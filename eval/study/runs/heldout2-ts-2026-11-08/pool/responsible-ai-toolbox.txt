@@ -1,0 +1,46 @@
+5 conventions from 2966 units in 313 roles (0 default tier, 5 suggestions)
+
+5 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-0bfbdb] libs/core-ui: functions in src/** declare their return type
+    evidence: 103/105 (lower bound 0.93, lift 1.7)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  libs/core-ui/src/lib/Cohort/ManualCohortManagement/CohortEditorPanelContentUtils.ts#getColumnItems
+    outlier:  libs/core-ui/src/lib/util/buildInitialContext.ts:54 getClassLength
+    outlier:  libs/core-ui/src/lib/util/buildInitialContext.ts:93 getClassLengthFromTextImportances
+
+ 2. [D-6cd898] functions in apps/** do not use `any`
+    evidence: 47/48 (lower bound 0.89, lift 5.7)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 0% of 1)
+    example:  apps/dashboard-e2e/src/describer/fairness/configurationPages/describeConfigurationSelection.ts#checkFairnessMetricSelectionPage
+    outlier:  apps/widget/src/app/modelData.ts:8 getModelData
+
+ 3. [D-a5a9f0] functions in apps/** declare their return type
+    evidence: 45/48 (lower bound 0.83, lift 1.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 100% of 4)
+    example:  apps/dashboard-e2e/src/describer/fairness/configurationPages/describeConfigurationSelection.ts#checkFairnessMetricSelectionPage
+    outlier:  apps/dashboard/src/model-assessment/model.py:23 create_pipeline
+    outlier:  apps/dashboard/src/model-assessment/model.py:17 split_label
+    outlier:  apps/dashboard/src/model-assessment/model.py:55 train
+
+ 4. [D-bee410] libs/causality: functions in src/** declare their return type, except a shared part (used by several members, not a member)
+    evidence: 25/26 (lower bound 0.81, lift 1.6)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  libs/causality/src/lib/CausalAnalysisDashboard/Controls/CausalAnalysisView/CausalAggregateView/getCausalDisplayFeatureName.ts#getCausalDisplayFeatureName
+    outlier:  libs/causality/src/lib/CausalAnalysisDashboard/Controls/CausalAnalysisView/CausalIndividualView/Outcome.tsx:14 outcome
+    exempt:   libs/causality/src/lib/CausalAnalysisDashboard/Controls/CausalAnalysisView/TreatmentView/TreatmentStyles.ts:20 TreatmentStyles (shared part used by 2 members)
+
+ 5. [D-ed6a98] libs/interpret-vision: classes in src/** render <Stack>
+    evidence: 18/19 (lower bound 0.75, lift 3.4)
+    tier:     suggestion (rule kind renders)
+    agents:   not shown to agents (family below admission bar: 40% of 10)
+    example:  libs/interpret-vision/src/lib/VisionExplanationDashboard/Controls/CohortToolBar.tsx#CohortToolBar
+    outlier:  libs/interpret-vision/src/lib/VisionExplanationDashboard/Controls/TitleBar.tsx:14 ITitleBarState
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

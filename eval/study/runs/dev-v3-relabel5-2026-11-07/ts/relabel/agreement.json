@@ -1,0 +1,124 @@
+{
+  "a": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/A",
+  "b": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/B",
+  "labels_sha256": {
+    "A": "6ef4b67d214d6709e70c0ba48da6e02416c608055a5d8cc7897643185481ac46",
+    "B": "81a4c6d4f7553565f234733e6ff67103cbf21270a2a7455042a43f1336794484"
+  },
+  "computed_at": "2026-11-08T00:06:09.425Z",
+  "rubric_sha256s": [
+    "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+  ],
+  "n": 80,
+  "scope": 80,
+  "exact": 0.875,
+  "kappa": 0.7579425113464449,
+  "kappa_boot": {
+    "lo": 0.5333707234997196,
+    "hi": 0.9248677248677246,
+    "clusters": 12
+  },
+  "accept_vs_not": {
+    "n": 80,
+    "po": 0.875,
+    "pe": 0.5203125,
+    "kappa": 0.739413680781759
+  },
+  "wrong_vs_not": {
+    "n": 80,
+    "po": 0.8875,
+    "pe": 0.553125,
+    "kappa": 0.7482517482517481
+  },
+  "confusion": {
+    "ACCEPT": {
+      "ACCEPT": 44,
+      "TRIVIAL": 1,
+      "WRONG": 8
+    },
+    "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 4,
+      "WRONG": 0
+    },
+    "WRONG": {
+      "ACCEPT": 1,
+      "TRIVIAL": 0,
+      "WRONG": 22
+    }
+  },
+  "mix": {
+    "A": {
+      "ACCEPT": 53,
+      "TRIVIAL": 4,
+      "WRONG": 23
+    },
+    "B": {
+      "ACCEPT": 45,
+      "TRIVIAL": 5,
+      "WRONG": 30
+    }
+  },
+  "disagreements": [
+    {
+      "uid": "formbricks/D-ec0946",
+      "repo": "formbricks",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "formbricks/D-514f45",
+      "repo": "formbricks",
+      "a": "WRONG",
+      "b": "ACCEPT"
+    },
+    {
+      "uid": "cal.com/D-85e09a",
+      "repo": "cal.com",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "cal.com/D-5722ba",
+      "repo": "cal.com",
+      "a": "ACCEPT",
+      "b": "TRIVIAL"
+    },
+    {
+      "uid": "cal.com/D-8d7d13",
+      "repo": "cal.com",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "supabase/D-e93eb6",
+      "repo": "supabase",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "supabase/D-922bc7",
+      "repo": "supabase",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "novu/D-dbba9a",
+      "repo": "novu",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "novu/D-3f3e16",
+      "repo": "novu",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "midday/D-f90103",
+      "repo": "midday",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    }
+  ]
+}

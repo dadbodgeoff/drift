@@ -1,0 +1,149 @@
+---
+source: crates/drift-mine/tests/practices.rs
+expression: r
+---
+{
+  "version": 1,
+  "commit": null,
+  "facts_schema": 11,
+  "scope": {
+    "concern": null,
+    "package": null,
+    "path": null
+  },
+  "summary": {
+    "population": 2,
+    "known": 0,
+    "declared": 0,
+    "none": 0,
+    "unknown": 2,
+    "coverage": 0.0,
+    "concerns_at_target": 0,
+    "target": 0.9
+  },
+  "concerns": [
+    {
+      "id": "authn",
+      "title": "Authentication",
+      "unit": "entry_point",
+      "population": {
+        "total": 2,
+        "known": 0,
+        "declared": 0,
+        "none": 0,
+        "unknown": 2,
+        "coverage": 0.0,
+        "left_out": {
+          "tests": 0,
+          "non_production": 0
+        }
+      },
+      "variants": [],
+      "unknown": {
+        "members": 2,
+        "reasons": [
+          {
+            "reason": "unclassified",
+            "members": 2
+          }
+        ],
+        "instruments": [
+          {
+            "instrument": "pkg:@nestjs/common#HttpCode",
+            "members": 1,
+            "config_hint": "practices: {authn: {\"pkg:@nestjs/common#HttpCode\": \"HttpCode\"}}"
+          },
+          {
+            "instrument": "pkg:@nestjs/common#UseGuards",
+            "members": 1,
+            "config_hint": "practices: {authn: {\"pkg:@nestjs/common#UseGuards\": \"UseGuards\"}}"
+          }
+        ],
+        "examples": [
+          {
+            "path": "src/projects/projects.controller.ts",
+            "symbol": "GET /projects/:id",
+            "line": 14
+          },
+          {
+            "path": "src/projects/projects.controller.ts",
+            "symbol": "POST /projects",
+            "line": 24
+          }
+        ]
+      },
+      "by_package": [
+        {
+          "package": "",
+          "total": 2,
+          "coverage": 0.0,
+          "variants": []
+        }
+      ],
+      "divergence": []
+    }
+  ],
+  "not_covered": [
+    "outbound calls (HTTP clients, timeouts, retries)",
+    "background jobs and queues",
+    "frontend data fetching",
+    "state and design system",
+    "hygiene (duplicate libraries, escape hatches)",
+    "declared vs actual (AGENTS.md, lint configs)",
+    "change over time (which variant new code adopts)"
+  ],
+  "recipes": [
+    {
+      "id": "E-081e0c",
+      "package": "",
+      "role": "http",
+      "label": "http entry points in .",
+      "population": 2,
+      "concerns": [
+        {
+          "concern": "authn",
+          "total": 2,
+          "variants": [],
+          "copy": null,
+          "none": 0,
+          "unknown": 2,
+          "differs": null
+        }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "kind": "unknown",
+      "concern": "authn",
+      "package": null,
+      "variants": [],
+      "members": 1,
+      "instrument": "pkg:@nestjs/common#HttpCode",
+      "config_hint": "practices: {authn: {\"pkg:@nestjs/common#HttpCode\": \"HttpCode\"}}",
+      "examples": [
+        {
+          "path": "src/projects/projects.controller.ts",
+          "symbol": "POST /projects",
+          "line": 24
+        }
+      ]
+    },
+    {
+      "kind": "unknown",
+      "concern": "authn",
+      "package": null,
+      "variants": [],
+      "members": 1,
+      "instrument": "pkg:@nestjs/common#UseGuards",
+      "config_hint": "practices: {authn: {\"pkg:@nestjs/common#UseGuards\": \"UseGuards\"}}",
+      "examples": [
+        {
+          "path": "src/projects/projects.controller.ts",
+          "symbol": "GET /projects/:id",
+          "line": 14
+        }
+      ]
+    }
+  ]
+}

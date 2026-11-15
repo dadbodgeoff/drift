@@ -1,0 +1,12 @@
+1 conventions from 405 units in 22 roles (0 default tier, 1 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-6e757d] files in frontend/** use lucide-react for icons, not react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react
+    evidence: 24/25 (lower bound 0.81, lift 1.0)
+    tier:     suggestion (rule kind prefers_library)
+    split:    lucide-react 24, react-icons 1
+    example:  frontend/src/components/Admin/AddUser.tsx#(file)
+    outlier:  frontend/src/components/Common/Footer.tsx:1 (file)
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

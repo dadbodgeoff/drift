@@ -1,0 +1,518 @@
+{
+  "//": "HELD-OUT set (second draw, decision D11), role PRIMARY: the D1/D4 re-measure and the D10.3 verifier check come from this set. FROZEN since `frozen_at`: the core (set_id, role, frozen_at, repos, reserves, tier, max, pool) never changes; only the append-only lists `replaced`, `burned` and `exposed` may grow. Rules: eval/study/README.md#held-out-rules. Selected code-blind by eval/study/select-holdout.mjs --selection heldout2 (see `selection`); nobody working on the product has read these repos.",
+  "set_id": "ts-heldout2-2026-11-07",
+  "role": "primary",
+  "decision": "Decision D11 (lead, 2026-11-07, before any data of this set existed): second held-out draw, selection only; census at the round-9 freeze; used for the D1/D4 re-measure and the D10.3 verifier check. Drawn code-blind with the primary draw's buckets, quotas, filters and classifier, a new seed committed before the draw, and every repo of the dev sets and of the earlier held-out sets (repos, reserves, replaced, exposed) excluded.",
+  "holdout": true,
+  "status": "frozen",
+  "frozen_on": "2026-11-07",
+  "frozen_at": "2026-11-07T23:26:23Z",
+  "language": "typescript/javascript",
+  "tier": {
+    "//": "Decision D7 (eval/study/README.md decision log), approved by the founder 2026-11-06 and recorded before any held-out census. D5 (tier-d5.json) narrowed by rule kind and language. TypeScript/JavaScript: the default tier admits only call wrappers (wrapped_by:call) and layering (avoids:import); wrapped_by:decorator, wrapped_by:extends and wrapped_by:jsx move to the suggestion tier. Python: no rule kind is in the default tier; Python advises only and every Python proposal is suggestion tier. D5's conditions still apply on top of the rule kind: every symbol the rule names is defined in the repository (default.target \"in_repo\": no pkg:, global# or unresolved: target; lib.mjs namesPackage, drift_mine::tier::names_package) and the role has >= default.min_members members. The language of a proposal is read conservatively (lib.mjs proposalLanguage, drift_mine::tier::convention_language): py when any member of its role is Python (conventions.yaml evidence.python_members) or its example path is (.py/.pyi files and Python package manifests), ts otherwise. Role members are counted as the role's size (evidence.role_members when set, else total; exempt members count). DEFAULT tier = language in default.languages AND structured rule kind (lib.mjs ruleKind) in default.rule_kinds AND the rule names no symbol from outside the repository AND its role has >= default.min_members members. SUGGESTION tier = every other shown proposal. The not-wrong rate is reported over all shown proposals, both tiers. Release gate unchanged: a language's default tier ships as advise until it measures >= 95% default-tier accept under rubric v3, judged per D1, on a primary held-out run.",
+    "kind": "rule_kind",
+    "decision": "D7",
+    "default": {
+      "//": "TypeScript/JavaScript call wrappers and layering (import avoidance), each only when every symbol it names is defined in the repository, in roles of 15 or more members",
+      "rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "languages": [
+        "ts"
+      ],
+      "min_members": 15,
+      "target": "in_repo"
+    },
+    "suggestion": {
+      "//": "D5's suggestion kinds, plus decorators, base classes and JSX layout wrappers (D7); every Python proposal (languages); and default-tier kinds whose rule names a package, built-in or unresolved symbol, or whose role is small",
+      "rule_kinds": [
+        "calls",
+        "named",
+        "avoids:other",
+        "prefers_library",
+        "before",
+        "has_test",
+        "model_has",
+        "package_has",
+        "dependency_version",
+        "wrapped_by:try",
+        "control",
+        "directive",
+        "throws",
+        "passes_key",
+        "renders",
+        "wrapped_by:decorator",
+        "wrapped_by:extends",
+        "wrapped_by:jsx"
+      ],
+      "languages": [
+        "py"
+      ]
+    },
+    "not_wrong_over": "all_shown"
+  },
+  "max": 15,
+  "//max_pool": "Same as the secondary sets: max 15 (census --max, proposals shown) and pool 200 (recall pool).",
+  "pool": 200,
+  "provenance": "Metadata only. Candidates: GitHub repository search (queries in `selection.record`), filtered by OSI licence, not archived, not a fork or template, and excluding every repo the Drift repository mentions (dev sets, the primary and secondary held-out sets with their reserves, replaced and exposed entries, any github.com URL on any branch, commit messages, PR and issue text) and obvious non-applications by name or topic. framework_bucket from the repo's dependency manifests only (package.json; pyproject.toml, requirements*.txt, setup.cfg, Pipfile), queried through GitHub code search restricted to those file names on the default branch; nothing else. sha = default-branch HEAD from git ls-remote. size_kb, stars, pushed_at from search metadata at retrieval. No notes about the code exist: nobody read it.",
+  "selection": {
+    "script": "eval/study/select-holdout.mjs",
+    "selection": "heldout2",
+    "record": "eval/study/selection/heldout2-2026-11-07.json",
+    "record_sha256": "0f77100d8d2b5e49d24787b5f7ce3e2db5961fd07b5941126c313ed5da6d764e",
+    "seed": "drift-heldout2-2026-11-07:6be4e9b992729c31fbd50b70d9c55c5d72085eaa:96981b12fc4ecd258ffa1003af1a1917",
+    "retrieved_at": "2026-11-07T22:32:04Z",
+    "buckets": {
+      "nestjs": 3,
+      "nextjs": 4,
+      "express_fastify_hono": 4,
+      "react_spa": 4,
+      "other_node": 3
+    }
+  },
+  "//lists": "Append-only lists outside the frozen core. replaced: [{date, repo, reserve, reason}], the i-th swap uses the i-th reserve, only for a failed technical check (clone fails, `drift scan` errors, fewer than 200 parseable files) or (Python) overlap with the dev set. burned: [{date, name, reason}]. exposed: [{name, where}], repos whose conventions were named where product engineers can read.",
+  "replaced": [
+    {
+      "date": "2026-11-08",
+      "repo": "kubespec.dev",
+      "reserve": "ui",
+      "reason": "technical check: fewer than 200 parseable files (53)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "epubbuilder",
+      "reserve": "aframe-inspector",
+      "reason": "technical check: fewer than 200 parseable files (111)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "aframe-inspector",
+      "reserve": "openwhyd",
+      "reason": "technical check: fewer than 200 parseable files (51)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "agentscope-studio",
+      "reserve": "reiverr",
+      "reason": "technical check: fewer than 200 parseable files (171)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "formity",
+      "reserve": "uxuescript",
+      "reason": "technical check: fewer than 200 parseable files (106)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "uxuescript",
+      "reserve": "clickhouse-etl",
+      "reason": "technical check: fewer than 200 parseable files (95)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "justified-gallery",
+      "reserve": "rao-pics",
+      "reason": "technical check: fewer than 200 parseable files (57)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "rao-pics",
+      "reserve": "capsize",
+      "reason": "technical check: fewer than 200 parseable files (110)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "capsize",
+      "reserve": "ownpilot",
+      "reason": "technical check: fewer than 200 parseable files (77)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "regl",
+      "reserve": "workflow",
+      "reason": "technical check: fewer than 200 parseable files (197)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "lumen",
+      "reserve": "planarally",
+      "reason": "technical check: fewer than 200 parseable files (49)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "vue-types",
+      "reserve": "onecli",
+      "reason": "technical check: fewer than 200 parseable files (43)"
+    }
+  ],
+  "burned": [],
+  "exposed": [],
+  "repos": [
+    {
+      "name": "ever-demand",
+      "url": "https://github.com/ever-co/ever-demand",
+      "sha": "32da41c40e1bc0e77e388a6bd08b74cf46654659",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs",
+      "size_kb": 33069,
+      "stars": 1870,
+      "pushed_at": "2026-09-27T15:52:25Z"
+    },
+    {
+      "name": "ngx-bootstrap",
+      "url": "https://github.com/valor-software/ngx-bootstrap",
+      "sha": "fdeaccefb6344cb544971d6d2953f8534e7a2235",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs",
+      "size_kb": 46738,
+      "stars": 5511,
+      "pushed_at": "2026-08-17T14:08:31Z"
+    },
+    {
+      "name": "island.is",
+      "url": "https://github.com/island-is/island.is",
+      "sha": "9933e49319bc82333f575611ca6a2dacef8926ec",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs",
+      "size_kb": 471067,
+      "stars": 445,
+      "pushed_at": "2026-11-06T22:07:47Z"
+    },
+    {
+      "name": "wind-comic",
+      "url": "https://github.com/ChrisChen667788/wind-comic",
+      "sha": "bce797bf3c7dede319df9b6afd53963b6dc0ff6e",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "size_kb": 180799,
+      "stars": 706,
+      "pushed_at": "2026-11-07T10:23:07Z"
+    },
+    {
+      "name": "better-chatbot",
+      "url": "https://github.com/keinsaasforever/better-chatbot",
+      "sha": "6f4183566bc48616303cb84055f11f79578c82fe",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "size_kb": 32619,
+      "stars": 1196,
+      "pushed_at": "2026-11-06T16:28:09Z"
+    },
+    {
+      "name": "kubespec.dev",
+      "url": "https://github.com/aptakube/kubespec.dev",
+      "sha": "9f20488dce699abe55704fc2685fb07a3e8a9952",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "size_kb": 21849,
+      "stars": 641,
+      "pushed_at": "2026-11-04T12:11:26Z"
+    },
+    {
+      "name": "mitosis",
+      "url": "https://github.com/BuilderIO/mitosis",
+      "sha": "2de76e9064d9e7916c5309c0a31206383403ae9d",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "size_kb": 31937,
+      "stars": 14458,
+      "pushed_at": "2026-10-28T22:04:27Z"
+    },
+    {
+      "name": "epubbuilder",
+      "url": "https://github.com/sqqihao/EPubBuilder",
+      "sha": "cfe554be1d7bb465f4b17b9d0f84f6e52bbdcf6c",
+      "language": "JavaScript",
+      "framework_bucket": "express_fastify_hono",
+      "size_kb": 22988,
+      "stars": 419,
+      "pushed_at": "2026-05-31T03:00:20Z"
+    },
+    {
+      "name": "squirrelscan",
+      "url": "https://github.com/squirrelscan/squirrelscan",
+      "sha": "19daf925c11dd723fac5b2536dc656efd3737018",
+      "language": "TypeScript",
+      "framework_bucket": "express_fastify_hono",
+      "size_kb": 30314,
+      "stars": 308,
+      "pushed_at": "2026-11-07T22:18:52Z"
+    },
+    {
+      "name": "webstudio",
+      "url": "https://github.com/webstudio-is/webstudio",
+      "sha": "ee277769ffe557e20211b3d98bdedc0d792d4ae2",
+      "language": "TypeScript",
+      "framework_bucket": "express_fastify_hono",
+      "size_kb": 153944,
+      "stars": 9153,
+      "pushed_at": "2026-11-07T11:04:27Z"
+    },
+    {
+      "name": "agentscope-studio",
+      "url": "https://github.com/agentscope-ai/agentscope-studio",
+      "sha": "20e7638273d3726732eb317b440bfa34e6694e17",
+      "language": "TypeScript",
+      "framework_bucket": "express_fastify_hono",
+      "size_kb": 25624,
+      "stars": 666,
+      "pushed_at": "2026-09-02T06:48:23Z"
+    },
+    {
+      "name": "agentrove",
+      "url": "https://github.com/Mng-dev-ai/agentrove",
+      "sha": "d5828dc44abe33ae2c31a3050747347a8cfc455a",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa",
+      "size_kb": 40273,
+      "stars": 337,
+      "pushed_at": "2026-11-07T21:32:28Z"
+    },
+    {
+      "name": "formity",
+      "url": "https://github.com/martiserra99/formity",
+      "sha": "3d4dab433b8c3040f9727ae3e4bba0044e146ce9",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa",
+      "size_kb": 65911,
+      "stars": 457,
+      "pushed_at": "2026-06-16T16:20:22Z"
+    },
+    {
+      "name": "responsible-ai-toolbox",
+      "url": "https://github.com/microsoft/responsible-ai-toolbox",
+      "sha": "12c307e4a3f37e4277ef9a5481156081da302500",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa",
+      "size_kb": 117848,
+      "stars": 1852,
+      "pushed_at": "2026-11-07T02:18:25Z"
+    },
+    {
+      "name": "justified-gallery",
+      "url": "https://github.com/miromannino/Justified-Gallery",
+      "sha": "541415c269262658e80c30d550642f8cf999a38a",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa",
+      "size_kb": 27439,
+      "stars": 1746,
+      "pushed_at": "2026-10-29T02:00:50Z"
+    },
+    {
+      "name": "regl",
+      "url": "https://github.com/regl-project/regl",
+      "sha": "581f8071182a8127d37a0cd1d3b035d7e5fef074",
+      "language": "JavaScript",
+      "framework_bucket": "other_node",
+      "size_kb": 193103,
+      "stars": 5595,
+      "pushed_at": "2026-10-17T02:38:06Z"
+    },
+    {
+      "name": "lumen",
+      "url": "https://github.com/alxshelepenok/lumen",
+      "sha": "4d965a9dd99f3c331ccd52b31fb492c2334ef5eb",
+      "language": "TypeScript",
+      "framework_bucket": "other_node",
+      "size_kb": 163088,
+      "stars": 2019,
+      "pushed_at": "2026-09-23T20:54:46Z"
+    },
+    {
+      "name": "vue-types",
+      "url": "https://github.com/dwightjack/vue-types",
+      "sha": "f94ecedf5950267e4b31b3c43484dc9872dcea18",
+      "language": "TypeScript",
+      "framework_bucket": "other_node",
+      "size_kb": 21193,
+      "stars": 583,
+      "pushed_at": "2026-11-03T17:57:56Z"
+    }
+  ],
+  "reserves": {
+    "//": "Pre-registered replacements, used in this order only (rule 1). Reserve i comes from bucket spec.sets.<set>.reserve_order[i] of the selection record.",
+    "repos": [
+      {
+        "name": "ui",
+        "url": "https://github.com/cosscom/ui",
+        "sha": "3686270c94c9d856ee1669bd06cfe3f7939d6796",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 26962,
+        "stars": 10797,
+        "pushed_at": "2026-11-05T20:08:20Z"
+      },
+      {
+        "name": "aframe-inspector",
+        "url": "https://github.com/aframevr/aframe-inspector",
+        "sha": "8d87d3e73dce37e805339cd40c96eaedc4bb7ecf",
+        "language": "JavaScript",
+        "framework_bucket": "react_spa",
+        "size_kb": 31162,
+        "stars": 688,
+        "pushed_at": "2026-07-14T06:59:40Z"
+      },
+      {
+        "name": "openwhyd",
+        "url": "https://github.com/openwhyd/openwhyd",
+        "sha": "26d9cbb548c2b06e09c9b5c505bd07f53274fa05",
+        "language": "JavaScript",
+        "framework_bucket": "express_fastify_hono",
+        "size_kb": 49784,
+        "stars": 436,
+        "pushed_at": "2026-11-05T18:18:41Z"
+      },
+      {
+        "name": "reiverr",
+        "url": "https://github.com/aleksilassila/reiverr",
+        "sha": "c8f15792b96ec1467f805fc03c9a6241ece70e74",
+        "language": "TypeScript",
+        "framework_bucket": "nestjs",
+        "size_kb": 86094,
+        "stars": 2345,
+        "pushed_at": "2026-11-07T22:09:54Z"
+      },
+      {
+        "name": "uxuescript",
+        "url": "https://github.com/unraous/uxuescript",
+        "sha": "2fe69c03d8349d687fb6998462c38a71de05e6ac",
+        "language": "JavaScript",
+        "framework_bucket": "other_node",
+        "size_kb": 57870,
+        "stars": 363,
+        "pushed_at": "2026-11-05T05:26:55Z"
+      },
+      {
+        "name": "clickhouse-etl",
+        "url": "https://github.com/glassflow/clickhouse-etl",
+        "sha": "cb1fcb669fcdeabd66d85be2bbc46e8801696483",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 90060,
+        "stars": 503,
+        "pushed_at": "2026-08-25T15:02:02Z"
+      },
+      {
+        "name": "rao-pics",
+        "url": "https://github.com/meetqy/rao-pics",
+        "sha": "c86d164c408d9594dda480835ec2ca15087f2d0e",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 78280,
+        "stars": 794,
+        "pushed_at": "2026-11-05T17:16:48Z"
+      },
+      {
+        "name": "capsize",
+        "url": "https://github.com/seek-oss/capsize",
+        "sha": "1fcf40ae804b918b9b2289cc046f12cedf9f34ae",
+        "language": "TypeScript",
+        "framework_bucket": "react_spa",
+        "size_kb": 46378,
+        "stars": 1734,
+        "pushed_at": "2026-10-15T02:05:36Z"
+      },
+      {
+        "name": "ownpilot",
+        "url": "https://github.com/ownpilot/OwnPilot",
+        "sha": "eb4c27f29d4d12778621a83e49cd673cd8b62239",
+        "language": "TypeScript",
+        "framework_bucket": "express_fastify_hono",
+        "size_kb": 30798,
+        "stars": 429,
+        "pushed_at": "2026-09-08T18:33:01Z"
+      },
+      {
+        "name": "workflow",
+        "url": "https://github.com/vercel/workflow",
+        "sha": "4beb5bcccdfbe9686ef56df6bbfa745caf993c86",
+        "language": "TypeScript",
+        "framework_bucket": "nestjs",
+        "size_kb": 128612,
+        "stars": 2497,
+        "pushed_at": "2026-11-07T19:11:08Z"
+      },
+      {
+        "name": "planarally",
+        "url": "https://github.com/Kruptein/PlanarAlly",
+        "sha": "dd5a03d1cb2003d4f7089698c60b83fbc98c6866",
+        "language": "TypeScript",
+        "framework_bucket": "other_node",
+        "size_kb": 101171,
+        "stars": 563,
+        "pushed_at": "2026-10-28T21:35:44Z"
+      },
+      {
+        "name": "onecli",
+        "url": "https://github.com/onecli/onecli",
+        "sha": "afb4a19cc37803f40f748d7d5cc1374530b9c2a0",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 25574,
+        "stars": 3629,
+        "pushed_at": "2026-11-05T13:08:03Z"
+      },
+      {
+        "name": "evolu",
+        "url": "https://github.com/evoluhq/evolu",
+        "sha": "771dc6119aa6cba8325bcde2dddbdd74bc8a2074",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 24414,
+        "stars": 1916,
+        "pushed_at": "2026-11-05T22:03:53Z"
+      },
+      {
+        "name": "evergreen",
+        "url": "https://github.com/segmentio/evergreen",
+        "sha": "9b774aee2d794f6cf2f73a054bd33066ca5898a9",
+        "language": "JavaScript",
+        "framework_bucket": "react_spa",
+        "size_kb": 231649,
+        "stars": 12429,
+        "pushed_at": "2026-06-25T23:25:22Z"
+      },
+      {
+        "name": "idurar-erp-crm",
+        "url": "https://github.com/idurar/idurar-erp-crm",
+        "sha": "e935dec13cf8b6082a7e7fc4736669e5151a80a3",
+        "language": "JavaScript",
+        "framework_bucket": "express_fastify_hono",
+        "size_kb": 23369,
+        "stars": 8943,
+        "pushed_at": "2026-08-14T23:02:15Z"
+      },
+      {
+        "name": "platformatic",
+        "url": "https://github.com/platformatic/platformatic",
+        "sha": "ad82443be4a5acb211e7697a83a228ef4b2a4ae1",
+        "language": "JavaScript",
+        "framework_bucket": "nestjs",
+        "size_kb": 66201,
+        "stars": 2172,
+        "pushed_at": "2026-11-07T14:47:31Z"
+      },
+      {
+        "name": "fleetbase",
+        "url": "https://github.com/fleetbase/fleetbase",
+        "sha": "67b2db64c7490599aaa6c799b26d5e4de897c25c",
+        "language": "JavaScript",
+        "framework_bucket": "other_node",
+        "size_kb": 26417,
+        "stars": 4574,
+        "pushed_at": "2026-11-06T19:09:54Z"
+      },
+      {
+        "name": "athas",
+        "url": "https://github.com/athasdev/athas",
+        "sha": "20719fa3a6ac26e5ea4babf3be02f3fdb5d11ad7",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 152916,
+        "stars": 3121,
+        "pushed_at": "2026-11-06T17:26:20Z"
+      }
+    ]
+  }
+}

@@ -1,0 +1,194 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - +layout
+  - +page
+  - +server
+  - __init__
+  - access
+  - actions
+  - admin
+  - apps
+  - conftest
+  - export_views
+  - models
+  - serializer
+  - serializers
+  - signals
+  - swagger_params
+  - tasks
+  - test_models
+  - updates
+  - urls
+  - views
+  suffixes:
+  - config
+  - server
+  - test
+  layers:
+  - tests/conftest
+conventions:
+- id: D-220569
+  status: proposed
+  mode: advise
+  summary: "backend: HTTP handlers in cases/** are wrapped in IsPortalContact() or permissions.IsAuthenticated()"
+  role:
+    package: backend
+    dir: cases
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - backend/common/portal_auth.py#IsPortalContact
+    - pkg:rest_framework#permissions.IsAuthenticated
+  evidence:
+    holders: 88
+    total: 94
+    lower_bound: 0.868
+    lift: 4.681
+    split:
+    - - pkg:rest_framework#permissions.IsAuthenticated
+      - 81
+    - - backend/common/portal_auth.py#IsPortalContact
+      - 7
+    python_members: 94
+  example: backend/cases/analytics_views.py#AnalyticsAgentsView.get
+  selector_version: 2
+- id: D-4a6ea2
+  status: proposed
+  mode: advise
+  summary: "backend: HTTP handlers in leads/** are wrapped in HasOrgContext()"
+  role:
+    package: backend
+    dir: leads
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - backend/common/permissions.py#HasOrgContext
+  evidence:
+    holders: 39
+    total: 41
+    lower_bound: 0.839
+    lift: 5.08
+    python_members: 41
+  example: backend/leads/views/import_views.py#LeadImportCommitView.post
+  selector_version: 2
+- id: D-4b232f
+  status: proposed
+  mode: advise
+  summary: "backend: HTTP handlers in common/** are wrapped in permissions.IsAuthenticated()"
+  role:
+    package: backend
+    dir: common
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - pkg:rest_framework#permissions.IsAuthenticated
+  evidence:
+    holders: 88
+    total: 98
+    lower_bound: 0.822
+    lift: 4.565
+    python_members: 98
+  example: backend/common/search_views.py#GlobalSearchView.get
+  selector_version: 2
+- id: D-8ee062
+  status: proposed
+  mode: advise
+  summary: "frontend: files in src/lib/v2/** have a test file"
+  role:
+    package: frontend
+    dir: src/lib/v2
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 35
+    total: 38
+    lower_bound: 0.792
+    lift: 3.085
+  example: frontend/src/lib/v2/audit-log.ts#(file)
+  selector_version: 2
+- id: D-f135a4
+  status: proposed
+  mode: advise
+  summary: "backend: HTTP handlers in cases/** are wrapped in HasOrgContext()"
+  role:
+    package: backend
+    dir: cases
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - backend/common/permissions.py#HasOrgContext
+  evidence:
+    holders: 81
+    total: 94
+    lower_bound: 0.778
+    lift: 4.602
+    python_members: 94
+  example: backend/cases/analytics_views.py#AnalyticsAgentsView.get
+  selector_version: 2
+- id: D-b6f0b8
+  status: proposed
+  mode: advise
+  summary: "frontend: exported values in src/** (*.server files) use `try`"
+  role:
+    package: frontend
+    dir: src
+    file: "*.server"
+    entry: '-'
+    kind: const
+  rule:
+    type: control
+    value: try
+  evidence:
+    holders: 93
+    total: 109
+    lower_bound: 0.775
+    lift: 9.633
+  example: frontend/src/routes/(app)/accounts/[id]/+page.server.ts#actions
+  selector_version: 2
+- id: D-9c2214
+  status: proposed
+  mode: advise
+  summary: "backend: HTTP handlers in cases/** pass `tags` to utils.extend_schema()"
+  role:
+    package: backend
+    dir: cases
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:drf_spectacular#utils.extend_schema
+    index: 99
+    key: tags
+  evidence:
+    holders: 80
+    total: 94
+    lower_bound: 0.765
+    lift: 4.433
+    python_members: 94
+  example: backend/cases/analytics_views.py#AnalyticsAgentsView.get
+  selector_version: 2

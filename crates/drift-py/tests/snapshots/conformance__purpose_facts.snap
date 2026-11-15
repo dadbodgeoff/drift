@@ -1,0 +1,1123 @@
+---
+source: crates/drift-py/tests/conformance.rs
+expression: "serde_json::to_string_pretty(&r).unwrap()"
+---
+{
+  "schema_version": 11,
+  "files": [
+    {
+      "path": "shop/__init__.py",
+      "hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [],
+      "symbols": [],
+      "entry_points": []
+    },
+    {
+      "path": "shop/api.py",
+      "hash": "6d4ca7f40de1773c1d17dc798c09cef25ae4e2a73ac93e5a75ab8c1b80ed44d1",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:requests",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "API",
+          "origin": "shop/api.py#API",
+          "kind": "local"
+        },
+        {
+          "name": "get",
+          "origin": "shop/api.py#get",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "API",
+          "kind": "const",
+          "exported_as": [
+            "API"
+          ],
+          "line": 3,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 1
+        },
+        {
+          "name": "get",
+          "kind": "function",
+          "exported_as": [
+            "get"
+          ],
+          "line": 6,
+          "wraps": [],
+          "calls": [
+            "pkg:requests#get"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:requests#get@99:timeout"
+          ],
+          "controls": [
+            "param_flows"
+          ],
+          "string_literals": 0,
+          "order": [
+            "pkg:requests#get"
+          ],
+          "returns_calls": [
+            "pkg:requests#get"
+          ]
+        }
+      ],
+      "entry_points": [],
+      "outgoing": [
+        {
+          "unread": "`path` is built from the request being served",
+          "line": 7,
+          "within": "get",
+          "url": "https://api.example.com{}"
+        }
+      ]
+    },
+    {
+      "path": "shop/clock.py",
+      "hash": "fc5733b168a74576a5c8a5e533b36eca1ddd24123dd81b5365f95d46b1c7ef7b",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "FakeClock",
+          "origin": "shop/clock.py#FakeClock",
+          "kind": "local"
+        },
+        {
+          "name": "Fakeroot",
+          "origin": "shop/clock.py#Fakeroot",
+          "kind": "local"
+        },
+        {
+          "name": "fake_user",
+          "origin": "shop/clock.py#fake_user",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "FakeClock",
+          "kind": "class",
+          "exported_as": [
+            "FakeClock"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "now="
+          ],
+          "controls": [],
+          "string_literals": 0,
+          "traits": [
+            "test_helper"
+          ]
+        },
+        {
+          "name": "Fakeroot",
+          "kind": "class",
+          "exported_as": [
+            "Fakeroot"
+          ],
+          "line": 5,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "fake_user",
+          "kind": "function",
+          "exported_as": [
+            "fake_user"
+          ],
+          "line": 9,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "shop/codec.py",
+      "hash": "01bce10a81f50060f1c937ee97a29799ac272ddab1ef8a64e4794a59830a2407",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:python:json",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "dumps",
+          "origin": "shop/codec.py#dumps",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "dumps",
+          "kind": "function",
+          "exported_as": [
+            "dumps"
+          ],
+          "line": 4,
+          "wraps": [],
+          "calls": [
+            "global#str",
+            "pkg:python:json#dumps",
+            "shop/codec.py#dumps"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "arg_value:shop/codec.py#dumps\t#0\tparam obj #0\t#1\tunread",
+            "param_flows"
+          ],
+          "string_literals": 0,
+          "order": [
+            "shop/codec.py#dumps",
+            "pkg:python:json#dumps",
+            "global#str"
+          ],
+          "conditional_calls": [
+            "under_branch:shop/codec.py#dumps"
+          ],
+          "returns_calls": [
+            "pkg:python:json#dumps",
+            "shop/codec.py#dumps"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "shop/config.py",
+      "hash": "8f0cfcd392b0fbfb59dc5657caba8f62ab9a66b2c9b7f63bde853a1fdce39b02",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:python:json",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "load",
+          "origin": "shop/config.py#load",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "load",
+          "kind": "function",
+          "exported_as": [
+            "load"
+          ],
+          "line": 4,
+          "wraps": [],
+          "calls": [
+            "global#open",
+            "pkg:python:json#load"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "param_flows"
+          ],
+          "string_literals": 1,
+          "order": [
+            "global#open",
+            "pkg:python:json#load"
+          ],
+          "returns_calls": [
+            "pkg:python:json#load"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "shop/fakes.py",
+      "hash": "b21dcc6f0bb8ae03e5c036099e31d46318717677efc53333a221e39e6d9c677b",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "shop/payments.py",
+          "names": [
+            "Gateway",
+            "Ledger"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "InMemoryGateway",
+          "origin": "shop/fakes.py#InMemoryGateway",
+          "kind": "local"
+        },
+        {
+          "name": "InMemoryLedger",
+          "origin": "shop/fakes.py#InMemoryLedger",
+          "kind": "local"
+        },
+        {
+          "name": "make_order",
+          "origin": "shop/fakes.py#make_order",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "InMemoryGateway",
+          "kind": "class",
+          "exported_as": [
+            "InMemoryGateway"
+          ],
+          "line": 4,
+          "wraps": [
+            {
+              "wrapper": "shop/payments.py#Gateway",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "charge="
+          ],
+          "controls": [],
+          "string_literals": 1,
+          "traits": [
+            "test_helper"
+          ],
+          "members": [
+            {
+              "name": "charge"
+            }
+          ]
+        },
+        {
+          "name": "InMemoryLedger",
+          "kind": "class",
+          "exported_as": [
+            "InMemoryLedger"
+          ],
+          "line": 13,
+          "wraps": [
+            {
+              "wrapper": "shop/payments.py#Ledger",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "entries="
+          ],
+          "controls": [],
+          "string_literals": 0,
+          "traits": [
+            "test_helper"
+          ]
+        },
+        {
+          "name": "make_order",
+          "kind": "function",
+          "exported_as": [
+            "make_order"
+          ],
+          "line": 9,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "traits": [
+            "test_helper"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "shop/gifts.py",
+      "hash": "8a5aaf4a8b7292b7563b49564e02ff9f3a3f91cb06aa874a2dfaba0ca936add8",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "shop/payments.py",
+          "names": [
+            "Order"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "GiftOrder",
+          "origin": "shop/gifts.py#GiftOrder",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GiftOrder",
+          "kind": "class",
+          "exported_as": [
+            "GiftOrder"
+          ],
+          "line": 4,
+          "wraps": [
+            {
+              "wrapper": "shop/payments.py#Order",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "wrapped="
+          ],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "shop/http.py",
+      "hash": "10e3ad497a5ae456eb4cb3f03bd156b084aa98c471cdd63217cf739b4ad02d77",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:python:os",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:requests",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "get",
+          "origin": "shop/http.py#get",
+          "kind": "local"
+        },
+        {
+          "name": "post",
+          "origin": "shop/http.py#post",
+          "kind": "local"
+        },
+        {
+          "name": "session",
+          "origin": "shop/http.py#session",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "get",
+          "kind": "function",
+          "exported_as": [
+            "get"
+          ],
+          "line": 8,
+          "wraps": [],
+          "calls": [
+            "global#float",
+            "pkg:python:os#environ.get",
+            "shop/http.py#session.get"
+          ],
+          "renders": [],
+          "args": [
+            "shop/http.py#session.get@99:**"
+          ],
+          "controls": [
+            "arg_value:shop/http.py#session.get\t#0\tparam url #0\t*\tunread",
+            "param_flows",
+            "unread_call"
+          ],
+          "string_literals": 3,
+          "reads": [
+            "os.environ.HTTP_TIMEOUT"
+          ],
+          "order": [
+            "global#float",
+            "pkg:python:os#environ.get",
+            "shop/http.py#session.get"
+          ],
+          "returns_calls": [
+            "shop/http.py#session.get"
+          ]
+        },
+        {
+          "name": "post",
+          "kind": "function",
+          "exported_as": [
+            "post"
+          ],
+          "line": 13,
+          "wraps": [],
+          "calls": [
+            "pkg:requests#post"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:requests#post@99:**"
+          ],
+          "controls": [
+            "param_flows"
+          ],
+          "string_literals": 0,
+          "sinks": [
+            "dynamic_fetch"
+          ],
+          "order": [
+            "pkg:requests#post"
+          ],
+          "traits": [
+            "forwards"
+          ],
+          "returns_calls": [
+            "pkg:requests#post"
+          ]
+        },
+        {
+          "name": "session",
+          "kind": "variable",
+          "exported_as": [
+            "session"
+          ],
+          "line": 5,
+          "wraps": [],
+          "calls": [
+            "pkg:requests#Session"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "shape:=pkg:requests#Session()"
+          ],
+          "string_literals": 0,
+          "order": [
+            "pkg:requests#Session"
+          ]
+        }
+      ],
+      "entry_points": [],
+      "outgoing": [
+        {
+          "unread": "`url` is built from the request being served",
+          "line": 10,
+          "within": "get",
+          "url": "{}"
+        },
+        {
+          "unread": "`url` is built from the request being served",
+          "line": 14,
+          "within": "post",
+          "url": "{}"
+        }
+      ]
+    },
+    {
+      "path": "shop/jsonio.py",
+      "hash": "7734781aafe11c4f36355b87c8eeecaecf34f279d4894033590a97b9c5b86364",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:python:json",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "load",
+          "origin": "shop/jsonio.py#load",
+          "kind": "local"
+        },
+        {
+          "name": "loads",
+          "origin": "shop/jsonio.py#loads",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "load",
+          "kind": "function",
+          "exported_as": [
+            "load"
+          ],
+          "line": 4,
+          "wraps": [],
+          "calls": [
+            "pkg:python:json#load"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:python:json#load@99:**"
+          ],
+          "controls": [
+            "param_flows"
+          ],
+          "string_literals": 0,
+          "order": [
+            "pkg:python:json#load"
+          ],
+          "traits": [
+            "forwards"
+          ],
+          "returns_calls": [
+            "pkg:python:json#load"
+          ]
+        },
+        {
+          "name": "loads",
+          "kind": "function",
+          "exported_as": [
+            "loads"
+          ],
+          "line": 8,
+          "wraps": [],
+          "calls": [
+            "pkg:python:json#loads"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "param_flows",
+            "unread_call"
+          ],
+          "string_literals": 0,
+          "order": [
+            "pkg:python:json#loads"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "shop/payments.py",
+      "hash": "e96884ba13f25c7e38a63a7576fa6cc1fed42996986f8d79f8330b06c1b65d3f",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:python:abc",
+          "names": [
+            "ABC",
+            "abstractmethod"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "Gateway",
+          "origin": "shop/payments.py#Gateway",
+          "kind": "local"
+        },
+        {
+          "name": "Invoice",
+          "origin": "shop/payments.py#Invoice",
+          "kind": "local"
+        },
+        {
+          "name": "Ledger",
+          "origin": "shop/payments.py#Ledger",
+          "kind": "local"
+        },
+        {
+          "name": "Order",
+          "origin": "shop/payments.py#Order",
+          "kind": "local"
+        },
+        {
+          "name": "Refunds",
+          "origin": "shop/payments.py#Refunds",
+          "kind": "local"
+        },
+        {
+          "name": "StripeGateway",
+          "origin": "shop/payments.py#StripeGateway",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "Gateway",
+          "kind": "class",
+          "exported_as": [
+            "Gateway"
+          ],
+          "line": 4,
+          "wraps": [
+            {
+              "wrapper": "pkg:python:abc#ABC",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "charge="
+          ],
+          "controls": [],
+          "string_literals": 0,
+          "traits": [
+            "abstract",
+            "base",
+            "subclassed"
+          ],
+          "members": [
+            {
+              "name": "charge"
+            }
+          ]
+        },
+        {
+          "name": "Invoice",
+          "kind": "class",
+          "exported_as": [
+            "Invoice"
+          ],
+          "line": 23,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "number="
+          ],
+          "controls": [],
+          "string_literals": 1
+        },
+        {
+          "name": "Ledger",
+          "kind": "class",
+          "exported_as": [
+            "Ledger"
+          ],
+          "line": 27,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "entries="
+          ],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "Order",
+          "kind": "class",
+          "exported_as": [
+            "Order"
+          ],
+          "line": 19,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "total="
+          ],
+          "controls": [],
+          "string_literals": 0,
+          "traits": [
+            "subclassed"
+          ]
+        },
+        {
+          "name": "Refunds",
+          "kind": "class",
+          "exported_as": [
+            "Refunds"
+          ],
+          "line": 9,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "refund="
+          ],
+          "controls": [],
+          "string_literals": 0,
+          "traits": [
+            "abstract"
+          ],
+          "members": [
+            {
+              "name": "refund"
+            }
+          ]
+        },
+        {
+          "name": "StripeGateway",
+          "kind": "class",
+          "exported_as": [
+            "StripeGateway"
+          ],
+          "line": 14,
+          "wraps": [
+            {
+              "wrapper": "shop/payments.py#Gateway",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "charge="
+          ],
+          "controls": [],
+          "string_literals": 1,
+          "members": [
+            {
+              "name": "charge"
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "shop/procs.py",
+      "hash": "33eff3bd66513c0bf0b66309a9018e92280c4290b42dea1fa4c71715cea16138",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:python:asyncio",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:python:subprocess",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "run",
+          "origin": "shop/procs.py#run",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "_warm",
+          "kind": "function",
+          "exported_as": [],
+          "line": 5,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "is_async": true
+        },
+        {
+          "name": "run",
+          "kind": "function",
+          "exported_as": [
+            "run"
+          ],
+          "line": 9,
+          "wraps": [],
+          "calls": [
+            "pkg:python:asyncio#run",
+            "pkg:python:subprocess#run",
+            "shop/procs.py#_warm"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:python:subprocess#run@99:check"
+          ],
+          "controls": [
+            "arg_value:shop/procs.py#_warm",
+            "param_flows"
+          ],
+          "string_literals": 0,
+          "order": [
+            "pkg:python:asyncio#run",
+            "shop/procs.py#_warm",
+            "pkg:python:subprocess#run"
+          ],
+          "returns_calls": [
+            "pkg:python:subprocess#run"
+          ]
+        }
+      ],
+      "entry_points": [],
+      "registries": [
+        {
+          "slot": "calls:pkg:python:asyncio#*",
+          "line": 10,
+          "items": [
+            {
+              "target": "shop/procs.py#_warm",
+              "line": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "shop/settings.py",
+      "hash": "c4bf3edaf5465f97c98d3399df2fb4c64de23093a5e21009161c684e850cadab",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:python:json",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "load",
+          "origin": "shop/settings.py#load",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "load",
+          "kind": "function",
+          "exported_as": [
+            "load"
+          ],
+          "line": 4,
+          "wraps": [],
+          "calls": [
+            "global#open",
+            "pkg:python:json#load"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 1,
+          "order": [
+            "global#open",
+            "pkg:python:json#load"
+          ],
+          "returns_calls": [
+            "pkg:python:json#load"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "shop/tests.py",
+      "hash": "4aca49dae22f5f730f9cc85d93e07cfc4458e7acec9ca71bacec9068e4e4391e",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "shop/payments.py",
+          "names": [
+            "Invoice"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "InvoiceTests",
+          "origin": "shop/tests.py#InvoiceTests",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "InvoiceTests",
+          "kind": "class",
+          "exported_as": [
+            "InvoiceTests"
+          ],
+          "line": 4,
+          "wraps": [
+            {
+              "wrapper": "shop/payments.py#Invoice",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "tests/test_orders.py",
+      "hash": "df1ce9a9d18e71f61722fdc0b44ced85ad014929753d00de2b5a8457619cefe0",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "shop/payments.py",
+          "names": [
+            "Invoice"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "FakeMailer",
+          "origin": "tests/test_orders.py#FakeMailer",
+          "kind": "local"
+        },
+        {
+          "name": "TestInvoice",
+          "origin": "tests/test_orders.py#TestInvoice",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "FakeMailer",
+          "kind": "class",
+          "exported_as": [
+            "FakeMailer"
+          ],
+          "line": 4,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "TestInvoice",
+          "kind": "class",
+          "exported_as": [
+            "TestInvoice"
+          ],
+          "line": 8,
+          "wraps": [
+            {
+              "wrapper": "shop/payments.py#Invoice",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    }
+  ],
+  "skipped": []
+}

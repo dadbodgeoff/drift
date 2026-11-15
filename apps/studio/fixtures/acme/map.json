@@ -1,0 +1,698 @@
+{
+ "schema": 1,
+ "scope": "repo",
+ "files": 365,
+ "files_in_a_role": 337,
+ "test_roles": true,
+ "packages": [
+  {
+   "path": "apps/api",
+   "name": "@acme/api",
+   "manifest": "apps/api/package.json",
+   "languages": [
+    "ts"
+   ],
+   "files": 95,
+   "production_files": 95,
+   "layers": [
+    {
+     "layer": "apps/api",
+     "files": 95
+    }
+   ],
+   "entry_points": [
+    {
+     "kind": "http",
+     "count": 49,
+     "examples": [
+      "apps/api/src/alerts/alerts.controller.ts#GET /alerts/:id",
+      "apps/api/src/pipelines/pipelines.controller.ts#GET /pipelines/:id",
+      "apps/api/src/webhooks/webhooks.controller.ts#POST /webhooks"
+     ]
+    }
+   ],
+   "depends_on": [
+    {
+     "package": "packages/db",
+     "files": 2
+    }
+   ],
+   "dependencies_test": [],
+   "depended_on_by": 0,
+   "tests": {
+    "files": 0,
+    "colocated": 0,
+    "placement": "none",
+    "naming": [],
+    "dirs": [],
+    "fixtures": []
+   }
+  },
+  {
+   "path": "apps/web",
+   "name": "@acme/web",
+   "manifest": "apps/web/package.json",
+   "languages": [
+    "ts"
+   ],
+   "files": 143,
+   "production_files": 143,
+   "layers": [
+    {
+     "layer": "apps/web",
+     "files": 143
+    }
+   ],
+   "entry_points": [
+    {
+     "kind": "http",
+     "count": 97,
+     "examples": [
+      "apps/web/app/api/admin/abuse/route.ts#GET",
+      "apps/web/app/api/workspaces/[id]/exports/route.ts#POST",
+      "apps/web/app/api/workspaces/[id]/webhooks/route.ts#POST"
+     ]
+    },
+    {
+     "kind": "page",
+     "count": 21,
+     "examples": [
+      "apps/web/app/(dashboard)/[slug]/alerts/page.tsx#default",
+      "apps/web/app/(dashboard)/[slug]/links/page.tsx#default",
+      "apps/web/app/(dashboard)/[slug]/webhooks/page.tsx#default"
+     ]
+    },
+    {
+     "kind": "server_action",
+     "count": 19,
+     "examples": [
+      "apps/web/lib/actions/archive-link.ts#archiveLinkAction",
+      "apps/web/lib/actions/export-events.ts#exportEventsAction",
+      "apps/web/lib/actions/update-link.ts#updateLinkAction"
+     ]
+    }
+   ],
+   "depends_on": [
+    {
+     "package": "packages/db",
+     "files": 61
+    },
+    {
+     "package": "packages/ui",
+     "files": 34
+    }
+   ],
+   "dependencies_test": [],
+   "depended_on_by": 1,
+   "tests": {
+    "files": 0,
+    "colocated": 0,
+    "placement": "none",
+    "naming": [],
+    "dirs": [],
+    "fixtures": []
+   }
+  },
+  {
+   "path": "examples/express-cjs",
+   "name": "fixture-express-cjs",
+   "manifest": "examples/express-cjs/package.json",
+   "languages": [
+    "ts"
+   ],
+   "files": 10,
+   "production_files": 0,
+   "layers": [
+    {
+     "layer": "examples/express-cjs",
+     "files": 10
+    }
+   ],
+   "entry_points": [
+    {
+     "kind": "http",
+     "count": 4,
+     "examples": [
+      "examples/express-cjs/src/routes/admin.route.js#DELETE /users/:id",
+      "examples/express-cjs/src/routes/user.route.js#GET /",
+      "examples/express-cjs/src/routes/user.route.js#POST /"
+     ]
+    }
+   ],
+   "depends_on": [],
+   "dependencies_test": [],
+   "depended_on_by": 0,
+   "tests": {
+    "files": 0,
+    "colocated": 0,
+    "placement": "none",
+    "naming": [],
+    "dirs": [],
+    "fixtures": []
+   }
+  },
+  {
+   "path": "examples/fastify-app",
+   "name": "fixture-fastify-app",
+   "manifest": "examples/fastify-app/package.json",
+   "languages": [
+    "ts"
+   ],
+   "files": 3,
+   "production_files": 0,
+   "layers": [
+    {
+     "layer": "examples/fastify-app",
+     "files": 3
+    }
+   ],
+   "entry_points": [
+    {
+     "kind": "http",
+     "count": 5,
+     "examples": [
+      "examples/fastify-app/src/routes/secrets.ts#DELETE /:id",
+      "examples/fastify-app/src/routes/secrets.ts#GET /public",
+      "examples/fastify-app/src/routes/secrets.ts#PUT /"
+     ]
+    }
+   ],
+   "depends_on": [],
+   "dependencies_test": [],
+   "depended_on_by": 0,
+   "tests": {
+    "files": 0,
+    "colocated": 0,
+    "placement": "none",
+    "naming": [],
+    "dirs": [],
+    "fixtures": []
+   }
+  },
+  {
+   "path": "examples/hono-app",
+   "name": "fixture-hono-app",
+   "manifest": "examples/hono-app/package.json",
+   "languages": [
+    "ts"
+   ],
+   "files": 4,
+   "production_files": 0,
+   "layers": [
+    {
+     "layer": "examples/hono-app",
+     "files": 4
+    }
+   ],
+   "entry_points": [
+    {
+     "kind": "http",
+     "count": 4,
+     "examples": [
+      "examples/hono-app/src/index.ts#GET /health",
+      "examples/hono-app/src/routers/public.ts#GET /status",
+      "examples/hono-app/src/routers/users.ts#POST /"
+     ]
+    }
+   ],
+   "depends_on": [],
+   "dependencies_test": [],
+   "depended_on_by": 0,
+   "tests": {
+    "files": 0,
+    "colocated": 0,
+    "placement": "none",
+    "naming": [],
+    "dirs": [],
+    "fixtures": []
+   }
+  },
+  {
+   "path": "examples/jobs-app",
+   "name": "fixture-jobs",
+   "manifest": "examples/jobs-app/package.json",
+   "languages": [
+    "ts"
+   ],
+   "files": 2,
+   "production_files": 0,
+   "layers": [
+    {
+     "layer": "examples/jobs-app",
+     "files": 2
+    }
+   ],
+   "entry_points": [
+    {
+     "kind": "cron",
+     "count": 2,
+     "examples": [
+      "examples/jobs-app/src/jobs.ts#CRON nightly-report",
+      "examples/jobs-app/src/jobs.ts#CRON weekly-digest"
+     ]
+    },
+    {
+     "kind": "job",
+     "count": 3,
+     "examples": [
+      "examples/jobs-app/src/jobs.ts#JOB emails",
+      "examples/jobs-app/src/jobs.ts#JOB resize-image",
+      "examples/jobs-app/src/jobs.ts#JOB send-welcome"
+     ]
+    }
+   ],
+   "depends_on": [],
+   "dependencies_test": [],
+   "depended_on_by": 0,
+   "tests": {
+    "files": 0,
+    "colocated": 0,
+    "placement": "none",
+    "naming": [],
+    "dirs": [],
+    "fixtures": []
+   }
+  },
+  {
+   "path": "examples/signals",
+   "name": "fixture-signals",
+   "manifest": "examples/signals/package.json",
+   "languages": [
+    "ts"
+   ],
+   "files": 3,
+   "production_files": 0,
+   "layers": [
+    {
+     "layer": "examples/signals",
+     "files": 3
+    }
+   ],
+   "entry_points": [],
+   "depends_on": [],
+   "dependencies_test": [],
+   "depended_on_by": 0,
+   "tests": {
+    "files": 0,
+    "colocated": 0,
+    "placement": "none",
+    "naming": [],
+    "dirs": [],
+    "fixtures": []
+   }
+  },
+  {
+   "path": "examples/trpc-app",
+   "name": "fixture-trpc",
+   "manifest": "examples/trpc-app/package.json",
+   "languages": [
+    "ts"
+   ],
+   "files": 3,
+   "production_files": 0,
+   "layers": [
+    {
+     "layer": "examples/trpc-app",
+     "files": 3
+    }
+   ],
+   "entry_points": [
+    {
+     "kind": "rpc",
+     "count": 3,
+     "examples": [
+      "examples/trpc-app/server/routers/get-team.ts#getTeamRoute",
+      "examples/trpc-app/server/routers/team.ts#MUTATION delete",
+      "examples/trpc-app/server/routers/team.ts#QUERY health"
+     ]
+    }
+   ],
+   "depends_on": [],
+   "dependencies_test": [],
+   "depended_on_by": 0,
+   "tests": {
+    "files": 0,
+    "colocated": 0,
+    "placement": "none",
+    "naming": [],
+    "dirs": [],
+    "fixtures": []
+   }
+  },
+  {
+   "path": "packages/db",
+   "name": "@acme/db",
+   "manifest": "packages/db/package.json",
+   "languages": [
+    "ts"
+   ],
+   "files": 2,
+   "production_files": 2,
+   "layers": [
+    {
+     "layer": "packages/db",
+     "files": 2
+    }
+   ],
+   "entry_points": [],
+   "depends_on": [],
+   "dependencies_test": [],
+   "depended_on_by": 2,
+   "tests": {
+    "files": 0,
+    "colocated": 0,
+    "placement": "none",
+    "naming": [],
+    "dirs": [],
+    "fixtures": []
+   }
+  },
+  {
+   "path": "packages/emails",
+   "name": "@acme/emails",
+   "manifest": "packages/emails/package.json",
+   "languages": [
+    "ts"
+   ],
+   "files": 25,
+   "production_files": 25,
+   "layers": [
+    {
+     "layer": "packages/emails",
+     "files": 25
+    }
+   ],
+   "entry_points": [],
+   "depends_on": [],
+   "dependencies_test": [],
+   "depended_on_by": 0,
+   "tests": {
+    "files": 0,
+    "colocated": 0,
+    "placement": "none",
+    "naming": [],
+    "dirs": [],
+    "fixtures": []
+   }
+  },
+  {
+   "path": "packages/ui",
+   "name": "@acme/ui",
+   "manifest": "packages/ui/package.json",
+   "languages": [
+    "ts"
+   ],
+   "files": 61,
+   "production_files": 61,
+   "layers": [
+    {
+     "layer": "packages/ui",
+     "files": 61
+    }
+   ],
+   "entry_points": [],
+   "depends_on": [
+    {
+     "package": "packages/utils",
+     "files": 32
+    },
+    {
+     "package": "apps/web",
+     "files": 1
+    }
+   ],
+   "dependencies_test": [],
+   "depended_on_by": 1,
+   "tests": {
+    "files": 0,
+    "colocated": 0,
+    "placement": "none",
+    "naming": [],
+    "dirs": [],
+    "fixtures": []
+   }
+  },
+  {
+   "path": "packages/utils",
+   "name": "@acme/utils",
+   "manifest": "packages/utils/package.json",
+   "languages": [
+    "ts"
+   ],
+   "files": 5,
+   "production_files": 5,
+   "layers": [
+    {
+     "layer": "packages/utils",
+     "files": 5
+    }
+   ],
+   "entry_points": [],
+   "depends_on": [],
+   "dependencies_test": [],
+   "depended_on_by": 1,
+   "tests": {
+    "files": 0,
+    "colocated": 0,
+    "placement": "none",
+    "naming": [],
+    "dirs": [],
+    "fixtures": []
+   }
+  },
+  {
+   "path": "services/agents",
+   "name": "acme-agents",
+   "manifest": "services/agents/pyproject.toml",
+   "languages": [
+    "py"
+   ],
+   "files": 9,
+   "production_files": 9,
+   "layers": [
+    {
+     "layer": "services/agents",
+     "files": 9
+    }
+   ],
+   "entry_points": [],
+   "depends_on": [],
+   "dependencies_test": [],
+   "depended_on_by": 0,
+   "tests": {
+    "files": 0,
+    "colocated": 0,
+    "placement": "none",
+    "naming": [],
+    "dirs": [],
+    "fixtures": []
+   }
+  }
+ ],
+ "roles": {
+  "count": 51,
+  "listed": 25,
+  "largest": [
+   {
+    "id": "R-bc8d5e",
+    "summary": "TypeScript HTTP handlers across the repo",
+    "members": 146,
+    "files": 88,
+    "test": false,
+    "mined": false
+   },
+   {
+    "id": "R-3cec2b",
+    "summary": "files in apps/web/**",
+    "members": 143,
+    "files": 143,
+    "test": false,
+    "mined": true
+   },
+   {
+    "id": "R-580edb",
+    "summary": "TypeScript React components across the repo",
+    "members": 98,
+    "files": 98,
+    "test": false,
+    "mined": false
+   },
+   {
+    "id": "R-5b33fb",
+    "summary": "apps/web: HTTP handlers in app/** (route files)",
+    "members": 97,
+    "files": 63,
+    "test": false,
+    "mined": true
+   },
+   {
+    "id": "R-9af99b",
+    "summary": "files in apps/api/**",
+    "members": 95,
+    "files": 95,
+    "test": false,
+    "mined": true
+   },
+   {
+    "id": "R-b6c51f",
+    "summary": "TypeScript Next.js app-router files across the repo",
+    "members": 82,
+    "files": 82,
+    "test": false,
+    "mined": false
+   },
+   {
+    "id": "R-5450e7",
+    "summary": "apps/web: HTTP handlers in app/api/workspaces/** (route files)",
+    "members": 74,
+    "files": 40,
+    "test": false,
+    "mined": true
+   },
+   {
+    "id": "R-7fa8a5",
+    "summary": "apps/web: files in app/** (route files)",
+    "members": 63,
+    "files": 63,
+    "test": false,
+    "mined": true
+   },
+   {
+    "id": "R-d86009",
+    "summary": "packages/ui: files in src/**",
+    "members": 61,
+    "files": 61,
+    "test": false,
+    "mined": true
+   },
+   {
+    "id": "R-ee92fc",
+    "summary": "files in packages/ui/**",
+    "members": 61,
+    "files": 61,
+    "test": false,
+    "mined": true
+   },
+   {
+    "id": "R-a175f7",
+    "summary": "packages/ui: components in src/**",
+    "members": 60,
+    "files": 60,
+    "test": false,
+    "mined": true
+   },
+   {
+    "id": "R-d650fe",
+    "summary": "apps/api: HTTP handlers in src/** (*.controller files)",
+    "members": 49,
+    "files": 25,
+    "test": false,
+    "mined": true
+   },
+   {
+    "id": "R-8ab2ab",
+    "summary": "apps/api: files in src/**",
+    "members": 43,
+    "files": 43,
+    "test": false,
+    "mined": true
+   },
+   {
+    "id": "R-4030be",
+    "summary": "apps/api: files in src/jobs/**",
+    "members": 41,
+    "files": 41,
+    "test": false,
+    "mined": true
+   },
+   {
+    "id": "R-90d573",
+    "summary": "apps/api: functions in src/**",
+    "members": 41,
+    "files": 41,
+    "test": false,
+    "mined": true
+   },
+   {
+    "id": "R-f310a3",
+    "summary": "apps/web: files in app/api/workspaces/** (route files)",
+    "members": 40,
+    "files": 40,
+    "test": false,
+    "mined": true
+   },
+   {
+    "id": "R-863528",
+    "summary": "packages/ui: components in src/icons/**",
+    "members": 28,
+    "files": 28,
+    "test": false,
+    "mined": true
+   },
+   {
+    "id": "R-8f05cd",
+    "summary": "packages/ui: files in src/icons/**",
+    "members": 28,
+    "files": 28,
+    "test": false,
+    "mined": true
+   },
+   {
+    "id": "R-2f9541",
+    "summary": "TypeScript service and repository modules across the repo",
+    "members": 27,
+    "files": 27,
+    "test": false,
+    "mined": false
+   },
+   {
+    "id": "R-665981",
+    "summary": "TypeScript service and repository classes across the repo",
+    "members": 27,
+    "files": 27,
+    "test": false,
+    "mined": false
+   },
+   {
+    "id": "R-6a82e2",
+    "summary": "apps/api: classes in src/** (*.service files)",
+    "members": 27,
+    "files": 27,
+    "test": false,
+    "mined": true
+   },
+   {
+    "id": "R-eff4df",
+    "summary": "apps/api: files in src/** (*.service files)",
+    "members": 27,
+    "files": 27,
+    "test": false,
+    "mined": true
+   },
+   {
+    "id": "R-2a3182",
+    "summary": "apps/api: files in src/** (*.controller files)",
+    "members": 25,
+    "files": 25,
+    "test": false,
+    "mined": true
+   },
+   {
+    "id": "R-346436",
+    "summary": "files in packages/emails/**",
+    "members": 25,
+    "files": 25,
+    "test": false,
+    "mined": true
+   },
+   {
+    "id": "R-66f189",
+    "summary": "TypeScript modules with entry points across the repo",
+    "members": 25,
+    "files": 25,
+    "test": false,
+    "mined": false
+   }
+  ]
+ }
+}

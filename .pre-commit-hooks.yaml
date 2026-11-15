@@ -1,0 +1,14 @@
+- id: drift-check
+  name: drift check
+  description: Fail when the working tree has new violations (not baselined in drift.lock) of accepted conventions in block mode.
+  entry: drift check
+  language: system
+  pass_filenames: false
+  types_or: [ts, tsx, javascript, jsx, python]
+- id: drift-check-strict
+  name: drift check (strict)
+  description: Fail when the working tree has any new violation (not baselined in drift.lock) of an accepted convention, advise mode included.
+  entry: drift check --strict
+  language: system
+  pass_filenames: false
+  types_or: [ts, tsx, javascript, jsx, python]

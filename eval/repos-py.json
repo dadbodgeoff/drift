@@ -1,0 +1,74 @@
+{
+  "//": "Pinned public Python repos for the parser and resolution evaluation (dev set). Bump a sha deliberately and review the diff in results.",
+  "//selection": [
+    "Chosen on 2026-11-05, before Drift was run on any of them, and fixed from then on (a separate held-out Python set exists and is not used here).",
+    "Shapes needed: a small canonical FastAPI app, a large production FastAPI server, Django + DRF, Django + Celery, a Flask app with blueprints and extensions, libraries (src layout, heavy __init__ re-exports), a monorepo of several pyproject packages.",
+    "Per shape, the best-known public repo that is actively maintained (default branch pushed within the last weeks); SHAs are the default-branch HEAD from git ls-remote on 2026-11-05.",
+    "This is a development set: findings on it drove fixes (router subclasses from polar, per-method view handlers from CTFd), so its numbers are not a held-out measurement."
+  ],
+  "defaults": {
+    "max_disagreements": 0,
+    "max_gaps": 0,
+    "max_parse_errors": 0,
+    "max_parse_disagreements": 0,
+    "max_abstract_disagreements": 0,
+    "min_symbol_recall": 0.99,
+    "min_export_recall": 0.99
+  },
+  "repos": [
+    {
+      "name": "full-stack-fastapi-template",
+      "url": "https://github.com/fastapi/full-stack-fastapi-template",
+      "sha": "aabb90126964a164e02aff39e7c385bb0598236d",
+      "shape": "FastAPI app (SQLModel, Annotated dependencies) + React frontend"
+    },
+    {
+      "name": "polar",
+      "url": "https://github.com/polarsource/polar",
+      "sha": "d14892d27cf346f70e44e36ca5601577e6313b6d",
+      "shape": "Large FastAPI + Dramatiq server in a TS monorepo",
+      "max_parse_errors": 10,
+      "//max_parse_errors": "sdk/generator/python/template/**: Jinja templates with a .py extension, not Python"
+    },
+    {
+      "name": "netbox",
+      "url": "https://github.com/netbox-community/netbox",
+      "sha": "56daec7debfd51fa991b45d6a40cb592b42b669d",
+      "shape": "Django + DRF (class-based views, viewsets, routers)"
+    },
+    {
+      "name": "saleor",
+      "url": "https://github.com/saleor/saleor",
+      "sha": "89817cdd10423619d6d6be54a61ead11fca90cfa",
+      "shape": "Django + GraphQL + Celery (largest)",
+      "max_gaps": 1,
+      "//max_gaps": "GAP_name_missing: .semgrep/correctness/django/django-no-default-token-generator.py imports token_generator, which saleor/core/tokens.py does not define (a semgrep test case); Python would raise ImportError"
+    },
+    {
+      "name": "CTFd",
+      "url": "https://github.com/CTFd/CTFd",
+      "sha": "a6a81ddd921cd74f8aabc07c0f7a71cdcf5365b6",
+      "shape": "Flask app: blueprints, flask-restx namespaces, app factory"
+    },
+    {
+      "name": "flask",
+      "url": "https://github.com/pallets/flask",
+      "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+      "shape": "Library, src layout, examples",
+      "max_gaps": 1,
+      "//max_gaps": "GAP_name_missing: tests/test_apps/subdomaintestmodule/__init__.py imports flask.Module, removed from Flask long ago; Python would raise ImportError"
+    },
+    {
+      "name": "fastapi",
+      "url": "https://github.com/fastapi/fastapi",
+      "sha": "1ca09c13584ca45aa0921e5e40b31d49c5e3135a",
+      "shape": "Library with heavy __init__ re-exports; docs_src has ~1,000 small apps"
+    },
+    {
+      "name": "langchain",
+      "url": "https://github.com/langchain-ai/langchain",
+      "sha": "e649741517b9584aae63a6ebd6ada803967da1c9",
+      "shape": "Monorepo: libs/* packages with their own pyproject.toml"
+    }
+  ]
+}

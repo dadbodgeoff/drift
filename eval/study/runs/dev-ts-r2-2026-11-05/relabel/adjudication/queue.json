@@ -1,0 +1,434 @@
+{
+  "labels_sha256": {
+    "A": "9cf919b26b410f95b9a39afe6f1760abd8d8788de506ccf7a8652275c92171e3",
+    "B": "39ccd9a04337a32b55f0da69dda585eefb7e8b7d0bacc682b6d86014615459da"
+  },
+  "cases": [
+    {
+      "uid": "ai/D-fc5ef7",
+      "repo": "ai",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "ai/D-fc5ef7",
+          "rubric": "v2",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/codemod/src/codemods/v4/remove-ai-stream-methods-from-stream-text-result.ts",
+            "packages/codemod/src/codemods/lib/add-await-fn.ts",
+            "packages/codemod/src/codemods/lib/add-comment.ts",
+            "packages/codemod/src/codemods/lib/create-transformer.ts",
+            "packages/codemod/src/codemods/lib/remove-await-fn.ts",
+            "packages/codemod/src/codemods/lib/remove-facade.ts",
+            "packages/codemod/src/codemods/v4/remove-openai-facade.ts",
+            "packages/codemod/src/codemods/v6/add-await-converttomodelmessages.ts",
+            "packages/codemod/src/codemods/v5/rename-message-to-ui-message.ts",
+            "packages/codemod/src/codemods/v7/move-include-raw-chunks-to-include.ts",
+            "packages/codemod/src/lib/transform.ts",
+            "packages/codemod/tsconfig.json",
+            ".oxlintrc.json",
+            "tools/oxlint-plugin-ai-sdk/index.mjs"
+          ],
+          "outliers": [
+            {
+              "symbol": "addAwaitFn",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "insertCommentOnce",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "createTransformer",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "removeAwaitFn",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "removeFacade",
+              "verdict": "legit"
+            }
+          ],
+          "reason": "Every versioned codemod's default export goes through createTransformer, directly (v5/rename-message-to-ui-message.ts, v7/move-include-raw-chunks-to-include.ts) or via lib factories (v4/remove-openai-facade.ts). jscodeshift would run a bare transformer, and no oxlint or type rule requires the wrapper, so a new codemod that skips it is worth flagging. All five outliers are lib/ helpers or factories, including createTransformer itself, so they are legitimately different. Hesitated with WRONG mixed_group because the role includes lib/, but that is only 5 of 114 members.",
+          "labeller": "A"
+        },
+        "B": {
+          "uid": "ai/D-fc5ef7",
+          "rubric": "v2",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/codemod/src/codemods/v4/remove-ai-stream-methods-from-stream-text-result.ts",
+            "packages/codemod/src/codemods/lib/add-await-fn.ts",
+            "packages/codemod/src/codemods/lib/add-comment.ts",
+            "packages/codemod/src/codemods/lib/create-transformer.ts",
+            "packages/codemod/src/codemods/lib/remove-await-fn.ts",
+            "packages/codemod/src/codemods/lib/remove-facade.ts",
+            "packages/codemod/src/codemods/v5/flatten-streamtext-file-properties.ts",
+            "packages/codemod/src/codemods/v7/move-include-raw-chunks-to-include.ts",
+            "packages/codemod/src/codemods/v4/remove-anthropic-facade.ts",
+            "packages/codemod/src/codemods/v6/add-await-converttomodelmessages.ts",
+            "packages/codemod/src/lib/transform.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "addAwaitFn",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "insertCommentOnce",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "createTransformer",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "removeAwaitFn",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "removeFacade",
+              "verdict": "legit"
+            }
+          ],
+          "reason": "Versioned codemods (v5/flatten-streamtext-file-properties.ts, v7/move-include-raw-chunks-to-include.ts) do default-export createTransformer(...), but every outlier is a shared helper in codemods/lib/ (createTransformer itself, the addAwaitFn/removeFacade factories that return createTransformer, insertCommentOnce), so the glob mixes helpers with codemods and new lib helpers would be falsely flagged. Hesitated with ACCEPT, since a new versioned codemod skipping the wrapper would be worth flagging.",
+          "labeller": "B"
+        }
+      }
+    },
+    {
+      "uid": "supabase/D-d8dcea",
+      "repo": "supabase",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "supabase/D-d8dcea",
+          "rubric": "v2",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "incidental",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/docs/internals/internal-links.ts",
+            "apps/docs/internals/files/reference-lib.ts",
+            "apps/docs/internals/helpers.ts",
+            "apps/docs/internals/markdown-schema/Link.ts",
+            "apps/docs/eslint.config.cjs",
+            "packages/eslint-config-supabase/next.js",
+            "apps/docs/tsconfig.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "generateReferencePages",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "addBaseUrlPrefix",
+              "verdict": "legit"
+            }
+          ],
+          "reason": "Most docs internals annotate returns (helpers.ts, markdown-schema/Link.ts `: string`), but no lint rule asks for it (eslint-config-supabase/next.js has no explicit-function-return-type) and the outliers (addBaseUrlPrefix in the same file as the example, generateReferencePages) are fine with inferred types, so a warning would be style noise. Hesitated with ACCEPT.",
+          "labeller": "A"
+        },
+        "B": {
+          "uid": "supabase/D-d8dcea",
+          "rubric": "v2",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/docs/internals/internal-links.ts",
+            "apps/docs/internals/files/reference-lib.ts",
+            "apps/docs/internals/helpers.ts",
+            "apps/docs/internals/markdown-sources.ts",
+            "apps/docs/internals/markdown-schema/Accordion.ts",
+            "apps/docs/internals/markdown-schema/Link.ts",
+            "apps/docs/eslint.config.cjs",
+            "packages/eslint-config-supabase/next.js",
+            "apps/docs/tsconfig.json",
+            "packages/tsconfig/base.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "generateReferencePages",
+              "verdict": "look"
+            },
+            {
+              "symbol": "addBaseUrlPrefix",
+              "verdict": "look"
+            }
+          ],
+          "reason": "Internals functions consistently annotate returns (getInternalLinkBaseUrl(): string, helpers.ts stripHeadingCustomIds(): void, markdown-sources.ts Promise<MarkdownSource[]>, Accordion.ts ): string); no eslint rule (eslint-config-supabase/next.js has no explicit-function-return-type) enforces it, and the two outliers are plain omissions. Hesitated with WRONG incidental since the repo-wide base rate is much lower and it is a mild style nit.",
+          "labeller": "B"
+        }
+      }
+    },
+    {
+      "uid": "novu/D-4512a2",
+      "repo": "novu",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "novu/D-4512a2",
+          "rubric": "v2",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "libs/application-generic/src/services/agent-email-inbox-quota/agent-email-inbox-quota.service.ts",
+            "libs/application-generic/src/health/queue-health-indicator.service.ts",
+            "libs/application-generic/src/services/queues/queue-base.service.ts",
+            "libs/application-generic/src/services/support.service.ts",
+            "libs/application-generic/src/services/cache/cache.service.ts",
+            "biome.json",
+            "biome-plugins/command-session-exclusion.grit"
+          ],
+          "outliers": [
+            {
+              "symbol": "QueueHealthIndicator",
+              "verdict": "look"
+            },
+            {
+              "symbol": "AgentEmailInboxQuotaExceededException",
+              "verdict": "look"
+            },
+            {
+              "symbol": "PartialDispatchError",
+              "verdict": "look"
+            }
+          ],
+          "reason": "Service classes in *.service.ts are named *Service (SupportService, CacheService, AgentEmailInboxQuotaService); biome.json useNamingConvention only enforces PascalCase. QueueHealthIndicator sits in a misnamed file (siblings use *.health-indicator.ts) and the co-located Error/Exception classes contrast with the repo's dedicated *.error.ts files (sqs-retry.error.ts, non-existing-file.error.ts), so a flag is worth a look; hesitated with WRONG legit_outliers for co-located error classes.",
+          "labeller": "A"
+        },
+        "B": {
+          "uid": "novu/D-4512a2",
+          "rubric": "v2",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "libs/application-generic/src/services/agent-email-inbox-quota/agent-email-inbox-quota.service.ts",
+            "libs/application-generic/src/health/queue-health-indicator.service.ts",
+            "libs/application-generic/src/services/queues/queue-base.service.ts",
+            "libs/application-generic/src/services/cache/cache.service.ts",
+            "libs/application-generic/src/services/queues/workflow-queue.service.ts",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "QueueHealthIndicator",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "AgentEmailInboxQuotaExceededException",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "PartialDispatchError",
+              "verdict": "legit"
+            }
+          ],
+          "reason": "The main class of each *.service.ts is *Service (CacheService, WorkflowQueueService), but the outliers are co-located error/exception classes (PartialDispatchError, AgentEmailInboxQuotaExceededException) and an abstract health-indicator base that follows the *HealthIndicator family naming, so new co-located error classes would be false alarms. Hesitated with ACCEPT since the service naming itself is consistent.",
+          "labeller": "B"
+        }
+      }
+    },
+    {
+      "uid": "midday/D-efc6d4",
+      "repo": "midday",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "midday/D-efc6d4",
+          "rubric": "v2",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "apps/api/src/trpc/routers/_app.ts",
+            "apps/api/src/trpc/init.ts",
+            "apps/api/src/trpc/routers/accounting.ts",
+            "apps/api/src/trpc/routers/jobs.ts",
+            "apps/api/src/trpc/routers/api-keys.ts",
+            "apps/api/src/trpc/routers/banking.ts",
+            "biome.json",
+            "apps/api/tsconfig.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "createCallerFactory",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "createTRPCRouter",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "publicProcedure",
+              "verdict": "legit"
+            }
+          ],
+          "reason": "Every router file (accounting.ts, jobs.ts, _app.ts) exports a createTRPCRouter() result, but the group also covers init.ts, whose exports are the tRPC infrastructure itself (t.router, t.createCallerFactory, t.procedure chains); new procedure kinds or helpers there would be flagged for nothing.",
+          "labeller": "A"
+        },
+        "B": {
+          "uid": "midday/D-efc6d4",
+          "rubric": "v2",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/api/src/trpc/routers/_app.ts",
+            "apps/api/src/trpc/init.ts",
+            "apps/api/src/trpc/routers/accounting.ts",
+            "apps/api/src/trpc/routers/tags.ts",
+            "apps/api/src/trpc/routers/api-keys.ts",
+            "apps/api/src/trpc/middleware/primary-read-after-write.ts",
+            "apps/api/src/trpc/middleware/team-permission.ts",
+            "apps/api/package.json",
+            "apps/api/tsconfig.json",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "createCallerFactory",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "createTRPCRouter",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "publicProcedure",
+              "verdict": "legit"
+            }
+          ],
+          "reason": "Every router file (all 38 in routers/, e.g. accounting.ts, tags.ts, _app.ts) exports one value built with createTRPCRouter from init.ts; the three outliers are the tRPC infrastructure in init.ts itself, so a new router built another way (tRPC v11 accepts plain procedure records, so types would not catch it) is worth flagging. Hesitated with WRONG mixed_group because init.ts infra exports share the group.",
+          "labeller": "B"
+        }
+      }
+    },
+    {
+      "uid": "midday/D-98e729",
+      "repo": "midday",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "midday/D-98e729",
+          "rubric": "v2",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/api/src/trpc/routers/_app.ts",
+            "apps/api/src/trpc/init.ts",
+            "apps/api/src/trpc/routers/accounting.ts",
+            "apps/api/src/trpc/routers/jobs.ts",
+            "apps/api/src/trpc/routers/api-keys.ts",
+            "biome.json",
+            "apps/api/tsconfig.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "createCallerFactory",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "publicProcedure",
+              "verdict": "legit"
+            }
+          ],
+          "reason": "Router exports are consistently named *Router (accountingRouter, jobsRouter, apiKeysRouter), but the scope src/trpc/** also takes in init.ts, whose infrastructure exports (createCallerFactory, publicProcedure, protectedProcedure) are rightly not routers. Hesitated with ACCEPT, since the naming scheme is genuine for routers/.",
+          "labeller": "A"
+        },
+        "B": {
+          "uid": "midday/D-98e729",
+          "rubric": "v2",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "apps/api/src/trpc/routers/_app.ts",
+            "apps/api/src/trpc/init.ts",
+            "apps/api/src/trpc/routers/accounting.ts",
+            "apps/api/src/trpc/routers/tags.ts",
+            "apps/api/src/trpc/routers/api-keys.ts",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "createCallerFactory",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "publicProcedure",
+              "verdict": "legit"
+            }
+          ],
+          "reason": "Every router module exports <name>Router (accountingRouter, tagsRouter, apiKeysRouter) and _app.ts imports them by that name, a chosen naming scheme not enforced by biome.json; the only outliers are tRPC infrastructure in init.ts, not routers.",
+          "labeller": "B"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,236 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - composio
+  - constants
+  - crud
+  - data
+  - derive
+  - engine
+  - health
+  - helpers
+  - integration
+  - messages
+  - notifications
+  - prompt
+  - service
+  - shared
+  - types
+  - validation
+  suffixes:
+  - config
+  - constants
+  - spec
+  - test
+conventions:
+- id: D-357e62
+  status: proposed
+  mode: advise
+  summary: "packages/gateway: functions in src/db/** and src/services/** declare their return type"
+  role:
+    package: packages/gateway
+    dir: src/db
+    file: "*"
+    entry: '-'
+    kind: function
+    also:
+    - package: packages/gateway
+      dir: src/services
+      file: "*"
+      entry: '-'
+      kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 501
+    total: 506
+    lower_bound: 0.977
+    lift: 1.505
+  example: packages/gateway/src/services/agent/agent-context.ts#compactContext
+  selector_version: 3
+- id: D-957723
+  status: proposed
+  mode: advise
+  summary: "packages/gateway: exported values in src/middleware/** are named `*Schema`"
+  role:
+    package: packages/gateway
+    dir: src/middleware
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Schema"
+  evidence:
+    holders: 111
+    total: 112
+    lower_bound: 0.951
+    lift: 7.457
+  example: packages/gateway/src/middleware/schemas/agent.ts#agentCommandSchema
+  selector_version: 3
+- id: D-59b926
+  status: proposed
+  mode: advise
+  summary: "packages/gateway: classes in src/db/repositories/** extend BaseRepository, except a member (of the module that defines a rule's target)"
+  role:
+    package: packages/gateway
+    dir: src/db/repositories
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - packages/gateway/src/db/repositories/base.ts#BaseRepository
+  evidence:
+    holders: 61
+    total: 61
+    lower_bound: 0.941
+    lift: 3.799
+    role_members: 62
+  example: packages/gateway/src/db/repositories/agents/index.ts#AgentsRepository
+  selector_version: 3
+- id: D-fe068c
+  status: proposed
+  mode: advise
+  summary: "packages/ui: exported values in src/api/** are named `*Api`"
+  role:
+    package: packages/ui
+    dir: src/api
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Api"
+  evidence:
+    holders: 61
+    total: 62
+    lower_bound: 0.914
+    lift: 14.806
+  example: packages/ui/src/api/endpoints/agentic.ts#agenticApi
+  selector_version: 3
+- id: D-90d32c
+  status: proposed
+  mode: advise
+  summary: "packages/gateway: exported values in src/routes/** are named `*Routes`"
+  role:
+    package: packages/gateway
+    dir: src/routes
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Routes"
+  evidence:
+    holders: 86
+    total: 90
+    lower_bound: 0.891
+    lift: 9.586
+  example: packages/gateway/src/routes/agentic.ts#agenticRoutes
+  selector_version: 3
+- id: D-925027
+  status: proposed
+  mode: advise
+  summary: "packages/gateway: files in src/routes/** have a test file"
+  role:
+    package: packages/gateway
+    dir: src/routes
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 89
+    total: 96
+    lower_bound: 0.857
+    lift: 1.926
+  example: packages/gateway/src/routes/agentic.ts#(file)
+  selector_version: 3
+- id: D-ba69a0
+  status: proposed
+  mode: advise
+  summary: "packages/gateway: files in src/db/repositories/** have a test file"
+  role:
+    package: packages/gateway
+    dir: src/db/repositories
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 63
+    total: 69
+    lower_bound: 0.823
+    lift: 1.897
+  example: packages/gateway/src/db/repositories/agents/index.ts#(file)
+  selector_version: 3
+- id: D-04b2fd
+  status: proposed
+  mode: advise
+  summary: "packages/gateway: classes in src/db/** are named `*Repository`"
+  role:
+    package: packages/gateway
+    dir: src/db
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Repository"
+  evidence:
+    holders: 62
+    total: 68
+    lower_bound: 0.821
+    lift: 3.467
+  example: packages/gateway/src/db/repositories/agents/index.ts#AgentsRepository
+  selector_version: 3
+- id: D-399322
+  status: proposed
+  mode: advise
+  summary: sql models have a `id` field
+  role:
+    package: ""
+    dir: sql
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: id
+  evidence:
+    holders: 97
+    total: 109
+    lower_bound: 0.817
+    lift: 1.0
+  example: packages/gateway/src/db/migrations/postgres/001_initial_schema.sql#agent_crews
+  selector_version: 3
+- id: D-57f216
+  status: proposed
+  mode: advise
+  summary: "packages/core: functions in src/services/** use `try`"
+  role:
+    package: packages/core
+    dir: src/services
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: try
+  evidence:
+    holders: 85
+    total: 96
+    lower_bound: 0.806
+    lift: 2.524
+  example: packages/core/src/services/artifact-service.ts#getArtifactService
+  selector_version: 3

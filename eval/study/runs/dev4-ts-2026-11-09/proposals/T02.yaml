@@ -1,0 +1,65 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - ""
+  - auth
+  - create
+  - delete
+  - export
+  - jest
+  - layout
+  - list
+  - page
+  - payment-gateway
+  - sentry
+  - update
+  suffixes:
+  - command
+  - config
+  - controller
+  - decorator
+  - dto
+  - environment
+  - eslintrc
+  - factory
+  - integration
+  - membership
+  - module
+  - pat
+  - private-key
+  - profile
+  - project
+  - role
+  - secret
+  - service
+  - spec
+  - stories
+  - strategy
+  - types
+  - variable
+  - workspace
+conventions:
+- id: D-673949
+  status: proposed
+  mode: advise
+  summary: "apps/api: classes in src/** (*.service files) are named `*Service`"
+  role:
+    package: apps/api
+    dir: src
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Service"
+  evidence:
+    holders: 36
+    total: 37
+    lower_bound: 0.862
+    lift: 6.351
+  example: apps/api/src/auth/service/auth.service.ts#AuthService
+  selector_version: 3

@@ -1,0 +1,82 @@
+{
+  "a": "eval/study/runs/heldout-ts-2026-11-07/labels/A",
+  "b": "eval/study/runs/heldout-ts-2026-11-07/labels/B",
+  "labels_sha256": {
+    "A": "21af3eb1c747b1903e65034ae02f8df1f0745f4b092ca7eed7b6a60fb58f9afb",
+    "B": "9af9248ec2ada7cb747e1540adadd4a4693a04a3d5b385da1aab8495cd92d621"
+  },
+  "computed_at": "2026-11-07T20:09:27.063Z",
+  "rubric_sha256s": [
+    "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+  ],
+  "n": 57,
+  "scope": 57,
+  "exact": 0.9473684210526315,
+  "kappa": 0.8931249999999998,
+  "kappa_boot": {
+    "lo": 0.7262773722627738,
+    "hi": 1,
+    "clusters": 15
+  },
+  "accept_vs_not": {
+    "n": 57,
+    "po": 0.9473684210526315,
+    "pe": 0.5287780855647891,
+    "kappa": 0.8883082952318745
+  },
+  "wrong_vs_not": {
+    "n": 57,
+    "po": 0.9473684210526315,
+    "pe": 0.5207756232686981,
+    "kappa": 0.8901734104046242
+  },
+  "confusion": {
+    "ACCEPT": {
+      "ACCEPT": 20,
+      "TRIVIAL": 0,
+      "WRONG": 3
+    },
+    "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 1,
+      "WRONG": 0
+    },
+    "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 33
+    }
+  },
+  "mix": {
+    "A": {
+      "ACCEPT": 23,
+      "TRIVIAL": 1,
+      "WRONG": 33
+    },
+    "B": {
+      "ACCEPT": 20,
+      "TRIVIAL": 1,
+      "WRONG": 36
+    }
+  },
+  "disagreements": [
+    {
+      "uid": "mercur/D-a8afe2",
+      "repo": "mercur",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "kan/D-11877a",
+      "repo": "kan",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "kan/D-798f44",
+      "repo": "kan",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    }
+  ]
+}

@@ -1,0 +1,189 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - page
+  - registry
+  - route
+  - types
+  suffixes:
+  - config
+  - service
+  - spec
+  - test
+conventions:
+- id: D-e79a2d
+  status: proposed
+  mode: advise
+  summary: >-
+    files in lib/** do not import from app/api/** (declared dependencies, and lazy
+    loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: lib
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:app/api
+  evidence:
+    holders: 379
+    total: 381
+    lower_bound: 0.981
+    lift: 3.0
+  example: lib/aaf-export.ts#(file)
+  selector_version: 3
+- id: D-242334
+  status: proposed
+  mode: advise
+  summary: >-
+    files in lib/** do not import from services/** (declared dependencies, and lazy
+    loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: lib
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:services
+  evidence:
+    holders: 375
+    total: 381
+    lower_bound: 0.966
+    lift: 3.0
+  example: lib/aaf-export.ts#(file)
+  selector_version: 3
+- id: D-ca9af7
+  status: proposed
+  mode: advise
+  summary: >-
+    HTTP handlers in app/api/projects/** (route files) pass `status` to
+    NextResponse.json()
+  role:
+    package: ""
+    dir: app/api/projects
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:next#NextResponse.json
+    index: 1
+    key: status
+  evidence:
+    holders: 117
+    total: 118
+    lower_bound: 0.954
+    lift: 8.336
+  example: app/api/projects/[id]/ab-variant/choose/route.ts#POST
+  selector_version: 3
+- id: D-3843f8
+  status: proposed
+  mode: advise
+  summary: components in components/ui/** do not use `any`
+  role:
+    package: ""
+    dir: components/ui
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: avoids
+    signal: any
+  evidence:
+    holders: 51
+    total: 52
+    lower_bound: 0.899
+    lift: 11.805
+  example: components/ui/DropZone.tsx#DropZone
+  selector_version: 3
+- id: D-39e262
+  status: proposed
+  mode: advise
+  summary: functions in lib/** do not use `any`
+  role:
+    package: ""
+    dir: lib
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: avoids
+    signal: any
+  evidence:
+    holders: 1330
+    total: 1466
+    lower_bound: 0.891
+    lift: 3.302
+  example: lib/aaf-export.ts#buildAAF
+  selector_version: 3
+- id: D-b08ea2
+  status: proposed
+  mode: advise
+  summary: functions in lib/** (registry files) do not use `any`
+  role:
+    package: ""
+    dir: lib
+    file: registry
+    entry: '-'
+    kind: function
+  rule:
+    type: avoids
+    signal: any
+  evidence:
+    holders: 34
+    total: 35
+    lower_bound: 0.855
+    lift: 5.203
+  example: lib/image-providers/registry.ts#autoDiscoverProviders
+  selector_version: 3
+- id: D-304043
+  status: proposed
+  mode: advise
+  summary: pages in app/** (page files) are named `*Page`
+  role:
+    package: ""
+    dir: app
+    file: page
+    entry: page
+    kind: component
+  rule:
+    type: named
+    pattern: "*Page"
+  evidence:
+    holders: 40
+    total: 43
+    lower_bound: 0.814
+    lift: 5.512
+  example: app/auth/page.tsx#AuthPage
+  selector_version: 3
+- id: D-f6dbe6
+  status: proposed
+  mode: advise
+  summary: >-
+    HTTP handlers in app/api/projects/** (route files) pass `message` to
+    NextResponse.json()
+  role:
+    package: ""
+    dir: app/api/projects
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:next#NextResponse.json
+    index: 0
+    key: message
+  evidence:
+    holders: 100
+    total: 118
+    lower_bound: 0.772
+    lift: 10.248
+  example: app/api/projects/[id]/ab-variant/choose/route.ts#POST
+  selector_version: 3

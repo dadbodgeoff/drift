@@ -1,0 +1,36 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - paths
+  - runtime
+  - smoke-slice10
+  - types
+  suffixes:
+  - test
+conventions:
+- id: D-5f2608
+  status: proposed
+  mode: advise
+  summary: >-
+    files in core/v4/** do not import from core/channels/** (declared dependencies,
+    and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: core/v4
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:core/channels
+  evidence:
+    holders: 448
+    total: 449
+    lower_bound: 0.987
+    lift: 3.0
+  example: core/v4/a2a/artifactQuarantine.ts#(file)
+  selector_version: 3

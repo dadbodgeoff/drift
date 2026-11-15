@@ -1,0 +1,8 @@
+1 conventions from 3742 units in 205 roles
+
+ 1. [D-077efe] files in libs/core/** do not import from libs/text-splitters/**
+    evidence: 184/186 (lower bound 0.96, lift 3.0)
+    example:  libs/core/langchain_core/__init__.py#(file)
+    outlier:  libs/core/langchain_core/document_loaders/base.py:1 (file)
+    outlier:  libs/core/langchain_core/messages/utils.py:1 (file)
+

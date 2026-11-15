@@ -1,0 +1,89 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - ""
+  - angular
+  - blocks
+  - component
+  - generator
+  - helpers
+  - hooks
+  - main
+  - mitosis
+  - svelte
+  - types
+  - vite
+  suffixes:
+  - config
+  - dev
+  - eslintrc
+  - lite
+  - preview
+  - raw
+  - ssr
+  - test
+conventions:
+- id: D-e375ce
+  status: proposed
+  mode: advise
+  summary: "packages/core: functions in src/helpers/** do not use `any`"
+  role:
+    package: packages/core
+    dir: src/helpers
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: avoids
+    signal: any
+  evidence:
+    holders: 128
+    total: 135
+    lower_bound: 0.897
+    lift: 3.668
+  example: packages/core/src/helpers/apply-meta-tagname.ts#applyMetaTagName
+  selector_version: 3
+- id: D-2a2de0
+  status: proposed
+  mode: advise
+  summary: "packages/core: functions in src/generators/angular/** do not use `any`"
+  role:
+    package: packages/core
+    dir: src/generators/angular
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: avoids
+    signal: any
+  evidence:
+    holders: 25
+    total: 26
+    lower_bound: 0.811
+    lift: 4.143
+  example: >-
+    packages/core/src/generators/angular/classic/plugins/get-code-processor-plugins.ts#getCodeProcessorPlugins
+  selector_version: 3
+- id: D-2e24b5
+  status: proposed
+  mode: advise
+  summary: "packages/eslint-plugin: files in src/rules/** have a test file"
+  role:
+    package: packages/eslint-plugin
+    dir: src/rules
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 12.02
+  example: packages/eslint-plugin/src/rules/css-no-vars.ts#(file)
+  selector_version: 3

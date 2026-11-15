@@ -1,0 +1,7 @@
+# R3 agent dogfood (168 headless sessions, c1d9b92; dub, formbricks, netbox, Misago; 12 tasks; control/all/w0). Files: ../r3/
+- 126 suggestion instances (all arm), 91 WRONG-labelled. helped 2 (D-cc8d72 FieldSet), redundant 107 (85%; agents copy neighbours), harmless-complied 8 (extra tests/FieldSet), noise-acknowledged 5 (wrote // drift-ignore), misled 1 (strict empty-query schema on health probe), ignored 3.
+- Overhead ~120 tok/instance; +2-7% cost, +0.7-2.1 turns. fb-1 (noisy post-edit WRONG rule) +33% (opus +63%). Hook latency 2-4.5s/run.
+- W0 sim: removes churn+suppressions, loses 2 helps; doesn't cut overhead (agents probe drift_rules_for ~3x/run).
+- family-precision.json pools default+suggestion tiers -> W0 must use suggestion-tier-only rates (pooled would admit WRONG formbricks atom()). (#110 uses metrics suggestion_tier — verify.)
+- Text fixes: (1) only exit offered is drift-ignore -> say "no action needed if it doesn't fit"; (2) "Legacy code is baselined; fix only these" is an order even for advice; (3) drift_explain gives no reason/exceptions; (4) "accepted conventions" states as fact; no fit test; (5) "any file" rules attach everywhere (cuid2 on health route, example a React modal); (6) drift_check exemption chatter after "No new violations"; (7) "+N more: run drift example" -> MCP drift_example returns paths only; (8) drift_rules_for and PreToolUse prime duplicate (~2x bytes).
+- Caveats: dev, in-sample, 5 runs/task, sandbox blocked tests.

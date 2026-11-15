@@ -1,0 +1,200 @@
+{
+  "run": "eval/study/runs/d8-prereg-2026-11-07/py/views/d8",
+  "prepared_at": "2026-11-07T04:45:05.294Z",
+  "amendments": [],
+  "manifest": {
+    "path": "eval/repos-py.json",
+    "sha256": "4bba8c062d3efc9de8a33c491b268db079a50f9c7225671c2b47816a6f03c135",
+    "core_sha256": "1164a34341d2a4697cdd61c219684c3fc2ec2d9ab65a6fcac761834cedb86297",
+    "holdout": false,
+    "holdout_because": [],
+    "set_id": null,
+    "role": "dev",
+    "language": null
+  },
+  "drift": {
+    "binary": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/bin/drift-d8",
+    "binary_sha256": "38488a10a44939c2e4f348f1f21ff659b7d702ad234392c46269e5ae4368afbc",
+    "version": "drift 0.1.0-dev",
+    "commit": "5cfbbb48c350ebe459021a8f803261d9c44f40e6",
+    "dirty": false,
+    "build": null
+  },
+  "params": {
+    "max": 15,
+    "pool": 200,
+    "tier": {
+      "//": "Decision D8 candidate. TypeScript/JavaScript: exactly D7 (call wrappers and layering, in-repo targets, roles of >= 15 members). Python: call wrappers (wrapped_by:call) whose every alternative is a guard, and layering (avoids:import), each only when every symbol the rule names is defined in the repository (default.target in_repo), in roles of >= 50 members (default.by_language.py.min_members). A call wrapper's alternatives are guards when the product's guard notion holds for each (drift_mine::security::authenticates, the one mining uses for auth variant sets since #60: read from the definition, it rejects callers who are not signed in or not allowed; a name that opens access is never one). The study cannot read definitions, so lib.mjs tierOf takes it from the queue item's `guards` (true only when the product said so: missing or false is suggestion tier, failing closed). Decorators, base classes, passes_key and every other Python kind stay suggestion tier. Everything else is suggestion tier. Release gate: Python's default tier ships as advise until it measures >= 95% default-tier accept under rubric v3, judged per D1 on a primary held-out run, AND on at least 30 default-tier cards (D8).",
+      "kind": "rule_kind",
+      "decision": "D8",
+      "status": "candidate",
+      "default": {
+        "//": "TypeScript/JavaScript as in D7; Python guard call wrappers and layering in roles of >= 50 members",
+        "rule_kinds": [
+          "wrapped_by:call",
+          "avoids:import"
+        ],
+        "languages": [
+          "ts",
+          "py"
+        ],
+        "min_members": 15,
+        "target": "in_repo",
+        "by_language": {
+          "py": {
+            "min_members": 50,
+            "call_wrappers": "guards"
+          }
+        }
+      },
+      "suggestion": {
+        "//": "D7's suggestion kinds; Python call wrappers with an alternative that is not a guard, and Python roles under 50 members",
+        "rule_kinds": [
+          "calls",
+          "named",
+          "avoids:other",
+          "prefers_library",
+          "before",
+          "has_test",
+          "model_has",
+          "package_has",
+          "dependency_version",
+          "wrapped_by:try",
+          "control",
+          "directive",
+          "throws",
+          "passes_key",
+          "renders",
+          "wrapped_by:decorator",
+          "wrapped_by:extends",
+          "wrapped_by:jsx"
+        ]
+      },
+      "not_wrong_over": "all_shown"
+    },
+    "tier_pre_registered": false,
+    "exposed": [],
+    "repos": [
+      "full-stack-fastapi-template@aabb90126964a164e02aff39e7c385bb0598236d",
+      "polar@d14892d27cf346f70e44e36ca5601577e6313b6d",
+      "netbox@56daec7debfd51fa991b45d6a40cb592b42b669d",
+      "saleor@89817cdd10423619d6d6be54a61ead11fca90cfa",
+      "CTFd@a6a81ddd921cd74f8aabc07c0f7a71cdcf5365b6",
+      "flask@49943b5a94413a530761350f04e896f76e8d620e",
+      "fastapi@1ca09c13584ca45aa0921e5e40b31d49c5e3135a",
+      "langchain@e649741517b9584aae63a6ebd6ada803967da1c9"
+    ],
+    "cache": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/cache",
+    "checkouts": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/cache/repos",
+    "tier_pre_registered_note": "derived view: eval/study/tier-d8-candidate.json's tier (decision D8) applied after the census; not pre-registered for this dev manifest"
+  },
+  "repos": [
+    {
+      "name": "full-stack-fastapi-template",
+      "url": "https://github.com/fastapi/full-stack-fastapi-template",
+      "sha": "aabb90126964a164e02aff39e7c385bb0598236d",
+      "shape": "FastAPI app (SQLModel, Annotated dependencies) + React frontend",
+      "language": null,
+      "framework_bucket": null,
+      "binary_sha256": "38488a10a44939c2e4f348f1f21ff659b7d702ad234392c46269e5ae4368afbc",
+      "prepared_at": "2026-11-07T04:44:42.818Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/cache/repos/full-stack-fastapi-template",
+      "status": "ok",
+      "units": 405,
+      "roles": 22,
+      "proposals": 1,
+      "pool": 1,
+      "census_ms": 50
+    },
+    {
+      "name": "netbox",
+      "url": "https://github.com/netbox-community/netbox",
+      "sha": "56daec7debfd51fa991b45d6a40cb592b42b669d",
+      "shape": "Django + DRF (class-based views, viewsets, routers)",
+      "language": null,
+      "framework_bucket": null,
+      "binary_sha256": "38488a10a44939c2e4f348f1f21ff659b7d702ad234392c46269e5ae4368afbc",
+      "prepared_at": "2026-11-07T04:44:43.209Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/cache/repos/netbox",
+      "status": "ok",
+      "units": 6486,
+      "roles": 155,
+      "proposals": 12,
+      "pool": 12,
+      "census_ms": 1360
+    },
+    {
+      "name": "saleor",
+      "url": "https://github.com/saleor/saleor",
+      "sha": "89817cdd10423619d6d6be54a61ead11fca90cfa",
+      "shape": "Django + GraphQL + Celery (largest)",
+      "language": null,
+      "framework_bucket": null,
+      "binary_sha256": "38488a10a44939c2e4f348f1f21ff659b7d702ad234392c46269e5ae4368afbc",
+      "prepared_at": "2026-11-07T04:44:48.658Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/cache/repos/saleor",
+      "status": "ok",
+      "units": 7261,
+      "roles": 278,
+      "proposals": 7,
+      "pool": 7,
+      "census_ms": 2483
+    },
+    {
+      "name": "flask",
+      "url": "https://github.com/pallets/flask",
+      "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+      "shape": "Library, src layout, examples",
+      "language": null,
+      "framework_bucket": null,
+      "binary_sha256": "38488a10a44939c2e4f348f1f21ff659b7d702ad234392c46269e5ae4368afbc",
+      "prepared_at": "2026-11-07T04:44:58.188Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/cache/repos/flask",
+      "status": "ok",
+      "units": 218,
+      "roles": 9,
+      "proposals": 0,
+      "pool": 0,
+      "census_ms": 62
+    },
+    {
+      "name": "fastapi",
+      "url": "https://github.com/fastapi/fastapi",
+      "sha": "1ca09c13584ca45aa0921e5e40b31d49c5e3135a",
+      "shape": "Library with heavy __init__ re-exports; docs_src has ~1,000 small apps",
+      "language": null,
+      "framework_bucket": null,
+      "binary_sha256": "38488a10a44939c2e4f348f1f21ff659b7d702ad234392c46269e5ae4368afbc",
+      "prepared_at": "2026-11-07T04:44:58.430Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/cache/repos/fastapi",
+      "status": "ok",
+      "units": 2310,
+      "roles": 89,
+      "proposals": 1,
+      "pool": 1,
+      "census_ms": 406
+    },
+    {
+      "name": "langchain",
+      "url": "https://github.com/langchain-ai/langchain",
+      "sha": "e649741517b9584aae63a6ebd6ada803967da1c9",
+      "shape": "Monorepo: libs/* packages with their own pyproject.toml",
+      "language": null,
+      "framework_bucket": null,
+      "binary_sha256": "38488a10a44939c2e4f348f1f21ff659b7d702ad234392c46269e5ae4368afbc",
+      "prepared_at": "2026-11-07T04:44:59.827Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/cache/repos/langchain",
+      "status": "ok",
+      "units": 3709,
+      "roles": 175,
+      "proposals": 2,
+      "pool": 2,
+      "census_ms": 1476
+    }
+  ],
+  "view_of": {
+    "run": "eval/study/runs/d8-prereg-2026-11-07/py",
+    "items": "all shown proposals",
+    "tier_from": "eval/study/tier-d8-candidate.json"
+  }
+}

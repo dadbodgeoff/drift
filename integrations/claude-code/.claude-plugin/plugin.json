@@ -1,0 +1,10 @@
+{
+  "name": "drift",
+  "version": "0.1.0-dev",
+  "description": "Learns your codebase's conventions, tells Claude the rules before it writes a file, advises after each edit, and blocks the end of a turn only when new code breaks a convention you set to block.",
+  "author": { "name": "Drift" },
+  "homepage": "https://github.com/dadbodgeoff/drift",
+  "repository": "https://github.com/dadbodgeoff/drift",
+  "license": "Apache-2.0",
+  "keywords": ["conventions", "lint", "guardrails", "code-quality"]
+}

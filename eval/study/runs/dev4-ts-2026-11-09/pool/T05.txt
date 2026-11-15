@@ -1,0 +1,17 @@
+1 conventions from 4235 units in 335 roles (0 default tier, 1 suggestions)
+
+1 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-2aa20d] backend: classes in apps/cloud/src/analytics/** (*.dto files) are named `*Dto`, except 3 companions (a helper or constant beside the members that follow it)
+    evidence: 68/69 (lower bound 0.92, lift 2.2)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  backend/apps/cloud/src/analytics/dto/data-deletion.dto.ts#DataDeletionDto
+    outlier:  backend/apps/cloud/src/analytics/dto/get-custom-event-meta.dto.ts:7 GetCustomEventMetadata
+    exempt:   backend/apps/cloud/src/analytics/dto/events.dto.ts:43 MetadataKeysQuantity (another kind of class (decorated with ValidatorConstraint()) beside EventsDto, which follows the scheme)
+    exempt:   backend/apps/cloud/src/analytics/dto/events.dto.ts:23 MetadataSizeLimit (another kind of class (decorated with ValidatorConstraint()) beside EventsDto, which follows the scheme)
+    exempt:   backend/apps/cloud/src/analytics/dto/events.dto.ts:74 MetadataValueType (another kind of class (decorated with ValidatorConstraint()) beside EventsDto, which follows the scheme)
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

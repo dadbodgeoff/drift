@@ -1,0 +1,13 @@
+{
+  "repo": "node-express-boilerplate",
+  "files": [
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": ".eslintrc.json",
+      "kind": "lint"
+    }
+  ]
+}

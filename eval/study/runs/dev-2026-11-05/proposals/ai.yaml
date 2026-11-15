@@ -1,0 +1,597 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - _create
+  - active-tools
+  - agent-step
+  - ai-sdk-coding
+  - ai-sdk-coding-agent
+  - app
+  - ask-user-questions
+  - attach
+  - bash-shell
+  - basic
+  - basic-agent
+  - basic-stepped-agent
+  - builtin-tool-approval
+  - builtin-tool-approval-with-host-tool
+  - changing-settings
+  - chat
+  - chat-input
+  - chatbot
+  - client
+  - compaction
+  - completion
+  - create-emit-stream-event
+  - custom-fetch
+  - custom-tool-approval
+  - decide
+  - edit
+  - file-edit
+  - fullstream
+  - generate-audio
+  - generate-text
+  - generate-video
+  - get-response-metadata
+  - host-tool-approval-with-host-tool
+  - i2v-frame-images
+  - image
+  - image-input
+  - image-to-video
+  - image-url
+  - inactive-tools
+  - json-schema-to-zod
+  - layout
+  - lazy-schemas
+  - lifecycle-callbacks
+  - model-resolution
+  - multi-turn
+  - native-subscription
+  - next
+  - output
+  - output-object
+  - page
+  - parallel-tool-approvals
+  - pdf
+  - permission-paths
+  - poll-options
+  - postcss
+  - programmatic-tool-calling
+  - provider-options
+  - provider-shorthand
+  - r2v-reference-images
+  - raw-chunks
+  - reasoning
+  - reasoning-effort
+  - rename-converttocoremessages-to-converttomodelmessages
+  - rename-core-message-to-model-message
+  - responses
+  - responses-file-search
+  - restricted-telemetry-dispatcher
+  - resume
+  - route
+  - run-agent-step
+  - run-slice-step
+  - sandbox-template
+  - schema
+  - server
+  - service-tier
+  - steer
+  - stop-when
+  - stream-text
+  - string
+  - structured-object
+  - suspend-turn
+  - tailwind
+  - text
+  - thinking
+  - time-slice-step
+  - timeout
+  - tool-call
+  - tool-choice
+  - tool-filtering
+  - tool-search
+  - tools
+  - tsdown
+  - typed-builtin-tools
+  - types
+  - url
+  - use-chat
+  - use-completion
+  - use-object
+  - utils
+  - vercel-sandbox-resume
+  - version
+  - vitest
+  - voice
+  - wan2
+  - wan3
+  - weather
+  - weather-agent
+  - weather-approval
+  - weather-approval-agent
+  - weather-only-agent
+  - weather-tool
+  - web-search
+  - web-search-tool
+  - with-client-side-tool
+  - with-instructions
+  - with-mcp
+  - with-model
+  - with-outside-workdir-reads
+  - with-provided-sandbox
+  - with-reasoning
+  - with-restricted-sandbox
+  - with-skills
+  - with-structured-output
+  - with-to-model-output
+  - with-tool-input-error
+  - with-tools
+  - workflow
+  suffixes:
+  - component
+  - config
+  - input
+  - ng
+  - output
+  - svelte
+  - test
+  - test-d
+conventions:
+- id: D-9c077a
+  status: proposed
+  mode: advise
+  summary: >-
+    files in examples/ai-functions/** use zod for validation, not
+    yup/joi/valibot/superstruct
+  role:
+    package: examples/ai-functions
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: prefers_library
+    group: validation
+    preferred: zod
+  evidence:
+    holders: 582
+    total: 583
+    lower_bound: 0.99
+    lift: 1.0
+    split:
+    - - zod
+      - 582
+    - - valibot
+      - 1
+  example: examples/ai-functions/src/agent/anthropic/generate-output-array.ts#(file)
+- id: D-20e2d4
+  status: proposed
+  mode: advise
+  summary: "examples/harness-e2e-next: pages in app/** (page files) render inside <ChatIdProvider>"
+  role:
+    package: examples/harness-e2e-next
+    dir: app
+    file: page
+    entry: page
+    kind: component
+  rule:
+    type: wrapped_by
+    kind: jsx
+    any_of:
+    - examples/harness-e2e-next/components/chat-id-provider.tsx#ChatIdProvider
+  evidence:
+    holders: 95
+    total: 96
+    lower_bound: 0.943
+    lift: 5.813
+  example: >-
+    examples/harness-e2e-next/app/harness/acp-codex/ai-sdk-coding/page.tsx#CodexACPAiSdkCodingPage
+- id: D-85dab9
+  status: proposed
+  mode: advise
+  summary: workspace packages depend on typescript@6.0.3
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: dependency_version
+    name: typescript
+    range: "6.0.3"
+  evidence:
+    holders: 112
+    total: 114
+    lower_bound: 0.938
+    lift: 1.0
+    split:
+    - - "6.0.3"
+      - 112
+    - - "5.8.3"
+      - 2
+  example: apps/docs/package.json#ai-sdk-docs
+- id: D-fc5ef7
+  status: proposed
+  mode: advise
+  summary: "packages/codemod: functions in src/codemods/** are wrapped in createTransformer()"
+  role:
+    package: packages/codemod
+    dir: src/codemods
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - packages/codemod/src/codemods/lib/create-transformer.ts#createTransformer
+  evidence:
+    holders: 105
+    total: 110
+    lower_bound: 0.898
+    lift: 22.384
+  example: >-
+    packages/codemod/src/codemods/v4/remove-ai-stream-methods-from-stream-text-result.ts#default
+- id: D-e8c51d
+  status: proposed
+  mode: advise
+  summary: "examples/ai-e2e-next: pages in app/chat/** (page files) call useChat()"
+  role:
+    package: examples/ai-e2e-next
+    dir: app/chat
+    file: page
+    entry: page
+    kind: component
+  rule:
+    type: calls
+    callee: packages/react/src/use-chat.ts#useChat
+  evidence:
+    holders: 98
+    total: 104
+    lower_bound: 0.88
+    lift: 3.677
+  example: >-
+    examples/ai-e2e-next/app/chat/anthropic-advisor-tool/page.tsx#TestAnthropicAdvisor20260301
+- id: D-60b107
+  status: proposed
+  mode: advise
+  summary: "packages/ai: functions in src/** declare their return type"
+  role:
+    package: packages/ai
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 231
+    total: 252
+    lower_bound: 0.876
+    lift: 1.552
+  example: >-
+    packages/ai/src/agent/create-agent-ui-stream-response.ts#createAgentUIStreamResponse
+- id: D-a08166
+  status: proposed
+  mode: advise
+  summary: "examples/ai-e2e-next: exported values in agent/** call ToolLoopAgent(new)()"
+  role:
+    package: examples/ai-e2e-next
+    dir: agent
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: calls
+    callee: packages/ai/src/agent/tool-loop-agent.ts#ToolLoopAgent(new)
+  evidence:
+    holders: 40
+    total: 41
+    lower_bound: 0.874
+    lift: 29.442
+  example: >-
+    examples/ai-e2e-next/agent/anthropic/advisor-20260301-agent.ts#anthropicAdvisor20260301Agent
+- id: D-9d44b7
+  status: proposed
+  mode: advise
+  summary: "packages/mcp: functions in src/** declare their return type"
+  role:
+    package: packages/mcp
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 46
+    total: 48
+    lower_bound: 0.86
+    lift: 1.622
+  example: packages/mcp/src/tool/json-rpc-message.ts#parseJSONRPCMessage
+- id: D-55e44c
+  status: proposed
+  mode: advise
+  summary: "examples/ai-e2e-next: components in components/tool/** are named `*View`"
+  role:
+    package: examples/ai-e2e-next
+    dir: components/tool
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: named
+    pattern: "*View"
+  evidence:
+    holders: 31
+    total: 32
+    lower_bound: 0.843
+    lift: 13.184
+  example: >-
+    examples/ai-e2e-next/components/tool/anthropic-advisor-20260301-view.tsx#AnthropicAdvisor20260301View
+- id: D-9b8f07
+  status: proposed
+  mode: advise
+  summary: >-
+    files in examples/ai-e2e-next/** use zod for validation, not
+    yup/joi/valibot/superstruct
+  role:
+    package: examples/ai-e2e-next
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: prefers_library
+    group: validation
+    preferred: zod
+  evidence:
+    holders: 40
+    total: 42
+    lower_bound: 0.842
+    lift: 1.0
+    split:
+    - - zod
+      - 40
+    - - valibot
+      - 2
+  example: examples/ai-e2e-next/agent/anthropic/code-execution-agent.ts#(file)
+- id: D-942c51
+  status: proposed
+  mode: advise
+  summary: "packages/code-mode: functions in src/** declare their return type"
+  role:
+    package: packages/code-mode
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 30
+    total: 31
+    lower_bound: 0.838
+    lift: 1.638
+  example: packages/code-mode/src/approval-continuation.ts#continueCodeModeApproval
+- id: D-d1e696
+  status: proposed
+  mode: advise
+  summary: "packages/harness-opencode/src/bridge: functions in ./** declare their return type"
+  role:
+    package: packages/harness-opencode/src/bridge
+    dir: '.'
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 29
+    total: 30
+    lower_bound: 0.833
+    lift: 1.636
+  example: >-
+    packages/harness-opencode/src/bridge/host-tool-schemas.ts#readHostToolSchemasFromEnvironment
+- id: D-6ac837
+  status: proposed
+  mode: advise
+  summary: "examples/ai-e2e-next: pages in app/chat/** (page files) pass `transport` to useChat()"
+  role:
+    package: examples/ai-e2e-next
+    dir: app/chat
+    file: page
+    entry: page
+    kind: component
+  rule:
+    type: passes_key
+    callee: packages/react/src/use-chat.ts#useChat
+    index: 0
+    key: transport
+  evidence:
+    holders: 94
+    total: 104
+    lower_bound: 0.832
+    lift: 3.85
+  example: >-
+    examples/ai-e2e-next/app/chat/anthropic-advisor-tool/page.tsx#TestAnthropicAdvisor20260301
+- id: D-7d20a8
+  status: proposed
+  mode: advise
+  summary: "examples/ai-e2e-next: exported values in app/** (route files) are named `max*`"
+  role:
+    package: examples/ai-e2e-next
+    dir: app
+    file: route
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: max*
+  evidence:
+    holders: 45
+    total: 48
+    lower_bound: 0.832
+    lift: 20.871
+  example: examples/ai-e2e-next/app/api/chat/anthropic-compaction/route.ts#maxDuration
+- id: D-474a89
+  status: proposed
+  mode: advise
+  summary: workspace packages depend on zod@3.25.76
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: dependency_version
+    name: zod
+    range: "3.25.76"
+  evidence:
+    holders: 90
+    total: 101
+    lower_bound: 0.815
+    lift: 1.0
+    split:
+    - - "3.25.76"
+      - 90
+    - - "4.4.3"
+      - 7
+    - - "4.5.4"
+      - 1
+    - - ^3.25.76
+      - 1
+    - - ^4.1.8
+      - 1
+    - - ^4.4.3
+      - 1
+  example: examples/ai-e2e-next/package.json#@example/next-openai
+- id: D-5590d9
+  status: proposed
+  mode: advise
+  summary: "packages/harness: exported values in src/v1/** are named `harness*`"
+  role:
+    package: packages/harness
+    dir: src/v1
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: harness*
+  evidence:
+    holders: 45
+    total: 49
+    lower_bound: 0.808
+    lift: 26.535
+  example: >-
+    packages/harness/src/v1/harness-v1-bridge-protocol.ts#harnessV1BridgeAbortInboundSchema
+- id: D-232917
+  status: proposed
+  mode: advise
+  summary: "packages/harness: exported values in src/** call z.object() before z.string()"
+  role:
+    package: packages/harness
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: before
+    first: pkg:zod/v4#z.object
+    then: pkg:zod/v4#z.string
+  evidence:
+    holders: 30
+    total: 32
+    lower_bound: 0.799
+    lift: 1.0
+  example: >-
+    packages/harness/src/v1/harness-v1-bridge-protocol.ts#experimental_harnessV1BridgeUserMessageResponseSchema
+- id: D-da3a46
+  status: proposed
+  mode: advise
+  summary: "packages/gateway: classes in src/** do not throw a bare Error"
+  role:
+    package: packages/gateway
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: avoids
+    signal: throw_error
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 4.014
+  example: >-
+    packages/gateway/src/errors/gateway-authentication-error.ts#GatewayAuthenticationError
+- id: D-352fc3
+  status: proposed
+  mode: advise
+  summary: "examples/ai-e2e-next: pages in app/chat/** (page files) call DefaultChatTransport(new)()"
+  role:
+    package: examples/ai-e2e-next
+    dir: app/chat
+    file: page
+    entry: page
+    kind: component
+  rule:
+    type: calls
+    callee: packages/ai/src/ui/default-chat-transport.ts#DefaultChatTransport(new)
+  evidence:
+    holders: 89
+    total: 104
+    lower_bound: 0.776
+    lift: 4.081
+  example: >-
+    examples/ai-e2e-next/app/chat/anthropic-advisor-tool/page.tsx#TestAnthropicAdvisor20260301
+- id: D-17ad34
+  status: proposed
+  mode: advise
+  summary: "packages/ai: classes in src/error/** call AISDKError.hasMarker()"
+  role:
+    package: packages/ai
+    dir: src/error
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: packages/provider/src/errors/ai-sdk-error.ts#AISDKError.hasMarker
+  evidence:
+    holders: 19
+    total: 20
+    lower_bound: 0.764
+    lift: 5.795
+  example: packages/ai/src/error/invalid-argument-error.ts#InvalidArgumentError
+- id: D-1c736f
+  status: proposed
+  mode: advise
+  summary: files in packages/harness-opencode/src/bridge/** have a test file
+  role:
+    package: packages/harness-opencode/src/bridge
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 6.524
+  example: packages/harness-opencode/src/bridge/create-emit-stream-event.ts#(file)

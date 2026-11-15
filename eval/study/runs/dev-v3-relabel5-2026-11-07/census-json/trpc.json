@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "cgu65-de57356-1794092874",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel5/restage-de57356/cache/repos/trpc",
+  "units": 1460,
+  "roles": 78,
+  "conventions": 0,
+  "shown": 0,
+  "tiers": {
+    "default": 0,
+    "suggestion": 0
+  },
+  "agents": {
+    "hidden": 0,
+    "admission": {
+      "kind": "family_table",
+      "file": "crates/drift-mine/data/family-admission.json",
+      "run": "eval/study/runs/dev-v3-relabel4-2026-11-07",
+      "date": "2026-11-07",
+      "min_accept": 0.85,
+      "min_cards": 10
+    }
+  },
+  "suggestion_cap": {
+    "cap": 5,
+    "from": "default",
+    "suggestions": 0,
+    "listed": 0
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    }
+  },
+  "proposals": [],
+  "largest_role": {
+    "role": {
+      "package": "tooling/ui",
+      "dir": "src/components",
+      "file": "*",
+      "entry": "-",
+      "kind": "component"
+    },
+    "members": 354,
+    "summary": "tooling/ui: components in src/components/**"
+  }
+}

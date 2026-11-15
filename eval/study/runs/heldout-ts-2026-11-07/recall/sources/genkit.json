@@ -1,0 +1,25 @@
+{
+  "repo": "genkit",
+  "files": [
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "go/GEMINI.md",
+      "kind": "doc"
+    },
+    {
+      "path": "py/pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "js/testapps/vercel-ai-elements/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "py/packages/genkit/ruff.toml",
+      "kind": "lint"
+    }
+  ]
+}

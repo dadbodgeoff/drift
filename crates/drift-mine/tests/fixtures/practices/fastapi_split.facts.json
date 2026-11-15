@@ -1,0 +1,1003 @@
+{
+  "schema_version": 11,
+  "files": [
+    {
+      "path": "services/api/app/db.py",
+      "hash": "8910066c0c8ee044c2a77f1d6240d832ff0da1f864d67392bf8ca378b96a42c2",
+      "lang": "py",
+      "package": "services/api",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:sqlalchemy.orm",
+          "names": [
+            "sessionmaker"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "SessionLocal",
+          "origin": "services/api/app/db.py#SessionLocal",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "SessionLocal",
+          "kind": "variable",
+          "exported_as": [
+            "SessionLocal"
+          ],
+          "line": 4,
+          "wraps": [],
+          "calls": [
+            "pkg:sqlalchemy.orm#sessionmaker"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "services/api/app/deps.py",
+      "hash": "da89488fa58ae7399ff1a79c41dac1d2004776903f73c0f865ae76af6d023949",
+      "lang": "py",
+      "package": "services/api",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:fastapi",
+          "names": [
+            "Depends",
+            "HTTPException"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "services/api/app/db.py",
+          "names": [
+            "SessionLocal"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "services/api/app/security.py",
+          "names": [
+            "decode_token"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "get_current_user",
+          "origin": "services/api/app/deps.py#get_current_user",
+          "kind": "local"
+        },
+        {
+          "name": "get_db",
+          "origin": "services/api/app/deps.py#get_db",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "get_current_user",
+          "kind": "function",
+          "exported_as": [
+            "get_current_user"
+          ],
+          "line": 15,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#HTTPException",
+            "services/api/app/security.py#decode_token"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:fastapi#HTTPException@99:status_code"
+          ],
+          "controls": [
+            "rejects_caller",
+            "throw"
+          ],
+          "string_literals": 1,
+          "throws": [
+            "pkg:fastapi#HTTPException"
+          ],
+          "body_checks": [
+            {
+              "source": "services/api/app/security.py#decode_token",
+              "reads": "",
+              "compares": "",
+              "outcome": "unauthenticated"
+            }
+          ],
+          "responses": [
+            {
+              "status": 401,
+              "via": "throw",
+              "builder": "pkg:fastapi#HTTPException",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ],
+          "headers": [
+            "authorization"
+          ]
+        },
+        {
+          "name": "get_db",
+          "kind": "function",
+          "exported_as": [
+            "get_db"
+          ],
+          "line": 8,
+          "wraps": [],
+          "calls": [
+            "services/api/app/db.py#SessionLocal"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "services/api/app/main.py",
+      "hash": "e87f04fad7c72cbea468dbab26943da69151db9d3282a14b748994854dc01e95",
+      "lang": "py",
+      "package": "services/api",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:fastapi",
+          "names": [
+            "FastAPI",
+            "HTTPException"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:fastapi.responses",
+          "names": [
+            "JSONResponse"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:logging",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "app",
+          "origin": "services/api/app/main.py#app",
+          "kind": "local"
+        },
+        {
+          "name": "http_exception_handler",
+          "origin": "services/api/app/main.py#http_exception_handler",
+          "kind": "local"
+        },
+        {
+          "name": "logger",
+          "origin": "services/api/app/main.py#logger",
+          "kind": "local"
+        },
+        {
+          "name": "unhandled",
+          "origin": "services/api/app/main.py#unhandled",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "app",
+          "kind": "variable",
+          "exported_as": [
+            "app"
+          ],
+          "line": 7,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#FastAPI"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "http_exception_handler",
+          "kind": "function",
+          "exported_as": [
+            "http_exception_handler"
+          ],
+          "line": 12,
+          "wraps": [
+            {
+              "wrapper": "services/api/app/main.py#app.exception_handler",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [
+            "pkg:fastapi.responses#JSONResponse"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:fastapi.responses#JSONResponse@99:content",
+            "pkg:fastapi.responses#JSONResponse@99:status_code"
+          ],
+          "controls": [],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 0,
+              "via": "return",
+              "builder": "pkg:fastapi.responses#JSONResponse",
+              "model": "",
+              "keys": [
+                "detail"
+              ],
+              "in_catch": false
+            }
+          ],
+          "handles_errors": [
+            "pkg:fastapi#HTTPException"
+          ]
+        },
+        {
+          "name": "logger",
+          "kind": "variable",
+          "exported_as": [
+            "logger"
+          ],
+          "line": 5,
+          "wraps": [],
+          "calls": [
+            "pkg:logging#getLogger"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "unhandled",
+          "kind": "function",
+          "exported_as": [
+            "unhandled"
+          ],
+          "line": 18,
+          "wraps": [
+            {
+              "wrapper": "services/api/app/main.py#app.exception_handler",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [
+            "pkg:fastapi.responses#JSONResponse",
+            "services/api/app/main.py#logger.exception"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 1,
+          "responses": [
+            {
+              "status": 500,
+              "via": "return",
+              "builder": "pkg:fastapi.responses#JSONResponse",
+              "model": "",
+              "keys": [
+                "detail"
+              ],
+              "in_catch": false
+            }
+          ],
+          "log_calls": [
+            {
+              "callee": "services/api/app/main.py#logger.exception",
+              "level": "exception",
+              "in_catch": false,
+              "structured": false,
+              "passes_error": true
+            }
+          ],
+          "handles_errors": [
+            "*"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "services/api/app/routers/items.py",
+      "hash": "366a1795b9c6df48c9bc4b94bed6db5c3adca85e4e85f1e0b2972894bf1944ef",
+      "lang": "py",
+      "package": "services/api",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:fastapi",
+          "names": [
+            "APIRouter",
+            "Depends",
+            "HTTPException",
+            "Header"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:structlog",
+          "names": [
+            "get_logger"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "services/api/app/crud.py",
+          "names": [
+            "create_item",
+            "get_item"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "services/api/app/deps.py",
+          "names": [
+            "get_current_user",
+            "get_db"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "services/api/app/schemas.py",
+          "names": [
+            "ItemCreate",
+            "ItemOut"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "create_item",
+          "origin": "services/api/app/routers/items.py#create_item",
+          "kind": "local"
+        },
+        {
+          "name": "logger",
+          "origin": "services/api/app/routers/items.py#logger",
+          "kind": "local"
+        },
+        {
+          "name": "read_item",
+          "origin": "services/api/app/routers/items.py#read_item",
+          "kind": "local"
+        },
+        {
+          "name": "router",
+          "origin": "services/api/app/routers/items.py#router",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "create_item",
+          "kind": "function",
+          "exported_as": [
+            "create_item"
+          ],
+          "line": 25,
+          "wraps": [
+            {
+              "wrapper": "services/api/app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "services/api/app/deps.py#get_db",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "services/api/app/crud.py#create_item"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input"
+          ],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 201,
+              "via": "declared",
+              "builder": "",
+              "model": "services/api/app/schemas.py#ItemOut",
+              "keys": [],
+              "in_catch": false
+            }
+          ],
+          "headers": [
+            "x-org-id"
+          ],
+          "inputs": [
+            "services/api/app/schemas.py#ItemCreate"
+          ]
+        },
+        {
+          "name": "logger",
+          "kind": "variable",
+          "exported_as": [
+            "logger"
+          ],
+          "line": 6,
+          "wraps": [],
+          "calls": [
+            "pkg:structlog#get_logger"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "read_item",
+          "kind": "function",
+          "exported_as": [
+            "read_item"
+          ],
+          "line": 10,
+          "wraps": [
+            {
+              "wrapper": "services/api/app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "services/api/app/deps.py#get_db",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "pkg:fastapi#HTTPException",
+            "services/api/app/crud.py#get_item",
+            "services/api/app/routers/items.py#logger.info"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:fastapi#HTTPException@99:status_code"
+          ],
+          "controls": [
+            "reads_input",
+            "throw"
+          ],
+          "string_literals": 1,
+          "throws": [
+            "pkg:fastapi#HTTPException"
+          ],
+          "body_checks": [
+            {
+              "source": "services/api/app/crud.py#get_item",
+              "reads": "",
+              "compares": "",
+              "outcome": "not_found"
+            },
+            {
+              "source": "services/api/app/deps.py#get_current_user",
+              "reads": ".org_id",
+              "compares": "param:org_id",
+              "outcome": "forbidden"
+            }
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "via": "declared",
+              "builder": "",
+              "model": "services/api/app/schemas.py#ItemOut",
+              "keys": [],
+              "in_catch": false
+            },
+            {
+              "status": 403,
+              "via": "throw",
+              "builder": "pkg:fastapi#HTTPException",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            },
+            {
+              "status": 404,
+              "via": "throw",
+              "builder": "pkg:fastapi#HTTPException",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ],
+          "log_calls": [
+            {
+              "callee": "services/api/app/routers/items.py#logger.info",
+              "level": "info",
+              "in_catch": false,
+              "structured": true,
+              "passes_error": false
+            }
+          ]
+        },
+        {
+          "name": "router",
+          "kind": "variable",
+          "exported_as": [
+            "router"
+          ],
+          "line": 5,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#APIRouter"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "create_item",
+          "kind": "http",
+          "method": "POST",
+          "route": "/orgs/{org_id}/items",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "read_item",
+          "kind": "http",
+          "method": "GET",
+          "route": "/orgs/{org_id}/items/{item_id}",
+          "adapter": "fastapi"
+        }
+      ]
+    },
+    {
+      "path": "services/api/app/security.py",
+      "hash": "0e7e4f131b899535e1835ea85a5bf3ed373df337103e74a1cf035debdbfdec3e",
+      "lang": "py",
+      "package": "services/api",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:jwt",
+          "names": [
+            "decode"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "decode_token",
+          "origin": "services/api/app/security.py#decode_token",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "decode_token",
+          "kind": "function",
+          "exported_as": [
+            "decode_token"
+          ],
+          "line": 3,
+          "wraps": [],
+          "calls": [
+            "pkg:jwt#decode"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "services/api/app/services/billing.py",
+      "hash": "6619faa6b3d40c93932a6f9e1b1fef262d729eba1a43ca35629f531c0f604297",
+      "lang": "py",
+      "package": "services/api",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:logging",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:stripe",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "services/api/app/errors.py",
+          "names": [
+            "PaymentFailed"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "charge",
+          "origin": "services/api/app/services/billing.py#charge",
+          "kind": "local"
+        },
+        {
+          "name": "logger",
+          "origin": "services/api/app/services/billing.py#logger",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "charge",
+          "kind": "function",
+          "exported_as": [
+            "charge"
+          ],
+          "line": 8,
+          "wraps": [],
+          "calls": [
+            "pkg:stripe#Charge.create",
+            "services/api/app/errors.py#PaymentFailed",
+            "services/api/app/services/billing.py#logger.warning"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "throw",
+            "try"
+          ],
+          "string_literals": 1,
+          "throws": [
+            "services/api/app/errors.py#PaymentFailed"
+          ],
+          "log_calls": [
+            {
+              "callee": "services/api/app/services/billing.py#logger.warning",
+              "level": "warn",
+              "in_catch": true,
+              "structured": true,
+              "passes_error": true
+            }
+          ],
+          "catches": [
+            {
+              "catches": [
+                "*"
+              ],
+              "does": [
+                "swallow"
+              ]
+            },
+            {
+              "catches": [
+                "pkg:stripe#error.CardError"
+              ],
+              "does": [
+                "log",
+                "throw:services/api/app/errors.py#PaymentFailed"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "logger",
+          "kind": "variable",
+          "exported_as": [
+            "logger"
+          ],
+          "line": 4,
+          "wraps": [],
+          "calls": [
+            "pkg:logging#getLogger"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "services/api/tests/test_items.py",
+      "hash": "972e43d0f344e122ec0996cca319a6853631f1eb92a1d49c5d62a4ed40479ea7",
+      "lang": "py",
+      "package": "services/api",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:fastapi.testclient",
+          "names": [
+            "TestClient"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:unittest.mock",
+          "names": [
+            "patch"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "test_create_item",
+          "origin": "services/api/tests/test_items.py#test_create_item",
+          "kind": "local"
+        },
+        {
+          "name": "test_read_item_other_org",
+          "origin": "services/api/tests/test_items.py#test_read_item_other_org",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "test_create_item",
+          "kind": "function",
+          "exported_as": [
+            "test_create_item"
+          ],
+          "line": 20,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi.testclient#TestClient.post"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 1
+        },
+        {
+          "name": "test_read_item_other_org",
+          "kind": "function",
+          "exported_as": [
+            "test_read_item_other_org"
+          ],
+          "line": 10,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi.testclient#TestClient.get"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 1
+        }
+      ],
+      "entry_points": [],
+      "test_requests": [
+        {
+          "method": "GET",
+          "route": "/orgs/[*]/items/[*]",
+          "target": "",
+          "statuses": [
+            200,
+            403,
+            404
+          ]
+        },
+        {
+          "method": "POST",
+          "route": "/orgs/[*]/items",
+          "target": "",
+          "statuses": [
+            201,
+            422
+          ]
+        }
+      ],
+      "mocks": [
+        "services/api/app/services/billing.py"
+      ]
+    },
+    {
+      "path": "services/legacy/views.py",
+      "hash": "352fd3f14cd16c354a3b9ab34234ad8ac3697b83f4d7d45b5930ad0ba6998577",
+      "lang": "py",
+      "package": "services/legacy",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:flask",
+          "names": [
+            "Blueprint",
+            "abort"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "bp",
+          "origin": "services/legacy/views.py#bp",
+          "kind": "local"
+        },
+        {
+          "name": "not_found",
+          "origin": "services/legacy/views.py#not_found",
+          "kind": "local"
+        },
+        {
+          "name": "show",
+          "origin": "services/legacy/views.py#show",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "bp",
+          "kind": "variable",
+          "exported_as": [
+            "bp"
+          ],
+          "line": 3,
+          "wraps": [],
+          "calls": [
+            "pkg:flask#Blueprint"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "not_found",
+          "kind": "function",
+          "exported_as": [
+            "not_found"
+          ],
+          "line": 12,
+          "wraps": [
+            {
+              "wrapper": "services/legacy/views.py#bp.errorhandler",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 404,
+              "via": "return",
+              "builder": "",
+              "model": "",
+              "keys": [
+                "error"
+              ],
+              "in_catch": false
+            }
+          ],
+          "handles_errors": [
+            "status:404"
+          ]
+        },
+        {
+          "name": "show",
+          "kind": "function",
+          "exported_as": [
+            "show"
+          ],
+          "line": 6,
+          "wraps": [],
+          "calls": [
+            "global#print",
+            "pkg:flask#abort"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input"
+          ],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 404,
+              "via": "abort",
+              "builder": "pkg:flask#abort",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ],
+          "log_calls": [
+            {
+              "callee": "global#print",
+              "level": "print",
+              "in_catch": false,
+              "structured": false,
+              "passes_error": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "show",
+          "kind": "http",
+          "method": "GET",
+          "route": "/legacy/<int:item_id>",
+          "adapter": "flask"
+        }
+      ]
+    }
+  ],
+  "skipped": [],
+  "packages": [
+    {
+      "path": "services/api",
+      "name": "api",
+      "scripts": [],
+      "dependencies": [
+        "fastapi@>=0.110",
+        "httpx@>=0.27",
+        "pytest@>=8",
+        "sqlalchemy@>=2",
+        "stripe@>=10",
+        "structlog@>=24"
+      ],
+      "compiler_flags": [],
+      "manifest": "services/api/pyproject.toml",
+      "dev_only": [
+        "httpx",
+        "pytest"
+      ]
+    },
+    {
+      "path": "services/legacy",
+      "name": "legacy",
+      "scripts": [],
+      "dependencies": [
+        "flask@>=3",
+        "ruff@>=0.6"
+      ],
+      "compiler_flags": [],
+      "manifest": "services/legacy/pyproject.toml",
+      "dev_only": [
+        "ruff"
+      ]
+    }
+  ]
+}

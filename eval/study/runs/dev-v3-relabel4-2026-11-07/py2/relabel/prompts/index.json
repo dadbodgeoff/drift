@@ -1,0 +1,335 @@
+[
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "InvenTree",
+    "prompt": "/home/user/drift-wt/relabel4/eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/prompts/label/A/InvenTree.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/outbox/dc3dea89-6e7c-4a33-8ad2-f818cf659053/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/workdirs/82477ba6-9f76-4e5d-9b81-ef842cee320e",
+    "checkout_status": [],
+    "expected": [
+      "InvenTree/D-6f225b",
+      "InvenTree/D-f31910"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T11:40:37.897Z",
+    "collected": {
+      "at": "2026-11-07T11:54:48.444Z",
+      "dest": "eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/labels/A/InvenTree.jsonl",
+      "records": 2,
+      "sha256": "e0bae4ceac5dd463eed564ac51617deec0040203ab5832e70df9ca007be5953c"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "ralph",
+    "prompt": "/home/user/drift-wt/relabel4/eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/prompts/label/A/ralph.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/outbox/141a167b-b67d-4016-8940-0ced0fddb3e0/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/workdirs/18fb1532-7330-4f21-9765-fc6df903dc51",
+    "checkout_status": [],
+    "expected": [
+      "ralph/D-4529f9",
+      "ralph/D-5b6f70",
+      "ralph/D-b1df5c",
+      "ralph/D-43f01e"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T11:40:38.039Z",
+    "collected": {
+      "at": "2026-11-07T11:54:48.613Z",
+      "dest": "eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/labels/A/ralph.jsonl",
+      "records": 4,
+      "sha256": "4ac4ec5e5c83425fe18bd579e1221d052d48ed6507285e765cf5d33b01efed63"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "Misago",
+    "prompt": "/home/user/drift-wt/relabel4/eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/prompts/label/A/Misago.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/outbox/3943662c-90b3-4324-902a-26f09516d47b/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/workdirs/38e0f6ae-5d3a-4293-973b-541022781942",
+    "checkout_status": [],
+    "expected": [
+      "Misago/D-c9ae1e",
+      "Misago/D-e72fc8",
+      "Misago/D-b4e5ff",
+      "Misago/D-d8703c"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T11:40:38.375Z",
+    "collected": {
+      "at": "2026-11-07T11:54:48.985Z",
+      "dest": "eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/labels/A/Misago.jsonl",
+      "records": 4,
+      "sha256": "2231860c854820e3c17ef03fa1efb44fcac1f1a359d88235fbeb7afb3c0131ca"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "wger",
+    "prompt": "/home/user/drift-wt/relabel4/eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/prompts/label/A/wger.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/outbox/f2cfd624-2377-4c9d-9d6a-2731dfa30f39/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/workdirs/ab15b673-d7ff-4761-acd5-b7b5a6e6b175",
+    "checkout_status": [],
+    "expected": [
+      "wger/D-db04dc"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T11:40:38.441Z",
+    "collected": {
+      "at": "2026-11-07T11:54:49.070Z",
+      "dest": "eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/labels/A/wger.jsonl",
+      "records": 1,
+      "sha256": "1727274ce0197c61c40dfe68854ade064eaef8c050bc4f3c27c9efbb95de3775"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "lotus",
+    "prompt": "/home/user/drift-wt/relabel4/eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/prompts/label/A/lotus.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/outbox/d4f5cc39-4dec-455b-8561-6f445a54a663/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/workdirs/5f0c116b-d414-4ffd-9f79-dc2766353b74",
+    "checkout_status": [],
+    "expected": [
+      "lotus/D-26d6a0",
+      "lotus/D-1cbdac"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T11:40:38.498Z",
+    "collected": {
+      "at": "2026-11-07T11:54:49.131Z",
+      "dest": "eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/labels/A/lotus.jsonl",
+      "records": 2,
+      "sha256": "3f700c0709286c312133bd784eb032b46ad07763802f67c6f0d702952a978ef0"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "open-wearables",
+    "prompt": "/home/user/drift-wt/relabel4/eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/prompts/label/A/open-wearables.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/outbox/ead3f954-c9a8-49d2-b845-d2f8fd9ada30/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/workdirs/f0648f1c-a27b-4144-89f9-90d5168f9e96",
+    "checkout_status": [],
+    "expected": [
+      "open-wearables/D-6606a8"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T11:40:38.577Z",
+    "collected": {
+      "at": "2026-11-07T11:54:49.205Z",
+      "dest": "eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/labels/A/open-wearables.jsonl",
+      "records": 1,
+      "sha256": "5400277392584b78bf8f50930dda79d74b47841687c0203f5b4e237952402667"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "InvenTree",
+    "prompt": "/home/user/drift-wt/relabel4/eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/prompts/label/B/InvenTree.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/outbox/b0d34c03-1f9e-436b-bc7e-7dd75e206a4f/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/workdirs/ef1a89e0-850b-4e72-a4f4-2ec8384d9674",
+    "checkout_status": [],
+    "expected": [
+      "InvenTree/D-6f225b",
+      "InvenTree/D-f31910"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T12:00:06.940Z",
+    "rejected": [
+      {
+        "at": "2026-11-07T12:01:47.310Z",
+        "problems": [
+          "out.jsonl:1: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: pyproject.toml (a config file)"
+        ]
+      },
+      {
+        "at": "2026-11-07T12:01:54.065Z",
+        "problems": [
+          "out.jsonl:1: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: pyproject.toml (a config file)"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-07T12:02:39.344Z",
+      "dest": "eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/labels/B/InvenTree.jsonl",
+      "records": 2,
+      "sha256": "7212feeb06e26ec9b935e7229d024a4420f0cbb95ccfa1ae59829971596741aa"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "ralph",
+    "prompt": "/home/user/drift-wt/relabel4/eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/prompts/label/B/ralph.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/outbox/64818550-6fd8-43ea-ac19-7760e7a1e86e/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/workdirs/e5f48723-f5f0-424b-b74f-0f183025d4f6",
+    "checkout_status": [],
+    "expected": [
+      "ralph/D-4529f9",
+      "ralph/D-5b6f70",
+      "ralph/D-b1df5c",
+      "ralph/D-43f01e"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T12:00:07.215Z",
+    "collected": {
+      "at": "2026-11-07T12:01:47.427Z",
+      "dest": "eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/labels/B/ralph.jsonl",
+      "records": 4,
+      "sha256": "b30631e225d55145dc35836f832bb59dedbfdca4f5f6c1efbaad77bce510322e"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "Misago",
+    "prompt": "/home/user/drift-wt/relabel4/eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/prompts/label/B/Misago.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/outbox/8cead58c-44de-4557-8b35-8cfa04433783/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/workdirs/8a24d327-55ab-4c43-8d77-e7a1f3bc135e",
+    "checkout_status": [],
+    "expected": [
+      "Misago/D-c9ae1e",
+      "Misago/D-e72fc8",
+      "Misago/D-b4e5ff",
+      "Misago/D-d8703c"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T12:00:07.822Z",
+    "rejected": [
+      {
+        "at": "2026-11-07T12:01:47.787Z",
+        "problems": [
+          "out.jsonl:2: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: misago/posting/hooks/get_thread_start_state.py (cannot hold a member of the role: outside its package, directory or file kind), misago/plugins/hooks.py (cannot hold a member of the role: outside its package, directory or file kind)"
+        ]
+      },
+      {
+        "at": "2026-11-07T12:01:54.475Z",
+        "problems": [
+          "out.jsonl:2: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: misago/posting/hooks/get_thread_start_state.py (cannot hold a member of the role: outside its package, directory or file kind), misago/plugins/hooks.py (cannot hold a member of the role: outside its package, directory or file kind)"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-07T12:02:39.710Z",
+      "dest": "eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/labels/B/Misago.jsonl",
+      "records": 4,
+      "sha256": "042405bc1212e69df4fdcde451c3d0fbd20b25b791df3ea781c4c99b408fd7ef"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "wger",
+    "prompt": "/home/user/drift-wt/relabel4/eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/prompts/label/B/wger.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/outbox/694cf605-f03e-4a78-8a36-84c4dcdc97a2/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/workdirs/f433f7bd-6aed-4d2c-99bd-07a98dda4136",
+    "checkout_status": [],
+    "expected": [
+      "wger/D-db04dc"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T12:00:07.984Z",
+    "collected": {
+      "at": "2026-11-07T12:01:47.863Z",
+      "dest": "eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/labels/B/wger.jsonl",
+      "records": 1,
+      "sha256": "1509d185d48f68584a18b666744c4f6c837934fecd24e3d4c119a32dc0c41722"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "lotus",
+    "prompt": "/home/user/drift-wt/relabel4/eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/prompts/label/B/lotus.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/outbox/c92d14da-8c31-4d69-817c-1d89ad6bd598/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/workdirs/3ddb9de4-0409-45df-ab26-e9c8da42f9b6",
+    "checkout_status": [],
+    "expected": [
+      "lotus/D-26d6a0",
+      "lotus/D-1cbdac"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T12:00:08.123Z",
+    "rejected": [
+      {
+        "at": "2026-11-07T12:01:47.922Z",
+        "problems": [
+          "out.jsonl:1: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: backend/pyproject.toml (a config file)",
+          "out.jsonl:2: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: backend/pyproject.toml (a config file)"
+        ]
+      },
+      {
+        "at": "2026-11-07T12:01:54.563Z",
+        "problems": [
+          "out.jsonl:1: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: backend/pyproject.toml (a config file)",
+          "out.jsonl:2: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: backend/pyproject.toml (a config file)"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-07T12:02:39.768Z",
+      "dest": "eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/labels/B/lotus.jsonl",
+      "records": 2,
+      "sha256": "86b2383625047515a2490f6786e45506b939675d05f37c4f36e22a5db8e195f0"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "open-wearables",
+    "prompt": "/home/user/drift-wt/relabel4/eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/prompts/label/B/open-wearables.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/outbox/45fb70d1-d325-491c-80d1-0a4d04b519e8/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/workdirs/2bda3667-cb01-4f47-b285-3fe3b275f826",
+    "checkout_status": [],
+    "expected": [
+      "open-wearables/D-6606a8"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T12:00:08.363Z",
+    "collected": {
+      "at": "2026-11-07T12:01:47.992Z",
+      "dest": "eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/labels/B/open-wearables.jsonl",
+      "records": 1,
+      "sha256": "d12409966f33ad4d7e199a772661feb2dcfcf23d8bb4a527f5f8dfad5b9278f3"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "wger",
+    "prompt": "/home/user/drift-wt/relabel4/eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/prompts/adjudicate/C/wger.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/outbox/3448925f-9e67-4652-b2ff-e470d315be8d/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/workdirs/bd7fad9b-7fea-45dc-b640-4236124ffc97",
+    "checkout_status": [],
+    "expected": [
+      "wger/D-db04dc"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T12:03:09.635Z",
+    "collected": {
+      "at": "2026-11-07T12:04:37.768Z",
+      "dest": "eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/labels/C/wger.jsonl",
+      "records": 1,
+      "sha256": "7af69b2b80d2f5c9500d3822e721a8d3a04c8c977054da90b25605b2bcd71e10"
+    }
+  }
+]

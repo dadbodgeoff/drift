@@ -1,0 +1,8 @@
+{
+  "name": "@beacon/app",
+  "private": true,
+  "main": "index.ts",
+  "dependencies": {
+    "@beacon/core": "*"
+  }
+}

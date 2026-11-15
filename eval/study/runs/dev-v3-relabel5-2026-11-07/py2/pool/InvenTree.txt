@@ -1,0 +1,108 @@
+12 conventions from 4524 units in 245 roles (0 default tier, 12 suggestions)
+
+12 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-7c0991] serializers in src/** (serializers files) are named `*Serializer`
+    evidence: 199/200 (lower bound 0.97, lift 4.8)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 40% of 15)
+    example:  src/backend/InvenTree/InvenTree/serializers.py#DuplicateOptionsSerializer
+    outlier:  src/backend/InvenTree/part/serializers.py:259 PartThumbSerializerUpdate
+
+ 2. [D-c2b101] admin classes in src/** (admin files) are named `*Admin`
+    evidence: 58/58 (lower bound 0.94, lift 17.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 40% of 15)
+    example:  src/backend/InvenTree/audit/admin.py#AuditLogEntryAdmin
+
+ 3. [D-095ebc] src/frontend: functions in src/components/tables/** declare their return type
+    evidence: 69/70 (lower bound 0.92, lift 2.5)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  src/frontend/src/components/tables/AppRowActions.tsx#AppRowViewAction
+    outlier:  src/frontend/src/components/tables/Filter.tsx:29 filterDisplayValue
+
+ 4. [D-90cbee] model classes in src/** (models files) call utils.translation.gettext_lazy()
+    evidence: 67/68 (lower bound 0.92, lift 3.4)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 44% of 9)
+    example:  src/backend/InvenTree/common/models.py#Attachment
+    outlier:  src/backend/InvenTree/users/models.py:502 Owner
+
+ 5. [D-b24fe0] src/frontend: components in src/tables/** call useTable() before useCallback()
+    evidence: 49/50 (lower bound 0.90, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable
+    outlier:  src/frontend/src/tables/settings/UserTable.tsx:63 UserDrawer
+
+ 6. [D-16c1ac] src/frontend: components in src/components/render/** declare their return type
+    evidence: 43/44 (lower bound 0.88, lift 3.8)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  src/frontend/src/components/render/Build.tsx#RenderBuildItem
+    outlier:  src/frontend/src/components/render/ModelHoverCard.tsx:23 ModelHoverCard
+
+ 7. [D-71f3ec] src/frontend: components in src/tables/** call useTable() before useState()
+    evidence: 48/50 (lower bound 0.86, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  src/frontend/src/tables/bom/BomTable.tsx#BomTable
+    outlier:  src/frontend/src/tables/part/PartThumbTable.tsx:133 PartThumbTable
+    outlier:  src/frontend/src/tables/settings/ApiTokenTable.tsx:36 ApiTokenTable
+
+ 8. [D-100344] admin classes in src/** (admin files) are decorated with contrib.admin.register()
+    evidence: 55/58 (lower bound 0.86, lift 19.7)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 50% of 6)
+    example:  src/backend/InvenTree/audit/admin.py#AuditLogEntryAdmin
+    outlier:  src/backend/InvenTree/common/admin.py:222 ReadOnlyAdmin
+    outlier:  src/backend/InvenTree/plugin/admin.py:54 PluginConfigAdmin
+    outlier:  src/backend/InvenTree/users/admin.py:130 InvenTreeUserAdmin
+
+ 9. [D-7e788c] src/frontend: components in src/tables/** call useMemo() before apiUrl()
+    evidence: 61/65 (lower bound 0.85, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable
+    outlier:  src/frontend/src/tables/general/AuditLogTable.tsx:459 AuditLogTable
+    outlier:  src/frontend/src/tables/general/ParametricDataTable.tsx:145 ParametricDataTable
+    outlier:  src/frontend/src/tables/part/PartThumbTable.tsx:133 PartThumbTable
+    ... 1 more outliers
+
+10. [D-455913] src/frontend: components in src/tables/** are named `*Table`, except a companion (a helper or constant beside the members that follow it)
+    evidence: 76/82 (lower bound 0.85, lift 5.0)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  src/frontend/src/tables/bom/BomTable.tsx#BomTable
+    outlier:  src/frontend/src/tables/general/ParametricDataTableFilters.tsx:200 ParameterFilter
+    outlier:  src/frontend/src/tables/settings/GroupTable.tsx:39 GroupDrawer
+    outlier:  src/frontend/src/tables/settings/SelectionListDrawer.tsx:147 SelectionListDrawer
+    ... 3 more outliers
+    exempt:   src/frontend/src/tables/purchasing/SupplierPriceBreakTable.tsx:41 SupplierPriceBreakColumns (a helper of SupplierPriceBreakTable, which uses it in its file)
+
+11. [D-9838a4] src/frontend: components in src/tables/** call useTable() before apiUrl()
+    evidence: 60/65 (lower bound 0.83, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable
+    outlier:  src/frontend/src/tables/notifications/NotificationTable.tsx:11 NotificationTable
+    outlier:  src/frontend/src/tables/part/PartThumbTable.tsx:133 PartThumbTable
+    outlier:  src/frontend/src/tables/settings/SnippetTable.tsx:49 SnippetDrawer
+    ... 2 more outliers
+
+12. [D-b5f2f2] classes in src/backend/InvenTree/plugin/** extend InvenTreePlugin, except 2 classes (named for a base of another kind)
+    evidence: 47/51 (lower bound 0.81, lift 21.5)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 33% of 9)
+    example:  src/backend/InvenTree/plugin/broken/bad_actor.py#BadActorPlugin
+    outlier:  src/backend/InvenTree/plugin/base/integration/NotificationMixin.py:18 SettingsKeyType
+    outlier:  src/backend/InvenTree/plugin/base/integration/SettingsMixin.py:23 SettingsKeyType
+    outlier:  src/backend/InvenTree/plugin/base/integration/SettingsMixin.py:20 User
+    ... 1 more outliers
+    exempt:   src/backend/InvenTree/plugin/samples/machines/sample_printer.py:19 SamplePrinterDriver (a driver, named for its base LabelPrinterBaseDriver)
+    exempt:   src/backend/InvenTree/plugin/template.py:8 PluginTemplateLoader (a loader, named for its base template.loaders.filesystem.Loader)
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

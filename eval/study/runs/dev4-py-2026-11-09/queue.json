@@ -1,0 +1,111 @@
+{
+  "run": "eval/study/runs/dev4-py-2026-11-09",
+  "items": [
+    {
+      "uid": "P04/D-9de24d",
+      "repo": "P04",
+      "id": "D-9de24d",
+      "rank": 1,
+      "summary": "forms in lfs/** (forms files) are named `*Form`",
+      "role": {
+        "package": "",
+        "dir": "lfs",
+        "file": "forms",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "form"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Form"
+      },
+      "evidence": {
+        "holders": 58,
+        "total": 58,
+        "lower_bound": 0.94,
+        "lift": 6.2
+      },
+      "members": 58,
+      "example": "lfs/addresses/forms.py#AddressBaseForm",
+      "python_members": 58,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 1. [D-9de24d] forms in lfs/** (forms files) are named `*Form`\n    evidence: 58/58 (lower bound 0.94, lift 6.2)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  lfs/addresses/forms.py#AddressBaseForm",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "P11/D-5199d3",
+      "repo": "P11",
+      "id": "D-5199d3",
+      "rank": 1,
+      "summary": "exceptions in jesse/services/** are named `*Error`",
+      "role": {
+        "package": "",
+        "dir": "jesse/services",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "exception"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Error"
+      },
+      "evidence": {
+        "holders": 30,
+        "total": 31,
+        "lower_bound": 0.84,
+        "lift": 12.7
+      },
+      "members": 31,
+      "example": "jesse/services/auth.py#InvalidAuthError",
+      "python_members": 31,
+      "outliers": 1,
+      "outlier_files": [
+        "jesse/services/historical_data/errors.py"
+      ],
+      "block": " 1. [D-5199d3] exceptions in jesse/services/** are named `*Error`\n    evidence: 30/31 (lower bound 0.84, lift 12.7)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  jesse/services/auth.py#InvalidAuthError\n    outlier:  jesse/services/historical_data/errors.py:76 HistoricalDataImportCancelled",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "P13/D-190e4e",
+      "repo": "P13",
+      "id": "D-190e4e",
+      "rank": 1,
+      "summary": "dataclasses in rio/components/** are named `*Event`",
+      "role": {
+        "package": "",
+        "dir": "rio/components",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "variety": "dataclass"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Event"
+      },
+      "evidence": {
+        "holders": 30,
+        "total": 31,
+        "lower_bound": 0.84,
+        "lift": 11.1
+      },
+      "members": 31,
+      "example": "rio/components/calendar.py#DateChangeEvent",
+      "python_members": 31,
+      "outliers": 1,
+      "outlier_files": [
+        "rio/components/tabs.py"
+      ],
+      "block": " 1. [D-190e4e] dataclasses in rio/components/** are named `*Event`\n    evidence: 30/31 (lower bound 0.84, lift 11.1)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  rio/components/calendar.py#DateChangeEvent\n    outlier:  rio/components/tabs.py:11 TabItem",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    }
+  ]
+}

@@ -1,0 +1,1301 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - SettingsPage
+  - constants
+  - copySecrets
+  - enums
+  - layout
+  - mutation
+  - mutations
+  - queries
+  - route
+  - route-agent-vault
+  - route-cert-manager
+  - route-kms
+  - route-pam
+  - route-secret-manager
+  - route-secret-scanning
+  - schemas
+  - types
+  - utils
+  suffixes:
+  - config
+  - spec
+  - stories
+  - test
+  - types
+  - utils
+conventions:
+- id: D-6e757d
+  status: proposed
+  mode: advise
+  summary: >-
+    files in frontend/** use lucide-react for icons, not
+    react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react
+  role:
+    package: frontend
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: prefers_library
+    group: icons
+    preferred: lucide-react
+  evidence:
+    holders: 1121
+    total: 1131
+    lower_bound: 0.984
+    lift: 1.0
+    split:
+    - - lucide-react
+      - 1125
+    - - react-icons
+      - 10
+  example: frontend/src/components/agent-vault/AccessBundleMemberRow.tsx#(file)
+- id: D-06334f
+  status: proposed
+  mode: advise
+  summary: "frontend: functions in src/** (mutations files) pass `mutationFn` to useMutation()"
+  role:
+    package: frontend
+    dir: src
+    file: mutations
+    entry: '-'
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:@tanstack/react-query#useMutation
+    index: 0
+    key: mutationFn
+  evidence:
+    holders: 477
+    total: 481
+    lower_bound: 0.979
+    lift: 14.747
+  example: >-
+    frontend/src/hooks/api/agentVault/mutations.tsx#useAddAgentVaultAccessBundleMembers
+- id: D-433226
+  status: proposed
+  mode: advise
+  summary: "backend: functions in src/db/** declare their return type"
+  role:
+    package: backend
+    dir: src/db
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 1223
+    total: 1268
+    lower_bound: 0.953
+    lift: 2.946
+  example: backend/src/db/migrations/20231128072457_user.ts#down
+- id: D-e309b7
+  status: proposed
+  mode: advise
+  summary: "frontend: functions in src/hooks/api/appConnections/** (queries files) call useQuery() before apiRequest.get()"
+  role:
+    package: frontend
+    dir: src/hooks/api/appConnections
+    file: queries
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: pkg:@tanstack/react-query#useQuery
+    then: pkg:@app/config/request#apiRequest.get
+  evidence:
+    holders: 112
+    total: 113
+    lower_bound: 0.952
+    lift: 1.0
+  example: >-
+    frontend/src/hooks/api/appConnections/1password/queries.tsx#useOnePassConnectionListVaults
+- id: D-7fa4fe
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/pages/secret-manager/integrations/** are named `*Page`"
+  role:
+    package: frontend
+    dir: src/pages/secret-manager/integrations
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: named
+    pattern: "*Page"
+  evidence:
+    holders: 75
+    total: 76
+    lower_bound: 0.929
+    lift: 11.417
+  example: >-
+    frontend/src/pages/secret-manager/integrations/AwsParameterStoreAuthorizePage/AwsParameterStoreAuthorizePage.tsx#AWSParameterStoreAuthorizeIntegrationPage
+- id: D-07a62f
+  status: proposed
+  mode: advise
+  summary: "frontend: functions in src/** (mutation files) pass `mutationFn` to useMutation()"
+  role:
+    package: frontend
+    dir: src
+    file: mutation
+    entry: '-'
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:@tanstack/react-query#useMutation
+    index: 0
+    key: mutationFn
+  evidence:
+    holders: 94
+    total: 96
+    lower_bound: 0.927
+    lift: 14.561
+  example: frontend/src/hooks/api/accessApproval/mutation.tsx#useCancelAccessRequest
+- id: D-fe4da6
+  status: proposed
+  mode: advise
+  summary: "frontend: functions in src/hooks/api/appConnections/** (queries files) pass `queryFn` to useQuery()"
+  role:
+    package: frontend
+    dir: src/hooks/api/appConnections
+    file: queries
+    entry: '-'
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:@tanstack/react-query#useQuery
+    index: 0
+    key: queryFn
+  evidence:
+    holders: 114
+    total: 117
+    lower_bound: 0.927
+    lift: 17.033
+  example: >-
+    frontend/src/hooks/api/appConnections/1password/queries.tsx#useOnePassConnectionListVaults
+- id: D-259bd1
+  status: proposed
+  mode: advise
+  summary: "backend: HTTP handlers in src/** are wrapped in verifyAuth() or passport.authenticate() or withOAuthTokenErrorAsBadRequest()"
+  role:
+    package: backend
+    dir: src
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - backend/src/server/plugins/auth/verify-auth.ts#verifyAuth
+    - backend/src/server/routes/v1/sso-router.ts#passport.authenticate
+    - backend/src/server/routes/v1/sso-router.ts#withOAuthTokenErrorAsBadRequest
+  evidence:
+    holders: 1582
+    total: 1702
+    lower_bound: 0.916
+    lift: 5.618
+    split:
+    - - backend/src/server/plugins/auth/verify-auth.ts#verifyAuth
+      - 1576
+    - - backend/src/server/routes/v1/sso-router.ts#passport.authenticate
+      - 3
+    - - backend/src/server/routes/v1/sso-router.ts#withOAuthTokenErrorAsBadRequest
+      - 3
+  example: backend/src/ee/routes/scep/pki-scep-router.ts#POST /:profileId/challenge
+- id: D-defa54
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/components/secret-syncs/forms/** call useFormContext()"
+  role:
+    package: frontend
+    dir: src/components/secret-syncs/forms
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: calls
+    callee: pkg:react-hook-form#useFormContext
+  evidence:
+    holders: 130
+    total: 135
+    lower_bound: 0.916
+    lift: 7.71
+  example: >-
+    frontend/src/components/secret-syncs/forms/AzureEntraIdScimSyncSourceFields.tsx#AzureEntraIdScimSyncSourceFields
+- id: D-7f0c51
+  status: proposed
+  mode: advise
+  summary: "frontend: functions in src/hooks/api/appConnections/** (queries files) call apiRequest.get()"
+  role:
+    package: frontend
+    dir: src/hooks/api/appConnections
+    file: queries
+    entry: '-'
+    kind: function
+  rule:
+    type: calls
+    callee: pkg:@app/config#apiRequest.get
+  evidence:
+    holders: 113
+    total: 117
+    lower_bound: 0.915
+    lift: 18.924
+  example: >-
+    frontend/src/hooks/api/appConnections/1password/queries.tsx#useOnePassConnectionListVaults
+- id: D-c03369
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/pages/secret-manager/integrations/** call useProject()"
+  role:
+    package: frontend
+    dir: src/pages/secret-manager/integrations
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: calls
+    callee: pkg:@app/context#useProject
+  evidence:
+    holders: 74
+    total: 76
+    lower_bound: 0.909
+    lift: 7.674
+  example: >-
+    frontend/src/pages/secret-manager/integrations/AwsParameterStoreAuthorizePage/AwsParameterStoreAuthorizePage.tsx#AWSParameterStoreAuthorizeIntegrationPage
+- id: D-156a6f
+  status: proposed
+  mode: advise
+  summary: "backend: functions in src/server/routes/** are named `register*`"
+  role:
+    package: backend
+    dir: src/server/routes
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: register*
+  evidence:
+    holders: 327
+    total: 349
+    lower_bound: 0.906
+    lift: 18.862
+  example: backend/src/server/routes/bdd/bdd-nock-router.dev.ts#registerBddNockRouter
+- id: D-6329f1
+  status: proposed
+  mode: advise
+  summary: "frontend: exported values in src/components/secret-syncs/** are named `*Schema`"
+  role:
+    package: frontend
+    dir: src/components/secret-syncs
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Schema"
+  evidence:
+    holders: 54
+    total: 55
+    lower_bound: 0.904
+    lift: 2.644
+  example: >-
+    frontend/src/components/secret-syncs/forms/schemas/1password-sync-destination-schema.ts#OnePassSyncDestinationSchema
+- id: D-34dd19
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/pages/secret-manager/SecretSyncDetailsByIDPage/** are named `*Section`"
+  role:
+    package: frontend
+    dir: src/pages/secret-manager/SecretSyncDetailsByIDPage
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: named
+    pattern: "*Section"
+  evidence:
+    holders: 66
+    total: 68
+    lower_bound: 0.899
+    lift: 10.199
+  example: >-
+    frontend/src/pages/secret-manager/SecretSyncDetailsByIDPage/components/AzureEntraIdScimSyncSourceSection.tsx#AzureEntraIdScimSyncSourceSection
+- id: D-536c03
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/components/secret-syncs/forms/** are named `*Fields`"
+  role:
+    package: frontend
+    dir: src/components/secret-syncs/forms
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: named
+    pattern: "*Fields"
+  evidence:
+    holders: 128
+    total: 135
+    lower_bound: 0.897
+    lift: 7.944
+  example: >-
+    frontend/src/components/secret-syncs/forms/AzureEntraIdScimSyncSourceFields.tsx#AzureEntraIdScimSyncSourceFields
+- id: D-2afa40
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/pages/secret-manager/integrations/** call useOrganization()"
+  role:
+    package: frontend
+    dir: src/pages/secret-manager/integrations
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: calls
+    callee: pkg:@app/context#useOrganization
+  evidence:
+    holders: 73
+    total: 76
+    lower_bound: 0.89
+    lift: 7.275
+  example: >-
+    frontend/src/pages/secret-manager/integrations/AwsParameterStoreAuthorizePage/AwsParameterStoreAuthorizePage.tsx#AWSParameterStoreAuthorizeIntegrationPage
+- id: D-4be5e9
+  status: proposed
+  mode: advise
+  summary: "backend: functions in src/ee/routes/** are named `register*`"
+  role:
+    package: backend
+    dir: src/ee/routes
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: register*
+  evidence:
+    holders: 140
+    total: 150
+    lower_bound: 0.882
+    lift: 18.788
+  example: backend/src/ee/routes/est/certificate-est-router.ts#registerCertificateEstRouter
+- id: D-d120f6
+  status: proposed
+  mode: advise
+  summary: "backend: components in src/** render <Section>"
+  role:
+    package: backend
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: pkg:@react-email/components#Section
+  evidence:
+    holders: 55
+    total: 57
+    lower_bound: 0.881
+    lift: 44.246
+  example: >-
+    backend/src/services/smtp/emails/AccessApprovalRequestTemplate.tsx#AccessApprovalRequestTemplate
+- id: D-8ce72f
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/components/secret-syncs/forms/SecretSyncDestinationFields/** render <FieldGroup>"
+  role:
+    package: frontend
+    dir: src/components/secret-syncs/forms/SecretSyncDestinationFields
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: pkg:@app/components#FieldGroup
+  evidence:
+    holders: 52
+    total: 54
+    lower_bound: 0.875
+    lift: 17.857
+  example: >-
+    frontend/src/components/secret-syncs/forms/SecretSyncDestinationFields/1PasswordSyncFields.tsx#OnePassSyncFields
+- id: D-d9b44e
+  status: proposed
+  mode: advise
+  summary: "backend: functions in src/server/routes/v1/secret-sync-routers/** pass `createSchema` to registerSyncSecretsEndpoints()"
+  role:
+    package: backend
+    dir: src/server/routes/v1/secret-sync-routers
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: passes_key
+    callee: >-
+      backend/src/server/routes/v1/secret-sync-routers/secret-sync-endpoints.ts#registerSyncSecretsEndpoints
+    index: 0
+    key: createSchema
+  evidence:
+    holders: 50
+    total: 52
+    lower_bound: 0.87
+    lift: 176.812
+  example: >-
+    backend/src/server/routes/v1/secret-sync-routers/1password-sync-router.ts#registerOnePassSyncRouter
+- id: D-151831
+  status: proposed
+  mode: advise
+  summary: "frontend: functions in src/** (mutations files) call useQueryClient() before useMutation()"
+  role:
+    package: frontend
+    dir: src
+    file: mutations
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: pkg:@tanstack/react-query#useQueryClient
+    then: pkg:@tanstack/react-query#useMutation
+  evidence:
+    holders: 428
+    total: 477
+    lower_bound: 0.867
+    lift: 1.0
+  example: >-
+    frontend/src/hooks/api/agentVault/mutations.tsx#useAddAgentVaultAccessBundleMembers
+- id: D-6034c7
+  status: proposed
+  mode: advise
+  summary: "frontend: functions in src/** (mutations files) pass `onSuccess` to useMutation()"
+  role:
+    package: frontend
+    dir: src
+    file: mutations
+    entry: '-'
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:@tanstack/react-query#useMutation
+    index: 0
+    key: onSuccess
+  evidence:
+    holders: 430
+    total: 481
+    lower_bound: 0.863
+    lift: 15.076
+  example: >-
+    frontend/src/hooks/api/agentVault/mutations.tsx#useAddAgentVaultAccessBundleMembers
+- id: D-d7b5b7
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/pages/secret-manager/SecretSyncDetailsByIDPage/** render <Detail>"
+  role:
+    package: frontend
+    dir: src/pages/secret-manager/SecretSyncDetailsByIDPage
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: pkg:@app/components#Detail
+  evidence:
+    holders: 64
+    total: 68
+    lower_bound: 0.858
+    lift: 12.299
+  example: >-
+    frontend/src/pages/secret-manager/SecretSyncDetailsByIDPage/components/AzureEntraIdScimSyncSourceSection.tsx#AzureEntraIdScimSyncSourceSection
+- id: D-34f463
+  status: proposed
+  mode: advise
+  summary: "backend: components in src/** render <BaseEmailWrapper>"
+  role:
+    package: backend
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: backend/src/services/smtp/emails/BaseEmailWrapper.tsx#BaseEmailWrapper
+  evidence:
+    holders: 54
+    total: 57
+    lower_bound: 0.856
+    lift: 44.246
+  example: >-
+    backend/src/services/smtp/emails/AccessApprovalRequestTemplate.tsx#AccessApprovalRequestTemplate
+- id: D-9d3025
+  status: proposed
+  mode: advise
+  summary: "frontend: exported values in src/components/secret-syncs/** pass `destination` to z.object()"
+  role:
+    package: frontend
+    dir: src/components/secret-syncs
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: passes_key
+    callee: pkg:zod#z.object
+    index: 0
+    key: destination
+  evidence:
+    holders: 52
+    total: 55
+    lower_bound: 0.851
+    lift: 36.055
+  example: >-
+    frontend/src/components/secret-syncs/forms/schemas/1password-sync-destination-schema.ts#OnePassSyncDestinationSchema
+- id: D-91b6f1
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/components/secret-syncs/forms/SecretSyncDestinationFields/** render <Field>"
+  role:
+    package: frontend
+    dir: src/components/secret-syncs/forms/SecretSyncDestinationFields
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: pkg:@app/components#Field
+  evidence:
+    holders: 51
+    total: 54
+    lower_bound: 0.849
+    lift: 3.593
+  example: >-
+    frontend/src/components/secret-syncs/forms/SecretSyncDestinationFields/1PasswordSyncFields.tsx#OnePassSyncFields
+- id: D-b8da90
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/components/secret-syncs/forms/SecretSyncDestinationFields/** render inside <FieldGroup>"
+  role:
+    package: frontend
+    dir: src/components/secret-syncs/forms/SecretSyncDestinationFields
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: wrapped_by
+    kind: jsx
+    any_of:
+    - pkg:@app/components#FieldGroup
+  evidence:
+    holders: 51
+    total: 54
+    lower_bound: 0.849
+    lift: 37.217
+  example: >-
+    frontend/src/components/secret-syncs/forms/SecretSyncDestinationFields/1PasswordSyncFields.tsx#OnePassSyncFields
+- id: D-9c7d99
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/components/secret-rotations-v2/forms/** call useFormContext()"
+  role:
+    package: frontend
+    dir: src/components/secret-rotations-v2/forms
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: calls
+    callee: pkg:react-hook-form#useFormContext
+  evidence:
+    holders: 89
+    total: 97
+    lower_bound: 0.846
+    lift: 7.346
+  example: >-
+    frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ConfigurationFields.tsx#SecretRotationV2ConfigurationFields
+- id: D-1e9bb3
+  status: proposed
+  mode: advise
+  summary: "backend: HTTP handlers in src/server/routes/v2/** are wrapped in verifyAuth()"
+  role:
+    package: backend
+    dir: src/server/routes/v2
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - backend/src/server/plugins/auth/verify-auth.ts#verifyAuth
+  evidence:
+    holders: 88
+    total: 96
+    lower_bound: 0.844
+    lift: 5.562
+  example: backend/src/server/routes/v2/certificate-authority-router.ts#GET /
+- id: D-ac8f81
+  status: proposed
+  mode: advise
+  summary: "frontend: exported values in src/hooks/api/appConnections/** are named `*Method`"
+  role:
+    package: frontend
+    dir: src/hooks/api/appConnections
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Method"
+  evidence:
+    holders: 95
+    total: 104
+    lower_bound: 0.844
+    lift: 22.612
+  example: >-
+    frontend/src/hooks/api/appConnections/types/1password-connection.ts#OnePassConnectionMethod
+- id: D-b74384
+  status: proposed
+  mode: advise
+  summary: "frontend: functions in src/hooks/api/identities/** (mutations files) call organizationKeys.getOrgIdentityMemberships() before identitiesKeys.getIdentityById()"
+  role:
+    package: frontend
+    dir: src/hooks/api/identities
+    file: mutations
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: >-
+      frontend/src/hooks/api/organization/queries.tsx#organizationKeys.getOrgIdentityMemberships
+    then: frontend/src/hooks/api/identities/queries.tsx#identitiesKeys.getIdentityById
+  evidence:
+    holders: 39
+    total: 41
+    lower_bound: 0.839
+    lift: 1.0
+  example: frontend/src/hooks/api/identities/mutations.tsx#useAddIdentityAliCloudAuth
+- id: D-055c32
+  status: proposed
+  mode: advise
+  summary: "backend: components in src/** render inside <BaseEmailWrapper>"
+  role:
+    package: backend
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: wrapped_by
+    kind: jsx
+    any_of:
+    - backend/src/services/smtp/emails/BaseEmailWrapper.tsx#BaseEmailWrapper
+  evidence:
+    holders: 53
+    total: 57
+    lower_bound: 0.833
+    lift: 44.246
+  example: >-
+    backend/src/services/smtp/emails/AccessApprovalRequestTemplate.tsx#AccessApprovalRequestTemplate
+- id: D-3026de
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/components/secret-rotations-v2/forms/** are named `*Fields`"
+  role:
+    package: frontend
+    dir: src/components/secret-rotations-v2/forms
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: named
+    pattern: "*Fields"
+  evidence:
+    holders: 88
+    total: 97
+    lower_bound: 0.833
+    lift: 7.601
+  example: >-
+    frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ConfigurationFields.tsx#SecretRotationV2ConfigurationFields
+- id: D-48958f
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/pages/secret-manager/integrations/** render <PageTitle>"
+  role:
+    package: frontend
+    dir: src/pages/secret-manager/integrations
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: pkg:@app/components#PageTitle
+  evidence:
+    holders: 69
+    total: 76
+    lower_bound: 0.822
+    lift: 11.803
+  example: >-
+    frontend/src/pages/secret-manager/integrations/AwsParameterStoreAuthorizePage/AwsParameterStoreAuthorizePage.tsx#AWSParameterStoreAuthorizeIntegrationPage
+- id: D-272621
+  status: proposed
+  mode: advise
+  summary: "backend: functions in src/server/routes/v1/app-connection-routers/** pass `app` to registerAppConnectionEndpoints()"
+  role:
+    package: backend
+    dir: src/server/routes/v1/app-connection-routers
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: passes_key
+    callee: >-
+      backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts#registerAppConnectionEndpoints
+    index: 0
+    key: app
+  evidence:
+    holders: 92
+    total: 103
+    lower_bound: 0.819
+    lift: 89.903
+  example: >-
+    backend/src/server/routes/v1/app-connection-routers/1password-connection-router.ts#registerOnePassConnectionRouter
+- id: D-78b033
+  status: proposed
+  mode: advise
+  summary: "backend: exported values in src/ee/routes/** are named `*Schema`"
+  role:
+    package: backend
+    dir: src/ee/routes
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Schema"
+  evidence:
+    holders: 47
+    total: 51
+    lower_bound: 0.815
+    lift: 2.482
+  example: >-
+    backend/src/ee/routes/v1/agent-vault-routers/agent-vault-schemas.ts#AgentVaultActorRefSchema
+- id: D-8aac8d
+  status: proposed
+  mode: advise
+  summary: "frontend: exported values in src/pages/secret-manager/integrations/** (route files) pass `params` to linkOptions()"
+  role:
+    package: frontend
+    dir: src/pages/secret-manager/integrations
+    file: route
+    entry: '-'
+    kind: const
+  rule:
+    type: passes_key
+    callee: pkg:@tanstack/react-router#linkOptions
+    index: 0
+    key: params
+  evidence:
+    holders: 75
+    total: 84
+    lower_bound: 0.809
+    lift: 39.679
+  example: >-
+    frontend/src/pages/secret-manager/integrations/AwsParameterStoreAuthorizePage/route.tsx#Route
+- id: D-b14eaf
+  status: proposed
+  mode: advise
+  summary: "frontend: exported values in src/context/** (types files) are named `*Actions`"
+  role:
+    package: frontend
+    dir: src/context
+    file: types
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Actions"
+  evidence:
+    holders: 63
+    total: 70
+    lower_bound: 0.808
+    lift: 37.627
+  example: frontend/src/context/OrgPermissionContext/types.ts#OrgGatewayPermissionActions
+- id: D-c0b272
+  status: proposed
+  mode: advise
+  summary: "frontend: exported values in src/components/secret-syncs/** call z.string()"
+  role:
+    package: frontend
+    dir: src/components/secret-syncs
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: calls
+    callee: pkg:zod#z.string
+  evidence:
+    holders: 50
+    total: 55
+    lower_bound: 0.804
+    lift: 7.727
+  example: >-
+    frontend/src/components/secret-syncs/forms/schemas/1password-sync-destination-schema.ts#OnePassSyncDestinationSchema
+- id: D-970965
+  status: proposed
+  mode: advise
+  summary: "backend: functions in src/ee/routes/** are named `*Router`"
+  role:
+    package: backend
+    dir: src/ee/routes
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: "*Router"
+  evidence:
+    holders: 130
+    total: 150
+    lower_bound: 0.803
+    lift: 18.877
+  example: backend/src/ee/routes/est/certificate-est-router.ts#registerCertificateEstRouter
+- id: D-1b2542
+  status: proposed
+  mode: advise
+  summary: "backend: functions in src/ee/routes/v2/secret-rotation-v2-routers/** pass `createSchema` to registerSecretRotationEndpoints()"
+  role:
+    package: backend
+    dir: src/ee/routes/v2/secret-rotation-v2-routers
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: passes_key
+    callee: >-
+      backend/src/ee/routes/v2/secret-rotation-v2-routers/secret-rotation-v2-endpoints.ts#registerSecretRotationEndpoints
+    index: 0
+    key: createSchema
+  evidence:
+    holders: 30
+    total: 32
+    lower_bound: 0.799
+    lift: 298.813
+  example: >-
+    backend/src/ee/routes/v2/secret-rotation-v2-routers/auth0-client-secret-rotation-router.ts#registerAuth0ClientSecretRotationRouter
+- id: D-16b725
+  status: proposed
+  mode: advise
+  summary: "backend: HTTP handlers in src/ee/routes/v1/agent-vault-routers/** call actorContext()"
+  role:
+    package: backend
+    dir: src/ee/routes/v1/agent-vault-routers
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: calls
+    callee: >-
+      backend/src/ee/routes/v1/agent-vault-routers/agent-vault-router-fns.ts#actorContext
+  evidence:
+    holders: 64
+    total: 72
+    lower_bound: 0.796
+    lift: 114.859
+  example: >-
+    backend/src/ee/routes/v1/agent-vault-routers/agent-vault-access-bundle-router.ts#DELETE /:accessBundleId
+- id: D-1e30ba
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/pages/organization/AppConnections/** render <Tooltip>"
+  role:
+    package: frontend
+    dir: src/pages/organization/AppConnections
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: pkg:@app/components#Tooltip
+  evidence:
+    holders: 99
+    total: 114
+    lower_bound: 0.794
+    lift: 4.544
+  example: >-
+    frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/1PasswordConnectionForm.tsx#OnePassConnectionForm
+- id: D-35725a
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/pages/organization/AppConnections/** render <Field>"
+  role:
+    package: frontend
+    dir: src/pages/organization/AppConnections
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: pkg:@app/components#Field
+  evidence:
+    holders: 99
+    total: 114
+    lower_bound: 0.794
+    lift: 3.303
+  example: >-
+    frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/1PasswordConnectionForm.tsx#OnePassConnectionForm
+- id: D-8810b7
+  status: proposed
+  mode: advise
+  summary: "frontend: functions in src/pages/organization/BillingV2Page/** declare their return type"
+  role:
+    package: frontend
+    dir: src/pages/organization/BillingV2Page
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 35
+    total: 38
+    lower_bound: 0.792
+    lift: 2.813
+  example: >-
+    frontend/src/pages/organization/BillingV2Page/billing-v2-format.ts#billingV2ErrorCode
+- id: D-4da889
+  status: proposed
+  mode: advise
+  summary: "backend: functions in src/server/routes/v1/app-connection-routers/** call registerAppConnectionEndpoints() before verifyAuth()"
+  role:
+    package: backend
+    dir: src/server/routes/v1/app-connection-routers
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: >-
+      backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts#registerAppConnectionEndpoints
+    then: backend/src/server/plugins/auth/verify-auth.ts#verifyAuth
+  evidence:
+    holders: 64
+    total: 73
+    lower_bound: 0.782
+    lift: 1.0
+  example: >-
+    backend/src/server/routes/v1/app-connection-routers/1password-connection-router.ts#registerOnePassConnectionRouter
+- id: D-e78af7
+  status: proposed
+  mode: advise
+  summary: "frontend: exported values in src/** (queries files) are named `*Keys`"
+  role:
+    package: frontend
+    dir: src
+    file: queries
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Keys"
+  evidence:
+    holders: 87
+    total: 101
+    lower_bound: 0.781
+    lift: 50.642
+  example: frontend/src/hooks/api/accessApproval/queries.tsx#accessApprovalKeys
+- id: D-2bfc9e
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/components/secret-rotations-v2/forms/SecretRotationV2SecretsMappingFields/** render <Field>"
+  role:
+    package: frontend
+    dir: src/components/secret-rotations-v2/forms/SecretRotationV2SecretsMappingFields
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: pkg:@app/components#Field
+  evidence:
+    holders: 27
+    total: 29
+    lower_bound: 0.78
+    lift: 3.542
+  example: >-
+    frontend/src/components/secret-rotations-v2/forms/SecretRotationV2SecretsMappingFields/Auth0ClientSecretRotationSecretsMappingFields.tsx#Auth0ClientSecretRotationSecretsMappingFields
+- id: D-76ad8b
+  status: proposed
+  mode: advise
+  summary: "backend: exported values in src/services/app-connection/** are named `*Schema`"
+  role:
+    package: backend
+    dir: src/services/app-connection
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Schema"
+  evidence:
+    holders: 709
+    total: 878
+    lower_bound: 0.78
+    lift: 2.174
+  example: >-
+    backend/src/services/app-connection/1password/1password-connection-schemas.ts#CreateOnePassConnectionSchema
+- id: D-fd3f1a
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/components/secret-rotations-v2/forms/SecretRotationV2ReviewFields/** render <SecretRotationReviewSection>"
+  role:
+    package: frontend
+    dir: src/components/secret-rotations-v2/forms/SecretRotationV2ReviewFields
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: >-
+      frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ReviewFields/shared/SecretRotationReviewSection.tsx#SecretRotationReviewSection
+  evidence:
+    holders: 27
+    total: 29
+    lower_bound: 0.78
+    lift: 86.966
+  example: >-
+    frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ReviewFields/Auth0ClientSecretRotationReviewFields.tsx#Auth0ClientSecretRotationReviewFields
+- id: D-6df386
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/pages/organization/AppConnections/** render <Controller>"
+  role:
+    package: frontend
+    dir: src/pages/organization/AppConnections
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: pkg:react-hook-form#Controller
+  evidence:
+    holders: 97
+    total: 114
+    lower_bound: 0.774
+    lift: 4.072
+  example: >-
+    frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/1PasswordConnectionForm.tsx#OnePassConnectionForm
+- id: D-9d0e71
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/pages/organization/AppConnections/** are named `*Form`"
+  role:
+    package: frontend
+    dir: src/pages/organization/AppConnections
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: named
+    pattern: "*Form"
+  evidence:
+    holders: 97
+    total: 114
+    lower_bound: 0.774
+    lift: 11.663
+  example: >-
+    frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/1PasswordConnectionForm.tsx#OnePassConnectionForm
+- id: D-adfb06
+  status: proposed
+  mode: advise
+  summary: "backend: classes in src/ee/services/pki-acme/** extend AcmeError"
+  role:
+    package: backend
+    dir: src/ee/services/pki-acme
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - backend/src/ee/services/pki-acme/pki-acme-errors.ts#AcmeError
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 4.048
+  example: backend/src/ee/services/pki-acme/pki-acme-errors.ts#AcmeAccountDoesNotExistError
+- id: D-dfa77a
+  status: proposed
+  mode: advise
+  summary: "frontend: functions in src/hooks/api/identities/** (mutations files) call identitiesKeys.getIdentityById()"
+  role:
+    package: frontend
+    dir: src/hooks/api/identities
+    file: mutations
+    entry: '-'
+    kind: function
+  rule:
+    type: calls
+    callee: frontend/src/hooks/api/identities/queries.tsx#identitiesKeys.getIdentityById
+  evidence:
+    holders: 41
+    total: 46
+    lower_bound: 0.77
+    lift: 202.92
+  example: frontend/src/hooks/api/identities/mutations.tsx#useAddIdentityAliCloudAuth
+- id: D-2cfcc0
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/components/secret-rotations-v2/forms/SecretRotationV2ParametersFields/** render <Field>"
+  role:
+    package: frontend
+    dir: src/components/secret-rotations-v2/forms/SecretRotationV2ParametersFields
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: pkg:@app/components#Field
+  evidence:
+    holders: 30
+    total: 33
+    lower_bound: 0.764
+    lift: 3.458
+  example: >-
+    frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ParametersFields/Auth0ClientSecretRotationParametersFields.tsx#Auth0ClientSecretRotationParametersFields
+- id: D-7731c9
+  status: proposed
+  mode: advise
+  summary: "backend: HTTP handlers in src/server/routes/v3/** are wrapped in verifyAuth()"
+  role:
+    package: backend
+    dir: src/server/routes/v3
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - backend/src/server/plugins/auth/verify-auth.ts#verifyAuth
+  evidence:
+    holders: 44
+    total: 50
+    lower_bound: 0.762
+    lift: 5.339
+  example: >-
+    backend/src/server/routes/v3/deprecated-certificates-router.ts#PATCH
+    /:certificateId/config
+- id: D-efc697
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/pages/secret-manager/integrations/** render <CardFooter>"
+  role:
+    package: frontend
+    dir: src/pages/secret-manager/integrations
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: pkg:@app/components#CardFooter
+  evidence:
+    holders: 65
+    total: 76
+    lower_bound: 0.759
+    lift: 24.511
+  example: >-
+    frontend/src/pages/secret-manager/integrations/AwsParameterStoreAuthorizePage/AwsParameterStoreAuthorizePage.tsx#AWSParameterStoreAuthorizeIntegrationPage
+- id: D-2950ed
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/pages/organization/AppConnections/** render inside <FormProvider>"
+  role:
+    package: frontend
+    dir: src/pages/organization/AppConnections
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: wrapped_by
+    kind: jsx
+    any_of:
+    - pkg:react-hook-form#FormProvider
+  evidence:
+    holders: 95
+    total: 114
+    lower_bound: 0.754
+    lift: 18.436
+  example: >-
+    frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/1PasswordConnectionForm.tsx#OnePassConnectionForm
+- id: D-553e95
+  status: proposed
+  mode: advise
+  summary: "backend: functions in src/ee/services/pam-web-access/clickhouse/** declare their return type"
+  role:
+    package: backend
+    dir: src/ee/services/pam-web-access/clickhouse
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 2.893
+  example: >-
+    backend/src/ee/services/pam-web-access/clickhouse/pam-clickhouse-client.ts#clickhouseErrorFields
+- id: D-02365f
+  status: proposed
+  mode: advise
+  summary: "frontend: functions in src/components/dynamic-secrets/** declare their return type"
+  role:
+    package: frontend
+    dir: src/components/dynamic-secrets
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 121
+    total: 147
+    lower_bound: 0.753
+    lift: 2.514
+  example: >-
+    frontend/src/components/dynamic-secrets/DynamicSecretProviderForm/createSubmission.ts#submitDynamicSecretCreatePayloads
+- id: D-406431
+  status: proposed
+  mode: advise
+  summary: "frontend: functions in src/** (mutation files) call useQueryClient() before useMutation()"
+  role:
+    package: frontend
+    dir: src
+    file: mutation
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: pkg:@tanstack/react-query#useQueryClient
+    then: pkg:@tanstack/react-query#useMutation
+  evidence:
+    holders: 79
+    total: 94
+    lower_bound: 0.753
+    lift: 1.0
+  example: frontend/src/hooks/api/accessApproval/mutation.tsx#useCancelAccessRequest

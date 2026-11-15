@@ -1,0 +1,1107 @@
+{
+  "repos": 12,
+  "failed": [],
+  "packages": {
+    "total": 141,
+    "per_repo": {
+      "n": 12,
+      "mean": 11.75,
+      "median": 4.5,
+      "zero": 0,
+      "min": 1,
+      "max": 72
+    },
+    "by_kind": {
+      "ts": 49,
+      "py": 92
+    }
+  },
+  "root_default": {
+    "silent_root": {
+      "repos": 10,
+      "of": 12,
+      "rate": 0.8333333333333334
+    },
+    "shown_per_repo": {
+      "n": 12,
+      "mean": 0.3333333333333333,
+      "median": 0,
+      "zero": 10,
+      "min": 0,
+      "max": 2
+    },
+    "shown_per_package": {
+      "n": 141,
+      "mean": 0.028368794326241134,
+      "median": 0,
+      "zero": 137,
+      "min": 0,
+      "max": 1
+    },
+    "packages_with_shown": {
+      "packages": 4,
+      "of": 141
+    },
+    "by_tier": {
+      "default": 1,
+      "suggestion": 3
+    },
+    "by_language": {
+      "ts": 4
+    }
+  },
+  "root_python_opt_in": {
+    "silent_root": {
+      "repos": 10,
+      "of": 12,
+      "rate": 0.8333333333333334
+    },
+    "shown_per_repo": {
+      "n": 12,
+      "mean": 0.3333333333333333,
+      "median": 0,
+      "zero": 10,
+      "min": 0,
+      "max": 2
+    },
+    "shown_per_package": {
+      "n": 141,
+      "mean": 0.028368794326241134,
+      "median": 0,
+      "zero": 137,
+      "min": 0,
+      "max": 1
+    },
+    "packages_with_shown": {
+      "packages": 4,
+      "of": 141
+    },
+    "by_tier": {
+      "default": 1,
+      "suggestion": 3
+    },
+    "by_language": {
+      "ts": 4
+    }
+  },
+  "per_package_census": {
+    "//": "each package censused alone (--root <package>); Python packages: the larger of the default and opt-in views",
+    "shown_per_package": {
+      "n": 141,
+      "mean": 0.028368794326241134,
+      "median": 0,
+      "zero": 138,
+      "min": 0,
+      "max": 2
+    },
+    "packages_with_shown": {
+      "packages": 3,
+      "of": 141
+    },
+    "shown_per_repo": {
+      "n": 12,
+      "mean": 0.3333333333333333,
+      "median": 0,
+      "zero": 10,
+      "min": 0,
+      "max": 3
+    },
+    "failed_packages": 0
+  },
+  "map": {
+    "repos": 12,
+    "failed": [],
+    "validation": [
+      {
+        "name": "chunky",
+        "default": "33/33 roles, 474/474 units, 0/0 member counts",
+        "python_opt_in": "33/33 roles, 474/474 units, 0/0 member counts"
+      },
+      {
+        "name": "deepv-ki",
+        "default": "32/32 roles, 779/779 units, 0/0 member counts",
+        "python_opt_in": "32/32 roles, 779/779 units, 0/0 member counts"
+      },
+      {
+        "name": "designsystemet",
+        "default": "117/117 roles, 1516/1516 units, 2/2 member counts",
+        "python_opt_in": "117/117 roles, 1516/1516 units, 2/2 member counts"
+      },
+      {
+        "name": "doska",
+        "default": "113/113 roles, 1788/1788 units, 0/0 member counts",
+        "python_opt_in": "113/113 roles, 1788/1788 units, 0/0 member counts"
+      },
+      {
+        "name": "hyper-alpha-arena",
+        "default": "55/55 roles, 2721/2721 units, 0/0 member counts",
+        "python_opt_in": "55/55 roles, 2721/2721 units, 0/0 member counts"
+      },
+      {
+        "name": "laya",
+        "default": "80/80 roles, 1898/1898 units, 0/0 member counts",
+        "python_opt_in": "80/80 roles, 1898/1898 units, 0/0 member counts"
+      },
+      {
+        "name": "metascreener",
+        "default": "97/97 roles, 1911/1911 units, 0/0 member counts",
+        "python_opt_in": "97/97 roles, 1911/1911 units, 0/0 member counts"
+      },
+      {
+        "name": "monitorss",
+        "default": "228/228 roles, 3095/3095 units, 2/2 member counts",
+        "python_opt_in": "228/228 roles, 3095/3095 units, 2/2 member counts"
+      },
+      {
+        "name": "openmanus-rl",
+        "default": "55/55 roles, 1095/1095 units, 0/0 member counts",
+        "python_opt_in": "55/55 roles, 1095/1095 units, 0/0 member counts"
+      },
+      {
+        "name": "opentelemetry-python-contrib",
+        "default": "72/72 roles, 1226/1226 units, 0/0 member counts",
+        "python_opt_in": "72/72 roles, 1226/1226 units, 0/0 member counts"
+      },
+      {
+        "name": "promptflow",
+        "default": "213/213 roles, 3545/3545 units, 0/0 member counts",
+        "python_opt_in": "213/213 roles, 3545/3545 units, 0/0 member counts"
+      },
+      {
+        "name": "xiaokeai",
+        "default": "137/137 roles, 2618/2618 units, 0/0 member counts",
+        "python_opt_in": "137/137 roles, 2618/2618 units, 0/0 member counts"
+      }
+    ],
+    "pooled": {
+      "files_parsed": {
+        "files": 7861,
+        "of_files": 8097,
+        "loc": 1124571,
+        "of_loc": 1209566,
+        "files_rate": 0.9708534024947512,
+        "loc_rate": 0.929730994422793
+      },
+      "files_in_package": {
+        "files": 5676,
+        "of_files": 8097,
+        "loc": 798022,
+        "of_loc": 1209566,
+        "files_rate": 0.7010003705075954,
+        "loc_rate": 0.6597589548648027
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 5897,
+        "of_files": 8097,
+        "loc": 824596,
+        "of_loc": 1209566,
+        "files_rate": 0.7282944300358157,
+        "loc_rate": 0.6817288184357034
+      },
+      "files_in_role": {
+        "files": 4036,
+        "of_files": 8097,
+        "loc": 649722,
+        "of_loc": 1209566,
+        "files_rate": 0.4984562183524762,
+        "loc_rate": 0.5371529953718938
+      },
+      "files_in_any_role": {
+        "files": 5029,
+        "of_files": 8097,
+        "loc": 704972,
+        "of_loc": 1209566,
+        "files_rate": 0.6210942324317649,
+        "loc_rate": 0.5828305359112277
+      },
+      "files_under_mined": {
+        "files": 103,
+        "of_files": 8097,
+        "loc": 9461,
+        "of_loc": 1209566,
+        "files_rate": 0.0127207607755959,
+        "loc_rate": 0.007821813774527392
+      },
+      "files_under_shown": {
+        "files": 103,
+        "of_files": 8097,
+        "loc": 9461,
+        "of_loc": 1209566,
+        "files_rate": 0.0127207607755959,
+        "loc_rate": 0.007821813774527392
+      },
+      "files_under_mined_py": {
+        "files": 103,
+        "of_files": 8097,
+        "loc": 9461,
+        "of_loc": 1209566,
+        "files_rate": 0.0127207607755959,
+        "loc_rate": 0.007821813774527392
+      },
+      "files_under_shown_py": {
+        "files": 103,
+        "of_files": 8097,
+        "loc": 9461,
+        "of_loc": 1209566,
+        "files_rate": 0.0127207607755959,
+        "loc_rate": 0.007821813774527392
+      }
+    },
+    "per_repo": {
+      "files_parsed": {
+        "files_rate": {
+          "n": 12,
+          "mean": 0.9671543861707182,
+          "median": 0.9948568872987478,
+          "zero": 0,
+          "min": 0.7828571428571428,
+          "max": 1
+        },
+        "loc_rate": {
+          "n": 12,
+          "mean": 0.9404968155803175,
+          "median": 0.9952965107948355,
+          "zero": 0,
+          "min": 0.6855897435897436,
+          "max": 1
+        }
+      },
+      "files_in_package": {
+        "files_rate": {
+          "n": 12,
+          "mean": 0.5840808274643311,
+          "median": 0.6421077393554457,
+          "zero": 1,
+          "min": 0,
+          "max": 0.9970501474926253
+        },
+        "loc_rate": {
+          "n": 12,
+          "mean": 0.5738228139285798,
+          "median": 0.6360625903783503,
+          "zero": 1,
+          "min": 0,
+          "max": 0.998072487123582
+        }
+      },
+      "files_in_nonroot_drift_package": {
+        "files_rate": {
+          "n": 12,
+          "mean": 0.6000609365507562,
+          "median": 0.6512820512820512,
+          "zero": 1,
+          "min": 0,
+          "max": 1
+        },
+        "loc_rate": {
+          "n": 12,
+          "mean": 0.5926350110388046,
+          "median": 0.6388275398763094,
+          "zero": 1,
+          "min": 0,
+          "max": 1
+        }
+      },
+      "files_in_role": {
+        "files_rate": {
+          "n": 12,
+          "mean": 0.57641514407745,
+          "median": 0.6383046003935164,
+          "zero": 0,
+          "min": 0.060191518467852256,
+          "max": 0.8820058997050148
+        },
+        "loc_rate": {
+          "n": 12,
+          "mean": 0.6154109392179626,
+          "median": 0.5680833846794757,
+          "zero": 0,
+          "min": 0.062490253851267615,
+          "max": 0.942261509779758
+        }
+      },
+      "files_in_any_role": {
+        "files_rate": {
+          "n": 12,
+          "mean": 0.7021106072326809,
+          "median": 0.7644106539455376,
+          "zero": 0,
+          "min": 0.18331053351573187,
+          "max": 0.9941002949852508
+        },
+        "loc_rate": {
+          "n": 12,
+          "mean": 0.6623595309689662,
+          "median": 0.629544207377164,
+          "zero": 0,
+          "min": 0.13152171236755497,
+          "max": 0.9965873542515878
+        }
+      },
+      "files_under_mined": {
+        "files_rate": {
+          "n": 12,
+          "mean": 0.008585331642154009,
+          "median": 0,
+          "zero": 10,
+          "min": 0,
+          "max": 0.07622739018087855
+        },
+        "loc_rate": {
+          "n": 12,
+          "mean": 0.0057999037807126355,
+          "median": 0,
+          "zero": 10,
+          "min": 0,
+          "max": 0.0472460738525859
+        }
+      },
+      "files_under_shown": {
+        "files_rate": {
+          "n": 12,
+          "mean": 0.008585331642154009,
+          "median": 0,
+          "zero": 10,
+          "min": 0,
+          "max": 0.07622739018087855
+        },
+        "loc_rate": {
+          "n": 12,
+          "mean": 0.0057999037807126355,
+          "median": 0,
+          "zero": 10,
+          "min": 0,
+          "max": 0.0472460738525859
+        }
+      },
+      "files_under_mined_py": {
+        "files_rate": {
+          "n": 12,
+          "mean": 0.008585331642154009,
+          "median": 0,
+          "zero": 10,
+          "min": 0,
+          "max": 0.07622739018087855
+        },
+        "loc_rate": {
+          "n": 12,
+          "mean": 0.0057999037807126355,
+          "median": 0,
+          "zero": 10,
+          "min": 0,
+          "max": 0.0472460738525859
+        }
+      },
+      "files_under_shown_py": {
+        "files_rate": {
+          "n": 12,
+          "mean": 0.008585331642154009,
+          "median": 0,
+          "zero": 10,
+          "min": 0,
+          "max": 0.07622739018087855
+        },
+        "loc_rate": {
+          "n": 12,
+          "mean": 0.0057999037807126355,
+          "median": 0,
+          "zero": 10,
+          "min": 0,
+          "max": 0.0472460738525859
+        }
+      }
+    },
+    "imports": {
+      "resolved": 17051,
+      "unresolved": 5138,
+      "rate": 0.7684438235161567
+    },
+    "per_package": {
+      "packages": 141,
+      "in_role_files": {
+        "n": 137,
+        "mean": 0.2254832181694773,
+        "median": 0,
+        "zero": 81,
+        "min": 0,
+        "max": 1
+      },
+      "in_role_loc": {
+        "n": 137,
+        "mean": 0.23949156911342434,
+        "median": 0,
+        "zero": 81,
+        "min": 0,
+        "max": 1
+      },
+      "under_shown_files": {
+        "n": 137,
+        "mean": 0.005080703947662758,
+        "median": 0,
+        "zero": 133,
+        "min": 0,
+        "max": 0.5
+      },
+      "silent": {
+        "default": 137,
+        "python_opt_in": 137
+      }
+    },
+    "unmapped_by_class": {
+      "test": {
+        "files": 2270,
+        "loc": 373935,
+        "reasons": {
+          "test path (forms no role)": 2265,
+          "not parsed: generated": 2,
+          "not in the fact index (not scanned)": 3
+        }
+      },
+      "other": {
+        "files": 659,
+        "loc": 50924,
+        "reasons": {
+          "only base, abstract, view or type-variable classes": 28,
+          "no exported symbol": 213,
+          "largest role 1-3 members (< 8)": 85,
+          "largest role 4-7 members (< 8)": 68,
+          "demo or integration-suite code": 205,
+          "Python role within fewer than 3 files": 14,
+          "not parsed: generated": 43,
+          "not parsed: minified": 3
+        }
+      },
+      "index/__init__": {
+        "files": 313,
+        "loc": 24175,
+        "reasons": {
+          "no exported symbol": 235,
+          "largest role 4-7 members (< 8)": 13,
+          "largest role 1-3 members (< 8)": 54,
+          "Python role within fewer than 3 files": 2,
+          "not parsed: generated": 5,
+          "demo or integration-suite code": 4
+        }
+      },
+      "service": {
+        "files": 187,
+        "loc": 7615,
+        "reasons": {
+          "no exported symbol": 155,
+          "largest role 4-7 members (< 8)": 17,
+          "largest role 1-3 members (< 8)": 14,
+          "not parsed: generated": 1
+        }
+      },
+      "component": {
+        "files": 181,
+        "loc": 33572,
+        "reasons": {
+          "not in the fact index (not scanned)": 112,
+          "largest role 1-3 members (< 8)": 39,
+          "no exported symbol": 16,
+          "largest role 4-7 members (< 8)": 9,
+          "not parsed: minified": 2,
+          "demo or integration-suite code": 3
+        }
+      },
+      "config": {
+        "files": 127,
+        "loc": 15817,
+        "reasons": {
+          "largest role 1-3 members (< 8)": 50,
+          "largest role 4-7 members (< 8)": 11,
+          "no exported symbol": 28,
+          "Python role within fewer than 3 files": 4,
+          "not in the fact index (not scanned)": 31,
+          "demo or integration-suite code": 3
+        }
+      },
+      "script": {
+        "files": 86,
+        "loc": 6930,
+        "reasons": {
+          "no exported symbol": 51,
+          "largest role 4-7 members (< 8)": 12,
+          "largest role 1-3 members (< 8)": 4,
+          "not in the fact index (not scanned)": 1,
+          "only base, abstract, view or type-variable classes": 2,
+          "demo or integration-suite code": 14,
+          "Python role within fewer than 3 files": 2
+        }
+      },
+      "pydantic/dataclass model": {
+        "files": 73,
+        "loc": 9612,
+        "reasons": {
+          "only base, abstract, view or type-variable classes": 1,
+          "no exported symbol": 6,
+          "largest role 4-7 members (< 8)": 5,
+          "largest role 1-3 members (< 8)": 7,
+          "Python role within fewer than 3 files": 3,
+          "demo or integration-suite code": 51
+        }
+      },
+      "util": {
+        "files": 55,
+        "loc": 6161,
+        "reasons": {
+          "no exported symbol": 18,
+          "largest role 4-7 members (< 8)": 8,
+          "Python role within fewer than 3 files": 5,
+          "largest role 1-3 members (< 8)": 11,
+          "only base, abstract, view or type-variable classes": 1,
+          "demo or integration-suite code": 12
+        }
+      },
+      "router/dep": {
+        "files": 43,
+        "loc": 13997,
+        "reasons": {
+          "no exported symbol": 23,
+          "Python role within fewer than 3 files": 1,
+          "largest role 4-7 members (< 8)": 1,
+          "not in the fact index (not scanned)": 17,
+          "largest role 1-3 members (< 8)": 1
+        }
+      },
+      "route/page": {
+        "files": 35,
+        "loc": 11898,
+        "reasons": {
+          "largest role 1-3 members (< 8)": 12,
+          "not parsed: minified": 1,
+          "no exported symbol": 5,
+          "Python role within fewer than 3 files": 1,
+          "not in the fact index (not scanned)": 13,
+          "largest role 4-7 members (< 8)": 2,
+          "demo or integration-suite code": 1
+        }
+      },
+      "hook": {
+        "files": 17,
+        "loc": 301,
+        "reasons": {
+          "largest role 1-3 members (< 8)": 2,
+          "no exported symbol": 15
+        }
+      },
+      "ORM model": {
+        "files": 8,
+        "loc": 4218,
+        "reasons": {
+          "no exported symbol": 5,
+          "largest role 1-3 members (< 8)": 1,
+          "not parsed: generated": 2
+        }
+      },
+      "types": {
+        "files": 7,
+        "loc": 689,
+        "reasons": {
+          "no exported symbol": 6,
+          "largest role 1-3 members (< 8)": 1
+        }
+      }
+    },
+    "unmapped": [
+      {
+        "class": "test",
+        "why": "test path (forms no role)",
+        "files": 2265,
+        "loc": 373482,
+        "repos": 12
+      },
+      {
+        "class": "index/__init__",
+        "why": "no exported symbol",
+        "files": 235,
+        "loc": 2247,
+        "repos": 11
+      },
+      {
+        "class": "other",
+        "why": "no exported symbol",
+        "files": 213,
+        "loc": 6727,
+        "repos": 10
+      },
+      {
+        "class": "other",
+        "why": "demo or integration-suite code",
+        "files": 205,
+        "loc": 7595,
+        "repos": 4
+      },
+      {
+        "class": "service",
+        "why": "no exported symbol",
+        "files": 155,
+        "loc": 3786,
+        "repos": 3
+      },
+      {
+        "class": "component",
+        "why": "not in the fact index (not scanned)",
+        "files": 112,
+        "loc": 29184,
+        "repos": 4
+      },
+      {
+        "class": "other",
+        "why": "largest role 1-3 members (< 8)",
+        "files": 85,
+        "loc": 7365,
+        "repos": 7
+      },
+      {
+        "class": "other",
+        "why": "largest role 4-7 members (< 8)",
+        "files": 68,
+        "loc": 7567,
+        "repos": 7
+      },
+      {
+        "class": "index/__init__",
+        "why": "largest role 1-3 members (< 8)",
+        "files": 54,
+        "loc": 13701,
+        "repos": 7
+      },
+      {
+        "class": "script",
+        "why": "no exported symbol",
+        "files": 51,
+        "loc": 4830,
+        "repos": 8
+      },
+      {
+        "class": "pydantic/dataclass model",
+        "why": "demo or integration-suite code",
+        "files": 51,
+        "loc": 4499,
+        "repos": 1
+      },
+      {
+        "class": "config",
+        "why": "largest role 1-3 members (< 8)",
+        "files": 50,
+        "loc": 1728,
+        "repos": 10
+      },
+      {
+        "class": "other",
+        "why": "not parsed: generated",
+        "files": 43,
+        "loc": 16051,
+        "repos": 2
+      },
+      {
+        "class": "component",
+        "why": "largest role 1-3 members (< 8)",
+        "files": 39,
+        "loc": 2876,
+        "repos": 4
+      },
+      {
+        "class": "config",
+        "why": "not in the fact index (not scanned)",
+        "files": 31,
+        "loc": 12741,
+        "repos": 2
+      },
+      {
+        "class": "other",
+        "why": "only base, abstract, view or type-variable classes",
+        "files": 28,
+        "loc": 2997,
+        "repos": 6
+      },
+      {
+        "class": "config",
+        "why": "no exported symbol",
+        "files": 28,
+        "loc": 54,
+        "repos": 4
+      },
+      {
+        "class": "router/dep",
+        "why": "no exported symbol",
+        "files": 23,
+        "loc": 1855,
+        "repos": 7
+      },
+      {
+        "class": "util",
+        "why": "no exported symbol",
+        "files": 18,
+        "loc": 1953,
+        "repos": 7
+      },
+      {
+        "class": "router/dep",
+        "why": "not in the fact index (not scanned)",
+        "files": 17,
+        "loc": 11926,
+        "repos": 1
+      },
+      {
+        "class": "service",
+        "why": "largest role 4-7 members (< 8)",
+        "files": 17,
+        "loc": 1928,
+        "repos": 2
+      },
+      {
+        "class": "component",
+        "why": "no exported symbol",
+        "files": 16,
+        "loc": 483,
+        "repos": 6
+      },
+      {
+        "class": "hook",
+        "why": "no exported symbol",
+        "files": 15,
+        "loc": 137,
+        "repos": 3
+      },
+      {
+        "class": "other",
+        "why": "Python role within fewer than 3 files",
+        "files": 14,
+        "loc": 2616,
+        "repos": 4
+      },
+      {
+        "class": "service",
+        "why": "largest role 1-3 members (< 8)",
+        "files": 14,
+        "loc": 1509,
+        "repos": 1
+      },
+      {
+        "class": "script",
+        "why": "demo or integration-suite code",
+        "files": 14,
+        "loc": 314,
+        "repos": 1
+      },
+      {
+        "class": "index/__init__",
+        "why": "largest role 4-7 members (< 8)",
+        "files": 13,
+        "loc": 5474,
+        "repos": 3
+      },
+      {
+        "class": "route/page",
+        "why": "not in the fact index (not scanned)",
+        "files": 13,
+        "loc": 7540,
+        "repos": 1
+      },
+      {
+        "class": "script",
+        "why": "largest role 4-7 members (< 8)",
+        "files": 12,
+        "loc": 964,
+        "repos": 5
+      },
+      {
+        "class": "route/page",
+        "why": "largest role 1-3 members (< 8)",
+        "files": 12,
+        "loc": 745,
+        "repos": 3
+      },
+      {
+        "class": "util",
+        "why": "demo or integration-suite code",
+        "files": 12,
+        "loc": 758,
+        "repos": 1
+      },
+      {
+        "class": "config",
+        "why": "largest role 4-7 members (< 8)",
+        "files": 11,
+        "loc": 822,
+        "repos": 4
+      },
+      {
+        "class": "util",
+        "why": "largest role 1-3 members (< 8)",
+        "files": 11,
+        "loc": 1435,
+        "repos": 3
+      },
+      {
+        "class": "component",
+        "why": "largest role 4-7 members (< 8)",
+        "files": 9,
+        "loc": 728,
+        "repos": 3
+      },
+      {
+        "class": "util",
+        "why": "largest role 4-7 members (< 8)",
+        "files": 8,
+        "loc": 736,
+        "repos": 3
+      },
+      {
+        "class": "pydantic/dataclass model",
+        "why": "largest role 1-3 members (< 8)",
+        "files": 7,
+        "loc": 1184,
+        "repos": 2
+      },
+      {
+        "class": "types",
+        "why": "no exported symbol",
+        "files": 6,
+        "loc": 659,
+        "repos": 6
+      },
+      {
+        "class": "pydantic/dataclass model",
+        "why": "no exported symbol",
+        "files": 6,
+        "loc": 107,
+        "repos": 4
+      },
+      {
+        "class": "ORM model",
+        "why": "no exported symbol",
+        "files": 5,
+        "loc": 77,
+        "repos": 5
+      },
+      {
+        "class": "route/page",
+        "why": "no exported symbol",
+        "files": 5,
+        "loc": 910,
+        "repos": 3
+      },
+      {
+        "class": "util",
+        "why": "Python role within fewer than 3 files",
+        "files": 5,
+        "loc": 1028,
+        "repos": 2
+      },
+      {
+        "class": "pydantic/dataclass model",
+        "why": "largest role 4-7 members (< 8)",
+        "files": 5,
+        "loc": 1994,
+        "repos": 3
+      },
+      {
+        "class": "index/__init__",
+        "why": "not parsed: generated",
+        "files": 5,
+        "loc": 2082,
+        "repos": 1
+      },
+      {
+        "class": "script",
+        "why": "largest role 1-3 members (< 8)",
+        "files": 4,
+        "loc": 282,
+        "repos": 3
+      },
+      {
+        "class": "config",
+        "why": "Python role within fewer than 3 files",
+        "files": 4,
+        "loc": 456,
+        "repos": 3
+      },
+      {
+        "class": "index/__init__",
+        "why": "demo or integration-suite code",
+        "files": 4,
+        "loc": 11,
+        "repos": 1
+      },
+      {
+        "class": "pydantic/dataclass model",
+        "why": "Python role within fewer than 3 files",
+        "files": 3,
+        "loc": 1633,
+        "repos": 2
+      },
+      {
+        "class": "component",
+        "why": "demo or integration-suite code",
+        "files": 3,
+        "loc": 148,
+        "repos": 1
+      },
+      {
+        "class": "test",
+        "why": "not in the fact index (not scanned)",
+        "files": 3,
+        "loc": 63,
+        "repos": 1
+      },
+      {
+        "class": "config",
+        "why": "demo or integration-suite code",
+        "files": 3,
+        "loc": 16,
+        "repos": 1
+      },
+      {
+        "class": "other",
+        "why": "not parsed: minified",
+        "files": 3,
+        "loc": 6,
+        "repos": 1
+      },
+      {
+        "class": "hook",
+        "why": "largest role 1-3 members (< 8)",
+        "files": 2,
+        "loc": 164,
+        "repos": 1
+      },
+      {
+        "class": "component",
+        "why": "not parsed: minified",
+        "files": 2,
+        "loc": 153,
+        "repos": 1
+      },
+      {
+        "class": "script",
+        "why": "only base, abstract, view or type-variable classes",
+        "files": 2,
+        "loc": 161,
+        "repos": 2
+      },
+      {
+        "class": "index/__init__",
+        "why": "Python role within fewer than 3 files",
+        "files": 2,
+        "loc": 660,
+        "repos": 1
+      },
+      {
+        "class": "test",
+        "why": "not parsed: generated",
+        "files": 2,
+        "loc": 390,
+        "repos": 1
+      },
+      {
+        "class": "ORM model",
+        "why": "not parsed: generated",
+        "files": 2,
+        "loc": 4129,
+        "repos": 1
+      },
+      {
+        "class": "route/page",
+        "why": "largest role 4-7 members (< 8)",
+        "files": 2,
+        "loc": 409,
+        "repos": 2
+      },
+      {
+        "class": "script",
+        "why": "Python role within fewer than 3 files",
+        "files": 2,
+        "loc": 135,
+        "repos": 1
+      },
+      {
+        "class": "router/dep",
+        "why": "Python role within fewer than 3 files",
+        "files": 1,
+        "loc": 93,
+        "repos": 1
+      },
+      {
+        "class": "router/dep",
+        "why": "largest role 4-7 members (< 8)",
+        "files": 1,
+        "loc": 92,
+        "repos": 1
+      },
+      {
+        "class": "route/page",
+        "why": "not parsed: minified",
+        "files": 1,
+        "loc": 94,
+        "repos": 1
+      },
+      {
+        "class": "route/page",
+        "why": "Python role within fewer than 3 files",
+        "files": 1,
+        "loc": 2135,
+        "repos": 1
+      },
+      {
+        "class": "script",
+        "why": "not in the fact index (not scanned)",
+        "files": 1,
+        "loc": 244,
+        "repos": 1
+      },
+      {
+        "class": "pydantic/dataclass model",
+        "why": "only base, abstract, view or type-variable classes",
+        "files": 1,
+        "loc": 195,
+        "repos": 1
+      },
+      {
+        "class": "ORM model",
+        "why": "largest role 1-3 members (< 8)",
+        "files": 1,
+        "loc": 12,
+        "repos": 1
+      },
+      {
+        "class": "router/dep",
+        "why": "largest role 1-3 members (< 8)",
+        "files": 1,
+        "loc": 31,
+        "repos": 1
+      },
+      {
+        "class": "service",
+        "why": "not parsed: generated",
+        "files": 1,
+        "loc": 392,
+        "repos": 1
+      },
+      {
+        "class": "util",
+        "why": "only base, abstract, view or type-variable classes",
+        "files": 1,
+        "loc": 251,
+        "repos": 1
+      },
+      {
+        "class": "types",
+        "why": "largest role 1-3 members (< 8)",
+        "files": 1,
+        "loc": 30,
+        "repos": 1
+      },
+      {
+        "class": "route/page",
+        "why": "demo or integration-suite code",
+        "files": 1,
+        "loc": 65,
+        "repos": 1
+      }
+    ]
+  }
+}

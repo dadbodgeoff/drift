@@ -1,0 +1,144 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - accessibility
+  - accordion
+  - animated
+  - app
+  - basic
+  - bs-datepicker
+  - carousel
+  - collapse
+  - config
+  - disabled
+  - dynamic
+  - eslint
+  - jest
+  - pagination
+  - progressbar
+  - public_api
+  - rating
+  - sortable
+  - test-setup
+  - timepicker
+  - tooltip
+  - typeahead
+  suffixes:
+  - class
+  - component
+  - conf
+  - config
+  - directive
+  - list
+  - model
+  - module
+  - po
+  - routes
+  - server
+  - service
+  - spec
+conventions:
+- id: D-32687f
+  status: proposed
+  mode: advise
+  summary: workspace packages enable `skipDefaultLibCheck` in tsconfig
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: flag:skipDefaultLibCheck
+  evidence:
+    holders: 44
+    total: 45
+    lower_bound: 0.884
+    lift: 1.0
+  example: libs/common-docs/package.json#@ngx-bootstrap-doc/docs
+  selector_version: 3
+- id: D-cd8fd8
+  status: proposed
+  mode: advise
+  summary: workspace packages enable `forceConsistentCasingInFileNames` in tsconfig
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: flag:forceConsistentCasingInFileNames
+  evidence:
+    holders: 43
+    total: 45
+    lower_bound: 0.852
+    lift: 1.0
+  example: libs/common-docs/package.json#@ngx-bootstrap-doc/docs
+  selector_version: 3
+- id: D-7d5872
+  status: proposed
+  mode: advise
+  summary: workspace packages enable `strict` in tsconfig
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: flag:strict
+  evidence:
+    holders: 42
+    total: 45
+    lower_bound: 0.821
+    lift: 1.0
+  example: libs/common-docs/package.json#@ngx-bootstrap-doc/docs
+  selector_version: 3
+- id: D-f1448a
+  status: proposed
+  mode: advise
+  summary: workspace packages enable `noFallthroughCasesInSwitch` in tsconfig
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: flag:noFallthroughCasesInSwitch
+  evidence:
+    holders: 42
+    total: 45
+    lower_bound: 0.821
+    lift: 1.0
+  example: libs/common-docs/package.json#@ngx-bootstrap-doc/docs
+  selector_version: 3
+- id: D-c0155e
+  status: proposed
+  mode: advise
+  summary: workspace packages enable `noImplicitReturns` in tsconfig
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: flag:noImplicitReturns
+  evidence:
+    holders: 40
+    total: 45
+    lower_bound: 0.765
+    lift: 1.0
+  example: libs/common-docs/package.json#@ngx-bootstrap-doc/docs
+  selector_version: 3

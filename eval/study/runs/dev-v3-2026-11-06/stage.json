@@ -1,0 +1,393 @@
+{
+  "rubric": {
+    "version": "v3",
+    "sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+  },
+  "d5_tier": "eval/study/tier-d5.json",
+  "parts": {
+    "ts": {
+      "run": "eval/study/runs/dev-v3-2026-11-06/ts",
+      "manifest": "eval/repos.json",
+      "recorded_tier": "min_members 15 (no tier in the manifest)",
+      "shown": {
+        "recorded_tier": {
+          "shown": 162,
+          "default": 162,
+          "suggestion": 0
+        },
+        "d5": {
+          "shown": 162,
+          "default": 52,
+          "suggestion": 110
+        }
+      },
+      "carried": {
+        "all": 37,
+        "d5": {
+          "shown": 37,
+          "default": 10,
+          "suggestion": 27
+        }
+      },
+      "to_label": {
+        "all": 125,
+        "d5": {
+          "shown": 125,
+          "default": 42,
+          "suggestion": 83
+        }
+      },
+      "not_carried_from_calibration": [],
+      "census_tier_vs_d5_mismatches": [],
+      "repos": [
+        {
+          "repo": "dub",
+          "shown": 15,
+          "carried": 8,
+          "to_label": 7,
+          "d5_default": 5
+        },
+        {
+          "repo": "twenty",
+          "shown": 15,
+          "carried": 5,
+          "to_label": 10,
+          "d5_default": 7
+        },
+        {
+          "repo": "formbricks",
+          "shown": 15,
+          "carried": 0,
+          "to_label": 15,
+          "d5_default": 4
+        },
+        {
+          "repo": "cal.com",
+          "shown": 15,
+          "carried": 3,
+          "to_label": 12,
+          "d5_default": 6
+        },
+        {
+          "repo": "documenso",
+          "shown": 15,
+          "carried": 3,
+          "to_label": 12,
+          "d5_default": 8
+        },
+        {
+          "repo": "excalidraw",
+          "shown": 2,
+          "carried": 0,
+          "to_label": 2,
+          "d5_default": 0
+        },
+        {
+          "repo": "create-t3-app",
+          "shown": 0,
+          "carried": 0,
+          "to_label": 0,
+          "d5_default": 0
+        },
+        {
+          "repo": "ai",
+          "shown": 6,
+          "carried": 2,
+          "to_label": 4,
+          "d5_default": 1
+        },
+        {
+          "repo": "trpc",
+          "shown": 0,
+          "carried": 0,
+          "to_label": 0,
+          "d5_default": 0
+        },
+        {
+          "repo": "nest",
+          "shown": 5,
+          "carried": 1,
+          "to_label": 4,
+          "d5_default": 4
+        },
+        {
+          "repo": "supabase",
+          "shown": 15,
+          "carried": 3,
+          "to_label": 12,
+          "d5_default": 2
+        },
+        {
+          "repo": "node-express-boilerplate",
+          "shown": 0,
+          "carried": 0,
+          "to_label": 0,
+          "d5_default": 0
+        },
+        {
+          "repo": "novu",
+          "shown": 15,
+          "carried": 1,
+          "to_label": 14,
+          "d5_default": 5
+        },
+        {
+          "repo": "immich",
+          "shown": 14,
+          "carried": 3,
+          "to_label": 11,
+          "d5_default": 3
+        },
+        {
+          "repo": "midday",
+          "shown": 15,
+          "carried": 6,
+          "to_label": 9,
+          "d5_default": 3
+        },
+        {
+          "repo": "infisical",
+          "shown": 15,
+          "carried": 2,
+          "to_label": 13,
+          "d5_default": 4
+        }
+      ]
+    },
+    "py": {
+      "run": "eval/study/runs/dev-v3-2026-11-06/py",
+      "manifest": "eval/repos-py.json",
+      "recorded_tier": "min_members 15 (no tier in the manifest)",
+      "shown": {
+        "recorded_tier": {
+          "shown": 39,
+          "default": 39,
+          "suggestion": 0
+        },
+        "d5": {
+          "shown": 39,
+          "default": 10,
+          "suggestion": 29
+        }
+      },
+      "carried": {
+        "all": 19,
+        "d5": {
+          "shown": 19,
+          "default": 5,
+          "suggestion": 14
+        }
+      },
+      "to_label": {
+        "all": 20,
+        "d5": {
+          "shown": 20,
+          "default": 5,
+          "suggestion": 15
+        }
+      },
+      "not_carried_from_calibration": [
+        {
+          "uid": "polar/D-e5f85b",
+          "why": "census text differs"
+        },
+        {
+          "uid": "polar/D-2ef961",
+          "why": "census text differs"
+        },
+        {
+          "uid": "netbox/D-e5e365",
+          "why": "not shown at main"
+        },
+        {
+          "uid": "netbox/D-310ec7",
+          "why": "census text differs"
+        },
+        {
+          "uid": "netbox/D-4c4e2d",
+          "why": "census text differs"
+        }
+      ],
+      "census_tier_vs_d5_mismatches": [],
+      "repos": [
+        {
+          "repo": "full-stack-fastapi-template",
+          "shown": 1,
+          "carried": 1,
+          "to_label": 0,
+          "d5_default": 0
+        },
+        {
+          "repo": "polar",
+          "shown": 15,
+          "carried": 9,
+          "to_label": 6,
+          "d5_default": 4
+        },
+        {
+          "repo": "netbox",
+          "shown": 12,
+          "carried": 5,
+          "to_label": 7,
+          "d5_default": 4
+        },
+        {
+          "repo": "saleor",
+          "shown": 7,
+          "carried": 3,
+          "to_label": 4,
+          "d5_default": 0
+        },
+        {
+          "repo": "CTFd",
+          "shown": 2,
+          "carried": 0,
+          "to_label": 2,
+          "d5_default": 2
+        },
+        {
+          "repo": "flask",
+          "shown": 0,
+          "carried": 0,
+          "to_label": 0,
+          "d5_default": 0
+        },
+        {
+          "repo": "fastapi",
+          "shown": 1,
+          "carried": 0,
+          "to_label": 1,
+          "d5_default": 0
+        },
+        {
+          "repo": "langchain",
+          "shown": 1,
+          "carried": 1,
+          "to_label": 0,
+          "d5_default": 0
+        }
+      ]
+    },
+    "py2": {
+      "run": "eval/study/runs/dev-v3-2026-11-06/py2",
+      "manifest": "eval/repos-py-2.json",
+      "recorded_tier": "rule_kind (pre-registered in the manifest: rule 5)",
+      "shown": {
+        "recorded_tier": {
+          "shown": 76,
+          "default": 27,
+          "suggestion": 49
+        },
+        "d5": {
+          "shown": 76,
+          "default": 14,
+          "suggestion": 62
+        }
+      },
+      "carried": {
+        "all": 0,
+        "d5": {
+          "shown": 0,
+          "default": 0,
+          "suggestion": 0
+        }
+      },
+      "to_label": {
+        "all": 76,
+        "d5": {
+          "shown": 76,
+          "default": 14,
+          "suggestion": 62
+        }
+      },
+      "not_carried_from_calibration": [],
+      "census_tier_vs_d5_mismatches": [],
+      "repos": [
+        {
+          "repo": "Django-CRM",
+          "shown": 9,
+          "carried": 0,
+          "to_label": 9,
+          "d5_default": 2
+        },
+        {
+          "repo": "InvenTree",
+          "shown": 11,
+          "carried": 0,
+          "to_label": 11,
+          "d5_default": 1
+        },
+        {
+          "repo": "ralph",
+          "shown": 6,
+          "carried": 0,
+          "to_label": 6,
+          "d5_default": 2
+        },
+        {
+          "repo": "Misago",
+          "shown": 8,
+          "carried": 0,
+          "to_label": 8,
+          "d5_default": 2
+        },
+        {
+          "repo": "paperless-ngx",
+          "shown": 3,
+          "carried": 0,
+          "to_label": 3,
+          "d5_default": 1
+        },
+        {
+          "repo": "wger",
+          "shown": 3,
+          "carried": 0,
+          "to_label": 3,
+          "d5_default": 0
+        },
+        {
+          "repo": "lotus",
+          "shown": 4,
+          "carried": 0,
+          "to_label": 4,
+          "d5_default": 0
+        },
+        {
+          "repo": "pontoon",
+          "shown": 2,
+          "carried": 0,
+          "to_label": 2,
+          "d5_default": 0
+        },
+        {
+          "repo": "open-wearables",
+          "shown": 8,
+          "carried": 0,
+          "to_label": 8,
+          "d5_default": 1
+        },
+        {
+          "repo": "tasking-manager",
+          "shown": 9,
+          "carried": 0,
+          "to_label": 9,
+          "d5_default": 3
+        },
+        {
+          "repo": "simplelogin",
+          "shown": 10,
+          "carried": 0,
+          "to_label": 10,
+          "d5_default": 1
+        },
+        {
+          "repo": "changedetection.io",
+          "shown": 3,
+          "carried": 0,
+          "to_label": 3,
+          "d5_default": 1
+        }
+      ]
+    }
+  }
+}

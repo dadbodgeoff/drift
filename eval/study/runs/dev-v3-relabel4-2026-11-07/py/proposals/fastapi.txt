@@ -1,0 +1,19 @@
+1 conventions from 2310 units in 89 roles (0 default tier, 1 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-499c0e] functions in scripts/** declare their return type
+    evidence: 94/102 (lower bound 0.85, lift 3.1)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  scripts/add_latest_release_date.py#main
+    outlier:  scripts/docs.py:119 complete_existing_lang
+    outlier:  scripts/docs.py:590 langs_json
+    outlier:  scripts/docs.py:132 new_lang
+    outlier:  scripts/docs.py:336 remove_header_permalinks
+    outlier:  scripts/translation_fixer.py:26 callback
+    outlier:  scripts/translation_fixer.py:102 fix_all
+    outlier:  scripts/translation_fixer.py:116 fix_pages
+    outlier:  scripts/translation_fixer.py:56 get_all_paths
+    exempt:   scripts/docs.py:836 add_permalinks_page (shared part used by 2 members)
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

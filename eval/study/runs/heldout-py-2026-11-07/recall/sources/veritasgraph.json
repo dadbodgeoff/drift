@@ -1,0 +1,41 @@
+{
+  "repo": "veritasgraph",
+  "files": [
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "medkg-signal-reference/pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "submission/veritasgraph_rag/pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "veritas-reason/.claude/skills/veritasreason/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": "veritas-reason/CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "veritas-reason/docs/architecture.md",
+      "kind": "doc"
+    },
+    {
+      "path": "veritas-reason/docs/contributing.md",
+      "kind": "doc"
+    },
+    {
+      "path": "veritas-reason/pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "veritas-reason/explorer/eslint.config.js",
+      "kind": "lint"
+    }
+  ]
+}

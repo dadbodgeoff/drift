@@ -1,0 +1,128 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - _base
+  - conftest
+  suffixes: []
+conventions:
+- id: D-0f5597
+  status: proposed
+  mode: advise
+  summary: exported values in src/dbt_charts/core/diagnostics/** call REGISTRY.register()
+  role:
+    package: ""
+    dir: src/dbt_charts/core/diagnostics
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: calls
+    callee: src/dbt_charts/core/diagnostics/registry.py#REGISTRY.register
+  evidence:
+    holders: 409
+    total: 416
+    lower_bound: 0.966
+    lift: 2.305
+    role_members: 419
+    python_members: 419
+  example: src/dbt_charts/core/diagnostics/codes_compile.py#ERR_ANNOTATION_INVALID
+  selector_version: 2
+- id: D-f5c512
+  status: proposed
+  mode: advise
+  summary: classes in src/dbt_charts/core/compile/** extend BaseModel
+  role:
+    package: ""
+    dir: src/dbt_charts/core/compile
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - pkg:pydantic#BaseModel
+  evidence:
+    holders: 434
+    total: 447
+    lower_bound: 0.951
+    lift: 1.517
+    role_members: 472
+    python_members: 472
+  example: src/dbt_charts/core/compile/models/board/authored.py#AuthoredBoard
+  selector_version: 2
+- id: D-9f88d3
+  status: proposed
+  mode: advise
+  summary: classes in src/dbt_charts/agent_api/** extend BaseModel
+  role:
+    package: ""
+    dir: src/dbt_charts/agent_api
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - pkg:pydantic#BaseModel
+  evidence:
+    holders: 108
+    total: 109
+    lower_bound: 0.95
+    lift: 1.523
+    role_members: 117
+    python_members: 117
+  example: src/dbt_charts/agent_api/_link_scan.py#LinkHit
+  selector_version: 2
+- id: D-e3cf08
+  status: proposed
+  mode: advise
+  summary: >-
+    functions in src/dbt_charts/core/render/warnings/** pass `fix` to
+    Diagnostic.from_code()
+  role:
+    package: ""
+    dir: src/dbt_charts/core/render/warnings
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: passes_key
+    callee: src/dbt_charts/core/diagnostics/diagnostic.py#Diagnostic.from_code
+    index: 99
+    key: fix
+  evidence:
+    holders: 63
+    total: 63
+    lower_bound: 0.943
+    lift: 23.833
+    role_members: 73
+    python_members: 73
+  example: src/dbt_charts/core/render/warnings/annotation_note_moved.py#detect
+  selector_version: 2
+- id: D-e818b0
+  status: proposed
+  mode: advise
+  summary: files in src/dbt_charts/agent_api/** have a test file
+  role:
+    package: ""
+    dir: src/dbt_charts/agent_api
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 47
+    total: 49
+    lower_bound: 0.863
+    lift: 2.046
+    python_members: 49
+  example: src/dbt_charts/agent_api/_link_scan.py#(file)
+  selector_version: 2

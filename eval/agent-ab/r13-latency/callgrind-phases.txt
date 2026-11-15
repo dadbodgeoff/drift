@@ -1,0 +1,27 @@
+## dub: 189 M instructions
+  policy load (open_for_agents)                     2.4 M   1.3%
+  file discovery (repo walk)                       87.4 M  46.2%
+  facts load: index                                23.0 M  12.1%
+  facts load: cached facts of linked files         17.3 M   9.2%
+  scan edited file (parse+lower)                    0.2 M   0.1%
+  index write-back                                 14.8 M   7.8%
+  check (needs_full_scan + check)                   9.2 M   4.9%
+  other (link, resolver setup, runtime, output)    34.8 M  18.4%
+## infisical: 795 M instructions
+  policy load (open_for_agents)                     3.2 M   0.4%
+  file discovery (repo walk)                      332.5 M  41.8%
+  facts load: index                                56.9 M   7.2%
+  facts load: cached facts of linked files        228.1 M  28.7%
+  scan edited file (parse+lower)                    6.4 M   0.8%
+  index write-back                                 32.0 M   4.0%
+  check (needs_full_scan + check)                  14.9 M   1.9%
+  other (link, resolver setup, runtime, output)   120.5 M  15.2%
+## midday: 216 M instructions
+  policy load (open_for_agents)                     1.8 M   0.8%
+  file discovery (repo walk)                       51.7 M  23.9%
+  facts load: index                                11.6 M   5.4%
+  facts load: cached facts of linked files         68.2 M  31.6%
+  scan edited file (parse+lower)                    0.8 M   0.4%
+  index write-back                                  7.6 M   3.5%
+  check (needs_full_scan + check)                  13.0 M   6.0%
+  other (link, resolver setup, runtime, output)    61.5 M  28.4%

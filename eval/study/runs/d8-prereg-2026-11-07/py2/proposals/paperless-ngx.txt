@@ -1,0 +1,26 @@
+3 conventions from 2098 units in 93 roles (0 default tier, 3 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-c3460b] src-ui: classes in src/app/components/common/input/** (*.component files) extend AbstractInputComponent
+    evidence: 19/20 (lower bound 0.76, lift 31.1)
+    tier:     suggestion (rule kind wrapped_by:extends; decision D7 keeps only call wrappers and layering)
+    example:  src-ui/src/app/components/common/input/check/check.component.ts#CheckComponent
+    outlier:  src-ui/src/app/components/common/input/tags/tags.component.ts:50 TagsComponent
+
+ 2. [D-de2489] src-ui: classes in src/** (*.component files) are named `*Component`
+    evidence: 114/114 (lower bound 0.97, lift 5.2)
+    tier:     suggestion (rule kind named)
+    example:  src-ui/src/app/app.component.ts#AppComponent
+    exempt:   src-ui/src/app/components/common/custom-fields-query-dropdown/custom-fields-query-dropdown.component.ts:72 CustomFieldQueriesModel (shared part used by 3 members)
+    exempt:   src-ui/src/app/components/common/filterable-dropdown/filterable-dropdown.component.ts:62 FilterableDropdownSelectionModel (shared part used by 2 members)
+    exempt:   src-ui/src/app/components/common/permissions-filter-dropdown/permissions-filter-dropdown.component.ts:28 PermissionsSelectionModel (shared part used by 2 members)
+    exempt:   src-ui/src/app/components/loading-component/loading.component.ts:6 LoadingComponentWithPermissions (shared part used by 22 members)
+    exempt:   src-ui/src/app/components/with-permissions/with-permissions.component.ts:6 ComponentWithPermissions (shared part used by 16 members)
+
+ 3. [D-1d6a6a] src-ui: classes in src/** (*.service files) are decorated with Injectable()
+    evidence: 35/36 (lower bound 0.86, lift 13.8)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    example:  src-ui/src/app/services/chat.service.ts#ChatService
+    outlier:  src-ui/src/app/services/websocket-status.service.ts:45 FileStatus
+

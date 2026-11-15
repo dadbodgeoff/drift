@@ -1,0 +1,270 @@
+{
+  "run": "eval/study/runs/heldout2-py-2026-11-08",
+  "prepared_at": "2026-11-08T01:51:17.594Z",
+  "amendments": [],
+  "manifest": {
+    "path": "eval/holdout-2-2026-11-07-py.json",
+    "sha256": "36dceafc831386b1e007d212f93f754db3101b89fdc02a6e990450c18374aa67",
+    "core_sha256": "96943fb1adc0cb2d62d637b5e2ede8aeae9cb2d83aa7cac571a53680e5776740",
+    "holdout": true,
+    "holdout_because": [
+      "it says \"holdout\": true",
+      "its file is named holdout*.json",
+      "its core hash is a registered held-out manifest",
+      "it pins a held-out repo's commit",
+      "it lists a held-out repo"
+    ],
+    "set_id": "py-heldout2-2026-11-07",
+    "role": "primary",
+    "language": "python"
+  },
+  "drift": {
+    "binary": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/cache/runs/heldout2-py-2026-11-08-facc3b48/drift-4e017e38ccc5",
+    "binary_sha256": "41edaa85c656d5161430dc88c0549da4e908aca7c110a54dc3f0a612d7fec015",
+    "version": "drift 0.1.0-dev",
+    "commit": "4e017e38ccc507d282ca31f49029ca48f035ddc1",
+    "dirty": false,
+    "build": {
+      "binary": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/cache/runs/heldout2-py-2026-11-08-facc3b48/drift-4e017e38ccc5",
+      "from": "git archive of the commit, built in a fresh CARGO_TARGET_DIR",
+      "built_at": "2026-11-08T01:44:34.430Z",
+      "tree": "1d55e7784f99bd132a79636d669638f4dde4e64d",
+      "cargo": "cargo 1.97.0 (c980f4866 2026-06-30)",
+      "rustc": "rustc 1.97.0 (2d8144b78 2026-07-07)\nbinary: rustc\ncommit-hash: 2d8144b7880597b6e6d3dfd63a9a9efae3f533d3\ncommit-date: 2026-07-07\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.0\nLLVM version: 22.1.6",
+      "env": {
+        "CARGO_HTTP_CAINFO": "/root/.ccr/ca-bundle.crt",
+        "RUSTUP_HOME": "/root/.rustup",
+        "RUST_BACKTRACE": "1"
+      },
+      "user_cargo_config": [],
+      "binary_sha256": "41edaa85c656d5161430dc88c0549da4e908aca7c110a54dc3f0a612d7fec015",
+      "reused_at": "2026-11-08T01:50:29.824Z"
+    }
+  },
+  "params": {
+    "max": 15,
+    "pool": 200,
+    "tier": {
+      "//": "Decision D7 (eval/study/README.md decision log), approved by the founder 2026-11-06 and recorded before any held-out census. D5 (tier-d5.json) narrowed by rule kind and language. TypeScript/JavaScript: the default tier admits only call wrappers (wrapped_by:call) and layering (avoids:import); wrapped_by:decorator, wrapped_by:extends and wrapped_by:jsx move to the suggestion tier. Python: no rule kind is in the default tier; Python advises only and every Python proposal is suggestion tier. D5's conditions still apply on top of the rule kind: every symbol the rule names is defined in the repository (default.target \"in_repo\": no pkg:, global# or unresolved: target; lib.mjs namesPackage, drift_mine::tier::names_package) and the role has >= default.min_members members. The language of a proposal is read conservatively (lib.mjs proposalLanguage, drift_mine::tier::convention_language): py when any member of its role is Python (conventions.yaml evidence.python_members) or its example path is (.py/.pyi files and Python package manifests), ts otherwise. Role members are counted as the role's size (evidence.role_members when set, else total; exempt members count). DEFAULT tier = language in default.languages AND structured rule kind (lib.mjs ruleKind) in default.rule_kinds AND the rule names no symbol from outside the repository AND its role has >= default.min_members members. SUGGESTION tier = every other shown proposal. The not-wrong rate is reported over all shown proposals, both tiers. Release gate unchanged: a language's default tier ships as advise until it measures >= 95% default-tier accept under rubric v3, judged per D1, on a primary held-out run.",
+      "kind": "rule_kind",
+      "decision": "D7",
+      "default": {
+        "//": "TypeScript/JavaScript call wrappers and layering (import avoidance), each only when every symbol it names is defined in the repository, in roles of 15 or more members",
+        "rule_kinds": [
+          "wrapped_by:call",
+          "avoids:import"
+        ],
+        "languages": [
+          "ts"
+        ],
+        "min_members": 15,
+        "target": "in_repo"
+      },
+      "suggestion": {
+        "//": "D5's suggestion kinds, plus decorators, base classes and JSX layout wrappers (D7); every Python proposal (languages); and default-tier kinds whose rule names a package, built-in or unresolved symbol, or whose role is small",
+        "rule_kinds": [
+          "calls",
+          "named",
+          "avoids:other",
+          "prefers_library",
+          "before",
+          "has_test",
+          "model_has",
+          "package_has",
+          "dependency_version",
+          "wrapped_by:try",
+          "control",
+          "directive",
+          "throws",
+          "passes_key",
+          "renders",
+          "wrapped_by:decorator",
+          "wrapped_by:extends",
+          "wrapped_by:jsx"
+        ],
+        "languages": [
+          "py"
+        ]
+      },
+      "not_wrong_over": "all_shown"
+    },
+    "tier_pre_registered": true,
+    "exposed": [],
+    "repos": [
+      "statsmodels@772cb34aff9e95f5c3eb10f1fe1ff6cd393daa69",
+      "flagsmith@4449ad4231392545807649e3b52a595999e0512d",
+      "kunlun-m@04635cce43d7551b369b471ff3160c626ce5980a",
+      "django-oscar@a5ed3c9c17d4cf6ee18aa9795b493172416ab68b",
+      "dcs_liberation@2506d42674a36a1a581aeef6b5dd3476ff90c522",
+      "supoclip@c62f3a5afd2744344b238d6f06bcfc70c6eac85e",
+      "vmlx@350bea16eb40dfb7faddcb8b5508274963829f92",
+      "nlweb@b423f15d9aeaa023ce75993ac9deed2354597043",
+      "fenic@486e535508c16825069f5c33768cab25b031e143",
+      "future-agi@28e729aab169d75a2ca856fb4ed67fd1dda5901a"
+    ],
+    "cache": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/cache",
+    "checkouts": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/cache/runs/heldout2-py-2026-11-08-facc3b48/repos"
+  },
+  "repos": [
+    {
+      "name": "statsmodels",
+      "url": "https://github.com/statsmodels/statsmodels",
+      "sha": "772cb34aff9e95f5c3eb10f1fe1ff6cd393daa69",
+      "language": "Python",
+      "framework_bucket": "django",
+      "binary_sha256": "41edaa85c656d5161430dc88c0549da4e908aca7c110a54dc3f0a612d7fec015",
+      "prepared_at": "2026-11-08T01:50:29.830Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/cache/runs/heldout2-py-2026-11-08-facc3b48/repos/statsmodels",
+      "status": "ok",
+      "units": 5926,
+      "roles": 133,
+      "proposals": 3,
+      "pool": 3,
+      "census_ms": 849
+    },
+    {
+      "name": "flagsmith",
+      "url": "https://github.com/Flagsmith/flagsmith",
+      "sha": "4449ad4231392545807649e3b52a595999e0512d",
+      "language": "Python",
+      "framework_bucket": "django",
+      "binary_sha256": "41edaa85c656d5161430dc88c0549da4e908aca7c110a54dc3f0a612d7fec015",
+      "prepared_at": "2026-11-08T01:50:33.764Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/cache/runs/heldout2-py-2026-11-08-facc3b48/repos/flagsmith",
+      "status": "ok",
+      "units": 7258,
+      "roles": 264,
+      "proposals": 3,
+      "pool": 3,
+      "census_ms": 773
+    },
+    {
+      "name": "kunlun-m",
+      "url": "https://github.com/LoRexxar/Kunlun-M",
+      "sha": "04635cce43d7551b369b471ff3160c626ce5980a",
+      "language": "Python",
+      "framework_bucket": "django",
+      "binary_sha256": "41edaa85c656d5161430dc88c0549da4e908aca7c110a54dc3f0a612d7fec015",
+      "prepared_at": "2026-11-08T01:50:37.233Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/cache/runs/heldout2-py-2026-11-08-facc3b48/repos/kunlun-m",
+      "status": "ok",
+      "units": 1441,
+      "roles": 81,
+      "proposals": 1,
+      "pool": 1,
+      "census_ms": 208
+    },
+    {
+      "name": "django-oscar",
+      "url": "https://github.com/django-oscar/django-oscar",
+      "sha": "a5ed3c9c17d4cf6ee18aa9795b493172416ab68b",
+      "language": "Python",
+      "framework_bucket": "django",
+      "binary_sha256": "41edaa85c656d5161430dc88c0549da4e908aca7c110a54dc3f0a612d7fec015",
+      "prepared_at": "2026-11-08T01:50:38.247Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/cache/runs/heldout2-py-2026-11-08-facc3b48/repos/django-oscar",
+      "status": "ok",
+      "units": 2052,
+      "roles": 143,
+      "proposals": 1,
+      "pool": 1,
+      "census_ms": 272
+    },
+    {
+      "name": "dcs_liberation",
+      "url": "https://github.com/dcs-liberation/dcs_liberation",
+      "sha": "2506d42674a36a1a581aeef6b5dd3476ff90c522",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "binary_sha256": "41edaa85c656d5161430dc88c0549da4e908aca7c110a54dc3f0a612d7fec015",
+      "prepared_at": "2026-11-08T01:50:39.855Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/cache/runs/heldout2-py-2026-11-08-facc3b48/repos/dcs_liberation",
+      "status": "ok",
+      "units": 2186,
+      "roles": 106,
+      "proposals": 6,
+      "pool": 6,
+      "census_ms": 241
+    },
+    {
+      "name": "supoclip",
+      "url": "https://github.com/FujiwaraChoki/supoclip",
+      "sha": "c62f3a5afd2744344b238d6f06bcfc70c6eac85e",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "binary_sha256": "41edaa85c656d5161430dc88c0549da4e908aca7c110a54dc3f0a612d7fec015",
+      "prepared_at": "2026-11-08T01:50:41.980Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/cache/runs/heldout2-py-2026-11-08-facc3b48/repos/supoclip",
+      "status": "ok",
+      "units": 3244,
+      "roles": 95,
+      "proposals": 3,
+      "pool": 3,
+      "census_ms": 338
+    },
+    {
+      "name": "vmlx",
+      "url": "https://github.com/jjang-ai/vmlx",
+      "sha": "350bea16eb40dfb7faddcb8b5508274963829f92",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "binary_sha256": "41edaa85c656d5161430dc88c0549da4e908aca7c110a54dc3f0a612d7fec015",
+      "prepared_at": "2026-11-08T01:50:44.103Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/cache/runs/heldout2-py-2026-11-08-facc3b48/repos/vmlx",
+      "status": "ok",
+      "units": 5381,
+      "roles": 133,
+      "proposals": 8,
+      "pool": 8,
+      "census_ms": 1471
+    },
+    {
+      "name": "nlweb",
+      "url": "https://github.com/nlweb-ai/NLWeb",
+      "sha": "b423f15d9aeaa023ce75993ac9deed2354597043",
+      "language": "Python",
+      "framework_bucket": "flask",
+      "binary_sha256": "41edaa85c656d5161430dc88c0549da4e908aca7c110a54dc3f0a612d7fec015",
+      "prepared_at": "2026-11-08T01:50:49.057Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/cache/runs/heldout2-py-2026-11-08-facc3b48/repos/nlweb",
+      "status": "ok",
+      "units": 1298,
+      "roles": 76,
+      "proposals": 0,
+      "pool": 0,
+      "census_ms": 140
+    },
+    {
+      "name": "fenic",
+      "url": "https://github.com/typedef-ai/fenic",
+      "sha": "486e535508c16825069f5c33768cab25b031e143",
+      "language": "Python",
+      "framework_bucket": "other_python",
+      "binary_sha256": "41edaa85c656d5161430dc88c0549da4e908aca7c110a54dc3f0a612d7fec015",
+      "prepared_at": "2026-11-08T01:50:49.849Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/cache/runs/heldout2-py-2026-11-08-facc3b48/repos/fenic",
+      "status": "ok",
+      "units": 1397,
+      "roles": 93,
+      "proposals": 5,
+      "pool": 5,
+      "census_ms": 324
+    },
+    {
+      "name": "future-agi",
+      "url": "https://github.com/future-agi/future-agi",
+      "sha": "28e729aab169d75a2ca856fb4ed67fd1dda5901a",
+      "language": "Python",
+      "framework_bucket": "django",
+      "binary_sha256": "41edaa85c656d5161430dc88c0549da4e908aca7c110a54dc3f0a612d7fec015",
+      "prepared_at": "2026-11-08T01:50:51.275Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/cache/runs/heldout2-py-2026-11-08-facc3b48/repos/future-agi",
+      "status": "ok",
+      "units": 28025,
+      "roles": 1196,
+      "proposals": 13,
+      "pool": 30,
+      "census_ms": 7503
+    }
+  ]
+}

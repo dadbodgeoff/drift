@@ -1,0 +1,16 @@
+/* @drift/ui styles: fonts (self-hosted, OFL), tokens, base and components. */
+@import "@fontsource-variable/inter/index.css";
+@import "@fontsource-variable/jetbrains-mono/index.css";
+/* Direction typefaces (OFL, self-hosted). Only the faces a direction uses are downloaded. */
+@import "@fontsource-variable/source-serif-4/standard.css";
+@import "@fontsource-variable/source-serif-4/standard-italic.css";
+@import "@fontsource-variable/archivo/standard.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/600.css";
+@import "@xyflow/react/dist/style.css";
+@import "./tokens.css";
+@import "./base.css";
+@import "./components.css";
+@import "./graph.css";
+@import "./directions.css";

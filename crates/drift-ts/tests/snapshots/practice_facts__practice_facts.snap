@@ -1,0 +1,291 @@
+---
+source: crates/drift-ts/tests/practice_facts.rs
+expression: "serde_json::to_string_pretty(&serde_json::Value::Object(out)).unwrap()"
+---
+{
+  "app/api/projects/route.test.ts": {
+    "test_requests": [
+      {
+        "method": "GET",
+        "route": "",
+        "target": "app/api/projects/route.ts",
+        "statuses": [
+          401
+        ]
+      }
+    ],
+    "mocks": [
+      "lib/db.ts"
+    ]
+  },
+  "app/api/projects/route.ts": {
+    "GET": {
+      "body_checks": [
+        {
+          "source": "lib/db.ts#prisma.project.findFirst",
+          "reads": "",
+          "compares": "",
+          "outcome": "not_found",
+          "after": [
+            "pkg:@clerk/nextjs/server#auth",
+            "pkg:next/server#NextResponse.json",
+            "lib/db.ts#prisma.project.findFirst"
+          ]
+        },
+        {
+          "source": "pkg:@clerk/nextjs/server#auth",
+          "reads": ".orgId",
+          "compares": "header:x-org-id",
+          "outcome": "forbidden",
+          "op": "ne",
+          "after": [
+            "pkg:@clerk/nextjs/server#auth",
+            "pkg:next/server#NextResponse.json"
+          ]
+        },
+        {
+          "source": "pkg:@clerk/nextjs/server#auth",
+          "reads": ".userId",
+          "compares": "",
+          "outcome": "unauthenticated",
+          "after": [
+            "pkg:@clerk/nextjs/server#auth"
+          ]
+        }
+      ],
+      "responses": [
+        {
+          "status": 200,
+          "via": "return",
+          "builder": "pkg:next/server#NextResponse.json",
+          "model": "",
+          "keys": [],
+          "in_catch": false
+        },
+        {
+          "status": 401,
+          "via": "return",
+          "builder": "pkg:next/server#NextResponse.json",
+          "model": "",
+          "keys": [
+            "error"
+          ],
+          "in_catch": false
+        },
+        {
+          "status": 403,
+          "via": "return",
+          "builder": "pkg:next/server#NextResponse.json",
+          "model": "",
+          "keys": [
+            "error"
+          ],
+          "in_catch": false
+        },
+        {
+          "status": 404,
+          "via": "return",
+          "builder": "pkg:next/server#NextResponse.json",
+          "model": "",
+          "keys": [
+            "error"
+          ],
+          "in_catch": false
+        }
+      ],
+      "headers": [
+        "x-org-id"
+      ]
+    },
+    "POST": {
+      "body_checks": [
+        {
+          "source": "pkg:next-auth#getServerSession",
+          "reads": ".user",
+          "compares": "",
+          "outcome": "unauthenticated",
+          "after": [
+            "pkg:next-auth#getServerSession"
+          ]
+        }
+      ],
+      "responses": [
+        {
+          "status": 201,
+          "via": "return",
+          "builder": "pkg:next/server#NextResponse.json",
+          "model": "",
+          "keys": [
+            "ok"
+          ],
+          "in_catch": false
+        },
+        {
+          "status": 401,
+          "via": "return",
+          "builder": "global#Response(new)",
+          "model": "",
+          "keys": [],
+          "in_catch": false
+        }
+      ]
+    }
+  },
+  "app/links/page.tsx": {
+    "Page": {
+      "body_checks": [
+        {
+          "source": "lib/links.ts#getLink",
+          "reads": "",
+          "compares": "",
+          "outcome": "not_found",
+          "after": [
+            "pkg:@clerk/nextjs/server#currentUser",
+            "pkg:next/navigation#redirect",
+            "lib/links.ts#getLink"
+          ]
+        },
+        {
+          "source": "pkg:@clerk/nextjs/server#currentUser",
+          "reads": "",
+          "compares": "",
+          "outcome": "sign_in_redirect",
+          "after": [
+            "pkg:@clerk/nextjs/server#currentUser"
+          ]
+        }
+      ],
+      "responses": [
+        {
+          "status": 307,
+          "via": "redirect",
+          "builder": "pkg:next/navigation#redirect",
+          "model": "",
+          "keys": [],
+          "in_catch": false
+        },
+        {
+          "status": 404,
+          "via": "throw",
+          "builder": "pkg:next/navigation#notFound",
+          "model": "",
+          "keys": [],
+          "in_catch": false
+        }
+      ]
+    }
+  },
+  "lib/auth.ts": {
+    "caught": {
+      "body_checks": [
+        {
+          "source": "lib/auth.ts#work",
+          "reads": "",
+          "compares": "",
+          "outcome": "unauthenticated",
+          "conditional": true,
+          "condition": "swallowed"
+        }
+      ],
+      "responses": [
+        {
+          "status": 401,
+          "via": "return",
+          "builder": "global#Response(new)",
+          "model": "",
+          "keys": [],
+          "in_catch": true
+        }
+      ],
+      "catches": [
+        {
+          "catches": [
+            "*"
+          ],
+          "does": [
+            "respond:401"
+          ]
+        }
+      ]
+    },
+    "flagged": {
+      "responses": [
+        {
+          "status": 403,
+          "via": "return",
+          "builder": "global#Response(new)",
+          "model": "",
+          "keys": [],
+          "in_catch": false
+        }
+      ]
+    },
+    "middlewareLike": {
+      "responses": [
+        {
+          "status": 401,
+          "via": "return",
+          "builder": "",
+          "model": "",
+          "keys": [],
+          "in_catch": false
+        }
+      ]
+    },
+    "requireAdmin": {
+      "body_checks": [
+        {
+          "source": "param:user",
+          "reads": ".role",
+          "compares": "literal",
+          "outcome": "forbidden",
+          "op": "ne"
+        }
+      ],
+      "responses": [
+        {
+          "status": 403,
+          "via": "return",
+          "builder": "global#Response(new)",
+          "model": "",
+          "keys": [],
+          "in_catch": false
+        }
+      ]
+    },
+    "requireUser": {
+      "body_checks": [
+        {
+          "source": "pkg:@clerk/nextjs/server#auth",
+          "reads": "",
+          "compares": "",
+          "outcome": "unauthenticated",
+          "after": [
+            "pkg:@clerk/nextjs/server#auth"
+          ]
+        }
+      ],
+      "responses": [
+        {
+          "status": 401,
+          "via": "throw",
+          "builder": "pkg:@trpc/server#TRPCError(new)",
+          "model": "",
+          "keys": [],
+          "in_catch": false
+        }
+      ]
+    }
+  },
+  "middleware.ts": {
+    "route_matchers": [
+      {
+        "binding": "config.matcher",
+        "patterns": [
+          "/api/(.*)"
+        ],
+        "polarity": "applies"
+      }
+    ]
+  }
+}

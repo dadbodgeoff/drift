@@ -1,0 +1,67 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - _template_example
+  - admin
+  - app
+  - apps
+  - asgi
+  - auth
+  - bootstrap
+  - celery
+  - example
+  - extensions
+  - forms
+  - guestbook
+  - main
+  - make_celery
+  - manage
+  - models
+  - restful
+  - routes
+  - run
+  - script
+  - settings
+  - tasks
+  - tests
+  - urls
+  - utils
+  - views
+  - wsgi
+  suffixes:
+  - config
+  layers:
+  - app/admin
+  - app/apps
+  - app/extensions
+  - app/forms
+  - app/models
+  - app/routes
+  - app/tasks
+  - app/tests
+  - app/views
+  - example/admin
+  - example/apps
+  - example/asgi
+  - example/models
+  - example/settings
+  - example/tests
+  - example/urls
+  - example/views
+  - example/wsgi
+  - project/asgi
+  - project/extensions
+  - project/models
+  - project/routes
+  - project/settings
+  - project/tasks
+  - project/urls
+  - project/utils
+  - project/views
+  - project/wsgi
+conventions: []

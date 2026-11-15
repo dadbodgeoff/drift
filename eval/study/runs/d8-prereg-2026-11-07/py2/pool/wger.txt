@@ -1,0 +1,25 @@
+3 conventions from 1789 units in 84 roles (0 default tier, 3 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-82d21d] HTTP handlers in wger/** (api/views files) are decorated with utils.extend_schema()
+    evidence: 25/26 (lower bound 0.81, lift 11.2)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  wger/core/api/views.py#ApplicationVersionView.get
+    outlier:  wger/exercises/api/views.py:264 ExerciseInfoViewset.list
+
+ 2. [D-db04dc] classes in wger/** (serializers files) are named `*Serializer`
+    evidence: 76/79 (lower bound 0.89, lift 6.2)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  wger/core/api/serializers.py#LanguageCheckSerializer
+    outlier:  wger/exercises/api/serializers.py:217 AbsoluteUrlFileField
+    outlier:  wger/exercises/api/serializers.py:202 AbsoluteUrlImageField
+    outlier:  wger/manager/api/serializers.py:555 OwnerScopedSessionField
+
+ 3. [D-3755b1] exported values in wger/** (urls files) call urls.path()
+    evidence: 44/46 (lower bound 0.85, lift 3.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  wger/config/urls.py#patterns_gym_config
+    outlier:  wger/urls.py:59 router
+    outlier:  wger/urls.py:265 sitemaps
+

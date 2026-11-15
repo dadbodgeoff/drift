@@ -1,0 +1,13 @@
+{
+  "repo": "freesound",
+  "files": [
+    {
+      "path": "pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": ".eslintrc",
+      "kind": "lint"
+    }
+  ]
+}

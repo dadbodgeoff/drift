@@ -1,0 +1,36 @@
+4 conventions from 1542 units in 47 roles (0 default tier, 4 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-e5b6fe] backend: HTTP handlers in metering_billing/** are decorated with utils.extend_schema()
+    evidence: 69/70 (lower bound 0.92, lift 2.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  backend/metering_billing/views/auth_views.py#DemoLoginView.post
+    outlier:  backend/metering_billing/views/webhook_views.py:55 stripe_webhook_endpoint
+
+ 2. [D-26d6a0] backend: classes in api/** are named `*Serializer`
+    evidence: 85/92 (lower bound 0.85, lift 2.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  backend/api/serializers/model_serializers.py#AddOnSerializer
+    outlier:  backend/api/apps.py:4 ApiConfig
+    outlier:  backend/api/serializers/model_serializers.py:134 LightweightCustomerSerializerForInvoice
+    outlier:  backend/api/serializers/model_serializers.py:2171 ListSubscriptionRecordFilter
+    ... 4 more outliers
+
+ 3. [D-1cbdac] backend: classes in metering_billing/serializers/** are named `*Serializer`
+    evidence: 140/163 (lower bound 0.80, lift 1.9)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  backend/metering_billing/serializers/auth_serializers.py#DemoRegistrationDetailSerializer
+    outlier:  backend/metering_billing/serializers/model_serializers.py:2398 ActivityGenericRelatedField
+    outlier:  backend/metering_billing/serializers/model_serializers.py:1687 ListSubscriptionRecordFilter
+    outlier:  backend/metering_billing/serializers/model_serializers.py:1675 SubscriptionRecordFilterSerializerDelete
+    ... 20 more outliers
+
+ 4. [D-2ab768] django models have a `organization` field
+    evidence: 46/49 (lower bound 0.83, lift 1.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  backend/metering_billing/models.py#APIToken
+    outlier:  backend/metering_billing/models.py:202 Organization
+    outlier:  backend/metering_billing/models.py:90 Team
+    outlier:  backend/metering_billing/models.py:2073 TeamInviteToken
+

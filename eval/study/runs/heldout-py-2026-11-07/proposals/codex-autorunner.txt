@@ -1,0 +1,13 @@
+1 conventions from 8390 units in 232 roles (0 default tier, 1 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-5a3a51] enums in src/codex_autorunner/core/** extend str
+    evidence: 58/61 (lower bound 0.86, lift 21.2)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/codex_autorunner/core/apps/hooks.py#AppHookPoint
+    outlier:  src/codex_autorunner/core/diagnostics/process_snapshot.py:15 ProcessCategory
+    outlier:  src/codex_autorunner/core/diagnostics/process_snapshot.py:22 ProcessOwnership
+    outlier:  src/codex_autorunner/core/pma_lifecycle.py:48 LifecycleCommand
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

@@ -1,0 +1,37 @@
+3 conventions from 1542 units in 47 roles (0 default tier, 3 suggestions)
+
+3 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-7d8745] backend: serializers in api/** and metering_billing/** are named `*Serializer`
+    evidence: 229/237 (lower bound 0.94, lift 2.1)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 40% of 15)
+    example:  backend/metering_billing/serializers/auth_serializers.py#DemoRegistrationDetailSerializer
+    outlier:  backend/api/serializers/model_serializers.py:134 LightweightCustomerSerializerForInvoice
+    outlier:  backend/api/serializers/model_serializers.py:2171 ListSubscriptionRecordFilter
+    outlier:  backend/api/serializers/model_serializers.py:1630 SubscriptionRecordCreateSerializerOld
+    outlier:  backend/api/serializers/model_serializers.py:2141 SubscriptionRecordFilterSerializerDelete
+    outlier:  backend/api/serializers/model_serializers.py:1876 SubscriptionRecordUpdateSerializerOld
+    outlier:  backend/api/serializers/webhook_serializers.py:48 UsageAlertPayload
+    outlier:  backend/metering_billing/serializers/model_serializers.py:1687 ListSubscriptionRecordFilter
+    outlier:  backend/metering_billing/serializers/model_serializers.py:1675 SubscriptionRecordFilterSerializerDelete
+
+ 2. [D-e5b6fe] backend: HTTP handlers in metering_billing/** are decorated with utils.extend_schema()
+    evidence: 69/70 (lower bound 0.92, lift 2.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 50% of 6)
+    example:  backend/metering_billing/views/auth_views.py#DemoLoginView.post
+    outlier:  backend/metering_billing/views/webhook_views.py:55 stripe_webhook_endpoint
+
+ 3. [D-2ab768] django models have a `organization` field
+    evidence: 46/49 (lower bound 0.83, lift 1.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 20% of 5)
+    example:  backend/metering_billing/models.py#APIToken
+    outlier:  backend/metering_billing/models.py:202 Organization
+    outlier:  backend/metering_billing/models.py:90 Team
+    outlier:  backend/metering_billing/models.py:2073 TeamInviteToken
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

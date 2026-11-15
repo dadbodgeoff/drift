@@ -1,0 +1,636 @@
+{
+  "schema_version": 11,
+  "files": [
+    {
+      "path": "src/auth/jwt-auth.guard.ts",
+      "hash": "dafaba9d7535c66c988d6bfb1c5b8712fdc5818de1602cf6e2a2be9a66703de9",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@nestjs/common",
+          "names": [
+            "Injectable"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:@nestjs/passport",
+          "names": [
+            "AuthGuard"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "JwtAuthGuard",
+          "origin": "src/auth/jwt-auth.guard.ts#JwtAuthGuard",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "JwtAuthGuard",
+          "kind": "class",
+          "exported_as": [
+            "JwtAuthGuard"
+          ],
+          "line": 4,
+          "wraps": [
+            {
+              "wrapper": "pkg:@nestjs/common#Injectable",
+              "kind": "decorator"
+            },
+            {
+              "wrapper": "pkg:@nestjs/passport#AuthGuard",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "src/auth/roles.guard.ts",
+      "hash": "97cf480d2a3404e5991bf96729142ada481598bf78a4928bcb7dff7c6d1236eb",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@nestjs/common",
+          "names": [
+            "ForbiddenException",
+            "Injectable"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:@nestjs/core",
+          "names": [
+            "Reflector"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "RolesGuard",
+          "origin": "src/auth/roles.guard.ts#RolesGuard",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "RolesGuard",
+          "kind": "class",
+          "exported_as": [
+            "RolesGuard"
+          ],
+          "line": 6,
+          "wraps": [
+            {
+              "wrapper": "pkg:@nestjs/common#Injectable",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [
+            "pkg:@nestjs/core#Reflector.getAllAndOverride"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "rejects_caller"
+          ],
+          "string_literals": 1,
+          "body_checks": [
+            {
+              "source": "param:context",
+              "reads": ".user.role",
+              "compares": "call:pkg:@nestjs/core#Reflector.getAllAndOverride",
+              "outcome": "forbidden"
+            }
+          ],
+          "responses": [
+            {
+              "status": 403,
+              "via": "throw",
+              "builder": "pkg:@nestjs/common#ForbiddenException(new)",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "src/common/http-exception.filter.ts",
+      "hash": "901548b2a454885ad880062b34b3edef5dd50c2753a3f98a05c27dba0b20e66e",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@nestjs/common",
+          "names": [
+            "Catch",
+            "HttpException",
+            "Logger"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:express",
+          "names": [
+            "Response"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "HttpExceptionFilter",
+          "origin": "src/common/http-exception.filter.ts#HttpExceptionFilter",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "HttpExceptionFilter",
+          "kind": "class",
+          "exported_as": [
+            "HttpExceptionFilter"
+          ],
+          "line": 5,
+          "wraps": [
+            {
+              "wrapper": "pkg:@nestjs/common#Catch",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [
+            "pkg:@nestjs/common#Logger.error",
+            "pkg:express#Response.status"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 0,
+              "via": "setter",
+              "builder": "pkg:express#Response.status",
+              "model": "",
+              "keys": [
+                "message",
+                "path",
+                "statusCode"
+              ],
+              "in_catch": false
+            }
+          ],
+          "log_calls": [
+            {
+              "callee": "pkg:@nestjs/common#Logger.error",
+              "level": "error",
+              "in_catch": false,
+              "structured": false,
+              "passes_error": true
+            }
+          ],
+          "handles_errors": [
+            "pkg:@nestjs/common#HttpException"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "src/projects/dto/create-project.dto.ts",
+      "hash": "a2872470ff5561ef408aa93c7d881b88510b2ddf713dbc9d3381d95aa2de0034",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:class-validator",
+          "names": [
+            "IsString"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "CreateProjectDto",
+          "origin": "src/projects/dto/create-project.dto.ts#CreateProjectDto",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "CreateProjectDto",
+          "kind": "class",
+          "exported_as": [
+            "CreateProjectDto"
+          ],
+          "line": 3,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "field_decorators": [
+            "pkg:class-validator#IsString"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "src/projects/projects.controller.ts",
+      "hash": "e14455dc80291df24b5f739354c77c32de646a9114b252eb1d1acdf71699c280",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@nestjs/common",
+          "names": [
+            "Body",
+            "Controller",
+            "Get",
+            "Headers",
+            "HttpCode",
+            "NotFoundException",
+            "Param",
+            "Post",
+            "UseGuards"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/auth/jwt-auth.guard.ts",
+          "names": [
+            "JwtAuthGuard"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/auth/roles.guard.ts",
+          "names": [
+            "RolesGuard"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/projects/dto/create-project.dto.ts",
+          "names": [
+            "CreateProjectDto"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/projects/projects.service.ts",
+          "names": [
+            "ProjectsService"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "ProjectsController",
+          "origin": "src/projects/projects.controller.ts#ProjectsController",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET /projects/:id",
+          "kind": "function",
+          "exported_as": [],
+          "line": 14,
+          "wraps": [
+            {
+              "wrapper": "pkg:@nestjs/common#UseGuards",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [
+            "pkg:@nestjs/common#NotFoundException(new)",
+            "src/projects/projects.service.ts#ProjectsService.findOne"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "reads_input",
+            "throw"
+          ],
+          "string_literals": 0,
+          "throws": [
+            "pkg:@nestjs/common#NotFoundException"
+          ],
+          "body_checks": [
+            {
+              "source": "src/projects/projects.service.ts#ProjectsService.findOne",
+              "reads": "",
+              "compares": "",
+              "outcome": "not_found"
+            }
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "via": "declared",
+              "builder": "",
+              "model": "src/projects/dto/project.dto.ts#ProjectDto",
+              "keys": [],
+              "in_catch": false
+            },
+            {
+              "status": 404,
+              "via": "throw",
+              "builder": "pkg:@nestjs/common#NotFoundException(new)",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ],
+          "headers": [
+            "x-tenant-id"
+          ]
+        },
+        {
+          "name": "POST /projects",
+          "kind": "function",
+          "exported_as": [],
+          "line": 24,
+          "wraps": [
+            {
+              "wrapper": "pkg:@nestjs/common#HttpCode",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [
+            "src/projects/projects.service.ts#ProjectsService.create"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "reads_input"
+          ],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 201,
+              "via": "declared",
+              "builder": "",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ],
+          "inputs": [
+            "src/projects/dto/create-project.dto.ts#CreateProjectDto"
+          ]
+        },
+        {
+          "name": "ProjectsController",
+          "kind": "class",
+          "exported_as": [
+            "ProjectsController"
+          ],
+          "line": 10,
+          "wraps": [
+            {
+              "wrapper": "pkg:@nestjs/common#Controller",
+              "kind": "decorator"
+            },
+            {
+              "wrapper": "pkg:@nestjs/common#UseGuards",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 1
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET /projects/:id",
+          "kind": "http",
+          "method": "GET",
+          "route": "/projects/:id",
+          "adapter": "nestjs"
+        },
+        {
+          "symbol": "POST /projects",
+          "kind": "http",
+          "method": "POST",
+          "route": "/projects",
+          "adapter": "nestjs"
+        }
+      ],
+      "has_test": true
+    },
+    {
+      "path": "src/projects/projects.service.ts",
+      "hash": "9dbad28e4811b8012d46f2a6eb311437bbebf059a5dc292775efc9cfee3f348b",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@nestjs/common",
+          "names": [
+            "Injectable",
+            "Logger"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "ProjectsService",
+          "origin": "src/projects/projects.service.ts#ProjectsService",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "ProjectsService",
+          "kind": "class",
+          "exported_as": [
+            "ProjectsService"
+          ],
+          "line": 6,
+          "wraps": [
+            {
+              "wrapper": "pkg:@nestjs/common#Injectable",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [
+            "pkg:@nestjs/common#Logger.log",
+            "src/prisma.service.ts#PrismaService.project.findUnique"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 1,
+          "log_calls": [
+            {
+              "callee": "pkg:@nestjs/common#Logger.log",
+              "level": "log",
+              "in_catch": false,
+              "structured": true,
+              "passes_error": false
+            }
+          ],
+          "catches": [
+            {
+              "catches": [
+                "*"
+              ],
+              "does": [
+                "return"
+              ]
+            },
+            {
+              "catches": [
+                "src/errors.ts#DbError"
+              ],
+              "does": [
+                "rethrow"
+              ]
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "test/projects.e2e-spec.ts",
+      "hash": "9e19b06583173a3445dd98ca78018bdbfbfed8901dfe0ef6206f8dacdbf14cff",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@nestjs/testing",
+          "names": [
+            "Test"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:supertest",
+          "names": [
+            "default"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [],
+      "symbols": [
+        {
+          "name": "<module>",
+          "kind": "module",
+          "exported_as": [],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:@nestjs/testing#Test.createTestingModule",
+            "pkg:supertest#default"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 4
+        }
+      ],
+      "entry_points": [],
+      "test_requests": [
+        {
+          "method": "GET",
+          "route": "/projects/[*]",
+          "target": "",
+          "statuses": [
+            200,
+            401,
+            404
+          ]
+        },
+        {
+          "method": "POST",
+          "route": "/projects",
+          "target": "",
+          "statuses": [
+            201,
+            400,
+            403
+          ]
+        }
+      ],
+      "mocks": [
+        "src/projects/projects.service.ts"
+      ]
+    }
+  ],
+  "skipped": [],
+  "packages": [
+    {
+      "path": "",
+      "name": "nest-mixed",
+      "scripts": [
+        "build",
+        "start",
+        "test",
+        "test:e2e"
+      ],
+      "dependencies": [
+        "@nestjs/common@^10.4.0",
+        "@nestjs/core@^10.4.0",
+        "@nestjs/passport@^10.0.3",
+        "@nestjs/testing@^10.4.0",
+        "class-validator@^0.14.1",
+        "express@^4.21.0",
+        "jest@^29.7.0",
+        "supertest@^7.0.0"
+      ],
+      "compiler_flags": [
+        "emitDecoratorMetadata",
+        "experimentalDecorators"
+      ],
+      "dev_only": [
+        "@nestjs/testing",
+        "jest",
+        "supertest"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+15 conventions from 6464 units in 401 roles
+
+ 1. [D-50255f] apps/api: rpc entry points in src/** are wrapped in internalProcedure() or protectedProcedure()
+    evidence: 97/99 (lower bound 0.93, lift 7.6)
+    split:    protectedProcedure 91, internalProcedure 6
+    example:  apps/api/src/trpc/routers/banking.ts#MUTATION deleteConnection
+    outlier:  apps/api/src/trpc/routers/banking.ts:291 QUERY getProviderAccounts
+    outlier:  apps/api/src/trpc/routers/short-links.ts:93 QUERY get
+
+ 2. [D-ff6099] apps/api: rpc entry points in src/** (invoice files) are wrapped in protectedProcedure()
+    evidence: 21/22 (lower bound 0.78, lift 7.6)
+    example:  apps/api/src/trpc/routers/invoice.ts#MUTATION cancelSchedule
+    outlier:  apps/api/src/trpc/routers/invoice.ts:81 QUERY getInvoiceByToken
+
+ 3. [D-86a3c1] packages/workbench: components in src/ui/components/** call cn()
+    evidence: 86/103 (lower bound 0.75, lift 10.5)
+    example:  packages/workbench/src/ui/components/app-sidebar.tsx#AppSidebar
+    outlier:  packages/workbench/src/ui/components/flows/flow-graph.tsx:96 FlowGraph
+    outlier:  packages/workbench/src/ui/components/layout/command-palette.tsx:87 CommandPalette
+    outlier:  packages/workbench/src/ui/components/layout/shell.tsx:35 ShellContent
+    outlier:  packages/workbench/src/ui/components/layout/shell.tsx:41 ShellHeader
+    outlier:  packages/workbench/src/ui/components/layout/shell.tsx:49 ShellMain
+    outlier:  packages/workbench/src/ui/components/shared/relative-time.tsx:13 RelativeTime
+    outlier:  packages/workbench/src/ui/components/ui/command.tsx:25 CommandDialog
+    outlier:  packages/workbench/src/ui/components/ui/command.tsx:67 CommandEmpty
+    outlier:  packages/workbench/src/ui/components/ui/dropdown-menu.tsx:7 DropdownMenu
+    outlier:  packages/workbench/src/ui/components/ui/dropdown-menu.tsx:52 DropdownMenuGroup
+    outlier:  packages/workbench/src/ui/components/ui/dropdown-menu.tsx:13 DropdownMenuPortal
+    outlier:  packages/workbench/src/ui/components/ui/dropdown-menu.tsx:109 DropdownMenuRadioGroup
+    outlier:  packages/workbench/src/ui/components/ui/dropdown-menu.tsx:193 DropdownMenuSub
+    outlier:  packages/workbench/src/ui/components/ui/dropdown-menu.tsx:21 DropdownMenuTrigger
+    outlier:  packages/workbench/src/ui/components/ui/hover-card.tsx:6 HoverCard
+    outlier:  packages/workbench/src/ui/components/ui/hover-card.tsx:12 HoverCardTrigger
+    outlier:  packages/workbench/src/ui/components/ui/sidebar.tsx:708 SidebarMenuSubItem
+
+ 4. [D-b57953] apps/website: exported values in src/** (page files) pass `description` to createPageMetadata()
+    evidence: 45/48 (lower bound 0.83, lift 27.0)
+    example:  apps/website/src/app/about/page.tsx#metadata
+    outlier:  apps/website/src/app/compare/page.tsx:12 metadata
+    outlier:  apps/website/src/app/updates/[slug]/page.tsx:11 dynamic
+    outlier:  apps/website/src/app/updates/page.tsx:18 dynamic
+
+ 5. [D-86f372] apps/worker: classes in src/** do not use `any`
+    evidence: 43/44 (lower bound 0.88, lift 5.9)
+    example:  apps/worker/src/errors/invoice-errors.ts#RecurringInvoiceError
+    outlier:  apps/worker/src/processors/inbox/slack-upload.ts:25 SlackUploadProcessor
+
+ 6. [D-b386b6] apps/dashboard: functions in src/hooks/** are named `use*`
+    evidence: 64/66 (lower bound 0.90, lift 14.4)
+    example:  apps/dashboard/src/hooks/use-accounting-error.ts#useAccountingError
+    outlier:  apps/dashboard/src/hooks/use-notifications.ts:24 getMetadata
+    outlier:  apps/dashboard/src/hooks/use-notifications.ts:28 getMetadataProperty
+
+ 7. [D-b8cff6] files in packages/db/** do not import from packages/notifications/**
+    evidence: 68/69 (lower bound 0.92, lift 3.0)
+    example:  packages/db/drizzle.config.ts#(file)
+    outlier:  packages/db/src/queries/notification-settings.ts:1 (file)
+
+ 8. [D-41656b] files in packages/db/** do not import from packages/banking/**
+    evidence: 67/69 (lower bound 0.90, lift 3.0)
+    example:  packages/db/drizzle.config.ts#(file)
+    outlier:  packages/db/src/queries/bank-accounts.ts:1 (file)
+    outlier:  packages/db/src/queries/reports.ts:1 (file)
+
+ 9. [D-5880dd] apps/worker: classes in src/processors/** extend BaseProcessor
+    evidence: 37/40 (lower bound 0.80, lift 2.4)
+    example:  apps/worker/src/processors/accounting/base.ts#AccountingProcessorBase
+    outlier:  apps/worker/src/processors/accounting/export-transactions.ts:123 ExportTransactionsProcessor
+    outlier:  apps/worker/src/processors/accounting/sync-attachments.ts:49 SyncAttachmentsProcessor
+    outlier:  apps/worker/src/processors/base.ts:17 BaseProcessor
+
+10. [D-61d4d5] apps/api: exported values in src/schemas/** (reports files) are named `get*`
+    evidence: 23/25 (lower bound 0.75, lift 14.4)
+    example:  apps/api/src/schemas/reports.ts#getAccountBalancesSchema
+    outlier:  apps/api/src/schemas/reports.ts:745 createReportSchema
+    outlier:  apps/api/src/schemas/reports.ts:734 reportTypeSchema
+
+11. [D-c48616] packages/db: functions in src/** (reports files) are named `get*`
+    evidence: 19/20 (lower bound 0.76, lift 4.5)
+    example:  packages/db/src/queries/reports.ts#getBalanceSheet
+    outlier:  packages/db/src/queries/reports.ts:4125 createReport
+
+12. [D-7da2b9] packages/db: functions in src/** (schema files) pass `withTimezone` to timestamp()
+    evidence: 47/49 (lower bound 0.86, lift 39.4)
+    example:  packages/db/src/schema.ts#accountingSyncRecords
+    outlier:  packages/db/src/schema.ts:2720 documentTagAssignments
+    outlier:  packages/db/src/schema.ts:308 documentTagEmbeddings
+
+13. [D-b98efb] packages/db: functions in src/** (schema files) call uuid()
+    evidence: 46/49 (lower bound 0.83, lift 39.4)
+    example:  packages/db/src/schema.ts#accountingSyncRecords
+    outlier:  packages/db/src/schema.ts:308 documentTagEmbeddings
+    outlier:  packages/db/src/schema.ts:1366 institutions
+    outlier:  packages/db/src/schema.ts:326 transactionCategoryEmbeddings
+
+14. [D-f90103] packages/db: functions in src/** (schema files) pass `createdAt` to pgTable()
+    evidence: 46/49 (lower bound 0.83, lift 39.4)
+    example:  packages/db/src/schema.ts#accountingSyncRecords
+    outlier:  packages/db/src/schema.ts:2720 documentTagAssignments
+    outlier:  packages/db/src/schema.ts:308 documentTagEmbeddings
+    outlier:  packages/db/src/schema.ts:1155 exchangeRates
+
+15. [D-afc38b] packages/db: functions in src/** (schema files) pass `mode` to timestamp()
+    evidence: 45/49 (lower bound 0.81, lift 39.4)
+    example:  packages/db/src/schema.ts#accountingSyncRecords
+    outlier:  packages/db/src/schema.ts:2720 documentTagAssignments
+    outlier:  packages/db/src/schema.ts:308 documentTagEmbeddings
+    outlier:  packages/db/src/schema.ts:4173 insightUserStatus
+    outlier:  packages/db/src/schema.ts:4086 insights
+

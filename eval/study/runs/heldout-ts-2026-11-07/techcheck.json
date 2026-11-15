@@ -1,0 +1,424 @@
+{
+  "manifest": "eval/holdout-primary.json",
+  "set_id": "ts-primary-2026-11-05",
+  "drift_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+  "min_parseable": 200,
+  "results": [
+    {
+      "name": "thunderhub",
+      "sha": "7c9f7354009040cacf51d544c951db809bcf984a",
+      "clone": true,
+      "scan": true,
+      "files": 568,
+      "parse_errors": 0,
+      "parseable": 568,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "fedify",
+      "sha": "88aa7efd5c46187bb50e4077438aa06f5a532cf2",
+      "clone": true,
+      "scan": true,
+      "files": 1028,
+      "parse_errors": 0,
+      "parseable": 1028,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "hedgedoc",
+      "sha": "c937fd26b5d20ca8b2c5fd26e5b467f0a5c03e08",
+      "clone": true,
+      "scan": true,
+      "files": 1380,
+      "parse_errors": 0,
+      "parseable": 1380,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "mercur",
+      "sha": "fd4e5a3e311fe1d39596f6b53c5e729a65ff2d4d",
+      "clone": true,
+      "scan": true,
+      "files": 4282,
+      "parse_errors": 0,
+      "parseable": 4282,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "pdfslick",
+      "sha": "5bf7d8c48193f34c6df380d0db1a568d69716d07",
+      "clone": true,
+      "scan": true,
+      "files": 176,
+      "parse_errors": 0,
+      "parseable": 176,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (176)"
+    },
+    {
+      "name": "taxhacker",
+      "sha": "636b6b9c98ed8df82f1c252a4cf3819202d8f111",
+      "clone": true,
+      "scan": true,
+      "files": 239,
+      "parse_errors": 0,
+      "parseable": 239,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "computer-science-fundamentals",
+      "sha": "1fa8d8fecb8a6f90466f466f409199506086dbfd",
+      "clone": true,
+      "scan": true,
+      "files": 999,
+      "parse_errors": 0,
+      "parseable": 999,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "memcode",
+      "sha": "782b0c0293d7c2ab9b7f0ce30786d47f5f84fa24",
+      "clone": true,
+      "scan": true,
+      "files": 365,
+      "parse_errors": 0,
+      "parseable": 365,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "zyfun",
+      "sha": "ffba0e2c8b72a9d40e7484fb3053dc4922934950",
+      "clone": true,
+      "scan": true,
+      "files": 527,
+      "parse_errors": 0,
+      "parseable": 527,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "tududi",
+      "sha": "71da9d7b34dfd1600657e9c5ddf40420206fd263",
+      "clone": true,
+      "scan": true,
+      "files": 1688,
+      "parse_errors": 0,
+      "parseable": 1688,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "shigureader",
+      "sha": "db1d6625b727d68f6c12c6fde801dda0a464a461",
+      "clone": true,
+      "scan": true,
+      "files": 148,
+      "parse_errors": 1,
+      "parseable": 147,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (147)"
+    },
+    {
+      "name": "3dcellforge",
+      "sha": "df569572b2eb88c31da89913dc269d816d226e5e",
+      "clone": true,
+      "scan": true,
+      "files": 49,
+      "parse_errors": 0,
+      "parseable": 49,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (49)"
+    },
+    {
+      "name": "ecctrl",
+      "sha": "e2cab804f9f15661a642e76f52d09f0b2db63f35",
+      "clone": true,
+      "scan": true,
+      "files": 49,
+      "parse_errors": 0,
+      "parseable": 49,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (49)"
+    },
+    {
+      "name": "ipfs-webui",
+      "sha": "24ddaa89894b7069c6b973a5526111c19a55c7b0",
+      "clone": true,
+      "scan": true,
+      "files": 491,
+      "parse_errors": 0,
+      "parseable": 491,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "restty",
+      "sha": "3db45b0e10dbe53c52a77131d366f519546e4f04",
+      "clone": true,
+      "scan": true,
+      "files": 348,
+      "parse_errors": 0,
+      "parseable": 348,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "print.js",
+      "sha": "08d002d43a9c383cc26fedbae3c8a6f597666917",
+      "clone": true,
+      "scan": true,
+      "files": 22,
+      "parse_errors": 0,
+      "parseable": 22,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (22)"
+    },
+    {
+      "name": "online3dviewer",
+      "sha": "d025663dcdd101527e87971d9ae2cf16f02949b4",
+      "clone": true,
+      "scan": true,
+      "files": 155,
+      "parse_errors": 0,
+      "parseable": 155,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (155)"
+    },
+    {
+      "name": "stock-api",
+      "sha": "bdab24063fbb7e317608bb5ea3e51f9319dd9d95",
+      "clone": true,
+      "scan": true,
+      "files": 71,
+      "parse_errors": 0,
+      "parseable": 71,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (71)"
+    }
+  ],
+  "reserves": [
+    {
+      "name": "genkit",
+      "sha": "63fba09ba65b3d29261501e8d91d7c6d845cd9d7",
+      "clone": true,
+      "scan": true,
+      "files": 1466,
+      "parse_errors": 0,
+      "parseable": 1466,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "linjun",
+      "sha": "ab682f8c2746a70231a6ab506c22f4e806c48f82",
+      "clone": true,
+      "scan": true,
+      "files": 167,
+      "parse_errors": 0,
+      "parseable": 167,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (167)"
+    },
+    {
+      "name": "cursorless",
+      "sha": "ff86743f2ed8c282219d8228132610f13ae22fbe",
+      "clone": true,
+      "scan": true,
+      "files": 1055,
+      "parse_errors": 1,
+      "parseable": 1054,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "backend",
+      "sha": "91218553b2d12006cd1370f4cf7c37861519ccf8",
+      "clone": true,
+      "scan": true,
+      "files": 246,
+      "parse_errors": 0,
+      "parseable": 246,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "obsidian-latex-suite",
+      "sha": "c58b9bfd30f089b42493cfd22488473ddfd29488",
+      "clone": true,
+      "scan": true,
+      "files": 87,
+      "parse_errors": 0,
+      "parseable": 87,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (87)"
+    },
+    {
+      "name": "kan",
+      "sha": "18f42912c1399a745ec81bc793a27e2ce249717a",
+      "clone": true,
+      "scan": true,
+      "files": 551,
+      "parse_errors": 0,
+      "parseable": 551,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "e2e",
+      "sha": "f185ca8ba2d8a0b1eb68776df832f44b645277ea",
+      "clone": true,
+      "scan": true,
+      "files": 1338,
+      "parse_errors": 0,
+      "parseable": 1338,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "glyph",
+      "sha": "4e25a96a57462fef5ad0d19065a822695b480f60",
+      "clone": true,
+      "scan": true,
+      "files": 892,
+      "parse_errors": 1,
+      "parseable": 891,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "sky-follower-bridge",
+      "sha": "64bfb53148dad76bb737bf2e0e1b0856ea023d19",
+      "clone": true,
+      "scan": true,
+      "files": 112,
+      "parse_errors": 0,
+      "parseable": 112,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (112)"
+    },
+    {
+      "name": "dyrectorio",
+      "sha": "98fe402eb61b88e5472dd3008cabc59d2ebce60b",
+      "clone": true,
+      "scan": true,
+      "files": 747,
+      "parse_errors": 0,
+      "parseable": 747,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "mailgun.js",
+      "sha": "11a1b5dd6b9b1ec7d24a8e2e465375123a1d6191",
+      "clone": true,
+      "scan": true,
+      "files": 261,
+      "parse_errors": 0,
+      "parseable": 261,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "c15t",
+      "sha": "c9f646e1a8ee9a74fc4a2ec3e3eb000223757cac",
+      "clone": true,
+      "scan": true,
+      "files": 4222,
+      "parse_errors": 0,
+      "parseable": 4222,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "open-slide",
+      "sha": "327dd09bcd530eb97647fc33fa67e99f8137d860",
+      "clone": true,
+      "scan": true,
+      "files": 389,
+      "parse_errors": 0,
+      "parseable": 389,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "portpal",
+      "sha": "f3acb8bbfd9416cb5a7554b7aff984a87d35eaa7",
+      "clone": true,
+      "scan": true,
+      "files": 4,
+      "parse_errors": 0,
+      "parseable": 4,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (4)"
+    }
+  ],
+  "replaced": [
+    {
+      "date": "2026-11-07",
+      "repo": "pdfslick",
+      "reserve": "genkit",
+      "reason": "technical check: fewer than 200 parseable files (176)"
+    },
+    {
+      "date": "2026-11-07",
+      "repo": "shigureader",
+      "reserve": "linjun",
+      "reason": "technical check: fewer than 200 parseable files (147)"
+    },
+    {
+      "date": "2026-11-07",
+      "repo": "linjun",
+      "reserve": "cursorless",
+      "reason": "technical check: fewer than 200 parseable files (167)"
+    },
+    {
+      "date": "2026-11-07",
+      "repo": "3dcellforge",
+      "reserve": "backend",
+      "reason": "technical check: fewer than 200 parseable files (49)"
+    },
+    {
+      "date": "2026-11-07",
+      "repo": "ecctrl",
+      "reserve": "obsidian-latex-suite",
+      "reason": "technical check: fewer than 200 parseable files (49)"
+    },
+    {
+      "date": "2026-11-07",
+      "repo": "obsidian-latex-suite",
+      "reserve": "kan",
+      "reason": "technical check: fewer than 200 parseable files (87)"
+    },
+    {
+      "date": "2026-11-07",
+      "repo": "print.js",
+      "reserve": "e2e",
+      "reason": "technical check: fewer than 200 parseable files (22)"
+    },
+    {
+      "date": "2026-11-07",
+      "repo": "online3dviewer",
+      "reserve": "glyph",
+      "reason": "technical check: fewer than 200 parseable files (155)"
+    },
+    {
+      "date": "2026-11-07",
+      "repo": "stock-api",
+      "reserve": "sky-follower-bridge",
+      "reason": "technical check: fewer than 200 parseable files (71)"
+    },
+    {
+      "date": "2026-11-07",
+      "repo": "sky-follower-bridge",
+      "reserve": "dyrectorio",
+      "reason": "technical check: fewer than 200 parseable files (112)"
+    }
+  ]
+}

@@ -1,0 +1,101 @@
+11 conventions from 2658 units in 172 roles (0 default tier, 11 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-e995bd] web/crux-ui: components in src/** do not use requests to computed URLs
+    evidence: 189/195 (lower bound 0.94, lift 9.8)
+    tier:     suggestion (rule kind avoids:other)
+    example:  web/crux-ui/src/components/composer/compose-environment.tsx#ComposeEnvironment
+    outlier:  web/crux-ui/src/components/deployments/edit-deployment-card.tsx:33 EditDeploymentCard
+    outlier:  web/crux-ui/src/components/nodes/dyo-node-setup.tsx:40 DyoNodeSetup
+    outlier:  web/crux-ui/src/components/nodes/edit-node-section.tsx:36 EditNodeSection
+    outlier:  web/crux-ui/src/components/nodes/node-audit-list.tsx:38 NodeAuditList
+    outlier:  web/crux-ui/src/components/pipelines/pipeline-run-list.tsx:22 PipelineRunList
+    outlier:  web/crux-ui/src/components/projects/versions/version-deployments-section.tsx:71 VersionDeploymentsSection
+
+ 2. [D-a7301b] web/crux: HTTP handlers in src/** (*.controller files) are decorated with ApiForbiddenResponse()
+    evidence: 122/123 (lower bound 0.95, lift 5.1)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    example:  web/crux/src/app/config.bundle/config.bundle.http.controller.ts#DELETE /
+    outlier:  web/crux/src/app/health/health.http.controller.ts:16 GET /
+
+ 3. [D-00b847] web/crux: HTTP handlers in src/** (*.controller files) are decorated with HttpCode()
+    evidence: 120/123 (lower bound 0.93, lift 5.1)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    example:  web/crux/src/app/config.bundle/config.bundle.http.controller.ts#DELETE /
+    outlier:  web/crux/src/app/health/health.http.controller.ts:16 GET /
+    outlier:  web/crux/src/app/node/node.http.controller.ts:211 GET / #3
+    outlier:  web/crux/src/app/version/version.http.controller.ts:88 GET / #2
+
+ 4. [D-883d32] web/crux: HTTP handlers in src/** (*.controller files) are decorated with UseGuards()
+    evidence: 112/123 (lower bound 0.85, lift 5.1)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    example:  web/crux/src/app/config.bundle/config.bundle.http.controller.ts#DELETE /
+    outlier:  web/crux/src/app/audit/audit.http.controller.ts:15 GET /
+    outlier:  web/crux/src/app/dashboard/dashboard.http.controller.ts:15 GET /
+    outlier:  web/crux/src/app/health/health.http.controller.ts:16 GET /
+    outlier:  web/crux/src/app/quality.assurance/quality-assurance.http.controller.ts:13 GET /
+    outlier:  web/crux/src/app/team/user.http.controller.ts:63 DELETE /
+    outlier:  web/crux/src/app/team/user.http.controller.ts:91 DELETE / #2
+    outlier:  web/crux/src/app/team/user.http.controller.ts:34 POST /
+    outlier:  web/crux/src/app/team/user.http.controller.ts:48 POST / #2
+    outlier:  web/crux/src/app/team/user.http.controller.ts:78 PUT /
+    outlier:  web/crux/src/app/template/template.http.controller.ts:57 GET /
+    outlier:  web/crux/src/app/template/template.http.controller.ts:96 GET / #2
+
+ 5. [D-d30c46] web/crux: classes in src/** (*.service files) are named `*Service`
+    evidence: 32/33 (lower bound 0.85, lift 13.5)
+    tier:     suggestion (rule kind named)
+    example:  web/crux/src/app/agent/agent.service.ts#AgentService
+    outlier:  web/crux/src/app/container/container-config.http.service.ts:30 ContainerConfigHttpController
+
+ 6. [D-7333aa] web/crux: classes in src/** (*.controller files) are decorated with ApiTags()
+    evidence: 21/22 (lower bound 0.78, lift 19.4)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    example:  web/crux/src/app/audit/audit.http.controller.ts#AuditController
+    outlier:  web/crux/src/app/agent/agent.grpc.controller.ts:33 AgentController
+
+ 7. [D-e10325] web/crux-ui: pages in src/** are named `*Page`
+    evidence: 35/38 (lower bound 0.79, lift 4.6)
+    tier:     suggestion (rule kind named)
+    example:  web/crux-ui/src/pages/[teamSlug]/audit-log.tsx#AuditLogPage
+    outlier:  web/crux-ui/src/pages/404.tsx:9 Page404
+    outlier:  web/crux-ui/src/pages/500.tsx:8 Page500
+    outlier:  web/crux-ui/src/pages/[teamSlug]/config-bundles.tsx:27 ConfigBundles
+
+ 8. [D-69c688] web/crux: HTTP handlers in src/** (*.controller files) pass `summary` to ApiOperation()
+    evidence: 122/123 (lower bound 0.95, lift 5.1)
+    tier:     suggestion (rule kind passes_key)
+    example:  web/crux/src/app/config.bundle/config.bundle.http.controller.ts#DELETE /
+    outlier:  web/crux/src/app/quality.assurance/quality-assurance.http.controller.ts:13 GET /
+
+ 9. [D-d1c643] web/crux: classes in src/** (*.interceptor files) are named `*Interceptor`
+    evidence: 25/27 (lower bound 0.77, lift 15.9)
+    tier:     suggestion (rule kind named)
+    example:  web/crux/src/app/audit.logger/audit.logger.interceptor.ts#AuditLoggerInterceptor
+    outlier:  web/crux/src/app/version/interceptors/version.increase.interceptor.ts:8 VersionIncreaseValidationPipe
+    outlier:  web/crux/src/interceptors/helper.interceptor.ts:15 InterceptorGrpcHelperProvider
+
+10. [D-8e0acd] web/crux: classes in src/** (*.dto files) are named `*Dto`
+    evidence: 192/198 (lower bound 0.94, lift 2.3)
+    tier:     suggestion (rule kind named)
+    example:  web/crux/src/app/audit/audit.dto.ts#AuditDto
+    outlier:  web/crux/src/app/deploy/deploy.dto.ts:334 DeploymentLogPaginationQuery
+    outlier:  web/crux/src/app/image/image.dto.ts:33 ImageValidation
+    outlier:  web/crux/src/app/node/node.dto.ts:53 BasicNodeWithStatus
+    outlier:  web/crux/src/app/node/node.dto.ts:197 ContainerPort
+    outlier:  web/crux/src/app/node/node.dto.ts:275 NodeContainerLogQuery
+    outlier:  web/crux/src/app/version/version.dto.ts:97 VersionListQuery
+
+11. [D-6e19cf] web/crux-ui: functions in src/components/** declare their return type
+    evidence: 43/49 (lower bound 0.76, lift 1.9)
+    tier:     suggestion (rule kind control)
+    example:  web/crux-ui/src/components/composer/use-composer-state.ts#activateBottomSection
+    outlier:  web/crux-ui/src/components/composer/use-composer-state.ts:374 selectDefaultEnvironment
+    outlier:  web/crux-ui/src/components/composer/use-composer-state.ts:377 selectShowDefaultEnvironment
+    outlier:  web/crux-ui/src/components/composer/use-composer-state.ts:381 useComposerState
+    outlier:  web/crux-ui/src/components/editor/use-multi-input-state.ts:17 DEFAULT_EDITOR_COMPARATOR
+    outlier:  web/crux-ui/src/components/projects/versions/use-version-hint.ts:5 useVersionHint
+    outlier:  web/crux-ui/src/components/projects/versions/version-sections.tsx:16 parseVersionSectionState
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

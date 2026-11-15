@@ -1,0 +1,727 @@
+{
+  "run": "eval/study/runs/dev-v3-2026-11-06/py/relabel",
+  "items": [
+    {
+      "uid": "polar/D-f80e7c",
+      "repo": "polar",
+      "id": "D-f80e7c",
+      "rank": 3,
+      "summary": "server: classes in polar/** (repository files) extend RepositoryBase",
+      "role": {
+        "package": "server",
+        "dir": "polar",
+        "file": "repository",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "server/polar/kit/repository/base.py#RepositoryBase"
+        ]
+      },
+      "evidence": {
+        "holders": 88,
+        "total": 90,
+        "lower_bound": 0.92,
+        "lift": 29.7
+      },
+      "members": 90,
+      "example": "server/polar/account/repository.py#AccountRepository",
+      "outliers": 2,
+      "outlier_files": [
+        "server/polar/authz/repository.py",
+        "server/polar/user_organization/repository.py"
+      ],
+      "block": " 3. [D-f80e7c] server: classes in polar/** (repository files) extend RepositoryBase\n    evidence: 88/90 (lower bound 0.92, lift 29.7)\n    example:  server/polar/account/repository.py#AccountRepository\n    outlier:  server/polar/authz/repository.py:114 AuthzRepository\n    outlier:  server/polar/user_organization/repository.py:13 UserOrganizationRepository",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "default"
+    },
+    {
+      "uid": "polar/D-27ad3b",
+      "repo": "polar",
+      "id": "D-27ad3b",
+      "rank": 8,
+      "summary": "clients/apps/web: pages in src/app/(main)/dashboard/[*]/** (page files) call getServerSideAPI()",
+      "role": {
+        "package": "clients/apps/web",
+        "dir": "src/app/(main)/dashboard/[*]",
+        "file": "page",
+        "entry": "page",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "clients/apps/web/src/utils/client/serverside.ts#getServerSideAPI"
+      },
+      "evidence": {
+        "holders": 49,
+        "total": 55,
+        "lower_bound": 0.78,
+        "lift": 18.9
+      },
+      "members": 55,
+      "example": "clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/(home)/page.tsx#Page",
+      "outliers": 6,
+      "outlier_files": [
+        "clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/customers/[customerId]/events/page.tsx",
+        "clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/customers/[customerId]/members/page.tsx",
+        "clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/customers/[customerId]/page.tsx",
+        "clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/customers/[customerId]/usage/page.tsx",
+        "clients/apps/web/src/app/(main)/dashboard/[organization]/cli/token/page.tsx",
+        "clients/apps/web/src/app/(main)/dashboard/[organization]/onboarding/integrate/page.tsx"
+      ],
+      "block": " 8. [D-27ad3b] clients/apps/web: pages in src/app/(main)/dashboard/[*]/** (page files) call getServerSideAPI()\n    evidence: 49/55 (lower bound 0.78, lift 18.9)\n    example:  clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/(home)/page.tsx#Page\n    outlier:  clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/customers/[customerId]/events/page.tsx:16 Page\n    outlier:  clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/customers/[customerId]/members/page.tsx:17 Page\n    outlier:  clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/customers/[customerId]/page.tsx:16 Page\n    outlier:  clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/customers/[customerId]/usage/page.tsx:16 Page\n    outlier:  clients/apps/web/src/app/(main)/dashboard/[organization]/cli/token/page.tsx:8 Page\n    outlier:  clients/apps/web/src/app/(main)/dashboard/[organization]/onboarding/integrate/page.tsx:3 Page",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "default"
+    },
+    {
+      "uid": "polar/D-e5f85b",
+      "repo": "polar",
+      "id": "D-e5f85b",
+      "rank": 10,
+      "summary": "server: enums in polar/** extend StrEnum",
+      "role": {
+        "package": "server",
+        "dir": "polar",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "variety": "enum"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:python:enum#StrEnum"
+        ]
+      },
+      "evidence": {
+        "holders": 124,
+        "total": 125,
+        "lower_bound": 0.96,
+        "lift": 14
+      },
+      "members": 125,
+      "example": "server/polar/auth/permission.py#OrganizationPermission",
+      "outliers": 1,
+      "outlier_files": [
+        "server/polar/worker/_runner.py"
+      ],
+      "block": "10. [D-e5f85b] server: enums in polar/** extend StrEnum\n    evidence: 124/125 (lower bound 0.96, lift 14.0)\n    example:  server/polar/auth/permission.py#OrganizationPermission\n    outlier:  server/polar/worker/_runner.py:134 RetryAction",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "default"
+    },
+    {
+      "uid": "polar/D-2ef961",
+      "repo": "polar",
+      "id": "D-2ef961",
+      "rank": 12,
+      "summary": "server: classes in polar/models/** call orm.mapped_column()",
+      "role": {
+        "package": "server",
+        "dir": "polar/models",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:sqlalchemy#orm.mapped_column"
+      },
+      "evidence": {
+        "holders": 124,
+        "total": 133,
+        "lower_bound": 0.88,
+        "lift": 18.6
+      },
+      "members": 133,
+      "example": "server/polar/models/account.py#Account",
+      "outliers": 9,
+      "outlier_files": [
+        "server/polar/models/benefit.py",
+        "server/polar/models/benefit_grant.py",
+        "server/polar/models/event.py",
+        "server/polar/models/merchant_migration_operation.py",
+        "server/polar/models/organization.py"
+      ],
+      "block": "12. [D-2ef961] server: classes in polar/models/** call orm.mapped_column()\n    evidence: 124/133 (lower bound 0.88, lift 18.6)\n    example:  server/polar/models/account.py#Account\n    outlier:  server/polar/models/benefit.py:25 TaxApplicationMustBeSpecified\n    outlier:  server/polar/models/benefit_grant.py:55 BenefitGrantScopeArgs\n    outlier:  server/polar/models/benefit_grant.py:73 BenefitGrantScopeComparator\n    outlier:  server/polar/models/event.py:56 CustomerComparator\n    outlier:  server/polar/models/merchant_migration_operation.py:63 MerchantMigrationOperation\n    outlier:  server/polar/models/merchant_migration_operation.py:42 MerchantMigrationOperationSelection\n    outlier:  server/polar/models/merchant_migration_operation.py:129 MerchantMigrationOperationType\n    outlier:  server/polar/models/organization.py:329 InvalidStatusTransitionError\n    outlier:  server/polar/models/organization.py:63 PayoutAccountNotReady",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "default"
+    },
+    {
+      "uid": "polar/D-232dfa",
+      "repo": "polar",
+      "id": "D-232dfa",
+      "rank": 13,
+      "summary": "server: exported values in polar/** (auth files) call Depends()",
+      "role": {
+        "package": "server",
+        "dir": "polar",
+        "file": "auth",
+        "entry": "-",
+        "kind": "variable"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:fastapi#Depends"
+      },
+      "evidence": {
+        "holders": 79,
+        "total": 81,
+        "lower_bound": 0.91,
+        "lift": 7.2
+      },
+      "members": 81,
+      "example": "server/polar/benefit/auth.py#BenefitGrantsRead",
+      "outliers": 2,
+      "outlier_files": [
+        "server/polar/file/auth.py"
+      ],
+      "block": "13. [D-232dfa] server: exported values in polar/** (auth files) call Depends()\n    evidence: 79/81 (lower bound 0.91, lift 7.2)\n    example:  server/polar/benefit/auth.py#BenefitGrantsRead\n    outlier:  server/polar/file/auth.py:16 FileRead\n    outlier:  server/polar/file/auth.py:24 FileWrite",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "default"
+    },
+    {
+      "uid": "polar/D-da3cac",
+      "repo": "polar",
+      "id": "D-da3cac",
+      "rank": 15,
+      "summary": "server: HTTP handlers in polar/customer_portal/** pass `summary` to APIRouter.api_route()",
+      "role": {
+        "package": "server",
+        "dir": "polar/customer_portal",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:fastapi#APIRouter.api_route",
+        "index": 99,
+        "key": "summary"
+      },
+      "evidence": {
+        "holders": 33,
+        "total": 35,
+        "lower_bound": 0.81,
+        "lift": 9.4
+      },
+      "members": 35,
+      "example": "server/polar/customer_portal/endpoints/benefit_grant.py#get",
+      "outliers": 2,
+      "outlier_files": [
+        "server/polar/customer_portal/endpoints/customer.py"
+      ],
+      "block": "15. [D-da3cac] server: HTTP handlers in polar/customer_portal/** pass `summary` to APIRouter.api_route()\n    evidence: 33/35 (lower bound 0.81, lift 9.4)\n    example:  server/polar/customer_portal/endpoints/benefit_grant.py#get\n    outlier:  server/polar/customer_portal/endpoints/customer.py:76 get_embed_policy\n    outlier:  server/polar/customer_portal/endpoints/customer.py:57 stream",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "default"
+    },
+    {
+      "uid": "netbox/D-281ae8",
+      "repo": "netbox",
+      "id": "D-281ae8",
+      "rank": 1,
+      "summary": "classes in netbox/** (types files) are decorated with register_type()",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "types",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "netbox/netbox/graphql/types.py#register_type"
+        ]
+      },
+      "evidence": {
+        "holders": 133,
+        "total": 134,
+        "lower_bound": 0.96,
+        "lift": 29.9
+      },
+      "members": 134,
+      "example": "netbox/circuits/graphql/types.py#CircuitGroupAssignmentType",
+      "outliers": 1,
+      "outlier_files": [
+        "netbox/netbox/graphql/types.py"
+      ],
+      "block": " 1. [D-281ae8] classes in netbox/** (types files) are decorated with register_type()\n    evidence: 133/134 (lower bound 0.96, lift 29.9)\n    example:  netbox/circuits/graphql/types.py#CircuitGroupAssignmentType\n    outlier:  netbox/netbox/graphql/types.py:153 NestedGroupObjectType",
+      "family": "decorator",
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "default"
+    },
+    {
+      "uid": "netbox/D-e2c3e4",
+      "repo": "netbox",
+      "id": "D-e2c3e4",
+      "rank": 4,
+      "summary": "classes in netbox/** (choices files) extend ChoiceSet",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "choices",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "netbox/utilities/choices.py#ChoiceSet"
+        ]
+      },
+      "evidence": {
+        "holders": 114,
+        "total": 116,
+        "lower_bound": 0.94,
+        "lift": 33.7
+      },
+      "members": 116,
+      "example": "netbox/circuits/choices.py#CircuitCommitRateChoices",
+      "outliers": 2,
+      "outlier_files": [
+        "netbox/extras/choices.py",
+        "netbox/utilities/choices.py"
+      ],
+      "block": " 4. [D-e2c3e4] classes in netbox/** (choices files) extend ChoiceSet\n    evidence: 114/116 (lower bound 0.94, lift 33.7)\n    example:  netbox/circuits/choices.py#CircuitCommitRateChoices\n    outlier:  netbox/extras/choices.py:305 EventRuleActionChoices\n    outlier:  netbox/utilities/choices.py:19 Choice",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "default"
+    },
+    {
+      "uid": "netbox/D-76eb6b",
+      "repo": "netbox",
+      "id": "D-76eb6b",
+      "rank": 5,
+      "summary": "classes in netbox/** (types files) pass `filters` to register_type()",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "types",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "netbox/netbox/graphql/types.py#register_type",
+        "index": 99,
+        "key": "filters"
+      },
+      "evidence": {
+        "holders": 131,
+        "total": 133,
+        "lower_bound": 0.95,
+        "lift": 29.9
+      },
+      "members": 133,
+      "example": "netbox/circuits/graphql/types.py#CircuitGroupAssignmentType",
+      "outliers": 2,
+      "outlier_files": [
+        "netbox/core/graphql/types.py",
+        "netbox/netbox/graphql/types.py"
+      ],
+      "block": " 5. [D-76eb6b] classes in netbox/** (types files) pass `filters` to register_type()\n    evidence: 131/133 (lower bound 0.95, lift 29.9)\n    example:  netbox/circuits/graphql/types.py#CircuitGroupAssignmentType\n    outlier:  netbox/core/graphql/types.py:49 ContentType\n    outlier:  netbox/netbox/graphql/types.py:204 ContentTypeType",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "default"
+    },
+    {
+      "uid": "netbox/D-cc8d72",
+      "repo": "netbox",
+      "id": "D-cc8d72",
+      "rank": 6,
+      "summary": "classes in netbox/** (forms/filtersets files) call FieldSet()",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "forms/filtersets",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "netbox/utilities/forms/rendering.py#FieldSet"
+      },
+      "evidence": {
+        "holders": 132,
+        "total": 136,
+        "lower_bound": 0.93,
+        "lift": 10.7
+      },
+      "members": 136,
+      "example": "netbox/circuits/forms/filtersets.py#CircuitFilterForm",
+      "outliers": 4,
+      "outlier_files": [
+        "netbox/dcim/forms/filtersets.py",
+        "netbox/extras/forms/filtersets.py"
+      ],
+      "block": " 6. [D-cc8d72] classes in netbox/** (forms/filtersets files) call FieldSet()\n    evidence: 132/136 (lower bound 0.93, lift 10.7)\n    example:  netbox/circuits/forms/filtersets.py#CircuitFilterForm\n    outlier:  netbox/dcim/forms/filtersets.py:2495 ConsoleConnectionFilterForm\n    outlier:  netbox/dcim/forms/filtersets.py:2543 InterfaceConnectionFilterForm\n    outlier:  netbox/dcim/forms/filtersets.py:2519 PowerConnectionFilterForm\n    outlier:  netbox/extras/forms/filtersets.py:640 NotificationGroupFilterForm",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "default"
+    },
+    {
+      "uid": "netbox/D-4c4e2d",
+      "repo": "netbox",
+      "id": "D-4c4e2d",
+      "rank": 7,
+      "summary": "classes in netbox/** (model_forms files) call FieldSet()",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "model_forms",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "netbox/utilities/forms/rendering.py#FieldSet"
+      },
+      "evidence": {
+        "holders": 129,
+        "total": 146,
+        "lower_bound": 0.82,
+        "lift": 9.6
+      },
+      "members": 146,
+      "example": "netbox/circuits/forms/model_forms.py#CircuitForm",
+      "outliers": 17,
+      "outlier_files": [
+        "netbox/dcim/forms/model_forms.py",
+        "netbox/extras/forms/model_forms.py",
+        "netbox/ipam/forms/model_forms.py",
+        "netbox/users/forms/model_forms.py",
+        "netbox/virtualization/forms/model_forms.py"
+      ],
+      "block": " 7. [D-4c4e2d] classes in netbox/** (model_forms files) call FieldSet()\n    evidence: 129/146 (lower bound 0.82, lift 9.6)\n    example:  netbox/circuits/forms/model_forms.py#CircuitForm\n    outlier:  netbox/dcim/forms/model_forms.py:1044 CableForm\n    outlier:  netbox/dcim/forms/model_forms.py:770 DeviceForm\n    outlier:  netbox/dcim/forms/model_forms.py:1260 DeviceVCMembershipForm\n    outlier:  netbox/dcim/forms/model_forms.py:2281 PopulateDeviceBayForm\n    outlier:  netbox/dcim/forms/model_forms.py:1301 VCMemberSelectForm\n    outlier:  netbox/dcim/forms/model_forms.py:1240 VirtualChassisForm\n    outlier:  netbox/extras/forms/model_forms.py:525 BookmarkForm\n    outlier:  netbox/extras/forms/model_forms.py:920 JournalEntryForm\n    outlier:  netbox/extras/forms/model_forms.py:536 NotificationGroupForm\n    outlier:  netbox/extras/forms/model_forms.py:562 SubscriptionForm\n    outlier:  netbox/extras/forms/model_forms.py:446 TableConfigForm\n    outlier:  netbox/ipam/forms/model_forms.py:551 IPAddressAssignForm\n    outlier:  netbox/ipam/forms/model_forms.py:703 VLANForm\n    outlier:  netbox/users/forms/model_forms.py:172 TokenForm\n    outlier:  netbox/users/forms/model_forms.py:128 UserTokenForm\n    outlier:  netbox/virtualization/forms/model_forms.py:106 ClusterAddDevicesForm\n    outlier:  netbox/virtualization/forms/model_forms.py:185 ClusterRemoveDevicesForm",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "default"
+    },
+    {
+      "uid": "netbox/D-afb64d",
+      "repo": "netbox",
+      "id": "D-afb64d",
+      "rank": 10,
+      "summary": "classes in netbox/** (choices files) are named `*Choices`",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "choices",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Choices"
+      },
+      "evidence": {
+        "holders": 115,
+        "total": 119,
+        "lower_bound": 0.92,
+        "lift": 33.7
+      },
+      "members": 119,
+      "example": "netbox/circuits/choices.py#CircuitCommitRateChoices",
+      "outliers": 4,
+      "outlier_files": [
+        "netbox/utilities/choices.py",
+        "netbox/utilities/forms/fields/choices.py"
+      ],
+      "block": "10. [D-afb64d] classes in netbox/** (choices files) are named `*Choices`\n    evidence: 115/119 (lower bound 0.92, lift 33.7)\n    example:  netbox/circuits/choices.py#CircuitCommitRateChoices\n    outlier:  netbox/utilities/choices.py:19 Choice\n    outlier:  netbox/utilities/forms/fields/choices.py:76 ChoiceField\n    outlier:  netbox/utilities/forms/fields/choices.py:96 MultipleChoiceField\n    outlier:  netbox/utilities/forms/fields/choices.py:83 TypedChoiceField",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "netbox/D-310ec7",
+      "repo": "netbox",
+      "id": "D-310ec7",
+      "rank": 12,
+      "summary": "classes in netbox/ipam/tables/** pass `verbose_name` to Column()",
+      "role": {
+        "package": "",
+        "dir": "netbox/ipam/tables",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:django_tables2#Column",
+        "index": 99,
+        "key": "verbose_name"
+      },
+      "evidence": {
+        "holders": 22,
+        "total": 22,
+        "lower_bound": 0.85,
+        "lift": 26.1
+      },
+      "members": 22,
+      "example": "netbox/ipam/tables/asn.py#ASNRangeTable",
+      "outliers": 0,
+      "outlier_files": [],
+      "block": "12. [D-310ec7] classes in netbox/ipam/tables/** pass `verbose_name` to Column()\n    evidence: 22/22 (lower bound 0.85, lift 26.1)\n    example:  netbox/ipam/tables/asn.py#ASNRangeTable",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "default"
+    },
+    {
+      "uid": "saleor/D-71795b",
+      "repo": "saleor",
+      "id": "D-71795b",
+      "rank": 2,
+      "summary": "classes in saleor/** (dataloaders files) are named `*Loader`",
+      "role": {
+        "package": "",
+        "dir": "saleor",
+        "file": "dataloaders",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Loader"
+      },
+      "evidence": {
+        "holders": 126,
+        "total": 128,
+        "lower_bound": 0.94,
+        "lift": 11
+      },
+      "members": 128,
+      "example": "saleor/graphql/account/dataloaders.py#AccessibleChannelsByGroupIdLoader",
+      "outliers": 2,
+      "outlier_files": [
+        "saleor/graphql/plugins/dataloaders.py",
+        "saleor/graphql/tax/dataloaders.py"
+      ],
+      "block": " 2. [D-71795b] classes in saleor/** (dataloaders files) are named `*Loader`\n    evidence: 126/128 (lower bound 0.94, lift 11.0)\n    example:  saleor/graphql/account/dataloaders.py#AccessibleChannelsByGroupIdLoader\n    outlier:  saleor/graphql/plugins/dataloaders.py:31 PluginManagerByRequestorDataloader\n    outlier:  saleor/graphql/tax/dataloaders.py:37 TaxConfigurationByChannelId",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "saleor/D-a6847e",
+      "repo": "saleor",
+      "id": "D-a6847e",
+      "rank": 4,
+      "summary": "classes in saleor/graphql/attribute/dataloaders/** are named `*Loader`",
+      "role": {
+        "package": "",
+        "dir": "saleor/graphql/attribute/dataloaders",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Loader"
+      },
+      "evidence": {
+        "holders": 18,
+        "total": 19,
+        "lower_bound": 0.75,
+        "lift": 10.6
+      },
+      "members": 19,
+      "example": "saleor/graphql/attribute/dataloaders/assigned_attributes.py#AttributeByPageIdAndAttributeSlugLoader",
+      "outliers": 1,
+      "outlier_files": [
+        "saleor/graphql/attribute/dataloaders/attributes.py"
+      ],
+      "block": " 4. [D-a6847e] classes in saleor/graphql/attribute/dataloaders/** are named `*Loader`\n    evidence: 18/19 (lower bound 0.75, lift 10.6)\n    example:  saleor/graphql/attribute/dataloaders/assigned_attributes.py#AttributeByPageIdAndAttributeSlugLoader\n    outlier:  saleor/graphql/attribute/dataloaders/attributes.py:22 AttributesByAttributeId",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "saleor/D-e86c5d",
+      "repo": "saleor",
+      "id": "D-e86c5d",
+      "rank": 5,
+      "summary": "files in saleor/graphql/account/** have a test file",
+      "role": {
+        "package": "",
+        "dir": "saleor/graphql/account",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "has_test"
+      },
+      "evidence": {
+        "holders": 50,
+        "total": 51,
+        "lower_bound": 0.9,
+        "lift": 1.6
+      },
+      "members": 51,
+      "example": "saleor/graphql/account/bulk_mutations/customer_bulk_delete.py#(file)",
+      "outliers": 1,
+      "outlier_files": [
+        "saleor/graphql/account/mixins.py"
+      ],
+      "block": " 5. [D-e86c5d] files in saleor/graphql/account/** have a test file\n    evidence: 50/51 (lower bound 0.90, lift 1.6)\n    example:  saleor/graphql/account/bulk_mutations/customer_bulk_delete.py#(file)\n    outlier:  saleor/graphql/account/mixins.py:1 (file)",
+      "family": "repo",
+      "rule_kind": "has_test",
+      "tier": "default"
+    },
+    {
+      "uid": "saleor/D-0da0cf",
+      "repo": "saleor",
+      "id": "D-0da0cf",
+      "rank": 7,
+      "summary": "files in saleor/graphql/app/** have a test file",
+      "role": {
+        "package": "",
+        "dir": "saleor/graphql/app",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "has_test"
+      },
+      "evidence": {
+        "holders": 20,
+        "total": 21,
+        "lower_bound": 0.77,
+        "lift": 1.6
+      },
+      "members": 21,
+      "example": "saleor/graphql/app/dataloaders/app.py#(file)",
+      "outliers": 1,
+      "outlier_files": [
+        "saleor/graphql/app/dataloaders/thumbnail.py"
+      ],
+      "block": " 7. [D-0da0cf] files in saleor/graphql/app/** have a test file\n    evidence: 20/21 (lower bound 0.77, lift 1.6)\n    example:  saleor/graphql/app/dataloaders/app.py#(file)\n    outlier:  saleor/graphql/app/dataloaders/thumbnail.py:1 (file)",
+      "family": "repo",
+      "rule_kind": "has_test",
+      "tier": "default"
+    },
+    {
+      "uid": "CTFd/D-560792",
+      "repo": "CTFd",
+      "id": "D-560792",
+      "rank": 1,
+      "summary": "classes in CTFd/forms/** extend BaseForm",
+      "role": {
+        "package": "",
+        "dir": "CTFd/forms",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "CTFd/forms/__init__.py#BaseForm"
+        ]
+      },
+      "evidence": {
+        "holders": 34,
+        "total": 35,
+        "lower_bound": 0.85,
+        "lift": 8.5
+      },
+      "members": 35,
+      "example": "CTFd/forms/auth.py#ConfirmForm",
+      "outliers": 1,
+      "outlier_files": [
+        "CTFd/forms/fields.py"
+      ],
+      "block": " 1. [D-560792] classes in CTFd/forms/** extend BaseForm\n    evidence: 34/35 (lower bound 0.85, lift 8.5)\n    example:  CTFd/forms/auth.py#ConfirmForm\n    outlier:  CTFd/forms/fields.py:4 SubmitField",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "default"
+    },
+    {
+      "uid": "CTFd/D-f6c1fb",
+      "repo": "CTFd",
+      "id": "D-f6c1fb",
+      "rank": 2,
+      "summary": "classes in CTFd/schemas/** extend ma.ModelSchema",
+      "role": {
+        "package": "",
+        "dir": "CTFd/schemas",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "CTFd/models/__init__.py#ma.ModelSchema"
+        ]
+      },
+      "evidence": {
+        "holders": 28,
+        "total": 30,
+        "lower_bound": 0.79,
+        "lift": 9.9
+      },
+      "members": 30,
+      "example": "CTFd/schemas/audiences.py#AudienceMemberSchema",
+      "outliers": 2,
+      "outlier_files": [
+        "CTFd/schemas/challenges.py",
+        "CTFd/schemas/config.py"
+      ],
+      "block": " 2. [D-f6c1fb] classes in CTFd/schemas/** extend ma.ModelSchema\n    evidence: 28/30 (lower bound 0.79, lift 9.9)\n    example:  CTFd/schemas/audiences.py#AudienceMemberSchema\n    outlier:  CTFd/schemas/challenges.py:8 ChallengeRequirementsValidator\n    outlier:  CTFd/schemas/config.py:9 ConfigValueField",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "default"
+    },
+    {
+      "uid": "fastapi/D-499c0e",
+      "repo": "fastapi",
+      "id": "D-499c0e",
+      "rank": 1,
+      "summary": "functions in scripts/** declare their return type",
+      "role": {
+        "package": "",
+        "dir": "scripts",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 94,
+        "total": 103,
+        "lower_bound": 0.84,
+        "lift": 3.1
+      },
+      "members": 103,
+      "example": "scripts/add_latest_release_date.py#main",
+      "outliers": 9,
+      "outlier_files": [
+        "scripts/docs.py",
+        "scripts/translation_fixer.py"
+      ],
+      "block": " 1. [D-499c0e] functions in scripts/** declare their return type\n    evidence: 94/103 (lower bound 0.84, lift 3.1)\n    example:  scripts/add_latest_release_date.py#main\n    outlier:  scripts/docs.py:836 add_permalinks_page\n    outlier:  scripts/docs.py:119 complete_existing_lang\n    outlier:  scripts/docs.py:590 langs_json\n    outlier:  scripts/docs.py:132 new_lang\n    outlier:  scripts/docs.py:336 remove_header_permalinks\n    outlier:  scripts/translation_fixer.py:26 callback\n    outlier:  scripts/translation_fixer.py:102 fix_all\n    outlier:  scripts/translation_fixer.py:116 fix_pages\n    outlier:  scripts/translation_fixer.py:56 get_all_paths",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "default"
+    }
+  ]
+}

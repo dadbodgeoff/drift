@@ -1,0 +1,56 @@
+5 conventions from 5341 units in 144 roles (0 default tier, 5 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-e3cf08] functions in src/dbt_charts/core/render/warnings/** pass `fix` to Diagnostic.from_code()
+    evidence: 63/63 (lower bound 0.94, lift 23.8)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/dbt_charts/core/render/warnings/annotation_note_moved.py#detect
+    exempt:   src/dbt_charts/core/render/warnings/base.py:221 chart_series (does not call Diagnostic.from_code())
+    exempt:   src/dbt_charts/core/render/warnings/base.py:253 engine_warnings (does not call Diagnostic.from_code())
+    exempt:   src/dbt_charts/core/render/warnings/base.py:200 listed_phrase (does not call Diagnostic.from_code())
+    ... 7 more exempt
+
+ 2. [D-0f5597] exported values in src/dbt_charts/core/diagnostics/** call REGISTRY.register()
+    evidence: 409/416 (lower bound 0.97, lift 2.3)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/dbt_charts/core/diagnostics/codes_compile.py#ERR_ANNOTATION_INVALID
+    outlier:  src/dbt_charts/core/diagnostics/codes_execute.py:693 UNKNOWN_RELATION_DIALECT_NOTES
+    outlier:  src/dbt_charts/core/diagnostics/codes_retired.py:10 RETIRED_WARNING_CODES
+    outlier:  src/dbt_charts/core/diagnostics/hints.py:42 CHART_RENDERING_SUCCESSORS
+    ... 4 more outliers
+    exempt:   src/dbt_charts/core/diagnostics/registry.py:21 CODED_VALIDATION_ERROR (in the module that defines REGISTRY.register)
+    exempt:   src/dbt_charts/core/diagnostics/registry.py:16 ERROR_GUIDE_PATH (in the module that defines REGISTRY.register)
+    exempt:   src/dbt_charts/core/diagnostics/registry.py:179 REGISTRY (in the module that defines REGISTRY.register)
+
+ 3. [D-f5c512] classes in src/dbt_charts/core/compile/** extend BaseModel
+    evidence: 434/447 (lower bound 0.95, lift 1.5)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/dbt_charts/core/compile/models/board/authored.py#AuthoredBoard
+    outlier:  src/dbt_charts/core/compile/config.py:1236 ProjectSourcesConfig
+    outlier:  src/dbt_charts/core/compile/migrations/migrations.py:126 Dropped
+    outlier:  src/dbt_charts/core/compile/migrations/migrations.py:282 MigrationRegistry
+    ... 10 more outliers
+    exempt:   src/dbt_charts/core/compile/board_artifact.py:78 DanglingStyleRefError (another kind of class (extends ValueError))
+    exempt:   src/dbt_charts/core/compile/errors.py:271 FileValidationError (another kind of class (extends Exception))
+    exempt:   src/dbt_charts/core/compile/errors.py:217 JinjaError (another kind of class (extends Exception))
+    ... 22 more exempt
+
+ 4. [D-e818b0] files in src/dbt_charts/agent_api/** have a test file
+    evidence: 47/49 (lower bound 0.86, lift 2.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/dbt_charts/agent_api/_link_scan.py#(file)
+    outlier:  src/dbt_charts/agent_api/hex_project.py:1 (file)
+    outlier:  src/dbt_charts/agent_api/inspect.py:1 (file)
+
+ 5. [D-9f88d3] classes in src/dbt_charts/agent_api/** extend BaseModel
+    evidence: 108/109 (lower bound 0.95, lift 1.5)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/dbt_charts/agent_api/_link_scan.py#LinkHit
+    outlier:  src/dbt_charts/agent_api/source_bundle.py:104 SourceBundle
+    exempt:   src/dbt_charts/agent_api/_paths.py:384 PathOutsideProjectError (another kind of class (extends Exception))
+    exempt:   src/dbt_charts/agent_api/examples.py:80 ExampleNotFound (another kind of class (extends Exception))
+    exempt:   src/dbt_charts/agent_api/exposures.py:39 ExposuresError (another kind of class (extends ValueError))
+    ... 5 more exempt
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

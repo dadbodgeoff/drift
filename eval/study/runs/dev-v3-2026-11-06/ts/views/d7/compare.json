@@ -1,0 +1,39 @@
+{
+  "shown": 162,
+  "d5_default": 52,
+  "d7_default": 32,
+  "d7_not_in_d5": [],
+  "moved_to_suggestion": {
+    "count": 20,
+    "by_rule_kind": {
+      "wrapped_by:decorator": 6,
+      "wrapped_by:extends": 12,
+      "wrapped_by:jsx": 2
+    },
+    "by_language": {
+      "ts": 20
+    },
+    "uids": [
+      "twenty/D-6429a5",
+      "twenty/D-0cd62c",
+      "twenty/D-2df337",
+      "twenty/D-2456fc",
+      "twenty/D-3c8584",
+      "twenty/D-c39eb9",
+      "twenty/D-7e503c",
+      "cal.com/D-5722ba",
+      "nest/D-897eda",
+      "supabase/D-9b2da2",
+      "novu/D-7c65a3",
+      "novu/D-462c2b",
+      "novu/D-6d3bdc",
+      "novu/D-53fcf5",
+      "novu/D-94d735",
+      "immich/D-876763",
+      "immich/D-c10e8e",
+      "immich/D-3b4f47",
+      "midday/D-5880dd",
+      "infisical/D-055c32"
+    ]
+  }
+}

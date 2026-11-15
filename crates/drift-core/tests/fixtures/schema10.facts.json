@@ -1,0 +1,280 @@
+{
+  "schema_version": 10,
+  "files": [
+    {
+      "path": "app/api/links/[id]/route.ts",
+      "hash": "0be8a343764ade084c22d2cd01e5d8705703b7446ae0ada6d447299f7882dfa9",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/auth.ts",
+          "names": [
+            "withWorkspace"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:zod",
+          "names": [
+            "z"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "origin": "app/api/links/[id]/route.ts#GET",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "exported_as": [
+            "GET"
+          ],
+          "line": 3,
+          "wraps": [
+            {
+              "wrapper": "lib/auth.ts#withWorkspace",
+              "kind": "call"
+            },
+            {
+              "wrapper": "try",
+              "kind": "try"
+            }
+          ],
+          "calls": [
+            "global#Response.json",
+            "global#console.error",
+            "pkg:zod#z.object",
+            "pkg:zod#z.object().parse",
+            "pkg:zod#z.string"
+          ],
+          "renders": [],
+          "args": [
+            "global#Response.json@0:error",
+            "global#Response.json@1:status",
+            "pkg:zod#z.object@0:a"
+          ],
+          "controls": [
+            "await",
+            "reads_input",
+            "try",
+            "validates"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:zod#z.object().parse",
+            "pkg:zod#z.object",
+            "pkg:zod#z.string",
+            "global#Response.json",
+            "global#console.error"
+          ],
+          "arg_types": [
+            "global#Response.json@0:error=unknown",
+            "global#Response.json@1:status=unknown",
+            "pkg:zod#z.object@0:a=unknown"
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/links/[id]",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "lib/auth.ts",
+      "hash": "2cb43be47d731041308cb3ce050070421f4a36071a141ce0c9611d6237c62ea4",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "withWorkspace",
+          "origin": "lib/auth.ts#withWorkspace",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "withWorkspace",
+          "kind": "function",
+          "exported_as": [
+            "withWorkspace"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "global#Error(new)"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "throw"
+          ],
+          "string_literals": 1,
+          "reads": [
+            "process.env.AUTH_SECRET"
+          ],
+          "throws": [
+            "global#Error"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "py/app/main.py",
+      "hash": "07e5d6b7acb14256eb71a63e817bc37a510a9fc412f3a1247f94c964aa4579ed",
+      "lang": "py",
+      "package": "py",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:fastapi",
+          "names": [
+            "Depends",
+            "FastAPI",
+            "HTTPException"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "app",
+          "origin": "py/app/main.py#app",
+          "kind": "local"
+        },
+        {
+          "name": "get_current_user",
+          "origin": "py/app/main.py#get_current_user",
+          "kind": "local"
+        },
+        {
+          "name": "read_item",
+          "origin": "py/app/main.py#read_item",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "app",
+          "kind": "variable",
+          "exported_as": [
+            "app"
+          ],
+          "line": 2,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#FastAPI"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "order": [
+            "pkg:fastapi#FastAPI"
+          ]
+        },
+        {
+          "name": "get_current_user",
+          "kind": "function",
+          "exported_as": [
+            "get_current_user"
+          ],
+          "line": 3,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "read_item",
+          "kind": "function",
+          "exported_as": [
+            "read_item"
+          ],
+          "line": 5,
+          "wraps": [
+            {
+              "wrapper": "py/app/main.py#get_current_user",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "pkg:fastapi#HTTPException"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:fastapi#HTTPException@99:status_code"
+          ],
+          "controls": [
+            "rejects_caller",
+            "throw"
+          ],
+          "string_literals": 1,
+          "throws": [
+            "pkg:fastapi#HTTPException"
+          ],
+          "order": [
+            "pkg:fastapi#HTTPException"
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "read_item",
+          "kind": "http",
+          "method": "GET",
+          "route": "/items/{item_id}",
+          "adapter": "fastapi"
+        }
+      ]
+    }
+  ],
+  "skipped": [],
+  "packages": [
+    {
+      "path": "",
+      "name": "s10",
+      "scripts": [
+        "build"
+      ],
+      "dependencies": [
+        "next@15.0.0",
+        "vitest@2.0.0",
+        "zod@3.23.0"
+      ],
+      "compiler_flags": [
+        "strict"
+      ]
+    },
+    {
+      "path": "py",
+      "name": "svc",
+      "scripts": [],
+      "dependencies": [
+        "fastapi@>=0.110"
+      ],
+      "compiler_flags": [],
+      "manifest": "py/pyproject.toml"
+    }
+  ]
+}

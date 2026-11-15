@@ -1,0 +1,423 @@
+{
+  "//": "BLIND DEV pool dev3 (PLAN-R10 section 3.1), role DEV: not a held-out set (no D1/D4 verdict); it predicts the next held-out draw. Drawn with the held-out procedure and exclusions. FROZEN since `frozen_at`: the core (set_id, role, frozen_at, repos, reserves, tier, max, pool) never changes (registered in `selection.registry`); only the append-only lists `replaced`, `burned` and `exposed` may grow. Nobody building product opens these repos, cards or labels before the round-10 freeze; only the dev3 operator runs its census and blind labelling, once, at the freeze. After its report it joins the build set.",
+  "set_id": "ts-dev3-2026-11-08",
+  "role": "dev",
+  "decision": "PLAN-R10 section 3.1 (adopted with D12, 2026-11-08): a rolling blind dev pool, dev3: select-holdout.mjs --selection dev3 with the held-out procedure and exclusions, 12 TS/JS and 8 Python repos, role dev, reserves fixed before the draw; census and blind labelling (rubric v3) once, at the round-10 freeze, on the frozen binary.",
+  "holdout": false,
+  "status": "frozen",
+  "frozen_on": "2026-11-08",
+  "frozen_at": "2026-11-08T14:40:25Z",
+  "language": "typescript/javascript",
+  "tier": {
+    "//": "Decision D7 (eval/study/README.md decision log), approved by the founder 2026-11-06 and recorded before any held-out census. D5 (tier-d5.json) narrowed by rule kind and language. TypeScript/JavaScript: the default tier admits only call wrappers (wrapped_by:call) and layering (avoids:import); wrapped_by:decorator, wrapped_by:extends and wrapped_by:jsx move to the suggestion tier. Python: no rule kind is in the default tier; Python advises only and every Python proposal is suggestion tier. D5's conditions still apply on top of the rule kind: every symbol the rule names is defined in the repository (default.target \"in_repo\": no pkg:, global# or unresolved: target; lib.mjs namesPackage, drift_mine::tier::names_package) and the role has >= default.min_members members. The language of a proposal is read conservatively (lib.mjs proposalLanguage, drift_mine::tier::convention_language): py when any member of its role is Python (conventions.yaml evidence.python_members) or its example path is (.py/.pyi files and Python package manifests), ts otherwise. Role members are counted as the role's size (evidence.role_members when set, else total; exempt members count). DEFAULT tier = language in default.languages AND structured rule kind (lib.mjs ruleKind) in default.rule_kinds AND the rule names no symbol from outside the repository AND its role has >= default.min_members members. SUGGESTION tier = every other shown proposal. The not-wrong rate is reported over all shown proposals, both tiers. Release gate unchanged: a language's default tier ships as advise until it measures >= 95% default-tier accept under rubric v3, judged per D1, on a primary held-out run.",
+    "kind": "rule_kind",
+    "decision": "D7",
+    "default": {
+      "//": "TypeScript/JavaScript call wrappers and layering (import avoidance), each only when every symbol it names is defined in the repository, in roles of 15 or more members",
+      "rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "languages": [
+        "ts"
+      ],
+      "min_members": 15,
+      "target": "in_repo"
+    },
+    "suggestion": {
+      "//": "D5's suggestion kinds, plus decorators, base classes and JSX layout wrappers (D7); every Python proposal (languages); and default-tier kinds whose rule names a package, built-in or unresolved symbol, or whose role is small",
+      "rule_kinds": [
+        "calls",
+        "named",
+        "avoids:other",
+        "prefers_library",
+        "before",
+        "has_test",
+        "model_has",
+        "package_has",
+        "dependency_version",
+        "wrapped_by:try",
+        "control",
+        "directive",
+        "throws",
+        "passes_key",
+        "renders",
+        "wrapped_by:decorator",
+        "wrapped_by:extends",
+        "wrapped_by:jsx"
+      ],
+      "languages": [
+        "py"
+      ]
+    },
+    "not_wrong_over": "all_shown"
+  },
+  "max": 15,
+  "//max_pool": "Same as the secondary sets: max 15 (census --max, proposals shown) and pool 200 (recall pool).",
+  "pool": 200,
+  "provenance": "Metadata only. Candidates: GitHub repository search (queries in `selection.record`), filtered by OSI licence, not archived, not a fork or template, and excluding every repo the Drift repository mentions (dev sets, polar and CTFd, every held-out set (primary, secondary and both later draws) with its reserves, replaced, burned and exposed entries, any github.com URL on any branch, commit messages, PR and issue text) and obvious non-applications by name or topic. framework_bucket from the repo's dependency manifests only (package.json; pyproject.toml, requirements*.txt, setup.cfg, Pipfile), queried through GitHub code search restricted to those file names on the default branch; nothing else. sha = default-branch HEAD from git ls-remote. size_kb, stars, pushed_at from search metadata at retrieval. No notes about the code exist: nobody read it.",
+  "selection": {
+    "script": "eval/study/select-holdout.mjs",
+    "selection": "dev3",
+    "record": "eval/dev3-2026-11-08-selection.json",
+    "record_sha256": "da4ba78bb20249c946373d60926cb9b4175c80e2c2805d8bf6fcb9a9cad5f7c8",
+    "registry": "eval/dev3-2026-11-08-registry.json",
+    "seed": "drift-dev3-2026-11-08:459e52857b0d6de8fb7a414e5841d3ad6a66a74d:1ec283eb0ee09446d7ea887006f5cebd",
+    "retrieved_at": "2026-11-08T13:35:15Z",
+    "buckets": {
+      "nestjs": 2,
+      "nextjs": 3,
+      "express_fastify_hono": 3,
+      "react_spa": 2,
+      "other_node": 2
+    }
+  },
+  "//lists": "Append-only lists outside the frozen core. replaced: [{date, repo, reserve, reason}], the i-th swap uses the i-th reserve, only for a failed technical check (clone fails, `drift scan` errors, fewer than 200 parseable files) or (Python) overlap with the dev set. burned: [{date, name, reason}]. exposed: [{name, where}], repos whose conventions were named where product engineers can read.",
+  "replaced": [
+    {
+      "date": "2026-11-08",
+      "repo": "react-multi-email",
+      "reserve": "dashclaw",
+      "reason": "technical check: fewer than 200 parseable files (45)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "text-behind-image",
+      "reserve": "3dtilesrendererjs",
+      "reason": "technical check: fewer than 200 parseable files (65)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "flopflip",
+      "reserve": "agoric-sdk",
+      "reason": "technical check: fewer than 200 parseable files (180)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "cowart",
+      "reserve": "maintainerr",
+      "reason": "technical check: fewer than 200 parseable files (54)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "redmatic",
+      "reserve": "arktype",
+      "reason": "technical check: fewer than 200 parseable files (33)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "sutil",
+      "reserve": "core",
+      "reason": "technical check: fewer than 200 parseable files (16)"
+    }
+  ],
+  "burned": [],
+  "exposed": [],
+  "repos": [
+    {
+      "name": "ng-antd-admin",
+      "url": "https://github.com/huajian123/ng-antd-admin",
+      "sha": "6119a2915b0913b269232d0926e85a509578a04f",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs",
+      "size_kb": 49498,
+      "stars": 711,
+      "pushed_at": "2026-10-19T12:15:58Z"
+    },
+    {
+      "name": "lexora",
+      "url": "https://github.com/useLexora/Lexora",
+      "sha": "22ee9fc552c673af1d0c366eff2eb6cda0bb7429",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs",
+      "size_kb": 82113,
+      "stars": 687,
+      "pushed_at": "2026-11-08T12:28:39Z"
+    },
+    {
+      "name": "openai-node",
+      "url": "https://github.com/openai/openai-node",
+      "sha": "47bade063b0277e56a8352997a55e857424d482c",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "size_kb": 26178,
+      "stars": 11252,
+      "pushed_at": "2026-11-07T03:41:01Z"
+    },
+    {
+      "name": "react-multi-email",
+      "url": "https://github.com/axisj/react-multi-email",
+      "sha": "8be3d6a1edbef101f68d877d34a501407fff7130",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "size_kb": 29955,
+      "stars": 316,
+      "pushed_at": "2026-09-01T06:35:25Z"
+    },
+    {
+      "name": "text-behind-image",
+      "url": "https://github.com/RexanWONG/text-behind-image",
+      "sha": "b650385ca77b19ca7a5a818d72520ddc8f5e2d3d",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "size_kb": 59659,
+      "stars": 2024,
+      "pushed_at": "2026-06-21T04:58:39Z"
+    },
+    {
+      "name": "rnx-kit",
+      "url": "https://github.com/microsoft/rnx-kit",
+      "sha": "3461face58e160b9c999d23e252a7cb422374142",
+      "language": "TypeScript",
+      "framework_bucket": "express_fastify_hono",
+      "size_kb": 174271,
+      "stars": 1740,
+      "pushed_at": "2026-11-06T09:14:15Z"
+    },
+    {
+      "name": "openreel-video",
+      "url": "https://github.com/Augani/openreel-video",
+      "sha": "367d7e90b61b5181f9861b852bb8b9d7a7d2954a",
+      "language": "TypeScript",
+      "framework_bucket": "express_fastify_hono",
+      "size_kb": 27093,
+      "stars": 5609,
+      "pushed_at": "2026-10-17T07:17:20Z"
+    },
+    {
+      "name": "browseros",
+      "url": "https://github.com/browseros-ai/BrowserOS",
+      "sha": "9e07439a919ded1acbd03c03d3c47b054ee8f05f",
+      "language": "TypeScript",
+      "framework_bucket": "express_fastify_hono",
+      "size_kb": 225369,
+      "stars": 14278,
+      "pushed_at": "2026-11-08T09:50:53Z"
+    },
+    {
+      "name": "flopflip",
+      "url": "https://github.com/tdeekens/flopflip",
+      "sha": "5d09b5fd40eca7c6ce3e8ca5f8eac2cc05445209",
+      "language": "JavaScript",
+      "framework_bucket": "react_spa",
+      "size_kb": 45673,
+      "stars": 412,
+      "pushed_at": "2026-10-31T21:42:59Z"
+    },
+    {
+      "name": "cowart",
+      "url": "https://github.com/zhongerxin/Cowart",
+      "sha": "38bdafeff47374ddbc11b12bddbc4f1f4cf14587",
+      "language": "JavaScript",
+      "framework_bucket": "react_spa",
+      "size_kb": 58604,
+      "stars": 6057,
+      "pushed_at": "2026-10-08T12:07:12Z"
+    },
+    {
+      "name": "redmatic",
+      "url": "https://github.com/rdmtc/RedMatic",
+      "sha": "7f00f62da226ba4fd2fa878814fa5c4b3f955724",
+      "language": "JavaScript",
+      "framework_bucket": "other_node",
+      "size_kb": 224885,
+      "stars": 528,
+      "pushed_at": "2026-11-05T12:34:34Z"
+    },
+    {
+      "name": "sutil",
+      "url": "https://github.com/davedawkins/Sutil",
+      "sha": "089f1a00d42da7eb33e50e94c92c3ad294cc4960",
+      "language": "JavaScript",
+      "framework_bucket": "other_node",
+      "size_kb": 24828,
+      "stars": 315,
+      "pushed_at": "2026-10-15T01:48:46Z"
+    }
+  ],
+  "reserves": {
+    "//": "Pre-registered replacements, used in this order only (rule 1). Reserve i comes from bucket spec.sets.<set>.reserve_order[i] of the selection record.",
+    "repos": [
+      {
+        "name": "dashclaw",
+        "url": "https://github.com/ucsandman/DashClaw",
+        "sha": "704824de5f5f2fa052d4c36ec269a1ab0dbfcc8a",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 241331,
+        "stars": 316,
+        "pushed_at": "2026-11-07T01:54:25Z"
+      },
+      {
+        "name": "3dtilesrendererjs",
+        "url": "https://github.com/NASA-AMMOS/3DTilesRendererJS",
+        "sha": "30889c190c051d7a278027d5818e7d2dd6b70a6f",
+        "language": "JavaScript",
+        "framework_bucket": "react_spa",
+        "size_kb": 58334,
+        "stars": 2522,
+        "pushed_at": "2026-11-07T03:02:00Z"
+      },
+      {
+        "name": "agoric-sdk",
+        "url": "https://github.com/Agoric/agoric-sdk",
+        "sha": "0417caca9eee0154e65b74f62962edcf172cf118",
+        "language": "TypeScript",
+        "framework_bucket": "express_fastify_hono",
+        "size_kb": 192638,
+        "stars": 358,
+        "pushed_at": "2026-11-07T00:40:34Z"
+      },
+      {
+        "name": "maintainerr",
+        "url": "https://github.com/Maintainerr/Maintainerr",
+        "sha": "80898a31b2ccc44e890b4456da86c03394831a29",
+        "language": "TypeScript",
+        "framework_bucket": "nestjs",
+        "size_kb": 30049,
+        "stars": 2394,
+        "pushed_at": "2026-11-06T15:20:56Z"
+      },
+      {
+        "name": "arktype",
+        "url": "https://github.com/arktypeio/arktype",
+        "sha": "326cdce3b188d627fc219cf75ce5d929fd18e8c1",
+        "language": "TypeScript",
+        "framework_bucket": "other_node",
+        "size_kb": 33870,
+        "stars": 7888,
+        "pushed_at": "2026-11-06T08:56:56Z"
+      },
+      {
+        "name": "core",
+        "url": "https://github.com/Asymmetric-al/core",
+        "sha": "bfde43a20c822afdd88e082e83a625f79025f10b",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 223238,
+        "stars": 370,
+        "pushed_at": "2026-11-07T17:11:15Z"
+      },
+      {
+        "name": "prompt-lens",
+        "url": "https://github.com/raojiacui/prompt-lens",
+        "sha": "75eb611f8759745ec743818bce24350691d6ab8d",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 110268,
+        "stars": 678,
+        "pushed_at": "2026-11-08T08:42:10Z"
+      },
+      {
+        "name": "google-pay-button",
+        "url": "https://github.com/google-pay/google-pay-button",
+        "sha": "f3bc7331a11f5bae91841608edfbabd692487887",
+        "language": "TypeScript",
+        "framework_bucket": "react_spa",
+        "size_kb": 23432,
+        "stars": 307,
+        "pushed_at": "2026-11-03T20:04:45Z"
+      },
+      {
+        "name": "openmeld",
+        "url": "https://github.com/amplifthq/openmeld",
+        "sha": "965d9eb3219fa2c35789f9ab9a2206ab8699de9b",
+        "language": "TypeScript",
+        "framework_bucket": "express_fastify_hono",
+        "size_kb": 103774,
+        "stars": 1413,
+        "pushed_at": "2026-11-06T07:27:52Z"
+      },
+      {
+        "name": "jarvishub",
+        "url": "https://github.com/LYL1015/JarvisHub",
+        "sha": "6c0f123119d9ffe1a6bae5140721f0b84ea3bbaa",
+        "language": "TypeScript",
+        "framework_bucket": "nestjs",
+        "size_kb": 59050,
+        "stars": 624,
+        "pushed_at": "2026-08-03T02:24:26Z"
+      },
+      {
+        "name": "ogam",
+        "url": "https://github.com/off-grid-ai/OGAM",
+        "sha": "0957b72ecf3e197c08325b2ba7659ea2f1ffc3ff",
+        "language": "TypeScript",
+        "framework_bucket": "other_node",
+        "size_kb": 402799,
+        "stars": 3351,
+        "pushed_at": "2026-11-08T02:13:33Z"
+      },
+      {
+        "name": "dify-app-hub",
+        "url": "https://github.com/lexmin0412/dify-app-hub",
+        "sha": "e62c2b3b861da86ab6f4ab159c2bc09d74e90c0a",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 24827,
+        "stars": 785,
+        "pushed_at": "2026-09-08T01:58:40Z"
+      },
+      {
+        "name": "notabase",
+        "url": "https://github.com/churichard/notabase",
+        "sha": "813670c810c37dda9e4d178eba0899b7845bf403",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 42604,
+        "stars": 915,
+        "pushed_at": "2026-07-17T17:01:40Z"
+      },
+      {
+        "name": "thorium-reader",
+        "url": "https://github.com/edrlab/thorium-reader",
+        "sha": "b00cee5e73381bc9ff4390ebabfa9da7f87de581",
+        "language": "TypeScript",
+        "framework_bucket": "react_spa",
+        "size_kb": 181249,
+        "stars": 2935,
+        "pushed_at": "2026-11-06T11:13:09Z"
+      },
+      {
+        "name": "routr",
+        "url": "https://github.com/fonoster/routr",
+        "sha": "88199378914c62dbd44cf187c7892ce8435c3ca3",
+        "language": "TypeScript",
+        "framework_bucket": "express_fastify_hono",
+        "size_kb": 187800,
+        "stars": 1729,
+        "pushed_at": "2026-11-07T16:38:51Z"
+      },
+      {
+        "name": "packmind",
+        "url": "https://github.com/PackmindHub/packmind",
+        "sha": "e9904844638eac5e0848a1bd759b8e7d31004e3b",
+        "language": "TypeScript",
+        "framework_bucket": "nestjs",
+        "size_kb": 51167,
+        "stars": 321,
+        "pushed_at": "2026-11-06T15:42:44Z"
+      },
+      {
+        "name": "qiaomu-clipper",
+        "url": "https://github.com/joeseesun/qiaomu-clipper",
+        "sha": "391c19247d2ff7f90454f32ed71c1eb469540899",
+        "language": "TypeScript",
+        "framework_bucket": "other_node",
+        "size_kb": 63349,
+        "stars": 409,
+        "pushed_at": "2026-11-02T06:11:50Z"
+      },
+      {
+        "name": "shroudly",
+        "url": "https://github.com/umutxyp/Shroudly",
+        "sha": "2e42d7dab72690521308b47a74ba4390caa0a843",
+        "language": "JavaScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 24610,
+        "stars": 425,
+        "pushed_at": "2026-11-08T13:15:32Z"
+      }
+    ]
+  }
+}

@@ -1,0 +1,155 @@
+{
+  "//": "PREREG-F12-dev5-py-check.md section 3: shown cards of the default census at F12 (`census --json --max 15`, mined Python proposals off), once per repo, counts only. shown_default_view: the proposals the JSON lists (equal to its `shown` field in every repo); python: those whose language is Python.",
+  "repos": [
+    {
+      "repo": "P01",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P02",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P03",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P04",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P05",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P06",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P07",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P08",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P09",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P10",
+      "shown_default_view": 2,
+      "python": 0
+    },
+    {
+      "repo": "P11",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P12",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P13",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P14",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P15",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P16",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P17",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P18",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P19",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P20",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P21",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P22",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P23",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P24",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P25",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P26",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P27",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P28",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P29",
+      "shown_default_view": 0,
+      "python": 0
+    },
+    {
+      "repo": "P30",
+      "shown_default_view": 0,
+      "python": 0
+    }
+  ]
+}

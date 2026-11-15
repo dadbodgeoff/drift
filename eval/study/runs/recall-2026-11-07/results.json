@@ -1,0 +1,3701 @@
+{
+ "binaries": {
+  "base": {
+   "commit": "cd8296b",
+   "sha256": "42755c7cdc1725f1ba2d002e48d36dcb092cfdf20634bebebd73f9635eaa0ce3"
+  },
+  "main": {
+   "commit": "feefad6",
+   "sha256": "24ed92b6a8e77b04366a83cb1d8e0aa24af4d19749c61976253dac9c91a89542"
+  }
+ },
+ "edits": [
+  {
+   "eid": "dub-01",
+   "group": "default",
+   "lang": "ts",
+   "repo": "dub",
+   "rule_kind": "wrapped_by:call",
+   "intent": "app/api/** route wrapped in withSession()/withWorkspace() (D-d24d21)",
+   "files": [
+    "apps/web/app/api/recall-synth/route.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-d24d21"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-d24d21"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "dub-02",
+   "group": "default",
+   "lang": "ts",
+   "repo": "dub",
+   "rule_kind": "wrapped_by:call",
+   "intent": "D-d24d21, handler added to an existing member file",
+   "files": [
+    "apps/web/app/api/activity-logs/route.ts"
+   ],
+   "variant": "add_to_member",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-d24d21"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-d24d21"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "dub-03",
+   "group": "default",
+   "lang": "ts",
+   "repo": "dub",
+   "rule_kind": "wrapped_by:call",
+   "intent": "app/api/workspaces/[*]/** wrapped in withWorkspace() (D-015190)",
+   "files": [
+    "apps/web/app/api/workspaces/[idOrSlug]/recall-synth/route.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-015190",
+     "D-d24d21"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-015190",
+     "D-d24d21"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "dub-04",
+   "group": "default",
+   "lang": "ts",
+   "repo": "dub",
+   "rule_kind": "wrapped_by:call",
+   "intent": "app/(ee)/api/partner-profile/** wrapped in withPartnerProfile() (D-83351e)",
+   "files": [
+    "apps/web/app/(ee)/api/partner-profile/recall-synth/route.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-83351e"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-83351e"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "dub-05",
+   "group": "default",
+   "lang": "ts",
+   "repo": "dub",
+   "rule_kind": "wrapped_by:call",
+   "intent": "app/(ee)/api/partners/** wrapped in withWorkspace() (D-ebbc30)",
+   "files": [
+    "apps/web/app/(ee)/api/partners/recall-synth/route.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-ebbc30"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": [
+     [
+      "D-79cc0a",
+      "PATCH",
+      "calls"
+     ]
+    ]
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-ebbc30"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": [
+     [
+      "D-79cc0a",
+      "PATCH",
+      "calls"
+     ]
+    ]
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "dub-06",
+   "group": "default",
+   "lang": "ts",
+   "repo": "dub",
+   "rule_kind": "wrapped_by:call",
+   "intent": "server actions in lib/actions/** wrapped in a safe-action client (base D-50df58, main D-345913)",
+   "files": [
+    "apps/web/lib/actions/recall-synth-delete-link.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-50df58"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-345913"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "dub-07",
+   "group": "default",
+   "lang": "ts",
+   "repo": "dub",
+   "rule_kind": "wrapped_by:call",
+   "intent": "server action added to an existing member file (base D-50df58, main D-345913)",
+   "files": [
+    "apps/web/lib/actions/add-edit-integration.ts"
+   ],
+   "variant": "add_to_member",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-50df58"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-345913"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "dub-08",
+   "group": "default",
+   "lang": "ts",
+   "repo": "dub",
+   "rule_kind": "wrapped_by:call",
+   "intent": "D-d24d21, handler wrapped in a local pass-through instead of the auth wrapper",
+   "files": [
+    "apps/web/app/api/recall-synth-passthrough/route.ts"
+   ],
+   "variant": "wrong_wrapper",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-d24d21"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-d24d21"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "dub-09",
+   "group": "default",
+   "lang": "ts",
+   "repo": "dub",
+   "rule_kind": "wrapped_by:call",
+   "intent": "D-d24d21, in-place: auth wrapper removed from an existing handler",
+   "files": [
+    "apps/web/app/api/activity-logs/route.ts"
+   ],
+   "variant": "unwrap_in_place",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-d24d21"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-d24d21"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "cal-01",
+   "group": "default",
+   "lang": "ts",
+   "repo": "cal.com",
+   "rule_kind": "wrapped_by:call",
+   "intent": "packages/trpc server/** _router entries wrapped in authed procedures (base D-0b36fb, main D-c54406)",
+   "files": [
+    "packages/trpc/server/routers/loggedInViewer/_router.tsx"
+   ],
+   "variant": "add_to_member",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-0b36fb"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": [
+     [
+      "D-42ab67",
+      "MUTATION recallSynthDeleteAll",
+      "control"
+     ]
+    ]
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-c54406"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": [
+     [
+      "D-42ab67",
+      "MUTATION recallSynthDeleteAll",
+      "control"
+     ]
+    ]
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "cal-02",
+   "group": "default",
+   "lang": "ts",
+   "repo": "cal.com",
+   "rule_kind": "wrapped_by:call",
+   "intent": "D-0b36fb/D-c54406, bare procedure in the features router",
+   "files": [
+    "packages/trpc/server/routers/features/_router.ts"
+   ],
+   "variant": "add_to_member",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-0b36fb"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": [
+     [
+      "D-42ab67",
+      "MUTATION recallSynthPurge",
+      "control"
+     ]
+    ]
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-c54406"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": [
+     [
+      "D-42ab67",
+      "MUTATION recallSynthPurge",
+      "control"
+     ]
+    ]
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "cal-03",
+   "group": "default",
+   "lang": "ts",
+   "repo": "cal.com",
+   "rule_kind": "avoids:import",
+   "intent": "packages/lib does not import apps/web (D-2f232d), package specifier",
+   "files": [
+    "packages/lib/CalEventParser.ts"
+   ],
+   "variant": "add_import",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-2f232d"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-2f232d"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "cal-04",
+   "group": "default",
+   "lang": "ts",
+   "repo": "cal.com",
+   "rule_kind": "avoids:import",
+   "intent": "D-2f232d, relative path into apps/web (new file)",
+   "files": [
+    "packages/lib/recallSynthProviders.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-2f232d"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-2f232d"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "cal-05",
+   "group": "default",
+   "lang": "ts",
+   "repo": "cal.com",
+   "rule_kind": "avoids:import",
+   "intent": "packages/lib does not import packages/features (D-441d0e)",
+   "files": [
+    "packages/lib/CalEventParser.ts"
+   ],
+   "variant": "add_import",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-441d0e"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-441d0e"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "cal-06",
+   "group": "default",
+   "lang": "ts",
+   "repo": "cal.com",
+   "rule_kind": "avoids:import",
+   "intent": "packages/emails does not import packages/app-store (D-31be39)",
+   "files": [
+    "packages/emails/auth-email-service.ts"
+   ],
+   "variant": "add_import",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-31be39"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-31be39"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "cal-07",
+   "group": "default",
+   "lang": "ts",
+   "repo": "cal.com",
+   "rule_kind": "avoids:import",
+   "intent": "packages/emails does not import packages/features (D-f26528), new file",
+   "files": [
+    "packages/emails/recall-synth-flags.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-f26528"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": [
+     [
+      "D-8d7d13",
+      "recallSynthFlags",
+      "named"
+     ]
+    ]
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-f26528"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": [
+     [
+      "D-8d7d13",
+      "recallSynthFlags",
+      "named"
+     ]
+    ]
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "fb-01",
+   "group": "default",
+   "lang": "ts",
+   "repo": "formbricks",
+   "rule_kind": "wrapped_by:call",
+   "intent": "modules/ee/** actions wrapped in authenticatedActionClient (D-73b648)",
+   "files": [
+    "apps/web/modules/ee/recall-synth/actions.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-60208a",
+     "D-73b648"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": [
+     [
+      "D-71e798",
+      "deleteRecallSynthAction",
+      "passes_key"
+     ]
+    ]
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-73b648"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": [
+     [
+      "D-71e798",
+      "deleteRecallSynthAction",
+      "passes_key"
+     ]
+    ]
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "fb-02",
+   "group": "default",
+   "lang": "ts",
+   "repo": "formbricks",
+   "rule_kind": "wrapped_by:call",
+   "intent": "D-73b648, action added to an existing member file",
+   "files": [
+    "apps/web/modules/ee/ai-translation/lib/actions.ts"
+   ],
+   "variant": "add_to_member",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-60208a",
+     "D-73b648"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": [
+     [
+      "D-71e798",
+      "resetAITranslationAction",
+      "passes_key"
+     ]
+    ]
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-73b648"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": [
+     [
+      "D-71e798",
+      "resetAITranslationAction",
+      "passes_key"
+     ]
+    ]
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "fb-03",
+   "group": "default",
+   "lang": "ts",
+   "repo": "formbricks",
+   "rule_kind": "wrapped_by:call",
+   "intent": "modules/** actions wrapped in an action client (base D-60208a; no main convention)",
+   "files": [
+    "apps/web/modules/analysis/recall-synth/actions.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-60208a"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": false,
+    "ids": [],
+    "tiers": [],
+    "modes": [],
+    "stop_blocks": false,
+    "posttooluse_advises": false,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "main_miss",
+   "attribution": {
+    "pr": "#60 (mixed-auth-sets), with the existing depth dedupe",
+    "path": "crates/drift-mine/src/mine.rs:4671-4679 (variant_set drops non-guard alternatives) then mine.rs:4798-4806 (across_depths, CHILD_MARGIN mine.rs:35)",
+    "kind": "narrowing (mining): parent role dropped",
+    "detail": "Base mined modules/** as a variant set that included the unauthenticated actionClient (D-60208a). #60 keeps only guard alternatives, so the parent becomes the single wrapper authenticatedActionClient.inputSchema().action at 107/119 (Wilson lb 0.832). Its child modules/ee (56/58, lb 0.883) is 0.0507 higher, past CHILD_MARGIN 0.05, so dedupe step 3 drops the parent. The sibling join that would have widened the parent to authenticatedActionClient.action runs only after dedupe (mine.rs:2704). No convention covers the 61 server actions in modules/** outside modules/ee. Confirmed: with one extra unwrapped action in modules/ee (fb-01 applied) the child falls to lb 0.861 and the parent comes back as D-cf72ae (109/120)."
+   }
+  },
+  {
+   "eid": "fb-04",
+   "group": "default",
+   "lang": "ts",
+   "repo": "formbricks",
+   "rule_kind": "wrapped_by:call",
+   "intent": "app/** actions wrapped in authenticatedActionClient (base D-5303d3; no main convention)",
+   "files": [
+    "apps/web/app/(app)/account/settings/authorized-apps/actions.ts"
+   ],
+   "variant": "add_to_member",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-5303d3"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": false,
+    "ids": [],
+    "tiers": [],
+    "modes": [],
+    "stop_blocks": false,
+    "posttooluse_advises": false,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "main_miss",
+   "attribution": {
+    "pr": "#50 (siblings-roots, F6 sibling join)",
+    "path": "crates/drift-mine/src/mine.rs:2854-2931 (join_siblings returns false at 2930 when every member holds), called at mine.rs:2704",
+    "kind": "narrowing (mining): rule dropped as universal",
+    "detail": "Base proposed app/** actions wrapped in authenticatedActionClient.inputSchema().action (D-5303d3), with the authenticated authenticatedActionClient.action members as outliers (v3 WRONG, legit_outliers). On main the sibling join adds authenticatedActionClient.action to the set. Then all 29 members hold, and join_siblings drops the rule as documentation. A new unwrapped action in app/** is reported by nothing. Confirmed: with the fb-04 edit applied, main mines the set as D-c3c4c5 (29/30)."
+   }
+  },
+  {
+   "eid": "fb-05",
+   "group": "default",
+   "lang": "ts",
+   "repo": "formbricks",
+   "rule_kind": "avoids:import",
+   "intent": "packages/surveys does not import apps/web (D-b8f1ee)",
+   "files": [
+    "packages/surveys/src/lib/recall-synth.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-b8f1ee"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-b8f1ee"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "fb-06",
+   "group": "default",
+   "lang": "ts",
+   "repo": "formbricks",
+   "rule_kind": "avoids:import",
+   "intent": "D-b8f1ee, import added to an existing member",
+   "files": [
+    "packages/surveys/src/lib/api-client.ts"
+   ],
+   "variant": "add_import",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-b8f1ee"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-b8f1ee"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "doc-01",
+   "group": "default",
+   "lang": "ts",
+   "repo": "documenso",
+   "rule_kind": "wrapped_by:call",
+   "intent": "server/team-router/** wrapped in authenticatedProcedure (D-9b91c3)",
+   "files": [
+    "packages/trpc/server/team-router/recall-synth-deleteTeamUnsafeRoute.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-9b91c3"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-32c861",
+     "D-9b91c3"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "doc-02",
+   "group": "default",
+   "lang": "ts",
+   "repo": "documenso",
+   "rule_kind": "wrapped_by:call",
+   "intent": "server/organisation-router/** wrapped in authenticatedProcedure (D-d51d70)",
+   "files": [
+    "packages/trpc/server/organisation-router/recall-synth-deleteOrganisationUnsafeRoute.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-d51d70"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-32c861",
+     "D-d51d70"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "doc-03",
+   "group": "default",
+   "lang": "ts",
+   "repo": "documenso",
+   "rule_kind": "wrapped_by:call",
+   "intent": "server/envelope-router/** wrapped in authenticatedProcedure (D-55ae12)",
+   "files": [
+    "packages/trpc/server/envelope-router/recall-synth-deleteEnvelopeUnsafeRoute.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-55ae12"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-32c861",
+     "D-55ae12"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "doc-04",
+   "group": "default",
+   "lang": "ts",
+   "repo": "documenso",
+   "rule_kind": "wrapped_by:call",
+   "intent": "D-9b91c3, in-place: authenticatedProcedure swapped for the bare procedure",
+   "files": [
+    "packages/trpc/server/team-router/create-team-groups.ts"
+   ],
+   "variant": "unwrap_in_place",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-9b91c3"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-32c861",
+     "D-9b91c3"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "doc-05",
+   "group": "default",
+   "lang": "ts",
+   "repo": "documenso",
+   "rule_kind": "avoids:import",
+   "intent": "packages/lib does not import packages/trpc (D-041293)",
+   "files": [
+    "packages/lib/advanced-fields-validation/validate-dropdown.ts"
+   ],
+   "variant": "add_import",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-041293"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-041293"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "doc-06",
+   "group": "default",
+   "lang": "ts",
+   "repo": "documenso",
+   "rule_kind": "avoids:import",
+   "intent": "packages/lib does not import packages/auth (D-7b5140)",
+   "files": [
+    "packages/lib/advanced-fields-validation/validate-dropdown.ts"
+   ],
+   "variant": "add_import",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-7b5140"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-7b5140"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "doc-07",
+   "group": "default",
+   "lang": "ts",
+   "repo": "documenso",
+   "rule_kind": "avoids:import",
+   "intent": "packages/lib does not import packages/ee (D-2a51e9)",
+   "files": [
+    "packages/lib/advanced-fields-validation/validate-dropdown.ts"
+   ],
+   "variant": "add_import",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-2a51e9"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-2a51e9"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "doc-08",
+   "group": "default",
+   "lang": "ts",
+   "repo": "documenso",
+   "rule_kind": "avoids:import",
+   "intent": "packages/lib does not import packages/ui (D-c3b713)",
+   "files": [
+    "packages/lib/advanced-fields-validation/validate-dropdown.ts"
+   ],
+   "variant": "add_import",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-c3b713"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-c3b713"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "md-01",
+   "group": "default",
+   "lang": "ts",
+   "repo": "midday",
+   "rule_kind": "wrapped_by:call",
+   "intent": "apps/api rpc entries wrapped in init.ts procedures (base D-ef5012, main D-50255f), procedure from a local initTRPC",
+   "files": [
+    "apps/api/src/trpc/routers/tags.ts"
+   ],
+   "variant": "add_to_member",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-ef5012"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-50255f"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "md-02",
+   "group": "default",
+   "lang": "ts",
+   "repo": "midday",
+   "rule_kind": "avoids:import",
+   "intent": "packages/db does not import packages/notifications (D-b8cff6)",
+   "files": [
+    "packages/db/src/queries/activities.ts"
+   ],
+   "variant": "add_import",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-b8cff6"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-b8cff6"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "md-03",
+   "group": "default",
+   "lang": "ts",
+   "repo": "midday",
+   "rule_kind": "avoids:import",
+   "intent": "D-b8cff6, new file",
+   "files": [
+    "packages/db/src/queries/recall-synth.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-b8cff6"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-b8cff6"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "ai-01",
+   "group": "default",
+   "lang": "ts",
+   "repo": "ai",
+   "rule_kind": "wrapped_by:call",
+   "intent": "codemods default exports wrapped in createTransformer() (D-fc5ef7)",
+   "files": [
+    "packages/codemod/src/codemods/v7/recall-synth-rename.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-fc5ef7"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-fc5ef7"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "nest-01",
+   "group": "default",
+   "lang": "ts",
+   "repo": "nest",
+   "rule_kind": "avoids:import",
+   "intent": "packages/core does not import packages/platform-express (base D-44a46d)",
+   "files": [
+    "packages/core/router/router-explorer.ts"
+   ],
+   "variant": "add_import",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-44a46d"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": false,
+    "ids": [],
+    "tiers": [],
+    "modes": [],
+    "stop_blocks": false,
+    "posttooluse_advises": false,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "main_miss",
+   "attribution": {
+    "pr": "#49 (lazy-imports, F2), with the existing signal-seeded layering candidates",
+    "path": "crates/drift-mine/src/mine.rs:377 (lazy/optional loads emit no import signal) and mine.rs:3633-3639 (avoid_drafts seeds candidates only from signals some member has)",
+    "kind": "narrowing (mining): rule never generated",
+    "detail": "packages/core's only imports of platform-express, websockets and microservices are lazy loads of declared optional peers. #49 rightly stops counting them as violations (v3: all three WRONG). But layering candidates are seeded only from import signals that some member of the role has. With no signal left, the rule is never generated, and a static relative import of ../../platform-express is not reported. Even if it were seeded, consider() (mine.rs:4578) would drop a rule that 203/203 members hold as universal."
+   }
+  },
+  {
+   "eid": "nest-02",
+   "group": "default",
+   "lang": "ts",
+   "repo": "nest",
+   "rule_kind": "avoids:import",
+   "intent": "packages/core does not import packages/websockets (base D-48b32a)",
+   "files": [
+    "packages/core/router/router-explorer.ts"
+   ],
+   "variant": "add_import",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-48b32a"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": false,
+    "ids": [],
+    "tiers": [],
+    "modes": [],
+    "stop_blocks": false,
+    "posttooluse_advises": false,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "main_miss",
+   "attribution": {
+    "pr": "#49 (lazy-imports, F2), with the existing signal-seeded layering candidates",
+    "path": "crates/drift-mine/src/mine.rs:377 (lazy/optional loads emit no import signal) and mine.rs:3633-3639 (avoid_drafts seeds candidates only from signals some member has)",
+    "kind": "narrowing (mining): rule never generated",
+    "detail": "packages/core's only imports of platform-express, websockets and microservices are lazy loads of declared optional peers. #49 rightly stops counting them as violations (v3: all three WRONG). But layering candidates are seeded only from import signals that some member of the role has. With no signal left, the rule is never generated, and a static relative import of ../../platform-express is not reported. Even if it were seeded, consider() (mine.rs:4578) would drop a rule that 203/203 members hold as universal."
+   }
+  },
+  {
+   "eid": "nest-03",
+   "group": "default",
+   "lang": "ts",
+   "repo": "nest",
+   "rule_kind": "avoids:import",
+   "intent": "packages/core does not import packages/microservices (base D-f68b2a)",
+   "files": [
+    "packages/core/router/router-explorer.ts"
+   ],
+   "variant": "add_import",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-f68b2a"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": false,
+    "ids": [],
+    "tiers": [],
+    "modes": [],
+    "stop_blocks": false,
+    "posttooluse_advises": false,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "main_miss",
+   "attribution": {
+    "pr": "#49 (lazy-imports, F2), with the existing signal-seeded layering candidates",
+    "path": "crates/drift-mine/src/mine.rs:377 (lazy/optional loads emit no import signal) and mine.rs:3633-3639 (avoid_drafts seeds candidates only from signals some member has)",
+    "kind": "narrowing (mining): rule never generated",
+    "detail": "packages/core's only imports of platform-express, websockets and microservices are lazy loads of declared optional peers. #49 rightly stops counting them as violations (v3: all three WRONG). But layering candidates are seeded only from import signals that some member of the role has. With no signal left, the rule is never generated, and a static relative import of ../../platform-express is not reported. Even if it were seeded, consider() (mine.rs:4578) would drop a rule that 203/203 members hold as universal."
+   }
+  },
+  {
+   "eid": "supa-01",
+   "group": "default",
+   "lang": "ts",
+   "repo": "supabase",
+   "rule_kind": "wrapped_by:call",
+   "intent": "docs app/** page generateMetadata wrapped in genGuideMeta() (D-c2e88c)",
+   "files": [
+    "apps/docs/app/guides/recall-synth/[[...slug]]/page.tsx"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-c2e88c"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-c2e88c"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "supa-02",
+   "group": "default",
+   "lang": "ts",
+   "repo": "supabase",
+   "rule_kind": "wrapped_by:call",
+   "intent": "D-c2e88c, in-place: genGuideMeta() removed",
+   "files": [
+    "apps/docs/app/guides/ai-tools/[[...slug]]/page.tsx"
+   ],
+   "variant": "unwrap_in_place",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-c2e88c"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-c2e88c"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "inf-01",
+   "group": "default",
+   "lang": "ts",
+   "repo": "infisical",
+   "rule_kind": "wrapped_by:call",
+   "intent": "src/server/routes/v2/** wrapped in verifyAuth() (D-1e9bb3), also src/** (base D-259bd1, main D-c4efb8)",
+   "files": [
+    "backend/src/server/routes/v2/certificate-authority-router.ts"
+   ],
+   "variant": "add_to_member",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-1e9bb3",
+     "D-259bd1"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-1e9bb3",
+     "D-c4efb8"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "inf-02",
+   "group": "default",
+   "lang": "ts",
+   "repo": "infisical",
+   "rule_kind": "wrapped_by:call",
+   "intent": "src/server/routes/v3/** wrapped in verifyAuth() (D-7731c9)",
+   "files": [
+    "backend/src/server/routes/v3/deprecated-certificates-router.ts"
+   ],
+   "variant": "add_to_member",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-259bd1",
+     "D-7731c9"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-7731c9",
+     "D-c4efb8"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "inf-03",
+   "group": "default",
+   "lang": "ts",
+   "repo": "infisical",
+   "rule_kind": "wrapped_by:call",
+   "intent": "src/ee/** wrapped in verifyAuth() (main D-f674a5; base D-259bd1)",
+   "files": [
+    "backend/src/ee/routes/v1/access-approval-policy-router.ts"
+   ],
+   "variant": "add_to_member",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-259bd1"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-c4efb8",
+     "D-f674a5"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "inf-04",
+   "group": "default",
+   "lang": "ts",
+   "repo": "infisical",
+   "rule_kind": "wrapped_by:call",
+   "intent": "src/** wrapped in verifyAuth() or passport.authenticate() (base D-259bd1, main D-c4efb8)",
+   "files": [
+    "backend/src/server/routes/v1/admin-router.ts"
+   ],
+   "variant": "add_to_member",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-259bd1"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-c4efb8"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "s-dub-01",
+   "group": "suggestion",
+   "lang": "ts",
+   "repo": "dub",
+   "rule_kind": "avoids:other",
+   "intent": "route handlers do not throw a bare Error (D-742eb6)",
+   "files": [
+    "apps/web/app/api/recall-synth-throw/route.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-742eb6"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-742eb6"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "s-dub-02",
+   "group": "suggestion",
+   "lang": "ts",
+   "repo": "dub",
+   "rule_kind": "named",
+   "intent": "ui/modals functions named *Modal (D-258285)",
+   "files": [
+    "apps/web/ui/modals/recall-synth-sheet.tsx"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-258285"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-258285"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "s-dub-03",
+   "group": "suggestion",
+   "lang": "ts",
+   "repo": "dub",
+   "rule_kind": "renders",
+   "intent": "email components render <Footer> (D-e25af3)",
+   "files": [
+    "packages/email/src/templates/recall-synth-notice.tsx"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-e25af3"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-e25af3"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "s-dub-04",
+   "group": "suggestion",
+   "lang": "ts",
+   "repo": "dub",
+   "rule_kind": "calls",
+   "intent": "partners handlers call getDefaultProgramIdOrThrow() (D-79cc0a)",
+   "files": [
+    "apps/web/app/(ee)/api/partners/recall-synth-count/route.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-79cc0a"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-79cc0a"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "s-cal-01",
+   "group": "suggestion",
+   "lang": "ts",
+   "repo": "cal.com",
+   "rule_kind": "named",
+   "intent": "viewer *.handler functions named *Handler (D-fafac1)",
+   "files": [
+    "packages/trpc/server/routers/viewer/me/recallSynth.handler.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-fafac1"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-fafac1"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "s-cal-02",
+   "group": "suggestion",
+   "lang": "ts",
+   "repo": "cal.com",
+   "rule_kind": "wrapped_by:extends",
+   "intent": "email template classes extend BaseEmail (D-5722ba; default under D5, suggestion under D7)",
+   "files": [
+    "packages/emails/templates/recall-synth-notice-email.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-5722ba"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-5722ba"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both",
+   "stop_change": "base blocked at Stop; main reports in advise mode only (D7 tier, #61)"
+  },
+  {
+   "eid": "s-doc-01",
+   "group": "suggestion",
+   "lang": "ts",
+   "repo": "documenso",
+   "rule_kind": "named",
+   "intent": "dialogs named *Dialog (D-4785b8)",
+   "files": [
+    "apps/remix/app/components/dialogs/recall-synth-panel.tsx"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-4785b8"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-4785b8"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "s-doc-02",
+   "group": "suggestion",
+   "lang": "ts",
+   "repo": "documenso",
+   "rule_kind": "renders",
+   "intent": "dialogs render <Button> (D-545ea0)",
+   "files": [
+    "apps/remix/app/components/dialogs/recall-synth-confirm-dialog.tsx"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-545ea0"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-545ea0"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "s-md-01",
+   "group": "suggestion",
+   "lang": "ts",
+   "repo": "midday",
+   "rule_kind": "avoids:other",
+   "intent": "worker classes do not use any (D-86f372)",
+   "files": [
+    "apps/worker/src/errors/recall-synth-error.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-86f372"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-86f372"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "s-md-02",
+   "group": "suggestion",
+   "lang": "ts",
+   "repo": "midday",
+   "rule_kind": "wrapped_by:extends",
+   "intent": "processors extend BaseProcessor (D-5880dd; default under D5, suggestion under D7)",
+   "files": [
+    "apps/worker/src/processors/accounting/recall-synth.ts"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-5880dd"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-5880dd"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both",
+   "stop_change": "base blocked at Stop; main reports in advise mode only (D7 tier, #61)"
+  },
+  {
+   "eid": "s-fb-01",
+   "group": "suggestion",
+   "lang": "ts",
+   "repo": "formbricks",
+   "rule_kind": "named",
+   "intent": "modules page components named *Page (D-87fcf9)",
+   "files": [
+    "apps/web/modules/auth/recall-synth/page.tsx"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-87fcf9"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-87fcf9"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "s-nb-01",
+   "group": "suggestion",
+   "lang": "py",
+   "repo": "netbox",
+   "rule_kind": "wrapped_by:decorator",
+   "intent": "filtersets decorated with register_filterset() (D-cc1341; default under D5)",
+   "files": [
+    "netbox/circuits/filtersets.py"
+   ],
+   "variant": "add_to_member",
+   "expect": null,
+   "path_tested": null,
+   "invalid": "neither binary reports any rule on the new class; not a valid probe of the rule",
+   "base_cd8296b": {
+    "check": false,
+    "ids": [],
+    "tiers": [],
+    "modes": [],
+    "stop_blocks": false,
+    "posttooluse_advises": false,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": false,
+    "ids": [],
+    "tiers": [],
+    "modes": [],
+    "stop_blocks": false,
+    "posttooluse_advises": false,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "invalid"
+  },
+  {
+   "eid": "s-nb-02",
+   "group": "suggestion",
+   "lang": "py",
+   "repo": "netbox",
+   "rule_kind": "named",
+   "intent": "choices classes named *Choices (D-afb64d)",
+   "files": [
+    "netbox/circuits/choices.py"
+   ],
+   "variant": "add_to_member",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-afb64d"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-afb64d"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "s-nb-03",
+   "group": "suggestion",
+   "lang": "py",
+   "repo": "netbox",
+   "rule_kind": "wrapped_by:extends",
+   "intent": "choices classes extend ChoiceSet (D-e2c3e4; default under D5)",
+   "files": [
+    "netbox/circuits/choices.py"
+   ],
+   "variant": "add_to_member",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-e2c3e4"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-e2c3e4"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both",
+   "stop_change": "base blocked at Stop; main reports in advise mode only (D7 tier, #61)"
+  },
+  {
+   "eid": "s-sal-01",
+   "group": "suggestion",
+   "lang": "py",
+   "repo": "saleor",
+   "rule_kind": "named",
+   "intent": "dataloaders classes named *Loader (D-71795b)",
+   "files": [
+    "saleor/graphql/account/dataloaders.py"
+   ],
+   "variant": "add_to_member",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-71795b"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-71795b"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "s-inv-01",
+   "group": "suggestion",
+   "lang": "py2",
+   "repo": "InvenTree",
+   "rule_kind": "named",
+   "intent": "admin classes named *Admin (D-6f225b)",
+   "files": [
+    "src/backend/InvenTree/InvenTree/admin.py"
+   ],
+   "variant": "add_to_member",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-6f225b"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-6f225b"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "s-mis-01",
+   "group": "suggestion",
+   "lang": "py2",
+   "repo": "Misago",
+   "rule_kind": "named",
+   "intent": "forms classes named *Form (D-b4e5ff)",
+   "files": [
+    "misago/account/forms.py"
+   ],
+   "variant": "add_to_member",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-b4e5ff"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-b4e5ff"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [
+     [
+      "D-b4e5ff",
+      "AccountNotifications",
+      "shared_part",
+      "shared part used by 2 members"
+     ]
+    ],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "s-mis-02",
+   "group": "suggestion",
+   "lang": "py2",
+   "repo": "Misago",
+   "rule_kind": "wrapped_by:extends",
+   "intent": "permission hooks extend FilterHook (D-c9ae1e; default under D5)",
+   "files": [
+    "misago/permissions/hooks/recall_synth_hook.py"
+   ],
+   "variant": "new_file",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-c9ae1e"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": [
+     [
+      "D-d01155",
+      "RecallSynthHook",
+      "calls"
+     ],
+     [
+      "D-d8703c",
+      "RecallSynthHook",
+      "calls"
+     ]
+    ]
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-c9ae1e"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": [
+     [
+      "D-d01155",
+      "RecallSynthHook",
+      "calls"
+     ],
+     [
+      "D-d8703c",
+      "RecallSynthHook",
+      "calls"
+     ]
+    ]
+   },
+   "verdict": "both",
+   "stop_change": "base blocked at Stop; main reports in advise mode only (D7 tier, #61)"
+  },
+  {
+   "eid": "s-crm-01b",
+   "group": "suggestion",
+   "lang": "py2",
+   "repo": "Django-CRM",
+   "rule_kind": "wrapped_by:call",
+   "intent": "cases handlers wrapped in HasOrgContext() (D-f135a4; default under D5, Python advises under D7) (view registered in urls.py)",
+   "files": [
+    "backend/cases/analytics_views.py"
+   ],
+   "variant": "add_to_member",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-f135a4"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-f135a4"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": [
+     [
+      "D-9c2214",
+      "RecallSynthExportView.get",
+      "passes_key"
+     ]
+    ]
+   },
+   "verdict": "both",
+   "stop_change": "base blocked at Stop; main reports in advise mode only (D7 tier, #61)"
+  },
+  {
+   "eid": "s-sl-01",
+   "group": "suggestion",
+   "lang": "py2",
+   "repo": "simplelogin",
+   "rule_kind": "avoids:import",
+   "intent": "app/** does not import events/** (D-2a4960; default under D5, Python advises under D7)",
+   "files": [
+    "app/abuser.py"
+   ],
+   "variant": "add_import",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-2a4960"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-2a4960"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both",
+   "stop_change": "base blocked at Stop; main reports in advise mode only (D7 tier, #61)"
+  },
+  {
+   "eid": "s-sl-02",
+   "group": "suggestion",
+   "lang": "py2",
+   "repo": "simplelogin",
+   "rule_kind": "calls",
+   "intent": "api handlers call jsonify() (D-ace6d1)",
+   "files": [
+    "app/api/views/alias.py"
+   ],
+   "variant": "add_to_member",
+   "expect": null,
+   "path_tested": null,
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-ace6d1"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-ace6d1"
+    ],
+    "tiers": [
+     "suggestion"
+    ],
+    "modes": [
+     "advise"
+    ],
+    "stop_blocks": false,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "p-dub-10",
+   "group": "probe",
+   "lang": "ts",
+   "repo": "dub",
+   "rule_kind": "wrapped_by:call",
+   "intent": "authenticated client without .inputSchema(), reads no input",
+   "files": [
+    "apps/web/lib/actions/recall-synth-touch.ts"
+   ],
+   "variant": "new_file",
+   "expect": "exempt_ok",
+   "path_tested": "no_input exemption (wrapper chain lacks only the input step)",
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-50df58"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": false,
+    "ids": [],
+    "tiers": [],
+    "modes": [],
+    "stop_blocks": false,
+    "posttooluse_advises": false,
+    "exempt": [
+     [
+      "D-345913",
+      "touchWorkspaceAction",
+      "no_input",
+      "reads no input, so needs no .inputSchema() (authActionClient.action() without it)"
+     ]
+    ],
+    "other_new": []
+   },
+   "verdict": "main_exempt_by_design"
+  },
+  {
+   "eid": "p-dub-11",
+   "group": "probe",
+   "lang": "ts",
+   "repo": "dub",
+   "rule_kind": "wrapped_by:call",
+   "intent": "UNauthenticated actionClient.action(), reads no input, deletes data",
+   "files": [
+    "apps/web/lib/actions/recall-synth-purge.ts"
+   ],
+   "variant": "new_file",
+   "expect": "report",
+   "path_tested": "no_input exemption must not apply across root bindings; #60 guard-only set",
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-50df58"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-345913"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "p-dub-12",
+   "group": "probe",
+   "lang": "ts",
+   "repo": "dub",
+   "rule_kind": "wrapped_by:call",
+   "intent": "server action on a local client derived from the unauthenticated actionClient",
+   "files": [
+    "apps/web/lib/actions/recall-synth-derived.ts"
+   ],
+   "variant": "new_file",
+   "expect": "report",
+   "path_tested": "wrapper identity (#51 F1): derived binding must count as what it is built on",
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-50df58"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-345913"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "p-md-04",
+   "group": "probe",
+   "lang": "ts",
+   "repo": "midday",
+   "rule_kind": "wrapped_by:call",
+   "intent": "procedure on a local binding derived from publicProcedure",
+   "files": [
+    "apps/api/src/trpc/routers/tags.ts"
+   ],
+   "variant": "add_to_member",
+   "expect": "report",
+   "path_tested": "wrapper identity (#51 F1) + guard-only sets (#60)",
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-ef5012"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-50255f"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "p-md-05",
+   "group": "probe",
+   "lang": "ts",
+   "repo": "midday",
+   "rule_kind": "wrapped_by:call",
+   "intent": "procedure on a local binding derived from protectedProcedure",
+   "files": [
+    "apps/api/src/trpc/routers/tags.ts"
+   ],
+   "variant": "add_to_member",
+   "expect": "exempt_ok",
+   "path_tested": "wrapper identity (#51 F1): holds through a binding built on the guard (control, should NOT be reported)",
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-ef5012"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": false,
+    "ids": [],
+    "tiers": [],
+    "modes": [],
+    "stop_blocks": false,
+    "posttooluse_advises": false,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "main_exempt_by_design"
+  },
+  {
+   "eid": "p-cal-08",
+   "group": "probe",
+   "lang": "ts",
+   "repo": "cal.com",
+   "rule_kind": "avoids:import",
+   "intent": "packages/lib reaches packages/features through a dynamic import()",
+   "files": [
+    "packages/lib/recallSynthLazy.ts"
+   ],
+   "variant": "new_file",
+   "expect": "exempt_ok",
+   "path_tested": "lazy imports are not layering violations (#49 F2)",
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-441d0e"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-441d0e"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "p-cal-09",
+   "group": "probe",
+   "lang": "ts",
+   "repo": "cal.com",
+   "rule_kind": "avoids:import",
+   "intent": "packages/lib imports a type from packages/features",
+   "files": [
+    "packages/lib/recallSynthTypes.ts"
+   ],
+   "variant": "new_file",
+   "expect": "report",
+   "path_tested": "type-only import across the layer (a static import)",
+   "invalid": null,
+   "base_cd8296b": {
+    "check": false,
+    "ids": [],
+    "tiers": [],
+    "modes": [],
+    "stop_blocks": false,
+    "posttooluse_advises": false,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": false,
+    "ids": [],
+    "tiers": [],
+    "modes": [],
+    "stop_blocks": false,
+    "posttooluse_advises": false,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "neither"
+  },
+  {
+   "eid": "p-cal-10",
+   "group": "probe",
+   "lang": "ts",
+   "repo": "cal.com",
+   "rule_kind": "avoids:import",
+   "intent": "packages/lib re-exports from packages/features",
+   "files": [
+    "packages/lib/recallSynthReexport.ts"
+   ],
+   "variant": "new_file",
+   "expect": "report",
+   "path_tested": "re-export across the layer",
+   "invalid": null,
+   "base_cd8296b": {
+    "check": false,
+    "ids": [],
+    "tiers": [],
+    "modes": [],
+    "stop_blocks": false,
+    "posttooluse_advises": false,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": false,
+    "ids": [],
+    "tiers": [],
+    "modes": [],
+    "stop_blocks": false,
+    "posttooluse_advises": false,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "neither"
+  },
+  {
+   "eid": "p-supa-03",
+   "group": "probe",
+   "lang": "ts",
+   "repo": "supabase",
+   "rule_kind": "wrapped_by:call",
+   "intent": "docs page outside app/guides without genGuideMeta()",
+   "files": [
+    "apps/docs/app/recall-synth/page.tsx"
+   ],
+   "variant": "new_file",
+   "expect": "report",
+   "path_tested": "subtree narrowing (#59 F10) / framework root files (#50 F9)",
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-c2e88c"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-c2e88c"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "p-ai-02",
+   "group": "probe",
+   "lang": "ts",
+   "repo": "ai",
+   "rule_kind": "wrapped_by:call",
+   "intent": "codemod outside the version folders without createTransformer()",
+   "files": [
+    "packages/codemod/src/codemods/recall-synth-top.ts"
+   ],
+   "variant": "new_file",
+   "expect": "report",
+   "path_tested": "subtree narrowing (#59 F10)",
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-fc5ef7"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-fc5ef7"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  },
+  {
+   "eid": "p-inf-05",
+   "group": "probe",
+   "lang": "ts",
+   "repo": "infisical",
+   "rule_kind": "wrapped_by:call",
+   "intent": "route whose onRequest is a hand-rolled check instead of verifyAuth()",
+   "files": [
+    "backend/src/server/routes/v2/certificate-authority-router.ts"
+   ],
+   "variant": "add_to_member",
+   "expect": "report",
+   "path_tested": "exemption gate: in-body / inline guards (#62)",
+   "invalid": null,
+   "base_cd8296b": {
+    "check": true,
+    "ids": [
+     "D-1e9bb3",
+     "D-259bd1"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "main_feefad6": {
+    "check": true,
+    "ids": [
+     "D-1e9bb3",
+     "D-c4efb8"
+    ],
+    "tiers": [
+     "default"
+    ],
+    "modes": [
+     "block"
+    ],
+    "stop_blocks": true,
+    "posttooluse_advises": true,
+    "exempt": [],
+    "other_new": []
+   },
+   "verdict": "both"
+  }
+ ]
+}

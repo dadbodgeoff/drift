@@ -1,0 +1,268 @@
+{
+  "//": "dev5 census manifest (PREREG-F12-dev5-py-check.md section 3): the current slot occupants of eval/dev5-py.json (its repos after its `replaced` swaps), in slot order, each named by an opaque key. Everything else as frozen there.",
+  "set_id": "py-dev5",
+  "role": "dev",
+  "holdout": false,
+  "language": "python",
+  "tier": {
+    "//": "Decision D7 (eval/study/README.md decision log), approved by the founder 2026-11-06 and recorded before any held-out census. D5 (tier-d5.json) narrowed by rule kind and language. TypeScript/JavaScript: the default tier admits only call wrappers (wrapped_by:call) and layering (avoids:import); wrapped_by:decorator, wrapped_by:extends and wrapped_by:jsx move to the suggestion tier. Python: no rule kind is in the default tier; Python advises only and every Python proposal is suggestion tier. D5's conditions still apply on top of the rule kind: every symbol the rule names is defined in the repository (default.target \"in_repo\": no pkg:, global# or unresolved: target; lib.mjs namesPackage, drift_mine::tier::names_package) and the role has >= default.min_members members. The language of a proposal is read conservatively (lib.mjs proposalLanguage, drift_mine::tier::convention_language): py when any member of its role is Python (conventions.yaml evidence.python_members) or its example path is (.py/.pyi files and Python package manifests), ts otherwise. Role members are counted as the role's size (evidence.role_members when set, else total; exempt members count). DEFAULT tier = language in default.languages AND structured rule kind (lib.mjs ruleKind) in default.rule_kinds AND the rule names no symbol from outside the repository AND its role has >= default.min_members members. SUGGESTION tier = every other shown proposal. The not-wrong rate is reported over all shown proposals, both tiers. Release gate unchanged: a language's default tier ships as advise until it measures >= 95% default-tier accept under rubric v3, judged per D1, on a primary held-out run.",
+    "kind": "rule_kind",
+    "decision": "D7",
+    "default": {
+      "//": "TypeScript/JavaScript call wrappers and layering (import avoidance), each only when every symbol it names is defined in the repository, in roles of 15 or more members",
+      "rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "languages": [
+        "ts"
+      ],
+      "min_members": 15,
+      "target": "in_repo"
+    },
+    "suggestion": {
+      "//": "D5's suggestion kinds, plus decorators, base classes and JSX layout wrappers (D7); every Python proposal (languages); and default-tier kinds whose rule names a package, built-in or unresolved symbol, or whose role is small",
+      "rule_kinds": [
+        "calls",
+        "named",
+        "avoids:other",
+        "prefers_library",
+        "before",
+        "has_test",
+        "model_has",
+        "package_has",
+        "dependency_version",
+        "wrapped_by:try",
+        "control",
+        "directive",
+        "throws",
+        "passes_key",
+        "renders",
+        "wrapped_by:decorator",
+        "wrapped_by:extends",
+        "wrapped_by:jsx"
+      ],
+      "languages": [
+        "py"
+      ]
+    },
+    "not_wrong_over": "all_shown"
+  },
+  "max": 15,
+  "pool": 200,
+  "source_manifest": "eval/dev5-py.json",
+  "source_sha256": "ee894713d0147b91ff70fc872d156d4a28753629567f1a0ce1cb1dcec62ad879",
+  "source_core_sha256": "3be7bf10d7619b770b128521c52f51bc03416c95ffb2522eaa3ffa8dc12a151c",
+  "repos": [
+    {
+      "name": "P01",
+      "url": "https://github.com/vas3k/vas3k.club",
+      "sha": "1d5540c084d3efe1c6cff84424231308f60e0913",
+      "language": "Python",
+      "framework_bucket": "django"
+    },
+    {
+      "name": "P02",
+      "url": "https://github.com/pennersr/django-allauth",
+      "sha": "3d4d78c988fbe8c89a2882b61da7536904da7af7",
+      "language": "Python",
+      "framework_bucket": "django"
+    },
+    {
+      "name": "P03",
+      "url": "https://github.com/ajslater/codex",
+      "sha": "9857d9a4fe1669e56f01b2106fea3e659c418dce",
+      "language": "Python",
+      "framework_bucket": "django"
+    },
+    {
+      "name": "P04",
+      "url": "https://github.com/pydantic/logfire",
+      "sha": "5aafc3db6f7a86c92bd37b2b506fa4d3324897b4",
+      "language": "Python",
+      "framework_bucket": "django"
+    },
+    {
+      "name": "P05",
+      "url": "https://github.com/taigaio/taiga-back",
+      "sha": "8ab6a4e3b5f6fbbfcbf108a6449011f07b7308aa",
+      "language": "Python",
+      "framework_bucket": "django"
+    },
+    {
+      "name": "P06",
+      "url": "https://github.com/mwmbl/mwmbl",
+      "sha": "b6a56cef39aa5196cca83cb2b589a503118152a5",
+      "language": "Python",
+      "framework_bucket": "django"
+    },
+    {
+      "name": "P07",
+      "url": "https://github.com/Edwardvaneechoud/Flowfile",
+      "sha": "8a6b7098dcd86c555e70f4f1fa0f2fc529123dc4",
+      "language": "Python",
+      "framework_bucket": "fastapi"
+    },
+    {
+      "name": "P08",
+      "url": "https://github.com/larlarua/AutoCVE",
+      "sha": "b26025f27199ba2d93145e4a08fc9015e8d846e4",
+      "language": "Python",
+      "framework_bucket": "django"
+    },
+    {
+      "name": "P09",
+      "url": "https://github.com/SREGym/SREGym",
+      "sha": "5ed86a8fdfa98637dbd3c8bac6a9a6228ed5d5c0",
+      "language": "Python",
+      "framework_bucket": "django"
+    },
+    {
+      "name": "P10",
+      "url": "https://github.com/AgentFlocks/flocks",
+      "sha": "6dd8470013b5f34f35d23a9bab220b9ea0b8869b",
+      "language": "Python",
+      "framework_bucket": "fastapi"
+    },
+    {
+      "name": "P11",
+      "url": "https://github.com/frederikemmer/MediaLyze",
+      "sha": "b8292fe7ebbb709680c25d9456d41eea9af43c29",
+      "language": "Python",
+      "framework_bucket": "fastapi"
+    },
+    {
+      "name": "P12",
+      "url": "https://github.com/EvolvingLMMs-Lab/OneVision-Encoder",
+      "sha": "a6e05c0f7cf1ec819a34e5f64792a030ddd4f485",
+      "language": "Python",
+      "framework_bucket": "fastapi"
+    },
+    {
+      "name": "P13",
+      "url": "https://github.com/OpenByteInc/QuantDinger",
+      "sha": "9c5b23d835a161960a4e8d50d112bf1f23029ad5",
+      "language": "Python",
+      "framework_bucket": "flask"
+    },
+    {
+      "name": "P14",
+      "url": "https://github.com/LCAV/pyroomacoustics",
+      "sha": "08d16968f8db414affaf84771a650358a7961446",
+      "language": "Python",
+      "framework_bucket": "other_python"
+    },
+    {
+      "name": "P15",
+      "url": "https://github.com/llama-farm/llamafarm",
+      "sha": "6244d466e8866d075883bd898ce5f851de4d8c10",
+      "language": "Python",
+      "framework_bucket": "fastapi"
+    },
+    {
+      "name": "P16",
+      "url": "https://github.com/pulp/pulpcore",
+      "sha": "4134ecd76ebc09338ca9769a4fbc276cd7122261",
+      "language": "Python",
+      "framework_bucket": "django"
+    },
+    {
+      "name": "P17",
+      "url": "https://github.com/AIOSAI/AIPass",
+      "sha": "230533cbed6b54c5e919bd2e6ba3756b1cf3874f",
+      "language": "Python",
+      "framework_bucket": "fastapi"
+    },
+    {
+      "name": "P18",
+      "url": "https://github.com/datachain-ai/datachain",
+      "sha": "72a97d2801ccf27965d97a182c56086d19afb311",
+      "language": "Python",
+      "framework_bucket": "fastapi"
+    },
+    {
+      "name": "P19",
+      "url": "https://github.com/aaronwmorris/indi-allsky",
+      "sha": "f13e6a10bbf9fadee68f86d7b8b55f9ac4b51e52",
+      "language": "Python",
+      "framework_bucket": "flask"
+    },
+    {
+      "name": "P20",
+      "url": "https://github.com/jingsongliujing/OnnxOCR",
+      "sha": "23b9798c261ea0a23ccf6823f1bf692e4bd4e98c",
+      "language": "Python",
+      "framework_bucket": "flask"
+    },
+    {
+      "name": "P21",
+      "url": "https://github.com/netalertx/NetAlertX",
+      "sha": "1046b400d116b327065ec19a35f302579dc72592",
+      "language": "Python",
+      "framework_bucket": "flask"
+    },
+    {
+      "name": "P22",
+      "url": "https://github.com/elder-plinius/OBLITERATUS",
+      "sha": "b2e65a7723c15fbdf04c8a44fb850c7dc98ddb3b",
+      "language": "Python",
+      "framework_bucket": "other_python"
+    },
+    {
+      "name": "P23",
+      "url": "https://github.com/metabrainz/listenbrainz-server",
+      "sha": "16af0fda0c848db61c798e2f15f21fb6ba5d8088",
+      "language": "Python",
+      "framework_bucket": "flask"
+    },
+    {
+      "name": "P24",
+      "url": "https://github.com/TabbycatDebate/tabbycat",
+      "sha": "f3a8a8d06697f87c30b3b8f4b41377a9d35d0c98",
+      "language": "Python",
+      "framework_bucket": "django"
+    },
+    {
+      "name": "P25",
+      "url": "https://github.com/Azure/azure-functions-python-worker",
+      "sha": "2054151b9257627e28fc86e8e6b618d48a6b2321",
+      "language": "Python",
+      "framework_bucket": "fastapi"
+    },
+    {
+      "name": "P26",
+      "url": "https://github.com/NousResearch/hermes-official-plugins",
+      "sha": "8b5b6296bbb900f90e296b4729d2c9a5d1139825",
+      "language": "Python",
+      "framework_bucket": "other_python"
+    },
+    {
+      "name": "P27",
+      "url": "https://github.com/SkyworkAI/Matrix-Game",
+      "sha": "51913b2bfa78a6d54de912b8348b1d318f4d36e2",
+      "language": "Python",
+      "framework_bucket": "flask"
+    },
+    {
+      "name": "P28",
+      "url": "https://github.com/allenai/molmoact",
+      "sha": "a5cf9808a4017f7f814772f57706324f0338642c",
+      "language": "Python",
+      "framework_bucket": "fastapi"
+    },
+    {
+      "name": "P29",
+      "url": "https://github.com/scaleapi/SWE-bench_Pro-os",
+      "sha": "66f92766bba642462d4bbe5479e83f91f9211862",
+      "language": "Python",
+      "framework_bucket": "other_python"
+    },
+    {
+      "name": "P30",
+      "url": "https://github.com/cryptoadvance/specter-desktop",
+      "sha": "18801fa1e3fe0399afdd3aac81fc06bea2eb507e",
+      "language": "Python",
+      "framework_bucket": "flask"
+    }
+  ]
+}

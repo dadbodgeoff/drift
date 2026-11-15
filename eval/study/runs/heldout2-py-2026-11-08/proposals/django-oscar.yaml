@@ -1,0 +1,48 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - abstract_models
+  - admin
+  - apps
+  - exceptions
+  - forms
+  - managers
+  - mixins
+  - models
+  - receivers
+  - reports
+  - signals
+  - test_forms
+  - test_models
+  - test_views
+  - utils
+  - views
+  suffixes: []
+conventions:
+- id: D-982b49
+  status: proposed
+  mode: advise
+  summary: forms in src/** (forms files) are named `*Form`
+  role:
+    package: ""
+    dir: src
+    file: forms
+    entry: '-'
+    kind: class
+    member_kind: form
+  rule:
+    type: named
+    pattern: "*Form"
+  evidence:
+    holders: 72
+    total: 72
+    lower_bound: 0.949
+    lift: 9.074
+    python_members: 72
+  example: src/oscar/apps/address/forms.py#UserAddressForm
+  selector_version: 3

@@ -1,0 +1,16 @@
+{
+ "labellers": [
+  "A",
+  "B"
+ ],
+ "n": 7,
+ "agree": 7,
+ "po": 1.0,
+ "kappa": {
+  "n": 7,
+  "po": 1,
+  "pe": 0.510204081632653,
+  "kappa": 1
+ },
+ "disagreements": []
+}

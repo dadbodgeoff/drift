@@ -1,0 +1,35 @@
+3 conventions from 1716 units in 119 roles (0 default tier, 3 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-a4cd95] exported values in src/main/services/FastifyService/schemas/** are named `*Schema`
+    evidence: 115/121 (lower bound 0.90, lift 3.9)
+    tier:     suggestion (rule kind named)
+    example:  src/main/services/FastifyService/schemas/base.ts#ResponseErrorSchema
+    outlier:  src/main/services/FastifyService/schemas/base.ts:35 PageQuery
+    outlier:  src/main/services/FastifyService/schemas/base.ts:19 ResponseCode
+    outlier:  src/main/services/FastifyService/schemas/v1/flim/cms.ts:121 getInitchema
+    outlier:  src/main/services/FastifyService/schemas/v1/flim/site.ts:25 SiteResponse
+    outlier:  src/main/services/FastifyService/schemas/v1/live/iptv.ts:23 IptvResponse
+    outlier:  src/main/services/FastifyService/schemas/v1/parse/analyze.ts:23 AnalyzeResponse
+
+ 2. [D-784831] functions in src/renderer/src/api/** pass `method` to apiRequest.request()
+    evidence: 94/94 (lower bound 0.96, lift 6.4)
+    tier:     suggestion (rule kind passes_key)
+    example:  src/renderer/src/api/data.ts#dataCloudBackup
+    exempt:   src/renderer/src/api/system.ts:35 fetchLoggerStream (does not call apiRequest.request())
+
+ 3. [D-238824] functions in src/shared/modules/** declare their return type
+    evidence: 104/112 (lower bound 0.86, lift 1.7)
+    tier:     suggestion (rule kind control)
+    example:  src/shared/modules/camelcase.ts#camelCase
+    outlier:  src/shared/modules/function.ts:3 runFunction
+    outlier:  src/shared/modules/headers.ts:34 UNSAFE_HEADERS_LOWER
+    outlier:  src/shared/modules/headers.ts:35 UNSAFE_HEADERS_UPPER
+    outlier:  src/shared/modules/request/axios/AxiosCancel.ts:12 getPendingUrl
+    outlier:  src/shared/modules/request/sse/SseCancel.ts:10 getPendingUrl
+    outlier:  src/shared/modules/request/ws/WsCancel.ts:10 getPendingUrl
+    outlier:  src/shared/modules/validate.ts:350 isContainsAlphaNumeric
+    outlier:  src/shared/modules/validate.ts:343 isContainsSpecialChar
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

@@ -1,0 +1,317 @@
+{
+  "labels_sha256": {
+    "A": "1977811e5e23642c27a8c90e10cfcc92c2485c19a654b812729e32b9492a9c90",
+    "B": "129027f744a717056bd306316459242c352487c75c37175d575ff1224ed2295b"
+  },
+  "cases": [
+    {
+      "uid": "cal.com/D-8d7d13",
+      "repo": "cal.com",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "cal.com/D-8d7d13",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "packages/emails/auth-email-service.ts",
+            "packages/emails/email-manager.ts",
+            "packages/emails/billing-email-service.ts",
+            "packages/emails/daily-video-emails.ts",
+            "packages/emails/workflow-email-service.ts",
+            "packages/emails/organization-email-service.ts",
+            "packages/emails/recording-email-service.ts",
+            "packages/emails/integration-email-service.ts",
+            "packages/emails/oauth-email-service.ts",
+            "packages/emails/lib/sanitizeDisplayName.ts",
+            "packages/emails/lib/utils/date-formatting.ts",
+            "packages/emails/lib/utils/team-invite-utils.ts",
+            "packages/emails/email-manager.test.ts",
+            "biome.json"
+          ],
+          "outliers": [],
+          "rules": [
+            "R1",
+            "R2",
+            "R9"
+          ],
+          "reason": "Every exported function of the root *-email-service.ts files and email-manager.ts is a send* function (sendPasswordResetEmail, sendChangeOfEmailVerificationLink, 20 in email-manager.ts); with no counted outliers, a new email-dispatch function named off-scheme is worth flagging. clear:false because the glob ./** literally covers lib/ utilities like getFormattedDate and getSubject that are not send functions; hesitated with WRONG mixed_group for that reason.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "rubric": "v3",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "uid": "cal.com/D-8d7d13",
+          "label": "WRONG",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/emails/auth-email-service.ts",
+            "packages/emails/email-manager.ts",
+            "packages/emails/billing-email-service.ts",
+            "packages/emails/organization-email-service.ts",
+            "packages/emails/workflow-email-service.ts",
+            "packages/emails/lib/utils/date-formatting.ts",
+            "packages/emails/lib/utils/team-invite-utils.ts",
+            "packages/emails/lib/generateIcsFile.ts",
+            "packages/emails/lib/sanitizeDisplayName.ts",
+            "packages/emails/tsconfig.json",
+            "biome.json"
+          ],
+          "outliers": [],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "The *-email-service.ts files export send* functions, but the scope ./** also holds non-sending helpers (lib/utils/date-formatting.ts getFormattedDate, team-invite-utils.ts getSubject, lib/sanitizeDisplayName.ts, billing-email-service.ts eventTypeDisableAttendeeEmail) that legitimately are not send*; a new helper would be flagged. No outliers listed; hesitated with ACCEPT for the service files alone.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "documenso/D-a10f62",
+      "repo": "documenso",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "documenso/D-a10f62",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "high",
+          "checked": [
+            "packages/trpc/server/admin-router/admin-search.types.ts",
+            "packages/trpc/server/admin-router/update-organisation-member-role.types.ts",
+            "packages/trpc/server/admin-router/update-user.types.ts",
+            "packages/trpc/server/admin-router/find-documents.types.ts",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "ZAdminRoleSelection",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Exported zod schemas in admin-router types files are named Z*Schema (admin-search.types.ts, update-user.types.ts, find-documents.types.ts); the sole outlier ZAdminRoleSelection is an ordinary z.enum schema off the naming scheme, a choice not a need, and biome.json has no naming-convention rule. Wording 'exported values' would also seem to cover constants like ADMIN_SEARCH_MAX_QUERY_LENGTH, which the tool exempts, hence clear: false.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "documenso/D-a10f62",
+          "rubric": "v3",
+          "label": "WRONG",
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/trpc/server/admin-router/admin-search.types.ts",
+            "packages/trpc/server/admin-router/update-organisation-member-role.types.ts",
+            "packages/trpc/server/admin-router/get-user.types.ts",
+            "packages/trpc/server/admin-router/find-documents.types.ts",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "ZAdminRoleSelection",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "ADMIN_SEARCH_MAX_QUERY_LENGTH",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Request/response schemas end in Schema (get-user, find-documents), but the only outliers are a shared enum sub-schema (ZAdminRoleSelection, which has its own TAdminRoleSelection type) and a numeric constant; both are legitimately different kinds of thing, so 0 of 2 counted are mistakes and new constants would be flagged wrongly. Hesitated with ACCEPT (the enum arguably should be *Schema); no naming lint rule in biome.json.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "supabase/D-e93eb6",
+      "repo": "supabase",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "supabase/D-e93eb6",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "apps/docs/app/guides/ai-tools/[[...slug]]/page.tsx",
+            "apps/docs/app/guides/ai-tools/ai-prompts/[slug]/page.tsx",
+            "apps/docs/app/guides/getting-started/ai-prompts/[slug]/AiPrompts.utils.ts",
+            "apps/docs/features/docs/GuidesMdx.utils.ts",
+            "apps/docs/app/guides/self-hosting/auth/config/page.tsx",
+            "apps/docs/app/guides/database/[[...slug]]/page.tsx",
+            "apps/docs/eslint.config.cjs",
+            "apps/docs/tsconfig.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "generateMetadata",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "Guide pages, including non-markdown ones like self-hosting/auth/config/page.tsx, build metadata via genGuideMeta (which adds canonical, md alternates and OG); ai-prompts/[slug]/page.tsx uses a hand-rolled generateAiPromptMetadata returning only a title though it renders GuideTemplate and could feed genGuideMeta {meta, pathname}, so it is drift worth a look. Next.js accepts any generateMetadata and no lint rule checks it, so not TRIVIAL.",
+          "defects": [
+            "apps/docs/app/guides/getting-started/ai-prompts/[slug]/AiPrompts.utils.ts:111 AI prompt guide metadata omits canonical/description/openGraph that genGuideMeta provides for other guides"
+          ],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "supabase/D-e93eb6",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/docs/app/guides/ai-tools/[[...slug]]/page.tsx",
+            "apps/docs/app/guides/ai-tools/ai-prompts/[slug]/page.tsx",
+            "apps/docs/app/guides/database/[[...slug]]/page.tsx",
+            "apps/docs/app/guides/auth/[[...slug]]/page.tsx",
+            "apps/docs/features/docs/GuidesMdx.utils.tsx",
+            "apps/docs/app/guides/getting-started/ai-prompts/[slug]/AiPrompts.utils.ts",
+            "apps/docs/eslint.config.cjs"
+          ],
+          "outliers": [
+            {
+              "symbol": "generateMetadata",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Members (ai-tools, database, auth slug pages) wrap getGuidesMarkdown in genGuideMeta; the sole outlier is the bespoke AI-prompt page, which has no markdown frontmatter and uses generateAiPromptMetadata, a different kind of page that genGuideMeta cannot serve as-is. No lint/type rule enforces it. Hesitated with ACCEPT (it drops canonical/OG metadata).",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "midday/D-b905f9",
+      "repo": "midday",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "midday/D-b905f9",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/website/src/app/about/page.tsx",
+            "apps/website/src/app/compare/page.tsx",
+            "apps/website/src/app/mcp/cursor/page.tsx",
+            "apps/website/src/app/invoicing/page.tsx",
+            "apps/website/src/app/integrations/[slug]/page.tsx",
+            "apps/website/src/lib/metadata.ts",
+            "apps/website/src/app/compare/[slug]/page.tsx",
+            "apps/website/tsconfig.json",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "metadata (compare/page.tsx)",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R5",
+            "R2",
+            "R1"
+          ],
+          "reason": "createPageMetadata's PageMetadataOptions requires description: string (lib/metadata.ts), so a call without it already fails tsc; the only outlier, compare/page.tsx, does not call the helper at all but hand-builds Metadata pointing at the dedicated /api/og/compare image, which the helper (fixed /api/og?title=...) cannot express, as compare/[slug] also does, so the counted outlier is a legitimate variant (0 of 1). Hesitated with ACCEPT (if compare is drift worth a look) and TRIVIAL types (if the outlier were set aside).",
+          "defects": [],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "midday/D-b905f9",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "apps/website/src/app/about/page.tsx",
+            "apps/website/src/app/compare/page.tsx",
+            "apps/website/src/app/story/page.tsx",
+            "apps/website/src/app/compare/[slug]/page.tsx",
+            "apps/website/src/lib/metadata.ts",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "metadata (compare/page.tsx)",
+              "verdict": "mistake"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R5"
+          ],
+          "reason": "45 page files use createPageMetadata (about, story) which centralises OG/twitter/canonical; compare/page.tsx hand-builds the same metadata object, duplicating the helper and drifting from the house style. The outlier does not call the helper, so the type checker does not catch it and biome has no rule for it; flagging a new page doing this is worthwhile.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    }
+  ]
+}

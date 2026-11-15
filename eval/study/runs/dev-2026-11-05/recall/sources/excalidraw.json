@@ -1,0 +1,37 @@
+{
+  "repo": "excalidraw",
+  "files": [
+    {
+      "path": ".github/copilot-instructions.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "dev-docs/docs/introduction/contributing.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": ".eslintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/common/.eslintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/element/.eslintrc.json",
+      "kind": "lint"
+    }
+  ]
+}

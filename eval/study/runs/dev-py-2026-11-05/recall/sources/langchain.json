@@ -1,0 +1,41 @@
+{
+  "repo": "langchain",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "libs/core/pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "libs/langchain/pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "libs/langchain_v1/pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "libs/model-profiles/pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "libs/standard-tests/pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "libs/text-splitters/pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "openwiki/architecture.md",
+      "kind": "doc"
+    },
+    {
+      "path": "libs/langchain/.flake8",
+      "kind": "lint"
+    }
+  ]
+}

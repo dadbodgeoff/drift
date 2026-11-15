@@ -1,0 +1,26 @@
+3 conventions from 934 units in 38 roles (2 default tier, 1 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-a8984b] files in src/components/** do not import from src/files/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 55/56 (lower bound 0.91, lift 3.0)
+    tier:     default
+    example:  src/components/about-ipfs/AboutIpfs.js#(file)
+    outlier:  src/components/loading-animation/LoadingAnimation.js:1 (file)
+
+ 2. [D-f05190] files in src/components/** do not import from src/settings/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 55/56 (lower bound 0.91, lift 3.0)
+    tier:     default
+    example:  src/components/about-ipfs/AboutIpfs.js#(file)
+    outlier:  src/components/experiments/ExperimentsPanel.js:1 (file)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 3. [D-ca6863] functions in src/lib/** do not call console.*
+    evidence: 42/44 (lower bound 0.85, lift 3.2)
+    tier:     suggestion (rule kind avoids:other)
+    example:  src/lib/count-dirs.js#countDirs
+    outlier:  src/lib/compare-version-strings.ts:15 cmpVersionStrings
+    outlier:  src/lib/files.js:134 debouncedProvide
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

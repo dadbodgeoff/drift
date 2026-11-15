@@ -1,0 +1,56 @@
+5 conventions from 2489 units in 133 roles (0 default tier, 5 suggestions)
+
+5 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-40c349] serializers in src/** (api and serializers files) extend RalphAPISerializer, except 7 classes (on a sibling base the target's module defines)
+    evidence: 103/103 (lower bound 0.96, lift 8.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 33% of 9)
+    example:  src/ralph/access_cards/api.py#AccessCardSerializer
+    exempt:   src/ralph/assets/api/serializers.py:255 AssetModelSaveSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)
+    exempt:   src/ralph/data_center/api/serializers.py:183 DataCenterAssetSaveSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)
+    exempt:   src/ralph/lib/custom_fields/api/serializers.py:64 CustomFieldValueSaveSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)
+    exempt:   src/ralph/networks/api.py:64 IPAddressSaveSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)
+    exempt:   src/ralph/virtual/api.py:62 SaveCloudFlavorSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)
+    exempt:   src/ralph/virtual/api.py:84 SaveCloudHostSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)
+    exempt:   src/ralph/virtual/api.py:182 VirtualServerSaveSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)
+
+ 2. [D-03c0d5] serializers in src/** (api and serializers files) are named `*Serializer`
+    evidence: 109/110 (lower bound 0.95, lift 7.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 40% of 15)
+    example:  src/ralph/access_cards/api.py#AccessCardSerializer
+    outlier:  src/ralph/dashboards/api/serializers.py:11 GraphSerializerDetail
+
+ 3. [D-c2b101] admin classes in src/** (admin files) are named `*Admin`
+    evidence: 94/98 (lower bound 0.90, lift 10.2)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 40% of 15)
+    example:  src/ralph/access_cards/admin.py#AccessCardAdmin
+    outlier:  src/ralph/domains/admin.py:138 DomainCategory
+    outlier:  src/ralph/licences/admin.py:224 Software
+    outlier:  src/ralph/reports/admin.py:13 ReportLanguage
+    outlier:  src/ralph/virtual/admin.py:45 VirtualServerTypeForm
+
+ 4. [D-a68e99] model classes in src/** extend AdminAbsoluteUrlMixin
+    evidence: 49/53 (lower bound 0.82, lift 9.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 33% of 9)
+    example:  src/ralph/assets/models/assets.py#AssetHolder
+    outlier:  src/ralph/assets/models/assets.py:262 AssetLastHostname
+    outlier:  src/ralph/switchports/models/connections.py:43 Connection
+    outlier:  src/ralph/switchports/models/connections.py:50 ConnectionMember
+    outlier:  src/ralph/switchports/models/validation.py:20 BackendValidationResult
+
+ 5. [D-cfd5da] functions in src/ralph/switchports/** declare their return type
+    evidence: 31/34 (lower bound 0.77, lift 5.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 100% of 4)
+    example:  src/ralph/switchports/connections/planning.py#switch_port_owner
+    outlier:  src/ralph/switchports/presentation.py:14 format_speed
+    outlier:  src/ralph/switchports/presentation.py:26 status_symbol
+    outlier:  src/ralph/switchports/sync/tasks.py:97 run_rack_refresh
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

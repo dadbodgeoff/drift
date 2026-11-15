@@ -1,0 +1,11 @@
+1 conventions from 2239 units in 68 roles (0 default tier, 1 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-4e8196] functions in utils/** do not use redirects to computed URLs
+    evidence: 149/150 (lower bound 0.96, lift 15.3)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  utils/audioprocessing/color_schemes.py#color_from_value
+    outlier:  utils/url.py:28 redirect_inline
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

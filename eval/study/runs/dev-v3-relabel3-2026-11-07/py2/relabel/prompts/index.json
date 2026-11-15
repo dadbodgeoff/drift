@@ -1,0 +1,352 @@
+[
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "Django-CRM",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/prompts/label/A/Django-CRM.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/1f80c2e6-4fc1-4cfb-b9fd-ec93e8acdcb9/out.jsonl",
+    "expected": [
+      "Django-CRM/D-b6f0b8",
+      "Django-CRM/D-1a9f79"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:07:41.582Z",
+    "collected": {
+      "at": "2026-11-07T06:14:31.328Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/A/Django-CRM.jsonl",
+      "records": 2,
+      "sha256": "fecc3873f29bf6bf45ca983e40e0c404e6c8fe574d2ae0936cef912113af315a"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "InvenTree",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/prompts/label/A/InvenTree.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/36be3d1b-cab1-4fcf-8427-28dae51560fc/out.jsonl",
+    "expected": [
+      "InvenTree/D-47d790",
+      "InvenTree/D-455913"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:07:41.583Z",
+    "collected": {
+      "at": "2026-11-07T06:13:30.747Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/A/InvenTree.jsonl",
+      "records": 2,
+      "sha256": "b8ef9afa9e1f4d0871553eee3e2e80232abf83e866d183e743c0a469e28ce422"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "ralph",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/prompts/label/A/ralph.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/03f0a225-3b55-4df0-a01c-223e67eb10ab/out.jsonl",
+    "expected": [
+      "ralph/D-4529f9",
+      "ralph/D-5b6f70",
+      "ralph/D-43f01e"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:07:41.584Z",
+    "collected": {
+      "at": "2026-11-07T06:13:30.749Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/A/ralph.jsonl",
+      "records": 3,
+      "sha256": "0d276b69d07f38eef26a51348da54b42e954a301701b09d176d22d382ceb71be"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "Misago",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/prompts/label/A/Misago.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/24770313-f3ae-4760-81f6-c98041b22d29/out.jsonl",
+    "expected": [
+      "Misago/D-b4e5ff"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:07:41.584Z",
+    "collected": {
+      "at": "2026-11-07T06:13:15.336Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/A/Misago.jsonl",
+      "records": 1,
+      "sha256": "9a61dcb8c76faf858e57aad3cf31bdab0d7a4560e142d70e0725f1bfd233a46f"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "paperless-ngx",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/prompts/label/A/paperless-ngx.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/fecfdc21-91d7-4bda-a10a-8a6731679ccd/out.jsonl",
+    "expected": [
+      "paperless-ngx/D-de2489"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:07:41.585Z",
+    "collected": {
+      "at": "2026-11-07T06:13:15.337Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/A/paperless-ngx.jsonl",
+      "records": 1,
+      "sha256": "89fac3fb91cc89c9be4eefbe6b3458d59dbd4292b6afa95beb71732f0141cb87"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "open-wearables",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/prompts/label/A/open-wearables.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/cfa8638f-482d-4705-b668-081db1500d9f/out.jsonl",
+    "expected": [
+      "open-wearables/D-dadcea"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:07:41.585Z",
+    "collected": {
+      "at": "2026-11-07T06:13:15.338Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/A/open-wearables.jsonl",
+      "records": 1,
+      "sha256": "6c5bbf4a756a2eff64ce3250f2bd7bce47b66b70d8c9d8d59925861875fe4b4f"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "tasking-manager",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/prompts/label/A/tasking-manager.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/4ef86bf5-8db7-450d-b53e-6807c93c3e61/out.jsonl",
+    "expected": [
+      "tasking-manager/D-c7acd1"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:07:41.586Z",
+    "collected": {
+      "at": "2026-11-07T06:13:15.339Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/A/tasking-manager.jsonl",
+      "records": 1,
+      "sha256": "80de4760c3e30a0dd224ce7b461f7b5a617431ffc677225a9b887520eec66916"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "simplelogin",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/prompts/label/A/simplelogin.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/3d78d05f-6799-468a-ac57-84e19595dd51/out.jsonl",
+    "expected": [
+      "simplelogin/D-2a4960"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:07:41.586Z",
+    "collected": {
+      "at": "2026-11-07T06:13:15.341Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/A/simplelogin.jsonl",
+      "records": 1,
+      "sha256": "9a1388a3881e898aa17a6b0db47ccf536ba1280d9e276f965696c08b968881dd"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "InvenTree",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/prompts/label/B/InvenTree.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/02c564d6-9d9e-40f0-9d4a-540506b8e1e0/out.jsonl",
+    "expected": [
+      "InvenTree/D-47d790",
+      "InvenTree/D-455913"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:13:31.163Z",
+    "collected": {
+      "at": "2026-11-07T06:14:48.699Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/B/InvenTree.jsonl",
+      "records": 2,
+      "sha256": "60a8fd739f6646ae4135db45860cdf3ed0d739ce9d7c9ed3bf64959a29a357a5"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "Misago",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/prompts/label/B/Misago.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/59c82ef1-ecfd-43d0-a0fc-1e9667684b26/out.jsonl",
+    "expected": [
+      "Misago/D-b4e5ff"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:13:31.211Z",
+    "collected": {
+      "at": "2026-11-07T06:14:31.430Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/B/Misago.jsonl",
+      "records": 1,
+      "sha256": "522ef29e453d2d1505dd7037c30ff56d892cf54deba98004c75c852a8d10ebd8"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "open-wearables",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/prompts/label/B/open-wearables.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/50346258-b49e-490b-b8dc-dd5d526e3d7a/out.jsonl",
+    "expected": [
+      "open-wearables/D-dadcea"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:13:31.255Z",
+    "collected": {
+      "at": "2026-11-07T06:14:31.431Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/B/open-wearables.jsonl",
+      "records": 1,
+      "sha256": "07073088b3da7bd4d55d48bb6b0a292f971402b7c441900be390118e5f39cb90"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "paperless-ngx",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/prompts/label/B/paperless-ngx.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/4e84a8a7-80b5-4b77-97c8-e5cf8173d73e/out.jsonl",
+    "expected": [
+      "paperless-ngx/D-de2489"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:13:31.297Z",
+    "collected": {
+      "at": "2026-11-07T06:14:31.432Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/B/paperless-ngx.jsonl",
+      "records": 1,
+      "sha256": "105cc5ff4127b16b18b0a859078d710f4b3c545c0dd80a58297bce96a32111a1"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "ralph",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/prompts/label/B/ralph.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/91c564eb-349a-4658-becc-f74998ac35ae/out.jsonl",
+    "expected": [
+      "ralph/D-4529f9",
+      "ralph/D-5b6f70",
+      "ralph/D-43f01e"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:13:31.341Z",
+    "collected": {
+      "at": "2026-11-07T06:14:48.702Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/B/ralph.jsonl",
+      "records": 3,
+      "sha256": "4bb0b08a9371ed8223335626abd007126d38bf4513a33d243caaf51c2d529032"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "simplelogin",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/prompts/label/B/simplelogin.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/fa9b89ad-3d29-42b0-bd5c-d66c68c6f412/out.jsonl",
+    "expected": [
+      "simplelogin/D-2a4960"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:13:31.386Z",
+    "collected": {
+      "at": "2026-11-07T06:14:48.702Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/B/simplelogin.jsonl",
+      "records": 1,
+      "sha256": "6731684cd0bbba4ceee849beab192e3b116943bd401fa50a7fee22d06248a1c1"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "tasking-manager",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/prompts/label/B/tasking-manager.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/f807538c-2fee-482e-abef-26625087932f/out.jsonl",
+    "expected": [
+      "tasking-manager/D-c7acd1"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:13:31.428Z",
+    "collected": {
+      "at": "2026-11-07T06:14:48.703Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/B/tasking-manager.jsonl",
+      "records": 1,
+      "sha256": "3f4f48f5d883387775d0aa94bce345c43edb6fec5378c4d88d651cdc62652c3a"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "Django-CRM",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/prompts/label/B/Django-CRM.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/339c1d93-f064-4866-8de5-37e5de46e20d/out.jsonl",
+    "expected": [
+      "Django-CRM/D-b6f0b8",
+      "Django-CRM/D-1a9f79"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:14:31.530Z",
+    "collected": {
+      "at": "2026-11-07T06:15:34.955Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/B/Django-CRM.jsonl",
+      "records": 2,
+      "sha256": "43c78085b77ae08e4c354ecc60c56c8026776d5cbe82c265451cd3da71e3d591"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "paperless-ngx",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/prompts/adjudicate/C/paperless-ngx.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/db22dc9e-b784-4077-ac91-60860333dc93/out.jsonl",
+    "expected": [
+      "paperless-ngx/D-de2489"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:16:07.236Z",
+    "collected": {
+      "at": "2026-11-07T06:17:45.868Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/C/paperless-ngx.jsonl",
+      "records": 1,
+      "sha256": "b936663c5efbd9aae1ad24d8458081e0abddcc36e424a8c8b8f2f88a424d6643"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "simplelogin",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/prompts/adjudicate/C/simplelogin.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/c3b49ce3-e081-46b5-a425-dcf7d7a31979/out.jsonl",
+    "expected": [
+      "simplelogin/D-2a4960"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:16:07.237Z",
+    "collected": {
+      "at": "2026-11-07T06:17:45.871Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/C/simplelogin.jsonl",
+      "records": 1,
+      "sha256": "b0648781003dc1806a11bb4a929487105ef01a9ddf90fd69e978e8e298cbc752"
+    }
+  }
+]

@@ -1,0 +1,53 @@
+{
+  "repo": "codex-autorunner",
+  "files": [
+    {
+      "path": ".agents/skills/desloppify/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/car_constitution/30_ENGINEERING_STANDARDS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/voice/architecture.md",
+      "kind": "doc"
+    },
+    {
+      "path": "pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "src/codex_autorunner/adapters/chat/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "src/codex_autorunner/agents/acp/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "src/codex_autorunner/surfaces/web/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "src/codex_autorunner/web_frontend/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "tests/AGENTS.md",
+      "kind": "doc"
+    }
+  ]
+}

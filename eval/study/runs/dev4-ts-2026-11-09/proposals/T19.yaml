@@ -1,0 +1,172 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - ""
+  - apply-destructuring
+  - apply-destructuring-fix
+  - args
+  - args-fix
+  - array
+  - array-fix
+  - assign
+  - assign-fix
+  - assignment
+  - assignment-fix
+  - async
+  - async-fix
+  - await
+  - call
+  - call-fix
+  - commonjs
+  - commonjs-fix
+  - convert-commonjs-to-esm
+  - convert-json-to-js
+  - couple
+  - couple-fix
+  - create-test
+  - css
+  - declare
+  - declare-fix
+  - declared
+  - destructuring
+  - different
+  - duplicate
+  - dynamic
+  - dynamic-fix
+  - empty
+  - equal
+  - equal-fix
+  - errors
+  - eslint
+  - esm
+  - esm-fix
+  - expected
+  - export
+  - export-fix
+  - exports
+  - filesystem
+  - find-file
+  - fn
+  - fn-fix
+  - get-imports
+  - gitignore
+  - identifier
+  - ignore
+  - jest
+  - json
+  - jsx
+  - lint
+  - lint-fix
+  - markdown
+  - match
+  - match-fix
+  - member
+  - nested
+  - new
+  - "no"
+  - no-args
+  - node
+  - not-fn
+  - not-string
+  - object
+  - object-fix
+  - operate
+  - options
+  - parens
+  - plugins
+  - printer
+  - putout
+  - regexp
+  - remove-files
+  - remove-useless-escape
+  - rename-file
+  - replace
+  - replace-fix
+  - return
+  - return-fix
+  - run
+  - sort-ignore
+  - sort-ignore-fix
+  - spread
+  - spread-fix
+  - template
+  - test
+  - traverse
+  - types
+  - typescript
+  - var
+  - wasm
+  suffixes:
+  - config
+  - errors
+  - madrun
+  - spec
+conventions:
+- id: D-afc638
+  status: proposed
+  mode: advise
+  summary: >-
+    files in packages/plugin-variables/** do not import from packages/operate/**
+    (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: packages/plugin-variables
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:packages/operate
+  evidence:
+    holders: 289
+    total: 290
+    lower_bound: 0.981
+    lift: 3.0
+  example: packages/plugin-variables/.madrun.js#(file)
+  selector_version: 3
+- id: D-c79a9e
+  status: proposed
+  mode: advise
+  summary: >-
+    files in packages/plugin-types/** do not import from packages/putout/**
+    (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: packages/plugin-types
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:packages/putout
+  evidence:
+    holders: 120
+    total: 123
+    lower_bound: 0.931
+    lift: 3.0
+  example: packages/plugin-types/.madrun.js#(file)
+  selector_version: 3
+- id: D-b24e52
+  status: proposed
+  mode: advise
+  summary: "packages/plugin-variables: files in lib/remove-unused/** do not import from packages/putout/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)"
+  role:
+    package: packages/plugin-variables
+    dir: lib/remove-unused
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:packages/putout
+  evidence:
+    holders: 127
+    total: 133
+    lower_bound: 0.905
+    lift: 3.0
+  example: packages/plugin-variables/lib/remove-unused/fixture.js#(file)
+  selector_version: 3

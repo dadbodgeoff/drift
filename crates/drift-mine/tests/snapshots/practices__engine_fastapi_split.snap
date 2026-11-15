@@ -1,0 +1,327 @@
+---
+source: crates/drift-mine/tests/practices.rs
+expression: r
+---
+{
+  "version": 1,
+  "commit": null,
+  "facts_schema": 11,
+  "scope": {
+    "concern": null,
+    "package": null,
+    "path": null
+  },
+  "summary": {
+    "population": 3,
+    "known": 2,
+    "declared": 0,
+    "none": 1,
+    "unknown": 0,
+    "coverage": 1.0,
+    "concerns_at_target": 1,
+    "target": 0.9
+  },
+  "concerns": [
+    {
+      "id": "authn",
+      "title": "Authentication",
+      "unit": "entry_point",
+      "population": {
+        "total": 3,
+        "known": 2,
+        "declared": 0,
+        "none": 1,
+        "unknown": 0,
+        "coverage": 1.0,
+        "left_out": {
+          "tests": 0,
+          "non_production": 0
+        }
+      },
+      "variants": [
+        {
+          "id": "P-4d6b09",
+          "key": "wrap:services/api/app/deps.py#get_current_user",
+          "label": "wrap get_current_user",
+          "kind": "known",
+          "mechanisms": [
+            "wrap"
+          ],
+          "instruments": [
+            "services/api/app/deps.py#get_current_user"
+          ],
+          "source": "vocab",
+          "members": 2,
+          "share": 0.667,
+          "where": {
+            "packages": [
+              {
+                "package": "services/api",
+                "members": 2,
+                "share_of_package": 1.0
+              }
+            ],
+            "dirs": [
+              {
+                "dir": "services/api/app/routers",
+                "members": 2
+              }
+            ],
+            "roles": [],
+            "entry_kinds": [
+              {
+                "kind": "http",
+                "members": 2
+              }
+            ],
+            "methods": [
+              {
+                "method": "GET",
+                "members": 1
+              },
+              {
+                "method": "POST",
+                "members": 1
+              }
+            ]
+          },
+          "sets_apart": [],
+          "examples": [
+            {
+              "path": "services/api/app/routers/items.py",
+              "symbol": "create_item",
+              "line": 25
+            },
+            {
+              "path": "services/api/app/routers/items.py",
+              "symbol": "read_item",
+              "line": 10
+            }
+          ],
+          "exceptions": [],
+          "exceptions_more": 0,
+          "conventions": [],
+          "promotable": null
+        },
+        {
+          "id": "P-01d468",
+          "key": "none:no guard",
+          "label": "no guard",
+          "kind": "none",
+          "mechanisms": [],
+          "instruments": [],
+          "source": "usage",
+          "members": 1,
+          "share": 0.333,
+          "where": {
+            "packages": [
+              {
+                "package": "services/legacy",
+                "members": 1,
+                "share_of_package": 1.0
+              }
+            ],
+            "dirs": [],
+            "roles": [],
+            "entry_kinds": [
+              {
+                "kind": "http",
+                "members": 1
+              }
+            ],
+            "methods": [
+              {
+                "method": "GET",
+                "members": 1
+              }
+            ]
+          },
+          "sets_apart": [],
+          "examples": [
+            {
+              "path": "services/legacy/views.py",
+              "symbol": "show",
+              "line": 6
+            }
+          ],
+          "exceptions": [],
+          "exceptions_more": 0,
+          "conventions": [],
+          "promotable": null
+        }
+      ],
+      "unknown": {
+        "members": 0,
+        "reasons": [],
+        "instruments": [],
+        "examples": []
+      },
+      "by_package": [
+        {
+          "package": "services/api",
+          "total": 2,
+          "coverage": 1.0,
+          "variants": [
+            {
+              "id": "P-4d6b09",
+              "members": 2,
+              "share": 1.0
+            }
+          ]
+        },
+        {
+          "package": "services/legacy",
+          "total": 1,
+          "coverage": 1.0,
+          "variants": [
+            {
+              "id": "P-01d468",
+              "members": 1,
+              "share": 1.0
+            }
+          ]
+        }
+      ],
+      "divergence": [],
+      "groups": [
+        {
+          "id": "G-bb41b1",
+          "kind": "known",
+          "class": "user",
+          "instrument": "services/api/app/deps.py#get_current_user",
+          "mechanisms": [
+            "wrap"
+          ],
+          "label": "wrap get_current_user",
+          "members": 2,
+          "share": 0.667,
+          "variants": 1,
+          "top": [
+            {
+              "id": "P-4d6b09",
+              "key": "wrap:services/api/app/deps.py#get_current_user",
+              "label": "wrap get_current_user",
+              "members": 2
+            }
+          ],
+          "examples": [
+            {
+              "path": "services/api/app/routers/items.py",
+              "symbol": "create_item",
+              "line": 25
+            },
+            {
+              "path": "services/api/app/routers/items.py",
+              "symbol": "read_item",
+              "line": 10
+            }
+          ]
+        },
+        {
+          "id": "G-b8e504",
+          "kind": "none",
+          "class": "",
+          "instrument": "",
+          "mechanisms": [],
+          "label": "no guard",
+          "members": 1,
+          "share": 0.333,
+          "variants": 1,
+          "top": [
+            {
+              "id": "P-01d468",
+              "key": "none:no guard",
+              "label": "no guard",
+              "members": 1
+            }
+          ],
+          "examples": [
+            {
+              "path": "services/legacy/views.py",
+              "symbol": "show",
+              "line": 6
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "not_covered": [
+    "outbound calls (HTTP clients, timeouts, retries)",
+    "background jobs and queues",
+    "frontend data fetching",
+    "state and design system",
+    "hygiene (duplicate libraries, escape hatches)",
+    "declared vs actual (AGENTS.md, lint configs)",
+    "change over time (which variant new code adopts)"
+  ],
+  "recipes": [
+    {
+      "id": "E-4dfd26",
+      "package": "services/api",
+      "role": "http",
+      "label": "http entry points in services/api",
+      "population": 2,
+      "concerns": [
+        {
+          "concern": "authn",
+          "total": 2,
+          "variants": [
+            {
+              "id": "P-4d6b09",
+              "label": "wrap get_current_user",
+              "members": 2,
+              "share": 1.0
+            }
+          ],
+          "copy": {
+            "path": "services/api/app/routers/items.py",
+            "symbol": "create_item",
+            "line": 25
+          },
+          "none": 0,
+          "unknown": 0,
+          "differs": null
+        }
+      ]
+    },
+    {
+      "id": "E-7e980d",
+      "package": "services/legacy",
+      "role": "http",
+      "label": "http entry points in services/legacy",
+      "population": 1,
+      "concerns": [
+        {
+          "concern": "authn",
+          "total": 1,
+          "variants": [],
+          "copy": null,
+          "none": 1,
+          "unknown": 0,
+          "differs": null
+        }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "kind": "none",
+      "concern": "authn",
+      "package": "services/legacy",
+      "variants": [
+        "P-01d468"
+      ],
+      "members": 1,
+      "instrument": null,
+      "config_hint": null,
+      "examples": [
+        {
+          "path": "services/legacy/views.py",
+          "symbol": "show",
+          "line": 6
+        }
+      ]
+    }
+  ]
+}

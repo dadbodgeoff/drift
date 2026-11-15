@@ -1,0 +1,65 @@
+{
+  "repo": "immich",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/docs/developer/architecture.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/docs/features/hardware-transcoding.md",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/docs/features/reverse-geocoding.md",
+      "kind": "doc"
+    },
+    {
+      "path": "e2e/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "machine-learning/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "mobile/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "native/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "server/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "web/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "e2e/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/cli/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "server/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "web/eslint.config.js",
+      "kind": "lint"
+    }
+  ]
+}

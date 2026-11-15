@@ -1,0 +1,2768 @@
+{
+ "about": "map11 coverage, build set (54 clones), final binary (kind-role drafts capped on their own). before = test and kind roles off (census byte-identical to F11); after = --test-roles --kind-roles. role_places is the F11 definition. Aggregates only.",
+ "pool_after": {
+  "parsed": {
+   "median": 98.7,
+   "mean": 91.6,
+   "at_or_above": 39,
+   "of": 54
+  },
+  "package": {
+   "median": 98.7,
+   "mean": 90.2,
+   "at_or_above": 39,
+   "of": 54
+  },
+  "role": {
+   "median": 94.4,
+   "mean": 87.4,
+   "at_or_above": 34,
+   "of": 54
+  },
+  "role_places": {
+   "median": 63.4,
+   "mean": 61.5,
+   "at_or_above": 4,
+   "of": 54
+  },
+  "role_test": {
+   "median": 25.5,
+   "mean": 25.5,
+   "at_or_above": 0,
+   "of": 54
+  },
+  "role_kind": {
+   "median": 37.5,
+   "mean": 39.5,
+   "at_or_above": 2,
+   "of": 54
+  },
+  "imports": {
+   "median": 100,
+   "mean": 97.9,
+   "at_or_above": 52,
+   "of": 54
+  },
+  "prod_role": {
+   "median": 96.6,
+   "mean": 88.6,
+   "at_or_above": 34,
+   "of": 54
+  },
+  "prod_narrow": {
+   "median": 88.3,
+   "mean": 84.7,
+   "at_or_above": 24,
+   "of": 54
+  },
+  "prod_kind": {
+   "median": 59.8,
+   "mean": 60.7,
+   "at_or_above": 5,
+   "of": 54
+  },
+  "prod_mined": {
+   "median": 13.7,
+   "mean": 23.3,
+   "at_or_above": 0,
+   "of": 54
+  },
+  "prod_shown": {
+   "median": 0,
+   "mean": 4.6,
+   "at_or_above": 0,
+   "of": 54
+  },
+  "test_role": {
+   "median": 99.6,
+   "mean": 90.8,
+   "at_or_above": 45,
+   "of": 54
+  },
+  "test_mined": {
+   "median": 9.6,
+   "mean": 31.8,
+   "at_or_above": 10,
+   "of": 54
+  },
+  "mined": {
+   "median": 19.2,
+   "mean": 26,
+   "at_or_above": 0,
+   "of": 54
+  },
+  "shown": {
+   "median": 0,
+   "mean": 3.5,
+   "at_or_above": 0,
+   "of": 54
+  },
+  "folds": {
+   "1": {
+    "parsed": {
+     "median": 93.7,
+     "mean": 87.5,
+     "at_or_above": 5,
+     "of": 9
+    },
+    "package": {
+     "median": 93.7,
+     "mean": 87.5,
+     "at_or_above": 5,
+     "of": 9
+    },
+    "role": {
+     "median": 81.1,
+     "mean": 80.9,
+     "at_or_above": 4,
+     "of": 9
+    },
+    "role_places": {
+     "median": 51.8,
+     "mean": 59.1,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "role_test": {
+     "median": 18.1,
+     "mean": 21.6,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "role_kind": {
+     "median": 33,
+     "mean": 36.1,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "imports": {
+     "median": 100,
+     "mean": 99.8,
+     "at_or_above": 9,
+     "of": 9
+    },
+    "prod_role": {
+     "median": 88.4,
+     "mean": 83.9,
+     "at_or_above": 4,
+     "of": 9
+    },
+    "prod_narrow": {
+     "median": 78.4,
+     "mean": 78.3,
+     "at_or_above": 2,
+     "of": 9
+    },
+    "prod_kind": {
+     "median": 59.9,
+     "mean": 60.5,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "prod_mined": {
+     "median": 9.6,
+     "mean": 20.2,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "prod_shown": {
+     "median": 0,
+     "mean": 4.2,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "test_role": {
+     "median": 98.4,
+     "mean": 89.7,
+     "at_or_above": 6,
+     "of": 9
+    },
+    "test_mined": {
+     "median": 7.9,
+     "mean": 13.8,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "mined": {
+     "median": 10.8,
+     "mean": 19.8,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "shown": {
+     "median": 0,
+     "mean": 2.6,
+     "at_or_above": 0,
+     "of": 9
+    }
+   },
+   "2": {
+    "parsed": {
+     "median": 89.3,
+     "mean": 83.7,
+     "at_or_above": 4,
+     "of": 9
+    },
+    "package": {
+     "median": 89.3,
+     "mean": 83.7,
+     "at_or_above": 4,
+     "of": 9
+    },
+    "role": {
+     "median": 76.8,
+     "mean": 75.3,
+     "at_or_above": 3,
+     "of": 9
+    },
+    "role_places": {
+     "median": 61.7,
+     "mean": 56.3,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "role_test": {
+     "median": 18.1,
+     "mean": 18.7,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "role_kind": {
+     "median": 30.6,
+     "mean": 38.7,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "imports": {
+     "median": 99.9,
+     "mean": 99.6,
+     "at_or_above": 9,
+     "of": 9
+    },
+    "prod_role": {
+     "median": 89.8,
+     "mean": 81.9,
+     "at_or_above": 4,
+     "of": 9
+    },
+    "prod_narrow": {
+     "median": 85.7,
+     "mean": 78.7,
+     "at_or_above": 2,
+     "of": 9
+    },
+    "prod_kind": {
+     "median": 50.3,
+     "mean": 59.2,
+     "at_or_above": 2,
+     "of": 9
+    },
+    "prod_mined": {
+     "median": 11.8,
+     "mean": 21,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "prod_shown": {
+     "median": 0,
+     "mean": 6.5,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "test_role": {
+     "median": 98.3,
+     "mean": 93,
+     "at_or_above": 7,
+     "of": 9
+    },
+    "test_mined": {
+     "median": 6.4,
+     "mean": 34.2,
+     "at_or_above": 2,
+     "of": 9
+    },
+    "mined": {
+     "median": 16.9,
+     "mean": 22.7,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "shown": {
+     "median": 0,
+     "mean": 5.9,
+     "at_or_above": 0,
+     "of": 9
+    }
+   },
+   "3": {
+    "parsed": {
+     "median": 99.1,
+     "mean": 93.4,
+     "at_or_above": 6,
+     "of": 8
+    },
+    "package": {
+     "median": 99.1,
+     "mean": 93.4,
+     "at_or_above": 6,
+     "of": 8
+    },
+    "role": {
+     "median": 94.9,
+     "mean": 89.3,
+     "at_or_above": 5,
+     "of": 8
+    },
+    "role_places": {
+     "median": 65.2,
+     "mean": 57.5,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "role_test": {
+     "median": 28.7,
+     "mean": 31.7,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "role_kind": {
+     "median": 40.7,
+     "mean": 37.7,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "imports": {
+     "median": 100,
+     "mean": 99.8,
+     "at_or_above": 8,
+     "of": 8
+    },
+    "prod_role": {
+     "median": 98.9,
+     "mean": 89.7,
+     "at_or_above": 6,
+     "of": 8
+    },
+    "prod_narrow": {
+     "median": 92.1,
+     "mean": 85.3,
+     "at_or_above": 4,
+     "of": 8
+    },
+    "prod_kind": {
+     "median": 67.5,
+     "mean": 59.1,
+     "at_or_above": 1,
+     "of": 8
+    },
+    "prod_mined": {
+     "median": 15.3,
+     "mean": 32.5,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "prod_shown": {
+     "median": 0,
+     "mean": 1,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "test_role": {
+     "median": 99.1,
+     "mean": 96.9,
+     "at_or_above": 7,
+     "of": 8
+    },
+    "test_mined": {
+     "median": 21,
+     "mean": 39.4,
+     "at_or_above": 2,
+     "of": 8
+    },
+    "mined": {
+     "median": 32,
+     "mean": 37.7,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "shown": {
+     "median": 0,
+     "mean": 0.7,
+     "at_or_above": 0,
+     "of": 8
+    }
+   },
+   "4": {
+    "parsed": {
+     "median": 98.8,
+     "mean": 96,
+     "at_or_above": 7,
+     "of": 8
+    },
+    "package": {
+     "median": 98.8,
+     "mean": 96,
+     "at_or_above": 7,
+     "of": 8
+    },
+    "role": {
+     "median": 96.7,
+     "mean": 95,
+     "at_or_above": 7,
+     "of": 8
+    },
+    "role_places": {
+     "median": 73.3,
+     "mean": 72.3,
+     "at_or_above": 3,
+     "of": 8
+    },
+    "role_test": {
+     "median": 21.1,
+     "mean": 21.8,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "role_kind": {
+     "median": 59.5,
+     "mean": 57.6,
+     "at_or_above": 2,
+     "of": 8
+    },
+    "imports": {
+     "median": 100,
+     "mean": 92.7,
+     "at_or_above": 7,
+     "of": 8
+    },
+    "prod_role": {
+     "median": 96.6,
+     "mean": 92.8,
+     "at_or_above": 6,
+     "of": 8
+    },
+    "prod_narrow": {
+     "median": 94.5,
+     "mean": 90.4,
+     "at_or_above": 5,
+     "of": 8
+    },
+    "prod_kind": {
+     "median": 79.4,
+     "mean": 74.2,
+     "at_or_above": 2,
+     "of": 8
+    },
+    "prod_mined": {
+     "median": 20.5,
+     "mean": 17.8,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "prod_shown": {
+     "median": 0,
+     "mean": 4,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "test_role": {
+     "median": 99.4,
+     "mean": 86.9,
+     "at_or_above": 7,
+     "of": 8
+    },
+    "test_mined": {
+     "median": 16,
+     "mean": 30.9,
+     "at_or_above": 1,
+     "of": 8
+    },
+    "mined": {
+     "median": 19.6,
+     "mean": 18.4,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "shown": {
+     "median": 0,
+     "mean": 3.7,
+     "at_or_above": 0,
+     "of": 8
+    }
+   },
+   "5": {
+    "parsed": {
+     "median": 99.2,
+     "mean": 94.4,
+     "at_or_above": 17,
+     "of": 20
+    },
+    "package": {
+     "median": 99,
+     "mean": 90.8,
+     "at_or_above": 17,
+     "of": 20
+    },
+    "role": {
+     "median": 95.7,
+     "mean": 91.9,
+     "at_or_above": 15,
+     "of": 20
+    },
+    "role_places": {
+     "median": 61.9,
+     "mean": 62.1,
+     "at_or_above": 1,
+     "of": 20
+    },
+    "role_test": {
+     "median": 30.7,
+     "mean": 29.4,
+     "at_or_above": 0,
+     "of": 20
+    },
+    "role_kind": {
+     "median": 37,
+     "mean": 34.8,
+     "at_or_above": 0,
+     "of": 20
+    },
+    "imports": {
+     "median": 100,
+     "mean": 97.7,
+     "at_or_above": 19,
+     "of": 20
+    },
+    "prod_role": {
+     "median": 97,
+     "mean": 91.7,
+     "at_or_above": 14,
+     "of": 20
+    },
+    "prod_narrow": {
+     "median": 93.8,
+     "mean": 87.9,
+     "at_or_above": 11,
+     "of": 20
+    },
+    "prod_kind": {
+     "median": 51.2,
+     "mean": 56.6,
+     "at_or_above": 0,
+     "of": 20
+    },
+    "prod_mined": {
+     "median": 12.5,
+     "mean": 24.3,
+     "at_or_above": 0,
+     "of": 20
+    },
+    "prod_shown": {
+     "median": 0,
+     "mean": 5.6,
+     "at_or_above": 0,
+     "of": 20
+    },
+    "test_role": {
+     "median": 99.7,
+     "mean": 89.5,
+     "at_or_above": 18,
+     "of": 20
+    },
+    "test_mined": {
+     "median": 5.9,
+     "mean": 36.1,
+     "at_or_above": 5,
+     "of": 20
+    },
+    "mined": {
+     "median": 31.1,
+     "mean": 28.7,
+     "at_or_above": 0,
+     "of": 20
+    },
+    "shown": {
+     "median": 0,
+     "mean": 3.9,
+     "at_or_above": 0,
+     "of": 20
+    }
+   }
+  },
+  "unmapped": {
+   "demo or example code": {
+    "files": 5717,
+    "share": 2.9,
+    "reasons": {
+     "demonstration or integration-suite code: no production role": 5717
+    }
+   },
+   "migration": {
+    "files": 4288,
+    "share": 6,
+    "reasons": {
+     "not parsed (skipped)": 4288
+    }
+   },
+   "lib or util": {
+    "files": 1023,
+    "share": 0.2,
+    "reasons": {
+     "not parsed (skipped)": 1022,
+     "its groups are too small to be roles": 1
+    }
+   },
+   "TS module": {
+    "files": 840,
+    "share": 0.9,
+    "reasons": {
+     "not parsed": 1,
+     "not parsed (skipped)": 536,
+     "its groups are too small to be roles": 303
+    }
+   },
+   "type declarations": {
+    "files": 544,
+    "share": 0.8,
+    "reasons": {
+     "not parsed (skipped)": 543,
+     "its groups are too small to be roles": 1
+    }
+   },
+   "TS end-to-end test": {
+    "files": 376,
+    "share": 0.3,
+    "reasons": {
+     "its groups are too small to be roles": 14,
+     "demonstration or integration-suite code: no production role": 361,
+     "not parsed (skipped)": 1
+    }
+   },
+   "TS unit test": {
+    "files": 314,
+    "share": 0.3,
+    "reasons": {
+     "not parsed (skipped)": 189,
+     "demonstration or integration-suite code: no production role": 122,
+     "its groups are too small to be roles": 3
+    }
+   },
+   "ORM or schema models": {
+    "files": 310,
+    "share": 0.1,
+    "reasons": {
+     "its groups are too small to be roles": 1,
+     "not parsed (skipped)": 309
+    }
+   },
+   "python module": {
+    "files": 133,
+    "share": 0.3,
+    "reasons": {
+     "not parsed (skipped)": 121,
+     "its groups are too small to be roles": 12
+    }
+   },
+   "barrel index": {
+    "files": 115,
+    "share": 0.1,
+    "reasons": {
+     "not parsed (skipped)": 52,
+     "its groups are too small to be roles": 63
+    }
+   },
+   "python test": {
+    "files": 85,
+    "share": 0.4,
+    "reasons": {
+     "demonstration or integration-suite code: no production role": 32,
+     "its groups are too small to be roles": 8,
+     "not parsed (skipped)": 45
+    }
+   },
+   "React component": {
+    "files": 42,
+    "share": 0,
+    "reasons": {
+     "not parsed (skipped)": 36,
+     "its groups are too small to be roles": 6
+    }
+   },
+   "service or repository": {
+    "files": 24,
+    "share": 0,
+    "reasons": {
+     "not parsed (skipped)": 24
+    }
+   },
+   "TS test fixture or mock": {
+    "files": 24,
+    "share": 0.1,
+    "reasons": {
+     "its groups are too small to be roles": 18,
+     "not parsed (skipped)": 4,
+     "demonstration or integration-suite code: no production role": 2
+    }
+   },
+   "python test fixture": {
+    "files": 23,
+    "share": 0.1,
+    "reasons": {
+     "its groups are too small to be roles": 20,
+     "demonstration or integration-suite code: no production role": 3
+    }
+   },
+   "CLI or script": {
+    "files": 10,
+    "share": 0,
+    "reasons": {
+     "its groups are too small to be roles": 7,
+     "not parsed (skipped)": 3
+    }
+   },
+   "TS story": {
+    "files": 8,
+    "share": 0,
+    "reasons": {
+     "not parsed (skipped)": 8
+    }
+   },
+   "config": {
+    "files": 7,
+    "share": 0,
+    "reasons": {
+     "not parsed (skipped)": 7
+    }
+   },
+   "python package __init__": {
+    "files": 3,
+    "share": 0,
+    "reasons": {
+     "not parsed (skipped)": 1,
+     "its groups are too small to be roles": 2
+    }
+   },
+   "TS component test": {
+    "files": 2,
+    "share": 0,
+    "reasons": {
+     "its groups are too small to be roles": 1,
+     "demonstration or integration-suite code: no production role": 1
+    }
+   },
+   "React hook": {
+    "files": 2,
+    "share": 0,
+    "reasons": {
+     "not parsed (skipped)": 2
+    }
+   }
+  },
+  "by_keying": {
+   "kind": {
+    "mined_cards": 626,
+    "shown_cards": 48,
+    "files_mined": 24033,
+    "files_shown": 2492
+   },
+   "path": {
+    "mined_cards": 145,
+    "shown_cards": 14,
+    "files_mined": 7363,
+    "files_shown": 763
+   },
+   "package": {
+    "mined_cards": 54,
+    "shown_cards": 13,
+    "files_mined": 19135,
+    "files_shown": 2999
+   }
+  }
+ },
+ "pool_before": {
+  "parsed": {
+   "median": 98.7,
+   "mean": 91.6,
+   "at_or_above": 39,
+   "of": 54
+  },
+  "package": {
+   "median": 98.7,
+   "mean": 90.2,
+   "at_or_above": 39,
+   "of": 54
+  },
+  "role": {
+   "median": 92.8,
+   "mean": 87,
+   "at_or_above": 34,
+   "of": 54
+  },
+  "role_places": {
+   "median": 63.4,
+   "mean": 61.5,
+   "at_or_above": 4,
+   "of": 54
+  },
+  "role_test": {
+   "median": 25.5,
+   "mean": 25.5,
+   "at_or_above": 0,
+   "of": 54
+  },
+  "role_kind": {
+   "median": 0,
+   "mean": 0,
+   "at_or_above": 0,
+   "of": 54
+  },
+  "imports": {
+   "median": 100,
+   "mean": 97.9,
+   "at_or_above": 52,
+   "of": 54
+  },
+  "prod_role": {
+   "median": 95.5,
+   "mean": 87.9,
+   "at_or_above": 33,
+   "of": 54
+  },
+  "prod_narrow": {
+   "median": 85.8,
+   "mean": 79.8,
+   "at_or_above": 18,
+   "of": 54
+  },
+  "prod_kind": {
+   "median": 25.1,
+   "mean": 24.2,
+   "at_or_above": 0,
+   "of": 54
+  },
+  "prod_mined": {
+   "median": 13,
+   "mean": 22.1,
+   "at_or_above": 0,
+   "of": 54
+  },
+  "prod_shown": {
+   "median": 0,
+   "mean": 4.4,
+   "at_or_above": 0,
+   "of": 54
+  },
+  "test_role": {
+   "median": 99.6,
+   "mean": 90.8,
+   "at_or_above": 45,
+   "of": 54
+  },
+  "test_mined": {
+   "median": 0,
+   "mean": 0,
+   "at_or_above": 0,
+   "of": 54
+  },
+  "mined": {
+   "median": 9.6,
+   "mean": 16.4,
+   "at_or_above": 0,
+   "of": 54
+  },
+  "shown": {
+   "median": 0,
+   "mean": 3.3,
+   "at_or_above": 0,
+   "of": 54
+  },
+  "folds": {
+   "1": {
+    "parsed": {
+     "median": 93.7,
+     "mean": 87.5,
+     "at_or_above": 5,
+     "of": 9
+    },
+    "package": {
+     "median": 93.7,
+     "mean": 87.5,
+     "at_or_above": 5,
+     "of": 9
+    },
+    "role": {
+     "median": 81.1,
+     "mean": 80.7,
+     "at_or_above": 4,
+     "of": 9
+    },
+    "role_places": {
+     "median": 51.8,
+     "mean": 59.1,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "role_test": {
+     "median": 18.1,
+     "mean": 21.6,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "role_kind": {
+     "median": 0,
+     "mean": 0,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "imports": {
+     "median": 100,
+     "mean": 99.8,
+     "at_or_above": 9,
+     "of": 9
+    },
+    "prod_role": {
+     "median": 88.2,
+     "mean": 83.6,
+     "at_or_above": 4,
+     "of": 9
+    },
+    "prod_narrow": {
+     "median": 77.4,
+     "mean": 74.3,
+     "at_or_above": 2,
+     "of": 9
+    },
+    "prod_kind": {
+     "median": 31.8,
+     "mean": 32.6,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "prod_mined": {
+     "median": 8.2,
+     "mean": 19.2,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "prod_shown": {
+     "median": 0,
+     "mean": 4.2,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "test_role": {
+     "median": 98.4,
+     "mean": 89.7,
+     "at_or_above": 6,
+     "of": 9
+    },
+    "test_mined": {
+     "median": 0,
+     "mean": 0,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "mined": {
+     "median": 6.4,
+     "mean": 14.8,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "shown": {
+     "median": 0,
+     "mean": 2.6,
+     "at_or_above": 0,
+     "of": 9
+    }
+   },
+   "2": {
+    "parsed": {
+     "median": 89.3,
+     "mean": 83.7,
+     "at_or_above": 4,
+     "of": 9
+    },
+    "package": {
+     "median": 89.3,
+     "mean": 83.7,
+     "at_or_above": 4,
+     "of": 9
+    },
+    "role": {
+     "median": 76.8,
+     "mean": 75,
+     "at_or_above": 3,
+     "of": 9
+    },
+    "role_places": {
+     "median": 61.7,
+     "mean": 56.3,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "role_test": {
+     "median": 18.1,
+     "mean": 18.7,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "role_kind": {
+     "median": 0,
+     "mean": 0,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "imports": {
+     "median": 99.9,
+     "mean": 99.6,
+     "at_or_above": 9,
+     "of": 9
+    },
+    "prod_role": {
+     "median": 88.3,
+     "mean": 81.3,
+     "at_or_above": 3,
+     "of": 9
+    },
+    "prod_narrow": {
+     "median": 76.4,
+     "mean": 73.3,
+     "at_or_above": 1,
+     "of": 9
+    },
+    "prod_kind": {
+     "median": 27.8,
+     "mean": 23.4,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "prod_mined": {
+     "median": 11.3,
+     "mean": 20.2,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "prod_shown": {
+     "median": 0,
+     "mean": 6.5,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "test_role": {
+     "median": 98.3,
+     "mean": 93,
+     "at_or_above": 7,
+     "of": 9
+    },
+    "test_mined": {
+     "median": 0,
+     "mean": 0,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "mined": {
+     "median": 9.1,
+     "mean": 16.9,
+     "at_or_above": 0,
+     "of": 9
+    },
+    "shown": {
+     "median": 0,
+     "mean": 5.6,
+     "at_or_above": 0,
+     "of": 9
+    }
+   },
+   "3": {
+    "parsed": {
+     "median": 99.1,
+     "mean": 93.4,
+     "at_or_above": 6,
+     "of": 8
+    },
+    "package": {
+     "median": 99.1,
+     "mean": 93.4,
+     "at_or_above": 6,
+     "of": 8
+    },
+    "role": {
+     "median": 94.7,
+     "mean": 89.2,
+     "at_or_above": 5,
+     "of": 8
+    },
+    "role_places": {
+     "median": 65.2,
+     "mean": 57.5,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "role_test": {
+     "median": 28.7,
+     "mean": 31.7,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "role_kind": {
+     "median": 0,
+     "mean": 0,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "imports": {
+     "median": 100,
+     "mean": 99.8,
+     "at_or_above": 8,
+     "of": 8
+    },
+    "prod_role": {
+     "median": 98.8,
+     "mean": 89.6,
+     "at_or_above": 6,
+     "of": 8
+    },
+    "prod_narrow": {
+     "median": 88.6,
+     "mean": 81.6,
+     "at_or_above": 3,
+     "of": 8
+    },
+    "prod_kind": {
+     "median": 18.6,
+     "mean": 23.7,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "prod_mined": {
+     "median": 15,
+     "mean": 31.6,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "prod_shown": {
+     "median": 0,
+     "mean": 0.8,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "test_role": {
+     "median": 99.1,
+     "mean": 96.9,
+     "at_or_above": 7,
+     "of": 8
+    },
+    "test_mined": {
+     "median": 0,
+     "mean": 0,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "mined": {
+     "median": 11.4,
+     "mean": 23.7,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "shown": {
+     "median": 0,
+     "mean": 0.6,
+     "at_or_above": 0,
+     "of": 8
+    }
+   },
+   "4": {
+    "parsed": {
+     "median": 98.8,
+     "mean": 96,
+     "at_or_above": 7,
+     "of": 8
+    },
+    "package": {
+     "median": 98.8,
+     "mean": 96,
+     "at_or_above": 7,
+     "of": 8
+    },
+    "role": {
+     "median": 95.3,
+     "mean": 94,
+     "at_or_above": 7,
+     "of": 8
+    },
+    "role_places": {
+     "median": 73.3,
+     "mean": 72.3,
+     "at_or_above": 3,
+     "of": 8
+    },
+    "role_test": {
+     "median": 21.1,
+     "mean": 21.8,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "role_kind": {
+     "median": 0,
+     "mean": 0,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "imports": {
+     "median": 100,
+     "mean": 92.7,
+     "at_or_above": 7,
+     "of": 8
+    },
+    "prod_role": {
+     "median": 94.1,
+     "mean": 91.6,
+     "at_or_above": 6,
+     "of": 8
+    },
+    "prod_narrow": {
+     "median": 88.9,
+     "mean": 83.4,
+     "at_or_above": 3,
+     "of": 8
+    },
+    "prod_kind": {
+     "median": 25.5,
+     "mean": 25.5,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "prod_mined": {
+     "median": 17.7,
+     "mean": 15.5,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "prod_shown": {
+     "median": 0,
+     "mean": 3.4,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "test_role": {
+     "median": 99.4,
+     "mean": 86.9,
+     "at_or_above": 7,
+     "of": 8
+    },
+    "test_mined": {
+     "median": 0,
+     "mean": 0,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "mined": {
+     "median": 11.4,
+     "mean": 11.9,
+     "at_or_above": 0,
+     "of": 8
+    },
+    "shown": {
+     "median": 0,
+     "mean": 3.2,
+     "at_or_above": 0,
+     "of": 8
+    }
+   },
+   "5": {
+    "parsed": {
+     "median": 99.2,
+     "mean": 94.4,
+     "at_or_above": 17,
+     "of": 20
+    },
+    "package": {
+     "median": 99,
+     "mean": 90.8,
+     "at_or_above": 17,
+     "of": 20
+    },
+    "role": {
+     "median": 95.1,
+     "mean": 91.5,
+     "at_or_above": 15,
+     "of": 20
+    },
+    "role_places": {
+     "median": 61.9,
+     "mean": 62.1,
+     "at_or_above": 1,
+     "of": 20
+    },
+    "role_test": {
+     "median": 30.7,
+     "mean": 29.4,
+     "at_or_above": 0,
+     "of": 20
+    },
+    "role_kind": {
+     "median": 0,
+     "mean": 0,
+     "at_or_above": 0,
+     "of": 20
+    },
+    "imports": {
+     "median": 100,
+     "mean": 97.7,
+     "at_or_above": 19,
+     "of": 20
+    },
+    "prod_role": {
+     "median": 96.4,
+     "mean": 90.8,
+     "at_or_above": 14,
+     "of": 20
+    },
+    "prod_narrow": {
+     "median": 89,
+     "mean": 83,
+     "at_or_above": 9,
+     "of": 20
+    },
+    "prod_kind": {
+     "median": 17.9,
+     "mean": 20.5,
+     "at_or_above": 0,
+     "of": 20
+    },
+    "prod_mined": {
+     "median": 12.3,
+     "mean": 23.3,
+     "at_or_above": 0,
+     "of": 20
+    },
+    "prod_shown": {
+     "median": 0,
+     "mean": 5.4,
+     "at_or_above": 0,
+     "of": 20
+    },
+    "test_role": {
+     "median": 99.7,
+     "mean": 89.5,
+     "at_or_above": 18,
+     "of": 20
+    },
+    "test_mined": {
+     "median": 0,
+     "mean": 0,
+     "at_or_above": 0,
+     "of": 20
+    },
+    "mined": {
+     "median": 9.1,
+     "mean": 15.7,
+     "at_or_above": 0,
+     "of": 20
+    },
+    "shown": {
+     "median": 0,
+     "mean": 3.8,
+     "at_or_above": 0,
+     "of": 20
+    }
+   }
+  },
+  "unmapped": {
+   "demo or example code": {
+    "files": 5717,
+    "share": 2.9,
+    "reasons": {
+     "demonstration or integration-suite code: no production role": 5717
+    }
+   },
+   "migration": {
+    "files": 4288,
+    "share": 6,
+    "reasons": {
+     "not parsed (skipped)": 4288
+    }
+   },
+   "lib or util": {
+    "files": 1081,
+    "share": 0.3,
+    "reasons": {
+     "not parsed (skipped)": 1022,
+     "its groups are too small to be roles": 59
+    }
+   },
+   "TS module": {
+    "files": 872,
+    "share": 0.9,
+    "reasons": {
+     "not parsed": 1,
+     "not parsed (skipped)": 536,
+     "its groups are too small to be roles": 335
+    }
+   },
+   "type declarations": {
+    "files": 579,
+    "share": 0.8,
+    "reasons": {
+     "not parsed (skipped)": 543,
+     "its groups are too small to be roles": 36
+    }
+   },
+   "TS end-to-end test": {
+    "files": 376,
+    "share": 0.3,
+    "reasons": {
+     "its groups are too small to be roles": 14,
+     "demonstration or integration-suite code: no production role": 361,
+     "not parsed (skipped)": 1
+    }
+   },
+   "TS unit test": {
+    "files": 314,
+    "share": 0.3,
+    "reasons": {
+     "not parsed (skipped)": 189,
+     "demonstration or integration-suite code: no production role": 122,
+     "its groups are too small to be roles": 3
+    }
+   },
+   "ORM or schema models": {
+    "files": 310,
+    "share": 0.1,
+    "reasons": {
+     "its groups are too small to be roles": 1,
+     "not parsed (skipped)": 309
+    }
+   },
+   "barrel index": {
+    "files": 272,
+    "share": 0.2,
+    "reasons": {
+     "not parsed (skipped)": 52,
+     "its groups are too small to be roles": 220
+    }
+   },
+   "config": {
+    "files": 142,
+    "share": 0.1,
+    "reasons": {
+     "not parsed (skipped)": 7,
+     "its groups are too small to be roles": 135
+    }
+   },
+   "python module": {
+    "files": 134,
+    "share": 0.3,
+    "reasons": {
+     "not parsed (skipped)": 121,
+     "its groups are too small to be roles": 13
+    }
+   },
+   "python test": {
+    "files": 85,
+    "share": 0.4,
+    "reasons": {
+     "demonstration or integration-suite code: no production role": 32,
+     "its groups are too small to be roles": 8,
+     "not parsed (skipped)": 45
+    }
+   },
+   "React component": {
+    "files": 81,
+    "share": 0,
+    "reasons": {
+     "its groups are too small to be roles": 45,
+     "not parsed (skipped)": 36
+    }
+   },
+   "CLI or script": {
+    "files": 47,
+    "share": 0.1,
+    "reasons": {
+     "its groups are too small to be roles": 44,
+     "not parsed (skipped)": 3
+    }
+   },
+   "service or repository": {
+    "files": 25,
+    "share": 0,
+    "reasons": {
+     "not parsed (skipped)": 24,
+     "its groups are too small to be roles": 1
+    }
+   },
+   "TS test fixture or mock": {
+    "files": 24,
+    "share": 0.1,
+    "reasons": {
+     "its groups are too small to be roles": 18,
+     "not parsed (skipped)": 4,
+     "demonstration or integration-suite code: no production role": 2
+    }
+   },
+   "python test fixture": {
+    "files": 23,
+    "share": 0.1,
+    "reasons": {
+     "its groups are too small to be roles": 20,
+     "demonstration or integration-suite code: no production role": 3
+    }
+   },
+   "python package __init__": {
+    "files": 19,
+    "share": 0,
+    "reasons": {
+     "its groups are too small to be roles": 18,
+     "not parsed (skipped)": 1
+    }
+   },
+   "TS story": {
+    "files": 8,
+    "share": 0,
+    "reasons": {
+     "not parsed (skipped)": 8
+    }
+   },
+   "Next route/page/layout": {
+    "files": 5,
+    "share": 0,
+    "reasons": {
+     "its groups are too small to be roles": 5
+    }
+   },
+   "React hook": {
+    "files": 5,
+    "share": 0,
+    "reasons": {
+     "its groups are too small to be roles": 3,
+     "not parsed (skipped)": 2
+    }
+   },
+   "entry-point module (router, handler, job)": {
+    "files": 4,
+    "share": 0,
+    "reasons": {
+     "its groups are too small to be roles": 4
+    }
+   },
+   "TS component test": {
+    "files": 2,
+    "share": 0,
+    "reasons": {
+     "its groups are too small to be roles": 1,
+     "demonstration or integration-suite code: no production role": 1
+    }
+   }
+  },
+  "by_keying": {
+   "kind": {
+    "mined_cards": 218,
+    "shown_cards": 34,
+    "files_mined": 8432,
+    "files_shown": 2072
+   },
+   "path": {
+    "mined_cards": 145,
+    "shown_cards": 14,
+    "files_mined": 7363,
+    "files_shown": 763
+   },
+   "package": {
+    "mined_cards": 54,
+    "shown_cards": 13,
+    "files_mined": 19135,
+    "files_shown": 2999
+   }
+  }
+ },
+ "repos_after": {
+  "Django-CRM": {
+   "fold": 4,
+   "files": 1642,
+   "production": 968,
+   "tests": 674,
+   "parsed": 84.2,
+   "package": 84.2,
+   "role": 84.2,
+   "role_places": 43.2,
+   "role_test": 41,
+   "role_kind": 27.1,
+   "imports": 95,
+   "prod_role": 73.2,
+   "prod_narrow": 66.6,
+   "prod_kind": 59.7,
+   "prod_mined": 24.2,
+   "prod_shown": 0,
+   "test_role": 100,
+   "test_mined": 28,
+   "mined": 25.8,
+   "shown": 0
+  },
+  "InvenTree": {
+   "fold": 1,
+   "files": 1268,
+   "production": 1141,
+   "tests": 127,
+   "parsed": 81.2,
+   "package": 81.2,
+   "role": 81.1,
+   "role_places": 71.2,
+   "role_test": 9.9,
+   "role_kind": 49.3,
+   "imports": 100,
+   "prod_role": 79.1,
+   "prod_narrow": 78.4,
+   "prod_kind": 59.9,
+   "prod_mined": 16.1,
+   "prod_shown": 1.6,
+   "test_role": 98.4,
+   "test_mined": 7.9,
+   "mined": 15.3,
+   "shown": 1.4
+  },
+  "Misago": {
+   "fold": 2,
+   "files": 2689,
+   "production": 1924,
+   "tests": 765,
+   "parsed": 92.7,
+   "package": 92.7,
+   "role": 92.7,
+   "role_places": 64.2,
+   "role_test": 28.4,
+   "role_kind": 30.6,
+   "imports": 97.6,
+   "prod_role": 89.8,
+   "prod_narrow": 86.8,
+   "prod_kind": 50.3,
+   "prod_mined": 12.7,
+   "prod_shown": 0,
+   "test_role": 100,
+   "test_mined": 2.6,
+   "mined": 9.8,
+   "shown": 0
+  },
+  "P01": {
+   "fold": 5,
+   "files": 2606,
+   "production": 1070,
+   "tests": 1535,
+   "parsed": 100,
+   "package": 100,
+   "role": 100,
+   "role_places": 41.4,
+   "role_test": 58.9,
+   "role_kind": 16.5,
+   "imports": 99.9,
+   "prod_role": 100,
+   "prod_narrow": 98.6,
+   "prod_kind": 42.5,
+   "prod_mined": 79,
+   "prod_shown": 0,
+   "test_role": 100,
+   "test_mined": 8.8,
+   "mined": 37.6,
+   "shown": 0
+  },
+  "P03": {
+   "fold": 5,
+   "files": 482,
+   "production": 330,
+   "tests": 152,
+   "parsed": 92.7,
+   "package": 92.7,
+   "role": 92.1,
+   "role_places": 60.8,
+   "role_test": 31.5,
+   "role_kind": 43.6,
+   "imports": 100,
+   "prod_role": 88.5,
+   "prod_narrow": 83.9,
+   "prod_kind": 64.2,
+   "prod_mined": 7,
+   "prod_shown": 0,
+   "test_role": 100,
+   "test_mined": 0,
+   "mined": 4.8,
+   "shown": 0
+  },
+  "P04": {
+   "fold": 5,
+   "files": 377,
+   "production": 317,
+   "tests": 60,
+   "parsed": 95.2,
+   "package": 95,
+   "role": 94.7,
+   "role_places": 79,
+   "role_test": 15.4,
+   "role_kind": 66.8,
+   "imports": 100,
+   "prod_role": 94.3,
+   "prod_narrow": 91.8,
+   "prod_kind": 79.5,
+   "prod_mined": 13.6,
+   "prod_shown": 0,
+   "test_role": 96.7,
+   "test_mined": 0,
+   "mined": 11.4,
+   "shown": 0
+  },
+  "P06": {
+   "fold": 5,
+   "files": 911,
+   "production": 653,
+   "tests": 258,
+   "parsed": 69.4,
+   "package": 0,
+   "role": 69.2,
+   "role_places": 41.1,
+   "role_test": 28.1,
+   "role_kind": 34.6,
+   "imports": 100,
+   "prod_role": 57.3,
+   "prod_narrow": 57,
+   "prod_kind": 48.2,
+   "prod_mined": 9,
+   "prod_shown": 0,
+   "test_role": 99.2,
+   "test_mined": 0,
+   "mined": 6.5,
+   "shown": 0
+  },
+  "P07": {
+   "fold": 5,
+   "files": 217,
+   "production": 193,
+   "tests": 23,
+   "parsed": 99.5,
+   "package": 99.5,
+   "role": 88.5,
+   "role_places": 88.5,
+   "role_test": 0,
+   "role_kind": 36.9,
+   "imports": 100,
+   "prod_role": 99.5,
+   "prod_narrow": 99,
+   "prod_kind": 41.5,
+   "prod_mined": 0,
+   "prod_shown": 0,
+   "test_role": 0,
+   "test_mined": 0,
+   "mined": 0,
+   "shown": 0
+  },
+  "P09": {
+   "fold": 5,
+   "files": 1024,
+   "production": 925,
+   "tests": 99,
+   "parsed": 70.7,
+   "package": 70.7,
+   "role": 70.5,
+   "role_places": 61,
+   "role_test": 9.5,
+   "role_kind": 41.8,
+   "imports": 100,
+   "prod_role": 67.6,
+   "prod_narrow": 66.6,
+   "prod_kind": 48.6,
+   "prod_mined": 38.9,
+   "prod_shown": 0,
+   "test_role": 98,
+   "test_mined": 0,
+   "mined": 35.2,
+   "shown": 0
+  },
+  "P10": {
+   "fold": 5,
+   "files": 897,
+   "production": 565,
+   "tests": 332,
+   "parsed": 99.7,
+   "package": 96,
+   "role": 99.6,
+   "role_places": 62.7,
+   "role_test": 36.9,
+   "role_kind": 52.5,
+   "imports": 100,
+   "prod_role": 99.5,
+   "prod_narrow": 99.5,
+   "prod_kind": 83.4,
+   "prod_mined": 15.2,
+   "prod_shown": 0,
+   "test_role": 99.7,
+   "test_mined": 28.9,
+   "mined": 20.3,
+   "shown": 0
+  },
+  "P12": {
+   "fold": 5,
+   "files": 549,
+   "production": 318,
+   "tests": 231,
+   "parsed": 99.8,
+   "package": 99.8,
+   "role": 99.8,
+   "role_places": 57.7,
+   "role_test": 42.1,
+   "role_kind": 7.1,
+   "imports": 100,
+   "prod_role": 99.7,
+   "prod_narrow": 97.2,
+   "prod_kind": 26.1,
+   "prod_mined": 0,
+   "prod_shown": 0,
+   "test_role": 100,
+   "test_mined": 0,
+   "mined": 0,
+   "shown": 0
+  },
+  "T01": {
+   "fold": 5,
+   "files": 383,
+   "production": 383,
+   "tests": 0,
+   "parsed": 100,
+   "package": 100,
+   "role": 100,
+   "role_places": 100,
+   "role_test": 0,
+   "role_kind": 35.2,
+   "imports": 100,
+   "prod_role": 100,
+   "prod_narrow": 96.9,
+   "prod_kind": 79.4,
+   "prod_mined": 60.1,
+   "prod_shown": 0,
+   "test_role": 0,
+   "test_mined": 0,
+   "mined": 60.1,
+   "shown": 0
+  },
+  "T02": {
+   "fold": 5,
+   "files": 3531,
+   "production": 2693,
+   "tests": 838,
+   "parsed": 99.7,
+   "package": 99.7,
+   "role": 99.5,
+   "role_places": 75.8,
+   "role_test": 23.7,
+   "role_kind": 50.4,
+   "imports": 92.5,
+   "prod_role": 99.4,
+   "prod_narrow": 98,
+   "prod_kind": 70.6,
+   "prod_mined": 67.7,
+   "prod_shown": 67.7,
+   "test_role": 100,
+   "test_mined": 98,
+   "mined": 74.9,
+   "shown": 51.6
+  },
+  "T03": {
+   "fold": 5,
+   "files": 1121,
+   "production": 534,
+   "tests": 498,
+   "parsed": 99.7,
+   "package": 99.7,
+   "role": 89.8,
+   "role_places": 45.8,
+   "role_test": 43.6,
+   "role_kind": 18,
+   "imports": 99.9,
+   "prod_role": 97,
+   "prod_narrow": 88.8,
+   "prod_kind": 43.6,
+   "prod_mined": 48.9,
+   "prod_shown": 0,
+   "test_role": 98.2,
+   "test_mined": 92.6,
+   "mined": 64.4,
+   "shown": 0
+  },
+  "T06": {
+   "fold": 5,
+   "files": 1901,
+   "production": 576,
+   "tests": 1325,
+   "parsed": 98.8,
+   "package": 99.3,
+   "role": 95.3,
+   "role_places": 21.9,
+   "role_test": 69.6,
+   "role_kind": 11.5,
+   "imports": 97.5,
+   "prod_role": 84.5,
+   "prod_narrow": 78.3,
+   "prod_kind": 43.4,
+   "prod_mined": 0,
+   "prod_shown": 0,
+   "test_role": 99.9,
+   "test_mined": 0,
+   "mined": 0,
+   "shown": 0
+  },
+  "T07": {
+   "fold": 5,
+   "files": 1642,
+   "production": 1150,
+   "tests": 492,
+   "parsed": 99.5,
+   "package": 99.5,
+   "role": 99,
+   "role_places": 68.9,
+   "role_test": 29.8,
+   "role_kind": 37,
+   "imports": 100,
+   "prod_role": 98.7,
+   "prod_narrow": 98.3,
+   "prod_kind": 53.7,
+   "prod_mined": 8.3,
+   "prod_shown": 2.2,
+   "test_role": 99.6,
+   "test_mined": 98.8,
+   "mined": 35.4,
+   "shown": 1.5
+  },
+  "T08": {
+   "fold": 5,
+   "files": 1920,
+   "production": 1396,
+   "tests": 522,
+   "parsed": 91.9,
+   "package": 91.6,
+   "role": 92,
+   "role_places": 64.4,
+   "role_test": 27.2,
+   "role_kind": 45.7,
+   "imports": 66.9,
+   "prod_role": 89.1,
+   "prod_narrow": 86.8,
+   "prod_kind": 66.1,
+   "prod_mined": 24.3,
+   "prod_shown": 0.7,
+   "test_role": 100,
+   "test_mined": 75.7,
+   "mined": 38.2,
+   "shown": 0.5
+  },
+  "T13": {
+   "fold": 5,
+   "files": 1657,
+   "production": 946,
+   "tests": 681,
+   "parsed": 98.5,
+   "package": 98.6,
+   "role": 96.1,
+   "role_places": 54.8,
+   "role_test": 41,
+   "role_kind": 49.3,
+   "imports": 98.9,
+   "prod_role": 96.4,
+   "prod_narrow": 95.8,
+   "prod_kind": 86.5,
+   "prod_mined": 50.3,
+   "prod_shown": 30.4,
+   "test_role": 99.9,
+   "test_mined": 89.7,
+   "mined": 65.6,
+   "shown": 17.4
+  },
+  "T14": {
+   "fold": 5,
+   "files": 353,
+   "production": 272,
+   "tests": 23,
+   "parsed": 76.5,
+   "package": 76.5,
+   "role": 60.1,
+   "role_places": 53.5,
+   "role_test": 6.5,
+   "role_kind": 6.8,
+   "imports": 100,
+   "prod_role": 69.5,
+   "prod_narrow": 65.8,
+   "prod_kind": 8.8,
+   "prod_mined": 36.8,
+   "prod_shown": 0,
+   "test_role": 100,
+   "test_mined": 0,
+   "mined": 28.3,
+   "shown": 0
+  },
+  "T15": {
+   "fold": 5,
+   "files": 2965,
+   "production": 1837,
+   "tests": 1014,
+   "parsed": 98.5,
+   "package": 98.5,
+   "role": 93.6,
+   "role_places": 58.4,
+   "role_test": 34.1,
+   "role_kind": 15.8,
+   "imports": 99.6,
+   "prod_role": 96.1,
+   "prod_narrow": 89.8,
+   "prod_kind": 41.3,
+   "prod_mined": 5.5,
+   "prod_shown": 4.2,
+   "test_role": 99.6,
+   "test_mined": 3,
+   "mined": 4.4,
+   "shown": 2.6
+  },
+  "T16": {
+   "fold": 5,
+   "files": 897,
+   "production": 675,
+   "tests": 222,
+   "parsed": 99.8,
+   "package": 99.8,
+   "role": 99.6,
+   "role_places": 75,
+   "role_test": 24.5,
+   "role_kind": 55.4,
+   "imports": 100,
+   "prod_role": 99.7,
+   "prod_narrow": 97.5,
+   "prod_kind": 85.3,
+   "prod_mined": 11.4,
+   "prod_shown": 0,
+   "test_role": 99.1,
+   "test_mined": 31.1,
+   "mined": 16.3,
+   "shown": 0
+  },
+  "T17": {
+   "fold": 5,
+   "files": 456,
+   "production": 302,
+   "tests": 154,
+   "parsed": 98.7,
+   "package": 98.7,
+   "role": 98,
+   "role_places": 64,
+   "role_test": 33.8,
+   "role_kind": 27.2,
+   "imports": 99.9,
+   "prod_role": 97,
+   "prod_narrow": 71.9,
+   "prod_kind": 44.4,
+   "prod_mined": 0,
+   "prod_shown": 0,
+   "test_role": 100,
+   "test_mined": 100,
+   "mined": 33.8,
+   "shown": 0
+  },
+  "T18": {
+   "fold": 5,
+   "files": 4156,
+   "production": 2835,
+   "tests": 1321,
+   "parsed": 99.8,
+   "package": 99.8,
+   "role": 99.7,
+   "role_places": 67.8,
+   "role_test": 31.7,
+   "role_kind": 44.7,
+   "imports": 98.9,
+   "prod_role": 99.6,
+   "prod_narrow": 96.4,
+   "prod_kind": 75.5,
+   "prod_mined": 10.1,
+   "prod_shown": 5.9,
+   "test_role": 99.7,
+   "test_mined": 94.5,
+   "mined": 36.9,
+   "shown": 4
+  },
+  "ai": {
+   "fold": 2,
+   "files": 7862,
+   "production": 2950,
+   "tests": 1456,
+   "parsed": 99.6,
+   "package": 99.6,
+   "role": 54.8,
+   "role_places": 36.2,
+   "role_test": 18.1,
+   "role_kind": 15.5,
+   "imports": 99.9,
+   "prod_role": 98,
+   "prod_narrow": 87.6,
+   "prod_kind": 43.6,
+   "prod_mined": 7.3,
+   "prod_shown": 4.1,
+   "test_role": 97.6,
+   "test_mined": 96.2,
+   "mined": 20.6,
+   "shown": 1.6
+  },
+  "cal.com": {
+   "fold": 4,
+   "files": 5075,
+   "production": 4408,
+   "tests": 638,
+   "parsed": 98.7,
+   "package": 98.7,
+   "role": 96.5,
+   "role_places": 80.3,
+   "role_test": 12.5,
+   "role_kind": 60.3,
+   "imports": 99.9,
+   "prod_role": 96.8,
+   "prod_narrow": 88.6,
+   "prod_kind": 81.1,
+   "prod_mined": 28.2,
+   "prod_shown": 10.3,
+   "test_role": 99.1,
+   "test_mined": 88.4,
+   "mined": 35.6,
+   "shown": 8.9
+  },
+  "changedetection.io": {
+   "fold": 4,
+   "files": 459,
+   "production": 240,
+   "tests": 219,
+   "parsed": 98.9,
+   "package": 98.9,
+   "role": 96.9,
+   "role_places": 49,
+   "role_test": 46.6,
+   "role_kind": 15.7,
+   "imports": 100,
+   "prod_role": 96.3,
+   "prod_narrow": 95.4,
+   "prod_kind": 31.3,
+   "prod_mined": 9.2,
+   "prod_shown": 0,
+   "test_role": 97.7,
+   "test_mined": 0,
+   "mined": 4.8,
+   "shown": 0
+  },
+  "create-t3-app": {
+   "fold": 4,
+   "files": 181,
+   "production": 181,
+   "tests": 0,
+   "parsed": 98.9,
+   "package": 98.9,
+   "role": 97.2,
+   "role_places": 95,
+   "role_test": 0,
+   "role_kind": 92.8,
+   "imports": 48,
+   "prod_role": 97.2,
+   "prod_narrow": 96.7,
+   "prod_kind": 92.8,
+   "prod_mined": 0,
+   "prod_shown": 0,
+   "test_role": 0,
+   "test_mined": 0,
+   "mined": 0,
+   "shown": 0
+  },
+  "documenso": {
+   "fold": 2,
+   "files": 2372,
+   "production": 2141,
+   "tests": 231,
+   "parsed": 99.6,
+   "package": 99.6,
+   "role": 99.3,
+   "role_places": 89.4,
+   "role_test": 9.7,
+   "role_kind": 81.7,
+   "imports": 99.3,
+   "prod_role": 99.3,
+   "prod_narrow": 97.6,
+   "prod_kind": 91.1,
+   "prod_mined": 86.5,
+   "prod_shown": 47.5,
+   "test_role": 100,
+   "test_mined": 95.2,
+   "mined": 87.4,
+   "shown": 42.9
+  },
+  "dub": {
+   "fold": 4,
+   "files": 3928,
+   "production": 3811,
+   "tests": 117,
+   "parsed": 99.8,
+   "package": 99.8,
+   "role": 99.6,
+   "role_places": 96.4,
+   "role_test": 3,
+   "role_kind": 93,
+   "imports": 100,
+   "prod_role": 99.6,
+   "prod_narrow": 99.3,
+   "prod_kind": 95.9,
+   "prod_mined": 26,
+   "prod_shown": 8.1,
+   "test_role": 100,
+   "test_mined": 0,
+   "mined": 25.2,
+   "shown": 7.9
+  },
+  "excalidraw": {
+   "fold": 3,
+   "files": 723,
+   "production": 548,
+   "tests": 162,
+   "parsed": 97.8,
+   "package": 97.8,
+   "role": 95.7,
+   "role_places": 72.9,
+   "role_test": 22.4,
+   "role_kind": 37.8,
+   "imports": 100,
+   "prod_role": 96.7,
+   "prod_narrow": 86.5,
+   "prod_kind": 54.2,
+   "prod_mined": 16.1,
+   "prod_shown": 0,
+   "test_role": 100,
+   "test_mined": 0,
+   "mined": 12.2,
+   "shown": 0
+  },
+  "fastapi": {
+   "fold": 3,
+   "files": 1223,
+   "production": 545,
+   "tests": 678,
+   "parsed": 100,
+   "package": 100,
+   "role": 100,
+   "role_places": 44.6,
+   "role_test": 55.4,
+   "role_kind": 39.3,
+   "imports": 99.9,
+   "prod_role": 100,
+   "prod_narrow": 99.4,
+   "prod_kind": 88.8,
+   "prod_mined": 1.8,
+   "prod_shown": 0,
+   "test_role": 100,
+   "test_mined": 83.3,
+   "mined": 47,
+   "shown": 0
+  },
+  "flask": {
+   "fold": 3,
+   "files": 83,
+   "production": 25,
+   "tests": 48,
+   "parsed": 100,
+   "package": 100,
+   "role": 78.3,
+   "role_places": 30.1,
+   "role_test": 48.2,
+   "role_kind": 0,
+   "imports": 100,
+   "prod_role": 100,
+   "prod_narrow": 88,
+   "prod_kind": 0,
+   "prod_mined": 0,
+   "prod_shown": 0,
+   "test_role": 83.3,
+   "test_mined": 0,
+   "mined": 0,
+   "shown": 0
+  },
+  "formbricks": {
+   "fold": 3,
+   "files": 5434,
+   "production": 3577,
+   "tests": 1847,
+   "parsed": 99.8,
+   "package": 99.8,
+   "role": 98.9,
+   "role_places": 65.2,
+   "role_test": 33.5,
+   "role_kind": 57.1,
+   "imports": 100,
+   "prod_role": 99.3,
+   "prod_narrow": 97.3,
+   "prod_kind": 90.2,
+   "prod_mined": 85.5,
+   "prod_shown": 6,
+   "test_role": 98.6,
+   "test_mined": 94.6,
+   "mined": 88.4,
+   "shown": 3.9
+  },
+  "full-stack-fastapi-template": {
+   "fold": 3,
+   "files": 152,
+   "production": 125,
+   "tests": 27,
+   "parsed": 84.9,
+   "package": 84.9,
+   "role": 82.2,
+   "role_places": 65.1,
+   "role_test": 17.1,
+   "role_kind": 42.1,
+   "imports": 98.8,
+   "prod_role": 79.2,
+   "prod_narrow": 72.8,
+   "prod_kind": 51.2,
+   "prod_mined": 60.8,
+   "prod_shown": 0,
+   "test_role": 96.3,
+   "test_mined": 0,
+   "mined": 50,
+   "shown": 0
+  },
+  "immich": {
+   "fold": 1,
+   "files": 1175,
+   "production": 794,
+   "tests": 381,
+   "parsed": 99.9,
+   "package": 99.9,
+   "role": 98.6,
+   "role_places": 65.2,
+   "role_test": 32.3,
+   "role_kind": 45.3,
+   "imports": 98.5,
+   "prod_role": 98.1,
+   "prod_narrow": 95.6,
+   "prod_kind": 89.2,
+   "prod_mined": 35.6,
+   "prod_shown": 7.6,
+   "test_role": 99.5,
+   "test_mined": 25.5,
+   "mined": 32.3,
+   "shown": 5.1
+  },
+  "infisical": {
+   "fold": 1,
+   "files": 9340,
+   "production": 8657,
+   "tests": 683,
+   "parsed": 96.6,
+   "package": 96.6,
+   "role": 96.5,
+   "role_places": 89.2,
+   "role_test": 7.3,
+   "role_kind": 78.5,
+   "imports": 100,
+   "prod_role": 96.2,
+   "prod_narrow": 95.7,
+   "prod_kind": 87.6,
+   "prod_mined": 68.9,
+   "prod_shown": 3.7,
+   "test_role": 99.9,
+   "test_mined": 22.1,
+   "mined": 65.5,
+   "shown": 3.4
+  },
+  "langchain": {
+   "fold": 2,
+   "files": 2651,
+   "production": 1764,
+   "tests": 872,
+   "parsed": 99.9,
+   "package": 99.6,
+   "role": 99.3,
+   "role_places": 65.3,
+   "role_test": 32.8,
+   "role_kind": 66.4,
+   "imports": 100,
+   "prod_role": 100,
+   "prod_narrow": 100,
+   "prod_kind": 99.8,
+   "prod_mined": 0.4,
+   "prod_shown": 0,
+   "test_role": 99.7,
+   "test_mined": 2.1,
+   "mined": 0.9,
+   "shown": 0
+  },
+  "lotus": {
+   "fold": 2,
+   "files": 542,
+   "production": 522,
+   "tests": 20,
+   "parsed": 50,
+   "package": 50,
+   "role": 49.1,
+   "role_places": 46.1,
+   "role_test": 3,
+   "role_kind": 33.8,
+   "imports": 100,
+   "prod_role": 47.9,
+   "prod_narrow": 47.1,
+   "prod_kind": 35.2,
+   "prod_mined": 3.6,
+   "prod_shown": 0,
+   "test_role": 80,
+   "test_mined": 0,
+   "mined": 3.5,
+   "shown": 0
+  },
+  "midday": {
+   "fold": 4,
+   "files": 2037,
+   "production": 1936,
+   "tests": 101,
+   "parsed": 99.5,
+   "package": 99.5,
+   "role": 98.2,
+   "role_places": 92.6,
+   "role_test": 4.9,
+   "role_kind": 72.1,
+   "imports": 100,
+   "prod_role": 98.2,
+   "prod_narrow": 96.8,
+   "prod_kind": 77.8,
+   "prod_mined": 13.8,
+   "prod_shown": 13.4,
+   "test_role": 99,
+   "test_mined": 99,
+   "mined": 18.1,
+   "shown": 12.8
+  },
+  "nest": {
+   "fold": 1,
+   "files": 2293,
+   "production": 739,
+   "tests": 718,
+   "parsed": 99.9,
+   "package": 99.9,
+   "role": 47.4,
+   "role_places": 31.8,
+   "role_test": 15.3,
+   "role_kind": 18.1,
+   "imports": 100,
+   "prod_role": 99.5,
+   "prod_narrow": 75.4,
+   "prod_kind": 64.5,
+   "prod_mined": 3.1,
+   "prod_shown": 0,
+   "test_role": 48.9,
+   "test_mined": 3.1,
+   "mined": 2,
+   "shown": 0
+  },
+  "netbox": {
+   "fold": 2,
+   "files": 1352,
+   "production": 1140,
+   "tests": 212,
+   "parsed": 76.8,
+   "package": 76.8,
+   "role": 76.8,
+   "role_places": 61.7,
+   "role_test": 15.4,
+   "role_kind": 30.3,
+   "imports": 99.9,
+   "prod_role": 72.9,
+   "prod_narrow": 71.3,
+   "prod_kind": 53.2,
+   "prod_mined": 11.8,
+   "prod_shown": 0,
+   "test_role": 98.1,
+   "test_mined": 43.9,
+   "mined": 16.9,
+   "shown": 0
+  },
+  "node-express-boilerplate": {
+   "fold": 1,
+   "files": 50,
+   "production": 40,
+   "tests": 10,
+   "parsed": 100,
+   "package": 100,
+   "role": 96,
+   "role_places": 80,
+   "role_test": 16,
+   "role_kind": 8,
+   "imports": 100,
+   "prod_role": 100,
+   "prod_narrow": 87.5,
+   "prod_kind": 30,
+   "prod_mined": 0,
+   "prod_shown": 0,
+   "test_role": 80,
+   "test_mined": 0,
+   "mined": 0,
+   "shown": 0
+  },
+  "novu": {
+   "fold": 2,
+   "files": 9723,
+   "production": 8206,
+   "tests": 1277,
+   "parsed": 89.3,
+   "package": 89.3,
+   "role": 86.5,
+   "role_places": 73.1,
+   "role_test": 13.1,
+   "role_kind": 51.8,
+   "imports": 100,
+   "prod_role": 87,
+   "prod_narrow": 85.6,
+   "prod_kind": 78.2,
+   "prod_mined": 35.2,
+   "prod_shown": 6.8,
+   "test_role": 99.8,
+   "test_mined": 57.2,
+   "mined": 37.2,
+   "shown": 5.8
+  },
+  "open-wearables": {
+   "fold": 4,
+   "files": 1187,
+   "production": 835,
+   "tests": 352,
+   "parsed": 96,
+   "package": 96,
+   "role": 96,
+   "role_places": 66.3,
+   "role_test": 29.7,
+   "role_kind": 58.7,
+   "imports": 98.9,
+   "prod_role": 94.3,
+   "prod_narrow": 93.5,
+   "prod_kind": 88,
+   "prod_mined": 17,
+   "prod_shown": 0,
+   "test_role": 100,
+   "test_mined": 15.9,
+   "mined": 16.7,
+   "shown": 0
+  },
+  "paperless-ngx": {
+   "fold": 1,
+   "files": 856,
+   "production": 466,
+   "tests": 390,
+   "parsed": 93.7,
+   "package": 93.7,
+   "role": 92.8,
+   "role_places": 48,
+   "role_test": 44.6,
+   "role_kind": 27,
+   "imports": 100,
+   "prod_role": 88.4,
+   "prod_narrow": 85.4,
+   "prod_kind": 62.9,
+   "prod_mined": 34.3,
+   "prod_shown": 24.9,
+   "test_role": 97.9,
+   "test_mined": 48.7,
+   "mined": 40.9,
+   "shown": 13.6
+  },
+  "pontoon": {
+   "fold": 1,
+   "files": 953,
+   "production": 700,
+   "tests": 253,
+   "parsed": 78.3,
+   "package": 78.3,
+   "role": 78.1,
+   "role_places": 51.8,
+   "role_test": 26.2,
+   "role_kind": 37.1,
+   "imports": 99.9,
+   "prod_role": 70.6,
+   "prod_narrow": 67,
+   "prod_kind": 56.6,
+   "prod_mined": 9.6,
+   "prod_shown": 0,
+   "test_role": 98.8,
+   "test_mined": 0,
+   "mined": 7,
+   "shown": 0
+  },
+  "ralph": {
+   "fold": 1,
+   "files": 1070,
+   "production": 839,
+   "tests": 231,
+   "parsed": 61.2,
+   "package": 61.3,
+   "role": 60.8,
+   "role_places": 43.1,
+   "role_test": 18.1,
+   "role_kind": 28.2,
+   "imports": 100,
+   "prod_role": 54.5,
+   "prod_narrow": 52.3,
+   "prod_kind": 42.8,
+   "prod_mined": 9.1,
+   "prod_shown": 0,
+   "test_role": 84,
+   "test_mined": 17.3,
+   "mined": 10.8,
+   "shown": 0
+  },
+  "saleor": {
+   "fold": 3,
+   "files": 4382,
+   "production": 2636,
+   "tests": 1746,
+   "parsed": 66.5,
+   "package": 66.5,
+   "role": 66.5,
+   "role_places": 26.7,
+   "role_test": 39.8,
+   "role_kind": 10.1,
+   "imports": 100,
+   "prod_role": 44.4,
+   "prod_narrow": 43.8,
+   "prod_kind": 23.3,
+   "prod_mined": 7.2,
+   "prod_shown": 0,
+   "test_role": 99.9,
+   "test_mined": 31.7,
+   "mined": 17,
+   "shown": 0
+  },
+  "simplelogin": {
+   "fold": 2,
+   "files": 794,
+   "production": 618,
+   "tests": 176,
+   "parsed": 62.8,
+   "package": 62.8,
+   "role": 62.6,
+   "role_places": 40.8,
+   "role_test": 21.8,
+   "role_kind": 22.3,
+   "imports": 100,
+   "prod_role": 52.4,
+   "prod_narrow": 46.3,
+   "prod_kind": 32.4,
+   "prod_mined": 31.6,
+   "prod_shown": 0,
+   "test_role": 98.3,
+   "test_mined": 4.5,
+   "mined": 25.6,
+   "shown": 0
+  },
+  "supabase": {
+   "fold": 3,
+   "files": 9098,
+   "production": 7446,
+   "tests": 1233,
+   "parsed": 99.1,
+   "package": 99.1,
+   "role": 94.1,
+   "role_places": 80.8,
+   "role_test": 13.2,
+   "role_kind": 63.8,
+   "imports": 99.7,
+   "prod_role": 98.8,
+   "prod_narrow": 96.1,
+   "prod_kind": 84.2,
+   "prod_mined": 73.9,
+   "prod_shown": 1.8,
+   "test_role": 97.5,
+   "test_mined": 95.6,
+   "mined": 73.4,
+   "shown": 1.5
+  },
+  "tasking-manager": {
+   "fold": 4,
+   "files": 1219,
+   "production": 776,
+   "tests": 443,
+   "parsed": 91.6,
+   "package": 91.6,
+   "role": 91.6,
+   "role_places": 55.3,
+   "role_test": 36.3,
+   "role_kind": 40.9,
+   "imports": 100,
+   "prod_role": 86.9,
+   "prod_narrow": 86,
+   "prod_kind": 67.3,
+   "prod_mined": 24,
+   "prod_shown": 0,
+   "test_role": 99.8,
+   "test_mined": 16,
+   "mined": 21.1,
+   "shown": 0
+  },
+  "trpc": {
+   "fold": 2,
+   "files": 1243,
+   "production": 419,
+   "tests": 514,
+   "parsed": 83,
+   "package": 83,
+   "role": 56.6,
+   "role_places": 29.8,
+   "role_test": 26.1,
+   "role_kind": 16.3,
+   "imports": 99.6,
+   "prod_role": 90.2,
+   "prod_narrow": 85.7,
+   "prod_kind": 48.7,
+   "prod_mined": 0,
+   "prod_shown": 0,
+   "test_role": 63.2,
+   "test_mined": 6.4,
+   "mined": 2.7,
+   "shown": 2.7
+  },
+  "twenty": {
+   "fold": 3,
+   "files": 36468,
+   "production": 27627,
+   "tests": 8757,
+   "parsed": 99.1,
+   "package": 99.1,
+   "role": 98.8,
+   "role_places": 74.9,
+   "role_test": 23.9,
+   "role_kind": 51.7,
+   "imports": 100,
+   "prod_role": 98.9,
+   "prod_narrow": 98.1,
+   "prod_kind": 80.7,
+   "prod_mined": 14.5,
+   "prod_shown": 0,
+   "test_role": 99.6,
+   "test_mined": 10.3,
+   "mined": 13.5,
+   "shown": 0
+  },
+  "wger": {
+   "fold": 1,
+   "files": 755,
+   "production": 568,
+   "tests": 187,
+   "parsed": 76.6,
+   "package": 76.6,
+   "role": 76.6,
+   "role_places": 51.8,
+   "role_test": 24.8,
+   "role_kind": 33,
+   "imports": 99.9,
+   "prod_role": 68.8,
+   "prod_narrow": 67.1,
+   "prod_kind": 50.9,
+   "prod_mined": 5.5,
+   "prod_shown": 0,
+   "test_role": 100,
+   "test_mined": 0,
+   "mined": 4.1,
+   "shown": 0
+  }
+ }
+}

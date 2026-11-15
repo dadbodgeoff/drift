@@ -1,0 +1,81 @@
+10 conventions from 1953 units in 49 roles (0 default tier, 10 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-7fa3b5] functions in app/** do not use redirects to computed URLs
+    evidence: 360/361 (lower bound 0.98, lift 40.3)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  app/abuser.py#mark_user_as_abuser
+    outlier:  app/auth/views/login_utils.py:13 after_login
+
+ 2. [D-2a4960] files in app/** do not import from events/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 193/195 (lower bound 0.96, lift 3.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  app/abuser.py#(file)
+    outlier:  app/jobs/send_event_job.py:1 (file)
+    outlier:  app/jobs/sync_subscription_job.py:1 (file)
+
+ 3. [D-e29828] classes in app/dashboard/** extend FlaskForm
+    evidence: 25/26 (lower bound 0.81, lift 7.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  app/dashboard/views/alias_contact_manager.py#NewContactForm
+    outlier:  app/dashboard/views/alias_log.py:11 AliasLog
+
+ 4. [D-ace6d1] HTTP handlers in app/api/** call jsonify()
+    evidence: 51/52 (lower bound 0.90, lift 11.9)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  app/api/views/alias.py#create_contact_route
+    outlier:  app/api/views/export.py:40 export_aliases
+
+ 5. [D-a4e9f4] HTTP handlers in app/dashboard/** call redirect()
+    evidence: 45/49 (lower bound 0.81, lift 7.2)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  app/dashboard/views/account_setting.py#account_setting
+    outlier:  app/dashboard/views/alias_export.py:8 alias_export_route
+    outlier:  app/dashboard/views/notification.py:41 notifications_route
+    outlier:  app/dashboard/views/pricing.py:77 subscription_success
+    outlier:  app/dashboard/views/refused_email.py:9 refused_email_route
+
+ 6. [D-8ab5d8] HTTP handlers in app/dashboard/** call url_for()
+    evidence: 44/49 (lower bound 0.78, lift 7.3)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  app/dashboard/views/account_setting.py#account_setting
+    outlier:  app/dashboard/views/alias_export.py:8 alias_export_route
+    outlier:  app/dashboard/views/app.py:12 app_route
+    outlier:  app/dashboard/views/notification.py:41 notifications_route
+    outlier:  app/dashboard/views/pricing.py:77 subscription_success
+    outlier:  app/dashboard/views/refused_email.py:9 refused_email_route
+
+ 7. [D-dbae61] HTTP handlers in app/dashboard/** call flash()
+    evidence: 44/49 (lower bound 0.78, lift 7.8)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  app/dashboard/views/account_setting.py#account_setting
+    outlier:  app/dashboard/views/alias_export.py:8 alias_export_route
+    outlier:  app/dashboard/views/notification.py:41 notifications_route
+    outlier:  app/dashboard/views/pricing.py:77 subscription_success
+    outlier:  app/dashboard/views/refused_email.py:9 refused_email_route
+    outlier:  app/dashboard/views/setup_done.py:9 setup_done
+
+ 8. [D-a9b19b] HTTP handlers in app/dashboard/** call flash() before redirect()
+    evidence: 42/45 (lower bound 0.82, lift 1.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  app/dashboard/views/account_setting.py#account_setting
+    outlier:  app/dashboard/views/enter_admin.py:24 enter_admin
+    outlier:  app/dashboard/views/enter_sudo.py:26 enter_sudo
+    outlier:  app/dashboard/views/setup_done.py:9 setup_done
+
+ 9. [D-dd624b] HTTP handlers in app/dashboard/** call flash() before render_template()
+    evidence: 36/39 (lower bound 0.80, lift 1.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  app/dashboard/views/account_setting.py#account_setting
+    outlier:  app/dashboard/views/notification.py:41 notifications_route
+    outlier:  app/dashboard/views/pricing.py:77 subscription_success
+    outlier:  app/dashboard/views/refused_email.py:9 refused_email_route
+
+10. [D-a1dfa4] HTTP handlers in app/auth/** call redirect() before url_for()
+    evidence: 20/21 (lower bound 0.77, lift 1.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  app/auth/views/activate.py#activate
+    outlier:  app/auth/views/reset_password.py:22 reset_password
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

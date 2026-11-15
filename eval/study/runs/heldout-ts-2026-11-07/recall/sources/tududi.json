@@ -1,0 +1,29 @@
+{
+  "repo": "tududi",
+  "files": [
+    {
+      "path": ".github/CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/architecture.md",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/code-conventions.md",
+      "kind": "doc"
+    },
+    {
+      "path": "backend/eslint.config.js",
+      "kind": "lint"
+    },
+    {
+      "path": "eslint.config.mjs",
+      "kind": "lint"
+    }
+  ]
+}

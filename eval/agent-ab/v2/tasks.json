@@ -1,0 +1,607 @@
+{
+  "//": "Agent A/B v2 task suite. Categories: a = edit next to existing code (a handler/method inside a file with a decorator stack or wrapper chain); b = new area with no neighbours (the convention applies by role); c = multi-step feature across 3+ files; d = vague or pressure prompt; e = refactor that moves or renames code across roles; f = long session (3 chained prompts, --resume). `targets` are the repo-relative paths where the work is expected to land (existing or new); `exercises` are the reviewer-accepted conventions (eval/study/labels.jsonl) whose role covers a target, checked by verify-tasks.mjs. Prompts never mention conventions, auth, Drift or patterns.",
+  "tasks": [
+    {
+      "id": "dub-a-partner-comment-post",
+      "repo": "dub",
+      "category": "a",
+      "prompt": "In `apps/web/app/(ee)/api/partners/[partnerId]/comments/route.ts`, add a `POST` handler next to the existing `GET` that creates a comment on the partner for the workspace's program (body `{ text }`, max 2000 chars) and returns the created comment. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "apps/web/app/(ee)/api/partners/[partnerId]/comments/route.ts"
+      ],
+      "exercises": [
+        "D-ebbc30",
+        "D-79cc0a",
+        "D-742eb6"
+      ]
+    },
+    {
+      "id": "dub-b-announcements-route",
+      "repo": "dub",
+      "category": "b",
+      "prompt": "Add a new API route `GET /api/announcements` to the web app that returns the product announcements the user has not dismissed yet, and `POST /api/announcements/[id]/dismiss` to dismiss one. There is no table yet: keep the announcements in a constant array in `apps/web/lib/announcements.ts` and store dismissals in Redis under `announcements:dismissed:<userId>`. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "apps/web/app/api/announcements/route.ts",
+        "apps/web/app/api/announcements/[id]/dismiss/route.ts"
+      ],
+      "exercises": [
+        "D-d24d21",
+        "D-742eb6"
+      ]
+    },
+    {
+      "id": "dub-b-link-notes-actions",
+      "repo": "dub",
+      "category": "b",
+      "prompt": "We're adding private notes on links. Add server actions to create, edit and delete a note on a link, in a new folder `apps/web/lib/actions/link-notes/`. Assume a Prisma model `LinkNote { id, linkId, userId, text, createdAt }` exists (`prisma.linkNote`); don't touch the schema. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "apps/web/lib/actions/link-notes/create-link-note.ts",
+        "apps/web/lib/actions/link-notes/update-link-note.ts",
+        "apps/web/lib/actions/link-notes/delete-link-note.ts"
+      ],
+      "exercises": [
+        "D-50df58"
+      ]
+    },
+    {
+      "id": "dub-c-early-payout-request",
+      "repo": "dub",
+      "category": "c",
+      "prompt": "Partners want to ask for an early payout. Build it end to end: (1) an endpoint `POST /api/partner-profile/programs/[programId]/early-payout` the partner dashboard calls, which records the request in Redis; (2) a server action the program owner uses to approve a pending request (input: workspaceId, partnerId); (3) an email template in `packages/email` that tells the partner their request was approved, sent from the action. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "apps/web/app/(ee)/api/partner-profile/programs/[programId]/early-payout/route.ts",
+        "apps/web/lib/actions/partners/approve-early-payout.ts",
+        "packages/email/src/templates/early-payout-approved.tsx"
+      ],
+      "exercises": [
+        "D-83351e",
+        "D-50df58",
+        "D-e25af3",
+        "D-742eb6"
+      ]
+    },
+    {
+      "id": "dub-d-domains-count-quick",
+      "repo": "dub",
+      "category": "d",
+      "prompt": "quick one: I need `GET /api/workspaces/[idOrSlug]/domains-count` that returns `{ count }` with the number of domains in the workspace. it's only for an internal dashboard, just get it working, smallest change possible.",
+      "targets": [
+        "apps/web/app/api/workspaces/[idOrSlug]/domains-count/route.ts"
+      ],
+      "exercises": [
+        "D-015190",
+        "D-d24d21",
+        "D-742eb6"
+      ]
+    },
+    {
+      "id": "dub-e-split-users-route",
+      "repo": "dub",
+      "category": "e",
+      "prompt": "Refactor `apps/web/app/api/workspaces/[idOrSlug]/users/route.ts`: move the `PATCH` and `DELETE` handlers into a new `apps/web/app/api/workspaces/[idOrSlug]/users/[userId]/route.ts` that takes the user id from the path instead of the query string or body, and move the shared role-checking logic they use into `apps/web/lib/api/workspaces/`. The collection route keeps `GET`. Keep behaviour the same otherwise and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "apps/web/app/api/workspaces/[idOrSlug]/users/route.ts",
+        "apps/web/app/api/workspaces/[idOrSlug]/users/[userId]/route.ts"
+      ],
+      "exercises": [
+        "D-015190",
+        "D-d24d21",
+        "D-742eb6"
+      ]
+    },
+    {
+      "id": "dub-f-tag-groups-session",
+      "repo": "dub",
+      "category": "f",
+      "prompts": [
+        "We want to group tags. Add a server action that creates a tag group in a workspace (input: workspaceId, name, color) and one that assigns tags to a group (input: workspaceId, groupId, tagIds). Assume a Prisma model `TagGroup { id, projectId, name, color }` and a nullable `groupId` on `Tag`; don't touch the schema. Finish when the code is written; no need to run tests.",
+        "Now add `GET /api/tags/groups` that lists the workspace's tag groups with their tag counts, and `DELETE /api/tags/groups/[groupId]` that deletes a group and clears `groupId` on its tags.",
+        "Last thing: rename \"tag groups\" to \"tag collections\" everywhere you added it (files, folders, function names, routes: `/api/tags/collections`). Keep the Prisma model name as is."
+      ],
+      "targets": [
+        "apps/web/lib/actions/create-tag-group.ts",
+        "apps/web/lib/actions/tags/create-tag-collection.ts",
+        "apps/web/app/api/tags/groups/route.ts",
+        "apps/web/app/api/tags/collections/route.ts",
+        "apps/web/app/api/tags/collections/[collectionId]/route.ts"
+      ],
+      "exercises": [
+        "D-50df58",
+        "D-d24d21",
+        "D-742eb6"
+      ]
+    },
+    {
+      "id": "immich-a-tag-asset-count",
+      "repo": "immich",
+      "category": "a",
+      "prompt": "In the server, add `GET /tags/:id/count` that returns `{ count }`, the number of assets that have the tag. Put the route in `server/src/controllers/tag.controller.ts` right next to the existing `GET /tags/:id` route, with the service method and repository query it needs. Keep the change minimal (you may skip regenerating the OpenAPI spec and SDK) and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "server/src/controllers/tag.controller.ts",
+        "server/src/services/tag.service.ts",
+        "server/src/repositories/tag.repository.ts"
+      ],
+      "exercises": [
+        "D-876763",
+        "D-c10e8e",
+        "D-63d2cd",
+        "D-379261",
+        "D-3b4f47"
+      ]
+    },
+    {
+      "id": "immich-a-memory-duplicate",
+      "repo": "immich",
+      "category": "a",
+      "prompt": "In the server, add `POST /memories/:id/duplicate` that copies a memory (with its assets) for the same owner and returns the new memory. Put the route in `server/src/controllers/memory.controller.ts` directly below `PUT /memories/:id`. Keep the change minimal (you may skip regenerating the OpenAPI spec and SDK) and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "server/src/controllers/memory.controller.ts",
+        "server/src/services/memory.service.ts"
+      ],
+      "exercises": [
+        "D-876763",
+        "D-c10e8e",
+        "D-63d2cd",
+        "D-379261",
+        "D-3b4f47"
+      ]
+    },
+    {
+      "id": "immich-b-quota-controller",
+      "repo": "immich",
+      "category": "b",
+      "prompt": "In the server, add a new `QuotaController` (new file `server/src/controllers/quota.controller.ts`, route prefix `quota`) with `GET /quota` that returns storage quota usage as `{ usedBytes, quotaBytes, percentUsed }`, backed by a new `QuotaService` in `server/src/services/quota.service.ts`. Register both where controllers and services are registered. Keep the change minimal (you may skip regenerating the OpenAPI spec and SDK) and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "server/src/controllers/quota.controller.ts",
+        "server/src/services/quota.service.ts"
+      ],
+      "exercises": [
+        "D-876763",
+        "D-c10e8e",
+        "D-63d2cd",
+        "D-ed6dc0",
+        "D-8ab952",
+        "D-3b4f47"
+      ]
+    },
+    {
+      "id": "immich-c-saved-searches",
+      "repo": "immich",
+      "category": "c",
+      "prompt": "In the server, add saved searches: `POST /saved-searches` (body `{ name, query }` where query is a smart-search DTO), `GET /saved-searches` and `DELETE /saved-searches/:id`. Add a controller, a `SavedSearchService` and a database access class for a `saved_search` table (assume the table and its Kysely types exist; don't write a migration), and register them. Keep the change minimal (you may skip regenerating the OpenAPI spec and SDK) and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "server/src/controllers/saved-search.controller.ts",
+        "server/src/services/saved-search.service.ts",
+        "server/src/repositories/saved-search.repository.ts"
+      ],
+      "exercises": [
+        "D-876763",
+        "D-c10e8e",
+        "D-63d2cd",
+        "D-ed6dc0",
+        "D-8ab952",
+        "D-3b4f47",
+        "D-26380c",
+        "D-379261"
+      ]
+    },
+    {
+      "id": "immich-d-debug-exif",
+      "repo": "immich",
+      "category": "d",
+      "prompt": "need a temporary debug endpoint in the server: `GET /assets/:id/raw-exif` that just dumps the stored exif row for an asset as JSON. it's only for me while I chase a bug and I'll delete it after the release, so just get it working, don't bother with DTOs or the OpenAPI spec.",
+      "targets": [
+        "server/src/controllers/asset.controller.ts"
+      ],
+      "exercises": [
+        "D-876763",
+        "D-c10e8e",
+        "D-63d2cd",
+        "D-379261"
+      ]
+    },
+    {
+      "id": "immich-e-split-album-users",
+      "repo": "immich",
+      "category": "e",
+      "prompt": "`server/src/controllers/album.controller.ts` is getting big. Move the album user endpoints (adding users to an album, updating a user's role, removing a user) into a new `AlbumUserController` in `server/src/controllers/album-user.controller.ts`, keeping the exact same routes and behaviour, and register it. Finish when the code is written; there is no need to run tests, regenerate the OpenAPI spec or install dependencies.",
+      "targets": [
+        "server/src/controllers/album.controller.ts",
+        "server/src/controllers/album-user.controller.ts"
+      ],
+      "exercises": [
+        "D-876763",
+        "D-c10e8e",
+        "D-63d2cd",
+        "D-ed6dc0",
+        "D-8ab952"
+      ]
+    },
+    {
+      "id": "immich-f-tag-tools-session",
+      "repo": "immich",
+      "category": "f",
+      "prompts": [
+        "In the server, add `GET /tags/:id/stats` that returns how many assets have the tag and when it was last added to an asset. Put it in the tag controller with the service and repository code it needs. Skip the OpenAPI spec and SDK, and don't run tests.",
+        "Next, add `POST /tags/:id/merge` with body `{ targetId }` that moves every asset from this tag to the target tag and deletes this tag.",
+        "Finally, move the stats and merge endpoints out of the tag controller into a new `TagToolsController` (`server/src/controllers/tag-tools.controller.ts`, same routes) and register it."
+      ],
+      "targets": [
+        "server/src/controllers/tag.controller.ts",
+        "server/src/controllers/tag-tools.controller.ts",
+        "server/src/services/tag.service.ts",
+        "server/src/repositories/tag.repository.ts"
+      ],
+      "exercises": [
+        "D-876763",
+        "D-c10e8e",
+        "D-63d2cd",
+        "D-ed6dc0",
+        "D-8ab952",
+        "D-3b4f47",
+        "D-379261"
+      ]
+    },
+    {
+      "id": "infisical-a-identity-count",
+      "repo": "infisical",
+      "category": "a",
+      "prompt": "In the backend, add `GET /api/v2/organizations/:orgId/identity-memberships/count` that returns `{ count }`, the number of machine identities in the organization. Put the route in `backend/src/server/routes/v2/identity-org-router.ts` right after the existing list route, reusing the identity service. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "backend/src/server/routes/v2/identity-org-router.ts"
+      ],
+      "exercises": [
+        "D-259bd1",
+        "D-1e9bb3"
+      ]
+    },
+    {
+      "id": "infisical-b-sync-destination-section",
+      "repo": "infisical",
+      "category": "b",
+      "prompt": "In the frontend, the secret sync details page needs a destination section for a new \"Fly.io\" sync: show the Fly.io app name and the organization slug from the sync's `destinationConfig` (`{ appName, orgSlug }`). Add the component next to the other destination sections and wire it into the section that picks one by destination type (add a `SecretSync.FlyIo = \"fly-io\"` enum member if it's missing). Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "frontend/src/pages/secret-manager/SecretSyncDetailsByIDPage/components/SecretSyncDestinationSection/FlyIoSyncDestinationSection.tsx"
+      ],
+      "exercises": [
+        "D-d7b5b7"
+      ]
+    },
+    {
+      "id": "infisical-c-rotation-notice",
+      "repo": "infisical",
+      "category": "c",
+      "prompt": "When an org admin rotates a machine identity's client secret they want to notify the people who use it. Build it: (1) a backend route `POST /api/v1/identities/:identityId/notify-rotation` with body `{ emails: string[] }` that sends an email; (2) a new email template for that message (identity name, who rotated it, a link to the identity page); (3) a frontend mutation hook in `frontend/src/hooks/api/identities/mutations.tsx` that calls the route and refreshes that identity's cached details. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "backend/src/server/routes/v1/identity-router.ts",
+        "backend/src/services/smtp/emails/IdentityRotationNoticeTemplate.tsx",
+        "frontend/src/hooks/api/identities/mutations.tsx"
+      ],
+      "exercises": [
+        "D-259bd1",
+        "D-34f463",
+        "D-055c32",
+        "D-dfa77a"
+      ]
+    },
+    {
+      "id": "infisical-d-sync-health-quick",
+      "repo": "infisical",
+      "category": "d",
+      "prompt": "our status page needs to poll something: add a backend endpoint `GET /api/v1/projects/:projectId/secret-sync-health` that returns `{ total, failing }` for the project's secret syncs. just get it working quickly, it's a temporary hack until we have proper metrics.",
+      "targets": [
+        "backend/src/server/routes/v1/project-router.ts",
+        "backend/src/server/routes/v1/secret-sync-health-router.ts"
+      ],
+      "exercises": [
+        "D-259bd1"
+      ]
+    },
+    {
+      "id": "infisical-e-split-user-mfa",
+      "repo": "infisical",
+      "category": "e",
+      "prompt": "Split `backend/src/server/routes/v2/user-router.ts`: move the `/me/mfa` routes (status, enroll, activate, deactivate) into a new `backend/src/server/routes/v2/user-mfa-router.ts` and register it in `v2/index.ts` under the same prefix so the URLs don't change. Finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "backend/src/server/routes/v2/user-router.ts",
+        "backend/src/server/routes/v2/user-mfa-router.ts"
+      ],
+      "exercises": [
+        "D-259bd1",
+        "D-1e9bb3"
+      ]
+    },
+    {
+      "id": "midday-a-category-merge",
+      "repo": "midday",
+      "category": "a",
+      "prompt": "In the API, add a `merge` mutation to the transaction categories tRPC router (`apps/api/src/trpc/routers/transaction-categories.ts`) with input `{ sourceId, targetId }` that moves every transaction from the source category to the target and deletes the source category. Add the db query it needs in `packages/db`. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "apps/api/src/trpc/routers/transaction-categories.ts",
+        "packages/db/src/queries/transaction-categories.ts"
+      ],
+      "exercises": [
+        "D-50255f",
+        "D-b8cff6"
+      ]
+    },
+    {
+      "id": "midday-a-invoice-duplicate",
+      "repo": "midday",
+      "category": "a",
+      "prompt": "In the API, add a `duplicate` mutation to the invoice tRPC router (`apps/api/src/trpc/routers/invoice.ts`), next to the other mutations, that copies an invoice into a new draft with a fresh invoice number and today's issue date, and returns the new invoice. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "apps/api/src/trpc/routers/invoice.ts"
+      ],
+      "exercises": [
+        "D-ff6099"
+      ]
+    },
+    {
+      "id": "midday-b-short-link-cleanup-job",
+      "repo": "midday",
+      "category": "b",
+      "prompt": "Add a new background job to the worker that deletes short links that expired more than 30 days ago. Put it in a new `apps/worker/src/processors/short-links/` folder, register it with the other processors and schedule it nightly. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "apps/worker/src/processors/short-links/cleanup-expired.ts",
+        "apps/worker/src/processors/short-links/index.ts"
+      ],
+      "exercises": [
+        "D-5880dd",
+        "D-86f372"
+      ]
+    },
+    {
+      "id": "midday-b-security-page",
+      "repo": "midday",
+      "category": "b",
+      "prompt": "Add a `/security` page to the marketing website (`apps/website`) that explains how we protect customer data: a headline and three short sections (encryption, access control, compliance). Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "apps/website/src/app/security/page.tsx"
+      ],
+      "exercises": [
+        "D-b57953"
+      ]
+    },
+    {
+      "id": "midday-c-expense-policies",
+      "repo": "midday",
+      "category": "c",
+      "prompt": "Add expense policies: a new `expense_policies` table in `packages/db` (id, team_id, name, max_amount, currency, created_at), db queries to list, create and delete them for a team, and a tRPC router `expensePolicies` with `list`, `create` and `delete`, mounted in the app router. When a policy is created, notify the team's members with the existing notifications package. Don't write a migration. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "packages/db/src/schema.ts",
+        "packages/db/src/queries/expense-policies.ts",
+        "apps/api/src/trpc/routers/expense-policies.ts"
+      ],
+      "exercises": [
+        "D-7da2b9",
+        "D-f90103",
+        "D-afc38b",
+        "D-b8cff6",
+        "D-50255f"
+      ]
+    },
+    {
+      "id": "midday-d-debug-counts",
+      "repo": "midday",
+      "category": "d",
+      "prompt": "quick hack for tomorrow's demo: add a tRPC query `overview.debugCounts` that returns how many transactions, invoices and customers the team has. don't overthink it, it'll be removed next week.",
+      "targets": [
+        "apps/api/src/trpc/routers/overview.ts"
+      ],
+      "exercises": [
+        "D-50255f"
+      ]
+    },
+    {
+      "id": "midday-e-split-transactions-router",
+      "repo": "midday",
+      "category": "e",
+      "prompt": "The transactions tRPC router (`apps/api/src/trpc/routers/transactions.ts`) is too big. Move the bulk operations (the procedures that act on many transactions at once) into a new router `apps/api/src/trpc/routers/transactions-bulk.ts` and mount it in the app router as `transactionsBulk`; update the dashboard's callers. Finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "apps/api/src/trpc/routers/transactions-bulk.ts"
+      ],
+      "exercises": [
+        "D-50255f"
+      ]
+    },
+    {
+      "id": "midday-f-budgets-session",
+      "repo": "midday",
+      "category": "f",
+      "prompts": [
+        "Add category budgets: a `category_budgets` table in `packages/db` (id, team_id, category_slug, amount, currency, period, created_at) and db queries to upsert and list a team's budgets. No migration, no tests.",
+        "Now add a tRPC router `budgets` with `list` and `upsert`, mounted in the app router, plus a `progress` query that returns, per budget, how much has been spent this period.",
+        "Last: add a nightly worker job that sends a notification to the team when a budget goes over 90%. Put it in a new processors folder and register it."
+      ],
+      "targets": [
+        "packages/db/src/schema.ts",
+        "packages/db/src/queries/category-budgets.ts",
+        "apps/api/src/trpc/routers/budgets.ts",
+        "apps/worker/src/processors/budgets/check-budgets.ts"
+      ],
+      "exercises": [
+        "D-7da2b9",
+        "D-f90103",
+        "D-afc38b",
+        "D-b8cff6",
+        "D-50255f",
+        "D-5880dd",
+        "D-86f372"
+      ]
+    },
+    {
+      "id": "novu-a-inbox-pin",
+      "repo": "novu",
+      "category": "a",
+      "prompt": "In the API, let subscribers pin inbox notifications: add `PATCH /inbox/notifications/:id/pin` and `PATCH /inbox/notifications/:id/unpin` to `apps/api/src/app/inbox/inbox.controller.ts`, next to the snooze routes, each backed by a use case with its command. Assume the message entity gets a boolean `pinned` field (add it to the entity if needed). Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "apps/api/src/app/inbox/inbox.controller.ts",
+        "apps/api/src/app/inbox/usecases/pin-notification/pin-notification.command.ts"
+      ],
+      "exercises": [
+        "D-36a604",
+        "D-2e9dcc",
+        "D-53fcf5"
+      ]
+    },
+    {
+      "id": "novu-b-textbelt-provider",
+      "repo": "novu",
+      "category": "b",
+      "prompt": "Add a new SMS provider, Textbelt (https://textbelt.com: `POST https://textbelt.com/text` with `phone`, `message`, `key`). Add the provider in `packages/providers`, its handler in `libs/application-generic` so the SMS factory can build it, and the provider id and credentials config in `packages/shared`. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "packages/providers/src/lib/sms/textbelt/textbelt.provider.ts",
+        "libs/application-generic/src/factories/sms/handlers/textbelt.handler.ts"
+      ],
+      "exercises": [
+        "D-7c65a3",
+        "D-462c2b"
+      ]
+    },
+    {
+      "id": "novu-d-unread-by-tag",
+      "repo": "novu",
+      "category": "d",
+      "prompt": "the frontend team wants to try something: an inbox endpoint that returns the subscriber's unread notification count grouped by tag. just hack it into the API quickly so they can play with it, we'll clean it up later.",
+      "targets": [
+        "apps/api/src/app/inbox/inbox.controller.ts",
+        "apps/api/src/app/inbox/usecases/unread-count-by-tag/unread-count-by-tag.command.ts"
+      ],
+      "exercises": [
+        "D-36a604",
+        "D-2e9dcc",
+        "D-53fcf5"
+      ]
+    },
+    {
+      "id": "novu-e-rename-snooze",
+      "repo": "novu",
+      "category": "e",
+      "prompt": "Rename the inbox `snooze-notification` use case to `defer-notification` across the API (folder, files, classes, the command, its use in the controller and module), keeping the HTTP route `/inbox/notifications/:id/snooze` unchanged. Finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "apps/api/src/app/inbox/usecases/defer-notification/defer-notification.command.ts",
+        "apps/api/src/app/inbox/inbox.controller.ts"
+      ],
+      "exercises": [
+        "D-2e9dcc",
+        "D-53fcf5",
+        "D-36a604"
+      ]
+    },
+    {
+      "id": "calcom-a-webhook-ping",
+      "repo": "cal.com",
+      "category": "a",
+      "prompt": "In API v2, add `POST /v2/webhooks/:webhookId/ping` to the user webhooks controller (`apps/api/v2/src/modules/webhooks/controllers/webhooks.controller.ts`) that sends a test `PING` payload to the webhook's subscriber URL and returns the HTTP status it got back. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "apps/api/v2/src/modules/webhooks/controllers/webhooks.controller.ts"
+      ],
+      "exercises": [
+        "D-777a50",
+        "D-ec4221"
+      ]
+    },
+    {
+      "id": "calcom-a-ooo-duplicate",
+      "repo": "cal.com",
+      "category": "a",
+      "prompt": "Add an `outOfOfficeEntryDuplicate` mutation to the out-of-office tRPC router (`packages/trpc/server/routers/viewer/ooo/_router.tsx`) that copies an existing entry of the user to a new date range (input: entry uuid, start, end), with its handler file. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "packages/trpc/server/routers/viewer/ooo/_router.tsx"
+      ],
+      "exercises": [
+        "D-0b36fb",
+        "D-42ab67"
+      ]
+    },
+    {
+      "id": "calcom-b-no-show-email",
+      "repo": "cal.com",
+      "category": "b",
+      "prompt": "Add an email to the organizer when an attendee is marked as a no-show: a new template class in `packages/emails/templates/` (attendee name, booking title and time, a link to the booking) and the code in `packages/emails` that sends it. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "packages/emails/templates/organizer-attendee-no-show-email.ts",
+        "packages/emails/email-manager.ts"
+      ],
+      "exercises": [
+        "D-c459f1",
+        "D-8d7d13"
+      ]
+    },
+    {
+      "id": "calcom-e-move-slot-utils",
+      "repo": "cal.com",
+      "category": "e",
+      "prompt": "The slot helpers in `packages/trpc/server/routers/viewer/slots/util.ts` are needed outside tRPC too. Move the reusable logic into a new module under `packages/features/slots/` and make the tRPC code import it from there; leave thin re-exports in the old file only if something else needs them. Finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "packages/features/slots/slot-utils.ts"
+      ],
+      "exercises": [
+        "D-7aa96c",
+        "D-931b9c"
+      ]
+    },
+    {
+      "id": "formbricks-a-archive-team",
+      "repo": "formbricks",
+      "category": "a",
+      "prompt": "In the web app, add a server action to archive a team (sets `archivedAt` on the team; assume the column exists) in `apps/web/modules/ee/teams/team-list/actions.ts`, next to the delete action, plus the lib function it calls. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "apps/web/modules/ee/teams/team-list/actions.ts"
+      ],
+      "exercises": [
+        "D-73b648",
+        "D-71e798",
+        "D-60208a"
+      ]
+    },
+    {
+      "id": "formbricks-b-template-library",
+      "repo": "formbricks",
+      "category": "b",
+      "prompt": "Add an organization survey template library as a new module `apps/web/modules/ee/template-library/`: server actions to save an existing survey as an organization template and to list and delete the organization's templates (assume a Prisma model `SurveyTemplate { id, organizationId, name, survey Json, createdAt }`), and a page component that lists them. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "apps/web/modules/ee/template-library/actions.ts",
+        "apps/web/modules/ee/template-library/page.tsx"
+      ],
+      "exercises": [
+        "D-73b648",
+        "D-71e798",
+        "D-60208a",
+        "D-87fcf9"
+      ]
+    },
+    {
+      "id": "documenso-b-reminder-router",
+      "repo": "documenso",
+      "category": "b",
+      "prompt": "Add tRPC routes for document reminders in a new folder `packages/trpc/server/reminder-router/`: `reminder.schedule` (documentId, sendAt) and `reminder.cancel` (reminderId), plus a `router.ts` for them, mounted in the app router. Assume a Prisma model `DocumentReminder { id, documentId, sendAt, createdAt }`. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "packages/trpc/server/reminder-router/router.ts",
+        "packages/trpc/server/reminder-router/schedule-reminder.ts"
+      ],
+      "exercises": [
+        "D-efe3da",
+        "D-879e02",
+        "D-d19fc6"
+      ]
+    },
+    {
+      "id": "documenso-e-move-team-analytics",
+      "repo": "documenso",
+      "category": "e",
+      "prompt": "The team analytics queries live inside the tRPC route files in `packages/trpc/server/team-router/get-team-analytics-*.ts`. Move the query logic into `packages/lib/server-only/team/analytics/` so other code can reuse it, and make the routes thin, calling into lib. Finish when the code is written; there is no need to run tests or install dependencies.",
+      "targets": [
+        "packages/lib/server-only/team/analytics/get-team-analytics-overview.ts",
+        "packages/trpc/server/team-router/get-team-analytics-overview.ts"
+      ],
+      "exercises": [
+        "D-041293",
+        "D-7b5140",
+        "D-2a51e9",
+        "D-9b91c3"
+      ]
+    }
+  ]
+}

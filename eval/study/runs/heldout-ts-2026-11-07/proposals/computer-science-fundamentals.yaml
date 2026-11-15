@@ -1,0 +1,83 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - after
+  - app
+  - before
+  - bench
+  - cart
+  - checkout
+  - cli
+  - config
+  - contract
+  - dashboard
+  - data
+  - db
+  - demo
+  - e2e
+  - experiment
+  - fixed-app
+  - http
+  - main
+  - network
+  - page
+  - playwright
+  - report
+  - results
+  - scenario
+  - scenarios
+  - server
+  - target
+  - unit
+  - vulnerable-app
+  suffixes:
+  - config
+  - e2e
+  - spec
+  - test
+  - xunit
+conventions:
+- id: D-6e4ada
+  status: proposed
+  mode: advise
+  summary: workspace packages define a `test` script
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: script:test
+  evidence:
+    holders: 60
+    total: 63
+    lower_bound: 0.869
+    lift: 1.032
+  example: benchmarks/package.json#benchmarks
+  selector_version: 2
+- id: D-a0d1d2
+  status: proposed
+  mode: advise
+  summary: workspace packages enable `noEmit` in tsconfig
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: flag:noEmit
+  evidence:
+    holders: 58
+    total: 63
+    lower_bound: 0.827
+    lift: 1.032
+  example: benchmarks/package.json#benchmarks
+  selector_version: 2

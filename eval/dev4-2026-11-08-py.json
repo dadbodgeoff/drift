@@ -1,0 +1,764 @@
+{
+  "//": "BLIND DEV pool dev4 (PLAN-R11 section 4.1), role DEV: not a held-out set (no D1/D4 verdict); its dev4-check (PREREG-F11-dev4-check.md) gates the next held-out draw. Drawn with the held-out procedure and exclusions. FROZEN since `frozen_at`: the core (set_id, role, frozen_at, repos, reserves, tier, max, pool) never changes (registered in `selection.registry`); only the append-only lists `replaced`, `burned` and `exposed` may grow. Nobody building product opens these repos, cards or labels before the round-11 freeze; only the dev4 operator runs its census and blind labelling, once, at the freeze. After its report it joins the build set.",
+  "set_id": "py-dev4-2026-11-08",
+  "role": "dev",
+  "decision": "PLAN-R11 section 4.1 (adopted with D13, 2026-11-08): a blind dev pool, dev4: select-holdout.mjs --selection dev4 with the held-out procedure and exclusions (every dev set, dev3 and every held-out set), 36 TS/JS and 24 Python repos (twice the held-out quotas), role dev, reserves fixed before the draw; census at the round-11 freeze on the frozen binary (TS/JS shown cards; the Python opt-in view) and blind labelling (rubric v3).",
+  "holdout": false,
+  "status": "frozen",
+  "frozen_on": "2026-11-08",
+  "frozen_at": "2026-11-08T23:02:54Z",
+  "language": "python",
+  "tier": {
+    "//": "Decision D7 (eval/study/README.md decision log), approved by the founder 2026-11-06 and recorded before any held-out census. D5 (tier-d5.json) narrowed by rule kind and language. TypeScript/JavaScript: the default tier admits only call wrappers (wrapped_by:call) and layering (avoids:import); wrapped_by:decorator, wrapped_by:extends and wrapped_by:jsx move to the suggestion tier. Python: no rule kind is in the default tier; Python advises only and every Python proposal is suggestion tier. D5's conditions still apply on top of the rule kind: every symbol the rule names is defined in the repository (default.target \"in_repo\": no pkg:, global# or unresolved: target; lib.mjs namesPackage, drift_mine::tier::names_package) and the role has >= default.min_members members. The language of a proposal is read conservatively (lib.mjs proposalLanguage, drift_mine::tier::convention_language): py when any member of its role is Python (conventions.yaml evidence.python_members) or its example path is (.py/.pyi files and Python package manifests), ts otherwise. Role members are counted as the role's size (evidence.role_members when set, else total; exempt members count). DEFAULT tier = language in default.languages AND structured rule kind (lib.mjs ruleKind) in default.rule_kinds AND the rule names no symbol from outside the repository AND its role has >= default.min_members members. SUGGESTION tier = every other shown proposal. The not-wrong rate is reported over all shown proposals, both tiers. Release gate unchanged: a language's default tier ships as advise until it measures >= 95% default-tier accept under rubric v3, judged per D1, on a primary held-out run.",
+    "kind": "rule_kind",
+    "decision": "D7",
+    "default": {
+      "//": "TypeScript/JavaScript call wrappers and layering (import avoidance), each only when every symbol it names is defined in the repository, in roles of 15 or more members",
+      "rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "languages": [
+        "ts"
+      ],
+      "min_members": 15,
+      "target": "in_repo"
+    },
+    "suggestion": {
+      "//": "D5's suggestion kinds, plus decorators, base classes and JSX layout wrappers (D7); every Python proposal (languages); and default-tier kinds whose rule names a package, built-in or unresolved symbol, or whose role is small",
+      "rule_kinds": [
+        "calls",
+        "named",
+        "avoids:other",
+        "prefers_library",
+        "before",
+        "has_test",
+        "model_has",
+        "package_has",
+        "dependency_version",
+        "wrapped_by:try",
+        "control",
+        "directive",
+        "throws",
+        "passes_key",
+        "renders",
+        "wrapped_by:decorator",
+        "wrapped_by:extends",
+        "wrapped_by:jsx"
+      ],
+      "languages": [
+        "py"
+      ]
+    },
+    "not_wrong_over": "all_shown"
+  },
+  "max": 15,
+  "//max_pool": "Same as the secondary sets: max 15 (census --max, proposals shown) and pool 200 (recall pool).",
+  "pool": 200,
+  "provenance": "Metadata only. Candidates: GitHub repository search (queries in `selection.record`), filtered by OSI licence, not archived, not a fork or template, and excluding every repo the Drift repository mentions (dev sets, polar and CTFd, every held-out set (primary, secondary and both later draws) and every earlier blind dev pool (dev3) with its reserves, replaced, burned and exposed entries, any github.com URL on any branch, commit messages, PR and issue text) and obvious non-applications by name or topic. framework_bucket from the repo's dependency manifests only (package.json; pyproject.toml, requirements*.txt, setup.cfg, Pipfile), queried through GitHub code search restricted to those file names on the default branch; nothing else. sha = default-branch HEAD from git ls-remote. size_kb, stars, pushed_at from search metadata at retrieval. No notes about the code exist: nobody read it.",
+  "selection": {
+    "script": "eval/study/select-holdout.mjs",
+    "selection": "dev4",
+    "record": "eval/dev4-2026-11-08-selection.json",
+    "record_sha256": "e942a8c7c6bcdf4a7715b081c8cea28a6e67a94936f093c3c917a7359faf20ae",
+    "registry": "eval/dev4-2026-11-08-registry.json",
+    "seed": "drift-dev4-2026-11-08:bb1d45ed129027d3c65349dc0ca653e68b13d125:abedc84078600f8fdfce1b9318162139",
+    "retrieved_at": "2026-11-08T20:34:29Z",
+    "buckets": {
+      "django": 7,
+      "fastapi": 7,
+      "flask": 5,
+      "other_python": 5
+    }
+  },
+  "//lists": "Append-only lists outside the frozen core. replaced: [{date, repo, reserve, reason}], the i-th swap uses the i-th reserve, only for a failed technical check (clone fails, `drift scan` errors, fewer than 200 parseable files) or (Python) overlap with the dev set. burned: [{date, name, reason}]. exposed: [{name, where}], repos whose conventions were named where product engineers can read.",
+  "replaced": [
+    {
+      "date": "2026-11-08",
+      "repo": "pyxtal",
+      "reserve": "swirl-search",
+      "reason": "technical check: fewer than 200 parseable files (163)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "swirl-search",
+      "reserve": "roll",
+      "reason": "technical check: fewer than 200 parseable files (112)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "icloud_photos_downloader",
+      "reserve": "cryodrgn",
+      "reason": "technical check: fewer than 200 parseable files (103)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "zotero-pdf2zh",
+      "reserve": "bench",
+      "reason": "technical check: fewer than 200 parseable files (89)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "bench",
+      "reserve": "mediacms",
+      "reason": "technical check: fewer than 200 parseable files (48)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "gazebo_terrain_generator",
+      "reserve": "docling-serve",
+      "reason": "technical check: fewer than 200 parseable files (12)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "docling-serve",
+      "reserve": "openagents",
+      "reason": "technical check: fewer than 200 parseable files (107)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "dxcam",
+      "reserve": "vismatch",
+      "reason": "technical check: fewer than 200 parseable files (44)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "vismatch",
+      "reserve": "spyder",
+      "reason": "technical check: fewer than 200 parseable files (59)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "youngserif",
+      "reserve": "openderisk",
+      "reason": "technical check: fewer than 200 parseable files (5)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "paranoid_crypto",
+      "reserve": "minimind-v",
+      "reason": "technical check: fewer than 200 parseable files (73)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "minimind-v",
+      "reserve": "local-rag",
+      "reason": "technical check: fewer than 200 parseable files (11)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "local-rag",
+      "reserve": "sefaria-project",
+      "reason": "technical check: fewer than 200 parseable files (42)"
+    }
+  ],
+  "burned": [],
+  "exposed": [],
+  "repos": [
+    {
+      "name": "youtube_video_code",
+      "url": "https://github.com/PrettyPrinted/youtube_video_code",
+      "sha": "c55ff2c61d530c8baf91d7db218606aabb7bcab2",
+      "language": "Python",
+      "framework_bucket": "django",
+      "size_kb": 48094,
+      "stars": 708,
+      "pushed_at": "2026-11-03T13:19:43Z"
+    },
+    {
+      "name": "arkid",
+      "url": "https://github.com/longguikeji/arkid",
+      "sha": "b7a7c074fb0ee36b1f779353c1b4d3b3288c1cae",
+      "language": "Python",
+      "framework_bucket": "django",
+      "size_kb": 34766,
+      "stars": 1285,
+      "pushed_at": "2026-10-20T14:18:32Z"
+    },
+    {
+      "name": "robosats",
+      "url": "https://github.com/RoboSats/robosats",
+      "sha": "e56f9cf7cd4e6b01aa78589922f7c648f262b6b6",
+      "language": "Python",
+      "framework_bucket": "django",
+      "size_kb": 245536,
+      "stars": 1045,
+      "pushed_at": "2026-11-08T10:33:19Z"
+    },
+    {
+      "name": "django-lfs",
+      "url": "https://github.com/diefenbach/django-lfs",
+      "sha": "3385b9a583abfaf8c9043cc669432051b957edac",
+      "language": "Python",
+      "framework_bucket": "django",
+      "size_kb": 27758,
+      "stars": 641,
+      "pushed_at": "2026-09-18T13:43:17Z"
+    },
+    {
+      "name": "panel",
+      "url": "https://github.com/holoviz/panel",
+      "sha": "d417056d8f422efa1a35de866b4f7dec29882abd",
+      "language": "Python",
+      "framework_bucket": "django",
+      "size_kb": 125682,
+      "stars": 5822,
+      "pushed_at": "2026-11-06T09:09:23Z"
+    },
+    {
+      "name": "cvengine",
+      "url": "https://github.com/hevnsnt/CVEngine",
+      "sha": "447ba9f810f0a4dec4a649dfb709c3f68dfe2f99",
+      "language": "Python",
+      "framework_bucket": "django",
+      "size_kb": 42829,
+      "stars": 693,
+      "pushed_at": "2026-11-08T22:17:24Z"
+    },
+    {
+      "name": "strawberry",
+      "url": "https://github.com/strawberry-graphql/strawberry",
+      "sha": "fbe4a2898a5e514490eed571f1c02b939e0775b0",
+      "language": "Python",
+      "framework_bucket": "django",
+      "size_kb": 20605,
+      "stars": 4729,
+      "pushed_at": "2026-11-08T18:03:00Z"
+    },
+    {
+      "name": "paper-ppt-agent",
+      "url": "https://github.com/CRui5in/paper-ppt-agent",
+      "sha": "7fecf0ce5815d77031bd26dc4eba2614c42d6fb3",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "size_kb": 93567,
+      "stars": 1071,
+      "pushed_at": "2026-11-02T07:20:58Z"
+    },
+    {
+      "name": "sparkrun",
+      "url": "https://github.com/spark-arena/sparkrun",
+      "sha": "593e3920ca2f74b8aa1cd59446ccbc4eeb307307",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "size_kb": 44877,
+      "stars": 562,
+      "pushed_at": "2026-11-08T02:39:45Z"
+    },
+    {
+      "name": "moviepilot",
+      "url": "https://github.com/jxxghp/MoviePilot",
+      "sha": "4620ceacda78b1e0d0f903aebb320fdb6d613420",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "size_kb": 93725,
+      "stars": 12044,
+      "pushed_at": "2026-11-08T03:56:02Z"
+    },
+    {
+      "name": "jesse",
+      "url": "https://github.com/jesse-ai/jesse",
+      "sha": "c7bbb18a6825aaa5b40b59675e02aa3e51302738",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "size_kb": 106565,
+      "stars": 8787,
+      "pushed_at": "2026-11-08T15:46:22Z"
+    },
+    {
+      "name": "aionshome",
+      "url": "https://github.com/death34018-hue/AionsHome",
+      "sha": "f66a82718efab843bfb2fca8df219567ea909880",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "size_kb": 467429,
+      "stars": 982,
+      "pushed_at": "2026-11-06T12:12:10Z"
+    },
+    {
+      "name": "rio",
+      "url": "https://github.com/rio-labs/rio",
+      "sha": "c9eae2e5e1b1bf5d21b3c841450fd516f6e85485",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "size_kb": 51196,
+      "stars": 3650,
+      "pushed_at": "2026-11-02T18:47:47Z"
+    },
+    {
+      "name": "realtimetts",
+      "url": "https://github.com/KoljaB/RealtimeTTS",
+      "sha": "5fbaa53c8afecf39d7468517c7c3846028cb192f",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "size_kb": 142645,
+      "stars": 4052,
+      "pushed_at": "2026-11-07T23:36:51Z"
+    },
+    {
+      "name": "medical-research-skills",
+      "url": "https://github.com/aipoch/medical-research-skills",
+      "sha": "686e09dfdb45d9fa1a08664f06bb93769b3c9d91",
+      "language": "Python",
+      "framework_bucket": "flask",
+      "size_kb": 260457,
+      "stars": 2029,
+      "pushed_at": "2026-09-17T05:39:52Z"
+    },
+    {
+      "name": "pyxtal",
+      "url": "https://github.com/MaterSim/PyXtal",
+      "sha": "653fcfd049c2e4c06004cee70885b2d9e6b13faf",
+      "language": "Python",
+      "framework_bucket": "flask",
+      "size_kb": 34021,
+      "stars": 394,
+      "pushed_at": "2026-10-26T14:27:34Z"
+    },
+    {
+      "name": "icloud_photos_downloader",
+      "url": "https://github.com/icloud-photos-downloader/icloud_photos_downloader",
+      "sha": "3caeae584c3d8bc6fcc51a1c9f7e5413b1422fd3",
+      "language": "Python",
+      "framework_bucket": "flask",
+      "size_kb": 47561,
+      "stars": 12392,
+      "pushed_at": "2026-11-04T20:41:16Z"
+    },
+    {
+      "name": "zotero-pdf2zh",
+      "url": "https://github.com/guaguastandup/zotero-pdf2zh",
+      "sha": "e783bb9ffd5cf3caf0efbb2cfd4d19f8d9f8a09e",
+      "language": "Python",
+      "framework_bucket": "flask",
+      "size_kb": 153746,
+      "stars": 8197,
+      "pushed_at": "2026-11-06T13:01:43Z"
+    },
+    {
+      "name": "gazebo_terrain_generator",
+      "url": "https://github.com/saiaravind19/gazebo_terrain_generator",
+      "sha": "dedcccc04855f93123c0fa350265b3efb0dc51bd",
+      "language": "Python",
+      "framework_bucket": "flask",
+      "size_kb": 282713,
+      "stars": 308,
+      "pushed_at": "2026-11-08T03:38:41Z"
+    },
+    {
+      "name": "edenlive",
+      "url": "https://github.com/VAST-AI-Research/EdenLive",
+      "sha": "0b78d211bfa87b6d9b6281e9e36e55b974fe7bec",
+      "language": "Python",
+      "framework_bucket": "other_python",
+      "size_kb": 127079,
+      "stars": 430,
+      "pushed_at": "2026-10-21T05:24:37Z"
+    },
+    {
+      "name": "dxcam",
+      "url": "https://github.com/ra1nty/DXcam",
+      "sha": "1e595ff55e57263c4b5d0414828f74104afa86f4",
+      "language": "Python",
+      "framework_bucket": "other_python",
+      "size_kb": 33666,
+      "stars": 802,
+      "pushed_at": "2026-09-23T03:39:55Z"
+    },
+    {
+      "name": "youngserif",
+      "url": "https://github.com/noirblancrouge/YoungSerif",
+      "sha": "8a6c3ceeed5e52bd77b0dfad6b76e99096b9fd4b",
+      "language": "Python",
+      "framework_bucket": "other_python",
+      "size_kb": 49909,
+      "stars": 482,
+      "pushed_at": "2026-05-19T12:03:20Z"
+    },
+    {
+      "name": "paranoid_crypto",
+      "url": "https://github.com/google/paranoid_crypto",
+      "sha": "31600d5776e7858f977164a398be2baac2a291a4",
+      "language": "Python",
+      "framework_bucket": "other_python",
+      "size_kb": 20764,
+      "stars": 901,
+      "pushed_at": "2026-11-06T22:12:20Z"
+    },
+    {
+      "name": "paddlescience",
+      "url": "https://github.com/PaddlePaddle/PaddleScience",
+      "sha": "aeba517c2718364ea6a9e2b43b569c1b5f0cd5bb",
+      "language": "Python",
+      "framework_bucket": "other_python",
+      "size_kb": 78482,
+      "stars": 454,
+      "pushed_at": "2026-10-14T06:42:17Z"
+    }
+  ],
+  "reserves": {
+    "//": "Pre-registered replacements, used in this order only (rule 1). Reserve i comes from bucket spec.sets.<set>.reserve_order[i] of the selection record.",
+    "repos": [
+      {
+        "name": "swirl-search",
+        "url": "https://github.com/swirlai/swirl-search",
+        "sha": "0506aa5638ae0d53ced849e33ce4aac25bd5ce3d",
+        "language": "Python",
+        "framework_bucket": "django",
+        "size_kb": 271345,
+        "stars": 3049,
+        "pushed_at": "2026-10-27T15:54:10Z"
+      },
+      {
+        "name": "roll",
+        "url": "https://github.com/alibaba/ROLL",
+        "sha": "7c0ded3d621ad4f45fb4d6675914de5eae8918eb",
+        "language": "Python",
+        "framework_bucket": "fastapi",
+        "size_kb": 126856,
+        "stars": 3449,
+        "pushed_at": "2026-11-08T01:12:49Z"
+      },
+      {
+        "name": "cryodrgn",
+        "url": "https://github.com/ml-struct-bio/cryodrgn",
+        "sha": "6273c8f3b6c2b76f68a721e465e9f7ef1b69610e",
+        "language": "Python",
+        "framework_bucket": "flask",
+        "size_kb": 147037,
+        "stars": 393,
+        "pushed_at": "2026-11-05T17:19:58Z"
+      },
+      {
+        "name": "bench",
+        "url": "https://github.com/frappe/bench",
+        "sha": "4f56e02d4a07368bb241f48b1aa69d21498984ae",
+        "language": "Python",
+        "framework_bucket": "other_python",
+        "size_kb": 32161,
+        "stars": 1747,
+        "pushed_at": "2026-10-31T04:21:06Z"
+      },
+      {
+        "name": "mediacms",
+        "url": "https://github.com/mediacms-io/mediacms",
+        "sha": "9bf46be5f4dc00005dd66e868f1d1d23371acadb",
+        "language": "Python",
+        "framework_bucket": "django",
+        "size_kb": 68511,
+        "stars": 5182,
+        "pushed_at": "2026-10-26T17:13:46Z"
+      },
+      {
+        "name": "docling-serve",
+        "url": "https://github.com/docling-project/docling-serve",
+        "sha": "9c058dbb58f61021e3a16e37edb8a7527b2cb2d4",
+        "language": "Python",
+        "framework_bucket": "fastapi",
+        "size_kb": 42801,
+        "stars": 1901,
+        "pushed_at": "2026-10-30T15:09:15Z"
+      },
+      {
+        "name": "openagents",
+        "url": "https://github.com/xlang-ai/OpenAgents",
+        "sha": "ff2e46440699af1324eb25655b622c4a131265bb",
+        "language": "Python",
+        "framework_bucket": "flask",
+        "size_kb": 24596,
+        "stars": 4868,
+        "pushed_at": "2026-10-27T16:19:29Z"
+      },
+      {
+        "name": "vismatch",
+        "url": "https://github.com/gmberton/vismatch",
+        "sha": "91f6f967821fc150750ef1601d37bc9c17645393",
+        "language": "Python",
+        "framework_bucket": "other_python",
+        "size_kb": 92825,
+        "stars": 942,
+        "pushed_at": "2026-11-03T07:15:09Z"
+      },
+      {
+        "name": "spyder",
+        "url": "https://github.com/spyder-ide/spyder",
+        "sha": "36b2daa1c63657c6d368320014ac5c7e4d7a2383",
+        "language": "Python",
+        "framework_bucket": "django",
+        "size_kb": 162588,
+        "stars": 9391,
+        "pushed_at": "2026-11-07T14:12:48Z"
+      },
+      {
+        "name": "openderisk",
+        "url": "https://github.com/derisk-ai/OpenDerisk",
+        "sha": "5b0e729e3854c2f0310285bf4901fe8c7866e757",
+        "language": "Python",
+        "framework_bucket": "fastapi",
+        "size_kb": 99813,
+        "stars": 978,
+        "pushed_at": "2026-09-17T12:04:16Z"
+      },
+      {
+        "name": "minimind-v",
+        "url": "https://github.com/jingyaogong/minimind-v",
+        "sha": "041d528e037a8a373c3c8aa7278a3ba3bd26b6dc",
+        "language": "Python",
+        "framework_bucket": "flask",
+        "size_kb": 33702,
+        "stars": 8825,
+        "pushed_at": "2026-10-27T07:03:19Z"
+      },
+      {
+        "name": "local-rag",
+        "url": "https://github.com/jonfairbanks/local-rag",
+        "sha": "195adafc5642dccb82e089f5e62ba3051525286e",
+        "language": "Python",
+        "framework_bucket": "other_python",
+        "size_kb": 57804,
+        "stars": 765,
+        "pushed_at": "2026-11-02T17:14:16Z"
+      },
+      {
+        "name": "sefaria-project",
+        "url": "https://github.com/Sefaria/Sefaria-Project",
+        "sha": "71a350dfeea8c351bacc7db3e35cc4505cf10948",
+        "language": "Python",
+        "framework_bucket": "django",
+        "size_kb": 491871,
+        "stars": 772,
+        "pushed_at": "2026-11-08T20:04:19Z"
+      },
+      {
+        "name": "stash",
+        "url": "https://github.com/Fergana-Labs/stash",
+        "sha": "60715ae11eb79c3334dda6f94f86de2754efd40d",
+        "language": "Python",
+        "framework_bucket": "fastapi",
+        "size_kb": 59679,
+        "stars": 342,
+        "pushed_at": "2026-11-05T23:47:32Z"
+      },
+      {
+        "name": "skills",
+        "url": "https://github.com/NVIDIA-NeMo/Skills",
+        "sha": "bcf059af55c20a89f797724598f9908d126153e6",
+        "language": "Python",
+        "framework_bucket": "flask",
+        "size_kb": 399442,
+        "stars": 1058,
+        "pushed_at": "2026-11-08T10:03:03Z"
+      },
+      {
+        "name": "fairlearn",
+        "url": "https://github.com/fairlearn/fairlearn",
+        "sha": "4b2aa83bddf0b0e7ae1202e787a6ec6050a24204",
+        "language": "Python",
+        "framework_bucket": "other_python",
+        "size_kb": 80869,
+        "stars": 2306,
+        "pushed_at": "2026-11-07T19:31:51Z"
+      },
+      {
+        "name": "testhub_platform",
+        "url": "https://github.com/chenjigang4167/testhub_platform",
+        "sha": "f85823ee36762ecab68ccd81e55aea33939730d6",
+        "language": "Python",
+        "framework_bucket": "django",
+        "size_kb": 34370,
+        "stars": 875,
+        "pushed_at": "2026-11-06T06:57:06Z"
+      },
+      {
+        "name": "refchecker",
+        "url": "https://github.com/markrussinovich/refchecker",
+        "sha": "27a81896c0c3d7361fb95b4d14b24a86f02c9c0d",
+        "language": "Python",
+        "framework_bucket": "fastapi",
+        "size_kb": 65857,
+        "stars": 566,
+        "pushed_at": "2026-10-27T14:02:34Z"
+      },
+      {
+        "name": "cornac",
+        "url": "https://github.com/PreferredAI/cornac",
+        "sha": "7190d0cb6a45c72bf0c044af4d7002d09d6a17f1",
+        "language": "Python",
+        "framework_bucket": "flask",
+        "size_kb": 27918,
+        "stars": 1064,
+        "pushed_at": "2026-11-05T06:25:55Z"
+      },
+      {
+        "name": "anyjev",
+        "url": "https://github.com/nokia-applied-research/AnyJev",
+        "sha": "35311c58955716cb8955ce1368a665988bc63735",
+        "language": "Python",
+        "framework_bucket": "other_python",
+        "size_kb": 25536,
+        "stars": 1595,
+        "pushed_at": "2026-10-21T20:30:58Z"
+      },
+      {
+        "name": "djangogirls",
+        "url": "https://github.com/DjangoGirls/djangogirls",
+        "sha": "e1899518201bb707522ed0358043589082fee5e3",
+        "language": "Python",
+        "framework_bucket": "django",
+        "size_kb": 80733,
+        "stars": 480,
+        "pushed_at": "2026-11-06T00:32:16Z"
+      },
+      {
+        "name": "rllm",
+        "url": "https://github.com/rllm-org/rllm",
+        "sha": "4e828c81680e5a85b638ceedeaf09d1e90109ca8",
+        "language": "Python",
+        "framework_bucket": "fastapi",
+        "size_kb": 142808,
+        "stars": 5912,
+        "pushed_at": "2026-10-16T19:02:56Z"
+      },
+      {
+        "name": "nipap",
+        "url": "https://github.com/SpriteLink/NIPAP",
+        "sha": "776ba7ca9801e865618c0fbd762f706de5ff2614",
+        "language": "Python",
+        "framework_bucket": "flask",
+        "size_kb": 64196,
+        "stars": 593,
+        "pushed_at": "2026-11-04T04:23:16Z"
+      },
+      {
+        "name": "internvla-m1",
+        "url": "https://github.com/InternRobotics/InternVLA-M1",
+        "sha": "7f42cf279a3b15d79507b632d37921f5f2f073ba",
+        "language": "Python",
+        "framework_bucket": "other_python",
+        "size_kb": 41509,
+        "stars": 438,
+        "pushed_at": "2026-10-09T08:35:40Z"
+      },
+      {
+        "name": "peeringdb",
+        "url": "https://github.com/peeringdb/peeringdb",
+        "sha": "34c37b881fd239c9b6d2b456a9dfc55e8df1bfb3",
+        "language": "Python",
+        "framework_bucket": "django",
+        "size_kb": 82205,
+        "stars": 476,
+        "pushed_at": "2026-11-06T21:11:18Z"
+      },
+      {
+        "name": "papermerge-core",
+        "url": "https://github.com/papermerge/papermerge-core",
+        "sha": "973b07a0f33c87b1ed1bab0e0ee848070ad8d22f",
+        "language": "Python",
+        "framework_bucket": "fastapi",
+        "size_kb": 24862,
+        "stars": 554,
+        "pushed_at": "2026-11-04T18:06:31Z"
+      },
+      {
+        "name": "kloppy",
+        "url": "https://github.com/PySport/kloppy",
+        "sha": "a9651eba7c4dbbe2d2fc6d4cffb4aea63fadac11",
+        "language": "Python",
+        "framework_bucket": "flask",
+        "size_kb": 49153,
+        "stars": 571,
+        "pushed_at": "2026-11-06T20:56:03Z"
+      },
+      {
+        "name": "leomoon-lightstudio",
+        "url": "https://github.com/leomoon-studios/leomoon-lightstudio",
+        "sha": "fe279acb544f297ac2c14cbd900db00f45091db7",
+        "language": "Python",
+        "framework_bucket": "other_python",
+        "size_kb": 184193,
+        "stars": 421,
+        "pushed_at": "2026-10-12T05:19:56Z"
+      },
+      {
+        "name": "cello",
+        "url": "https://github.com/hyperledger-cello/cello",
+        "sha": "3d0481717fe59c4a6e77ed9dd2cc35527f7fc855",
+        "language": "Python",
+        "framework_bucket": "django",
+        "size_kb": 122128,
+        "stars": 920,
+        "pushed_at": "2026-11-06T22:50:11Z"
+      },
+      {
+        "name": "recogdrive",
+        "url": "https://github.com/xiaomi-research/recogdrive",
+        "sha": "5831ee83c7a6a40bf6919715b96b0e9ba2b48335",
+        "language": "Python",
+        "framework_bucket": "fastapi",
+        "size_kb": 118623,
+        "stars": 627,
+        "pushed_at": "2026-10-17T16:47:11Z"
+      },
+      {
+        "name": "chipper",
+        "url": "https://github.com/TilmanGriesel/chipper",
+        "sha": "e8b8dc7a714f4ecbc44b5e968436b2bcfcbd9601",
+        "language": "Python",
+        "framework_bucket": "flask",
+        "size_kb": 88527,
+        "stars": 486,
+        "pushed_at": "2026-05-19T18:31:49Z"
+      },
+      {
+        "name": "pydy",
+        "url": "https://github.com/pydy/pydy",
+        "sha": "7ca52b7225991c96cc1dbac00d1940ec7d31e4f3",
+        "language": "Python",
+        "framework_bucket": "other_python",
+        "size_kb": 22119,
+        "stars": 417,
+        "pushed_at": "2026-07-28T12:29:05Z"
+      },
+      {
+        "name": "netbox-proxbox",
+        "url": "https://github.com/emersonfelipesp/netbox-proxbox",
+        "sha": "a5610e7afe62fdab411ec37eba9941bb1d4b4f5b",
+        "language": "Python",
+        "framework_bucket": "django",
+        "size_kb": 74905,
+        "stars": 609,
+        "pushed_at": "2026-11-06T01:30:42Z"
+      },
+      {
+        "name": "soulx-duplug",
+        "url": "https://github.com/Soul-AILab/SoulX-Duplug",
+        "sha": "a0b9063843df69619b087b95b74597b2176910b8",
+        "language": "Python",
+        "framework_bucket": "fastapi",
+        "size_kb": 24943,
+        "stars": 332,
+        "pushed_at": "2026-07-17T13:49:40Z"
+      },
+      {
+        "name": "privacyidea",
+        "url": "https://github.com/privacyidea/privacyidea",
+        "sha": "7efda8524179f5cec8abd0de5f6a84586e07e636",
+        "language": "Python",
+        "framework_bucket": "flask",
+        "size_kb": 152663,
+        "stars": 1790,
+        "pushed_at": "2026-11-06T19:11:27Z"
+      },
+      {
+        "name": "archai",
+        "url": "https://github.com/microsoft/archai",
+        "sha": "6b5df1d5fea829ebf6f6f632cf68295401f7fc10",
+        "language": "Python",
+        "framework_bucket": "other_python",
+        "size_kb": 50737,
+        "stars": 488,
+        "pushed_at": "2026-11-03T17:03:55Z"
+      }
+    ]
+  }
+}

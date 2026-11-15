@@ -1,0 +1,123 @@
+14 conventions from 6464 units in 330 roles (2 default tier, 12 suggestions)
+
+12 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-50255f] apps/api: rpc entry points in src/** are wrapped in internalProcedure() or protectedProcedure()
+    evidence: 248/255 (lower bound 0.94, lift 7.6)
+    tier:     default
+    split:    protectedProcedure 242, internalProcedure 6
+    example:  apps/api/src/trpc/routers/accounting.ts#MUTATION disconnect
+    outlier:  apps/api/src/trpc/routers/banking.ts:291 QUERY getProviderAccounts
+    outlier:  apps/api/src/trpc/routers/customers.ts:221 QUERY getByPortalId
+    outlier:  apps/api/src/trpc/routers/customers.ts:244 QUERY getPortalInvoices
+    outlier:  apps/api/src/trpc/routers/invoice.ts:81 QUERY getInvoiceByToken
+    outlier:  apps/api/src/trpc/routers/reports.ts:168 QUERY getByLinkId
+    outlier:  apps/api/src/trpc/routers/reports.ts:174 QUERY getChartDataByLinkId
+    outlier:  apps/api/src/trpc/routers/short-links.ts:93 QUERY get
+
+ 2. [D-b8cff6] files in packages/db/** do not import from packages/notifications/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 68/69 (lower bound 0.92, lift 3.0)
+    tier:     default
+    example:  packages/db/drizzle.config.ts#(file)
+    outlier:  packages/db/src/queries/notification-settings.ts:1 (file)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 3. [D-495f56] apps/api: exported values in src/schemas/** are named `*Schema`
+    evidence: 308/309 (lower bound 0.98, lift 2.7)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/api/src/schemas/accounting.ts#accountingProviderIdSchema
+    outlier:  apps/api/src/schemas/invoice.ts:337 draftInvoiceSchemaWithOpenApi
+
+ 4. [D-7da2b9] packages/db: functions in src/** (schema files) pass `withTimezone` to timestamp(), except 2 members (not calling the callee)
+    evidence: 47/47 (lower bound 0.92, lift 39.3)
+    tier:     suggestion (rule kind passes_key)
+    agents:   not shown to agents (family below admission bar: 50% of 12)
+    example:  packages/db/src/schema.ts#accountingSyncRecords
+    exempt:   packages/db/src/schema.ts:2720 documentTagAssignments (does not call timestamp())
+    exempt:   packages/db/src/schema.ts:308 documentTagEmbeddings (does not call timestamp())
+
+ 5. [D-5880dd] apps/worker: classes in src/processors/** extend BaseProcessor, except a member (of the module that defines a rule's target)
+    evidence: 39/39 (lower bound 0.91, lift 2.4)
+    tier:     suggestion (rule kind wrapped_by:extends; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 61% of 18)
+    example:  apps/worker/src/processors/accounting/export-transactions.ts#ExportTransactionsProcessor
+    exempt:   apps/worker/src/processors/base.ts:17 BaseProcessor (in the module that defines BaseProcessor)
+
+ 6. [D-48f0ae] packages/db: functions in src/** (schema files) call timestamp() before index()
+    evidence: 41/42 (lower bound 0.88, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  packages/db/src/schema.ts#accountingSyncRecords
+    outlier:  packages/db/src/schema.ts:2720 documentTagAssignments
+
+ 7. [D-a45d35] packages/db: functions in src/** (schema files) call foreignKey().onDelete() before foreignKey()
+    evidence: 40/41 (lower bound 0.87, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  packages/db/src/schema.ts#accountingSyncRecords
+    outlier:  packages/db/src/schema.ts:2765 usersOnTeam
+
+ 8. [D-80f1c3] apps/worker: classes in src/processors/** are named `*Processor`
+    evidence: 39/40 (lower bound 0.87, lift 2.3)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/worker/src/processors/accounting/export-transactions.ts#ExportTransactionsProcessor
+    outlier:  apps/worker/src/processors/accounting/base.ts:100 AccountingProcessorBase
+
+ 9. [D-afc38b] packages/db: functions in src/** (schema files) pass `mode` to timestamp(), except 2 members (not calling the callee)
+    evidence: 45/47 (lower bound 0.86, lift 39.3)
+    tier:     suggestion (rule kind passes_key)
+    agents:   not shown to agents (family below admission bar: 50% of 12)
+    example:  packages/db/src/schema.ts#accountingSyncRecords
+    outlier:  packages/db/src/schema.ts:4173 insightUserStatus
+    outlier:  packages/db/src/schema.ts:4086 insights
+    exempt:   packages/db/src/schema.ts:2720 documentTagAssignments (does not call timestamp())
+    exempt:   packages/db/src/schema.ts:308 documentTagEmbeddings (does not call timestamp())
+
+10. [D-98e729] apps/api: exported values in src/trpc/** are named `*Router`
+    evidence: 39/41 (lower bound 0.84, lift 21.7)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/api/src/trpc/init.ts#createTRPCRouter
+    outlier:  apps/api/src/trpc/init.ts:87 createCallerFactory
+    outlier:  apps/api/src/trpc/init.ts:120 publicProcedure
+
+11. [D-798f44] drizzle models have a `createdAt` field
+    evidence: 47/50 (lower bound 0.84, lift 1.0)
+    tier:     suggestion (rule kind model_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  packages/db/src/schema.ts#accounting_sync_records
+    outlier:  packages/db/src/schema.ts:2720 document_tag_assignments
+    outlier:  packages/db/src/schema.ts:308 document_tag_embeddings
+    outlier:  packages/db/src/schema.ts:1155 exchange_rates
+
+12. [D-f90103] packages/db: functions in src/** (schema files) pass `createdAt` to pgTable()
+    evidence: 46/49 (lower bound 0.83, lift 39.3)
+    tier:     suggestion (rule kind passes_key)
+    agents:   not shown to agents (family below admission bar: 50% of 12)
+    example:  packages/db/src/schema.ts#accountingSyncRecords
+    outlier:  packages/db/src/schema.ts:2720 documentTagAssignments
+    outlier:  packages/db/src/schema.ts:308 documentTagEmbeddings
+    outlier:  packages/db/src/schema.ts:1155 exchangeRates
+
+13. [D-8fbbad] workspace packages use the typescript version most workspace packages use
+    evidence: 22/23 (lower bound 0.79, lift 1.0)
+    tier:     suggestion (rule kind dependency_version)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    split:    catalog: 22, ^6.0.2 1
+    example:  apps/dashboard/package.json#@midday/dashboard
+    outlier:  packages/mcp-apps/package.json:1 @midday/mcp-apps
+
+14. [D-8fd473] packages/invoice: functions in src/utils/** declare their return type
+    evidence: 24/26 (lower bound 0.76, lift 2.4)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  packages/invoice/src/utils/content.ts#isValidJSON
+    outlier:  packages/invoice/src/utils/calculate.ts:66 calculateLineItemTotal
+    outlier:  packages/invoice/src/utils/calculate.ts:1 calculateTotal
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

@@ -1,0 +1,130 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "cgu74-bb1d45ed-1794166617",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-clones/dev3/P03",
+  "units": 1375,
+  "roles": 78,
+  "conventions": 1,
+  "shown": 1,
+  "tiers": {
+    "default": 0,
+    "suggestion": 1
+  },
+  "agents": {
+    "hidden": 1,
+    "admission": {
+      "kind": "family_table",
+      "file": "crates/drift-mine/data/family-admission.json",
+      "run": "eval/study/runs/dev-v3-relabel4-2026-11-07",
+      "date": "2026-11-07",
+      "min_accept": 0.85,
+      "min_cards": 10
+    }
+  },
+  "suggestion_cap": {
+    "cap": 5,
+    "from": "default",
+    "suggestions": 1,
+    "listed": 1
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    },
+    "show": {
+      "file": "crates/drift-mine/data/show-policy.json",
+      "schema": 1,
+      "run": "eval/study/runs/dev-v3-relabel5-2026-11-07",
+      "date": "2026-11-07",
+      "min_accept": 0.6,
+      "min_cards": 5,
+      "max_outliers": 1,
+      "admitted": {
+        "py": [
+          "naming"
+        ],
+        "ts": [
+          "control",
+          "naming"
+        ]
+      }
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-1062a8",
+      "rank": 1,
+      "shown_by_default": true,
+      "summary": "agentex: exceptions in src/** (exceptions files) are named `*Error`",
+      "role": {
+        "package": "agentex",
+        "dir": "src",
+        "file": "exceptions",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "exception",
+        "members": 22
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Error"
+      },
+      "evidence": {
+        "holders": 21,
+        "total": 22,
+        "lower_bound": 0.782,
+        "lift": 11.42,
+        "python_members": 22
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": false,
+        "reason": "below_bar",
+        "source": "crates/drift-mine/data/family-admission.json (eval/study/runs/dev-v3-relabel4-2026-11-07, bar 85% of 10)",
+        "family": "naming",
+        "accepted": 6,
+        "n": 15,
+        "text": "not shown to agents (family below admission bar: 40% of 15)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "agentex/src/adapters/authentication/exceptions.py",
+        "symbol": "AuthenticationError",
+        "line": 4
+      },
+      "outliers": [
+        {
+          "path": "agentex/src/adapters/crud_store/exceptions.py",
+          "symbol": "ItemDoesNotExist",
+          "line": 12
+        }
+      ],
+      "outliers_total": 1
+    }
+  ],
+  "largest_role": null
+}

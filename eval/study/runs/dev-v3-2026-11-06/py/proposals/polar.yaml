@@ -1,0 +1,451 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - auth
+  - base
+  - checkout
+  - client
+  - conftest
+  - customerPortal
+  - customer_meter
+  - endpoints
+  - errors
+  - examples
+  - forms
+  - layout
+  - legacy_schemas
+  - meter
+  - order
+  - page
+  - polar
+  - properties
+  - repository
+  - route
+  - runtime
+  - schemas
+  - service
+  - sorting
+  - subscription
+  - tasks
+  - test_client
+  - test_endpoints
+  - test_repository
+  - test_schemas
+  - test_service
+  - test_tasks
+  - tsdown
+  - types
+  - update
+  - utils
+  - vitest
+  - wallet
+  - webhooks
+  suffixes:
+  - bench
+  - config
+  - rule-test
+  - stylex
+  - test
+conventions:
+- id: D-31bf00
+  status: proposed
+  mode: advise
+  summary: "server: HTTP handlers in polar/** (endpoints files) are wrapped in get_authentication_session() or Authenticator() or _web_user_or_anonymous() or get_login_organization() or AccountPolicyGuard() or OrgPolicyGuard() or PayoutAccountPolicyGuard() or WebUserAuthorizer() or WebUserAuthorizerFresh() or _get_client_dependency() or get_authentication_session() or _get_safe_return_url_dependency() or get_pagination_params() or OrderPolicyGuard() or get_db_read_session() or get_db_session()"
+  role:
+    package: server
+    dir: polar
+    file: endpoints
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - server/polar/auth/authentication_session.py#get_authentication_session
+    - server/polar/auth/dependencies.py#Authenticator
+    - server/polar/auth/dependencies.py#_web_user_or_anonymous
+    - server/polar/auth/sso/endpoints.py#get_login_organization
+    - server/polar/authz/dependencies.py#AccountPolicyGuard
+    - server/polar/authz/dependencies.py#OrgPolicyGuard
+    - server/polar/authz/dependencies.py#PayoutAccountPolicyGuard
+    - server/polar/authz/dependencies.py#WebUserAuthorizer
+    - server/polar/authz/dependencies.py#WebUserAuthorizerFresh
+    - server/polar/checkout/ip_geolocation.py#_get_client_dependency
+    - >-
+      server/polar/customer_portal/auth/authentication_session.py#get_authentication_session
+    - server/polar/kit/http.py#_get_safe_return_url_dependency
+    - server/polar/kit/pagination.py#get_pagination_params
+    - server/polar/order/auth.py#OrderPolicyGuard
+    - server/polar/postgres.py#get_db_read_session
+    - server/polar/postgres.py#get_db_session
+  evidence:
+    holders: 364
+    total: 370
+    lower_bound: 0.965
+    lift: 7.463
+    split:
+    - - server/polar/auth/dependencies.py#Authenticator
+      - 228
+    - - server/polar/authz/dependencies.py#OrgPolicyGuard
+      - 49
+    - - server/polar/authz/dependencies.py#WebUserAuthorizer
+      - 22
+    - - server/polar/postgres.py#get_db_session
+      - 19
+    - - server/polar/authz/dependencies.py#WebUserAuthorizerFresh
+      - 9
+    - - server/polar/auth/authentication_session.py#get_authentication_session
+      - 5
+    - - server/polar/authz/dependencies.py#PayoutAccountPolicyGuard
+      - 5
+    - - server/polar/kit/pagination.py#get_pagination_params
+      - 5
+    - - server/polar/kit/http.py#_get_safe_return_url_dependency
+      - 4
+    - - server/polar/auth/sso/endpoints.py#get_login_organization
+      - 3
+    - - server/polar/authz/dependencies.py#AccountPolicyGuard
+      - 3
+    - - server/polar/checkout/ip_geolocation.py#_get_client_dependency
+      - 3
+    - - server/polar/postgres.py#get_db_read_session
+      - 3
+    - - server/polar/auth/dependencies.py#_web_user_or_anonymous
+      - 2
+    - - >-
+        server/polar/customer_portal/auth/authentication_session.py#get_authentication_session
+      - 2
+    - - server/polar/order/auth.py#OrderPolicyGuard
+      - 2
+  example: server/polar/account/endpoints.py#get
+- id: D-e5f85b
+  status: proposed
+  mode: advise
+  summary: "server: enums in polar/** extend StrEnum"
+  role:
+    package: server
+    dir: polar
+    file: "*"
+    entry: '-'
+    kind: class
+    variety: enum
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - pkg:python:enum#StrEnum
+  evidence:
+    holders: 124
+    total: 125
+    lower_bound: 0.956
+    lift: 13.954
+    role_members: 127
+  example: server/polar/auth/permission.py#OrganizationPermission
+- id: D-77dc4b
+  status: proposed
+  mode: advise
+  summary: "server: job entry points in polar/** (tasks files) pass `priority` to actor()"
+  role:
+    package: server
+    dir: polar
+    file: tasks
+    entry: job
+    kind: function
+  rule:
+    type: passes_key
+    callee: server/polar/worker/__init__.py#actor
+    index: 99
+    key: priority
+  evidence:
+    holders: 174
+    total: 177
+    lower_bound: 0.951
+    lift: 18.516
+  example: server/polar/auth/tasks.py#auth_delete_expired
+- id: D-f80e7c
+  status: proposed
+  mode: advise
+  summary: "server: classes in polar/** (repository files) extend RepositoryBase"
+  role:
+    package: server
+    dir: polar
+    file: repository
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - server/polar/kit/repository/base.py#RepositoryBase
+  evidence:
+    holders: 88
+    total: 90
+    lower_bound: 0.923
+    lift: 29.676
+  example: server/polar/account/repository.py#AccountRepository
+- id: D-232dfa
+  status: proposed
+  mode: advise
+  summary: "server: exported values in polar/** (auth files) call Depends()"
+  role:
+    package: server
+    dir: polar
+    file: auth
+    entry: '-'
+    kind: variable
+  rule:
+    type: calls
+    callee: pkg:fastapi#Depends
+  evidence:
+    holders: 79
+    total: 81
+    lower_bound: 0.914
+    lift: 7.174
+  example: server/polar/benefit/auth.py#BenefitGrantsRead
+- id: D-b1d2c3
+  status: proposed
+  mode: advise
+  summary: "server: functions in polar/** (endpoints files) call tag.div() before text()"
+  role:
+    package: server
+    dir: polar
+    file: endpoints
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: pkg:tagflow#tag.div
+    then: pkg:tagflow#text
+  evidence:
+    holders: 58
+    total: 60
+    lower_bound: 0.886
+    lift: 1.0
+  example: server/polar/backoffice/benefits/endpoints.py#get
+- id: D-9c16e6
+  status: proposed
+  mode: advise
+  summary: "server/emails: components in src/emails/** render <Text>"
+  role:
+    package: server/emails
+    dir: src/emails
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: server/emails/src/components/foundation/Text.tsx#Text
+  evidence:
+    holders: 44
+    total: 45
+    lower_bound: 0.884
+    lift: 28.736
+  example: >-
+    server/emails/src/emails/chargeback_prevention_refund.tsx#ChargebackPreventionRefund
+- id: D-2ef961
+  status: proposed
+  mode: advise
+  summary: "server: classes in polar/models/** call orm.mapped_column()"
+  role:
+    package: server
+    dir: polar/models
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: pkg:sqlalchemy#orm.mapped_column
+  evidence:
+    holders: 124
+    total: 133
+    lower_bound: 0.876
+    lift: 18.575
+  example: server/polar/models/account.py#Account
+- id: D-5ef201
+  status: proposed
+  mode: advise
+  summary: "server: job entry points in polar/** (tasks files) call AsyncSessionMaker()"
+  role:
+    package: server
+    dir: polar
+    file: tasks
+    entry: job
+    kind: function
+  rule:
+    type: calls
+    callee: server/polar/worker/_sqlalchemy.py#AsyncSessionMaker
+  evidence:
+    holders: 161
+    total: 177
+    lower_bound: 0.858
+    lift: 18.499
+  example: server/polar/auth/tasks.py#auth_delete_expired
+- id: D-26e577
+  status: proposed
+  mode: advise
+  summary: "clients/apps/orbit: pages in src/** (page files) render <PageHeader>"
+  role:
+    package: clients/apps/orbit
+    dir: src
+    file: page
+    entry: page
+    kind: component
+  rule:
+    type: renders
+    component: clients/apps/orbit/src/components/docs/PageHeader.tsx#PageHeader
+  evidence:
+    holders: 29
+    total: 30
+    lower_bound: 0.833
+    lift: 52.9
+  example: clients/apps/orbit/src/app/components/alert/page.tsx#AlertPage
+- id: D-da3cac
+  status: proposed
+  mode: advise
+  summary: "server: HTTP handlers in polar/customer_portal/** pass `summary` to APIRouter.api_route()"
+  role:
+    package: server
+    dir: polar/customer_portal
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:fastapi#APIRouter.api_route
+    index: 99
+    key: summary
+  evidence:
+    holders: 33
+    total: 35
+    lower_bound: 0.814
+    lift: 9.386
+    role_members: 37
+  example: server/polar/customer_portal/endpoints/benefit_grant.py#get
+- id: D-f818d9
+  status: proposed
+  mode: advise
+  summary: "clients/packages/cli: files in src/services/** have a test file"
+  role:
+    package: clients/packages/cli
+    dir: src/services
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 3.638
+  example: clients/packages/cli/src/services/api.ts#(file)
+- id: D-093712
+  status: proposed
+  mode: advise
+  summary: "server: HTTP handlers in polar/** are wrapped in Authenticator() or _web_user_or_anonymous() or WebUserAuthorizer() or _RoleCheck() or _UnionBillingRoleCheck() or get_authorization_server() or get_token() or get_db_session()"
+  role:
+    package: server
+    dir: polar
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - server/polar/auth/dependencies.py#Authenticator
+    - server/polar/auth/dependencies.py#_web_user_or_anonymous
+    - server/polar/authz/dependencies.py#WebUserAuthorizer
+    - server/polar/customer_portal/auth/__init__.py#_RoleCheck
+    - server/polar/customer_portal/auth/__init__.py#_UnionBillingRoleCheck
+    - server/polar/oauth2/dependencies.py#get_authorization_server
+    - server/polar/oauth2/dependencies.py#get_token
+    - server/polar/postgres.py#get_db_session
+  evidence:
+    holders: 47
+    total: 52
+    lower_bound: 0.794
+    lift: 7.416
+    split:
+    - - server/polar/auth/dependencies.py#Authenticator
+      - 16
+    - - server/polar/customer_portal/auth/__init__.py#_UnionBillingRoleCheck
+      - 8
+    - - server/polar/postgres.py#get_db_session
+      - 6
+    - - server/polar/auth/dependencies.py#_web_user_or_anonymous
+      - 5
+    - - server/polar/customer_portal/auth/__init__.py#_RoleCheck
+      - 4
+    - - server/polar/oauth2/dependencies.py#get_authorization_server
+      - 4
+    - - server/polar/authz/dependencies.py#WebUserAuthorizer
+      - 2
+    - - server/polar/oauth2/dependencies.py#get_token
+      - 2
+  example: server/polar/customer_portal/endpoints/benefit_grant.py#get
+- id: D-f53bba
+  status: proposed
+  mode: advise
+  summary: "server: classes in polar/integrations/** (schemas files) extend Schema"
+  role:
+    package: server
+    dir: polar/integrations
+    file: schemas
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - server/polar/kit/schemas.py#Schema
+  evidence:
+    holders: 47
+    total: 52
+    lower_bound: 0.794
+    lift: 2.757
+  example: server/polar/integrations/aws/s3/schemas.py#S3DownloadURL
+- id: D-27ad3b
+  status: proposed
+  mode: advise
+  summary: "clients/apps/web: pages in src/app/(main)/dashboard/[*]/** (page files) call getServerSideAPI()"
+  role:
+    package: clients/apps/web
+    dir: src/app/(main)/dashboard/[*]
+    file: page
+    entry: page
+    kind: component
+  rule:
+    type: calls
+    callee: clients/apps/web/src/utils/client/serverside.ts#getServerSideAPI
+  evidence:
+    holders: 49
+    total: 55
+    lower_bound: 0.782
+    lift: 18.852
+  example: >-
+    clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/(home)/page.tsx#Page
+- id: D-fb4011
+  status: proposed
+  mode: advise
+  summary: "clients/apps/app: functions in hooks/polar/** call usePolarClient()"
+  role:
+    package: clients/apps/app
+    dir: hooks/polar
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: calls
+    callee: clients/apps/app/providers/PolarClientProvider.tsx#usePolarClient
+  evidence:
+    holders: 34
+    total: 38
+    lower_bound: 0.759
+    lift: 87.237
+  example: clients/apps/app/hooks/polar/checkout_links.ts#useCheckoutLink

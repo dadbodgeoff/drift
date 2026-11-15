@@ -1,0 +1,221 @@
+{
+ "schema": "drift-review-questions",
+ "schema_version": 1,
+ "question": "Are these the same kind of thing?",
+ "answers": {
+  "same": "Yes: accept the card (`drift review --answer ID=same`)",
+  "different": "No, these are different: pick the files whose flagged members are a different kind; they are exempt by path and the card is accepted (`--answer ID=different --set-apart PATH,...`; an entry point marked needs_confirmation also needs `--confirm-entry PATH#SYMBOL`)",
+  "not-a-convention": "Not a convention: reject the card (`--answer ID=not-a-convention`)"
+ },
+ "unanswered": "A candidate nobody answers stays a candidate and never reaches agents.",
+ "candidates": [
+  {
+   "id": "D-0f9742",
+   "summary": "files in packages/core/** do not import from packages/app/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+   "rule_kind": "avoids:import",
+   "family": "Layering",
+   "holders_total": 201,
+   "members": 204,
+   "holders": [
+    {
+     "path": "packages/core/src/c0.ts",
+     "symbol": "(file)",
+     "line": 1
+    },
+    {
+     "path": "packages/core/src/c22.ts",
+     "symbol": "(file)",
+     "line": 1
+    },
+    {
+     "path": "packages/core/src/c79.ts",
+     "symbol": "(file)",
+     "line": 1
+    }
+   ],
+   "flagged": [
+    {
+     "path": "packages/core/src/fixtures.ts",
+     "members": [
+      {
+       "symbol": "(file)",
+       "line": 1,
+       "needs_confirmation": false,
+       "legacy": true
+      }
+     ]
+    },
+    {
+     "path": "packages/core/src/legacy.ts",
+     "members": [
+      {
+       "symbol": "(file)",
+       "line": 1,
+       "needs_confirmation": false,
+       "legacy": true
+      }
+     ]
+    },
+    {
+     "path": "packages/core/src/seed.ts",
+     "members": [
+      {
+       "symbol": "(file)",
+       "line": 1,
+       "needs_confirmation": false,
+       "legacy": true
+      }
+     ]
+    }
+   ],
+   "flagged_total": 3,
+   "auth_or_validation": false,
+   "set_apart": []
+  },
+  {
+   "id": "D-3a1c98",
+   "summary": "files in packages/ui/** do not import from apps/portal/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+   "rule_kind": "avoids:import",
+   "family": "Layering",
+   "holders_total": 120,
+   "members": 121,
+   "holders": [
+    {
+     "path": "packages/ui/src/part0.ts",
+     "symbol": "(file)",
+     "line": 1
+    },
+    {
+     "path": "packages/ui/src/part112.ts",
+     "symbol": "(file)",
+     "line": 1
+    },
+    {
+     "path": "packages/ui/src/part14.ts",
+     "symbol": "(file)",
+     "line": 1
+    }
+   ],
+   "flagged": [
+    {
+     "path": "packages/ui/src/debug-panel.ts",
+     "members": [
+      {
+       "symbol": "(file)",
+       "line": 1,
+       "needs_confirmation": false,
+       "legacy": true
+      }
+     ]
+    }
+   ],
+   "flagged_total": 1,
+   "auth_or_validation": false,
+   "set_apart": []
+  },
+  {
+   "id": "D-6ff644",
+   "summary": "files in packages/jobs/** do not import from packages/app/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+   "rule_kind": "avoids:import",
+   "family": "Layering",
+   "holders_total": 120,
+   "members": 122,
+   "holders": [
+    {
+     "path": "packages/jobs/src/job0.ts",
+     "symbol": "(file)",
+     "line": 1
+    },
+    {
+     "path": "packages/jobs/src/job66.ts",
+     "symbol": "(file)",
+     "line": 1
+    },
+    {
+     "path": "packages/jobs/src/job6.ts",
+     "symbol": "(file)",
+     "line": 1
+    }
+   ],
+   "flagged": [
+    {
+     "path": "packages/jobs/src/nightly-report.ts",
+     "members": [
+      {
+       "symbol": "(file)",
+       "line": 1,
+       "needs_confirmation": false,
+       "legacy": true
+      }
+     ]
+    },
+    {
+     "path": "packages/jobs/src/weekly-digest.ts",
+     "members": [
+      {
+       "symbol": "(file)",
+       "line": 1,
+       "needs_confirmation": false,
+       "legacy": true
+      }
+     ]
+    }
+   ],
+   "flagged_total": 2,
+   "auth_or_validation": false,
+   "set_apart": []
+  },
+  {
+   "id": "D-8394d6",
+   "summary": "apps/portal: HTTP handlers in app/** (route files) are wrapped in withSession()",
+   "rule_kind": "wrapped_by:call",
+   "family": "Call wrappers",
+   "holders_total": 31,
+   "members": 33,
+   "holders": [
+    {
+     "path": "apps/portal/app/api/accounts/route.ts",
+     "symbol": "GET",
+     "line": 3
+    },
+    {
+     "path": "apps/portal/app/api/events/route.ts",
+     "symbol": "GET",
+     "line": 3
+    },
+    {
+     "path": "apps/portal/app/api/files/route.ts",
+     "symbol": "GET",
+     "line": 3
+    }
+   ],
+   "flagged": [
+    {
+     "path": "apps/portal/app/api/health/route.ts",
+     "members": [
+      {
+       "symbol": "GET",
+       "line": 1,
+       "needs_confirmation": true,
+       "legacy": true
+      }
+     ]
+    },
+    {
+     "path": "apps/portal/app/api/status/route.ts",
+     "members": [
+      {
+       "symbol": "GET",
+       "line": 1,
+       "needs_confirmation": true,
+       "legacy": true
+      }
+     ]
+    }
+   ],
+   "flagged_total": 2,
+   "auth_or_validation": true,
+   "set_apart": []
+  }
+ ]
+}

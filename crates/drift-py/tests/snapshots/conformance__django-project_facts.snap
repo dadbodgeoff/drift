@@ -1,0 +1,2239 @@
+---
+source: crates/drift-py/tests/conformance.rs
+expression: "serde_json::to_string_pretty(&r).unwrap()"
+---
+{
+  "schema_version": 11,
+  "files": [
+    {
+      "path": "blog/__init__.py",
+      "hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [],
+      "symbols": [],
+      "entry_points": []
+    },
+    {
+      "path": "blog/api.py",
+      "hash": "bc10440f2bf033ea8fc3e74ffc179d9eae197bc28d74efda45bfbe1ef81c9ce1",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:django",
+          "names": [
+            "forms"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:django.db",
+          "names": [
+            "models"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:rest_framework",
+          "names": [
+            "permissions",
+            "viewsets"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:rest_framework.permissions",
+          "names": [
+            "IsAuthenticated"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:rest_framework.viewsets",
+          "names": [
+            "ModelViewSet"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "LabelViewSet",
+          "origin": "blog/api.py#LabelViewSet",
+          "kind": "local"
+        },
+        {
+          "name": "TagViewSet",
+          "origin": "blog/api.py#TagViewSet",
+          "kind": "local"
+        },
+        {
+          "name": "fields",
+          "origin": "blog/api.py#fields",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "LabelViewSet",
+          "kind": "class",
+          "exported_as": [
+            "LabelViewSet"
+          ],
+          "line": 12,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#viewsets.ModelViewSet",
+              "kind": "extends"
+            },
+            {
+              "wrapper": "pkg:rest_framework#permissions.IsAuthenticated",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "permission_classes="
+          ],
+          "controls": [],
+          "string_literals": 0,
+          "traits": [
+            "lineage_view",
+            "view"
+          ]
+        },
+        {
+          "name": "TagViewSet",
+          "kind": "class",
+          "exported_as": [
+            "TagViewSet"
+          ],
+          "line": 8,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#viewsets.ModelViewSet",
+              "kind": "extends"
+            },
+            {
+              "wrapper": "pkg:rest_framework#permissions.IsAuthenticated",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "permission_classes="
+          ],
+          "controls": [],
+          "string_literals": 0,
+          "traits": [
+            "lineage_view",
+            "view"
+          ]
+        },
+        {
+          "name": "fields",
+          "kind": "function",
+          "exported_as": [
+            "fields"
+          ],
+          "line": 16,
+          "wraps": [],
+          "calls": [
+            "pkg:django#db.models.CharField",
+            "pkg:django#forms.CharField"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "order": [
+            "pkg:django#db.models.CharField",
+            "pkg:django#forms.CharField"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "blog/legacy_urls.py",
+      "hash": "9b98512e5b4768cccc0825420b8ee2a7860dc48f428e097b0e6bc5817bb8fc52",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "blog/views.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:django.urls",
+          "names": [
+            "path"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "urlpatterns",
+          "origin": "blog/legacy_urls.py#urlpatterns",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "urlpatterns",
+          "kind": "variable",
+          "exported_as": [
+            "urlpatterns"
+          ],
+          "line": 6,
+          "wraps": [],
+          "calls": [
+            "pkg:django#urls.path"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 1,
+          "order": [
+            "pkg:django#urls.path"
+          ]
+        }
+      ],
+      "entry_points": [],
+      "registries": [
+        {
+          "slot": "binding:urlpatterns",
+          "line": 6,
+          "items": [
+            {
+              "target": "blog/views.py#index",
+              "line": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "blog/models.py",
+      "hash": "8532c4fae4b6bc44b37fd2f032337edee056c2144493c677f87f833ec7cb2b71",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:django.db",
+          "names": [
+            "models"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "Post",
+          "origin": "blog/models.py#Post",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "Post",
+          "kind": "class",
+          "exported_as": [
+            "Post"
+          ],
+          "line": 4,
+          "wraps": [
+            {
+              "wrapper": "pkg:django#db.models.Model",
+              "kind": "extends"
+            }
+          ],
+          "calls": [
+            "pkg:django#db.models.CharField",
+            "pkg:django#db.models.ForeignKey",
+            "pkg:django#db.models.TextField"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:django#db.models.CharField@99:max_length",
+            "pkg:django#db.models.ForeignKey@99:on_delete"
+          ],
+          "declares": [
+            "__str__=",
+            "author=",
+            "author=pkg:django#db.models.ForeignKey",
+            "body=",
+            "body=pkg:django#db.models.TextField",
+            "title=",
+            "title=pkg:django#db.models.CharField"
+          ],
+          "controls": [],
+          "string_literals": 1,
+          "order": [
+            "pkg:django#db.models.CharField",
+            "pkg:django#db.models.TextField",
+            "pkg:django#db.models.ForeignKey"
+          ],
+          "traits": [
+            "lineage_model"
+          ],
+          "members": [
+            {
+              "name": "__str__"
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "blog/permissions.py",
+      "hash": "9e84e85004620d02201fa1a34f4c2971c888ffbf6d4af481ba732e9b7a8e0fe7",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:rest_framework.permissions",
+          "names": [
+            "BasePermission"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "IsMember",
+          "origin": "blog/permissions.py#IsMember",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "IsMember",
+          "kind": "class",
+          "exported_as": [
+            "IsMember"
+          ],
+          "line": 4,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#permissions.BasePermission",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "has_permission="
+          ],
+          "controls": [
+            "scope_unread"
+          ],
+          "string_literals": 1,
+          "members": [
+            {
+              "name": "has_permission",
+              "unread": [
+                "scope_unread"
+              ]
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "blog/serializers.py",
+      "hash": "2304fe808ea655881a9db1446be3792d32f0cee7fbe22bbf25bb9315d32b6689",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "blog/models.py",
+          "names": [
+            "Post"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:rest_framework",
+          "names": [
+            "serializers"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "PostSerializer",
+          "origin": "blog/serializers.py#PostSerializer",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "PostSerializer",
+          "kind": "class",
+          "exported_as": [
+            "PostSerializer"
+          ],
+          "line": 6,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#serializers.ModelSerializer",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "Meta="
+          ],
+          "controls": [],
+          "string_literals": 2,
+          "traits": [
+            "lineage_serializer"
+          ],
+          "meta": [
+            "model=blog/models.py#Post"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "blog/tasks.py",
+      "hash": "089cb34a594a050a3008d27aa190e7b1cde672989bc457d7ce8dc22ebcd65fed",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:celery",
+          "names": [
+            "shared_task"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "purge_drafts",
+          "origin": "blog/tasks.py#purge_drafts",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "purge_drafts",
+          "kind": "function",
+          "exported_as": [
+            "purge_drafts"
+          ],
+          "line": 4,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "purge_drafts",
+          "kind": "cron",
+          "method": null,
+          "route": "purge-drafts",
+          "adapter": "celery"
+        },
+        {
+          "symbol": "purge_drafts",
+          "kind": "job",
+          "method": null,
+          "route": "blog.tasks.purge_drafts",
+          "adapter": "celery"
+        }
+      ]
+    },
+    {
+      "path": "blog/tests.py",
+      "hash": "ef0573eed142a2738e42b05b77f2bf3c08d9d7a7636db3696940e7d382659290",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:django.test",
+          "names": [
+            "TestCase"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "PostTests",
+          "origin": "blog/tests.py#PostTests",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "PostTests",
+          "kind": "class",
+          "exported_as": [
+            "PostTests"
+          ],
+          "line": 4,
+          "wraps": [
+            {
+              "wrapper": "pkg:django#test.TestCase",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "test_index="
+          ],
+          "controls": [],
+          "string_literals": 0,
+          "members": [
+            {
+              "name": "test_index",
+              "conditional_calls": [
+                "not_awaited:blog/tests.py#PostTests.assertTrue"
+              ],
+              "order": [
+                "blog/tests.py#PostTests.assertTrue"
+              ],
+              "unread": [
+                "arg_value:blog/tests.py#PostTests.assertTrue\t#0\tliteral"
+              ]
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "blog/urls.py",
+      "hash": "56ea2b83d6dbac5e371ca1d6da870b75af65d34eae33c8b1da0b3237651df451",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "blog/views.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:django.contrib.auth.decorators",
+          "names": [
+            "login_required"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:django.urls",
+          "names": [
+            "include",
+            "path",
+            "re_path"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "app_name",
+          "origin": "blog/urls.py#app_name",
+          "kind": "local"
+        },
+        {
+          "name": "draft_patterns",
+          "origin": "blog/urls.py#draft_patterns",
+          "kind": "local"
+        },
+        {
+          "name": "urlpatterns",
+          "origin": "blog/urls.py#urlpatterns",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "(module)",
+          "kind": "module",
+          "exported_as": [],
+          "line": 22,
+          "wraps": [],
+          "calls": [
+            "pkg:django#urls.include",
+            "pkg:django#urls.path"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 1,
+          "order": [
+            "pkg:django#urls.path",
+            "pkg:django#urls.include"
+          ]
+        },
+        {
+          "name": "app_name",
+          "kind": "variable",
+          "exported_as": [
+            "app_name"
+          ],
+          "line": 6,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 1
+        },
+        {
+          "name": "draft_patterns",
+          "kind": "variable",
+          "exported_as": [
+            "draft_patterns"
+          ],
+          "line": 8,
+          "wraps": [],
+          "calls": [
+            "pkg:django#contrib.auth.decorators.login_required",
+            "pkg:django#urls.path"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:django#urls.path@99:name"
+          ],
+          "controls": [],
+          "string_literals": 2,
+          "order": [
+            "pkg:django#urls.path",
+            "pkg:django#contrib.auth.decorators.login_required"
+          ]
+        },
+        {
+          "name": "urlpatterns",
+          "kind": "variable",
+          "exported_as": [
+            "urlpatterns"
+          ],
+          "line": 12,
+          "wraps": [],
+          "calls": [
+            "blog/views.py#PostDetail.as_view",
+            "blog/views.py#SignInView.as_view",
+            "blog/views.py#TokenProvisionView.as_view",
+            "blog/views.py#WhoAmIView.as_view",
+            "pkg:django#urls.path",
+            "pkg:django#urls.re_path"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:django#urls.path@99:name"
+          ],
+          "omits": [
+            "pkg:django#urls.path@99:name"
+          ],
+          "controls": [
+            "arg_value:blog/views.py#PostDetail.as_view",
+            "arg_value:blog/views.py#SignInView.as_view",
+            "arg_value:blog/views.py#TokenProvisionView.as_view",
+            "arg_value:blog/views.py#WhoAmIView.as_view"
+          ],
+          "string_literals": 10,
+          "order": [
+            "pkg:django#urls.path",
+            "blog/views.py#PostDetail.as_view",
+            "blog/views.py#SignInView.as_view",
+            "blog/views.py#TokenProvisionView.as_view",
+            "blog/views.py#WhoAmIView.as_view",
+            "pkg:django#urls.re_path"
+          ]
+        }
+      ],
+      "entry_points": [],
+      "registries": [
+        {
+          "slot": "binding:draft_patterns",
+          "line": 8,
+          "items": [
+            {
+              "target": "blog/views.py#drafts",
+              "line": 9
+            }
+          ]
+        },
+        {
+          "slot": "binding:urlpatterns",
+          "line": 12,
+          "items": [
+            {
+              "target": "blog/urls.py#draft_patterns",
+              "line": 22
+            },
+            {
+              "target": "blog/views.py#PostDetail",
+              "line": 14
+            },
+            {
+              "target": "blog/views.py#SignInView",
+              "line": 17
+            },
+            {
+              "target": "blog/views.py#TokenProvisionView",
+              "line": 18
+            },
+            {
+              "target": "blog/views.py#WhoAmIView",
+              "line": 19
+            },
+            {
+              "target": "blog/views.py#archive",
+              "line": 20
+            },
+            {
+              "target": "blog/views.py#health",
+              "line": 15
+            },
+            {
+              "target": "blog/views.py#index",
+              "line": 13
+            },
+            {
+              "target": "blog/views.py#signup",
+              "line": 16
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "blog/views.py",
+      "hash": "f06dfaed73caa0a9c3235b132a0564f64301761b2d742f190370b341520aad50",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "blog/models.py",
+          "names": [
+            "Post"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "blog/serializers.py",
+          "names": [
+            "PostSerializer"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:django.contrib.auth.decorators",
+          "names": [
+            "login_not_required",
+            "login_required"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:django.contrib.auth.mixins",
+          "names": [
+            "LoginRequiredMixin"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:django.contrib.auth.views",
+          "names": [
+            "LoginView"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:django.shortcuts",
+          "names": [
+            "redirect",
+            "render"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:django.utils.decorators",
+          "names": [
+            "method_decorator"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:django.views.decorators.cache",
+          "names": [
+            "never_cache"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:django.views.decorators.http",
+          "names": [
+            "require_http_methods"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:django.views.generic",
+          "names": [
+            "DetailView"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:rest_framework",
+          "names": [
+            "viewsets"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:rest_framework.authentication",
+          "names": [
+            "SessionAuthentication"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:rest_framework.decorators",
+          "names": [
+            "action",
+            "api_view",
+            "permission_classes"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:rest_framework.permissions",
+          "names": [
+            "AllowAny",
+            "IsAdminUser",
+            "IsAuthenticated"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:rest_framework.views",
+          "names": [
+            "APIView"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "CommentViewSet",
+          "origin": "blog/views.py#CommentViewSet",
+          "kind": "local"
+        },
+        {
+          "name": "PostDetail",
+          "origin": "blog/views.py#PostDetail",
+          "kind": "local"
+        },
+        {
+          "name": "PostViewSet",
+          "origin": "blog/views.py#PostViewSet",
+          "kind": "local"
+        },
+        {
+          "name": "ReportViewSet",
+          "origin": "blog/views.py#ReportViewSet",
+          "kind": "local"
+        },
+        {
+          "name": "SignInView",
+          "origin": "blog/views.py#SignInView",
+          "kind": "local"
+        },
+        {
+          "name": "StaffViewSet",
+          "origin": "blog/views.py#StaffViewSet",
+          "kind": "local"
+        },
+        {
+          "name": "TokenProvisionView",
+          "origin": "blog/views.py#TokenProvisionView",
+          "kind": "local"
+        },
+        {
+          "name": "WhoAmIView",
+          "origin": "blog/views.py#WhoAmIView",
+          "kind": "local"
+        },
+        {
+          "name": "archive",
+          "origin": "blog/views.py#archive",
+          "kind": "local"
+        },
+        {
+          "name": "drafts",
+          "origin": "blog/views.py#drafts",
+          "kind": "local"
+        },
+        {
+          "name": "health",
+          "origin": "blog/views.py#health",
+          "kind": "local"
+        },
+        {
+          "name": "index",
+          "origin": "blog/views.py#index",
+          "kind": "local"
+        },
+        {
+          "name": "signup",
+          "origin": "blog/views.py#signup",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "CommentViewSet",
+          "kind": "class",
+          "exported_as": [
+            "CommentViewSet"
+          ],
+          "line": 69,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#authentication.TokenAuthentication",
+              "kind": "config_authenticates"
+            },
+            {
+              "wrapper": "blog/permissions.py#IsMember",
+              "kind": "config"
+            },
+            {
+              "wrapper": "pkg:rest_framework#viewsets.ModelViewSet",
+              "kind": "extends"
+            }
+          ],
+          "calls": [
+            "blog/models.py#Post.objects.all"
+          ],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "queryset=",
+            "queryset=blog/models.py#Post.objects.all"
+          ],
+          "controls": [
+            "arg_value:blog/models.py#Post.objects.all"
+          ],
+          "string_literals": 0,
+          "order": [
+            "blog/models.py#Post.objects.all"
+          ],
+          "traits": [
+            "lineage_view"
+          ]
+        },
+        {
+          "name": "PostDetail",
+          "kind": "class",
+          "exported_as": [
+            "PostDetail"
+          ],
+          "line": 33,
+          "wraps": [
+            {
+              "wrapper": "pkg:django#views.decorators.cache.never_cache",
+              "kind": "decorator"
+            },
+            {
+              "wrapper": "pkg:django#contrib.auth.mixins.LoginRequiredMixin",
+              "kind": "extends"
+            },
+            {
+              "wrapper": "pkg:django#views.generic.DetailView",
+              "kind": "extends"
+            }
+          ],
+          "calls": [
+            "global#super",
+            "global#super().get"
+          ],
+          "renders": [],
+          "args": [
+            "global#super().get@99:**"
+          ],
+          "declares": [
+            "get=",
+            "model="
+          ],
+          "controls": [
+            "param_flows"
+          ],
+          "string_literals": 0,
+          "order": [
+            "global#super().get",
+            "global#super"
+          ],
+          "traits": [
+            "lineage_view",
+            "view"
+          ],
+          "members": [
+            {
+              "name": "get",
+              "calls": [
+                "global#super",
+                "global#super().get"
+              ],
+              "args": [
+                "global#super().get@99:**"
+              ],
+              "order": [
+                "global#super().get",
+                "global#super"
+              ],
+              "unread": [
+                "param_flows"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "PostDetail.get",
+          "kind": "function",
+          "exported_as": [
+            "PostDetail.get"
+          ],
+          "line": 37,
+          "wraps": [
+            {
+              "wrapper": "pkg:django#contrib.auth.middleware.LoginRequiredMiddleware",
+              "kind": "config"
+            },
+            {
+              "wrapper": "pkg:django#views.decorators.cache.never_cache",
+              "kind": "decorator"
+            },
+            {
+              "wrapper": "pkg:django#contrib.auth.mixins.LoginRequiredMixin",
+              "kind": "extends"
+            },
+            {
+              "wrapper": "pkg:django#views.generic.DetailView",
+              "kind": "extends"
+            }
+          ],
+          "calls": [
+            "global#super",
+            "global#super().get"
+          ],
+          "renders": [],
+          "args": [
+            "global#super().get@99:**"
+          ],
+          "controls": [
+            "param_flows"
+          ],
+          "string_literals": 0,
+          "order": [
+            "global#super().get",
+            "global#super"
+          ]
+        },
+        {
+          "name": "PostViewSet",
+          "kind": "class",
+          "exported_as": [
+            "PostViewSet"
+          ],
+          "line": 41,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#viewsets.ModelViewSet",
+              "kind": "extends"
+            },
+            {
+              "wrapper": "pkg:rest_framework#permissions.IsAuthenticated",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "blog/models.py#Post.objects.all",
+            "global#super",
+            "global#super().list",
+            "pkg:rest_framework#decorators.action"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:rest_framework#decorators.action@99:detail",
+            "pkg:rest_framework#decorators.action@99:methods"
+          ],
+          "declares": [
+            "list=",
+            "permission_classes=",
+            "publish=",
+            "publish=pkg:rest_framework#decorators.action",
+            "queryset=",
+            "queryset=blog/models.py#Post.objects.all",
+            "serializer_class="
+          ],
+          "controls": [
+            "arg_value:blog/models.py#Post.objects.all",
+            "param_flows"
+          ],
+          "string_literals": 1,
+          "order": [
+            "blog/models.py#Post.objects.all",
+            "global#super().list",
+            "global#super",
+            "pkg:rest_framework#decorators.action"
+          ],
+          "traits": [
+            "lineage_view",
+            "view"
+          ],
+          "members": [
+            {
+              "name": "list",
+              "calls": [
+                "global#super",
+                "global#super().list"
+              ],
+              "order": [
+                "pkg:rest_framework#viewsets.ModelViewSet.list",
+                "global#super().list",
+                "global#super"
+              ],
+              "unread": [
+                "param_flows"
+              ]
+            },
+            {
+              "name": "publish"
+            }
+          ],
+          "inputs": [
+            "blog/serializers.py#PostSerializer"
+          ]
+        },
+        {
+          "name": "PostViewSet.list",
+          "kind": "function",
+          "exported_as": [
+            "PostViewSet.list"
+          ],
+          "line": 46,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#authentication.TokenAuthentication",
+              "kind": "config_authenticates"
+            },
+            {
+              "wrapper": "pkg:rest_framework#viewsets.ModelViewSet",
+              "kind": "extends"
+            },
+            {
+              "wrapper": "pkg:rest_framework#permissions.IsAuthenticated",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "global#super",
+            "global#super().list"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "param_flows"
+          ],
+          "string_literals": 0,
+          "order": [
+            "global#super().list",
+            "global#super"
+          ]
+        },
+        {
+          "name": "PostViewSet.publish",
+          "kind": "function",
+          "exported_as": [
+            "PostViewSet.publish"
+          ],
+          "line": 49,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#authentication.TokenAuthentication",
+              "kind": "config_authenticates"
+            },
+            {
+              "wrapper": "pkg:rest_framework#viewsets.ModelViewSet",
+              "kind": "extends"
+            },
+            {
+              "wrapper": "pkg:rest_framework#permissions.IsAuthenticated",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "ReportViewSet",
+          "kind": "class",
+          "exported_as": [
+            "ReportViewSet"
+          ],
+          "line": 78,
+          "wraps": [
+            {
+              "wrapper": "blog/views.py#StaffViewSet",
+              "kind": "extends"
+            }
+          ],
+          "calls": [
+            "global#super",
+            "global#super().list"
+          ],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "list="
+          ],
+          "controls": [
+            "param_flows"
+          ],
+          "string_literals": 0,
+          "order": [
+            "global#super().list",
+            "global#super"
+          ],
+          "traits": [
+            "lineage_view",
+            "view"
+          ],
+          "members": [
+            {
+              "name": "list",
+              "calls": [
+                "global#super",
+                "global#super().list"
+              ],
+              "receiver_calls": [
+                "blog/views.py#StaffViewSet.list"
+              ],
+              "order": [
+                "blog/views.py#StaffViewSet.list",
+                "global#super().list",
+                "global#super"
+              ],
+              "unread": [
+                "param_flows"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "ReportViewSet.list",
+          "kind": "function",
+          "exported_as": [
+            "ReportViewSet.list"
+          ],
+          "line": 79,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#authentication.SessionAuthentication",
+              "kind": "authenticates"
+            },
+            {
+              "wrapper": "pkg:rest_framework#permissions.IsAdminUser",
+              "kind": "call"
+            },
+            {
+              "wrapper": "blog/views.py#StaffViewSet",
+              "kind": "extends"
+            }
+          ],
+          "calls": [
+            "global#super",
+            "global#super().list"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "param_flows"
+          ],
+          "string_literals": 0,
+          "order": [
+            "global#super().list",
+            "global#super"
+          ],
+          "receiver_calls": [
+            "blog/views.py#StaffViewSet.list"
+          ]
+        },
+        {
+          "name": "SignInView",
+          "kind": "class",
+          "exported_as": [
+            "SignInView"
+          ],
+          "line": 65,
+          "wraps": [
+            {
+              "wrapper": "pkg:django#contrib.auth.views.LoginView",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "template_name="
+          ],
+          "controls": [],
+          "string_literals": 1,
+          "traits": [
+            "lineage_view"
+          ]
+        },
+        {
+          "name": "StaffViewSet",
+          "kind": "class",
+          "exported_as": [
+            "StaffViewSet"
+          ],
+          "line": 73,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#viewsets.ModelViewSet",
+              "kind": "extends"
+            },
+            {
+              "wrapper": "pkg:rest_framework#permissions.IsAdminUser",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:rest_framework#authentication.SessionAuthentication",
+              "kind": "authenticates"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "authentication_classes=",
+            "permission_classes="
+          ],
+          "controls": [],
+          "string_literals": 0,
+          "traits": [
+            "lineage_view",
+            "subclassed",
+            "view"
+          ]
+        },
+        {
+          "name": "TokenProvisionView",
+          "kind": "class",
+          "exported_as": [
+            "TokenProvisionView"
+          ],
+          "line": 83,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#views.APIView",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "permission_classes=",
+            "post="
+          ],
+          "controls": [],
+          "string_literals": 0,
+          "traits": [
+            "lineage_view",
+            "view"
+          ],
+          "members": [
+            {
+              "name": "post"
+            }
+          ]
+        },
+        {
+          "name": "TokenProvisionView.post",
+          "kind": "function",
+          "exported_as": [
+            "TokenProvisionView.post"
+          ],
+          "line": 88,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#authentication.TokenAuthentication",
+              "kind": "config_authenticates"
+            },
+            {
+              "wrapper": "pkg:rest_framework#views.APIView",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "WhoAmIView",
+          "kind": "class",
+          "exported_as": [
+            "WhoAmIView"
+          ],
+          "line": 92,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#views.APIView",
+              "kind": "extends"
+            },
+            {
+              "wrapper": "pkg:rest_framework#authentication.SessionAuthentication",
+              "kind": "authenticates"
+            },
+            {
+              "wrapper": "pkg:rest_framework#permissions.AllowAny",
+              "kind": "opens"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "authentication_classes=",
+            "get=",
+            "permission_classes="
+          ],
+          "controls": [],
+          "string_literals": 0,
+          "traits": [
+            "lineage_view",
+            "view"
+          ],
+          "members": [
+            {
+              "name": "get"
+            }
+          ]
+        },
+        {
+          "name": "WhoAmIView.get",
+          "kind": "function",
+          "exported_as": [
+            "WhoAmIView.get"
+          ],
+          "line": 96,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#views.APIView",
+              "kind": "extends"
+            },
+            {
+              "wrapper": "pkg:rest_framework#authentication.SessionAuthentication",
+              "kind": "authenticates"
+            },
+            {
+              "wrapper": "pkg:rest_framework#permissions.AllowAny",
+              "kind": "opens"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "archive",
+          "kind": "function",
+          "exported_as": [
+            "archive"
+          ],
+          "line": 29,
+          "wraps": [
+            {
+              "wrapper": "pkg:django#contrib.auth.middleware.LoginRequiredMiddleware",
+              "kind": "config"
+            }
+          ],
+          "calls": [
+            "pkg:django#shortcuts.redirect"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input"
+          ],
+          "string_literals": 1,
+          "sinks": [
+            "dynamic_redirect"
+          ],
+          "order": [
+            "pkg:django#shortcuts.redirect"
+          ],
+          "responses": [
+            {
+              "status": 0,
+              "via": "redirect",
+              "builder": "pkg:django#shortcuts.redirect",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ],
+          "returns_calls": [
+            "pkg:django#shortcuts.redirect"
+          ]
+        },
+        {
+          "name": "drafts",
+          "kind": "function",
+          "exported_as": [
+            "drafts"
+          ],
+          "line": 24,
+          "wraps": [
+            {
+              "wrapper": "pkg:django#contrib.auth.middleware.LoginRequiredMiddleware",
+              "kind": "config"
+            },
+            {
+              "wrapper": "pkg:django#contrib.auth.decorators.login_required",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:django#views.decorators.http.require_http_methods",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [
+            "pkg:django#shortcuts.render"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "param_flows",
+            "shape:pkg:django#views.decorators.http.require_http_methods(lit)"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:django#shortcuts.render"
+          ],
+          "returns_calls": [
+            "pkg:django#shortcuts.render"
+          ]
+        },
+        {
+          "name": "health",
+          "kind": "function",
+          "exported_as": [
+            "health"
+          ],
+          "line": 54,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#authentication.TokenAuthentication",
+              "kind": "config_authenticates"
+            },
+            {
+              "wrapper": "pkg:rest_framework#permissions.AllowAny",
+              "kind": "opens"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "index",
+          "kind": "function",
+          "exported_as": [
+            "index"
+          ],
+          "line": 19,
+          "wraps": [
+            {
+              "wrapper": "pkg:django#contrib.auth.middleware.LoginRequiredMiddleware",
+              "kind": "config"
+            },
+            {
+              "wrapper": "pkg:django#contrib.auth.decorators.login_required",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [
+            "blog/models.py#Post.objects.all",
+            "pkg:django#shortcuts.render"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "arg_value:blog/models.py#Post.objects.all",
+            "param_flows"
+          ],
+          "string_literals": 2,
+          "order": [
+            "pkg:django#shortcuts.render",
+            "blog/models.py#Post.objects.all"
+          ],
+          "returns_calls": [
+            "pkg:django#shortcuts.render"
+          ]
+        },
+        {
+          "name": "signup",
+          "kind": "function",
+          "exported_as": [
+            "signup"
+          ],
+          "line": 60,
+          "wraps": [
+            {
+              "wrapper": "pkg:django#contrib.auth.decorators.login_not_required",
+              "kind": "opens"
+            }
+          ],
+          "calls": [
+            "pkg:django#shortcuts.render"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "param_flows"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:django#shortcuts.render"
+          ],
+          "returns_calls": [
+            "pkg:django#shortcuts.render"
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "CommentViewSet",
+          "kind": "http",
+          "method": "ANY",
+          "route": "/api/comments",
+          "adapter": "drf"
+        },
+        {
+          "symbol": "PostDetail.get",
+          "kind": "http",
+          "method": "GET",
+          "route": "/blog/<int:pk>",
+          "adapter": "django"
+        },
+        {
+          "symbol": "PostViewSet.list",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/posts",
+          "adapter": "drf"
+        },
+        {
+          "symbol": "PostViewSet.publish",
+          "kind": "http",
+          "method": "POST",
+          "route": "/api/posts",
+          "adapter": "drf"
+        },
+        {
+          "symbol": "ReportViewSet.list",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/reports",
+          "adapter": "drf"
+        },
+        {
+          "symbol": "SignInView",
+          "kind": "http",
+          "method": "ANY",
+          "route": "/blog/login",
+          "adapter": "django"
+        },
+        {
+          "symbol": "TokenProvisionView.post",
+          "kind": "http",
+          "method": "POST",
+          "route": "/blog/tokens/provision",
+          "adapter": "drf"
+        },
+        {
+          "symbol": "WhoAmIView.get",
+          "kind": "http",
+          "method": "GET",
+          "route": "/blog/whoami",
+          "adapter": "drf"
+        },
+        {
+          "symbol": "archive",
+          "kind": "http",
+          "method": "ANY",
+          "route": "/blog/archive/(?P<year>[0-9]{4})",
+          "adapter": "django"
+        },
+        {
+          "symbol": "drafts",
+          "kind": "http",
+          "method": "GET",
+          "route": "/blog/drafts",
+          "adapter": "django"
+        },
+        {
+          "symbol": "drafts",
+          "kind": "http",
+          "method": "POST",
+          "route": "/blog/drafts",
+          "adapter": "django"
+        },
+        {
+          "symbol": "health",
+          "kind": "http",
+          "method": "GET",
+          "route": "/blog/health",
+          "adapter": "drf"
+        },
+        {
+          "symbol": "index",
+          "kind": "http",
+          "method": "ANY",
+          "route": "/blog",
+          "adapter": "django"
+        },
+        {
+          "symbol": "signup",
+          "kind": "http",
+          "method": "ANY",
+          "route": "/blog/signup",
+          "adapter": "django"
+        }
+      ]
+    },
+    {
+      "path": "manage.py",
+      "hash": "47e75572f8fe4f4e479444ff764d31cab435a8fde94ab720a8536ada957e5f43",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:django.core.management",
+          "names": [
+            "execute_from_command_line"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:python:os",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:python:sys",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [],
+      "symbols": [
+        {
+          "name": "(module)",
+          "kind": "module",
+          "exported_as": [],
+          "line": 4,
+          "wraps": [],
+          "calls": [
+            "pkg:django#core.management.execute_from_command_line",
+            "pkg:python:os#environ.setdefault"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 3,
+          "reads": [
+            "os.environ.DJANGO_SETTINGS_MODULE"
+          ],
+          "order": [
+            "pkg:python:os#environ.setdefault",
+            "pkg:django#core.management.execute_from_command_line"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "mysite/__init__.py",
+      "hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [],
+      "symbols": [],
+      "entry_points": []
+    },
+    {
+      "path": "mysite/settings.py",
+      "hash": "2c11f745af06f3b958ec71648a24a6cefe4758a31c04196c08046cd84c8c4e2a",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:python:os",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "CELERY_BEAT_SCHEDULE",
+          "origin": "mysite/settings.py#CELERY_BEAT_SCHEDULE",
+          "kind": "local"
+        },
+        {
+          "name": "CORS_ALLOW_ALL_ORIGINS",
+          "origin": "mysite/settings.py#CORS_ALLOW_ALL_ORIGINS",
+          "kind": "local"
+        },
+        {
+          "name": "DEBUG",
+          "origin": "mysite/settings.py#DEBUG",
+          "kind": "local"
+        },
+        {
+          "name": "INSTALLED_APPS",
+          "origin": "mysite/settings.py#INSTALLED_APPS",
+          "kind": "local"
+        },
+        {
+          "name": "MIDDLEWARE",
+          "origin": "mysite/settings.py#MIDDLEWARE",
+          "kind": "local"
+        },
+        {
+          "name": "REST_FRAMEWORK",
+          "origin": "mysite/settings.py#REST_FRAMEWORK",
+          "kind": "local"
+        },
+        {
+          "name": "ROOT_URLCONF",
+          "origin": "mysite/settings.py#ROOT_URLCONF",
+          "kind": "local"
+        },
+        {
+          "name": "SECRET_KEY",
+          "origin": "mysite/settings.py#SECRET_KEY",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "CELERY_BEAT_SCHEDULE",
+          "kind": "const",
+          "exported_as": [
+            "CELERY_BEAT_SCHEDULE"
+          ],
+          "line": 23,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 4
+        },
+        {
+          "name": "CORS_ALLOW_ALL_ORIGINS",
+          "kind": "const",
+          "exported_as": [
+            "CORS_ALLOW_ALL_ORIGINS"
+          ],
+          "line": 6,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "sinks": [
+            "cors_any_origin"
+          ]
+        },
+        {
+          "name": "DEBUG",
+          "kind": "const",
+          "exported_as": [
+            "DEBUG"
+          ],
+          "line": 4,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "INSTALLED_APPS",
+          "kind": "const",
+          "exported_as": [
+            "INSTALLED_APPS"
+          ],
+          "line": 7,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 3
+        },
+        {
+          "name": "MIDDLEWARE",
+          "kind": "const",
+          "exported_as": [
+            "MIDDLEWARE"
+          ],
+          "line": 9,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 3
+        },
+        {
+          "name": "REST_FRAMEWORK",
+          "kind": "const",
+          "exported_as": [
+            "REST_FRAMEWORK"
+          ],
+          "line": 17,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 3
+        },
+        {
+          "name": "ROOT_URLCONF",
+          "kind": "const",
+          "exported_as": [
+            "ROOT_URLCONF"
+          ],
+          "line": 5,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 1
+        },
+        {
+          "name": "SECRET_KEY",
+          "kind": "const",
+          "exported_as": [
+            "SECRET_KEY"
+          ],
+          "line": 3,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 1,
+          "reads": [
+            "os.environ.DJANGO_SECRET_KEY"
+          ]
+        }
+      ],
+      "entry_points": [],
+      "registries": [
+        {
+          "slot": "binding:INSTALLED_APPS",
+          "line": 7,
+          "items": [
+            {
+              "target": "blog/__init__.py#*",
+              "line": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "mysite/urls.py",
+      "hash": "26755bfdab7c276d25582075c966ddb47d84f4c0ba04131d6ab3a7b868e29409",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "blog/views.py",
+          "names": [
+            "CommentViewSet",
+            "PostViewSet",
+            "ReportViewSet"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:django.contrib",
+          "names": [
+            "admin"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:django.urls",
+          "names": [
+            "include",
+            "path"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:rest_framework.routers",
+          "names": [
+            "DefaultRouter"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "router",
+          "origin": "mysite/urls.py#router",
+          "kind": "local"
+        },
+        {
+          "name": "urlpatterns",
+          "origin": "mysite/urls.py#urlpatterns",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "(module)",
+          "kind": "module",
+          "exported_as": [],
+          "line": 8,
+          "wraps": [],
+          "calls": [
+            "mysite/urls.py#router.register"
+          ],
+          "renders": [],
+          "args": [
+            "mysite/urls.py#router.register@99:basename"
+          ],
+          "controls": [
+            "arg_value:mysite/urls.py#router.register\t#0\tliteral\t#1\tvalue blog/views.py#CommentViewSet",
+            "arg_value:mysite/urls.py#router.register\t#0\tliteral\t#1\tvalue blog/views.py#PostViewSet\tbasename\tliteral",
+            "arg_value:mysite/urls.py#router.register\t#0\tliteral\t#1\tvalue blog/views.py#ReportViewSet"
+          ],
+          "string_literals": 4,
+          "order": [
+            "mysite/urls.py#router.register"
+          ]
+        },
+        {
+          "name": "router",
+          "kind": "variable",
+          "exported_as": [
+            "router"
+          ],
+          "line": 7,
+          "wraps": [],
+          "calls": [
+            "pkg:rest_framework#routers.DefaultRouter"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "shape:=pkg:rest_framework#routers.DefaultRouter()"
+          ],
+          "string_literals": 0,
+          "order": [
+            "pkg:rest_framework#routers.DefaultRouter"
+          ]
+        },
+        {
+          "name": "urlpatterns",
+          "kind": "variable",
+          "exported_as": [
+            "urlpatterns"
+          ],
+          "line": 12,
+          "wraps": [
+            {
+              "wrapper": "pkg:django#contrib.auth.middleware.LoginRequiredMiddleware",
+              "kind": "config"
+            },
+            {
+              "wrapper": "pkg:django#contrib.admin.sites.AdminSite.admin_view",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "pkg:django#urls.include",
+            "pkg:django#urls.path"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 4,
+          "order": [
+            "pkg:django#urls.path",
+            "pkg:django#urls.include"
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "urlpatterns",
+          "kind": "http",
+          "method": "ANY",
+          "route": "/admin",
+          "adapter": "django_admin"
+        }
+      ],
+      "registries": [
+        {
+          "slot": "binding:urlpatterns",
+          "line": 12,
+          "items": [
+            {
+              "target": "blog/urls.py#*",
+              "line": 14
+            },
+            {
+              "target": "mysite/urls.py#router",
+              "line": 15
+            }
+          ]
+        },
+        {
+          "slot": "calls:mysite/urls.py#router",
+          "line": 8,
+          "items": [
+            {
+              "target": "blog/views.py#CommentViewSet",
+              "line": 9
+            },
+            {
+              "target": "blog/views.py#PostViewSet",
+              "line": 8
+            },
+            {
+              "target": "blog/views.py#ReportViewSet",
+              "line": 10
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "skipped": [
+    {
+      "path": "blog/migrations/0001_initial.py",
+      "reason": "generated"
+    },
+    {
+      "path": "blog/migrations/__init__.py",
+      "reason": "generated"
+    }
+  ],
+  "models": [
+    {
+      "path": "blog/models.py",
+      "name": "Post",
+      "source": "django",
+      "line": 4,
+      "fields": [
+        "author",
+        "body",
+        "title"
+      ]
+    }
+  ]
+}

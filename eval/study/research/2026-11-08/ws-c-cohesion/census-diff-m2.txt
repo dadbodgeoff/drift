@@ -1,0 +1,17 @@
+GONE InvenTree/D-16c1ac [suggestion] ACCEPT/None (relabel5@7) v3=ACCEPT/None :: control ::  43/44->None :: src/frontend: components in src/components/render/** declare their return type
+GONE Misago/D-5862f4 [suggestion] WRONG/false_outliers (relabel5@7) v3=WRONG/false_outliers :: wrapped_by:extends ::  133/159->None :: frontend: classes in src/components/** extend react.Component
+NEW  Misago/D-8a6943 [suggestion] -/None () v3=-/None :: wrapped_by:extends ::  None->29/31 :: frontend: classes in src/components/posts-list/** extend react.Component
+GONE ai/D-4683f7 [suggestion] ACCEPT/None (relabel5@7) v3=-/None :: before ::  24/25->None :: packages/openai: functions in src/tool/** call zodSchema() before z.object()
+GONE excalidraw/D-553404 [suggestion] ACCEPT/None (relabel5@7) v3=ACCEPT/None :: avoids:other ::  401/408->None :: packages/element: functions in src/** do not use `any`
+GONE immich/D-26380c [suggestion] WRONG/mixed_group (relabel5@7) v3=WRONG/mixed_group :: named ::  61/62->None :: server: classes in src/** (*.repository files) are named `*Repository`, except a companion (a helper or consta
+NEW  midday/D-404dbb [suggestion] -/None () v3=-/None :: package_has ::  None->36/38 :: workspace packages enable `skipLibCheck` in tsconfig
+GONE midday/D-8fd473 [suggestion] ACCEPT/None (relabel5@7) v3=-/None :: control ::  24/26->None :: packages/invoice: functions in src/utils/** declare their return type
+NEW  novu/D-1b8741 [suggestion] -/None () v3=-/None :: named ::  None->31/31 :: libs/application-generic: exported values in src/schemas/control/** (*.schema files) are named `*Schema`
+NEW  novu/D-74374a [suggestion] -/None () v3=-/None :: named ::  None->52/55 :: libs/dal: classes in src/** (*.entity files) are named `*Entity`, except a companion (a helper or constant bes
+NEW  novu/D-7b0a0f [suggestion] -/None () v3=-/None :: wrapped_by:jsx ::  None->24/25 :: packages/novu: components in src/commands/wizard/** render inside <Box>
+GONE novu/D-808edd [suggestion] WRONG/mixed_group (relabel5@7) v3=WRONG/mixed_group :: named ::  90/95->None :: libs/application-generic: classes in src/** (*.command files) are named `*Command`, except 9 companions (a hel
+GONE novu/D-bdd970 [suggestion] ACCEPT/None (relabel5@7) v3=-/None :: named ::  65/65->None :: libs/application-generic: classes in src/services/** (*.service files) are named `*Service`, except 2 companio
+GONE novu/D-e79710 [suggestion] ACCEPT/None (relabel5@7) v3=ACCEPT/None :: named ::  642/675->None :: apps/api: classes in src/** (*.dto files) are named `*Dto`, except 3 companions (a helper or constant beside t
+GONE pontoon/D-6957a9 [suggestion] ACCEPT/None (relabel5@7) v3=-/None :: control ::  74/76->None :: translate: functions in src/api/** and src/utils/** declare their return type
+GONE supabase/D-017ce5 [suggestion] ACCEPT/None (relabel5@7) v3=ACCEPT/None :: control ::  38/42->None :: apps/studio: functions in lib/** (*.utils files) declare their return type
+changed 16 | proposals before 224 after 218

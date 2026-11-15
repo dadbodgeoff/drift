@@ -1,0 +1,24 @@
+[package]
+name = "drift-mine"
+description = "Drift convention mining, policy and check (language-neutral)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+drift-core.workspace = true
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde-saphyr.workspace = true
+blake3.workspace = true
+globset.workspace = true
+ignore.workspace = true
+toml.workspace = true
+
+[dev-dependencies]
+insta.workspace = true
+tempfile.workspace = true

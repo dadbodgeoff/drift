@@ -1,0 +1,51 @@
+5 conventions from 2249 units in 185 roles (0 default tier, 5 suggestions)
+
+5 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-32687f] workspace packages enable `skipDefaultLibCheck` in tsconfig
+    evidence: 44/45 (lower bound 0.88, lift 1.0)
+    tier:     suggestion (rule kind package_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  libs/common-docs/package.json#@ngx-bootstrap-doc/docs
+    outlier:  _root/package.json:1 ngx-bootstrap-base
+
+ 2. [D-cd8fd8] workspace packages enable `forceConsistentCasingInFileNames` in tsconfig
+    evidence: 43/45 (lower bound 0.85, lift 1.0)
+    tier:     suggestion (rule kind package_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  libs/common-docs/package.json#@ngx-bootstrap-doc/docs
+    outlier:  _root/package.json:1 ngx-bootstrap-base
+    outlier:  src/schematics/package.json:1 schematics
+
+ 3. [D-7d5872] workspace packages enable `strict` in tsconfig
+    evidence: 42/45 (lower bound 0.82, lift 1.0)
+    tier:     suggestion (rule kind package_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  libs/common-docs/package.json#@ngx-bootstrap-doc/docs
+    outlier:  _root/package.json:1 ngx-bootstrap-base
+    outlier:  src/chronos/package.json:1 ngx-bootstrap/chronos
+    outlier:  src/schematics/package.json:1 schematics
+
+ 4. [D-f1448a] workspace packages enable `noFallthroughCasesInSwitch` in tsconfig
+    evidence: 42/45 (lower bound 0.82, lift 1.0)
+    tier:     suggestion (rule kind package_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  libs/common-docs/package.json#@ngx-bootstrap-doc/docs
+    outlier:  _root/package.json:1 ngx-bootstrap-base
+    outlier:  src/chronos/package.json:1 ngx-bootstrap/chronos
+    outlier:  src/datepicker/package.json:1 ngx-bootstrap/datepicker
+
+ 5. [D-c0155e] workspace packages enable `noImplicitReturns` in tsconfig
+    evidence: 40/45 (lower bound 0.77, lift 1.0)
+    tier:     suggestion (rule kind package_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  libs/common-docs/package.json#@ngx-bootstrap-doc/docs
+    outlier:  _root/package.json:1 ngx-bootstrap-base
+    outlier:  src/chronos/package.json:1 ngx-bootstrap/chronos
+    outlier:  src/component-loader/package.json:1 ngx-bootstrap/component-loader
+    outlier:  src/datepicker/package.json:1 ngx-bootstrap/datepicker
+    outlier:  src/schematics/package.json:1 schematics
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

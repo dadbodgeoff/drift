@@ -1,0 +1,100 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  suffixes:
+  - config
+conventions:
+- id: D-e5b6fe
+  status: proposed
+  mode: advise
+  summary: "backend: HTTP handlers in metering_billing/** are decorated with utils.extend_schema()"
+  role:
+    package: backend
+    dir: metering_billing
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:drf_spectacular#utils.extend_schema
+  evidence:
+    holders: 69
+    total: 70
+    lower_bound: 0.923
+    lift: 2.629
+    python_members: 70
+  example: backend/metering_billing/views/auth_views.py#DemoLoginView.post
+  selector_version: 2
+- id: D-26d6a0
+  status: proposed
+  mode: advise
+  summary: "backend: classes in api/** are named `*Serializer`"
+  role:
+    package: backend
+    dir: api
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Serializer"
+  evidence:
+    holders: 85
+    total: 91
+    lower_bound: 0.864
+    lift: 2.023
+    role_members: 92
+    python_members: 92
+  example: backend/api/serializers/model_serializers.py#AddOnSerializer
+  selector_version: 2
+- id: D-1cbdac
+  status: proposed
+  mode: advise
+  summary: "backend: classes in metering_billing/serializers/** are named `*Serializer`"
+  role:
+    package: backend
+    dir: metering_billing/serializers
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Serializer"
+  evidence:
+    holders: 140
+    total: 156
+    lower_bound: 0.84
+    lift: 1.88
+    role_members: 163
+    python_members: 163
+  example: >-
+    backend/metering_billing/serializers/auth_serializers.py#DemoRegistrationDetailSerializer
+  selector_version: 2
+- id: D-2ab768
+  status: proposed
+  mode: advise
+  summary: django models have a `organization` field
+  role:
+    package: ""
+    dir: django
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: organization
+  evidence:
+    holders: 46
+    total: 49
+    lower_bound: 0.835
+    lift: 1.0
+    python_members: 49
+  example: backend/metering_billing/models.py#APIToken
+  selector_version: 2

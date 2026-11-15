@@ -1,0 +1,265 @@
+40 conventions from 6523 units in 345 roles
+
+ 1. [D-281ae8] classes in netbox/** (types files) are decorated with register_type()
+    evidence: 133/143 (lower bound 0.88, lift 28.2)
+    example:  netbox/circuits/graphql/types.py#CircuitGroupAssignmentType
+    outlier:  netbox/dcim/graphql/types.py:163 ComponentType
+    outlier:  netbox/dcim/graphql/types.py:171 ModularComponentType
+    outlier:  netbox/netbox/graphql/types.py:66 BaseObjectType
+    ... 7 more outliers
+
+ 2. [D-76eb6b] classes in netbox/** (types files) pass `filters` to register_type()
+    evidence: 131/143 (lower bound 0.86, lift 28.2)
+    example:  netbox/circuits/graphql/types.py#CircuitGroupAssignmentType
+    outlier:  netbox/core/graphql/types.py:49 ContentType
+    outlier:  netbox/dcim/graphql/types.py:163 ComponentType
+    outlier:  netbox/dcim/graphql/types.py:171 ModularComponentType
+    ... 9 more outliers
+
+ 3. [D-436c3c] classes in netbox/** (views files) are decorated with register_model_view()
+    evidence: 1100/1189 (lower bound 0.91, lift 3.4)
+    example:  netbox/account/views.py#UserTokenDeleteView
+    outlier:  netbox/account/views.py:300 ChangePasswordView
+    outlier:  netbox/account/views.py:47 LoginView
+    outlier:  netbox/account/views.py:172 LogoutView
+    ... 86 more outliers
+
+ 4. [D-bc0c7d] classes in netbox/** (search files) are decorated with register_search()
+    evidence: 98/100 (lower bound 0.93, lift 40.3)
+    example:  netbox/circuits/search.py#CircuitGroupIndex
+    outlier:  netbox/extras/models/search.py:16 CachedValue
+    outlier:  netbox/netbox/forms/search.py:18 SearchForm
+
+ 5. [D-4c4e2d] classes in netbox/** (model_forms files) call FieldSet()
+    evidence: 127/150 (lower bound 0.78, lift 9.4)
+    example:  netbox/circuits/forms/model_forms.py#CircuitForm
+    outlier:  netbox/dcim/forms/model_forms.py:1044 CableForm
+    outlier:  netbox/dcim/forms/model_forms.py:1386 ConsolePortTemplateForm
+    outlier:  netbox/dcim/forms/model_forms.py:1400 ConsoleServerPortTemplateForm
+    ... 20 more outliers
+
+ 6. [D-e2c3e4] classes in netbox/** (choices files) extend ChoiceSet
+    evidence: 113/120 (lower bound 0.88, lift 33.6)
+    example:  netbox/circuits/choices.py#CircuitCommitRateChoices
+    outlier:  netbox/extras/choices.py:165 CustomLinkButtonClassChoices
+    outlier:  netbox/extras/choices.py:305 EventRuleActionChoices
+    outlier:  netbox/utilities/choices.py:19 Choice
+    ... 4 more outliers
+
+ 7. [D-4fabef] classes in netbox/** (filters files) are decorated with register_filter()
+    evidence: 135/162 (lower bound 0.77, lift 24.9)
+    example:  netbox/circuits/graphql/filters.py#CircuitFilter
+    outlier:  netbox/extras/filters.py:16 MissingKeyAwareFilterMixin
+    outlier:  netbox/extras/filters.py:108 TagFilter
+    outlier:  netbox/extras/filters.py:123 TagIDFilter
+    ... 24 more outliers
+
+ 8. [D-58913a] classes in netbox/** (choices files) call Choice()
+    evidence: 106/120 (lower bound 0.81, lift 33.6)
+    example:  netbox/circuits/choices.py#CircuitCommitRateChoices
+    outlier:  netbox/dcim/choices.py:2267 CoolingConnectorTypeChoices
+    outlier:  netbox/dcim/choices.py:2225 CoolingFeedStatusChoices
+    outlier:  netbox/dcim/choices.py:2177 CoolingMethodChoices
+    ... 11 more outliers
+
+ 9. [D-0eddf0] HTTP handlers in netbox/dcim/api/** (views files) extend NetBoxModelViewSet
+    evidence: 51/52 (lower bound 0.90, lift 29.9)
+    example:  netbox/dcim/api/views.py#CableBundleViewSet
+    outlier:  netbox/dcim/api/views.py:596 CableTerminationViewSet
+
+10. [D-4cf3e5] classes in netbox/dcim/forms/** (filtersets files) pass `name` to FieldSet()
+    evidence: 53/56 (lower bound 0.85, lift 14.1)
+    example:  netbox/dcim/forms/filtersets.py#CableBundleFilterForm
+    outlier:  netbox/dcim/forms/filtersets.py:2495 ConsoleConnectionFilterForm
+    outlier:  netbox/dcim/forms/filtersets.py:2543 InterfaceConnectionFilterForm
+    outlier:  netbox/dcim/forms/filtersets.py:2519 PowerConnectionFilterForm
+
+11. [D-7d7f0c] files in the repo do not import from netbox/account/**
+    evidence: 785/786 (lower bound 0.99, lift 3.0)
+    example:  .claude/skills/draft-release-notes/audit_milestone.py#(file)
+    outlier:  netbox/netbox/urls.py:1 (file)
+
+12. [D-7f5847] files in the repo do not import from netbox/vpn/**
+    evidence: 777/786 (lower bound 0.98, lift 3.0)
+    example:  .claude/skills/draft-release-notes/audit_milestone.py#(file)
+    outlier:  netbox/dcim/api/serializers_/device_components.py:1 (file)
+    outlier:  netbox/dcim/filtersets.py:1 (file)
+    outlier:  netbox/dcim/forms/filtersets.py:1 (file)
+    ... 6 more outliers
+
+13. [D-593fc9] files in the repo do not import from netbox/circuits/**
+    evidence: 776/786 (lower bound 0.98, lift 3.0)
+    example:  .claude/skills/draft-release-notes/audit_milestone.py#(file)
+    outlier:  netbox/dcim/filtersets.py:1 (file)
+    outlier:  netbox/dcim/forms/connections.py:1 (file)
+    outlier:  netbox/dcim/graphql/gfk_mixins.py:1 (file)
+    ... 7 more outliers
+
+14. [D-dd6307] files in the repo do not import from netbox/wireless/**
+    evidence: 771/786 (lower bound 0.97, lift 3.0)
+    example:  .claude/skills/draft-release-notes/audit_milestone.py#(file)
+    outlier:  netbox/dcim/api/serializers_/device_components.py:1 (file)
+    outlier:  netbox/dcim/api/serializers_/devicetype_components.py:1 (file)
+    outlier:  netbox/dcim/filtersets.py:1 (file)
+    ... 12 more outliers
+
+15. [D-41d415] classes in netbox/** (nested files) extend WritableNestedSerializer
+    evidence: 23/24 (lower bound 0.80, lift 167.8)
+    example:  netbox/circuits/api/serializers_/nested.py#NestedProviderAccountSerializer
+    outlier:  netbox/netbox/api/serializers/nested.py:11 WritableNestedSerializer
+
+16. [D-9dcc21] files in the repo do not import from netbox/virtualization/**
+    evidence: 749/786 (lower bound 0.94, lift 3.0)
+    example:  .claude/skills/draft-release-notes/audit_milestone.py#(file)
+    outlier:  netbox/dcim/api/serializers_/devices.py:1 (file)
+    outlier:  netbox/dcim/api/views.py:1 (file)
+    outlier:  netbox/dcim/filtersets.py:1 (file)
+    ... 34 more outliers
+
+17. [D-51c506] classes in netbox/** (panels files) are named `*Panel`
+    evidence: 179/180 (lower bound 0.97, lift 22.2)
+    example:  netbox/circuits/ui/panels.py#CircuitCircuitTerminationPanel
+    outlier:  netbox/netbox/ui/panels.py:35 Panel
+
+18. [D-f803be] classes in netbox/** (filters files) are named `*Filter`
+    evidence: 161/162 (lower bound 0.97, lift 24.4)
+    example:  netbox/circuits/graphql/filters.py#CircuitFilter
+    outlier:  netbox/extras/filters.py:16 MissingKeyAwareFilterMixin
+
+19. [D-c2d5f2] classes in netbox/** (types files) are named `*Type`
+    evidence: 142/143 (lower bound 0.96, lift 25.6)
+    example:  netbox/circuits/graphql/types.py#CircuitGroupAssignmentType
+    outlier:  netbox/netbox/graphql/types.py:126 LtreeNodeMixin
+
+20. [D-94948e] classes in netbox/** (views files) are named `*View`
+    evidence: 1164/1189 (lower bound 0.97, lift 3.2)
+    example:  netbox/account/views.py#UserTokenDeleteView
+    outlier:  netbox/core/api/views.py:164 BackgroundQueueViewSet
+    outlier:  netbox/core/api/views.py:228 BackgroundTaskViewSet
+    outlier:  netbox/core/api/views.py:197 BackgroundWorkerViewSet
+    ... 22 more outliers
+
+21. [D-e162ab] classes in netbox/** (bulk_import files) are named `*Form`
+    evidence: 119/120 (lower bound 0.95, lift 6.4)
+    example:  netbox/circuits/forms/bulk_import.py#CircuitGroupAssignmentImportForm
+    outlier:  netbox/netbox/forms/bulk_import.py:100 OwnerCSVMixin
+
+22. [D-afb64d] classes in netbox/** (choices files) are named `*Choices`
+    evidence: 115/120 (lower bound 0.91, lift 33.6)
+    example:  netbox/circuits/choices.py#CircuitCommitRateChoices
+    outlier:  netbox/utilities/choices.py:19 Choice
+    outlier:  netbox/utilities/choices.py:111 ChoiceSet
+    outlier:  netbox/utilities/forms/fields/choices.py:76 ChoiceField
+    ... 2 more outliers
+
+23. [D-650131] HTTP handlers in netbox/** (views files) are named `*Set`
+    evidence: 134/164 (lower bound 0.75, lift 10.2)
+    example:  netbox/circuits/api/views.py#CircuitGroupAssignmentViewSet
+    outlier:  netbox/account/views.py:334 BookmarkListView
+    outlier:  netbox/account/views.py:351 NotificationListView
+    outlier:  netbox/account/views.py:364 SubscriptionListView
+    ... 27 more outliers
+
+24. [D-ac4dc2] files in netbox/** (__init__ files) do not import from netbox/core/**
+    evidence: 115/117 (lower bound 0.94, lift 3.0)
+    example:  netbox/account/__init__.py#(file)
+    outlier:  netbox/netbox/config/__init__.py:1 (file)
+    outlier:  netbox/netbox/plugins/__init__.py:1 (file)
+
+25. [D-ffde02] files in netbox/** (__init__ files) do not import from netbox/utilities/**
+    evidence: 114/117 (lower bound 0.93, lift 3.0)
+    example:  netbox/account/__init__.py#(file)
+    outlier:  netbox/netbox/api/viewsets/__init__.py:1 (file)
+    outlier:  netbox/netbox/authentication/__init__.py:1 (file)
+    outlier:  netbox/netbox/models/__init__.py:1 (file)
+
+26. [D-99150d] files in netbox/utilities/** do not import from netbox/dcim/**
+    evidence: 66/67 (lower bound 0.92, lift 3.0)
+    example:  netbox/utilities/api.py#(file)
+    outlier:  netbox/utilities/conversion.py:1 (file)
+
+27. [D-184b7e] classes in netbox/dcim/forms/** are named `*Form`
+    evidence: 52/53 (lower bound 0.90, lift 6.3)
+    example:  netbox/dcim/forms/bulk_create.py#ConsolePortBulkCreateForm
+    outlier:  netbox/dcim/forms/formsets.py:9 BaseVCMemberFormSet
+
+28. [D-e8f429] classes in netbox/** (mixins files) are named `*Mixin`
+    evidence: 56/59 (lower bound 0.86, lift 31.1)
+    example:  netbox/core/forms/mixins.py#SyncedDataMixin
+    outlier:  netbox/dcim/forms/mixins.py:34 ScopedBulkEditForm
+    outlier:  netbox/dcim/forms/mixins.py:24 ScopedForm
+    outlier:  netbox/dcim/forms/mixins.py:44 ScopedImportForm
+
+29. [D-7bacb2] classes in netbox/** (tables files) are named `*Table`
+    evidence: 34/36 (lower bound 0.82, lift 21.2)
+    example:  netbox/extras/tables/tables.py#BookmarkTable
+    outlier:  netbox/utilities/testing/tables.py:16 ModelTableTestCase
+    outlier:  netbox/utilities/testing/tables.py:128 TableTestCases
+
+30. [D-7e0f41] classes in netbox/** (columns files) are named `*Column`
+    evidence: 29/31 (lower bound 0.79, lift 129.9)
+    example:  netbox/circuits/tables/columns.py#CommitRateColumn
+    outlier:  netbox/tenancy/tables/columns.py:54 ContactsColumnMixin
+    outlier:  netbox/tenancy/tables/columns.py:45 TenancyColumnsMixin
+
+31. [D-bb8000] files in netbox/netbox/** do not import from netbox/dcim/**
+    evidence: 54/55 (lower bound 0.90, lift 3.0)
+    example:  netbox/netbox/__main__.py#(file)
+    outlier:  netbox/netbox/views/misc.py:1 (file)
+
+32. [D-937c0c] classes in netbox/ipam/api/** are named `*Serializer`
+    evidence: 27/29 (lower bound 0.78, lift 18.3)
+    example:  netbox/ipam/api/serializers_/asns.py#ASNRangeSerializer
+    outlier:  netbox/ipam/api/field_serializers.py:11 IPAddressField
+    outlier:  netbox/ipam/api/field_serializers.py:31 IPNetworkField
+
+33. [D-f1c995] classes in netbox/dcim/** (filters files) call filter_field()
+    evidence: 53/55 (lower bound 0.88, lift 24.6)
+    example:  netbox/dcim/graphql/filters.py#CableBundleFilter
+    outlier:  netbox/dcim/graphql/filters.py:732 ManufacturerFilter
+    outlier:  netbox/dcim/graphql/filters.py:1185 RackGroupFilter
+
+34. [D-310ec7] classes in netbox/ipam/tables/** pass `verbose_name` to Column()
+    evidence: 23/24 (lower bound 0.80, lift 26.3)
+    example:  netbox/ipam/tables/asn.py#ASNRangeTable
+    outlier:  netbox/ipam/tables/ip.py:373 AnnotatedIPAddressTable
+
+35. [D-046d92] classes in netbox/** (bulk_edit files) call utils.translation.gettext_lazy() before FieldSet()
+    evidence: 92/101 (lower bound 0.84, lift 1.0)
+    example:  netbox/circuits/forms/bulk_edit.py#CircuitBulkEditForm
+    outlier:  netbox/dcim/forms/bulk_edit.py:1837 CoolingOutflowBulkEditForm
+    outlier:  netbox/dcim/forms/bulk_edit.py:2280 MACAddressBulkEditForm
+    outlier:  netbox/dcim/forms/bulk_edit.py:531 ManufacturerBulkEditForm
+    ... 6 more outliers
+
+36. [D-a54245] classes in netbox/extras/** (tables files) pass `verbose_name` to Column()
+    evidence: 21/22 (lower bound 0.78, lift 26.1)
+    example:  netbox/extras/tables/tables.py#BookmarkTable
+    outlier:  netbox/extras/tables/tables.py:850 ScriptJobTable
+
+37. [D-a30f5e] classes in netbox/** (choices files) call Choice() before utils.translation.gettext_lazy()
+    evidence: 81/95 (lower bound 0.77, lift 1.0)
+    example:  netbox/circuits/choices.py#CircuitPriorityChoices
+    outlier:  netbox/dcim/choices.py:1830 CableProfileChoices
+    outlier:  netbox/dcim/choices.py:1918 CableTypeChoices
+    outlier:  netbox/dcim/choices.py:2267 CoolingConnectorTypeChoices
+    ... 11 more outliers
+
+38. [D-0e0dfc] classes in netbox/dcim/** (bulk_import files) call CSVModelChoiceField() before utils.translation.gettext_lazy()
+    evidence: 31/34 (lower bound 0.77, lift 1.0)
+    example:  netbox/dcim/forms/bulk_import.py#CableImportForm
+    outlier:  netbox/dcim/forms/bulk_import.py:512 ModuleTypeImportForm
+    outlier:  netbox/dcim/forms/bulk_import.py:218 RackTypeImportForm
+    outlier:  netbox/dcim/forms/bulk_import.py:115 SiteImportForm
+
+39. [D-408ce9] classes in netbox/dcim/** (bulk_import files) call utils.translation.gettext_lazy() before CSVChoiceField()
+    evidence: 23/24 (lower bound 0.80, lift 1.0)
+    example:  netbox/dcim/forms/bulk_import.py#CableImportForm
+    outlier:  netbox/dcim/forms/bulk_import.py:115 SiteImportForm
+
+40. [D-da44f6] classes in netbox/dcim/models/** call utils.translation.gettext_lazy() before core.exceptions.ValidationError()
+    evidence: 33/35 (lower bound 0.81, lift 1.0)
+    example:  netbox/dcim/models/cables.py#Cable
+    outlier:  netbox/dcim/models/device_component_templates.py:732 PortTemplateMapping
+    outlier:  netbox/dcim/models/device_components.py:1502 PortMapping
+

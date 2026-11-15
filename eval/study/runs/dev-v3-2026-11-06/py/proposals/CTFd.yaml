@@ -1,0 +1,56 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - test_challenges
+  - test_teams
+  - test_users
+  suffixes:
+  - config
+conventions:
+- id: D-560792
+  status: proposed
+  mode: advise
+  summary: classes in CTFd/forms/** extend BaseForm
+  role:
+    package: ""
+    dir: CTFd/forms
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - CTFd/forms/__init__.py#BaseForm
+  evidence:
+    holders: 34
+    total: 35
+    lower_bound: 0.855
+    lift: 8.486
+  example: CTFd/forms/auth.py#ConfirmForm
+- id: D-f6c1fb
+  status: proposed
+  mode: advise
+  summary: classes in CTFd/schemas/** extend ma.ModelSchema
+  role:
+    package: ""
+    dir: CTFd/schemas
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - CTFd/models/__init__.py#ma.ModelSchema
+  evidence:
+    holders: 28
+    total: 30
+    lower_bound: 0.787
+    lift: 9.9
+  example: CTFd/schemas/audiences.py#AudienceMemberSchema

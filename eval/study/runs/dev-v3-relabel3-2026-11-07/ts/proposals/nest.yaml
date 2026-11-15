@@ -1,0 +1,140 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - any-files
+  - app
+  - audio
+  - auth
+  - cat
+  - cats
+  - circular
+  - constants
+  - core
+  - create-cat
+  - database
+  - date
+  - drizzle
+  - events
+  - express
+  - fastify
+  - file
+  - file-fields
+  - files
+  - get-media-type-version
+  - hello
+  - input
+  - kafka
+  - logger
+  - logging
+  - main
+  - math
+  - merge-map-bounded
+  - mqtt
+  - multer
+  - multipart
+  - nats
+  - no-files
+  - node
+  - orders
+  - parse-int
+  - recipes
+  - redis
+  - request-scoped
+  - rmq
+  - roles
+  - test
+  - user
+  - user-by-id
+  - users
+  - utils
+  - validation
+  - vitest
+  suffixes:
+  - args
+  - builder
+  - config
+  - constants
+  - context
+  - controller
+  - decorator
+  - deserializer
+  - dto
+  - e2e
+  - e2e-spec
+  - entity
+  - enum
+  - events
+  - exception
+  - filter
+  - gateway
+  - guard
+  - hook
+  - input
+  - interceptor
+  - interface
+  - interfaces
+  - middleware
+  - model
+  - module
+  - pipe
+  - plugin
+  - record-builder
+  - resolver
+  - scalar
+  - schema
+  - serializer
+  - service
+  - spec
+  - strategy
+  - util
+  - utils
+conventions:
+- id: D-897eda
+  status: proposed
+  mode: advise
+  summary: "packages/core: classes in errors/** (*.exception files) extend RuntimeException"
+  role:
+    package: packages/core
+    dir: errors
+    file: "*.exception"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - packages/core/errors/exceptions/runtime.exception.ts#RuntimeException
+  evidence:
+    holders: 22
+    total: 22
+    lower_bound: 0.851
+    lift: 9.685
+    role_members: 23
+  example: >-
+    packages/core/errors/exceptions/circular-dependency.exception.ts#CircularDependencyException
+  selector_version: 2
+- id: D-3915b0
+  status: proposed
+  mode: advise
+  summary: "packages/microservices: classes in errors/** (*.exception files) do not use `any`"
+  role:
+    package: packages/microservices
+    dir: errors
+    file: "*.exception"
+    entry: '-'
+    kind: class
+  rule:
+    type: avoids
+    signal: any
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 12.129
+  example: >-
+    packages/microservices/errors/corrupted-packet-length.exception.ts#CorruptedPacketLengthException
+  selector_version: 2

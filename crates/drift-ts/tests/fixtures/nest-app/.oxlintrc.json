@@ -1,0 +1,10 @@
+{
+  // Settings Drift relates to its conventions; the rest is ignored.
+  "plugins": ["typescript"],
+  "rules": {
+    "typescript/no-explicit-any": "off",
+    "no-console": ["warn", { "allow": ["error"] }],
+    "eqeqeq": "error",
+  },
+  "overrides": [{ "files": ["**/*.spec.ts"], "rules": { "no-console": "off" } }]
+}

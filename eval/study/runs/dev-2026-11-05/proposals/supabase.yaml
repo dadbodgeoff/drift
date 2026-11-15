@@ -1,0 +1,641 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - $id
+  - +layout
+  - +page
+  - AIAssistant
+  - AccessToken
+  - Account
+  - AccountLayout
+  - Admonition
+  - ApiAuthorization
+  - App
+  - AuditLogs
+  - Auth
+  - Avatar
+  - BucketVersioningFields
+  - BucketsTable
+  - BuildStage
+  - Charts
+  - CodeBlock
+  - Compute
+  - ConfigurationDriftPage
+  - Connect
+  - ConnectionFields
+  - CronJobsTab
+  - DaySection
+  - DestinationForm
+  - DiskManagement
+  - EdgeFunctionDetails
+  - EdgeFunctionOverview
+  - EmailTemplates
+  - ExplainVisualizer
+  - FeaturesSection
+  - Fields
+  - ForeignKeySelector
+  - Header
+  - Hero
+  - Home
+  - LabelBadge
+  - LaunchWeekLogoHeader
+  - LaunchWeekPrizeCard
+  - LaunchWeekPrizeSection
+  - Logs
+  - MainStage
+  - MarketplaceIntegrationSettingsTab
+  - McpSecrets
+  - Message
+  - NavigationMenu
+  - OAuthApps
+  - OAuthAppsAuthorizeScreen
+  - OverviewTab
+  - ProjectCreation
+  - ProjectNeedsSecuring
+  - Providers
+  - QueryInsightsHealth
+  - QueryInsightsTable
+  - QueryPerformance
+  - QuerySourceMenu
+  - QuoteSection
+  - Reference
+  - ReplicationPipelineStatus
+  - Reports
+  - ResourceExhaustionWarningBanner
+  - SQLEditor
+  - SidePanelEditor
+  - SpreadsheetImport
+  - Storage
+  - StorageSettings
+  - TableEditor
+  - Tabs
+  - UnifiedLogs
+  - UrlSigningKeys
+  - Usage
+  - "[id]"
+  - "[slug]"
+  - _app
+  - account
+  - api
+  - api-keys
+  - app
+  - apple-sign-in-button
+  - auth
+  - authorize
+  - avatar
+  - client
+  - column-privileges
+  - compute
+  - connect
+  - connections
+  - constants
+  - content
+  - contest
+  - contest-thank-you
+  - database
+  - docs
+  - edge-functions
+  - eslint
+  - extensions
+  - functions
+  - graphql
+  - handler
+  - helpers
+  - home
+  - hooks
+  - indexes
+  - integrations
+  - json-ld
+  - keys
+  - layout
+  - legacy
+  - log-drains
+  - login
+  - login-form
+  - logs
+  - main
+  - middleware
+  - migrations
+  - nav
+  - new
+  - next
+  - organizations
+  - page
+  - performance
+  - playwright
+  - policies
+  - postcss
+  - project
+  - proxy
+  - publications
+  - realtime
+  - registry
+  - roles
+  - route
+  - router
+  - routes
+  - schema
+  - schemas
+  - secrets
+  - security
+  - sentry
+  - server
+  - settings
+  - sign-up
+  - snippets
+  - status-page
+  - storage
+  - supabase
+  - supabaseClient
+  - table-editor
+  - tailwind
+  - telemetry
+  - templates
+  - test
+  - theme
+  - toaster
+  - toc
+  - triggers
+  - types
+  - useTableEditorFiltersSort
+  - util
+  - utils
+  - views
+  - vite
+  - vitest
+  suffixes:
+  - Commands
+  - ai
+  - client
+  - component
+  - components
+  - config
+  - constants
+  - data
+  - hooks
+  - module
+  - page
+  - queries
+  - schema
+  - server
+  - setup
+  - shared
+  - spec
+  - test
+  - types
+  - utils
+  - web
+conventions:
+- id: D-df24f2
+  status: proposed
+  mode: advise
+  summary: >-
+    files in apps/studio/** use lucide-react for icons, not
+    react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react
+  role:
+    package: apps/studio
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: prefers_library
+    group: icons
+    preferred: lucide-react
+  evidence:
+    holders: 870
+    total: 872
+    lower_bound: 0.992
+    lift: 1.0
+    split:
+    - - lucide-react
+      - 872
+    - - "@heroicons/react"
+      - 2
+  example: apps/studio/components/grid/components/editor/DateTimeEditor.tsx#(file)
+- id: D-93cb8d
+  status: proposed
+  mode: advise
+  summary: "apps/studio: functions in components/** (*.utils files) do not throw a bare Error"
+  role:
+    package: apps/studio
+    dir: components
+    file: "*.utils"
+    entry: '-'
+    kind: function
+  rule:
+    type: avoids
+    signal: throw_error
+  evidence:
+    holders: 1047
+    total: 1059
+    lower_bound: 0.98
+    lift: 9.509
+  example: apps/studio/components/grid/SupabaseGrid.utils.ts#buildTableEditorUrl
+- id: D-f64778
+  status: proposed
+  mode: advise
+  summary: "apps/studio: exported values in routes/** call createFileRoute()"
+  role:
+    package: apps/studio
+    dir: routes
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: calls
+    callee: pkg:@tanstack/react-router#createFileRoute
+  evidence:
+    holders: 231
+    total: 232
+    lower_bound: 0.976
+    lift: 8.436
+  example: apps/studio/routes/_app/account/apps.tsx#Route
+- id: D-b10f47
+  status: proposed
+  mode: advise
+  summary: "apps/www: pages in pages/** render <DefaultLayout>"
+  role:
+    package: apps/www
+    dir: pages
+    file: "*"
+    entry: page
+    kind: component
+  rule:
+    type: renders
+    component: apps/www/components/Layouts/Default.tsx#DefaultLayout
+  evidence:
+    holders: 60
+    total: 62
+    lower_bound: 0.89
+    lift: 54.677
+  example: apps/www/pages/aup.tsx#AcceptableUsePolicyPage
+- id: D-db9d80
+  status: proposed
+  mode: advise
+  summary: "apps/www: pages in pages/** render <NextSeo>"
+  role:
+    package: apps/www
+    dir: pages
+    file: "*"
+    entry: page
+    kind: component
+  rule:
+    type: renders
+    component: pkg:next-seo#NextSeo
+  evidence:
+    holders: 60
+    total: 62
+    lower_bound: 0.89
+    lift: 66.276
+  example: apps/www/pages/aup.tsx#AcceptableUsePolicyPage
+- id: D-7c4152
+  status: proposed
+  mode: advise
+  summary: files in apps/studio/** use dayjs for dates, not date-fns/moment/luxon
+  role:
+    package: apps/studio
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: prefers_library
+    group: dates
+    preferred: dayjs
+  evidence:
+    holders: 162
+    total: 174
+    lower_bound: 0.883
+    lift: 1.0
+    split:
+    - - dayjs
+      - 163
+    - - date-fns
+      - 12
+  example: apps/studio/components/grid/components/editor/DateTimeEditor.tsx#(file)
+- id: D-3c4b60
+  status: proposed
+  mode: advise
+  summary: "packages/pg-meta: functions in src/** declare their return type"
+  role:
+    package: packages/pg-meta
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 107
+    total: 115
+    lower_bound: 0.869
+    lift: 2.43
+  example: packages/pg-meta/src/pg-format/index.ts#acceptUntrustedSql
+- id: D-539058
+  status: proposed
+  mode: advise
+  summary: "packages/ui: components in src/components/shadcn/** call cn()"
+  role:
+    package: packages/ui
+    dir: src/components/shadcn
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: calls
+    callee: packages/ui/src/lib/utils/cn.ts#cn
+  evidence:
+    holders: 191
+    total: 216
+    lower_bound: 0.835
+    lift: 3.26
+  example: packages/ui/src/components/shadcn/ui/accordion.tsx#AccordionContent
+- id: D-c2e88c
+  status: proposed
+  mode: advise
+  summary: "apps/docs: functions in app/** (page files) are wrapped in genGuideMeta()"
+  role:
+    package: apps/docs
+    dir: app
+    file: page
+    entry: '-'
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - apps/docs/features/docs/GuidesMdx.utils.tsx#genGuideMeta
+  evidence:
+    holders: 29
+    total: 30
+    lower_bound: 0.833
+    lift: 179.767
+  example: apps/docs/app/guides/ai-tools/[[...slug]]/page.tsx#generateMetadata
+- id: D-8446bc
+  status: proposed
+  mode: advise
+  summary: "apps/docs: exported values in app/guides/** (page files) are named `generate*`"
+  role:
+    package: apps/docs
+    dir: app/guides
+    file: page
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: generate*
+  evidence:
+    holders: 26
+    total: 27
+    lower_bound: 0.817
+    lift: 99.942
+  example: apps/docs/app/guides/ai-tools/[[...slug]]/page.tsx#generateStaticParams
+- id: D-d8dcea
+  status: proposed
+  mode: advise
+  summary: "apps/docs: functions in internals/** declare their return type"
+  role:
+    package: apps/docs
+    dir: internals
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 32
+    total: 34
+    lower_bound: 0.809
+    lift: 2.458
+  example: apps/docs/internals/internal-links.ts#getInternalLinkBaseUrl
+- id: D-c17d48
+  status: proposed
+  mode: advise
+  summary: "packages/marketing: exported values in src/** (schemas files) call z.object() before z.string()"
+  role:
+    package: packages/marketing
+    dir: src
+    file: schemas
+    entry: '-'
+    kind: const
+  rule:
+    type: before
+    first: pkg:zod#z.object
+    then: pkg:zod#z.string
+  evidence:
+    holders: 30
+    total: 32
+    lower_bound: 0.799
+    lift: 1.0
+  example: packages/marketing/src/go/schemas.ts#checkboxGroupFieldSchema
+- id: D-922bc7
+  status: proposed
+  mode: advise
+  summary: "packages/icons: exported values in src/** pass `fill` to createLucideIcon()"
+  role:
+    package: packages/icons
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: passes_key
+    callee: packages/icons/src/createSupabaseIcon.ts#createLucideIcon
+    index: 2
+    key: fill
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 77.359
+  example: packages/icons/src/icons/REST-api.ts#RESTApi
+- id: D-9644ab
+  status: proposed
+  mode: advise
+  summary: "packages/pg-meta: functions in src/sql/** are named `get*`"
+  role:
+    package: packages/pg-meta
+    dir: src/sql
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: get*
+  evidence:
+    holders: 65
+    total: 73
+    lower_bound: 0.798
+    lift: 4.253
+  example: packages/pg-meta/src/sql/columns.ts#getColumnsSql
+- id: D-43f5f0
+  status: proposed
+  mode: advise
+  summary: "apps/studio: functions in hooks/** are named `use*`"
+  role:
+    package: apps/studio
+    dir: hooks
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: use*
+  evidence:
+    holders: 97
+    total: 112
+    lower_bound: 0.791
+    lift: 3.593
+  example: apps/studio/hooks/analytics/useComputeMetrics.ts#useComputeMetrics
+- id: D-41c644
+  status: proposed
+  mode: advise
+  summary: "packages/ui-patterns: functions in src/** (utils files) declare their return type"
+  role:
+    package: packages/ui-patterns
+    dir: src
+    file: utils
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 22
+    total: 23
+    lower_bound: 0.79
+    lift: 2.498
+  example: packages/ui-patterns/src/FilterBar/utils.ts#addFilterToGroup
+- id: D-100c39
+  status: proposed
+  mode: advise
+  summary: >-
+    files in apps/www/** use lucide-react for icons, not
+    react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react
+  role:
+    package: apps/www
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: prefers_library
+    group: icons
+    preferred: lucide-react
+  evidence:
+    holders: 150
+    total: 177
+    lower_bound: 0.787
+    lift: 1.0
+    split:
+    - - lucide-react
+      - 169
+    - - "@heroicons/react"
+      - 27
+  example: apps/www/_go/lead-gen/ask-supabase-select.tsx#(file)
+- id: D-017ce5
+  status: proposed
+  mode: advise
+  summary: "apps/studio: functions in lib/** (*.utils files) declare their return type"
+  role:
+    package: apps/studio
+    dir: lib
+    file: "*.utils"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 38
+    total: 42
+    lower_bound: 0.779
+    lift: 2.363
+  example: apps/studio/lib/ai/generate-assistant-response.utils.ts#buildSystemPrompt
+- id: D-9b2da2
+  status: proposed
+  mode: advise
+  summary: "apps/docs: layouts in app/** (layout files) render inside <Layout>"
+  role:
+    package: apps/docs
+    dir: app
+    file: layout
+    entry: layout
+    kind: component
+  rule:
+    type: wrapped_by
+    kind: jsx
+    any_of:
+    - apps/docs/layouts/guides/index.tsx#Layout
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 215.238
+  example: apps/docs/app/guides/ai-tools/layout.tsx#AiToolsLayout
+- id: D-cf40f5
+  status: proposed
+  mode: advise
+  summary: "apps/docs: layouts in app/** (layout files) are named `*Layout`"
+  role:
+    package: apps/docs
+    dir: app
+    file: layout
+    entry: layout
+    kind: component
+  rule:
+    type: named
+    pattern: "*Layout"
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 45.795
+  example: apps/docs/app/guides/ai-tools/layout.tsx#AiToolsLayout
+- id: D-e97861
+  status: proposed
+  mode: advise
+  summary: "apps/studio: HTTP handlers in pages/** call apiWrapper()"
+  role:
+    package: apps/studio
+    dir: pages
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: calls
+    callee: apps/studio/lib/api/apiWrapper.ts#apiWrapper
+  evidence:
+    holders: 68
+    total: 79
+    lower_bound: 0.768
+    lift: 52.751
+  example: apps/studio/pages/api/ai/code/complete.ts#wrapper
+- id: D-012d14
+  status: proposed
+  mode: advise
+  summary: "apps/studio: exported values in routes/project/$ref/logs/** pass `staticData.logsLayoutTitle` to createFileRoute()()"
+  role:
+    package: apps/studio
+    dir: routes/project/$ref/logs
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: passes_key
+    callee: pkg:@tanstack/react-router#createFileRoute()
+    index: 0
+    key: staticData.logsLayoutTitle
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 144.898
+  example: apps/studio/routes/project/$ref/logs/auth-logs.tsx#Route

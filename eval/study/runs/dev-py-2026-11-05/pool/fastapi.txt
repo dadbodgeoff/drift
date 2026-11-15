@@ -1,0 +1,10 @@
+1 conventions from 2309 units in 86 roles
+
+ 1. [D-499c0e] functions in scripts/** declare their return type
+    evidence: 94/103 (lower bound 0.84, lift 3.1)
+    example:  scripts/add_latest_release_date.py#main
+    outlier:  scripts/docs.py:836 add_permalinks_page
+    outlier:  scripts/docs.py:119 complete_existing_lang
+    outlier:  scripts/docs.py:590 langs_json
+    ... 6 more outliers
+

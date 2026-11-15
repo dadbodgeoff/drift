@@ -1,0 +1,82 @@
+{
+  "run": "eval/study/runs/d8-prereg-2026-11-07/py2/relabel",
+  "items": [
+    {
+      "uid": "Django-CRM/D-f135a4",
+      "repo": "Django-CRM",
+      "id": "D-f135a4",
+      "rank": 3,
+      "summary": "backend: HTTP handlers in cases/** are wrapped in HasOrgContext()",
+      "role": {
+        "package": "backend",
+        "dir": "cases",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "backend/common/permissions.py#HasOrgContext"
+        ]
+      },
+      "evidence": {
+        "holders": 81,
+        "total": 94,
+        "lower_bound": 0.78,
+        "lift": 4.6
+      },
+      "members": 94,
+      "example": "backend/cases/analytics_views.py#AnalyticsAgentsView.get",
+      "python_members": 94,
+      "outliers": 13,
+      "outlier_files": [
+        "backend/cases/csat_views.py",
+        "backend/cases/help_center_views.py",
+        "backend/cases/inbound_views.py",
+        "backend/cases/portal_views.py"
+      ],
+      "block": " 3. [D-f135a4] backend: HTTP handlers in cases/** are wrapped in HasOrgContext()\n    evidence: 81/94 (lower bound 0.78, lift 4.6)\n    example:  backend/cases/analytics_views.py#AnalyticsAgentsView.get\n    outlier:  backend/cases/csat_views.py:111 PublicCsatView.get\n    outlier:  backend/cases/csat_views.py:155 PublicCsatView.post\n    outlier:  backend/cases/help_center_views.py:178 PublicHelpCenterArticleView.get\n    outlier:  backend/cases/help_center_views.py:138 PublicHelpCenterListView.get\n    outlier:  backend/cases/inbound_views.py:625 InboundCatchAllView.post\n    outlier:  backend/cases/inbound_views.py:379 InboundMailboxWebhookView.post\n    outlier:  backend/cases/portal_views.py:292 PortalArticleDetailView.get\n    outlier:  backend/cases/portal_views.py:256 PortalArticleListView.get\n    outlier:  backend/cases/portal_views.py:334 PortalArticleSuggestView.get\n    outlier:  backend/cases/portal_views.py:374 PortalCaseCommentView.post\n    outlier:  backend/cases/portal_views.py:203 PortalCaseDetailView.get\n    outlier:  backend/cases/portal_views.py:134 PortalCaseListView.get\n    outlier:  backend/cases/portal_views.py:167 PortalCaseListView.post",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "simplelogin/D-2a4960",
+      "repo": "simplelogin",
+      "id": "D-2a4960",
+      "rank": 2,
+      "summary": "files in app/** do not import from events/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "app",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:events"
+      },
+      "evidence": {
+        "holders": 193,
+        "total": 195,
+        "lower_bound": 0.96,
+        "lift": 3
+      },
+      "members": 195,
+      "example": "app/abuser.py#(file)",
+      "python_members": 195,
+      "outliers": 2,
+      "outlier_files": [
+        "app/jobs/send_event_job.py",
+        "app/jobs/sync_subscription_job.py"
+      ],
+      "block": " 2. [D-2a4960] files in app/** do not import from events/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 193/195 (lower bound 0.96, lift 3.0)\n    example:  app/abuser.py#(file)\n    outlier:  app/jobs/send_event_job.py:1 (file)\n    outlier:  app/jobs/sync_subscription_job.py:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    }
+  ]
+}

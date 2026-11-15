@@ -1,0 +1,323 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - apps
+  - bulk_edit
+  - bulk_import
+  - choices
+  - columns
+  - constants
+  - enums
+  - events
+  - exceptions
+  - filter_mixins
+  - filters
+  - filtersets
+  - mixins
+  - model_forms
+  - nested
+  - panels
+  - racks
+  - schema
+  - search
+  - serializers
+  - signals
+  - template_code
+  - test_api
+  - test_filtersets
+  - test_models
+  - test_signals
+  - test_tables
+  - test_views
+  - types
+  - urls
+  - utils
+  - views
+  suffixes: []
+  layers:
+  - api/urls
+  - api/views
+  - forms/filtersets
+  - graphql/filters
+  - graphql/mixins
+  - graphql/schema
+  - serializers_/nested
+conventions:
+- id: D-cc1341
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in netbox/** (filtersets files) are decorated with
+    register_filterset(), except 3 classes (whose model is already registered)
+  role:
+    package: ""
+    dir: netbox
+    file: filtersets
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - netbox/utilities/filtersets.py#register_filterset
+  evidence:
+    holders: 138
+    total: 138
+    lower_bound: 0.973
+    lift: 28.454
+    role_members: 141
+    python_members: 141
+  example: netbox/circuits/filtersets.py#CircuitFilterSet
+  selector_version: 3
+- id: D-281ae8
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in netbox/** (types files) are decorated with register_type(), except a
+    member (of the module that defines a rule's target)
+  role:
+    package: ""
+    dir: netbox
+    file: types
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - netbox/netbox/graphql/types.py#register_type
+  evidence:
+    holders: 133
+    total: 133
+    lower_bound: 0.972
+    lift: 29.94
+    role_members: 134
+    python_members: 134
+  example: netbox/circuits/graphql/types.py#CircuitGroupAssignmentType
+  selector_version: 3
+- id: D-e2c3e4
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in netbox/** (choices files) extend ChoiceSet, except 3 classes (named
+    for a base of another kind), a member (of the module that defines a rule's
+    target) and a member (documented as an exception)
+  role:
+    package: ""
+    dir: netbox
+    file: choices
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - netbox/utilities/choices.py#ChoiceSet
+  evidence:
+    holders: 114
+    total: 114
+    lower_bound: 0.967
+    lift: 33.714
+    role_members: 119
+    python_members: 119
+  example: netbox/circuits/choices.py#CircuitCommitRateChoices
+  selector_version: 3
+- id: D-bc0c7d
+  status: proposed
+  mode: advise
+  summary: classes in netbox/** (search files) are decorated with register_search()
+  role:
+    package: ""
+    dir: netbox
+    file: search
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - netbox/netbox/search/__init__.py#register_search
+  evidence:
+    holders: 98
+    total: 98
+    lower_bound: 0.962
+    lift: 40.939
+    python_members: 98
+  example: netbox/circuits/search.py#CircuitGroupIndex
+  selector_version: 3
+- id: D-3ab42c
+  status: proposed
+  mode: advise
+  summary: model classes in netbox/** call utils.translation.gettext_lazy()
+  role:
+    package: ""
+    dir: netbox
+    file: "*"
+    entry: '-'
+    kind: class
+    member_kind: model
+  rule:
+    type: calls
+    callee: pkg:django#utils.translation.gettext_lazy
+  evidence:
+    holders: 141
+    total: 142
+    lower_bound: 0.961
+    lift: 3.0
+    python_members: 142
+  example: netbox/account/models.py#UserToken
+  selector_version: 3
+- id: D-76eb6b
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in netbox/** (types files) pass `filters` to register_type(), except 2
+    members (of the module that defines a rule's target)
+  role:
+    package: ""
+    dir: netbox
+    file: types
+    entry: '-'
+    kind: class
+  rule:
+    type: passes_key
+    callee: netbox/netbox/graphql/types.py#register_type
+    index: 99
+    key: filters
+  evidence:
+    holders: 131
+    total: 132
+    lower_bound: 0.958
+    lift: 29.94
+    role_members: 134
+    python_members: 134
+  example: netbox/circuits/graphql/types.py#CircuitGroupAssignmentType
+  selector_version: 3
+- id: D-73d13c
+  status: proposed
+  mode: advise
+  summary: HTTP handlers in netbox/** (api/views files) are named `*Set`
+  role:
+    package: ""
+    dir: netbox
+    file: api/views
+    entry: http
+    kind: class
+  rule:
+    type: named
+    pattern: "*Set"
+  evidence:
+    holders: 134
+    total: 137
+    lower_bound: 0.938
+    lift: 12.112
+    python_members: 137
+  example: netbox/circuits/api/views.py#CircuitGroupAssignmentViewSet
+  selector_version: 3
+- id: D-8a1131
+  status: proposed
+  mode: advise
+  summary: forms in netbox/** (forms/filtersets and model_forms files) call FieldSet()
+  role:
+    package: ""
+    dir: netbox
+    file: forms/filtersets
+    entry: '-'
+    kind: class
+    member_kind: form
+    also:
+    - package: ""
+      dir: netbox
+      file: model_forms
+      entry: '-'
+      kind: class
+      member_kind: form
+  rule:
+    type: calls
+    callee: netbox/utilities/forms/rendering.py#FieldSet
+  evidence:
+    holders: 261
+    total: 282
+    lower_bound: 0.889
+    lift: 10.229
+    python_members: 282
+  example: netbox/circuits/forms/filtersets.py#CircuitFilterForm
+  selector_version: 3
+- id: D-b69a13
+  status: proposed
+  mode: advise
+  summary: serializers in netbox/ipam/api/** are named `*Serializer`
+  role:
+    package: ""
+    dir: netbox/ipam/api
+    file: "*"
+    entry: '-'
+    kind: class
+    member_kind: serializer
+  rule:
+    type: named
+    pattern: "*Serializer"
+  evidence:
+    holders: 27
+    total: 27
+    lower_bound: 0.875
+    lift: 19.571
+    python_members: 27
+  example: netbox/ipam/api/serializers_/asns.py#ASNRangeSerializer
+  selector_version: 3
+- id: D-58913a
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in netbox/** (choices files) call Choice(), except 3 classes (of
+    another kind), a member (of the module that defines a rule's target) and a member
+    (documented as an exception)
+  role:
+    package: ""
+    dir: netbox
+    file: choices
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: netbox/utilities/choices.py#Choice
+  evidence:
+    holders: 106
+    total: 114
+    lower_bound: 0.868
+    lift: 33.714
+    role_members: 119
+    python_members: 119
+  example: netbox/circuits/choices.py#CircuitCommitRateChoices
+  selector_version: 3
+- id: D-310ec7
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in netbox/ipam/tables/** pass `verbose_name` to Column(), except a
+    member (not calling the callee)
+  role:
+    package: ""
+    dir: netbox/ipam/tables
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: passes_key
+    callee: pkg:django_tables2#Column
+    index: 99
+    key: verbose_name
+  evidence:
+    holders: 22
+    total: 22
+    lower_bound: 0.851
+    lift: 26.106
+    role_members: 23
+    python_members: 23
+  example: netbox/ipam/tables/asn.py#ASNRangeTable
+  selector_version: 3

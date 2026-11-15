@@ -1,0 +1,83 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - aigc
+  - channel
+  - constants
+  - types
+  - utils
+  suffixes:
+  - config
+  - min
+  - test
+  - worker
+conventions:
+- id: D-784831
+  status: proposed
+  mode: advise
+  summary: functions in src/renderer/src/api/** pass `method` to apiRequest.request()
+  role:
+    package: ""
+    dir: src/renderer/src/api
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: passes_key
+    callee: unresolved:src/renderer/src/api/@/utils/request#apiRequest.request
+    index: 0
+    key: method
+  evidence:
+    holders: 94
+    total: 94
+    lower_bound: 0.961
+    lift: 6.364
+    role_members: 95
+  example: src/renderer/src/api/data.ts#dataCloudBackup
+  selector_version: 2
+- id: D-a4cd95
+  status: proposed
+  mode: advise
+  summary: >-
+    exported values in src/main/services/FastifyService/schemas/** are named
+    `*Schema`
+  role:
+    package: ""
+    dir: src/main/services/FastifyService/schemas
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Schema"
+  evidence:
+    holders: 115
+    total: 121
+    lower_bound: 0.896
+    lift: 3.857
+  example: src/main/services/FastifyService/schemas/base.ts#ResponseErrorSchema
+  selector_version: 2
+- id: D-238824
+  status: proposed
+  mode: advise
+  summary: functions in src/shared/modules/** declare their return type
+  role:
+    package: ""
+    dir: src/shared/modules
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 104
+    total: 112
+    lower_bound: 0.865
+    lift: 1.702
+  example: src/shared/modules/camelcase.ts#camelCase
+  selector_version: 2

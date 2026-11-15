@@ -1,0 +1,1331 @@
+{
+ "schema": 1,
+ "engine": "drift 0.1.0-dev",
+ "commit": null,
+ "root": "/work/acme",
+ "units": 793,
+ "roles": 50,
+ "conventions": 14,
+ "shown": 14,
+ "tiers": {
+  "default": 5,
+  "suggestion": 9
+ },
+ "agents": {
+  "hidden": 14,
+  "admission": {
+   "kind": "family_table",
+   "file": "crates/drift-mine/data/family-admission.json",
+   "run": "eval/study/runs/dev-v3-relabel4-2026-11-07",
+   "date": "2026-11-07",
+   "min_accept": 0.85,
+   "min_cards": 10
+  },
+  "candidates": 5
+ },
+ "suggestion_cap": {
+  "cap": 5,
+  "from": "default",
+  "suggestions": 9,
+  "listed": 5
+ },
+ "params": {
+  "max": 15,
+  "max_per_role": 5,
+  "min_role_size": 8,
+  "min_block_role_size": 15,
+  "min_lower_bound": 0.75,
+  "min_lift": 1.5,
+  "min_lift_external_call": 3,
+  "tier": {
+   "decision": "D7",
+   "default_rule_kinds": [
+    "wrapped_by:call",
+    "avoids:import"
+   ],
+   "default_languages": [
+    "ts"
+   ],
+   "advise_only_languages": [
+    "py"
+   ],
+   "target": "in_repo",
+   "min_members": 15
+  },
+  "show": {
+   "file": "crates/drift-mine/data/show-policy.json",
+   "schema": 1,
+   "run": "eval/study/runs/dev-v3-relabel5-2026-11-07",
+   "date": "2026-11-07",
+   "min_accept": 0.6,
+   "min_cards": 5,
+   "max_outliers": 1,
+   "admitted": {
+    "py": [
+     "naming"
+    ],
+    "ts": [
+     "control",
+     "naming"
+    ]
+   }
+  }
+ },
+ "proposals": [
+  {
+   "id": "D-ed1ec0",
+   "rank": 1,
+   "shown_by_default": true,
+   "summary": "apps/web: HTTP handlers in app/api/workspaces/** (route files) are wrapped in withWorkspace()",
+   "role": {
+    "package": "apps/web",
+    "dir": "app/api/workspaces",
+    "file": "route",
+    "entry": "http",
+    "kind": "function",
+    "members": 74
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "call",
+    "any_of": [
+     "apps/web/lib/auth.ts#withWorkspace"
+    ]
+   },
+   "evidence": {
+    "holders": 70,
+    "total": 74,
+    "lower_bound": 0.869,
+    "lift": 3.243
+   },
+   "rule_kind": "wrapped_by:call",
+   "tier": "default",
+   "tier_reason": null,
+   "language": "ts",
+   "names_package": false,
+   "agents": {
+    "shown_to_agents": false,
+    "reason": "candidate",
+    "source": "default tier (block candidate)",
+    "text": "not shown to agents (block candidate: reaches agents once you accept it)"
+   },
+   "blockable": true,
+   "example": {
+    "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+    "symbol": "GET",
+    "line": 5
+   },
+   "outliers": [
+    {
+     "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+     "symbol": "GET",
+     "line": 4
+    },
+    {
+     "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+     "symbol": "GET",
+     "line": 4
+    },
+    {
+     "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+     "symbol": "GET",
+     "line": 5
+    },
+    {
+     "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+     "symbol": "GET",
+     "line": 4
+    }
+   ],
+   "outliers_total": 4
+  },
+  {
+   "id": "D-288d8d",
+   "rank": 2,
+   "shown_by_default": true,
+   "summary": "apps/web: HTTP handlers in app/api/admin/** (route files) are wrapped in withAdmin()",
+   "role": {
+    "package": "apps/web",
+    "dir": "app/api/admin",
+    "file": "route",
+    "entry": "http",
+    "kind": "function",
+    "members": 20
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "call",
+    "any_of": [
+     "apps/web/lib/auth.ts#withAdmin"
+    ]
+   },
+   "evidence": {
+    "holders": 19,
+    "total": 20,
+    "lower_bound": 0.764,
+    "lift": 12
+   },
+   "rule_kind": "wrapped_by:call",
+   "tier": "default",
+   "tier_reason": null,
+   "language": "ts",
+   "names_package": false,
+   "agents": {
+    "shown_to_agents": false,
+    "reason": "candidate",
+    "source": "default tier (block candidate)",
+    "text": "not shown to agents (block candidate: reaches agents once you accept it)"
+   },
+   "blockable": true,
+   "example": {
+    "path": "apps/web/app/api/admin/abuse/route.ts",
+    "symbol": "GET",
+    "line": 4
+   },
+   "outliers": [
+    {
+     "path": "apps/web/app/api/admin/health/route.ts",
+     "symbol": "GET",
+     "line": 3
+    }
+   ],
+   "outliers_total": 1
+  },
+  {
+   "id": "D-50ba36",
+   "rank": 3,
+   "shown_by_default": true,
+   "summary": "apps/web: server actions in lib/** are wrapped in authActionClient.inputSchema().action()",
+   "role": {
+    "package": "apps/web",
+    "dir": "lib",
+    "file": "*",
+    "entry": "server_action",
+    "kind": "function",
+    "members": 19
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "call",
+    "any_of": [
+     "apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action"
+    ]
+   },
+   "evidence": {
+    "holders": 18,
+    "total": 19,
+    "lower_bound": 0.754,
+    "lift": 12.632
+   },
+   "rule_kind": "wrapped_by:call",
+   "tier": "default",
+   "tier_reason": null,
+   "language": "ts",
+   "names_package": false,
+   "agents": {
+    "shown_to_agents": false,
+    "reason": "candidate",
+    "source": "default tier (block candidate)",
+    "text": "not shown to agents (block candidate: reaches agents once you accept it)"
+   },
+   "blockable": true,
+   "example": {
+    "path": "apps/web/lib/actions/archive-link.ts",
+    "symbol": "archiveLinkAction",
+    "line": 7
+   },
+   "outliers": [
+    {
+     "path": "apps/web/lib/actions/ban-customer.ts",
+     "symbol": "banCustomer",
+     "line": 5
+    }
+   ],
+   "outliers_total": 1
+  },
+  {
+   "id": "D-b0d245",
+   "rank": 4,
+   "shown_by_default": true,
+   "summary": "apps/web: HTTP handlers in app/** (route files) are wrapped in withAdmin() or withWorkspace()",
+   "role": {
+    "package": "apps/web",
+    "dir": "app",
+    "file": "route",
+    "entry": "http",
+    "kind": "function",
+    "members": 97
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "call",
+    "any_of": [
+     "apps/web/lib/auth.ts#withAdmin",
+     "apps/web/lib/auth.ts#withWorkspace"
+    ]
+   },
+   "evidence": {
+    "holders": 89,
+    "total": 97,
+    "lower_bound": 0.846,
+    "lift": 2.474,
+    "split": [
+     [
+      "apps/web/lib/auth.ts#withWorkspace",
+      70
+     ],
+     [
+      "apps/web/lib/auth.ts#withAdmin",
+      19
+     ]
+    ]
+   },
+   "rule_kind": "wrapped_by:call",
+   "tier": "default",
+   "tier_reason": null,
+   "language": "ts",
+   "names_package": false,
+   "agents": {
+    "shown_to_agents": false,
+    "reason": "candidate",
+    "source": "default tier (block candidate)",
+    "text": "not shown to agents (block candidate: reaches agents once you accept it)"
+   },
+   "blockable": true,
+   "example": {
+    "path": "apps/web/app/api/admin/abuse/route.ts",
+    "symbol": "GET",
+    "line": 4
+   },
+   "outliers": [
+    {
+     "path": "apps/web/app/api/admin/health/route.ts",
+     "symbol": "GET",
+     "line": 3
+    },
+    {
+     "path": "apps/web/app/api/oauth/callback/route.ts",
+     "symbol": "GET",
+     "line": 3
+    },
+    {
+     "path": "apps/web/app/api/public/preview/route.ts",
+     "symbol": "GET",
+     "line": 4
+    },
+    {
+     "path": "apps/web/app/api/public/status/route.ts",
+     "symbol": "GET",
+     "line": 3
+    },
+    {
+     "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+     "symbol": "GET",
+     "line": 4
+    },
+    {
+     "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+     "symbol": "GET",
+     "line": 4
+    },
+    {
+     "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+     "symbol": "GET",
+     "line": 5
+    },
+    {
+     "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+     "symbol": "GET",
+     "line": 4
+    }
+   ],
+   "outliers_total": 8
+  },
+  {
+   "id": "D-987321",
+   "rank": 5,
+   "shown_by_default": true,
+   "summary": "files in packages/ui/** do not import from apps/web/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+   "role": {
+    "package": "packages/ui",
+    "dir": "**",
+    "file": "*",
+    "entry": "-",
+    "kind": "module",
+    "members": 61
+   },
+   "rule": {
+    "type": "avoids",
+    "signal": "import:apps/web"
+   },
+   "evidence": {
+    "holders": 60,
+    "total": 61,
+    "lower_bound": 0.913,
+    "lift": 3
+   },
+   "rule_kind": "avoids:import",
+   "tier": "default",
+   "tier_reason": null,
+   "language": "ts",
+   "names_package": false,
+   "agents": {
+    "shown_to_agents": false,
+    "reason": "candidate",
+    "source": "default tier (block candidate)",
+    "text": "not shown to agents (block candidate: reaches agents once you accept it)"
+   },
+   "blockable": true,
+   "example": {
+    "path": "packages/ui/src/alert.tsx",
+    "symbol": "(file)",
+    "line": 1
+   },
+   "outliers": [
+    {
+     "path": "packages/ui/src/stat.tsx",
+     "symbol": "(file)",
+     "line": 1
+    }
+   ],
+   "outliers_total": 1
+  },
+  {
+   "id": "D-e599ac",
+   "rank": 6,
+   "shown_by_default": true,
+   "summary": "apps/api: functions in src/** are named `run*`, except a shared part (used by several members, not a member)",
+   "role": {
+    "package": "apps/api",
+    "dir": "src",
+    "file": "*",
+    "entry": "-",
+    "kind": "function",
+    "members": 41
+   },
+   "rule": {
+    "type": "named",
+    "pattern": "run*"
+   },
+   "evidence": {
+    "holders": 40,
+    "total": 40,
+    "lower_bound": 0.912,
+    "lift": 5.854,
+    "role_members": 41
+   },
+   "rule_kind": "named",
+   "tier": "suggestion",
+   "tier_reason": "rule_kind",
+   "language": "ts",
+   "names_package": false,
+   "agents": {
+    "shown_to_agents": false,
+    "reason": "below_bar",
+    "source": "crates/drift-mine/data/family-admission.json (eval/study/runs/dev-v3-relabel4-2026-11-07, bar 85% of 10)",
+    "family": "naming",
+    "accepted": 21,
+    "n": 37,
+    "text": "not shown to agents (family below admission bar: 56% of 37)"
+   },
+   "blockable": true,
+   "example": {
+    "path": "apps/api/src/jobs/job10.ts",
+    "symbol": "runJob10",
+    "line": 3
+   },
+   "outliers": [],
+   "outliers_total": 0,
+   "exempt": [
+    {
+     "path": "apps/api/src/jobs/audit.ts",
+     "symbol": "audit",
+     "line": 1,
+     "code": "shared_part",
+     "reason": "shared part used by 39 members"
+    }
+   ]
+  },
+  {
+   "id": "D-a312d9",
+   "rank": 7,
+   "shown_by_default": true,
+   "summary": "apps/api: classes in src/** (*.controller files) are registered in Module() controllers of apps/api/src/app.module.ts",
+   "role": {
+    "package": "apps/api",
+    "dir": "src",
+    "file": "*.controller",
+    "entry": "*",
+    "kind": "class",
+    "members": 25
+   },
+   "rule": {
+    "type": "registered_in",
+    "slot": "arg:pkg:@nestjs/common#Module@0:controllers",
+    "path": "apps/api/src/app.module.ts"
+   },
+   "evidence": {
+    "holders": 25,
+    "total": 25,
+    "lower_bound": 0.867,
+    "lift": 1
+   },
+   "rule_kind": "registered_in",
+   "tier": "suggestion",
+   "tier_reason": "rule_kind",
+   "language": "ts",
+   "names_package": false,
+   "agents": {
+    "shown_to_agents": false,
+    "reason": "unknown_family",
+    "source": "crates/drift-mine/data/family-admission.json (eval/study/runs/dev-v3-relabel4-2026-11-07, bar 85% of 10)",
+    "text": "not shown to agents (rule family not in the admission table)"
+   },
+   "blockable": false,
+   "example": {
+    "path": "apps/api/src/alerts/alerts.controller.ts",
+    "symbol": "AlertsController",
+    "line": 7
+   },
+   "outliers": [],
+   "outliers_total": 0,
+   "wiring": {
+    "registry": {
+     "action": "register",
+     "path": "apps/api/src/app.module.ts",
+     "line": 54,
+     "label": "Module() controllers",
+     "like": {
+      "name": "RefundsController",
+      "line": 55,
+      "path": "apps/api/src/refunds/refunds.controller.ts"
+     }
+    },
+    "lists": 1
+   }
+  },
+  {
+   "id": "D-ccf957",
+   "rank": 8,
+   "shown_by_default": true,
+   "summary": "apps/api: HTTP handlers in src/** (*.controller files) are decorated with UseGuards()",
+   "role": {
+    "package": "apps/api",
+    "dir": "src",
+    "file": "*.controller",
+    "entry": "http",
+    "kind": "function",
+    "members": 49
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "decorator",
+    "any_of": [
+     "pkg:@nestjs/common#UseGuards"
+    ]
+   },
+   "evidence": {
+    "holders": 47,
+    "total": 49,
+    "lower_bound": 0.863,
+    "lift": 4.898
+   },
+   "rule_kind": "wrapped_by:decorator",
+   "tier": "suggestion",
+   "tier_reason": "rule_kind_d7",
+   "language": "ts",
+   "names_package": true,
+   "agents": {
+    "shown_to_agents": false,
+    "reason": "below_bar",
+    "source": "crates/drift-mine/data/family-admission.json (eval/study/runs/dev-v3-relabel4-2026-11-07, bar 85% of 10)",
+    "family": "decorator",
+    "accepted": 7,
+    "n": 17,
+    "text": "not shown to agents (family below admission bar: 41% of 17)"
+   },
+   "blockable": true,
+   "example": {
+    "path": "apps/api/src/alerts/alerts.controller.ts",
+    "symbol": "GET /alerts/:id",
+    "line": 10
+   },
+   "outliers": [
+    {
+     "path": "apps/api/src/releases/releases.controller.ts",
+     "symbol": "GET /releases/:id",
+     "line": 8
+    },
+    {
+     "path": "apps/api/src/releases/releases.controller.ts",
+     "symbol": "POST /releases",
+     "line": 13
+    }
+   ],
+   "outliers_total": 2
+  },
+  {
+   "id": "D-d779d0",
+   "rank": 9,
+   "shown_by_default": true,
+   "summary": "apps/api: functions in src/** pass `event` to audit(), except 2 members (not calling the callee)",
+   "role": {
+    "package": "apps/api",
+    "dir": "src",
+    "file": "*",
+    "entry": "-",
+    "kind": "function",
+    "members": 41
+   },
+   "rule": {
+    "type": "passes_key",
+    "callee": "apps/api/src/jobs/audit.ts#audit",
+    "index": 0,
+    "key": "event"
+   },
+   "evidence": {
+    "holders": 37,
+    "total": 39,
+    "lower_bound": 0.831,
+    "lift": 5.854,
+    "role_members": 41
+   },
+   "rule_kind": "passes_key",
+   "tier": "suggestion",
+   "tier_reason": "rule_kind",
+   "language": "ts",
+   "names_package": false,
+   "agents": {
+    "shown_to_agents": false,
+    "reason": "below_bar",
+    "source": "crates/drift-mine/data/family-admission.json (eval/study/runs/dev-v3-relabel4-2026-11-07, bar 85% of 10)",
+    "family": "argument_key",
+    "accepted": 6,
+    "n": 12,
+    "text": "not shown to agents (family below admission bar: 50% of 12)"
+   },
+   "blockable": true,
+   "example": {
+    "path": "apps/api/src/jobs/job10.ts",
+    "symbol": "runJob10",
+    "line": 3
+   },
+   "outliers": [
+    {
+     "path": "apps/api/src/jobs/job47.ts",
+     "symbol": "runJob47",
+     "line": 3
+    },
+    {
+     "path": "apps/api/src/jobs/job48.ts",
+     "symbol": "runJob48",
+     "line": 3
+    }
+   ],
+   "outliers_total": 2,
+   "exempt": [
+    {
+     "path": "apps/api/src/jobs/audit.ts",
+     "symbol": "audit",
+     "line": 1,
+     "code": "does_not_call",
+     "reason": "does not call audit()"
+    },
+    {
+     "path": "apps/api/src/jobs/job49.ts",
+     "symbol": "runJob49",
+     "line": 1,
+     "code": "does_not_call",
+     "reason": "does not call audit()"
+    }
+   ],
+   "key_type": "required"
+  },
+  {
+   "id": "D-df89fd",
+   "rank": 10,
+   "shown_by_default": true,
+   "summary": "apps/api: classes in src/** (*.service files) extend BaseService, except a member (of the module that defines a rule's target)",
+   "role": {
+    "package": "apps/api",
+    "dir": "src",
+    "file": "*.service",
+    "entry": "-",
+    "kind": "class",
+    "members": 27
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "apps/api/src/common/base.service.ts#BaseService"
+    ]
+   },
+   "evidence": {
+    "holders": 25,
+    "total": 26,
+    "lower_bound": 0.811,
+    "lift": 3,
+    "role_members": 27
+   },
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "tier_reason": "rule_kind_d7",
+   "language": "ts",
+   "names_package": false,
+   "agents": {
+    "shown_to_agents": false,
+    "reason": "below_bar",
+    "source": "crates/drift-mine/data/family-admission.json (eval/study/runs/dev-v3-relabel4-2026-11-07, bar 85% of 10)",
+    "family": "base_class",
+    "accepted": 11,
+    "n": 18,
+    "text": "not shown to agents (family below admission bar: 61% of 18)"
+   },
+   "blockable": true,
+   "example": {
+    "path": "apps/api/src/alerts/alerts.service.ts",
+    "symbol": "AlertsService",
+    "line": 5
+   },
+   "outliers": [
+    {
+     "path": "apps/api/src/audits/audits.service.ts",
+     "symbol": "AuditsService",
+     "line": 5
+    }
+   ],
+   "outliers_total": 1,
+   "exempt": [
+    {
+     "path": "apps/api/src/common/base.service.ts",
+     "symbol": "BaseService",
+     "line": 3,
+     "code": "defining_module",
+     "reason": "in the module that defines BaseService"
+    }
+   ]
+  },
+  {
+   "id": "D-43b8c8",
+   "rank": 11,
+   "shown_by_default": false,
+   "summary": "apps/api: classes in src/** (*.service files) are registered in Module() providers of apps/api/src/app.module.ts",
+   "role": {
+    "package": "apps/api",
+    "dir": "src",
+    "file": "*.service",
+    "entry": "*",
+    "kind": "class",
+    "members": 26
+   },
+   "rule": {
+    "type": "registered_in",
+    "slot": "arg:pkg:@nestjs/common#Module@0:providers",
+    "path": "apps/api/src/app.module.ts"
+   },
+   "evidence": {
+    "holders": 25,
+    "total": 26,
+    "lower_bound": 0.811,
+    "lift": 1
+   },
+   "rule_kind": "registered_in",
+   "tier": "suggestion",
+   "tier_reason": "rule_kind",
+   "language": "ts",
+   "names_package": false,
+   "agents": {
+    "shown_to_agents": false,
+    "reason": "unknown_family",
+    "source": "crates/drift-mine/data/family-admission.json (eval/study/runs/dev-v3-relabel4-2026-11-07, bar 85% of 10)",
+    "text": "not shown to agents (rule family not in the admission table)"
+   },
+   "blockable": false,
+   "example": {
+    "path": "apps/api/src/alerts/alerts.service.ts",
+    "symbol": "AlertsService",
+    "line": 5
+   },
+   "outliers": [
+    {
+     "path": "apps/api/src/payouts/payouts.service.ts",
+     "symbol": "PayoutsService",
+     "line": 5
+    }
+   ],
+   "outliers_total": 1,
+   "wiring": {
+    "registry": {
+     "action": "register",
+     "path": "apps/api/src/app.module.ts",
+     "line": 81,
+     "label": "Module() providers",
+     "like": {
+      "name": "RefundsService",
+      "line": 82,
+      "path": "apps/api/src/refunds/refunds.service.ts"
+     }
+    },
+    "lists": 1
+   }
+  },
+  {
+   "id": "D-82ce0b",
+   "rank": 12,
+   "shown_by_default": false,
+   "summary": "services/agents: TypedDicts in agents/** take `TypedDict` from typing_extensions, not typing",
+   "role": {
+    "package": "services/agents",
+    "dir": "agents",
+    "file": "*",
+    "entry": "-",
+    "kind": "class",
+    "variety": "typeddict",
+    "members": 24
+   },
+   "rule": {
+    "type": "imports_from",
+    "name": "TypedDict",
+    "source": "pkg:typing_extensions#TypedDict",
+    "instead_of": [
+     "pkg:python:typing#TypedDict"
+    ]
+   },
+   "evidence": {
+    "holders": 23,
+    "total": 24,
+    "lower_bound": 0.798,
+    "lift": 1,
+    "split": [
+     [
+      "typing_extensions",
+      23
+     ],
+     [
+      "typing",
+      1
+     ]
+    ],
+    "python_members": 24
+   },
+   "rule_kind": "imports_from",
+   "tier": "suggestion",
+   "tier_reason": "language_advise",
+   "language": "py",
+   "names_package": true,
+   "agents": {
+    "shown_to_agents": false,
+    "reason": "below_bar",
+    "source": "crates/drift-mine/data/family-admission.json (eval/study/runs/dev-v3-relabel4-2026-11-07, bar 85% of 10)",
+    "family": "import_source",
+    "accepted": 1,
+    "n": 1,
+    "text": "not shown to agents (family below admission bar: 100% of 1)"
+   },
+   "blockable": true,
+   "example": {
+    "path": "services/agents/agents/handoff.py",
+    "symbol": "HandoffInput",
+    "line": 10
+   },
+   "outliers": [
+    {
+     "path": "services/agents/agents/handoff.py",
+     "symbol": "HandoffEvent",
+     "line": 20
+    }
+   ],
+   "outliers_total": 1
+  },
+  {
+   "id": "D-da92a0",
+   "rank": 13,
+   "shown_by_default": false,
+   "summary": "packages/emails: components in src/templates/** render <Footer>",
+   "role": {
+    "package": "packages/emails",
+    "dir": "src/templates",
+    "file": "*",
+    "entry": "-",
+    "kind": "component",
+    "members": 23
+   },
+   "rule": {
+    "type": "renders",
+    "component": "packages/emails/src/components/footer.tsx#Footer"
+   },
+   "evidence": {
+    "holders": 22,
+    "total": 23,
+    "lower_bound": 0.79,
+    "lift": 5.174
+   },
+   "rule_kind": "renders",
+   "tier": "suggestion",
+   "tier_reason": "rule_kind",
+   "language": "ts",
+   "names_package": false,
+   "agents": {
+    "shown_to_agents": false,
+    "reason": "below_bar",
+    "source": "crates/drift-mine/data/family-admission.json (eval/study/runs/dev-v3-relabel4-2026-11-07, bar 85% of 10)",
+    "family": "renders",
+    "accepted": 4,
+    "n": 10,
+    "text": "not shown to agents (family below admission bar: 40% of 10)"
+   },
+   "blockable": true,
+   "example": {
+    "path": "packages/emails/src/templates/comment-added.tsx",
+    "symbol": "CommentAddedEmail",
+    "line": 4
+   },
+   "outliers": [
+    {
+     "path": "packages/emails/src/templates/goodbye.tsx",
+     "symbol": "GoodbyeEmail",
+     "line": 3
+    }
+   ],
+   "outliers_total": 1
+  },
+  {
+   "id": "D-69e735",
+   "rank": 14,
+   "shown_by_default": false,
+   "summary": "apps/web: pages in app/** (page files) render inside <PageShell>",
+   "role": {
+    "package": "apps/web",
+    "dir": "app",
+    "file": "page",
+    "entry": "page",
+    "kind": "component",
+    "members": 21
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "jsx",
+    "any_of": [
+     "apps/web/components/page-shell.tsx#PageShell"
+    ]
+   },
+   "evidence": {
+    "holders": 20,
+    "total": 21,
+    "lower_bound": 0.773,
+    "lift": 5.667
+   },
+   "rule_kind": "wrapped_by:jsx",
+   "tier": "suggestion",
+   "tier_reason": "rule_kind_d7",
+   "language": "ts",
+   "names_package": false,
+   "agents": {
+    "shown_to_agents": false,
+    "reason": "below_bar",
+    "source": "crates/drift-mine/data/family-admission.json (eval/study/runs/dev-v3-relabel4-2026-11-07, bar 85% of 10)",
+    "family": "jsx_wrapper",
+    "accepted": 2,
+    "n": 2,
+    "text": "not shown to agents (family below admission bar: 100% of 2)"
+   },
+   "blockable": true,
+   "example": {
+    "path": "apps/web/app/(dashboard)/[slug]/alerts/page.tsx",
+    "symbol": "AlertsPage",
+    "line": 4
+   },
+   "outliers": [
+    {
+     "path": "apps/web/app/(dashboard)/[slug]/onboarding/page.tsx",
+     "symbol": "OnboardingPage",
+     "line": 3
+    }
+   ],
+   "outliers_total": 1
+  }
+ ],
+ "largest_role": null,
+ "wiring": {
+  "enabled": true,
+  "params": {
+   "min_coverage": 0.9,
+   "min_members": 5,
+   "min_files": 3,
+   "max_rules": 10,
+   "cochange": {
+    "min_share": 0.9,
+    "min_commits": 5,
+    "window": 500,
+    "max_rules": 5
+   }
+  },
+  "registries": [
+   {
+    "path": "apps/api/src/app.module.ts",
+    "line": 54,
+    "slot": "arg:pkg:@nestjs/common#Module@0:controllers",
+    "label": "Module() controllers",
+    "lists": 1,
+    "role": {
+     "package": "apps/api",
+     "dir": "src",
+     "file": "*.controller",
+     "entry": "*",
+     "kind": "class"
+    },
+    "role_summary": "apps/api: classes in src/** (*.controller files)",
+    "members": 25,
+    "covered": 25,
+    "status": "proposed"
+   },
+   {
+    "path": "apps/api/src/app.module.ts",
+    "line": 81,
+    "slot": "arg:pkg:@nestjs/common#Module@0:providers",
+    "label": "Module() providers",
+    "lists": 1,
+    "role": {
+     "package": "apps/api",
+     "dir": "src",
+     "file": "*.service",
+     "entry": "*",
+     "kind": "class"
+    },
+    "role_summary": "apps/api: classes in src/** (*.service files)",
+    "members": 26,
+    "covered": 25,
+    "status": "proposed"
+   },
+   {
+    "path": "packages/ui/src/index.tsx",
+    "line": 0,
+    "slot": "exports",
+    "label": "re-exports",
+    "lists": 1,
+    "role": {
+     "package": "packages/ui",
+     "dir": "src",
+     "file": "*",
+     "entry": "*",
+     "kind": "component"
+    },
+    "role_summary": "packages/ui: components in src/**",
+    "members": 60,
+    "covered": 32,
+    "status": "below_threshold"
+   },
+   {
+    "path": "packages/utils/src/index.ts",
+    "line": 0,
+    "slot": "exports",
+    "label": "re-exports",
+    "lists": 1,
+    "role": {
+     "package": "packages/utils",
+     "dir": "src",
+     "file": "*",
+     "entry": "*",
+     "kind": "function"
+    },
+    "role_summary": "packages/utils: functions in src/**",
+    "members": 6,
+    "covered": 4,
+    "status": "below_threshold"
+   }
+  ],
+  "cochange": {
+   "history": "read",
+   "head": "288a7c8154738efd5cd5a5d1fb485369b86be34b",
+   "commits": 0,
+   "rules": 0
+  }
+ },
+ "workspace": {
+  "tools": [
+   "npm"
+  ],
+  "packages": [
+   {
+    "path": "",
+    "languages": [],
+    "files": 0,
+    "manifests": [
+     "package.json"
+    ],
+    "declared_by": [],
+    "roles": 0,
+    "cards": 0,
+    "default_tier": 0,
+    "suggestions": 0,
+    "python_withheld": 0,
+    "hidden_by_show_policy": 0,
+    "skipped": {},
+    "silent": "no production source files (a manifest only, or only tests and examples)"
+   },
+   {
+    "path": "apps/api",
+    "languages": [
+     "ts"
+    ],
+    "files": 95,
+    "manifests": [
+     "apps/api/package.json"
+    ],
+    "declared_by": [
+     "package.json workspaces"
+    ],
+    "roles": 10,
+    "cards": 6,
+    "default_tier": 0,
+    "suggestions": 6,
+    "python_withheld": 0,
+    "hidden_by_show_policy": 1,
+    "skipped": {},
+    "silent": null
+   },
+   {
+    "path": "apps/web",
+    "languages": [
+     "ts"
+    ],
+    "files": 143,
+    "manifests": [
+     "apps/web/package.json"
+    ],
+    "declared_by": [
+     "package.json workspaces"
+    ],
+    "roles": 25,
+    "cards": 5,
+    "default_tier": 4,
+    "suggestions": 1,
+    "python_withheld": 0,
+    "hidden_by_show_policy": 0,
+    "skipped": {
+     "too_costly": 1,
+     "too_deep": 1
+    },
+    "silent": null
+   },
+   {
+    "path": "examples/express-cjs",
+    "languages": [],
+    "files": 0,
+    "manifests": [],
+    "declared_by": [],
+    "roles": 0,
+    "cards": 0,
+    "default_tier": 0,
+    "suggestions": 0,
+    "python_withheld": 0,
+    "hidden_by_show_policy": 0,
+    "skipped": {},
+    "silent": "no production source files (a manifest only, or only tests and examples)"
+   },
+   {
+    "path": "examples/fastify-app",
+    "languages": [],
+    "files": 0,
+    "manifests": [],
+    "declared_by": [],
+    "roles": 0,
+    "cards": 0,
+    "default_tier": 0,
+    "suggestions": 0,
+    "python_withheld": 0,
+    "hidden_by_show_policy": 0,
+    "skipped": {},
+    "silent": "no production source files (a manifest only, or only tests and examples)"
+   },
+   {
+    "path": "examples/hono-app",
+    "languages": [],
+    "files": 0,
+    "manifests": [],
+    "declared_by": [],
+    "roles": 0,
+    "cards": 0,
+    "default_tier": 0,
+    "suggestions": 0,
+    "python_withheld": 0,
+    "hidden_by_show_policy": 0,
+    "skipped": {},
+    "silent": "no production source files (a manifest only, or only tests and examples)"
+   },
+   {
+    "path": "examples/jobs-app",
+    "languages": [],
+    "files": 0,
+    "manifests": [],
+    "declared_by": [],
+    "roles": 0,
+    "cards": 0,
+    "default_tier": 0,
+    "suggestions": 0,
+    "python_withheld": 0,
+    "hidden_by_show_policy": 0,
+    "skipped": {},
+    "silent": "no production source files (a manifest only, or only tests and examples)"
+   },
+   {
+    "path": "examples/signals",
+    "languages": [],
+    "files": 0,
+    "manifests": [],
+    "declared_by": [],
+    "roles": 0,
+    "cards": 0,
+    "default_tier": 0,
+    "suggestions": 0,
+    "python_withheld": 0,
+    "hidden_by_show_policy": 0,
+    "skipped": {},
+    "silent": "no production source files (a manifest only, or only tests and examples)"
+   },
+   {
+    "path": "examples/trpc-app",
+    "languages": [],
+    "files": 0,
+    "manifests": [],
+    "declared_by": [],
+    "roles": 0,
+    "cards": 0,
+    "default_tier": 0,
+    "suggestions": 0,
+    "python_withheld": 0,
+    "hidden_by_show_policy": 0,
+    "skipped": {},
+    "silent": "no production source files (a manifest only, or only tests and examples)"
+   },
+   {
+    "path": "packages/db",
+    "languages": [
+     "ts"
+    ],
+    "files": 2,
+    "manifests": [
+     "packages/db/package.json"
+    ],
+    "declared_by": [
+     "package.json workspaces"
+    ],
+    "roles": 0,
+    "cards": 0,
+    "default_tier": 0,
+    "suggestions": 0,
+    "python_withheld": 0,
+    "hidden_by_show_policy": 0,
+    "skipped": {},
+    "silent": "too small to mine: no role reaches 8 members (2 production file(s))"
+   },
+   {
+    "path": "packages/emails",
+    "languages": [
+     "ts"
+    ],
+    "files": 25,
+    "manifests": [
+     "packages/emails/package.json"
+    ],
+    "declared_by": [
+     "package.json workspaces"
+    ],
+    "roles": 5,
+    "cards": 1,
+    "default_tier": 0,
+    "suggestions": 1,
+    "python_withheld": 0,
+    "hidden_by_show_policy": 1,
+    "skipped": {},
+    "silent": null
+   },
+   {
+    "path": "packages/ui",
+    "languages": [
+     "ts"
+    ],
+    "files": 61,
+    "manifests": [
+     "packages/ui/package.json"
+    ],
+    "declared_by": [
+     "package.json workspaces"
+    ],
+    "roles": 5,
+    "cards": 1,
+    "default_tier": 1,
+    "suggestions": 0,
+    "python_withheld": 0,
+    "hidden_by_show_policy": 0,
+    "skipped": {},
+    "silent": null
+   },
+   {
+    "path": "packages/utils",
+    "languages": [
+     "ts"
+    ],
+    "files": 5,
+    "manifests": [
+     "packages/utils/package.json"
+    ],
+    "declared_by": [
+     "package.json workspaces"
+    ],
+    "roles": 0,
+    "cards": 0,
+    "default_tier": 0,
+    "suggestions": 0,
+    "python_withheld": 0,
+    "hidden_by_show_policy": 0,
+    "skipped": {},
+    "silent": "too small to mine: no role reaches 8 members (5 production file(s))"
+   },
+   {
+    "path": "services/agents",
+    "languages": [
+     "py"
+    ],
+    "files": 9,
+    "manifests": [
+     "services/agents/pyproject.toml"
+    ],
+    "declared_by": [],
+    "roles": 3,
+    "cards": 1,
+    "default_tier": 0,
+    "suggestions": 1,
+    "python_withheld": 0,
+    "hidden_by_show_policy": 0,
+    "skipped": {},
+    "silent": null
+   }
+  ]
+ },
+ "python_proposals": {
+  "enabled": false,
+  "decision": "D13-py",
+  "withheld": 0,
+  "opt_in": "proposals: {python: on} in .drift/config.yaml (census: --python-proposals)"
+ },
+ "withheld": {
+  "total": 2,
+  "by": [
+   {
+    "language": "ts",
+    "family": "decorator",
+    "reason": "family_not_admitted",
+    "n": 1
+   },
+   {
+    "language": "ts",
+    "family": "jsx_wrapper",
+    "reason": "family_not_admitted",
+    "n": 1
+   }
+  ],
+  "review": "drift review --hidden"
+ }
+}

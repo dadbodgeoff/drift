@@ -1,0 +1,297 @@
+[
+ {
+  "kind": "CHG",
+  "repo": "T02",
+  "id": "D-f9ec7b",
+  "tier_before": "suggestion",
+  "tier_after": "suggestion",
+  "label": "ACCEPT",
+  "why": null,
+  "label_run": "dev3",
+  "v3": "-",
+  "v3_why": null,
+  "rule_kind": "named",
+  "role": {
+   "package": "legacy/web-stack/apps/api",
+   "dir": "src",
+   "file": "*.service",
+   "entry": "-",
+   "kind": "class",
+   "members": 62
+  },
+  "summary": "legacy/web-stack/apps/api: classes in src/** (*.service files) are named `*Service`, except 2 companions (a helper or constant beside the members that follow it)",
+  "what": [
+   "evidence",
+   "role"
+  ],
+  "ev_before": "61/61",
+  "ev_after": "60/60",
+  "members_before": 63,
+  "members_after": 62
+ },
+ {
+  "kind": "CHG",
+  "repo": "T13",
+  "id": "D-005b17",
+  "tier_before": "default",
+  "tier_after": "default",
+  "label": "ACCEPT",
+  "why": null,
+  "label_run": "dev3",
+  "v3": "-",
+  "v3_why": null,
+  "rule_kind": "avoids:import",
+  "role": {
+   "package": "",
+   "dir": "app/lib",
+   "file": "*",
+   "entry": "-",
+   "kind": "module",
+   "members": 230
+  },
+  "summary": "files in app/lib/** do not import from app/policies/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+  "what": [
+   "evidence",
+   "role"
+  ],
+  "ev_before": "230/232",
+  "ev_after": "228/230",
+  "members_before": 232,
+  "members_after": 230
+ },
+ {
+  "kind": "GONE",
+  "repo": "T18",
+  "id": "D-41177a",
+  "tier_before": "default",
+  "tier_after": null,
+  "label": "WRONG",
+  "why": "legit_outliers",
+  "label_run": "dev3",
+  "v3": "-",
+  "v3_why": null,
+  "rule_kind": "avoids:import",
+  "role": {
+   "package": "",
+   "dir": "scripts",
+   "file": "*",
+   "entry": "-",
+   "kind": "module",
+   "members": 126
+  },
+  "summary": "files in scripts/** do not import from apps/admin/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+  "what": [],
+  "ev_before": "124/126",
+  "ev_after": null,
+  "members_before": 126,
+  "members_after": null
+ },
+ {
+  "kind": "CHG",
+  "repo": "documenso",
+  "id": "D-041293",
+  "tier_before": "default",
+  "tier_after": "default",
+  "label": "ACCEPT",
+  "why": null,
+  "label_run": "relabel5@7",
+  "v3": "ACCEPT",
+  "v3_why": null,
+  "rule_kind": "avoids:import",
+  "role": {
+   "package": "packages/lib",
+   "dir": "**",
+   "file": "*",
+   "entry": "-",
+   "kind": "module",
+   "members": 633
+  },
+  "summary": "files in packages/lib/** do not import from packages/trpc/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+  "what": [
+   "evidence",
+   "role"
+  ],
+  "ev_before": "637/641",
+  "ev_after": "629/633",
+  "members_before": 641,
+  "members_after": 633
+ },
+ {
+  "kind": "CHG",
+  "repo": "documenso",
+  "id": "D-2a51e9",
+  "tier_before": "default",
+  "tier_after": "default",
+  "label": "ACCEPT",
+  "why": null,
+  "label_run": "relabel5@7",
+  "v3": "ACCEPT",
+  "v3_why": null,
+  "rule_kind": "avoids:import",
+  "role": {
+   "package": "packages/lib",
+   "dir": "**",
+   "file": "*",
+   "entry": "-",
+   "kind": "module",
+   "members": 633
+  },
+  "summary": "files in packages/lib/** do not import from packages/ee/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+  "what": [
+   "evidence",
+   "role"
+  ],
+  "ev_before": "633/641",
+  "ev_after": "625/633",
+  "members_before": 641,
+  "members_after": 633
+ },
+ {
+  "kind": "CHG",
+  "repo": "documenso",
+  "id": "D-7b5140",
+  "tier_before": "default",
+  "tier_after": "default",
+  "label": "ACCEPT",
+  "why": null,
+  "label_run": "relabel5@7",
+  "v3": "ACCEPT",
+  "v3_why": null,
+  "rule_kind": "avoids:import",
+  "role": {
+   "package": "packages/lib",
+   "dir": "**",
+   "file": "*",
+   "entry": "-",
+   "kind": "module",
+   "members": 633
+  },
+  "summary": "files in packages/lib/** do not import from packages/auth/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+  "what": [
+   "evidence",
+   "role"
+  ],
+  "ev_before": "637/641",
+  "ev_after": "629/633",
+  "members_before": 641,
+  "members_after": 633
+ },
+ {
+  "kind": "CHG",
+  "repo": "documenso",
+  "id": "D-c3b713",
+  "tier_before": "default",
+  "tier_after": "default",
+  "label": "ACCEPT",
+  "why": null,
+  "label_run": "relabel5@7",
+  "v3": "ACCEPT",
+  "v3_why": null,
+  "rule_kind": "avoids:import",
+  "role": {
+   "package": "packages/lib",
+   "dir": "**",
+   "file": "*",
+   "entry": "-",
+   "kind": "module",
+   "members": 633
+  },
+  "summary": "files in packages/lib/** do not import from packages/ui/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+  "what": [
+   "evidence",
+   "role"
+  ],
+  "ev_before": "633/641",
+  "ev_after": "625/633",
+  "members_before": 641,
+  "members_after": 633
+ },
+ {
+  "kind": "CHG",
+  "repo": "formbricks",
+  "id": "D-b8f1ee",
+  "tier_before": "default",
+  "tier_after": "default",
+  "label": "ACCEPT",
+  "why": null,
+  "label_run": "relabel5@7",
+  "v3": "ACCEPT",
+  "v3_why": null,
+  "rule_kind": "avoids:import",
+  "role": {
+   "package": "packages/surveys",
+   "dir": "**",
+   "file": "*",
+   "entry": "-",
+   "kind": "module",
+   "members": 114
+  },
+  "summary": "files in packages/surveys/** do not import from apps/web/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+  "what": [
+   "evidence",
+   "role"
+  ],
+  "ev_before": "115/116",
+  "ev_after": "113/114",
+  "members_before": 116,
+  "members_after": 114
+ },
+ {
+  "kind": "CHG",
+  "repo": "midday",
+  "id": "D-b8cff6",
+  "tier_before": "default",
+  "tier_after": "default",
+  "label": "ACCEPT",
+  "why": null,
+  "label_run": "relabel5@7",
+  "v3": "ACCEPT",
+  "v3_why": null,
+  "rule_kind": "avoids:import",
+  "role": {
+   "package": "packages/db",
+   "dir": "**",
+   "file": "*",
+   "entry": "-",
+   "kind": "module",
+   "members": 68
+  },
+  "summary": "files in packages/db/** do not import from packages/notifications/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+  "what": [
+   "evidence",
+   "example",
+   "role"
+  ],
+  "ev_before": "68/69",
+  "ev_after": "67/68",
+  "members_before": 69,
+  "members_after": 68
+ },
+ {
+  "kind": "GONE",
+  "repo": "novu",
+  "id": "D-6ded6b",
+  "tier_before": "suggestion",
+  "tier_after": null,
+  "label": "ACCEPT",
+  "why": null,
+  "label_run": "relabel5@7",
+  "v3": "-",
+  "v3_why": null,
+  "rule_kind": "named",
+  "role": {
+   "package": "packages/framework",
+   "dir": "src",
+   "file": "*.errors",
+   "entry": "-",
+   "kind": "class",
+   "members": 40
+  },
+  "summary": "packages/framework: classes in src/** (*.errors files) are named `*Error`",
+  "what": [],
+  "ev_before": "39/40",
+  "ev_after": null,
+  "members_before": 40,
+  "members_after": null
+ }
+]

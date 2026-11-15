@@ -1,0 +1,102 @@
+11 conventions from 4524 units in 237 roles (0 default tier, 11 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-47d790] classes in src/backend/InvenTree/plugin/samples/** extend InvenTreePlugin
+    evidence: 22/22 (lower bound 0.85, lift 23.2)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/backend/InvenTree/plugin/samples/event/event_sample.py#EventPluginSample
+    exempt:   src/backend/InvenTree/plugin/samples/machines/sample_printer.py:19 SamplePrinterDriver (a driver, named for its base LabelPrinterBaseDriver)
+
+ 2. [D-43f01e] classes in src/** (serializers files) are named `*Serializer`
+    evidence: 205/212 (lower bound 0.93, lift 4.7)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/backend/InvenTree/InvenTree/serializers.py#DuplicateOptionsSerializer
+    outlier:  src/backend/InvenTree/InvenTree/serializers.py:1033 ContentTypeField
+    outlier:  src/backend/InvenTree/InvenTree/serializers.py:641 DependentField
+    outlier:  src/backend/InvenTree/InvenTree/serializers.py:922 InvenTreeAttachmentSerializerField
+    outlier:  src/backend/InvenTree/InvenTree/serializers.py:961 InvenTreeDecimalField
+    outlier:  src/backend/InvenTree/InvenTree/serializers.py:947 InvenTreeImageSerializerField
+    outlier:  src/backend/InvenTree/common/serializers.py:42 SettingsValueField
+    outlier:  src/backend/InvenTree/part/serializers.py:259 PartThumbSerializerUpdate
+
+ 3. [D-455913] src/frontend: components in src/tables/** are named `*Table`
+    evidence: 76/83 (lower bound 0.84, lift 5.0)
+    tier:     suggestion (rule kind named)
+    example:  src/frontend/src/tables/bom/BomTable.tsx#BomTable
+    outlier:  src/frontend/src/tables/general/ParametricDataTableFilters.tsx:200 ParameterFilter
+    outlier:  src/frontend/src/tables/purchasing/SupplierPriceBreakTable.tsx:41 SupplierPriceBreakColumns
+    outlier:  src/frontend/src/tables/settings/GroupTable.tsx:39 GroupDrawer
+    outlier:  src/frontend/src/tables/settings/SelectionListDrawer.tsx:147 SelectionListDrawer
+    outlier:  src/frontend/src/tables/settings/SnippetTable.tsx:49 SnippetDrawer
+    outlier:  src/frontend/src/tables/settings/TemplateTable.tsx:88 TemplateDrawer
+    outlier:  src/frontend/src/tables/settings/UserTable.tsx:63 UserDrawer
+
+ 4. [D-6f225b] classes in src/** (admin files) are named `*Admin`
+    evidence: 66/74 (lower bound 0.80, lift 15.2)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/backend/InvenTree/InvenTree/admin.py#CustomRateAdmin
+    outlier:  src/backend/InvenTree/company/admin.py:28 SupplierPriceBreakInline
+    outlier:  src/backend/InvenTree/machine/admin.py:9 MachineSettingInline
+    outlier:  src/backend/InvenTree/order/admin.py:18 GeneralExtraLineMeta
+    outlier:  src/backend/InvenTree/plugin/admin.py:38 PluginSettingInline
+    outlier:  src/backend/InvenTree/plugin/admin.py:46 PluginUserSettingInline
+    outlier:  src/backend/InvenTree/stock/admin.py:9 LocationInline
+    outlier:  src/backend/InvenTree/users/admin.py:87 InvenTreeGroupAdminForm
+    outlier:  src/backend/InvenTree/users/admin.py:72 RuleSetInline
+
+ 5. [D-16c1ac] src/frontend: components in src/components/render/** declare their return type
+    evidence: 43/44 (lower bound 0.88, lift 3.8)
+    tier:     suggestion (rule kind control)
+    example:  src/frontend/src/components/render/Build.tsx#RenderBuildItem
+    outlier:  src/frontend/src/components/render/ModelHoverCard.tsx:23 ModelHoverCard
+
+ 6. [D-095ebc] src/frontend: functions in src/components/tables/** declare their return type
+    evidence: 69/70 (lower bound 0.92, lift 2.5)
+    tier:     suggestion (rule kind control)
+    example:  src/frontend/src/components/tables/AppRowActions.tsx#AppRowViewAction
+    outlier:  src/frontend/src/components/tables/Filter.tsx:29 filterDisplayValue
+
+ 7. [D-7e788c] src/frontend: components in src/tables/** call useMemo() before apiUrl()
+    evidence: 61/65 (lower bound 0.85, lift 1.0)
+    tier:     suggestion (rule kind before)
+    example:  src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable
+    outlier:  src/frontend/src/tables/general/AuditLogTable.tsx:459 AuditLogTable
+    outlier:  src/frontend/src/tables/general/ParametricDataTable.tsx:145 ParametricDataTable
+    outlier:  src/frontend/src/tables/part/PartThumbTable.tsx:133 PartThumbTable
+    outlier:  src/frontend/src/tables/stock/InstalledItemsTable.tsx:27 InstalledItemsTable
+
+ 8. [D-9838a4] src/frontend: components in src/tables/** call useTable() before apiUrl()
+    evidence: 60/65 (lower bound 0.83, lift 1.0)
+    tier:     suggestion (rule kind before)
+    example:  src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable
+    outlier:  src/frontend/src/tables/notifications/NotificationTable.tsx:11 NotificationTable
+    outlier:  src/frontend/src/tables/part/PartThumbTable.tsx:133 PartThumbTable
+    outlier:  src/frontend/src/tables/settings/SnippetTable.tsx:49 SnippetDrawer
+    outlier:  src/frontend/src/tables/settings/TemplateTable.tsx:88 TemplateDrawer
+    outlier:  src/frontend/src/tables/settings/UserTable.tsx:63 UserDrawer
+
+ 9. [D-f31910] classes in src/** (models files) call utils.translation.gettext_lazy()
+    evidence: 76/82 (lower bound 0.85, lift 3.1)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/backend/InvenTree/audit/models.py#AuditLogEntry
+    outlier:  src/backend/InvenTree/audit/models.py:165 AuditLogEntryManager
+    outlier:  src/backend/InvenTree/common/models.py:3778 NoDeleteManager
+    outlier:  src/backend/InvenTree/common/models.py:3768 NoDeleteQuerySet
+    outlier:  src/backend/InvenTree/common/models.py:80 RenderMeta
+    outlier:  src/backend/InvenTree/common/models.py:213 SettingsManager
+    outlier:  src/backend/InvenTree/users/models.py:502 Owner
+
+10. [D-b24fe0] src/frontend: components in src/tables/** call useTable() before useCallback()
+    evidence: 49/50 (lower bound 0.90, lift 1.0)
+    tier:     suggestion (rule kind before)
+    example:  src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable
+    outlier:  src/frontend/src/tables/settings/UserTable.tsx:63 UserDrawer
+
+11. [D-71f3ec] src/frontend: components in src/tables/** call useTable() before useState()
+    evidence: 48/50 (lower bound 0.86, lift 1.0)
+    tier:     suggestion (rule kind before)
+    example:  src/frontend/src/tables/bom/BomTable.tsx#BomTable
+    outlier:  src/frontend/src/tables/part/PartThumbTable.tsx:133 PartThumbTable
+    outlier:  src/frontend/src/tables/settings/ApiTokenTable.tsx:36 ApiTokenTable
+

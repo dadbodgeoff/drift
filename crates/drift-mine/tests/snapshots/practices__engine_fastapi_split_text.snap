@@ -1,0 +1,13 @@
+---
+source: crates/drift-mine/tests/practices.rs
+expression: "practices::render(&r, false)"
+---
+Practices (facts, not rules): 3 unit(s) across 1 concern(s), 100% told: known, identified, or nothing found in what Drift read (1 at the 90% target).
+
+Authentication (entry points 3, coverage 100%, known 67%, none 33% (nothing found in what Drift read), unknown 0%):
+  A P-4d6b09 wrap get_current_user 67% (2) [services/api]
+      e.g. services/api/app/routers/items.py:25 create_item
+  B P-01d468 none: no guard in what Drift read 33% (1) [services/legacy]
+      e.g. services/legacy/views.py:6 show
+
+Not covered yet: outbound calls (HTTP clients, timeouts, retries); background jobs and queues; frontend data fetching; state and design system; hygiene (duplicate libraries, escape hatches); declared vs actual (AGENTS.md, lint configs); change over time (which variant new code adopts).

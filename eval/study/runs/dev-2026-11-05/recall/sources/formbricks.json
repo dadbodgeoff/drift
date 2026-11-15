@@ -1,0 +1,177 @@
+{
+  "repo": "formbricks",
+  "files": [
+    {
+      "path": ".agents/skills/code-review/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/codebase-design/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/domain-modeling/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/grill-with-docs/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/grilling/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/implement-spec/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/implement/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/release-notes/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/retro/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/tdd/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/to-spec/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/to-tickets/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/writing-for-agents/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/web/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/web/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/development/standards/organization/naming-conventions.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/development/standards/practices/naming-conventions.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/development/standards/technical/language-specific-conventions.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/cache/.cursor/rules/cache-package.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": "packages/storage/.cursor/rules/storage-package.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": "apps/deployment-check/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "apps/storybook/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "apps/web/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/ai/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/api-v3-schemas/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/cache/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/creatives/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/database/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/email/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/i18n-utils/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/jobs/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/js-core/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/logger/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/redis-config/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/storage/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/survey-ui/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/surveys/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/types/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/vite-plugins/eslint.config.mjs",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/workflows/eslint.config.mjs",
+      "kind": "lint"
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "labels_sha256": {
+    "A": "383f1c16f3c041427d56129253d5e89d425dc0022f036713497a4845c1672a40",
+    "B": "699c95c14b95906817a230f2ac53c3c808690f4d3e8d748d460b8e1f6bb39234"
+  },
+  "cases": [
+    {
+      "uid": "netbox/D-937c0c",
+      "repo": "netbox",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "netbox/D-937c0c",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "netbox/ipam/api/serializers_/asns.py",
+            "netbox/ipam/api/field_serializers.py",
+            "netbox/ipam/api/serializers_/vlans.py",
+            "netbox/ipam/api/serializers_/ip.py",
+            "netbox/ipam/api/serializers_/services.py",
+            "netbox/ipam/api/views.py",
+            "netbox/ipam/api/serializers.py",
+            "pyproject.toml"
+          ],
+          "outliers": [],
+          "rules": [
+            "R1",
+            "R2",
+            "R9"
+          ],
+          "reason": "Every serializer in serializers_/ (asns.py, vlans.py, ip.py) is named *Serializer and no counted outliers exist; ruff config has no naming rule, so a misnamed serializer is a naming-scheme drift worth flagging. Wording 'classes in netbox/ipam/api/**' would mislead for views.py ViewSets and field classes like PortMappingsField/IPAddressField, which the tool does not count; hesitated with WRONG mixed_group for that reason.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "netbox/D-937c0c",
+          "rubric": "v3",
+          "label": "WRONG",
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "netbox/ipam/api/serializers_/asns.py",
+            "netbox/ipam/api/field_serializers.py",
+            "netbox/ipam/api/serializers_/services.py",
+            "netbox/ipam/api/serializers_/nested.py",
+            "netbox/ipam/api/views.py",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "IPAddressField",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "IPNetworkField",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "PortMappingsField",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "PortMappingsSerializerMixin",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "ipam/api also holds DRF field classes (field_serializers.py, PortMappingsField in services.py), a serializer mixin and ViewSets that are not named *Serializer, so as worded for netbox/ipam/api/** a new field class would be flagged for nothing. Hesitated with ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    }
+  ]
+}

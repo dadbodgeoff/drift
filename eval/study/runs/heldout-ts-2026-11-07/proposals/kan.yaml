@@ -1,0 +1,120 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - "[*]"
+  - eslint
+  suffixes:
+  - config
+  - repo
+  - spec
+  - test
+conventions:
+- id: D-eda068
+  status: proposed
+  mode: advise
+  summary: "packages/api: rpc entry points in src/** throw TRPCError"
+  role:
+    package: packages/api
+    dir: src
+    file: "*"
+    entry: rpc
+    kind: function
+  rule:
+    type: throws
+    class: pkg:@trpc/server#TRPCError
+  evidence:
+    holders: 87
+    total: 88
+    lower_bound: 0.938
+    lift: 4.593
+  example: packages/api/src/routers/attachment.ts#MUTATION confirm
+  selector_version: 2
+- id: D-cc5ca5
+  status: proposed
+  mode: advise
+  summary: "packages/api: rpc entry points in src/** are wrapped in protectedProcedure()"
+  role:
+    package: packages/api
+    dir: src
+    file: "*"
+    entry: rpc
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - packages/api/src/trpc.ts#protectedProcedure
+  evidence:
+    holders: 78
+    total: 88
+    lower_bound: 0.803
+    lift: 5.068
+  example: packages/api/src/routers/attachment.ts#MUTATION confirm
+  selector_version: 2
+- id: D-f314d1
+  status: proposed
+  mode: advise
+  summary: "packages/api: exported values in src/schemas/** pass `publicId` to z.object()"
+  role:
+    package: packages/api
+    dir: src/schemas
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: passes_key
+    callee: pkg:zod#z.object
+    index: 0
+    key: publicId
+  evidence:
+    holders: 28
+    total: 30
+    lower_bound: 0.787
+    lift: 5.685
+    role_members: 31
+  example: packages/api/src/schemas/attachment.ts#attachmentConfirmResponseSchema
+  selector_version: 2
+- id: D-11877a
+  status: proposed
+  mode: advise
+  summary: sql models have a `createdAt` field
+  role:
+    package: ""
+    dir: sql
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: createdAt
+  evidence:
+    holders: 29
+    total: 32
+    lower_bound: 0.758
+    lift: 1.0
+  example: packages/db/migrations/20250508083758_SetupTables.sql#account
+  selector_version: 2
+- id: D-798f44
+  status: proposed
+  mode: advise
+  summary: drizzle models have a `createdAt` field
+  role:
+    package: ""
+    dir: drizzle
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: createdAt
+  evidence:
+    holders: 29
+    total: 32
+    lower_bound: 0.758
+    lift: 1.0
+  example: packages/db/src/schema/auth.ts#account
+  selector_version: 2

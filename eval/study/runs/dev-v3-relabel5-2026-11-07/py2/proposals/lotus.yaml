@@ -1,0 +1,85 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  suffixes:
+  - config
+conventions:
+- id: D-7d8745
+  status: proposed
+  mode: advise
+  summary: "backend: serializers in api/** and metering_billing/** are named `*Serializer`"
+  role:
+    package: backend
+    dir: api
+    file: "*"
+    entry: '-'
+    kind: class
+    member_kind: serializer
+    also:
+    - package: backend
+      dir: metering_billing
+      file: "*"
+      entry: '-'
+      kind: class
+      member_kind: serializer
+  rule:
+    type: named
+    pattern: "*Serializer"
+  evidence:
+    holders: 229
+    total: 237
+    lower_bound: 0.935
+    lift: 2.115
+    python_members: 237
+  example: >-
+    backend/metering_billing/serializers/auth_serializers.py#DemoRegistrationDetailSerializer
+  selector_version: 3
+- id: D-e5b6fe
+  status: proposed
+  mode: advise
+  summary: "backend: HTTP handlers in metering_billing/** are decorated with utils.extend_schema()"
+  role:
+    package: backend
+    dir: metering_billing
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:drf_spectacular#utils.extend_schema
+  evidence:
+    holders: 69
+    total: 70
+    lower_bound: 0.923
+    lift: 2.629
+    python_members: 70
+  example: backend/metering_billing/views/auth_views.py#DemoLoginView.post
+  selector_version: 3
+- id: D-2ab768
+  status: proposed
+  mode: advise
+  summary: django models have a `organization` field
+  role:
+    package: ""
+    dir: django
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: organization
+  evidence:
+    holders: 46
+    total: 49
+    lower_bound: 0.835
+    lift: 1.0
+    python_members: 49
+  example: backend/metering_billing/models.py#APIToken
+  selector_version: 3

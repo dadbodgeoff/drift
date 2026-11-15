@@ -1,0 +1,69 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - ava
+  - bootstrap
+  - bundle
+  - config
+  - deploy
+  - exports
+  - fast-usdc
+  - genesis
+  - helpers
+  - keys
+  - main
+  - mocks
+  - module
+  - msgs
+  - packet
+  - params
+  - query
+  - rpc
+  - tx
+  - types
+  - types-index
+  - vat-alice
+  - vat-bob
+  - vat-left
+  - wallet
+  suffixes:
+  - Query
+  - build
+  - builder
+  - config
+  - contract
+  - core
+  - exo
+  - flows
+  - msg
+  - query
+  - test
+  - test-d
+  - tx
+conventions:
+- id: D-ec6190
+  status: proposed
+  mode: advise
+  summary: >-
+    files in packages/vats/** do not import from packages/deploy-script-support/**
+    (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: packages/vats
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:packages/deploy-script-support
+  evidence:
+    holders: 76
+    total: 77
+    lower_bound: 0.93
+    lift: 3.0
+  example: packages/vats/ava.config.js#(file)
+  selector_version: 3

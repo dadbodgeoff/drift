@@ -1,1 +1,0 @@
-{"name":"dashboard","private":true,"dependencies":{"@acme/supabase":"workspace:*","@acme/utils":"workspace:*"}}

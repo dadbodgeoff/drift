@@ -1,0 +1,252 @@
+{
+ "schema": "drift-review-log",
+ "schema_version": 1,
+ "exported_at": "(time)",
+ "repo": "(this repository's salted hash)",
+ "include_paths": true,
+ "drift": {
+  "version": "0.1.0-dev",
+  "commit": "cgu99-f0b7889f-1794245582"
+ },
+ "skipped_lines": 0,
+ "events": [
+  {
+   "v": 1,
+   "ts": "(time)",
+   "event": "decision",
+   "decision": "accept",
+   "via": "cli",
+   "id": "D-8394d6",
+   "rule_kind": "wrapped_by:call",
+   "family": "Call wrappers",
+   "tier": "default",
+   "language": "ts",
+   "evidence": {
+    "holders": 31,
+    "total": 33,
+    "members": 33,
+    "outliers": 2,
+    "wilson": 0.804,
+    "lift": 7.515
+   },
+   "rank": 4,
+   "listed": true,
+   "agents": {
+    "shown": false,
+    "reason": "candidate",
+    "family": null,
+    "accepted": null,
+    "n": null
+   },
+   "verify": null,
+   "example": "apps/portal/app/api/accounts/route.ts#GET",
+   "drift": {
+    "version": "0.1.0-dev",
+    "commit": "cgu99-f0b7889f-1794245582"
+   },
+   "before": {
+    "status": "proposed",
+    "mode": "advise"
+   },
+   "after": {
+    "status": "accepted",
+    "mode": "advise",
+    "shown_to_agents": true
+   },
+   "question": {
+    "v": 1,
+    "answer": "different",
+    "auth_or_validation": true,
+    "holders_shown": 3,
+    "flagged": 2,
+    "flagged_files": 2,
+    "set_apart": 1,
+    "set_apart_files": 1,
+    "entry_confirmed": 1,
+    "kept_flagged": 1,
+    "needs_confirmation": 2
+   },
+   "set_apart_members": [
+    "apps/portal/app/api/health/route.ts#GET"
+   ],
+   "kept_flagged_members": [
+    "apps/portal/app/api/status/route.ts#GET"
+   ]
+  },
+  {
+   "v": 1,
+   "ts": "(time)",
+   "event": "decision",
+   "decision": "accept",
+   "via": "cli",
+   "id": "D-0f9742",
+   "rule_kind": "avoids:import",
+   "family": "Layering",
+   "tier": "default",
+   "language": "ts",
+   "evidence": {
+    "holders": 201,
+    "total": 204,
+    "members": 204,
+    "outliers": 3,
+    "wilson": 0.958,
+    "lift": 3
+   },
+   "rank": 1,
+   "listed": true,
+   "agents": {
+    "shown": false,
+    "reason": "candidate",
+    "family": null,
+    "accepted": null,
+    "n": null
+   },
+   "verify": null,
+   "example": "packages/core/src/c0.ts#(file)",
+   "drift": {
+    "version": "0.1.0-dev",
+    "commit": "cgu99-f0b7889f-1794245582"
+   },
+   "before": {
+    "status": "proposed",
+    "mode": "advise"
+   },
+   "after": {
+    "status": "accepted",
+    "mode": "advise",
+    "shown_to_agents": true
+   },
+   "question": {
+    "v": 1,
+    "answer": "different",
+    "auth_or_validation": false,
+    "holders_shown": 3,
+    "flagged": 3,
+    "flagged_files": 3,
+    "set_apart": 2,
+    "set_apart_files": 2,
+    "entry_confirmed": 0,
+    "kept_flagged": 0,
+    "needs_confirmation": 0
+   },
+   "set_apart_members": [
+    "packages/core/src/fixtures.ts#(file)",
+    "packages/core/src/seed.ts#(file)"
+   ]
+  },
+  {
+   "v": 1,
+   "ts": "(time)",
+   "event": "decision",
+   "decision": "accept",
+   "via": "cli",
+   "id": "D-3a1c98",
+   "rule_kind": "avoids:import",
+   "family": "Layering",
+   "tier": "default",
+   "language": "ts",
+   "evidence": {
+    "holders": 120,
+    "total": 121,
+    "members": 121,
+    "outliers": 1,
+    "wilson": 0.955,
+    "lift": 3
+   },
+   "rank": 1,
+   "listed": true,
+   "agents": {
+    "shown": false,
+    "reason": "candidate",
+    "family": null,
+    "accepted": null,
+    "n": null
+   },
+   "verify": null,
+   "example": "packages/ui/src/part0.ts#(file)",
+   "drift": {
+    "version": "0.1.0-dev",
+    "commit": "cgu99-f0b7889f-1794245582"
+   },
+   "before": {
+    "status": "proposed",
+    "mode": "advise"
+   },
+   "after": {
+    "status": "accepted",
+    "mode": "advise",
+    "shown_to_agents": true
+   },
+   "question": {
+    "v": 1,
+    "answer": "same",
+    "auth_or_validation": false,
+    "holders_shown": 3,
+    "flagged": 1,
+    "flagged_files": 1,
+    "set_apart": 0,
+    "set_apart_files": 0,
+    "entry_confirmed": 0,
+    "kept_flagged": 0,
+    "needs_confirmation": 0
+   }
+  },
+  {
+   "v": 1,
+   "ts": "(time)",
+   "event": "decision",
+   "decision": "reject",
+   "via": "cli",
+   "id": "D-6ff644",
+   "rule_kind": "avoids:import",
+   "family": "Layering",
+   "tier": "default",
+   "language": "ts",
+   "evidence": {
+    "holders": 120,
+    "total": 122,
+    "members": 122,
+    "outliers": 2,
+    "wilson": 0.942,
+    "lift": 3
+   },
+   "rank": 1,
+   "listed": true,
+   "agents": {
+    "shown": false,
+    "reason": "candidate",
+    "family": null,
+    "accepted": null,
+    "n": null
+   },
+   "verify": null,
+   "example": "packages/jobs/src/job0.ts#(file)",
+   "drift": {
+    "version": "0.1.0-dev",
+    "commit": "cgu99-f0b7889f-1794245582"
+   },
+   "before": {
+    "status": "proposed",
+    "mode": "advise"
+   },
+   "after": {
+    "status": "rejected",
+    "mode": "advise",
+    "shown_to_agents": false
+   },
+   "question": {
+    "v": 1,
+    "answer": "not-a-convention",
+    "auth_or_validation": false,
+    "holders_shown": 3,
+    "flagged": 2,
+    "flagged_files": 2,
+    "set_apart": 0,
+    "set_apart_files": 0,
+    "entry_confirmed": 0,
+    "kept_flagged": 0,
+    "needs_confirmation": 0
+   }
+  }
+ ]
+}

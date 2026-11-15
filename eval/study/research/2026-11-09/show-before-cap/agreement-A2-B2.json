@@ -1,0 +1,29 @@
+{
+ "n": 22,
+ "agree": 20,
+ "po": 0.9090909090909091,
+ "kappa": 0.8035714285714285,
+ "disagreements": 2,
+ "by_repo": {
+  "documenso": {
+   "n": 1,
+   "agree": 1
+  },
+  "dub": {
+   "n": 1,
+   "agree": 1
+  },
+  "infisical": {
+   "n": 4,
+   "agree": 4
+  },
+  "novu": {
+   "n": 3,
+   "agree": 3
+  },
+  "twenty": {
+   "n": 13,
+   "agree": 11
+  }
+ }
+}

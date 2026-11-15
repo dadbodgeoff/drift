@@ -1,0 +1,3 @@
+0 conventions from 317 units in 13 roles (0 default tier, 0 suggestions)
+
+No conventions found: roles need roughly 20+ similar symbols where one pattern clearly dominates and is rarer elsewhere; the largest role here has 22 members (packages/next-drupal: functions in src/**).

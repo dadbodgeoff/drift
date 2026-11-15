@@ -1,0 +1,378 @@
+## 1. Per-card accept by snapshot (D7 tier, all shown, unlabelled = WRONG)
+v3 debc33a after round 3 (before round 4) TS: all 42.6% (69/162); default 75.0% (24/32); not-wrong 43.2% (70/162)
+v3 debc33a after round 3 (before round 4) Py: all 31.6% (31/98); default n/a; not-wrong 32.7% (32/98)
+r2 feefad6 after round 4 TS: all 50.0% (79/158); default 93.1% (27/29); not-wrong 51.3% (81/158)
+r3 e9c6058 after round 5 TS: all 55.1% (87/158); default 100.0% (29/29); not-wrong 56.3% (89/158)
+r3 e9c6058 after round 5 Py: all 34.0% (34/100); default n/a; not-wrong 35.0% (35/100)
+r4 2c81ba4 after round 6 TS: all 62.6% (92/147); default 100.0% (30/30); not-wrong 64.6% (95/147)
+r4 2c81ba4 after round 6 Py: all 45.8% (38/83); default n/a; not-wrong 47.0% (39/83)
+r5 de57356 after round 9 TS: all 63.9% (94/147); default 100.0% (30/30); not-wrong 67.3% (99/147)
+r5 de57356 after round 9 Py: all 61.0% (47/77); default n/a; not-wrong 61.0% (47/77)
+
+## 2. Lineage of relabel5 cards, PR attribution (a PR "names" a card when its body cites the id)
+TS vs r2 (PR rounds 5,6,8,9): now 63.9% (94/147); base 50.0% (79/158)
+  classes: held_A 71 (named 17); flipped_to_A 11 (named 11); new_A 12 (named 11); held_nonA 45 (named 14); flipped_from_A 0 (named 0); new_nonA 8 (named 8)
+  hidden since base: ACCEPT 8 (named 8), non-ACCEPT 23 (named 23)
+  gains (accepts now, not at base): 23, named by a PR 22; by repo novu 5, ai 4, supabase 4, midday 4, cal.com 3, documenso 2, twenty 1
+  undo every PR-named change: 50.3% (80/159)
+TS vs v3 (PR rounds 4,5,6,8,9): now 63.9% (94/147); base 42.6% (69/162)
+  classes: held_A 57 (named 39); flipped_to_A 14 (named 13); new_A 23 (named 21); held_nonA 43 (named 28); flipped_from_A 0 (named 0); new_nonA 10 (named 9)
+  hidden since base: ACCEPT 12 (named 12), non-ACCEPT 36 (named 36)
+  gains (accepts now, not at base): 37, named by a PR 34; by repo midday 6, documenso 5, ai 5, novu 5, supabase 4, dub 3, twenty 3, cal.com 3, infisical 3
+  undo every PR-named change: 43.6% (72/165)
+Py vs v3 (PR rounds 4,5,6,8,9): now 61.0% (47/77); base 31.6% (31/98)
+  classes: held_A 19 (named 4); flipped_to_A 9 (named 8); new_A 19 (named 17); held_nonA 22 (named 6); flipped_from_A 0 (named 0); new_nonA 8 (named 7)
+  hidden since base: ACCEPT 12 (named 12), non-ACCEPT 36 (named 34)
+  gains (accepts now, not at base): 28, named by a PR 25; by repo netbox 5, Misago 4, paperless-ngx 3, InvenTree 3, ralph 3, tasking-manager 3, open-wearables 1, langchain 1, Django-CRM 1, wger 1, lotus 1, pontoon 1, changedetection.io 1
+  undo every PR-named change: 34.3% (34/99)
+Py vs r3 (PR rounds 6,8,9): now 61.0% (47/77); base 34.0% (34/100)
+  classes: held_A 24 (named 3); flipped_to_A 6 (named 5); new_A 17 (named 15); held_nonA 24 (named 2); flipped_from_A 0 (named 0); new_nonA 6 (named 6)
+  hidden since base: ACCEPT 10 (named 10), non-ACCEPT 36 (named 34)
+  gains (accepts now, not at base): 23, named by a PR 20; by repo Misago 4, paperless-ngx 3, InvenTree 3, ralph 3, netbox 2, tasking-manager 2, open-wearables 1, Django-CRM 1, wger 1, lotus 1, pontoon 1, changedetection.io 1
+  undo every PR-named change: 37.0% (37/100)
+
+## 3. LORO over round 5-9 fixes (PRs that name cards in only one repo, or in <=2 repos)
+#70 r5 ws/parts-roots-2: 2 ids in 2 repos (ai, supabase)
+#75 r5 ws/small-precision: 5 ids in 4 repos (cal.com, midday, netbox, novu)
+#76 r5 ws/layering-reexport: 4 ids in 2 repos (cal.com, documenso)
+#78 r5 ws/role-scope: 7 ids in 3 repos (cal.com, midday, supabase)
+#83 r5 ws/suggestion-precision: 18 ids in 10 repos (InvenTree, ai, cal.com, documenso, dub, immich, infisical, midday, novu, supabase)
+#88 r5 ws/trpc-default-import: 3 ids in 1 repos (cal.com)
+#91 r6 ws/fn-factory-consts: 20 ids in 5 repos (ai, cal.com, formbricks, infisical, supabase)
+#96 r6 ws/flow-js: 4 ids in 1 repos (tasking-manager)
+#97 r6 ws/py-precision-4: 32 ids in 11 repos (Django-CRM, InvenTree, Misago, changedetection.io, lotus, netbox, open-wearables, ralph, saleor, simplelogin, wger)
+#99 r6 ws/ts-suggestion-precision: 42 ids in 13 repos (Django-CRM, ai, cal.com, documenso, formbricks, immich, infisical, midday, nest, netbox, novu, supabase, twenty)
+#102 r6 ws/trpc-builder-factories: 10 ids in 1 repos (cal.com)
+#103 r6 ws/security-precision: 4 ids in 1 repos (novu)
+#112 r8 ws/w2-outlier-markers: 6 ids in 4 repos (ai, dub, infisical, netbox)
+#113 r8 ws/w1-py-member-kinds: 32 ids in 12 repos (InvenTree, Misago, changedetection.io, lotus, netbox, open-wearables, paperless-ngx, ralph, saleor, simplelogin, tasking-manager, wger)
+#117 r9 ws/r9-comply-flags: 11 ids in 7 repos (ai, cal.com, documenso, formbricks, infisical, netbox, supabase)
+#120 r9 ws/r9-role-stability: 25 ids in 10 repos (Django-CRM, InvenTree, lotus, netbox, novu, pontoon, ralph, saleor, tasking-manager, twenty)
+TS: now 63.9% (94/147); undo single-repo fixes 63.7% (93/146); undo fixes naming <=2 repos 63.7% (93/146)
+   cal.com: base 66.7% (10/15) now 80.0% (12/15) loro1 78.6% (11/14) loro2 78.6% (11/14)
+Py: now 61.0% (47/77); undo single-repo fixes 60.5% (46/76); undo fixes naming <=2 repos 60.5% (46/76)
+   tasking-manager: base 33.3% (3/9) now 50.0% (4/8) loro1 42.9% (3/7) loro2 42.9% (3/7)
+
+## 4. Leave-one-repo-out of the baseline->relabel5 gain
+TS r2->r5 gain 13.9 pts; leaving one repo out ranges 12.6 (ai) to 16.5 (formbricks)
+   per repo (base -> now): nest 1/2->1/1, ai 3/8->6/8, novu 9/15->12/14, midday 7/15->10/14, supabase 9/14->13/15, cal.com 10/15->12/15, documenso 11/15->13/15, twenty 5/15->6/13, immich 1/14->1/10, infisical 6/15->6/14, dub 8/15->8/15, excalidraw 2/2->2/2, formbricks 7/13->4/11
+TS v3->r5 gain 21.4 pts; leaving one repo out ranges 20.3 (midday) to 24.0 (formbricks)
+   per repo (base -> now): nest 1/5->1/1, ai 2/6->6/8, midday 6/15->10/14, documenso 9/15->13/15, supabase 9/15->13/15, novu 9/15->12/14, cal.com 9/15->12/15, twenty 4/15->6/13, infisical 4/15->6/14, dub 6/15->8/15, immich 1/14->1/10, excalidraw 2/2->2/2, formbricks 7/15->4/11
+Py v3->r5 gain 29.4 pts; leaving one repo out ranges 26.3 (Misago) to 31.7 (saleor)
+   per repo (base -> now): ralph 1/6->4/5, Misago 2/8->6/7, langchain 0/1->1/2, paperless-ngx 1/3->4/5, simplelogin 1/10->1/2, netbox 3/12->7/11, wger 0/3->1/3, changedetection.io 1/3->2/3, InvenTree 2/11->5/12, open-wearables 3/8->3/5, tasking-manager 3/9->4/8, lotus 2/4->2/3, Django-CRM 5/9->4/6, full-stack-fastapi-template 0/1->0/1, fastapi 1/1->1/1, pontoon 2/2->1/1, saleor 4/7->1/2
+
+## 5. Label stability on relabel5 lift-only relabels and other relabels
+lift: 28 relabelled with an earlier label; same 28; to ACCEPT 0; from ACCEPT 0; 
+other: 51 relabelled with an earlier label; same 46; to ACCEPT 4; from ACCEPT 1; cal.com/D-8d7d13 ACCEPT->WRONG; Misago/D-d8703c WRONG->ACCEPT; Misago/D-c9ae1e WRONG->ACCEPT; Misago/D-e72fc8 WRONG->ACCEPT; paperless-ngx/D-de2489 WRONG->ACCEPT
+outliers: 9 relabelled with an earlier label; same 6; to ACCEPT 3; from ACCEPT 0; documenso/D-d7fae5 WRONG->ACCEPT; ai/D-5590d9 WRONG->ACCEPT; netbox/D-281ae8 WRONG->ACCEPT
+
+## 6. relabel5 WRONG causes (dev)
+TS WRONG 48: legit_outliers 24, mixed_group 17, incidental 6, misdescribes 1
+Py WRONG 30: mixed_group 9, legit_outliers 7, incidental 7, false_outliers 5, misdescribes 2
+  v3 TS WRONG 92 of 162: mixed_group 36, legit_outliers 31, incidental 14, false_outliers 6, team_disabled 5
+  v3 Py WRONG 66 of 98: mixed_group 27, legit_outliers 15, incidental 15, false_outliers 8, misdescribes 1
+  r2 TS WRONG 77 of 158: mixed_group 30, legit_outliers 27, incidental 13, team_disabled 5, misdescribes 1, false_outliers 1
+  r3 TS WRONG 69 of 158: legit_outliers 27, mixed_group 22, incidental 13, team_disabled 5, misdescribes 1, false_outliers 1
+  r3 Py WRONG 65 of 100: mixed_group 24, incidental 16, legit_outliers 14, false_outliers 10, misdescribes 1
+  r4 TS WRONG 52 of 147: legit_outliers 25, mixed_group 20, incidental 6, misdescribes 1
+  r4 Py WRONG 44 of 83: mixed_group 20, legit_outliers 11, incidental 8, false_outliers 4, misdescribes 1
+  r5 TS WRONG 48 of 147: legit_outliers 24, mixed_group 17, incidental 6, misdescribes 1
+  r5 Py WRONG 30 of 77: mixed_group 9, legit_outliers 7, incidental 7, false_outliers 5, misdescribes 2
+
+## 7. Family accept across repos (relabel5, suggestion tier): pooled, repo-mean, LORO min/max, repos
+TS argument_key: 50.0% (6/12) over 6 repos; repo-mean 54%; LORO 33-63%
+TS avoids_other: 50.0% (1/2) over 2 repos; repo-mean 50%; LORO 0-100%
+TS base_class: 66.7% (10/15) over 6 repos; repo-mean 78%; LORO 60-80%
+TS calls: 0.0% (0/2) over 2 repos; repo-mean 0%; LORO 0-0%
+TS control: 83.3% (5/6) over 3 repos; repo-mean 67%; LORO 50-100%
+TS decorator: 40.0% (6/15) over 4 repos; repo-mean 48%; LORO 31-55%
+TS jsx_wrapper: 100.0% (2/2) over 2 repos; repo-mean 100%; LORO 100-100%
+TS naming: 64.7% (22/34) over 11 repos; repo-mean 67%; LORO 59-73%
+TS ordering: 20.0% (1/5) over 4 repos; repo-mean 25%; LORO 0-33%
+TS renders: 40.0% (4/10) over 4 repos; repo-mean 43%; LORO 33-44%
+TS repo: 53.8% (7/13) over 5 repos; repo-mean 45%; LORO 44-64%
+TS wrapper: 0.0% (0/1) over 1 repos; repo-mean 0%; LORO Infinity--Infinity%
+Py argument_key: 50.0% (2/4) over 3 repos; repo-mean 50%; LORO 33-67%
+Py avoids_other: 0.0% (0/1) over 1 repos; repo-mean 0%; LORO Infinity--Infinity%
+Py base_class: 54.5% (6/11) over 7 repos; repo-mean 60%; LORO 50-67%
+Py calls: 66.7% (8/12) over 7 repos; repo-mean 71%; LORO 60-78%
+Py control: 87.5% (7/8) over 7 repos; repo-mean 86%; LORO 83-100%
+Py decorator: 50.0% (4/8) over 6 repos; repo-mean 33%; LORO 20-57%
+Py import_source: 100.0% (1/1) over 1 repos; repo-mean 100%; LORO Infinity--Infinity%
+Py layering: 100.0% (1/1) over 1 repos; repo-mean 100%; LORO Infinity--Infinity%
+Py naming: 86.7% (13/15) over 9 repos; repo-mean 91%; LORO 85-92%
+Py ordering: 0.0% (0/5) over 2 repos; repo-mean 0%; LORO 0-0%
+Py repo: 0.0% (0/5) over 5 repos; repo-mean 0%; LORO 0-0%
+Py wrapper: 83.3% (5/6) over 3 repos; repo-mean 67%; LORO 67-100%
+
+## 8. LORO over fixes, by beneficial effect (baseline TS r2 / Py v3; PR rounds 5-9)
+TS vs r2: 46 helpful events (gains + hidden non-ACCEPT); helped >1 repo 44, only this repo 1, not named 1
+   PR -> repos helped: #99:8 #102:1 #91:4 #83:5 #117:3 #70:2 #112:1 #78:3 #75:1 #120:2 #103:1
+   single-repo: cal.com/D-594d38 (new_A; #102)
+TS vs v3: 73 helpful events (gains + hidden non-ACCEPT); helped >1 repo 69, only this repo 1, not named 3
+   PR -> repos helped: #60:6 #112:2 #37:5 #59:3 #50:7 #99:8 #102:1 #91:5 #83:5 #117:3 #45:7 #49:7 #51:7 #52:2 #58:4 #70:2 #78:3 #75:1 #120:2 #103:1
+   single-repo: cal.com/D-594d38 (new_A; #102)
+Py vs v3: 64 helpful events (gains + hidden non-ACCEPT); helped >1 repo 58, only this repo 1, not named 5
+   PR -> repos helped: #45:5 #49:5 #53:5 #75:1 #112:1 #64:1 #113:11 #35:3 #120:7 #97:11 #60:1 #96:1
+   single-repo: tasking-manager/D-c7acd1 (new_A; #60,#96)
+
+## 9. Default tier (TS) lineage v3 -> r5
+default r5 30: ACCEPT at v3 with the same id 20; others new or flipped
+   dub/D-d24d21 wrapped_by:call ACCEPT out=31 v3=ACCEPT named=45,49,50,51,60
+   dub/D-345913 wrapped_by:call ACCEPT out=14 v3=not shown named=60,112
+   dub/D-83351e wrapped_by:call ACCEPT out=1 v3=ACCEPT named=45,49,50,51
+   dub/D-015190 wrapped_by:call ACCEPT out=2 v3=ACCEPT named=45,49,50,51
+   dub/D-ebbc30 wrapped_by:call ACCEPT out=1 v3=ACCEPT named=45,49,50,51
+   formbricks/D-73b648 wrapped_by:call ACCEPT out=2 v3=ACCEPT named=45,49,50,51,91
+   formbricks/D-b8f1ee avoids:import ACCEPT out=1 v3=ACCEPT named=45,49,50,51
+   cal.com/D-594d38 wrapped_by:call ACCEPT out=15 v3=not shown named=102
+   cal.com/D-85e09a wrapped_by:call ACCEPT out=4 v3=not shown named=91,102
+   cal.com/D-2f232d avoids:import ACCEPT out=1 v3=ACCEPT named=45,49,50,51
+   cal.com/D-441d0e avoids:import ACCEPT out=2 v3=ACCEPT named=45,49,50,51
+   cal.com/D-31be39 avoids:import ACCEPT out=2 v3=ACCEPT named=45,49,50,51
+   cal.com/D-f26528 avoids:import ACCEPT out=3 v3=ACCEPT named=45,49,50,51,76
+   documenso/D-32c861 wrapped_by:call ACCEPT out=24 v3=not shown named=60
+   documenso/D-a0eee5 wrapped_by:call ACCEPT out=5 v3=not shown named=60
+   documenso/D-55ae12 wrapped_by:call ACCEPT out=5 v3=ACCEPT named=45,49,50,51
+   documenso/D-d51d70 wrapped_by:call ACCEPT out=2 v3=ACCEPT named=45,49,50,51
+   documenso/D-9b91c3 wrapped_by:call ACCEPT out=1 v3=ACCEPT named=45,49,50,51
+   documenso/D-041293 avoids:import ACCEPT out=4 v3=ACCEPT named=45,49,50,51,76
+   documenso/D-7b5140 avoids:import ACCEPT out=4 v3=ACCEPT named=45,49,50,51,76
+   documenso/D-2a51e9 avoids:import ACCEPT out=8 v3=ACCEPT named=45,49,50,51
+   documenso/D-c3b713 avoids:import ACCEPT out=8 v3=ACCEPT named=45,49,50,51,76
+   ai/D-fc5ef7 wrapped_by:call ACCEPT out=0 v3=WRONG named=45,49,50,51,52,58,70,91,112
+   supabase/D-e93eb6 wrapped_by:call ACCEPT out=1 v3=not shown named=78,91
+   midday/D-50255f wrapped_by:call ACCEPT out=7 v3=not shown named=60
+   midday/D-b8cff6 avoids:import ACCEPT out=1 v3=ACCEPT named=45,49,50,51
+   infisical/D-c4efb8 wrapped_by:call ACCEPT out=123 v3=not shown named=60,91
+   infisical/D-f674a5 wrapped_by:call ACCEPT out=50 v3=not shown named=60,91
+   infisical/D-1e9bb3 wrapped_by:call ACCEPT out=8 v3=ACCEPT named=45,49,50,51,91
+   infisical/D-7731c9 wrapped_by:call ACCEPT out=6 v3=ACCEPT named=45,49,50,51,91
+v3 default not shown at r5: dub/D-50df58 ACCEPT/null; formbricks/D-60208a WRONG/legit_outliers; formbricks/D-5303d3 WRONG/legit_outliers; cal.com/D-0b36fb WRONG/false_outliers; documenso/D-efe3da ACCEPT/null; nest/D-44a46d WRONG/false_outliers; nest/D-48b32a WRONG/false_outliers; nest/D-f68b2a WRONG/legit_outliers; supabase/D-c2e88c WRONG/mixed_group; midday/D-ef5012 ACCEPT/null; infisical/D-259bd1 ACCEPT/null
+default outliers per card: median 4, zero 1, >=10 6
+
+## 10. Shown-set policies (all shown; ACCEPT/shown, cards per repo, repos with >=1 card); r5, then v3 and r4 (rank is W4's only at r5)
+r5 TS (13 repos):
+   all shown: 63.9% (94/147); 11.3 cards/repo; 7.23 accepts/repo; WRONG 48; repos with cards 13; repo-mean 67%
+   default tier only: 100.0% (30/30); 2.3 cards/repo; 2.31 accepts/repo; WRONG 0; repos with cards 8; repo-mean 100%
+   <=2 outliers: 72.7% (56/77); 5.9 cards/repo; 4.31 accepts/repo; WRONG 17; repos with cards 12; repo-mean 71%
+   <=1 outlier: 75.9% (41/54); 4.2 cards/repo; 3.15 accepts/repo; WRONG 9; repos with cards 12; repo-mean 77%
+   0 outliers: 76.0% (19/25); 1.9 cards/repo; 1.46 accepts/repo; WRONG 2; repos with cards 10; repo-mean 78%
+   no ordering family: 65.5% (93/142); 10.9 cards/repo; 7.15 accepts/repo; WRONG 44; repos with cards 13; repo-mean 68%
+   no ordering, calls, repo families: 67.7% (86/127); 9.8 cards/repo; 6.62 accepts/repo; WRONG 36; repos with cards 13; repo-mean 73%
+   rank <= 5: 82.8% (48/58); 4.5 cards/repo; 3.69 accepts/repo; WRONG 8; repos with cards 13; repo-mean 85%
+   rank <= 3: 88.9% (32/36); 2.8 cards/repo; 2.46 accepts/repo; WRONG 2; repos with cards 13; repo-mean 90%
+   default + sugg <=1 outlier: 82.9% (63/76); 5.8 cards/repo; 4.85 accepts/repo; WRONG 9; repos with cards 12; repo-mean 81%
+   default + sugg <=1 outlier, no ordering: 84.9% (62/73); 5.6 cards/repo; 4.77 accepts/repo; WRONG 7; repos with cards 12; repo-mean 82%
+   LORO families >= 50% (n>=5): 66.7% (66/99); 7.6 cards/repo; 5.08 accepts/repo; WRONG 28
+   LORO families >= 50% + <=1 outlier: 85.2% (52/61); 4.7 cards/repo; 4.00 accepts/repo; WRONG 5
+   LORO families >= 60% (n>=5): 70.7% (58/82); 6.3 cards/repo; 4.46 accepts/repo; WRONG 20
+   LORO families >= 60% + <=1 outlier: 85.7% (48/56); 4.3 cards/repo; 3.69 accepts/repo; WRONG 4
+   LORO families >= 70% (n>=5): 80.5% (33/41); 3.2 cards/repo; 2.54 accepts/repo; WRONG 6
+   LORO families >= 70% + <=1 outlier: 93.8% (30/32); 2.5 cards/repo; 2.31 accepts/repo; WRONG 0
+r5 Py (17 repos):
+   all shown: 61.0% (47/77); 4.5 cards/repo; 2.76 accepts/repo; WRONG 30; repos with cards 17; repo-mean 61%
+   default tier only: n/a; 0.0 cards/repo; 0.00 accepts/repo; WRONG 0; repos with cards 0; repo-mean 0%
+   <=2 outliers: 68.8% (33/48); 2.8 cards/repo; 1.94 accepts/repo; WRONG 15; repos with cards 15; repo-mean 68%
+   <=1 outlier: 73.8% (31/42); 2.5 cards/repo; 1.82 accepts/repo; WRONG 11; repos with cards 14; repo-mean 67%
+   0 outliers: 100.0% (14/14); 0.8 cards/repo; 0.82 accepts/repo; WRONG 0; repos with cards 6; repo-mean 100%
+   no ordering family: 65.3% (47/72); 4.2 cards/repo; 2.76 accepts/repo; WRONG 25; repos with cards 17; repo-mean 63%
+   no ordering, calls, repo families: 70.9% (39/55); 3.2 cards/repo; 2.29 accepts/repo; WRONG 16; repos with cards 16; repo-mean 75%
+   rank <= 5: 69.0% (40/58); 3.4 cards/repo; 2.35 accepts/repo; WRONG 18; repos with cards 17; repo-mean 66%
+   rank <= 3: 71.4% (30/42); 2.5 cards/repo; 1.76 accepts/repo; WRONG 12; repos with cards 17; repo-mean 70%
+   default + sugg <=1 outlier: 73.8% (31/42); 2.5 cards/repo; 1.82 accepts/repo; WRONG 11; repos with cards 14; repo-mean 67%
+   default + sugg <=1 outlier, no ordering: 77.5% (31/40); 2.4 cards/repo; 1.82 accepts/repo; WRONG 9; repos with cards 14; repo-mean 69%
+   LORO families >= 50% (n>=5): 66.7% (34/51); 3.0 cards/repo; 2.00 accepts/repo; WRONG 17
+   LORO families >= 50% + <=1 outlier: 82.8% (24/29); 1.7 cards/repo; 1.41 accepts/repo; WRONG 5
+   LORO families >= 60% (n>=5): 71.8% (28/39); 2.3 cards/repo; 1.65 accepts/repo; WRONG 11
+   LORO families >= 60% + <=1 outlier: 90.5% (19/21); 1.2 cards/repo; 1.12 accepts/repo; WRONG 2
+   LORO families >= 70% (n>=5): 75.0% (21/28); 1.6 cards/repo; 1.24 accepts/repo; WRONG 7
+   LORO families >= 70% + <=1 outlier: 92.3% (12/13); 0.8 cards/repo; 0.71 accepts/repo; WRONG 1
+v3 TS (13 repos):
+   all shown: 42.6% (69/162); 12.5 cards/repo; 5.31 accepts/repo; WRONG 92; repos with cards 13; repo-mean 45%
+   default tier only: 75.0% (24/32); 2.5 cards/repo; 1.85 accepts/repo; WRONG 8; repos with cards 9; repo-mean 59%
+   <=2 outliers: 51.9% (40/77); 5.9 cards/repo; 3.08 accepts/repo; WRONG 37; repos with cards 12; repo-mean 50%
+   <=1 outlier: 61.4% (27/44); 3.4 cards/repo; 2.08 accepts/repo; WRONG 17; repos with cards 11; repo-mean 63%
+   0 outliers: n/a; 0.0 cards/repo; 0.00 accepts/repo; WRONG 0; repos with cards 0; repo-mean 0%
+   no ordering family: 42.8% (68/159); 12.2 cards/repo; 5.23 accepts/repo; WRONG 90; repos with cards 13; repo-mean 45%
+   no ordering, calls, repo families: 45.6% (62/136); 10.5 cards/repo; 4.77 accepts/repo; WRONG 73; repos with cards 13; repo-mean 45%
+   rank <= 5: 54.8% (34/62); 4.8 cards/repo; 2.62 accepts/repo; WRONG 27; repos with cards 13; repo-mean 57%
+   rank <= 3: 63.2% (24/38); 2.9 cards/repo; 1.85 accepts/repo; WRONG 13; repos with cards 13; repo-mean 64%
+   default + sugg <=1 outlier: 68.3% (43/63); 4.8 cards/repo; 3.31 accepts/repo; WRONG 20; repos with cards 12; repo-mean 64%
+   default + sugg <=1 outlier, no ordering: 67.7% (42/62); 4.8 cards/repo; 3.23 accepts/repo; WRONG 20; repos with cards 12; repo-mean 64%
+   LORO families >= 50% (n>=5): 63.5% (33/52); 4.0 cards/repo; 2.54 accepts/repo; WRONG 18
+   LORO families >= 50% + <=1 outlier: 77.5% (31/40); 3.1 cards/repo; 2.38 accepts/repo; WRONG 9
+   LORO families >= 60% (n>=5): 73.3% (33/45); 3.5 cards/repo; 2.54 accepts/repo; WRONG 12
+   LORO families >= 60% + <=1 outlier: 77.5% (31/40); 3.1 cards/repo; 2.38 accepts/repo; WRONG 9
+   LORO families >= 70% (n>=5): 70.3% (26/37); 2.8 cards/repo; 2.00 accepts/repo; WRONG 11
+   LORO families >= 70% + <=1 outlier: 75.8% (25/33); 2.5 cards/repo; 1.92 accepts/repo; WRONG 8
+v3 Py (17 repos):
+   all shown: 31.6% (31/98); 5.8 cards/repo; 1.82 accepts/repo; WRONG 66; repos with cards 17; repo-mean 35%
+   default tier only: n/a; 0.0 cards/repo; 0.00 accepts/repo; WRONG 0; repos with cards 0; repo-mean 0%
+   <=2 outliers: 33.3% (16/48); 2.8 cards/repo; 0.94 accepts/repo; WRONG 31; repos with cards 15; repo-mean 34%
+   <=1 outlier: 38.2% (13/34); 2.0 cards/repo; 0.76 accepts/repo; WRONG 20; repos with cards 14; repo-mean 37%
+   0 outliers: 50.0% (1/2); 0.1 cards/repo; 0.06 accepts/repo; WRONG 0; repos with cards 2; repo-mean 50%
+   no ordering family: 34.4% (31/90); 5.3 cards/repo; 1.82 accepts/repo; WRONG 58; repos with cards 17; repo-mean 36%
+   no ordering, calls, repo families: 41.3% (26/63); 3.7 cards/repo; 1.53 accepts/repo; WRONG 36; repos with cards 15; repo-mean 48%
+   rank <= 5: 34.9% (22/63); 3.7 cards/repo; 1.29 accepts/repo; WRONG 40; repos with cards 17; repo-mean 36%
+   rank <= 3: 36.4% (16/44); 2.6 cards/repo; 0.94 accepts/repo; WRONG 27; repos with cards 17; repo-mean 37%
+   default + sugg <=1 outlier: 38.2% (13/34); 2.0 cards/repo; 0.76 accepts/repo; WRONG 20; repos with cards 14; repo-mean 37%
+   default + sugg <=1 outlier, no ordering: 41.9% (13/31); 1.8 cards/repo; 0.76 accepts/repo; WRONG 17; repos with cards 14; repo-mean 39%
+   LORO families >= 50% (n>=5): 88.2% (15/17); 1.0 cards/repo; 0.88 accepts/repo; WRONG 2
+   LORO families >= 50% + <=1 outlier: 83.3% (5/6); 0.4 cards/repo; 0.29 accepts/repo; WRONG 1
+   LORO families >= 60% (n>=5): 88.2% (15/17); 1.0 cards/repo; 0.88 accepts/repo; WRONG 2
+   LORO families >= 60% + <=1 outlier: 83.3% (5/6); 0.4 cards/repo; 0.29 accepts/repo; WRONG 1
+   LORO families >= 70% (n>=5): 84.6% (11/13); 0.8 cards/repo; 0.65 accepts/repo; WRONG 2
+   LORO families >= 70% + <=1 outlier: 83.3% (5/6); 0.4 cards/repo; 0.29 accepts/repo; WRONG 1
+r4 TS (13 repos):
+   all shown: 62.6% (92/147); 11.3 cards/repo; 7.08 accepts/repo; WRONG 52; repos with cards 13; repo-mean 65%
+   default tier only: 100.0% (30/30); 2.3 cards/repo; 2.31 accepts/repo; WRONG 0; repos with cards 8; repo-mean 100%
+   <=2 outliers: 75.3% (55/73); 5.6 cards/repo; 4.23 accepts/repo; WRONG 16; repos with cards 12; repo-mean 73%
+   <=1 outlier: 78.8% (41/52); 4.0 cards/repo; 3.15 accepts/repo; WRONG 9; repos with cards 12; repo-mean 77%
+   0 outliers: 85.0% (17/20); 1.5 cards/repo; 1.31 accepts/repo; WRONG 1; repos with cards 10; repo-mean 83%
+   no ordering family: 64.1% (91/142); 10.9 cards/repo; 7.00 accepts/repo; WRONG 48; repos with cards 13; repo-mean 66%
+   no ordering, calls, repo families: 66.1% (84/127); 9.8 cards/repo; 6.46 accepts/repo; WRONG 40; repos with cards 13; repo-mean 68%
+   rank <= 5: 72.4% (42/58); 4.5 cards/repo; 3.23 accepts/repo; WRONG 15; repos with cards 13; repo-mean 75%
+   rank <= 3: 72.2% (26/36); 2.8 cards/repo; 2.00 accepts/repo; WRONG 9; repos with cards 13; repo-mean 74%
+   default + sugg <=1 outlier: 85.1% (63/74); 5.7 cards/repo; 4.85 accepts/repo; WRONG 9; repos with cards 12; repo-mean 81%
+   default + sugg <=1 outlier, no ordering: 87.3% (62/71); 5.5 cards/repo; 4.77 accepts/repo; WRONG 7; repos with cards 12; repo-mean 81%
+   LORO families >= 50% (n>=5): 64.9% (63/97); 7.5 cards/repo; 4.85 accepts/repo; WRONG 31
+   LORO families >= 50% + <=1 outlier: 87.7% (50/57); 4.4 cards/repo; 3.85 accepts/repo; WRONG 5
+   LORO families >= 60% (n>=5): 64.2% (43/67); 5.2 cards/repo; 3.31 accepts/repo; WRONG 22
+   LORO families >= 60% + <=1 outlier: 88.9% (40/45); 3.5 cards/repo; 3.08 accepts/repo; WRONG 3
+   LORO families >= 70% (n>=5): 91.4% (32/35); 2.7 cards/repo; 2.46 accepts/repo; WRONG 3
+   LORO families >= 70% + <=1 outlier: 100.0% (30/30); 2.3 cards/repo; 2.31 accepts/repo; WRONG 0
+r4 Py (17 repos):
+   all shown: 45.8% (38/83); 4.9 cards/repo; 2.24 accepts/repo; WRONG 44; repos with cards 17; repo-mean 49%
+   default tier only: n/a; 0.0 cards/repo; 0.00 accepts/repo; WRONG 0; repos with cards 0; repo-mean 0%
+   <=2 outliers: 43.6% (24/55); 3.2 cards/repo; 1.41 accepts/repo; WRONG 30; repos with cards 16; repo-mean 46%
+   <=1 outlier: 45.7% (21/46); 2.7 cards/repo; 1.24 accepts/repo; WRONG 24; repos with cards 15; repo-mean 45%
+   0 outliers: 46.2% (6/13); 0.8 cards/repo; 0.35 accepts/repo; WRONG 6; repos with cards 6; repo-mean 47%
+   no ordering family: 48.7% (38/78); 4.6 cards/repo; 2.24 accepts/repo; WRONG 39; repos with cards 17; repo-mean 50%
+   no ordering, calls, repo families: 52.5% (32/61); 3.6 cards/repo; 1.88 accepts/repo; WRONG 28; repos with cards 16; repo-mean 59%
+   rank <= 5: 49.2% (30/61); 3.6 cards/repo; 1.76 accepts/repo; WRONG 30; repos with cards 17; repo-mean 50%
+   rank <= 3: 52.3% (23/44); 2.6 cards/repo; 1.35 accepts/repo; WRONG 20; repos with cards 17; repo-mean 53%
+   default + sugg <=1 outlier: 45.7% (21/46); 2.7 cards/repo; 1.24 accepts/repo; WRONG 24; repos with cards 15; repo-mean 45%
+   default + sugg <=1 outlier, no ordering: 47.7% (21/44); 2.6 cards/repo; 1.24 accepts/repo; WRONG 22; repos with cards 15; repo-mean 46%
+   LORO families >= 50% (n>=5): 55.0% (11/20); 1.2 cards/repo; 0.65 accepts/repo; WRONG 9
+   LORO families >= 50% + <=1 outlier: 54.5% (6/11); 0.6 cards/repo; 0.35 accepts/repo; WRONG 5
+   LORO families >= 60% (n>=5): 76.9% (10/13); 0.8 cards/repo; 0.59 accepts/repo; WRONG 3
+   LORO families >= 60% + <=1 outlier: 83.3% (5/6); 0.4 cards/repo; 0.29 accepts/repo; WRONG 1
+   LORO families >= 70% (n>=5): 76.9% (10/13); 0.8 cards/repo; 0.59 accepts/repo; WRONG 3
+   LORO families >= 70% + <=1 outlier: 83.3% (5/6); 0.4 cards/repo; 0.29 accepts/repo; WRONG 1
+
+## 11. Accept by outlier count, suggestion tier, per snapshot
+v3 TS: 0: n/a; 1: 61.3% (19/31); 2: 30.8% (8/26); 3-5: 21.2% (7/33); 6+: 27.5% (11/40)
+v3 Py: 0: 50.0% (1/2); 1: 37.5% (12/32); 2: 21.4% (3/14); 3-5: 23.3% (7/30); 6+: 40.0% (8/20)
+r2 TS: 0: 83.3% (10/12); 1: 57.1% (16/28); 2: 33.3% (8/24); 3-5: 22.2% (6/27); 6+: 31.6% (12/38)
+r3 TS: 0: 81.3% (13/16); 1: 58.1% (18/31); 2: 42.1% (8/19); 3-5: 24.0% (6/25); 6+: 34.2% (13/38)
+r3 Py: 0: 66.7% (4/6); 1: 37.1% (13/35); 2: 27.3% (3/11); 3-5: 25.0% (7/28); 6+: 35.0% (7/20)
+r4 TS: 0: 84.2% (16/19); 1: 68.0% (17/25); 2: 56.3% (9/16); 3-5: 36.4% (8/22); 6+: 34.3% (12/35)
+r4 Py: 0: 46.2% (6/13); 1: 45.5% (15/33); 2: 33.3% (3/9); 3-5: 53.8% (7/13); 6+: 46.7% (7/15)
+r5 TS: 0: 75.0% (18/24); 1: 68.2% (15/22); 2: 55.6% (10/18); 3-5: 45.0% (9/20); 6+: 36.4% (12/33)
+r5 Py: 0: 100.0% (14/14); 1: 60.7% (17/28); 2: 33.3% (2/6); 3-5: 41.2% (7/17); 6+: 58.3% (7/12)
+
+## 12. Flag precision (mistake+look over all verdicts) by language, tier and family, relabel5
+Py suggestion argument_key: 64.5% (20/31) over 3 repos (repo range 0-100%)
+Py suggestion avoids_other: 50.0% (1/2) over 1 repos (repo range 50-50%)
+Py suggestion base_class: 15.8% (9/57) over 7 repos (repo range 0-100%)
+Py suggestion calls: 31.7% (26/82) over 7 repos (repo range 0-50%)
+Py suggestion control: 68.4% (39/57) over 7 repos (repo range 5-100%)
+Py suggestion decorator: 5.6% (1/18) over 6 repos (repo range 0-50%)
+Py suggestion import_source: 100.0% (2/2) over 1 repos (repo range 100-100%)
+Py suggestion layering: 50.0% (2/4) over 1 repos (repo range 50-50%)
+Py suggestion naming: 66.7% (40/60) over 7 repos (repo range 0-100%)
+Py suggestion ordering: 0.0% (0/26) over 2 repos (repo range 0-0%)
+Py suggestion repo: 12.5% (3/24) over 5 repos (repo range 0-50%)
+Py suggestion wrapper: 72.2% (57/79) over 3 repos (repo range 0-100%)
+Py suggestion: 45.2% (200/442) over 17 repos (repo range 0-100%)
+TS default layering: 89.7% (61/68) over 4 repos (repo range 85-100%)
+TS default wrapper: 88.5% (200/226) over 8 repos (repo range 0-100%)
+TS default: 88.8% (261/294) over 8 repos (repo range 0-100%)
+TS suggestion argument_key: 16.7% (15/90) over 5 repos (repo range 0-44%)
+TS suggestion avoids_other: 45.2% (14/31) over 2 repos (repo range 12-86%)
+TS suggestion base_class: 32.9% (24/73) over 6 repos (repo range 0-43%)
+TS suggestion calls: 15.4% (4/26) over 2 repos (repo range 0-18%)
+TS suggestion control: 63.5% (40/63) over 3 repos (repo range 0-100%)
+TS suggestion decorator: 33.3% (50/150) over 4 repos (repo range 9-75%)
+TS suggestion jsx_wrapper: 0.0% (0/2) over 1 repos (repo range 0-0%)
+TS suggestion naming: 49.2% (118/240) over 10 repos (repo range 9-100%)
+TS suggestion ordering: 6.3% (1/16) over 4 repos (repo range 0-50%)
+TS suggestion renders: 3.8% (2/52) over 4 repos (repo range 0-100%)
+TS suggestion repo: 57.4% (58/101) over 5 repos (repo range 0-95%)
+TS suggestion wrapper: 0.0% (0/4) over 1 repos (repo range 0-0%)
+TS suggestion: 38.4% (326/848) over 13 repos (repo range 0-86%)
+card accept by share of verdicts that are real (cards with outliers):
+   real share [0,0.25): 24.5% (23/94)
+   real share [0.25,0.5): 28.6% (2/7)
+   real share [0.5,0.75): 84.6% (22/26)
+   real share [0.75,0.999): 100.0% (14/14)
+   real share [0.999,1]: 98.5% (65/66)
+
+## 13. relabel5 WRONG cards: cause by outlier count, and families of incidental WRONGs
+TS: legit_outliers {1:2 4+:16 2-3:6}; mixed_group {0:1 1:3 4+:9 2-3:4}; misdescribes {0:1}; incidental {1:2 2-3:4}
+   incidental by family: ordering 3, renders 2, repo 1
+   mixed_group by family: naming 11, calls 1, wrapper 1, repo 3, renders 1
+   flag errors (legit+false) by family: avoids_other 1, renders 3, base_class 3, decorator 7, repo 2, argument_key 4, control 1, calls 1, naming 1, ordering 1
+Py: legit_outliers {1:5 2-3:2}; misdescribes {1:2}; mixed_group {1:2 4+:4 2-3:3}; incidental {1:1 2-3:2 4+:4}; false_outliers {1:1 4+:2 2-3:2}
+   incidental by family: repo 1, ordering 4, base_class 1, wrapper 1
+   mixed_group by family: calls 3, repo 1, naming 1, base_class 3, decorator 1
+   flag errors (legit+false) by family: repo 3, argument_key 2, naming 1, control 1, decorator 3, base_class 1, ordering 1
+v3 TS: incidental {"renders":3,"calls":7,"ordering":1,"repo":1,"argument_key":2}; mixed_group {"renders":2,"calls":2,"naming":17,"decorator":2,"base_class":1,"argument_key":6,"wrapper":3,"repo":2,"jsx_wrapper":1}; flag errors {"renders":4,"avoids_other":1,"decorator":7,"base_class":3,"argument_key":4,"wrapper":3,"repo":2,"control":4,"calls":3,"naming":2,"layering":3,"ordering":1}
+v3 Py: incidental {"avoids_other":2,"repo":1,"ordering":7,"calls":4,"wrapper":1}; mixed_group {"decorator":3,"base_class":5,"calls":6,"naming":12,"repo":1}; flag errors {"repo":4,"decorator":3,"argument_key":2,"naming":1,"calls":6,"base_class":4,"avoids_other":1,"wrapper":1,"ordering":1}
+
+## 14. Suggestion-tier family accept by snapshot (v3 = before rounds 4-9)
+TS argument_key: v3 4/16  r2 4/16  r3 4/16  r4 6/12  r5 6/12
+TS avoids_other: v3 2/6  r2 2/6  r3 2/6  r4 1/2  r5 1/2
+TS base_class: v3 9/13  r2 9/13  r3 9/13  r4 10/15  r5 10/15
+TS calls: v3 2/14  r2 2/14  r3 2/14  r4 0/2  r5 0/2
+TS control: v3 3/9  r2 4/7  r3 4/7  r4 4/5  r5 5/6
+TS decorator: v3 6/16  r2 7/16  r3 7/16  r4 7/16  r5 6/15
+TS jsx_wrapper: v3 1/2  r2 2/2  r3 2/2  r4 2/2  r5 2/2
+TS naming: v3 11/30  r2 12/30  r3 18/30  r4 20/34  r5 22/34
+TS ordering: v3 1/3  r2 1/3  r3 1/3  r4 1/5  r5 1/5
+TS renders: v3 2/11  r2 4/10  r3 4/10  r4 4/10  r5 4/10
+TS repo: v3 4/9  r2 5/11  r3 5/11  r4 7/13  r5 7/13
+TS wrapper: v3 0/1  r2 0/1  r3 0/1  r4 0/1  r5 0/1
+Py argument_key: v3 2/4  r3 2/4  r4 2/4  r5 2/4
+Py avoids_other: v3 0/4  r3 0/4  r4 0/1  r5 0/1
+Py base_class: v3 2/12  r3 3/12  r4 4/12  r5 6/11
+Py calls: v3 4/20  r3 4/21  r4 5/10  r5 8/12
+Py control: v3 8/8  r3 8/9  r4 8/9  r5 7/8
+Py decorator: v3 1/7  r3 3/7  r4 3/7  r5 4/8
+Py import_source: r3 1/1  r4 1/1  r5 1/1
+Py layering: v3 1/1  r3 1/1  r4 1/1  r5 1/1
+Py naming: v3 5/18  r3 5/18  r4 7/18  r5 13/15
+Py ordering: v3 0/8  r3 0/8  r4 0/5  r5 0/5
+Py repo: v3 1/7  r3 1/7  r4 1/7  r5 0/5
+Py wrapper: v3 7/9  r3 6/8  r4 6/8  r5 5/6
+
+## 15. How often round 4-9 PRs named each relabel5 card, by label
+TS: named 0x: 21 A / 16 non-A; named 1x: 27 A / 16 non-A; named 2-3x: 14 A / 14 non-A; named 4+x: 32 A / 7 non-A
+   non-ACCEPT named by >=2 round 5-9 PRs (6): cal.com/D-8d7d13(83,91,102) cal.com/D-42ab67(88,102) midday/D-98e729(75,83,99) infisical/D-4be5e9(99,117) infisical/D-156a6f(83,91,117) infisical/D-ac787f(91,112,117)
+Py: named 0x: 18 A / 17 non-A; named 1x: 18 A / 11 non-A; named 2-3x: 5 A / 2 non-A; named 4+x: 6 A / 0 non-A
+   non-ACCEPT named by >=2 round 5-9 PRs (1): netbox/D-76eb6b(99,117)
+
+## 16. Plan mechanisms on relabel5 and dev-v3; TS naming by role shape; lift bands
+r5 TS M1 (no TS naming on plain-function roles): 66.2% (94/142) (all shown 63.9% (94/147))
+r5 TS I1 (no ordering): 65.5% (93/142) (all shown 63.9% (94/147))
+r5 TS I1+I2 (hide ordering, renders, calls): 68.5% (89/130) (all shown 63.9% (94/147))
+r5 TS M1+I1+I2: 71.2% (89/125) (all shown 63.9% (94/147))
+r5 Py M1 (no TS naming on plain-function roles): 61.0% (47/77) (all shown 61.0% (47/77))
+r5 Py I1 (no ordering): 65.3% (47/72) (all shown 61.0% (47/77))
+r5 Py I1+I2 (hide ordering, repo): 70.1% (47/67) (all shown 61.0% (47/77))
+r5 Py M1+I1+I2: 70.1% (47/67) (all shown 61.0% (47/77))
+v3 TS M1 (no TS naming on plain-function roles): 43.7% (69/158) (all shown 42.6% (69/162))
+v3 TS I1 (no ordering): 42.8% (68/159) (all shown 42.6% (69/162))
+v3 TS I1+I2 (hide ordering, renders, calls): 47.8% (64/134) (all shown 42.6% (69/162))
+v3 TS M1+I1+I2: 49.2% (64/130) (all shown 42.6% (69/162))
+v3 Py M1 (no TS naming on plain-function roles): 31.6% (31/98) (all shown 31.6% (31/98))
+v3 Py I1 (no ordering): 34.4% (31/90) (all shown 31.6% (31/98))
+v3 Py I1+I2 (hide ordering, repo): 36.1% (30/83) (all shown 31.6% (31/98))
+v3 Py M1+I1+I2: 36.1% (30/83) (all shown 31.6% (31/98))
+v3 TS naming by role shape: file any, entry -, function 0/4; file any, entry server_action, function 1/1; file kind, entry -, component 1/2; file kind, entry -, const 1/2; file kind, entry -, function 0/1; file any, entry -, component 3/5; file any, entry -, class 1/2; file any, entry -, const 2/5; file kind, entry layout, component 1/1; file kind, entry -, class 1/7
+   plain-function naming cards: dub/D-258285 WRONG/mixed_group; cal.com/D-8d7d13 WRONG/mixed_group; infisical/D-156a6f WRONG/mixed_group; infisical/D-4be5e9 WRONG/mixed_group
+r5 TS naming by role shape: file any, entry -, function 0/5; file any, entry server_action, function 1/1; file kind, entry -, component 1/2; file kind, entry -, const 3/3; file any, entry -, component 4/5; file kind, entry -, function 1/1; file any, entry -, class 1/2; file any, entry ?, ? 1/1; file any, entry -, const 4/5; file kind, entry layout, component 1/1; file kind, entry -, class 5/8
+   plain-function naming cards: dub/D-258285 WRONG/mixed_group; cal.com/D-8d7d13 WRONG/mixed_group; infisical/D-4be5e9 WRONG/mixed_group; infisical/D-156a6f WRONG/mixed_group; infisical/D-ac787f WRONG/mixed_group
+v3 lift bands, calls/renders/ordering/repo/argument_key vs other families: [0,2) 24.0% (6/25) vs 0.0% (0/1); [2,4) 0.0% (0/7) vs 67.9% (19/28); [4,8) 14.3% (2/14) vs 28.1% (9/32); [8,inf) 26.1% (12/46) vs 37.3% (28/75)
+r5 lift bands, calls/renders/ordering/repo/argument_key vs other families: [0,2) 29.2% (7/24) vs 100.0% (3/3); [2,4) 22.2% (2/9) vs 82.6% (19/23); [4,8) 60.0% (3/5) vs 65.2% (15/23); [8,inf) 53.3% (16/30) vs 59.7% (46/77)

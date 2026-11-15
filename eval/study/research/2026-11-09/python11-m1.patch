@@ -1,0 +1,304 @@
+diff --git a/apps/studio/src/entities/facts/model.ts b/apps/studio/src/entities/facts/model.ts
+index 490dfe06..a1a4734a 100644
+--- a/apps/studio/src/entities/facts/model.ts
++++ b/apps/studio/src/entities/facts/model.ts
+@@ -186,6 +186,7 @@ export const SYMBOL_TRAIT: Record<string, { label: string; why: string; purpose?
+   lineage_inline: { label: "admin inline", why: "Built, directly or through the repository's own classes, on a Django admin inline (TabularInline, StackedInline): inlines form roles of their own, apart from the model admins that hold them." },
+   lineage_mixin: { label: "mixin", why: "Named *Mixin, or built only on mixins: mixins form roles of their own." },
+   lineage_exception: { label: "exception", why: "Built, directly or through the repository's own classes, on a Python or framework exception: exceptions form roles of their own." },
++  lineage_schema: { label: "schema", why: "Built, directly or through the repository's own classes, on a pydantic model (BaseModel, RootModel): schemas form roles of their own, apart from the helpers and value types beside them." },
+   forwards: { label: "forwards", why: "A function that passes one of its own parameters (an argument, *args or **kwargs) on to a call of its own name: a thin wrapper of that call, which is what makes it a team version of a library function." },
+   schema_value: { label: "schema value", why: "A value a schema library builds (z.object(...), yup.string(), callbacks such as .refine(fn) included), or a chain on such a value of the same file. A naming rule over schemas leaves plain values out (TypeScript)." },
+   plain_value: { label: "plain value", why: "A value built from literals and built-ins only: an object, array or primitive literal, or plain data such as Object.keys(...). Not a schema to rename under a naming rule over schema values (TypeScript)." },
+diff --git a/crates/drift-core/src/facts.rs b/crates/drift-core/src/facts.rs
+index 7ec2490e..2e63e2f3 100644
+--- a/crates/drift-core/src/facts.rs
++++ b/crates/drift-core/src/facts.rs
+@@ -619,7 +619,7 @@ pub mod traits {
+     /// Lineage kinds of a Python class ([`crate::lineage`]): built, directly or through
+     /// classes of the repo, on a framework view, a DRF serializer, a Django model, a
+     /// form, a Django model admin, a Django admin inline, only mixins (or named
+-    /// `*Mixin`), or an exception.
++    /// `*Mixin`), an exception, or a pydantic model (`schema`).
+     /// A class of one kind forms roles of its own (`RoleSelector::member_kind`); a class
+     /// of none is a plain class.
+     pub const LINEAGE_VIEW: &str = "lineage_view";
+@@ -630,6 +630,7 @@ pub mod traits {
+     pub const LINEAGE_INLINE: &str = "lineage_inline";
+     pub const LINEAGE_MIXIN: &str = "lineage_mixin";
+     pub const LINEAGE_EXCEPTION: &str = "lineage_exception";
++    pub const LINEAGE_SCHEMA: &str = "lineage_schema";
+     /// A value (`const`, `let`) a schema library builds: a call chain from a schema
+     /// package (`z.object({...}).refine(fn)`, `yup.string()`) or from a binding of the
+     /// same file that is one. Recorded by TypeScript only.
+diff --git a/crates/drift-core/src/lineage.rs b/crates/drift-core/src/lineage.rs
+index 5d94feeb..b0ebd6ce 100644
+--- a/crates/drift-core/src/lineage.rs
++++ b/crates/drift-core/src/lineage.rs
+@@ -17,10 +17,13 @@ pub const ADMIN: &str = "admin";
+ pub const INLINE: &str = "inline";
+ pub const MIXIN: &str = "mixin";
+ pub const EXCEPTION: &str = "exception";
++/// pydantic models: request and response schemas, DTOs and settings-free data classes
++/// of the FastAPI stack (python11 M1, candidate for F12).
++pub const SCHEMA: &str = "schema";
+ 
+ /// Every lineage kind.
+ pub const KINDS: &[&str] = &[
+-    VIEW, SERIALIZER, MODEL, FORM, ADMIN, INLINE, MIXIN, EXCEPTION,
++    VIEW, SERIALIZER, MODEL, FORM, ADMIN, INLINE, MIXIN, EXCEPTION, SCHEMA,
+ ];
+ 
+ /// Prefix of the trait that records a class's lineage kind (`lineage_serializer`).
+@@ -71,6 +74,19 @@ const MODELS: &[&str] = &[
+     "pkg:rest_framework_api_key#models.AbstractAPIKey",
+ ];
+ 
++/// pydantic models (v2 and the v1 namespace). Not `BaseSettings` (configuration, read
++/// once) nor SQLModel, which is a table only with `table=True`, a keyword the facts do
++/// not record: no kind is guessed for it.
++const SCHEMAS: &[&str] = &[
++    "pkg:pydantic#BaseModel",
++    "pkg:pydantic#main.BaseModel",
++    "pkg:pydantic#RootModel",
++    "pkg:pydantic#root_model.RootModel",
++    "pkg:pydantic#v1.BaseModel",
++    "pkg:pydantic#v1.main.BaseModel",
++    "pkg:pydantic.v1#BaseModel",
++];
++
+ /// Django and WTForms forms (not form fields, widgets or formsets).
+ const FORMS: &[&str] = &[
+     "pkg:django#forms.Form",
+@@ -254,6 +270,9 @@ pub fn framework_kind(base: &str) -> Option<&'static str> {
+     if listed(MODELS) {
+         return Some(MODEL);
+     }
++    if listed(SCHEMAS) {
++        return Some(SCHEMA);
++    }
+     if listed(FORMS) {
+         return Some(FORM);
+     }
+@@ -329,7 +348,12 @@ mod tests {
+                 Some(EXCEPTION),
+             ),
+             ("pkg:anthropic#BadRequestError", None),
+-            ("pkg:pydantic#BaseModel", None),
++            ("pkg:pydantic#BaseModel", Some(SCHEMA)),
++            ("pkg:pydantic#v1.BaseModel", Some(SCHEMA)),
++            ("pkg:pydantic#RootModel", Some(SCHEMA)),
++            ("pkg:pydantic_settings#BaseSettings", None),
++            ("pkg:pydantic#Field", None),
++            ("pkg:sqlmodel#SQLModel", None),
+             ("unresolved:Foo", None),
+         ] {
+             assert_eq!(framework_kind(base), want, "{base}");
+@@ -348,6 +372,7 @@ mod tests {
+             LINEAGE_INLINE,
+             LINEAGE_MIXIN,
+             LINEAGE_EXCEPTION,
++            LINEAGE_SCHEMA,
+         ];
+         let want: Vec<String> = KINDS.iter().map(|k| trait_for(k)).collect();
+         assert_eq!(consts.to_vec(), want);
+diff --git a/crates/drift-mine/src/roles.rs b/crates/drift-mine/src/roles.rs
+index 06d1d222..7afcf8b7 100644
+--- a/crates/drift-mine/src/roles.rs
++++ b/crates/drift-mine/src/roles.rs
+@@ -50,7 +50,7 @@ pub struct RoleSelector {
+     pub export_name: Option<String>,
+     /// For a member of a kind of its own within its symbol kind: that kind. Python
+     /// classes of a framework lineage ([`drift_core::lineage`]: `serializer`, `model`,
+-    /// `form`, `admin`, `inline`, `mixin`, `exception`, `view`) form roles of their own, apart
++    /// `form`, `admin`, `inline`, `mixin`, `exception`, `view`, `schema`) form roles of their own, apart
+     /// from the plain classes and the other kinds next to them: what most serializers
+     /// in `api.py` files do says nothing about the permission classes beside them.
+     /// `None` (not serialised) for everything else, so the ids of other roles do not
+@@ -154,6 +154,7 @@ impl RoleSelector {
+                     drift_core::lineage::INLINE => "admin inlines".to_string(),
+                     drift_core::lineage::MIXIN => "mixins".to_string(),
+                     drift_core::lineage::EXCEPTION => "exceptions".to_string(),
++                    drift_core::lineage::SCHEMA => "schemas".to_string(),
+                     other => format!("{other} classes"),
+                 }
+             }
+diff --git a/crates/drift-py/src/kinds.rs b/crates/drift-py/src/kinds.rs
+index ec44851b..389f9851 100644
+--- a/crates/drift-py/src/kinds.rs
++++ b/crates/drift-py/src/kinds.rs
+@@ -752,6 +752,7 @@ mod tests {
+             class("OwnedMixin", &[]),
+             class("TeamModel", &[("pkg:django#db.models.Model", e)]),
+             class("AppError", &[("global#Exception", e)]),
++            class("TeamSchema", &[("pkg:pydantic#BaseModel", e)]),
+             // A cycle the resolver cannot settle.
+             class("Loop", &[("app/lib.py#Loop2", e)]),
+             class("Loop2", &[("app/lib.py#Loop", e)]),
+@@ -784,8 +785,12 @@ mod tests {
+                 ],
+             ),
+             class("NotFound", &[("app/lib.py#AppError", e)]),
++            class("OrderOut", &[("app/lib.py#TeamSchema", e)]),
++            class("Code", &[("global#str", e)]),
+             class("Unknown", &[("unresolved:Thing", e)]),
+             class("Pydantic", &[("pkg:pydantic#BaseModel", e)]),
++            class("Settings", &[("pkg:pydantic_settings#BaseSettings", e)]),
++            class("Table", &[("pkg:sqlmodel#SQLModel", e)]),
+             class("Plain", &[]),
+             class(
+                 "AuditedOrderSerializer",
+@@ -807,7 +812,7 @@ mod tests {
+                 .find(|s| s.name == name)
+                 .and_then(|s| drift_core::lineage::of_traits(&s.traits))
+         };
+-        use drift_core::lineage::{EXCEPTION, MIXIN, MODEL, SERIALIZER};
++        use drift_core::lineage::{EXCEPTION, MIXIN, MODEL, SCHEMA, SERIALIZER};
+         assert_eq!(lineage("TeamSerializer"), Some(SERIALIZER));
+         assert_eq!(
+             lineage("OrderSerializer"),
+@@ -830,8 +835,16 @@ mod tests {
+         // plain, never guessed.
+         assert_eq!(lineage("Both"), None);
+         assert_eq!(lineage("Unknown"), None);
+-        assert_eq!(lineage("Pydantic"), None);
+         assert_eq!(lineage("Plain"), None);
++        // python11 M1: a pydantic model is a schema, directly or through the repo's own
++        // base; settings, SQLModel (a table only with `table=True`) and a `str`
++        // subclass beside them are plain.
++        assert_eq!(lineage("Pydantic"), Some(SCHEMA));
++        assert_eq!(lineage("TeamSchema"), Some(SCHEMA));
++        assert_eq!(lineage("OrderOut"), Some(SCHEMA), "through an in-repo base");
++        assert_eq!(lineage("Settings"), None);
++        assert_eq!(lineage("Table"), None);
++        assert_eq!(lineage("Code"), None);
+         assert_eq!(lineage("Loop"), None);
+         assert_eq!(lineage("Loop2"), None);
+     }
+diff --git a/crates/drift-cli/tests/py_framework_lineage.rs b/crates/drift-cli/tests/py_framework_lineage.rs
+new file mode 100644
+index 00000000..abc0be3b
+--- /dev/null
++++ b/crates/drift-cli/tests/py_framework_lineage.rs
+@@ -0,0 +1,121 @@
++//! python11 M1 (round 11 research, candidate for F12): pydantic models are a lineage
++//! kind of their own (`schema`), as DRF serializers and Django models are. The kind is
++//! mined on its own: a naming rule over it is proposed (naming rules over plain Python
++//! classes are not, W3), the value types beside it are no outliers, and the framework
++//! base that forms the role is not restated as a rule. Synthetic project.
++
++use std::path::Path;
++use std::process::Command;
++
++use serde_json::Value;
++
++/// The CLI under test: `DRIFT_TEST_BIN` when set (a private copy, so another build sharing
++/// this target directory cannot swap the binary mid-run), else Cargo's own.
++static BIN: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
++    std::env::var("DRIFT_TEST_BIN").unwrap_or_else(|_| env!("CARGO_BIN_EXE_drift").to_string())
++});
++
++fn write(root: &Path, rel: &str, body: &str) {
++    let p = root.join(rel);
++    std::fs::create_dir_all(p.parent().unwrap()).unwrap();
++    std::fs::write(p, body).unwrap();
++}
++
++fn census(root: &Path) -> Value {
++    let out = Command::new(&*BIN)
++        .env("DRIFT_TEST_UNSHOWN", "1")
++        .args(["census", "--json", "--python-proposals", "--max", "200"])
++        .current_dir(root)
++        .env_remove("DRIFT_CACHE_DIR")
++        .env_remove("DRIFT_EXPERIMENTAL")
++        .output()
++        .unwrap();
++    assert!(
++        out.status.success(),
++        "census failed: {}",
++        String::from_utf8_lossy(&out.stderr)
++    );
++    serde_json::from_slice(&out.stdout).unwrap()
++}
++
++/// `gizmo`: 30 pydantic schemas `Part{i}Out` in `gizmo/schemas/`, three `str` value types
++/// beside them, and plain modules around.
++fn repo() -> tempfile::TempDir {
++    let dir = tempfile::tempdir().unwrap();
++    let r = dir.path();
++    write(
++        r,
++        "pyproject.toml",
++        "[project]\nname = \"gizmo\"\ndependencies = [\"pydantic\"]\n",
++    );
++    write(r, "gizmo/__init__.py", "");
++    for i in 0..30 {
++        let extra = if i < 3 {
++            format!("\n\nclass Tag{i}(str):\n    pass\n")
++        } else {
++            String::new()
++        };
++        write(
++            r,
++            &format!("gizmo/schemas/s{i:02}.py"),
++            &format!(
++                "from pydantic import BaseModel\n\n\nclass Part{i}Out(BaseModel):\n    name: str\n{extra}"
++            ),
++        );
++    }
++    for i in 0..30 {
++        write(
++            r,
++            &format!("gizmo/util/h{i:02}.py"),
++            &format!("def helper_{i}():\n    return {i}\n"),
++        );
++    }
++    dir
++}
++
++fn proposals(v: &Value) -> &Vec<Value> {
++    v["proposals"].as_array().unwrap()
++}
++
++fn naming<'a>(v: &'a Value, pattern: &str) -> Option<&'a Value> {
++    proposals(v)
++        .iter()
++        .find(|p| p["rule"]["type"] == "named" && p["rule"]["pattern"] == pattern)
++}
++
++fn extends(v: &Value, base: &str) -> bool {
++    proposals(v).iter().any(|p| {
++        p["rule_kind"] == "wrapped_by:extends"
++            && p["rule"]["any_of"]
++                .as_array()
++                .is_some_and(|a| a.iter().any(|t| t.as_str().unwrap_or("").contains(base)))
++    })
++}
++
++fn summary(v: &Value) -> Vec<String> {
++    proposals(v)
++        .iter()
++        .map(|p| p["summary"].as_str().unwrap_or("").to_string())
++        .collect()
++}
++
++#[test]
++fn pydantic_models_form_a_schema_role_of_their_own() {
++    let dir = repo();
++    let v = census(dir.path());
++    let c = naming(&v, "*Out").unwrap_or_else(|| panic!("no *Out rule: {:#?}", summary(&v)));
++    assert_eq!(c["role"]["member_kind"], "schema", "{c:#}");
++    assert_eq!(
++        c["outliers_total"], 0,
++        "the str value types are no schemas: {c:#}"
++    );
++    assert!(
++        c["summary"]
++            .as_str()
++            .unwrap()
++            .starts_with("schemas in gizmo/schemas/**"),
++        "{c:#}"
++    );
++    // The base that forms the role is not a rule of it.
++    assert!(!extends(&v, "BaseModel"), "{:#?}", summary(&v));
++}

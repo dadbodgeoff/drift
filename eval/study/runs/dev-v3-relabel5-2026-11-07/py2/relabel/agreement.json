@@ -1,0 +1,100 @@
+{
+  "a": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/A",
+  "b": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/B",
+  "labels_sha256": {
+    "A": "35b14e5ed20801f9fca8909568e74a2f48ef2027626d76e7bde4002da9147493",
+    "B": "82a4b6f81e8e085aff04054626fc42728cbcfd4f00e82b1da99b12ffb48573dd"
+  },
+  "computed_at": "2026-11-08T00:06:09.568Z",
+  "rubric_sha256s": [
+    "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+  ],
+  "n": 24,
+  "scope": 24,
+  "exact": 0.75,
+  "kappa": 0.43749999999999994,
+  "kappa_boot": {
+    "lo": 0,
+    "hi": 0.8210526315789474,
+    "clusters": 10
+  },
+  "accept_vs_not": {
+    "n": 24,
+    "po": 0.75,
+    "pe": 0.5555555555555556,
+    "kappa": 0.43749999999999994
+  },
+  "wrong_vs_not": {
+    "n": 24,
+    "po": 0.75,
+    "pe": 0.5555555555555556,
+    "kappa": 0.43749999999999994
+  },
+  "confusion": {
+    "ACCEPT": {
+      "ACCEPT": 14,
+      "TRIVIAL": 0,
+      "WRONG": 6
+    },
+    "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+    },
+    "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 4
+    }
+  },
+  "mix": {
+    "A": {
+      "ACCEPT": 20,
+      "TRIVIAL": 0,
+      "WRONG": 4
+    },
+    "B": {
+      "ACCEPT": 14,
+      "TRIVIAL": 0,
+      "WRONG": 10
+    }
+  },
+  "disagreements": [
+    {
+      "uid": "InvenTree/D-90cbee",
+      "repo": "InvenTree",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "Misago/D-d8703c",
+      "repo": "Misago",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "Misago/D-c9ae1e",
+      "repo": "Misago",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "Misago/D-e72fc8",
+      "repo": "Misago",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "paperless-ngx/D-0dfb1b",
+      "repo": "paperless-ngx",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "changedetection.io/D-129993",
+      "repo": "changedetection.io",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    }
+  ]
+}

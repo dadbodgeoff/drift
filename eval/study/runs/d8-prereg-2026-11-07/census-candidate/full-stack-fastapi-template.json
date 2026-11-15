@@ -1,0 +1,118 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "5cfbbb4-d8",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/cache/repos/full-stack-fastapi-template",
+  "units": 405,
+  "roles": 22,
+  "conventions": 1,
+  "shown": 1,
+  "tiers": {
+    "default": 0,
+    "suggestion": 1
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    },
+    "candidate": {
+      "decision": "D8",
+      "status": "candidate (pre-registered, not adopted)",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts",
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15,
+      "py": {
+        "min_members": 50,
+        "call_wrappers": "guards"
+      }
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-6e757d",
+      "rank": 1,
+      "summary": "files in frontend/** use lucide-react for icons, not react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react",
+      "role": {
+        "package": "frontend",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 25
+      },
+      "rule": {
+        "type": "prefers_library",
+        "group": "icons",
+        "preferred": "lucide-react"
+      },
+      "evidence": {
+        "holders": 24,
+        "total": 25,
+        "lower_bound": 0.805,
+        "lift": 1.0,
+        "split": [
+          [
+            "lucide-react",
+            24
+          ],
+          [
+            "react-icons",
+            1
+          ]
+        ]
+      },
+      "rule_kind": "prefers_library",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "frontend/src/components/Admin/AddUser.tsx",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "frontend/src/components/Common/Footer.tsx",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    }
+  ],
+  "largest_role": null
+}

@@ -1,0 +1,240 @@
+{
+  "manifest": "eval/holdout-primary-py.json",
+  "set_id": "py-primary-2026-11-05",
+  "drift_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+  "min_parseable": 200,
+  "results": [
+    {
+      "name": "cs146s_cn",
+      "sha": "bba55e7de60b65ab9a4330f8bcc782b73657bad9",
+      "clone": true,
+      "scan": true,
+      "files": 111,
+      "parse_errors": 0,
+      "parseable": 111,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (111)"
+    },
+    {
+      "name": "dbt-charts",
+      "sha": "90f9ded7ac8f17c67ad5dd35215e895157ddc959",
+      "clone": true,
+      "scan": true,
+      "files": 2229,
+      "parse_errors": 0,
+      "parseable": 2229,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "djongo",
+      "sha": "2753c066e03b8b6d68c783a4a28ae02b9b934623",
+      "clone": true,
+      "scan": true,
+      "files": 30,
+      "parse_errors": 0,
+      "parseable": 30,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (30)"
+    },
+    {
+      "name": "taos",
+      "sha": "0c5225f0a07b31fc2f949cad1b8a16b484d8e4c4",
+      "clone": true,
+      "scan": true,
+      "files": 2744,
+      "parse_errors": 0,
+      "parseable": 2744,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "veritasgraph",
+      "sha": "6b14ce7a56772bbd354754054bc5bda10800c7ef",
+      "clone": true,
+      "scan": true,
+      "files": 798,
+      "parse_errors": 0,
+      "parseable": 798,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "ods",
+      "sha": "891f722ab7cca7715fa719cff5f8b3ac3b09c1ac",
+      "clone": true,
+      "scan": true,
+      "files": 2140,
+      "parse_errors": 0,
+      "parseable": 2140,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "platypush",
+      "sha": "cef2e08866054cb25934cac899793841cbdd794c",
+      "clone": true,
+      "scan": true,
+      "files": 844,
+      "parse_errors": 0,
+      "parseable": 844,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "ultimate-rvc",
+      "sha": "dc14d1451e95eeda8801c67a7b9aa2a85b9cf7bd",
+      "clone": true,
+      "scan": true,
+      "files": 113,
+      "parse_errors": 0,
+      "parseable": 113,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (113)"
+    },
+    {
+      "name": "deeptools",
+      "sha": "a8d6da53656b9a1c1d211f6010ce38eebc508307",
+      "clone": true,
+      "scan": true,
+      "files": 63,
+      "parse_errors": 0,
+      "parseable": 63,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (63)"
+    },
+    {
+      "name": "cosmos-transfer1",
+      "sha": "5005e823dbd478ad8e51f6bc28a913a13a994b5f",
+      "clone": true,
+      "scan": true,
+      "files": 287,
+      "parse_errors": 0,
+      "parseable": 287,
+      "pass": true,
+      "reason": null
+    }
+  ],
+  "reserves": [
+    {
+      "name": "nefarious",
+      "sha": "4ec2fd5d332a07436b48845b22907939af60cc5a",
+      "clone": true,
+      "scan": true,
+      "files": 115,
+      "parse_errors": 0,
+      "parseable": 115,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (115)"
+    },
+    {
+      "name": "codex-autorunner",
+      "sha": "7a2f78db84e1ca9b96a1f02f16b07cf3ce57314c",
+      "clone": true,
+      "scan": true,
+      "files": 2166,
+      "parse_errors": 0,
+      "parseable": 2166,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "aws-parallelcluster",
+      "sha": "28c28bac550a2c4a6fd458f763e06a3a4d23ee23",
+      "clone": true,
+      "scan": true,
+      "files": 678,
+      "parse_errors": 0,
+      "parseable": 678,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "trimesh",
+      "sha": "6c158cce226500fc64b12acd265af0cf01d1c212",
+      "clone": true,
+      "scan": true,
+      "files": 261,
+      "parse_errors": 0,
+      "parseable": 261,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "freesound",
+      "sha": "da3a786e2e5bdcaec1265b0798d4e212d2015720",
+      "clone": true,
+      "scan": true,
+      "files": 469,
+      "parse_errors": 0,
+      "parseable": 469,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "omnivinci",
+      "sha": "9307faa7017651f9734994f2a55fc0e5a9f60add",
+      "clone": true,
+      "scan": true,
+      "files": 4,
+      "parse_errors": 0,
+      "parseable": 4,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (4)"
+    },
+    {
+      "name": "monkey",
+      "sha": "bea2f415c8966de235798bbf9d2dbcd06fd37ae4",
+      "clone": true,
+      "scan": true,
+      "files": 906,
+      "parse_errors": 0,
+      "parseable": 906,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "genomi",
+      "sha": "1df4f5bfb635e2d08f93a1102b70b840fbe80d86",
+      "clone": true,
+      "scan": true,
+      "files": 557,
+      "parse_errors": 0,
+      "parseable": 557,
+      "pass": true,
+      "reason": null
+    }
+  ],
+  "replaced": [
+    {
+      "date": "2026-11-07",
+      "repo": "cs146s_cn",
+      "reserve": "nefarious",
+      "reason": "technical check: fewer than 200 parseable files (111)"
+    },
+    {
+      "date": "2026-11-07",
+      "repo": "nefarious",
+      "reserve": "codex-autorunner",
+      "reason": "technical check: fewer than 200 parseable files (115)"
+    },
+    {
+      "date": "2026-11-07",
+      "repo": "djongo",
+      "reserve": "aws-parallelcluster",
+      "reason": "technical check: fewer than 200 parseable files (30)"
+    },
+    {
+      "date": "2026-11-07",
+      "repo": "ultimate-rvc",
+      "reserve": "trimesh",
+      "reason": "technical check: fewer than 200 parseable files (113)"
+    },
+    {
+      "date": "2026-11-07",
+      "repo": "deeptools",
+      "reserve": "freesound",
+      "reason": "technical check: fewer than 200 parseable files (63)"
+    }
+  ]
+}

@@ -1,0 +1,424 @@
+{
+  "run": "eval/study/runs/dev3-ts-2026-11-08",
+  "items": [
+    {
+      "uid": "T02/D-c983c0",
+      "repo": "T02",
+      "id": "D-c983c0",
+      "rank": 1,
+      "summary": "files in apps/buddy/** do not import from packaging/buddy/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "apps/buddy",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:packaging/buddy"
+      },
+      "evidence": {
+        "holders": 1720,
+        "total": 1721,
+        "lower_bound": 1,
+        "lift": 3
+      },
+      "members": 1721,
+      "example": "apps/buddy/electron.vite.config.ts#(file)",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "apps/buddy/electron-builder.config.cjs"
+      ],
+      "block": " 1. [D-c983c0] files in apps/buddy/** do not import from packaging/buddy/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 1720/1721 (lower bound 1.00, lift 3.0)\n    example:  apps/buddy/electron.vite.config.ts#(file)\n    outlier:  apps/buddy/electron-builder.config.cjs:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "T02/D-f9ec7b",
+      "repo": "T02",
+      "id": "D-f9ec7b",
+      "rank": 2,
+      "summary": "legacy/web-stack/apps/api: classes in src/** (*.service files) are named `*Service`, except 2 companions (a helper or constant beside the members that follow it)",
+      "role": {
+        "package": "legacy/web-stack/apps/api",
+        "dir": "src",
+        "file": "*.service",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Service"
+      },
+      "evidence": {
+        "holders": 61,
+        "total": 61,
+        "lower_bound": 0.94,
+        "lift": 4
+      },
+      "members": 63,
+      "example": "legacy/web-stack/apps/api/src/database/prisma.service.ts#PrismaService",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 2. [D-f9ec7b] legacy/web-stack/apps/api: classes in src/** (*.service files) are named `*Service`, except 2 companions (a helper or constant beside the members that follow it)\n    evidence: 61/61 (lower bound 0.94, lift 4.0)\n    agents:   not shown to agents (family below admission bar: 56% of 37)\n    example:  legacy/web-stack/apps/api/src/database/prisma.service.ts#PrismaService\n    exempt:   legacy/web-stack/apps/api/src/modules/agent/agent-events.service.ts:34 AgentGenerationEventsConsumerError (another kind of class (extends Error) beside AgentGenerationEventsService, which follows the scheme)\n    exempt:   legacy/web-stack/apps/api/src/modules/auth/registration-invite-grants.service.ts:15 RegistrationInviteRequiredException (another kind of class (extends BadRequestException) beside RegistrationInviteGrantsService, which follows the scheme)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "T02/D-3a6225",
+      "repo": "T02",
+      "id": "D-3a6225",
+      "rank": 3,
+      "summary": "apps/buddy: functions in electron/preload/** are named `*Api`, except a shared part (used by several members, not a member)",
+      "role": {
+        "package": "apps/buddy",
+        "dir": "electron/preload",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Api"
+      },
+      "evidence": {
+        "holders": 24,
+        "total": 24,
+        "lower_bound": 0.86,
+        "lift": 101.8
+      },
+      "members": 25,
+      "example": "apps/buddy/electron/preload/browser.ts#createBrowserApi",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 3. [D-3a6225] apps/buddy: functions in electron/preload/** are named `*Api`, except a shared part (used by several members, not a member)\n    evidence: 24/24 (lower bound 0.86, lift 101.8)\n    agents:   not shown to agents (family below admission bar: 56% of 37)\n    example:  apps/buddy/electron/preload/browser.ts#createBrowserApi\n    exempt:   apps/buddy/electron/preload/subscribe.ts:3 subscribe (shared part used by 17 members)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "T02/D-b25c1d",
+      "repo": "T02",
+      "id": "D-b25c1d",
+      "rank": 4,
+      "summary": "apps/buddy: classes in platform/extensions/** throw on failure",
+      "role": {
+        "package": "apps/buddy",
+        "dir": "platform/extensions",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "control",
+        "value": "throw"
+      },
+      "evidence": {
+        "holders": 20,
+        "total": 21,
+        "lower_bound": 0.77,
+        "lift": 1.7
+      },
+      "members": 21,
+      "example": "apps/buddy/platform/extensions/ExtensionCatalogService.ts#ExtensionCatalogService",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "apps/buddy/platform/extensions/ExtensionConditionEvaluator.ts"
+      ],
+      "block": " 4. [D-b25c1d] apps/buddy: classes in platform/extensions/** throw on failure\n    evidence: 20/21 (lower bound 0.77, lift 1.7)\n    agents:   not shown to agents (family below admission bar: 80% of 10)\n    example:  apps/buddy/platform/extensions/ExtensionCatalogService.ts#ExtensionCatalogService\n    outlier:  apps/buddy/platform/extensions/ExtensionConditionEvaluator.ts:33 ExtensionConditionInvalidatedError",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "T13/D-005b17",
+      "repo": "T13",
+      "id": "D-005b17",
+      "rank": 1,
+      "summary": "files in app/lib/** do not import from app/policies/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "app/lib",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:app/policies"
+      },
+      "evidence": {
+        "holders": 230,
+        "total": 232,
+        "lower_bound": 0.97,
+        "lift": 3
+      },
+      "members": 232,
+      "example": "app/lib/AgentFilterContext.tsx#(file)",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "app/lib/policy-modes/contract.ts",
+        "app/lib/policy-modes/summary.ts"
+      ],
+      "block": " 1. [D-005b17] files in app/lib/** do not import from app/policies/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 230/232 (lower bound 0.97, lift 3.0)\n    example:  app/lib/AgentFilterContext.tsx#(file)\n    outlier:  app/lib/policy-modes/contract.ts:1 (file)\n    outlier:  app/lib/policy-modes/summary.ts:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "T13/D-546fe2",
+      "repo": "T13",
+      "id": "D-546fe2",
+      "rank": 2,
+      "summary": "functions in app/** (demoMiddleware files) are named `demo*`, except 2 shared parts (used by several members, not a member)",
+      "role": {
+        "package": "",
+        "dir": "app",
+        "file": "demoMiddleware",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "demo*"
+      },
+      "evidence": {
+        "holders": 38,
+        "total": 38,
+        "lower_bound": 0.91,
+        "lift": 48.2
+      },
+      "members": 40,
+      "example": "app/lib/demo/demoMiddleware.actions.ts#demoActionArtifacts",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 2. [D-546fe2] functions in app/** (demoMiddleware files) are named `demo*`, except 2 shared parts (used by several members, not a member)\n    evidence: 38/38 (lower bound 0.91, lift 48.2)\n    agents:   not shown to agents (family below admission bar: 56% of 37)\n    example:  app/lib/demo/demoMiddleware.actions.ts#demoActionArtifacts\n    exempt:   app/lib/demo/demoMiddleware.sessions.ts:68 buildDemoSessionActions (shared part used by 3 members)\n    exempt:   app/lib/demo/demoMiddleware.sessions.ts:21 buildDemoSessionList (shared part used by 5 members)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "T13/D-304043",
+      "repo": "T13",
+      "id": "D-304043",
+      "rank": 3,
+      "summary": "pages in app/** (page files) are named `*Page`",
+      "role": {
+        "package": "",
+        "dir": "app",
+        "file": "page",
+        "entry": "page",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Page"
+      },
+      "evidence": {
+        "holders": 51,
+        "total": 52,
+        "lower_bound": 0.9,
+        "lift": 3.9
+      },
+      "members": 52,
+      "example": "app/agents/page.tsx#AgentsPage",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "app/decisions/page.tsx"
+      ],
+      "block": " 3. [D-304043] pages in app/** (page files) are named `*Page`\n    evidence: 51/52 (lower bound 0.90, lift 3.9)\n    agents:   not shown to agents (family below admission bar: 56% of 37)\n    example:  app/agents/page.tsx#AgentsPage\n    outlier:  app/decisions/page.tsx:1024 DecisionsLedger",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "T07/D-51aa33",
+      "repo": "T07",
+      "id": "D-51aa33",
+      "rank": 1,
+      "summary": "apps/web: components in src/motion/** declare their return type",
+      "role": {
+        "package": "apps/web",
+        "dir": "src/motion",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 40,
+        "total": 41,
+        "lower_bound": 0.87,
+        "lift": 5.4
+      },
+      "members": 41,
+      "example": "apps/web/src/motion/MotionCreatorShell.tsx#MotionCreatorShell",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "apps/web/src/motion/MotionCreatorApp.tsx"
+      ],
+      "block": " 1. [D-51aa33] apps/web: components in src/motion/** declare their return type\n    evidence: 40/41 (lower bound 0.87, lift 5.4)\n    agents:   not shown to agents (family below admission bar: 80% of 10)\n    example:  apps/web/src/motion/MotionCreatorShell.tsx#MotionCreatorShell\n    outlier:  apps/web/src/motion/MotionCreatorApp.tsx:17 MotionCreatorApp",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "T15/D-ec6190",
+      "repo": "T15",
+      "id": "D-ec6190",
+      "rank": 1,
+      "summary": "files in packages/vats/** do not import from packages/deploy-script-support/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "packages/vats",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:packages/deploy-script-support"
+      },
+      "evidence": {
+        "holders": 76,
+        "total": 77,
+        "lower_bound": 0.93,
+        "lift": 3
+      },
+      "members": 77,
+      "example": "packages/vats/ava.config.js#(file)",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/vats/src/proposals/terminate-governed-instance.js"
+      ],
+      "block": " 1. [D-ec6190] files in packages/vats/** do not import from packages/deploy-script-support/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 76/77 (lower bound 0.93, lift 3.0)\n    example:  packages/vats/ava.config.js#(file)\n    outlier:  packages/vats/src/proposals/terminate-governed-instance.js:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "T18/D-ea1da6",
+      "repo": "T18",
+      "id": "D-ea1da6",
+      "rank": 1,
+      "summary": "packages/api: functions in src/** (route files) are wrapped in withOperation()",
+      "role": {
+        "package": "packages/api",
+        "dir": "src",
+        "file": "route",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "packages/api/src/shared/with-operation.ts#withOperation"
+        ]
+      },
+      "evidence": {
+        "holders": 35,
+        "total": 37,
+        "lower_bound": 0.82,
+        "lift": 55.1
+      },
+      "members": 37,
+      "example": "packages/api/src/admin/contribution-batches/route.ts#POST",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "packages/api/src/admin/contribution-batches/route.ts"
+      ],
+      "block": " 1. [D-ea1da6] packages/api: functions in src/** (route files) are wrapped in withOperation()\n    evidence: 35/37 (lower bound 0.82, lift 55.1)\n    example:  packages/api/src/admin/contribution-batches/route.ts#POST\n    outlier:  packages/api/src/admin/contribution-batches/route.ts:118 assertPreviewSnapshotMatchesBatchSelection\n    outlier:  packages/api/src/admin/contribution-batches/route.ts:100 createContributionBatchSelectionHash",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "T18/D-41177a",
+      "repo": "T18",
+      "id": "D-41177a",
+      "rank": 2,
+      "summary": "files in scripts/** do not import from apps/admin/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "scripts",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:apps/admin"
+      },
+      "evidence": {
+        "holders": 124,
+        "total": 126,
+        "lower_bound": 0.94,
+        "lift": 3
+      },
+      "members": 126,
+      "example": "scripts/check-motion-patterns.mjs#(file)",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "scripts/cms/seed-local.mjs",
+        "scripts/cms/verify-local.mjs"
+      ],
+      "block": " 2. [D-41177a] files in scripts/** do not import from apps/admin/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 124/126 (lower bound 0.94, lift 3.0)\n    example:  scripts/check-motion-patterns.mjs#(file)\n    outlier:  scripts/cms/seed-local.mjs:1 (file)\n    outlier:  scripts/cms/verify-local.mjs:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "T18/D-62fb72",
+      "repo": "T18",
+      "id": "D-62fb72",
+      "rank": 3,
+      "summary": "packages/api: functions in src/eve/** declare their return type",
+      "role": {
+        "package": "packages/api",
+        "dir": "src/eve",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 73,
+        "total": 74,
+        "lower_bound": 0.93,
+        "lift": 2.7
+      },
+      "members": 74,
+      "example": "packages/api/src/eve/admin-memory/exclusions.ts#classifyEveAdminMemoryExclusions",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/api/src/eve/github-review/monitor-comment.ts"
+      ],
+      "block": " 3. [D-62fb72] packages/api: functions in src/eve/** declare their return type\n    evidence: 73/74 (lower bound 0.93, lift 2.7)\n    agents:   not shown to agents (family below admission bar: 80% of 10)\n    example:  packages/api/src/eve/admin-memory/exclusions.ts#classifyEveAdminMemoryExclusions\n    outlier:  packages/api/src/eve/github-review/monitor-comment.ts:49 publishEveGithubMonitorComment",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    }
+  ]
+}

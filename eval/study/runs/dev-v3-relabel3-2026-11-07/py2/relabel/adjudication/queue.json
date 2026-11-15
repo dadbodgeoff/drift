@@ -1,0 +1,194 @@
+{
+  "labels_sha256": {
+    "A": "2619759a0a7bb5a15187a3b41ae2f47f3baf0cc11410fade2ab56e33e0956cef",
+    "B": "93e76ef0af6cbf9f20e36885157bdd2b2b8ce95e9e0a71f67333feab836b4e64"
+  },
+  "cases": [
+    {
+      "uid": "paperless-ngx/D-de2489",
+      "repo": "paperless-ngx",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "paperless-ngx/D-de2489",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "src-ui/src/app/app.component.ts",
+            "src-ui/src/app/components/common/custom-fields-query-dropdown/custom-fields-query-dropdown.component.ts",
+            "src-ui/src/app/components/common/filterable-dropdown/filterable-dropdown.component.ts",
+            "src-ui/src/app/components/common/permissions-filter-dropdown/permissions-filter-dropdown.component.ts",
+            "src-ui/src/app/components/loading-component/loading.component.ts",
+            "src-ui/src/app/components/with-permissions/with-permissions.component.ts",
+            "src-ui/src/app/components/document-detail/document-detail.component.ts",
+            "src-ui/src/app/components/manage/document-attributes/document-attributes.component.ts",
+            "src-ui/eslint.config.js",
+            "src-ui/package.json",
+            "src-ui/angular.json",
+            ".pre-commit-config.yaml",
+            ".github/workflows/ci-frontend.yml"
+          ],
+          "outliers": [],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Every @Component class sampled (AppComponent, DocumentDetailComponent, DocumentAttributesComponent) carries the Component suffix, a team naming scheme; src-ui/eslint.config.js lists the angular-eslint recommended rules by hand but does not enable @angular-eslint/component-class-suffix (nor turn it off), so nothing catches a violation. clear: false and hesitated with WRONG mixed_group because the wording 'classes in *.component files' also covers the exempted helper models (FilterableDropdownSelectionModel, PermissionsSelectionModel, CustomFieldQueriesModel) and base classes (ComponentWithPermissions, LoadingComponentWithPermissions), which legitimately lack the suffix.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "paperless-ngx/D-de2489",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "src-ui/src/app/app.component.ts",
+            "src-ui/src/app/components/common/tag/tag.component.ts",
+            "src-ui/src/app/components/common/input/text/text.component.ts",
+            "src-ui/src/app/components/common/custom-fields-query-dropdown/custom-fields-query-dropdown.component.ts",
+            "src-ui/src/app/components/common/filterable-dropdown/filterable-dropdown.component.ts",
+            "src-ui/src/app/components/common/permissions-filter-dropdown/permissions-filter-dropdown.component.ts",
+            "src-ui/src/app/components/loading-component/loading.component.ts",
+            "src-ui/src/app/components/with-permissions/with-permissions.component.ts",
+            "src-ui/eslint.config.js"
+          ],
+          "outliers": [
+            {
+              "symbol": "CustomFieldQueriesModel",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "FilterableDropdownSelectionModel",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "PermissionsSelectionModel",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "LoadingComponentWithPermissions",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "ComponentWithPermissions",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Real components (AppComponent, TagComponent, TextComponent) follow it and eslint.config.js has no component-class-suffix rule, but all five outliers are non-component helpers co-located in *.component.ts files (plain model classes, base classes ComponentWithPermissions/LoadingComponentWithPermissions); none is a mistake, so new models or base classes would be flagged wrongly.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "simplelogin/D-2a4960",
+      "repo": "simplelogin",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "simplelogin/D-2a4960",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "app/abuser.py",
+            "app/jobs/send_event_job.py",
+            "app/jobs/sync_subscription_job.py",
+            "app/admin/user.py",
+            "app/coupon_utils.py",
+            "events/event_sink.py",
+            "events/runner.py",
+            "events/event_source.py",
+            "events/event_debugger.py",
+            "job_runner.py",
+            "pyproject.toml",
+            ".flake8",
+            ".pylintrc",
+            ".pre-commit-config.yaml"
+          ],
+          "outliers": [
+            {
+              "symbol": "app/jobs/send_event_job.py",
+              "verdict": "look"
+            },
+            {
+              "symbol": "app/jobs/sync_subscription_job.py",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "The top-level events/ package (event_sink.py, runner.py, event_source.py) is the event-listener service built on app (it imports app.models, app.config), and no other app module imports a top-level package; the two job outliers invert that layering only to annotate run(sink: EventSink), which job_runner.py could inject or which could sit under TYPE_CHECKING, so they are worth a second look; no ruff/flake8/pylint rule enforces import boundaries. clear: false because 'events/**' is easily confused with app/events/**, which members (admin/user.py, coupon_utils.py) import freely. Hesitated with WRONG legit_outliers (event-sending jobs need the sink interface).",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "simplelogin/D-2a4960",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "app/abuser.py",
+            "app/jobs/send_event_job.py",
+            "app/jobs/sync_subscription_job.py",
+            "app/jobs/event_jobs.py",
+            "app/models.py",
+            "events/event_sink.py",
+            ".flake8",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "send_event_job.py",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "sync_subscription_job.py",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "No import-linter or lint rule enforces it (.flake8, pyproject ruff have none). Both outliers are Job classes whose run(sink: EventSink) takes the sink abstraction from events/event_sink.py, a recurring job-to-sink pattern (job_runner.py injects HttpEventSink), so new jobs of that kind would be flagged falsely; hesitated with ACCEPT as a layering rule.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    }
+  ]
+}

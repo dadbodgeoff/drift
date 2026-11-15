@@ -1,0 +1,185 @@
+24 conventions from 6464 units in 332 roles (3 default tier, 21 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-ef5012] apps/api: rpc entry points in src/** are wrapped in internalProcedure() or protectedProcedure() or publicProcedure()
+    evidence: 254/255 (lower bound 0.98, lift 7.6)
+    tier:     default
+    split:    protectedProcedure 242, internalProcedure 6, publicProcedure 6
+    example:  apps/api/src/trpc/routers/accounting.ts#MUTATION disconnect
+    outlier:  apps/api/src/trpc/routers/banking.ts:291 QUERY getProviderAccounts
+
+ 2. [D-b8cff6] files in packages/db/** do not import from packages/notifications/** (declared dependencies excepted)
+    evidence: 68/69 (lower bound 0.92, lift 3.0)
+    tier:     default
+    example:  packages/db/drizzle.config.ts#(file)
+    outlier:  packages/db/src/queries/notification-settings.ts:1 (file)
+
+ 3. [D-5880dd] apps/worker: classes in src/processors/** extend BaseProcessor
+    evidence: 39/40 (lower bound 0.87, lift 2.4)
+    tier:     default
+    example:  apps/worker/src/processors/accounting/export-transactions.ts#ExportTransactionsProcessor
+    outlier:  apps/worker/src/processors/base.ts:17 BaseProcessor
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 4. [D-d1b6ba] apps/api: rpc entry points in src/** validate their input with a schema
+    evidence: 211/255 (lower bound 0.78, lift 6.4)
+    tier:     suggestion (rule kind control)
+    example:  apps/api/src/trpc/routers/accounting.ts#MUTATION disconnect
+    outlier:  apps/api/src/trpc/routers/accounting.ts:90 QUERY getConnections
+    outlier:  apps/api/src/trpc/routers/api-keys.ts:14 QUERY get
+    outlier:  apps/api/src/trpc/routers/apps.ts:19 QUERY get
+    ... 41 more outliers
+
+ 5. [D-b57953] apps/website: exported values in src/** (page files) pass `description` to createPageMetadata()
+    evidence: 45/48 (lower bound 0.83, lift 27.0)
+    tier:     suggestion (rule kind passes_key)
+    example:  apps/website/src/app/about/page.tsx#metadata
+    outlier:  apps/website/src/app/compare/page.tsx:12 metadata
+    outlier:  apps/website/src/app/updates/[slug]/page.tsx:11 dynamic
+    outlier:  apps/website/src/app/updates/page.tsx:18 dynamic
+
+ 6. [D-efc6d4] apps/api: exported values in src/trpc/** call createTRPCRouter()
+    evidence: 38/41 (lower bound 0.81, lift 31.6)
+    tier:     suggestion (rule kind calls)
+    example:  apps/api/src/trpc/routers/_app.ts#appRouter
+    outlier:  apps/api/src/trpc/init.ts:87 createCallerFactory
+    outlier:  apps/api/src/trpc/init.ts:86 createTRPCRouter
+    outlier:  apps/api/src/trpc/init.ts:120 publicProcedure
+
+ 7. [D-86f372] apps/worker: classes in src/** do not use `any`
+    evidence: 43/44 (lower bound 0.88, lift 5.9)
+    tier:     suggestion (rule kind avoids:other)
+    example:  apps/worker/src/errors/invoice-errors.ts#RecurringInvoiceError
+    outlier:  apps/worker/src/processors/inbox/slack-upload.ts:25 SlackUploadProcessor
+
+ 8. [D-98e729] apps/api: exported values in src/trpc/** are named `*Router`
+    evidence: 39/41 (lower bound 0.84, lift 21.6)
+    tier:     suggestion (rule kind named)
+    example:  apps/api/src/trpc/routers/_app.ts#appRouter
+    outlier:  apps/api/src/trpc/init.ts:87 createCallerFactory
+    outlier:  apps/api/src/trpc/init.ts:120 publicProcedure
+
+ 9. [D-495f56] apps/api: exported values in src/schemas/** are named `*Schema`
+    evidence: 308/309 (lower bound 0.98, lift 2.7)
+    tier:     suggestion (rule kind named)
+    example:  apps/api/src/schemas/api-keys.ts#deleteApiKeySchema
+    outlier:  apps/api/src/schemas/invoice.ts:337 draftInvoiceSchemaWithOpenApi
+
+10. [D-f6c709] apps/api: exported values in src/schemas/** call z.object()
+    evidence: 256/309 (lower bound 0.78, lift 4.2)
+    tier:     suggestion (rule kind calls)
+    example:  apps/api/src/schemas/api-keys.ts#deleteApiKeySchema
+    outlier:  apps/api/src/schemas/accounting.ts:6 accountingProviderIdSchema
+    outlier:  apps/api/src/schemas/accounting.ts:32 disconnectProviderSchema
+    outlier:  apps/api/src/schemas/accounting.ts:16 exportToAccountingSchema
+    ... 50 more outliers
+
+11. [D-7da2b9] packages/db: functions in src/** (schema files) pass `withTimezone` to timestamp()
+    evidence: 47/49 (lower bound 0.86, lift 39.4)
+    tier:     suggestion (rule kind passes_key)
+    example:  packages/db/src/schema.ts#accountingSyncRecords
+    outlier:  packages/db/src/schema.ts:2720 documentTagAssignments
+    outlier:  packages/db/src/schema.ts:308 documentTagEmbeddings
+
+12. [D-b98efb] packages/db: functions in src/** (schema files) call uuid()
+    evidence: 46/49 (lower bound 0.83, lift 39.4)
+    tier:     suggestion (rule kind calls)
+    example:  packages/db/src/schema.ts#accountingSyncRecords
+    outlier:  packages/db/src/schema.ts:308 documentTagEmbeddings
+    outlier:  packages/db/src/schema.ts:1366 institutions
+    outlier:  packages/db/src/schema.ts:326 transactionCategoryEmbeddings
+
+13. [D-f90103] packages/db: functions in src/** (schema files) pass `createdAt` to pgTable()
+    evidence: 46/49 (lower bound 0.83, lift 39.4)
+    tier:     suggestion (rule kind passes_key)
+    example:  packages/db/src/schema.ts#accountingSyncRecords
+    outlier:  packages/db/src/schema.ts:2720 documentTagAssignments
+    outlier:  packages/db/src/schema.ts:308 documentTagEmbeddings
+    outlier:  packages/db/src/schema.ts:1155 exchangeRates
+
+14. [D-afc38b] packages/db: functions in src/** (schema files) pass `mode` to timestamp()
+    evidence: 45/49 (lower bound 0.81, lift 39.4)
+    tier:     suggestion (rule kind passes_key)
+    example:  packages/db/src/schema.ts#accountingSyncRecords
+    outlier:  packages/db/src/schema.ts:2720 documentTagAssignments
+    outlier:  packages/db/src/schema.ts:308 documentTagEmbeddings
+    outlier:  packages/db/src/schema.ts:4173 insightUserStatus
+    ... 1 more outliers
+
+15. [D-80f1c3] apps/worker: classes in src/processors/** are named `*Processor`
+    evidence: 39/40 (lower bound 0.87, lift 2.3)
+    tier:     suggestion (rule kind named)
+    example:  apps/worker/src/processors/accounting/export-transactions.ts#ExportTransactionsProcessor
+    outlier:  apps/worker/src/processors/accounting/base.ts:100 AccountingProcessorBase
+
+16. [D-8fd473] packages/invoice: functions in src/utils/** declare their return type
+    evidence: 24/26 (lower bound 0.76, lift 2.4)
+    tier:     suggestion (rule kind control)
+    example:  packages/invoice/src/utils/content.ts#isValidJSON
+    outlier:  packages/invoice/src/utils/calculate.ts:66 calculateLineItemTotal
+    outlier:  packages/invoice/src/utils/calculate.ts:1 calculateTotal
+
+17. [D-8fbbad] workspace packages use the typescript version most workspace packages use
+    evidence: 22/23 (lower bound 0.79, lift 1.0)
+    tier:     suggestion (rule kind dependency_version)
+    split:    catalog: 22, ^6.0.2 1
+    example:  apps/dashboard/package.json#@midday/dashboard
+    outlier:  packages/mcp-apps/package.json:1 @midday/mcp-apps
+
+18. [D-48f0ae] packages/db: functions in src/** (schema files) call timestamp() before index()
+    evidence: 41/42 (lower bound 0.88, lift 1.0)
+    tier:     suggestion (rule kind before)
+    example:  packages/db/src/schema.ts#accountingSyncRecords
+    outlier:  packages/db/src/schema.ts:2720 documentTagAssignments
+
+19. [D-798f44] drizzle models have a `createdAt` field
+    evidence: 47/50 (lower bound 0.84, lift 1.0)
+    tier:     suggestion (rule kind model_has)
+    example:  packages/db/src/schema.ts#accounting_sync_records
+    outlier:  packages/db/src/schema.ts:2720 document_tag_assignments
+    outlier:  packages/db/src/schema.ts:308 document_tag_embeddings
+    outlier:  packages/db/src/schema.ts:1155 exchange_rates
+
+20. [D-404dbb] workspace packages enable `skipLibCheck` in tsconfig
+    evidence: 36/38 (lower bound 0.83, lift 1.0)
+    tier:     suggestion (rule kind package_has)
+    example:  apps/api/package.json#@midday/api
+    outlier:  packages/desktop-client/package.json:1 @midday/desktop-client
+    outlier:  packages/tsconfig/package.json:1 @midday/tsconfig
+
+21. [D-17340a] drizzle models have a `id` field
+    evidence: 46/50 (lower bound 0.81, lift 1.0)
+    tier:     suggestion (rule kind model_has)
+    example:  packages/db/src/schema.ts#accounting_sync_records
+    outlier:  packages/db/src/schema.ts:2720 document_tag_assignments
+    outlier:  packages/db/src/schema.ts:308 document_tag_embeddings
+    outlier:  packages/db/src/schema.ts:4173 insight_user_status
+    ... 1 more outliers
+
+22. [D-667807] workspace packages define a `lint` script
+    evidence: 35/38 (lower bound 0.79, lift 1.0)
+    tier:     suggestion (rule kind package_has)
+    example:  apps/api/package.json#@midday/api
+    outlier:  apps/desktop/package.json:1 @midday/desktop
+    outlier:  packages/desktop-client/package.json:1 @midday/desktop-client
+    outlier:  packages/tsconfig/package.json:1 @midday/tsconfig
+
+23. [D-7d5872] workspace packages enable `strict` in tsconfig
+    evidence: 35/38 (lower bound 0.79, lift 1.0)
+    tier:     suggestion (rule kind package_has)
+    example:  apps/api/package.json#@midday/api
+    outlier:  packages/desktop-client/package.json:1 @midday/desktop-client
+    outlier:  packages/tsconfig/package.json:1 @midday/tsconfig
+    outlier:  packages/workbench/package.json:1 workbench
+
+24. [D-675545] workspace packages define a `typecheck` script
+    evidence: 34/38 (lower bound 0.76, lift 1.0)
+    tier:     suggestion (rule kind package_has)
+    example:  apps/api/package.json#@midday/api
+    outlier:  apps/desktop/package.json:1 @midday/desktop
+    outlier:  apps/website/package.json:1 @midday/website
+    outlier:  packages/desktop-client/package.json:1 @midday/desktop-client
+    ... 1 more outliers
+

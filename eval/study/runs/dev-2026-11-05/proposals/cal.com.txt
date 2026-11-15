@@ -1,0 +1,239 @@
+15 conventions from 11462 units in 692 roles
+
+ 1. [D-0b36fb] packages/trpc: rpc entry points in server/** (_router files) are wrapped in authedAdminProcedure() or authedProcedure() or publicProcedure() or authedAdminProcedureWithRequestedUser()
+    evidence: 128/129 (lower bound 0.96, lift 19.3)
+    split:    authedProcedure 82, authedAdminProcedure 30, publicProcedure 13, authedAdminProcedureWithRequestedUser 3
+    example:  packages/trpc/server/routers/features/_router.ts#QUERY checkTeamFeature
+    outlier:  packages/trpc/server/routers/viewer/bookings/_router.tsx:42 MUTATION editLocation
+
+ 2. [D-901a32] packages/coss-ui: exported values in src/** are wrapped in createIcon()
+    evidence: 154/186 (lower bound 0.77, lift 9.9)
+    example:  packages/coss-ui/src/icons.tsx#ActivityIcon
+    outlier:  packages/coss-ui/src/components/alert-dialog.tsx:9 AlertDialog
+    outlier:  packages/coss-ui/src/components/alert-dialog.tsx:7 AlertDialogCreateHandle
+    outlier:  packages/coss-ui/src/components/alert-dialog.tsx:11 AlertDialogPortal
+    outlier:  packages/coss-ui/src/components/autocomplete.tsx:10 Autocomplete
+    outlier:  packages/coss-ui/src/components/autocomplete.tsx:305 useAutocompleteFilter
+    outlier:  packages/coss-ui/src/components/badge.tsx:9 badgeVariants
+    outlier:  packages/coss-ui/src/components/button.tsx:10 buttonVariants
+    outlier:  packages/coss-ui/src/components/combobox.tsx:411 useComboboxFilter
+    outlier:  packages/coss-ui/src/components/command.tsx:23 CommandCreateHandle
+    outlier:  packages/coss-ui/src/components/command.tsx:19 CommandDialog
+    outlier:  packages/coss-ui/src/components/dialog.tsx:11 Dialog
+    outlier:  packages/coss-ui/src/components/dialog.tsx:9 DialogCreateHandle
+    outlier:  packages/coss-ui/src/components/dialog.tsx:13 DialogPortal
+    outlier:  packages/coss-ui/src/components/field.tsx:63 FieldControl
+    outlier:  packages/coss-ui/src/components/field.tsx:64 FieldValidity
+    outlier:  packages/coss-ui/src/components/group.tsx:11 groupVariants
+    outlier:  packages/coss-ui/src/components/menu.tsx:11 Menu
+    outlier:  packages/coss-ui/src/components/menu.tsx:9 MenuCreateHandle
+    outlier:  packages/coss-ui/src/components/menu.tsx:13 MenuPortal
+    outlier:  packages/coss-ui/src/components/popover.tsx:9 Popover
+    outlier:  packages/coss-ui/src/components/popover.tsx:7 PopoverCreateHandle
+    outlier:  packages/coss-ui/src/components/preview-card.tsx:7 PreviewCard
+    outlier:  packages/coss-ui/src/components/select.tsx:16 Select
+    outlier:  packages/coss-ui/src/components/select.tsx:18 selectTriggerVariants
+    outlier:  packages/coss-ui/src/components/sheet.tsx:9 Sheet
+    outlier:  packages/coss-ui/src/components/sheet.tsx:11 SheetPortal
+    outlier:  packages/coss-ui/src/components/toast.tsx:16 anchoredToastManager
+    outlier:  packages/coss-ui/src/components/toast.tsx:15 toastManager
+    outlier:  packages/coss-ui/src/components/toggle.tsx:8 toggleVariants
+    outlier:  packages/coss-ui/src/components/tooltip.tsx:11 Tooltip
+    outlier:  packages/coss-ui/src/components/tooltip.tsx:7 TooltipCreateHandle
+    outlier:  packages/coss-ui/src/components/tooltip.tsx:9 TooltipProvider
+
+ 3. [D-266b44] packages/coss-ui: components in src/** call cn()
+    evidence: 194/237 (lower bound 0.77, lift 5.3)
+    example:  packages/coss-ui/src/components/accordion.tsx#AccordionItem
+    outlier:  packages/coss-ui/src/components/accordion.tsx:8 Accordion
+    outlier:  packages/coss-ui/src/components/alert-dialog.tsx:148 AlertDialogClose
+    outlier:  packages/coss-ui/src/components/alert-dialog.tsx:13 AlertDialogTrigger
+    outlier:  packages/coss-ui/src/components/autocomplete.tsx:278 AutocompleteCollection
+    outlier:  packages/coss-ui/src/components/autocomplete.tsx:207 AutocompleteRow
+    outlier:  packages/coss-ui/src/components/autocomplete.tsx:289 AutocompleteTrigger
+    outlier:  packages/coss-ui/src/components/autocomplete.tsx:220 AutocompleteValue
+    outlier:  packages/coss-ui/src/components/breadcrumb.tsx:10 Breadcrumb
+    outlier:  packages/coss-ui/src/components/breadcrumb.tsx:86 BreadcrumbEllipsis
+    outlier:  packages/coss-ui/src/components/collapsible.tsx:7 Collapsible
+    outlier:  packages/coss-ui/src/components/combobox.tsx:19 Combobox
+    outlier:  packages/coss-ui/src/components/combobox.tsx:379 ComboboxChip
+    outlier:  packages/coss-ui/src/components/combobox.tsx:313 ComboboxClear
+    outlier:  packages/coss-ui/src/components/combobox.tsx:339 ComboboxCollection
+    outlier:  packages/coss-ui/src/components/combobox.tsx:284 ComboboxRow
+    outlier:  packages/coss-ui/src/components/combobox.tsx:133 ComboboxTrigger
+    outlier:  packages/coss-ui/src/components/combobox.tsx:294 ComboboxValue
+    outlier:  packages/coss-ui/src/components/command.tsx:90 Command
+    outlier:  packages/coss-ui/src/components/command.tsx:189 CommandCollection
+    outlier:  packages/coss-ui/src/components/command.tsx:25 CommandDialogTrigger
+    outlier:  packages/coss-ui/src/components/command.tsx:163 CommandGroup
+    outlier:  packages/coss-ui/src/components/command.tsx:176 CommandGroupLabel
+    outlier:  packages/coss-ui/src/components/command.tsx:154 CommandPanel
+    outlier:  packages/coss-ui/src/components/dialog.tsx:19 DialogClose
+    outlier:  packages/coss-ui/src/components/dialog.tsx:15 DialogTrigger
+    outlier:  packages/coss-ui/src/components/input-group.tsx:87 InputGroupInput
+    outlier:  packages/coss-ui/src/components/input-group.tsx:91 InputGroupTextarea
+    outlier:  packages/coss-ui/src/components/menu.tsx:75 MenuGroup
+    outlier:  packages/coss-ui/src/components/menu.tsx:158 MenuRadioGroup
+    outlier:  packages/coss-ui/src/components/menu.tsx:239 MenuSub
+    outlier:  packages/coss-ui/src/components/menu.tsx:267 MenuSubPopup
+    outlier:  packages/coss-ui/src/components/menu.tsx:15 MenuTrigger
+    outlier:  packages/coss-ui/src/components/popover.tsx:68 PopoverClose
+    outlier:  packages/coss-ui/src/components/popover.tsx:11 PopoverTrigger
+    outlier:  packages/coss-ui/src/components/preview-card.tsx:9 PreviewCardTrigger
+    outlier:  packages/coss-ui/src/components/select.tsx:217 SelectGroup
+    outlier:  packages/coss-ui/src/components/select.tsx:221 SelectGroupLabel
+    outlier:  packages/coss-ui/src/components/sheet.tsx:17 SheetClose
+    outlier:  packages/coss-ui/src/components/sheet.tsx:13 SheetTrigger
+    outlier:  packages/coss-ui/src/components/toast.tsx:169 AnchoredToastProvider
+    outlier:  packages/coss-ui/src/components/toast.tsx:38 ToastProvider
+    outlier:  packages/coss-ui/src/components/toggle-group.tsx:57 Toggle
+    outlier:  packages/coss-ui/src/components/tooltip.tsx:13 TooltipTrigger
+
+ 4. [D-777a50] apps/api/v2: HTTP handlers in src/** (*.controller files) are decorated with UseGuards()
+    evidence: 156/175 (lower bound 0.84, lift 14.6)
+    example:  apps/api/v2/src/modules/api-keys/controllers/api-keys.controller.ts#POST /v2/api-keys/refresh
+    outlier:  apps/api/v2/src/app.controller.ts:5 GET /health
+    outlier:  apps/api/v2/src/modules/atoms/controllers/atoms.event-types.controller.ts:55 GET /v2/atoms/event-types/:eventSlug/public
+    outlier:  apps/api/v2/src/modules/atoms/controllers/atoms.verification.controller.ts:61 GET /v2/atoms/verification/email/check
+    outlier:  apps/api/v2/src/modules/atoms/controllers/atoms.verification.controller.ts:41 POST /v2/atoms/verification/email/send-code
+    outlier:  apps/api/v2/src/modules/atoms/controllers/atoms.verification.controller.ts:78 POST /v2/atoms/verification/email/verify-code
+    outlier:  apps/api/v2/src/modules/auth/oauth2/controllers/atoms-oauth2.controller.ts:30 GET /v2/atoms/auth/oauth2/clients/:clientId
+    outlier:  apps/api/v2/src/modules/auth/oauth2/controllers/oauth2.controller.ts:65 POST /v2/auth/oauth2/token
+    outlier:  apps/api/v2/src/modules/oauth-clients/controllers/oauth-flow/oauth-flow.controller.ts:83 POST /v2/oauth/:clientId/exchange
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts:76 DELETE /v2/slots/selected-slot
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts:100 GET /v2/slots/available
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts:45 POST /v2/slots/reserve
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/slots.controller.ts:334 DELETE /v2/slots/reservations/:uid
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/slots.controller.ts:60 GET /v2/slots
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/slots.controller.ts:298 GET /v2/slots/reservations/:uid
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/slots.controller.ts:314 PATCH /v2/slots/reservations/:uid
+    outlier:  apps/api/v2/src/modules/timezones/controllers/timezones.controller.ts:20 GET /v2/timezones
+    outlier:  apps/api/v2/src/platform/calendars/controllers/calendars.controller.ts:195 GET /v2/calendars/:calendar/save
+    outlier:  apps/api/v2/src/platform/gcal/gcal.controller.ts:76 GET /v2/gcal/oauth/save
+    outlier:  apps/api/v2/src/platform/provider/provider.controller.ts:34 GET /v2/provider/:clientId
+
+ 5. [D-42ab67] packages/trpc: rpc entry points in server/** (_router files) validate their input with a schema
+    evidence: 126/129 (lower bound 0.93, lift 8.0)
+    example:  packages/trpc/server/routers/features/_router.ts#QUERY checkTeamFeature
+    outlier:  packages/trpc/server/routers/viewer/admin/_router.ts:38 QUERY getSMSLockStateTeamsUsers
+    outlier:  packages/trpc/server/routers/viewer/admin/watchlist/_router.ts:51 QUERY pendingReportsCount
+    outlier:  packages/trpc/server/routers/viewer/users/_router.ts:57 QUERY list
+
+ 6. [D-ec4221] apps/api/v2: HTTP handlers in src/modules/** (*.controller files) are decorated with ApiTags()
+    evidence: 95/100 (lower bound 0.89, lift 16.8)
+    example:  apps/api/v2/src/modules/api-keys/controllers/api-keys.controller.ts#POST /v2/api-keys/refresh
+    outlier:  apps/api/v2/src/modules/oauth-clients/controllers/oauth-flow/oauth-flow.controller.ts:48 POST /v2/oauth/:clientId/authorize
+    outlier:  apps/api/v2/src/modules/oauth-clients/controllers/oauth-flow/oauth-flow.controller.ts:83 POST /v2/oauth/:clientId/exchange
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts:76 DELETE /v2/slots/selected-slot
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts:100 GET /v2/slots/available
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts:45 POST /v2/slots/reserve
+
+ 7. [D-c459f1] packages/emails: classes in templates/** call renderEmail()
+    evidence: 47/48 (lower bound 0.89, lift 21.6)
+    example:  packages/emails/templates/account-verify-email.ts#AccountVerifyEmail
+    outlier:  packages/emails/templates/_base-email.ts:14 BaseEmail
+
+ 8. [D-4791b7] apps/web: functions in app/(use-page-wrapper)/** (page files) call _generateMetadata()
+    evidence: 57/59 (lower bound 0.89, lift 39.9)
+    example:  apps/web/app/(use-page-wrapper)/(main-nav)/availability/page.tsx#generateMetadata
+    outlier:  apps/web/app/(use-page-wrapper)/apps/[slug]/page.tsx:14 generateMetadata
+    outlier:  apps/web/app/(use-page-wrapper)/video/[uid]/page.tsx:14 generateMetadata
+
+ 9. [D-7aa96c] files in packages/features/** do not import from packages/trpc/**
+    evidence: 731/735 (lower bound 0.99, lift 3.0)
+    example:  packages/features/CalendarEventBuilder.ts#(file)
+    outlier:  packages/features/bookings/lib/getAllUserBookings.ts:1 (file)
+    outlier:  packages/features/bookings/services/BookingAttendeesRemoveService.ts:1 (file)
+    outlier:  packages/features/bookings/services/BookingAttendeesService.ts:1 (file)
+    outlier:  packages/features/di/modules/AvailableSlots.ts:1 (file)
+
+10. [D-931b9c] files in packages/features/** do not import from packages/platform/**
+    evidence: 729/735 (lower bound 0.98, lift 3.0)
+    example:  packages/features/CalendarEventBuilder.ts#(file)
+    outlier:  packages/features/bookings/components/Header.tsx:1 (file)
+    outlier:  packages/features/components/controlled-dialog/index.tsx:1 (file)
+    outlier:  packages/features/eventtypes/components/CheckedTeamSelect.tsx:1 (file)
+    outlier:  packages/features/eventtypes/components/CreateEventTypeForm.tsx:1 (file)
+    outlier:  packages/features/form/components/LocationSelect.tsx:1 (file)
+    outlier:  packages/features/schedules/components/DateOverrideList.tsx:1 (file)
+
+11. [D-3435a3] files in packages/features/** do not import from packages/emails/**
+    evidence: 719/735 (lower bound 0.96, lift 3.0)
+    example:  packages/features/CalendarEventBuilder.ts#(file)
+    outlier:  packages/features/bookings/lib/BookingEmailSmsHandler.ts:1 (file)
+    outlier:  packages/features/bookings/lib/handleBookingRequested.ts:1 (file)
+    outlier:  packages/features/bookings/lib/handleCancelBooking.ts:1 (file)
+    outlier:  packages/features/bookings/lib/handleConfirmation.ts:1 (file)
+    outlier:  packages/features/bookings/lib/handleSeats/cancel/cancelAttendeeSeat.ts:1 (file)
+    outlier:  packages/features/bookings/lib/handleSeats/create/createNewSeat.ts:1 (file)
+    outlier:  packages/features/bookings/lib/handleSeats/reschedule/attendee/attendeeRescheduleSeatedBooking.ts:1 (file)
+    outlier:  packages/features/bookings/lib/handleSeats/reschedule/owner/combineTwoSeatedBookings.ts:1 (file)
+    outlier:  packages/features/bookings/lib/handleSeats/reschedule/owner/moveSeatedBookingToNewTimeSlot.ts:1 (file)
+    outlier:  packages/features/bookings/lib/payment/handleNoShowFee.ts:1 (file)
+    outlier:  packages/features/bookings/lib/payment/handleRefundError.ts:1 (file)
+    outlier:  packages/features/bookings/lib/service/RegularBookingService.ts:1 (file)
+    outlier:  packages/features/bookings/services/BookingAttendeesRemoveService.ts:1 (file)
+    outlier:  packages/features/conferencing/lib/videoClient.ts:1 (file)
+    outlier:  packages/features/credentials/handleDeleteCredential.ts:1 (file)
+    outlier:  packages/features/tasker/tasks/sendAwaitingPaymentEmail.ts:1 (file)
+
+12. [D-ffa810] files in apps/web/** do not import from packages/platform/**
+    evidence: 810/837 (lower bound 0.95, lift 3.0)
+    example:  apps/web/app/(booking-page-wrapper)/[user]/[type]/embed/page.tsx#(file)
+    outlier:  apps/web/components/apps/DestinationCalendarSettingsWebWrapper.tsx:1 (file)
+    outlier:  apps/web/components/phone-input/PhoneInput.tsx:1 (file)
+    outlier:  apps/web/modules/availability/[schedule]/schedule-view.tsx:1 (file)
+    outlier:  apps/web/modules/bookings/components/AvailableTimes.tsx:1 (file)
+    outlier:  apps/web/modules/bookings/components/BookEventForm/BookEventForm.tsx:1 (file)
+    outlier:  apps/web/modules/bookings/components/BookEventForm/BookFormAsModal.tsx:1 (file)
+    outlier:  apps/web/modules/bookings/components/Booker.tsx:1 (file)
+    outlier:  apps/web/modules/bookings/components/EventMeta.tsx:1 (file)
+    outlier:  apps/web/modules/bookings/components/OverlayCalendar/OverlayCalendar.tsx:1 (file)
+    outlier:  apps/web/modules/bookings/components/OverlayCalendar/OverlayCalendarSettingsModal.tsx:1 (file)
+    outlier:  apps/web/modules/bookings/components/SlotSelectionModalHeader.tsx:1 (file)
+    outlier:  apps/web/modules/bookings/components/event-meta/AvailableEventLocations.tsx:1 (file)
+    outlier:  apps/web/modules/bookings/components/event-meta/Duration.tsx:1 (file)
+    outlier:  apps/web/modules/bookings/components/event-meta/Members.tsx:1 (file)
+    outlier:  apps/web/modules/bookings/hooks/useBookings.ts:1 (file)
+    outlier:  apps/web/modules/calendar-view/components/LargeCalendar.tsx:1 (file)
+    outlier:  apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx:1 (file)
+    outlier:  apps/web/modules/event-types/components/AddVerifiedEmail.tsx:1 (file)
+    outlier:  apps/web/modules/event-types/components/EventTypeLayout.tsx:1 (file)
+    outlier:  apps/web/modules/event-types/components/EventTypeWebWrapper.tsx:1 (file)
+    outlier:  apps/web/modules/event-types/components/locations/CalVideoSettings.tsx:1 (file)
+    outlier:  apps/web/modules/event-types/components/locations/Locations.tsx:1 (file)
+    outlier:  apps/web/modules/event-types/components/tabs/advanced/EventAdvancedTab.tsx:1 (file)
+    outlier:  apps/web/modules/event-types/components/tabs/advanced/FormBuilder.tsx:1 (file)
+    outlier:  apps/web/modules/event-types/components/tabs/availability/EventAvailabilityTab.tsx:1 (file)
+    outlier:  apps/web/modules/event-types/components/tabs/setup/EventSetupTab.tsx:1 (file)
+    outlier:  apps/web/modules/event-types/hooks/useCreateEventType.ts:1 (file)
+
+13. [D-d690c0] packages/trpc: exported values in server/** (*.schema files) are named `*Schema`
+    evidence: 123/135 (lower bound 0.85, lift 10.1)
+    example:  packages/trpc/server/routers/loggedInViewer/addNotificationsSubscription.schema.ts#ZAddNotificationsSubscriptionInputSchema
+    outlier:  packages/trpc/server/routers/publicViewer/timezones/cityTimezones.schema.ts:3 cityTimezonesSchema
+    outlier:  packages/trpc/server/routers/viewer/admin/removeTwoFactor.schema.ts:3 ZAdminRemoveTwoFactor
+    outlier:  packages/trpc/server/routers/viewer/admin/setSMSLockState.schema.ts:3 ZSetSMSLockState
+    outlier:  packages/trpc/server/routers/viewer/apps/checkGlobalKeys.schema.ts:3 checkGlobalKeysSchema
+    outlier:  packages/trpc/server/routers/viewer/availability/team/listTeamAvailability.schema.ts:3 ZListTeamAvailaiblityScheme
+    outlier:  packages/trpc/server/routers/viewer/bookings/getWrongAssignmentReports.schema.ts:16 statusToEnumMap
+    outlier:  packages/trpc/server/routers/viewer/calendars/setDestinationReminder.schema.ts:3 VALID_REMINDER_MINUTES
+    outlier:  packages/trpc/server/routers/viewer/calendars/setDestinationReminder.schema.ts:5 reminderSchema
+    outlier:  packages/trpc/server/routers/viewer/eventTypes/getByViewer.schema.ts:12 filterQuerySchemaStrict
+    outlier:  packages/trpc/server/routers/viewer/i18n/i18n.schema.ts:7 i18nInputSchema
+    outlier:  packages/trpc/server/routers/viewer/me/updateProfile.schema.ts:11 updateUserMetadataAllowedKeys
+    outlier:  packages/trpc/server/routers/viewer/ooo/outOfOfficeEntryDelete.schema.ts:3 ZOutOfOfficeDelete
+
+14. [D-769fef] packages/platform/atoms: functions in hooks/** are named `use*`
+    evidence: 57/60 (lower bound 0.86, lift 9.3)
+    example:  packages/platform/atoms/hooks/bookings/useBooking.ts#useBooking
+    outlier:  packages/platform/atoms/hooks/bookings/useBookings.ts:42 extractBookingsQueryKeys
+    outlier:  packages/platform/atoms/hooks/connect/useCheck.ts:23 getQueryKey
+    outlier:  packages/platform/atoms/hooks/connect/useConnect.ts:9 getQueryKey
+
+15. [D-8d7d13] packages/emails: functions in ./** are named `send*`
+    evidence: 40/42 (lower bound 0.84, lift 40.7)
+    example:  packages/emails/auth-email-service.ts#sendChangeOfEmailVerificationLink
+    outlier:  packages/emails/email-manager.ts:62 fetchOrganizationEmailSettings
+    outlier:  packages/emails/email-manager.ts:67 shouldSkipAttendeeEmailWithSettings
+

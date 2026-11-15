@@ -1,0 +1,361 @@
+{
+  "labels_sha256": {
+    "A": "ac4e4c8efb6a45d0f2141974c6d9b50a01c566a674e254dd677e276bd4ee613f",
+    "B": "0e67f93ccc0e32faced095cfaaec5be4c6a0796df30ceb5ffabb50966e79a6ea"
+  },
+  "cases": [
+    {
+      "uid": "L18/D-815f43",
+      "repo": "L18",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "L18/D-815f43",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "backend/api/chat_copilot.py",
+            "backend/utils/streaming.py",
+            "backend/api/chat_plugin.py",
+            "backend/utils/utils.py",
+            "backend/api/data_connector.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "extract_title_and_image_links",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R8"
+          ],
+          "reason": "Backend functions in chat_copilot.py, utils/utils.py and data_connector.py make no HTTP calls, while streaming.py:49 does requests.get(url) on a link regex-extracted from agent output with no host check, a server-side fetch of an unvalidated URL that a reviewer would want to confirm (R3 look, 1 of 1); no Python lint config exists in the repo, so nothing catches it. Hesitated with WRONG incidental, since most members simply have no need to fetch anything and chat_plugin.py:46 make_request (not listed) also fetches a computed manifest logo_url.",
+          "defects": [
+            "backend/utils/streaming.py:49 requests.get(url) fetches any URL found in agent output, with no scheme/host allowlist (possible SSRF to internal addresses)"
+          ],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "L18/D-815f43",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "incidental",
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "backend/api/chat_copilot.py",
+            "backend/utils/streaming.py",
+            "backend/api/chat_plugin.py",
+            "backend/utils/utils.py",
+            "backend/utils/charts.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "extract_title_and_image_links",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "The 48 members simply never make HTTP calls (chat_copilot.py create_interaction_executor, utils.py); the only outlier, streaming.py extract_title_and_image_links, uses requests.get because its job is fetching link titles, so the absence is a consequence of what the code does, not a chosen rule, and a new function needing an HTTP fetch would be flagged for nothing. Hesitated with ACCEPT (SSRF angle on fetching URLs from chat text); the rule wording is also a negative, vague one, and chat_plugin.py's nested make_request also uses requests.get but is not listed.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "L20/D-9e3a75",
+      "repo": "L20",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "L20/D-9e3a75",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "cryodrgn/analysis.py",
+            "cryodrgn/commands/abinit_het_old.py",
+            "cryodrgn/commands/graph_traversal.py",
+            "cryodrgn/commands/pc_traversal.py",
+            "cryodrgn/utils.py",
+            "cryodrgn/pose.py",
+            "cryodrgn/commands/filter.py",
+            "cryodrgn/dashboard/data.py",
+            "cryodrgn/commands/eval_images.py",
+            ".flake8",
+            ".pre-commit-config.yaml",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "abinit_het_old.main",
+              "verdict": "look"
+            },
+            {
+              "symbol": "graph_traversal.main",
+              "verdict": "look"
+            },
+            {
+              "symbol": "pc_traversal.main",
+              "verdict": "look"
+            },
+            {
+              "symbol": "assert_pkl_close",
+              "verdict": "look"
+            },
+            {
+              "symbol": "load_pkl",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8",
+            "R9"
+          ],
+          "reason": "True as checked: members read pickles through utils.load_pkl (pose.py:85-87, 88 call sites) and YAML through yaml.safe_load (filter.py:130, dashboard/data.py:167), while the three command mains and assert_pkl_close call pickle.load directly where load_pkl would do the same job (a choice, R8), and no lint (.flake8 has no bandit rules) catches it; 4 of 5 are look. Hesitated with WRONG incidental: load_pkl is itself pickle.load and torch.load(weights_only=False) is used throughout, so the wording's security claim is not real and does not tell a developer the compliant path is utils.load_pkl (clear false); eval_images.py:207 main also calls pickle.load unlisted.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "L20/D-9e3a75",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "cryodrgn/analysis.py",
+            "cryodrgn/commands/abinit_het_old.py",
+            "cryodrgn/commands/graph_traversal.py",
+            "cryodrgn/commands/pc_traversal.py",
+            "cryodrgn/utils.py",
+            "cryodrgn/commands/train_vae.py",
+            "cryodrgn/commands/eval_images.py",
+            "cryodrgn/models.py",
+            ".flake8",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "abinit_het_old.main",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "graph_traversal.main",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "pc_traversal.main",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "assert_pkl_close",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "load_pkl",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "Rule is true as checked and no lint/type tool enforces it (.flake8 only ignores E203/E501). But pickle is cryoDRGN's native file format: utils.load_pkl is the shared pickle loader, outliers read user z/index pickles via pickle.load, and the repo uses torch.load(weights_only=False) elsewhere; a new member loading a .pkl would be flagged for a recurring legitimate need. Hesitated with ACCEPT as a security rule.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "L21/D-646cc1",
+      "repo": "L21",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "L21/D-646cc1",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/derisk-app/src/derisk_app/auth/user_service.py",
+            "packages/derisk-serve/src/derisk_serve/mcp/models/models.py",
+            "packages/derisk-serve/src/derisk_serve/skill/models/models.py",
+            "packages/derisk-core/src/derisk/storage/chat_history/chat_history_db.py",
+            "packages/derisk-serve/src/derisk_serve/scene_strategy/models/models.py",
+            "packages/derisk-serve/src/derisk_serve/datasource/manages/connect_config_db.py",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "ServeEntity",
+              "verdict": "look"
+            },
+            {
+              "symbol": "SkillEntity",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Every other model declares an autoincrement `id` primary key, including ones that also have a unique code (scene_strategy/models/models.py: id plus unique scene_code); the mcp and skill models use the code as primary key instead, and mcp's __repr__ still reads self.id, so a new model without id is worth a second look. Hesitated with WRONG legit_outliers (natural-key models as a deliberate variant).",
+          "defects": [
+            "packages/derisk-serve/src/derisk_serve/mcp/models/models.py:54 ServeEntity.__repr__ reads self.id but the model has no id column (primary key is mcp_code)"
+          ],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "L21/D-646cc1",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/derisk-app/src/derisk_app/auth/user_service.py",
+            "packages/derisk-serve/src/derisk_serve/mcp/models/models.py",
+            "packages/derisk-serve/src/derisk_serve/skill/models/models.py",
+            "packages/derisk-serve/src/derisk_serve/feedback/models/models.py",
+            "pyproject.toml",
+            "packages/derisk-serve/src/derisk_serve/prompt/models/models.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "ServeEntity",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "SkillEntity",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "Both outliers deliberately use a natural primary key (mcp_code, skill_code) instead of id, so a new entity keyed by a domain code would be flagged for nothing. Hesitated with ACCEPT; the stale self.id in mcp ServeEntity.__repr__ is a minor bug.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "L21/D-1d9639",
+      "repo": "L21",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "L21/D-1d9639",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "packages/derisk-serve/src/derisk_serve/agent/chat/service/service.py",
+            "packages/derisk-serve/src/derisk_serve/multimodal/service/service.py",
+            "packages/derisk-serve/src/derisk_serve/mcp/service/service.py",
+            "packages/derisk-serve/src/derisk_serve/cron/service/service.py",
+            "packages/derisk-serve/src/derisk_serve/scene_strategy/service/service.py",
+            "packages/derisk-serve/src/derisk_serve/core/service.py",
+            "packages/derisk-core/src/derisk/component.py",
+            "packages/derisk-serve/src/derisk_serve/multimodal/serve.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "MultimodalService",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Service classes extend BaseService/BaseComponent and call super().__init__(system_app), which is what runs init_app (component.py BaseComponent.__init__; mcp and scene_strategy services); MultimodalService has its own __init__ but extends bare LifeCycle and skips it, a drift from the service pattern worth a second look.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "L21/D-1d9639",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "incidental",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/derisk-serve/src/derisk_serve/agent/chat/service/service.py",
+            "packages/derisk-serve/src/derisk_serve/multimodal/service/service.py",
+            "packages/derisk-serve/src/derisk_serve/model/service/service.py",
+            "packages/derisk-serve/src/derisk_serve/rag/service/service.py",
+            "packages/derisk-serve/src/derisk_serve/feedback/service/service.py",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "MultimodalService",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Members subclass BaseService and call super().__init__(system_app); MultimodalService extends LifeCycle, which has no __init__, so it lacks the need. Hesitated with ACCEPT, but the single outlier is not a mistake.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    }
+  ]
+}

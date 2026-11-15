@@ -1,0 +1,140 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "cgu47-2c81ba4-1794051240",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel4/restage-2c81ba4/cache/repos/changedetection.io",
+  "units": 1324,
+  "roles": 57,
+  "conventions": 2,
+  "shown": 2,
+  "tiers": {
+    "default": 0,
+    "suggestion": 2
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-2619c7",
+      "rank": 1,
+      "summary": "HTTP handlers in changedetectionio/** are decorated with validate_openapi_request()",
+      "role": {
+        "package": "",
+        "dir": "changedetectionio",
+        "file": "*",
+        "entry": "http",
+        "kind": "function",
+        "members": 24
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "changedetectionio/api/__init__.py#validate_openapi_request"
+        ]
+      },
+      "evidence": {
+        "holders": 23,
+        "total": 24,
+        "lower_bound": 0.798,
+        "lift": 24.083,
+        "python_members": 24
+      },
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "changedetectionio/api/Changes.py",
+        "symbol": "Changes.get",
+        "line": 29
+      },
+      "outliers": [
+        {
+          "path": "changedetectionio/api/Spec.py",
+          "symbol": "Spec.get",
+          "line": 15
+        }
+      ],
+      "outliers_total": 1
+    },
+    {
+      "id": "D-1ce566",
+      "rank": 2,
+      "summary": "functions in changedetectionio/llm/** declare their return type",
+      "role": {
+        "package": "",
+        "dir": "changedetectionio/llm",
+        "file": "*",
+        "entry": "-",
+        "kind": "function",
+        "members": 32
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 29,
+        "total": 32,
+        "lower_bound": 0.758,
+        "lift": 8.878,
+        "python_members": 32
+      },
+      "rule_kind": "control",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "changedetectionio/llm/bm25_trim.py",
+        "symbol": "trim_to_relevant",
+        "line": 14
+      },
+      "outliers": [
+        {
+          "path": "changedetectionio/llm/client.py",
+          "symbol": "completion_isolated",
+          "line": 281
+        },
+        {
+          "path": "changedetectionio/llm/evaluator.py",
+          "symbol": "tag_llm_decision",
+          "line": 310
+        },
+        {
+          "path": "changedetectionio/llm/model_list.py",
+          "symbol": "list_models",
+          "line": 101
+        }
+      ],
+      "outliers_total": 3
+    }
+  ],
+  "largest_role": null
+}

@@ -1,0 +1,1193 @@
+[
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "ever-demand",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/A/ever-demand.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/a6f93ad2-901c-4b69-b4ac-ee4c7029e4e4/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/4eb13b74-e5b2-49f3-abac-ad3c908bba79",
+    "checkout_status": [],
+    "expected": [
+      "ever-demand/D-410f0a",
+      "ever-demand/D-728139",
+      "ever-demand/D-49be71",
+      "ever-demand/D-75c6f7",
+      "ever-demand/D-96dc9f",
+      "ever-demand/D-07cce0",
+      "ever-demand/D-d08791",
+      "ever-demand/D-0d5819",
+      "ever-demand/D-024ccb",
+      "ever-demand/D-5bf6fb",
+      "ever-demand/D-413b34",
+      "ever-demand/D-5b38bb"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:34.659Z",
+    "collected": {
+      "at": "2026-11-08T01:58:20.633Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/A/ever-demand.jsonl",
+      "records": 12,
+      "sha256": "9c33b5c1b1e6c69d98c8dee3ced7008def8e5d53e265ff091af7bd161bdc7cc3"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "ngx-bootstrap",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/A/ngx-bootstrap.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/73b1e101-dabc-4edc-a19f-33d1b93b111e/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/399a7de6-ec7d-4c6c-838b-99c35986813d",
+    "checkout_status": [],
+    "expected": [
+      "ngx-bootstrap/D-32687f",
+      "ngx-bootstrap/D-cd8fd8",
+      "ngx-bootstrap/D-7d5872",
+      "ngx-bootstrap/D-f1448a",
+      "ngx-bootstrap/D-c0155e"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:34.725Z",
+    "collected": {
+      "at": "2026-11-08T01:59:09.382Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/A/ngx-bootstrap.jsonl",
+      "records": 5,
+      "sha256": "2c6689a6eeea396b3a95e414d2bbe3e7398b9fb73c28251d6ecf744ad2b59a63"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "island.is",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/A/island.is.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/305007e8-0b20-4e14-9255-a041d9eabf5b/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/fa59bdba-da25-486a-b725-5324c7fdca55",
+    "checkout_status": [],
+    "expected": [
+      "island.is/D-a3fa2c",
+      "island.is/D-519283",
+      "island.is/D-b3af94",
+      "island.is/D-b30b5f",
+      "island.is/D-5e3ccc",
+      "island.is/D-9d506a",
+      "island.is/D-da0d39",
+      "island.is/D-789652",
+      "island.is/D-25f855",
+      "island.is/D-e314b0",
+      "island.is/D-c24a94",
+      "island.is/D-d063e1",
+      "island.is/D-de5d76"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:34.872Z",
+    "collected": {
+      "at": "2026-11-08T01:59:48.815Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/A/island.is.jsonl",
+      "records": 13,
+      "sha256": "46ee62681dbb87561166fca484fe7f662f98d470bac8c7d826d8da2ac71115d8"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "wind-comic",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/A/wind-comic.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/50943ba7-2852-4dd4-afbd-6333af5e1d91/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/3873a498-6e19-4fa6-816f-fd02a6735c9a",
+    "checkout_status": [],
+    "expected": [
+      "wind-comic/D-e79a2d",
+      "wind-comic/D-242334",
+      "wind-comic/D-ca9af7",
+      "wind-comic/D-3843f8",
+      "wind-comic/D-39e262",
+      "wind-comic/D-304043",
+      "wind-comic/D-f6dbe6"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:34.934Z",
+    "collected": {
+      "at": "2026-11-08T01:57:59.845Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/A/wind-comic.jsonl",
+      "records": 7,
+      "sha256": "204856dabca73a20f8389e3b262a61d4633280e09dd1b4946aaca61057dc24af"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "better-chatbot",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/A/better-chatbot.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/469d1eae-79d6-42f7-b556-fe7d8de99b2b/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/20621225-80c1-4a79-b367-81ce38d3d130",
+    "checkout_status": [],
+    "expected": [
+      "better-chatbot/D-ed17cb",
+      "better-chatbot/D-5b91e5",
+      "better-chatbot/D-7c60e2",
+      "better-chatbot/D-3af9f8",
+      "better-chatbot/D-17340a",
+      "better-chatbot/D-399322",
+      "better-chatbot/D-1bc181",
+      "better-chatbot/D-215de3",
+      "better-chatbot/D-798f44",
+      "better-chatbot/D-c6ea9c",
+      "better-chatbot/D-4e1215",
+      "better-chatbot/D-bdd2a0",
+      "better-chatbot/D-7f4083",
+      "better-chatbot/D-5a6787",
+      "better-chatbot/D-ad0dad"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:34.997Z",
+    "rejected": [
+      {
+        "at": "2026-11-08T01:58:28.660Z",
+        "problems": [
+          "out.jsonl:1: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: biome.json (a config file), apps/web/.eslintrc.json (a config file), apps/web/tsconfig.json (a config file)",
+          "out.jsonl:3: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: biome.json (a config file), apps/web/.eslintrc.json (a config file)",
+          "out.jsonl:5: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: biome.json (a config file), apps/web/.eslintrc.json (a config file)",
+          "out.jsonl:7: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: biome.json (a config file), apps/web/.eslintrc.json (a config file)",
+          "out.jsonl:9: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: biome.json (a config file), apps/web/.eslintrc.json (a config file)",
+          "out.jsonl:13: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: biome.json (a config file), apps/web/.eslintrc.json (a config file)",
+          "out.jsonl:15: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: biome.json (a config file), apps/web/.eslintrc.json (a config file)"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T02:05:24.399Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/A/better-chatbot.jsonl",
+      "records": 15,
+      "sha256": "4cd9600dd472c3f0eee374b2c01473c9497fc8e0fa5b76b15f5ce7d0c9ddf070"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "ui",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/A/ui.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/60b71b5f-d51b-4b7b-9b97-95a8a0dd08b1/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/b674b920-7190-49fc-88b1-4be1aa5f6ce1",
+    "checkout_status": [],
+    "expected": [
+      "ui/D-569610",
+      "ui/D-d24287"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:35.052Z",
+    "collected": {
+      "at": "2026-11-08T02:06:02.012Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/A/ui.jsonl",
+      "records": 2,
+      "sha256": "d1b8e01ac7f656257422f1c2a9066c0aebc57f9a2af523e6ce96b1a174ad7d1c"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "mitosis",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/A/mitosis.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/7b97999c-7a10-4477-a0fb-567a01b4d132/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/5a8b7158-50e6-410b-8ade-044c96cfea17",
+    "checkout_status": [],
+    "expected": [
+      "mitosis/D-e375ce",
+      "mitosis/D-2a2de0",
+      "mitosis/D-2e24b5"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:35.101Z",
+    "collected": {
+      "at": "2026-11-08T02:03:44.480Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/A/mitosis.jsonl",
+      "records": 3,
+      "sha256": "f720b2125315718d5c0e43b70ff36411f99dd2123d735d3dd297cd04debfa9db"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "webstudio",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/A/webstudio.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/4e63ec06-f8be-41cf-ba62-08d33f261a70/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/fd9bcb99-2d6e-4deb-a8e2-4972774e724d",
+    "checkout_status": [],
+    "expected": [
+      "webstudio/D-50ff6f",
+      "webstudio/D-72343d",
+      "webstudio/D-681d54",
+      "webstudio/D-07af70"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:35.153Z",
+    "collected": {
+      "at": "2026-11-08T02:00:48.318Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/A/webstudio.jsonl",
+      "records": 4,
+      "sha256": "c4ac4668597be9b6d77872cb5bf60d155f59e5eb8e616bfe57b138963b1046f7"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "reiverr",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/A/reiverr.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/2fd877a0-4f96-4243-914d-cd9138e61a48/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/1a11b1cf-d282-4464-b6d4-ea4feaf1a1bc",
+    "checkout_status": [],
+    "expected": [
+      "reiverr/D-e1c436",
+      "reiverr/D-791f60",
+      "reiverr/D-581e59",
+      "reiverr/D-ce6e0a"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:35.197Z",
+    "collected": {
+      "at": "2026-11-08T02:01:30.807Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/A/reiverr.jsonl",
+      "records": 4,
+      "sha256": "a8c3e2b283bfbc2bd1ae504ebbd6f39f14f3ba942e330ae81c233130d2699296"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "agentrove",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/A/agentrove.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/377bfc15-04f4-488f-9e44-c41ef48ff728/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/d9544812-e91f-478d-a752-4e54f4f90f5e",
+    "checkout_status": [],
+    "expected": [
+      "agentrove/D-da58a2",
+      "agentrove/D-6e1b64",
+      "agentrove/D-f863f3"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:35.245Z",
+    "collected": {
+      "at": "2026-11-08T02:04:58.704Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/A/agentrove.jsonl",
+      "records": 3,
+      "sha256": "dca29855fea6528dfa713987000260c314431f883dbeb6413c0edd80928a146a"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "clickhouse-etl",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/A/clickhouse-etl.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/ad671891-bb77-4f6c-9b62-1de711bd484c/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/a46a1235-e387-4e76-8d75-0233badd7c2f",
+    "checkout_status": [],
+    "expected": [
+      "clickhouse-etl/D-3345d1",
+      "clickhouse-etl/D-b006e4",
+      "clickhouse-etl/D-08b385",
+      "clickhouse-etl/D-c2cda4",
+      "clickhouse-etl/D-b1729f"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:35.295Z",
+    "collected": {
+      "at": "2026-11-08T02:00:29.205Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/A/clickhouse-etl.jsonl",
+      "records": 5,
+      "sha256": "cc910eaa88b27203a929bca4ec7d8c71be62d2d6ae59bfbef65e82ccf14c27d6"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "responsible-ai-toolbox",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/A/responsible-ai-toolbox.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/49fea2d8-83d0-4dc8-a562-e09f2ddae0a6/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/eeab75e3-f01b-477a-b6c1-e162363b9e5b",
+    "checkout_status": [],
+    "expected": [
+      "responsible-ai-toolbox/D-0bfbdb",
+      "responsible-ai-toolbox/D-6cd898",
+      "responsible-ai-toolbox/D-a5a9f0",
+      "responsible-ai-toolbox/D-bee410",
+      "responsible-ai-toolbox/D-ed6a98"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:35.344Z",
+    "collected": {
+      "at": "2026-11-08T02:00:48.654Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/A/responsible-ai-toolbox.jsonl",
+      "records": 5,
+      "sha256": "ed6b9e6d3b742120b5f9928acee1763273e7175e53ad2621048f764676ac1212"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "ownpilot",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/A/ownpilot.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/ff02a37c-ac13-4fb1-9dc6-85631efe781c/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/caf648e2-74d2-4d5b-95fd-e4966c2c8f63",
+    "checkout_status": [],
+    "expected": [
+      "ownpilot/D-357e62",
+      "ownpilot/D-957723",
+      "ownpilot/D-59b926",
+      "ownpilot/D-fe068c",
+      "ownpilot/D-90d32c",
+      "ownpilot/D-925027",
+      "ownpilot/D-ba69a0",
+      "ownpilot/D-04b2fd",
+      "ownpilot/D-399322",
+      "ownpilot/D-57f216"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:35.390Z",
+    "rejected": [
+      {
+        "at": "2026-11-08T01:58:53.565Z",
+        "problems": [
+          "out.jsonl:7: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: eslint.config.js (a config file), tsconfig.base.json (a config file), packages/gateway/tsconfig.json (a config file)"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T02:04:38.522Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/A/ownpilot.jsonl",
+      "records": 10,
+      "sha256": "53407d811e38d9a62c1da1554840adf3f08930ec6ca0feecef1fff3dd43d7a74"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "workflow",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/A/workflow.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/899174ea-5e2f-4480-832a-6c236fb3bcd2/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/5b08b663-6c4d-4606-abe4-1ecb9a204452",
+    "checkout_status": [],
+    "expected": [
+      "workflow/D-e4aff0",
+      "workflow/D-6d8dac",
+      "workflow/D-073046",
+      "workflow/D-8fbbad",
+      "workflow/D-a526a7",
+      "workflow/D-f75a3a",
+      "workflow/D-f834fe"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:35.443Z",
+    "rejected": [
+      {
+        "at": "2026-11-08T01:56:56.587Z",
+        "problems": [
+          "out.jsonl:1: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: docs/tsconfig.json (a config file), workbench/astro/tsconfig.json (a config file), workbench/nuxt/tsconfig.json (a config file), workbench/vitest/vitest.config.ts (a config file), and 5 more"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T02:01:08.677Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/A/workflow.jsonl",
+      "records": 7,
+      "sha256": "5dbc2e10ed294a5a5ea7ddbd5a4b127e06385be3bb75b196afcff03e8588b092"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "planarally",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/A/planarally.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/e0cba60c-b28f-4d6d-9c6b-addd0640e46c/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/14d19e1d-9da8-4c56-b18b-341f55be31fa",
+    "checkout_status": [],
+    "expected": [
+      "planarally/D-dde3e1",
+      "planarally/D-901af2",
+      "planarally/D-988115",
+      "planarally/D-4e7e50",
+      "planarally/D-4bcf91",
+      "planarally/D-157d31",
+      "planarally/D-d0cb99"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:35.491Z",
+    "collected": {
+      "at": "2026-11-08T01:56:39.111Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/A/planarally.jsonl",
+      "records": 7,
+      "sha256": "2123cb9ca07bb8adb08bc4d7275904fa1cdb8246127201e344966714eff2f283"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "onecli",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/A/onecli.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/b00614b4-b331-4458-97af-b6c21c9d2ab1/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/fd37e2f9-87bc-432d-b7ad-48fd422aca9b",
+    "checkout_status": [],
+    "expected": [
+      "onecli/D-cc64dd",
+      "onecli/D-b911e8",
+      "onecli/D-1e0151",
+      "onecli/D-391beb",
+      "onecli/D-608b7b",
+      "onecli/D-399322",
+      "onecli/D-e596bb"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:35.545Z",
+    "rejected": [
+      {
+        "at": "2026-11-08T01:57:35.228Z",
+        "problems": [
+          "out.jsonl:1: checked must list at least 2 files opened",
+          "out.jsonl:2: checked must list at least 2 files opened"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T02:01:31.153Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/A/onecli.jsonl",
+      "records": 7,
+      "sha256": "7f855a0402448e3975a83139693e57959c26795f49f46068a3fa2537be4db024"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "planarally",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/B/planarally.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/f0cdb3a4-2dcc-41b9-980c-e51811530640/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/6119d414-2ad7-48b4-b729-711b31d59ed9",
+    "checkout_status": [],
+    "expected": [
+      "planarally/D-dde3e1",
+      "planarally/D-901af2",
+      "planarally/D-988115",
+      "planarally/D-4e7e50",
+      "planarally/D-4bcf91",
+      "planarally/D-157d31",
+      "planarally/D-d0cb99"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:56:39.163Z",
+    "rejected": [
+      {
+        "at": "2026-11-08T01:58:20.214Z",
+        "problems": [
+          "out.jsonl:3: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: server/src/auth.py (cannot hold a member of the role: outside its package, directory or file kind)",
+          "out.jsonl:4: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:6: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: client/src/game/api/emits/asset.ts (cannot hold a member of the role: outside its package, directory or file kind), client/src/game/api/emits/client.ts (cannot hold a member of the role: outside its package, directory or file kind)"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T02:01:30.475Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/B/planarally.jsonl",
+      "records": 7,
+      "sha256": "9f15347d8531ec97f4260ededd5c99b0c106f43c2d355d84ff3129f8bb2b2f14"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "wind-comic",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/B/wind-comic.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/22226ddb-20f4-4196-8902-4c9f1f1f8475/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/c5155b7c-61a9-4b3b-bf8e-0501af391882",
+    "checkout_status": [],
+    "expected": [
+      "wind-comic/D-e79a2d",
+      "wind-comic/D-242334",
+      "wind-comic/D-ca9af7",
+      "wind-comic/D-3843f8",
+      "wind-comic/D-39e262",
+      "wind-comic/D-304043",
+      "wind-comic/D-f6dbe6"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:57:59.899Z",
+    "rejected": [
+      {
+        "at": "2026-11-08T02:00:13.686Z",
+        "problems": [
+          "out.jsonl:3: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: tsconfig.json (a config file), package.json (a config file)",
+          "out.jsonl:5: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T02:03:09.591Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/B/wind-comic.jsonl",
+      "records": 7,
+      "sha256": "dbfd30c861fffabe56bb824026054cc921f93e6197774dfceeaa8321314f3ba0"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "ever-demand",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/B/ever-demand.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/9a0f1bee-8e7e-4129-8932-c0bc54cba9d6/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/7ac4fdb6-b8d0-44db-b69b-5cd9a892f977",
+    "checkout_status": [],
+    "expected": [
+      "ever-demand/D-410f0a",
+      "ever-demand/D-728139",
+      "ever-demand/D-49be71",
+      "ever-demand/D-75c6f7",
+      "ever-demand/D-96dc9f",
+      "ever-demand/D-07cce0",
+      "ever-demand/D-d08791",
+      "ever-demand/D-0d5819",
+      "ever-demand/D-024ccb",
+      "ever-demand/D-5bf6fb",
+      "ever-demand/D-413b34",
+      "ever-demand/D-5b38bb"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:58:20.875Z",
+    "collected": {
+      "at": "2026-11-08T02:06:01.467Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/B/ever-demand.jsonl",
+      "records": 12,
+      "sha256": "6676bca38b52002db78f3dfe4507c1eb91ea324d64ce1207b22b24adbc767fad"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "ngx-bootstrap",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/B/ngx-bootstrap.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/a0ef0f38-8df3-4e8b-bd05-658a8c7a6526/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/d69223f1-ea3b-42d1-be36-2cf897f3186d",
+    "checkout_status": [],
+    "expected": [
+      "ngx-bootstrap/D-32687f",
+      "ngx-bootstrap/D-cd8fd8",
+      "ngx-bootstrap/D-7d5872",
+      "ngx-bootstrap/D-f1448a",
+      "ngx-bootstrap/D-c0155e"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:59:09.438Z",
+    "rejected": [
+      {
+        "at": "2026-11-08T02:02:10.857Z",
+        "problems": [
+          "out.jsonl:1: checked covers 1 outlier files, needs 3 (of _root/package.json, src/chronos/package.json, src/component-loader/package.json, src/datepicker/package.json, src/schematics/package.json)",
+          "out.jsonl:1: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: libs/common-docs/tsconfig.json (a config file), _root/tsconfig.json (a config file), src/chronos/tsconfig.json (a config file), src/component-loader/tsconfig.json (a config file), and 5 more",
+          "out.jsonl:2: checked does not include the example file libs/common-docs/package.json",
+          "out.jsonl:2: checked covers 0 outlier files, needs 3 (of _root/package.json, src/chronos/package.json, src/datepicker/package.json)",
+          "out.jsonl:2: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: libs/common-docs/tsconfig.json (a config file), _root/tsconfig.json (a config file), src/chronos/tsconfig.json (a config file), src/datepicker/tsconfig.json (a config file), and 4 more",
+          "out.jsonl:3: checked does not include the example file libs/common-docs/package.json",
+          "out.jsonl:3: checked covers 0 outlier files, needs 3 (of _root/package.json, src/chronos/package.json, src/schematics/package.json)",
+          "out.jsonl:3: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: libs/common-docs/tsconfig.json (a config file), _root/tsconfig.json (a config file), src/chronos/tsconfig.json (a config file), src/schematics/tsconfig.json (a config file), and 3 more",
+          "out.jsonl:4: checked does not include the example file libs/common-docs/package.json",
+          "out.jsonl:4: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: libs/common-docs/tsconfig.json (a config file), _root/tsconfig.json (a config file), tsconfig.base.json (a config file), src/sortable/tsconfig.json (a config file), and 2 more",
+          "out.jsonl:5: checked does not include the example file libs/common-docs/package.json",
+          "out.jsonl:5: checked covers 1 outlier files, needs 2 (of _root/package.json, src/schematics/package.json)",
+          "out.jsonl:5: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: libs/common-docs/tsconfig.json (a config file), _root/tsconfig.json (a config file), src/schematics/tsconfig.json (a config file), src/sortable/tsconfig.json (a config file), and 3 more"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T02:04:38.195Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/B/ngx-bootstrap.jsonl",
+      "records": 5,
+      "sha256": "9cfcbe18e6c7cfa5c194daa9a1040fd8c0846c5706e91e71b444d8469d9ac995"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "island.is",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/B/island.is.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/4aa442e8-ffb5-4c1a-a953-6e1e52e6eae2/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/7a8c686f-a675-42e3-8085-c19c5eb8f068",
+    "checkout_status": [],
+    "expected": [
+      "island.is/D-a3fa2c",
+      "island.is/D-519283",
+      "island.is/D-b3af94",
+      "island.is/D-b30b5f",
+      "island.is/D-5e3ccc",
+      "island.is/D-9d506a",
+      "island.is/D-da0d39",
+      "island.is/D-789652",
+      "island.is/D-25f855",
+      "island.is/D-e314b0",
+      "island.is/D-c24a94",
+      "island.is/D-d063e1",
+      "island.is/D-de5d76"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:59:49.309Z",
+    "collected": {
+      "at": "2026-11-08T02:04:38.966Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/B/island.is.jsonl",
+      "records": 13,
+      "sha256": "88efbedb51ea4ff37cbec3b56676e353ada2c7431b5384acc5294e41bd8c3f9c"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "clickhouse-etl",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/B/clickhouse-etl.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/d735e084-8d02-4b52-b579-587da2a78f27/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/8b656171-46fb-4ec9-a905-e73a3267f489",
+    "checkout_status": [],
+    "expected": [
+      "clickhouse-etl/D-3345d1",
+      "clickhouse-etl/D-b006e4",
+      "clickhouse-etl/D-08b385",
+      "clickhouse-etl/D-c2cda4",
+      "clickhouse-etl/D-b1729f"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:00:29.268Z",
+    "collected": {
+      "at": "2026-11-08T02:02:45.251Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/B/clickhouse-etl.jsonl",
+      "records": 5,
+      "sha256": "950c5a24650c5972800753007daeb0ff2558dbba1d25145676bd225ed13d6a3b"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "webstudio",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/B/webstudio.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/9fe79782-9736-421c-9ae8-640056c81259/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/3f73d570-2b39-4bec-bc30-ab7d816c9c41",
+    "checkout_status": [],
+    "expected": [
+      "webstudio/D-50ff6f",
+      "webstudio/D-72343d",
+      "webstudio/D-681d54",
+      "webstudio/D-07af70"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:00:48.716Z",
+    "collected": {
+      "at": "2026-11-08T02:02:38.105Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/B/webstudio.jsonl",
+      "records": 4,
+      "sha256": "5a2c32089e173b10bcaf793e767c324547308ec271da6626d38d8dc8cd8c7f8b"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "responsible-ai-toolbox",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/B/responsible-ai-toolbox.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/efbee5e6-b868-4883-b286-7e684772ca10/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/138ecb58-f786-4222-9e23-d3b30beb596d",
+    "checkout_status": [],
+    "expected": [
+      "responsible-ai-toolbox/D-0bfbdb",
+      "responsible-ai-toolbox/D-6cd898",
+      "responsible-ai-toolbox/D-a5a9f0",
+      "responsible-ai-toolbox/D-bee410",
+      "responsible-ai-toolbox/D-ed6a98"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:00:48.770Z",
+    "rejected": [
+      {
+        "at": "2026-11-08T02:02:44.808Z",
+        "problems": [
+          "out.jsonl:2: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: libs/core-ui/.eslintrc.json (a config file), .eslintrc/.eslintrc.typescript.eslintrc (a config file), libs/causality/src/lib/CausalAnalysisDashboard/Controls/CausalAnalysisView/CausalAggregateView/getCausalDisplayFeatureName.ts (cannot hold a member of the role: outside its package, directory or file kind), apps/dashboard-e2e/src/util/getSpan.ts (cannot hold a member of the role: outside its package, directory or file kind)"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T02:05:05.547Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/B/responsible-ai-toolbox.jsonl",
+      "records": 5,
+      "sha256": "a130f9e6a95be668737c7f7636124426239e9d54b2258ec6ea7cc1c6f22a819e"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "workflow",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/B/workflow.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/7a80c995-0a5a-4a5e-8c39-d096d8c8e224/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/78f8c8bc-8b80-4a49-9b20-651a0da5f895",
+    "checkout_status": [],
+    "expected": [
+      "workflow/D-e4aff0",
+      "workflow/D-6d8dac",
+      "workflow/D-073046",
+      "workflow/D-8fbbad",
+      "workflow/D-a526a7",
+      "workflow/D-f75a3a",
+      "workflow/D-f834fe"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:01:08.921Z",
+    "rejected": [
+      {
+        "at": "2026-11-08T02:03:23.119Z",
+        "problems": [
+          "out.jsonl:2: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: biome.json (a config file)",
+          "out.jsonl:3: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: docs/tsconfig.json (a config file), packages/cli/tsconfig.json (a config file), workbench/astro/tsconfig.json (a config file), workbench/nuxt/tsconfig.json (a config file), and 1 more"
+        ]
+      },
+      {
+        "at": "2026-11-08T02:06:37.625Z",
+        "problems": [
+          "out.jsonl:3: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: docs/tsconfig.json (a config file), workbench/astro/tsconfig.json (a config file), workbench/nuxt/tsconfig.json (a config file), packages/core/tsconfig.json (a config file), and 2 more"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T02:09:20.131Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/B/workflow.jsonl",
+      "records": 7,
+      "sha256": "070d776f3e045945114dfd70c8897b548073153cae62ed5fd84a486f72f4a9f2"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "reiverr",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/B/reiverr.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/3cae3d7e-49f1-490f-8087-77b30b983947/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/a62953de-6690-4fd9-95f2-f75030dfa12a",
+    "checkout_status": [],
+    "expected": [
+      "reiverr/D-e1c436",
+      "reiverr/D-791f60",
+      "reiverr/D-581e59",
+      "reiverr/D-ce6e0a"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:01:31.203Z",
+    "collected": {
+      "at": "2026-11-08T02:03:51.321Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/B/reiverr.jsonl",
+      "records": 4,
+      "sha256": "d1f6fefc471b5edf132357541e18628f8b83d7324ff6decaf4efb0423727b999"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "onecli",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/B/onecli.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/ea0c1121-4019-4605-a4af-b4988a1a1ec5/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/7f3cdbb0-2b13-40fd-bd36-94d40b1114ab",
+    "checkout_status": [],
+    "expected": [
+      "onecli/D-cc64dd",
+      "onecli/D-b911e8",
+      "onecli/D-1e0151",
+      "onecli/D-391beb",
+      "onecli/D-608b7b",
+      "onecli/D-399322",
+      "onecli/D-e596bb"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:01:31.254Z",
+    "rejected": [
+      {
+        "at": "2026-11-08T02:04:37.713Z",
+        "problems": [
+          "out.jsonl:1: checked must list at least 2 files opened",
+          "out.jsonl:4: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:5: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:7: checked must list at least 2 files opened"
+        ]
+      },
+      {
+        "at": "2026-11-08T02:07:41.514Z",
+        "problems": [
+          "out.jsonl:5: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T02:11:16.023Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/B/onecli.jsonl",
+      "records": 7,
+      "sha256": "bdfbddc82a0a4eb3f0617e596314b62b5712a84384b478434ddcc93f61e85db2"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "mitosis",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/B/mitosis.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/64d1e630-be34-4eef-befb-9619c3310193/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/42c508f7-0249-4c56-a612-65b5e2af66e3",
+    "checkout_status": [],
+    "expected": [
+      "mitosis/D-e375ce",
+      "mitosis/D-2a2de0",
+      "mitosis/D-2e24b5"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:03:44.533Z",
+    "rejected": [
+      {
+        "at": "2026-11-08T02:05:41.580Z",
+        "problems": [
+          "out.jsonl:1: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: packages/core/tsconfig.json (a config file), .eslintrc.js (a config file)",
+          "out.jsonl:3: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: packages/core/tsconfig.json (a config file), .eslintrc.js (a config file)"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T02:07:42.836Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/B/mitosis.jsonl",
+      "records": 3,
+      "sha256": "a49b25fca83a1e2d2dc3169a83c93d9c0afb82482133c0e89f3115b7108a75ed"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "ownpilot",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/B/ownpilot.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/edde85f9-ff29-4d6f-93b4-0645e348cddc/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/dd96088e-a35d-434b-ba5e-bb76ccdeea54",
+    "checkout_status": [],
+    "expected": [
+      "ownpilot/D-357e62",
+      "ownpilot/D-957723",
+      "ownpilot/D-59b926",
+      "ownpilot/D-fe068c",
+      "ownpilot/D-90d32c",
+      "ownpilot/D-925027",
+      "ownpilot/D-ba69a0",
+      "ownpilot/D-04b2fd",
+      "ownpilot/D-399322",
+      "ownpilot/D-57f216"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:04:39.024Z",
+    "rejected": [
+      {
+        "at": "2026-11-08T02:07:41.958Z",
+        "problems": [
+          "out.jsonl:1: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:4: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: eslint.config.js (a config file), packages/gateway/tsconfig.json (a config file)",
+          "out.jsonl:7: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:9: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T02:11:27.692Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/B/ownpilot.jsonl",
+      "records": 10,
+      "sha256": "db6559f6f0efe2777bcf12e4ea099ff881eb52da7a21ca90f26a84438853de8a"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "agentrove",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/B/agentrove.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/f5d6577a-7eef-45a5-9e9d-040fef2bb45c/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/b769f779-8788-4b07-87f5-6d74f69f21ea",
+    "checkout_status": [],
+    "expected": [
+      "agentrove/D-da58a2",
+      "agentrove/D-6e1b64",
+      "agentrove/D-f863f3"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:04:58.759Z",
+    "collected": {
+      "at": "2026-11-08T02:07:01.139Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/B/agentrove.jsonl",
+      "records": 3,
+      "sha256": "23673f04379281628d22f868bd533204ec97b3090b53729b0cef4f1dc919772a"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "better-chatbot",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/B/better-chatbot.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/76aac756-1793-4ca4-9aa3-67471a5dd93c/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/e923ee68-0a45-48c6-87b6-fbaaa21f4fa3",
+    "checkout_status": [],
+    "expected": [
+      "better-chatbot/D-ed17cb",
+      "better-chatbot/D-5b91e5",
+      "better-chatbot/D-7c60e2",
+      "better-chatbot/D-3af9f8",
+      "better-chatbot/D-17340a",
+      "better-chatbot/D-399322",
+      "better-chatbot/D-1bc181",
+      "better-chatbot/D-215de3",
+      "better-chatbot/D-798f44",
+      "better-chatbot/D-c6ea9c",
+      "better-chatbot/D-4e1215",
+      "better-chatbot/D-bdd2a0",
+      "better-chatbot/D-7f4083",
+      "better-chatbot/D-5a6787",
+      "better-chatbot/D-ad0dad"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:05:24.460Z",
+    "rejected": [
+      {
+        "at": "2026-11-08T02:10:56.182Z",
+        "problems": [
+          "out.jsonl:2: checked must list at least 2 files opened",
+          "out.jsonl:2: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:3: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: apps/web/src/lib/projects/members.ts (cannot hold a member of the role: outside its package, directory or file kind), apps/web/src/lib/projects/access.ts (cannot hold a member of the role: outside its package, directory or file kind)",
+          "out.jsonl:5: checked must list at least 2 files opened",
+          "out.jsonl:5: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:6: checked must list at least 2 files opened",
+          "out.jsonl:6: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:7: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: apps/web/src/lib/projects/access.ts (cannot hold a member of the role: outside its package, directory or file kind)",
+          "out.jsonl:8: checked must list at least 2 files opened",
+          "out.jsonl:8: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:10: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: apps/web/src/lib/projects/access.ts (cannot hold a member of the role: outside its package, directory or file kind)",
+          "out.jsonl:11: checked must list at least 2 files opened",
+          "out.jsonl:11: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:12: checked must list at least 2 files opened",
+          "out.jsonl:12: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:13: checked must list at least 2 files opened",
+          "out.jsonl:13: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T02:14:36.460Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/B/better-chatbot.jsonl",
+      "records": 15,
+      "sha256": "6e8ddabe19e3eafc9060c10091098dedecec4ea8855eb919c5852fc9bf2368d9"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "ui",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/label/B/ui.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/b342dfe9-3475-4f91-b0b8-42603ce0fe25/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/ad065a77-e6ae-4dde-86a7-2dda322c1213",
+    "checkout_status": [],
+    "expected": [
+      "ui/D-569610",
+      "ui/D-d24287"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:06:02.076Z",
+    "collected": {
+      "at": "2026-11-08T02:07:43.181Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/B/ui.jsonl",
+      "records": 2,
+      "sha256": "1207ea879c55d22f9df98e40474e70649d8d0a7d4ca21b2ae37cdbbe8767bdd2"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "ever-demand",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/adjudicate/C/ever-demand.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/f55f52b2-7704-452c-9b96-37d38cd7ee66/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/f767533d-c9ea-4e99-84f5-e56fbefe09f1",
+    "checkout_status": [],
+    "expected": [
+      "ever-demand/D-5b38bb",
+      "ever-demand/D-d08791"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:14:37.250Z",
+    "collected": {
+      "at": "2026-11-08T02:17:45.537Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/C/ever-demand.jsonl",
+      "records": 2,
+      "sha256": "797c1018e736ff3e2d0277784b7b6519e388cbb52bd0fdd3b88d2177d1df1c15"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "ngx-bootstrap",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/adjudicate/C/ngx-bootstrap.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/b8b31314-4b00-4427-9c01-955d27e6ac08/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/305be7dc-641f-45c9-af93-a0d0d1afe710",
+    "checkout_status": [],
+    "expected": [
+      "ngx-bootstrap/D-c0155e",
+      "ngx-bootstrap/D-f1448a"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:14:37.260Z",
+    "collected": {
+      "at": "2026-11-08T02:17:36.451Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/C/ngx-bootstrap.jsonl",
+      "records": 2,
+      "sha256": "410778d1db928304dc5be38feba161156edb5f8f74d23c59d7326cce1a0a8429"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "better-chatbot",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/adjudicate/C/better-chatbot.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/df18f249-1060-4a77-bdb6-98ed829b2e27/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/33a3d118-e12a-41c9-81e6-c7415ec1e961",
+    "checkout_status": [],
+    "expected": [
+      "better-chatbot/D-ad0dad"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:14:37.269Z",
+    "collected": {
+      "at": "2026-11-08T02:17:37.128Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/C/better-chatbot.jsonl",
+      "records": 1,
+      "sha256": "bb69d6bd0cd3c4279c41df54e39c83bb1146c2400d6acdc8b648a638b0e22dad"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "mitosis",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/adjudicate/C/mitosis.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/925ea6d5-d320-4fdd-9384-4a0612d27424/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/7b47c39a-661c-4cac-b2b2-4dcdd705a2ed",
+    "checkout_status": [],
+    "expected": [
+      "mitosis/D-e375ce"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:14:37.277Z",
+    "collected": {
+      "at": "2026-11-08T02:17:13.874Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/C/mitosis.jsonl",
+      "records": 1,
+      "sha256": "f277745fe7f33e907d53b68ff25f98afe1d64788bfca5be812eb31d0ba601cc7"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "webstudio",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/adjudicate/C/webstudio.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/32b706bc-fbb9-419e-9faa-35b17fc3b629/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/3d969304-70d7-4a24-b0a9-82caf33c9d9f",
+    "checkout_status": [],
+    "expected": [
+      "webstudio/D-50ff6f",
+      "webstudio/D-07af70"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:14:37.291Z",
+    "collected": {
+      "at": "2026-11-08T02:17:45.889Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/C/webstudio.jsonl",
+      "records": 2,
+      "sha256": "011eadb5f97f37cacc46301f439f167dcc9d4f066e9b1b156a28fa0b52f67b16"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "responsible-ai-toolbox",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/adjudicate/C/responsible-ai-toolbox.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/ffd8d8aa-615d-4822-b67f-b84765739072/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/0f5bf795-ea75-411c-b516-a6598252355e",
+    "checkout_status": [],
+    "expected": [
+      "responsible-ai-toolbox/D-a5a9f0"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:14:37.301Z",
+    "collected": {
+      "at": "2026-11-08T02:17:21.501Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/C/responsible-ai-toolbox.jsonl",
+      "records": 1,
+      "sha256": "3f755ad8beea1a377f6d08f029ebb79363ab08e825dadf88ca0e7e470446e1ac"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "ownpilot",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/adjudicate/C/ownpilot.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/6348a81e-d3a8-4074-ba0d-50f97fa0246d/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/8339153f-965c-420c-856b-c2f913b0602f",
+    "checkout_status": [],
+    "expected": [
+      "ownpilot/D-ba69a0"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:14:37.309Z",
+    "collected": {
+      "at": "2026-11-08T02:17:29.110Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/C/ownpilot.jsonl",
+      "records": 1,
+      "sha256": "a0c88ba74123feb0b038d667b86624434f957c6fb8ccb3488a016d70bb681661"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "planarally",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-ts-2026-11-08/prompts/adjudicate/C/planarally.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/ce5be8f3-47bc-4b26-b002-54c1f326ada4/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/9cfe1098-d5a8-4a51-a102-d532bdd6ca53",
+    "checkout_status": [],
+    "expected": [
+      "planarally/D-988115"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:14:37.317Z",
+    "collected": {
+      "at": "2026-11-08T02:17:36.790Z",
+      "dest": "eval/study/runs/heldout2-ts-2026-11-08/labels/C/planarally.jsonl",
+      "records": 1,
+      "sha256": "d8c32b2d814a9cda4aef188e999f76bf99805dc6447562902ca39b7a44552e50"
+    }
+  }
+]

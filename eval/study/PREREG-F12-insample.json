@@ -1,0 +1,240 @@
+{
+  "//": "The build-set in-sample figure of the Python opt-in view (eval/study/insample-py.mjs; PREREG-F12-dev5-py-check.md sections 1 and 6). Unlabelled cards count as WRONG in both rates.",
+  "drift": {
+    "binary_sha256": "18681df2dce171063be1128a2c4fd27489456270fc26b83f3d04d12dc55580ba",
+    "version": "drift 0.1.0-dev",
+    "census_commit_tag": "5bafc43d4366f183ab0a25d780533c9bb1725077"
+  },
+  "view": "census --json --max 15 --python-proposals, Python proposals",
+  "repos": 50,
+  "clones": "each at its pinned commit and clean, before and after",
+  "labels": {
+    "run": "eval/study/runs/dev-v3-relabel6-2026-11-10",
+    "rubric": "v3",
+    "carried_by": "byte-identical labeller-facing card text in the same repo (rule 4)",
+    "parts": [
+      {
+        "queue": "eval/study/runs/dev-v3-relabel6-2026-11-10/py/views/d7/queue.json",
+        "queue_sha256": "f87d7a87f5fbed282dd404c9f0a9e9646ede82c6054d7fe3ff4704df742546d8",
+        "labels": "eval/study/runs/dev-v3-relabel6-2026-11-10/py/final.jsonl",
+        "labels_sha256": "76a209c69fc52e33e7eaa46250261362023d76adfde32d06d5691810e5dc0513"
+      },
+      {
+        "queue": "eval/study/runs/dev-v3-relabel6-2026-11-10/py2/views/d7/queue.json",
+        "queue_sha256": "0ae0ff6888e27ae2f6b9c8c728be40e0a7881947cfc6f97af2f4dcaebccb8ab7",
+        "labels": "eval/study/runs/dev-v3-relabel6-2026-11-10/py2/final.jsonl",
+        "labels_sha256": "74177fec2ec1de2fdea2ec8bcab141b8b650d2d1c8e00c7f93baeb0cd9bd255e"
+      },
+      {
+        "queue": "eval/study/runs/dev-v3-relabel6-2026-11-10/py3/views/d7/queue.json",
+        "queue_sha256": "6af87ca57bf0b5989159e2323d69210df00be06b10e615b1748e471008db965e",
+        "labels": "eval/study/runs/dev-v3-relabel6-2026-11-10/py3/final.jsonl",
+        "labels_sha256": "d3cee46e79ad0fd5693f6e4a6e2d5d9b0449ba3f0cc8836a9e382da14e4ccb93"
+      },
+      {
+        "queue": "eval/study/runs/dev-v3-relabel6-2026-11-10/py4/views/d7/queue.json",
+        "queue_sha256": "1989ce97d4e9a866ab5f50cf44af4b7f87da9be277bdb3e51fd1ec834bd8cf9b",
+        "labels": "eval/study/runs/dev-v3-relabel6-2026-11-10/py4/final.jsonl",
+        "labels_sha256": "3219dbfd93e07496e4c5fc86cff219e33bed8ef64b1ab96a52083ca27b0f9130"
+      },
+      {
+        "queue": "eval/study/runs/dev-v3-relabel6-2026-11-10/ts/views/d7/queue.json",
+        "queue_sha256": "557611c2e8f0ef5797809ad4733f9cfc2057b8264517707e0b0cf0cf3ecad355",
+        "labels": "eval/study/runs/dev-v3-relabel6-2026-11-10/ts/final.jsonl",
+        "labels_sha256": "40d937f1d8a80b242bfcaaf155c9038653df2b5b2b645532557fa73260497f47"
+      }
+    ]
+  },
+  "shown": 30,
+  "accept": 25,
+  "trivial": 0,
+  "wrong": 5,
+  "unlabelled": 0,
+  "per_card_accept": {
+    "k": 25,
+    "n": 30,
+    "percent": 83.3
+  },
+  "not_wrong": {
+    "k": 25,
+    "n": 30,
+    "percent": 83.3
+  },
+  "by_family": {
+    "control": {
+      "shown": 7,
+      "accept": 5,
+      "trivial": 0,
+      "wrong": 2,
+      "unlabelled": 0,
+      "per_card_accept": {
+        "k": 5,
+        "n": 7,
+        "percent": 71.4
+      },
+      "not_wrong": {
+        "k": 5,
+        "n": 7,
+        "percent": 71.4
+      }
+    },
+    "layering": {
+      "shown": 7,
+      "accept": 6,
+      "trivial": 0,
+      "wrong": 1,
+      "unlabelled": 0,
+      "per_card_accept": {
+        "k": 6,
+        "n": 7,
+        "percent": 85.7
+      },
+      "not_wrong": {
+        "k": 6,
+        "n": 7,
+        "percent": 85.7
+      }
+    },
+    "naming": {
+      "shown": 14,
+      "accept": 12,
+      "trivial": 0,
+      "wrong": 2,
+      "unlabelled": 0,
+      "per_card_accept": {
+        "k": 12,
+        "n": 14,
+        "percent": 85.7
+      },
+      "not_wrong": {
+        "k": 12,
+        "n": 14,
+        "percent": 85.7
+      }
+    },
+    "wrapper": {
+      "shown": 2,
+      "accept": 2,
+      "trivial": 0,
+      "wrong": 0,
+      "unlabelled": 0,
+      "per_card_accept": {
+        "k": 2,
+        "n": 2,
+        "percent": 100
+      },
+      "not_wrong": {
+        "k": 2,
+        "n": 2,
+        "percent": 100
+      }
+    }
+  },
+  "by_pool": {
+    "build": {
+      "shown": 10,
+      "accept": 10,
+      "trivial": 0,
+      "wrong": 0,
+      "unlabelled": 0,
+      "per_card_accept": {
+        "k": 10,
+        "n": 10,
+        "percent": 100
+      },
+      "not_wrong": {
+        "k": 10,
+        "n": 10,
+        "percent": 100
+      }
+    },
+    "dev3": {
+      "shown": 6,
+      "accept": 5,
+      "trivial": 0,
+      "wrong": 1,
+      "unlabelled": 0,
+      "per_card_accept": {
+        "k": 5,
+        "n": 6,
+        "percent": 83.3
+      },
+      "not_wrong": {
+        "k": 5,
+        "n": 6,
+        "percent": 83.3
+      }
+    },
+    "dev4": {
+      "shown": 14,
+      "accept": 10,
+      "trivial": 0,
+      "wrong": 4,
+      "unlabelled": 0,
+      "per_card_accept": {
+        "k": 10,
+        "n": 14,
+        "percent": 71.4
+      },
+      "not_wrong": {
+        "k": 10,
+        "n": 14,
+        "percent": 71.4
+      }
+    }
+  },
+  "unlabelled_cards": [],
+  "view_sha256": "d65ef377aa065d063a913d4ab5acc8dc5bc8ead54f4a261b9114d37288f94065",
+  "census_sha256": {
+    "Django-CRM": "8f48ab51454dd8092457ff1f61b7624cb06f72108a4008f13d3a9d3bedee91a8",
+    "InvenTree": "596c71c795c404ca2cd8b5ab1c1ca7e964658b165a91fb44b21de0e8529f994c",
+    "Misago": "14a0209af1cd4bc2cc0942f12d8c95a9fd6c6261547905b2ef3ce58f47c18d1f",
+    "changedetection.io": "0b7ea65a58385751928be392bcffdd85319e454b2413a722b79b061d823353f8",
+    "dev3:P01": "10a6ae052f8cded0527c53ecaf239625b2624fc5b8669f0e22644e4ef2105052",
+    "dev3:P03": "b1dd565486d836b9db753b345de9a112cc9d3fe01db748f1e0d82d873a1caacc",
+    "dev3:P04": "81d1c8c27fd188092870fffcaadb40a6ce5e3b439bd2877c2b0986da048e23c0",
+    "dev3:P06": "210fa145d822d3ae2735d2d947bdb6cbff6ce1ce1cd5bb333bf43ac7253212a0",
+    "dev3:P07": "d6ba7393891a905d19faebb909c04bab2279ff4e87aef7b6677c6794ad0d3f86",
+    "dev3:P09": "12143d6ba5c9b768f795cdd03183f187c578cfa026709fb6f23888eee6777bc7",
+    "dev3:P10": "695ea3c51a2a6fb59f1e54951b931e828feaf2df9045201d4a3c3765bbc8b5f1",
+    "dev3:P12": "6fb5498175d0362a36b7dd5e2f9b190b07e487914a2304722365dc8b38223086",
+    "dev4:P01": "595c2d87c752634785f5f4d3189024f04037ec8b848e46eccc1234131d1e05ba",
+    "dev4:P02": "3b0dbce75bb8f3915d4ccaa3e9880fac928f8f500ea8fa3560687761e04581e3",
+    "dev4:P03": "9fb51d350ee8d2426f805f3ac9631df97e4160dd43e8b67f7723d6a0ebd0af25",
+    "dev4:P04": "6499482310fed660356fd77a774881044a5bdcead59b6e0254ea580b7186552b",
+    "dev4:P05": "47eb4f1d7228d7fead662db45004f6810e74edfc31b4d4c75f837843e2d5d7e7",
+    "dev4:P06": "a217f3428fcb4e1d0f70af05276ebbb105bd9497e4089d9f4a2536ddff920bc3",
+    "dev4:P07": "a324ec7a90b46eb1a39f5322411319c06f0fddb308d3836bf9d9c6c485c5894e",
+    "dev4:P08": "c003698acf1f6393594e519f0ebd6dc00d311f1043a48988abe93ac0f3ab66cb",
+    "dev4:P09": "e65e2d67d7e4111362b2fca3a298bb91700e80d8af98968910e444d87cc37089",
+    "dev4:P10": "281233634590e5d704b1999e8d07bd6f49b7593d3a6dbf02628941b769af3c4b",
+    "dev4:P11": "8615507e771b662376cdd47ad845497906f37e104d8e6749d5f95871cf74b24c",
+    "dev4:P12": "b2878202e7eec92620369afe94f26b4103e8e4d06632521a8569ca4ebde7a30f",
+    "dev4:P13": "83d120f0ce48cae46060281f66b8c0bd9a6311096c9c9b67ed547b87783ca2c3",
+    "dev4:P14": "a0e3e6391853c65b750b3326a75f4c453de06be4f92ff96c407754b400b2a70e",
+    "dev4:P15": "e94f00b99302769cd9424b42d2c28b39850582db67acacac26fdb05fe25b78d4",
+    "dev4:P16": "fa5fa4f46b79db197c335d137be5ccff6c674dec4ad646bdef56fa3a1e3693d2",
+    "dev4:P17": "1e240a4bc0b8e96d6f7870bed90f7bbd4bf557b11cb8850cf154912f38c4e429",
+    "dev4:P18": "78d70fcbae3fabbf318a80d3772d5a00f211b066c73e892d6836a481702840c3",
+    "dev4:P19": "2a5cf8044f06ec37f64888e6cf30d7a1b0753ddbcae08be74c123be3d33ed274",
+    "dev4:P20": "50c956fb6b52b9467e0bff24d7b100385a7133ec68d10dedfccec4d0d1098cca",
+    "dev4:P21": "56a43a60cc9d148da549d36e1e9009eb2b9f15bb2b2a36e117b502f86b7656f0",
+    "dev4:P22": "5cc6e837f79fe2cda359583b9aa6885909f7160599e9d4fc23573cf26b92ed21",
+    "dev4:P23": "f5fbce8bd86c225092c2341b2b16b0fc9ea1fe3cd3427916b35e16379fc02e50",
+    "dev4:P24": "1735eb875e09a151852101740433f1a500bb7b7ef5fe48d314f26c43e4a302a7",
+    "fastapi": "f99a812773c590d1c68e9f54db208a89524727a3859f691b9911981449ae7797",
+    "flask": "77f3e0fa850ba7f283b31a926a7cce8f9ea345b01c0c9d94a391ed6361fdab70",
+    "full-stack-fastapi-template": "cf73f1135c114912fbdcd6b5d33977a07d599ee700d74e71425a71de90bce11d",
+    "langchain": "fc7d23c406decb1e183b0a4743fe7833dc1cf069b861772d99975a38da2971ce",
+    "lotus": "88de80ecd001e279f4401e641b34c9f42f23a1810ca74758b885ed9b4b329042",
+    "netbox": "4d13f08f9f7d8700033ef0038cb36d2365eec49c7e3955ef0548deb4771176b9",
+    "open-wearables": "fe97fdc89a4763383a82f1a0e454716031f3ab82be56828146e112b599f499df",
+    "paperless-ngx": "97fe0df17a6f23829202701f78957910c4d6c5e7d89d71b387d13cb6310aa079",
+    "pontoon": "5b99de76129bb5b0c45e1885088389af6903ad8a422230acadd995b3cb3596b0",
+    "ralph": "9504fb8ea8d6d4ec2b883d0a8711141b1da1727b834bed747d1321bce30053ea",
+    "saleor": "837cbe9b5a53a436759d803d07b5edc7bfe679071ce8508f8ef8cd9df73a6808",
+    "simplelogin": "ef72d2808c26baf4baf6c30a1455cdf317fd7250a1b01a6cea9944c464400c9f",
+    "tasking-manager": "f8d7deabc483cc127f7dddd4a83f5ec4c6999718a01765d4daf280288d506223",
+    "wger": "c08cbd8f1ee56e466b5c6b3a1c772dcf9e0b5baaf6723092e3e5794fcdcebf5f"
+  }
+}

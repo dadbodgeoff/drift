@@ -1,0 +1,4814 @@
+{
+ "version": 1,
+ "commit": null,
+ "facts_schema": 11,
+ "scope": {
+  "concern": null,
+  "package": null,
+  "path": null
+ },
+ "summary": {
+  "population": 1055,
+  "known": 687,
+  "none": 284,
+  "unknown": 84,
+  "coverage": 0.92,
+  "concerns_at_target": 7,
+  "target": 0.9
+ },
+ "concerns": [
+  {
+   "id": "authn",
+   "title": "Authentication",
+   "unit": "entry_point",
+   "population": {
+    "total": 165,
+    "known": 154,
+    "none": 11,
+    "unknown": 0,
+    "coverage": 1,
+    "left_out": {
+     "tests": 0,
+     "non_production": 19
+    }
+   },
+   "variants": [
+    {
+     "id": "P-1e83ce",
+     "key": "any_of(decorator:apps/api/src/common/auth.guard.ts#AuthGuard|wrap:apps/web/lib/auth.ts#withWorkspace)",
+     "label": "wrap withWorkspace, or decorator AuthGuard",
+     "kind": "known",
+     "mechanisms": [
+      "decorator",
+      "wrap"
+     ],
+     "instruments": [
+      "apps/api/src/common/auth.guard.ts#AuthGuard",
+      "apps/web/lib/auth.ts#withWorkspace"
+     ],
+     "source": "usage",
+     "members": 117,
+     "share": 0.709,
+     "where": {
+      "packages": [
+       {
+        "package": "apps/web",
+        "members": 70,
+        "share_of_package": 0.603
+       },
+       {
+        "package": "apps/api",
+        "members": 47,
+        "share_of_package": 0.959
+       }
+      ],
+      "dirs": [
+       {
+        "dir": "apps/web/app/api/workspaces/[id]",
+        "members": 70
+       },
+       {
+        "dir": "apps/api/src",
+        "members": 47
+       },
+       {
+        "dir": "apps/api/src/alerts",
+        "members": 2
+       },
+       {
+        "dir": "apps/api/src/artifacts",
+        "members": 2
+       },
+       {
+        "dir": "apps/api/src/audits",
+        "members": 2
+       },
+       {
+        "dir": "apps/api/src/billing",
+        "members": 2
+       },
+       {
+        "dir": "apps/api/src/comments",
+        "members": 2
+       },
+       {
+        "dir": "apps/api/src/deployments",
+        "members": 2
+       }
+      ],
+      "roles": [
+       {
+        "role": "R-bc8d5e",
+        "members": 117
+       },
+       {
+        "role": "R-3cec2b",
+        "members": 70
+       },
+       {
+        "role": "R-5450e7",
+        "members": 70
+       },
+       {
+        "role": "R-5b33fb",
+        "members": 70
+       },
+       {
+        "role": "R-7fa8a5",
+        "members": 70
+       },
+       {
+        "role": "R-f310a3",
+        "members": 70
+       },
+       {
+        "role": "R-b6c51f",
+        "members": 68
+       },
+       {
+        "role": "R-2a3182",
+        "members": 47
+       }
+      ],
+      "entry_kinds": [
+       {
+        "kind": "http",
+        "members": 117
+       }
+      ],
+      "methods": [
+       {
+        "method": "GET",
+        "members": 60
+       },
+       {
+        "method": "POST",
+        "members": 57
+       }
+      ]
+     },
+     "sets_apart": [],
+     "examples": [
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/billing/route.ts",
+       "symbol": "GET",
+       "line": 5
+      }
+     ],
+     "exceptions": [
+      {
+       "path": "apps/api/src/releases/releases.controller.ts",
+       "symbol": "GET /releases/:id",
+       "line": 8,
+       "variant": "P-68fb99"
+      },
+      {
+       "path": "apps/api/src/releases/releases.controller.ts",
+       "symbol": "POST /releases",
+       "line": 13,
+       "variant": "P-68fb99"
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4,
+       "variant": "P-68fb99"
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+       "symbol": "GET",
+       "line": 4,
+       "variant": "P-68fb99"
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+       "symbol": "GET",
+       "line": 5,
+       "variant": "P-68fb99"
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+       "symbol": "GET",
+       "line": 4,
+       "variant": "P-68fb99"
+      }
+     ],
+     "exceptions_more": 0,
+     "conventions": [
+      {
+       "id": "D-b0d245",
+       "status": "accepted",
+       "mode": "block"
+      },
+      {
+       "id": "D-ed1ec0",
+       "status": "accepted",
+       "mode": "block"
+      }
+     ],
+     "promotable": null,
+     "alternatives": [
+      {
+       "id": "P-5c347c",
+       "key": "decorator:apps/api/src/common/auth.guard.ts#AuthGuard",
+       "label": "decorator AuthGuard",
+       "kind": "known",
+       "mechanisms": [
+        "decorator"
+       ],
+       "instruments": [
+        "apps/api/src/common/auth.guard.ts#AuthGuard"
+       ],
+       "source": "usage",
+       "members": 47,
+       "share": 0.285,
+       "where": {
+        "packages": [
+         {
+          "package": "apps/api",
+          "members": 47,
+          "share_of_package": 0.959
+         }
+        ],
+        "dirs": [
+         {
+          "dir": "apps/api/src",
+          "members": 47
+         },
+         {
+          "dir": "apps/api/src/alerts",
+          "members": 2
+         },
+         {
+          "dir": "apps/api/src/artifacts",
+          "members": 2
+         },
+         {
+          "dir": "apps/api/src/audits",
+          "members": 2
+         },
+         {
+          "dir": "apps/api/src/billing",
+          "members": 2
+         },
+         {
+          "dir": "apps/api/src/comments",
+          "members": 2
+         },
+         {
+          "dir": "apps/api/src/deployments",
+          "members": 2
+         },
+         {
+          "dir": "apps/api/src/environments",
+          "members": 2
+         }
+        ],
+        "roles": [
+         {
+          "role": "R-2a3182",
+          "members": 47
+         },
+         {
+          "role": "R-66f189",
+          "members": 47
+         },
+         {
+          "role": "R-9af99b",
+          "members": 47
+         },
+         {
+          "role": "R-a12171",
+          "members": 47
+         },
+         {
+          "role": "R-bc8d5e",
+          "members": 47
+         },
+         {
+          "role": "R-d650fe",
+          "members": 47
+         }
+        ],
+        "entry_kinds": [
+         {
+          "kind": "http",
+          "members": 47
+         }
+        ],
+        "methods": [
+         {
+          "method": "GET",
+          "members": 24
+         },
+         {
+          "method": "POST",
+          "members": 23
+         }
+        ]
+       },
+       "sets_apart": [
+        {
+         "attribute": "dir:apps/api/src",
+         "in_variant": [
+          47,
+          47
+         ],
+         "in_dominant": [
+          0,
+          70
+         ],
+         "separation": 0.642,
+         "purity": 1
+        },
+        {
+         "attribute": "package:apps/api",
+         "in_variant": [
+          47,
+          47
+         ],
+         "in_dominant": [
+          0,
+          70
+         ],
+         "separation": 0.642,
+         "purity": 1
+        },
+        {
+         "attribute": "role:R-2a3182",
+         "in_variant": [
+          47,
+          47
+         ],
+         "in_dominant": [
+          0,
+          70
+         ],
+         "separation": 0.642,
+         "purity": 1
+        }
+       ],
+       "examples": [
+        {
+         "path": "apps/api/src/alerts/alerts.controller.ts",
+         "symbol": "GET /alerts/:id",
+         "line": 10
+        },
+        {
+         "path": "apps/api/src/artifacts/artifacts.controller.ts",
+         "symbol": "GET /artifacts/:id",
+         "line": 10
+        },
+        {
+         "path": "apps/api/src/audits/audits.controller.ts",
+         "symbol": "GET /audits/:id",
+         "line": 10
+        }
+       ],
+       "exceptions": [
+        {
+         "path": "apps/api/src/releases/releases.controller.ts",
+         "symbol": "GET /releases/:id",
+         "line": 8,
+         "variant": "P-68fb99"
+        },
+        {
+         "path": "apps/api/src/releases/releases.controller.ts",
+         "symbol": "POST /releases",
+         "line": 13,
+         "variant": "P-68fb99"
+        }
+       ],
+       "exceptions_more": 0,
+       "conventions": [],
+       "promotable": null
+      },
+      {
+       "id": "P-a64de4",
+       "key": "wrap:apps/web/lib/auth.ts#withWorkspace",
+       "label": "wrap withWorkspace",
+       "kind": "known",
+       "mechanisms": [
+        "wrap"
+       ],
+       "instruments": [
+        "apps/web/lib/auth.ts#withWorkspace"
+       ],
+       "source": "usage",
+       "members": 70,
+       "share": 0.424,
+       "where": {
+        "packages": [
+         {
+          "package": "apps/web",
+          "members": 70,
+          "share_of_package": 0.603
+         }
+        ],
+        "dirs": [
+         {
+          "dir": "apps/web/app/api/workspaces/[id]",
+          "members": 70
+         },
+         {
+          "dir": "apps/web/app/api/workspaces/[id]/alerts",
+          "members": 2
+         },
+         {
+          "dir": "apps/web/app/api/workspaces/[id]/audit",
+          "members": 2
+         },
+         {
+          "dir": "apps/web/app/api/workspaces/[id]/billing",
+          "members": 2
+         },
+         {
+          "dir": "apps/web/app/api/workspaces/[id]/branding",
+          "members": 2
+         },
+         {
+          "dir": "apps/web/app/api/workspaces/[id]/budgets",
+          "members": 2
+         },
+         {
+          "dir": "apps/web/app/api/workspaces/[id]/campaigns",
+          "members": 2
+         },
+         {
+          "dir": "apps/web/app/api/workspaces/[id]/channels",
+          "members": 2
+         }
+        ],
+        "roles": [
+         {
+          "role": "R-3cec2b",
+          "members": 70
+         },
+         {
+          "role": "R-5450e7",
+          "members": 70
+         },
+         {
+          "role": "R-5b33fb",
+          "members": 70
+         },
+         {
+          "role": "R-7fa8a5",
+          "members": 70
+         },
+         {
+          "role": "R-bc8d5e",
+          "members": 70
+         },
+         {
+          "role": "R-f310a3",
+          "members": 70
+         },
+         {
+          "role": "R-b6c51f",
+          "members": 68
+         }
+        ],
+        "entry_kinds": [
+         {
+          "kind": "http",
+          "members": 70
+         }
+        ],
+        "methods": [
+         {
+          "method": "GET",
+          "members": 36
+         },
+         {
+          "method": "POST",
+          "members": 34
+         }
+        ]
+       },
+       "sets_apart": [
+        {
+         "attribute": "wrap:authz:role_guard:apps/web/lib/auth.ts#withWorkspace",
+         "in_variant": [
+          70,
+          70
+         ],
+         "in_dominant": [
+          0,
+          95
+         ],
+         "separation": 0.756,
+         "purity": 1
+        },
+        {
+         "attribute": "wrap:authz:tenancy_guard:apps/web/lib/auth.ts#withWorkspace",
+         "in_variant": [
+          70,
+          70
+         ],
+         "in_dominant": [
+          0,
+          95
+         ],
+         "separation": 0.756,
+         "purity": 1
+        },
+        {
+         "attribute": "role:R-5450e7",
+         "in_variant": [
+          70,
+          70
+         ],
+         "in_dominant": [
+          4,
+          95
+         ],
+         "separation": 0.689,
+         "purity": 0.946
+        }
+       ],
+       "examples": [
+        {
+         "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+         "symbol": "GET",
+         "line": 5
+        },
+        {
+         "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+         "symbol": "GET",
+         "line": 5
+        },
+        {
+         "path": "apps/web/app/api/workspaces/[id]/billing/route.ts",
+         "symbol": "GET",
+         "line": 5
+        }
+       ],
+       "exceptions": [
+        {
+         "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+         "symbol": "GET",
+         "line": 4,
+         "variant": "P-68fb99"
+        },
+        {
+         "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+         "symbol": "GET",
+         "line": 4,
+         "variant": "P-68fb99"
+        },
+        {
+         "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+         "symbol": "GET",
+         "line": 5,
+         "variant": "P-68fb99"
+        },
+        {
+         "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+         "symbol": "GET",
+         "line": 4,
+         "variant": "P-68fb99"
+        }
+       ],
+       "exceptions_more": 0,
+       "conventions": [],
+       "promotable": null
+      }
+     ]
+    },
+    {
+     "id": "P-1587e5",
+     "key": "wrap:apps/web/lib/auth.ts#withAdmin",
+     "label": "wrap withAdmin",
+     "kind": "known",
+     "mechanisms": [
+      "wrap"
+     ],
+     "instruments": [
+      "apps/web/lib/auth.ts#withAdmin"
+     ],
+     "source": "usage",
+     "members": 19,
+     "share": 0.115,
+     "where": {
+      "packages": [
+       {
+        "package": "apps/web",
+        "members": 19,
+        "share_of_package": 0.164
+       }
+      ],
+      "dirs": [
+       {
+        "dir": "apps/web/app/api/admin",
+        "members": 19
+       },
+       {
+        "dir": "apps/web/app/api/admin/abuse",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/admin/audit",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/admin/cache",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/admin/domains",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/admin/emails",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/admin/exports",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/admin/flags",
+        "members": 1
+       }
+      ],
+      "roles": [
+       {
+        "role": "R-3cec2b",
+        "members": 19
+       },
+       {
+        "role": "R-50ac6c",
+        "members": 19
+       },
+       {
+        "role": "R-5b33fb",
+        "members": 19
+       },
+       {
+        "role": "R-7fa8a5",
+        "members": 19
+       },
+       {
+        "role": "R-b6c51f",
+        "members": 19
+       },
+       {
+        "role": "R-bc8d5e",
+        "members": 19
+       },
+       {
+        "role": "R-dafdc1",
+        "members": 19
+       }
+      ],
+      "entry_kinds": [
+       {
+        "kind": "http",
+        "members": 19
+       }
+      ],
+      "methods": [
+       {
+        "method": "GET",
+        "members": 19
+       }
+      ]
+     },
+     "sets_apart": [
+      {
+       "attribute": "dir:apps/web/app/api/admin",
+       "in_variant": [
+        19,
+        19
+       ],
+       "in_dominant": [
+        0,
+        70
+       ],
+       "separation": 0.516,
+       "purity": 1
+      },
+      {
+       "attribute": "role:R-50ac6c",
+       "in_variant": [
+        19,
+        19
+       ],
+       "in_dominant": [
+        0,
+        70
+       ],
+       "separation": 0.516,
+       "purity": 1
+      },
+      {
+       "attribute": "role:R-dafdc1",
+       "in_variant": [
+        19,
+        19
+       ],
+       "in_dominant": [
+        0,
+        70
+       ],
+       "separation": 0.516,
+       "purity": 1
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/app/api/admin/abuse/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/audit/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/cache/route.ts",
+       "symbol": "GET",
+       "line": 4
+      }
+     ],
+     "exceptions": [
+      {
+       "path": "apps/web/app/api/admin/health/route.ts",
+       "symbol": "GET",
+       "line": 3,
+       "variant": "P-68fb99"
+      }
+     ],
+     "exceptions_more": 0,
+     "conventions": [
+      {
+       "id": "D-288d8d",
+       "status": "accepted",
+       "mode": "advise"
+      },
+      {
+       "id": "D-b0d245",
+       "status": "accepted",
+       "mode": "block"
+      }
+     ],
+     "promotable": null
+    },
+    {
+     "id": "P-f245bd",
+     "key": "wrap:apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action",
+     "label": "wrap authActionClient.inputSchema().action",
+     "kind": "known",
+     "mechanisms": [
+      "wrap"
+     ],
+     "instruments": [
+      "apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action"
+     ],
+     "source": "usage",
+     "members": 18,
+     "share": 0.109,
+     "where": {
+      "packages": [
+       {
+        "package": "apps/web",
+        "members": 18,
+        "share_of_package": 0.155
+       }
+      ],
+      "dirs": [
+       {
+        "dir": "apps/web/lib/actions",
+        "members": 18
+       }
+      ],
+      "roles": [
+       {
+        "role": "R-2a0640",
+        "members": 18
+       },
+       {
+        "role": "R-3cec2b",
+        "members": 18
+       },
+       {
+        "role": "R-7519f9",
+        "members": 18
+       },
+       {
+        "role": "R-9ebb35",
+        "members": 18
+       },
+       {
+        "role": "R-c3b351",
+        "members": 18
+       },
+       {
+        "role": "R-f99564",
+        "members": 18
+       }
+      ],
+      "entry_kinds": [
+       {
+        "kind": "server_action",
+        "members": 18
+       }
+      ],
+      "methods": []
+     },
+     "sets_apart": [
+      {
+       "attribute": "dir:apps/web/lib",
+       "in_variant": [
+        18,
+        18
+       ],
+       "in_dominant": [
+        0,
+        70
+       ],
+       "separation": 0.51,
+       "purity": 1
+      },
+      {
+       "attribute": "entry:server_action",
+       "in_variant": [
+        18,
+        18
+       ],
+       "in_dominant": [
+        0,
+        70
+       ],
+       "separation": 0.51,
+       "purity": 1
+      },
+      {
+       "attribute": "imports:apps/web/lib/zod.ts",
+       "in_variant": [
+        18,
+        18
+       ],
+       "in_dominant": [
+        0,
+        70
+       ],
+       "separation": 0.51,
+       "purity": 1
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/lib/actions/archive-link.ts",
+       "symbol": "archiveLinkAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/cancel-plan.ts",
+       "symbol": "cancelPlanAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/create-campaign.ts",
+       "symbol": "createCampaignAction",
+       "line": 7
+      }
+     ],
+     "exceptions": [
+      {
+       "path": "apps/web/lib/actions/ban-customer.ts",
+       "symbol": "banCustomer",
+       "line": 5,
+       "variant": "P-68fb99"
+      }
+     ],
+     "exceptions_more": 0,
+     "conventions": [
+      {
+       "id": "D-50ba36",
+       "status": "proposed",
+       "mode": "advise"
+      }
+     ],
+     "promotable": null
+    },
+    {
+     "id": "P-68fb99",
+     "key": "none:no guard, nothing opens it",
+     "label": "no guard, nothing opens it",
+     "kind": "none",
+     "mechanisms": [],
+     "instruments": [],
+     "source": "usage",
+     "members": 11,
+     "share": 0.067,
+     "where": {
+      "packages": [
+       {
+        "package": "apps/web",
+        "members": 9,
+        "share_of_package": 0.078
+       },
+       {
+        "package": "apps/api",
+        "members": 2,
+        "share_of_package": 0.041
+       }
+      ],
+      "dirs": [
+       {
+        "dir": "apps/web/app/api",
+        "members": 8
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]",
+        "members": 4
+       },
+       {
+        "dir": "apps/api/src/releases",
+        "members": 2
+       },
+       {
+        "dir": "apps/web/app/api/public",
+        "members": 2
+       },
+       {
+        "dir": "apps/web/app/api/admin/health",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/oauth/callback",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/public/preview",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/public/status",
+        "members": 1
+       }
+      ],
+      "roles": [
+       {
+        "role": "R-bc8d5e",
+        "members": 10
+       },
+       {
+        "role": "R-3cec2b",
+        "members": 9
+       },
+       {
+        "role": "R-5b33fb",
+        "members": 8
+       },
+       {
+        "role": "R-7fa8a5",
+        "members": 8
+       },
+       {
+        "role": "R-b6c51f",
+        "members": 8
+       },
+       {
+        "role": "R-5450e7",
+        "members": 4
+       },
+       {
+        "role": "R-f310a3",
+        "members": 4
+       },
+       {
+        "role": "R-2a3182",
+        "members": 2
+       }
+      ],
+      "entry_kinds": [
+       {
+        "kind": "http",
+        "members": 10
+       },
+       {
+        "kind": "server_action",
+        "members": 1
+       }
+      ],
+      "methods": [
+       {
+        "method": "GET",
+        "members": 9
+       },
+       {
+        "method": "POST",
+        "members": 1
+       }
+      ]
+     },
+     "sets_apart": [],
+     "examples": [
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+       "symbol": "GET",
+       "line": 5
+      }
+     ],
+     "exceptions": [],
+     "exceptions_more": 0,
+     "conventions": [],
+     "promotable": null
+    }
+   ],
+   "unknown": {
+    "members": 0,
+    "reasons": [],
+    "instruments": [],
+    "examples": []
+   },
+   "by_package": [
+    {
+     "package": "apps/api",
+     "total": 49,
+     "coverage": 1,
+     "variants": [
+      {
+       "id": "P-1e83ce",
+       "members": 47,
+       "share": 0.959
+      },
+      {
+       "id": "P-68fb99",
+       "members": 2,
+       "share": 0.041
+      }
+     ]
+    },
+    {
+     "package": "apps/web",
+     "total": 116,
+     "coverage": 1,
+     "variants": [
+      {
+       "id": "P-1e83ce",
+       "members": 70,
+       "share": 0.603
+      },
+      {
+       "id": "P-1587e5",
+       "members": 19,
+       "share": 0.164
+      },
+      {
+       "id": "P-f245bd",
+       "members": 18,
+       "share": 0.155
+      },
+      {
+       "id": "P-68fb99",
+       "members": 9,
+       "share": 0.078
+      }
+     ]
+    }
+   ],
+   "divergence": [],
+   "groups": [
+    {
+     "id": "G-a703ca",
+     "kind": "known",
+     "class": "user",
+     "instrument": "apps/web/lib/auth.ts#withWorkspace",
+     "mechanisms": [
+      "wrap"
+     ],
+     "label": "wrap withWorkspace",
+     "members": 70,
+     "share": 0.424,
+     "variants": 1,
+     "top": [
+      {
+       "id": "P-a64de4",
+       "key": "wrap:apps/web/lib/auth.ts#withWorkspace",
+       "label": "wrap withWorkspace",
+       "members": 70
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/billing/route.ts",
+       "symbol": "GET",
+       "line": 5
+      }
+     ]
+    },
+    {
+     "id": "G-4fd56b",
+     "kind": "known",
+     "class": "user",
+     "instrument": "apps/api/src/common/auth.guard.ts#AuthGuard",
+     "mechanisms": [
+      "decorator"
+     ],
+     "label": "decorator AuthGuard",
+     "members": 47,
+     "share": 0.285,
+     "variants": 1,
+     "top": [
+      {
+       "id": "P-5c347c",
+       "key": "decorator:apps/api/src/common/auth.guard.ts#AuthGuard",
+       "label": "decorator AuthGuard",
+       "members": 47
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/api/src/alerts/alerts.controller.ts",
+       "symbol": "GET /alerts/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/artifacts/artifacts.controller.ts",
+       "symbol": "GET /artifacts/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/audits/audits.controller.ts",
+       "symbol": "GET /audits/:id",
+       "line": 10
+      }
+     ]
+    },
+    {
+     "id": "G-5cbc1f",
+     "kind": "known",
+     "class": "user",
+     "instrument": "apps/web/lib/auth.ts#withAdmin",
+     "mechanisms": [
+      "wrap"
+     ],
+     "label": "wrap withAdmin",
+     "members": 19,
+     "share": 0.115,
+     "variants": 1,
+     "top": [
+      {
+       "id": "P-1587e5",
+       "key": "wrap:apps/web/lib/auth.ts#withAdmin",
+       "label": "wrap withAdmin",
+       "members": 19
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/app/api/admin/abuse/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/audit/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/cache/route.ts",
+       "symbol": "GET",
+       "line": 4
+      }
+     ]
+    },
+    {
+     "id": "G-982fa1",
+     "kind": "known",
+     "class": "user",
+     "instrument": "apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action",
+     "mechanisms": [
+      "wrap"
+     ],
+     "label": "wrap authActionClient.inputSchema().action",
+     "members": 18,
+     "share": 0.109,
+     "variants": 1,
+     "top": [
+      {
+       "id": "P-f245bd",
+       "key": "wrap:apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action",
+       "label": "wrap authActionClient.inputSchema().action",
+       "members": 18
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/lib/actions/archive-link.ts",
+       "symbol": "archiveLinkAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/cancel-plan.ts",
+       "symbol": "cancelPlanAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/create-campaign.ts",
+       "symbol": "createCampaignAction",
+       "line": 7
+      }
+     ]
+    },
+    {
+     "id": "G-d9fb22",
+     "kind": "none",
+     "class": "",
+     "instrument": "",
+     "mechanisms": [],
+     "label": "no guard, nothing opens it",
+     "members": 11,
+     "share": 0.067,
+     "variants": 1,
+     "top": [
+      {
+       "id": "P-68fb99",
+       "key": "none:no guard, nothing opens it",
+       "label": "no guard, nothing opens it",
+       "members": 11
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+       "symbol": "GET",
+       "line": 5
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "authz",
+   "title": "Authorization and tenant scoping",
+   "unit": "entry_point",
+   "population": {
+    "total": 154,
+    "known": 107,
+    "none": 0,
+    "unknown": 47,
+    "coverage": 0.695,
+    "left_out": {
+     "tests": 0,
+     "non_production": 0
+    }
+   },
+   "variants": [
+    {
+     "id": "P-4def23",
+     "key": "role_guard:apps/web/lib/auth.ts#withWorkspace+tenancy_filter:where.workspaceId+tenancy_guard:apps/web/lib/auth.ts#withWorkspace",
+     "label": "role guard withWorkspace + tenancy filter where.workspaceId + tenancy guard withWorkspace",
+     "kind": "known",
+     "mechanisms": [
+      "role_guard",
+      "tenancy_filter",
+      "tenancy_guard"
+     ],
+     "instruments": [
+      "apps/web/lib/auth.ts#withWorkspace",
+      "where.workspaceId"
+     ],
+     "source": "usage",
+     "members": 36,
+     "share": 0.234,
+     "where": {
+      "packages": [
+       {
+        "package": "apps/web",
+        "members": 36,
+        "share_of_package": 0.336
+       }
+      ],
+      "dirs": [
+       {
+        "dir": "apps/web/app/api/workspaces/[id]",
+        "members": 36
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/alerts",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/audit",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/billing",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/branding",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/budgets",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/campaigns",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/channels",
+        "members": 1
+       }
+      ],
+      "roles": [
+       {
+        "role": "R-3cec2b",
+        "members": 36
+       },
+       {
+        "role": "R-5450e7",
+        "members": 36
+       },
+       {
+        "role": "R-5b33fb",
+        "members": 36
+       },
+       {
+        "role": "R-7fa8a5",
+        "members": 36
+       },
+       {
+        "role": "R-bc8d5e",
+        "members": 36
+       },
+       {
+        "role": "R-f310a3",
+        "members": 36
+       },
+       {
+        "role": "R-b6c51f",
+        "members": 35
+       }
+      ],
+      "entry_kinds": [
+       {
+        "kind": "http",
+        "members": 36
+       }
+      ],
+      "methods": [
+       {
+        "method": "GET",
+        "members": 36
+       }
+      ]
+     },
+     "sets_apart": [
+      {
+       "attribute": "dir:apps/web/app/api/workspaces",
+       "in_variant": [
+        36,
+        36
+       ],
+       "in_dominant": [
+        34,
+        118
+       ],
+       "separation": 0.323,
+       "purity": 0.514
+      },
+      {
+       "attribute": "role:R-5450e7",
+       "in_variant": [
+        36,
+        36
+       ],
+       "in_dominant": [
+        34,
+        118
+       ],
+       "separation": 0.323,
+       "purity": 0.514
+      },
+      {
+       "attribute": "role:R-f310a3",
+       "in_variant": [
+        36,
+        36
+       ],
+       "in_dominant": [
+        34,
+        118
+       ],
+       "separation": 0.323,
+       "purity": 0.514
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/billing/route.ts",
+       "symbol": "GET",
+       "line": 5
+      }
+     ],
+     "exceptions": [],
+     "exceptions_more": 0,
+     "conventions": [
+      {
+       "id": "D-b0d245",
+       "status": "accepted",
+       "mode": "block"
+      },
+      {
+       "id": "D-ed1ec0",
+       "status": "accepted",
+       "mode": "block"
+      }
+     ],
+     "promotable": null
+    },
+    {
+     "id": "P-c6688d",
+     "key": "role_guard:apps/web/lib/auth.ts#withWorkspace+tenancy_guard:apps/web/lib/auth.ts#withWorkspace",
+     "label": "role guard withWorkspace + tenancy guard withWorkspace",
+     "kind": "known",
+     "mechanisms": [
+      "role_guard",
+      "tenancy_guard"
+     ],
+     "instruments": [
+      "apps/web/lib/auth.ts#withWorkspace"
+     ],
+     "source": "usage",
+     "members": 34,
+     "share": 0.221,
+     "where": {
+      "packages": [
+       {
+        "package": "apps/web",
+        "members": 34,
+        "share_of_package": 0.318
+       }
+      ],
+      "dirs": [
+       {
+        "dir": "apps/web/app/api/workspaces/[id]",
+        "members": 34
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/alerts",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/audit",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/billing",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/branding",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/budgets",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/campaigns",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/channels",
+        "members": 1
+       }
+      ],
+      "roles": [
+       {
+        "role": "R-3cec2b",
+        "members": 34
+       },
+       {
+        "role": "R-5450e7",
+        "members": 34
+       },
+       {
+        "role": "R-5b33fb",
+        "members": 34
+       },
+       {
+        "role": "R-7fa8a5",
+        "members": 34
+       },
+       {
+        "role": "R-bc8d5e",
+        "members": 34
+       },
+       {
+        "role": "R-f310a3",
+        "members": 34
+       },
+       {
+        "role": "R-b6c51f",
+        "members": 33
+       }
+      ],
+      "entry_kinds": [
+       {
+        "kind": "http",
+        "members": 34
+       }
+      ],
+      "methods": [
+       {
+        "method": "POST",
+        "members": 34
+       }
+      ]
+     },
+     "sets_apart": [
+      {
+       "attribute": "method:POST",
+       "in_variant": [
+        34,
+        34
+       ],
+       "in_dominant": [
+        0,
+        36
+       ],
+       "separation": 0.518,
+       "purity": 1
+      },
+      {
+       "attribute": "wrap:validation:none",
+       "in_variant": [
+        34,
+        34
+       ],
+       "in_dominant": [
+        0,
+        36
+       ],
+       "separation": 0.518,
+       "purity": 1
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/billing/route.ts",
+       "symbol": "POST",
+       "line": 10
+      }
+     ],
+     "exceptions": [],
+     "exceptions_more": 0,
+     "conventions": [
+      {
+       "id": "D-b0d245",
+       "status": "accepted",
+       "mode": "block"
+      },
+      {
+       "id": "D-ed1ec0",
+       "status": "accepted",
+       "mode": "block"
+      }
+     ],
+     "promotable": null
+    },
+    {
+     "id": "P-6440f0",
+     "key": "role_guard:apps/web/lib/auth.ts#withAdmin",
+     "label": "role guard withAdmin",
+     "kind": "known",
+     "mechanisms": [
+      "role_guard"
+     ],
+     "instruments": [
+      "apps/web/lib/auth.ts#withAdmin"
+     ],
+     "source": "usage",
+     "members": 19,
+     "share": 0.123,
+     "where": {
+      "packages": [
+       {
+        "package": "apps/web",
+        "members": 19,
+        "share_of_package": 0.178
+       }
+      ],
+      "dirs": [
+       {
+        "dir": "apps/web/app/api/admin",
+        "members": 19
+       },
+       {
+        "dir": "apps/web/app/api/admin/abuse",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/admin/audit",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/admin/cache",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/admin/domains",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/admin/emails",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/admin/exports",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/app/api/admin/flags",
+        "members": 1
+       }
+      ],
+      "roles": [
+       {
+        "role": "R-3cec2b",
+        "members": 19
+       },
+       {
+        "role": "R-50ac6c",
+        "members": 19
+       },
+       {
+        "role": "R-5b33fb",
+        "members": 19
+       },
+       {
+        "role": "R-7fa8a5",
+        "members": 19
+       },
+       {
+        "role": "R-b6c51f",
+        "members": 19
+       },
+       {
+        "role": "R-bc8d5e",
+        "members": 19
+       },
+       {
+        "role": "R-dafdc1",
+        "members": 19
+       }
+      ],
+      "entry_kinds": [
+       {
+        "kind": "http",
+        "members": 19
+       }
+      ],
+      "methods": [
+       {
+        "method": "GET",
+        "members": 19
+       }
+      ]
+     },
+     "sets_apart": [
+      {
+       "attribute": "dir:apps/web/app/api/admin",
+       "in_variant": [
+        19,
+        19
+       ],
+       "in_dominant": [
+        0,
+        36
+       ],
+       "separation": 0.422,
+       "purity": 1
+      },
+      {
+       "attribute": "role:R-50ac6c",
+       "in_variant": [
+        19,
+        19
+       ],
+       "in_dominant": [
+        0,
+        36
+       ],
+       "separation": 0.422,
+       "purity": 1
+      },
+      {
+       "attribute": "role:R-dafdc1",
+       "in_variant": [
+        19,
+        19
+       ],
+       "in_dominant": [
+        0,
+        36
+       ],
+       "separation": 0.422,
+       "purity": 1
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/app/api/admin/abuse/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/audit/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/cache/route.ts",
+       "symbol": "GET",
+       "line": 4
+      }
+     ],
+     "exceptions": [],
+     "exceptions_more": 0,
+     "conventions": [
+      {
+       "id": "D-288d8d",
+       "status": "accepted",
+       "mode": "advise"
+      },
+      {
+       "id": "D-b0d245",
+       "status": "accepted",
+       "mode": "block"
+      }
+     ],
+     "promotable": null
+    },
+    {
+     "id": "P-04ca0f",
+     "key": "tenancy_filter:where.workspaceId",
+     "label": "tenancy filter where.workspaceId",
+     "kind": "known",
+     "mechanisms": [
+      "tenancy_filter"
+     ],
+     "instruments": [
+      "where.workspaceId"
+     ],
+     "source": "usage",
+     "members": 18,
+     "share": 0.117,
+     "where": {
+      "packages": [
+       {
+        "package": "apps/web",
+        "members": 18,
+        "share_of_package": 0.168
+       }
+      ],
+      "dirs": [
+       {
+        "dir": "apps/web/lib/actions",
+        "members": 18
+       }
+      ],
+      "roles": [
+       {
+        "role": "R-2a0640",
+        "members": 18
+       },
+       {
+        "role": "R-3cec2b",
+        "members": 18
+       },
+       {
+        "role": "R-7519f9",
+        "members": 18
+       },
+       {
+        "role": "R-9ebb35",
+        "members": 18
+       },
+       {
+        "role": "R-c3b351",
+        "members": 18
+       },
+       {
+        "role": "R-f99564",
+        "members": 18
+       }
+      ],
+      "entry_kinds": [
+       {
+        "kind": "server_action",
+        "members": 18
+       }
+      ],
+      "methods": []
+     },
+     "sets_apart": [
+      {
+       "attribute": "dir:apps/web/lib",
+       "in_variant": [
+        18,
+        18
+       ],
+       "in_dominant": [
+        0,
+        36
+       ],
+       "separation": 0.415,
+       "purity": 1
+      },
+      {
+       "attribute": "entry:server_action",
+       "in_variant": [
+        18,
+        18
+       ],
+       "in_dominant": [
+        0,
+        36
+       ],
+       "separation": 0.415,
+       "purity": 1
+      },
+      {
+       "attribute": "imports:apps/web/lib/actions/safe-action.ts",
+       "in_variant": [
+        18,
+        18
+       ],
+       "in_dominant": [
+        0,
+        36
+       ],
+       "separation": 0.415,
+       "purity": 1
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/lib/actions/archive-link.ts",
+       "symbol": "archiveLinkAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/cancel-plan.ts",
+       "symbol": "cancelPlanAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/create-campaign.ts",
+       "symbol": "createCampaignAction",
+       "line": 7
+      }
+     ],
+     "exceptions": [],
+     "exceptions_more": 0,
+     "conventions": [],
+     "promotable": null
+    }
+   ],
+   "unknown": {
+    "members": 47,
+    "reasons": [
+     {
+      "reason": "unresolved",
+      "members": 47
+     }
+    ],
+    "instruments": [
+     {
+      "instrument": "apps/api/src/alerts/alerts.service.ts#AlertsService.create",
+      "members": 1
+     },
+     {
+      "instrument": "apps/api/src/alerts/alerts.service.ts#AlertsService.get",
+      "members": 1
+     },
+     {
+      "instrument": "apps/api/src/artifacts/artifacts.service.ts#ArtifactsService.create",
+      "members": 1
+     },
+     {
+      "instrument": "apps/api/src/artifacts/artifacts.service.ts#ArtifactsService.get",
+      "members": 1
+     },
+     {
+      "instrument": "apps/api/src/audits/audits.service.ts#AuditsService.create",
+      "members": 1
+     },
+     {
+      "instrument": "apps/api/src/audits/audits.service.ts#AuditsService.get",
+      "members": 1
+     },
+     {
+      "instrument": "apps/api/src/billing/billing.service.ts#BillingService.create",
+      "members": 1
+     },
+     {
+      "instrument": "apps/api/src/billing/billing.service.ts#BillingService.get",
+      "members": 1
+     }
+    ],
+    "examples": [
+     {
+      "path": "apps/api/src/alerts/alerts.controller.ts",
+      "symbol": "GET /alerts/:id",
+      "line": 10
+     },
+     {
+      "path": "apps/api/src/alerts/alerts.controller.ts",
+      "symbol": "POST /alerts",
+      "line": 15
+     },
+     {
+      "path": "apps/api/src/artifacts/artifacts.controller.ts",
+      "symbol": "GET /artifacts/:id",
+      "line": 10
+     }
+    ]
+   },
+   "by_package": [
+    {
+     "package": "apps/api",
+     "total": 47,
+     "coverage": 0,
+     "variants": []
+    },
+    {
+     "package": "apps/web",
+     "total": 107,
+     "coverage": 1,
+     "variants": [
+      {
+       "id": "P-4def23",
+       "members": 36,
+       "share": 0.336
+      },
+      {
+       "id": "P-c6688d",
+       "members": 34,
+       "share": 0.318
+      },
+      {
+       "id": "P-6440f0",
+       "members": 19,
+       "share": 0.178
+      },
+      {
+       "id": "P-04ca0f",
+       "members": 18,
+       "share": 0.168
+      }
+     ]
+    }
+   ],
+   "divergence": [],
+   "groups": [
+    {
+     "id": "G-d666d5",
+     "kind": "known",
+     "class": "",
+     "instrument": "apps/web/lib/auth.ts#withWorkspace",
+     "mechanisms": [
+      "role_guard",
+      "tenancy_guard"
+     ],
+     "label": "2 variants sharing withWorkspace",
+     "members": 70,
+     "share": 0.455,
+     "variants": 2,
+     "top": [
+      {
+       "id": "P-4def23",
+       "key": "role_guard:apps/web/lib/auth.ts#withWorkspace+tenancy_filter:where.workspaceId+tenancy_guard:apps/web/lib/auth.ts#withWorkspace",
+       "label": "role guard withWorkspace + tenancy filter where.workspaceId + tenancy guard withWorkspace",
+       "members": 36
+      },
+      {
+       "id": "P-c6688d",
+       "key": "role_guard:apps/web/lib/auth.ts#withWorkspace+tenancy_guard:apps/web/lib/auth.ts#withWorkspace",
+       "label": "role guard withWorkspace + tenancy guard withWorkspace",
+       "members": 34
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/billing/route.ts",
+       "symbol": "GET",
+       "line": 5
+      }
+     ]
+    },
+    {
+     "id": "G-4bec94",
+     "kind": "known",
+     "class": "",
+     "instrument": "apps/web/lib/auth.ts#withAdmin",
+     "mechanisms": [
+      "role_guard"
+     ],
+     "label": "role guard withAdmin",
+     "members": 19,
+     "share": 0.123,
+     "variants": 1,
+     "top": [
+      {
+       "id": "P-6440f0",
+       "key": "role_guard:apps/web/lib/auth.ts#withAdmin",
+       "label": "role guard withAdmin",
+       "members": 19
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/app/api/admin/abuse/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/audit/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/cache/route.ts",
+       "symbol": "GET",
+       "line": 4
+      }
+     ]
+    },
+    {
+     "id": "G-c367a8",
+     "kind": "known",
+     "class": "",
+     "instrument": "where.workspaceId",
+     "mechanisms": [
+      "tenancy_filter"
+     ],
+     "label": "tenancy filter where.workspaceId",
+     "members": 18,
+     "share": 0.117,
+     "variants": 1,
+     "top": [
+      {
+       "id": "P-04ca0f",
+       "key": "tenancy_filter:where.workspaceId",
+       "label": "tenancy filter where.workspaceId",
+       "members": 18
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/lib/actions/archive-link.ts",
+       "symbol": "archiveLinkAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/cancel-plan.ts",
+       "symbol": "cancelPlanAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/create-campaign.ts",
+       "symbol": "createCampaignAction",
+       "line": 7
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "errors",
+   "title": "Error handling",
+   "unit": "entry_point",
+   "population": {
+    "total": 165,
+    "known": 165,
+    "none": 0,
+    "unknown": 0,
+    "coverage": 1,
+    "left_out": {
+     "tests": 0,
+     "non_production": 19
+    }
+   },
+   "variants": [
+    {
+     "id": "P-6123b9",
+     "key": "bubble:framework_default",
+     "label": "bubble framework_default",
+     "kind": "known",
+     "mechanisms": [
+      "bubble"
+     ],
+     "instruments": [
+      "framework_default"
+     ],
+     "source": "vocab",
+     "members": 165,
+     "share": 1,
+     "where": {
+      "packages": [
+       {
+        "package": "apps/web",
+        "members": 116,
+        "share_of_package": 1
+       },
+       {
+        "package": "apps/api",
+        "members": 49,
+        "share_of_package": 1
+       }
+      ],
+      "dirs": [
+       {
+        "dir": "apps/web/app/api",
+        "members": 97
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]",
+        "members": 74
+       },
+       {
+        "dir": "apps/api/src",
+        "members": 49
+       },
+       {
+        "dir": "apps/web/app/api/admin",
+        "members": 20
+       },
+       {
+        "dir": "apps/web/lib/actions",
+        "members": 19
+       },
+       {
+        "dir": "apps/api/src/alerts",
+        "members": 2
+       },
+       {
+        "dir": "apps/api/src/artifacts",
+        "members": 2
+       },
+       {
+        "dir": "apps/api/src/audits",
+        "members": 2
+       }
+      ],
+      "roles": [
+       {
+        "role": "R-bc8d5e",
+        "members": 146
+       },
+       {
+        "role": "R-3cec2b",
+        "members": 116
+       },
+       {
+        "role": "R-5b33fb",
+        "members": 97
+       },
+       {
+        "role": "R-7fa8a5",
+        "members": 97
+       },
+       {
+        "role": "R-b6c51f",
+        "members": 95
+       },
+       {
+        "role": "R-5450e7",
+        "members": 74
+       },
+       {
+        "role": "R-f310a3",
+        "members": 74
+       },
+       {
+        "role": "R-2a3182",
+        "members": 49
+       }
+      ],
+      "entry_kinds": [
+       {
+        "kind": "http",
+        "members": 146
+       },
+       {
+        "kind": "server_action",
+        "members": 19
+       }
+      ],
+      "methods": [
+       {
+        "method": "GET",
+        "members": 88
+       },
+       {
+        "method": "POST",
+        "members": 58
+       }
+      ]
+     },
+     "sets_apart": [],
+     "examples": [
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "GET",
+       "line": 5
+      }
+     ],
+     "exceptions": [],
+     "exceptions_more": 0,
+     "conventions": [],
+     "promotable": null
+    }
+   ],
+   "unknown": {
+    "members": 0,
+    "reasons": [],
+    "instruments": [],
+    "examples": []
+   },
+   "by_package": [
+    {
+     "package": "apps/api",
+     "total": 49,
+     "coverage": 1,
+     "variants": [
+      {
+       "id": "P-6123b9",
+       "members": 49,
+       "share": 1
+      }
+     ]
+    },
+    {
+     "package": "apps/web",
+     "total": 116,
+     "coverage": 1,
+     "variants": [
+      {
+       "id": "P-6123b9",
+       "members": 116,
+       "share": 1
+      }
+     ]
+    }
+   ],
+   "divergence": [],
+   "groups": [
+    {
+     "id": "G-7c954d",
+     "kind": "known",
+     "class": "",
+     "instrument": "framework_default",
+     "mechanisms": [
+      "bubble"
+     ],
+     "label": "bubble framework_default",
+     "members": 165,
+     "share": 1,
+     "variants": 1,
+     "top": [
+      {
+       "id": "P-6123b9",
+       "key": "bubble:framework_default",
+       "label": "bubble framework_default",
+       "members": 165
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "GET",
+       "line": 5
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "logging",
+   "title": "Logging and observability",
+   "unit": "symbol",
+   "population": {
+    "total": 1,
+    "known": 1,
+    "none": 0,
+    "unknown": 0,
+    "coverage": 1,
+    "left_out": {
+     "tests": 0,
+     "non_production": 0
+    }
+   },
+   "variants": [
+    {
+     "id": "P-e8a7e2",
+     "key": "tail",
+     "label": "other ways, one unit each (1 unit)",
+     "kind": "known",
+     "mechanisms": [
+      "message"
+     ],
+     "instruments": [],
+     "source": "vocab",
+     "members": 1,
+     "share": 1,
+     "where": {
+      "packages": [
+       {
+        "package": "apps/api",
+        "members": 1,
+        "share_of_package": 1
+       }
+      ],
+      "dirs": [
+       {
+        "dir": "apps/api/src/common",
+        "members": 1
+       }
+      ],
+      "roles": [
+       {
+        "role": "R-2f9541",
+        "members": 1
+       },
+       {
+        "role": "R-665981",
+        "members": 1
+       },
+       {
+        "role": "R-6a82e2",
+        "members": 1
+       },
+       {
+        "role": "R-9af99b",
+        "members": 1
+       },
+       {
+        "role": "R-eff4df",
+        "members": 1
+       }
+      ],
+      "entry_kinds": [],
+      "methods": []
+     },
+     "sets_apart": [],
+     "examples": [
+      {
+       "path": "apps/api/src/common/base.service.ts",
+       "symbol": "BaseService",
+       "line": 3
+      }
+     ],
+     "exceptions": [],
+     "exceptions_more": 0,
+     "conventions": [],
+     "promotable": null
+    }
+   ],
+   "unknown": {
+    "members": 0,
+    "reasons": [],
+    "instruments": [],
+    "examples": []
+   },
+   "by_package": [
+    {
+     "package": "apps/api",
+     "total": 1,
+     "coverage": 1,
+     "variants": [
+      {
+       "id": "P-e8a7e2",
+       "members": 1,
+       "share": 1
+      }
+     ]
+    }
+   ],
+   "divergence": [],
+   "groups": [
+    {
+     "id": "G-4bd851",
+     "kind": "known",
+     "class": "",
+     "instrument": "",
+     "mechanisms": [],
+     "label": "other ways, nothing shared (1 unit)",
+     "members": 1,
+     "share": 1,
+     "variants": 1,
+     "top": [
+      {
+       "id": "P-4c9b4b",
+       "key": "message:console",
+       "label": "message logs via console",
+       "members": 1
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/api/src/common/base.service.ts",
+       "symbol": "BaseService",
+       "line": 3
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "api",
+   "title": "API design and responses",
+   "unit": "entry_point",
+   "population": {
+    "total": 146,
+    "known": 145,
+    "none": 0,
+    "unknown": 1,
+    "coverage": 0.993,
+    "left_out": {
+     "tests": 0,
+     "non_production": 13
+    }
+   },
+   "variants": [
+    {
+     "id": "P-ec0957",
+     "key": "builder:pkg:next#NextResponse.json",
+     "label": "builder NextResponse.json",
+     "kind": "known",
+     "mechanisms": [
+      "builder"
+     ],
+     "instruments": [
+      "pkg:next#NextResponse.json"
+     ],
+     "source": "vocab",
+     "members": 96,
+     "share": 0.658,
+     "where": {
+      "packages": [
+       {
+        "package": "apps/web",
+        "members": 96,
+        "share_of_package": 0.99
+       }
+      ],
+      "dirs": [
+       {
+        "dir": "apps/web/app/api",
+        "members": 96
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]",
+        "members": 74
+       },
+       {
+        "dir": "apps/web/app/api/admin",
+        "members": 20
+       },
+       {
+        "dir": "apps/web/app/api/public",
+        "members": 2
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/alerts",
+        "members": 2
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/audit",
+        "members": 2
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/billing",
+        "members": 2
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/branding",
+        "members": 2
+       }
+      ],
+      "roles": [
+       {
+        "role": "R-3cec2b",
+        "members": 96
+       },
+       {
+        "role": "R-5b33fb",
+        "members": 96
+       },
+       {
+        "role": "R-7fa8a5",
+        "members": 96
+       },
+       {
+        "role": "R-bc8d5e",
+        "members": 96
+       },
+       {
+        "role": "R-b6c51f",
+        "members": 94
+       },
+       {
+        "role": "R-5450e7",
+        "members": 74
+       },
+       {
+        "role": "R-f310a3",
+        "members": 74
+       },
+       {
+        "role": "R-50ac6c",
+        "members": 20
+       }
+      ],
+      "entry_kinds": [
+       {
+        "kind": "http",
+        "members": 96
+       }
+      ],
+      "methods": [
+       {
+        "method": "GET",
+        "members": 62
+       },
+       {
+        "method": "POST",
+        "members": 34
+       }
+      ]
+     },
+     "sets_apart": [
+      {
+       "attribute": "dir:apps/web/app",
+       "in_variant": [
+        96,
+        96
+       ],
+       "in_dominant": [
+        1,
+        50
+       ],
+       "separation": 0.663,
+       "purity": 0.99
+      },
+      {
+       "attribute": "package:apps/web",
+       "in_variant": [
+        96,
+        96
+       ],
+       "in_dominant": [
+        1,
+        50
+       ],
+       "separation": 0.663,
+       "purity": 0.99
+      },
+      {
+       "attribute": "role:R-3cec2b",
+       "in_variant": [
+        96,
+        96
+       ],
+       "in_dominant": [
+        1,
+        50
+       ],
+       "separation": 0.663,
+       "purity": 0.99
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "GET",
+       "line": 5
+      }
+     ],
+     "exceptions": [
+      {
+       "path": "apps/web/app/api/oauth/callback/route.ts",
+       "symbol": "GET",
+       "line": 3,
+       "variant": "unknown"
+      }
+     ],
+     "exceptions_more": 0,
+     "conventions": [],
+     "promotable": null
+    },
+    {
+     "id": "P-7ed24a",
+     "key": "builder:return_value",
+     "label": "builder return_value",
+     "kind": "known",
+     "mechanisms": [
+      "builder"
+     ],
+     "instruments": [
+      "return_value"
+     ],
+     "source": "vocab",
+     "members": 49,
+     "share": 0.336,
+     "where": {
+      "packages": [
+       {
+        "package": "apps/api",
+        "members": 49,
+        "share_of_package": 1
+       }
+      ],
+      "dirs": [
+       {
+        "dir": "apps/api/src",
+        "members": 49
+       },
+       {
+        "dir": "apps/api/src/alerts",
+        "members": 2
+       },
+       {
+        "dir": "apps/api/src/artifacts",
+        "members": 2
+       },
+       {
+        "dir": "apps/api/src/audits",
+        "members": 2
+       },
+       {
+        "dir": "apps/api/src/billing",
+        "members": 2
+       },
+       {
+        "dir": "apps/api/src/comments",
+        "members": 2
+       },
+       {
+        "dir": "apps/api/src/deployments",
+        "members": 2
+       },
+       {
+        "dir": "apps/api/src/environments",
+        "members": 2
+       }
+      ],
+      "roles": [
+       {
+        "role": "R-2a3182",
+        "members": 49
+       },
+       {
+        "role": "R-66f189",
+        "members": 49
+       },
+       {
+        "role": "R-9af99b",
+        "members": 49
+       },
+       {
+        "role": "R-a12171",
+        "members": 49
+       },
+       {
+        "role": "R-bc8d5e",
+        "members": 49
+       },
+       {
+        "role": "R-d650fe",
+        "members": 49
+       }
+      ],
+      "entry_kinds": [
+       {
+        "kind": "http",
+        "members": 49
+       }
+      ],
+      "methods": [
+       {
+        "method": "GET",
+        "members": 25
+       },
+       {
+        "method": "POST",
+        "members": 24
+       }
+      ]
+     },
+     "sets_apart": [
+      {
+       "attribute": "dir:apps/api/src",
+       "in_variant": [
+        49,
+        49
+       ],
+       "in_dominant": [
+        0,
+        96
+       ],
+       "separation": 0.683,
+       "purity": 1
+      },
+      {
+       "attribute": "package:apps/api",
+       "in_variant": [
+        49,
+        49
+       ],
+       "in_dominant": [
+        0,
+        96
+       ],
+       "separation": 0.683,
+       "purity": 1
+      },
+      {
+       "attribute": "role:R-2a3182",
+       "in_variant": [
+        49,
+        49
+       ],
+       "in_dominant": [
+        0,
+        96
+       ],
+       "separation": 0.683,
+       "purity": 1
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/api/src/alerts/alerts.controller.ts",
+       "symbol": "GET /alerts/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/artifacts/artifacts.controller.ts",
+       "symbol": "GET /artifacts/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/audits/audits.controller.ts",
+       "symbol": "GET /audits/:id",
+       "line": 10
+      }
+     ],
+     "exceptions": [],
+     "exceptions_more": 0,
+     "conventions": [],
+     "promotable": null
+    }
+   ],
+   "unknown": {
+    "members": 1,
+    "reasons": [
+     {
+      "reason": "unclassified",
+      "members": 1
+     }
+    ],
+    "instruments": [],
+    "examples": [
+     {
+      "path": "apps/web/app/api/oauth/callback/route.ts",
+      "symbol": "GET",
+      "line": 3
+     }
+    ]
+   },
+   "by_package": [
+    {
+     "package": "apps/api",
+     "total": 49,
+     "coverage": 1,
+     "variants": [
+      {
+       "id": "P-7ed24a",
+       "members": 49,
+       "share": 1
+      }
+     ]
+    },
+    {
+     "package": "apps/web",
+     "total": 97,
+     "coverage": 0.99,
+     "variants": [
+      {
+       "id": "P-ec0957",
+       "members": 96,
+       "share": 0.99
+      }
+     ]
+    }
+   ],
+   "divergence": [
+    {
+     "package": "apps/api",
+     "dominant": "P-7ed24a",
+     "repo_dominant": "P-ec0957",
+     "members": 49
+    }
+   ],
+   "groups": [
+    {
+     "id": "G-e89007",
+     "kind": "known",
+     "class": "",
+     "instrument": "pkg:next#NextResponse.json",
+     "mechanisms": [
+      "builder"
+     ],
+     "label": "builder NextResponse.json",
+     "members": 96,
+     "share": 0.658,
+     "variants": 1,
+     "top": [
+      {
+       "id": "P-ec0957",
+       "key": "builder:pkg:next#NextResponse.json",
+       "label": "builder NextResponse.json",
+       "members": 96
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "GET",
+       "line": 5
+      }
+     ]
+    },
+    {
+     "id": "G-1e4c07",
+     "kind": "known",
+     "class": "",
+     "instrument": "return_value",
+     "mechanisms": [
+      "builder"
+     ],
+     "label": "builder return_value",
+     "members": 49,
+     "share": 0.336,
+     "variants": 1,
+     "top": [
+      {
+       "id": "P-7ed24a",
+       "key": "builder:return_value",
+       "label": "builder return_value",
+       "members": 49
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/api/src/alerts/alerts.controller.ts",
+       "symbol": "GET /alerts/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/artifacts/artifacts.controller.ts",
+       "symbol": "GET /artifacts/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/audits/audits.controller.ts",
+       "symbol": "GET /audits/:id",
+       "line": 10
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "validation",
+   "title": "Input validation",
+   "unit": "entry_point",
+   "population": {
+    "total": 162,
+    "known": 18,
+    "none": 108,
+    "unknown": 36,
+    "coverage": 0.778,
+    "left_out": {
+     "tests": 0,
+     "non_production": 8
+    }
+   },
+   "variants": [
+    {
+     "id": "P-d55b13",
+     "key": "none:reads input, nothing validates it",
+     "label": "reads input, nothing validates it",
+     "kind": "none",
+     "mechanisms": [],
+     "instruments": [],
+     "source": "usage",
+     "members": 108,
+     "share": 0.667,
+     "where": {
+      "packages": [
+       {
+        "package": "apps/web",
+        "members": 59,
+        "share_of_package": 0.522
+       },
+       {
+        "package": "apps/api",
+        "members": 49,
+        "share_of_package": 1
+       }
+      ],
+      "dirs": [
+       {
+        "dir": "apps/web/app/api",
+        "members": 58
+       },
+       {
+        "dir": "apps/api/src",
+        "members": 49
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]",
+        "members": 37
+       },
+       {
+        "dir": "apps/web/app/api/admin",
+        "members": 19
+       },
+       {
+        "dir": "apps/api/src/alerts",
+        "members": 2
+       },
+       {
+        "dir": "apps/api/src/artifacts",
+        "members": 2
+       },
+       {
+        "dir": "apps/api/src/audits",
+        "members": 2
+       },
+       {
+        "dir": "apps/api/src/billing",
+        "members": 2
+       }
+      ],
+      "roles": [
+       {
+        "role": "R-bc8d5e",
+        "members": 107
+       },
+       {
+        "role": "R-3cec2b",
+        "members": 59
+       },
+       {
+        "role": "R-5b33fb",
+        "members": 58
+       },
+       {
+        "role": "R-7fa8a5",
+        "members": 58
+       },
+       {
+        "role": "R-b6c51f",
+        "members": 57
+       },
+       {
+        "role": "R-2a3182",
+        "members": 49
+       },
+       {
+        "role": "R-66f189",
+        "members": 49
+       },
+       {
+        "role": "R-9af99b",
+        "members": 49
+       }
+      ],
+      "entry_kinds": [
+       {
+        "kind": "http",
+        "members": 107
+       },
+       {
+        "kind": "server_action",
+        "members": 1
+       }
+      ],
+      "methods": [
+       {
+        "method": "POST",
+        "members": 58
+       },
+       {
+        "method": "GET",
+        "members": 49
+       }
+      ]
+     },
+     "sets_apart": [
+      {
+       "attribute": "entry:http",
+       "in_variant": [
+        107,
+        108
+       ],
+       "in_dominant": [
+        0,
+        18
+       ],
+       "separation": 0.444,
+       "purity": 1
+      },
+      {
+       "attribute": "role:R-bc8d5e",
+       "in_variant": [
+        107,
+        108
+       ],
+       "in_dominant": [
+        0,
+        18
+       ],
+       "separation": 0.444,
+       "purity": 1
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "POST",
+       "line": 10
+      }
+     ],
+     "exceptions": [],
+     "exceptions_more": 0,
+     "conventions": [],
+     "promotable": null
+    },
+    {
+     "id": "P-cd2572",
+     "key": "schema:zod",
+     "label": "schema zod",
+     "kind": "known",
+     "mechanisms": [
+      "schema"
+     ],
+     "instruments": [
+      "zod"
+     ],
+     "source": "usage",
+     "members": 18,
+     "share": 0.111,
+     "where": {
+      "packages": [
+       {
+        "package": "apps/web",
+        "members": 18,
+        "share_of_package": 0.159
+       }
+      ],
+      "dirs": [
+       {
+        "dir": "apps/web/lib/actions",
+        "members": 18
+       }
+      ],
+      "roles": [
+       {
+        "role": "R-2a0640",
+        "members": 18
+       },
+       {
+        "role": "R-3cec2b",
+        "members": 18
+       },
+       {
+        "role": "R-7519f9",
+        "members": 18
+       },
+       {
+        "role": "R-9ebb35",
+        "members": 18
+       },
+       {
+        "role": "R-c3b351",
+        "members": 18
+       },
+       {
+        "role": "R-f99564",
+        "members": 18
+       }
+      ],
+      "entry_kinds": [
+       {
+        "kind": "server_action",
+        "members": 18
+       }
+      ],
+      "methods": []
+     },
+     "sets_apart": [
+      {
+       "attribute": "imports:apps/web/lib/actions/safe-action.ts",
+       "in_variant": [
+        18,
+        18
+       ],
+       "in_dominant": [
+        0,
+        144
+       ],
+       "separation": 0.57,
+       "purity": 1
+      },
+      {
+       "attribute": "imports:apps/web/lib/zod.ts",
+       "in_variant": [
+        18,
+        18
+       ],
+       "in_dominant": [
+        0,
+        144
+       ],
+       "separation": 0.57,
+       "purity": 1
+      },
+      {
+       "attribute": "wrap:authn:wrap:apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action",
+       "in_variant": [
+        18,
+        18
+       ],
+       "in_dominant": [
+        0,
+        144
+       ],
+       "separation": 0.57,
+       "purity": 1
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/lib/actions/archive-link.ts",
+       "symbol": "archiveLinkAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/cancel-plan.ts",
+       "symbol": "cancelPlanAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/create-campaign.ts",
+       "symbol": "createCampaignAction",
+       "line": 7
+      }
+     ],
+     "exceptions": [
+      {
+       "path": "apps/web/lib/actions/ban-customer.ts",
+       "symbol": "banCustomer",
+       "line": 5,
+       "variant": "P-d55b13"
+      }
+     ],
+     "exceptions_more": 0,
+     "conventions": [],
+     "promotable": null
+    }
+   ],
+   "unknown": {
+    "members": 36,
+    "reasons": [
+     {
+      "reason": "unclassified",
+      "members": 36
+     }
+    ],
+    "instruments": [],
+    "examples": [
+     {
+      "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+      "symbol": "GET",
+      "line": 5
+     },
+     {
+      "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+      "symbol": "GET",
+      "line": 5
+     },
+     {
+      "path": "apps/web/app/api/workspaces/[id]/billing/route.ts",
+      "symbol": "GET",
+      "line": 5
+     }
+    ]
+   },
+   "by_package": [
+    {
+     "package": "apps/api",
+     "total": 49,
+     "coverage": 1,
+     "variants": [
+      {
+       "id": "P-d55b13",
+       "members": 49,
+       "share": 1
+      }
+     ]
+    },
+    {
+     "package": "apps/web",
+     "total": 113,
+     "coverage": 0.681,
+     "variants": [
+      {
+       "id": "P-d55b13",
+       "members": 59,
+       "share": 0.522
+      },
+      {
+       "id": "P-cd2572",
+       "members": 18,
+       "share": 0.159
+      }
+     ]
+    }
+   ],
+   "divergence": [],
+   "groups": [
+    {
+     "id": "G-416c94",
+     "kind": "none",
+     "class": "",
+     "instrument": "",
+     "mechanisms": [],
+     "label": "reads input, nothing validates it",
+     "members": 108,
+     "share": 0.667,
+     "variants": 1,
+     "top": [
+      {
+       "id": "P-d55b13",
+       "key": "none:reads input, nothing validates it",
+       "label": "reads input, nothing validates it",
+       "members": 108
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "POST",
+       "line": 10
+      }
+     ]
+    },
+    {
+     "id": "G-ad1434",
+     "kind": "known",
+     "class": "",
+     "instrument": "zod",
+     "mechanisms": [
+      "schema"
+     ],
+     "label": "schema zod",
+     "members": 18,
+     "share": 0.111,
+     "variants": 1,
+     "top": [
+      {
+       "id": "P-cd2572",
+       "key": "schema:zod",
+       "label": "schema zod",
+       "members": 18
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/lib/actions/archive-link.ts",
+       "symbol": "archiveLinkAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/cancel-plan.ts",
+       "symbol": "cancelPlanAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/create-campaign.ts",
+       "symbol": "createCampaignAction",
+       "line": 7
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "config",
+   "title": "Config, secrets, feature flags",
+   "unit": "symbol",
+   "population": {
+    "total": 1,
+    "known": 1,
+    "none": 0,
+    "unknown": 0,
+    "coverage": 1,
+    "left_out": {
+     "tests": 0,
+     "non_production": 2
+    }
+   },
+   "variants": [
+    {
+     "id": "P-4514b9",
+     "key": "tail",
+     "label": "other ways, one unit each (1 unit)",
+     "kind": "known",
+     "mechanisms": [
+      "in_place",
+      "secret_client"
+     ],
+     "instruments": [],
+     "source": "vocab",
+     "members": 1,
+     "share": 1,
+     "where": {
+      "packages": [
+       {
+        "package": "apps/web",
+        "members": 1,
+        "share_of_package": 1
+       }
+      ],
+      "dirs": [
+       {
+        "dir": "apps/web/components",
+        "members": 1
+       }
+      ],
+      "roles": [
+       {
+        "role": "R-19bb01",
+        "members": 1
+       },
+       {
+        "role": "R-3cec2b",
+        "members": 1
+       },
+       {
+        "role": "R-580edb",
+        "members": 1
+       },
+       {
+        "role": "R-d515d7",
+        "members": 1
+       }
+      ],
+      "entry_kinds": [],
+      "methods": []
+     },
+     "sets_apart": [],
+     "examples": [
+      {
+       "path": "apps/web/components/billing-card.tsx",
+       "symbol": "BillingCard",
+       "line": 7
+      }
+     ],
+     "exceptions": [],
+     "exceptions_more": 0,
+     "conventions": [],
+     "promotable": null
+    }
+   ],
+   "unknown": {
+    "members": 0,
+    "reasons": [],
+    "instruments": [],
+    "examples": []
+   },
+   "by_package": [
+    {
+     "package": "apps/web",
+     "total": 1,
+     "coverage": 1,
+     "variants": [
+      {
+       "id": "P-4514b9",
+       "members": 1,
+       "share": 1
+      }
+     ]
+    }
+   ],
+   "divergence": [],
+   "groups": [
+    {
+     "id": "G-de743c",
+     "kind": "known",
+     "class": "",
+     "instrument": "",
+     "mechanisms": [],
+     "label": "other ways, nothing shared (1 unit)",
+     "members": 1,
+     "share": 1,
+     "variants": 1,
+     "top": [
+      {
+       "id": "P-a8695c",
+       "key": "in_place:process.env+secret_client:process.env",
+       "label": "in place process.env + secret client process.env",
+       "members": 1
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/components/billing-card.tsx",
+       "symbol": "BillingCard",
+       "line": 7
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "data_access",
+   "title": "Data access",
+   "unit": "symbol",
+   "population": {
+    "total": 96,
+    "known": 96,
+    "none": 0,
+    "unknown": 0,
+    "coverage": 1,
+    "left_out": {
+     "tests": 0,
+     "non_production": 1
+    }
+   },
+   "variants": [
+    {
+     "id": "P-d65fba",
+     "key": "entry_direct:@prisma/client",
+     "label": "entry direct @prisma/client",
+     "kind": "known",
+     "mechanisms": [
+      "entry_direct"
+     ],
+     "instruments": [
+      "@prisma/client"
+     ],
+     "source": "vocab",
+     "members": 92,
+     "share": 0.958,
+     "where": {
+      "packages": [
+       {
+        "package": "apps/web",
+        "members": 92,
+        "share_of_package": 0.979
+       }
+      ],
+      "dirs": [
+       {
+        "dir": "apps/web/app/api/workspaces/[id]",
+        "members": 73
+       },
+       {
+        "dir": "apps/web/lib/actions",
+        "members": 19
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/alerts",
+        "members": 2
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/audit",
+        "members": 2
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/billing",
+        "members": 2
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/branding",
+        "members": 2
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/budgets",
+        "members": 2
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]/campaigns",
+        "members": 2
+       }
+      ],
+      "roles": [
+       {
+        "role": "R-3cec2b",
+        "members": 92
+       },
+       {
+        "role": "R-5450e7",
+        "members": 73
+       },
+       {
+        "role": "R-5b33fb",
+        "members": 73
+       },
+       {
+        "role": "R-7fa8a5",
+        "members": 73
+       },
+       {
+        "role": "R-bc8d5e",
+        "members": 73
+       },
+       {
+        "role": "R-f310a3",
+        "members": 73
+       },
+       {
+        "role": "R-b6c51f",
+        "members": 71
+       },
+       {
+        "role": "R-2a0640",
+        "members": 19
+       }
+      ],
+      "entry_kinds": [],
+      "methods": []
+     },
+     "sets_apart": [],
+     "examples": [
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "GET",
+       "line": 5
+      }
+     ],
+     "exceptions": [
+      {
+       "path": "apps/web/lib/analytics.ts",
+       "symbol": "eventsFor",
+       "line": 3,
+       "variant": "P-e2533f"
+      },
+      {
+       "path": "apps/web/lib/auth.ts",
+       "symbol": "withWorkspace",
+       "line": 5,
+       "variant": "P-288461"
+      }
+     ],
+     "exceptions_more": 0,
+     "conventions": [],
+     "promotable": null
+    },
+    {
+     "id": "P-288461",
+     "key": "service:@prisma/client",
+     "label": "service @prisma/client",
+     "kind": "known",
+     "mechanisms": [
+      "service"
+     ],
+     "instruments": [
+      "@prisma/client"
+     ],
+     "source": "vocab",
+     "members": 2,
+     "share": 0.021,
+     "where": {
+      "packages": [
+       {
+        "package": "apps/api",
+        "members": 1,
+        "share_of_package": 1
+       },
+       {
+        "package": "apps/web",
+        "members": 1,
+        "share_of_package": 0.011
+       }
+      ],
+      "dirs": [
+       {
+        "dir": "apps/api/src/audits",
+        "members": 1
+       },
+       {
+        "dir": "apps/web/lib",
+        "members": 1
+       }
+      ],
+      "roles": [
+       {
+        "role": "R-2f9541",
+        "members": 1
+       },
+       {
+        "role": "R-3cec2b",
+        "members": 1
+       },
+       {
+        "role": "R-665981",
+        "members": 1
+       },
+       {
+        "role": "R-6a82e2",
+        "members": 1
+       },
+       {
+        "role": "R-8cefea",
+        "members": 1
+       },
+       {
+        "role": "R-9af99b",
+        "members": 1
+       },
+       {
+        "role": "R-c3b351",
+        "members": 1
+       },
+       {
+        "role": "R-eff4df",
+        "members": 1
+       }
+      ],
+      "entry_kinds": [],
+      "methods": []
+     },
+     "sets_apart": [],
+     "examples": [
+      {
+       "path": "apps/api/src/audits/audits.service.ts",
+       "symbol": "AuditsService",
+       "line": 5
+      },
+      {
+       "path": "apps/web/lib/auth.ts",
+       "symbol": "withWorkspace",
+       "line": 5
+      }
+     ],
+     "exceptions": [],
+     "exceptions_more": 0,
+     "conventions": [],
+     "promotable": null
+    },
+    {
+     "id": "P-e2533f",
+     "key": "tail",
+     "label": "other ways, one unit each (2 units)",
+     "kind": "known",
+     "mechanisms": [
+      "repository",
+      "service"
+     ],
+     "instruments": [],
+     "source": "vocab",
+     "members": 2,
+     "share": 0.021,
+     "where": {
+      "packages": [
+       {
+        "package": "apps/web",
+        "members": 1,
+        "share_of_package": 0.011
+       },
+       {
+        "package": "packages/db",
+        "members": 1,
+        "share_of_package": 1
+       }
+      ],
+      "dirs": [
+       {
+        "dir": "apps/web/lib",
+        "members": 1
+       },
+       {
+        "dir": "packages/db/src",
+        "members": 1
+       }
+      ],
+      "roles": [
+       {
+        "role": "R-3cec2b",
+        "members": 1
+       },
+       {
+        "role": "R-8cefea",
+        "members": 1
+       },
+       {
+        "role": "R-c3b351",
+        "members": 1
+       }
+      ],
+      "entry_kinds": [],
+      "methods": []
+     },
+     "sets_apart": [],
+     "examples": [
+      {
+       "path": "apps/web/lib/analytics.ts",
+       "symbol": "eventsFor",
+       "line": 3
+      },
+      {
+       "path": "packages/db/src/client.ts",
+       "symbol": "db",
+       "line": 3
+      }
+     ],
+     "exceptions": [],
+     "exceptions_more": 0,
+     "conventions": [],
+     "promotable": null
+    }
+   ],
+   "unknown": {
+    "members": 0,
+    "reasons": [],
+    "instruments": [],
+    "examples": []
+   },
+   "by_package": [
+    {
+     "package": "apps/api",
+     "total": 1,
+     "coverage": 1,
+     "variants": [
+      {
+       "id": "P-288461",
+       "members": 1,
+       "share": 1
+      }
+     ]
+    },
+    {
+     "package": "apps/web",
+     "total": 94,
+     "coverage": 1,
+     "variants": [
+      {
+       "id": "P-d65fba",
+       "members": 92,
+       "share": 0.979
+      },
+      {
+       "id": "P-288461",
+       "members": 1,
+       "share": 0.011
+      },
+      {
+       "id": "P-e2533f",
+       "members": 1,
+       "share": 0.011
+      }
+     ]
+    },
+    {
+     "package": "packages/db",
+     "total": 1,
+     "coverage": 1,
+     "variants": [
+      {
+       "id": "P-e2533f",
+       "members": 1,
+       "share": 1
+      }
+     ]
+    }
+   ],
+   "divergence": [
+    {
+     "package": "apps/api",
+     "dominant": "P-288461",
+     "repo_dominant": "P-d65fba",
+     "members": 1
+    }
+   ],
+   "groups": [
+    {
+     "id": "G-4fef59",
+     "kind": "known",
+     "class": "",
+     "instrument": "@prisma/client",
+     "mechanisms": [
+      "entry_direct",
+      "repository",
+      "service"
+     ],
+     "label": "4 variants sharing @prisma/client",
+     "members": 96,
+     "share": 1,
+     "variants": 4,
+     "top": [
+      {
+       "id": "P-d65fba",
+       "key": "entry_direct:@prisma/client",
+       "label": "entry direct @prisma/client",
+       "members": 92
+      },
+      {
+       "id": "P-288461",
+       "key": "service:@prisma/client",
+       "label": "service @prisma/client",
+       "members": 2
+      },
+      {
+       "id": "P-12a83e",
+       "key": "repository:@prisma/client",
+       "label": "repository @prisma/client",
+       "members": 1
+      },
+      {
+       "id": "P-3a8521",
+       "key": "service:@prisma/client+service:raw_sql",
+       "label": "service @prisma/client + service raw_sql",
+       "members": 1
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "GET",
+       "line": 5
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "testing",
+   "title": "Testing practice",
+   "unit": "entry_point",
+   "population": {
+    "total": 165,
+    "known": 0,
+    "none": 165,
+    "unknown": 0,
+    "coverage": 1,
+    "left_out": {
+     "tests": 0,
+     "non_production": 13
+    }
+   },
+   "variants": [
+    {
+     "id": "P-bbcd49",
+     "key": "none:untested",
+     "label": "untested",
+     "kind": "none",
+     "mechanisms": [],
+     "instruments": [],
+     "source": "usage",
+     "members": 165,
+     "share": 1,
+     "where": {
+      "packages": [
+       {
+        "package": "apps/web",
+        "members": 116,
+        "share_of_package": 1
+       },
+       {
+        "package": "apps/api",
+        "members": 49,
+        "share_of_package": 1
+       }
+      ],
+      "dirs": [
+       {
+        "dir": "apps/web/app/api",
+        "members": 97
+       },
+       {
+        "dir": "apps/web/app/api/workspaces/[id]",
+        "members": 74
+       },
+       {
+        "dir": "apps/api/src",
+        "members": 49
+       },
+       {
+        "dir": "apps/web/app/api/admin",
+        "members": 20
+       },
+       {
+        "dir": "apps/web/lib/actions",
+        "members": 19
+       },
+       {
+        "dir": "apps/api/src/alerts",
+        "members": 2
+       },
+       {
+        "dir": "apps/api/src/artifacts",
+        "members": 2
+       },
+       {
+        "dir": "apps/api/src/audits",
+        "members": 2
+       }
+      ],
+      "roles": [
+       {
+        "role": "R-bc8d5e",
+        "members": 146
+       },
+       {
+        "role": "R-3cec2b",
+        "members": 116
+       },
+       {
+        "role": "R-5b33fb",
+        "members": 97
+       },
+       {
+        "role": "R-7fa8a5",
+        "members": 97
+       },
+       {
+        "role": "R-b6c51f",
+        "members": 95
+       },
+       {
+        "role": "R-5450e7",
+        "members": 74
+       },
+       {
+        "role": "R-f310a3",
+        "members": 74
+       },
+       {
+        "role": "R-2a3182",
+        "members": 49
+       }
+      ],
+      "entry_kinds": [
+       {
+        "kind": "http",
+        "members": 146
+       },
+       {
+        "kind": "server_action",
+        "members": 19
+       }
+      ],
+      "methods": [
+       {
+        "method": "GET",
+        "members": 88
+       },
+       {
+        "method": "POST",
+        "members": 58
+       }
+      ]
+     },
+     "sets_apart": [],
+     "examples": [
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "GET",
+       "line": 5
+      }
+     ],
+     "exceptions": [],
+     "exceptions_more": 0,
+     "conventions": [],
+     "promotable": null
+    }
+   ],
+   "unknown": {
+    "members": 0,
+    "reasons": [],
+    "instruments": [],
+    "examples": []
+   },
+   "by_package": [
+    {
+     "package": "apps/api",
+     "total": 49,
+     "coverage": 1,
+     "variants": [
+      {
+       "id": "P-bbcd49",
+       "members": 49,
+       "share": 1
+      }
+     ]
+    },
+    {
+     "package": "apps/web",
+     "total": 116,
+     "coverage": 1,
+     "variants": [
+      {
+       "id": "P-bbcd49",
+       "members": 116,
+       "share": 1
+      }
+     ]
+    }
+   ],
+   "divergence": [],
+   "groups": [
+    {
+     "id": "G-232c6d",
+     "kind": "none",
+     "class": "",
+     "instrument": "",
+     "mechanisms": [],
+     "label": "untested",
+     "members": 165,
+     "share": 1,
+     "variants": 1,
+     "top": [
+      {
+       "id": "P-bbcd49",
+       "key": "none:untested",
+       "label": "untested",
+       "members": 165
+      }
+     ],
+     "examples": [
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "GET",
+       "line": 5
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "not_covered": [
+  "outbound calls (HTTP clients, timeouts, retries)",
+  "background jobs and queues",
+  "frontend data fetching",
+  "state and design system",
+  "hygiene (duplicate libraries and helpers, escape hatches)",
+  "declared vs actual (AGENTS.md, lint configs)",
+  "change over time (which variant new code adopts)"
+ ],
+ "recipes": [
+  {
+   "id": "E-3c6229",
+   "package": "apps/web",
+   "role": "http",
+   "label": "http entry points in apps/web",
+   "population": 97,
+   "concerns": [
+    {
+     "concern": "authn",
+     "total": 97,
+     "variants": [
+      {
+       "id": "P-1e83ce",
+       "label": "wrap withWorkspace, or decorator AuthGuard",
+       "members": 70,
+       "share": 0.722
+      },
+      {
+       "id": "P-1587e5",
+       "label": "wrap withAdmin",
+       "members": 19,
+       "share": 0.196
+      }
+     ],
+     "copy": {
+      "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+      "symbol": "GET",
+      "line": 5
+     },
+     "none": 8,
+     "unknown": 0,
+     "differs": {
+      "variant": "P-1587e5",
+      "members": 19,
+      "attribute": "dir:apps/web/app/api/admin",
+      "examples": [
+       {
+        "path": "apps/web/app/api/admin/abuse/route.ts",
+        "symbol": "GET",
+        "line": 4
+       },
+       {
+        "path": "apps/web/app/api/admin/audit/route.ts",
+        "symbol": "GET",
+        "line": 4
+       },
+       {
+        "path": "apps/web/app/api/admin/cache/route.ts",
+        "symbol": "GET",
+        "line": 4
+       }
+      ]
+     }
+    },
+    {
+     "concern": "authz",
+     "total": 89,
+     "variants": [
+      {
+       "id": "P-4def23",
+       "label": "role guard withWorkspace + tenancy filter where.workspaceId + tenancy guard withWorkspace",
+       "members": 36,
+       "share": 0.404
+      },
+      {
+       "id": "P-c6688d",
+       "label": "role guard withWorkspace + tenancy guard withWorkspace",
+       "members": 34,
+       "share": 0.382
+      }
+     ],
+     "copy": {
+      "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+      "symbol": "GET",
+      "line": 5
+     },
+     "none": 0,
+     "unknown": 0,
+     "differs": {
+      "variant": "P-c6688d",
+      "members": 34,
+      "attribute": "method:POST",
+      "examples": [
+       {
+        "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+        "symbol": "POST",
+        "line": 10
+       },
+       {
+        "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+        "symbol": "POST",
+        "line": 10
+       },
+       {
+        "path": "apps/web/app/api/workspaces/[id]/billing/route.ts",
+        "symbol": "POST",
+        "line": 10
+       }
+      ]
+     }
+    },
+    {
+     "concern": "errors",
+     "total": 97,
+     "variants": [
+      {
+       "id": "P-6123b9",
+       "label": "bubble framework_default",
+       "members": 97,
+       "share": 1
+      }
+     ],
+     "copy": {
+      "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+      "symbol": "GET",
+      "line": 5
+     },
+     "none": 0,
+     "unknown": 0,
+     "differs": null
+    },
+    {
+     "concern": "api",
+     "total": 97,
+     "variants": [
+      {
+       "id": "P-ec0957",
+       "label": "builder NextResponse.json",
+       "members": 96,
+       "share": 0.99
+      }
+     ],
+     "copy": {
+      "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+      "symbol": "GET",
+      "line": 5
+     },
+     "none": 0,
+     "unknown": 1,
+     "differs": null
+    },
+    {
+     "concern": "validation",
+     "total": 94,
+     "variants": [],
+     "copy": null,
+     "none": 58,
+     "unknown": 36,
+     "differs": null
+    }
+   ]
+  },
+  {
+   "id": "E-e5a70b",
+   "package": "apps/api",
+   "role": "http",
+   "label": "http entry points in apps/api",
+   "population": 49,
+   "concerns": [
+    {
+     "concern": "authn",
+     "total": 49,
+     "variants": [
+      {
+       "id": "P-1e83ce",
+       "label": "wrap withWorkspace, or decorator AuthGuard",
+       "members": 47,
+       "share": 0.959
+      }
+     ],
+     "copy": {
+      "path": "apps/api/src/alerts/alerts.controller.ts",
+      "symbol": "GET /alerts/:id",
+      "line": 10
+     },
+     "none": 2,
+     "unknown": 0,
+     "differs": null
+    },
+    {
+     "concern": "authz",
+     "total": 47,
+     "variants": [],
+     "copy": null,
+     "none": 0,
+     "unknown": 47,
+     "differs": null
+    },
+    {
+     "concern": "errors",
+     "total": 49,
+     "variants": [
+      {
+       "id": "P-6123b9",
+       "label": "bubble framework_default",
+       "members": 49,
+       "share": 1
+      }
+     ],
+     "copy": {
+      "path": "apps/api/src/alerts/alerts.controller.ts",
+      "symbol": "GET /alerts/:id",
+      "line": 10
+     },
+     "none": 0,
+     "unknown": 0,
+     "differs": null
+    },
+    {
+     "concern": "api",
+     "total": 49,
+     "variants": [
+      {
+       "id": "P-7ed24a",
+       "label": "builder return_value",
+       "members": 49,
+       "share": 1
+      }
+     ],
+     "copy": {
+      "path": "apps/api/src/alerts/alerts.controller.ts",
+      "symbol": "GET /alerts/:id",
+      "line": 10
+     },
+     "none": 0,
+     "unknown": 0,
+     "differs": null
+    },
+    {
+     "concern": "validation",
+     "total": 49,
+     "variants": [],
+     "copy": null,
+     "none": 49,
+     "unknown": 0,
+     "differs": null
+    }
+   ]
+  },
+  {
+   "id": "E-e9ef42",
+   "package": "apps/web",
+   "role": "server_action",
+   "label": "server_action entry points in apps/web",
+   "population": 19,
+   "concerns": [
+    {
+     "concern": "authn",
+     "total": 19,
+     "variants": [
+      {
+       "id": "P-f245bd",
+       "label": "wrap authActionClient.inputSchema().action",
+       "members": 18,
+       "share": 0.947
+      }
+     ],
+     "copy": {
+      "path": "apps/web/lib/actions/archive-link.ts",
+      "symbol": "archiveLinkAction",
+      "line": 7
+     },
+     "none": 1,
+     "unknown": 0,
+     "differs": null
+    },
+    {
+     "concern": "authz",
+     "total": 18,
+     "variants": [
+      {
+       "id": "P-04ca0f",
+       "label": "tenancy filter where.workspaceId",
+       "members": 18,
+       "share": 1
+      }
+     ],
+     "copy": {
+      "path": "apps/web/lib/actions/archive-link.ts",
+      "symbol": "archiveLinkAction",
+      "line": 7
+     },
+     "none": 0,
+     "unknown": 0,
+     "differs": null
+    },
+    {
+     "concern": "errors",
+     "total": 19,
+     "variants": [
+      {
+       "id": "P-6123b9",
+       "label": "bubble framework_default",
+       "members": 19,
+       "share": 1
+      }
+     ],
+     "copy": {
+      "path": "apps/web/lib/actions/archive-link.ts",
+      "symbol": "archiveLinkAction",
+      "line": 7
+     },
+     "none": 0,
+     "unknown": 0,
+     "differs": null
+    },
+    {
+     "concern": "validation",
+     "total": 19,
+     "variants": [
+      {
+       "id": "P-cd2572",
+       "label": "schema zod",
+       "members": 18,
+       "share": 0.947
+      }
+     ],
+     "copy": {
+      "path": "apps/web/lib/actions/archive-link.ts",
+      "symbol": "archiveLinkAction",
+      "line": 7
+     },
+     "none": 1,
+     "unknown": 0,
+     "differs": null
+    }
+   ]
+  }
+ ],
+ "findings": [
+  {
+   "kind": "none",
+   "concern": "validation",
+   "package": "apps/web",
+   "variants": [
+    "P-d55b13"
+   ],
+   "members": 59,
+   "instrument": null,
+   "config_hint": null,
+   "examples": [
+    {
+     "path": "apps/web/app/api/admin/abuse/route.ts",
+     "symbol": "GET",
+     "line": 4
+    },
+    {
+     "path": "apps/web/app/api/admin/audit/route.ts",
+     "symbol": "GET",
+     "line": 4
+    },
+    {
+     "path": "apps/web/app/api/admin/cache/route.ts",
+     "symbol": "GET",
+     "line": 4
+    }
+   ]
+  },
+  {
+   "kind": "none",
+   "concern": "validation",
+   "package": "apps/api",
+   "variants": [
+    "P-d55b13"
+   ],
+   "members": 49,
+   "instrument": null,
+   "config_hint": null,
+   "examples": [
+    {
+     "path": "apps/api/src/alerts/alerts.controller.ts",
+     "symbol": "GET /alerts/:id",
+     "line": 10
+    },
+    {
+     "path": "apps/api/src/alerts/alerts.controller.ts",
+     "symbol": "POST /alerts",
+     "line": 15
+    },
+    {
+     "path": "apps/api/src/artifacts/artifacts.controller.ts",
+     "symbol": "GET /artifacts/:id",
+     "line": 10
+    }
+   ]
+  },
+  {
+   "kind": "none",
+   "concern": "authn",
+   "package": "apps/web",
+   "variants": [
+    "P-68fb99"
+   ],
+   "members": 9,
+   "instrument": null,
+   "config_hint": null,
+   "examples": [
+    {
+     "path": "apps/web/app/api/admin/health/route.ts",
+     "symbol": "GET",
+     "line": 3
+    },
+    {
+     "path": "apps/web/app/api/oauth/callback/route.ts",
+     "symbol": "GET",
+     "line": 3
+    },
+    {
+     "path": "apps/web/app/api/public/preview/route.ts",
+     "symbol": "GET",
+     "line": 4
+    }
+   ]
+  },
+  {
+   "kind": "none",
+   "concern": "authn",
+   "package": "apps/api",
+   "variants": [
+    "P-68fb99"
+   ],
+   "members": 2,
+   "instrument": null,
+   "config_hint": null,
+   "examples": [
+    {
+     "path": "apps/api/src/releases/releases.controller.ts",
+     "symbol": "GET /releases/:id",
+     "line": 8
+    },
+    {
+     "path": "apps/api/src/releases/releases.controller.ts",
+     "symbol": "POST /releases",
+     "line": 13
+    }
+   ]
+  },
+  {
+   "kind": "unknown",
+   "concern": "authz",
+   "package": null,
+   "variants": [],
+   "members": 1,
+   "instrument": "apps/api/src/alerts/alerts.service.ts#AlertsService.create",
+   "config_hint": null,
+   "examples": [
+    {
+     "path": "apps/api/src/alerts/alerts.controller.ts",
+     "symbol": "POST /alerts",
+     "line": 15
+    }
+   ]
+  },
+  {
+   "kind": "unknown",
+   "concern": "authz",
+   "package": null,
+   "variants": [],
+   "members": 1,
+   "instrument": "apps/api/src/alerts/alerts.service.ts#AlertsService.get",
+   "config_hint": null,
+   "examples": [
+    {
+     "path": "apps/api/src/alerts/alerts.controller.ts",
+     "symbol": "GET /alerts/:id",
+     "line": 10
+    }
+   ]
+  },
+  {
+   "kind": "unknown",
+   "concern": "authz",
+   "package": null,
+   "variants": [],
+   "members": 1,
+   "instrument": "apps/api/src/artifacts/artifacts.service.ts#ArtifactsService.create",
+   "config_hint": null,
+   "examples": [
+    {
+     "path": "apps/api/src/artifacts/artifacts.controller.ts",
+     "symbol": "POST /artifacts",
+     "line": 15
+    }
+   ]
+  },
+  {
+   "kind": "unknown",
+   "concern": "authz",
+   "package": null,
+   "variants": [],
+   "members": 1,
+   "instrument": "apps/api/src/artifacts/artifacts.service.ts#ArtifactsService.get",
+   "config_hint": null,
+   "examples": [
+    {
+     "path": "apps/api/src/artifacts/artifacts.controller.ts",
+     "symbol": "GET /artifacts/:id",
+     "line": 10
+    }
+   ]
+  },
+  {
+   "kind": "unknown",
+   "concern": "authz",
+   "package": null,
+   "variants": [],
+   "members": 1,
+   "instrument": "apps/api/src/audits/audits.service.ts#AuditsService.create",
+   "config_hint": null,
+   "examples": [
+    {
+     "path": "apps/api/src/audits/audits.controller.ts",
+     "symbol": "POST /audits",
+     "line": 15
+    }
+   ]
+  },
+  {
+   "kind": "unknown",
+   "concern": "authz",
+   "package": null,
+   "variants": [],
+   "members": 1,
+   "instrument": "apps/api/src/audits/audits.service.ts#AuditsService.get",
+   "config_hint": null,
+   "examples": [
+    {
+     "path": "apps/api/src/audits/audits.controller.ts",
+     "symbol": "GET /audits/:id",
+     "line": 10
+    }
+   ]
+  },
+  {
+   "kind": "unknown",
+   "concern": "authz",
+   "package": null,
+   "variants": [],
+   "members": 1,
+   "instrument": "apps/api/src/billing/billing.service.ts#BillingService.create",
+   "config_hint": null,
+   "examples": [
+    {
+     "path": "apps/api/src/billing/billing.controller.ts",
+     "symbol": "POST /billing",
+     "line": 15
+    }
+   ]
+  },
+  {
+   "kind": "unknown",
+   "concern": "authz",
+   "package": null,
+   "variants": [],
+   "members": 1,
+   "instrument": "apps/api/src/billing/billing.service.ts#BillingService.get",
+   "config_hint": null,
+   "examples": [
+    {
+     "path": "apps/api/src/billing/billing.controller.ts",
+     "symbol": "GET /billing/:id",
+     "line": 10
+    }
+   ]
+  }
+ ]
+}

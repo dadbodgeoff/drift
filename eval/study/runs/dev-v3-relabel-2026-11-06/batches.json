@@ -1,0 +1,131 @@
+{
+  "rule": "one batch = one (labeller, repo) prompt, launched as one fresh agent (README 'Launching'; REVIEWER-PROMPT.md 'Isolation'); A and B of one repo never at the same time",
+  "batches": [
+    {
+      "part": "ts",
+      "labeller": "A",
+      "repo": "dub",
+      "proposals": 1,
+      "prompt": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/A/dub.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/0c208ea4-be1e-4914-996a-818c225be185/out.jsonl",
+      "status": "collected"
+    },
+    {
+      "part": "ts",
+      "labeller": "B",
+      "repo": "dub",
+      "proposals": 1,
+      "prompt": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/B/dub.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/d54121f2-f9fa-4476-9aae-a703888d23ca/out.jsonl",
+      "status": "collected"
+    },
+    {
+      "part": "ts",
+      "labeller": "A",
+      "repo": "cal.com",
+      "proposals": 1,
+      "prompt": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/A/cal.com.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/151aa444-ff0b-4e5b-b556-0cdd2dd7938e/out.jsonl",
+      "status": "collected"
+    },
+    {
+      "part": "ts",
+      "labeller": "B",
+      "repo": "cal.com",
+      "proposals": 1,
+      "prompt": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/B/cal.com.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/fa487a0f-d7a1-4a26-a934-5c6f1e4c729d/out.jsonl",
+      "status": "collected"
+    },
+    {
+      "part": "ts",
+      "labeller": "A",
+      "repo": "documenso",
+      "proposals": 2,
+      "prompt": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/A/documenso.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/79c90905-16ff-4ceb-90b2-588db904f9f8/out.jsonl",
+      "status": "collected"
+    },
+    {
+      "part": "ts",
+      "labeller": "B",
+      "repo": "documenso",
+      "proposals": 2,
+      "prompt": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/B/documenso.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/ee1e072b-f971-466c-a516-aaf2e4c5086c/out.jsonl",
+      "status": "collected"
+    },
+    {
+      "part": "ts",
+      "labeller": "A",
+      "repo": "ai",
+      "proposals": 1,
+      "prompt": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/A/ai.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/3dd14e0a-9101-499e-9798-bb49fb819cba/out.jsonl",
+      "status": "collected"
+    },
+    {
+      "part": "ts",
+      "labeller": "B",
+      "repo": "ai",
+      "proposals": 1,
+      "prompt": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/B/ai.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/859b7f4e-e85b-40ee-a912-e623ca668864/out.jsonl",
+      "status": "collected"
+    },
+    {
+      "part": "ts",
+      "labeller": "A",
+      "repo": "supabase",
+      "proposals": 1,
+      "prompt": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/A/supabase.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/505f8824-8f65-42e2-ba84-756ea2801a20/out.jsonl",
+      "status": "collected"
+    },
+    {
+      "part": "ts",
+      "labeller": "B",
+      "repo": "supabase",
+      "proposals": 1,
+      "prompt": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/B/supabase.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/66e4200a-d5cc-467f-a4f5-45d71bd1c233/out.jsonl",
+      "status": "collected"
+    },
+    {
+      "part": "ts",
+      "labeller": "A",
+      "repo": "midday",
+      "proposals": 1,
+      "prompt": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/A/midday.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/c8d9359f-81b7-424a-a5c4-202e3349eddd/out.jsonl",
+      "status": "collected"
+    },
+    {
+      "part": "ts",
+      "labeller": "B",
+      "repo": "midday",
+      "proposals": 1,
+      "prompt": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/B/midday.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/8a31494c-04bd-461f-9545-b670d8ea59f5/out.jsonl",
+      "status": "collected"
+    },
+    {
+      "part": "ts",
+      "labeller": "A",
+      "repo": "infisical",
+      "proposals": 2,
+      "prompt": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/A/infisical.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/991018e6-6aad-4691-a140-27953d75afa6/out.jsonl",
+      "status": "collected"
+    },
+    {
+      "part": "ts",
+      "labeller": "B",
+      "repo": "infisical",
+      "proposals": 2,
+      "prompt": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/B/infisical.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/44b8426d-1c3d-44bd-9a82-c12d3763c15e/out.jsonl",
+      "status": "collected"
+    }
+  ]
+}

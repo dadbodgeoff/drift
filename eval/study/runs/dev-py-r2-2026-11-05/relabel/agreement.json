@@ -1,0 +1,80 @@
+{
+  "a": "eval/study/runs/dev-py-r2-2026-11-05/relabel/labels/A",
+  "b": "eval/study/runs/dev-py-r2-2026-11-05/relabel/labels/B",
+  "n": 22,
+  "scope": 22,
+  "exact": 0.8181818181818182,
+  "kappa": 0.6363636363636365,
+  "kappa_boot": {
+    "lo": 0.15384615384615374,
+    "hi": 0.813953488372093,
+    "clusters": 5
+  },
+  "accept_vs_not": {
+    "n": 22,
+    "po": 0.8181818181818182,
+    "pe": 0.5,
+    "kappa": 0.6363636363636365
+  },
+  "wrong_vs_not": {
+    "n": 22,
+    "po": 0.8181818181818182,
+    "pe": 0.5,
+    "kappa": 0.6363636363636365
+  },
+  "confusion": {
+    "ACCEPT": {
+      "ACCEPT": 9,
+      "TRIVIAL": 0,
+      "WRONG": 2
+    },
+    "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+    },
+    "WRONG": {
+      "ACCEPT": 2,
+      "TRIVIAL": 0,
+      "WRONG": 9
+    }
+  },
+  "mix": {
+    "A": {
+      "ACCEPT": 11,
+      "TRIVIAL": 0,
+      "WRONG": 11
+    },
+    "B": {
+      "ACCEPT": 11,
+      "TRIVIAL": 0,
+      "WRONG": 11
+    }
+  },
+  "disagreements": [
+    {
+      "uid": "polar/D-fb4011",
+      "repo": "polar",
+      "a": "WRONG",
+      "b": "ACCEPT"
+    },
+    {
+      "uid": "netbox/D-310ec7",
+      "repo": "netbox",
+      "a": "WRONG",
+      "b": "ACCEPT"
+    },
+    {
+      "uid": "saleor/D-e36ea5",
+      "repo": "saleor",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "langchain/D-468530",
+      "repo": "langchain",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    }
+  ]
+}

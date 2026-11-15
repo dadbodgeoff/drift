@@ -1,0 +1,31 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  suffixes: []
+conventions:
+- id: D-03e2be
+  status: proposed
+  mode: advise
+  summary: exported values in src/flask/sansio/** pass `bound` to TypeVar()
+  role:
+    package: ""
+    dir: src/flask/sansio
+    file: "*"
+    entry: '-'
+    kind: variable
+  rule:
+    type: passes_key
+    callee: pkg:python:typing#TypeVar
+    index: 99
+    key: bound
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 3.239
+  example: src/flask/sansio/app.py#T_shell_context_processor

@@ -1,0 +1,107 @@
+{
+  "//": "Pinned public repos for the parser and mining evaluation (16: every route adapter is exercised by a real repo). Bump a sha deliberately and review the diff in results.",
+  "defaults": {
+    "max_disagreements": 0,
+    "max_gaps": 0,
+    "min_export_recall": 0.98
+  },
+  "repos": [
+    {
+      "name": "dub",
+      "url": "https://github.com/GeoffreyFernald/dub",
+      "sha": "7dbbccd4bc9e935cc9c0433f2d153a95cd625cea",
+      "shape": "Next.js app-router monorepo"
+    },
+    {
+      "name": "twenty",
+      "url": "https://github.com/twentyhq/twenty",
+      "sha": "a074732678d68ee75c020cf65c95b7c5f3c79207",
+      "shape": "NestJS + React monorepo (36k files)"
+    },
+    {
+      "name": "formbricks",
+      "url": "https://github.com/formbricks/formbricks",
+      "sha": "7cddb162bb4615b68561d90a7dbde4c5985213f0",
+      "shape": "Next.js monorepo, server actions"
+    },
+    {
+      "name": "cal.com",
+      "url": "https://github.com/calcom/cal.com",
+      "sha": "2eb48eccd8aca8a0c0ffabf28cf92e298b33ecee",
+      "shape": "Next.js + NestJS API v2"
+    },
+    {
+      "name": "documenso",
+      "url": "https://github.com/documenso/documenso",
+      "sha": "fdd0337bdd8f6afac64faf97113c65ed2dd0e2a2",
+      "shape": "Remix + tRPC monorepo"
+    },
+    {
+      "name": "excalidraw",
+      "url": "https://github.com/excalidraw/excalidraw",
+      "sha": "7ded689cad49331167e29fd88b38f38d3736d576",
+      "shape": "React library, JSX in .js"
+    },
+    {
+      "name": "create-t3-app",
+      "url": "https://github.com/t3-oss/create-t3-app",
+      "sha": "4709861f7e67a15564c0460c13e7b4b6cfcae40d",
+      "shape": "CLI with template files",
+      "max_gaps": 200
+    },
+    {
+      "name": "ai",
+      "url": "https://github.com/vercel/ai",
+      "sha": "8e8033a73dd471f221810ade3c7a355b78cf4d8b",
+      "shape": "SDK monorepo, exports maps, ESM .js extensions"
+    },
+    {
+      "name": "trpc",
+      "url": "https://github.com/trpc/trpc",
+      "sha": "fb58947633d86a6b0e6b18856a6def1bca843df7",
+      "shape": "Library monorepo, builder chains"
+    },
+    {
+      "name": "nest",
+      "url": "https://github.com/nestjs/nest",
+      "sha": "2643bf0fef5ec73faf5d4e0437a69b78a3029a73",
+      "shape": "Framework source, decorators and barrels"
+    },
+    {
+      "name": "supabase",
+      "url": "https://github.com/supabase/supabase",
+      "sha": "ab54becc60debd614a4496742d5fcf787be4bb60",
+      "shape": "Large Next.js pages-router monorepo"
+    },
+    {
+      "name": "node-express-boilerplate",
+      "url": "https://github.com/hagopj13/node-express-boilerplate",
+      "sha": "179ae84efec61b14206d0305d941daed6c6d07f9",
+      "shape": "CommonJS Express app"
+    },
+    {
+      "name": "novu",
+      "url": "https://github.com/novuhq/novu",
+      "sha": "866bd2859bca46c68b9daed9a13b8d01bfefc556",
+      "shape": "NestJS API monorepo"
+    },
+    {
+      "name": "immich",
+      "url": "https://github.com/immich-app/immich",
+      "sha": "335f65a057d9fddbdf09b2386a102ca3c892820f",
+      "shape": "NestJS server (+ Svelte web, not parsed)"
+    },
+    {
+      "name": "midday",
+      "url": "https://github.com/midday-ai/midday",
+      "sha": "51587319f26a0ffaa9dfccab1920373cb65689b7",
+      "shape": "Hono OpenAPI API + Next.js apps"
+    },
+    {
+      "name": "infisical",
+      "url": "https://github.com/Infisical/infisical",
+      "sha": "41db38dca9f70d69f3bab268b631c31debfc51d4",
+      "shape": "Fastify backend + React frontend"
+    }
+  ]
+}

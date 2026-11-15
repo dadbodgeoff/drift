@@ -1,0 +1,13 @@
+{
+  "repo": "trimesh",
+  "files": [
+    {
+      "path": "docs/content/contributing.md",
+      "kind": "doc"
+    },
+    {
+      "path": "pyproject.toml",
+      "kind": "lint (python config sections)"
+    }
+  ]
+}

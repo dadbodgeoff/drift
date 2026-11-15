@@ -1,0 +1,16 @@
+## TS: suggestion tier per fold (ACCEPT / shown; flag precision), before -> after
+   fold 1: 0.0% (0/1), flag precision 0.0% (0/3) -> 0.0% (0/1), flag precision n/a (1 untraced)
+   fold 2: 100.0% (9/9), flag precision 50.0% (4/8) -> 100.0% (9/9), flag precision 33.3% (2/6) (1 untraced)
+   fold 3: 100.0% (3/3), flag precision 85.7% (6/7) -> 100.0% (3/3), flag precision 85.7% (6/7)
+   fold 4: 33.3% (1/3), flag precision 33.3% (2/6) -> 25.0% (1/4), flag precision 0.0% (0/4) (2 untraced)
+   fold 5: 85.7% (6/7), flag precision 54.5% (6/11) -> 85.7% (6/7), flag precision 54.5% (6/11)
+   folds 1-4: 81.3% (13/16), flag precision 50.0% (12/24) -> 76.5% (13/17), flag precision 47.1% (8/17) (4 untraced)
+   all five: 82.6% (19/23), flag precision 51.4% (18/35) -> 79.2% (19/24), flag precision 50.0% (14/28) (4 untraced)
+## Python: suggestion tier per fold (ACCEPT / shown; flag precision), before -> after
+   fold 1: 100.0% (8/8), flag precision 100.0% (10/10) -> 100.0% (8/8), flag precision 100.0% (10/10)
+   fold 2: 100.0% (2/2), flag precision n/a -> 100.0% (2/2), flag precision n/a
+   fold 3: 100.0% (1/1), flag precision 100.0% (2/2) -> 100.0% (1/1), flag precision 100.0% (2/2)
+   fold 4: 100.0% (1/1), flag precision 100.0% (2/2) -> n/a, flag precision n/a
+   fold 5: 50.0% (1/2), flag precision 50.0% (2/4) -> 50.0% (1/2), flag precision 50.0% (2/4)
+   folds 1-4: 100.0% (12/12), flag precision 100.0% (14/14) -> 100.0% (11/11), flag precision 100.0% (12/12)
+   all five: 92.9% (13/14), flag precision 88.9% (16/18) -> 92.3% (12/13), flag precision 87.5% (14/16)

@@ -1,0 +1,552 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "5cfbbb4-d8",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/cache/repos/open-wearables",
+  "units": 3568,
+  "roles": 230,
+  "conventions": 8,
+  "shown": 8,
+  "tiers": {
+    "default": 0,
+    "suggestion": 8
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    },
+    "candidate": {
+      "decision": "D8",
+      "status": "candidate (pre-registered, not adopted)",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts",
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15,
+      "py": {
+        "min_members": 50,
+        "call_wrappers": "guards"
+      }
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-dadcea",
+      "rank": 1,
+      "summary": "backend: HTTP handlers in app/** are wrapped in _get_db_dependency()",
+      "role": {
+        "package": "backend",
+        "dir": "app",
+        "file": "*",
+        "entry": "http",
+        "kind": "function",
+        "members": 117
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "backend/app/database.py#_get_db_dependency"
+        ]
+      },
+      "evidence": {
+        "holders": 106,
+        "total": 117,
+        "lower_bound": 0.839,
+        "lift": 8.236,
+        "python_members": 117
+      },
+      "rule_kind": "wrapped_by:call",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "backend/app/api/routes/v1/api_keys.py",
+        "symbol": "create_api_key",
+        "line": 34
+      },
+      "outliers": [
+        {
+          "path": "backend/app/api/routes/v1/import_xml.py",
+          "symbol": "receive_sns_notification",
+          "line": 217
+        },
+        {
+          "path": "backend/app/api/routes/v1/meta.py",
+          "symbol": "get_coverage",
+          "line": 149
+        },
+        {
+          "path": "backend/app/api/routes/v1/oura_webhooks.py",
+          "symbol": "oura_webhook_health",
+          "line": 51
+        },
+        {
+          "path": "backend/app/api/routes/v1/oura_webhooks.py",
+          "symbol": "oura_webhook_verification",
+          "line": 42
+        },
+        {
+          "path": "backend/app/api/routes/v1/outgoing_webhooks.py",
+          "symbol": "list_event_types",
+          "line": 109
+        },
+        {
+          "path": "backend/app/api/routes/v1/sync_status.py",
+          "symbol": "stream_user_sync_status",
+          "line": 68
+        },
+        {
+          "path": "backend/app/api/routes/v1/webhooks.py",
+          "symbol": "probe_provider_webhook",
+          "line": 139
+        },
+        {
+          "path": "backend/app/api/routes/v1/webhooks.py",
+          "symbol": "probe_provider_webhook_with_token",
+          "line": 301
+        },
+        {
+          "path": "backend/app/api/routes/v1/webhooks.py",
+          "symbol": "verify_provider_webhook",
+          "line": 119
+        },
+        {
+          "path": "backend/app/api/routes/v1/webhooks.py",
+          "symbol": "verify_provider_webhook_with_token",
+          "line": 295
+        },
+        {
+          "path": "backend/app/main.py",
+          "symbol": "root",
+          "line": 130
+        }
+      ],
+      "outliers_total": 11,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "not_guard",
+        "guards": false
+      }
+    },
+    {
+      "id": "D-ff3192",
+      "rank": 2,
+      "summary": "backend: functions in app/services/providers/garmin/backfill_state/** call get_redis_client()",
+      "role": {
+        "package": "backend",
+        "dir": "app/services/providers/garmin/backfill_state",
+        "file": "*",
+        "entry": "-",
+        "kind": "function",
+        "members": 33
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "backend/app/integrations/redis_client.py#get_redis_client"
+      },
+      "evidence": {
+        "holders": 31,
+        "total": 33,
+        "lower_bound": 0.804,
+        "lift": 14.155,
+        "python_members": 33
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "backend/app/services/providers/garmin/backfill_state/core.py",
+        "symbol": "acquire_backfill_lock",
+        "line": 49
+      },
+      "outliers": [
+        {
+          "path": "backend/app/services/providers/garmin/backfill_state/window_state.py",
+          "symbol": "get_window_date_range",
+          "line": 62
+        },
+        {
+          "path": "backend/app/services/providers/garmin/backfill_state/window_state.py",
+          "symbol": "get_window_date_range_for_index",
+          "line": 76
+        }
+      ],
+      "outliers_total": 2,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-6606a8",
+      "rank": 3,
+      "summary": "backend: functions in app/services/providers/garmin/backfill_state/** call _get_key()",
+      "role": {
+        "package": "backend",
+        "dir": "app/services/providers/garmin/backfill_state",
+        "file": "*",
+        "entry": "-",
+        "kind": "function",
+        "members": 33
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "backend/app/services/providers/garmin/backfill_state/core.py#_get_key"
+      },
+      "evidence": {
+        "holders": 30,
+        "total": 33,
+        "lower_bound": 0.764,
+        "lift": 29.412,
+        "python_members": 33
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "backend/app/services/providers/garmin/backfill_state/core.py",
+        "symbol": "acquire_backfill_lock",
+        "line": 49
+      },
+      "outliers": [
+        {
+          "path": "backend/app/services/providers/garmin/backfill_state/window_state.py",
+          "symbol": "get_window_date_range",
+          "line": 62
+        },
+        {
+          "path": "backend/app/services/providers/garmin/backfill_state/window_state.py",
+          "symbol": "get_window_date_range_for_index",
+          "line": 76
+        },
+        {
+          "path": "backend/app/services/providers/garmin/backfill_state/window_state.py",
+          "symbol": "update_window_cell",
+          "line": 91
+        }
+      ],
+      "outliers_total": 3,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-262064",
+      "rank": 4,
+      "summary": "backend: enums in app/schemas/** extend StrEnum",
+      "role": {
+        "package": "backend",
+        "dir": "app/schemas",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "variety": "enum",
+        "members": 57
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:python:enum#StrEnum"
+        ]
+      },
+      "evidence": {
+        "holders": 53,
+        "total": 57,
+        "lower_bound": 0.833,
+        "lift": 9.484,
+        "python_members": 57
+      },
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "backend/app/schemas/auth/authentication_method.py",
+        "symbol": "AuthenticationMethod",
+        "line": 4
+      },
+      "outliers": [
+        {
+          "path": "backend/app/schemas/enums/aggregation_method.py",
+          "symbol": "AggregationMethod",
+          "line": 6
+        },
+        {
+          "path": "backend/app/schemas/enums/provider.py",
+          "symbol": "ProviderName",
+          "line": 4
+        },
+        {
+          "path": "backend/app/schemas/enums/series_types.py",
+          "symbol": "SeriesType",
+          "line": 23
+        },
+        {
+          "path": "backend/app/schemas/providers/google/health_api.py",
+          "symbol": "TimeShape",
+          "line": 33
+        }
+      ],
+      "outliers_total": 4,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-b21ebc",
+      "rank": 5,
+      "summary": "backend: exported values in app/integrations/** call get_logger()",
+      "role": {
+        "package": "backend",
+        "dir": "app/integrations",
+        "file": "*",
+        "entry": "-",
+        "kind": "variable",
+        "members": 33
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "backend/app/utils/structured_logging.py#get_logger"
+      },
+      "evidence": {
+        "holders": 31,
+        "total": 33,
+        "lower_bound": 0.804,
+        "lift": 2.613,
+        "python_members": 33
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "backend/app/integrations/celery/core.py",
+        "symbol": "logger",
+        "line": 22
+      },
+      "outliers": [
+        {
+          "path": "backend/app/integrations/celery/tasks/garmin/backfill_task.py",
+          "symbol": "continue_garmin_backfill",
+          "line": 511
+        },
+        {
+          "path": "backend/app/integrations/celery/tasks/garmin/backfill_task.py",
+          "symbol": "trigger_next_backfill",
+          "line": 510
+        }
+      ],
+      "outliers_total": 2,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-8ffd6f",
+      "rank": 6,
+      "summary": "backend: classes in app/repositories/** are named `*Repository`",
+      "role": {
+        "package": "backend",
+        "dir": "app/repositories",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "members": 29
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Repository"
+      },
+      "evidence": {
+        "holders": 28,
+        "total": 29,
+        "lower_bound": 0.828,
+        "lift": 23.772,
+        "python_members": 29
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "backend/app/repositories/aggregate_backfill_repository.py",
+        "symbol": "AggregateBackfillRepository",
+        "line": 132
+      },
+      "outliers": [
+        {
+          "path": "backend/app/repositories/data_point_series_repository.py",
+          "symbol": "WriteCounts",
+          "line": 144
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-baa886",
+      "rank": 7,
+      "summary": "backend: functions in app/services/providers/garmin/** call str()",
+      "role": {
+        "package": "backend",
+        "dir": "app/services/providers/garmin",
+        "file": "*",
+        "entry": "-",
+        "kind": "function",
+        "members": 38
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "global#str"
+      },
+      "evidence": {
+        "holders": 35,
+        "total": 38,
+        "lower_bound": 0.792,
+        "lift": 7.237,
+        "python_members": 38
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "backend/app/services/providers/garmin/backfill_state/core.py",
+        "symbol": "acquire_backfill_lock",
+        "line": 49
+      },
+      "outliers": [
+        {
+          "path": "backend/app/services/providers/garmin/backfill_state/core.py",
+          "symbol": "get_trace_id",
+          "line": 30
+        },
+        {
+          "path": "backend/app/services/providers/garmin/backfill_state/window_state.py",
+          "symbol": "get_window_date_range",
+          "line": 62
+        },
+        {
+          "path": "backend/app/services/providers/garmin/backfill_state/window_state.py",
+          "symbol": "get_window_date_range_for_index",
+          "line": 76
+        }
+      ],
+      "outliers_total": 3,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-4c541f",
+      "rank": 8,
+      "summary": "frontend: functions in src/routes/(app)/** (*.server files) call requireToken()",
+      "role": {
+        "package": "frontend",
+        "dir": "src/routes/(app)",
+        "file": "*.server",
+        "entry": "-",
+        "kind": "function",
+        "members": 24
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:$lib#requireToken"
+      },
+      "evidence": {
+        "holders": 23,
+        "total": 24,
+        "lower_bound": 0.798,
+        "lift": 30.119
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "frontend/src/routes/(app)/dashboard/+page.server.ts",
+        "symbol": "load",
+        "line": 12
+      },
+      "outliers": [
+        {
+          "path": "frontend/src/routes/(app)/+layout.server.ts",
+          "symbol": "load",
+          "line": 7
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    }
+  ],
+  "largest_role": null
+}

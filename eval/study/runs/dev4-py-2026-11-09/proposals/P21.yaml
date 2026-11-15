@@ -1,0 +1,37 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - All
+  - BasicLatin
+  - BoxDrawing
+  - CombDiacritMarks
+  - CombDiactForSymbols
+  - EnclosedAlphanum
+  - Main
+  - Other
+  - PUA
+  - __init__
+  - api
+  - config
+  - confpage
+  - conftest
+  - container
+  - fontdata-extra
+  - main_widget
+  - manager
+  - mixins
+  - plugin
+  - provider
+  - status
+  - test_plugin
+  - utils
+  - widgets
+  suffixes: []
+  layers:
+  - widgets/main_widget
+  - widgets/status
+conventions: []

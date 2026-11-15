@@ -1,0 +1,1001 @@
+{
+  "part": "py",
+  "labels_from": "eval/study/runs/dev-v3-2026-11-06/py/final.jsonl",
+  "labelled_at": "debc33a3483ba9c53dfac93d50bbadf58553ea27",
+  "not_scanned": [
+    "polar",
+    "CTFd"
+  ],
+  "scanned": [
+    {
+      "repo": "full-stack-fastapi-template",
+      "sha": "aabb90126964a164e02aff39e7c385bb0598236d",
+      "shown": 1,
+      "tiers": {
+        "default": 0,
+        "suggestion": 1
+      },
+      "commit": "feefad6-pyplan"
+    },
+    {
+      "repo": "netbox",
+      "sha": "56daec7debfd51fa991b45d6a40cb592b42b669d",
+      "shown": 12,
+      "tiers": {
+        "default": 0,
+        "suggestion": 12
+      },
+      "commit": "feefad6-pyplan"
+    },
+    {
+      "repo": "saleor",
+      "sha": "89817cdd10423619d6d6be54a61ead11fca90cfa",
+      "shown": 7,
+      "tiers": {
+        "default": 0,
+        "suggestion": 7
+      },
+      "commit": "feefad6-pyplan"
+    },
+    {
+      "repo": "flask",
+      "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+      "shown": 0,
+      "tiers": {
+        "default": 0,
+        "suggestion": 0
+      },
+      "commit": "feefad6-pyplan"
+    },
+    {
+      "repo": "fastapi",
+      "sha": "1ca09c13584ca45aa0921e5e40b31d49c5e3135a",
+      "shown": 1,
+      "tiers": {
+        "default": 0,
+        "suggestion": 1
+      },
+      "commit": "feefad6-pyplan"
+    },
+    {
+      "repo": "langchain",
+      "sha": "e649741517b9584aae63a6ebd6ada803967da1c9",
+      "shown": 2,
+      "tiers": {
+        "default": 0,
+        "suggestion": 2
+      },
+      "commit": "feefad6-pyplan"
+    }
+  ],
+  "proposals": [
+    {
+      "uid": "full-stack-fastapi-template/D-6e757d",
+      "repo": "full-stack-fastapi-template",
+      "id": "D-6e757d",
+      "rank": 1,
+      "summary": "files in frontend/** use lucide-react for icons, not react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react",
+      "rule_kind": "prefers_library",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "members": 25,
+      "evidence": {
+        "holders": 24,
+        "total": 25,
+        "lower_bound": 0.805,
+        "lift": 1
+      },
+      "rule": {
+        "type": "prefers_library",
+        "group": "icons",
+        "preferred": "lucide-react"
+      },
+      "example": "frontend/src/components/Admin/AddUser.tsx#(file)",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "legit_outliers",
+      "trivial_by": null,
+      "label_reason": "lucide-react is the house icon library (components.json iconLibrary: lucide; AddUser.tsx, User.tsx, DeleteItem.tsx), and biome.json has no import restriction, so not TRIVIAL. The only outlier, Footer.tsx, uses react-icons/fa and fa6 for GitHub, X and LinkedIn brand logos, which lucide does not provide; any new social/brand icon would recur as a false alarm, so 0 of 1 counted outliers are mistakes.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-6e757d] files in frontend/** use lucide-react for icons, not react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react\n    evidence: 24/25 (lower bound 0.81, lift 1.0)\n    split:    lucide-react 24, react-icons 1\n    example:  frontend/src/components/Admin/AddUser.tsx#(file)\n    outlier:  frontend/src/components/Common/Footer.tsx:1 (file)",
+      "d5_conditions": true
+    },
+    {
+      "uid": "netbox/D-281ae8",
+      "repo": "netbox",
+      "id": "D-281ae8",
+      "rank": 1,
+      "summary": "classes in netbox/** (types files) are decorated with register_type()",
+      "rule_kind": "wrapped_by:decorator",
+      "group": "decorator",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 134,
+      "evidence": {
+        "holders": 133,
+        "total": 134,
+        "lower_bound": 0.959,
+        "lift": 29.94
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "netbox/netbox/graphql/types.py#register_type"
+        ]
+      },
+      "example": "netbox/circuits/graphql/types.py#CircuitGroupAssignmentType",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "mixed_group",
+      "trivial_by": null,
+      "label_reason": "Concrete model types are decorated with @register_type(model, ...) (circuits, dcim, ipam, core), but the only outlier, NestedGroupObjectType in netbox/graphql/types.py, is an abstract base type kept for plugin compatibility alongside other base types that cannot be bound to a model; 0 of 1, so a new base type there would be wrongly flagged.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-281ae8] classes in netbox/** (types files) are decorated with register_type()\n    evidence: 133/134 (lower bound 0.96, lift 29.9)\n    example:  netbox/circuits/graphql/types.py#CircuitGroupAssignmentType\n    outlier:  netbox/netbox/graphql/types.py:153 NestedGroupObjectType",
+      "d5_conditions": true
+    },
+    {
+      "uid": "netbox/D-cc1341",
+      "repo": "netbox",
+      "id": "D-cc1341",
+      "rank": 2,
+      "summary": "classes in netbox/** (filtersets files) are decorated with register_filterset()",
+      "rule_kind": "wrapped_by:decorator",
+      "group": "decorator",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 141,
+      "evidence": {
+        "holders": 138,
+        "total": 141,
+        "lower_bound": 0.939,
+        "lift": 28.454
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "netbox/utilities/filtersets.py#register_filterset"
+        ]
+      },
+      "example": "netbox/circuits/filtersets.py#CircuitFilterSet",
+      "outliers": 3,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "legit_outliers",
+      "trivial_by": null,
+      "label_reason": "register_filterset (utilities/filtersets.py) keys the registry by Meta.model label, and the connection filtersets reuse ConsolePort/PowerPort/Interface, so decorating them would overwrite the primary filtersets; secondary filtersets for an already-registered model are a legitimate recurring category. Hesitated with ACCEPT since a new primary model filterset missing the decorator would be a real mistake.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-cc1341] classes in netbox/** (filtersets files) are decorated with register_filterset()\n    evidence: 138/141 (lower bound 0.94, lift 28.5)\n    example:  netbox/circuits/filtersets.py#CircuitFilterSet\n    outlier:  netbox/dcim/filtersets.py:3478 ConsoleConnectionFilterSet\n    outlier:  netbox/dcim/filtersets.py:3492 InterfaceConnectionFilterSet\n    outlier:  netbox/dcim/filtersets.py:3485 PowerConnectionFilterSet",
+      "d5_conditions": true
+    },
+    {
+      "uid": "netbox/D-76eb6b",
+      "repo": "netbox",
+      "id": "D-76eb6b",
+      "rank": 3,
+      "summary": "classes in netbox/** (types files) pass `filters` to register_type()",
+      "rule_kind": "passes_key",
+      "group": "passes_key",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 134,
+      "evidence": {
+        "holders": 131,
+        "total": 133,
+        "lower_bound": 0.947,
+        "lift": 29.94
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "netbox/netbox/graphql/types.py#register_type",
+        "index": 99,
+        "key": "filters"
+      },
+      "example": "netbox/circuits/graphql/types.py#CircuitGroupAssignmentType",
+      "outliers": 2,
+      "exempt": 1,
+      "status": "changed",
+      "label": null,
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": null,
+      "old_label": {
+        "label": "WRONG",
+        "wrong_because": "legit_outliers"
+      },
+      "diff": {
+        "removed": [],
+        "added": [
+          "    exempt:   netbox/netbox/graphql/types.py:153 NestedGroupObjectType (does not call register_type())"
+        ]
+      },
+      "block": "[D-76eb6b] classes in netbox/** (types files) pass `filters` to register_type()\n    evidence: 131/133 (lower bound 0.95, lift 29.9)\n    example:  netbox/circuits/graphql/types.py#CircuitGroupAssignmentType\n    outlier:  netbox/core/graphql/types.py:49 ContentType\n    outlier:  netbox/netbox/graphql/types.py:204 ContentTypeType\n    exempt:   netbox/netbox/graphql/types.py:153 NestedGroupObjectType (does not call register_type())",
+      "d5_conditions": true
+    },
+    {
+      "uid": "netbox/D-cc8d72",
+      "repo": "netbox",
+      "id": "D-cc8d72",
+      "rank": 4,
+      "summary": "classes in netbox/** (forms/filtersets files) call FieldSet()",
+      "rule_kind": "calls",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 136,
+      "evidence": {
+        "holders": 132,
+        "total": 136,
+        "lower_bound": 0.927,
+        "lift": 10.727
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "netbox/utilities/forms/rendering.py#FieldSet"
+      },
+      "example": "netbox/circuits/forms/filtersets.py#CircuitFilterForm",
+      "outliers": 4,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "Concrete filter forms declare fieldsets with FieldSet() even when tiny (core ConfigRevisionFilterForm has only FieldSet('q','filter_id'); users GroupFilterForm and extras ImageAttachmentFilterForm likewise). The four outliers are ordinary FilterForm subclasses used as filterset_form by list views (dcim/views.py:5113-5141, extras/views.py:569) and rendered by the same inc/filter_list.html, whose flat fallback only hides the omission; lacking a model does not stop them using FieldSet, so this is a choice, 4 of 4 look. Nothing catches it: pyproject.toml ruff selects only pycodestyle/pyflakes/isort/RET/UP rules.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-cc8d72] classes in netbox/** (forms/filtersets files) call FieldSet()\n    evidence: 132/136 (lower bound 0.93, lift 10.7)\n    example:  netbox/circuits/forms/filtersets.py#CircuitFilterForm\n    outlier:  netbox/dcim/forms/filtersets.py:2495 ConsoleConnectionFilterForm\n    outlier:  netbox/dcim/forms/filtersets.py:2543 InterfaceConnectionFilterForm\n    outlier:  netbox/dcim/forms/filtersets.py:2519 PowerConnectionFilterForm\n    outlier:  netbox/extras/forms/filtersets.py:640 NotificationGroupFilterForm",
+      "d5_conditions": true
+    },
+    {
+      "uid": "netbox/D-bc0c7d",
+      "repo": "netbox",
+      "id": "D-bc0c7d",
+      "rank": 5,
+      "summary": "classes in netbox/** (search files) are decorated with register_search()",
+      "rule_kind": "wrapped_by:decorator",
+      "group": "decorator",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 100,
+      "evidence": {
+        "holders": 98,
+        "total": 99,
+        "lower_bound": 0.945,
+        "lift": 40.12
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "netbox/netbox/search/__init__.py#register_search"
+        ]
+      },
+      "example": "netbox/circuits/search.py#CircuitGroupIndex",
+      "outliers": 1,
+      "exempt": 1,
+      "status": "changed",
+      "label": null,
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": null,
+      "old_label": {
+        "label": "WRONG",
+        "wrong_because": "mixed_group"
+      },
+      "diff": {
+        "removed": [
+          "    evidence: 98/100 (lower bound 0.93, lift 40.1)",
+          "    outlier:  netbox/extras/models/search.py:16 CachedValue"
+        ],
+        "added": [
+          "    evidence: 98/99 (lower bound 0.94, lift 40.1)",
+          "    exempt:   netbox/extras/models/search.py:16 CachedValue (another kind of class (extends db.models.Model))"
+        ]
+      },
+      "block": "[D-bc0c7d] classes in netbox/** (search files) are decorated with register_search()\n    evidence: 98/99 (lower bound 0.94, lift 40.1)\n    example:  netbox/circuits/search.py#CircuitGroupIndex\n    outlier:  netbox/netbox/forms/search.py:18 SearchForm\n    exempt:   netbox/extras/models/search.py:16 CachedValue (another kind of class (extends db.models.Model))",
+      "d5_conditions": true
+    },
+    {
+      "uid": "netbox/D-4c4e2d",
+      "repo": "netbox",
+      "id": "D-4c4e2d",
+      "rank": 6,
+      "summary": "classes in netbox/** (model_forms files) call FieldSet()",
+      "rule_kind": "calls",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 146,
+      "evidence": {
+        "holders": 129,
+        "total": 146,
+        "lower_bound": 0.821,
+        "lift": 9.614
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "netbox/utilities/forms/rendering.py#FieldSet"
+      },
+      "example": "netbox/circuits/forms/model_forms.py#CircuitForm",
+      "outliers": 17,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "mixed_group",
+      "trivial_by": null,
+      "label_reason": "Standard edit forms declare fieldsets of FieldSet() (CircuitForm, tenancy/vpn/wireless forms), but the outliers are plain forms.Form/ModelForm helpers (DeviceVCMembershipForm, VCMemberSelectForm, PopulateDeviceBayForm; extras BookmarkForm, SubscriptionForm, TableConfigForm, NotificationGroupForm), an inline hidden-field JournalEntryForm, or forms rendered by custom templates (DeviceForm -> dcim/device_edit.html, VLANForm -> ipam/vlan_edit.html, CableForm, VirtualChassisForm); 0 of 12 are mistakes.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-4c4e2d] classes in netbox/** (model_forms files) call FieldSet()\n    evidence: 129/146 (lower bound 0.82, lift 9.6)\n    example:  netbox/circuits/forms/model_forms.py#CircuitForm\n    outlier:  netbox/dcim/forms/model_forms.py:1044 CableForm\n    outlier:  netbox/dcim/forms/model_forms.py:770 DeviceForm\n    outlier:  netbox/dcim/forms/model_forms.py:1260 DeviceVCMembershipForm\n    outlier:  netbox/dcim/forms/model_forms.py:2281 PopulateDeviceBayForm\n    outlier:  netbox/dcim/forms/model_forms.py:1301 VCMemberSelectForm\n    outlier:  netbox/dcim/forms/model_forms.py:1240 VirtualChassisForm\n    outlier:  netbox/extras/forms/model_forms.py:525 BookmarkForm\n    outlier:  netbox/extras/forms/model_forms.py:920 JournalEntryForm\n    outlier:  netbox/extras/forms/model_forms.py:536 NotificationGroupForm\n    outlier:  netbox/extras/forms/model_forms.py:562 SubscriptionForm\n    outlier:  netbox/extras/forms/model_forms.py:446 TableConfigForm\n    outlier:  netbox/ipam/forms/model_forms.py:551 IPAddressAssignForm\n    outlier:  netbox/ipam/forms/model_forms.py:703 VLANForm\n    outlier:  netbox/users/forms/model_forms.py:172 TokenForm\n    outlier:  netbox/users/forms/model_forms.py:128 UserTokenForm\n    outlier:  netbox/virtualization/forms/model_forms.py:106 ClusterAddDevicesForm\n    outlier:  netbox/virtualization/forms/model_forms.py:185 ClusterRemoveDevicesForm",
+      "d5_conditions": true
+    },
+    {
+      "uid": "netbox/D-e2c3e4",
+      "repo": "netbox",
+      "id": "D-e2c3e4",
+      "rank": 7,
+      "summary": "classes in netbox/** (choices files) extend ChoiceSet",
+      "rule_kind": "wrapped_by:extends",
+      "group": "base",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 119,
+      "evidence": {
+        "holders": 114,
+        "total": 114,
+        "lower_bound": 0.967,
+        "lift": 33.714
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "netbox/utilities/choices.py#ChoiceSet"
+        ]
+      },
+      "example": "netbox/circuits/choices.py#CircuitCommitRateChoices",
+      "outliers": 0,
+      "exempt": 5,
+      "status": "changed",
+      "label": null,
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": null,
+      "old_label": {
+        "label": "WRONG",
+        "wrong_because": "mixed_group"
+      },
+      "diff": {
+        "removed": [
+          "    evidence: 114/116 (lower bound 0.94, lift 33.7)",
+          "    outlier:  netbox/extras/choices.py:305 EventRuleActionChoices",
+          "    outlier:  netbox/utilities/choices.py:19 Choice"
+        ],
+        "added": [
+          "    evidence: 114/114 (lower bound 0.97, lift 33.7)",
+          "    exempt:   netbox/extras/choices.py:305 EventRuleActionChoices (documented exception: \"Not a ChoiceSet\")",
+          "    exempt:   netbox/utilities/choices.py:19 Choice (in the module that defines ChoiceSet)",
+          "    exempt:   netbox/utilities/forms/fields/choices.py:76 ChoiceField (a field, named for its base forms.ChoiceField)",
+          "    exempt:   netbox/utilities/forms/fields/choices.py:96 MultipleChoiceField (a field, named for its base forms.MultipleChoiceField)",
+          "    exempt:   netbox/utilities/forms/fields/choices.py:83 TypedChoiceField (a field, named for its base forms.TypedChoiceField)"
+        ]
+      },
+      "block": "[D-e2c3e4] classes in netbox/** (choices files) extend ChoiceSet\n    evidence: 114/114 (lower bound 0.97, lift 33.7)\n    example:  netbox/circuits/choices.py#CircuitCommitRateChoices\n    exempt:   netbox/extras/choices.py:305 EventRuleActionChoices (documented exception: \"Not a ChoiceSet\")\n    exempt:   netbox/utilities/choices.py:19 Choice (in the module that defines ChoiceSet)\n    exempt:   netbox/utilities/forms/fields/choices.py:76 ChoiceField (a field, named for its base forms.ChoiceField)\n    exempt:   netbox/utilities/forms/fields/choices.py:96 MultipleChoiceField (a field, named for its base forms.MultipleChoiceField)\n    exempt:   netbox/utilities/forms/fields/choices.py:83 TypedChoiceField (a field, named for its base forms.TypedChoiceField)",
+      "d5_conditions": true
+    },
+    {
+      "uid": "netbox/D-58913a",
+      "repo": "netbox",
+      "id": "D-58913a",
+      "rank": 8,
+      "summary": "classes in netbox/** (choices files) call Choice()",
+      "rule_kind": "calls",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 119,
+      "evidence": {
+        "holders": 106,
+        "total": 118,
+        "lower_bound": 0.831,
+        "lift": 33.714
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "netbox/utilities/choices.py#Choice"
+      },
+      "example": "netbox/circuits/choices.py#CircuitCommitRateChoices",
+      "outliers": 12,
+      "exempt": 1,
+      "status": "changed",
+      "label": null,
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": null,
+      "old_label": {
+        "label": "ACCEPT",
+        "wrong_because": null
+      },
+      "diff": {
+        "removed": [
+          "    evidence: 106/119 (lower bound 0.82, lift 33.7)",
+          "    outlier:  netbox/utilities/choices.py:19 Choice"
+        ],
+        "added": [
+          "    evidence: 106/118 (lower bound 0.83, lift 33.7)",
+          "    exempt:   netbox/utilities/choices.py:19 Choice (the rule's own target)"
+        ]
+      },
+      "block": "[D-58913a] classes in netbox/** (choices files) call Choice()\n    evidence: 106/118 (lower bound 0.83, lift 33.7)\n    example:  netbox/circuits/choices.py#CircuitCommitRateChoices\n    outlier:  netbox/dcim/choices.py:2267 CoolingConnectorTypeChoices\n    outlier:  netbox/dcim/choices.py:2225 CoolingFeedStatusChoices\n    outlier:  netbox/dcim/choices.py:2177 CoolingMethodChoices\n    outlier:  netbox/dcim/choices.py:2209 CoolingSourceStatusChoices\n    outlier:  netbox/dcim/choices.py:2191 CoolingSourceTypeChoices\n    outlier:  netbox/dcim/choices.py:2241 FluidTypeChoices\n    outlier:  netbox/dcim/choices.py:2255 RackCoolingCapabilityChoices\n    outlier:  netbox/extras/choices.py:50 CustomFieldStatusChoices\n    outlier:  netbox/extras/choices.py:305 EventRuleActionChoices\n    outlier:  netbox/utilities/forms/fields/choices.py:76 ChoiceField\n    outlier:  netbox/utilities/forms/fields/choices.py:96 MultipleChoiceField\n    outlier:  netbox/utilities/forms/fields/choices.py:83 TypedChoiceField\n    exempt:   netbox/utilities/choices.py:19 Choice (the rule's own target)",
+      "d5_conditions": true
+    },
+    {
+      "uid": "netbox/D-73d13c",
+      "repo": "netbox",
+      "id": "D-73d13c",
+      "rank": 9,
+      "summary": "HTTP handlers in netbox/** (api/views files) are named `*Set`",
+      "rule_kind": "named",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 137,
+      "evidence": {
+        "holders": 134,
+        "total": 137,
+        "lower_bound": 0.938,
+        "lift": 12.112
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Set"
+      },
+      "example": "netbox/circuits/api/views.py#CircuitGroupAssignmentViewSet",
+      "outliers": 3,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "legit_outliers",
+      "trivial_by": null,
+      "label_reason": "Router-registered ViewSets are named *ViewSet (tenancy, dcim api/views.py), but the outliers are plain APIView/RetrieveUpdateDestroyAPIView classes wired with .as_view() in ipam/api/urls.py and extras/api/urls.py; the *View suffix is correct for that recurring category, so new non-viewset API views would be falsely flagged.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-73d13c] HTTP handlers in netbox/** (api/views files) are named `*Set`\n    evidence: 134/137 (lower bound 0.94, lift 12.1)\n    example:  netbox/circuits/api/views.py#CircuitGroupAssignmentViewSet\n    outlier:  netbox/extras/api/views.py:465 DashboardView\n    outlier:  netbox/ipam/api/views.py:460 IPRangeAvailableIPAddressesView\n    outlier:  netbox/ipam/api/views.py:454 PrefixAvailableIPAddressesView",
+      "d5_conditions": true
+    },
+    {
+      "uid": "netbox/D-afb64d",
+      "repo": "netbox",
+      "id": "D-afb64d",
+      "rank": 10,
+      "summary": "classes in netbox/** (choices files) are named `*Choices`",
+      "rule_kind": "named",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 119,
+      "evidence": {
+        "holders": 115,
+        "total": 119,
+        "lower_bound": 0.917,
+        "lift": 33.714
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Choices"
+      },
+      "example": "netbox/circuits/choices.py#CircuitCommitRateChoices",
+      "outliers": 4,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "mixed_group",
+      "trivial_by": null,
+      "label_reason": "ChoiceSet subclasses in app choices.py files (circuits, dcim, ipam, vpn) are named *Choices, but the scope also catches utilities/choices.py#Choice (a tuple subclass beside the ChoiceSet definition) and the form-field classes in utilities/forms/fields/choices.py; 0 of 4 counted outliers are mistakes, so a new form field there would be told to be named *Choices.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-afb64d] classes in netbox/** (choices files) are named `*Choices`\n    evidence: 115/119 (lower bound 0.92, lift 33.7)\n    example:  netbox/circuits/choices.py#CircuitCommitRateChoices\n    outlier:  netbox/utilities/choices.py:19 Choice\n    outlier:  netbox/utilities/forms/fields/choices.py:76 ChoiceField\n    outlier:  netbox/utilities/forms/fields/choices.py:96 MultipleChoiceField\n    outlier:  netbox/utilities/forms/fields/choices.py:83 TypedChoiceField",
+      "d5_conditions": true
+    },
+    {
+      "uid": "netbox/D-937c0c",
+      "repo": "netbox",
+      "id": "D-937c0c",
+      "rank": 11,
+      "summary": "classes in netbox/ipam/api/** are named `*Serializer`",
+      "rule_kind": "named",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 29,
+      "evidence": {
+        "holders": 27,
+        "total": 28,
+        "lower_bound": 0.823,
+        "lift": 18.221
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "example": "netbox/ipam/api/serializers_/asns.py#ASNRangeSerializer",
+      "outliers": 1,
+      "exempt": 1,
+      "status": "changed",
+      "label": null,
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": null,
+      "old_label": {
+        "label": "WRONG",
+        "wrong_because": "mixed_group"
+      },
+      "diff": {
+        "removed": [
+          "    evidence: 27/29 (lower bound 0.78, lift 18.2)",
+          "    outlier:  netbox/ipam/api/field_serializers.py:31 IPNetworkField"
+        ],
+        "added": [
+          "    evidence: 27/28 (lower bound 0.82, lift 18.2)",
+          "    exempt:   netbox/ipam/api/field_serializers.py:31 IPNetworkField (shared part used by 2 members)"
+        ]
+      },
+      "block": "[D-937c0c] classes in netbox/ipam/api/** are named `*Serializer`\n    evidence: 27/28 (lower bound 0.82, lift 18.2)\n    example:  netbox/ipam/api/serializers_/asns.py#ASNRangeSerializer\n    outlier:  netbox/ipam/api/field_serializers.py:11 IPAddressField\n    exempt:   netbox/ipam/api/field_serializers.py:31 IPNetworkField (shared part used by 2 members)",
+      "d5_conditions": true
+    },
+    {
+      "uid": "netbox/D-310ec7",
+      "repo": "netbox",
+      "id": "D-310ec7",
+      "rank": 12,
+      "summary": "classes in netbox/ipam/tables/** pass `verbose_name` to Column()",
+      "rule_kind": "passes_key",
+      "group": "passes_key",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 23,
+      "evidence": {
+        "holders": 22,
+        "total": 22,
+        "lower_bound": 0.851,
+        "lift": 26.106
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:django_tables2#Column",
+        "index": 99,
+        "key": "verbose_name"
+      },
+      "example": "netbox/ipam/tables/asn.py#ASNRangeTable",
+      "outliers": 0,
+      "exempt": 1,
+      "status": "changed",
+      "label": null,
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": null,
+      "old_label": {
+        "label": "ACCEPT",
+        "wrong_because": null
+      },
+      "diff": {
+        "removed": [],
+        "added": [
+          "    exempt:   netbox/ipam/tables/ip.py:373 AnnotatedIPAddressTable (does not call Column())"
+        ]
+      },
+      "block": "[D-310ec7] classes in netbox/ipam/tables/** pass `verbose_name` to Column()\n    evidence: 22/22 (lower bound 0.85, lift 26.1)\n    example:  netbox/ipam/tables/asn.py#ASNRangeTable\n    exempt:   netbox/ipam/tables/ip.py:373 AnnotatedIPAddressTable (does not call Column())",
+      "d5_conditions": false
+    },
+    {
+      "uid": "saleor/D-e36ea5",
+      "repo": "saleor",
+      "id": "D-e36ea5",
+      "rank": 1,
+      "summary": "exported values in saleor/core/** do not read os.environ directly",
+      "rule_kind": "avoids:other",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 77,
+      "evidence": {
+        "holders": 76,
+        "total": 77,
+        "lower_bound": 0.93,
+        "lift": 11.83
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "os_environ"
+      },
+      "example": "saleor/core/auth.py#AUTH_HEADER_PREFIXES",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "incidental",
+      "trivial_by": null,
+      "label_reason": "Members (auth.py AUTH_HEADER_PREFIXES, jwt.py JWT_* names, db/connection.py TRACEBACK_LIMIT) are fixed literals with no need for configuration; the one outlier, DEFAULT_CURRENCY in the dev-only random_data.py, is the one value that is configurable and mirrors the same os.environ.get('DEFAULT_CURRENCY','USD') in giftcard/models.py, while core/views.py and cleaners/html.py read os.getenv directly too, so no team choice against direct env reads is visible. Hesitated with ACCEPT (routing config through settings.py would be cleaner).",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-e36ea5] exported values in saleor/core/** do not read os.environ directly\n    evidence: 76/77 (lower bound 0.93, lift 11.8)\n    example:  saleor/core/auth.py#AUTH_HEADER_PREFIXES\n    outlier:  saleor/core/development/random_data.py:139 DEFAULT_CURRENCY",
+      "d5_conditions": true
+    },
+    {
+      "uid": "saleor/D-71795b",
+      "repo": "saleor",
+      "id": "D-71795b",
+      "rank": 2,
+      "summary": "classes in saleor/** (dataloaders files) are named `*Loader`",
+      "rule_kind": "named",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 128,
+      "evidence": {
+        "holders": 126,
+        "total": 128,
+        "lower_bound": 0.945,
+        "lift": 11.011
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Loader"
+      },
+      "example": "saleor/graphql/account/dataloaders.py#AccessibleChannelsByGroupIdLoader",
+      "outliers": 2,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "DataLoader subclasses across account, order, tax and plugins dataloaders.py are named *Loader (e.g. AnonymousPluginManagerLoader, TaxClassCountryRateByTaxClassIDLoader); the outliers are ordinary DataLoaders that drifted ('...Dataloader' casing in plugins/dataloaders.py:31, missing suffix in tax/dataloaders.py:37), and ruff in pyproject.toml has no naming rules, so the warning is a useful review nit.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-71795b] classes in saleor/** (dataloaders files) are named `*Loader`\n    evidence: 126/128 (lower bound 0.94, lift 11.0)\n    example:  saleor/graphql/account/dataloaders.py#AccessibleChannelsByGroupIdLoader\n    outlier:  saleor/graphql/plugins/dataloaders.py:31 PluginManagerByRequestorDataloader\n    outlier:  saleor/graphql/tax/dataloaders.py:37 TaxConfigurationByChannelId",
+      "d5_conditions": true
+    },
+    {
+      "uid": "saleor/D-ac08d9",
+      "repo": "saleor",
+      "id": "D-ac08d9",
+      "rank": 3,
+      "summary": "enums in saleor/** (error_codes files) are named `*Code`",
+      "rule_kind": "named",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 92,
+      "evidence": {
+        "holders": 91,
+        "total": 92,
+        "lower_bound": 0.941,
+        "lift": 26.047
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Code"
+      },
+      "example": "saleor/account/error_codes.py#AccountErrorCode",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "Every enum in error_codes.py files is named *ErrorCode (AccountErrorCode, OrderNoteAddErrorCode, WebhookDryRunErrorCode); ExternalNotificationErrorCodes is the lone plural, and graphql/core/enums.py even re-exposes it as ExternalNotificationTriggerErrorCode, showing it is off-scheme drift. No ruff naming rule (N not selected in pyproject.toml) enforces this.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-ac08d9] enums in saleor/** (error_codes files) are named `*Code`\n    evidence: 91/92 (lower bound 0.94, lift 26.0)\n    example:  saleor/account/error_codes.py#AccountErrorCode\n    outlier:  saleor/graphql/notifications/error_codes.py:4 ExternalNotificationErrorCodes",
+      "d5_conditions": true
+    },
+    {
+      "uid": "saleor/D-a6847e",
+      "repo": "saleor",
+      "id": "D-a6847e",
+      "rank": 4,
+      "summary": "classes in saleor/graphql/attribute/dataloaders/** are named `*Loader`",
+      "rule_kind": "named",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 19,
+      "evidence": {
+        "holders": 18,
+        "total": 19,
+        "lower_bound": 0.754,
+        "lift": 10.597
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Loader"
+      },
+      "example": "saleor/graphql/attribute/dataloaders/assigned_attributes.py#AttributeByPageIdAndAttributeSlugLoader",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "Every DataLoader subclass in assigned_attributes.py, reference_types.py and the rest of attributes.py ends in Loader; AttributesByAttributeId (attributes.py:22) is an ordinary DataLoader[int, Attribute] that simply dropped the suffix, and ruff in pyproject.toml selects no pep8-naming rules, so nothing catches it. Only three files exist in scope, so reference_types.py was the only further member file available.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-a6847e] classes in saleor/graphql/attribute/dataloaders/** are named `*Loader`\n    evidence: 18/19 (lower bound 0.75, lift 10.6)\n    example:  saleor/graphql/attribute/dataloaders/assigned_attributes.py#AttributeByPageIdAndAttributeSlugLoader\n    outlier:  saleor/graphql/attribute/dataloaders/attributes.py:22 AttributesByAttributeId",
+      "d5_conditions": true
+    },
+    {
+      "uid": "saleor/D-e86c5d",
+      "repo": "saleor",
+      "id": "D-e86c5d",
+      "rank": 5,
+      "summary": "files in saleor/graphql/account/** have a test file",
+      "rule_kind": "has_test",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 51,
+      "evidence": {
+        "holders": 50,
+        "total": 51,
+        "lower_bound": 0.897,
+        "lift": 1.646
+      },
+      "rule": {
+        "type": "has_test"
+      },
+      "example": "saleor/graphql/account/bulk_mutations/customer_bulk_delete.py#(file)",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "Members include support modules as well as mutations (i18n.py, itself a mixin module, has test_i18n.py importing I18nMixin; enums/types/sorters are imported by tests), so mixins.py is not a different kind of thing: it holds real logic, including AppImpersonateMixin's IMPERSONATE_USER permission check, and no test imports it (covered only indirectly via test_account_address_create.py), so 1 of 1 counted outliers is worth a look. No tool enforces test presence; wording does not say how a test file is matched (clear: false). Hesitated with WRONG mixed_group.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-e86c5d] files in saleor/graphql/account/** have a test file\n    evidence: 50/51 (lower bound 0.90, lift 1.6)\n    example:  saleor/graphql/account/bulk_mutations/customer_bulk_delete.py#(file)\n    outlier:  saleor/graphql/account/mixins.py:1 (file)",
+      "d5_conditions": true
+    },
+    {
+      "uid": "saleor/D-6af632",
+      "repo": "saleor",
+      "id": "D-6af632",
+      "rank": 6,
+      "summary": "files in saleor/graphql/order/** have a test file",
+      "rule_kind": "has_test",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 38,
+      "evidence": {
+        "holders": 36,
+        "total": 38,
+        "lower_bound": 0.827,
+        "lift": 1.59
+      },
+      "rule": {
+        "type": "has_test"
+      },
+      "example": "saleor/graphql/order/bulk_mutations/draft_orders.py#(file)",
+      "outliers": 2,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "mixed_group",
+      "trivial_by": null,
+      "label_reason": "Concrete mutation modules have matching tests (order_note_add.py -> test_order_note_add.py, order_void.py -> test_order_void.py), but both outliers are shared helpers: draft_order_cleaner.py holds clean_* functions used by draft_order_create/update, and order_note_common.py is an abstract OrderNoteCommon base (Meta.abstract=True) tested through its subclasses; new helper/base modules would be flagged for nothing (0 of 2). Wording is also vague about how a test file is matched (draft_orders.py maps to test_draft_order_bulk_delete.py).",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-6af632] files in saleor/graphql/order/** have a test file\n    evidence: 36/38 (lower bound 0.83, lift 1.6)\n    example:  saleor/graphql/order/bulk_mutations/draft_orders.py#(file)\n    outlier:  saleor/graphql/order/mutations/draft_order_cleaner.py:1 (file)\n    outlier:  saleor/graphql/order/mutations/order_note_common.py:1 (file)",
+      "d5_conditions": true
+    },
+    {
+      "uid": "saleor/D-0da0cf",
+      "repo": "saleor",
+      "id": "D-0da0cf",
+      "rank": 7,
+      "summary": "files in saleor/graphql/app/** have a test file",
+      "rule_kind": "has_test",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 21,
+      "evidence": {
+        "holders": 20,
+        "total": 21,
+        "lower_bound": 0.773,
+        "lift": 1.599
+      },
+      "rule": {
+        "type": "has_test"
+      },
+      "example": "saleor/graphql/app/dataloaders/app.py#(file)",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "legit_outliers",
+      "trivial_by": null,
+      "label_reason": "Members with logic have direct tests (dataloaders/app.py via test_app_by_token_loader_use_cache.py, utils.py via tests/test_utils.py, app_create.py via test_app_create.py), but the only outlier thumbnail.py is two purely declarative BaseThumbnailBySizeAndFormatLoader subclasses setting context_key/model_name, exercised through the logo thumbnail queries in test_apps_installations.py; the same pattern recurs (product/dataloaders/products.py), so new declarative loader modules would get false alarms: 0 of 1 counted outliers is a mistake. Rule wording does not say how a test file is matched (clear: false).",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-0da0cf] files in saleor/graphql/app/** have a test file\n    evidence: 20/21 (lower bound 0.77, lift 1.6)\n    example:  saleor/graphql/app/dataloaders/app.py#(file)\n    outlier:  saleor/graphql/app/dataloaders/thumbnail.py:1 (file)",
+      "d5_conditions": true
+    },
+    {
+      "uid": "fastapi/D-499c0e",
+      "repo": "fastapi",
+      "id": "D-499c0e",
+      "rank": 1,
+      "summary": "functions in scripts/** declare their return type",
+      "rule_kind": "control",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 103,
+      "evidence": {
+        "holders": 94,
+        "total": 102,
+        "lower_bound": 0.853,
+        "lift": 3.056
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "example": "scripts/add_latest_release_date.py#main",
+      "outliers": 8,
+      "exempt": 1,
+      "status": "changed",
+      "label": null,
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": null,
+      "old_label": {
+        "label": "ACCEPT",
+        "wrong_because": null
+      },
+      "diff": {
+        "removed": [
+          "    evidence: 94/103 (lower bound 0.84, lift 3.1)",
+          "    outlier:  scripts/docs.py:836 add_permalinks_page"
+        ],
+        "added": [
+          "    evidence: 94/102 (lower bound 0.85, lift 3.1)",
+          "    exempt:   scripts/docs.py:836 add_permalinks_page (shared part used by 2 members)"
+        ]
+      },
+      "block": "[D-499c0e] functions in scripts/** declare their return type\n    evidence: 94/102 (lower bound 0.85, lift 3.1)\n    example:  scripts/add_latest_release_date.py#main\n    outlier:  scripts/docs.py:119 complete_existing_lang\n    outlier:  scripts/docs.py:590 langs_json\n    outlier:  scripts/docs.py:132 new_lang\n    outlier:  scripts/docs.py:336 remove_header_permalinks\n    outlier:  scripts/translation_fixer.py:26 callback\n    outlier:  scripts/translation_fixer.py:102 fix_all\n    outlier:  scripts/translation_fixer.py:116 fix_pages\n    outlier:  scripts/translation_fixer.py:56 get_all_paths\n    exempt:   scripts/docs.py:836 add_permalinks_page (shared part used by 2 members)",
+      "d5_conditions": true
+    },
+    {
+      "uid": "langchain/D-468530",
+      "repo": "langchain",
+      "id": "D-468530",
+      "rank": 1,
+      "summary": "Python packages use the pytest version most workspace packages use",
+      "rule_kind": "dependency_version",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 22,
+      "evidence": {
+        "holders": 21,
+        "total": 22,
+        "lower_bound": 0.782,
+        "lift": 1
+      },
+      "rule": {
+        "type": "dependency_version",
+        "name": "pytest"
+      },
+      "example": "libs/core/pyproject.toml#langchain-core",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "legit_outliers",
+      "trivial_by": null,
+      "label_reason": "Members pin \"pytest>=9.0.3,<10.0.0\" in their dev `test` dependency group (core, openai, text-splitters, anthropic pyproject.toml). The lone outlier, langchain-tests (libs/standard-tests/pyproject.toml:28), is a pytest plugin library that lists pytest as a published runtime dependency, and it leaves the upper bound off its other pytest-ecosystem deps as well, so downstream packages can choose their own pytest. Leaving the cap off is deliberate and would recur for any shipped test-helper package. With 0 of 1 counted outliers a mistake, the label is WRONG. No lint or CI check enforces the pin; I also weighed mixed_group as the reason, since runtime deps and dev groups are mixed in one rule.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-468530] Python packages use the pytest version most workspace packages use\n    evidence: 21/22 (lower bound 0.78, lift 1.0)\n    split:    >=9.0.3,<10.0.0 21, >=9.0.3 1\n    example:  libs/core/pyproject.toml#langchain-core\n    outlier:  libs/standard-tests/pyproject.toml:1 langchain-tests",
+      "d5_conditions": true
+    },
+    {
+      "uid": "langchain/D-0e154c",
+      "repo": "langchain",
+      "id": "D-0e154c",
+      "rank": 2,
+      "summary": "libs/langchain_v1: TypedDicts in langchain/agents/** take `TypedDict` from typing_extensions, not typing",
+      "rule_kind": "imports_from",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 19,
+      "evidence": {
+        "holders": 18,
+        "total": 19,
+        "lower_bound": 0.754,
+        "lift": 1
+      },
+      "rule": {
+        "type": "imports_from",
+        "name": "TypedDict",
+        "source": "pkg:typing_extensions#TypedDict",
+        "instead_of": [
+          "pkg:python:typing#TypedDict"
+        ]
+      },
+      "example": "libs/langchain_v1/langchain/agents/middleware/_redaction.py#PIIMatch",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "new",
+      "label": null,
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": null,
+      "old_label": null,
+      "diff": null,
+      "block": "[D-0e154c] libs/langchain_v1: TypedDicts in langchain/agents/** take `TypedDict` from typing_extensions, not typing\n    evidence: 18/19 (lower bound 0.75, lift 1.0)\n    split:    typing_extensions 18, typing 1\n    example:  libs/langchain_v1/langchain/agents/middleware/_redaction.py#PIIMatch\n    outlier:  libs/langchain_v1/langchain/agents/middleware/summarization.py:217 TriggerClause",
+      "d5_conditions": false
+    }
+  ],
+  "gone": []
+}

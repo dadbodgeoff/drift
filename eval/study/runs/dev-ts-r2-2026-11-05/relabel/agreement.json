@@ -1,0 +1,86 @@
+{
+  "a": "eval/study/runs/dev-ts-r2-2026-11-05/relabel/labels/A",
+  "b": "eval/study/runs/dev-ts-r2-2026-11-05/relabel/labels/B",
+  "n": 31,
+  "scope": 31,
+  "exact": 0.8387096774193549,
+  "kappa": 0.6652267818574514,
+  "kappa_boot": {
+    "lo": 0.42622950819672123,
+    "hi": 0.901023890784983,
+    "clusters": 10
+  },
+  "accept_vs_not": {
+    "n": 31,
+    "po": 0.8387096774193549,
+    "pe": 0.5182101977107181,
+    "kappa": 0.6652267818574514
+  },
+  "wrong_vs_not": {
+    "n": 31,
+    "po": 0.8387096774193549,
+    "pe": 0.5182101977107181,
+    "kappa": 0.6652267818574514
+  },
+  "confusion": {
+    "ACCEPT": {
+      "ACCEPT": 16,
+      "TRIVIAL": 0,
+      "WRONG": 2
+    },
+    "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+    },
+    "WRONG": {
+      "ACCEPT": 3,
+      "TRIVIAL": 0,
+      "WRONG": 10
+    }
+  },
+  "mix": {
+    "A": {
+      "ACCEPT": 18,
+      "TRIVIAL": 0,
+      "WRONG": 13
+    },
+    "B": {
+      "ACCEPT": 19,
+      "TRIVIAL": 0,
+      "WRONG": 12
+    }
+  },
+  "disagreements": [
+    {
+      "uid": "ai/D-fc5ef7",
+      "repo": "ai",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "supabase/D-d8dcea",
+      "repo": "supabase",
+      "a": "WRONG",
+      "b": "ACCEPT"
+    },
+    {
+      "uid": "novu/D-4512a2",
+      "repo": "novu",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "midday/D-efc6d4",
+      "repo": "midday",
+      "a": "WRONG",
+      "b": "ACCEPT"
+    },
+    {
+      "uid": "midday/D-98e729",
+      "repo": "midday",
+      "a": "WRONG",
+      "b": "ACCEPT"
+    }
+  ]
+}

@@ -1,0 +1,1514 @@
+{
+  "rubric": {
+    "version": "v3",
+    "sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+  },
+  "product": {
+    "commit": "feefad614e6e13e3cdc2f661e42c8630d1579f53",
+    "binary_sha256": "24ed92b6a8e77b04366a83cb1d8e0aa24af4d19749c61976253dac9c91a89542",
+    "dirty": false
+  },
+  "previous": {
+    "dev_v3": {
+      "run": "eval/study/runs/dev-v3-2026-11-06/ts",
+      "commit": "debc33a3483ba9c53dfac93d50bbadf58553ea27"
+    },
+    "relabel_2026_11_06": {
+      "run": "eval/study/runs/dev-v3-relabel-2026-11-06/ts",
+      "commit": "fcec23198fe36fa3b3c621613f158573f146a032"
+    }
+  },
+  "d7_tier": "eval/study/tier-d7.json",
+  "census_tier_vs_d7_mismatches": [],
+  "cards_vs_relabel_2026_11_06": {
+    "identical": 158,
+    "differ": [],
+    "no_longer_shown": []
+  },
+  "default": {
+    "shown": 29,
+    "carried_from_relabel_2026_11_06": 29,
+    "carried_from_dev_v3": 0,
+    "to_label": 0,
+    "to_label_new": 0,
+    "to_label_changed": 0
+  },
+  "suggestion": {
+    "shown": 129,
+    "carried_from_relabel_2026_11_06": 0,
+    "carried_from_dev_v3": 76,
+    "to_label": 53,
+    "to_label_new": 10,
+    "to_label_changed": 43
+  },
+  "all": {
+    "shown": 158,
+    "carried_from_relabel_2026_11_06": 29,
+    "carried_from_dev_v3": 76,
+    "to_label": 53,
+    "to_label_new": 10,
+    "to_label_changed": 43
+  },
+  "relabel": [
+    "ai/D-5baed4",
+    "ai/D-80697a",
+    "cal.com/D-42ab67",
+    "cal.com/D-4791b7",
+    "cal.com/D-5722ba",
+    "cal.com/D-d690c0",
+    "cal.com/D-e5e923",
+    "cal.com/D-ec4221",
+    "documenso/D-4785b8",
+    "documenso/D-a10f62",
+    "dub/D-024a81",
+    "dub/D-258285",
+    "dub/D-3fad9a",
+    "dub/D-418256",
+    "dub/D-a23ff8",
+    "dub/D-e25af3",
+    "immich/D-3b4f47",
+    "infisical/D-055c32",
+    "infisical/D-156a6f",
+    "infisical/D-1b2542",
+    "infisical/D-272621",
+    "infisical/D-ac787f",
+    "infisical/D-bf8c50",
+    "infisical/D-d7b5b7",
+    "infisical/D-d9b44e",
+    "infisical/D-fd3f1a",
+    "midday/D-5880dd",
+    "midday/D-8fd473",
+    "midday/D-98e729",
+    "midday/D-efc6d4",
+    "midday/D-f6c709",
+    "nest/D-897eda",
+    "novu/D-2e9dcc",
+    "novu/D-462c2b",
+    "novu/D-67ddb9",
+    "novu/D-6d3bdc",
+    "novu/D-7c65a3",
+    "novu/D-94d735",
+    "novu/D-bdd970",
+    "novu/D-dbba9a",
+    "supabase/D-3c4b60",
+    "supabase/D-db9d80",
+    "twenty/D-006db2",
+    "twenty/D-0cd62c",
+    "twenty/D-153f9c",
+    "twenty/D-2a3e38",
+    "twenty/D-2df337",
+    "twenty/D-6429a5",
+    "twenty/D-70d216",
+    "twenty/D-865fba",
+    "twenty/D-868e25",
+    "twenty/D-bc65cf",
+    "twenty/D-cfebe6"
+  ],
+  "relabel_per_repo": {
+    "dub": 6,
+    "twenty": 11,
+    "cal.com": 6,
+    "documenso": 2,
+    "ai": 2,
+    "nest": 1,
+    "supabase": 2,
+    "novu": 8,
+    "immich": 1,
+    "midday": 5,
+    "infisical": 9
+  },
+  "previous_not_shown": [
+    "dub/D-50df58",
+    "twenty/D-7e503c",
+    "twenty/D-0929de",
+    "twenty/D-47b768",
+    "formbricks/D-60208a",
+    "formbricks/D-5303d3",
+    "cal.com/D-0b36fb",
+    "documenso/D-efe3da",
+    "documenso/D-d19fc6",
+    "documenso/D-879e02",
+    "nest/D-44a46d",
+    "nest/D-48b32a",
+    "nest/D-f68b2a",
+    "supabase/D-b10f47",
+    "novu/D-4512a2",
+    "midday/D-ef5012",
+    "midday/D-d1b6ba",
+    "infisical/D-259bd1",
+    "infisical/D-34f463",
+    "infisical/D-536c03",
+    "infisical/D-4be5e9"
+  ],
+  "proposals": [
+    {
+      "uid": "dub/D-d24d21",
+      "tier": "default",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:call",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "dub/D-345913",
+      "tier": "default",
+      "card_vs_dev_v3": "new",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:call",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "dub/D-83351e",
+      "tier": "default",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:call",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "dub/D-015190",
+      "tier": "default",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:call",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "dub/D-ebbc30",
+      "tier": "default",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:call",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "dub/D-e25af3",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "renders",
+      "action": "relabel"
+    },
+    {
+      "uid": "dub/D-742eb6",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "avoids:other",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "dub/D-3fad9a",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "renders",
+      "action": "relabel"
+    },
+    {
+      "uid": "dub/D-a23ff8",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "renders",
+      "action": "relabel"
+    },
+    {
+      "uid": "dub/D-024a81",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "renders",
+      "action": "relabel"
+    },
+    {
+      "uid": "dub/D-79cc0a",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "calls",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "dub/D-418256",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "renders",
+      "action": "relabel"
+    },
+    {
+      "uid": "dub/D-258285",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "relabel"
+    },
+    {
+      "uid": "dub/D-2ea85b",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "dub/D-ec6127",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "twenty/D-6429a5",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:decorator",
+      "action": "relabel"
+    },
+    {
+      "uid": "twenty/D-0cd62c",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:decorator",
+      "action": "relabel"
+    },
+    {
+      "uid": "twenty/D-2df337",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:decorator",
+      "action": "relabel"
+    },
+    {
+      "uid": "twenty/D-70d216",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:decorator",
+      "action": "relabel"
+    },
+    {
+      "uid": "twenty/D-2456fc",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:extends",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "twenty/D-3c8584",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:extends",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "twenty/D-c39eb9",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:extends",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "twenty/D-5cb05f",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "calls",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "twenty/D-cfebe6",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "new",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:decorator",
+      "action": "relabel"
+    },
+    {
+      "uid": "twenty/D-2a3e38",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:decorator",
+      "action": "relabel"
+    },
+    {
+      "uid": "twenty/D-153f9c",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "new",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "passes_key",
+      "action": "relabel"
+    },
+    {
+      "uid": "twenty/D-865fba",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "new",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:decorator",
+      "action": "relabel"
+    },
+    {
+      "uid": "twenty/D-bc65cf",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "passes_key",
+      "action": "relabel"
+    },
+    {
+      "uid": "twenty/D-006db2",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "passes_key",
+      "action": "relabel"
+    },
+    {
+      "uid": "twenty/D-868e25",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "calls",
+      "action": "relabel"
+    },
+    {
+      "uid": "formbricks/D-73b648",
+      "tier": "default",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:call",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "formbricks/D-b8f1ee",
+      "tier": "default",
+      "card_vs_dev_v3": "summary-only",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "avoids:import",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "formbricks/D-cf32c5",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "passes_key",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "formbricks/D-ec0946",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "passes_key",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "formbricks/D-b70b0a",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "passes_key",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "formbricks/D-71e798",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "passes_key",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "formbricks/D-5adbb0",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "calls",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "formbricks/D-43e309",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:call",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "formbricks/D-87fcf9",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "formbricks/D-514f45",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "has_test",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "formbricks/D-97495d",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "before",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "formbricks/D-d64e88",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "prefers_library",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "formbricks/D-3cabc8",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "before",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "cal.com/D-c54406",
+      "tier": "default",
+      "card_vs_dev_v3": "new",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:call",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "cal.com/D-2f232d",
+      "tier": "default",
+      "card_vs_dev_v3": "summary-only",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "avoids:import",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "cal.com/D-441d0e",
+      "tier": "default",
+      "card_vs_dev_v3": "summary-only",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "avoids:import",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "cal.com/D-31be39",
+      "tier": "default",
+      "card_vs_dev_v3": "summary-only",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "avoids:import",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "cal.com/D-f26528",
+      "tier": "default",
+      "card_vs_dev_v3": "summary-only",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "avoids:import",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "cal.com/D-777a50",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:decorator",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "cal.com/D-42ab67",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "control",
+      "action": "relabel"
+    },
+    {
+      "uid": "cal.com/D-ec4221",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:decorator",
+      "action": "relabel"
+    },
+    {
+      "uid": "cal.com/D-5722ba",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:extends",
+      "action": "relabel"
+    },
+    {
+      "uid": "cal.com/D-4791b7",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "calls",
+      "action": "relabel"
+    },
+    {
+      "uid": "cal.com/D-d690c0",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "relabel"
+    },
+    {
+      "uid": "cal.com/D-fafac1",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "cal.com/D-554063",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "cal.com/D-8d7d13",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "cal.com/D-e5e923",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "relabel"
+    },
+    {
+      "uid": "documenso/D-32c861",
+      "tier": "default",
+      "card_vs_dev_v3": "new",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:call",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "documenso/D-a0eee5",
+      "tier": "default",
+      "card_vs_dev_v3": "new",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:call",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "documenso/D-55ae12",
+      "tier": "default",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:call",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "documenso/D-d51d70",
+      "tier": "default",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:call",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "documenso/D-9b91c3",
+      "tier": "default",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:call",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "documenso/D-041293",
+      "tier": "default",
+      "card_vs_dev_v3": "summary-only",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "avoids:import",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "documenso/D-7b5140",
+      "tier": "default",
+      "card_vs_dev_v3": "summary-only",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "avoids:import",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "documenso/D-2a51e9",
+      "tier": "default",
+      "card_vs_dev_v3": "summary-only",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "avoids:import",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "documenso/D-c3b713",
+      "tier": "default",
+      "card_vs_dev_v3": "summary-only",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "avoids:import",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "documenso/D-fc0990",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "calls",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "documenso/D-545ea0",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "renders",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "documenso/D-4785b8",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "relabel"
+    },
+    {
+      "uid": "documenso/D-aafe01",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "documenso/D-694c8a",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "prefers_library",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "documenso/D-a10f62",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "new",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "relabel"
+    },
+    {
+      "uid": "excalidraw/D-553404",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "avoids:other",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "excalidraw/D-92af59",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "ai/D-fc5ef7",
+      "tier": "default",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:call",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "ai/D-17ad34",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "calls",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "ai/D-5590d9",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "ai/D-cdee41",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "ai/D-5baed4",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "new",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "has_test",
+      "action": "relabel"
+    },
+    {
+      "uid": "ai/D-80697a",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "new",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "has_test",
+      "action": "relabel"
+    },
+    {
+      "uid": "ai/D-8fbbad",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "dependency_version",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "ai/D-224b9e",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "dependency_version",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "nest/D-897eda",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:extends",
+      "action": "relabel"
+    },
+    {
+      "uid": "nest/D-3915b0",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "avoids:other",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "supabase/D-c2e88c",
+      "tier": "default",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:call",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "supabase/D-e97861",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "calls",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "supabase/D-922bc7",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "passes_key",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "supabase/D-9b2da2",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:jsx",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "supabase/D-db9d80",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "renders",
+      "action": "relabel"
+    },
+    {
+      "uid": "supabase/D-5bd6b4",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "supabase/D-cf40f5",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "supabase/D-df24f2",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "prefers_library",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "supabase/D-3c4b60",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "control",
+      "action": "relabel"
+    },
+    {
+      "uid": "supabase/D-7c4152",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "prefers_library",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "supabase/D-100c39",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "prefers_library",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "supabase/D-d8dcea",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "control",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "supabase/D-017ce5",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "control",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "supabase/D-c59437",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "package_has",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "novu/D-7c65a3",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:extends",
+      "action": "relabel"
+    },
+    {
+      "uid": "novu/D-462c2b",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:extends",
+      "action": "relabel"
+    },
+    {
+      "uid": "novu/D-af3463",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "calls",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "novu/D-36a604",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:decorator",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "novu/D-3f3e16",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:decorator",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "novu/D-2e9dcc",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "relabel"
+    },
+    {
+      "uid": "novu/D-6d3bdc",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:extends",
+      "action": "relabel"
+    },
+    {
+      "uid": "novu/D-53fcf5",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:extends",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "novu/D-94d735",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:extends",
+      "action": "relabel"
+    },
+    {
+      "uid": "novu/D-52c44b",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:decorator",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "novu/D-e79710",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "novu/D-67ddb9",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "relabel"
+    },
+    {
+      "uid": "novu/D-bdd970",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "new",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "relabel"
+    },
+    {
+      "uid": "novu/D-dbba9a",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "relabel"
+    },
+    {
+      "uid": "novu/D-808edd",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "immich/D-876763",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:decorator",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "immich/D-c10e8e",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:decorator",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "immich/D-4fc758",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:decorator",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "immich/D-63d2cd",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "passes_key",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "immich/D-379261",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "avoids:other",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "immich/D-3b4f47",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:extends",
+      "action": "relabel"
+    },
+    {
+      "uid": "immich/D-26380c",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "immich/D-ed6dc0",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:decorator",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "immich/D-d7122f",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "avoids:other",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "immich/D-d3f2f9",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:extends",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "immich/D-ac672e",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "control",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "immich/D-f0120c",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "immich/D-57ead0",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "control",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "immich/D-c8db80",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "before",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "midday/D-50255f",
+      "tier": "default",
+      "card_vs_dev_v3": "new",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:call",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "midday/D-b8cff6",
+      "tier": "default",
+      "card_vs_dev_v3": "summary-only",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "avoids:import",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "midday/D-b57953",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "passes_key",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "midday/D-efc6d4",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "calls",
+      "action": "relabel"
+    },
+    {
+      "uid": "midday/D-86f372",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "avoids:other",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "midday/D-98e729",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "relabel"
+    },
+    {
+      "uid": "midday/D-5880dd",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:extends",
+      "action": "relabel"
+    },
+    {
+      "uid": "midday/D-495f56",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "midday/D-f6c709",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "calls",
+      "action": "relabel"
+    },
+    {
+      "uid": "midday/D-7da2b9",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "passes_key",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "midday/D-b98efb",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "calls",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "midday/D-f90103",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "passes_key",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "midday/D-afc38b",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "passes_key",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "midday/D-80f1c3",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "midday/D-8fd473",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "new",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "control",
+      "action": "relabel"
+    },
+    {
+      "uid": "infisical/D-c4efb8",
+      "tier": "default",
+      "card_vs_dev_v3": "new",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:call",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "infisical/D-f674a5",
+      "tier": "default",
+      "card_vs_dev_v3": "new",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:call",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "infisical/D-1e9bb3",
+      "tier": "default",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:call",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "infisical/D-7731c9",
+      "tier": "default",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:call",
+      "action": "carried",
+      "carried_from": "relabel-2026-11-06"
+    },
+    {
+      "uid": "infisical/D-272621",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "passes_key",
+      "action": "relabel"
+    },
+    {
+      "uid": "infisical/D-16b725",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "calls",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "infisical/D-bf8c50",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "new",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "renders",
+      "action": "relabel"
+    },
+    {
+      "uid": "infisical/D-d9b44e",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "passes_key",
+      "action": "relabel"
+    },
+    {
+      "uid": "infisical/D-055c32",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "wrapped_by:jsx",
+      "action": "relabel"
+    },
+    {
+      "uid": "infisical/D-1b2542",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "passes_key",
+      "action": "relabel"
+    },
+    {
+      "uid": "infisical/D-dfa77a",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "identical",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "calls",
+      "action": "carried",
+      "carried_from": "dev-v3-2026-11-06"
+    },
+    {
+      "uid": "infisical/D-156a6f",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "relabel"
+    },
+    {
+      "uid": "infisical/D-fd3f1a",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "renders",
+      "action": "relabel"
+    },
+    {
+      "uid": "infisical/D-ac787f",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "new",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "named",
+      "action": "relabel"
+    },
+    {
+      "uid": "infisical/D-d7b5b7",
+      "tier": "suggestion",
+      "card_vs_dev_v3": "changed",
+      "card_vs_relabel_2026_11_06": "identical",
+      "kind": "renders",
+      "action": "relabel"
+    }
+  ]
+}

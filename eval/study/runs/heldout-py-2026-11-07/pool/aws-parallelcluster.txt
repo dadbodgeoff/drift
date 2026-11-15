@@ -1,0 +1,58 @@
+7 conventions from 1632 units in 67 roles (0 default tier, 7 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-79ad45] cli: classes in src/pcluster/schemas/** extend BaseSchema
+    evidence: 94/95 (lower bound 0.94, lift 6.5)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  cli/src/pcluster/schemas/cluster_schema.py#AdditionalPackagesSchema
+    outlier:  cli/src/pcluster/schemas/cluster_schema.py:1252 OneOrManyCustomActionField
+
+ 2. [D-70f439] cli: classes in src/pcluster/api/** extend Model
+    evidence: 67/68 (lower bound 0.92, lift 8.4)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  cli/src/pcluster/api/models/ami_info.py#AmiInfo
+    outlier:  cli/src/pcluster/api/flask_app.py:70 ParallelClusterFlaskApp
+    exempt:   cli/src/pcluster/api/errors.py:99 BadRequestException (a exception, named for its base ParallelClusterApiException)
+    exempt:   cli/src/pcluster/api/errors.py:81 BuildImageBadRequestException (a exception, named for its base ParallelClusterApiException)
+    exempt:   cli/src/pcluster/api/errors.py:153 ConflictException (a exception, named for its base ParallelClusterApiException)
+    ... 7 more exempt
+
+ 3. [D-8241b1] cli: functions in src/pcluster/api/controllers/** are decorated with convert_errors()
+    evidence: 20/21 (lower bound 0.77, lift 18.3)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  cli/src/pcluster/api/controllers/cluster_compute_fleet_controller.py#describe_compute_fleet
+    outlier:  cli/src/pcluster/api/controllers/cluster_logs_controller.py:27 validate_filters
+
+ 4. [D-6f69b2] cli: classes in src/pcluster/validators/** are named `*Validator`
+    evidence: 125/129 (lower bound 0.92, lift 5.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  cli/src/pcluster/validators/cluster_validators.py#ArchitectureOsValidator
+    outlier:  cli/src/pcluster/validators/cluster_validators.py:1507 DictLaunchTemplateBuilder
+    outlier:  cli/src/pcluster/validators/slurm_settings_validator.py:202 ExternalSlurmdbdRequiresCustomMungeKey
+    outlier:  cli/src/pcluster/validators/slurm_settings_validator.py:213 ExternalSlurmdbdTrafficNotEncrypted
+    ... 1 more outliers
+
+ 5. [D-51bdb8] cli: classes in src/pcluster/schemas/** are named `*Schema`
+    evidence: 93/94 (lower bound 0.94, lift 6.4)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  cli/src/pcluster/schemas/cluster_schema.py#AdditionalPackagesSchema
+    outlier:  cli/src/pcluster/schemas/cluster_schema.py:1308 CustomActionScriptSchemaBase
+    exempt:   cli/src/pcluster/schemas/cluster_schema.py:1252 OneOrManyCustomActionField (shared part used by 3 members)
+
+ 6. [D-1ef14c] api/client/src: files in pcluster_client/** have a test file
+    evidence: 73/79 (lower bound 0.84, lift 1.8)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  api/client/src/pcluster_client/api/cluster_compute_fleet_api.py#(file)
+    outlier:  api/client/src/pcluster_client/api_client.py:1 (file)
+    outlier:  api/client/src/pcluster_client/configuration.py:1 (file)
+    outlier:  api/client/src/pcluster_client/exceptions.py:1 (file)
+    ... 3 more outliers
+
+ 7. [D-c15280] cli: files in src/pcluster/validators/** have a test file
+    evidence: 18/19 (lower bound 0.75, lift 1.9)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  cli/src/pcluster/validators/cluster_validators.py#(file)
+    outlier:  cli/src/pcluster/validators/slurm_settings_validator.py:1 (file)
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

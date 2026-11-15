@@ -1,0 +1,219 @@
+{
+  "labels_sha256": {
+    "A": "405b222dea1fcfc35666e6671f87e9c4c6c02dd3043f35040d9aa7b7618799d0",
+    "B": "c6f915e68555437daca2d80bb8577589c6ced0850012a0d8b3f37053f8fbf93b"
+  },
+  "cases": [
+    {
+      "uid": "dub/D-345913",
+      "repo": "dub",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "dub/D-345913",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "apps/web/lib/actions/add-edit-integration.ts",
+            "apps/web/lib/actions/safe-action.ts",
+            "apps/web/lib/actions/check-account-exists.ts",
+            "apps/web/lib/actions/create-user-account.ts",
+            "apps/web/lib/actions/partners/ban-partner.ts",
+            "apps/web/lib/actions/partners/create-program-application.ts",
+            "apps/web/lib/actions/partners/force-withdrawal.ts",
+            "apps/web/lib/actions/partners/upload-program-application-image.ts",
+            "apps/web/lib/actions/request-password-reset.ts",
+            "apps/web/lib/actions/send-otp.ts",
+            "apps/web/lib/ai/generate-csv-mapping.ts",
+            "apps/web/lib/ai/generate-filters.ts",
+            "apps/web/lib/api/oauth/actions.ts",
+            "apps/web/lib/api/partners/create-and-enroll-partner.ts",
+            "apps/web/lib/submitted-leads/mark-submitted-lead-closed-won.ts",
+            "apps/web/lib/submitted-leads/mark-submitted-lead-qualified.ts",
+            "apps/web/lib/actions/generate-unsubscribe-url.ts",
+            "apps/web/lib/actions/partners/archive-partner.ts",
+            "apps/web/lib/actions/send-test-webhook.ts",
+            "apps/web/ui/modals/import-csv-modal/field-mapping.tsx"
+          ],
+          "outliers": [
+            {
+              "symbol": "checkAccountExistsAction",
+              "verdict": "look"
+            },
+            {
+              "symbol": "createUserAccountAction",
+              "verdict": "look"
+            },
+            {
+              "symbol": "banPartner",
+              "verdict": "look"
+            },
+            {
+              "symbol": "createProgramApplicationAction",
+              "verdict": "look"
+            },
+            {
+              "symbol": "forceWithdrawal",
+              "verdict": "look"
+            },
+            {
+              "symbol": "uploadProgramApplicationImageAction",
+              "verdict": "look"
+            },
+            {
+              "symbol": "requestPasswordResetAction",
+              "verdict": "look"
+            },
+            {
+              "symbol": "sendOtpAction",
+              "verdict": "look"
+            },
+            {
+              "symbol": "generateCsvMapping",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "generateFilters",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "validateAuthorizeRequest",
+              "verdict": "look"
+            },
+            {
+              "symbol": "createAndEnrollPartner",
+              "verdict": "look"
+            },
+            {
+              "symbol": "markSubmittedLeadClosedWon",
+              "verdict": "look"
+            },
+            {
+              "symbol": "markSubmittedLeadQualified",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R9"
+          ],
+          "reason": "Members (add-edit-integration.ts, archive-partner.ts, send-test-webhook.ts) are wrapped in the session/workspace-checking clients from safe-action.ts, and no lint or type rule requires it. Every outlier is an exported async function in a \"use server\" file, so a reachable server action that skips the auth client: pre-auth flows on bare actionClient + throwIfAuthenticated (send-otp, sign-up, password reset) are exceptions worth confirming (R3), while server-only helpers like banPartner/forceWithdrawal/markSubmittedLeadClosedWon and the AI actions take caller-supplied workspace/partner objects or call the LLM with no session check.",
+          "defects": [
+            "apps/web/lib/ai/generate-csv-mapping.ts:8 generateCsvMapping is a client-imported server action with no session check, invoking the Anthropic API unauthenticated",
+            "apps/web/lib/ai/generate-filters.ts:40 generateFilters is a server action with no session check, invoking the Anthropic API unauthenticated",
+            "apps/web/lib/actions/partners/ban-partner.ts:50 banPartner exported from a \"use server\" file takes workspace/user from arguments with no auth",
+            "apps/web/lib/actions/partners/force-withdrawal.ts:36 forceWithdrawal exported from a \"use server\" file triggers a payout for a caller-supplied partner with no auth",
+            "apps/web/lib/submitted-leads/mark-submitted-lead-closed-won.ts:17 markSubmittedLeadClosedWon exported from a \"use server\" file tracks a sale for a caller-supplied workspace with no auth"
+          ],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "dub/D-345913",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/web/lib/actions/add-edit-integration.ts",
+            "apps/web/lib/actions/generate-unsubscribe-url.ts",
+            "apps/web/lib/actions/safe-action.ts",
+            "apps/web/lib/actions/check-account-exists.ts",
+            "apps/web/lib/actions/create-user-account.ts",
+            "apps/web/lib/actions/partners/ban-partner.ts",
+            "apps/web/lib/actions/partners/create-program-application.ts",
+            "apps/web/lib/actions/partners/force-withdrawal.ts",
+            "apps/web/lib/actions/partners/upload-program-application-image.ts",
+            "apps/web/lib/actions/request-password-reset.ts",
+            "apps/web/lib/actions/send-otp.ts",
+            "apps/web/lib/ai/generate-csv-mapping.ts",
+            "apps/web/lib/ai/generate-filters.ts",
+            "apps/web/lib/api/oauth/actions.ts",
+            "apps/web/lib/api/partners/create-and-enroll-partner.ts",
+            "apps/web/lib/submitted-leads/mark-submitted-lead-qualified.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "checkAccountExistsAction",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "createUserAccountAction",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "banPartner",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "createProgramApplicationAction",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "forceWithdrawal",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "uploadProgramApplicationImageAction",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "requestPasswordResetAction",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "sendOtpAction",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "generateCsvMapping",
+              "verdict": "look"
+            },
+            {
+              "symbol": "generateFilters",
+              "verdict": "look"
+            },
+            {
+              "symbol": "validateAuthorizeRequest",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "createAndEnrollPartner",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "markSubmittedLeadClosedWon",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "markSubmittedLeadQualified",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2",
+            "R3"
+          ],
+          "reason": "Members use the auth clients (add-edit-integration.ts, generate-unsubscribe-url.ts), but most outliers are deliberately public pre-auth actions on plain actionClient (send-otp, create-user-account, request-password-reset, create-program-application) or non-action helpers in use-server files (ban-partner.ts banPartner, create-and-enroll-partner.ts, mark-submitted-lead-*.ts); only the two unauthenticated AI actions look like real gaps, so 2 of 14 counted; hesitated with ACCEPT given security framing.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    }
+  ]
+}

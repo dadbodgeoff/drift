@@ -1,0 +1,4 @@
+[project]
+name = "fastapi-app"
+version = "0.1.0"
+dependencies = ["fastapi", "sqlmodel", "celery"]

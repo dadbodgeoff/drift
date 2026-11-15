@@ -1,0 +1,57 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - action
+  - app
+  - astro
+  - command
+  - fallback
+  - federation
+  - kv
+  - logging
+  - main
+  - middleware
+  - mod
+  - mq
+  - node
+  - package
+  - router
+  - schema
+  - store
+  - template
+  - tsdown
+  - types
+  suffixes:
+  - bench
+  - bun
+  - config
+  - get
+  - node
+  - post
+  - server
+  - test
+conventions:
+- id: D-a44f2b
+  status: proposed
+  mode: advise
+  summary: workspace packages define a `build:self` script
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: script:build:self
+  evidence:
+    holders: 37
+    total: 38
+    lower_bound: 0.865
+    lift: 1.0
+  example: packages/adonisjs/package.json#@fedify/adonisjs
+  selector_version: 2

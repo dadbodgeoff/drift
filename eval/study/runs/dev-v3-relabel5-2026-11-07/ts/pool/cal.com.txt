@@ -1,0 +1,221 @@
+24 conventions from 11444 units in 694 roles (9 default tier, 15 suggestions)
+
+15 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-594d38] packages/trpc: rpc entry points in server/** (_router files) are wrapped in authedAdminProcedure() or authedProcedure() or createEventPbacProcedure() or authedAdminProcedureWithRequestedUser() or createWebhookProcedure()
+    evidence: 156/171 (lower bound 0.86, lift 15.4)
+    tier:     default
+    split:    authedProcedure 107, authedAdminProcedure 30, createEventPbacProcedure 9, createWebhookProcedure 7, authedAdminProcedureWithRequestedUser 3
+    derived:  bookingsProcedure 1 (built on authedProcedure), createTeamPbacProcedure 1 (built on authedProcedure)
+    example:  packages/trpc/server/routers/loggedInViewer/_router.tsx#MUTATION addNotificationsSubscription
+    outlier:  packages/trpc/server/routers/features/_router.ts:13 QUERY checkTeamFeature
+    outlier:  packages/trpc/server/routers/features/_router.ts:9 QUERY list
+    outlier:  packages/trpc/server/routers/publicViewer/_router.tsx:18 MUTATION markHostAsNoShow
+    ... 12 more outliers
+
+ 2. [D-85e09a] apps/web: HTTP handlers in app/** (route files) are wrapped in defaultResponderForAppDir()
+    evidence: 41/45 (lower bound 0.79, lift 60.1)
+    tier:     default
+    example:  apps/web/app/api/auth/forgot-password/route.ts#POST
+    outlier:  apps/web/app/api/csrf/route.ts:6 GET
+    outlier:  apps/web/app/api/ip/route.ts:4 GET
+    outlier:  apps/web/app/api/social/og/image/route.tsx:34 handler
+    ... 1 more outliers
+
+ 3. [D-2f232d] files in packages/lib/** do not import from apps/web/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 235/236 (lower bound 0.98, lift 3.0)
+    tier:     default
+    example:  packages/lib/CalEventParser.ts#(file)
+    outlier:  packages/lib/hooks/useLocale.ts:1 (file)
+
+ 4. [D-441d0e] files in packages/lib/** do not import from packages/features/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 234/236 (lower bound 0.97, lift 3.0)
+    tier:     default
+    example:  packages/lib/CalEventParser.ts#(file)
+    outlier:  packages/lib/holidays/HolidayService.ts:1 (file)
+    outlier:  packages/lib/holidays/HolidayServiceCachingProxy.ts:1 (file)
+
+ 5. [D-31be39] files in packages/emails/** do not import from packages/app-store/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 137/139 (lower bound 0.95, lift 3.0)
+    tier:     default
+    example:  packages/emails/auth-email-service.ts#(file)
+    outlier:  packages/emails/src/components/LocationInfo.tsx:1 (file)
+    outlier:  packages/emails/src/templates/BrokenIntegrationEmail.tsx:1 (file)
+
+ 6. [D-f26528] files in packages/emails/** do not import from packages/features/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 136/139 (lower bound 0.94, lift 3.0)
+    tier:     default
+    example:  packages/emails/auth-email-service.ts#(file)
+    outlier:  packages/emails/email-manager.ts:1 (file)
+    outlier:  packages/emails/templates/_base-email.ts:1 (file)
+    outlier:  packages/emails/templates/organizer-request-email.ts:1 (file)
+
+ 7. [D-0e68a4] files in packages/platform/atoms/** do not import from apps/web/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 160/168 (lower bound 0.91, lift 3.0)
+    tier:     default
+    example:  packages/platform/atoms/availability/index.ts#(file)
+    outlier:  packages/platform/atoms/availability/AvailabilitySettings.tsx:1 (file)
+    outlier:  packages/platform/atoms/booker/BookerPlatformWrapper.tsx:1 (file)
+    outlier:  packages/platform/atoms/calendar-view/CalendarViewComponent.tsx:1 (file)
+    ... 5 more outliers
+
+ 8. [D-46d8a1] files in packages/app-store/** do not import from packages/platform/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 83/84 (lower bound 0.94, lift 3.0)
+    tier:     default
+    example:  packages/app-store/AppDependencyComponent.tsx#(file)
+    outlier:  packages/app-store/_components/AppCard.tsx:1 (file)
+
+ 9. [D-f4cef1] files in packages/app-store/** do not import from packages/features/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 83/84 (lower bound 0.94, lift 3.0)
+    tier:     default
+    example:  packages/app-store/AppDependencyComponent.tsx#(file)
+    outlier:  packages/app-store/_utils/getConnectedApps.ts:1 (file)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+10. [D-c66c89] workspace packages use the @calcom/types version most workspace packages use
+    evidence: 88/89 (lower bound 0.94, lift 1.0)
+    tier:     suggestion (rule kind dependency_version)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    split:    workspace:* 89, * 1
+    example:  apps/web/package.json#@calcom/web
+    outlier:  packages/app-store/lyra/package.json:1 @calcom/lyra
+
+11. [D-5722ba] packages/emails: classes in templates/** extend BaseEmail, except a member (of the module that defines a rule's target)
+    evidence: 47/47 (lower bound 0.92, lift 21.6)
+    tier:     suggestion (rule kind wrapped_by:extends; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 61% of 18)
+    example:  packages/emails/templates/account-verify-email.ts#AccountVerifyEmail
+    exempt:   packages/emails/templates/_base-email.ts:14 BaseEmail (in the module that defines BaseEmail)
+
+12. [D-8d7d13] packages/emails: functions in ./** are named `send*`, except 2 companions (a helper or constant beside the members that follow it)
+    evidence: 44/44 (lower bound 0.92, lift 40.4)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/emails/auth-email-service.ts#sendChangeOfEmailVerificationLink
+    exempt:   packages/emails/email-manager.ts:62 fetchOrganizationEmailSettings (a helper of sendAddGuestsEmailsAndSMS, which uses it in its file)
+    exempt:   packages/emails/email-manager.ts:67 shouldSkipAttendeeEmailWithSettings (a helper of sendAddGuestsEmailsAndSMS, which uses it in its file)
+
+13. [D-d690c0] packages/trpc: exported values in server/** (*.schema files) are named `*Schema`, except a companion (a helper or constant beside the members that follow it), a plain value (not a schema) and a shared part (used by several members, not a member)
+    evidence: 129/134 (lower bound 0.92, lift 4.2)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/trpc/server/routers/loggedInViewer/addNotificationsSubscription.schema.ts#ZAddNotificationsSubscriptionInputSchema
+    outlier:  packages/trpc/server/routers/viewer/admin/removeTwoFactor.schema.ts:3 ZAdminRemoveTwoFactor
+    outlier:  packages/trpc/server/routers/viewer/admin/setSMSLockState.schema.ts:3 ZSetSMSLockState
+    outlier:  packages/trpc/server/routers/viewer/availability/team/listTeamAvailability.schema.ts:3 ZListTeamAvailaiblityScheme
+    ... 2 more outliers
+    exempt:   packages/trpc/server/routers/viewer/bookings/getWrongAssignmentReports.schema.ts:16 statusToEnumMap (a plain value (literals or built-ins only), not a schema like the members named `*Schema`)
+    exempt:   packages/trpc/server/routers/viewer/calendars/setDestinationReminder.schema.ts:3 VALID_REMINDER_MINUTES (a constant beside ZSetDestinationReminderInputSchema, which follows the scheme)
+    exempt:   packages/trpc/server/routers/viewer/eventTypes/getByViewer.schema.ts:12 filterQuerySchemaStrict (shared part used by 2 members)
+
+14. [D-ec4221] apps/api/v2: HTTP handlers in src/modules/** (*.controller files) are decorated with ApiTags()
+    evidence: 95/100 (lower bound 0.89, lift 17.7)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/api/v2/src/modules/api-keys/controllers/api-keys.controller.ts#POST /v2/api-keys/refresh
+    outlier:  apps/api/v2/src/modules/oauth-clients/controllers/oauth-flow/oauth-flow.controller.ts:48 POST /v2/oauth/:clientId/authorize
+    outlier:  apps/api/v2/src/modules/oauth-clients/controllers/oauth-flow/oauth-flow.controller.ts:83 POST /v2/oauth/:clientId/exchange
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts:76 DELETE /v2/slots/selected-slot
+    ... 2 more outliers
+
+15. [D-554063] packages/emails: components in src/templates/** are named `*Email`
+    evidence: 45/47 (lower bound 0.86, lift 26.3)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/emails/src/templates/AdminOAuthClientNotificationEmail.tsx#AdminOAuthClientNotificationEmail
+    outlier:  packages/emails/src/templates/BookingRedirectEmailNotification.tsx:4 BookingRedirectEmailNotification
+    outlier:  packages/emails/src/templates/VerifyEmailByCode.tsx:9 VerifyEmailByCode
+
+16. [D-7c87f5] packages/coss-ui: functions in src/components/** pass `defaultTagName` to useRender(), except a member (not calling the callee)
+    evidence: 21/21 (lower bound 0.84, lift 117.3)
+    tier:     suggestion (rule kind passes_key)
+    agents:   not shown to agents (family below admission bar: 50% of 12)
+    example:  packages/coss-ui/src/components/badge.tsx#Badge
+    exempt:   packages/coss-ui/src/components/sidebar.tsx:47 useSidebar (does not call useRender())
+
+17. [D-399322] sql models have a `id` field
+    evidence: 113/125 (lower bound 0.84, lift 1.0)
+    tier:     suggestion (rule kind model_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  packages/prisma/migrations/20210605225044_init/migration.sql#Credential
+    outlier:  packages/prisma/migrations/20210613133618_add_team_membership_verification/migration.sql:13 Membership
+    outlier:  packages/prisma/migrations/20210908042159_teams_feature/migration.sql:12 _user_eventtype
+    outlier:  packages/prisma/migrations/20220502154345_adds_apps/migration.sql:8 App
+    ... 9 more outliers
+
+18. [D-777a50] apps/api/v2: HTTP handlers in src/** (*.controller files) are decorated with UseGuards()
+    evidence: 156/175 (lower bound 0.84, lift 15.5)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/api/v2/src/modules/api-keys/controllers/api-keys.controller.ts#POST /v2/api-keys/refresh
+    outlier:  apps/api/v2/src/app.controller.ts:5 GET /health
+    outlier:  apps/api/v2/src/modules/atoms/controllers/atoms.event-types.controller.ts:55 GET /v2/atoms/event-types/:eventSlug/public
+    outlier:  apps/api/v2/src/modules/atoms/controllers/atoms.verification.controller.ts:61 GET /v2/atoms/verification/email/check
+    ... 16 more outliers
+
+19. [D-fafac1] packages/trpc: functions in server/routers/viewer/** (*.handler files) are named `*Handler`, except 13 companions (a helper or constant beside the members that follow it)
+    evidence: 137/154 (lower bound 0.83, lift 13.3)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/trpc/server/routers/viewer/admin/assignFeatureToTeam.handler.ts#assignFeatureToTeamHandler
+    outlier:  packages/trpc/server/routers/viewer/admin/createCoupon.handler.ts:53 createCoupon
+    outlier:  packages/trpc/server/routers/viewer/admin/createSelfHostedLicenseKey.handler.ts:53 createSelfHostedInstance
+    outlier:  packages/trpc/server/routers/viewer/admin/getSMSLockStateTeamsUsers.handler.ts:12 getSMSLockStateTeamsUsers
+    ... 14 more outliers
+    exempt:   packages/trpc/server/routers/viewer/apps/updateAppCredentials.handler.ts:20 handleCustomValidations (a helper of updateAppCredentialsHandler, which uses it in its file)
+    exempt:   packages/trpc/server/routers/viewer/auth/sendVerifyEmailCode.handler.ts:20 sendVerifyEmailCode (a helper of sendVerifyEmailCodeHandler, which uses it in its file)
+    exempt:   packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts:272 buildCalendarEvent (a helper of addGuestsHandler, which uses it in its file)
+    ... 10 more exempt
+
+20. [D-cc64dd] prisma models have a `id` field
+    evidence: 90/101 (lower bound 0.81, lift 1.0)
+    tier:     suggestion (rule kind model_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  packages/platform/examples/base/prisma/schema.prisma#User
+    outlier:  packages/prisma/schema.prisma:1263 App
+    outlier:  packages/prisma/schema.prisma:1636 Avatar
+    outlier:  packages/prisma/schema.prisma:119 CalVideoSettings
+    ... 8 more outliers
+
+21. [D-597695] apps/api/v2: classes in src/lib/** and src/modules/** (*.service files) are named `*Service`
+    evidence: 68/76 (lower bound 0.81, lift 5.7)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/api/v2/src/modules/api-keys/services/api-keys.service.ts#ApiKeysService
+    outlier:  apps/api/v2/src/lib/services/tasker/booking-emails-sms-tasker.service.ts:9 BookingEmailAndSmsTasker
+    outlier:  apps/api/v2/src/lib/services/tasker/calendars-tasker.service.ts:9 CalendarsTasker
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-04-15/services/slots-output.service.ts:15 SlotsOutputService_2024_04_15
+    ... 5 more outliers
+
+22. [D-e5e923] packages/emails: classes in templates/** are named `*Email`
+    evidence: 44/48 (lower bound 0.80, lift 21.6)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/emails/templates/account-verify-email.ts#AccountVerifyEmail
+    outlier:  packages/emails/templates/admin-oauth-client-notification.ts:18 AdminOAuthClientNotification
+    outlier:  packages/emails/templates/admin-organization-notification.ts:16 AdminOrganizationNotification
+    outlier:  packages/emails/templates/booking-redirect-notification.ts:9 BookingRedirectNotification
+    ... 1 more outliers
+
+23. [D-c2e733] apps/api/v2: classes in src/modules/** (*.module files) are named `*Module`
+    evidence: 30/32 (lower bound 0.80, lift 21.6)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/api/v2/src/modules/api-keys/api-keys.module.ts#ApiKeysModule
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-04-15/slots.module.ts:22 SlotsModule_2024_04_15
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-09-04/slots.module.ts:36 SlotsModule_2024_09_04
+
+24. [D-42ab67] packages/trpc: rpc entry points in server/** (_router files) validate their input with a schema
+    evidence: 142/171 (lower bound 0.77, lift 6.9)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  packages/trpc/server/routers/loggedInViewer/_router.tsx#MUTATION addNotificationsSubscription
+    outlier:  packages/trpc/server/routers/features/_router.ts:9 QUERY list
+    outlier:  packages/trpc/server/routers/loggedInViewer/_router.tsx:28 MUTATION unlinkConnectedAccount
+    outlier:  packages/trpc/server/routers/loggedInViewer/_router.tsx:23 QUERY stripeCustomer
+    ... 26 more outliers
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

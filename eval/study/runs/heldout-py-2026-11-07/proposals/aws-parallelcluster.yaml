@@ -1,0 +1,167 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - common
+  - conftest
+  - utils
+  suffixes: []
+conventions:
+- id: D-79ad45
+  status: proposed
+  mode: advise
+  summary: "cli: classes in src/pcluster/schemas/** extend BaseSchema"
+  role:
+    package: cli
+    dir: src/pcluster/schemas
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - cli/src/pcluster/schemas/common_schema.py#BaseSchema
+  evidence:
+    holders: 94
+    total: 95
+    lower_bound: 0.943
+    lift: 6.456
+    python_members: 95
+  example: cli/src/pcluster/schemas/cluster_schema.py#AdditionalPackagesSchema
+  selector_version: 2
+- id: D-51bdb8
+  status: proposed
+  mode: advise
+  summary: "cli: classes in src/pcluster/schemas/** are named `*Schema`"
+  role:
+    package: cli
+    dir: src/pcluster/schemas
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Schema"
+  evidence:
+    holders: 93
+    total: 94
+    lower_bound: 0.942
+    lift: 6.387
+    role_members: 95
+    python_members: 95
+  example: cli/src/pcluster/schemas/cluster_schema.py#AdditionalPackagesSchema
+  selector_version: 2
+- id: D-6f69b2
+  status: proposed
+  mode: advise
+  summary: "cli: classes in src/pcluster/validators/** are named `*Validator`"
+  role:
+    package: cli
+    dir: src/pcluster/validators
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Validator"
+  evidence:
+    holders: 125
+    total: 129
+    lower_bound: 0.923
+    lift: 5.028
+    python_members: 129
+  example: cli/src/pcluster/validators/cluster_validators.py#ArchitectureOsValidator
+  selector_version: 2
+- id: D-70f439
+  status: proposed
+  mode: advise
+  summary: "cli: classes in src/pcluster/api/** extend Model"
+  role:
+    package: cli
+    dir: src/pcluster/api
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - cli/src/pcluster/api/models/base_model_.py#Model
+  evidence:
+    holders: 67
+    total: 68
+    lower_bound: 0.921
+    lift: 8.449
+    role_members: 78
+    python_members: 78
+  example: cli/src/pcluster/api/models/ami_info.py#AmiInfo
+  selector_version: 2
+- id: D-1ef14c
+  status: proposed
+  mode: advise
+  summary: "api/client/src: files in pcluster_client/** have a test file"
+  role:
+    package: api/client/src
+    dir: pcluster_client
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 73
+    total: 79
+    lower_bound: 0.844
+    lift: 1.813
+    python_members: 79
+  example: api/client/src/pcluster_client/api/cluster_compute_fleet_api.py#(file)
+  selector_version: 2
+- id: D-8241b1
+  status: proposed
+  mode: advise
+  summary: "cli: functions in src/pcluster/api/controllers/** are decorated with convert_errors()"
+  role:
+    package: cli
+    dir: src/pcluster/api/controllers
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - cli/src/pcluster/api/controllers/common.py#convert_errors
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 18.286
+    python_members: 21
+  example: >-
+    cli/src/pcluster/api/controllers/cluster_compute_fleet_controller.py#describe_compute_fleet
+  selector_version: 2
+- id: D-c15280
+  status: proposed
+  mode: advise
+  summary: "cli: files in src/pcluster/validators/** have a test file"
+  role:
+    package: cli
+    dir: src/pcluster/validators
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 1.858
+    python_members: 19
+  example: cli/src/pcluster/validators/cluster_validators.py#(file)
+  selector_version: 2

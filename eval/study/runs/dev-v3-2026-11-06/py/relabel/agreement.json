@@ -1,0 +1,77 @@
+{
+  "a": "eval/study/runs/dev-v3-2026-11-06/py/relabel/labels/A",
+  "b": "eval/study/runs/dev-v3-2026-11-06/py/relabel/labels/B",
+  "rubric_sha256s": [
+    "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+  ],
+  "n": 18,
+  "scope": 20,
+  "exact": 0.8333333333333334,
+  "kappa": 0.64,
+  "kappa_boot": {
+    "lo": 0,
+    "hi": 1,
+    "clusters": 4
+  },
+  "accept_vs_not": {
+    "n": 18,
+    "po": 0.8333333333333334,
+    "pe": 0.5370370370370371,
+    "kappa": 0.64
+  },
+  "wrong_vs_not": {
+    "n": 18,
+    "po": 0.8333333333333334,
+    "pe": 0.5370370370370371,
+    "kappa": 0.64
+  },
+  "confusion": {
+    "ACCEPT": {
+      "ACCEPT": 5,
+      "TRIVIAL": 0,
+      "WRONG": 1
+    },
+    "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+    },
+    "WRONG": {
+      "ACCEPT": 2,
+      "TRIVIAL": 0,
+      "WRONG": 10
+    }
+  },
+  "mix": {
+    "A": {
+      "ACCEPT": 6,
+      "TRIVIAL": 0,
+      "WRONG": 12
+    },
+    "B": {
+      "ACCEPT": 7,
+      "TRIVIAL": 0,
+      "WRONG": 11
+    }
+  },
+  "disagreements": [
+    {
+      "uid": "netbox/D-cc8d72",
+      "repo": "netbox",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "saleor/D-e86c5d",
+      "repo": "saleor",
+      "a": "WRONG",
+      "b": "ACCEPT"
+    },
+    {
+      "uid": "saleor/D-0da0cf",
+      "repo": "saleor",
+      "a": "WRONG",
+      "b": "ACCEPT"
+    }
+  ]
+}

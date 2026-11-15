@@ -1,0 +1,909 @@
+[
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "dub",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/A/dub.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/1d4ac0d3-719e-408e-b33b-16c76ff4606b/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/f700e60b-88c1-4512-be32-1795198d79e5",
+    "checkout_status": [],
+    "expected": [
+      "dub/D-d24d21",
+      "dub/D-345913",
+      "dub/D-83351e",
+      "dub/D-015190",
+      "dub/D-ebbc30",
+      "dub/D-3fad9a",
+      "dub/D-a23ff8",
+      "dub/D-742eb6",
+      "dub/D-024a81",
+      "dub/D-418256",
+      "dub/D-e25af3",
+      "dub/D-258285",
+      "dub/D-2ea85b",
+      "dub/D-79cc0a"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:22.443Z",
+    "collected": {
+      "at": "2026-11-07T23:40:43.491Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/A/dub.jsonl",
+      "records": 14,
+      "sha256": "6acf5596e463e61625581498f3c083f86486919ba422a13f9a642e52ff26d809"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "twenty",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/A/twenty.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/b6919d6a-b6c1-4fe1-99a7-41add2ea1627/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/7f772f95-6ab5-49a6-9607-d9eebf8fa374",
+    "checkout_status": [],
+    "expected": [
+      "twenty/D-2df337",
+      "twenty/D-c010e4",
+      "twenty/D-8f867b",
+      "twenty/D-bc65cf",
+      "twenty/D-532878"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:22.604Z",
+    "collected": {
+      "at": "2026-11-07T23:40:44.125Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/A/twenty.jsonl",
+      "records": 5,
+      "sha256": "9f4778b5dcb14f758706eca2392bd7aec7f7e2fa3c9e16e77414578c600fbdbe"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "formbricks",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/A/formbricks.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/91344afe-211a-4719-8dce-7f949d337d91/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/fd1cc3d6-d655-446a-962a-651035bf10cb",
+    "checkout_status": [],
+    "expected": [
+      "formbricks/D-73b648",
+      "formbricks/D-43e309",
+      "formbricks/D-ec0946",
+      "formbricks/D-3bb3c1",
+      "formbricks/D-514f45",
+      "formbricks/D-b70b0a",
+      "formbricks/D-71e798"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:22.637Z",
+    "rejected": [
+      {
+        "at": "2026-11-07T23:37:47.521Z",
+        "problems": [
+          "out.jsonl:5: checked must list at least 2 files opened",
+          "out.jsonl:5: checked lists 0 files besides the example and outliers, needs 1 (other members; the role has members in at most 1 other files); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'"
+        ]
+      },
+      {
+        "at": "2026-11-07T23:38:09.311Z",
+        "problems": [
+          "out.jsonl:5: checked must list at least 2 files opened",
+          "out.jsonl:5: checked lists 0 files besides the example and outliers, needs 1 (other members; the role has members in at most 1 other files); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-07T23:57:43.341Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/A/formbricks.jsonl",
+      "records": 7,
+      "sha256": "d6fa2b9f85ebfeaa62bfbb667ce544e6324a084a7b65509c4ea691d34eb7cf09"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "cal.com",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/A/cal.com.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/3a6a9a11-059e-4f5e-b273-ffd39ec3e011/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/2dd5907b-d20a-40c6-8c9b-ef06104a069b",
+    "checkout_status": [],
+    "expected": [
+      "cal.com/D-594d38",
+      "cal.com/D-85e09a",
+      "cal.com/D-5722ba",
+      "cal.com/D-8d7d13",
+      "cal.com/D-d690c0",
+      "cal.com/D-ec4221",
+      "cal.com/D-777a50",
+      "cal.com/D-fafac1"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:41:01.014Z",
+    "collected": {
+      "at": "2026-11-07T23:46:30.234Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/A/cal.com.jsonl",
+      "records": 8,
+      "sha256": "3447daab8fabf252ba5f7170c18cbe1a52a250895e64d39afd29804e408082d7"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "documenso",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/A/documenso.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/db50cab1-ba36-4e5a-add6-8225d380f152/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/dfa5b789-ebb9-4b41-9fcb-a12a2955094b",
+    "checkout_status": [],
+    "expected": [
+      "documenso/D-a0eee5",
+      "documenso/D-55ae12",
+      "documenso/D-d51d70",
+      "documenso/D-d7fae5",
+      "documenso/D-4785b8",
+      "documenso/D-a10f62"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:22.687Z",
+    "collected": {
+      "at": "2026-11-07T23:36:56.540Z",
+      "dest": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/A/documenso.jsonl",
+      "records": 6,
+      "sha256": "84c3ba64b4963a427ab34ce238f028e8d2bb8a9f734161cd0ea6c820956cf731"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "ai",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/A/ai.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/fa75e0e2-309a-49c8-ac2d-b2b57241d2e2/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/91b1cca3-7f1e-4f75-aa0b-2393a2e21c87",
+    "checkout_status": [],
+    "expected": [
+      "ai/D-fc5ef7",
+      "ai/D-5590d9",
+      "ai/D-b2e3c6"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:22.713Z",
+    "collected": {
+      "at": "2026-11-07T23:37:19.047Z",
+      "dest": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/A/ai.jsonl",
+      "records": 3,
+      "sha256": "e9faf4cfef72585c58df4b8a36b8cbaea10956d184791d87e5bca0d44164f2e7"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "nest",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/A/nest.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/9bb22ec9-af80-485e-9cba-b00cd3bc3c66/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/f3d41eed-da84-4cb7-8066-9c6e359cb83d",
+    "checkout_status": [],
+    "expected": [
+      "nest/D-897eda"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:22.726Z",
+    "collected": {
+      "at": "2026-11-07T23:35:45.886Z",
+      "dest": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/A/nest.jsonl",
+      "records": 1,
+      "sha256": "ebaa3f52ef41233a05fd54c94859ec2f97889701aea1b566fc7d5180550ca310"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "supabase",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/A/supabase.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/f32c3749-71ef-4bef-bf0a-3268d1fa29b5/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/b18d98a4-b16d-40e3-a873-d9f1f96e7c69",
+    "checkout_status": [],
+    "expected": [
+      "supabase/D-e93eb6",
+      "supabase/D-5bd6b4",
+      "supabase/D-3c4b60",
+      "supabase/D-922bc7",
+      "supabase/D-e97861",
+      "supabase/D-81b35e"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:41:00.905Z",
+    "collected": {
+      "at": "2026-11-07T23:46:06.291Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/A/supabase.jsonl",
+      "records": 6,
+      "sha256": "0067ed7ca71f89405b1d536b8f8e59f83492ad76252899a9329bc0172e637c0f"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "novu",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/A/novu.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/00602462-9f36-44b5-974d-bfb68ec6777d/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/cf211bb1-08f4-4c20-9af8-f3512603a5d5",
+    "checkout_status": [],
+    "expected": [
+      "novu/D-2e9dcc",
+      "novu/D-67ddb9",
+      "novu/D-bdd970",
+      "novu/D-7c65a3",
+      "novu/D-e79710",
+      "novu/D-462c2b",
+      "novu/D-808edd",
+      "novu/D-99f229",
+      "novu/D-dbba9a",
+      "novu/D-6d3bdc",
+      "novu/D-94d735",
+      "novu/D-3f3e16"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:22.820Z",
+    "collected": {
+      "at": "2026-11-07T23:40:44.643Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/A/novu.jsonl",
+      "records": 12,
+      "sha256": "7069c353310bd915286d4b18de0bac2f418052a0f4affd6fb0c33b6453059337"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "immich",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/A/immich.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/036a2182-678a-48c4-bd23-b43d2226624d/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/93594acc-2ca3-4849-b455-22972907c920",
+    "checkout_status": [],
+    "expected": [
+      "immich/D-26380c",
+      "immich/D-3b4f47"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:22.835Z",
+    "collected": {
+      "at": "2026-11-07T23:37:47.539Z",
+      "dest": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/A/immich.jsonl",
+      "records": 2,
+      "sha256": "32fe356622ff8e8ffc717f00ba9df5503da6223aa45eeed72d45ee766d0fe6fd"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "midday",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/A/midday.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/0485fb70-518b-498f-9176-2034123d693e/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/11ad11de-b22b-42f0-ba7f-7e6795c4a3f1",
+    "checkout_status": [],
+    "expected": [
+      "midday/D-7da2b9",
+      "midday/D-5880dd",
+      "midday/D-afc38b",
+      "midday/D-98e729",
+      "midday/D-f90103"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:22.846Z",
+    "rejected": [
+      {
+        "at": "2026-11-07T23:42:44.910Z",
+        "problems": [
+          "out.jsonl:1: checked must list at least 2 files opened",
+          "out.jsonl:4: checked must list at least 2 files opened"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-07T23:52:49.308Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/A/midday.jsonl",
+      "records": 5,
+      "sha256": "d5eaf2e06c7640de8221cca22248c946decf1e3dca0b0f00c6989873baed10d4"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "infisical",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/A/infisical.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/7900ae5d-2f7d-44be-8437-873e520bb624/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/8121251a-990d-4f75-b982-4349e6ebcb3c",
+    "checkout_status": [],
+    "expected": [
+      "infisical/D-f674a5",
+      "infisical/D-1e9bb3",
+      "infisical/D-4be5e9",
+      "infisical/D-156a6f",
+      "infisical/D-055c32",
+      "infisical/D-d9b44e",
+      "infisical/D-536c03",
+      "infisical/D-ac787f",
+      "infisical/D-1b2542",
+      "infisical/D-fd3f1a",
+      "infisical/D-bf8c50"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:22.891Z",
+    "collected": {
+      "at": "2026-11-07T23:48:27.600Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/A/infisical.jsonl",
+      "records": 11,
+      "sha256": "fd3ab8997c5b9a066477a7414a032feec99c255db76cde6ed5667a033e0fc6b3"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "nest",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/B/nest.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/3b26de86-01d6-4018-a0e9-4a503c411fbf/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/3868539f-ee71-4344-aa22-c3e6fd4ff23f",
+    "checkout_status": [],
+    "expected": [
+      "nest/D-897eda"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:35:45.972Z",
+    "collected": {
+      "at": "2026-11-07T23:36:29.533Z",
+      "dest": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/B/nest.jsonl",
+      "records": 1,
+      "sha256": "c8994ed0db3b379adeecb098052866abff3cea67a155985b3fc7af21aba92e31"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "documenso",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/B/documenso.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/2331afc5-93ce-414b-b8ee-f3ad93ab1033/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/a788c822-b1ee-4348-9b70-36ec45681688",
+    "checkout_status": [],
+    "expected": [
+      "documenso/D-a0eee5",
+      "documenso/D-55ae12",
+      "documenso/D-d51d70",
+      "documenso/D-d7fae5",
+      "documenso/D-4785b8",
+      "documenso/D-a10f62"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:36:56.619Z",
+    "rejected": [
+      {
+        "at": "2026-11-07T23:38:34.460Z",
+        "problems": [
+          "out.jsonl:4: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: packages/trpc/server/trpc.ts (cannot hold a member of the role: outside its package, directory or file kind)",
+          "out.jsonl:6: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: packages/trpc/server/trpc.ts (cannot hold a member of the role: outside its package, directory or file kind)"
+        ]
+      },
+      {
+        "at": "2026-11-07T23:39:46.229Z",
+        "problems": [
+          "out.jsonl:4: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: packages/trpc/server/trpc.ts (cannot hold a member of the role: outside its package, directory or file kind)",
+          "out.jsonl:6: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: packages/trpc/server/trpc.ts (cannot hold a member of the role: outside its package, directory or file kind)"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-07T23:54:38.872Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/B/documenso.jsonl",
+      "records": 6,
+      "sha256": "a4ac4599e4e70230d07c68a1450ec1ac5f3e985d194578f5e809cb5878576daf"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "ai",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/B/ai.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/dcd4ad4b-be0d-4891-a7e9-ed55447d494a/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/9d934c91-7db3-46ab-b3d4-ffb1e403f50b",
+    "checkout_status": [],
+    "expected": [
+      "ai/D-fc5ef7",
+      "ai/D-5590d9",
+      "ai/D-b2e3c6"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:37:19.149Z",
+    "collected": {
+      "at": "2026-11-07T23:38:34.489Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/B/ai.jsonl",
+      "records": 3,
+      "sha256": "2e578c110873d502258c110ca8cfe539bdc6ec3387d1eefe475eeb5d6e0645ca"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "immich",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/B/immich.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/c5f9f935-c89a-4c55-8b85-8105206abbc4/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/fa1814d1-cbef-42c2-9db3-31c55ec8e37f",
+    "checkout_status": [],
+    "expected": [
+      "immich/D-26380c",
+      "immich/D-3b4f47"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:38:20.517Z",
+    "collected": {
+      "at": "2026-11-07T23:39:46.252Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/B/immich.jsonl",
+      "records": 2,
+      "sha256": "a24498afe2ac8243cbddc30abcddba6188ebdbb2f1546e34aa2585768d2eb27e"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "dub",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/B/dub.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/c2e5a7a5-a11d-4219-aaa7-7b0a02adcd84/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/reconciled-9f4f23c0",
+    "checkout_status": [],
+    "expected": [
+      "dub/D-d24d21",
+      "dub/D-345913",
+      "dub/D-83351e",
+      "dub/D-015190",
+      "dub/D-ebbc30",
+      "dub/D-3fad9a",
+      "dub/D-a23ff8",
+      "dub/D-742eb6",
+      "dub/D-024a81",
+      "dub/D-418256",
+      "dub/D-e25af3",
+      "dub/D-258285",
+      "dub/D-2ea85b",
+      "dub/D-79cc0a"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:41:18.523Z",
+    "reconciled": {
+      "note": "relabel5: a second render (orchestrator) replaced the launched prompt and deleted its outbox and working directory while its agent ran; restored to the launched prompt and outbox; the original working directory is gone, so cwd is a fresh empty directory",
+      "retired_prompt_key": "e4bdbe92",
+      "retired_output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/e3971b0b-0ca2-4a4f-bbab-30fe09cd9b3a/out.jsonl",
+      "retired_cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/6481d44b-131f-474f-8802-4db16a83f9d8"
+    },
+    "rejected": [
+      {
+        "at": "2026-11-07T23:44:52.451Z",
+        "problems": [
+          "out.jsonl:3: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:6: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:9: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:12: checked does not include the example file apps/web/app/api/activity-logs/route.ts"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-07T23:53:43.831Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/B/dub.jsonl",
+      "records": 14,
+      "sha256": "5bd80240bfc1fc1a1189534ad543243b6e16a925b188b0c119fe9c9449ac0c5a"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "twenty",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/B/twenty.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/d4422daf-0a6b-46ac-bfb4-c7fa370a4cd3/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/reconciled-49a4531d",
+    "checkout_status": [],
+    "expected": [
+      "twenty/D-2df337",
+      "twenty/D-c010e4",
+      "twenty/D-8f867b",
+      "twenty/D-bc65cf",
+      "twenty/D-532878"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:41:17.921Z",
+    "reconciled": {
+      "note": "relabel5: a second render (orchestrator) replaced the launched prompt and deleted its outbox and working directory while its agent ran; restored to the launched prompt and outbox; the original working directory is gone, so cwd is a fresh empty directory",
+      "retired_prompt_key": "c0dc644b",
+      "retired_output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/99d45819-32a7-47f8-8ec0-8d93020b1a42/out.jsonl",
+      "retired_cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/773711e8-5985-448d-84f4-5c07de0b223b"
+    },
+    "rejected": [
+      {
+        "at": "2026-11-07T23:44:37.827Z",
+        "problems": [
+          "out.jsonl:1: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/interfaces/base-metadata-side-effect-handler.service.ts (cannot hold a member of the role: outside its package, directory or file kind), packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/registry/metadata-side-effect-handler-registry.service.ts (cannot hold a member of the role: outside its package, directory or file kind)",
+          "out.jsonl:3: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/interfaces/workspace-migration-runner-action-handler-service.interface.ts (cannot hold a member of the role: outside its package, directory or file kind), packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/registry/workspace-migration-runner-action-handler-registry.service.ts (cannot hold a member of the role: outside its package, directory or file kind)"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-07T23:52:29.766Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/B/twenty.jsonl",
+      "records": 5,
+      "sha256": "c0047dc370609236668b207d1a7d235648c1f624adb9757a08e687750676ae3d"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "novu",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/B/novu.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/45b6c275-7a77-4906-a1c3-c983dd0ca09e/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/3e830dd9-33dc-45d3-aa32-1b2eb6076768",
+    "checkout_status": [],
+    "expected": [
+      "novu/D-2e9dcc",
+      "novu/D-67ddb9",
+      "novu/D-bdd970",
+      "novu/D-7c65a3",
+      "novu/D-e79710",
+      "novu/D-462c2b",
+      "novu/D-808edd",
+      "novu/D-99f229",
+      "novu/D-dbba9a",
+      "novu/D-6d3bdc",
+      "novu/D-94d735",
+      "novu/D-3f3e16"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:40:52.276Z",
+    "rejected": [
+      {
+        "at": "2026-11-07T23:43:38.585Z",
+        "problems": [
+          "out.jsonl:3: confidence must be \"high\" or \"low\"",
+          "out.jsonl:3: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: biome.json (a config file)",
+          "out.jsonl:4: confidence must be \"high\" or \"low\"",
+          "out.jsonl:6: confidence must be \"high\" or \"low\"",
+          "out.jsonl:6: checked does not include the example file apps/dashboard/src/pages/access-denied-page.tsx",
+          "out.jsonl:8: confidence must be \"high\" or \"low\"",
+          "out.jsonl:9: confidence must be \"high\" or \"low\"",
+          "out.jsonl:10: confidence must be \"high\" or \"low\"",
+          "out.jsonl:11: confidence must be \"high\" or \"low\"",
+          "out.jsonl:11: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:12: confidence must be \"high\" or \"low\""
+        ]
+      },
+      {
+        "at": "2026-11-07T23:44:57.873Z",
+        "problems": [
+          "out.jsonl:3: confidence must be \"high\" or \"low\"",
+          "out.jsonl:3: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: biome.json (a config file)",
+          "out.jsonl:4: confidence must be \"high\" or \"low\"",
+          "out.jsonl:6: confidence must be \"high\" or \"low\"",
+          "out.jsonl:6: checked does not include the example file apps/dashboard/src/pages/access-denied-page.tsx",
+          "out.jsonl:8: confidence must be \"high\" or \"low\"",
+          "out.jsonl:9: confidence must be \"high\" or \"low\"",
+          "out.jsonl:10: confidence must be \"high\" or \"low\"",
+          "out.jsonl:11: confidence must be \"high\" or \"low\"",
+          "out.jsonl:11: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:12: confidence must be \"high\" or \"low\""
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-07T23:53:37.478Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/B/novu.jsonl",
+      "records": 12,
+      "sha256": "8d296044865f46312810a9f6377efe7ada20bc1327df16e7684fc4e9bcb70237"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "supabase",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/B/supabase.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/2e4462a9-2f41-4ff3-bca9-ac5c06b5d055/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/296d76c0-36af-4af8-b7c9-5516f2483221",
+    "checkout_status": [],
+    "expected": [
+      "supabase/D-e93eb6",
+      "supabase/D-5bd6b4",
+      "supabase/D-3c4b60",
+      "supabase/D-922bc7",
+      "supabase/D-e97861",
+      "supabase/D-81b35e"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:46:06.400Z",
+    "rejected": [
+      {
+        "at": "2026-11-07T23:47:39.515Z",
+        "problems": [
+          "out.jsonl:2: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: apps/studio/lib/api/apiWrapper.ts (cannot hold a member of the role: outside its package, directory or file kind)",
+          "out.jsonl:4: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: apps/studio/eslint.config.cjs (a config file)",
+          "out.jsonl:5: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: apps/studio/eslint.config.cjs (a config file)"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-07T23:52:48.820Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/B/supabase.jsonl",
+      "records": 6,
+      "sha256": "91b5513cb4bed37bbba19f9e60ae4cddeba6ece7fe4111f307292827e4a3d935"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "cal.com",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/B/cal.com.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/bc3339df-884f-4491-9fe6-41a5e633553c/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/f4e0d113-a3a2-4637-ba77-390cd1dee629",
+    "checkout_status": [],
+    "expected": [
+      "cal.com/D-594d38",
+      "cal.com/D-85e09a",
+      "cal.com/D-5722ba",
+      "cal.com/D-8d7d13",
+      "cal.com/D-d690c0",
+      "cal.com/D-ec4221",
+      "cal.com/D-777a50",
+      "cal.com/D-fafac1"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:46:30.323Z",
+    "rejected": [
+      {
+        "at": "2026-11-07T23:49:18.628Z",
+        "problems": [
+          "out.jsonl:1: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'"
+        ]
+      },
+      {
+        "at": "2026-11-07T23:57:27.618Z",
+        "problems": [
+          "out.jsonl:8: checked does not include the example file packages/emails/auth-email-service.ts"
+        ]
+      },
+      {
+        "at": "2026-11-08T00:00:30.728Z",
+        "problems": [
+          "out.jsonl:5: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T00:03:34.521Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/B/cal.com.jsonl",
+      "records": 8,
+      "sha256": "1e55298d385b29018b7f1daa2ca2a641a90309b5236f5160bd9dbff9c470a66c"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "infisical",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/B/infisical.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/d3ca1526-c8a2-46b6-a440-dcfb6e559799/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/27edd5f0-e2f5-47d5-9279-a2f16d57770c",
+    "checkout_status": [],
+    "expected": [
+      "infisical/D-f674a5",
+      "infisical/D-1e9bb3",
+      "infisical/D-4be5e9",
+      "infisical/D-156a6f",
+      "infisical/D-055c32",
+      "infisical/D-d9b44e",
+      "infisical/D-536c03",
+      "infisical/D-ac787f",
+      "infisical/D-1b2542",
+      "infisical/D-fd3f1a",
+      "infisical/D-bf8c50"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:48:27.716Z",
+    "rejected": [
+      {
+        "at": "2026-11-07T23:50:52.168Z",
+        "problems": [
+          "out.jsonl:3: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:4: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:8: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-07T23:57:05.886Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/B/infisical.jsonl",
+      "records": 11,
+      "sha256": "133a85efdf0b949d0d99b015b6f385e1568d381414907725dd943b320a7d17a6"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "midday",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/B/midday.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/31562238-fa5a-4154-afd3-f9f04522c608/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/d8d76d31-a41e-4db9-8c8f-3a3cf7be467a",
+    "checkout_status": [],
+    "expected": [
+      "midday/D-7da2b9",
+      "midday/D-5880dd",
+      "midday/D-afc38b",
+      "midday/D-98e729",
+      "midday/D-f90103"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:52:49.369Z",
+    "collected": {
+      "at": "2026-11-07T23:54:38.371Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/B/midday.jsonl",
+      "records": 5,
+      "sha256": "1a99999060427076f799560926dff2fd0d10549aa327f3ae45e40dc27971a9ba"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "formbricks",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/label/B/formbricks.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/810aae1a-212f-480e-bbfd-914fc2765410/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/38fd8285-26e9-45bb-944c-99f19917eefa",
+    "checkout_status": [],
+    "expected": [
+      "formbricks/D-73b648",
+      "formbricks/D-43e309",
+      "formbricks/D-ec0946",
+      "formbricks/D-3bb3c1",
+      "formbricks/D-514f45",
+      "formbricks/D-b70b0a",
+      "formbricks/D-71e798"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:57:43.422Z",
+    "rejected": [
+      {
+        "at": "2026-11-07T23:59:50.832Z",
+        "problems": [
+          "out.jsonl:4: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: apps/web/modules/ee/license-check/lib/recheck-authorization.ts (cannot hold a member of the role: outside its package, directory or file kind), apps/web/modules/ee/unify-feedback/lib/access.ts (cannot hold a member of the role: outside its package, directory or file kind)",
+          "out.jsonl:5: checked must list at least 2 files opened",
+          "out.jsonl:5: checked lists 0 files besides the example and outliers, needs 1 (other members; the role has members in at most 1 other files); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T00:02:13.018Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/B/formbricks.jsonl",
+      "records": 7,
+      "sha256": "d391d4f280b65ae75ca62fe98dc7360baffbcda21f8b9111afbddf7387d3b5cb"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "formbricks",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/adjudicate/C/formbricks.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/4828d467-5fbb-4f8b-89e2-9293d744f68e/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/6bc07188-8941-4226-b691-ff6e43021c6a",
+    "checkout_status": [],
+    "expected": [
+      "formbricks/D-514f45",
+      "formbricks/D-ec0946"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T00:06:25.738Z",
+    "collected": {
+      "at": "2026-11-08T00:10:07.577Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/C/formbricks.jsonl",
+      "records": 2,
+      "sha256": "d40114862dfbe715e53b40a9541be7171fda22c50130d54d693d7310ce8231fd"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "cal.com",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/adjudicate/C/cal.com.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/5a9ed1fc-162c-4753-b040-e4821a509857/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/6121ad7f-cc78-4d7b-a261-8e9ef1a7757d",
+    "checkout_status": [],
+    "expected": [
+      "cal.com/D-8d7d13",
+      "cal.com/D-85e09a",
+      "cal.com/D-5722ba"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T00:06:25.794Z",
+    "collected": {
+      "at": "2026-11-08T00:10:08.097Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/C/cal.com.jsonl",
+      "records": 3,
+      "sha256": "b2a57f4993cf0386cafda446e618c8815f149d078207998c0331369710b20cb9"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "supabase",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/adjudicate/C/supabase.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/db67a7d4-189a-40b1-a657-3e01baadddc1/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/c5be52fe-db2b-477b-a4ca-5b3ce5a44261",
+    "checkout_status": [],
+    "expected": [
+      "supabase/D-922bc7",
+      "supabase/D-e93eb6"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T00:06:25.888Z",
+    "collected": {
+      "at": "2026-11-08T00:09:13.332Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/C/supabase.jsonl",
+      "records": 2,
+      "sha256": "e3f59e051dd3900a42f995f2b1d33ad528b56e13eabae1cd0dd611e757358e09"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "novu",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/adjudicate/C/novu.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/609959f4-182a-481f-bd69-99f894c21cd6/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/d2b57635-208b-4a5f-b072-96c6c16e4067",
+    "checkout_status": [],
+    "expected": [
+      "novu/D-dbba9a",
+      "novu/D-3f3e16"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T00:06:25.948Z",
+    "collected": {
+      "at": "2026-11-08T00:09:29.680Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/C/novu.jsonl",
+      "records": 2,
+      "sha256": "c30389f01c549457dbbd5372a00288eb86cfe50f895eea49bd0f8b61ecd74482"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "midday",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/prompts/adjudicate/C/midday.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/07d55e82-e1a4-4746-9be8-996f61f943ce/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/5cc5b1da-c0f0-4e6d-af07-16f5fa8e8650",
+    "checkout_status": [],
+    "expected": [
+      "midday/D-f90103"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T00:06:25.966Z",
+    "collected": {
+      "at": "2026-11-08T00:08:44.982Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/ts/relabel/labels/C/midday.jsonl",
+      "records": 1,
+      "sha256": "26b9a479f32bc61f9705541f31d27989437e4ea2fd39303487b9792931fde6a0"
+    }
+  }
+]

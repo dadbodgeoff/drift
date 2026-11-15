@@ -1,0 +1,828 @@
+{
+  "labels_sha256": {
+    "A": "59199cdaa5e707ffa88c174bb92e4613ce97c91c151ef315ba20e0228f360dcd",
+    "B": "8ea8541a9b1c7dab4e02183cf0d53acbaeda4ee5a057907e626665c9fd75a7dd"
+  },
+  "cases": [
+    {
+      "uid": "Django-CRM/D-f135a4",
+      "repo": "Django-CRM",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "Django-CRM/D-f135a4",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "high",
+          "checked": [
+            "backend/cases/analytics_views.py",
+            "backend/cases/csat_views.py",
+            "backend/cases/help_center_views.py",
+            "backend/cases/inbound_views.py",
+            "backend/cases/portal_views.py",
+            "backend/cases/kanban_views.py",
+            "backend/cases/solution_views.py",
+            "backend/cases/kb_views.py",
+            "backend/common/permissions.py",
+            "backend/common/portal_auth.py",
+            "backend/crm/settings.py",
+            "backend/ruff.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "PublicCsatView.get",
+              "verdict": "look"
+            },
+            {
+              "symbol": "PublicCsatView.post",
+              "verdict": "look"
+            },
+            {
+              "symbol": "PublicHelpCenterArticleView.get",
+              "verdict": "look"
+            },
+            {
+              "symbol": "PublicHelpCenterListView.get",
+              "verdict": "look"
+            },
+            {
+              "symbol": "InboundCatchAllView.post",
+              "verdict": "look"
+            },
+            {
+              "symbol": "InboundMailboxWebhookView.post",
+              "verdict": "look"
+            },
+            {
+              "symbol": "PortalCaseListView.get",
+              "verdict": "look"
+            },
+            {
+              "symbol": "PortalCaseListView.post",
+              "verdict": "look"
+            },
+            {
+              "symbol": "PortalCaseDetailView.get",
+              "verdict": "look"
+            },
+            {
+              "symbol": "PortalArticleListView.get",
+              "verdict": "look"
+            },
+            {
+              "symbol": "PortalArticleDetailView.get",
+              "verdict": "look"
+            },
+            {
+              "symbol": "PortalArticleSuggestView.get",
+              "verdict": "look"
+            },
+            {
+              "symbol": "PortalCaseCommentView.post",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R3",
+            "R4",
+            "R2"
+          ],
+          "reason": "HasOrgContext is the tenant-scope permission on cases views (kanban_views, solution_views, kb_views); every outlier is a reachable endpoint that skips it by design: AllowAny public CSAT/help-center/inbound webhooks resolving the org themselves, and portal views using IsPortalContact. Security exceptions worth confirming (R3); set via permission_classes on the class, so clear: false.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "rubric": "v3",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "uid": "Django-CRM/D-f135a4",
+          "label": "WRONG",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "backend/cases/analytics_views.py",
+            "backend/cases/csat_views.py",
+            "backend/cases/help_center_views.py",
+            "backend/cases/inbound_views.py",
+            "backend/cases/portal_views.py",
+            "backend/common/portal_auth.py",
+            "backend/common/permissions.py",
+            "backend/cases/kb_views.py",
+            "backend/cases/views.py",
+            "backend/ruff.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "PublicCsatView.get",
+              "verdict": "look"
+            },
+            {
+              "symbol": "PublicHelpCenterListView.get",
+              "verdict": "look"
+            },
+            {
+              "symbol": "InboundCatchAllView.post",
+              "verdict": "look"
+            },
+            {
+              "symbol": "InboundMailboxWebhookView.post",
+              "verdict": "look"
+            },
+            {
+              "symbol": "PortalCaseListView.get",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "PortalCaseListView.post",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "PortalArticleListView.get",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "PortalCaseCommentView.post",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3"
+          ],
+          "reason": "The 7 portal handlers inherit PortalBaseView (IsPortalContact + PortalContactAuthentication, portal_views.py:89-94); portal contacts carry no profile, so HasOrgContext cannot apply and they are gated differently (legit). Only the 6 public AllowAny handlers are look, so 6 of 13 is not more than half. Hesitated with ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "Django-CRM/D-8ee062",
+      "repo": "Django-CRM",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "Django-CRM/D-8ee062",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "frontend/src/lib/v2/audit-log.ts",
+            "frontend/src/lib/v2/audit-log.test.ts",
+            "frontend/src/lib/v2/author.ts",
+            "frontend/src/lib/v2/enums.ts",
+            "frontend/src/lib/v2/lead-alerts.ts",
+            "frontend/src/lib/v2/dates.ts",
+            "frontend/src/lib/v2/dates.test.ts",
+            "frontend/src/lib/v2/tabs.ts",
+            "frontend/src/lib/v2/tabs.test.ts",
+            "frontend/src/lib/v2/record-timeline-author.test.ts",
+            "frontend/src/lib/v2/record-timeline.ts",
+            "frontend/vitest.config.js",
+            "frontend/eslint.config.js"
+          ],
+          "outliers": [
+            {
+              "symbol": "lead-alerts.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "author.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "enums.ts",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "lib/v2 logic modules carry a co-located vitest file (audit-log, dates, tabs); lead-alerts.ts has untested logic (reminderExtra) and author.ts is only exercised indirectly via record-timeline-author.test.ts, while enums.ts is mostly a constants table. 2 of 3 worth a look, nothing enforces it; hesitated with WRONG legit_outliers for data-only modules.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "rubric": "v3",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "incidental",
+          "uid": "Django-CRM/D-8ee062",
+          "label": "WRONG",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "frontend/src/lib/v2/audit-log.ts",
+            "frontend/src/lib/v2/audit-log.test.ts",
+            "frontend/src/lib/v2/dates.ts",
+            "frontend/src/lib/v2/dates.test.ts",
+            "frontend/src/lib/v2/author.ts",
+            "frontend/src/lib/v2/enums.ts",
+            "frontend/src/lib/v2/lead-alerts.ts",
+            "frontend/src/lib/v2/connected-apps.test.ts",
+            "frontend/eslint.config.js",
+            "CLAUDE.md"
+          ],
+          "outliers": [
+            {
+              "symbol": "author.ts",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "enums.ts",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "lead-alerts.ts",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "author.ts is a 3-line helper already tested through connected-apps.test.ts (authorText); enums.ts is a table of label/tone constants with no logic to test (legit); only lead-alerts.ts has untested logic. Counted outliers are 1 look and 1 legit, a tie, so not ACCEPT; the members have tests because they hold logic. Hesitated with ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "Misago/D-90a5d9",
+      "repo": "Misago",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "Misago/D-90a5d9",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "misago/likes/urls.py",
+            "misago/core/testproject/urls.py",
+            "misago/postedits/urls.py",
+            "misago/threadevents/urls.py",
+            "misago/plugins/extensions.py",
+            "misago/solutions/urls.py",
+            "misago/account/urls.py",
+            "misago/notifications/urls.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "urlpatterns",
+              "verdict": "one_off"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Module-level views in likes/, postedits/, threadevents/ urls.py are built with extensions.get(View).as_view() so plugins can extend them; the only outlier is the test project's root urlpatterns aggregator (one_off), and a new view built without extensions.get() would silently be unextendable by plugins, worth flagging. Low confidence (vs WRONG legit_outliers) because solutions/, account/ and notifications/ urls.py inline View.as_view() without extensions.get(), and 'HTTP handlers' is loosely worded.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "Misago/D-90a5d9",
+          "label": "WRONG",
+          "wrong_because": "mixed_group",
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "misago/likes/urls.py",
+            "misago/core/testproject/urls.py",
+            "misago/posting/urls.py",
+            "misago/threads/urls.py",
+            "misago/polls/urls.py",
+            ".ruff.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "urlpatterns (testproject)",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Extensible view variables in likes/urls.py, posting/urls.py, threads/urls.py use extensions.get(); the sole outlier is the test project's urlpatterns, a fixture aggregator that is not a handler (and urls files like polls/urls.py use views directly), so 0 of 1 counted outliers is a mistake. Hesitated with ACCEPT.",
+          "rubric": "v3",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "lotus/D-e5b6fe",
+      "repo": "lotus",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "lotus/D-e5b6fe",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "backend/metering_billing/views/auth_views.py",
+            "backend/metering_billing/views/webhook_views.py",
+            "backend/metering_billing/views/payment_processor_views.py",
+            "backend/metering_billing/views/views.py",
+            "backend/metering_billing/openapi_hooks.py",
+            "backend/lotus/settings.py",
+            "backend/lotus/urls.py",
+            "backend/api/views.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "stripe_webhook_endpoint",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R4",
+            "R9"
+          ],
+          "reason": "Handlers in auth_views.py, views.py and payment_processor_views.py carry drf_spectacular's @extend_schema (RegisterView at class level, R4), even the unauthenticated track_event; the lone outlier, the Stripe webhook, is undocumented and would be better marked @extend_schema(exclude=True), worth a look. 'utils.extend_schema' could be read as metering_billing.utils, hence clear false; hesitated with WRONG legit_outliers for third-party webhook receivers.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "lotus/D-e5b6fe",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "backend/metering_billing/views/auth_views.py",
+            "backend/metering_billing/views/webhook_views.py",
+            "backend/metering_billing/views/payment_processor_views.py",
+            "backend/pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "stripe_webhook_endpoint",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3"
+          ],
+          "reason": "Views in auth_views.py and payment_processor_views.py use drf_spectacular extend_schema; the sole outlier is the public Stripe webhook (csrf_exempt, no auth, called by Stripe, not part of the client API docs), a recurring category of inbound webhooks that would get false alarms; extend_schema is documentation, not security. Hesitated with ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "open-wearables/D-3b39dc",
+      "repo": "open-wearables",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "open-wearables/D-3b39dc",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "backend/app/api/routes/v1/api_keys.py",
+            "backend/app/api/routes/v1/auth.py",
+            "backend/app/api/routes/v1/import_xml.py",
+            "backend/app/api/routes/v1/meta.py",
+            "backend/app/api/routes/v1/oura_webhooks.py",
+            "backend/app/api/routes/v1/outgoing_webhooks.py",
+            "backend/app/api/routes/v1/sync_data.py",
+            "backend/app/api/routes/v1/sync_status.py",
+            "backend/app/api/routes/v1/webhooks.py",
+            "backend/app/main.py",
+            "backend/app/api/routes/v1/archival.py",
+            "backend/app/api/routes/v1/users.py",
+            "backend/app/database.py",
+            "backend/app/utils/auth.py",
+            "backend/app/services/api_key_service.py",
+            "backend/pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "login",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "abort_multipart_upload",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "complete_multipart_upload",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "sign_multipart_parts",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "list_extensions",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "get_garmin_backfill_status_endpoint",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "sync_historical_data",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "list_all_sync_run_summaries",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "stream_user_sync_status",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "receive_sns_notification",
+              "verdict": "look"
+            },
+            {
+              "symbol": "get_coverage",
+              "verdict": "look"
+            },
+            {
+              "symbol": "oura_webhook_health",
+              "verdict": "look"
+            },
+            {
+              "symbol": "oura_webhook_verification",
+              "verdict": "look"
+            },
+            {
+              "symbol": "list_event_types",
+              "verdict": "look"
+            },
+            {
+              "symbol": "verify_provider_webhook",
+              "verdict": "look"
+            },
+            {
+              "symbol": "probe_provider_webhook",
+              "verdict": "look"
+            },
+            {
+              "symbol": "verify_provider_webhook_with_token",
+              "verdict": "look"
+            },
+            {
+              "symbol": "probe_provider_webhook_with_token",
+              "verdict": "look"
+            },
+            {
+              "symbol": "root",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R6",
+            "R9"
+          ],
+          "reason": "The list mixes a DB-session dependency (_get_db_dependency via DbSession, 70 members) and _get_strategy with real auth deps, so clear=false; 8 outliers actually depend on DbSession directly (login) or via ApiKeyDep -> _require_api_key -> DbSession (import_xml.py, sync_data.py, sync_status.py, meta.py list_extensions), and of the rest 10 of 11 are publicly reachable webhook/health/meta endpoints worth confirming (R3). Hesitated with WRONG legit_outliers/false_outliers since the alternative list misses ApiKeyDep and lets unauthenticated DbSession handlers pass.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "open-wearables/D-3b39dc",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "backend/app/api/routes/v1/api_keys.py",
+            "backend/app/api/routes/v1/auth.py",
+            "backend/app/api/routes/v1/import_xml.py",
+            "backend/app/api/routes/v1/meta.py",
+            "backend/app/api/routes/v1/oura_webhooks.py",
+            "backend/app/api/routes/v1/outgoing_webhooks.py",
+            "backend/app/api/routes/v1/sync_data.py",
+            "backend/app/api/routes/v1/sync_status.py",
+            "backend/app/api/routes/v1/webhooks.py",
+            "backend/app/main.py",
+            "backend/app/database.py",
+            "backend/app/services/__init__.py"
+          ],
+          "reason": "The list mixes a DB-session dependency with auth wrappers and omits ApiKeyDep/StreamingApiKeyDep; most outliers (import_xml, sync_data, sync_status, list_extensions) are already API-key authenticated and the rest are public probes, challenges or root, so an agent would be flagged wrongly for recurring categories.",
+          "outliers": [
+            {
+              "symbol": "abort_multipart_upload",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "sign_multipart_parts",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "list_extensions",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "oura_webhook_health",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "list_event_types",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "root",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "receive_sns_notification",
+              "verdict": "look"
+            },
+            {
+              "symbol": "login",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "get_coverage",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R9"
+          ],
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "tasking-manager/D-cfe608",
+      "repo": "tasking-manager",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "tasking-manager/D-cfe608",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "backend/api/annotations/resources.py",
+            "backend/api/comments/resources.py",
+            "backend/api/tasks/resources.py",
+            "backend/api/campaigns/resources.py",
+            "backend/api/countries/resources.py",
+            "backend/services/users/user_service.py",
+            "backend/services/validator_service.py",
+            "backend/services/project_service.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "get_task_comments",
+              "verdict": "look"
+            },
+            {
+              "symbol": "delete",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "get_invalidated_tasks",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "tasks_aoi",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Resource handlers take Depends(get_db) (annotations, campaigns, countries); the outliers in tasks/resources.py are unported Flask-era handlers that call DB services without a connection (delete calls UserService.get_user_by_id(user_id) which requires db), and get_task_comments is a stub; only tasks_aoi is pure computation. 3 of 4 worth flagging; hesitated with WRONG incidental given tasks_aoi.",
+          "defects": [
+            "backend/api/tasks/resources.py:212 delete calls async UserService.get_user_by_id without db or await",
+            "backend/api/tasks/resources.py:525 get_invalidated_tasks calls ValidatorService.get_user_invalidated_tasks with no db session",
+            "backend/api/comments/resources.py:365 get_task_comments returns None (comment says NEW FUNCTION HAS TO BE ADDED)"
+          ],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "rubric": "v3",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "incidental",
+          "uid": "tasking-manager/D-cfe608",
+          "label": "WRONG",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "backend/api/annotations/resources.py",
+            "backend/api/comments/resources.py",
+            "backend/api/tasks/resources.py",
+            "backend/api/licenses/actions.py",
+            "backend/api/teams/resources.py",
+            "backend/api/users/resources.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "get_task_comments",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "delete",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "get_invalidated_tasks",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "tasks_aoi",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "The outliers (comments/resources.py:298, tasks/resources.py:164,344,445) are leftover Flask-style stubs (request.json(), return {...}, 403) that do no DB access via db; get_db is present where a handler queries the DB (annotations/resources.py:27), so it follows need. Hesitated with ACCEPT, since these half-ported handlers may be bugs. Also read teams/resources.py and users/resources.py: handlers there take Depends(get_db) where they query the DB, same pattern.",
+          "defects": [
+            "backend/api/tasks/resources.py:164 delete uses Flask-style tuple returns and sync request.json() unported to FastAPI"
+          ],
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "tasking-manager/D-c373f7",
+      "repo": "tasking-manager",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "tasking-manager/D-c373f7",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "backend/api/organisations/campaigns.py",
+            "backend/api/system/authentication.py",
+            "backend/api/system/general.py",
+            "backend/api/system/banner.py",
+            "backend/api/system/applications.py",
+            "backend/services/users/authentication_service.py",
+            ".flake8",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "login",
+              "verdict": "look"
+            },
+            {
+              "symbol": "contact_admin",
+              "verdict": "look"
+            },
+            {
+              "symbol": "get",
+              "verdict": "look"
+            },
+            {
+              "symbol": "get_docs",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R9"
+          ],
+          "reason": "Members depend on login_required and/or get_db (campaigns.py, banner.py, applications.py); the outliers in system/authentication.py and system/general.py are reachable public endpoints with no auth dependency (contact_admin even accepts a body), worth confirming under R3. get_db is not auth, so the or-list misleads (clear: false); hesitated with WRONG legit_outliers since these are public by design.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "rubric": "v3",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "uid": "tasking-manager/D-c373f7",
+          "label": "WRONG",
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "backend/api/organisations/campaigns.py",
+            "backend/api/licenses/actions.py",
+            "backend/api/projects/actions.py",
+            "backend/api/system/authentication.py",
+            "backend/api/system/general.py",
+            "backend/services/users/authentication_service.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "login",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "contact_admin",
+              "verdict": "look"
+            },
+            {
+              "symbol": "get",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "get_docs",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R9"
+          ],
+          "reason": "The 'or' list mixes a DB session (get_db) with auth wrappers (unclear wording). The system/ outliers are public by design: login (OAuth start), languages get and swagger get_docs take no input; only contact_admin (general.py:196) reads a body, 1 of 4, so recurring public-system-endpoint category gives false alarms. Hesitated with ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    }
+  ]
+}

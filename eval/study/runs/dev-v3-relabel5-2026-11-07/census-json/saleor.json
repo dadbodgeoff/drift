@@ -1,0 +1,195 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "cgu65-de57356-1794092874",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel5/restage-de57356/cache/repos/saleor",
+  "units": 7261,
+  "roles": 281,
+  "conventions": 2,
+  "shown": 2,
+  "tiers": {
+    "default": 0,
+    "suggestion": 2
+  },
+  "agents": {
+    "hidden": 2,
+    "admission": {
+      "kind": "family_table",
+      "file": "crates/drift-mine/data/family-admission.json",
+      "run": "eval/study/runs/dev-v3-relabel4-2026-11-07",
+      "date": "2026-11-07",
+      "min_accept": 0.85,
+      "min_cards": 10
+    }
+  },
+  "suggestion_cap": {
+    "cap": 5,
+    "from": "default",
+    "suggestions": 2,
+    "listed": 2
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-ac08d9",
+      "rank": 1,
+      "shown_by_default": true,
+      "summary": "enums in saleor/** (error_codes files) are named `*Code`",
+      "role": {
+        "package": "",
+        "dir": "saleor",
+        "file": "error_codes",
+        "entry": "-",
+        "kind": "class",
+        "variety": "enum",
+        "members": 92
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Code"
+      },
+      "evidence": {
+        "holders": 91,
+        "total": 92,
+        "lower_bound": 0.941,
+        "lift": 26.047,
+        "python_members": 92
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": false,
+        "reason": "below_bar",
+        "source": "crates/drift-mine/data/family-admission.json (eval/study/runs/dev-v3-relabel4-2026-11-07, bar 85% of 10)",
+        "family": "naming",
+        "accepted": 6,
+        "n": 15,
+        "text": "not shown to agents (family below admission bar: 40% of 15)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "saleor/account/error_codes.py",
+        "symbol": "AccountErrorCode",
+        "line": 4
+      },
+      "outliers": [
+        {
+          "path": "saleor/graphql/notifications/error_codes.py",
+          "symbol": "ExternalNotificationErrorCodes",
+          "line": 4
+        }
+      ],
+      "outliers_total": 1
+    },
+    {
+      "id": "D-7e57d6",
+      "rank": 2,
+      "shown_by_default": true,
+      "summary": "files in saleor/graphql/account/**, saleor/graphql/app/** and saleor/graphql/order/** have a test file",
+      "role": {
+        "package": "",
+        "dir": "saleor/graphql/account",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "also": [
+          {
+            "package": "",
+            "dir": "saleor/graphql/app",
+            "file": "*",
+            "entry": "-",
+            "kind": "module"
+          },
+          {
+            "package": "",
+            "dir": "saleor/graphql/order",
+            "file": "*",
+            "entry": "-",
+            "kind": "module"
+          }
+        ],
+        "members": 110
+      },
+      "rule": {
+        "type": "has_test"
+      },
+      "evidence": {
+        "holders": 106,
+        "total": 110,
+        "lower_bound": 0.91,
+        "lift": 1.618,
+        "python_members": 110
+      },
+      "rule_kind": "has_test",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": false,
+        "reason": "below_bar",
+        "source": "crates/drift-mine/data/family-admission.json (eval/study/runs/dev-v3-relabel4-2026-11-07, bar 85% of 10)",
+        "family": "repo",
+        "accepted": 1,
+        "n": 5,
+        "text": "not shown to agents (family below admission bar: 20% of 5)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "saleor/graphql/account/bulk_mutations/customer_bulk_delete.py",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "saleor/graphql/account/mixins.py",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "saleor/graphql/app/dataloaders/thumbnail.py",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "saleor/graphql/order/mutations/draft_order_cleaner.py",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "saleor/graphql/order/mutations/order_note_common.py",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 4
+    }
+  ],
+  "largest_role": null
+}

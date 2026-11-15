@@ -1,0 +1,1201 @@
+{
+  "labels_sha256": {
+    "A": "0c092790adcdb2dab62174ed2afacf0a8b329f7066eb3c799c00efe13dbe0aff",
+    "B": "e0cacaf23a30877ab2fefe3a7191a61eb5c2c2d9657f6a432dc0c37048845f5c"
+  },
+  "cases": [
+    {
+      "uid": "dub/D-50df58",
+      "repo": "dub",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "dub/D-50df58",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/web/lib/actions/add-edit-integration.ts",
+            "apps/web/lib/actions/generate-unsubscribe-url.ts",
+            "apps/web/lib/actions/partners/ban-partner.ts",
+            "apps/web/lib/actions/partners/force-withdrawal.ts",
+            "apps/web/lib/actions/partners/archive-partner.ts",
+            "apps/web/lib/actions/partners/accept-program-invite.ts",
+            "apps/web/lib/actions/partners/update-partner-notification-preference.ts",
+            "apps/web/lib/actions/safe-action.ts",
+            "apps/web/package.json",
+            "package.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "generateUnsubscribeTokenAction",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "banPartner",
+              "verdict": "look"
+            },
+            {
+              "symbol": "forceWithdrawal",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R9"
+          ],
+          "reason": "Actions use the safe-action clients from safe-action.ts (add-edit-integration.ts, archive-partner.ts); generateUnsubscribeTokenAction uses authUserActionClient.action(), authenticated but missing from the list (legit), while banPartner and forceWithdrawal are raw async exports from 'use server' files with no auth client, which are reachable action exports worth a second look (R3), 2 of 3. Hesitated with WRONG mixed_group since they are helpers called from API/cron routes.",
+          "defects": [
+            "apps/web/lib/actions/partners/ban-partner.ts:50 banPartner is exported from a 'use server' file without authActionClient or permission check",
+            "apps/web/lib/actions/partners/force-withdrawal.ts:36 forceWithdrawal is exported from a 'use server' file without authPartnerActionClient"
+          ],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "dub/D-50df58",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": false,
+          "confidence": "high",
+          "checked": [
+            "apps/web/lib/actions/add-edit-integration.ts",
+            "apps/web/lib/actions/generate-unsubscribe-url.ts",
+            "apps/web/lib/actions/partners/ban-partner.ts",
+            "apps/web/lib/actions/partners/force-withdrawal.ts",
+            "apps/web/lib/actions/partners/accept-program-invite.ts",
+            "apps/web/lib/actions/send-otp.ts",
+            "apps/web/lib/actions/safe-action.ts",
+            "apps/web/tsconfig.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "generateUnsubscribeTokenAction",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "banPartner",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "forceWithdrawal",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2",
+            "R9"
+          ],
+          "reason": "Members chain a safe-action client (add-edit-integration.ts, accept-program-invite.ts); generateUnsubscribeTokenAction uses authUserActionClient.action() with no input so it takes no schema, and banPartner/forceWithdrawal are plain helpers exported next to their *Action in the same files. No counted outlier is a mistake, so the rule would flag new helpers in action files; the six-way alternation list is also unwieldy.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "dub/D-d24d21",
+      "repo": "dub",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "dub/D-d24d21",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "apps/web/app/api/activity-logs/route.ts",
+            "apps/web/app/api/ai/support-chat/route.ts",
+            "apps/web/app/api/user/route.ts",
+            "apps/web/app/api/ai/sync-embeddings/route.ts",
+            "apps/web/app/api/analytics/dashboard/route.ts",
+            "apps/web/app/api/auth/reset-password/route.ts",
+            "apps/web/app/api/callback/bitly/route.ts",
+            "apps/web/app/api/callback/plain/partner/route.ts",
+            "apps/web/app/api/dub/webhook/route.ts",
+            "apps/web/app/api/links/exists/route.ts",
+            "apps/web/app/api/links/metatags/route.ts",
+            "apps/web/app/api/oauth/userinfo/route.ts",
+            "apps/web/app/api/resumes/upload-url/route.ts",
+            "apps/web/app/api/user/notification-preferences/route.ts",
+            "apps/web/app/api/unsplash/search/route.ts",
+            "apps/web/app/api/providers/route.ts",
+            "apps/web/app/api/slack/slash-commands/route.ts",
+            "apps/web/tsconfig.json",
+            "package.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "POST (ai/sync-embeddings)",
+              "verdict": "look"
+            },
+            {
+              "symbol": "GET (analytics/dashboard)",
+              "verdict": "look"
+            },
+            {
+              "symbol": "POST (auth/reset-password)",
+              "verdict": "look"
+            },
+            {
+              "symbol": "GET (callback/bitly)",
+              "verdict": "look"
+            },
+            {
+              "symbol": "POST (callback/plain/partner)",
+              "verdict": "look"
+            },
+            {
+              "symbol": "POST (dub/webhook)",
+              "verdict": "look"
+            },
+            {
+              "symbol": "GET (links/exists)",
+              "verdict": "look"
+            },
+            {
+              "symbol": "GET (links/metatags)",
+              "verdict": "look"
+            },
+            {
+              "symbol": "GET (oauth/userinfo)",
+              "verdict": "look"
+            },
+            {
+              "symbol": "POST (resumes/upload-url)",
+              "verdict": "look"
+            },
+            {
+              "symbol": "GET (user/notification-preferences)",
+              "verdict": "look"
+            },
+            {
+              "symbol": "GET (unsplash/search)",
+              "verdict": "look"
+            },
+            {
+              "symbol": "GET (providers)",
+              "verdict": "look"
+            },
+            {
+              "symbol": "POST (slack/slash-commands)",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R9"
+          ],
+          "reason": "Members (activity-logs, user, ai/support-chat) use withWorkspace/withSession; every outlier opened is a reachable public endpoint (webhooks with hand-rolled signature/secret checks, OAuth/token-based routes, rate-limited public utilities like links/exists and unsplash/search) that skips the auth wrapper, exceptions a reviewer would want to confirm (R3). No lint config exists, so nothing catches it.",
+          "defects": [],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "dub/D-d24d21",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "apps/web/app/api/activity-logs/route.ts",
+            "apps/web/app/api/workspaces/[idOrSlug]/route.ts",
+            "apps/web/app/api/ai/sync-embeddings/route.ts",
+            "apps/web/app/api/analytics/dashboard/route.ts",
+            "apps/web/app/api/auth/reset-password/route.ts",
+            "apps/web/app/api/callback/bitly/route.ts",
+            "apps/web/app/api/callback/plain/partner/route.ts",
+            "apps/web/app/api/dub/webhook/route.ts",
+            "apps/web/app/api/links/exists/route.ts",
+            "apps/web/app/api/links/iframeable/route.ts",
+            "apps/web/app/api/links/metatags/route.ts",
+            "apps/web/app/api/links/random/route.ts",
+            "apps/web/tsconfig.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "sync-embeddings POST",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "analytics/dashboard GET",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "reset-password POST",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "callback/bitly GET",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "callback/plain/partner POST",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "dub/webhook POST",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "links/exists GET",
+              "verdict": "look"
+            },
+            {
+              "symbol": "links/iframeable GET",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "links/metatags GET",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "links/random GET",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3"
+          ],
+          "reason": "Of 10 outliers opened, 9 are recurring legitimate categories: webhooks and cron endpoints that verify their own secret or signature (sync-embeddings, dub/webhook, plain/partner), public rate-limited utilities (metatags, iframeable, random, reset-password), and OAuth callbacks that check getSession themselves (bitly). Only links/exists is arguably worth a look, so new public/webhook routes would get false alarms.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "cal.com/D-0b36fb",
+      "repo": "cal.com",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "cal.com/D-0b36fb",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "false_outliers",
+          "clear": false,
+          "confidence": "high",
+          "checked": [
+            "packages/trpc/server/routers/features/_router.ts",
+            "packages/trpc/server/routers/viewer/bookings/_router.tsx",
+            "packages/trpc/server/routers/viewer/bookings/util.ts",
+            "packages/trpc/server/routers/viewer/ooo/_router.tsx",
+            "packages/trpc/server/routers/viewer/admin/_router.ts",
+            "packages/trpc/server/routers/viewer/users/_router.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "editLocation",
+              "verdict": "not_violation"
+            }
+          ],
+          "rules": [
+            "R6",
+            "R9"
+          ],
+          "reason": "The only outlier, editLocation in bookings/_router.tsx, uses bookingsProcedure, which util.ts defines as authedProcedure.input(commonBookingSchema).use(...), so it is authed through a helper (R6); 1 of 1 is not_violation. Wording also lists publicProcedure among auth wrappers, hence clear false.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "cal.com/D-0b36fb",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "packages/trpc/server/routers/features/_router.ts",
+            "packages/trpc/server/routers/viewer/bookings/_router.tsx",
+            "packages/trpc/server/routers/viewer/bookings/util.ts",
+            "packages/trpc/server/routers/viewer/admin/_router.ts",
+            "packages/trpc/server/routers/viewer/apiKeys/_router.tsx",
+            "packages/trpc/server/trpc.ts",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "editLocation",
+              "verdict": "not_violation"
+            }
+          ],
+          "rules": [
+            "R6",
+            "R2"
+          ],
+          "reason": "editLocation uses bookingsProcedure, which is authedProcedure.input(...).use(...) in bookings/util.ts, so it follows the rule; trpc.ts still exports a bare `procedure` and biome.json has no rule against it, so an entry built on it would reach production unflagged. Auth wrapper, worth flagging.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "cal.com/D-5722ba",
+      "repo": "cal.com",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "cal.com/D-5722ba",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/emails/templates/account-verify-email.ts",
+            "packages/emails/templates/_base-email.ts",
+            "packages/emails/templates/organizer-scheduled-email.ts",
+            "packages/emails/templates/team-invite-email.ts",
+            "packages/emails/email-manager.ts",
+            "packages/features/bookings/services/BookingAttendeesRemoveService.ts",
+            "packages/platform/libraries/emails.ts",
+            "packages/emails/tsconfig.json",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "BaseEmail",
+              "verdict": "one_off"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "The only outlier is BaseEmail itself (one_off); BaseEmail.sendEmail adds the kill switch and test-email handling, so a new template not extending it is worth flagging. Service helpers take () => BaseEmail and would fail tsc, but templates are also instantiated directly (BookingAttendeesRemoveService.ts, platform/libraries/emails.ts), so types do not reliably catch it. Hesitated with TRIVIAL types.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "cal.com/D-5722ba",
+          "rubric": "v3",
+          "label": "TRIVIAL",
+          "trivial_by": "types",
+          "trivial_evidence": "packages/emails/email-manager.ts and auth-email-service.ts: sendEmail(prepare: () => BaseEmail); BaseEmail (templates/_base-email.ts) has protected members, so a class that does not extend it fails tsc where it is used",
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/emails/templates/account-verify-email.ts",
+            "packages/emails/templates/_base-email.ts",
+            "packages/emails/templates/team-invite-email.ts",
+            "packages/emails/templates/attendee-scheduled-email.ts",
+            "packages/emails/auth-email-service.ts",
+            "packages/emails/email-manager.ts",
+            "packages/emails/tsconfig.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "BaseEmail",
+              "verdict": "one_off"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R5"
+          ],
+          "reason": "The only outlier is the BaseEmail definition (one_off). A template that doesn't extend BaseEmail can't be passed to sendEmail(() => BaseEmail), because BaseEmail's protected members make it nominal, so tsc rejects it. Hesitated with ACCEPT since the error appears only at the call site.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "cal.com/D-fafac1",
+      "repo": "cal.com",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "cal.com/D-fafac1",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/trpc/server/routers/viewer/admin/assignFeatureToTeam.handler.ts",
+            "packages/trpc/server/routers/viewer/admin/createCoupon.handler.ts",
+            "packages/trpc/server/routers/viewer/admin/createSelfHostedLicenseKey.handler.ts",
+            "packages/trpc/server/routers/viewer/admin/getSMSLockStateTeamsUsers.handler.ts",
+            "packages/trpc/server/routers/viewer/admin/setSMSLockState.handler.ts",
+            "packages/trpc/server/routers/viewer/apps/updateAppCredentials.handler.ts",
+            "packages/trpc/server/routers/viewer/auth/resendVerifyEmail.handler.ts",
+            "packages/trpc/server/routers/viewer/auth/sendVerifyEmailCode.handler.ts",
+            "packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts",
+            "packages/trpc/server/routers/viewer/bookings/editLocation.handler.ts",
+            "packages/trpc/server/routers/viewer/bookings/get.handler.ts",
+            "packages/trpc/server/routers/viewer/calendars/setDestinationCalendar.handler.ts",
+            "packages/trpc/server/routers/viewer/eventTypes/getActiveOnOptions.handler.ts",
+            "packages/trpc/server/routers/viewer/eventTypes/getEventTypesFromGroup.handler.ts",
+            "packages/trpc/server/routers/viewer/eventTypes/getHostsWithLocationOptions.handler.ts",
+            "packages/trpc/server/routers/viewer/eventTypes/getUserEventGroups.handler.ts",
+            "packages/trpc/server/routers/viewer/googleWorkspace/googleWorkspace.handler.ts",
+            "packages/trpc/server/routers/viewer/ooo/outOfOfficeCreateOrUpdate.handler.ts",
+            "packages/trpc/server/routers/viewer/ooo/outOfOfficeEntriesList.handler.ts",
+            "packages/trpc/server/routers/viewer/ooo/outOfOfficeEntryDelete.handler.ts",
+            "packages/trpc/server/routers/viewer/ooo/outOfOfficeReasons.handler.ts",
+            "packages/trpc/server/routers/viewer/ooo/_router.tsx",
+            "packages/trpc/server/routers/viewer/eventTypes/_router.ts",
+            "packages/trpc/server/routers/viewer/bookings/confirm.handler.ts",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "createCoupon",
+              "verdict": "look"
+            },
+            {
+              "symbol": "createSelfHostedInstance",
+              "verdict": "look"
+            },
+            {
+              "symbol": "getSMSLockStateTeamsUsers",
+              "verdict": "look"
+            },
+            {
+              "symbol": "setSMSLockState",
+              "verdict": "look"
+            },
+            {
+              "symbol": "handleCustomValidations",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "resendVerifyEmail",
+              "verdict": "look"
+            },
+            {
+              "symbol": "sendVerifyEmailCode",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "buildCalendarEvent",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "getBooking",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "getOrganizerData",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "prepareAttendeesList",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "sanitizeAndFilterGuests",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "updateBookingAttendees",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "updateCalendarEvent",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "validateGuestsFieldEnabled",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "validateUserPermissions",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "getLocationForOrganizerDefaultConferencingAppInEvtFormat",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "getBookings",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "getFirstConnectedCalendar",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "getActiveOnOptions",
+              "verdict": "look"
+            },
+            {
+              "symbol": "getEventTypesFromGroup",
+              "verdict": "look"
+            },
+            {
+              "symbol": "transformHostsToResponse",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "getUserEventGroups",
+              "verdict": "look"
+            },
+            {
+              "symbol": "checkForGWorkspace",
+              "verdict": "look"
+            },
+            {
+              "symbol": "getUsersFromGWorkspace",
+              "verdict": "look"
+            },
+            {
+              "symbol": "removeCurrentGoogleWorkspaceConnection",
+              "verdict": "look"
+            },
+            {
+              "symbol": "outOfOfficeCreateOrUpdate",
+              "verdict": "look"
+            },
+            {
+              "symbol": "outOfOfficeEntriesList",
+              "verdict": "look"
+            },
+            {
+              "symbol": "outOfOfficeEntryDelete",
+              "verdict": "look"
+            },
+            {
+              "symbol": "outOfOfficeReasonList",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Of 30 outliers, 15 are routed handlers named off the scheme (createCoupon, ooo/*, googleWorkspace.handler.ts) but 15 are exported helpers co-located in handler files (nine in addGuests.handler.ts, getBookings in get.handler.ts, sendVerifyEmailCode beside sendVerifyEmailCodeHandler); a 15/15 tie is not most, and new helpers would be told to end in Handler. Hesitated with ACCEPT.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "cal.com/D-fafac1",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/trpc/server/routers/viewer/admin/assignFeatureToTeam.handler.ts",
+            "packages/trpc/server/routers/viewer/admin/createCoupon.handler.ts",
+            "packages/trpc/server/routers/viewer/admin/createSelfHostedLicenseKey.handler.ts",
+            "packages/trpc/server/routers/viewer/admin/getSMSLockStateTeamsUsers.handler.ts",
+            "packages/trpc/server/routers/viewer/admin/setSMSLockState.handler.ts",
+            "packages/trpc/server/routers/viewer/apps/updateAppCredentials.handler.ts",
+            "packages/trpc/server/routers/viewer/auth/resendVerifyEmail.handler.ts",
+            "packages/trpc/server/routers/viewer/auth/sendVerifyEmailCode.handler.ts",
+            "packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts",
+            "packages/trpc/server/routers/viewer/bookings/editLocation.handler.ts",
+            "packages/trpc/server/routers/viewer/bookings/get.handler.ts",
+            "packages/trpc/server/routers/viewer/calendars/setDestinationCalendar.handler.ts",
+            "packages/trpc/server/routers/viewer/eventTypes/getActiveOnOptions.handler.ts",
+            "packages/trpc/server/routers/viewer/eventTypes/getEventTypesFromGroup.handler.ts",
+            "packages/trpc/server/routers/viewer/eventTypes/getHostsWithLocationOptions.handler.ts",
+            "packages/trpc/server/routers/viewer/eventTypes/getUserEventGroups.handler.ts",
+            "packages/trpc/server/routers/viewer/googleWorkspace/googleWorkspace.handler.ts",
+            "packages/trpc/server/routers/viewer/ooo/outOfOfficeCreateOrUpdate.handler.ts",
+            "packages/trpc/server/routers/viewer/ooo/outOfOfficeEntriesList.handler.ts",
+            "packages/trpc/server/routers/viewer/ooo/outOfOfficeEntryDelete.handler.ts",
+            "packages/trpc/server/routers/viewer/ooo/outOfOfficeReasons.handler.ts",
+            "biome.json",
+            "packages/trpc/server/routers/viewer/apiKeys/create.handler.ts",
+            "packages/trpc/server/routers/viewer/bookings/confirm.handler.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "createCoupon",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "createSelfHostedInstance",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "getSMSLockStateTeamsUsers",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "setSMSLockState",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "resendVerifyEmail",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "sendVerifyEmailCode",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "getActiveOnOptions",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "getEventTypesFromGroup",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "getUserEventGroups",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "checkForGWorkspace",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "outOfOfficeCreateOrUpdate",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "outOfOfficeEntriesList",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "outOfOfficeEntryDelete",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "outOfOfficeReasonList",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "getUsersFromGWorkspace",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "removeCurrentGoogleWorkspaceConnection",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "buildCalendarEvent",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "getBooking",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "getOrganizerData",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "prepareAttendeesList",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "sanitizeAndFilterGuests",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "updateBookingAttendees",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "updateCalendarEvent",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "validateGuestsFieldEnabled",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "validateUserPermissions",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "handleCustomValidations",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "getLocationForOrganizerDefaultConferencingAppInEvtFormat",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "getBookings",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "getFirstConnectedCalendar",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "transformHostsToResponse",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2",
+            "R8"
+          ],
+          "reason": "16 of 30 outliers are the main handler of their file under another name (createCoupon, setSMSLockState, outOfOfficeEntryDelete), a naming drift; 14 are exported helpers (the addGuests.handler.ts functions, getBookings). 16/30 is just over half; hesitated with WRONG mixed_group because a new helper in a handler file would be flagged.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "nest/D-44a46d",
+      "repo": "nest",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "nest/D-44a46d",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "false_outliers",
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "packages/core/adapters/http-adapter.ts",
+            "packages/core/nest-factory.ts",
+            "packages/core/package.json",
+            "packages/core/helpers/load-adapter.ts",
+            "packages/core/router/routes-resolver.ts",
+            "packages/core/injector/instance-loader.ts",
+            "tsconfig.json",
+            ".oxlintrc.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "nest-factory.ts (file)",
+              "verdict": "not_violation"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2",
+            "R6"
+          ],
+          "reason": "The only outlier, nest-factory.ts:349-351, loads the default ExpressAdapter via loadAdapter('@nestjs/platform-express', ..., () => import('@nestjs/platform-express')), and @nestjs/platform-express is a declared optional peerDependency in packages/core/package.json, so it is excepted by the rule's own wording. Hesitated with WRONG legit_outliers, since lazy loading of the default platform is a deliberate design that recurs in core.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "nest/D-44a46d",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/core/adapters/http-adapter.ts",
+            "packages/core/nest-factory.ts",
+            "packages/core/scanner.ts",
+            "packages/core/adapters/index.ts",
+            "packages/core/package.json",
+            ".oxlintrc.json",
+            "packages/core/tsconfig.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "nest-factory.ts",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "Core is a layering boundary: platform-express is an optional peer and no oxlint rule or tsconfig restricts the import; nest-factory.ts:349 lazily loads the default Express adapter, a deliberate exception a reviewer would want to confirm. Hesitated with WRONG legit_outliers.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "nest/D-48b32a",
+      "repo": "nest",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "nest/D-48b32a",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "false_outliers",
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "packages/core/adapters/http-adapter.ts",
+            "packages/core/nest-application.ts",
+            "packages/core/package.json",
+            "packages/core/helpers/optional-require.ts",
+            "packages/core/router/routes-resolver.ts",
+            "packages/core/injector/instance-loader.ts",
+            "tsconfig.json",
+            ".oxlintrc.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "nest-application.ts (file)",
+              "verdict": "not_violation"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2",
+            "R6"
+          ],
+          "reason": "The only outlier, nest-application.ts:754, lazily loads '@nestjs/websockets/socket-module' through optionalRequire(), and @nestjs/websockets is declared as an optional peerDependency in packages/core/package.json, so it falls under the rule's own 'declared dependencies excepted' clause. Hesitated with WRONG legit_outliers, since the optional lazy load of platform packages is a deliberate recurring pattern that the rule would flag.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "nest/D-48b32a",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/core/adapters/http-adapter.ts",
+            "packages/core/nest-application.ts",
+            "packages/core/scanner.ts",
+            "packages/core/adapters/index.ts",
+            "packages/core/package.json",
+            ".oxlintrc.json",
+            "packages/core/tsconfig.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "nest-application.ts",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "Same layering boundary: websockets is an optional peer and nothing enforces the ban; nest-application.ts:754 lazily loads socket-module via optionalRequire, an exception worth confirming. Hesitated with WRONG legit_outliers.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "novu/D-3f3e16",
+      "repo": "novu",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "novu/D-3f3e16",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "apps/api/src/app/integrations/integrations-mobile-configure-public.controller.ts",
+            "apps/api/src/app/integrations/integrations.controller.ts",
+            "apps/api/src/app/integrations/integrations-public.controller.ts",
+            "apps/api/src/app/integrations/integrations-whatsapp-signup-public.controller.ts",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "GET /integrations/:channelType/limit",
+              "verdict": "look"
+            },
+            {
+              "symbol": "GET /integrations/in-app/status",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Even @ApiExcludeEndpoint and @ApiExcludeController handlers carry @ApiOperation here: 14 of 16 excluded endpoints in integrations.controller.ts do, and so do the public controllers. The two outliers at lines 478 and 502 simply omit it, which is drift and not a missing need.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "novu/D-3f3e16",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "apps/api/src/app/integrations/integrations-mobile-configure-public.controller.ts",
+            "apps/api/src/app/integrations/integrations.controller.ts",
+            "apps/api/src/app/integrations/integrations-public.controller.ts",
+            "apps/api/src/app/integrations/integrations-whatsapp-signup-public.controller.ts"
+          ],
+          "reason": "Both outliers (getProviderLimit, getInAppActivated) carry @ApiExcludeEndpoint(): internal dashboard-only endpoints deliberately hidden from the OpenAPI docs, so ApiOperation would be pointless; a recurring category that new internal endpoints would hit.",
+          "outliers": [
+            {
+              "symbol": "GET /integrations/:channelType/limit",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "GET /integrations/in-app/status",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "novu/D-dbba9a",
+      "repo": "novu",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "novu/D-dbba9a",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/dashboard/src/pages/access-denied-page.tsx",
+            "apps/dashboard/src/pages/activity-feed.tsx",
+            "apps/dashboard/src/pages/new-layout-drawer.tsx",
+            "apps/dashboard/src/pages/new-workflow-drawer.tsx",
+            "apps/dashboard/src/pages/test-workflow-route-handler.tsx",
+            "apps/dashboard/src/pages/workflows.tsx",
+            "apps/dashboard/src/pages/create-topic.tsx",
+            "apps/dashboard/src/pages/test-workflow-drawer-page.tsx",
+            "apps/dashboard/src/pages/index.ts",
+            "apps/dashboard/src/main.tsx",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "ActivityFeed",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "NewLayoutDrawer",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "NewWorkflowDrawer",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "TestWorkflowRouteHandler",
+              "verdict": "look"
+            },
+            {
+              "symbol": "TemplateModal",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Route components in pages/ are *Page even when they only open a drawer (CreateTopicPage, TestWorkflowDrawerPage), yet ActivityFeed, TemplateModal and TestWorkflowRouteHandler are used directly as route elements in main.tsx without the suffix. NewLayoutDrawer and NewWorkflowDrawer are shared components that the create/duplicate pages render (legit). 3 of 5 counted; hesitated with WRONG mixed_group.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "novu/D-dbba9a",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "apps/dashboard/src/pages/access-denied-page.tsx",
+            "apps/dashboard/src/pages/activity-feed.tsx",
+            "apps/dashboard/src/pages/new-layout-drawer.tsx",
+            "apps/dashboard/src/pages/new-workflow-drawer.tsx",
+            "apps/dashboard/src/pages/test-workflow-route-handler.tsx",
+            "apps/dashboard/src/pages/workflows.tsx",
+            "apps/dashboard/src/pages/agents.tsx",
+            "apps/dashboard/src/pages/sign-in.tsx",
+            "apps/dashboard/src/pages/topics.tsx"
+          ],
+          "reason": "Outliers are mostly drawers (NewLayoutDrawer, NewWorkflowDrawer), a modal (TemplateModal in workflows.tsx) and a redirect handler, not pages; only ActivityFeed is a real page missing the suffix. 1 of 5 is a mistake, so the *Page rule would false-alarm on new drawers/modals in pages/.",
+          "outliers": [
+            {
+              "symbol": "ActivityFeed",
+              "verdict": "look"
+            },
+            {
+              "symbol": "NewLayoutDrawer",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "NewWorkflowDrawer",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "TestWorkflowRouteHandler",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "TemplateModal",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "immich/D-d3f2f9",
+      "repo": "immich",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "immich/D-d3f2f9",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "server/src/dtos/activity.dto.ts",
+            "server/src/dtos/user-profile.dto.ts",
+            "server/src/dtos/asset-media.dto.ts",
+            "server/src/dtos/album.dto.ts",
+            "server/src/dtos/database-backup.dto.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "CreateProfileImageDto",
+              "verdict": "mistake"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "DTOs are built from zod schemas via createZodDto (album.dto.ts, database-backup.dto.ts); CreateProfileImageDto is a leftover @ApiProperty class, although asset-media.dto.ts shows file upload fields expressed in zod with format 'binary', so the drift is worth flagging.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "immich/D-d3f2f9",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "server/src/dtos/activity.dto.ts",
+            "server/src/dtos/user-profile.dto.ts",
+            "server/src/dtos/album.dto.ts",
+            "server/src/dtos/stack.dto.ts",
+            "server/src/controllers/user.controller.ts",
+            "server/src/app.module.ts"
+          ],
+          "reason": "The only outlier, CreateProfileImageDto, describes a multipart file upload with @ApiProperty binary and Express.Multer.File, which cannot be a zod schema; it is a legitimate recurring kind (file-upload bodies), so a new upload DTO would be flagged wrongly. Not set aside as one-off (not a definition or aggregator).",
+          "outliers": [
+            {
+              "symbol": "CreateProfileImageDto",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    }
+  ]
+}

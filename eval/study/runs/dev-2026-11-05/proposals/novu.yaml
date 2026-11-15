@@ -1,0 +1,1254 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - Inbox
+  - actions
+  - activity
+  - adapter
+  - agent
+  - agents
+  - analytics
+  - api
+  - app
+  - auth
+  - base
+  - bridge
+  - button
+  - card-render
+  - card-renderer
+  - change
+  - channel-connection
+  - channel-connections
+  - channel-endpoint
+  - channel-endpoints
+  - channels
+  - chat
+  - chat-oauth-callback
+  - check-ee
+  - cli-auth
+  - client
+  - code-block
+  - community
+  - config
+  - connect
+  - connect-card
+  - constants
+  - content
+  - context
+  - conversation
+  - conversations
+  - create-context
+  - create-execution-details
+  - create-layout
+  - create-organization
+  - create-workflow
+  - cron
+  - cursor-pagination-query
+  - delete-layout
+  - delete-topic
+  - delete-topic-subscriptions
+  - detect-project
+  - detect-wiring
+  - digest
+  - domain-route
+  - domains
+  - ee
+  - email
+  - env
+  - environment
+  - environment-variable
+  - environments
+  - errors
+  - events
+  - execution-details
+  - feature-flags
+  - get-layout
+  - get-requests
+  - get-subscriber
+  - get-subscriber-preferences
+  - get-topic
+  - graders
+  - headers
+  - health
+  - helpers
+  - hooks
+  - http-client
+  - human-interaction
+  - idempotency
+  - inbox
+  - infobip
+  - input
+  - instrument
+  - integration
+  - integration-conditions
+  - integrations
+  - json-schema
+  - keys
+  - layout
+  - layouts
+  - localization
+  - login
+  - main
+  - member
+  - message
+  - message-template
+  - metrics
+  - nest
+  - next
+  - nodemailer
+  - notification
+  - notification-template
+  - novu
+  - one-signal
+  - organization
+  - outbound
+  - package-install
+  - page
+  - photon-imessage
+  - postcss
+  - preferences
+  - preview
+  - provider
+  - push
+  - reasoning
+  - remove-message
+  - remove-subscriber
+  - requirements
+  - response
+  - route
+  - scenario
+  - schema
+  - sendblue
+  - session
+  - setup
+  - shared
+  - slack
+  - sms
+  - step
+  - storage
+  - subscriber
+  - subscribers
+  - sync
+  - tailwind
+  - telegram
+  - tenant
+  - thread
+  - thread-list
+  - tool
+  - tooltip
+  - topic
+  - translation
+  - tsup
+  - twilio
+  - types
+  - update-integration
+  - update-layout
+  - upsert-workflow
+  - usage-limits
+  - user
+  - utils
+  - validation
+  - verify-payload
+  - vitest
+  - web-chat
+  - webhooks
+  - whatsapp-business
+  - workflow
+  - workflow-override
+  - workflows
+  suffixes:
+  - adapter
+  - aui
+  - base
+  - builder
+  - client
+  - command
+  - config
+  - const
+  - constants
+  - controller
+  - decorator
+  - dto
+  - e2e
+  - e2e-ee
+  - entity
+  - enum
+  - error
+  - errors
+  - exception
+  - factory
+  - fixture
+  - guard
+  - handler
+  - health-indicator
+  - helpers
+  - interceptor
+  - interface
+  - mapper
+  - migration
+  - module
+  - operation
+  - provider
+  - query
+  - repository
+  - resolver
+  - resource
+  - runtime
+  - schema
+  - service
+  - spec
+  - store
+  - strategy
+  - template
+  - test
+  - test-d
+  - type
+  - types
+  - use-case
+  - usecase
+  - util
+  - utils
+  - validator
+  - validators
+  - worker
+conventions:
+- id: D-2e9dcc
+  status: proposed
+  mode: advise
+  summary: "apps/api: classes in src/** (*.command files) are named `*Command`"
+  role:
+    package: apps/api
+    dir: src
+    file: "*.command"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Command"
+  evidence:
+    holders: 409
+    total: 415
+    lower_bound: 0.969
+    lift: 5.574
+  example: >-
+    apps/api/src/app/activity/usecases/build-active-subscribers-chart/build-active-subscribers-chart.command.ts#BuildActiveSubscribersChartCommand
+- id: D-cc571a
+  status: proposed
+  mode: advise
+  summary: "apps/api: classes in src/** (*.usecase files) are decorated with Injectable()"
+  role:
+    package: apps/api
+    dir: src
+    file: "*.usecase"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#Injectable
+  evidence:
+    holders: 406
+    total: 412
+    lower_bound: 0.969
+    lift: 3.783
+  example: >-
+    apps/api/src/app/activity/usecases/build-active-subscribers-chart/build-active-subscribers-chart.usecase.ts#BuildActiveSubscribersChart
+- id: D-67ddb9
+  status: proposed
+  mode: advise
+  summary: "packages/providers: classes in src/** (*.provider files) are named `*Provider`"
+  role:
+    package: packages/providers
+    dir: src
+    file: "*.provider"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Provider"
+  evidence:
+    holders: 88
+    total: 89
+    lower_bound: 0.939
+    lift: 32.325
+  example: >-
+    packages/providers/src/lib/chat/chat-webhook/chat-webhook.provider.ts#ChatWebhookProvider
+- id: D-b386b6
+  status: proposed
+  mode: advise
+  summary: "apps/dashboard: functions in src/hooks/** are named `use*`"
+  role:
+    package: apps/dashboard
+    dir: src/hooks
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: use*
+  evidence:
+    holders: 220
+    total: 227
+    lower_bound: 0.938
+    lift: 10.069
+  example: apps/dashboard/src/hooks/use-activity-url-state.ts#useActivityUrlState
+- id: D-e79710
+  status: proposed
+  mode: advise
+  summary: "apps/api: classes in src/** (*.dto files) are named `*Dto`"
+  role:
+    package: apps/api
+    dir: src
+    file: "*.dto"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Dto"
+  evidence:
+    holders: 642
+    total: 678
+    lower_bound: 0.927
+    lift: 3.575
+  example: apps/api/src/app/activity/dtos/get-charts.request.dto.ts#GetChartsRequestDto
+- id: D-b03b86
+  status: proposed
+  mode: advise
+  summary: "apps/api: classes in src/app/agents/** (*.command files) call IsString()"
+  role:
+    package: apps/api
+    dir: src/app/agents
+    file: "*.command"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: pkg:class-validator#IsString
+  evidence:
+    holders: 60
+    total: 61
+    lower_bound: 0.913
+    lift: 4.272
+  example: >-
+    apps/api/src/app/agents/channels/integrations/add-agent-integration/add-agent-integration.command.ts#AddAgentIntegrationCommand
+- id: D-2467a6
+  status: proposed
+  mode: advise
+  summary: "playground/nextjs: components in src/components/ui/** call cn()"
+  role:
+    package: playground/nextjs
+    dir: src/components/ui
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: calls
+    callee: playground/nextjs/src/lib/utils.ts#cn
+  evidence:
+    holders: 73
+    total: 75
+    lower_bound: 0.908
+    lift: 6.738
+  example: playground/nextjs/src/components/ui/accordion.tsx#AccordionContent
+- id: D-fd0664
+  status: proposed
+  mode: advise
+  summary: "apps/api: classes in src/** (*.controller files) are named `*Controller`"
+  role:
+    package: apps/api
+    dir: src
+    file: "*.controller"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Controller"
+  evidence:
+    holders: 82
+    total: 85
+    lower_bound: 0.901
+    lift: 31.889
+  example: apps/api/src/app/activity/activity.controller.ts#ActivityController
+- id: D-ebfb42
+  status: proposed
+  mode: advise
+  summary: "libs/application-generic: classes in src/** (*.usecase files) are decorated with Injectable()"
+  role:
+    package: libs/application-generic
+    dir: src
+    file: "*.usecase"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#Injectable
+  evidence:
+    holders: 65
+    total: 67
+    lower_bound: 0.898
+    lift: 3.724
+  example: >-
+    libs/application-generic/src/usecases/build-step-data/build-step-data.usecase.ts#BuildStepDataUsecase
+- id: D-2f6b12
+  status: proposed
+  mode: advise
+  summary: "apps/api: classes in src/** (*.module files) pass `imports` to Module()"
+  role:
+    package: apps/api
+    dir: src
+    file: "*.module"
+    entry: '-'
+    kind: class
+  rule:
+    type: passes_key
+    callee: pkg:@nestjs/common#Module
+    index: 0
+    key: imports
+  evidence:
+    holders: 58
+    total: 60
+    lower_bound: 0.886
+    lift: 39.942
+  example: apps/api/src/app.module.ts#AppModule
+- id: D-a1e13b
+  status: proposed
+  mode: advise
+  summary: "apps/api: classes in src/** (*.module files) are named `*Module`"
+  role:
+    package: apps/api
+    dir: src
+    file: "*.module"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Module"
+  evidence:
+    holders: 58
+    total: 60
+    lower_bound: 0.886
+    lift: 36.87
+  example: apps/api/src/app.module.ts#AppModule
+- id: D-4512a2
+  status: proposed
+  mode: advise
+  summary: "libs/application-generic: classes in src/** (*.service files) are named `*Service`"
+  role:
+    package: libs/application-generic
+    dir: src
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Service"
+  evidence:
+    holders: 69
+    total: 72
+    lower_bound: 0.885
+    lift: 16.771
+  example: >-
+    libs/application-generic/src/services/agent-email-inbox-quota/agent-email-inbox-quota.service.ts#AgentEmailInboxQuotaService
+- id: D-b0be3f
+  status: proposed
+  mode: advise
+  summary: "apps/api: classes in src/app/human/** (*.command files) call IsString()"
+  role:
+    package: apps/api
+    dir: src/app/human
+    file: "*.command"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: pkg:class-validator#IsString
+  evidence:
+    holders: 42
+    total: 43
+    lower_bound: 0.879
+    lift: 4.242
+  example: >-
+    apps/api/src/app/human/usecases/approve-human-cli-login/approve-human-cli-login.command.ts#ApproveHumanCliLoginCommand
+- id: D-462c2b
+  status: proposed
+  mode: advise
+  summary: "libs/application-generic: classes in src/factories/sms/** (*.handler files) extend BaseSmsHandler"
+  role:
+    package: libs/application-generic
+    dir: src/factories/sms
+    file: "*.handler"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - >-
+      libs/application-generic/src/factories/sms/handlers/base.handler.ts#BaseSmsHandler
+  evidence:
+    holders: 39
+    total: 40
+    lower_bound: 0.871
+    lift: 74.375
+  example: >-
+    libs/application-generic/src/factories/sms/handlers/africas-talking.handler.ts#AfricasTalkingSmsHandler
+- id: D-6ded6b
+  status: proposed
+  mode: advise
+  summary: "packages/framework: classes in src/** (*.errors files) are named `*Error`"
+  role:
+    package: packages/framework
+    dir: src
+    file: "*.errors"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Error"
+  evidence:
+    holders: 39
+    total: 40
+    lower_bound: 0.871
+    lift: 26.369
+  example: packages/framework/src/errors/base.errors.ts#BadRequestError
+- id: D-e3819f
+  status: proposed
+  mode: advise
+  summary: "apps/api: classes in src/** (*.controller files) call Controller() before RequireAuthentication()"
+  role:
+    package: apps/api
+    dir: src
+    file: "*.controller"
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: pkg:@nestjs/common#Controller
+    then: apps/api/src/app/auth/framework/auth.decorator.ts#RequireAuthentication
+  evidence:
+    holders: 57
+    total: 60
+    lower_bound: 0.863
+    lift: 1.0
+  example: apps/api/src/app/activity/activity.controller.ts#ActivityController
+- id: D-36a604
+  status: proposed
+  mode: advise
+  summary: "apps/api: HTTP handlers in src/app/inbox/** (*.controller files) are decorated with UseGuards()"
+  role:
+    package: apps/api
+    dir: src/app/inbox
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#UseGuards
+  evidence:
+    holders: 36
+    total: 37
+    lower_bound: 0.862
+    lift: 53.911
+  example: >-
+    apps/api/src/app/inbox/inbox.controller.ts#DELETE
+    /inbox/channel-connections/:identifier
+- id: D-af3463
+  status: proposed
+  mode: advise
+  summary: "packages/js: functions in src/** (helpers files) call NovuError(new)()"
+  role:
+    package: packages/js
+    dir: src
+    file: helpers
+    entry: '-'
+    kind: function
+  rule:
+    type: calls
+    callee: packages/js/src/utils/errors.ts#NovuError(new)
+  evidence:
+    holders: 36
+    total: 37
+    lower_bound: 0.862
+    lift: 135.506
+  example: packages/js/src/channel-connections/helpers.ts#deleteChannelConnection
+- id: D-ab0017
+  status: proposed
+  mode: advise
+  summary: "apps/worker: classes in src/** (*.usecase files) are decorated with Injectable()"
+  role:
+    package: apps/worker
+    dir: src
+    file: "*.usecase"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#Injectable
+  evidence:
+    holders: 34
+    total: 35
+    lower_bound: 0.855
+    lift: 3.729
+  example: >-
+    apps/worker/src/app/telemetry/usecases/machineInfoService.usecase.ts#MachineInfoService
+- id: D-03056b
+  status: proposed
+  mode: advise
+  summary: "apps/api: classes in src/** (*.controller files) call Controller() before ApiExcludeController()"
+  role:
+    package: apps/api
+    dir: src
+    file: "*.controller"
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: pkg:@nestjs/common#Controller
+    then: pkg:@nestjs/swagger#ApiExcludeController
+  evidence:
+    holders: 58
+    total: 62
+    lower_bound: 0.846
+    lift: 1.0
+  example: >-
+    apps/api/src/app/agents/channels/slack-linking/agents-public.controller.ts#AgentsPublicController
+- id: D-e58530
+  status: proposed
+  mode: advise
+  summary: "apps/api: classes in src/** (*.module files) pass `providers` to Module()"
+  role:
+    package: apps/api
+    dir: src
+    file: "*.module"
+    entry: '-'
+    kind: class
+  rule:
+    type: passes_key
+    callee: pkg:@nestjs/common#Module
+    index: 0
+    key: providers
+  evidence:
+    holders: 56
+    total: 60
+    lower_bound: 0.841
+    lift: 38.565
+  example: apps/api/src/app.module.ts#AppModule
+- id: D-6a5b0e
+  status: proposed
+  mode: advise
+  summary: "apps/api: classes in src/** (*.controller files) call Post() before Body()"
+  role:
+    package: apps/api
+    dir: src
+    file: "*.controller"
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: pkg:@nestjs/common#Post
+    then: pkg:@nestjs/common#Body
+  evidence:
+    holders: 54
+    total: 58
+    lower_bound: 0.836
+    lift: 1.0
+  example: >-
+    apps/api/src/app/agents/channels/integrations/agent-integrations.controller.ts#AgentIntegrationsController
+- id: D-a83a64
+  status: proposed
+  mode: advise
+  summary: >-
+    files in apps/dashboard/** use react-icons for icons, not
+    lucide-react/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react
+  role:
+    package: apps/dashboard
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: prefers_library
+    group: icons
+    preferred: react-icons
+  evidence:
+    holders: 428
+    total: 494
+    lower_bound: 0.834
+    lift: 1.0
+    split:
+    - - react-icons
+      - 458
+    - - lucide-react
+      - 50
+    - - "@radix-ui/react-icons"
+      - 17
+  example: apps/dashboard/src/components/activity/activity-calendar.tsx#(file)
+- id: D-dbba9a
+  status: proposed
+  mode: advise
+  summary: "apps/dashboard: components in src/pages/** are named `*Page`"
+  role:
+    package: apps/dashboard
+    dir: src/pages
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: named
+    pattern: "*Page"
+  evidence:
+    holders: 53
+    total: 57
+    lower_bound: 0.833
+    lift: 21.497
+  example: apps/dashboard/src/pages/access-denied-page.tsx#AccessDeniedPage
+- id: D-74374a
+  status: proposed
+  mode: advise
+  summary: "libs/dal: classes in src/** (*.entity files) are named `*Entity`"
+  role:
+    package: libs/dal
+    dir: src
+    file: "*.entity"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Entity"
+  evidence:
+    holders: 52
+    total: 56
+    lower_bound: 0.83
+    lift: 53.125
+  example: >-
+    libs/dal/src/repositories/agent-integration/agent-integration.entity.ts#AgentIntegrationEntity
+- id: D-6927da
+  status: proposed
+  mode: advise
+  summary: "libs/application-generic: classes in src/webhooks/** (*.dto files) call ApiProperty()"
+  role:
+    package: libs/application-generic
+    dir: src/webhooks
+    file: "*.dto"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: pkg:@nestjs/swagger#ApiProperty
+  evidence:
+    holders: 33
+    total: 35
+    lower_bound: 0.814
+    lift: 4.51
+  example: >-
+    libs/application-generic/src/webhooks/dtos/inbound-email-webhook.dto.ts#InboundEmailWebhookAddressDto
+- id: D-3f3e16
+  status: proposed
+  mode: advise
+  summary: "apps/api: HTTP handlers in src/app/integrations/** (*.controller files) are decorated with ApiOperation()"
+  role:
+    package: apps/api
+    dir: src/app/integrations
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/swagger#ApiOperation
+  evidence:
+    holders: 32
+    total: 34
+    lower_bound: 0.809
+    lift: 16.22
+  example: >-
+    apps/api/src/app/integrations/integrations-mobile-configure-public.controller.ts#GET /integrations/mobile-configure/status
+- id: D-7c65a3
+  status: proposed
+  mode: advise
+  summary: "packages/providers: classes in src/** (*.provider files) extend BaseProvider"
+  role:
+    package: packages/providers
+    dir: src
+    file: "*.provider"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - packages/providers/src/base.provider.ts#BaseProvider
+  evidence:
+    holders: 79
+    total: 89
+    lower_bound: 0.805
+    lift: 33.009
+  example: >-
+    packages/providers/src/lib/chat/chat-webhook/chat-webhook.provider.ts#ChatWebhookProvider
+- id: D-b173c5
+  status: proposed
+  mode: advise
+  summary: "libs/dal: exported values in src/** (*.schema files) call mongoose.model()"
+  role:
+    package: libs/dal
+    dir: src
+    file: "*.schema"
+    entry: '-'
+    kind: const
+  rule:
+    type: calls
+    callee: pkg:mongoose#default.model
+  evidence:
+    holders: 44
+    total: 48
+    lower_bound: 0.804
+    lift: 56.417
+  example: >-
+    libs/dal/src/repositories/agent-integration/agent-integration.schema.ts#AgentIntegration
+- id: D-45cdcd
+  status: proposed
+  mode: advise
+  summary: "apps/api: classes in src/app/agents/** (*.command files) call IsNotEmpty()"
+  role:
+    package: apps/api
+    dir: src/app/agents
+    file: "*.command"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: pkg:class-validator#IsNotEmpty
+  evidence:
+    holders: 55
+    total: 61
+    lower_bound: 0.802
+    lift: 10.277
+  example: >-
+    apps/api/src/app/agents/channels/integrations/add-agent-integration/add-agent-integration.command.ts#AddAgentIntegrationCommand
+- id: D-7b0a0f
+  status: proposed
+  mode: advise
+  summary: "packages/novu: components in src/commands/wizard/** render inside <Box>"
+  role:
+    package: packages/novu
+    dir: src/commands/wizard
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: wrapped_by
+    kind: jsx
+    any_of:
+    - pkg:ink#Box
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 46.442
+  example: packages/novu/src/commands/wizard/ui/components/auth-pane.tsx#AuthPane
+- id: D-68d6d9
+  status: proposed
+  mode: advise
+  summary: "libs/application-generic: classes in src/** (*.dto files) are named `*Dto`"
+  role:
+    package: libs/application-generic
+    dir: src
+    file: "*.dto"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Dto"
+  evidence:
+    holders: 102
+    total: 119
+    lower_bound: 0.783
+    lift: 3.236
+  example: libs/application-generic/src/dtos/base-issue.dto.ts#BaseIssueDto
+- id: D-6d3bdc
+  status: proposed
+  mode: advise
+  summary: "libs/application-generic: classes in src/factories/mail/** (*.handler files) extend BaseEmailHandler"
+  role:
+    package: libs/application-generic
+    dir: src/factories/mail
+    file: "*.handler"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - >-
+      libs/application-generic/src/factories/mail/handlers/base.handler.ts#BaseEmailHandler
+  evidence:
+    holders: 21
+    total: 22
+    lower_bound: 0.782
+    lift: 135.227
+  example: >-
+    libs/application-generic/src/factories/mail/handlers/anypost.handler.ts#AnypostHandler
+- id: D-709b2b
+  status: proposed
+  mode: advise
+  summary: "apps/api: HTTP handlers in src/app/subscribers/** (*.controller files) pass `description` to ApiOperation()"
+  role:
+    package: apps/api
+    dir: src/app/subscribers
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:@nestjs/swagger#ApiOperation
+    index: 0
+    key: description
+  evidence:
+    holders: 21
+    total: 22
+    lower_bound: 0.782
+    lift: 20.495
+  example: >-
+    apps/api/src/app/subscribers/subscribersV1.controller.ts#DELETE
+    /subscribers/:subscriberId
+- id: D-7e7f1d
+  status: proposed
+  mode: advise
+  summary: "apps/api: classes in src/app/agents/** (*.service files) are decorated with Injectable()"
+  role:
+    package: apps/api
+    dir: src/app/agents
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#Injectable
+  evidence:
+    holders: 49
+    total: 55
+    lower_bound: 0.782
+    lift: 3.42
+  example: >-
+    apps/api/src/app/agents/channels/agent-config-resolver.service.ts#AgentConfigResolver
+- id: D-30f477
+  status: proposed
+  mode: advise
+  summary: "apps/api: exported values in src/** (*.decorator files) are named `*Response`"
+  role:
+    package: apps/api
+    dir: src
+    file: "*.decorator"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Response"
+  evidence:
+    holders: 27
+    total: 29
+    lower_bound: 0.78
+    lift: 93.379
+  example: apps/api/src/app/shared/framework/response.decorator.ts#ApiAcceptedResponse
+- id: D-28ecbe
+  status: proposed
+  mode: advise
+  summary: "apps/api: classes in src/** (*.module files) pass `controllers` to Module()"
+  role:
+    package: apps/api
+    dir: src
+    file: "*.module"
+    entry: '-'
+    kind: class
+  rule:
+    type: passes_key
+    callee: pkg:@nestjs/common#Module
+    index: 0
+    key: controllers
+  evidence:
+    holders: 53
+    total: 60
+    lower_bound: 0.778
+    lift: 42.386
+  example: apps/api/src/app.module.ts#AppModule
+- id: D-cb2f0a
+  status: proposed
+  mode: advise
+  summary: >-
+    files in playground/nextjs/** use lucide-react for icons, not
+    react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react
+  role:
+    package: playground/nextjs
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: prefers_library
+    group: icons
+    preferred: lucide-react
+  evidence:
+    holders: 42
+    total: 47
+    lower_bound: 0.774
+    lift: 1.0
+    split:
+    - - lucide-react
+      - 42
+    - - "@radix-ui/react-icons"
+      - 3
+    - - react-icons
+      - 2
+  example: playground/nextjs/src/app/agents-mcp/components/flow-simulator.tsx#(file)
+- id: D-1cdfa5
+  status: proposed
+  mode: advise
+  summary: "libs/application-generic: functions in src/services/cache/key-builders/** are named `build*`"
+  role:
+    package: libs/application-generic
+    dir: src/services/cache/key-builders
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: build*
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 19.17
+  example: >-
+    libs/application-generic/src/services/cache/key-builders/builder.scoped.ts#buildEnvironmentScopedKey
+- id: D-86e75a
+  status: proposed
+  mode: advise
+  summary: "apps/api: classes in src/app/agents/shared/** (*.dto files) call ApiProperty()"
+  role:
+    package: apps/api
+    dir: src/app/agents/shared
+    file: "*.dto"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: pkg:@nestjs/swagger#ApiProperty
+  evidence:
+    holders: 97
+    total: 115
+    lower_bound: 0.766
+    lift: 4.034
+  example: >-
+    apps/api/src/app/agents/shared/dtos/agent-inbox.dto.ts#UpdateAgentInboxSharedRequestDto
+- id: D-91e753
+  status: proposed
+  mode: advise
+  summary: "playground/nextjs: pages in src/** render <Title>"
+  role:
+    package: playground/nextjs
+    dir: src
+    file: "*"
+    entry: page
+    kind: component
+  rule:
+    type: renders
+    component: playground/nextjs/src/components/Title.tsx#Title
+  evidence:
+    holders: 25
+    total: 27
+    lower_bound: 0.766
+    lift: 93.333
+  example: playground/nextjs/src/pages/agent-human/index.tsx#AgentHumanPage
+- id: D-9f19f7
+  status: proposed
+  mode: advise
+  summary: "apps/api: classes in src/app/channel-endpoints/** (*.dto files) pass `description` to ApiProperty()"
+  role:
+    package: apps/api
+    dir: src/app/channel-endpoints
+    file: "*.dto"
+    entry: '-'
+    kind: class
+  rule:
+    type: passes_key
+    callee: pkg:@nestjs/swagger#ApiProperty
+    index: 0
+    key: description
+  evidence:
+    holders: 30
+    total: 33
+    lower_bound: 0.764
+    lift: 5.345
+  example: >-
+    apps/api/src/app/channel-endpoints/dtos/create-channel-endpoint-variants.dto.ts#CreateGrafanaOnCallIntegrationEndpointDto
+- id: D-bd4e93
+  status: proposed
+  mode: advise
+  summary: "apps/api: HTTP handlers in src/app/subscribers-v2/** (*.controller files) are decorated with ApiParam()"
+  role:
+    package: apps/api
+    dir: src/app/subscribers-v2
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/swagger#ApiParam
+  evidence:
+    holders: 24
+    total: 26
+    lower_bound: 0.759
+    lift: 72.07
+  example: >-
+    apps/api/src/app/subscribers-v2/subscribers.controller.ts#DELETE
+    /subscribers/:subscriberId
+- id: D-85dab9
+  status: proposed
+  mode: advise
+  summary: workspace packages depend on typescript@6.0.3
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: dependency_version
+    name: typescript
+    range: "6.0.3"
+  evidence:
+    holders: 43
+    total: 49
+    lower_bound: 0.758
+    lift: 1.0
+    split:
+    - - "6.0.3"
+      - 43
+    - - ^5.5.2
+      - 4
+    - - ^5.8.3
+      - 1
+    - - ~5.8.3
+      - 1
+  example: apps/api/package.json#@novu/api-service
+- id: D-52c44b
+  status: proposed
+  mode: advise
+  summary: "apps/api: HTTP handlers in src/app/widgets/** (*.controller files) are decorated with UseGuards()"
+  role:
+    package: apps/api
+    dir: src/app/widgets
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#UseGuards
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 52.492
+  example: apps/api/src/app/widgets/widgets.controller.ts#DELETE /widgets/messages
+- id: D-53fcf5
+  status: proposed
+  mode: advise
+  summary: "apps/api: classes in src/app/inbox/** (*.command files) extend EnvironmentWithSubscriber"
+  role:
+    package: apps/api
+    dir: src/app/inbox
+    file: "*.command"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - apps/api/src/app/shared/commands/project.command.ts#EnvironmentWithSubscriber
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 80.526
+  example: >-
+    apps/api/src/app/inbox/usecases/bulk-update-preferences/bulk-update-preferences.command.ts#BulkUpdatePreferencesCommand
+- id: D-808edd
+  status: proposed
+  mode: advise
+  summary: "libs/application-generic: classes in src/** (*.command files) are named `*Command`"
+  role:
+    package: libs/application-generic
+    dir: src
+    file: "*.command"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Command"
+  evidence:
+    holders: 87
+    total: 104
+    lower_bound: 0.754
+    lift: 4.731
+  example: >-
+    libs/application-generic/src/commands/authenticated.command.ts#AuthenticatedCommand
+- id: D-94d735
+  status: proposed
+  mode: advise
+  summary: "libs/application-generic: classes in src/factories/chat/** (*.handler files) extend BaseChatHandler"
+  role:
+    package: libs/application-generic
+    dir: src/factories/chat
+    file: "*.handler"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - >-
+      libs/application-generic/src/factories/chat/handlers/base.handler.ts#BaseChatHandler
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 156.579
+  example: >-
+    libs/application-generic/src/factories/chat/handlers/chat-webhook.handler.ts#ChatWebhookHandler
+- id: D-cac0d0
+  status: proposed
+  mode: advise
+  summary: "apps/human-dashboard: components in src/components/ui/** call cn()"
+  role:
+    package: apps/human-dashboard
+    dir: src/components/ui
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: calls
+    callee: apps/human-dashboard/src/lib/utils.ts#cn
+  evidence:
+    holders: 23
+    total: 25
+    lower_bound: 0.75
+    lift: 20.337
+  example: apps/human-dashboard/src/components/ui/agent-avatar.tsx#AgentAvatar

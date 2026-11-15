@@ -1,0 +1,2581 @@
+{
+  "note": "Dev figures (py was used for tuning, py2 is a dev set too): optimistic, never a held-out result. accept_all_shown is the target definition (unlabelled counted as WRONG); accept_labelled and accept_ceiling are bounds, not labels.",
+  "census": {
+    "py": [
+      {
+        "repo": "full-stack-fastapi-template",
+        "sha": "aabb90126964a164e02aff39e7c385bb0598236d",
+        "shown": 1,
+        "tiers": {
+          "default": 0,
+          "suggestion": 1
+        },
+        "commit": "feefad6-pyplan"
+      },
+      {
+        "repo": "netbox",
+        "sha": "56daec7debfd51fa991b45d6a40cb592b42b669d",
+        "shown": 12,
+        "tiers": {
+          "default": 0,
+          "suggestion": 12
+        },
+        "commit": "feefad6-pyplan"
+      },
+      {
+        "repo": "saleor",
+        "sha": "89817cdd10423619d6d6be54a61ead11fca90cfa",
+        "shown": 7,
+        "tiers": {
+          "default": 0,
+          "suggestion": 7
+        },
+        "commit": "feefad6-pyplan"
+      },
+      {
+        "repo": "flask",
+        "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+        "shown": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "commit": "feefad6-pyplan"
+      },
+      {
+        "repo": "fastapi",
+        "sha": "1ca09c13584ca45aa0921e5e40b31d49c5e3135a",
+        "shown": 1,
+        "tiers": {
+          "default": 0,
+          "suggestion": 1
+        },
+        "commit": "feefad6-pyplan"
+      },
+      {
+        "repo": "langchain",
+        "sha": "e649741517b9584aae63a6ebd6ada803967da1c9",
+        "shown": 2,
+        "tiers": {
+          "default": 0,
+          "suggestion": 2
+        },
+        "commit": "feefad6-pyplan"
+      }
+    ],
+    "py2": [
+      {
+        "repo": "Django-CRM",
+        "sha": "f63fe8cf22bd818cea45427b48ef59da24206ff1",
+        "shown": 9,
+        "tiers": {
+          "default": 0,
+          "suggestion": 9
+        },
+        "commit": "feefad6-pyplan"
+      },
+      {
+        "repo": "InvenTree",
+        "sha": "c5c878d6afe67cf612f436d04c6479dc18a3c2dd",
+        "shown": 11,
+        "tiers": {
+          "default": 0,
+          "suggestion": 11
+        },
+        "commit": "feefad6-pyplan"
+      },
+      {
+        "repo": "ralph",
+        "sha": "39d1d45f8cd3d987b9adbdfdf22dfe15da921fad",
+        "shown": 6,
+        "tiers": {
+          "default": 0,
+          "suggestion": 6
+        },
+        "commit": "feefad6-pyplan"
+      },
+      {
+        "repo": "Misago",
+        "sha": "4a37d19d3d9f74064c75cdda6856350b2daea5df",
+        "shown": 8,
+        "tiers": {
+          "default": 0,
+          "suggestion": 8
+        },
+        "commit": "feefad6-pyplan"
+      },
+      {
+        "repo": "paperless-ngx",
+        "sha": "cb3513c6f3cee9b4f769afe7fd58616c6ad21ca6",
+        "shown": 3,
+        "tiers": {
+          "default": 0,
+          "suggestion": 3
+        },
+        "commit": "feefad6-pyplan"
+      },
+      {
+        "repo": "wger",
+        "sha": "fa01090126bfeee32d9d829234c12bf941757319",
+        "shown": 3,
+        "tiers": {
+          "default": 0,
+          "suggestion": 3
+        },
+        "commit": "feefad6-pyplan"
+      },
+      {
+        "repo": "lotus",
+        "sha": "9c4fe5daa746b0136a1ea0aed54930e37289ab78",
+        "shown": 4,
+        "tiers": {
+          "default": 0,
+          "suggestion": 4
+        },
+        "commit": "feefad6-pyplan"
+      },
+      {
+        "repo": "pontoon",
+        "sha": "2690c3315d04b7e0d8637c36583bb16056e0e9bd",
+        "shown": 2,
+        "tiers": {
+          "default": 0,
+          "suggestion": 2
+        },
+        "commit": "feefad6-pyplan"
+      },
+      {
+        "repo": "open-wearables",
+        "sha": "76a504f54f43b269f972547f7ef92c9ea0e38a21",
+        "shown": 8,
+        "tiers": {
+          "default": 0,
+          "suggestion": 8
+        },
+        "commit": "feefad6-pyplan"
+      },
+      {
+        "repo": "tasking-manager",
+        "sha": "cbf2ec89c38bf876bbc4de048f782978247ecfd9",
+        "shown": 8,
+        "tiers": {
+          "default": 0,
+          "suggestion": 8
+        },
+        "commit": "feefad6-pyplan"
+      },
+      {
+        "repo": "simplelogin",
+        "sha": "b3cf76443994c95db4cbe8e3878cdf29f2372013",
+        "shown": 10,
+        "tiers": {
+          "default": 0,
+          "suggestion": 10
+        },
+        "commit": "feefad6-pyplan"
+      },
+      {
+        "repo": "changedetection.io",
+        "sha": "43c697c32e1be1fceb8a2d265cfbcb8ecf15f6d5",
+        "shown": 3,
+        "tiers": {
+          "default": 0,
+          "suggestion": 3
+        },
+        "commit": "feefad6-pyplan"
+      }
+    ]
+  },
+  "status": {
+    "py": {
+      "changed": 7,
+      "identical": 15,
+      "new": 1
+    },
+    "py2": {
+      "changed": 7,
+      "identical": 66,
+      "new": 2
+    }
+  },
+  "unlabelled": [
+    "netbox/D-76eb6b [passes_key] changed (old card: WRONG legit_outliers) lang=py",
+    "netbox/D-bc0c7d [wrapped_by:decorator] changed (old card: WRONG mixed_group) lang=py",
+    "netbox/D-e2c3e4 [wrapped_by:extends] changed (old card: WRONG mixed_group) lang=py",
+    "netbox/D-58913a [calls] changed (old card: ACCEPT) lang=py",
+    "netbox/D-937c0c [named] changed (old card: WRONG mixed_group) lang=py",
+    "netbox/D-310ec7 [passes_key] changed (old card: ACCEPT) lang=py",
+    "fastapi/D-499c0e [control] changed (old card: ACCEPT) lang=py",
+    "langchain/D-0e154c [imports_from] new lang=py",
+    "InvenTree/D-47d790 [wrapped_by:extends] changed (old card: TRIVIAL) lang=py",
+    "ralph/D-4529f9 [wrapped_by:extends] changed (old card: WRONG mixed_group) lang=py",
+    "ralph/D-5b6f70 [wrapped_by:extends] changed (old card: WRONG legit_outliers) lang=py",
+    "ralph/D-43f01e [named] changed (old card: WRONG mixed_group) lang=py",
+    "Misago/D-b4e5ff [named] changed (old card: WRONG mixed_group) lang=py",
+    "paperless-ngx/D-de2489 [named] changed (old card: WRONG mixed_group) lang=ts",
+    "open-wearables/D-dadcea [wrapped_by:call] new lang=py",
+    "tasking-manager/D-c7acd1 [wrapped_by:call] new lang=py",
+    "simplelogin/D-2a4960 [avoids:import] changed (old card: ACCEPT) lang=py"
+  ],
+  "gone": {
+    "py": [],
+    "py2": [
+      "open-wearables/D-3b39dc [wrapped_by:call] ACCEPT",
+      "tasking-manager/D-c373f7 [wrapped_by:call] WRONG legit_outliers",
+      "tasking-manager/D-86bd7f [wrapped_by:call] ACCEPT"
+    ]
+  },
+  "python": {
+    "all": {
+      "shown": 79,
+      "ACCEPT": 18,
+      "TRIVIAL": 0,
+      "WRONG": 45,
+      "unlabelled": 16,
+      "changed": 13,
+      "new": 3,
+      "wrong_because": {
+        "mixed_group": 17,
+        "legit_outliers": 11,
+        "incidental": 10,
+        "false_outliers": 6,
+        "misdescribes": 1
+      },
+      "accept_all_shown": {
+        "k": 18,
+        "n": 79,
+        "p": 0.22784810126582278,
+        "lo": 0.1492677463583001,
+        "hi": 0.33166848314950054
+      },
+      "accept_labelled": {
+        "k": 18,
+        "n": 63,
+        "p": 0.2857142857142857,
+        "lo": 0.18903191922643195,
+        "hi": 0.40702716667788075
+      },
+      "accept_ceiling": {
+        "k": 34,
+        "n": 79,
+        "p": 0.43037974683544306,
+        "lo": 0.32693823359163393,
+        "hi": 0.5402780111661755
+      }
+    },
+    "all_d5_conditions": {
+      "shown": 53,
+      "ACCEPT": 13,
+      "TRIVIAL": 0,
+      "WRONG": 26,
+      "unlabelled": 14,
+      "changed": 12,
+      "new": 2,
+      "wrong_because": {
+        "mixed_group": 11,
+        "legit_outliers": 9,
+        "incidental": 3,
+        "false_outliers": 2,
+        "misdescribes": 1
+      },
+      "accept_all_shown": {
+        "k": 13,
+        "n": 53,
+        "p": 0.24528301886792453,
+        "lo": 0.1493290204821951,
+        "hi": 0.3756655779783221
+      },
+      "accept_labelled": {
+        "k": 13,
+        "n": 39,
+        "p": 0.3333333333333333,
+        "lo": 0.20632956108003392,
+        "hi": 0.4902260572517306
+      },
+      "accept_ceiling": {
+        "k": 27,
+        "n": 53,
+        "p": 0.5094339622641509,
+        "lo": 0.378835290181561,
+        "hi": 0.6387575024680494
+      }
+    },
+    "by_group": {
+      "call:auth": {
+        "py": {
+          "shown": 0,
+          "ACCEPT": 0,
+          "TRIVIAL": 0,
+          "WRONG": 0,
+          "unlabelled": 0,
+          "changed": 0,
+          "new": 0,
+          "wrong_because": {},
+          "accept_all_shown": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          },
+          "accept_labelled": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          },
+          "accept_ceiling": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          }
+        },
+        "py2": {
+          "shown": 5,
+          "ACCEPT": 4,
+          "TRIVIAL": 0,
+          "WRONG": 0,
+          "unlabelled": 1,
+          "changed": 0,
+          "new": 1,
+          "wrong_because": {},
+          "accept_all_shown": {
+            "k": 4,
+            "n": 5,
+            "p": 0.8,
+            "lo": 0.375534627029995,
+            "hi": 0.9637758917743693
+          },
+          "accept_labelled": {
+            "k": 4,
+            "n": 4,
+            "p": 1,
+            "lo": 0.5101091596030786,
+            "hi": 0.9999999999999999
+          },
+          "accept_ceiling": {
+            "k": 5,
+            "n": 5,
+            "p": 1,
+            "lo": 0.5655175313406071,
+            "hi": 1
+          }
+        },
+        "both": {
+          "shown": 5,
+          "ACCEPT": 4,
+          "TRIVIAL": 0,
+          "WRONG": 0,
+          "unlabelled": 1,
+          "changed": 0,
+          "new": 1,
+          "wrong_because": {},
+          "accept_all_shown": {
+            "k": 4,
+            "n": 5,
+            "p": 0.8,
+            "lo": 0.375534627029995,
+            "hi": 0.9637758917743693
+          },
+          "accept_labelled": {
+            "k": 4,
+            "n": 4,
+            "p": 1,
+            "lo": 0.5101091596030786,
+            "hi": 0.9999999999999999
+          },
+          "accept_ceiling": {
+            "k": 5,
+            "n": 5,
+            "p": 1,
+            "lo": 0.5655175313406071,
+            "hi": 1
+          }
+        },
+        "uids": [
+          "Django-CRM/D-220569 [wrapped_by:call] ACCEPT",
+          "Django-CRM/D-4a6ea2 [wrapped_by:call] ACCEPT",
+          "Django-CRM/D-f135a4 [wrapped_by:call] ACCEPT",
+          "Django-CRM/D-4b232f [wrapped_by:call] ACCEPT",
+          "tasking-manager/D-c7acd1 [wrapped_by:call] new"
+        ]
+      },
+      "call:resource": {
+        "py": {
+          "shown": 0,
+          "ACCEPT": 0,
+          "TRIVIAL": 0,
+          "WRONG": 0,
+          "unlabelled": 0,
+          "changed": 0,
+          "new": 0,
+          "wrong_because": {},
+          "accept_all_shown": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          },
+          "accept_labelled": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          },
+          "accept_ceiling": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          }
+        },
+        "py2": {
+          "shown": 3,
+          "ACCEPT": 1,
+          "TRIVIAL": 0,
+          "WRONG": 1,
+          "unlabelled": 1,
+          "changed": 0,
+          "new": 1,
+          "wrong_because": {
+            "incidental": 1
+          },
+          "accept_all_shown": {
+            "k": 1,
+            "n": 3,
+            "p": 0.3333333333333333,
+            "lo": 0.06149194402093078,
+            "hi": 0.7923404011921757
+          },
+          "accept_labelled": {
+            "k": 1,
+            "n": 2,
+            "p": 0.5,
+            "lo": 0.09453120463920084,
+            "hi": 0.9054687953607992
+          },
+          "accept_ceiling": {
+            "k": 2,
+            "n": 3,
+            "p": 0.6666666666666666,
+            "lo": 0.2076595988078242,
+            "hi": 0.9385080559790691
+          }
+        },
+        "both": {
+          "shown": 3,
+          "ACCEPT": 1,
+          "TRIVIAL": 0,
+          "WRONG": 1,
+          "unlabelled": 1,
+          "changed": 0,
+          "new": 1,
+          "wrong_because": {
+            "incidental": 1
+          },
+          "accept_all_shown": {
+            "k": 1,
+            "n": 3,
+            "p": 0.3333333333333333,
+            "lo": 0.06149194402093078,
+            "hi": 0.7923404011921757
+          },
+          "accept_labelled": {
+            "k": 1,
+            "n": 2,
+            "p": 0.5,
+            "lo": 0.09453120463920084,
+            "hi": 0.9054687953607992
+          },
+          "accept_ceiling": {
+            "k": 2,
+            "n": 3,
+            "p": 0.6666666666666666,
+            "lo": 0.2076595988078242,
+            "hi": 0.9385080559790691
+          }
+        },
+        "uids": [
+          "open-wearables/D-dadcea [wrapped_by:call] new",
+          "tasking-manager/D-cfe608 [wrapped_by:call] ACCEPT",
+          "tasking-manager/D-3e220e [wrapped_by:call] WRONG incidental"
+        ]
+      },
+      "call:mixed": {
+        "py": {
+          "shown": 0,
+          "ACCEPT": 0,
+          "TRIVIAL": 0,
+          "WRONG": 0,
+          "unlabelled": 0,
+          "changed": 0,
+          "new": 0,
+          "wrong_because": {},
+          "accept_all_shown": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          },
+          "accept_labelled": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          },
+          "accept_ceiling": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          }
+        },
+        "py2": {
+          "shown": 0,
+          "ACCEPT": 0,
+          "TRIVIAL": 0,
+          "WRONG": 0,
+          "unlabelled": 0,
+          "changed": 0,
+          "new": 0,
+          "wrong_because": {},
+          "accept_all_shown": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          },
+          "accept_labelled": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          },
+          "accept_ceiling": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          }
+        },
+        "both": {
+          "shown": 0,
+          "ACCEPT": 0,
+          "TRIVIAL": 0,
+          "WRONG": 0,
+          "unlabelled": 0,
+          "changed": 0,
+          "new": 0,
+          "wrong_because": {},
+          "accept_all_shown": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          },
+          "accept_labelled": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          },
+          "accept_ceiling": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          }
+        },
+        "uids": []
+      },
+      "decorator": {
+        "py": {
+          "shown": 3,
+          "ACCEPT": 0,
+          "TRIVIAL": 0,
+          "WRONG": 2,
+          "unlabelled": 1,
+          "changed": 1,
+          "new": 0,
+          "wrong_because": {
+            "mixed_group": 1,
+            "legit_outliers": 1
+          },
+          "accept_all_shown": {
+            "k": 0,
+            "n": 3,
+            "p": 0,
+            "lo": 0,
+            "hi": 0.5614970356393196
+          },
+          "accept_labelled": {
+            "k": 0,
+            "n": 2,
+            "p": 0,
+            "lo": 0,
+            "hi": 0.6576197760453506
+          },
+          "accept_ceiling": {
+            "k": 1,
+            "n": 3,
+            "p": 0.3333333333333333,
+            "lo": 0.06149194402093078,
+            "hi": 0.7923404011921757
+          }
+        },
+        "py2": {
+          "shown": 3,
+          "ACCEPT": 1,
+          "TRIVIAL": 0,
+          "WRONG": 2,
+          "unlabelled": 0,
+          "changed": 0,
+          "new": 0,
+          "wrong_because": {
+            "legit_outliers": 2
+          },
+          "accept_all_shown": {
+            "k": 1,
+            "n": 3,
+            "p": 0.3333333333333333,
+            "lo": 0.06149194402093078,
+            "hi": 0.7923404011921757
+          },
+          "accept_labelled": {
+            "k": 1,
+            "n": 3,
+            "p": 0.3333333333333333,
+            "lo": 0.06149194402093078,
+            "hi": 0.7923404011921757
+          },
+          "accept_ceiling": {
+            "k": 1,
+            "n": 3,
+            "p": 0.3333333333333333,
+            "lo": 0.06149194402093078,
+            "hi": 0.7923404011921757
+          }
+        },
+        "both": {
+          "shown": 6,
+          "ACCEPT": 1,
+          "TRIVIAL": 0,
+          "WRONG": 4,
+          "unlabelled": 1,
+          "changed": 1,
+          "new": 0,
+          "wrong_because": {
+            "mixed_group": 1,
+            "legit_outliers": 3
+          },
+          "accept_all_shown": {
+            "k": 1,
+            "n": 6,
+            "p": 0.16666666666666666,
+            "lo": 0.030053369411815023,
+            "hi": 0.5635028250257673
+          },
+          "accept_labelled": {
+            "k": 1,
+            "n": 5,
+            "p": 0.2,
+            "lo": 0.03622410822563066,
+            "hi": 0.6244653729700049
+          },
+          "accept_ceiling": {
+            "k": 2,
+            "n": 6,
+            "p": 0.3333333333333333,
+            "lo": 0.09677141021353453,
+            "hi": 0.7000066870052566
+          }
+        },
+        "uids": [
+          "netbox/D-281ae8 [wrapped_by:decorator] WRONG mixed_group",
+          "netbox/D-cc1341 [wrapped_by:decorator] WRONG legit_outliers",
+          "netbox/D-bc0c7d [wrapped_by:decorator] changed (old card: WRONG mixed_group)",
+          "wger/D-82d21d [wrapped_by:decorator] WRONG legit_outliers",
+          "lotus/D-e5b6fe [wrapped_by:decorator] ACCEPT",
+          "changedetection.io/D-2619c7 [wrapped_by:decorator] WRONG legit_outliers"
+        ]
+      },
+      "base": {
+        "py": {
+          "shown": 1,
+          "ACCEPT": 0,
+          "TRIVIAL": 0,
+          "WRONG": 0,
+          "unlabelled": 1,
+          "changed": 1,
+          "new": 0,
+          "wrong_because": {},
+          "accept_all_shown": {
+            "k": 0,
+            "n": 1,
+            "p": 0,
+            "lo": 0,
+            "hi": 0.7934506882081973
+          },
+          "accept_labelled": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          },
+          "accept_ceiling": {
+            "k": 1,
+            "n": 1,
+            "p": 1,
+            "lo": 0.2065493117918027,
+            "hi": 1
+          }
+        },
+        "py2": {
+          "shown": 8,
+          "ACCEPT": 1,
+          "TRIVIAL": 0,
+          "WRONG": 4,
+          "unlabelled": 3,
+          "changed": 3,
+          "new": 0,
+          "wrong_because": {
+            "legit_outliers": 2,
+            "mixed_group": 2
+          },
+          "accept_all_shown": {
+            "k": 1,
+            "n": 8,
+            "p": 0.125,
+            "lo": 0.022417491199971912,
+            "hi": 0.47088818505608376
+          },
+          "accept_labelled": {
+            "k": 1,
+            "n": 5,
+            "p": 0.2,
+            "lo": 0.03622410822563066,
+            "hi": 0.6244653729700049
+          },
+          "accept_ceiling": {
+            "k": 4,
+            "n": 8,
+            "p": 0.5,
+            "lo": 0.21521606069626764,
+            "hi": 0.7847839393037324
+          }
+        },
+        "both": {
+          "shown": 9,
+          "ACCEPT": 1,
+          "TRIVIAL": 0,
+          "WRONG": 4,
+          "unlabelled": 4,
+          "changed": 4,
+          "new": 0,
+          "wrong_because": {
+            "legit_outliers": 2,
+            "mixed_group": 2
+          },
+          "accept_all_shown": {
+            "k": 1,
+            "n": 9,
+            "p": 0.1111111111111111,
+            "lo": 0.01989088741690992,
+            "hi": 0.4349997083707909
+          },
+          "accept_labelled": {
+            "k": 1,
+            "n": 5,
+            "p": 0.2,
+            "lo": 0.03622410822563066,
+            "hi": 0.6244653729700049
+          },
+          "accept_ceiling": {
+            "k": 5,
+            "n": 9,
+            "p": 0.5555555555555556,
+            "lo": 0.26665129180087416,
+            "hi": 0.8112214802294544
+          }
+        },
+        "uids": [
+          "netbox/D-e2c3e4 [wrapped_by:extends] changed (old card: WRONG mixed_group)",
+          "InvenTree/D-47d790 [wrapped_by:extends] changed (old card: TRIVIAL)",
+          "ralph/D-4529f9 [wrapped_by:extends] changed (old card: WRONG mixed_group)",
+          "ralph/D-5b6f70 [wrapped_by:extends] changed (old card: WRONG legit_outliers)",
+          "Misago/D-c9ae1e [wrapped_by:extends] WRONG legit_outliers",
+          "Misago/D-e72fc8 [wrapped_by:extends] WRONG legit_outliers",
+          "open-wearables/D-262064 [wrapped_by:extends] ACCEPT",
+          "tasking-manager/D-2dfb9d [wrapped_by:extends] WRONG mixed_group",
+          "simplelogin/D-e29828 [wrapped_by:extends] WRONG mixed_group"
+        ]
+      },
+      "passes_key": {
+        "py": {
+          "shown": 2,
+          "ACCEPT": 0,
+          "TRIVIAL": 0,
+          "WRONG": 0,
+          "unlabelled": 2,
+          "changed": 2,
+          "new": 0,
+          "wrong_because": {},
+          "accept_all_shown": {
+            "k": 0,
+            "n": 2,
+            "p": 0,
+            "lo": 0,
+            "hi": 0.6576197760453506
+          },
+          "accept_labelled": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          },
+          "accept_ceiling": {
+            "k": 2,
+            "n": 2,
+            "p": 1,
+            "lo": 0.3423802239546494,
+            "hi": 1
+          }
+        },
+        "py2": {
+          "shown": 2,
+          "ACCEPT": 1,
+          "TRIVIAL": 0,
+          "WRONG": 1,
+          "unlabelled": 0,
+          "changed": 0,
+          "new": 0,
+          "wrong_because": {
+            "false_outliers": 1
+          },
+          "accept_all_shown": {
+            "k": 1,
+            "n": 2,
+            "p": 0.5,
+            "lo": 0.09453120463920084,
+            "hi": 0.9054687953607992
+          },
+          "accept_labelled": {
+            "k": 1,
+            "n": 2,
+            "p": 0.5,
+            "lo": 0.09453120463920084,
+            "hi": 0.9054687953607992
+          },
+          "accept_ceiling": {
+            "k": 1,
+            "n": 2,
+            "p": 0.5,
+            "lo": 0.09453120463920084,
+            "hi": 0.9054687953607992
+          }
+        },
+        "both": {
+          "shown": 4,
+          "ACCEPT": 1,
+          "TRIVIAL": 0,
+          "WRONG": 1,
+          "unlabelled": 2,
+          "changed": 2,
+          "new": 0,
+          "wrong_because": {
+            "false_outliers": 1
+          },
+          "accept_all_shown": {
+            "k": 1,
+            "n": 4,
+            "p": 0.25,
+            "lo": 0.04558726029536886,
+            "hi": 0.6993581599030918
+          },
+          "accept_labelled": {
+            "k": 1,
+            "n": 2,
+            "p": 0.5,
+            "lo": 0.09453120463920084,
+            "hi": 0.9054687953607992
+          },
+          "accept_ceiling": {
+            "k": 3,
+            "n": 4,
+            "p": 0.75,
+            "lo": 0.3006418400969081,
+            "hi": 0.954412739704631
+          }
+        },
+        "uids": [
+          "netbox/D-76eb6b [passes_key] changed (old card: WRONG legit_outliers)",
+          "netbox/D-310ec7 [passes_key] changed (old card: ACCEPT)",
+          "Django-CRM/D-9c2214 [passes_key] ACCEPT",
+          "tasking-manager/D-4ede9c [passes_key] WRONG false_outliers"
+        ]
+      },
+      "layering": {
+        "py": {
+          "shown": 0,
+          "ACCEPT": 0,
+          "TRIVIAL": 0,
+          "WRONG": 0,
+          "unlabelled": 0,
+          "changed": 0,
+          "new": 0,
+          "wrong_because": {},
+          "accept_all_shown": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          },
+          "accept_labelled": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          },
+          "accept_ceiling": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          }
+        },
+        "py2": {
+          "shown": 1,
+          "ACCEPT": 0,
+          "TRIVIAL": 0,
+          "WRONG": 0,
+          "unlabelled": 1,
+          "changed": 1,
+          "new": 0,
+          "wrong_because": {},
+          "accept_all_shown": {
+            "k": 0,
+            "n": 1,
+            "p": 0,
+            "lo": 0,
+            "hi": 0.7934506882081973
+          },
+          "accept_labelled": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          },
+          "accept_ceiling": {
+            "k": 1,
+            "n": 1,
+            "p": 1,
+            "lo": 0.2065493117918027,
+            "hi": 1
+          }
+        },
+        "both": {
+          "shown": 1,
+          "ACCEPT": 0,
+          "TRIVIAL": 0,
+          "WRONG": 0,
+          "unlabelled": 1,
+          "changed": 1,
+          "new": 0,
+          "wrong_because": {},
+          "accept_all_shown": {
+            "k": 0,
+            "n": 1,
+            "p": 0,
+            "lo": 0,
+            "hi": 0.7934506882081973
+          },
+          "accept_labelled": {
+            "k": 0,
+            "n": 0,
+            "p": null,
+            "lo": null,
+            "hi": null
+          },
+          "accept_ceiling": {
+            "k": 1,
+            "n": 1,
+            "p": 1,
+            "lo": 0.2065493117918027,
+            "hi": 1
+          }
+        },
+        "uids": [
+          "simplelogin/D-2a4960 [avoids:import] changed (old card: ACCEPT)"
+        ]
+      },
+      "other": {
+        "py": {
+          "shown": 16,
+          "ACCEPT": 5,
+          "TRIVIAL": 0,
+          "WRONG": 7,
+          "unlabelled": 4,
+          "changed": 3,
+          "new": 1,
+          "wrong_because": {
+            "mixed_group": 3,
+            "legit_outliers": 3,
+            "incidental": 1
+          },
+          "accept_all_shown": {
+            "k": 5,
+            "n": 16,
+            "p": 0.3125,
+            "lo": 0.14164643765150897,
+            "hi": 0.5559564434725178
+          },
+          "accept_labelled": {
+            "k": 5,
+            "n": 12,
+            "p": 0.4166666666666667,
+            "lo": 0.1932603124346072,
+            "hi": 0.6804886891575758
+          },
+          "accept_ceiling": {
+            "k": 9,
+            "n": 16,
+            "p": 0.5625,
+            "lo": 0.3317855624393811,
+            "hi": 0.7690134771859434
+          }
+        },
+        "py2": {
+          "shown": 35,
+          "ACCEPT": 5,
+          "TRIVIAL": 0,
+          "WRONG": 28,
+          "unlabelled": 2,
+          "changed": 2,
+          "new": 0,
+          "wrong_because": {
+            "false_outliers": 5,
+            "mixed_group": 11,
+            "legit_outliers": 3,
+            "incidental": 8,
+            "misdescribes": 1
+          },
+          "accept_all_shown": {
+            "k": 5,
+            "n": 35,
+            "p": 0.14285714285714285,
+            "lo": 0.06260231039823719,
+            "hi": 0.29375554226628564
+          },
+          "accept_labelled": {
+            "k": 5,
+            "n": 33,
+            "p": 0.15151515151515152,
+            "lo": 0.06650457239529714,
+            "hi": 0.30919876025212834
+          },
+          "accept_ceiling": {
+            "k": 7,
+            "n": 35,
+            "p": 0.2,
+            "lo": 0.10042446419270429,
+            "hi": 0.3589161320454949
+          }
+        },
+        "both": {
+          "shown": 51,
+          "ACCEPT": 10,
+          "TRIVIAL": 0,
+          "WRONG": 35,
+          "unlabelled": 6,
+          "changed": 5,
+          "new": 1,
+          "wrong_because": {
+            "mixed_group": 14,
+            "legit_outliers": 6,
+            "incidental": 9,
+            "false_outliers": 5,
+            "misdescribes": 1
+          },
+          "accept_all_shown": {
+            "k": 10,
+            "n": 51,
+            "p": 0.19607843137254902,
+            "lo": 0.11015342461952897,
+            "hi": 0.324580795943434
+          },
+          "accept_labelled": {
+            "k": 10,
+            "n": 45,
+            "p": 0.2222222222222222,
+            "lo": 0.12544685475248524,
+            "hi": 0.36269292295645134
+          },
+          "accept_ceiling": {
+            "k": 16,
+            "n": 51,
+            "p": 0.3137254901960784,
+            "lo": 0.20327678393067292,
+            "hi": 0.4502699964143688
+          }
+        },
+        "uids": [
+          "netbox/D-cc8d72 [calls] ACCEPT",
+          "netbox/D-4c4e2d [calls] WRONG mixed_group",
+          "netbox/D-58913a [calls] changed (old card: ACCEPT)",
+          "netbox/D-73d13c [named] WRONG legit_outliers",
+          "netbox/D-afb64d [named] WRONG mixed_group",
+          "netbox/D-937c0c [named] changed (old card: WRONG mixed_group)",
+          "saleor/D-e36ea5 [avoids:other] WRONG incidental",
+          "saleor/D-71795b [named] ACCEPT",
+          "saleor/D-ac08d9 [named] ACCEPT",
+          "saleor/D-a6847e [named] ACCEPT",
+          "saleor/D-e86c5d [has_test] ACCEPT",
+          "saleor/D-6af632 [has_test] WRONG mixed_group",
+          "saleor/D-0da0cf [has_test] WRONG legit_outliers",
+          "fastapi/D-499c0e [control] changed (old card: ACCEPT)",
+          "langchain/D-468530 [dependency_version] WRONG legit_outliers",
+          "langchain/D-0e154c [imports_from] new",
+          "Django-CRM/D-e62e87 [calls] WRONG false_outliers",
+          "Django-CRM/D-0bd0ec [calls] WRONG false_outliers",
+          "Django-CRM/D-f01192 [calls] WRONG false_outliers",
+          "InvenTree/D-43f01e [named] WRONG mixed_group",
+          "InvenTree/D-6f225b [named] WRONG mixed_group",
+          "InvenTree/D-f31910 [calls] WRONG mixed_group",
+          "ralph/D-5bf491 [avoids:other] WRONG legit_outliers",
+          "ralph/D-b1df5c [named] WRONG mixed_group",
+          "ralph/D-43f01e [named] changed (old card: WRONG mixed_group)",
+          "ralph/D-cfd5da [control] ACCEPT",
+          "Misago/D-90a5d9 [calls] ACCEPT",
+          "Misago/D-b4e5ff [named] changed (old card: WRONG mixed_group)",
+          "Misago/D-d8703c [calls] WRONG mixed_group",
+          "Misago/D-d01155 [calls] WRONG mixed_group",
+          "Misago/D-d93d41 [control] ACCEPT",
+          "wger/D-db04dc [named] WRONG mixed_group",
+          "wger/D-3755b1 [calls] WRONG mixed_group",
+          "lotus/D-26d6a0 [named] ACCEPT",
+          "lotus/D-1cbdac [named] WRONG mixed_group",
+          "lotus/D-2ab768 [model_has] WRONG legit_outliers",
+          "open-wearables/D-ff3192 [calls] WRONG false_outliers",
+          "open-wearables/D-6606a8 [calls] WRONG false_outliers",
+          "open-wearables/D-b21ebc [calls] WRONG mixed_group",
+          "open-wearables/D-8ffd6f [named] WRONG mixed_group",
+          "open-wearables/D-baa886 [calls] WRONG incidental",
+          "simplelogin/D-7fa3b5 [avoids:other] WRONG misdescribes",
+          "simplelogin/D-ace6d1 [calls] WRONG legit_outliers",
+          "simplelogin/D-a4e9f4 [calls] WRONG incidental",
+          "simplelogin/D-8ab5d8 [calls] WRONG incidental",
+          "simplelogin/D-dbae61 [calls] WRONG incidental",
+          "simplelogin/D-a9b19b [before] WRONG incidental",
+          "simplelogin/D-dd624b [before] WRONG incidental",
+          "simplelogin/D-a1dfa4 [before] WRONG incidental",
+          "changedetection.io/D-7f369e [avoids:other] WRONG incidental",
+          "changedetection.io/D-1ce566 [control] ACCEPT"
+        ]
+      }
+    },
+    "by_group_d5_conditions": {
+      "call:auth": {
+        "shown": 3,
+        "ACCEPT": 2,
+        "TRIVIAL": 0,
+        "WRONG": 0,
+        "unlabelled": 1,
+        "changed": 0,
+        "new": 1,
+        "wrong_because": {},
+        "accept_all_shown": {
+          "k": 2,
+          "n": 3,
+          "p": 0.6666666666666666,
+          "lo": 0.2076595988078242,
+          "hi": 0.9385080559790691
+        },
+        "accept_labelled": {
+          "k": 2,
+          "n": 2,
+          "p": 1,
+          "lo": 0.3423802239546494,
+          "hi": 1
+        },
+        "accept_ceiling": {
+          "k": 3,
+          "n": 3,
+          "p": 1,
+          "lo": 0.43850296436068037,
+          "hi": 1
+        }
+      },
+      "call:resource": {
+        "shown": 3,
+        "ACCEPT": 1,
+        "TRIVIAL": 0,
+        "WRONG": 1,
+        "unlabelled": 1,
+        "changed": 0,
+        "new": 1,
+        "wrong_because": {
+          "incidental": 1
+        },
+        "accept_all_shown": {
+          "k": 1,
+          "n": 3,
+          "p": 0.3333333333333333,
+          "lo": 0.06149194402093078,
+          "hi": 0.7923404011921757
+        },
+        "accept_labelled": {
+          "k": 1,
+          "n": 2,
+          "p": 0.5,
+          "lo": 0.09453120463920084,
+          "hi": 0.9054687953607992
+        },
+        "accept_ceiling": {
+          "k": 2,
+          "n": 3,
+          "p": 0.6666666666666666,
+          "lo": 0.2076595988078242,
+          "hi": 0.9385080559790691
+        }
+      },
+      "call:mixed": {
+        "shown": 0,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 0,
+        "unlabelled": 0,
+        "changed": 0,
+        "new": 0,
+        "wrong_because": {},
+        "accept_all_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept_labelled": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept_ceiling": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        }
+      },
+      "decorator": {
+        "shown": 4,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 3,
+        "unlabelled": 1,
+        "changed": 1,
+        "new": 0,
+        "wrong_because": {
+          "mixed_group": 1,
+          "legit_outliers": 2
+        },
+        "accept_all_shown": {
+          "k": 0,
+          "n": 4,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.4898908403969213
+        },
+        "accept_labelled": {
+          "k": 0,
+          "n": 3,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.5614970356393196
+        },
+        "accept_ceiling": {
+          "k": 1,
+          "n": 4,
+          "p": 0.25,
+          "lo": 0.04558726029536886,
+          "hi": 0.6993581599030918
+        }
+      },
+      "base": {
+        "shown": 6,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 2,
+        "unlabelled": 4,
+        "changed": 4,
+        "new": 0,
+        "wrong_because": {
+          "legit_outliers": 2
+        },
+        "accept_all_shown": {
+          "k": 0,
+          "n": 6,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.39033429165637346
+        },
+        "accept_labelled": {
+          "k": 0,
+          "n": 2,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.6576197760453506
+        },
+        "accept_ceiling": {
+          "k": 4,
+          "n": 6,
+          "p": 0.6666666666666666,
+          "lo": 0.29999331299474324,
+          "hi": 0.9032285897864654
+        }
+      },
+      "passes_key": {
+        "shown": 1,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 0,
+        "unlabelled": 1,
+        "changed": 1,
+        "new": 0,
+        "wrong_because": {},
+        "accept_all_shown": {
+          "k": 0,
+          "n": 1,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.7934506882081973
+        },
+        "accept_labelled": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept_ceiling": {
+          "k": 1,
+          "n": 1,
+          "p": 1,
+          "lo": 0.2065493117918027,
+          "hi": 1
+        }
+      },
+      "layering": {
+        "shown": 1,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 0,
+        "unlabelled": 1,
+        "changed": 1,
+        "new": 0,
+        "wrong_because": {},
+        "accept_all_shown": {
+          "k": 0,
+          "n": 1,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.7934506882081973
+        },
+        "accept_labelled": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept_ceiling": {
+          "k": 1,
+          "n": 1,
+          "p": 1,
+          "lo": 0.2065493117918027,
+          "hi": 1
+        }
+      },
+      "other": {
+        "shown": 35,
+        "ACCEPT": 10,
+        "TRIVIAL": 0,
+        "WRONG": 20,
+        "unlabelled": 5,
+        "changed": 5,
+        "new": 0,
+        "wrong_because": {
+          "mixed_group": 10,
+          "legit_outliers": 5,
+          "incidental": 2,
+          "false_outliers": 2,
+          "misdescribes": 1
+        },
+        "accept_all_shown": {
+          "k": 10,
+          "n": 35,
+          "p": 0.2857142857142857,
+          "lo": 0.16326536162242042,
+          "hi": 0.45054934997629326
+        },
+        "accept_labelled": {
+          "k": 10,
+          "n": 30,
+          "p": 0.3333333333333333,
+          "lo": 0.19230497996726426,
+          "hi": 0.5121994849532198
+        },
+        "accept_ceiling": {
+          "k": 15,
+          "n": 35,
+          "p": 0.42857142857142855,
+          "lo": 0.2798456807626357,
+          "hi": 0.5914258897702688
+        }
+      }
+    },
+    "by_rule_kind": {
+      "avoids:import": {
+        "shown": 1,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 0,
+        "unlabelled": 1,
+        "changed": 1,
+        "new": 0,
+        "wrong_because": {},
+        "accept_all_shown": {
+          "k": 0,
+          "n": 1,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.7934506882081973
+        },
+        "accept_labelled": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept_ceiling": {
+          "k": 1,
+          "n": 1,
+          "p": 1,
+          "lo": 0.2065493117918027,
+          "hi": 1
+        }
+      },
+      "avoids:other": {
+        "shown": 4,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 4,
+        "unlabelled": 0,
+        "changed": 0,
+        "new": 0,
+        "wrong_because": {
+          "incidental": 2,
+          "legit_outliers": 1,
+          "misdescribes": 1
+        },
+        "accept_all_shown": {
+          "k": 0,
+          "n": 4,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.4898908403969213
+        },
+        "accept_labelled": {
+          "k": 0,
+          "n": 4,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.4898908403969213
+        },
+        "accept_ceiling": {
+          "k": 0,
+          "n": 4,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.4898908403969213
+        }
+      },
+      "before": {
+        "shown": 3,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 3,
+        "unlabelled": 0,
+        "changed": 0,
+        "new": 0,
+        "wrong_because": {
+          "incidental": 3
+        },
+        "accept_all_shown": {
+          "k": 0,
+          "n": 3,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.5614970356393196
+        },
+        "accept_labelled": {
+          "k": 0,
+          "n": 3,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.5614970356393196
+        },
+        "accept_ceiling": {
+          "k": 0,
+          "n": 3,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.5614970356393196
+        }
+      },
+      "calls": {
+        "shown": 19,
+        "ACCEPT": 2,
+        "TRIVIAL": 0,
+        "WRONG": 16,
+        "unlabelled": 1,
+        "changed": 1,
+        "new": 0,
+        "wrong_because": {
+          "mixed_group": 6,
+          "false_outliers": 5,
+          "incidental": 4,
+          "legit_outliers": 1
+        },
+        "accept_all_shown": {
+          "k": 2,
+          "n": 19,
+          "p": 0.10526315789473684,
+          "lo": 0.029358560033196812,
+          "hi": 0.31394082911909027
+        },
+        "accept_labelled": {
+          "k": 2,
+          "n": 18,
+          "p": 0.1111111111111111,
+          "lo": 0.031019522364791025,
+          "hi": 0.32799765336109676
+        },
+        "accept_ceiling": {
+          "k": 3,
+          "n": 19,
+          "p": 0.15789473684210525,
+          "lo": 0.055204715953508426,
+          "hi": 0.3756547546451403
+        }
+      },
+      "control": {
+        "shown": 4,
+        "ACCEPT": 3,
+        "TRIVIAL": 0,
+        "WRONG": 0,
+        "unlabelled": 1,
+        "changed": 1,
+        "new": 0,
+        "wrong_because": {},
+        "accept_all_shown": {
+          "k": 3,
+          "n": 4,
+          "p": 0.75,
+          "lo": 0.3006418400969081,
+          "hi": 0.954412739704631
+        },
+        "accept_labelled": {
+          "k": 3,
+          "n": 3,
+          "p": 1,
+          "lo": 0.43850296436068037,
+          "hi": 1
+        },
+        "accept_ceiling": {
+          "k": 4,
+          "n": 4,
+          "p": 1,
+          "lo": 0.5101091596030786,
+          "hi": 0.9999999999999999
+        }
+      },
+      "dependency_version": {
+        "shown": 1,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 1,
+        "unlabelled": 0,
+        "changed": 0,
+        "new": 0,
+        "wrong_because": {
+          "legit_outliers": 1
+        },
+        "accept_all_shown": {
+          "k": 0,
+          "n": 1,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.7934506882081973
+        },
+        "accept_labelled": {
+          "k": 0,
+          "n": 1,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.7934506882081973
+        },
+        "accept_ceiling": {
+          "k": 0,
+          "n": 1,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.7934506882081973
+        }
+      },
+      "has_test": {
+        "shown": 3,
+        "ACCEPT": 1,
+        "TRIVIAL": 0,
+        "WRONG": 2,
+        "unlabelled": 0,
+        "changed": 0,
+        "new": 0,
+        "wrong_because": {
+          "mixed_group": 1,
+          "legit_outliers": 1
+        },
+        "accept_all_shown": {
+          "k": 1,
+          "n": 3,
+          "p": 0.3333333333333333,
+          "lo": 0.06149194402093078,
+          "hi": 0.7923404011921757
+        },
+        "accept_labelled": {
+          "k": 1,
+          "n": 3,
+          "p": 0.3333333333333333,
+          "lo": 0.06149194402093078,
+          "hi": 0.7923404011921757
+        },
+        "accept_ceiling": {
+          "k": 1,
+          "n": 3,
+          "p": 0.3333333333333333,
+          "lo": 0.06149194402093078,
+          "hi": 0.7923404011921757
+        }
+      },
+      "imports_from": {
+        "shown": 1,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 0,
+        "unlabelled": 1,
+        "changed": 0,
+        "new": 1,
+        "wrong_because": {},
+        "accept_all_shown": {
+          "k": 0,
+          "n": 1,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.7934506882081973
+        },
+        "accept_labelled": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept_ceiling": {
+          "k": 1,
+          "n": 1,
+          "p": 1,
+          "lo": 0.2065493117918027,
+          "hi": 1
+        }
+      },
+      "model_has": {
+        "shown": 1,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 1,
+        "unlabelled": 0,
+        "changed": 0,
+        "new": 0,
+        "wrong_because": {
+          "legit_outliers": 1
+        },
+        "accept_all_shown": {
+          "k": 0,
+          "n": 1,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.7934506882081973
+        },
+        "accept_labelled": {
+          "k": 0,
+          "n": 1,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.7934506882081973
+        },
+        "accept_ceiling": {
+          "k": 0,
+          "n": 1,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.7934506882081973
+        }
+      },
+      "named": {
+        "shown": 15,
+        "ACCEPT": 4,
+        "TRIVIAL": 0,
+        "WRONG": 8,
+        "unlabelled": 3,
+        "changed": 3,
+        "new": 0,
+        "wrong_because": {
+          "legit_outliers": 1,
+          "mixed_group": 7
+        },
+        "accept_all_shown": {
+          "k": 4,
+          "n": 15,
+          "p": 0.26666666666666666,
+          "lo": 0.1089745324961737,
+          "hi": 0.5195043425155202
+        },
+        "accept_labelled": {
+          "k": 4,
+          "n": 12,
+          "p": 0.3333333333333333,
+          "lo": 0.13812009012485987,
+          "hi": 0.6093779130595061
+        },
+        "accept_ceiling": {
+          "k": 7,
+          "n": 15,
+          "p": 0.4666666666666667,
+          "lo": 0.24809535232620925,
+          "hi": 0.6988302012468901
+        }
+      },
+      "passes_key": {
+        "shown": 4,
+        "ACCEPT": 1,
+        "TRIVIAL": 0,
+        "WRONG": 1,
+        "unlabelled": 2,
+        "changed": 2,
+        "new": 0,
+        "wrong_because": {
+          "false_outliers": 1
+        },
+        "accept_all_shown": {
+          "k": 1,
+          "n": 4,
+          "p": 0.25,
+          "lo": 0.04558726029536886,
+          "hi": 0.6993581599030918
+        },
+        "accept_labelled": {
+          "k": 1,
+          "n": 2,
+          "p": 0.5,
+          "lo": 0.09453120463920084,
+          "hi": 0.9054687953607992
+        },
+        "accept_ceiling": {
+          "k": 3,
+          "n": 4,
+          "p": 0.75,
+          "lo": 0.3006418400969081,
+          "hi": 0.954412739704631
+        }
+      },
+      "wrapped_by:call": {
+        "shown": 8,
+        "ACCEPT": 5,
+        "TRIVIAL": 0,
+        "WRONG": 1,
+        "unlabelled": 2,
+        "changed": 0,
+        "new": 2,
+        "wrong_because": {
+          "incidental": 1
+        },
+        "accept_all_shown": {
+          "k": 5,
+          "n": 8,
+          "p": 0.625,
+          "lo": 0.30574239265377096,
+          "hi": 0.8631557152608771
+        },
+        "accept_labelled": {
+          "k": 5,
+          "n": 6,
+          "p": 0.8333333333333334,
+          "lo": 0.4364971749742326,
+          "hi": 0.969946630588185
+        },
+        "accept_ceiling": {
+          "k": 7,
+          "n": 8,
+          "p": 0.875,
+          "lo": 0.5291118149439162,
+          "hi": 0.9775825088000281
+        }
+      },
+      "wrapped_by:decorator": {
+        "shown": 6,
+        "ACCEPT": 1,
+        "TRIVIAL": 0,
+        "WRONG": 4,
+        "unlabelled": 1,
+        "changed": 1,
+        "new": 0,
+        "wrong_because": {
+          "mixed_group": 1,
+          "legit_outliers": 3
+        },
+        "accept_all_shown": {
+          "k": 1,
+          "n": 6,
+          "p": 0.16666666666666666,
+          "lo": 0.030053369411815023,
+          "hi": 0.5635028250257673
+        },
+        "accept_labelled": {
+          "k": 1,
+          "n": 5,
+          "p": 0.2,
+          "lo": 0.03622410822563066,
+          "hi": 0.6244653729700049
+        },
+        "accept_ceiling": {
+          "k": 2,
+          "n": 6,
+          "p": 0.3333333333333333,
+          "lo": 0.09677141021353453,
+          "hi": 0.7000066870052566
+        }
+      },
+      "wrapped_by:extends": {
+        "shown": 9,
+        "ACCEPT": 1,
+        "TRIVIAL": 0,
+        "WRONG": 4,
+        "unlabelled": 4,
+        "changed": 4,
+        "new": 0,
+        "wrong_because": {
+          "legit_outliers": 2,
+          "mixed_group": 2
+        },
+        "accept_all_shown": {
+          "k": 1,
+          "n": 9,
+          "p": 0.1111111111111111,
+          "lo": 0.01989088741690992,
+          "hi": 0.4349997083707909
+        },
+        "accept_labelled": {
+          "k": 1,
+          "n": 5,
+          "p": 0.2,
+          "lo": 0.03622410822563066,
+          "hi": 0.6244653729700049
+        },
+        "accept_ceiling": {
+          "k": 5,
+          "n": 9,
+          "p": 0.5555555555555556,
+          "lo": 0.26665129180087416,
+          "hi": 0.8112214802294544
+        }
+      }
+    },
+    "wrong": {
+      "false_outliers": [
+        {
+          "uid": "Django-CRM/D-e62e87",
+          "group": "other",
+          "d5_conditions": false,
+          "summary": "backend: HTTP handlers in common/** call response.Response()",
+          "reason": "3 of 4 outliers return a Response through helpers (SecurityAuditLogListView via paginator.get_paginated_response; OrgUpdateView put/patch via _write, which returns Response), and AttachmentDownloadView legitimately streams a FileResponse."
+        },
+        {
+          "uid": "Django-CRM/D-0bd0ec",
+          "group": "other",
+          "d5_conditions": false,
+          "summary": "backend: HTTP handlers in cases/** call response.Response()",
+          "reason": "Every outlier returns a Response through a helper: CaseKanbanView.get via _get_status_kanban/_get_pipeline_kanban (return Response), SolutionDetailView put/patch via _update, SolutionListView via get_paginated_response, and the time views via create_entry/start_timer, which return Response."
+        },
+        {
+          "uid": "Django-CRM/D-f01192",
+          "group": "other",
+          "d5_conditions": false,
+          "summary": "backend: HTTP handlers in leads/** call response.Response()",
+          "reason": "Both outliers return a Response through helpers: LeadIntakePostView.post via _answer/_refuse/_refused (_answer is `return Response(body, status=code)`), LeadKanbanView.get via _get_status_kanban/_get_pipeline_kanban, which return Response."
+        },
+        {
+          "uid": "open-wearables/D-ff3192",
+          "group": "other",
+          "d5_conditions": true,
+          "summary": "backend: functions in app/services/providers/garmin/backfill_state/** call get_redis_client()",
+          "reason": "Both outliers in window_state.py read Redis through get_anchor_timestamp/get_current_window/_floored, which call get_redis_client() themselves, so they comply through a helper; members like record_timed_out_entry (retry_state.py) and mark_type_triggered (type_tracking.py) call it directly."
+        },
+        {
+          "uid": "open-wearables/D-6606a8",
+          "group": "other",
+          "d5_conditions": true,
+          "summary": "backend: functions in app/services/providers/garmin/backfill_state/** call _get_key()",
+          "reason": "get_window_date_range and get_window_date_range_for_index build keys through get_anchor_timestamp/get_current_window/_floored, which call _get_key(); only update_window_cell hand-builds its matrix key with an f-string (same pattern persist_window_results and get_backfill_status use), so 2 of 3 outliers are not_violation."
+        },
+        {
+          "uid": "tasking-manager/D-4ede9c",
+          "group": "passes_key",
+          "d5_conditions": false,
+          "summary": "HTTP handlers in backend/** (actions files) pass `content` to responses.JSONResponse()",
+          "reason": "All three outliers in teams/actions.py do pass the content, positionally (JSONResponse({...}, status_code=...)), while members in projects/actions.py and notifications/actions.py use content=; the tool only saw the keyword. Hesitated with ACCEPT if the rule is read strictly as 'use the content= keyword', which would be a minor style look."
+        }
+      ],
+      "incidental": [
+        {
+          "uid": "saleor/D-e36ea5",
+          "group": "other",
+          "d5_conditions": true,
+          "summary": "exported values in saleor/core/** do not read os.environ directly",
+          "reason": "Members (auth.py AUTH_HEADER_PREFIXES, jwt.py JWT_* names, db/connection.py TRACEBACK_LIMIT) are fixed literals with no need for configuration; the one outlier, DEFAULT_CURRENCY in the dev-only random_data.py, is the one value that is configurable and mirrors the same os.environ.get('DEFAULT_CURRENCY','USD') in giftcard/models.py, while core/views.py and cleaners/html.py read os.getenv directly too, so no team choice against direct env reads is visible. Hesitated with ACCEPT (routing config through settings.py would be cleaner)."
+        },
+        {
+          "uid": "open-wearables/D-baa886",
+          "group": "other",
+          "d5_conditions": false,
+          "summary": "backend: functions in app/services/providers/garmin/** call str()",
+          "reason": "Members call str() only to normalise a `str | UUID` user_id (e.g. `uid = str(user_id)` in retry_state.py, type_tracking.py); the outliers pass user_id straight to helpers (_get_key, get_anchor_timestamp) that do the conversion, so they lack the need. Either incidental or false_outliers via R6; WRONG either way."
+        },
+        {
+          "uid": "tasking-manager/D-3e220e",
+          "group": "call:resource",
+          "d5_conditions": true,
+          "summary": "HTTP handlers in backend/** (actions files) are wrapped in get_db()",
+          "reason": "Handlers take Depends(get_db) because they query the database (tasks/actions.py, notifications/actions.py); intersecting_tiles in projects/actions.py only runs GridService.trim_grid_to_aoi on the body and needs no connection, so a DB-free handler would be flagged for nothing."
+        },
+        {
+          "uid": "simplelogin/D-a4e9f4",
+          "group": "other",
+          "d5_conditions": false,
+          "summary": "HTTP handlers in app/dashboard/** call redirect()",
+          "reason": "Handlers redirect after POST actions or failed checks (api_key.py, coupon.py, app.py); the outliers are GET-only pages or a CSV download (alias_export.py) with no action to redirect after."
+        },
+        {
+          "uid": "simplelogin/D-8ab5d8",
+          "group": "other",
+          "d5_conditions": false,
+          "summary": "HTTP handlers in app/dashboard/** call url_for()",
+          "reason": "url_for() is called because handlers redirect to named routes (api_key.py, coupon.py); the outliers build no URLs: read-only renders, a CSV download, and app.py which redirects to request.url, a pattern also used in api_key.py:60."
+        },
+        {
+          "uid": "simplelogin/D-dbae61",
+          "group": "other",
+          "d5_conditions": false,
+          "summary": "HTTP handlers in app/dashboard/** call flash()",
+          "reason": "flash() is called by handlers that report the result of an action (api_key.py, coupon.py); the outliers return a CSV (alias_export.py), render read-only pages (notification.py, pricing.py, refused_email.py) or just set a cookie (setup_done.py), so they lack the need."
+        },
+        {
+          "uid": "simplelogin/D-a9b19b",
+          "group": "other",
+          "d5_conditions": false,
+          "summary": "HTTP handlers in app/dashboard/** call flash() before redirect()",
+          "reason": "The order is a by-product of early returns: enter_admin.py:30 and enter_sudo.py:48 redirect on success paths that need no message before a later error flash, and setup_done.py only sets a cookie and redirects with nothing to flash; none is a mistake."
+        },
+        {
+          "uid": "simplelogin/D-dd624b",
+          "group": "other",
+          "d5_conditions": false,
+          "summary": "HTTP handlers in app/dashboard/** call flash() before render_template()",
+          "reason": "Handlers flash before render_template only when they process a form and have a message (api_key.py, coupon.py); notifications_route, subscription_success and refused_email_route are read-only pages with nothing to flash."
+        },
+        {
+          "uid": "simplelogin/D-a1dfa4",
+          "group": "other",
+          "d5_conditions": false,
+          "summary": "HTTP handlers in app/auth/** call redirect() before url_for()",
+          "reason": "redirect() appearing before url_for() is just the nesting redirect(url_for(...)) seen in activate.py, logout.py and resend_activation.py, with no runtime effect; reset_password.py passes url_for(...) to after_login(), which does the redirect itself, a legitimate pattern."
+        },
+        {
+          "uid": "changedetection.io/D-7f369e",
+          "group": "other",
+          "d5_conditions": true,
+          "summary": "exported values in changedetectionio/blueprint/** do not read os.environ directly",
+          "reason": "Members are fixed constants (REQUIRED_CAPABILITIES, ACCESS_TOKEN_SECONDS, DEFAULT_NAME) that have no reason to be env-tunable; the outlier is an env-tunable limit written exactly the house way (float(os.getenv(...)) at module level, as in api/Changes.py, llm/client.py DEFAULT_TIMEOUT and backups/restore.py), so new tunables would be flagged for nothing. 0 of 1 counted outliers is a mistake."
+        }
+      ],
+      "legit_outliers": [
+        {
+          "uid": "netbox/D-cc1341",
+          "group": "decorator",
+          "d5_conditions": true,
+          "summary": "classes in netbox/** (filtersets files) are decorated with register_filterset()",
+          "reason": "register_filterset (utilities/filtersets.py) keys the registry by Meta.model label, and the connection filtersets reuse ConsolePort/PowerPort/Interface, so decorating them would overwrite the primary filtersets; secondary filtersets for an already-registered model are a legitimate recurring category. Hesitated with ACCEPT since a new primary model filterset missing the decorator would be a real mistake."
+        },
+        {
+          "uid": "netbox/D-73d13c",
+          "group": "other",
+          "d5_conditions": true,
+          "summary": "HTTP handlers in netbox/** (api/views files) are named `*Set`",
+          "reason": "Router-registered ViewSets are named *ViewSet (tenancy, dcim api/views.py), but the outliers are plain APIView/RetrieveUpdateDestroyAPIView classes wired with .as_view() in ipam/api/urls.py and extras/api/urls.py; the *View suffix is correct for that recurring category, so new non-viewset API views would be falsely flagged."
+        },
+        {
+          "uid": "saleor/D-0da0cf",
+          "group": "other",
+          "d5_conditions": true,
+          "summary": "files in saleor/graphql/app/** have a test file",
+          "reason": "Members with logic have direct tests (dataloaders/app.py via test_app_by_token_loader_use_cache.py, utils.py via tests/test_utils.py, app_create.py via test_app_create.py), but the only outlier thumbnail.py is two purely declarative BaseThumbnailBySizeAndFormatLoader subclasses setting context_key/model_name, exercised through the logo thumbnail queries in test_apps_installations.py; the same pattern recurs (product/dataloaders/products.py), so new declarative loader modules would get false alarms: 0 of 1 counted outliers is a mistake. Rule wording does not say how a test file is matched (clear: false)."
+        },
+        {
+          "uid": "langchain/D-468530",
+          "group": "other",
+          "d5_conditions": true,
+          "summary": "Python packages use the pytest version most workspace packages use",
+          "reason": "Members pin \"pytest>=9.0.3,<10.0.0\" in their dev `test` dependency group (core, openai, text-splitters, anthropic pyproject.toml). The lone outlier, langchain-tests (libs/standard-tests/pyproject.toml:28), is a pytest plugin library that lists pytest as a published runtime dependency, and it leaves the upper bound off its other pytest-ecosystem deps as well, so downstream packages can choose their own pytest. Leaving the cap off is deliberate and would recur for any shipped test-helper package. With 0 of 1 counted outliers a mistake, the label is WRONG. No lint or CI check enforces the pin; I also weighed mixed_group as the reason, since runtime deps and dev groups are mixed in one rule."
+        },
+        {
+          "uid": "ralph/D-5bf491",
+          "group": "other",
+          "d5_conditions": true,
+          "summary": "exported values in src/** do not read os.environ directly",
+          "reason": "Every outlier is a Django setting in settings/prod.py or settings/test.py, whose job is to read os.environ (settings/base.py does the same throughout); ordinary module constants like ANSI_ESCAPE_RE or switchports/constants.py simply have no reason to. New settings would be flagged for nothing."
+        },
+        {
+          "uid": "Misago/D-c9ae1e",
+          "group": "base",
+          "d5_conditions": true,
+          "summary": "classes in misago/permissions/hooks/** extend FilterHook",
+          "reason": "GetAdminCategoryPermissionsHook extends ActionHook on purpose: plugins append actions that each contribute permissions, which __call__ concatenates; ActionHook is the second hook kind in plugins/hooks.py (also used by posting/hooks/validate_posting.py), so new action hooks would get false alarms. 0 of 1."
+        },
+        {
+          "uid": "Misago/D-e72fc8",
+          "group": "base",
+          "d5_conditions": true,
+          "summary": "classes in misago/posting/hooks/** extend FilterHook",
+          "reason": "ValidatePostingHook deliberately extends ActionHook (plugins append_action validators that all run), the second hook kind defined in plugins/hooks.py and also used in permissions/hooks/get_admin_category_permissions.py; a new action hook in posting/hooks would be falsely told to extend FilterHook. 0 of 1."
+        },
+        {
+          "uid": "wger/D-82d21d",
+          "group": "decorator",
+          "d5_conditions": false,
+          "summary": "HTTP handlers in wger/** (api/views files) are decorated with utils.extend_schema()",
+          "reason": "Members are custom @action methods and plain ViewSet get() handlers whose responses drf-spectacular cannot infer (manager/nutrition api views, core ApplicationVersionView.get); the only outlier overrides the standard list() of a ReadOnlyModelViewSet with serializer_class set, so its schema is inferred automatically, and future overrides of standard actions would be false alarms. Hesitated with ACCEPT, since a new custom @action without extend_schema would be worth flagging."
+        },
+        {
+          "uid": "lotus/D-2ab768",
+          "group": "other",
+          "d5_conditions": true,
+          "summary": "django models have a `organization` field",
+          "reason": "Tenant-scoped models (APIToken, Tag, Backtest, RecurringCharge in models.py, all models live in this one file) carry an organization FK, but Organization is the tenant itself (one_off) and Team/TeamInviteToken are team-level models that sit above organizations and are scoped by a team FK, a recurring category that would be falsely flagged. Hesitated with ACCEPT since org scoping is the multi-tenancy boundary checked in permissions.py."
+        },
+        {
+          "uid": "simplelogin/D-ace6d1",
+          "group": "other",
+          "d5_conditions": false,
+          "summary": "HTTP handlers in app/api/** call jsonify()",
+          "reason": "JSON endpoints return jsonify(...) (notification.py, setting.py, export_data in export.py), but export_aliases returns an importable CSV via alias_export_csv, a file-download endpoint that legitimately does not return JSON; new download endpoints would be falsely flagged."
+        },
+        {
+          "uid": "changedetection.io/D-2619c7",
+          "group": "decorator",
+          "d5_conditions": true,
+          "summary": "HTTP handlers in changedetectionio/** are decorated with validate_openapi_request()",
+          "reason": "flask-restful Resource methods in api/ carry @validate_openapi_request (Search.get, Notifications.post); the only outlier Spec.get is the public, unauthenticated GET that serves the spec itself and reads no input, and the decorator skips validation for GETs anyway (api/__init__.py:259), so nothing is at stake under R3 and 0 of 1 counts. Wording 'HTTP handlers in changedetectionio/**' wrongly suggests Flask blueprint routes too, hence clear=false; hesitated with ACCEPT since new API resources taking bodies should be validated."
+        }
+      ],
+      "misdescribes": [
+        {
+          "uid": "simplelogin/D-7fa3b5",
+          "group": "other",
+          "d5_conditions": true,
+          "summary": "functions in app/** do not use redirects to computed URLs",
+          "reason": "Many members redirect to computed URLs without being flagged: login.py and api_to_cookie.py redirect(next_url), oidc.py/google.py redirect(authorization_url), oauth/views/authorize.py redirect(final_redirect_uri) and redirect(construct_url(...)); the rule is false for the group, and after_login is only one of many such redirects (its callers mostly sanitize next_url)."
+        }
+      ],
+      "mixed_group": [
+        {
+          "uid": "netbox/D-281ae8",
+          "group": "decorator",
+          "d5_conditions": true,
+          "summary": "classes in netbox/** (types files) are decorated with register_type()",
+          "reason": "Concrete model types are decorated with @register_type(model, ...) (circuits, dcim, ipam, core), but the only outlier, NestedGroupObjectType in netbox/graphql/types.py, is an abstract base type kept for plugin compatibility alongside other base types that cannot be bound to a model; 0 of 1, so a new base type there would be wrongly flagged."
+        },
+        {
+          "uid": "netbox/D-4c4e2d",
+          "group": "other",
+          "d5_conditions": true,
+          "summary": "classes in netbox/** (model_forms files) call FieldSet()",
+          "reason": "Standard edit forms declare fieldsets of FieldSet() (CircuitForm, tenancy/vpn/wireless forms), but the outliers are plain forms.Form/ModelForm helpers (DeviceVCMembershipForm, VCMemberSelectForm, PopulateDeviceBayForm; extras BookmarkForm, SubscriptionForm, TableConfigForm, NotificationGroupForm), an inline hidden-field JournalEntryForm, or forms rendered by custom templates (DeviceForm -> dcim/device_edit.html, VLANForm -> ipam/vlan_edit.html, CableForm, VirtualChassisForm); 0 of 12 are mistakes."
+        },
+        {
+          "uid": "netbox/D-afb64d",
+          "group": "other",
+          "d5_conditions": true,
+          "summary": "classes in netbox/** (choices files) are named `*Choices`",
+          "reason": "ChoiceSet subclasses in app choices.py files (circuits, dcim, ipam, vpn) are named *Choices, but the scope also catches utilities/choices.py#Choice (a tuple subclass beside the ChoiceSet definition) and the form-field classes in utilities/forms/fields/choices.py; 0 of 4 counted outliers are mistakes, so a new form field there would be told to be named *Choices."
+        },
+        {
+          "uid": "saleor/D-6af632",
+          "group": "other",
+          "d5_conditions": true,
+          "summary": "files in saleor/graphql/order/** have a test file",
+          "reason": "Concrete mutation modules have matching tests (order_note_add.py -> test_order_note_add.py, order_void.py -> test_order_void.py), but both outliers are shared helpers: draft_order_cleaner.py holds clean_* functions used by draft_order_create/update, and order_note_common.py is an abstract OrderNoteCommon base (Meta.abstract=True) tested through its subclasses; new helper/base modules would be flagged for nothing (0 of 2). Wording is also vague about how a test file is matched (draft_orders.py maps to test_draft_order_bulk_delete.py)."
+        },
+        {
+          "uid": "InvenTree/D-43f01e",
+          "group": "other",
+          "d5_conditions": true,
+          "summary": "classes in src/** (serializers files) are named `*Serializer`",
+          "reason": "Six outliers are DRF serializer field classes (subclasses of serializers.Field/ChoiceField/FileField, named *Field), a recurring different kind of thing; only PartThumbSerializerUpdate (part/serializers.py:259) is a serializer off the naming scheme, 1 of 7."
+        },
+        {
+          "uid": "InvenTree/D-6f225b",
+          "group": "other",
+          "d5_conditions": true,
+          "summary": "classes in src/** (admin files) are named `*Admin`",
+          "reason": "Admin files also hold TabularInline classes consistently named *Inline (company, machine, plugin, stock, users), a ModelForm (InvenTreeGroupAdminForm) and a resource Meta template (GeneralExtraLineMeta); these are not ModelAdmins, so new inlines and forms would be falsely flagged."
+        },
+        {
+          "uid": "InvenTree/D-f31910",
+          "group": "other",
+          "d5_conditions": false,
+          "summary": "classes in src/** (models files) call utils.translation.gettext_lazy()",
+          "reason": "Models use _() for verbose_name/help_text (AuditLogEntry, Company), but models files also contain managers, querysets and an enum metaclass with no user-facing strings; only Owner (users/models.py:502, a model whose fields lack translated verbose_name) is worth a look, 1 of 6."
+        },
+        {
+          "uid": "ralph/D-b1df5c",
+          "group": "other",
+          "d5_conditions": true,
+          "summary": "classes in src/** (api files) are named `*Serializer`",
+          "reason": "Serializers in api.py files are named *Serializer (access_cards, networks, virtual), but the outliers are a serializer field (lib/mixins/api.py), DRF permission and filter-backend classes (lib/permissions/api.py) and a FilterSet (virtual/api.py): other kinds of classes that legitimately live in api.py, 0 of 5 mistakes."
+        },
+        {
+          "uid": "Misago/D-d8703c",
+          "group": "other",
+          "d5_conditions": false,
+          "summary": "classes in misago/permissions/** call super().__call__()",
+          "reason": "Only the hook classes in permissions/hooks/ override __call__ and delegate to FilterHook/ActionHook via super().__call__(); the outliers are ordinary classes (a result object in checkutils.py, a debug-toolbar Panel, the permissions proxy, queryset filters) with no __call__ at all, so any new non-hook class in misago/permissions would be flagged for nothing. 0 of 6 counted outliers are mistakes."
+        },
+        {
+          "uid": "Misago/D-d01155",
+          "group": "other",
+          "d5_conditions": false,
+          "summary": "classes in misago/permissions/** call super()",
+          "reason": "Members are hook classes whose __call__ returns super().__call__(...); outliers are plain helper classes (checkutils.py result, panels.py debug panel, proxy.py, querysets.py) with no base behaviour to delegate to. 0 of 5 counted outliers are mistakes; 'call super()' without saying which method is also vague."
+        },
+        {
+          "uid": "wger/D-db04dc",
+          "group": "other",
+          "d5_conditions": true,
+          "summary": "classes in wger/** (serializers files) are named `*Serializer`",
+          "reason": "Serializer classes (LanguageCheckSerializer, MealSerializer, WeightEntrySerializer, gallery ImageSerializer) are named *Serializer, but all three outliers are custom DRF field classes (subclassing ImageField/FileField/PrimaryKeyRelatedField) co-located in serializers.py and correctly named *Field; a new field class there would be falsely told to end in Serializer."
+        },
+        {
+          "uid": "wger/D-3755b1",
+          "group": "other",
+          "d5_conditions": false,
+          "summary": "exported values in wger/** (urls files) call urls.path()",
+          "reason": "Pattern lists in urls files (patterns_gym_config, nutrition patterns_bmi, weight urlpatterns) are lists of path() calls, but wger/urls.py also defines the root DRF DefaultRouter (the one aggregator, one_off) and a sitemaps dict mapping names to Sitemap classes, a different kind of module-level value that has no reason to call path(); 0 of 1 counted outliers is a mistake."
+        },
+        {
+          "uid": "lotus/D-1cbdac",
+          "group": "other",
+          "d5_conditions": true,
+          "summary": "backend: classes in metering_billing/serializers/** are named `*Serializer`",
+          "reason": "Serializers in auth/request/response_serializers.py follow *Serializer, but serializer_utils.py and model_serializers.py also hold DRF field classes (*UUIDField, SlugRelatedField*, ActivityGenericRelatedField) and a JSON encoder, which are a different kind of thing; only 2 of 23 counted outliers are misnamed serializers, so a new field class would be told to be named *Serializer."
+        },
+        {
+          "uid": "open-wearables/D-b21ebc",
+          "group": "other",
+          "d5_conditions": true,
+          "summary": "backend: exported values in app/integrations/** call get_logger()",
+          "reason": "Members are the module-level `logger = get_logger(__name__)` lines (celery/core.py, sentry.py, periodic_sync_task.py); the outliers at backfill_task.py:510-511 are backwards-compatibility aliases of a task, a different kind of exported value that would be told to call get_logger()."
+        },
+        {
+          "uid": "open-wearables/D-8ffd6f",
+          "group": "other",
+          "d5_conditions": true,
+          "summary": "backend: classes in app/repositories/** are named `*Repository`",
+          "reason": "WriteCounts (data_point_series_repository.py:144) is an int-subclass result type returned by bulk upserts, not a repository; the repositories package routinely co-locates such value types (NamedTuples, dataclasses like SourceRanking, SampleDay), so 0 of 1 counted outliers is a mistake."
+        },
+        {
+          "uid": "tasking-manager/D-2dfb9d",
+          "group": "base",
+          "d5_conditions": false,
+          "summary": "classes in backend/models/dtos/** extend BaseModel",
+          "reason": "DTOs in application_dto.py and project_dto.py extend pydantic BaseModel, but the one outlier, ExtendedStringType in validator_dto.py, is a str subclass field type, not a DTO; 0 of 1 counted, so a helper type added under dtos/ would be flagged wrongly."
+        },
+        {
+          "uid": "simplelogin/D-e29828",
+          "group": "base",
+          "d5_conditions": false,
+          "summary": "classes in app/dashboard/** extend FlaskForm",
+          "reason": "Forms in dashboard views do extend FlaskForm (mailbox.py, alias_trash.py), but AliasLog in alias_log.py is a view-model data holder, like the Stats and ContactInfo dataclasses in index.py and alias_contact_manager.py; a new such helper class would be told to extend FlaskForm."
+        }
+      ]
+    }
+  },
+  "typescript_side": {
+    "all": {
+      "shown": 19,
+      "ACCEPT": 7,
+      "TRIVIAL": 0,
+      "WRONG": 11,
+      "unlabelled": 1,
+      "changed": 1,
+      "new": 0,
+      "wrong_because": {
+        "legit_outliers": 1,
+        "incidental": 5,
+        "mixed_group": 3,
+        "false_outliers": 2
+      },
+      "accept_all_shown": {
+        "k": 7,
+        "n": 19,
+        "p": 0.3684210526315789,
+        "lo": 0.19149512641954003,
+        "hi": 0.5896046699645555
+      },
+      "accept_labelled": {
+        "k": 7,
+        "n": 18,
+        "p": 0.3888888888888889,
+        "lo": 0.2030524646285427,
+        "hi": 0.6138095855788537
+      },
+      "accept_ceiling": {
+        "k": 8,
+        "n": 19,
+        "p": 0.42105263157894735,
+        "lo": 0.23141891166171535,
+        "hi": 0.637240966168742
+      }
+    },
+    "uids": [
+      "full-stack-fastapi-template/D-6e757d [prefers_library] WRONG legit_outliers",
+      "Django-CRM/D-8ee062 [has_test] WRONG incidental",
+      "InvenTree/D-455913 [named] WRONG mixed_group",
+      "InvenTree/D-16c1ac [control] ACCEPT",
+      "InvenTree/D-095ebc [control] ACCEPT",
+      "InvenTree/D-7e788c [before] WRONG incidental",
+      "InvenTree/D-9838a4 [before] WRONG incidental",
+      "InvenTree/D-b24fe0 [before] WRONG incidental",
+      "InvenTree/D-71f3ec [before] WRONG incidental",
+      "Misago/D-5862f4 [wrapped_by:extends] WRONG false_outliers",
+      "paperless-ngx/D-c3460b [wrapped_by:extends] ACCEPT",
+      "paperless-ngx/D-de2489 [named] changed (old card: WRONG mixed_group)",
+      "paperless-ngx/D-1d6a6a [wrapped_by:decorator] WRONG mixed_group",
+      "pontoon/D-94fc85 [control] ACCEPT",
+      "pontoon/D-ddba4b [control] ACCEPT",
+      "open-wearables/D-4c541f [calls] ACCEPT",
+      "tasking-manager/D-6ec938 [wrapped_by:extends] WRONG mixed_group",
+      "tasking-manager/D-68243e [named] ACCEPT",
+      "tasking-manager/D-0dbb9f [before] WRONG false_outliers"
+    ]
+  },
+  "subsets": [
+    {
+      "name": "auth call wrappers + layering",
+      "shown": 4,
+      "ACCEPT": 2,
+      "TRIVIAL": 0,
+      "WRONG": 0,
+      "unlabelled": 2,
+      "changed": 1,
+      "new": 1,
+      "wrong_because": {},
+      "accept_all_shown": {
+        "k": 2,
+        "n": 4,
+        "p": 0.5,
+        "lo": 0.15003898774401986,
+        "hi": 0.8499610122559802
+      },
+      "accept_labelled": {
+        "k": 2,
+        "n": 2,
+        "p": 1,
+        "lo": 0.3423802239546494,
+        "hi": 1
+      },
+      "accept_ceiling": {
+        "k": 4,
+        "n": 4,
+        "p": 1,
+        "lo": 0.5101091596030786,
+        "hi": 0.9999999999999999
+      },
+      "repos": 3,
+      "uids": [
+        "Django-CRM/D-4a6ea2 [wrapped_by:call] ACCEPT",
+        "Django-CRM/D-f135a4 [wrapped_by:call] ACCEPT",
+        "tasking-manager/D-c7acd1 [wrapped_by:call] new",
+        "simplelogin/D-2a4960 [avoids:import] changed (old card: ACCEPT)"
+      ]
+    },
+    {
+      "name": "auth call wrappers",
+      "shown": 3,
+      "ACCEPT": 2,
+      "TRIVIAL": 0,
+      "WRONG": 0,
+      "unlabelled": 1,
+      "changed": 0,
+      "new": 1,
+      "wrong_because": {},
+      "accept_all_shown": {
+        "k": 2,
+        "n": 3,
+        "p": 0.6666666666666666,
+        "lo": 0.2076595988078242,
+        "hi": 0.9385080559790691
+      },
+      "accept_labelled": {
+        "k": 2,
+        "n": 2,
+        "p": 1,
+        "lo": 0.3423802239546494,
+        "hi": 1
+      },
+      "accept_ceiling": {
+        "k": 3,
+        "n": 3,
+        "p": 1,
+        "lo": 0.43850296436068037,
+        "hi": 1
+      },
+      "repos": 2,
+      "uids": [
+        "Django-CRM/D-4a6ea2 [wrapped_by:call] ACCEPT",
+        "Django-CRM/D-f135a4 [wrapped_by:call] ACCEPT",
+        "tasking-manager/D-c7acd1 [wrapped_by:call] new"
+      ]
+    },
+    {
+      "name": "layering",
+      "shown": 1,
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0,
+      "unlabelled": 1,
+      "changed": 1,
+      "new": 0,
+      "wrong_because": {},
+      "accept_all_shown": {
+        "k": 0,
+        "n": 1,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.7934506882081973
+      },
+      "accept_labelled": {
+        "k": 0,
+        "n": 0,
+        "p": null,
+        "lo": null,
+        "hi": null
+      },
+      "accept_ceiling": {
+        "k": 1,
+        "n": 1,
+        "p": 1,
+        "lo": 0.2065493117918027,
+        "hi": 1
+      },
+      "repos": 1,
+      "uids": [
+        "simplelogin/D-2a4960 [avoids:import] changed (old card: ACCEPT)"
+      ]
+    },
+    {
+      "name": "call wrappers (all) + layering",
+      "shown": 7,
+      "ACCEPT": 3,
+      "TRIVIAL": 0,
+      "WRONG": 1,
+      "unlabelled": 3,
+      "changed": 1,
+      "new": 2,
+      "wrong_because": {
+        "incidental": 1
+      },
+      "accept_all_shown": {
+        "k": 3,
+        "n": 7,
+        "p": 0.42857142857142855,
+        "lo": 0.15821985399244537,
+        "hi": 0.7495416372469643
+      },
+      "accept_labelled": {
+        "k": 3,
+        "n": 4,
+        "p": 0.75,
+        "lo": 0.3006418400969081,
+        "hi": 0.954412739704631
+      },
+      "accept_ceiling": {
+        "k": 6,
+        "n": 7,
+        "p": 0.8571428571428571,
+        "lo": 0.486872167860775,
+        "hi": 0.9743203759421759
+      },
+      "repos": 4,
+      "uids": [
+        "Django-CRM/D-4a6ea2 [wrapped_by:call] ACCEPT",
+        "Django-CRM/D-f135a4 [wrapped_by:call] ACCEPT",
+        "open-wearables/D-dadcea [wrapped_by:call] new",
+        "tasking-manager/D-c7acd1 [wrapped_by:call] new",
+        "tasking-manager/D-cfe608 [wrapped_by:call] ACCEPT",
+        "tasking-manager/D-3e220e [wrapped_by:call] WRONG incidental",
+        "simplelogin/D-2a4960 [avoids:import] changed (old card: ACCEPT)"
+      ]
+    },
+    {
+      "name": "call wrappers + layering + decorators",
+      "shown": 11,
+      "ACCEPT": 3,
+      "TRIVIAL": 0,
+      "WRONG": 4,
+      "unlabelled": 4,
+      "changed": 2,
+      "new": 2,
+      "wrong_because": {
+        "mixed_group": 1,
+        "legit_outliers": 2,
+        "incidental": 1
+      },
+      "accept_all_shown": {
+        "k": 3,
+        "n": 11,
+        "p": 0.2727272727272727,
+        "lo": 0.09746059213308628,
+        "hi": 0.5656453033189257
+      },
+      "accept_labelled": {
+        "k": 3,
+        "n": 7,
+        "p": 0.42857142857142855,
+        "lo": 0.15821985399244537,
+        "hi": 0.7495416372469643
+      },
+      "accept_ceiling": {
+        "k": 7,
+        "n": 11,
+        "p": 0.6363636363636364,
+        "lo": 0.35380117262012434,
+        "hi": 0.8483352901086686
+      },
+      "repos": 6,
+      "uids": [
+        "netbox/D-281ae8 [wrapped_by:decorator] WRONG mixed_group",
+        "netbox/D-cc1341 [wrapped_by:decorator] WRONG legit_outliers",
+        "netbox/D-bc0c7d [wrapped_by:decorator] changed (old card: WRONG mixed_group)",
+        "Django-CRM/D-4a6ea2 [wrapped_by:call] ACCEPT",
+        "Django-CRM/D-f135a4 [wrapped_by:call] ACCEPT",
+        "open-wearables/D-dadcea [wrapped_by:call] new",
+        "tasking-manager/D-c7acd1 [wrapped_by:call] new",
+        "tasking-manager/D-cfe608 [wrapped_by:call] ACCEPT",
+        "tasking-manager/D-3e220e [wrapped_by:call] WRONG incidental",
+        "simplelogin/D-2a4960 [avoids:import] changed (old card: ACCEPT)",
+        "changedetection.io/D-2619c7 [wrapped_by:decorator] WRONG legit_outliers"
+      ]
+    },
+    {
+      "name": "D5 Python kinds (call, decorator, base, passes_key, layering)",
+      "shown": 18,
+      "ACCEPT": 3,
+      "TRIVIAL": 0,
+      "WRONG": 6,
+      "unlabelled": 9,
+      "changed": 7,
+      "new": 2,
+      "wrong_because": {
+        "mixed_group": 1,
+        "legit_outliers": 4,
+        "incidental": 1
+      },
+      "accept_all_shown": {
+        "k": 3,
+        "n": 18,
+        "p": 0.16666666666666666,
+        "lo": 0.05836576760185505,
+        "hi": 0.39222038302033446
+      },
+      "accept_labelled": {
+        "k": 3,
+        "n": 9,
+        "p": 0.3333333333333333,
+        "lo": 0.12058381743407343,
+        "hi": 0.6457978664749412
+      },
+      "accept_ceiling": {
+        "k": 12,
+        "n": 18,
+        "p": 0.6666666666666666,
+        "lo": 0.4374946712512044,
+        "hi": 0.8372122534377007
+      },
+      "repos": 9,
+      "uids": [
+        "netbox/D-281ae8 [wrapped_by:decorator] WRONG mixed_group",
+        "netbox/D-cc1341 [wrapped_by:decorator] WRONG legit_outliers",
+        "netbox/D-76eb6b [passes_key] changed (old card: WRONG legit_outliers)",
+        "netbox/D-bc0c7d [wrapped_by:decorator] changed (old card: WRONG mixed_group)",
+        "netbox/D-e2c3e4 [wrapped_by:extends] changed (old card: WRONG mixed_group)",
+        "Django-CRM/D-4a6ea2 [wrapped_by:call] ACCEPT",
+        "Django-CRM/D-f135a4 [wrapped_by:call] ACCEPT",
+        "InvenTree/D-47d790 [wrapped_by:extends] changed (old card: TRIVIAL)",
+        "ralph/D-4529f9 [wrapped_by:extends] changed (old card: WRONG mixed_group)",
+        "ralph/D-5b6f70 [wrapped_by:extends] changed (old card: WRONG legit_outliers)",
+        "Misago/D-c9ae1e [wrapped_by:extends] WRONG legit_outliers",
+        "Misago/D-e72fc8 [wrapped_by:extends] WRONG legit_outliers",
+        "open-wearables/D-dadcea [wrapped_by:call] new",
+        "tasking-manager/D-c7acd1 [wrapped_by:call] new",
+        "tasking-manager/D-cfe608 [wrapped_by:call] ACCEPT",
+        "tasking-manager/D-3e220e [wrapped_by:call] WRONG incidental",
+        "simplelogin/D-2a4960 [avoids:import] changed (old card: ACCEPT)",
+        "changedetection.io/D-2619c7 [wrapped_by:decorator] WRONG legit_outliers"
+      ]
+    }
+  ],
+  "zero_wrong_n_for_lower_95": 73
+}

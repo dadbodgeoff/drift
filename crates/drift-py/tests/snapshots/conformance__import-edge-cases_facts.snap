@@ -1,0 +1,468 @@
+---
+source: crates/drift-py/tests/conformance.rs
+expression: "serde_json::to_string_pretty(&r).unwrap()"
+---
+{
+  "schema_version": 11,
+  "files": [
+    {
+      "path": "a.py",
+      "hash": "3ceae248eacaf486357192011806a5bf7ebc58462f64e88fa1ddffd9be3cda4b",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "x",
+          "origin": "a.py#x",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "x",
+          "kind": "variable",
+          "exported_as": [
+            "x"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "a/__init__.py",
+      "hash": "ba31bad797c8b6c2e85c68a33dfb78cafd558c7d712c3d8904015506a01b9f9b",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "y",
+          "origin": "a/__init__.py#y",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "y",
+          "kind": "variable",
+          "exported_as": [
+            "y"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "ns/inner/mod.py",
+      "hash": "ae3316d39ed06b6474ee6583f5796727765c7e80d29e549162a3b3292d8ecc89",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "q",
+          "origin": "ns/inner/mod.py#q",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "q",
+          "kind": "variable",
+          "exported_as": [
+            "q"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "pkg/__init__.py",
+      "hash": "03a7f8f786b2d34064f9f2ee8b1981b95866d8362bda222f74f65fa53ad7e90d",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg/foo.py",
+          "names": [
+            "foo"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg/sub/__init__.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "foo",
+          "origin": "pkg/foo.py#foo",
+          "kind": "re_export"
+        },
+        {
+          "name": "sub",
+          "origin": "pkg/sub/__init__.py#*",
+          "kind": "re_export"
+        }
+      ],
+      "symbols": [],
+      "entry_points": []
+    },
+    {
+      "path": "pkg/bar.py",
+      "hash": "0e8305b6762e03c166a76cfd1c5de9383de7564348155d1725de156aeb10f8d7",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "bar",
+          "origin": "pkg/bar.py#bar",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "bar",
+          "kind": "function",
+          "exported_as": [
+            "bar"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "pkg/foo.py",
+      "hash": "6962ddc70c891e18c2ef9ef24acb92c40440fc4cf4a4f323a3ed062d9206c7fb",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "foo",
+          "origin": "pkg/foo.py#foo",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "foo",
+          "kind": "function",
+          "exported_as": [
+            "foo"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "pkg/m.py",
+      "hash": "90c9b0a6d8866a95236582f638d6b6df4a7ab2294edc279a5a61b9857b6859f0",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg/__init__.py",
+          "names": [
+            "foo"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "unresolved:..",
+          "names": [
+            "a"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "unresolved:...",
+          "names": [
+            "nothing"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [],
+      "symbols": [],
+      "entry_points": []
+    },
+    {
+      "path": "pkg/sub/__init__.py",
+      "hash": "295192ea1ec8566d563b1a7587e5f0198580cdbd043842f5090a4c197c20c67a",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [],
+      "symbols": [],
+      "entry_points": []
+    },
+    {
+      "path": "pkg/sub/deep.py",
+      "hash": "2dcb0bb17d6957461ee33c3afb7d6c3a8c15081a2c3c1ec07d44eb211cf3b295",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "z",
+          "origin": "pkg/sub/deep.py#z",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "z",
+          "kind": "variable",
+          "exported_as": [
+            "z"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "scripts/logging.py",
+      "hash": "c0f8f0928dea8a3792aa62893bf2b021c8c808601c5192ac252d7eba7eae8bda",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "shadow",
+          "origin": "scripts/logging.py#shadow",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "shadow",
+          "kind": "variable",
+          "exported_as": [
+            "shadow"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "scripts/util.py",
+      "hash": "2fdc6a011fdd75bd04d0764159a27e833b6a2b2a979d16ed325c4f9308886f6d",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "u",
+          "origin": "scripts/util.py#u",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "u",
+          "kind": "function",
+          "exported_as": [
+            "u"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "scripts/y.py",
+      "hash": "041deb85acb0c73ce9a44601a558804aa90b27583930b2d3c2ea585bc0d49535",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "a/__init__.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "ns",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "ns/inner/mod.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg/__init__.py",
+          "names": [
+            "foo"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg/bar.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg/sub/__init__.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg/sub/deep.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:b",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "scripts/logging.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "scripts/util.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [],
+      "symbols": [],
+      "entry_points": []
+    },
+    {
+      "path": "top.py",
+      "hash": "c26f1750187f275cddbcee4830b0fd63fba8a7af9e6511c5b329e1ec24570dca",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:python:json",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:python:logging",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [],
+      "symbols": [],
+      "entry_points": []
+    }
+  ],
+  "skipped": []
+}

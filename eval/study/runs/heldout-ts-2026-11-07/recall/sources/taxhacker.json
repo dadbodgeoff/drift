@@ -1,0 +1,9 @@
+{
+  "repo": "taxhacker",
+  "files": [
+    {
+      "path": "eslint.config.mjs",
+      "kind": "lint"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "name": "beacon",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

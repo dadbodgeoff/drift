@@ -1,0 +1,249 @@
+{
+  "repo": "computer-science-fundamentals",
+  "files": [
+    {
+      "path": ".claude/agents.md",
+      "kind": "doc"
+    },
+    {
+      "path": ".claude/rules/code-style.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".claude/rules/external-skills.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".claude/rules/git-workflow.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".claude/rules/load-tests.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".claude/rules/mini-project.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".claude/rules/quiz.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".claude/rules/security-labs.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".claude/skills/api-and-interface-design/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/brainstorming/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/browser-testing-with-devtools/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/ci-cd-and-automation/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/code-review-and-quality/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/code-simplification/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/constraint-driven-development/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/context-engineering/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/debugging-and-error-recovery/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/deprecation-and-migration/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/diagnosing-superpowers/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/dispatching-parallel-agents/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/documentation-and-adrs/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/doubt-driven-development/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/executing-plans/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/finishing-a-development-branch/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/frontend-ui-engineering/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/git-workflow-and-versioning/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/idea-refine/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/incremental-implementation/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/interview-me/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/karpathy-guidelines/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/observability-and-instrumentation/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/performance-optimization/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/planning-and-task-breakdown/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/ponytail-audit/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/ponytail-debt/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/ponytail-gain/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/ponytail-help/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/ponytail-review/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/ponytail/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/receiving-code-review/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/requesting-code-review/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/security-and-hardening/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/shipping-and-launch/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/source-driven-development/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/spec-driven-development/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/subagent-driven-development/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/superpowers-test-driven-development/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/systematic-debugging/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/test-driven-development/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/using-agent-skills/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/using-git-worktrees/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/using-superpowers/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/verification-before-completion/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/writing-plans/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/writing-skills/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "biome.json",
+      "kind": "lint"
+    },
+    {
+      "path": "ruff.toml",
+      "kind": "lint"
+    },
+    {
+      "path": "18 more ruff.toml files, e.g. projects/algorithms/dynamic-programming/python/ruff.toml, projects/algorithms/sorting-race/python/ruff.toml, projects/artificial-intelligence/bpe-tokenizer/python/ruff.toml",
+      "kind": "lint (collapsed: read one or two)"
+    }
+  ]
+}

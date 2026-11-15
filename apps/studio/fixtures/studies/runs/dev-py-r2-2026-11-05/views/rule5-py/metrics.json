@@ -1,0 +1,4560 @@
+{
+  "run": "eval/study/runs/dev-py-r2-2026-11-05/views/rule5-py",
+  "kind": "precision",
+  "secondary": false,
+  "headline_eligible": false,
+  "drift": {
+    "binary": "drift-2709f17",
+    "binary_sha256": "41054fadcecfca94837b5dfba5f3879292696a963c4165ebd11fadec9190020f",
+    "version": "drift 0.1.0-dev",
+    "commit": "2709f17fbbc2ef21a1612b9f8a94efcba45593a8",
+    "dirty": false,
+    "build": null
+  },
+  "manifest": {
+    "path": "eval/repos-py.json",
+    "sha256": "ef2493ecd01438471b750944a978de145cf54cd956f28a7f9a5a684d7b48994b",
+    "core_sha256": "1164a34341d2a4697cdd61c219684c3fc2ec2d9ab65a6fcac761834cedb86297",
+    "holdout": false,
+    "holdout_because": [],
+    "set_id": null,
+    "role": "dev"
+  },
+  "labels": "eval/study/runs/dev-py-r2-2026-11-05/final.jsonl",
+  "rubric": null,
+  "rubric_sha256": null,
+  "rubric_sha256s": [],
+  "label_rubrics": {
+    "not recorded": 36
+  },
+  "decisions": [
+    {
+      "id": "D1",
+      "date": "2026-11-05",
+      "by": "founder",
+      "status": "decided",
+      "title": "default-tier accept target met when the point estimate, per language, is >= 95%"
+    },
+    {
+      "id": "D2",
+      "date": "2026-11-05",
+      "by": "founder",
+      "status": "decided",
+      "title": "course-material repos stay in; results also shown without them"
+    },
+    {
+      "id": "D3",
+      "date": "2026-11-05",
+      "by": "product lead",
+      "status": "decided",
+      "title": "parseable files = scan files - parse errors; census or init failures reported, no swap"
+    },
+    {
+      "id": "D4",
+      "date": "2026-11-05",
+      "by": "product lead",
+      "status": "decided",
+      "title": "not-wrong target met when the point estimate, per language, is >= 95%"
+    },
+    {
+      "id": "D5",
+      "date": "2026-11-06",
+      "by": "lead; approved by founder 2026-11-06",
+      "status": "approved",
+      "title": "the default tier admits only in-repo structural rules (tier-d5.json), approved before any held-out census"
+    },
+    {
+      "id": "D5a",
+      "date": "2026-11-06",
+      "by": "lead",
+      "status": "decided",
+      "title": "secondary sets measured under the D5 tier: a tier-only amendment applying D5 to the secondary manifests"
+    },
+    {
+      "id": "D6",
+      "date": "2026-11-06",
+      "by": "lead; approved by founder 2026-11-06",
+      "status": "approved",
+      "title": "rubric v3 (RUBRIC-v3.md) for the held-out run and later dev rounds; the default tier ships as advise until it measures >= 95% under v3",
+      "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+    },
+    {
+      "id": "D7",
+      "date": "2026-11-06",
+      "by": "founder (approved)",
+      "status": "approved",
+      "title": "default tier is TypeScript/JavaScript call wrappers and layering only (tier-d7.json, D5's target and member conditions kept); Python advises only; release gate unchanged; recorded before any held-out census"
+    },
+    {
+      "id": "D7a",
+      "date": "2026-11-06",
+      "by": "lead",
+      "status": "decided",
+      "title": "secondary sets measured under the D7 tier: a tier-only amendment applying D7 to the secondary manifests, before any held-out census"
+    },
+    {
+      "id": "D8",
+      "date": "2026-11-07",
+      "by": "lead (pre-registration; not approved)",
+      "status": "pre-registered",
+      "title": "candidate Python default tier (tier-d8-candidate.json: guard call wrappers and layering, in-repo, roles >= 50), with dev (>= 40 cards, >= 10 repos, >= 97.5%) and held-out (>= 30 cards, >= 95%) thresholds; NOT adopted: the product ships D7 and Python advises only"
+    }
+  ],
+  "tier": {
+    "definition": {
+      "//": "Pre-registered 2026-11-05 by the product lead, before these sets were drawn. DEFAULT tier (blocking-eligible; its ACCEPT / shown is the headline default-tier accept rate) = the proposal's structured rule kind (lib.mjs ruleKind: conventions.yaml rule.type, rule.kind for wrapped_by, import vs other signal for avoids; never the summary text) is in default.rule_kinds AND its role has >= default.min_members members (PLAN: n >= 15 to allow blocking). SUGGESTION tier = every other shown proposal, including kinds listed in neither list and proposals without a structured rule. The not-wrong rate is reported over all shown proposals, both tiers. Amended 2026-11-05, before any held-out run (no held-out data existed): wrapped_by:jsx moved from suggestion to default (product lead).",
+      "kind": "rule_kind",
+      "default": {
+        "//": "call wrappers, decorators, base classes, required argument keys, layering (import avoidance), rendered components, rendered inside a (layout) wrapper",
+        "rule_kinds": [
+          "wrapped_by:call",
+          "wrapped_by:decorator",
+          "wrapped_by:extends",
+          "passes_key",
+          "avoids:import",
+          "renders",
+          "wrapped_by:jsx"
+        ],
+        "min_members": 15
+      },
+      "suggestion": {
+        "//": "named by the product lead: generic calls, naming, absence (any/console/bare Error and other non-import avoids), preferred libraries, ordering, file/model/package rules. Unmeasured, so suggestion tier (the default tier is an allowlist): wrapped_by:try, control, directive, throws.",
+        "rule_kinds": [
+          "calls",
+          "named",
+          "avoids:other",
+          "prefers_library",
+          "before",
+          "has_test",
+          "model_has",
+          "package_has",
+          "dependency_version",
+          "wrapped_by:try",
+          "control",
+          "directive",
+          "throws"
+        ]
+      },
+      "not_wrong_over": "all_shown"
+    },
+    "min_members": 15,
+    "pre_registered": false,
+    "unkinded": []
+  },
+  "overall": {
+    "shown": 36,
+    "labelled": 36,
+    "ACCEPT": 22,
+    "TRIVIAL": 0,
+    "WRONG": 14,
+    "unlabelled": 0,
+    "not_wrong": {
+      "k": 22,
+      "n": 36,
+      "p": 0.6111111111111112,
+      "lo": 0.4486445897263513,
+      "hi": 0.7521512702805644,
+      "boot": {
+        "lo": 0.5405405405405406,
+        "hi": 0.7142857142857143,
+        "clusters": 6
+      },
+      "t": {
+        "lo": 0.49035021030042214,
+        "hi": 0.7318720119218002,
+        "clusters": 6
+      }
+    },
+    "accept": {
+      "k": 22,
+      "n": 36,
+      "p": 0.6111111111111112,
+      "lo": 0.4486445897263513,
+      "hi": 0.7521512702805644,
+      "boot": {
+        "lo": 0.5405405405405406,
+        "hi": 0.7142857142857143,
+        "clusters": 6
+      },
+      "t": {
+        "lo": 0.49035021030042214,
+        "hi": 0.7318720119218002,
+        "clusters": 6
+      }
+    },
+    "not_wrong_shown": {
+      "k": 22,
+      "n": 36,
+      "p": 0.6111111111111112,
+      "lo": 0.4486445897263513,
+      "hi": 0.7521512702805644,
+      "boot": {
+        "lo": 0.5405405405405406,
+        "hi": 0.7142857142857143,
+        "clusters": 6
+      },
+      "t": {
+        "lo": 0.49035021030042214,
+        "hi": 0.7318720119218002,
+        "clusters": 6
+      }
+    },
+    "accept_shown": {
+      "k": 22,
+      "n": 36,
+      "p": 0.6111111111111112,
+      "lo": 0.4486445897263513,
+      "hi": 0.7521512702805644,
+      "boot": {
+        "lo": 0.5405405405405406,
+        "hi": 0.7142857142857143,
+        "clusters": 6
+      },
+      "t": {
+        "lo": 0.49035021030042214,
+        "hi": 0.7318720119218002,
+        "clusters": 6
+      }
+    },
+    "yield": {
+      "repos": 8,
+      "total": 22,
+      "mean": 2.75,
+      "median": 1,
+      "zero": 2
+    }
+  },
+  "default_tier": {
+    "shown": 16,
+    "labelled": 16,
+    "ACCEPT": 11,
+    "TRIVIAL": 0,
+    "WRONG": 5,
+    "unlabelled": 0,
+    "not_wrong": {
+      "k": 11,
+      "n": 16,
+      "p": 0.6875,
+      "lo": 0.4440435565274821,
+      "hi": 0.858353562348491,
+      "boot": {
+        "lo": 0.3333333333333333,
+        "hi": 0.8,
+        "clusters": 4
+      },
+      "t": {
+        "lo": 0.41442379196067736,
+        "hi": 0.9605762080393226,
+        "clusters": 4
+      }
+    },
+    "accept": {
+      "k": 11,
+      "n": 16,
+      "p": 0.6875,
+      "lo": 0.4440435565274821,
+      "hi": 0.858353562348491,
+      "boot": {
+        "lo": 0.3333333333333333,
+        "hi": 0.8,
+        "clusters": 4
+      },
+      "t": {
+        "lo": 0.41442379196067736,
+        "hi": 0.9605762080393226,
+        "clusters": 4
+      }
+    },
+    "not_wrong_shown": {
+      "k": 11,
+      "n": 16,
+      "p": 0.6875,
+      "lo": 0.4440435565274821,
+      "hi": 0.858353562348491,
+      "boot": {
+        "lo": 0.3333333333333333,
+        "hi": 0.8,
+        "clusters": 4
+      },
+      "t": {
+        "lo": 0.41442379196067736,
+        "hi": 0.9605762080393226,
+        "clusters": 4
+      }
+    },
+    "accept_shown": {
+      "k": 11,
+      "n": 16,
+      "p": 0.6875,
+      "lo": 0.4440435565274821,
+      "hi": 0.858353562348491,
+      "boot": {
+        "lo": 0.3333333333333333,
+        "hi": 0.8,
+        "clusters": 4
+      },
+      "t": {
+        "lo": 0.41442379196067736,
+        "hi": 0.9605762080393226,
+        "clusters": 4
+      }
+    },
+    "yield": {
+      "repos": 8,
+      "total": 11,
+      "mean": 1.375,
+      "median": 0,
+      "zero": 5
+    }
+  },
+  "suggestion_tier": {
+    "shown": 20,
+    "labelled": 20,
+    "ACCEPT": 11,
+    "TRIVIAL": 0,
+    "WRONG": 9,
+    "unlabelled": 0,
+    "not_wrong": {
+      "k": 11,
+      "n": 20,
+      "p": 0.55,
+      "lo": 0.3420853410191274,
+      "hi": 0.7418021429623598,
+      "boot": {
+        "lo": 0.391304347826087,
+        "hi": 0.8181818181818182,
+        "clusters": 5
+      },
+      "t": {
+        "lo": 0.2353951716835866,
+        "hi": 0.8646048283164135,
+        "clusters": 5
+      }
+    },
+    "accept": {
+      "k": 11,
+      "n": 20,
+      "p": 0.55,
+      "lo": 0.3420853410191274,
+      "hi": 0.7418021429623598,
+      "boot": {
+        "lo": 0.391304347826087,
+        "hi": 0.8181818181818182,
+        "clusters": 5
+      },
+      "t": {
+        "lo": 0.2353951716835866,
+        "hi": 0.8646048283164135,
+        "clusters": 5
+      }
+    },
+    "not_wrong_shown": {
+      "k": 11,
+      "n": 20,
+      "p": 0.55,
+      "lo": 0.3420853410191274,
+      "hi": 0.7418021429623598,
+      "boot": {
+        "lo": 0.391304347826087,
+        "hi": 0.8181818181818182,
+        "clusters": 5
+      },
+      "t": {
+        "lo": 0.2353951716835866,
+        "hi": 0.8646048283164135,
+        "clusters": 5
+      }
+    },
+    "accept_shown": {
+      "k": 11,
+      "n": 20,
+      "p": 0.55,
+      "lo": 0.3420853410191274,
+      "hi": 0.7418021429623598,
+      "boot": {
+        "lo": 0.391304347826087,
+        "hi": 0.8181818181818182,
+        "clusters": 5
+      },
+      "t": {
+        "lo": 0.2353951716835866,
+        "hi": 0.8646048283164135,
+        "clusters": 5
+      }
+    },
+    "yield": {
+      "repos": 8,
+      "total": 11,
+      "mean": 1.375,
+      "median": 1,
+      "zero": 3
+    }
+  },
+  "exploratory": null,
+  "exposure": null,
+  "failed_repos": [],
+  "by_language": [
+    {
+      "language": "python",
+      "set_language": true,
+      "repos": [
+        "full-stack-fastapi-template",
+        "polar",
+        "netbox",
+        "saleor",
+        "CTFd",
+        "flask",
+        "fastapi",
+        "langchain"
+      ],
+      "overall": {
+        "shown": 36,
+        "labelled": 36,
+        "ACCEPT": 22,
+        "TRIVIAL": 0,
+        "WRONG": 14,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 22,
+          "n": 36,
+          "p": 0.6111111111111112,
+          "lo": 0.4486445897263513,
+          "hi": 0.7521512702805644,
+          "boot": {
+            "lo": 0.5405405405405406,
+            "hi": 0.7142857142857143,
+            "clusters": 6
+          },
+          "t": {
+            "lo": 0.49035021030042214,
+            "hi": 0.7318720119218002,
+            "clusters": 6
+          }
+        },
+        "accept": {
+          "k": 22,
+          "n": 36,
+          "p": 0.6111111111111112,
+          "lo": 0.4486445897263513,
+          "hi": 0.7521512702805644,
+          "boot": {
+            "lo": 0.5405405405405406,
+            "hi": 0.7142857142857143,
+            "clusters": 6
+          },
+          "t": {
+            "lo": 0.49035021030042214,
+            "hi": 0.7318720119218002,
+            "clusters": 6
+          }
+        },
+        "not_wrong_shown": {
+          "k": 22,
+          "n": 36,
+          "p": 0.6111111111111112,
+          "lo": 0.4486445897263513,
+          "hi": 0.7521512702805644,
+          "boot": {
+            "lo": 0.5405405405405406,
+            "hi": 0.7142857142857143,
+            "clusters": 6
+          },
+          "t": {
+            "lo": 0.49035021030042214,
+            "hi": 0.7318720119218002,
+            "clusters": 6
+          }
+        },
+        "accept_shown": {
+          "k": 22,
+          "n": 36,
+          "p": 0.6111111111111112,
+          "lo": 0.4486445897263513,
+          "hi": 0.7521512702805644,
+          "boot": {
+            "lo": 0.5405405405405406,
+            "hi": 0.7142857142857143,
+            "clusters": 6
+          },
+          "t": {
+            "lo": 0.49035021030042214,
+            "hi": 0.7318720119218002,
+            "clusters": 6
+          }
+        },
+        "yield": {
+          "repos": 8,
+          "total": 22,
+          "mean": 2.75,
+          "median": 1,
+          "zero": 2
+        }
+      },
+      "default_tier": {
+        "shown": 16,
+        "labelled": 16,
+        "ACCEPT": 11,
+        "TRIVIAL": 0,
+        "WRONG": 5,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 11,
+          "n": 16,
+          "p": 0.6875,
+          "lo": 0.4440435565274821,
+          "hi": 0.858353562348491,
+          "boot": {
+            "lo": 0.3333333333333333,
+            "hi": 0.8,
+            "clusters": 4
+          },
+          "t": {
+            "lo": 0.41442379196067736,
+            "hi": 0.9605762080393226,
+            "clusters": 4
+          }
+        },
+        "accept": {
+          "k": 11,
+          "n": 16,
+          "p": 0.6875,
+          "lo": 0.4440435565274821,
+          "hi": 0.858353562348491,
+          "boot": {
+            "lo": 0.3333333333333333,
+            "hi": 0.8,
+            "clusters": 4
+          },
+          "t": {
+            "lo": 0.41442379196067736,
+            "hi": 0.9605762080393226,
+            "clusters": 4
+          }
+        },
+        "not_wrong_shown": {
+          "k": 11,
+          "n": 16,
+          "p": 0.6875,
+          "lo": 0.4440435565274821,
+          "hi": 0.858353562348491,
+          "boot": {
+            "lo": 0.3333333333333333,
+            "hi": 0.8,
+            "clusters": 4
+          },
+          "t": {
+            "lo": 0.41442379196067736,
+            "hi": 0.9605762080393226,
+            "clusters": 4
+          }
+        },
+        "accept_shown": {
+          "k": 11,
+          "n": 16,
+          "p": 0.6875,
+          "lo": 0.4440435565274821,
+          "hi": 0.858353562348491,
+          "boot": {
+            "lo": 0.3333333333333333,
+            "hi": 0.8,
+            "clusters": 4
+          },
+          "t": {
+            "lo": 0.41442379196067736,
+            "hi": 0.9605762080393226,
+            "clusters": 4
+          }
+        },
+        "yield": {
+          "repos": 8,
+          "total": 11,
+          "mean": 1.375,
+          "median": 0,
+          "zero": 5
+        }
+      },
+      "suggestion_tier": {
+        "shown": 20,
+        "labelled": 20,
+        "ACCEPT": 11,
+        "TRIVIAL": 0,
+        "WRONG": 9,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 11,
+          "n": 20,
+          "p": 0.55,
+          "lo": 0.3420853410191274,
+          "hi": 0.7418021429623598,
+          "boot": {
+            "lo": 0.391304347826087,
+            "hi": 0.8181818181818182,
+            "clusters": 5
+          },
+          "t": {
+            "lo": 0.2353951716835866,
+            "hi": 0.8646048283164135,
+            "clusters": 5
+          }
+        },
+        "accept": {
+          "k": 11,
+          "n": 20,
+          "p": 0.55,
+          "lo": 0.3420853410191274,
+          "hi": 0.7418021429623598,
+          "boot": {
+            "lo": 0.391304347826087,
+            "hi": 0.8181818181818182,
+            "clusters": 5
+          },
+          "t": {
+            "lo": 0.2353951716835866,
+            "hi": 0.8646048283164135,
+            "clusters": 5
+          }
+        },
+        "not_wrong_shown": {
+          "k": 11,
+          "n": 20,
+          "p": 0.55,
+          "lo": 0.3420853410191274,
+          "hi": 0.7418021429623598,
+          "boot": {
+            "lo": 0.391304347826087,
+            "hi": 0.8181818181818182,
+            "clusters": 5
+          },
+          "t": {
+            "lo": 0.2353951716835866,
+            "hi": 0.8646048283164135,
+            "clusters": 5
+          }
+        },
+        "accept_shown": {
+          "k": 11,
+          "n": 20,
+          "p": 0.55,
+          "lo": 0.3420853410191274,
+          "hi": 0.7418021429623598,
+          "boot": {
+            "lo": 0.391304347826087,
+            "hi": 0.8181818181818182,
+            "clusters": 5
+          },
+          "t": {
+            "lo": 0.2353951716835866,
+            "hi": 0.8646048283164135,
+            "clusters": 5
+          }
+        },
+        "yield": {
+          "repos": 8,
+          "total": 11,
+          "mean": 1.375,
+          "median": 1,
+          "zero": 3
+        }
+      },
+      "target": {
+        "criterion": "met when the point estimate, per language, is ≥ 95% (decision D1, 2026-11-05)",
+        "threshold": 0.95,
+        "default_tier_accept": 0.6875,
+        "met": null
+      },
+      "not_wrong_target": {
+        "criterion": "met when the point estimate, per language, is ≥ 95% (decision D4, 2026-11-05)",
+        "threshold": 0.95,
+        "not_wrong": 0.6111111111111112,
+        "met": null
+      },
+      "families": [
+        {
+          "family": "wrapper",
+          "name": "Call wrappers",
+          "overall": {
+            "shown": 2,
+            "labelled": 2,
+            "ACCEPT": 2,
+            "TRIVIAL": 0,
+            "WRONG": 0,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 2,
+              "n": 2,
+              "p": 1,
+              "lo": 0.3423802239546494,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "accept": {
+              "k": 2,
+              "n": 2,
+              "p": 1,
+              "lo": 0.3423802239546494,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "not_wrong_shown": {
+              "k": 2,
+              "n": 2,
+              "p": 1,
+              "lo": 0.3423802239546494,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "accept_shown": {
+              "k": 2,
+              "n": 2,
+              "p": 1,
+              "lo": 0.3423802239546494,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 2,
+              "mean": 0.25,
+              "median": 0,
+              "zero": 7
+            }
+          },
+          "default_tier": {
+            "shown": 2,
+            "labelled": 2,
+            "ACCEPT": 2,
+            "TRIVIAL": 0,
+            "WRONG": 0,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 2,
+              "n": 2,
+              "p": 1,
+              "lo": 0.3423802239546494,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "accept": {
+              "k": 2,
+              "n": 2,
+              "p": 1,
+              "lo": 0.3423802239546494,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "not_wrong_shown": {
+              "k": 2,
+              "n": 2,
+              "p": 1,
+              "lo": 0.3423802239546494,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "accept_shown": {
+              "k": 2,
+              "n": 2,
+              "p": 1,
+              "lo": 0.3423802239546494,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 2,
+              "mean": 0.25,
+              "median": 0,
+              "zero": 7
+            }
+          },
+          "suggestion_tier": {
+            "shown": 0,
+            "labelled": 0,
+            "ACCEPT": 0,
+            "TRIVIAL": 0,
+            "WRONG": 0,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "accept": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "not_wrong_shown": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "accept_shown": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 0,
+              "mean": 0,
+              "median": 0,
+              "zero": 8
+            }
+          }
+        },
+        {
+          "family": "decorator",
+          "name": "Decorators",
+          "overall": {
+            "shown": 3,
+            "labelled": 3,
+            "ACCEPT": 3,
+            "TRIVIAL": 0,
+            "WRONG": 0,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 3,
+              "n": 3,
+              "p": 1,
+              "lo": 0.43850296436068037,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "accept": {
+              "k": 3,
+              "n": 3,
+              "p": 1,
+              "lo": 0.43850296436068037,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "not_wrong_shown": {
+              "k": 3,
+              "n": 3,
+              "p": 1,
+              "lo": 0.43850296436068037,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "accept_shown": {
+              "k": 3,
+              "n": 3,
+              "p": 1,
+              "lo": 0.43850296436068037,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 3,
+              "mean": 0.375,
+              "median": 0,
+              "zero": 7
+            }
+          },
+          "default_tier": {
+            "shown": 3,
+            "labelled": 3,
+            "ACCEPT": 3,
+            "TRIVIAL": 0,
+            "WRONG": 0,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 3,
+              "n": 3,
+              "p": 1,
+              "lo": 0.43850296436068037,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "accept": {
+              "k": 3,
+              "n": 3,
+              "p": 1,
+              "lo": 0.43850296436068037,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "not_wrong_shown": {
+              "k": 3,
+              "n": 3,
+              "p": 1,
+              "lo": 0.43850296436068037,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "accept_shown": {
+              "k": 3,
+              "n": 3,
+              "p": 1,
+              "lo": 0.43850296436068037,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 3,
+              "mean": 0.375,
+              "median": 0,
+              "zero": 7
+            }
+          },
+          "suggestion_tier": {
+            "shown": 0,
+            "labelled": 0,
+            "ACCEPT": 0,
+            "TRIVIAL": 0,
+            "WRONG": 0,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "accept": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "not_wrong_shown": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "accept_shown": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 0,
+              "mean": 0,
+              "median": 0,
+              "zero": 8
+            }
+          }
+        },
+        {
+          "family": "base_class",
+          "name": "Base classes",
+          "overall": {
+            "shown": 7,
+            "labelled": 7,
+            "ACCEPT": 4,
+            "TRIVIAL": 0,
+            "WRONG": 3,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 4,
+              "n": 7,
+              "p": 0.5714285714285714,
+              "lo": 0.25045836275303557,
+              "hi": 0.8417801460075546,
+              "boot": {
+                "lo": 0.25,
+                "hi": 0.8,
+                "clusters": 4
+              },
+              "t": {
+                "lo": 0.16071969327935576,
+                "hi": 0.982137449577787,
+                "clusters": 4
+              }
+            },
+            "accept": {
+              "k": 4,
+              "n": 7,
+              "p": 0.5714285714285714,
+              "lo": 0.25045836275303557,
+              "hi": 0.8417801460075546,
+              "boot": {
+                "lo": 0.25,
+                "hi": 0.8,
+                "clusters": 4
+              },
+              "t": {
+                "lo": 0.16071969327935576,
+                "hi": 0.982137449577787,
+                "clusters": 4
+              }
+            },
+            "not_wrong_shown": {
+              "k": 4,
+              "n": 7,
+              "p": 0.5714285714285714,
+              "lo": 0.25045836275303557,
+              "hi": 0.8417801460075546,
+              "boot": {
+                "lo": 0.25,
+                "hi": 0.8,
+                "clusters": 4
+              },
+              "t": {
+                "lo": 0.16071969327935576,
+                "hi": 0.982137449577787,
+                "clusters": 4
+              }
+            },
+            "accept_shown": {
+              "k": 4,
+              "n": 7,
+              "p": 0.5714285714285714,
+              "lo": 0.25045836275303557,
+              "hi": 0.8417801460075546,
+              "boot": {
+                "lo": 0.25,
+                "hi": 0.8,
+                "clusters": 4
+              },
+              "t": {
+                "lo": 0.16071969327935576,
+                "hi": 0.982137449577787,
+                "clusters": 4
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 4,
+              "mean": 0.5,
+              "median": 0,
+              "zero": 5
+            }
+          },
+          "default_tier": {
+            "shown": 7,
+            "labelled": 7,
+            "ACCEPT": 4,
+            "TRIVIAL": 0,
+            "WRONG": 3,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 4,
+              "n": 7,
+              "p": 0.5714285714285714,
+              "lo": 0.25045836275303557,
+              "hi": 0.8417801460075546,
+              "boot": {
+                "lo": 0.25,
+                "hi": 0.8,
+                "clusters": 4
+              },
+              "t": {
+                "lo": 0.16071969327935576,
+                "hi": 0.982137449577787,
+                "clusters": 4
+              }
+            },
+            "accept": {
+              "k": 4,
+              "n": 7,
+              "p": 0.5714285714285714,
+              "lo": 0.25045836275303557,
+              "hi": 0.8417801460075546,
+              "boot": {
+                "lo": 0.25,
+                "hi": 0.8,
+                "clusters": 4
+              },
+              "t": {
+                "lo": 0.16071969327935576,
+                "hi": 0.982137449577787,
+                "clusters": 4
+              }
+            },
+            "not_wrong_shown": {
+              "k": 4,
+              "n": 7,
+              "p": 0.5714285714285714,
+              "lo": 0.25045836275303557,
+              "hi": 0.8417801460075546,
+              "boot": {
+                "lo": 0.25,
+                "hi": 0.8,
+                "clusters": 4
+              },
+              "t": {
+                "lo": 0.16071969327935576,
+                "hi": 0.982137449577787,
+                "clusters": 4
+              }
+            },
+            "accept_shown": {
+              "k": 4,
+              "n": 7,
+              "p": 0.5714285714285714,
+              "lo": 0.25045836275303557,
+              "hi": 0.8417801460075546,
+              "boot": {
+                "lo": 0.25,
+                "hi": 0.8,
+                "clusters": 4
+              },
+              "t": {
+                "lo": 0.16071969327935576,
+                "hi": 0.982137449577787,
+                "clusters": 4
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 4,
+              "mean": 0.5,
+              "median": 0,
+              "zero": 5
+            }
+          },
+          "suggestion_tier": {
+            "shown": 0,
+            "labelled": 0,
+            "ACCEPT": 0,
+            "TRIVIAL": 0,
+            "WRONG": 0,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "accept": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "not_wrong_shown": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "accept_shown": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 0,
+              "mean": 0,
+              "median": 0,
+              "zero": 8
+            }
+          }
+        },
+        {
+          "family": "argument_key",
+          "name": "Argument keys",
+          "overall": {
+            "shown": 4,
+            "labelled": 4,
+            "ACCEPT": 2,
+            "TRIVIAL": 0,
+            "WRONG": 2,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 2,
+              "n": 4,
+              "p": 0.5,
+              "lo": 0.15003898774401986,
+              "hi": 0.8499610122559802,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "accept": {
+              "k": 2,
+              "n": 4,
+              "p": 0.5,
+              "lo": 0.15003898774401986,
+              "hi": 0.8499610122559802,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "not_wrong_shown": {
+              "k": 2,
+              "n": 4,
+              "p": 0.5,
+              "lo": 0.15003898774401986,
+              "hi": 0.8499610122559802,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "accept_shown": {
+              "k": 2,
+              "n": 4,
+              "p": 0.5,
+              "lo": 0.15003898774401986,
+              "hi": 0.8499610122559802,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 2,
+              "mean": 0.25,
+              "median": 0,
+              "zero": 6
+            }
+          },
+          "default_tier": {
+            "shown": 4,
+            "labelled": 4,
+            "ACCEPT": 2,
+            "TRIVIAL": 0,
+            "WRONG": 2,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 2,
+              "n": 4,
+              "p": 0.5,
+              "lo": 0.15003898774401986,
+              "hi": 0.8499610122559802,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "accept": {
+              "k": 2,
+              "n": 4,
+              "p": 0.5,
+              "lo": 0.15003898774401986,
+              "hi": 0.8499610122559802,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "not_wrong_shown": {
+              "k": 2,
+              "n": 4,
+              "p": 0.5,
+              "lo": 0.15003898774401986,
+              "hi": 0.8499610122559802,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "accept_shown": {
+              "k": 2,
+              "n": 4,
+              "p": 0.5,
+              "lo": 0.15003898774401986,
+              "hi": 0.8499610122559802,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 2,
+              "mean": 0.25,
+              "median": 0,
+              "zero": 6
+            }
+          },
+          "suggestion_tier": {
+            "shown": 0,
+            "labelled": 0,
+            "ACCEPT": 0,
+            "TRIVIAL": 0,
+            "WRONG": 0,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "accept": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "not_wrong_shown": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "accept_shown": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 0,
+              "mean": 0,
+              "median": 0,
+              "zero": 8
+            }
+          }
+        },
+        {
+          "family": "calls",
+          "name": "Calls",
+          "overall": {
+            "shown": 7,
+            "labelled": 7,
+            "ACCEPT": 3,
+            "TRIVIAL": 0,
+            "WRONG": 4,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 3,
+              "n": 7,
+              "p": 0.42857142857142855,
+              "lo": 0.15821985399244537,
+              "hi": 0.7495416372469643,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 0.5,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "accept": {
+              "k": 3,
+              "n": 7,
+              "p": 0.42857142857142855,
+              "lo": 0.15821985399244537,
+              "hi": 0.7495416372469643,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 0.5,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "not_wrong_shown": {
+              "k": 3,
+              "n": 7,
+              "p": 0.42857142857142855,
+              "lo": 0.15821985399244537,
+              "hi": 0.7495416372469643,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 0.5,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "accept_shown": {
+              "k": 3,
+              "n": 7,
+              "p": 0.42857142857142855,
+              "lo": 0.15821985399244537,
+              "hi": 0.7495416372469643,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 0.5,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 3,
+              "mean": 0.375,
+              "median": 0,
+              "zero": 6
+            }
+          },
+          "default_tier": {
+            "shown": 0,
+            "labelled": 0,
+            "ACCEPT": 0,
+            "TRIVIAL": 0,
+            "WRONG": 0,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "accept": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "not_wrong_shown": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "accept_shown": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 0,
+              "mean": 0,
+              "median": 0,
+              "zero": 8
+            }
+          },
+          "suggestion_tier": {
+            "shown": 7,
+            "labelled": 7,
+            "ACCEPT": 3,
+            "TRIVIAL": 0,
+            "WRONG": 4,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 3,
+              "n": 7,
+              "p": 0.42857142857142855,
+              "lo": 0.15821985399244537,
+              "hi": 0.7495416372469643,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 0.5,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "accept": {
+              "k": 3,
+              "n": 7,
+              "p": 0.42857142857142855,
+              "lo": 0.15821985399244537,
+              "hi": 0.7495416372469643,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 0.5,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "not_wrong_shown": {
+              "k": 3,
+              "n": 7,
+              "p": 0.42857142857142855,
+              "lo": 0.15821985399244537,
+              "hi": 0.7495416372469643,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 0.5,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "accept_shown": {
+              "k": 3,
+              "n": 7,
+              "p": 0.42857142857142855,
+              "lo": 0.15821985399244537,
+              "hi": 0.7495416372469643,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 0.5,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 3,
+              "mean": 0.375,
+              "median": 0,
+              "zero": 6
+            }
+          }
+        },
+        {
+          "family": "naming",
+          "name": "Naming",
+          "overall": {
+            "shown": 6,
+            "labelled": 6,
+            "ACCEPT": 4,
+            "TRIVIAL": 0,
+            "WRONG": 2,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 4,
+              "n": 6,
+              "p": 0.6666666666666666,
+              "lo": 0.29999331299474324,
+              "hi": 0.9032285897864654,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "accept": {
+              "k": 4,
+              "n": 6,
+              "p": 0.6666666666666666,
+              "lo": 0.29999331299474324,
+              "hi": 0.9032285897864654,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "not_wrong_shown": {
+              "k": 4,
+              "n": 6,
+              "p": 0.6666666666666666,
+              "lo": 0.29999331299474324,
+              "hi": 0.9032285897864654,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "accept_shown": {
+              "k": 4,
+              "n": 6,
+              "p": 0.6666666666666666,
+              "lo": 0.29999331299474324,
+              "hi": 0.9032285897864654,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 4,
+              "mean": 0.5,
+              "median": 0,
+              "zero": 6
+            }
+          },
+          "default_tier": {
+            "shown": 0,
+            "labelled": 0,
+            "ACCEPT": 0,
+            "TRIVIAL": 0,
+            "WRONG": 0,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "accept": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "not_wrong_shown": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "accept_shown": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 0,
+              "mean": 0,
+              "median": 0,
+              "zero": 8
+            }
+          },
+          "suggestion_tier": {
+            "shown": 6,
+            "labelled": 6,
+            "ACCEPT": 4,
+            "TRIVIAL": 0,
+            "WRONG": 2,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 4,
+              "n": 6,
+              "p": 0.6666666666666666,
+              "lo": 0.29999331299474324,
+              "hi": 0.9032285897864654,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "accept": {
+              "k": 4,
+              "n": 6,
+              "p": 0.6666666666666666,
+              "lo": 0.29999331299474324,
+              "hi": 0.9032285897864654,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "not_wrong_shown": {
+              "k": 4,
+              "n": 6,
+              "p": 0.6666666666666666,
+              "lo": 0.29999331299474324,
+              "hi": 0.9032285897864654,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "accept_shown": {
+              "k": 4,
+              "n": 6,
+              "p": 0.6666666666666666,
+              "lo": 0.29999331299474324,
+              "hi": 0.9032285897864654,
+              "boot": {
+                "lo": 0.3333333333333333,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 4,
+              "mean": 0.5,
+              "median": 0,
+              "zero": 6
+            }
+          }
+        },
+        {
+          "family": "avoids_other",
+          "name": "Other avoidance (any, console, bare Error)",
+          "overall": {
+            "shown": 1,
+            "labelled": 1,
+            "ACCEPT": 0,
+            "TRIVIAL": 0,
+            "WRONG": 1,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 0,
+              "n": 1,
+              "p": 0,
+              "lo": 0,
+              "hi": 0.7934506882081973,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "accept": {
+              "k": 0,
+              "n": 1,
+              "p": 0,
+              "lo": 0,
+              "hi": 0.7934506882081973,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "not_wrong_shown": {
+              "k": 0,
+              "n": 1,
+              "p": 0,
+              "lo": 0,
+              "hi": 0.7934506882081973,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "accept_shown": {
+              "k": 0,
+              "n": 1,
+              "p": 0,
+              "lo": 0,
+              "hi": 0.7934506882081973,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 0,
+              "mean": 0,
+              "median": 0,
+              "zero": 8
+            }
+          },
+          "default_tier": {
+            "shown": 0,
+            "labelled": 0,
+            "ACCEPT": 0,
+            "TRIVIAL": 0,
+            "WRONG": 0,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "accept": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "not_wrong_shown": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "accept_shown": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 0,
+              "mean": 0,
+              "median": 0,
+              "zero": 8
+            }
+          },
+          "suggestion_tier": {
+            "shown": 1,
+            "labelled": 1,
+            "ACCEPT": 0,
+            "TRIVIAL": 0,
+            "WRONG": 1,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 0,
+              "n": 1,
+              "p": 0,
+              "lo": 0,
+              "hi": 0.7934506882081973,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "accept": {
+              "k": 0,
+              "n": 1,
+              "p": 0,
+              "lo": 0,
+              "hi": 0.7934506882081973,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "not_wrong_shown": {
+              "k": 0,
+              "n": 1,
+              "p": 0,
+              "lo": 0,
+              "hi": 0.7934506882081973,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "accept_shown": {
+              "k": 0,
+              "n": 1,
+              "p": 0,
+              "lo": 0,
+              "hi": 0.7934506882081973,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 0,
+              "mean": 0,
+              "median": 0,
+              "zero": 8
+            }
+          }
+        },
+        {
+          "family": "ordering",
+          "name": "Call order",
+          "overall": {
+            "shown": 1,
+            "labelled": 1,
+            "ACCEPT": 0,
+            "TRIVIAL": 0,
+            "WRONG": 1,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 0,
+              "n": 1,
+              "p": 0,
+              "lo": 0,
+              "hi": 0.7934506882081973,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "accept": {
+              "k": 0,
+              "n": 1,
+              "p": 0,
+              "lo": 0,
+              "hi": 0.7934506882081973,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "not_wrong_shown": {
+              "k": 0,
+              "n": 1,
+              "p": 0,
+              "lo": 0,
+              "hi": 0.7934506882081973,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "accept_shown": {
+              "k": 0,
+              "n": 1,
+              "p": 0,
+              "lo": 0,
+              "hi": 0.7934506882081973,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 0,
+              "mean": 0,
+              "median": 0,
+              "zero": 8
+            }
+          },
+          "default_tier": {
+            "shown": 0,
+            "labelled": 0,
+            "ACCEPT": 0,
+            "TRIVIAL": 0,
+            "WRONG": 0,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "accept": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "not_wrong_shown": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "accept_shown": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 0,
+              "mean": 0,
+              "median": 0,
+              "zero": 8
+            }
+          },
+          "suggestion_tier": {
+            "shown": 1,
+            "labelled": 1,
+            "ACCEPT": 0,
+            "TRIVIAL": 0,
+            "WRONG": 1,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 0,
+              "n": 1,
+              "p": 0,
+              "lo": 0,
+              "hi": 0.7934506882081973,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "accept": {
+              "k": 0,
+              "n": 1,
+              "p": 0,
+              "lo": 0,
+              "hi": 0.7934506882081973,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "not_wrong_shown": {
+              "k": 0,
+              "n": 1,
+              "p": 0,
+              "lo": 0,
+              "hi": 0.7934506882081973,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "accept_shown": {
+              "k": 0,
+              "n": 1,
+              "p": 0,
+              "lo": 0,
+              "hi": 0.7934506882081973,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 0,
+              "mean": 0,
+              "median": 0,
+              "zero": 8
+            }
+          }
+        },
+        {
+          "family": "control",
+          "name": "Control and typing",
+          "overall": {
+            "shown": 1,
+            "labelled": 1,
+            "ACCEPT": 1,
+            "TRIVIAL": 0,
+            "WRONG": 0,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 1,
+              "n": 1,
+              "p": 1,
+              "lo": 0.2065493117918027,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "accept": {
+              "k": 1,
+              "n": 1,
+              "p": 1,
+              "lo": 0.2065493117918027,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "not_wrong_shown": {
+              "k": 1,
+              "n": 1,
+              "p": 1,
+              "lo": 0.2065493117918027,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "accept_shown": {
+              "k": 1,
+              "n": 1,
+              "p": 1,
+              "lo": 0.2065493117918027,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 1,
+              "mean": 0.125,
+              "median": 0,
+              "zero": 7
+            }
+          },
+          "default_tier": {
+            "shown": 0,
+            "labelled": 0,
+            "ACCEPT": 0,
+            "TRIVIAL": 0,
+            "WRONG": 0,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "accept": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "not_wrong_shown": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "accept_shown": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 0,
+              "mean": 0,
+              "median": 0,
+              "zero": 8
+            }
+          },
+          "suggestion_tier": {
+            "shown": 1,
+            "labelled": 1,
+            "ACCEPT": 1,
+            "TRIVIAL": 0,
+            "WRONG": 0,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 1,
+              "n": 1,
+              "p": 1,
+              "lo": 0.2065493117918027,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "accept": {
+              "k": 1,
+              "n": 1,
+              "p": 1,
+              "lo": 0.2065493117918027,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "not_wrong_shown": {
+              "k": 1,
+              "n": 1,
+              "p": 1,
+              "lo": 0.2065493117918027,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "accept_shown": {
+              "k": 1,
+              "n": 1,
+              "p": 1,
+              "lo": 0.2065493117918027,
+              "hi": 1,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 1
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 1,
+              "mean": 0.125,
+              "median": 0,
+              "zero": 7
+            }
+          }
+        },
+        {
+          "family": "repo",
+          "name": "Package and repo facts",
+          "overall": {
+            "shown": 4,
+            "labelled": 4,
+            "ACCEPT": 3,
+            "TRIVIAL": 0,
+            "WRONG": 1,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 3,
+              "n": 4,
+              "p": 0.75,
+              "lo": 0.3006418400969081,
+              "hi": 0.954412739704631,
+              "boot": {
+                "lo": 0.6666666666666666,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "accept": {
+              "k": 3,
+              "n": 4,
+              "p": 0.75,
+              "lo": 0.3006418400969081,
+              "hi": 0.954412739704631,
+              "boot": {
+                "lo": 0.6666666666666666,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "not_wrong_shown": {
+              "k": 3,
+              "n": 4,
+              "p": 0.75,
+              "lo": 0.3006418400969081,
+              "hi": 0.954412739704631,
+              "boot": {
+                "lo": 0.6666666666666666,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "accept_shown": {
+              "k": 3,
+              "n": 4,
+              "p": 0.75,
+              "lo": 0.3006418400969081,
+              "hi": 0.954412739704631,
+              "boot": {
+                "lo": 0.6666666666666666,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 3,
+              "mean": 0.375,
+              "median": 0,
+              "zero": 6
+            }
+          },
+          "default_tier": {
+            "shown": 0,
+            "labelled": 0,
+            "ACCEPT": 0,
+            "TRIVIAL": 0,
+            "WRONG": 0,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "accept": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "not_wrong_shown": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "accept_shown": {
+              "k": 0,
+              "n": 0,
+              "p": null,
+              "lo": null,
+              "hi": null,
+              "boot": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              },
+              "t": {
+                "lo": null,
+                "hi": null,
+                "clusters": 0
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 0,
+              "mean": 0,
+              "median": 0,
+              "zero": 8
+            }
+          },
+          "suggestion_tier": {
+            "shown": 4,
+            "labelled": 4,
+            "ACCEPT": 3,
+            "TRIVIAL": 0,
+            "WRONG": 1,
+            "unlabelled": 0,
+            "not_wrong": {
+              "k": 3,
+              "n": 4,
+              "p": 0.75,
+              "lo": 0.3006418400969081,
+              "hi": 0.954412739704631,
+              "boot": {
+                "lo": 0.6666666666666666,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "accept": {
+              "k": 3,
+              "n": 4,
+              "p": 0.75,
+              "lo": 0.3006418400969081,
+              "hi": 0.954412739704631,
+              "boot": {
+                "lo": 0.6666666666666666,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "not_wrong_shown": {
+              "k": 3,
+              "n": 4,
+              "p": 0.75,
+              "lo": 0.3006418400969081,
+              "hi": 0.954412739704631,
+              "boot": {
+                "lo": 0.6666666666666666,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "accept_shown": {
+              "k": 3,
+              "n": 4,
+              "p": 0.75,
+              "lo": 0.3006418400969081,
+              "hi": 0.954412739704631,
+              "boot": {
+                "lo": 0.6666666666666666,
+                "hi": 1,
+                "clusters": 2
+              },
+              "t": {
+                "lo": 0,
+                "hi": 1,
+                "clusters": 2
+              }
+            },
+            "yield": {
+              "repos": 8,
+              "total": 3,
+              "mean": 0.375,
+              "median": 0,
+              "zero": 6
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "sensitivity": null,
+  "by_framework": [],
+  "repos": [
+    {
+      "name": "full-stack-fastapi-template",
+      "language": "python",
+      "framework_bucket": null,
+      "shown": 0,
+      "labelled": 0,
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0,
+      "unlabelled": 0,
+      "not_wrong": {
+        "k": 0,
+        "n": 0,
+        "p": null,
+        "lo": null,
+        "hi": null
+      },
+      "accept": {
+        "k": 0,
+        "n": 0,
+        "p": null,
+        "lo": null,
+        "hi": null
+      },
+      "not_wrong_shown": {
+        "k": 0,
+        "n": 0,
+        "p": null,
+        "lo": null,
+        "hi": null
+      },
+      "accept_shown": {
+        "k": 0,
+        "n": 0,
+        "p": null,
+        "lo": null,
+        "hi": null
+      },
+      "tier": {
+        "shown": 0,
+        "labelled": 0,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 0,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "not_wrong_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        }
+      }
+    },
+    {
+      "name": "polar",
+      "language": "python",
+      "framework_bucket": null,
+      "shown": 9,
+      "labelled": 9,
+      "ACCEPT": 6,
+      "TRIVIAL": 0,
+      "WRONG": 3,
+      "unlabelled": 0,
+      "not_wrong": {
+        "k": 6,
+        "n": 9,
+        "p": 0.6666666666666666,
+        "lo": 0.35420213352505864,
+        "hi": 0.8794161825659264
+      },
+      "accept": {
+        "k": 6,
+        "n": 9,
+        "p": 0.6666666666666666,
+        "lo": 0.35420213352505864,
+        "hi": 0.8794161825659264
+      },
+      "not_wrong_shown": {
+        "k": 6,
+        "n": 9,
+        "p": 0.6666666666666666,
+        "lo": 0.35420213352505864,
+        "hi": 0.8794161825659264
+      },
+      "accept_shown": {
+        "k": 6,
+        "n": 9,
+        "p": 0.6666666666666666,
+        "lo": 0.35420213352505864,
+        "hi": 0.8794161825659264
+      },
+      "tier": {
+        "shown": 6,
+        "labelled": 6,
+        "ACCEPT": 5,
+        "TRIVIAL": 0,
+        "WRONG": 1,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 5,
+          "n": 6,
+          "p": 0.8333333333333334,
+          "lo": 0.4364971749742326,
+          "hi": 0.969946630588185
+        },
+        "accept": {
+          "k": 5,
+          "n": 6,
+          "p": 0.8333333333333334,
+          "lo": 0.4364971749742326,
+          "hi": 0.969946630588185
+        },
+        "not_wrong_shown": {
+          "k": 5,
+          "n": 6,
+          "p": 0.8333333333333334,
+          "lo": 0.4364971749742326,
+          "hi": 0.969946630588185
+        },
+        "accept_shown": {
+          "k": 5,
+          "n": 6,
+          "p": 0.8333333333333334,
+          "lo": 0.4364971749742326,
+          "hi": 0.969946630588185
+        }
+      }
+    },
+    {
+      "name": "netbox",
+      "language": "python",
+      "framework_bucket": null,
+      "shown": 15,
+      "labelled": 15,
+      "ACCEPT": 8,
+      "TRIVIAL": 0,
+      "WRONG": 7,
+      "unlabelled": 0,
+      "not_wrong": {
+        "k": 8,
+        "n": 15,
+        "p": 0.5333333333333333,
+        "lo": 0.3011697987531101,
+        "hi": 0.751904647673791
+      },
+      "accept": {
+        "k": 8,
+        "n": 15,
+        "p": 0.5333333333333333,
+        "lo": 0.3011697987531101,
+        "hi": 0.751904647673791
+      },
+      "not_wrong_shown": {
+        "k": 8,
+        "n": 15,
+        "p": 0.5333333333333333,
+        "lo": 0.3011697987531101,
+        "hi": 0.751904647673791
+      },
+      "accept_shown": {
+        "k": 8,
+        "n": 15,
+        "p": 0.5333333333333333,
+        "lo": 0.3011697987531101,
+        "hi": 0.751904647673791
+      },
+      "tier": {
+        "shown": 7,
+        "labelled": 7,
+        "ACCEPT": 5,
+        "TRIVIAL": 0,
+        "WRONG": 2,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 5,
+          "n": 7,
+          "p": 0.7142857142857143,
+          "lo": 0.3589344495310541,
+          "hi": 0.9177810767507166
+        },
+        "accept": {
+          "k": 5,
+          "n": 7,
+          "p": 0.7142857142857143,
+          "lo": 0.3589344495310541,
+          "hi": 0.9177810767507166
+        },
+        "not_wrong_shown": {
+          "k": 5,
+          "n": 7,
+          "p": 0.7142857142857143,
+          "lo": 0.3589344495310541,
+          "hi": 0.9177810767507166
+        },
+        "accept_shown": {
+          "k": 5,
+          "n": 7,
+          "p": 0.7142857142857143,
+          "lo": 0.3589344495310541,
+          "hi": 0.9177810767507166
+        }
+      }
+    },
+    {
+      "name": "saleor",
+      "language": "python",
+      "framework_bucket": null,
+      "shown": 7,
+      "labelled": 7,
+      "ACCEPT": 5,
+      "TRIVIAL": 0,
+      "WRONG": 2,
+      "unlabelled": 0,
+      "not_wrong": {
+        "k": 5,
+        "n": 7,
+        "p": 0.7142857142857143,
+        "lo": 0.3589344495310541,
+        "hi": 0.9177810767507166
+      },
+      "accept": {
+        "k": 5,
+        "n": 7,
+        "p": 0.7142857142857143,
+        "lo": 0.3589344495310541,
+        "hi": 0.9177810767507166
+      },
+      "not_wrong_shown": {
+        "k": 5,
+        "n": 7,
+        "p": 0.7142857142857143,
+        "lo": 0.3589344495310541,
+        "hi": 0.9177810767507166
+      },
+      "accept_shown": {
+        "k": 5,
+        "n": 7,
+        "p": 0.7142857142857143,
+        "lo": 0.3589344495310541,
+        "hi": 0.9177810767507166
+      },
+      "tier": {
+        "shown": 0,
+        "labelled": 0,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 0,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "not_wrong_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        }
+      }
+    },
+    {
+      "name": "CTFd",
+      "language": "python",
+      "framework_bucket": null,
+      "shown": 2,
+      "labelled": 2,
+      "ACCEPT": 1,
+      "TRIVIAL": 0,
+      "WRONG": 1,
+      "unlabelled": 0,
+      "not_wrong": {
+        "k": 1,
+        "n": 2,
+        "p": 0.5,
+        "lo": 0.09453120463920084,
+        "hi": 0.9054687953607992
+      },
+      "accept": {
+        "k": 1,
+        "n": 2,
+        "p": 0.5,
+        "lo": 0.09453120463920084,
+        "hi": 0.9054687953607992
+      },
+      "not_wrong_shown": {
+        "k": 1,
+        "n": 2,
+        "p": 0.5,
+        "lo": 0.09453120463920084,
+        "hi": 0.9054687953607992
+      },
+      "accept_shown": {
+        "k": 1,
+        "n": 2,
+        "p": 0.5,
+        "lo": 0.09453120463920084,
+        "hi": 0.9054687953607992
+      },
+      "tier": {
+        "shown": 2,
+        "labelled": 2,
+        "ACCEPT": 1,
+        "TRIVIAL": 0,
+        "WRONG": 1,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 1,
+          "n": 2,
+          "p": 0.5,
+          "lo": 0.09453120463920084,
+          "hi": 0.9054687953607992
+        },
+        "accept": {
+          "k": 1,
+          "n": 2,
+          "p": 0.5,
+          "lo": 0.09453120463920084,
+          "hi": 0.9054687953607992
+        },
+        "not_wrong_shown": {
+          "k": 1,
+          "n": 2,
+          "p": 0.5,
+          "lo": 0.09453120463920084,
+          "hi": 0.9054687953607992
+        },
+        "accept_shown": {
+          "k": 1,
+          "n": 2,
+          "p": 0.5,
+          "lo": 0.09453120463920084,
+          "hi": 0.9054687953607992
+        }
+      }
+    },
+    {
+      "name": "flask",
+      "language": "python",
+      "framework_bucket": null,
+      "shown": 0,
+      "labelled": 0,
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0,
+      "unlabelled": 0,
+      "not_wrong": {
+        "k": 0,
+        "n": 0,
+        "p": null,
+        "lo": null,
+        "hi": null
+      },
+      "accept": {
+        "k": 0,
+        "n": 0,
+        "p": null,
+        "lo": null,
+        "hi": null
+      },
+      "not_wrong_shown": {
+        "k": 0,
+        "n": 0,
+        "p": null,
+        "lo": null,
+        "hi": null
+      },
+      "accept_shown": {
+        "k": 0,
+        "n": 0,
+        "p": null,
+        "lo": null,
+        "hi": null
+      },
+      "tier": {
+        "shown": 0,
+        "labelled": 0,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 0,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "not_wrong_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        }
+      }
+    },
+    {
+      "name": "fastapi",
+      "language": "python",
+      "framework_bucket": null,
+      "shown": 1,
+      "labelled": 1,
+      "ACCEPT": 1,
+      "TRIVIAL": 0,
+      "WRONG": 0,
+      "unlabelled": 0,
+      "not_wrong": {
+        "k": 1,
+        "n": 1,
+        "p": 1,
+        "lo": 0.2065493117918027,
+        "hi": 1
+      },
+      "accept": {
+        "k": 1,
+        "n": 1,
+        "p": 1,
+        "lo": 0.2065493117918027,
+        "hi": 1
+      },
+      "not_wrong_shown": {
+        "k": 1,
+        "n": 1,
+        "p": 1,
+        "lo": 0.2065493117918027,
+        "hi": 1
+      },
+      "accept_shown": {
+        "k": 1,
+        "n": 1,
+        "p": 1,
+        "lo": 0.2065493117918027,
+        "hi": 1
+      },
+      "tier": {
+        "shown": 0,
+        "labelled": 0,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 0,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "not_wrong_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        }
+      }
+    },
+    {
+      "name": "langchain",
+      "language": "python",
+      "framework_bucket": null,
+      "shown": 2,
+      "labelled": 2,
+      "ACCEPT": 1,
+      "TRIVIAL": 0,
+      "WRONG": 1,
+      "unlabelled": 0,
+      "not_wrong": {
+        "k": 1,
+        "n": 2,
+        "p": 0.5,
+        "lo": 0.09453120463920084,
+        "hi": 0.9054687953607992
+      },
+      "accept": {
+        "k": 1,
+        "n": 2,
+        "p": 0.5,
+        "lo": 0.09453120463920084,
+        "hi": 0.9054687953607992
+      },
+      "not_wrong_shown": {
+        "k": 1,
+        "n": 2,
+        "p": 0.5,
+        "lo": 0.09453120463920084,
+        "hi": 0.9054687953607992
+      },
+      "accept_shown": {
+        "k": 1,
+        "n": 2,
+        "p": 0.5,
+        "lo": 0.09453120463920084,
+        "hi": 0.9054687953607992
+      },
+      "tier": {
+        "shown": 1,
+        "labelled": 1,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 1,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 0,
+          "n": 1,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.7934506882081973
+        },
+        "accept": {
+          "k": 0,
+          "n": 1,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.7934506882081973
+        },
+        "not_wrong_shown": {
+          "k": 0,
+          "n": 1,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.7934506882081973
+        },
+        "accept_shown": {
+          "k": 0,
+          "n": 1,
+          "p": 0,
+          "lo": 0,
+          "hi": 0.7934506882081973
+        }
+      }
+    }
+  ],
+  "families": [
+    {
+      "family": "wrapper",
+      "name": "Call wrappers",
+      "shown": 2,
+      "labelled": 2,
+      "ACCEPT": 2,
+      "TRIVIAL": 0,
+      "WRONG": 0,
+      "unlabelled": 0,
+      "not_wrong": {
+        "k": 2,
+        "n": 2,
+        "p": 1,
+        "lo": 0.3423802239546494,
+        "hi": 1
+      },
+      "accept": {
+        "k": 2,
+        "n": 2,
+        "p": 1,
+        "lo": 0.3423802239546494,
+        "hi": 1
+      },
+      "not_wrong_shown": {
+        "k": 2,
+        "n": 2,
+        "p": 1,
+        "lo": 0.3423802239546494,
+        "hi": 1
+      },
+      "accept_shown": {
+        "k": 2,
+        "n": 2,
+        "p": 1,
+        "lo": 0.3423802239546494,
+        "hi": 1
+      },
+      "tier": {
+        "shown": 2,
+        "labelled": 2,
+        "ACCEPT": 2,
+        "TRIVIAL": 0,
+        "WRONG": 0,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 2,
+          "n": 2,
+          "p": 1,
+          "lo": 0.3423802239546494,
+          "hi": 1
+        },
+        "accept": {
+          "k": 2,
+          "n": 2,
+          "p": 1,
+          "lo": 0.3423802239546494,
+          "hi": 1
+        },
+        "not_wrong_shown": {
+          "k": 2,
+          "n": 2,
+          "p": 1,
+          "lo": 0.3423802239546494,
+          "hi": 1
+        },
+        "accept_shown": {
+          "k": 2,
+          "n": 2,
+          "p": 1,
+          "lo": 0.3423802239546494,
+          "hi": 1
+        }
+      }
+    },
+    {
+      "family": "decorator",
+      "name": "Decorators",
+      "shown": 3,
+      "labelled": 3,
+      "ACCEPT": 3,
+      "TRIVIAL": 0,
+      "WRONG": 0,
+      "unlabelled": 0,
+      "not_wrong": {
+        "k": 3,
+        "n": 3,
+        "p": 1,
+        "lo": 0.43850296436068037,
+        "hi": 1
+      },
+      "accept": {
+        "k": 3,
+        "n": 3,
+        "p": 1,
+        "lo": 0.43850296436068037,
+        "hi": 1
+      },
+      "not_wrong_shown": {
+        "k": 3,
+        "n": 3,
+        "p": 1,
+        "lo": 0.43850296436068037,
+        "hi": 1
+      },
+      "accept_shown": {
+        "k": 3,
+        "n": 3,
+        "p": 1,
+        "lo": 0.43850296436068037,
+        "hi": 1
+      },
+      "tier": {
+        "shown": 3,
+        "labelled": 3,
+        "ACCEPT": 3,
+        "TRIVIAL": 0,
+        "WRONG": 0,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 3,
+          "n": 3,
+          "p": 1,
+          "lo": 0.43850296436068037,
+          "hi": 1
+        },
+        "accept": {
+          "k": 3,
+          "n": 3,
+          "p": 1,
+          "lo": 0.43850296436068037,
+          "hi": 1
+        },
+        "not_wrong_shown": {
+          "k": 3,
+          "n": 3,
+          "p": 1,
+          "lo": 0.43850296436068037,
+          "hi": 1
+        },
+        "accept_shown": {
+          "k": 3,
+          "n": 3,
+          "p": 1,
+          "lo": 0.43850296436068037,
+          "hi": 1
+        }
+      }
+    },
+    {
+      "family": "base_class",
+      "name": "Base classes",
+      "shown": 7,
+      "labelled": 7,
+      "ACCEPT": 4,
+      "TRIVIAL": 0,
+      "WRONG": 3,
+      "unlabelled": 0,
+      "not_wrong": {
+        "k": 4,
+        "n": 7,
+        "p": 0.5714285714285714,
+        "lo": 0.25045836275303557,
+        "hi": 0.8417801460075546
+      },
+      "accept": {
+        "k": 4,
+        "n": 7,
+        "p": 0.5714285714285714,
+        "lo": 0.25045836275303557,
+        "hi": 0.8417801460075546
+      },
+      "not_wrong_shown": {
+        "k": 4,
+        "n": 7,
+        "p": 0.5714285714285714,
+        "lo": 0.25045836275303557,
+        "hi": 0.8417801460075546
+      },
+      "accept_shown": {
+        "k": 4,
+        "n": 7,
+        "p": 0.5714285714285714,
+        "lo": 0.25045836275303557,
+        "hi": 0.8417801460075546
+      },
+      "tier": {
+        "shown": 7,
+        "labelled": 7,
+        "ACCEPT": 4,
+        "TRIVIAL": 0,
+        "WRONG": 3,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 4,
+          "n": 7,
+          "p": 0.5714285714285714,
+          "lo": 0.25045836275303557,
+          "hi": 0.8417801460075546
+        },
+        "accept": {
+          "k": 4,
+          "n": 7,
+          "p": 0.5714285714285714,
+          "lo": 0.25045836275303557,
+          "hi": 0.8417801460075546
+        },
+        "not_wrong_shown": {
+          "k": 4,
+          "n": 7,
+          "p": 0.5714285714285714,
+          "lo": 0.25045836275303557,
+          "hi": 0.8417801460075546
+        },
+        "accept_shown": {
+          "k": 4,
+          "n": 7,
+          "p": 0.5714285714285714,
+          "lo": 0.25045836275303557,
+          "hi": 0.8417801460075546
+        }
+      }
+    },
+    {
+      "family": "argument_key",
+      "name": "Argument keys",
+      "shown": 4,
+      "labelled": 4,
+      "ACCEPT": 2,
+      "TRIVIAL": 0,
+      "WRONG": 2,
+      "unlabelled": 0,
+      "not_wrong": {
+        "k": 2,
+        "n": 4,
+        "p": 0.5,
+        "lo": 0.15003898774401986,
+        "hi": 0.8499610122559802
+      },
+      "accept": {
+        "k": 2,
+        "n": 4,
+        "p": 0.5,
+        "lo": 0.15003898774401986,
+        "hi": 0.8499610122559802
+      },
+      "not_wrong_shown": {
+        "k": 2,
+        "n": 4,
+        "p": 0.5,
+        "lo": 0.15003898774401986,
+        "hi": 0.8499610122559802
+      },
+      "accept_shown": {
+        "k": 2,
+        "n": 4,
+        "p": 0.5,
+        "lo": 0.15003898774401986,
+        "hi": 0.8499610122559802
+      },
+      "tier": {
+        "shown": 4,
+        "labelled": 4,
+        "ACCEPT": 2,
+        "TRIVIAL": 0,
+        "WRONG": 2,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 2,
+          "n": 4,
+          "p": 0.5,
+          "lo": 0.15003898774401986,
+          "hi": 0.8499610122559802
+        },
+        "accept": {
+          "k": 2,
+          "n": 4,
+          "p": 0.5,
+          "lo": 0.15003898774401986,
+          "hi": 0.8499610122559802
+        },
+        "not_wrong_shown": {
+          "k": 2,
+          "n": 4,
+          "p": 0.5,
+          "lo": 0.15003898774401986,
+          "hi": 0.8499610122559802
+        },
+        "accept_shown": {
+          "k": 2,
+          "n": 4,
+          "p": 0.5,
+          "lo": 0.15003898774401986,
+          "hi": 0.8499610122559802
+        }
+      }
+    },
+    {
+      "family": "calls",
+      "name": "Calls",
+      "shown": 7,
+      "labelled": 7,
+      "ACCEPT": 3,
+      "TRIVIAL": 0,
+      "WRONG": 4,
+      "unlabelled": 0,
+      "not_wrong": {
+        "k": 3,
+        "n": 7,
+        "p": 0.42857142857142855,
+        "lo": 0.15821985399244537,
+        "hi": 0.7495416372469643
+      },
+      "accept": {
+        "k": 3,
+        "n": 7,
+        "p": 0.42857142857142855,
+        "lo": 0.15821985399244537,
+        "hi": 0.7495416372469643
+      },
+      "not_wrong_shown": {
+        "k": 3,
+        "n": 7,
+        "p": 0.42857142857142855,
+        "lo": 0.15821985399244537,
+        "hi": 0.7495416372469643
+      },
+      "accept_shown": {
+        "k": 3,
+        "n": 7,
+        "p": 0.42857142857142855,
+        "lo": 0.15821985399244537,
+        "hi": 0.7495416372469643
+      },
+      "tier": {
+        "shown": 0,
+        "labelled": 0,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 0,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "not_wrong_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        }
+      }
+    },
+    {
+      "family": "naming",
+      "name": "Naming",
+      "shown": 6,
+      "labelled": 6,
+      "ACCEPT": 4,
+      "TRIVIAL": 0,
+      "WRONG": 2,
+      "unlabelled": 0,
+      "not_wrong": {
+        "k": 4,
+        "n": 6,
+        "p": 0.6666666666666666,
+        "lo": 0.29999331299474324,
+        "hi": 0.9032285897864654
+      },
+      "accept": {
+        "k": 4,
+        "n": 6,
+        "p": 0.6666666666666666,
+        "lo": 0.29999331299474324,
+        "hi": 0.9032285897864654
+      },
+      "not_wrong_shown": {
+        "k": 4,
+        "n": 6,
+        "p": 0.6666666666666666,
+        "lo": 0.29999331299474324,
+        "hi": 0.9032285897864654
+      },
+      "accept_shown": {
+        "k": 4,
+        "n": 6,
+        "p": 0.6666666666666666,
+        "lo": 0.29999331299474324,
+        "hi": 0.9032285897864654
+      },
+      "tier": {
+        "shown": 0,
+        "labelled": 0,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 0,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "not_wrong_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        }
+      }
+    },
+    {
+      "family": "avoids_other",
+      "name": "Other avoidance (any, console, bare Error)",
+      "shown": 1,
+      "labelled": 1,
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 1,
+      "unlabelled": 0,
+      "not_wrong": {
+        "k": 0,
+        "n": 1,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.7934506882081973
+      },
+      "accept": {
+        "k": 0,
+        "n": 1,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.7934506882081973
+      },
+      "not_wrong_shown": {
+        "k": 0,
+        "n": 1,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.7934506882081973
+      },
+      "accept_shown": {
+        "k": 0,
+        "n": 1,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.7934506882081973
+      },
+      "tier": {
+        "shown": 0,
+        "labelled": 0,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 0,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "not_wrong_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        }
+      }
+    },
+    {
+      "family": "ordering",
+      "name": "Call order",
+      "shown": 1,
+      "labelled": 1,
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 1,
+      "unlabelled": 0,
+      "not_wrong": {
+        "k": 0,
+        "n": 1,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.7934506882081973
+      },
+      "accept": {
+        "k": 0,
+        "n": 1,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.7934506882081973
+      },
+      "not_wrong_shown": {
+        "k": 0,
+        "n": 1,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.7934506882081973
+      },
+      "accept_shown": {
+        "k": 0,
+        "n": 1,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.7934506882081973
+      },
+      "tier": {
+        "shown": 0,
+        "labelled": 0,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 0,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "not_wrong_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        }
+      }
+    },
+    {
+      "family": "control",
+      "name": "Control and typing",
+      "shown": 1,
+      "labelled": 1,
+      "ACCEPT": 1,
+      "TRIVIAL": 0,
+      "WRONG": 0,
+      "unlabelled": 0,
+      "not_wrong": {
+        "k": 1,
+        "n": 1,
+        "p": 1,
+        "lo": 0.2065493117918027,
+        "hi": 1
+      },
+      "accept": {
+        "k": 1,
+        "n": 1,
+        "p": 1,
+        "lo": 0.2065493117918027,
+        "hi": 1
+      },
+      "not_wrong_shown": {
+        "k": 1,
+        "n": 1,
+        "p": 1,
+        "lo": 0.2065493117918027,
+        "hi": 1
+      },
+      "accept_shown": {
+        "k": 1,
+        "n": 1,
+        "p": 1,
+        "lo": 0.2065493117918027,
+        "hi": 1
+      },
+      "tier": {
+        "shown": 0,
+        "labelled": 0,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 0,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "not_wrong_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        }
+      }
+    },
+    {
+      "family": "repo",
+      "name": "Package and repo facts",
+      "shown": 4,
+      "labelled": 4,
+      "ACCEPT": 3,
+      "TRIVIAL": 0,
+      "WRONG": 1,
+      "unlabelled": 0,
+      "not_wrong": {
+        "k": 3,
+        "n": 4,
+        "p": 0.75,
+        "lo": 0.3006418400969081,
+        "hi": 0.954412739704631
+      },
+      "accept": {
+        "k": 3,
+        "n": 4,
+        "p": 0.75,
+        "lo": 0.3006418400969081,
+        "hi": 0.954412739704631
+      },
+      "not_wrong_shown": {
+        "k": 3,
+        "n": 4,
+        "p": 0.75,
+        "lo": 0.3006418400969081,
+        "hi": 0.954412739704631
+      },
+      "accept_shown": {
+        "k": 3,
+        "n": 4,
+        "p": 0.75,
+        "lo": 0.3006418400969081,
+        "hi": 0.954412739704631
+      },
+      "tier": {
+        "shown": 0,
+        "labelled": 0,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 0,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "not_wrong_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        },
+        "accept_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null
+        }
+      }
+    }
+  ],
+  "why": {
+    "trivial_by": {},
+    "wrong_because": {
+      "legit_outliers": 4,
+      "mixed_group": 2,
+      "false_outliers": 2,
+      "incidental": 3
+    }
+  }
+}

@@ -1,0 +1,37 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - emby
+  - jellyfin
+  - ombi-api
+  - rule
+  - rules
+  - seerr-api
+  - settings
+  - sportarr-metadata
+  - storage-metrics
+  - streamystats-api
+  - tautulli-api
+  - tracearr-api
+  suffixes:
+  - config
+  - constants
+  - controller
+  - dto
+  - entities
+  - factory
+  - helper
+  - interface
+  - mapper
+  - module
+  - provider
+  - service
+  - spec
+  - types
+  - util
+  - utils
+conventions: []

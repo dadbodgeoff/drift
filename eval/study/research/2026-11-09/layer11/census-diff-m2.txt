@@ -1,0 +1,3 @@
+fold 2 documenso D-7b5140 gone [ACCEPT] 637/641 out=4 default -> - :: files in packages/lib/** do not import from packages/auth/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+fold 2 documenso D-ea1182 new [UNLABELLED] - -> 640/641 out=1 default :: files in packages/lib/** do not import from packages/auth/** except from packages/auth/client/index.ts (declared dependencies, and lazy loads of peer 
+2 changed

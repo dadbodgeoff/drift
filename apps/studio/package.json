@@ -1,0 +1,48 @@
+{
+  "name": "drift-studio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Drift Studio: a desktop view of what Drift knows and what AI agents did",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist-electron/main.cjs",
+  "scripts": {
+    "dev": "vite --mode fixture",
+    "dev:electron": "npm run build:electron && STUDIO_DEV_URL=http://localhost:5174/ electron .",
+    "build": "npm run build:renderer && npm run build:electron",
+    "build:renderer": "vite build",
+    "build:fixture": "vite build --mode fixture",
+    "build:electron": "node scripts/build-electron.mjs",
+    "start": "npm run build && electron .",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.electron.json",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "e2e": "npm run build:fixture && node tests/e2e/run.mjs",
+    "fixtures": "node scripts/make-fixtures.mjs"
+  },
+  "dependencies": {
+    "@drift/ui": "0.1.0",
+    "@tanstack/react-query": "5.106.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "yaml": "2.9.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "22.19.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.2.1",
+    "axe-core": "4.14.0",
+    "electron": "45.2.3",
+    "eslint": "10.14.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.14.0",
+    "playwright": "1.63.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.72.1",
+    "vite": "8.3.6",
+    "vitest": "5.1.0"
+  }
+}

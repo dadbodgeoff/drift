@@ -1,0 +1,82 @@
+8 conventions from 3568 units in 230 roles (1 default tier, 7 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-3b39dc] backend: HTTP handlers in app/** are wrapped in _require_data_lifecycle_enabled() or _svix_app_id() or _get_strategy() or _get_db_dependency() or get_current_developer() or get_sdk_auth()
+    evidence: 98/117 (lower bound 0.76, lift 8.1)
+    tier:     default
+    split:    _get_db_dependency 70, _svix_app_id 9, get_current_developer 8, _get_strategy 6, _require_data_lifecycle_enabled 3, get_sdk_auth 2
+    example:  backend/app/api/routes/v1/api_keys.py#create_api_key
+    outlier:  backend/app/api/routes/v1/auth.py:29 login
+    outlier:  backend/app/api/routes/v1/import_xml.py:162 abort_multipart_upload
+    outlier:  backend/app/api/routes/v1/import_xml.py:100 complete_multipart_upload
+    outlier:  backend/app/api/routes/v1/import_xml.py:217 receive_sns_notification
+    outlier:  backend/app/api/routes/v1/import_xml.py:82 sign_multipart_parts
+    outlier:  backend/app/api/routes/v1/meta.py:149 get_coverage
+    outlier:  backend/app/api/routes/v1/meta.py:170 list_extensions
+    outlier:  backend/app/api/routes/v1/oura_webhooks.py:51 oura_webhook_health
+    outlier:  backend/app/api/routes/v1/oura_webhooks.py:42 oura_webhook_verification
+    outlier:  backend/app/api/routes/v1/outgoing_webhooks.py:109 list_event_types
+    outlier:  backend/app/api/routes/v1/sync_data.py:212 get_garmin_backfill_status_endpoint
+    outlier:  backend/app/api/routes/v1/sync_data.py:259 sync_historical_data
+    outlier:  backend/app/api/routes/v1/sync_status.py:142 list_all_sync_run_summaries
+    outlier:  backend/app/api/routes/v1/sync_status.py:68 stream_user_sync_status
+    outlier:  backend/app/api/routes/v1/webhooks.py:139 probe_provider_webhook
+    outlier:  backend/app/api/routes/v1/webhooks.py:301 probe_provider_webhook_with_token
+    outlier:  backend/app/api/routes/v1/webhooks.py:119 verify_provider_webhook
+    outlier:  backend/app/api/routes/v1/webhooks.py:295 verify_provider_webhook_with_token
+    outlier:  backend/app/main.py:130 root
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 2. [D-ff3192] backend: functions in app/services/providers/garmin/backfill_state/** call get_redis_client()
+    evidence: 31/33 (lower bound 0.80, lift 14.2)
+    tier:     suggestion (rule kind calls)
+    example:  backend/app/services/providers/garmin/backfill_state/core.py#acquire_backfill_lock
+    outlier:  backend/app/services/providers/garmin/backfill_state/window_state.py:62 get_window_date_range
+    outlier:  backend/app/services/providers/garmin/backfill_state/window_state.py:76 get_window_date_range_for_index
+
+ 3. [D-6606a8] backend: functions in app/services/providers/garmin/backfill_state/** call _get_key()
+    evidence: 30/33 (lower bound 0.76, lift 29.4)
+    tier:     suggestion (rule kind calls)
+    example:  backend/app/services/providers/garmin/backfill_state/core.py#acquire_backfill_lock
+    outlier:  backend/app/services/providers/garmin/backfill_state/window_state.py:62 get_window_date_range
+    outlier:  backend/app/services/providers/garmin/backfill_state/window_state.py:76 get_window_date_range_for_index
+    outlier:  backend/app/services/providers/garmin/backfill_state/window_state.py:91 update_window_cell
+
+ 4. [D-262064] backend: enums in app/schemas/** extend StrEnum
+    evidence: 53/57 (lower bound 0.83, lift 9.5)
+    tier:     suggestion (rule names a symbol from outside the repo)
+    example:  backend/app/schemas/auth/authentication_method.py#AuthenticationMethod
+    outlier:  backend/app/schemas/enums/aggregation_method.py:6 AggregationMethod
+    outlier:  backend/app/schemas/enums/provider.py:4 ProviderName
+    outlier:  backend/app/schemas/enums/series_types.py:23 SeriesType
+    outlier:  backend/app/schemas/providers/google/health_api.py:33 TimeShape
+
+ 5. [D-b21ebc] backend: exported values in app/integrations/** call get_logger()
+    evidence: 31/33 (lower bound 0.80, lift 2.6)
+    tier:     suggestion (rule kind calls)
+    example:  backend/app/integrations/celery/core.py#logger
+    outlier:  backend/app/integrations/celery/tasks/garmin/backfill_task.py:511 continue_garmin_backfill
+    outlier:  backend/app/integrations/celery/tasks/garmin/backfill_task.py:510 trigger_next_backfill
+
+ 6. [D-8ffd6f] backend: classes in app/repositories/** are named `*Repository`
+    evidence: 28/29 (lower bound 0.83, lift 23.8)
+    tier:     suggestion (rule kind named)
+    example:  backend/app/repositories/aggregate_backfill_repository.py#AggregateBackfillRepository
+    outlier:  backend/app/repositories/data_point_series_repository.py:144 WriteCounts
+
+ 7. [D-baa886] backend: functions in app/services/providers/garmin/** call str()
+    evidence: 35/38 (lower bound 0.79, lift 7.2)
+    tier:     suggestion (rule kind calls)
+    example:  backend/app/services/providers/garmin/backfill_state/core.py#acquire_backfill_lock
+    outlier:  backend/app/services/providers/garmin/backfill_state/core.py:30 get_trace_id
+    outlier:  backend/app/services/providers/garmin/backfill_state/window_state.py:62 get_window_date_range
+    outlier:  backend/app/services/providers/garmin/backfill_state/window_state.py:76 get_window_date_range_for_index
+
+ 8. [D-4c541f] frontend: functions in src/routes/(app)/** (*.server files) call requireToken()
+    evidence: 23/24 (lower bound 0.80, lift 30.1)
+    tier:     suggestion (rule kind calls)
+    example:  frontend/src/routes/(app)/dashboard/+page.server.ts#load
+    outlier:  frontend/src/routes/(app)/+layout.server.ts:7 load
+

@@ -1,0 +1,25 @@
+3 conventions from 791 units in 40 roles (0 default tier, 3 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-d07023] packages/mobile: functions in src/** do not throw a bare Error
+    evidence: 51/52 (lower bound 0.90, lift 7.3)
+    tier:     suggestion (rule kind avoids:other)
+    example:  packages/mobile/src/actions.ts#pointerInteraction
+    outlier:  packages/mobile/src/lease/index.ts:65 agentDeviceLeases
+
+ 2. [D-6c629b] apps/mobile-benchmark: components in src/Examples/** render <View>
+    evidence: 23/25 (lower bound 0.75, lift 3.0)
+    tier:     suggestion (rule kind renders)
+    example:  apps/mobile-benchmark/src/Examples/ApplePay.tsx#ApplePay
+    outlier:  apps/mobile-benchmark/src/Examples/BottomTabs.tsx:49 BottomTabs
+    outlier:  apps/mobile-benchmark/src/Examples/TextInputs.tsx:14 TextInputs
+
+ 3. [D-ebee38] apps/mobile-benchmark: components in src/** render <Text>
+    evidence: 24/26 (lower bound 0.76, lift 2.9)
+    tier:     suggestion (rule kind renders)
+    example:  apps/mobile-benchmark/src/Examples/ApplePay.tsx#ApplePay
+    outlier:  apps/mobile-benchmark/src/App.tsx:45 App
+    outlier:  apps/mobile-benchmark/src/Examples/BottomTabs.tsx:49 BottomTabs
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

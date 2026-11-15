@@ -1,0 +1,98 @@
+{
+  "name": "hyper-alpha-arena",
+  "repo": "hammergpt/hyper-alpha-arena",
+  "sha": "2b5c064952c034d9a82b9caca9484478e7a0d32b",
+  "loc": 126588,
+  "shape": {
+    "mix": "ts+py",
+    "shape": "frontend+backend",
+    "js_dirs": 2,
+    "py_dirs": 1,
+    "workspace_files": [
+      "pnpm-workspace.yaml"
+    ],
+    "frontend_dirs": [
+      "frontend"
+    ],
+    "backend_dirs": [
+      "backend"
+    ]
+  },
+  "packages": [
+    {
+      "dir": "backend",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 2132,
+        "roles": 32,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 2132,
+        "roles": 32,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "frontend",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 588,
+        "roles": 23,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    }
+  ],
+  "root": {
+    "default": {
+      "shown": 0,
+      "conventions": 0,
+      "units": 2721,
+      "roles": 55,
+      "tiers": {
+        "default": 0,
+        "suggestion": 0
+      },
+      "python_withheld": 0,
+      "secs": 1,
+      "cards": []
+    },
+    "python_opt_in": {
+      "shown": 0,
+      "conventions": 0,
+      "units": 2721,
+      "roles": 55,
+      "tiers": {
+        "default": 0,
+        "suggestion": 0
+      },
+      "python_withheld": null,
+      "secs": 1,
+      "cards": []
+    }
+  }
+}

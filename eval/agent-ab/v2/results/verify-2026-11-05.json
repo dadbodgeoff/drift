@@ -1,0 +1,827 @@
+{
+  "tasks": {
+    "dub-a-partner-comment-post": {
+      "repo": "dub",
+      "category": "a",
+      "targets": {
+        "apps/web/app/(ee)/api/partners/[partnerId]/comments/route.ts": [
+          "D-742eb6",
+          "D-ebbc30",
+          "D-79cc0a"
+        ]
+      },
+      "exercises": [
+        "D-ebbc30",
+        "D-79cc0a",
+        "D-742eb6"
+      ],
+      "extra": []
+    },
+    "dub-b-announcements-route": {
+      "repo": "dub",
+      "category": "b",
+      "targets": {
+        "apps/web/app/api/announcements/route.ts": [
+          "D-742eb6",
+          "D-d24d21"
+        ],
+        "apps/web/app/api/announcements/[id]/dismiss/route.ts": [
+          "D-742eb6",
+          "D-d24d21"
+        ]
+      },
+      "exercises": [
+        "D-d24d21",
+        "D-742eb6"
+      ],
+      "extra": []
+    },
+    "dub-b-link-notes-actions": {
+      "repo": "dub",
+      "category": "b",
+      "targets": {
+        "apps/web/lib/actions/link-notes/create-link-note.ts": [
+          "D-50df58"
+        ],
+        "apps/web/lib/actions/link-notes/update-link-note.ts": [
+          "D-50df58"
+        ],
+        "apps/web/lib/actions/link-notes/delete-link-note.ts": [
+          "D-50df58"
+        ]
+      },
+      "exercises": [
+        "D-50df58"
+      ],
+      "extra": []
+    },
+    "dub-c-early-payout-request": {
+      "repo": "dub",
+      "category": "c",
+      "targets": {
+        "apps/web/app/(ee)/api/partner-profile/programs/[programId]/early-payout/route.ts": [
+          "D-742eb6",
+          "D-83351e"
+        ],
+        "apps/web/lib/actions/partners/approve-early-payout.ts": [
+          "D-50df58"
+        ],
+        "packages/email/src/templates/early-payout-approved.tsx": [
+          "D-e25af3"
+        ]
+      },
+      "exercises": [
+        "D-83351e",
+        "D-50df58",
+        "D-e25af3",
+        "D-742eb6"
+      ],
+      "extra": []
+    },
+    "dub-d-domains-count-quick": {
+      "repo": "dub",
+      "category": "d",
+      "targets": {
+        "apps/web/app/api/workspaces/[idOrSlug]/domains-count/route.ts": [
+          "D-742eb6",
+          "D-015190",
+          "D-d24d21"
+        ]
+      },
+      "exercises": [
+        "D-015190",
+        "D-d24d21",
+        "D-742eb6"
+      ],
+      "extra": []
+    },
+    "dub-e-split-users-route": {
+      "repo": "dub",
+      "category": "e",
+      "targets": {
+        "apps/web/app/api/workspaces/[idOrSlug]/users/route.ts": [
+          "D-742eb6",
+          "D-015190",
+          "D-d24d21"
+        ],
+        "apps/web/app/api/workspaces/[idOrSlug]/users/[userId]/route.ts": [
+          "D-742eb6",
+          "D-015190",
+          "D-d24d21"
+        ]
+      },
+      "exercises": [
+        "D-015190",
+        "D-d24d21",
+        "D-742eb6"
+      ],
+      "extra": []
+    },
+    "dub-f-tag-groups-session": {
+      "repo": "dub",
+      "category": "f",
+      "targets": {
+        "apps/web/lib/actions/create-tag-group.ts": [
+          "D-50df58"
+        ],
+        "apps/web/lib/actions/tags/create-tag-collection.ts": [
+          "D-50df58"
+        ],
+        "apps/web/app/api/tags/groups/route.ts": [
+          "D-742eb6",
+          "D-d24d21"
+        ],
+        "apps/web/app/api/tags/collections/route.ts": [
+          "D-742eb6",
+          "D-d24d21"
+        ],
+        "apps/web/app/api/tags/collections/[collectionId]/route.ts": [
+          "D-742eb6",
+          "D-d24d21"
+        ]
+      },
+      "exercises": [
+        "D-50df58",
+        "D-d24d21",
+        "D-742eb6"
+      ],
+      "extra": []
+    },
+    "immich-a-tag-asset-count": {
+      "repo": "immich",
+      "category": "a",
+      "targets": {
+        "server/src/controllers/tag.controller.ts": [
+          "D-379261",
+          "D-876763",
+          "D-8ab952",
+          "D-c10e8e",
+          "D-ed6dc0",
+          "D-63d2cd"
+        ],
+        "server/src/services/tag.service.ts": [
+          "D-3b4f47"
+        ],
+        "server/src/repositories/tag.repository.ts": [
+          "D-26380c"
+        ]
+      },
+      "exercises": [
+        "D-876763",
+        "D-c10e8e",
+        "D-63d2cd",
+        "D-379261",
+        "D-3b4f47"
+      ],
+      "extra": [
+        "D-8ab952",
+        "D-ed6dc0",
+        "D-26380c"
+      ]
+    },
+    "immich-a-memory-duplicate": {
+      "repo": "immich",
+      "category": "a",
+      "targets": {
+        "server/src/controllers/memory.controller.ts": [
+          "D-379261",
+          "D-876763",
+          "D-8ab952",
+          "D-c10e8e",
+          "D-ed6dc0",
+          "D-63d2cd"
+        ],
+        "server/src/services/memory.service.ts": [
+          "D-3b4f47"
+        ]
+      },
+      "exercises": [
+        "D-876763",
+        "D-c10e8e",
+        "D-63d2cd",
+        "D-379261",
+        "D-3b4f47"
+      ],
+      "extra": [
+        "D-8ab952",
+        "D-ed6dc0"
+      ]
+    },
+    "immich-b-quota-controller": {
+      "repo": "immich",
+      "category": "b",
+      "targets": {
+        "server/src/controllers/quota.controller.ts": [
+          "D-379261",
+          "D-876763",
+          "D-8ab952",
+          "D-c10e8e",
+          "D-ed6dc0",
+          "D-63d2cd"
+        ],
+        "server/src/services/quota.service.ts": [
+          "D-3b4f47"
+        ]
+      },
+      "exercises": [
+        "D-876763",
+        "D-c10e8e",
+        "D-63d2cd",
+        "D-ed6dc0",
+        "D-8ab952",
+        "D-3b4f47"
+      ],
+      "extra": [
+        "D-379261"
+      ]
+    },
+    "immich-c-saved-searches": {
+      "repo": "immich",
+      "category": "c",
+      "targets": {
+        "server/src/controllers/saved-search.controller.ts": [
+          "D-379261",
+          "D-876763",
+          "D-8ab952",
+          "D-c10e8e",
+          "D-ed6dc0",
+          "D-63d2cd"
+        ],
+        "server/src/services/saved-search.service.ts": [
+          "D-3b4f47"
+        ],
+        "server/src/repositories/saved-search.repository.ts": [
+          "D-26380c"
+        ]
+      },
+      "exercises": [
+        "D-876763",
+        "D-c10e8e",
+        "D-63d2cd",
+        "D-ed6dc0",
+        "D-8ab952",
+        "D-3b4f47",
+        "D-26380c",
+        "D-379261"
+      ],
+      "extra": []
+    },
+    "immich-d-debug-exif": {
+      "repo": "immich",
+      "category": "d",
+      "targets": {
+        "server/src/controllers/asset.controller.ts": [
+          "D-379261",
+          "D-876763",
+          "D-8ab952",
+          "D-c10e8e",
+          "D-ed6dc0",
+          "D-63d2cd"
+        ]
+      },
+      "exercises": [
+        "D-876763",
+        "D-c10e8e",
+        "D-63d2cd",
+        "D-379261"
+      ],
+      "extra": [
+        "D-8ab952",
+        "D-ed6dc0"
+      ]
+    },
+    "immich-e-split-album-users": {
+      "repo": "immich",
+      "category": "e",
+      "targets": {
+        "server/src/controllers/album.controller.ts": [
+          "D-379261",
+          "D-876763",
+          "D-8ab952",
+          "D-c10e8e",
+          "D-ed6dc0",
+          "D-63d2cd"
+        ],
+        "server/src/controllers/album-user.controller.ts": [
+          "D-379261",
+          "D-876763",
+          "D-8ab952",
+          "D-c10e8e",
+          "D-ed6dc0",
+          "D-63d2cd"
+        ]
+      },
+      "exercises": [
+        "D-876763",
+        "D-c10e8e",
+        "D-63d2cd",
+        "D-ed6dc0",
+        "D-8ab952"
+      ],
+      "extra": [
+        "D-379261"
+      ]
+    },
+    "immich-f-tag-tools-session": {
+      "repo": "immich",
+      "category": "f",
+      "targets": {
+        "server/src/controllers/tag.controller.ts": [
+          "D-379261",
+          "D-876763",
+          "D-8ab952",
+          "D-c10e8e",
+          "D-ed6dc0",
+          "D-63d2cd"
+        ],
+        "server/src/controllers/tag-tools.controller.ts": [
+          "D-379261",
+          "D-876763",
+          "D-8ab952",
+          "D-c10e8e",
+          "D-ed6dc0",
+          "D-63d2cd"
+        ],
+        "server/src/services/tag.service.ts": [
+          "D-3b4f47"
+        ],
+        "server/src/repositories/tag.repository.ts": [
+          "D-26380c"
+        ]
+      },
+      "exercises": [
+        "D-876763",
+        "D-c10e8e",
+        "D-63d2cd",
+        "D-ed6dc0",
+        "D-8ab952",
+        "D-3b4f47",
+        "D-379261"
+      ],
+      "extra": [
+        "D-26380c"
+      ]
+    },
+    "infisical-a-identity-count": {
+      "repo": "infisical",
+      "category": "a",
+      "targets": {
+        "backend/src/server/routes/v2/identity-org-router.ts": [
+          "D-259bd1",
+          "D-1e9bb3"
+        ]
+      },
+      "exercises": [
+        "D-259bd1",
+        "D-1e9bb3"
+      ],
+      "extra": []
+    },
+    "infisical-b-sync-destination-section": {
+      "repo": "infisical",
+      "category": "b",
+      "targets": {
+        "frontend/src/pages/secret-manager/SecretSyncDetailsByIDPage/components/SecretSyncDestinationSection/FlyIoSyncDestinationSection.tsx": [
+          "D-d7b5b7"
+        ]
+      },
+      "exercises": [
+        "D-d7b5b7"
+      ],
+      "extra": []
+    },
+    "infisical-c-rotation-notice": {
+      "repo": "infisical",
+      "category": "c",
+      "targets": {
+        "backend/src/server/routes/v1/identity-router.ts": [
+          "D-259bd1"
+        ],
+        "backend/src/services/smtp/emails/IdentityRotationNoticeTemplate.tsx": [
+          "D-259bd1",
+          "D-34f463",
+          "D-055c32"
+        ],
+        "frontend/src/hooks/api/identities/mutations.tsx": [
+          "D-dfa77a"
+        ]
+      },
+      "exercises": [
+        "D-259bd1",
+        "D-34f463",
+        "D-055c32",
+        "D-dfa77a"
+      ],
+      "extra": []
+    },
+    "infisical-d-sync-health-quick": {
+      "repo": "infisical",
+      "category": "d",
+      "targets": {
+        "backend/src/server/routes/v1/project-router.ts": [
+          "D-259bd1"
+        ],
+        "backend/src/server/routes/v1/secret-sync-health-router.ts": [
+          "D-259bd1",
+          "D-34f463",
+          "D-055c32"
+        ]
+      },
+      "exercises": [
+        "D-259bd1"
+      ],
+      "extra": [
+        "D-34f463",
+        "D-055c32"
+      ]
+    },
+    "infisical-e-split-user-mfa": {
+      "repo": "infisical",
+      "category": "e",
+      "targets": {
+        "backend/src/server/routes/v2/user-router.ts": [
+          "D-259bd1",
+          "D-1e9bb3"
+        ],
+        "backend/src/server/routes/v2/user-mfa-router.ts": [
+          "D-259bd1",
+          "D-34f463",
+          "D-1e9bb3",
+          "D-055c32"
+        ]
+      },
+      "exercises": [
+        "D-259bd1",
+        "D-1e9bb3"
+      ],
+      "extra": [
+        "D-34f463",
+        "D-055c32"
+      ]
+    },
+    "midday-a-category-merge": {
+      "repo": "midday",
+      "category": "a",
+      "targets": {
+        "apps/api/src/trpc/routers/transaction-categories.ts": [
+          "D-50255f"
+        ],
+        "packages/db/src/queries/transaction-categories.ts": [
+          "D-b8cff6"
+        ]
+      },
+      "exercises": [
+        "D-50255f",
+        "D-b8cff6"
+      ],
+      "extra": []
+    },
+    "midday-a-invoice-duplicate": {
+      "repo": "midday",
+      "category": "a",
+      "targets": {
+        "apps/api/src/trpc/routers/invoice.ts": [
+          "D-ff6099"
+        ]
+      },
+      "exercises": [
+        "D-ff6099"
+      ],
+      "extra": []
+    },
+    "midday-b-short-link-cleanup-job": {
+      "repo": "midday",
+      "category": "b",
+      "targets": {
+        "apps/worker/src/processors/short-links/cleanup-expired.ts": [
+          "D-86f372",
+          "D-5880dd"
+        ],
+        "apps/worker/src/processors/short-links/index.ts": [
+          "D-86f372",
+          "D-5880dd"
+        ]
+      },
+      "exercises": [
+        "D-5880dd",
+        "D-86f372"
+      ],
+      "extra": []
+    },
+    "midday-b-security-page": {
+      "repo": "midday",
+      "category": "b",
+      "targets": {
+        "apps/website/src/app/security/page.tsx": [
+          "D-b57953"
+        ]
+      },
+      "exercises": [
+        "D-b57953"
+      ],
+      "extra": []
+    },
+    "midday-c-expense-policies": {
+      "repo": "midday",
+      "category": "c",
+      "targets": {
+        "packages/db/src/schema.ts": [
+          "D-b8cff6",
+          "D-7da2b9",
+          "D-f90103",
+          "D-afc38b"
+        ],
+        "packages/db/src/queries/expense-policies.ts": [
+          "D-b8cff6"
+        ],
+        "apps/api/src/trpc/routers/expense-policies.ts": [
+          "D-50255f"
+        ]
+      },
+      "exercises": [
+        "D-7da2b9",
+        "D-f90103",
+        "D-afc38b",
+        "D-b8cff6",
+        "D-50255f"
+      ],
+      "extra": []
+    },
+    "midday-d-debug-counts": {
+      "repo": "midday",
+      "category": "d",
+      "targets": {
+        "apps/api/src/trpc/routers/overview.ts": [
+          "D-50255f"
+        ]
+      },
+      "exercises": [
+        "D-50255f"
+      ],
+      "extra": []
+    },
+    "midday-e-split-transactions-router": {
+      "repo": "midday",
+      "category": "e",
+      "targets": {
+        "apps/api/src/trpc/routers/transactions-bulk.ts": [
+          "D-50255f"
+        ]
+      },
+      "exercises": [
+        "D-50255f"
+      ],
+      "extra": []
+    },
+    "midday-f-budgets-session": {
+      "repo": "midday",
+      "category": "f",
+      "targets": {
+        "packages/db/src/schema.ts": [
+          "D-b8cff6",
+          "D-7da2b9",
+          "D-f90103",
+          "D-afc38b"
+        ],
+        "packages/db/src/queries/category-budgets.ts": [
+          "D-b8cff6"
+        ],
+        "apps/api/src/trpc/routers/budgets.ts": [
+          "D-50255f"
+        ],
+        "apps/worker/src/processors/budgets/check-budgets.ts": [
+          "D-86f372",
+          "D-5880dd"
+        ]
+      },
+      "exercises": [
+        "D-7da2b9",
+        "D-f90103",
+        "D-afc38b",
+        "D-b8cff6",
+        "D-50255f",
+        "D-5880dd",
+        "D-86f372"
+      ],
+      "extra": []
+    },
+    "novu-a-inbox-pin": {
+      "repo": "novu",
+      "category": "a",
+      "targets": {
+        "apps/api/src/app/inbox/inbox.controller.ts": [
+          "D-36a604"
+        ],
+        "apps/api/src/app/inbox/usecases/pin-notification/pin-notification.command.ts": [
+          "D-2e9dcc",
+          "D-53fcf5"
+        ]
+      },
+      "exercises": [
+        "D-36a604",
+        "D-2e9dcc",
+        "D-53fcf5"
+      ],
+      "extra": []
+    },
+    "novu-b-textbelt-provider": {
+      "repo": "novu",
+      "category": "b",
+      "targets": {
+        "packages/providers/src/lib/sms/textbelt/textbelt.provider.ts": [
+          "D-7c65a3"
+        ],
+        "libs/application-generic/src/factories/sms/handlers/textbelt.handler.ts": [
+          "D-462c2b"
+        ]
+      },
+      "exercises": [
+        "D-7c65a3",
+        "D-462c2b"
+      ],
+      "extra": []
+    },
+    "novu-d-unread-by-tag": {
+      "repo": "novu",
+      "category": "d",
+      "targets": {
+        "apps/api/src/app/inbox/inbox.controller.ts": [
+          "D-36a604"
+        ],
+        "apps/api/src/app/inbox/usecases/unread-count-by-tag/unread-count-by-tag.command.ts": [
+          "D-2e9dcc",
+          "D-53fcf5"
+        ]
+      },
+      "exercises": [
+        "D-36a604",
+        "D-2e9dcc",
+        "D-53fcf5"
+      ],
+      "extra": []
+    },
+    "novu-e-rename-snooze": {
+      "repo": "novu",
+      "category": "e",
+      "targets": {
+        "apps/api/src/app/inbox/usecases/defer-notification/defer-notification.command.ts": [
+          "D-2e9dcc",
+          "D-53fcf5"
+        ],
+        "apps/api/src/app/inbox/inbox.controller.ts": [
+          "D-36a604"
+        ]
+      },
+      "exercises": [
+        "D-2e9dcc",
+        "D-53fcf5",
+        "D-36a604"
+      ],
+      "extra": []
+    },
+    "calcom-a-webhook-ping": {
+      "repo": "cal.com",
+      "category": "a",
+      "targets": {
+        "apps/api/v2/src/modules/webhooks/controllers/webhooks.controller.ts": [
+          "D-ec4221",
+          "D-777a50"
+        ]
+      },
+      "exercises": [
+        "D-777a50",
+        "D-ec4221"
+      ],
+      "extra": []
+    },
+    "calcom-a-ooo-duplicate": {
+      "repo": "cal.com",
+      "category": "a",
+      "targets": {
+        "packages/trpc/server/routers/viewer/ooo/_router.tsx": [
+          "D-0b36fb",
+          "D-42ab67"
+        ]
+      },
+      "exercises": [
+        "D-0b36fb",
+        "D-42ab67"
+      ],
+      "extra": []
+    },
+    "calcom-b-no-show-email": {
+      "repo": "cal.com",
+      "category": "b",
+      "targets": {
+        "packages/emails/templates/organizer-attendee-no-show-email.ts": [
+          "D-c459f1"
+        ],
+        "packages/emails/email-manager.ts": [
+          "D-8d7d13"
+        ]
+      },
+      "exercises": [
+        "D-c459f1",
+        "D-8d7d13"
+      ],
+      "extra": []
+    },
+    "calcom-e-move-slot-utils": {
+      "repo": "cal.com",
+      "category": "e",
+      "targets": {
+        "packages/features/slots/slot-utils.ts": [
+          "D-7aa96c",
+          "D-931b9c"
+        ]
+      },
+      "exercises": [
+        "D-7aa96c",
+        "D-931b9c"
+      ],
+      "extra": []
+    },
+    "formbricks-a-archive-team": {
+      "repo": "formbricks",
+      "category": "a",
+      "targets": {
+        "apps/web/modules/ee/teams/team-list/actions.ts": [
+          "D-60208a",
+          "D-73b648",
+          "D-71e798"
+        ]
+      },
+      "exercises": [
+        "D-73b648",
+        "D-71e798",
+        "D-60208a"
+      ],
+      "extra": []
+    },
+    "formbricks-b-template-library": {
+      "repo": "formbricks",
+      "category": "b",
+      "targets": {
+        "apps/web/modules/ee/template-library/actions.ts": [
+          "D-60208a",
+          "D-73b648",
+          "D-71e798"
+        ],
+        "apps/web/modules/ee/template-library/page.tsx": [
+          "D-87fcf9"
+        ]
+      },
+      "exercises": [
+        "D-73b648",
+        "D-71e798",
+        "D-60208a",
+        "D-87fcf9"
+      ],
+      "extra": []
+    },
+    "documenso-b-reminder-router": {
+      "repo": "documenso",
+      "category": "b",
+      "targets": {
+        "packages/trpc/server/reminder-router/router.ts": [
+          "D-efe3da",
+          "D-879e02"
+        ],
+        "packages/trpc/server/reminder-router/schedule-reminder.ts": [
+          "D-d19fc6"
+        ]
+      },
+      "exercises": [
+        "D-efe3da",
+        "D-879e02",
+        "D-d19fc6"
+      ],
+      "extra": []
+    },
+    "documenso-e-move-team-analytics": {
+      "repo": "documenso",
+      "category": "e",
+      "targets": {
+        "packages/lib/server-only/team/analytics/get-team-analytics-overview.ts": [
+          "D-041293",
+          "D-7b5140",
+          "D-2a51e9"
+        ],
+        "packages/trpc/server/team-router/get-team-analytics-overview.ts": [
+          "D-d19fc6",
+          "D-9b91c3"
+        ]
+      },
+      "exercises": [
+        "D-041293",
+        "D-7b5140",
+        "D-2a51e9",
+        "D-9b91c3"
+      ],
+      "extra": [
+        "D-d19fc6"
+      ]
+    }
+  },
+  "problems": []
+}

@@ -1,0 +1,115 @@
+14 conventions from 19907 units in 1160 roles (1 default tier, 13 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-e93eb6] apps/docs: functions named `generateMetadata` in app/guides/** (page files) are wrapped in genGuideMeta()
+    evidence: 29/30 (lower bound 0.83, lift 176.4)
+    tier:     default
+    example:  apps/docs/app/guides/ai-tools/[[...slug]]/page.tsx#generateMetadata
+    outlier:  apps/docs/app/guides/ai-tools/ai-prompts/[slug]/page.tsx:58 generateMetadata
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 2. [D-e97861] apps/studio: HTTP handlers in pages/** call apiWrapper()
+    evidence: 71/82 (lower bound 0.78, lift 52.1)
+    tier:     suggestion (rule kind calls)
+    example:  apps/studio/pages/api/ai/code/complete.ts#wrapper
+    outlier:  apps/studio/pages/api/check-cname.ts:5 handler
+    outlier:  apps/studio/pages/api/cli-release-version.ts:13 handler
+    outlier:  apps/studio/pages/api/connect/index.ts:33 getFileNames
+    ... 8 more outliers
+
+ 3. [D-922bc7] packages/icons: exported values in src/** pass `fill` to createLucideIcon()
+    evidence: 30/31 (lower bound 0.84, lift 72.7)
+    tier:     suggestion (rule kind passes_key)
+    example:  packages/icons/src/icons/REST-api.ts#RESTApi
+    outlier:  packages/icons/src/defaultAttributes.ts:1 default
+
+ 4. [D-9b2da2] apps/docs: layouts in app/** (layout files) render inside <Layout>
+    evidence: 20/21 (lower bound 0.77, lift 208.7)
+    tier:     suggestion (rule kind wrapped_by:jsx; decision D7 keeps only call wrappers and layering)
+    example:  apps/docs/app/guides/ai-tools/layout.tsx#AiToolsLayout
+    outlier:  apps/docs/app/layout.tsx:57 RootLayout
+
+ 5. [D-db9d80] apps/www: pages in pages/** render <NextSeo>
+    evidence: 59/60 (lower bound 0.91, lift 64.3)
+    tier:     suggestion (rule kind renders)
+    example:  apps/www/pages/assistant.tsx#Assistant
+    outlier:  apps/www/pages/launch-week/ticket.tsx:7 Lw15Page
+
+ 6. [D-5bd6b4] apps/studio: exported values in data/** (keys files) are named `*Keys`
+    evidence: 85/86 (lower bound 0.94, lift 30.0)
+    tier:     suggestion (rule kind named)
+    example:  apps/studio/data/__templates/keys.ts#resourceKeys
+    outlier:  apps/studio/data/third-party-auth/keys.ts:1 keys
+    exempt:   apps/studio/data/projects/keys.ts:1 INFINITE_PROJECTS_KEY_PREFIX (a constant beside projectKeys, which follows the scheme)
+
+ 7. [D-cf40f5] apps/docs: layouts in app/** (layout files) are named `*Layout`
+    evidence: 20/21 (lower bound 0.77, lift 50.3)
+    tier:     suggestion (rule kind named)
+    example:  apps/docs/app/guides/ai-tools/layout.tsx#AiToolsLayout
+    outlier:  apps/docs/app/guides/observability/layout.tsx:3 MonitoringAndDebugging
+
+ 8. [D-df24f2] files in apps/studio/** use lucide-react for icons, not react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react
+    evidence: 870/872 (lower bound 0.99, lift 1.0)
+    tier:     suggestion (rule kind prefers_library)
+    split:    lucide-react 872, @heroicons/react 2
+    example:  apps/studio/components/grid/components/editor/DateTimeEditor.tsx#(file)
+    outlier:  apps/studio/components/interfaces/Linter/LintPageTabs.tsx:1 (file)
+    outlier:  apps/studio/components/interfaces/QueryPerformance/QueryPanel.tsx:1 (file)
+
+ 9. [D-3c4b60] packages/pg-meta: functions in src/** declare their return type
+    evidence: 117/123 (lower bound 0.90, lift 2.4)
+    tier:     suggestion (rule kind control)
+    example:  packages/pg-meta/src/pg-format/index.ts#acceptUntrustedSql
+    outlier:  packages/pg-meta/src/pg-meta-functions.ts:282 create
+    outlier:  packages/pg-meta/src/query/table-row-query.ts:94 formatPatternMatchFilterValue
+    outlier:  packages/pg-meta/src/query/table-row-query.ts:143 getPagination
+    ... 3 more outliers
+    exempt:   packages/pg-meta/src/query/table-row-query.ts:110 getDefaultOrderByColumns (shared part used by 2 members)
+    exempt:   packages/pg-meta/src/sql/tables.ts:19 getTablesSql (shared part used by 2 members)
+
+10. [D-7c4152] files in apps/studio/** use dayjs for dates, not date-fns/moment/luxon
+    evidence: 162/174 (lower bound 0.88, lift 1.0)
+    tier:     suggestion (rule kind prefers_library)
+    split:    dayjs 163, date-fns 12
+    example:  apps/studio/components/grid/components/editor/DateTimeEditor.tsx#(file)
+    outlier:  apps/studio/components/grid/components/header/filter/FilterPopoverNew.tsx:1 (file)
+    outlier:  apps/studio/components/grid/components/header/filter/FilterPopoverNew.utils.ts:1 (file)
+    outlier:  apps/studio/components/interfaces/Auth/AuthProvidersForm/FormField.tsx:1 (file)
+    ... 9 more outliers
+
+11. [D-100c39] files in apps/www/** use lucide-react for icons, not react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react
+    evidence: 150/177 (lower bound 0.79, lift 1.0)
+    tier:     suggestion (rule kind prefers_library)
+    split:    lucide-react 169, @heroicons/react 27
+    example:  apps/www/_go/lead-gen/ask-supabase-select.tsx#(file)
+    outlier:  apps/www/app/pricing/PricingContent.tsx:1 (file)
+    outlier:  apps/www/components/EventCallout.tsx:1 (file)
+    outlier:  apps/www/components/Footer/index.tsx:1 (file)
+    ... 24 more outliers
+
+12. [D-d8dcea] apps/docs: functions in internals/** declare their return type
+    evidence: 33/35 (lower bound 0.81, lift 2.4)
+    tier:     suggestion (rule kind control)
+    example:  apps/docs/internals/internal-links.ts#getInternalLinkBaseUrl
+    outlier:  apps/docs/internals/files/reference-lib.ts:4 generateReferencePages
+    outlier:  apps/docs/internals/internal-links.ts:40 addBaseUrlPrefix
+
+13. [D-017ce5] apps/studio: functions in lib/** (*.utils files) declare their return type
+    evidence: 38/42 (lower bound 0.78, lift 2.3)
+    tier:     suggestion (rule kind control)
+    example:  apps/studio/lib/ai/generate-assistant-response.utils.ts#buildSystemPrompt
+    outlier:  apps/studio/lib/ai/generate-assistant-response.utils.ts:78 hideToolErrorsFromModel
+    outlier:  apps/studio/lib/ai/generate-assistant-response.utils.ts:53 prepareMessagesForModel
+    outlier:  apps/studio/lib/api/snippets.utils.ts:210 getSnippet
+    ... 1 more outliers
+
+14. [D-c59437] workspace packages define a `clean` script
+    evidence: 23/25 (lower bound 0.75, lift 1.0)
+    tier:     suggestion (rule kind package_has)
+    example:  apps/design-system/package.json#design-system
+    outlier:  apps/kb/package.json:1 kb
+    outlier:  packages/tsconfig/package.json:1 tsconfig
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

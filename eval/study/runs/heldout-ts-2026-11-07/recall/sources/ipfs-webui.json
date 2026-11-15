@@ -1,0 +1,13 @@
+{
+  "repo": "ipfs-webui",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": ".eslintrc.cjs",
+      "kind": "lint"
+    }
+  ]
+}

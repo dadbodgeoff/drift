@@ -1,0 +1,3890 @@
+{
+ "snapshots": {
+  "v3": {
+   "TS": {
+    "all": [
+     69,
+     162
+    ],
+    "default": [
+     24,
+     32
+    ],
+    "not_wrong": [
+     70,
+     162
+    ],
+    "repos": 13
+   },
+   "Py": {
+    "all": [
+     31,
+     98
+    ],
+    "default": [
+     0,
+     0
+    ],
+    "not_wrong": [
+     32,
+     98
+    ],
+    "repos": 17
+   }
+  },
+  "r2": {
+   "TS": {
+    "all": [
+     79,
+     158
+    ],
+    "default": [
+     27,
+     29
+    ],
+    "not_wrong": [
+     81,
+     158
+    ],
+    "repos": 13
+   }
+  },
+  "r3": {
+   "TS": {
+    "all": [
+     87,
+     158
+    ],
+    "default": [
+     29,
+     29
+    ],
+    "not_wrong": [
+     89,
+     158
+    ],
+    "repos": 13
+   },
+   "Py": {
+    "all": [
+     34,
+     100
+    ],
+    "default": [
+     0,
+     0
+    ],
+    "not_wrong": [
+     35,
+     100
+    ],
+    "repos": 17
+   }
+  },
+  "r4": {
+   "TS": {
+    "all": [
+     92,
+     147
+    ],
+    "default": [
+     30,
+     30
+    ],
+    "not_wrong": [
+     95,
+     147
+    ],
+    "repos": 13
+   },
+   "Py": {
+    "all": [
+     38,
+     83
+    ],
+    "default": [
+     0,
+     0
+    ],
+    "not_wrong": [
+     39,
+     83
+    ],
+    "repos": 17
+   }
+  },
+  "r5": {
+   "TS": {
+    "all": [
+     94,
+     147
+    ],
+    "default": [
+     30,
+     30
+    ],
+    "not_wrong": [
+     99,
+     147
+    ],
+    "repos": 13
+   },
+   "Py": {
+    "all": [
+     47,
+     77
+    ],
+    "default": [
+     0,
+     0
+    ],
+    "not_wrong": [
+     47,
+     77
+    ],
+    "repos": 17
+   }
+  }
+ },
+ "lineage": [
+  {
+   "baseline": "r2",
+   "lang": "TS",
+   "shown_now": 147,
+   "accept_now": 94,
+   "shown_base": 158,
+   "accept_base": 79,
+   "classes": {
+    "held_A": {
+     "n": 71,
+     "pr_touched": 17
+    },
+    "flipped_to_A": {
+     "n": 11,
+     "pr_touched": 11
+    },
+    "new_A": {
+     "n": 12,
+     "pr_touched": 11
+    },
+    "held_nonA": {
+     "n": 45,
+     "pr_touched": 14
+    },
+    "flipped_from_A": {
+     "n": 0,
+     "pr_touched": 0
+    },
+    "new_nonA": {
+     "n": 8,
+     "pr_touched": 8
+    }
+   },
+   "hidden": {
+    "accept": 8,
+    "accept_pr_touched": 8,
+    "nonaccept": 23,
+    "nonaccept_pr_touched": 23
+   },
+   "undo_named": {
+    "accept": 80,
+    "shown": 159
+   },
+   "gain_cards": 23,
+   "gain_named": 22,
+   "gain_named_repo_share": [
+    [
+     "novu",
+     5
+    ],
+    [
+     "ai",
+     4
+    ],
+    [
+     "supabase",
+     4
+    ],
+    [
+     "midday",
+     4
+    ],
+    [
+     "cal.com",
+     3
+    ],
+    [
+     "documenso",
+     2
+    ],
+    [
+     "twenty",
+     1
+    ]
+   ],
+   "rounds": [
+    5,
+    6,
+    8,
+    9
+   ]
+  },
+  {
+   "baseline": "v3",
+   "lang": "TS",
+   "shown_now": 147,
+   "accept_now": 94,
+   "shown_base": 162,
+   "accept_base": 69,
+   "classes": {
+    "held_A": {
+     "n": 57,
+     "pr_touched": 39
+    },
+    "flipped_to_A": {
+     "n": 14,
+     "pr_touched": 13
+    },
+    "new_A": {
+     "n": 23,
+     "pr_touched": 21
+    },
+    "held_nonA": {
+     "n": 43,
+     "pr_touched": 28
+    },
+    "flipped_from_A": {
+     "n": 0,
+     "pr_touched": 0
+    },
+    "new_nonA": {
+     "n": 10,
+     "pr_touched": 9
+    }
+   },
+   "hidden": {
+    "accept": 12,
+    "accept_pr_touched": 12,
+    "nonaccept": 36,
+    "nonaccept_pr_touched": 36
+   },
+   "undo_named": {
+    "accept": 72,
+    "shown": 165
+   },
+   "gain_cards": 37,
+   "gain_named": 34,
+   "gain_named_repo_share": [
+    [
+     "midday",
+     6
+    ],
+    [
+     "documenso",
+     5
+    ],
+    [
+     "ai",
+     5
+    ],
+    [
+     "novu",
+     5
+    ],
+    [
+     "supabase",
+     4
+    ],
+    [
+     "dub",
+     3
+    ],
+    [
+     "twenty",
+     3
+    ],
+    [
+     "cal.com",
+     3
+    ],
+    [
+     "infisical",
+     3
+    ]
+   ],
+   "rounds": [
+    4,
+    5,
+    6,
+    8,
+    9
+   ]
+  },
+  {
+   "baseline": "v3",
+   "lang": "Py",
+   "shown_now": 77,
+   "accept_now": 47,
+   "shown_base": 98,
+   "accept_base": 31,
+   "classes": {
+    "held_A": {
+     "n": 19,
+     "pr_touched": 4
+    },
+    "flipped_to_A": {
+     "n": 9,
+     "pr_touched": 8
+    },
+    "new_A": {
+     "n": 19,
+     "pr_touched": 17
+    },
+    "held_nonA": {
+     "n": 22,
+     "pr_touched": 6
+    },
+    "flipped_from_A": {
+     "n": 0,
+     "pr_touched": 0
+    },
+    "new_nonA": {
+     "n": 8,
+     "pr_touched": 7
+    }
+   },
+   "hidden": {
+    "accept": 12,
+    "accept_pr_touched": 12,
+    "nonaccept": 36,
+    "nonaccept_pr_touched": 34
+   },
+   "undo_named": {
+    "accept": 34,
+    "shown": 99
+   },
+   "gain_cards": 28,
+   "gain_named": 25,
+   "gain_named_repo_share": [
+    [
+     "netbox",
+     5
+    ],
+    [
+     "Misago",
+     4
+    ],
+    [
+     "paperless-ngx",
+     3
+    ],
+    [
+     "InvenTree",
+     3
+    ],
+    [
+     "ralph",
+     3
+    ],
+    [
+     "tasking-manager",
+     3
+    ],
+    [
+     "open-wearables",
+     1
+    ],
+    [
+     "langchain",
+     1
+    ],
+    [
+     "Django-CRM",
+     1
+    ],
+    [
+     "wger",
+     1
+    ],
+    [
+     "lotus",
+     1
+    ],
+    [
+     "pontoon",
+     1
+    ],
+    [
+     "changedetection.io",
+     1
+    ]
+   ],
+   "rounds": [
+    4,
+    5,
+    6,
+    8,
+    9
+   ]
+  },
+  {
+   "baseline": "r3",
+   "lang": "Py",
+   "shown_now": 77,
+   "accept_now": 47,
+   "shown_base": 100,
+   "accept_base": 34,
+   "classes": {
+    "held_A": {
+     "n": 24,
+     "pr_touched": 3
+    },
+    "flipped_to_A": {
+     "n": 6,
+     "pr_touched": 5
+    },
+    "new_A": {
+     "n": 17,
+     "pr_touched": 15
+    },
+    "held_nonA": {
+     "n": 24,
+     "pr_touched": 2
+    },
+    "flipped_from_A": {
+     "n": 0,
+     "pr_touched": 0
+    },
+    "new_nonA": {
+     "n": 6,
+     "pr_touched": 6
+    }
+   },
+   "hidden": {
+    "accept": 10,
+    "accept_pr_touched": 10,
+    "nonaccept": 36,
+    "nonaccept_pr_touched": 34
+   },
+   "undo_named": {
+    "accept": 37,
+    "shown": 100
+   },
+   "gain_cards": 23,
+   "gain_named": 20,
+   "gain_named_repo_share": [
+    [
+     "Misago",
+     4
+    ],
+    [
+     "paperless-ngx",
+     3
+    ],
+    [
+     "InvenTree",
+     3
+    ],
+    [
+     "ralph",
+     3
+    ],
+    [
+     "netbox",
+     2
+    ],
+    [
+     "tasking-manager",
+     2
+    ],
+    [
+     "open-wearables",
+     1
+    ],
+    [
+     "Django-CRM",
+     1
+    ],
+    [
+     "wger",
+     1
+    ],
+    [
+     "lotus",
+     1
+    ],
+    [
+     "pontoon",
+     1
+    ],
+    [
+     "changedetection.io",
+     1
+    ]
+   ],
+   "rounds": [
+    6,
+    8,
+    9
+   ]
+  }
+ ],
+ "loro": {
+  "TS": {
+   "rows": [
+    {
+     "repo": "ai",
+     "now": [
+      6,
+      8
+     ],
+     "base": [
+      3,
+      8
+     ],
+     "loro1": [
+      6,
+      8
+     ],
+     "loro2": [
+      6,
+      8
+     ]
+    },
+    {
+     "repo": "cal.com",
+     "now": [
+      12,
+      15
+     ],
+     "base": [
+      10,
+      15
+     ],
+     "loro1": [
+      11,
+      14
+     ],
+     "loro2": [
+      11,
+      14
+     ]
+    },
+    {
+     "repo": "documenso",
+     "now": [
+      13,
+      15
+     ],
+     "base": [
+      11,
+      15
+     ],
+     "loro1": [
+      13,
+      15
+     ],
+     "loro2": [
+      13,
+      15
+     ]
+    },
+    {
+     "repo": "dub",
+     "now": [
+      8,
+      15
+     ],
+     "base": [
+      8,
+      15
+     ],
+     "loro1": [
+      8,
+      15
+     ],
+     "loro2": [
+      8,
+      15
+     ]
+    },
+    {
+     "repo": "excalidraw",
+     "now": [
+      2,
+      2
+     ],
+     "base": [
+      2,
+      2
+     ],
+     "loro1": [
+      2,
+      2
+     ],
+     "loro2": [
+      2,
+      2
+     ]
+    },
+    {
+     "repo": "formbricks",
+     "now": [
+      4,
+      11
+     ],
+     "base": [
+      7,
+      13
+     ],
+     "loro1": [
+      4,
+      11
+     ],
+     "loro2": [
+      4,
+      11
+     ]
+    },
+    {
+     "repo": "immich",
+     "now": [
+      1,
+      10
+     ],
+     "base": [
+      1,
+      14
+     ],
+     "loro1": [
+      1,
+      10
+     ],
+     "loro2": [
+      1,
+      10
+     ]
+    },
+    {
+     "repo": "infisical",
+     "now": [
+      6,
+      14
+     ],
+     "base": [
+      6,
+      15
+     ],
+     "loro1": [
+      6,
+      14
+     ],
+     "loro2": [
+      6,
+      14
+     ]
+    },
+    {
+     "repo": "midday",
+     "now": [
+      10,
+      14
+     ],
+     "base": [
+      7,
+      15
+     ],
+     "loro1": [
+      10,
+      14
+     ],
+     "loro2": [
+      10,
+      14
+     ]
+    },
+    {
+     "repo": "nest",
+     "now": [
+      1,
+      1
+     ],
+     "base": [
+      1,
+      2
+     ],
+     "loro1": [
+      1,
+      1
+     ],
+     "loro2": [
+      1,
+      1
+     ]
+    },
+    {
+     "repo": "novu",
+     "now": [
+      12,
+      14
+     ],
+     "base": [
+      9,
+      15
+     ],
+     "loro1": [
+      12,
+      14
+     ],
+     "loro2": [
+      12,
+      14
+     ]
+    },
+    {
+     "repo": "supabase",
+     "now": [
+      13,
+      15
+     ],
+     "base": [
+      9,
+      14
+     ],
+     "loro1": [
+      13,
+      15
+     ],
+     "loro2": [
+      13,
+      15
+     ]
+    },
+    {
+     "repo": "twenty",
+     "now": [
+      6,
+      13
+     ],
+     "base": [
+      5,
+      15
+     ],
+     "loro1": [
+      6,
+      13
+     ],
+     "loro2": [
+      6,
+      13
+     ]
+    }
+   ],
+   "total": [
+    94,
+    147
+   ],
+   "loro1": [
+    93,
+    146
+   ],
+   "loro2": [
+    93,
+    146
+   ]
+  },
+  "Py": {
+   "rows": [
+    {
+     "repo": "Django-CRM",
+     "now": [
+      4,
+      6
+     ],
+     "base": [
+      5,
+      9
+     ],
+     "loro1": [
+      4,
+      6
+     ],
+     "loro2": [
+      4,
+      6
+     ]
+    },
+    {
+     "repo": "InvenTree",
+     "now": [
+      5,
+      12
+     ],
+     "base": [
+      2,
+      11
+     ],
+     "loro1": [
+      5,
+      12
+     ],
+     "loro2": [
+      5,
+      12
+     ]
+    },
+    {
+     "repo": "Misago",
+     "now": [
+      6,
+      7
+     ],
+     "base": [
+      2,
+      8
+     ],
+     "loro1": [
+      6,
+      7
+     ],
+     "loro2": [
+      6,
+      7
+     ]
+    },
+    {
+     "repo": "changedetection.io",
+     "now": [
+      2,
+      3
+     ],
+     "base": [
+      1,
+      3
+     ],
+     "loro1": [
+      2,
+      3
+     ],
+     "loro2": [
+      2,
+      3
+     ]
+    },
+    {
+     "repo": "fastapi",
+     "now": [
+      1,
+      1
+     ],
+     "base": [
+      1,
+      1
+     ],
+     "loro1": [
+      1,
+      1
+     ],
+     "loro2": [
+      1,
+      1
+     ]
+    },
+    {
+     "repo": "full-stack-fastapi-template",
+     "now": [
+      0,
+      1
+     ],
+     "base": [
+      0,
+      1
+     ],
+     "loro1": [
+      0,
+      1
+     ],
+     "loro2": [
+      0,
+      1
+     ]
+    },
+    {
+     "repo": "langchain",
+     "now": [
+      1,
+      2
+     ],
+     "base": [
+      0,
+      1
+     ],
+     "loro1": [
+      1,
+      2
+     ],
+     "loro2": [
+      1,
+      2
+     ]
+    },
+    {
+     "repo": "lotus",
+     "now": [
+      2,
+      3
+     ],
+     "base": [
+      2,
+      4
+     ],
+     "loro1": [
+      2,
+      3
+     ],
+     "loro2": [
+      2,
+      3
+     ]
+    },
+    {
+     "repo": "netbox",
+     "now": [
+      7,
+      11
+     ],
+     "base": [
+      3,
+      12
+     ],
+     "loro1": [
+      7,
+      11
+     ],
+     "loro2": [
+      7,
+      11
+     ]
+    },
+    {
+     "repo": "open-wearables",
+     "now": [
+      3,
+      5
+     ],
+     "base": [
+      3,
+      8
+     ],
+     "loro1": [
+      3,
+      5
+     ],
+     "loro2": [
+      3,
+      5
+     ]
+    },
+    {
+     "repo": "paperless-ngx",
+     "now": [
+      4,
+      5
+     ],
+     "base": [
+      1,
+      3
+     ],
+     "loro1": [
+      4,
+      5
+     ],
+     "loro2": [
+      4,
+      5
+     ]
+    },
+    {
+     "repo": "pontoon",
+     "now": [
+      1,
+      1
+     ],
+     "base": [
+      2,
+      2
+     ],
+     "loro1": [
+      1,
+      1
+     ],
+     "loro2": [
+      1,
+      1
+     ]
+    },
+    {
+     "repo": "ralph",
+     "now": [
+      4,
+      5
+     ],
+     "base": [
+      1,
+      6
+     ],
+     "loro1": [
+      4,
+      5
+     ],
+     "loro2": [
+      4,
+      5
+     ]
+    },
+    {
+     "repo": "saleor",
+     "now": [
+      1,
+      2
+     ],
+     "base": [
+      4,
+      7
+     ],
+     "loro1": [
+      1,
+      2
+     ],
+     "loro2": [
+      1,
+      2
+     ]
+    },
+    {
+     "repo": "simplelogin",
+     "now": [
+      1,
+      2
+     ],
+     "base": [
+      1,
+      10
+     ],
+     "loro1": [
+      1,
+      2
+     ],
+     "loro2": [
+      1,
+      2
+     ]
+    },
+    {
+     "repo": "tasking-manager",
+     "now": [
+      4,
+      8
+     ],
+     "base": [
+      3,
+      9
+     ],
+     "loro1": [
+      3,
+      7
+     ],
+     "loro2": [
+      3,
+      7
+     ]
+    },
+    {
+     "repo": "wger",
+     "now": [
+      1,
+      3
+     ],
+     "base": [
+      0,
+      3
+     ],
+     "loro1": [
+      1,
+      3
+     ],
+     "loro2": [
+      1,
+      3
+     ]
+    }
+   ],
+   "total": [
+    47,
+    77
+   ],
+   "loro1": [
+    46,
+    76
+   ],
+   "loro2": [
+    46,
+    76
+   ]
+  }
+ },
+ "gain_loro": {
+  "TS_r2": {
+   "full": 0.1394557823129252,
+   "per": [
+    [
+     "ai",
+     0.12642685851318936
+    ],
+    [
+     "novu",
+     0.12703086387296908
+    ],
+    [
+     "supabase",
+     0.12752525252525254
+    ],
+    [
+     "midday",
+     0.12808244387191747
+    ],
+    [
+     "nest",
+     0.136986301369863
+    ],
+    [
+     "immich",
+     0.1371654501216545
+    ],
+    [
+     "documenso",
+     0.13811188811188813
+    ],
+    [
+     "cal.com",
+     0.13869463869463872
+    ],
+    [
+     "twenty",
+     0.13923390042793027
+    ],
+    [
+     "excalidraw",
+     0.1408930150309461
+    ],
+    [
+     "infisical",
+     0.1511646248488353
+    ],
+    [
+     "dub",
+     0.15501165501165498
+    ],
+    [
+     "formbricks",
+     0.1652129817444219
+    ]
+   ],
+   "perRepo": [
+    {
+     "repo": "dub",
+     "now": [
+      8,
+      15
+     ],
+     "base": [
+      8,
+      15
+     ]
+    },
+    {
+     "repo": "twenty",
+     "now": [
+      6,
+      13
+     ],
+     "base": [
+      5,
+      15
+     ]
+    },
+    {
+     "repo": "formbricks",
+     "now": [
+      4,
+      11
+     ],
+     "base": [
+      7,
+      13
+     ]
+    },
+    {
+     "repo": "cal.com",
+     "now": [
+      12,
+      15
+     ],
+     "base": [
+      10,
+      15
+     ]
+    },
+    {
+     "repo": "documenso",
+     "now": [
+      13,
+      15
+     ],
+     "base": [
+      11,
+      15
+     ]
+    },
+    {
+     "repo": "excalidraw",
+     "now": [
+      2,
+      2
+     ],
+     "base": [
+      2,
+      2
+     ]
+    },
+    {
+     "repo": "ai",
+     "now": [
+      6,
+      8
+     ],
+     "base": [
+      3,
+      8
+     ]
+    },
+    {
+     "repo": "nest",
+     "now": [
+      1,
+      1
+     ],
+     "base": [
+      1,
+      2
+     ]
+    },
+    {
+     "repo": "supabase",
+     "now": [
+      13,
+      15
+     ],
+     "base": [
+      9,
+      14
+     ]
+    },
+    {
+     "repo": "novu",
+     "now": [
+      12,
+      14
+     ],
+     "base": [
+      9,
+      15
+     ]
+    },
+    {
+     "repo": "immich",
+     "now": [
+      1,
+      10
+     ],
+     "base": [
+      1,
+      14
+     ]
+    },
+    {
+     "repo": "midday",
+     "now": [
+      10,
+      14
+     ],
+     "base": [
+      7,
+      15
+     ]
+    },
+    {
+     "repo": "infisical",
+     "now": [
+      6,
+      14
+     ],
+     "base": [
+      6,
+      15
+     ]
+    }
+   ]
+  },
+  "TS_v3": {
+   "full": 0.21352985638699928,
+   "per": [
+    [
+     "midday",
+     0.20300751879699247
+    ],
+    [
+     "ai",
+     0.2036063456926766
+    ],
+    [
+     "nest",
+     0.20386528226158274
+    ],
+    [
+     "documenso",
+     0.2054730983302412
+    ],
+    [
+     "supabase",
+     0.2054730983302412
+    ],
+    [
+     "novu",
+     0.20837808807733615
+    ],
+    [
+     "cal.com",
+     0.21304885590599876
+    ],
+    [
+     "twenty",
+     0.21453954716214846
+    ],
+    [
+     "excalidraw",
+     0.2157327586206897
+    ],
+    [
+     "immich",
+     0.21937265732886163
+    ],
+    [
+     "infisical",
+     0.21947726459004652
+    ],
+    [
+     "dub",
+     0.22294372294372294
+    ],
+    [
+     "formbricks",
+     0.2399959983993597
+    ]
+   ],
+   "perRepo": [
+    {
+     "repo": "dub",
+     "now": [
+      8,
+      15
+     ],
+     "base": [
+      6,
+      15
+     ]
+    },
+    {
+     "repo": "twenty",
+     "now": [
+      6,
+      13
+     ],
+     "base": [
+      4,
+      15
+     ]
+    },
+    {
+     "repo": "formbricks",
+     "now": [
+      4,
+      11
+     ],
+     "base": [
+      7,
+      15
+     ]
+    },
+    {
+     "repo": "cal.com",
+     "now": [
+      12,
+      15
+     ],
+     "base": [
+      9,
+      15
+     ]
+    },
+    {
+     "repo": "documenso",
+     "now": [
+      13,
+      15
+     ],
+     "base": [
+      9,
+      15
+     ]
+    },
+    {
+     "repo": "excalidraw",
+     "now": [
+      2,
+      2
+     ],
+     "base": [
+      2,
+      2
+     ]
+    },
+    {
+     "repo": "ai",
+     "now": [
+      6,
+      8
+     ],
+     "base": [
+      2,
+      6
+     ]
+    },
+    {
+     "repo": "nest",
+     "now": [
+      1,
+      1
+     ],
+     "base": [
+      1,
+      5
+     ]
+    },
+    {
+     "repo": "supabase",
+     "now": [
+      13,
+      15
+     ],
+     "base": [
+      9,
+      15
+     ]
+    },
+    {
+     "repo": "novu",
+     "now": [
+      12,
+      14
+     ],
+     "base": [
+      9,
+      15
+     ]
+    },
+    {
+     "repo": "immich",
+     "now": [
+      1,
+      10
+     ],
+     "base": [
+      1,
+      14
+     ]
+    },
+    {
+     "repo": "midday",
+     "now": [
+      10,
+      14
+     ],
+     "base": [
+      6,
+      15
+     ]
+    },
+    {
+     "repo": "infisical",
+     "now": [
+      6,
+      14
+     ],
+     "base": [
+      4,
+      15
+     ]
+    }
+   ]
+  },
+  "Py_v3": {
+   "full": 0.29406307977736545,
+   "per": [
+    [
+     "Misago",
+     0.2634920634920635
+    ],
+    [
+     "ralph",
+     0.2711352657004831
+    ],
+    [
+     "simplelogin",
+     0.2724242424242424
+    ],
+    [
+     "netbox",
+     0.28047921071176884
+    ],
+    [
+     "paperless-ngx",
+     0.2814327485380117
+    ],
+    [
+     "changedetection.io",
+     0.2923186344238976
+    ],
+    [
+     "langchain",
+     0.29374570446735393
+    ],
+    [
+     "wger",
+     0.2953058321479374
+    ],
+    [
+     "fastapi",
+     0.2959848073792729
+    ],
+    [
+     "full-stack-fastapi-template",
+     0.2988334237655996
+    ],
+    [
+     "lotus",
+     0.2995974698102358
+    ],
+    [
+     "open-wearables",
+     0.30000000000000004
+    ],
+    [
+     "pontoon",
+     0.3031798245614035
+    ],
+    [
+     "tasking-manager",
+     0.30858166422406774
+    ],
+    [
+     "InvenTree",
+     0.3128205128205129
+    ],
+    [
+     "Django-CRM",
+     0.31349897135622723
+    ],
+    [
+     "saleor",
+     0.3166300366300366
+    ]
+   ],
+   "perRepo": [
+    {
+     "repo": "full-stack-fastapi-template",
+     "now": [
+      0,
+      1
+     ],
+     "base": [
+      0,
+      1
+     ]
+    },
+    {
+     "repo": "netbox",
+     "now": [
+      7,
+      11
+     ],
+     "base": [
+      3,
+      12
+     ]
+    },
+    {
+     "repo": "saleor",
+     "now": [
+      1,
+      2
+     ],
+     "base": [
+      4,
+      7
+     ]
+    },
+    {
+     "repo": "fastapi",
+     "now": [
+      1,
+      1
+     ],
+     "base": [
+      1,
+      1
+     ]
+    },
+    {
+     "repo": "langchain",
+     "now": [
+      1,
+      2
+     ],
+     "base": [
+      0,
+      1
+     ]
+    },
+    {
+     "repo": "Django-CRM",
+     "now": [
+      4,
+      6
+     ],
+     "base": [
+      5,
+      9
+     ]
+    },
+    {
+     "repo": "InvenTree",
+     "now": [
+      5,
+      12
+     ],
+     "base": [
+      2,
+      11
+     ]
+    },
+    {
+     "repo": "ralph",
+     "now": [
+      4,
+      5
+     ],
+     "base": [
+      1,
+      6
+     ]
+    },
+    {
+     "repo": "Misago",
+     "now": [
+      6,
+      7
+     ],
+     "base": [
+      2,
+      8
+     ]
+    },
+    {
+     "repo": "paperless-ngx",
+     "now": [
+      4,
+      5
+     ],
+     "base": [
+      1,
+      3
+     ]
+    },
+    {
+     "repo": "wger",
+     "now": [
+      1,
+      3
+     ],
+     "base": [
+      0,
+      3
+     ]
+    },
+    {
+     "repo": "lotus",
+     "now": [
+      2,
+      3
+     ],
+     "base": [
+      2,
+      4
+     ]
+    },
+    {
+     "repo": "pontoon",
+     "now": [
+      1,
+      1
+     ],
+     "base": [
+      2,
+      2
+     ]
+    },
+    {
+     "repo": "open-wearables",
+     "now": [
+      3,
+      5
+     ],
+     "base": [
+      3,
+      8
+     ]
+    },
+    {
+     "repo": "tasking-manager",
+     "now": [
+      4,
+      8
+     ],
+     "base": [
+      3,
+      9
+     ]
+    },
+    {
+     "repo": "simplelogin",
+     "now": [
+      1,
+      2
+     ],
+     "base": [
+      1,
+      10
+     ]
+    },
+    {
+     "repo": "changedetection.io",
+     "now": [
+      2,
+      3
+     ],
+     "base": [
+      1,
+      3
+     ]
+    }
+   ]
+  }
+ },
+ "noise": {
+  "lift": {
+   "n": 28,
+   "same": 28,
+   "toA": 0,
+   "fromA": 0,
+   "cases": []
+  },
+  "other": {
+   "n": 51,
+   "same": 46,
+   "toA": 4,
+   "fromA": 1,
+   "cases": [
+    "cal.com/D-8d7d13 ACCEPT->WRONG",
+    "Misago/D-d8703c WRONG->ACCEPT",
+    "Misago/D-c9ae1e WRONG->ACCEPT",
+    "Misago/D-e72fc8 WRONG->ACCEPT",
+    "paperless-ngx/D-de2489 WRONG->ACCEPT"
+   ]
+  },
+  "outliers": {
+   "n": 9,
+   "same": 6,
+   "toA": 3,
+   "fromA": 0,
+   "cases": [
+    "documenso/D-d7fae5 WRONG->ACCEPT",
+    "ai/D-5590d9 WRONG->ACCEPT",
+    "netbox/D-281ae8 WRONG->ACCEPT"
+   ]
+  }
+ },
+ "causes": {
+  "TS": {
+   "legit_outliers": 24,
+   "mixed_group": 17,
+   "misdescribes": 1,
+   "incidental": 6
+  },
+  "Py": {
+   "legit_outliers": 7,
+   "misdescribes": 2,
+   "mixed_group": 9,
+   "incidental": 7,
+   "false_outliers": 5
+  }
+ },
+ "families": {
+  "TS:argument_key": {
+   "n": 12,
+   "a": 6,
+   "repos": 6,
+   "repo_mean": 0.5416666666666666,
+   "loro_min": 0.3333333333333333,
+   "loro_max": 0.625,
+   "repo_rates": {
+    "twenty": 1,
+    "formbricks": 0.25,
+    "supabase": 1,
+    "immich": 0,
+    "midday": 1,
+    "infisical": 0
+   }
+  },
+  "TS:avoids_other": {
+   "n": 2,
+   "a": 1,
+   "repos": 2,
+   "repo_mean": 0.5,
+   "loro_min": 0,
+   "loro_max": 1,
+   "repo_rates": {
+    "dub": 0,
+    "excalidraw": 1
+   }
+  },
+  "TS:base_class": {
+   "n": 15,
+   "a": 10,
+   "repos": 6,
+   "repo_mean": 0.7833333333333333,
+   "loro_min": 0.6,
+   "loro_max": 0.8,
+   "repo_rates": {
+    "twenty": 0.4,
+    "cal.com": 1,
+    "nest": 1,
+    "novu": 0.8,
+    "immich": 0.5,
+    "midday": 1
+   }
+  },
+  "TS:calls": {
+   "n": 2,
+   "a": 0,
+   "repos": 2,
+   "repo_mean": 0,
+   "loro_min": 0,
+   "loro_max": 0,
+   "repo_rates": {
+    "dub": 0,
+    "supabase": 0
+   }
+  },
+  "TS:control": {
+   "n": 6,
+   "a": 5,
+   "repos": 3,
+   "repo_mean": 0.6666666666666666,
+   "loro_min": 0.5,
+   "loro_max": 1,
+   "repo_rates": {
+    "cal.com": 0,
+    "supabase": 1,
+    "midday": 1
+   }
+  },
+  "TS:decorator": {
+   "n": 15,
+   "a": 6,
+   "repos": 4,
+   "repo_mean": 0.48214285714285715,
+   "loro_min": 0.3076923076923077,
+   "loro_max": 0.5454545454545454,
+   "repo_rates": {
+    "twenty": 0.42857142857142855,
+    "cal.com": 0.5,
+    "novu": 1,
+    "immich": 0
+   }
+  },
+  "TS:jsx_wrapper": {
+   "n": 2,
+   "a": 2,
+   "repos": 2,
+   "repo_mean": 1,
+   "loro_min": 1,
+   "loro_max": 1,
+   "repo_rates": {
+    "supabase": 1,
+    "infisical": 1
+   }
+  },
+  "TS:naming": {
+   "n": 34,
+   "a": 22,
+   "repos": 11,
+   "repo_mean": 0.6658008658008657,
+   "loro_min": 0.5925925925925926,
+   "loro_max": 0.7333333333333333,
+   "repo_rates": {
+    "dub": 0.3333333333333333,
+    "formbricks": 1,
+    "cal.com": 0.8,
+    "documenso": 1,
+    "excalidraw": 1,
+    "ai": 1,
+    "supabase": 1,
+    "novu": 0.8571428571428571,
+    "immich": 0,
+    "midday": 0.3333333333333333,
+    "infisical": 0
+   }
+  },
+  "TS:ordering": {
+   "n": 5,
+   "a": 1,
+   "repos": 4,
+   "repo_mean": 0.25,
+   "loro_min": 0,
+   "loro_max": 0.3333333333333333,
+   "repo_rates": {
+    "formbricks": 0,
+    "ai": 1,
+    "immich": 0,
+    "midday": 0
+   }
+  },
+  "TS:renders": {
+   "n": 10,
+   "a": 4,
+   "repos": 4,
+   "repo_mean": 0.4333333333333333,
+   "loro_min": 0.3333333333333333,
+   "loro_max": 0.4444444444444444,
+   "repo_rates": {
+    "dub": 0.4,
+    "documenso": 0,
+    "supabase": 1,
+    "infisical": 0.3333333333333333
+   }
+  },
+  "TS:repo": {
+   "n": 13,
+   "a": 7,
+   "repos": 5,
+   "repo_mean": 0.45,
+   "loro_min": 0.4444444444444444,
+   "loro_max": 0.6363636363636364,
+   "repo_rates": {
+    "formbricks": 0,
+    "documenso": 0,
+    "ai": 0.5,
+    "supabase": 0.75,
+    "midday": 1
+   }
+  },
+  "TS:wrapper": {
+   "n": 1,
+   "a": 0,
+   "repos": 1,
+   "repo_mean": 0,
+   "loro_min": null,
+   "loro_max": null,
+   "repo_rates": {
+    "formbricks": 0
+   }
+  },
+  "Py:argument_key": {
+   "n": 4,
+   "a": 2,
+   "repos": 3,
+   "repo_mean": 0.5,
+   "loro_min": 0.3333333333333333,
+   "loro_max": 0.6666666666666666,
+   "repo_rates": {
+    "netbox": 0.5,
+    "Django-CRM": 1,
+    "tasking-manager": 0
+   }
+  },
+  "Py:avoids_other": {
+   "n": 1,
+   "a": 0,
+   "repos": 1,
+   "repo_mean": 0,
+   "loro_min": null,
+   "loro_max": null,
+   "repo_rates": {
+    "simplelogin": 0
+   }
+  },
+  "Py:base_class": {
+   "n": 11,
+   "a": 6,
+   "repos": 7,
+   "repo_mean": 0.5952380952380951,
+   "loro_min": 0.5,
+   "loro_max": 0.6666666666666666,
+   "repo_rates": {
+    "netbox": 1,
+    "InvenTree": 0,
+    "ralph": 0.5,
+    "Misago": 0.6666666666666666,
+    "paperless-ngx": 1,
+    "open-wearables": 1,
+    "tasking-manager": 0
+   }
+  },
+  "Py:calls": {
+   "n": 12,
+   "a": 8,
+   "repos": 7,
+   "repo_mean": 0.7142857142857143,
+   "loro_min": 0.6,
+   "loro_max": 0.7777777777777778,
+   "repo_rates": {
+    "netbox": 0.3333333333333333,
+    "InvenTree": 1,
+    "Misago": 1,
+    "paperless-ngx": 1,
+    "wger": 0,
+    "open-wearables": 0.6666666666666666,
+    "changedetection.io": 1
+   }
+  },
+  "Py:control": {
+   "n": 8,
+   "a": 7,
+   "repos": 7,
+   "repo_mean": 0.8571428571428571,
+   "loro_min": 0.8333333333333334,
+   "loro_max": 1,
+   "repo_rates": {
+    "fastapi": 1,
+    "Django-CRM": 0,
+    "InvenTree": 1,
+    "ralph": 1,
+    "Misago": 1,
+    "pontoon": 1,
+    "changedetection.io": 1
+   }
+  },
+  "Py:decorator": {
+   "n": 8,
+   "a": 4,
+   "repos": 6,
+   "repo_mean": 0.3333333333333333,
+   "loro_min": 0.2,
+   "loro_max": 0.5714285714285714,
+   "repo_rates": {
+    "netbox": 1,
+    "InvenTree": 0,
+    "paperless-ngx": 0,
+    "wger": 0,
+    "lotus": 1,
+    "changedetection.io": 0
+   }
+  },
+  "Py:import_source": {
+   "n": 1,
+   "a": 1,
+   "repos": 1,
+   "repo_mean": 1,
+   "loro_min": null,
+   "loro_max": null,
+   "repo_rates": {
+    "langchain": 1
+   }
+  },
+  "Py:layering": {
+   "n": 1,
+   "a": 1,
+   "repos": 1,
+   "repo_mean": 1,
+   "loro_min": null,
+   "loro_max": null,
+   "repo_rates": {
+    "simplelogin": 1
+   }
+  },
+  "Py:naming": {
+   "n": 15,
+   "a": 13,
+   "repos": 9,
+   "repo_mean": 0.9074074074074073,
+   "loro_min": 0.8461538461538461,
+   "loro_max": 0.9230769230769231,
+   "repo_rates": {
+    "netbox": 0.5,
+    "saleor": 1,
+    "InvenTree": 0.6666666666666666,
+    "ralph": 1,
+    "Misago": 1,
+    "paperless-ngx": 1,
+    "wger": 1,
+    "lotus": 1,
+    "tasking-manager": 1
+   }
+  },
+  "Py:ordering": {
+   "n": 5,
+   "a": 0,
+   "repos": 2,
+   "repo_mean": 0,
+   "loro_min": 0,
+   "loro_max": 0,
+   "repo_rates": {
+    "InvenTree": 0,
+    "tasking-manager": 0
+   }
+  },
+  "Py:repo": {
+   "n": 5,
+   "a": 0,
+   "repos": 5,
+   "repo_mean": 0,
+   "loro_min": 0,
+   "loro_max": 0,
+   "repo_rates": {
+    "full-stack-fastapi-template": 0,
+    "saleor": 0,
+    "langchain": 0,
+    "Django-CRM": 0,
+    "lotus": 0
+   }
+  },
+  "Py:wrapper": {
+   "n": 6,
+   "a": 5,
+   "repos": 3,
+   "repo_mean": 0.6666666666666666,
+   "loro_min": 0.6666666666666666,
+   "loro_max": 1,
+   "repo_rates": {
+    "Django-CRM": 1,
+    "open-wearables": 0,
+    "tasking-manager": 1
+   }
+  }
+ },
+ "loro_benefit": {
+  "TS_r2": {
+   "events": 46,
+   "multi": 44,
+   "single": 1,
+   "unnamed": 1,
+   "singleCases": [
+    "cal.com/D-594d38 (new_A; #102)"
+   ],
+   "prHelp": "#99:8 #102:1 #91:4 #83:5 #117:3 #70:2 #112:1 #78:3 #75:1 #120:2 #103:1"
+  },
+  "TS_v3": {
+   "events": 73,
+   "multi": 69,
+   "single": 1,
+   "unnamed": 3,
+   "singleCases": [
+    "cal.com/D-594d38 (new_A; #102)"
+   ],
+   "prHelp": "#60:6 #112:2 #37:5 #59:3 #50:7 #99:8 #102:1 #91:5 #83:5 #117:3 #45:7 #49:7 #51:7 #52:2 #58:4 #70:2 #78:3 #75:1 #120:2 #103:1"
+  },
+  "Py_v3": {
+   "events": 64,
+   "multi": 58,
+   "single": 1,
+   "unnamed": 5,
+   "singleCases": [
+    "tasking-manager/D-c7acd1 (new_A; #60,#96)"
+   ],
+   "prHelp": "#45:5 #49:5 #53:5 #75:1 #112:1 #64:1 #113:11 #35:3 #120:7 #97:11 #60:1 #96:1"
+  }
+ },
+ "policies": {
+  "r5:TS": {
+   "all shown": {
+    "accept": 94,
+    "shown": 147,
+    "per_repo": 11.307692307692308,
+    "repos_with_cards": 13,
+    "repo_mean": 0.6724493455262687,
+    "accepts_per_repo": 7.230769230769231,
+    "wrong": 48
+   },
+   "default tier only": {
+    "accept": 30,
+    "shown": 30,
+    "per_repo": 2.3076923076923075,
+    "repos_with_cards": 8,
+    "repo_mean": 1,
+    "accepts_per_repo": 2.3076923076923075,
+    "wrong": 0
+   },
+   "<=2 outliers": {
+    "accept": 56,
+    "shown": 77,
+    "per_repo": 5.923076923076923,
+    "repos_with_cards": 12,
+    "repo_mean": 0.7104016354016355,
+    "accepts_per_repo": 4.3076923076923075,
+    "wrong": 17
+   },
+   "<=1 outlier": {
+    "accept": 41,
+    "shown": 54,
+    "per_repo": 4.153846153846154,
+    "repos_with_cards": 12,
+    "repo_mean": 0.7650462962962963,
+    "accepts_per_repo": 3.1538461538461537,
+    "wrong": 9
+   },
+   "0 outliers": {
+    "accept": 19,
+    "shown": 25,
+    "per_repo": 1.9230769230769231,
+    "repos_with_cards": 10,
+    "repo_mean": 0.7833333333333333,
+    "accepts_per_repo": 1.4615384615384615,
+    "wrong": 2
+   },
+   "no ordering family": {
+    "accept": 93,
+    "shown": 142,
+    "per_repo": 10.923076923076923,
+    "repos_with_cards": 13,
+    "repo_mean": 0.6825115055884285,
+    "accepts_per_repo": 7.153846153846154,
+    "wrong": 44
+   },
+   "no ordering, calls, repo families": {
+    "accept": 86,
+    "shown": 127,
+    "per_repo": 9.76923076923077,
+    "repos_with_cards": 13,
+    "repo_mean": 0.7275664506433738,
+    "accepts_per_repo": 6.615384615384615,
+    "wrong": 36
+   },
+   "rank <= 5": {
+    "accept": 48,
+    "shown": 58,
+    "per_repo": 4.461538461538462,
+    "repos_with_cards": 13,
+    "repo_mean": 0.8461538461538461,
+    "accepts_per_repo": 3.6923076923076925,
+    "wrong": 8
+   },
+   "rank <= 3": {
+    "accept": 32,
+    "shown": 36,
+    "per_repo": 2.769230769230769,
+    "repos_with_cards": 13,
+    "repo_mean": 0.8974358974358974,
+    "accepts_per_repo": 2.4615384615384617,
+    "wrong": 2
+   },
+   "default + sugg <=1 outlier": {
+    "accept": 63,
+    "shown": 76,
+    "per_repo": 5.846153846153846,
+    "repos_with_cards": 12,
+    "repo_mean": 0.8067129629629629,
+    "accepts_per_repo": 4.846153846153846,
+    "wrong": 9
+   },
+   "default + sugg <=1 outlier, no ordering": {
+    "accept": 62,
+    "shown": 73,
+    "per_repo": 5.615384615384615,
+    "repos_with_cards": 12,
+    "repo_mean": 0.8184193121693122,
+    "accepts_per_repo": 4.769230769230769,
+    "wrong": 7
+   },
+   "LORO families >= 50% (n>=5)": {
+    "accept": 66,
+    "shown": 99,
+    "per_repo": 7.615384615384615,
+    "accepts_per_repo": 5.076923076923077,
+    "wrong": 28
+   },
+   "LORO families >= 50% + <=1 outlier": {
+    "accept": 52,
+    "shown": 61,
+    "per_repo": 4.6923076923076925,
+    "accepts_per_repo": 4,
+    "wrong": 5
+   },
+   "LORO families >= 60% (n>=5)": {
+    "accept": 58,
+    "shown": 82,
+    "per_repo": 6.3076923076923075,
+    "accepts_per_repo": 4.461538461538462,
+    "wrong": 20
+   },
+   "LORO families >= 60% + <=1 outlier": {
+    "accept": 48,
+    "shown": 56,
+    "per_repo": 4.3076923076923075,
+    "accepts_per_repo": 3.6923076923076925,
+    "wrong": 4
+   },
+   "LORO families >= 70% (n>=5)": {
+    "accept": 33,
+    "shown": 41,
+    "per_repo": 3.1538461538461537,
+    "accepts_per_repo": 2.5384615384615383,
+    "wrong": 6
+   },
+   "LORO families >= 70% + <=1 outlier": {
+    "accept": 30,
+    "shown": 32,
+    "per_repo": 2.4615384615384617,
+    "accepts_per_repo": 2.3076923076923075,
+    "wrong": 0
+   }
+  },
+  "r5:Py": {
+   "all shown": {
+    "accept": 47,
+    "shown": 77,
+    "per_repo": 4.529411764705882,
+    "repos_with_cards": 17,
+    "repo_mean": 0.6143239113827348,
+    "accepts_per_repo": 2.764705882352941,
+    "wrong": 30
+   },
+   "default tier only": {
+    "accept": 0,
+    "shown": 0,
+    "per_repo": 0,
+    "repos_with_cards": 0,
+    "repo_mean": 0,
+    "accepts_per_repo": 0,
+    "wrong": 0
+   },
+   "<=2 outliers": {
+    "accept": 33,
+    "shown": 48,
+    "per_repo": 2.823529411764706,
+    "repos_with_cards": 15,
+    "repo_mean": 0.6776190476190477,
+    "accepts_per_repo": 1.9411764705882353,
+    "wrong": 15
+   },
+   "<=1 outlier": {
+    "accept": 31,
+    "shown": 42,
+    "per_repo": 2.4705882352941178,
+    "repos_with_cards": 14,
+    "repo_mean": 0.6702380952380952,
+    "accepts_per_repo": 1.8235294117647058,
+    "wrong": 11
+   },
+   "0 outliers": {
+    "accept": 14,
+    "shown": 14,
+    "per_repo": 0.8235294117647058,
+    "repos_with_cards": 6,
+    "repo_mean": 1,
+    "accepts_per_repo": 0.8235294117647058,
+    "wrong": 0
+   },
+   "no ordering family": {
+    "accept": 47,
+    "shown": 72,
+    "per_repo": 4.235294117647059,
+    "repos_with_cards": 17,
+    "repo_mean": 0.6307804940157881,
+    "accepts_per_repo": 2.764705882352941,
+    "wrong": 25
+   },
+   "no ordering, calls, repo families": {
+    "accept": 39,
+    "shown": 55,
+    "per_repo": 3.235294117647059,
+    "repos_with_cards": 16,
+    "repo_mean": 0.7526785714285714,
+    "accepts_per_repo": 2.2941176470588234,
+    "wrong": 16
+   },
+   "rank <= 5": {
+    "accept": 40,
+    "shown": 58,
+    "per_repo": 3.411764705882353,
+    "repos_with_cards": 17,
+    "repo_mean": 0.6568627450980392,
+    "accepts_per_repo": 2.3529411764705883,
+    "wrong": 18
+   },
+   "rank <= 3": {
+    "accept": 30,
+    "shown": 42,
+    "per_repo": 2.4705882352941178,
+    "repos_with_cards": 17,
+    "repo_mean": 0.696078431372549,
+    "accepts_per_repo": 1.7647058823529411,
+    "wrong": 12
+   },
+   "default + sugg <=1 outlier": {
+    "accept": 31,
+    "shown": 42,
+    "per_repo": 2.4705882352941178,
+    "repos_with_cards": 14,
+    "repo_mean": 0.6702380952380952,
+    "accepts_per_repo": 1.8235294117647058,
+    "wrong": 11
+   },
+   "default + sugg <=1 outlier, no ordering": {
+    "accept": 31,
+    "shown": 40,
+    "per_repo": 2.3529411764705883,
+    "repos_with_cards": 14,
+    "repo_mean": 0.694047619047619,
+    "accepts_per_repo": 1.8235294117647058,
+    "wrong": 9
+   },
+   "LORO families >= 50% (n>=5)": {
+    "accept": 34,
+    "shown": 51,
+    "per_repo": 3,
+    "accepts_per_repo": 2,
+    "wrong": 17
+   },
+   "LORO families >= 50% + <=1 outlier": {
+    "accept": 24,
+    "shown": 29,
+    "per_repo": 1.7058823529411764,
+    "accepts_per_repo": 1.411764705882353,
+    "wrong": 5
+   },
+   "LORO families >= 60% (n>=5)": {
+    "accept": 28,
+    "shown": 39,
+    "per_repo": 2.2941176470588234,
+    "accepts_per_repo": 1.6470588235294117,
+    "wrong": 11
+   },
+   "LORO families >= 60% + <=1 outlier": {
+    "accept": 19,
+    "shown": 21,
+    "per_repo": 1.2352941176470589,
+    "accepts_per_repo": 1.1176470588235294,
+    "wrong": 2
+   },
+   "LORO families >= 70% (n>=5)": {
+    "accept": 21,
+    "shown": 28,
+    "per_repo": 1.6470588235294117,
+    "accepts_per_repo": 1.2352941176470589,
+    "wrong": 7
+   },
+   "LORO families >= 70% + <=1 outlier": {
+    "accept": 12,
+    "shown": 13,
+    "per_repo": 0.7647058823529411,
+    "accepts_per_repo": 0.7058823529411765,
+    "wrong": 1
+   }
+  },
+  "v3:TS": {
+   "all shown": {
+    "accept": 69,
+    "shown": 162,
+    "per_repo": 12.461538461538462,
+    "repos_with_cards": 13,
+    "repo_mean": 0.4465201465201465,
+    "accepts_per_repo": 5.3076923076923075,
+    "wrong": 92
+   },
+   "default tier only": {
+    "accept": 24,
+    "shown": 32,
+    "per_repo": 2.4615384615384617,
+    "repos_with_cards": 9,
+    "repo_mean": 0.5888888888888889,
+    "accepts_per_repo": 1.8461538461538463,
+    "wrong": 8
+   },
+   "<=2 outliers": {
+    "accept": 40,
+    "shown": 77,
+    "per_repo": 5.923076923076923,
+    "repos_with_cards": 12,
+    "repo_mean": 0.5027777777777779,
+    "accepts_per_repo": 3.076923076923077,
+    "wrong": 37
+   },
+   "<=1 outlier": {
+    "accept": 27,
+    "shown": 44,
+    "per_repo": 3.3846153846153846,
+    "repos_with_cards": 11,
+    "repo_mean": 0.6325757575757575,
+    "accepts_per_repo": 2.076923076923077,
+    "wrong": 17
+   },
+   "0 outliers": {
+    "accept": 0,
+    "shown": 0,
+    "per_repo": 0,
+    "repos_with_cards": 0,
+    "repo_mean": 0,
+    "accepts_per_repo": 0,
+    "wrong": 0
+   },
+   "no ordering family": {
+    "accept": 68,
+    "shown": 159,
+    "per_repo": 12.23076923076923,
+    "repos_with_cards": 13,
+    "repo_mean": 0.4465483234714004,
+    "accepts_per_repo": 5.230769230769231,
+    "wrong": 90
+   },
+   "no ordering, calls, repo families": {
+    "accept": 62,
+    "shown": 136,
+    "per_repo": 10.461538461538462,
+    "repos_with_cards": 13,
+    "repo_mean": 0.4537616229923922,
+    "accepts_per_repo": 4.769230769230769,
+    "wrong": 73
+   },
+   "rank <= 5": {
+    "accept": 34,
+    "shown": 62,
+    "per_repo": 4.769230769230769,
+    "repos_with_cards": 13,
+    "repo_mean": 0.5692307692307692,
+    "accepts_per_repo": 2.6153846153846154,
+    "wrong": 27
+   },
+   "rank <= 3": {
+    "accept": 24,
+    "shown": 38,
+    "per_repo": 2.923076923076923,
+    "repos_with_cards": 13,
+    "repo_mean": 0.641025641025641,
+    "accepts_per_repo": 1.8461538461538463,
+    "wrong": 13
+   },
+   "default + sugg <=1 outlier": {
+    "accept": 43,
+    "shown": 63,
+    "per_repo": 4.846153846153846,
+    "repos_with_cards": 12,
+    "repo_mean": 0.642824074074074,
+    "accepts_per_repo": 3.3076923076923075,
+    "wrong": 20
+   },
+   "default + sugg <=1 outlier, no ordering": {
+    "accept": 42,
+    "shown": 62,
+    "per_repo": 4.769230769230769,
+    "repos_with_cards": 12,
+    "repo_mean": 0.6398478835978836,
+    "accepts_per_repo": 3.230769230769231,
+    "wrong": 20
+   },
+   "LORO families >= 50% (n>=5)": {
+    "accept": 33,
+    "shown": 52,
+    "per_repo": 4,
+    "accepts_per_repo": 2.5384615384615383,
+    "wrong": 18
+   },
+   "LORO families >= 50% + <=1 outlier": {
+    "accept": 31,
+    "shown": 40,
+    "per_repo": 3.076923076923077,
+    "accepts_per_repo": 2.3846153846153846,
+    "wrong": 9
+   },
+   "LORO families >= 60% (n>=5)": {
+    "accept": 33,
+    "shown": 45,
+    "per_repo": 3.4615384615384617,
+    "accepts_per_repo": 2.5384615384615383,
+    "wrong": 12
+   },
+   "LORO families >= 60% + <=1 outlier": {
+    "accept": 31,
+    "shown": 40,
+    "per_repo": 3.076923076923077,
+    "accepts_per_repo": 2.3846153846153846,
+    "wrong": 9
+   },
+   "LORO families >= 70% (n>=5)": {
+    "accept": 26,
+    "shown": 37,
+    "per_repo": 2.8461538461538463,
+    "accepts_per_repo": 2,
+    "wrong": 11
+   },
+   "LORO families >= 70% + <=1 outlier": {
+    "accept": 25,
+    "shown": 33,
+    "per_repo": 2.5384615384615383,
+    "accepts_per_repo": 1.9230769230769231,
+    "wrong": 8
+   }
+  },
+  "v3:Py": {
+   "all shown": {
+    "accept": 31,
+    "shown": 98,
+    "per_repo": 5.764705882352941,
+    "repos_with_cards": 17,
+    "repo_mean": 0.35002758679229257,
+    "accepts_per_repo": 1.8235294117647058,
+    "wrong": 66
+   },
+   "default tier only": {
+    "accept": 0,
+    "shown": 0,
+    "per_repo": 0,
+    "repos_with_cards": 0,
+    "repo_mean": 0,
+    "accepts_per_repo": 0,
+    "wrong": 0
+   },
+   "<=2 outliers": {
+    "accept": 16,
+    "shown": 48,
+    "per_repo": 2.823529411764706,
+    "repos_with_cards": 15,
+    "repo_mean": 0.34142857142857147,
+    "accepts_per_repo": 0.9411764705882353,
+    "wrong": 31
+   },
+   "<=1 outlier": {
+    "accept": 13,
+    "shown": 34,
+    "per_repo": 2,
+    "repos_with_cards": 14,
+    "repo_mean": 0.37023809523809526,
+    "accepts_per_repo": 0.7647058823529411,
+    "wrong": 20
+   },
+   "0 outliers": {
+    "accept": 1,
+    "shown": 2,
+    "per_repo": 0.11764705882352941,
+    "repos_with_cards": 2,
+    "repo_mean": 0.5,
+    "accepts_per_repo": 0.058823529411764705,
+    "wrong": 0
+   },
+   "no ordering family": {
+    "accept": 31,
+    "shown": 90,
+    "per_repo": 5.294117647058823,
+    "repos_with_cards": 17,
+    "repo_mean": 0.36111111111111116,
+    "accepts_per_repo": 1.8235294117647058,
+    "wrong": 58
+   },
+   "no ordering, calls, repo families": {
+    "accept": 26,
+    "shown": 63,
+    "per_repo": 3.7058823529411766,
+    "repos_with_cards": 15,
+    "repo_mean": 0.48462962962962963,
+    "accepts_per_repo": 1.5294117647058822,
+    "wrong": 36
+   },
+   "rank <= 5": {
+    "accept": 22,
+    "shown": 63,
+    "per_repo": 3.7058823529411766,
+    "repos_with_cards": 17,
+    "repo_mean": 0.36274509803921573,
+    "accepts_per_repo": 1.2941176470588236,
+    "wrong": 40
+   },
+   "rank <= 3": {
+    "accept": 16,
+    "shown": 44,
+    "per_repo": 2.588235294117647,
+    "repos_with_cards": 17,
+    "repo_mean": 0.3725490196078431,
+    "accepts_per_repo": 0.9411764705882353,
+    "wrong": 27
+   },
+   "default + sugg <=1 outlier": {
+    "accept": 13,
+    "shown": 34,
+    "per_repo": 2,
+    "repos_with_cards": 14,
+    "repo_mean": 0.37023809523809526,
+    "accepts_per_repo": 0.7647058823529411,
+    "wrong": 20
+   },
+   "default + sugg <=1 outlier, no ordering": {
+    "accept": 13,
+    "shown": 31,
+    "per_repo": 1.8235294117647058,
+    "repos_with_cards": 14,
+    "repo_mean": 0.38809523809523805,
+    "accepts_per_repo": 0.7647058823529411,
+    "wrong": 17
+   },
+   "LORO families >= 50% (n>=5)": {
+    "accept": 15,
+    "shown": 17,
+    "per_repo": 1,
+    "accepts_per_repo": 0.8823529411764706,
+    "wrong": 2
+   },
+   "LORO families >= 50% + <=1 outlier": {
+    "accept": 5,
+    "shown": 6,
+    "per_repo": 0.35294117647058826,
+    "accepts_per_repo": 0.29411764705882354,
+    "wrong": 1
+   },
+   "LORO families >= 60% (n>=5)": {
+    "accept": 15,
+    "shown": 17,
+    "per_repo": 1,
+    "accepts_per_repo": 0.8823529411764706,
+    "wrong": 2
+   },
+   "LORO families >= 60% + <=1 outlier": {
+    "accept": 5,
+    "shown": 6,
+    "per_repo": 0.35294117647058826,
+    "accepts_per_repo": 0.29411764705882354,
+    "wrong": 1
+   },
+   "LORO families >= 70% (n>=5)": {
+    "accept": 11,
+    "shown": 13,
+    "per_repo": 0.7647058823529411,
+    "accepts_per_repo": 0.6470588235294118,
+    "wrong": 2
+   },
+   "LORO families >= 70% + <=1 outlier": {
+    "accept": 5,
+    "shown": 6,
+    "per_repo": 0.35294117647058826,
+    "accepts_per_repo": 0.29411764705882354,
+    "wrong": 1
+   }
+  },
+  "r4:TS": {
+   "all shown": {
+    "accept": 92,
+    "shown": 147,
+    "per_repo": 11.307692307692308,
+    "repos_with_cards": 13,
+    "repo_mean": 0.6532185762954993,
+    "accepts_per_repo": 7.076923076923077,
+    "wrong": 52
+   },
+   "default tier only": {
+    "accept": 30,
+    "shown": 30,
+    "per_repo": 2.3076923076923075,
+    "repos_with_cards": 8,
+    "repo_mean": 1,
+    "accepts_per_repo": 2.3076923076923075,
+    "wrong": 0
+   },
+   "<=2 outliers": {
+    "accept": 55,
+    "shown": 73,
+    "per_repo": 5.615384615384615,
+    "repos_with_cards": 12,
+    "repo_mean": 0.728493265993266,
+    "accepts_per_repo": 4.230769230769231,
+    "wrong": 16
+   },
+   "<=1 outlier": {
+    "accept": 41,
+    "shown": 52,
+    "per_repo": 4,
+    "repos_with_cards": 12,
+    "repo_mean": 0.7736742424242425,
+    "accepts_per_repo": 3.1538461538461537,
+    "wrong": 9
+   },
+   "0 outliers": {
+    "accept": 17,
+    "shown": 20,
+    "per_repo": 1.5384615384615385,
+    "repos_with_cards": 10,
+    "repo_mean": 0.8333333333333334,
+    "accepts_per_repo": 1.3076923076923077,
+    "wrong": 1
+   },
+   "no ordering family": {
+    "accept": 91,
+    "shown": 142,
+    "per_repo": 10.923076923076923,
+    "repos_with_cards": 13,
+    "repo_mean": 0.6605334836104066,
+    "accepts_per_repo": 7,
+    "wrong": 48
+   },
+   "no ordering, calls, repo families": {
+    "accept": 84,
+    "shown": 127,
+    "per_repo": 9.76923076923077,
+    "repos_with_cards": 13,
+    "repo_mean": 0.6766506997276228,
+    "accepts_per_repo": 6.461538461538462,
+    "wrong": 40
+   },
+   "rank <= 5": {
+    "accept": 42,
+    "shown": 58,
+    "per_repo": 4.461538461538462,
+    "repos_with_cards": 13,
+    "repo_mean": 0.7538461538461539,
+    "accepts_per_repo": 3.230769230769231,
+    "wrong": 15
+   },
+   "rank <= 3": {
+    "accept": 26,
+    "shown": 36,
+    "per_repo": 2.769230769230769,
+    "repos_with_cards": 13,
+    "repo_mean": 0.7435897435897435,
+    "accepts_per_repo": 2,
+    "wrong": 9
+   },
+   "default + sugg <=1 outlier": {
+    "accept": 63,
+    "shown": 74,
+    "per_repo": 5.6923076923076925,
+    "repos_with_cards": 12,
+    "repo_mean": 0.8118686868686869,
+    "accepts_per_repo": 4.846153846153846,
+    "wrong": 9
+   },
+   "default + sugg <=1 outlier, no ordering": {
+    "accept": 62,
+    "shown": 71,
+    "per_repo": 5.461538461538462,
+    "repos_with_cards": 12,
+    "repo_mean": 0.8138528138528139,
+    "accepts_per_repo": 4.769230769230769,
+    "wrong": 7
+   },
+   "LORO families >= 50% (n>=5)": {
+    "accept": 63,
+    "shown": 97,
+    "per_repo": 7.461538461538462,
+    "accepts_per_repo": 4.846153846153846,
+    "wrong": 31
+   },
+   "LORO families >= 50% + <=1 outlier": {
+    "accept": 50,
+    "shown": 57,
+    "per_repo": 4.384615384615385,
+    "accepts_per_repo": 3.8461538461538463,
+    "wrong": 5
+   },
+   "LORO families >= 60% (n>=5)": {
+    "accept": 43,
+    "shown": 67,
+    "per_repo": 5.153846153846154,
+    "accepts_per_repo": 3.3076923076923075,
+    "wrong": 22
+   },
+   "LORO families >= 60% + <=1 outlier": {
+    "accept": 40,
+    "shown": 45,
+    "per_repo": 3.4615384615384617,
+    "accepts_per_repo": 3.076923076923077,
+    "wrong": 3
+   },
+   "LORO families >= 70% (n>=5)": {
+    "accept": 32,
+    "shown": 35,
+    "per_repo": 2.6923076923076925,
+    "accepts_per_repo": 2.4615384615384617,
+    "wrong": 3
+   },
+   "LORO families >= 70% + <=1 outlier": {
+    "accept": 30,
+    "shown": 30,
+    "per_repo": 2.3076923076923075,
+    "accepts_per_repo": 2.3076923076923075,
+    "wrong": 0
+   }
+  },
+  "r4:Py": {
+   "all shown": {
+    "accept": 38,
+    "shown": 83,
+    "per_repo": 4.882352941176471,
+    "repos_with_cards": 17,
+    "repo_mean": 0.48961675579322633,
+    "accepts_per_repo": 2.235294117647059,
+    "wrong": 44
+   },
+   "default tier only": {
+    "accept": 0,
+    "shown": 0,
+    "per_repo": 0,
+    "repos_with_cards": 0,
+    "repo_mean": 0,
+    "accepts_per_repo": 0,
+    "wrong": 0
+   },
+   "<=2 outliers": {
+    "accept": 24,
+    "shown": 55,
+    "per_repo": 3.235294117647059,
+    "repos_with_cards": 16,
+    "repo_mean": 0.46249999999999997,
+    "accepts_per_repo": 1.411764705882353,
+    "wrong": 30
+   },
+   "<=1 outlier": {
+    "accept": 21,
+    "shown": 46,
+    "per_repo": 2.7058823529411766,
+    "repos_with_cards": 15,
+    "repo_mean": 0.44666666666666666,
+    "accepts_per_repo": 1.2352941176470589,
+    "wrong": 24
+   },
+   "0 outliers": {
+    "accept": 6,
+    "shown": 13,
+    "per_repo": 0.7647058823529411,
+    "repos_with_cards": 6,
+    "repo_mean": 0.4666666666666666,
+    "accepts_per_repo": 0.35294117647058826,
+    "wrong": 6
+   },
+   "no ordering family": {
+    "accept": 38,
+    "shown": 78,
+    "per_repo": 4.588235294117647,
+    "repos_with_cards": 17,
+    "repo_mean": 0.4988795518207283,
+    "accepts_per_repo": 2.235294117647059,
+    "wrong": 39
+   },
+   "no ordering, calls, repo families": {
+    "accept": 32,
+    "shown": 61,
+    "per_repo": 3.588235294117647,
+    "repos_with_cards": 16,
+    "repo_mean": 0.5941468253968254,
+    "accepts_per_repo": 1.8823529411764706,
+    "wrong": 28
+   },
+   "rank <= 5": {
+    "accept": 30,
+    "shown": 61,
+    "per_repo": 3.588235294117647,
+    "repos_with_cards": 17,
+    "repo_mean": 0.5,
+    "accepts_per_repo": 1.7647058823529411,
+    "wrong": 30
+   },
+   "rank <= 3": {
+    "accept": 23,
+    "shown": 44,
+    "per_repo": 2.588235294117647,
+    "repos_with_cards": 17,
+    "repo_mean": 0.5294117647058824,
+    "accepts_per_repo": 1.3529411764705883,
+    "wrong": 20
+   },
+   "default + sugg <=1 outlier": {
+    "accept": 21,
+    "shown": 46,
+    "per_repo": 2.7058823529411766,
+    "repos_with_cards": 15,
+    "repo_mean": 0.44666666666666666,
+    "accepts_per_repo": 1.2352941176470589,
+    "wrong": 24
+   },
+   "default + sugg <=1 outlier, no ordering": {
+    "accept": 21,
+    "shown": 44,
+    "per_repo": 2.588235294117647,
+    "repos_with_cards": 15,
+    "repo_mean": 0.4633333333333333,
+    "accepts_per_repo": 1.2352941176470589,
+    "wrong": 22
+   },
+   "LORO families >= 50% (n>=5)": {
+    "accept": 11,
+    "shown": 20,
+    "per_repo": 1.1764705882352942,
+    "accepts_per_repo": 0.6470588235294118,
+    "wrong": 9
+   },
+   "LORO families >= 50% + <=1 outlier": {
+    "accept": 6,
+    "shown": 11,
+    "per_repo": 0.6470588235294118,
+    "accepts_per_repo": 0.35294117647058826,
+    "wrong": 5
+   },
+   "LORO families >= 60% (n>=5)": {
+    "accept": 10,
+    "shown": 13,
+    "per_repo": 0.7647058823529411,
+    "accepts_per_repo": 0.5882352941176471,
+    "wrong": 3
+   },
+   "LORO families >= 60% + <=1 outlier": {
+    "accept": 5,
+    "shown": 6,
+    "per_repo": 0.35294117647058826,
+    "accepts_per_repo": 0.29411764705882354,
+    "wrong": 1
+   },
+   "LORO families >= 70% (n>=5)": {
+    "accept": 10,
+    "shown": 13,
+    "per_repo": 0.7647058823529411,
+    "accepts_per_repo": 0.5882352941176471,
+    "wrong": 3
+   },
+   "LORO families >= 70% + <=1 outlier": {
+    "accept": 5,
+    "shown": 6,
+    "per_repo": 0.35294117647058826,
+    "accepts_per_repo": 0.29411764705882354,
+    "wrong": 1
+   }
+  }
+ },
+ "flag_precision": {
+  "Py suggestion argument_key": {
+   "real": 20,
+   "n": 31,
+   "repos": 3,
+   "repo_min": 0,
+   "repo_max": 1
+  },
+  "Py suggestion avoids_other": {
+   "real": 1,
+   "n": 2,
+   "repos": 1,
+   "repo_min": 0.5,
+   "repo_max": 0.5
+  },
+  "Py suggestion base_class": {
+   "real": 9,
+   "n": 57,
+   "repos": 7,
+   "repo_min": 0,
+   "repo_max": 1
+  },
+  "Py suggestion calls": {
+   "real": 26,
+   "n": 82,
+   "repos": 7,
+   "repo_min": 0,
+   "repo_max": 0.5
+  },
+  "Py suggestion control": {
+   "real": 39,
+   "n": 57,
+   "repos": 7,
+   "repo_min": 0.05263157894736842,
+   "repo_max": 1
+  },
+  "Py suggestion decorator": {
+   "real": 1,
+   "n": 18,
+   "repos": 6,
+   "repo_min": 0,
+   "repo_max": 0.5
+  },
+  "Py suggestion import_source": {
+   "real": 2,
+   "n": 2,
+   "repos": 1,
+   "repo_min": 1,
+   "repo_max": 1
+  },
+  "Py suggestion layering": {
+   "real": 2,
+   "n": 4,
+   "repos": 1,
+   "repo_min": 0.5,
+   "repo_max": 0.5
+  },
+  "Py suggestion naming": {
+   "real": 40,
+   "n": 60,
+   "repos": 7,
+   "repo_min": 0,
+   "repo_max": 1
+  },
+  "Py suggestion ordering": {
+   "real": 0,
+   "n": 26,
+   "repos": 2,
+   "repo_min": 0,
+   "repo_max": 0
+  },
+  "Py suggestion repo": {
+   "real": 3,
+   "n": 24,
+   "repos": 5,
+   "repo_min": 0,
+   "repo_max": 0.5
+  },
+  "Py suggestion wrapper": {
+   "real": 57,
+   "n": 79,
+   "repos": 3,
+   "repo_min": 0,
+   "repo_max": 1
+  },
+  "Py suggestion": {
+   "real": 200,
+   "n": 442,
+   "repos": 17,
+   "repo_min": 0,
+   "repo_max": 1
+  },
+  "TS default layering": {
+   "real": 61,
+   "n": 68,
+   "repos": 4,
+   "repo_min": 0.8541666666666666,
+   "repo_max": 1
+  },
+  "TS default wrapper": {
+   "real": 200,
+   "n": 226,
+   "repos": 8,
+   "repo_min": 0,
+   "repo_max": 1
+  },
+  "TS default": {
+   "real": 261,
+   "n": 294,
+   "repos": 8,
+   "repo_min": 0,
+   "repo_max": 1
+  },
+  "TS suggestion argument_key": {
+   "real": 15,
+   "n": 90,
+   "repos": 5,
+   "repo_min": 0,
+   "repo_max": 0.4375
+  },
+  "TS suggestion avoids_other": {
+   "real": 14,
+   "n": 31,
+   "repos": 2,
+   "repo_min": 0.11764705882352941,
+   "repo_max": 0.8571428571428571
+  },
+  "TS suggestion base_class": {
+   "real": 24,
+   "n": 73,
+   "repos": 6,
+   "repo_min": 0,
+   "repo_max": 0.425531914893617
+  },
+  "TS suggestion calls": {
+   "real": 4,
+   "n": 26,
+   "repos": 2,
+   "repo_min": 0,
+   "repo_max": 0.18181818181818182
+  },
+  "TS suggestion control": {
+   "real": 40,
+   "n": 63,
+   "repos": 3,
+   "repo_min": 0,
+   "repo_max": 1
+  },
+  "TS suggestion decorator": {
+   "real": 50,
+   "n": 150,
+   "repos": 4,
+   "repo_min": 0.09302325581395349,
+   "repo_max": 0.75
+  },
+  "TS suggestion jsx_wrapper": {
+   "real": 0,
+   "n": 2,
+   "repos": 1,
+   "repo_min": 0,
+   "repo_max": 0
+  },
+  "TS suggestion naming": {
+   "real": 118,
+   "n": 240,
+   "repos": 10,
+   "repo_min": 0.09090909090909091,
+   "repo_max": 1
+  },
+  "TS suggestion ordering": {
+   "real": 1,
+   "n": 16,
+   "repos": 4,
+   "repo_min": 0,
+   "repo_max": 0.5
+  },
+  "TS suggestion renders": {
+   "real": 2,
+   "n": 52,
+   "repos": 4,
+   "repo_min": 0,
+   "repo_max": 1
+  },
+  "TS suggestion repo": {
+   "real": 58,
+   "n": 101,
+   "repos": 5,
+   "repo_min": 0,
+   "repo_max": 0.9473684210526315
+  },
+  "TS suggestion wrapper": {
+   "real": 0,
+   "n": 4,
+   "repos": 1,
+   "repo_min": 0,
+   "repo_max": 0
+  },
+  "TS suggestion": {
+   "real": 326,
+   "n": 848,
+   "repos": 13,
+   "repo_min": 0,
+   "repo_max": 0.8636363636363636
+  }
+ },
+ "family_history": {
+  "TS:argument_key": {
+   "v3": [
+    4,
+    16
+   ],
+   "r2": [
+    4,
+    16
+   ],
+   "r3": [
+    4,
+    16
+   ],
+   "r4": [
+    6,
+    12
+   ],
+   "r5": [
+    6,
+    12
+   ]
+  },
+  "TS:avoids_other": {
+   "v3": [
+    2,
+    6
+   ],
+   "r2": [
+    2,
+    6
+   ],
+   "r3": [
+    2,
+    6
+   ],
+   "r4": [
+    1,
+    2
+   ],
+   "r5": [
+    1,
+    2
+   ]
+  },
+  "TS:base_class": {
+   "v3": [
+    9,
+    13
+   ],
+   "r2": [
+    9,
+    13
+   ],
+   "r3": [
+    9,
+    13
+   ],
+   "r4": [
+    10,
+    15
+   ],
+   "r5": [
+    10,
+    15
+   ]
+  },
+  "TS:calls": {
+   "v3": [
+    2,
+    14
+   ],
+   "r2": [
+    2,
+    14
+   ],
+   "r3": [
+    2,
+    14
+   ],
+   "r4": [
+    0,
+    2
+   ],
+   "r5": [
+    0,
+    2
+   ]
+  },
+  "TS:control": {
+   "v3": [
+    3,
+    9
+   ],
+   "r2": [
+    4,
+    7
+   ],
+   "r3": [
+    4,
+    7
+   ],
+   "r4": [
+    4,
+    5
+   ],
+   "r5": [
+    5,
+    6
+   ]
+  },
+  "TS:decorator": {
+   "v3": [
+    6,
+    16
+   ],
+   "r2": [
+    7,
+    16
+   ],
+   "r3": [
+    7,
+    16
+   ],
+   "r4": [
+    7,
+    16
+   ],
+   "r5": [
+    6,
+    15
+   ]
+  },
+  "TS:jsx_wrapper": {
+   "v3": [
+    1,
+    2
+   ],
+   "r2": [
+    2,
+    2
+   ],
+   "r3": [
+    2,
+    2
+   ],
+   "r4": [
+    2,
+    2
+   ],
+   "r5": [
+    2,
+    2
+   ]
+  },
+  "TS:naming": {
+   "v3": [
+    11,
+    30
+   ],
+   "r2": [
+    12,
+    30
+   ],
+   "r3": [
+    18,
+    30
+   ],
+   "r4": [
+    20,
+    34
+   ],
+   "r5": [
+    22,
+    34
+   ]
+  },
+  "TS:ordering": {
+   "v3": [
+    1,
+    3
+   ],
+   "r2": [
+    1,
+    3
+   ],
+   "r3": [
+    1,
+    3
+   ],
+   "r4": [
+    1,
+    5
+   ],
+   "r5": [
+    1,
+    5
+   ]
+  },
+  "TS:renders": {
+   "v3": [
+    2,
+    11
+   ],
+   "r2": [
+    4,
+    10
+   ],
+   "r3": [
+    4,
+    10
+   ],
+   "r4": [
+    4,
+    10
+   ],
+   "r5": [
+    4,
+    10
+   ]
+  },
+  "TS:repo": {
+   "v3": [
+    4,
+    9
+   ],
+   "r2": [
+    5,
+    11
+   ],
+   "r3": [
+    5,
+    11
+   ],
+   "r4": [
+    7,
+    13
+   ],
+   "r5": [
+    7,
+    13
+   ]
+  },
+  "TS:wrapper": {
+   "v3": [
+    0,
+    1
+   ],
+   "r2": [
+    0,
+    1
+   ],
+   "r3": [
+    0,
+    1
+   ],
+   "r4": [
+    0,
+    1
+   ],
+   "r5": [
+    0,
+    1
+   ]
+  },
+  "Py:argument_key": {
+   "v3": [
+    2,
+    4
+   ],
+   "r3": [
+    2,
+    4
+   ],
+   "r4": [
+    2,
+    4
+   ],
+   "r5": [
+    2,
+    4
+   ]
+  },
+  "Py:avoids_other": {
+   "v3": [
+    0,
+    4
+   ],
+   "r3": [
+    0,
+    4
+   ],
+   "r4": [
+    0,
+    1
+   ],
+   "r5": [
+    0,
+    1
+   ]
+  },
+  "Py:base_class": {
+   "v3": [
+    2,
+    12
+   ],
+   "r3": [
+    3,
+    12
+   ],
+   "r4": [
+    4,
+    12
+   ],
+   "r5": [
+    6,
+    11
+   ]
+  },
+  "Py:calls": {
+   "v3": [
+    4,
+    20
+   ],
+   "r3": [
+    4,
+    21
+   ],
+   "r4": [
+    5,
+    10
+   ],
+   "r5": [
+    8,
+    12
+   ]
+  },
+  "Py:control": {
+   "v3": [
+    8,
+    8
+   ],
+   "r3": [
+    8,
+    9
+   ],
+   "r4": [
+    8,
+    9
+   ],
+   "r5": [
+    7,
+    8
+   ]
+  },
+  "Py:decorator": {
+   "v3": [
+    1,
+    7
+   ],
+   "r3": [
+    3,
+    7
+   ],
+   "r4": [
+    3,
+    7
+   ],
+   "r5": [
+    4,
+    8
+   ]
+  },
+  "Py:import_source": {
+   "r3": [
+    1,
+    1
+   ],
+   "r4": [
+    1,
+    1
+   ],
+   "r5": [
+    1,
+    1
+   ]
+  },
+  "Py:layering": {
+   "v3": [
+    1,
+    1
+   ],
+   "r3": [
+    1,
+    1
+   ],
+   "r4": [
+    1,
+    1
+   ],
+   "r5": [
+    1,
+    1
+   ]
+  },
+  "Py:naming": {
+   "v3": [
+    5,
+    18
+   ],
+   "r3": [
+    5,
+    18
+   ],
+   "r4": [
+    7,
+    18
+   ],
+   "r5": [
+    13,
+    15
+   ]
+  },
+  "Py:ordering": {
+   "v3": [
+    0,
+    8
+   ],
+   "r3": [
+    0,
+    8
+   ],
+   "r4": [
+    0,
+    5
+   ],
+   "r5": [
+    0,
+    5
+   ]
+  },
+  "Py:repo": {
+   "v3": [
+    1,
+    7
+   ],
+   "r3": [
+    1,
+    7
+   ],
+   "r4": [
+    1,
+    7
+   ],
+   "r5": [
+    0,
+    5
+   ]
+  },
+  "Py:wrapper": {
+   "v3": [
+    7,
+    9
+   ],
+   "r3": [
+    6,
+    8
+   ],
+   "r4": [
+    6,
+    8
+   ],
+   "r5": [
+    5,
+    6
+   ]
+  }
+ },
+ "chased": {
+  "TS": {
+   "by_times_named": {
+    "0": {
+     "ACCEPT": 21,
+     "other": 16
+    },
+    "1": {
+     "ACCEPT": 27,
+     "other": 16
+    },
+    "4+": {
+     "ACCEPT": 32,
+     "other": 7
+    },
+    "2-3": {
+     "ACCEPT": 14,
+     "other": 14
+    }
+   },
+   "nonaccept_named_by_2plus_r5to9": [
+    "cal.com/D-8d7d13(83,91,102)",
+    "cal.com/D-42ab67(88,102)",
+    "midday/D-98e729(75,83,99)",
+    "infisical/D-4be5e9(99,117)",
+    "infisical/D-156a6f(83,91,117)",
+    "infisical/D-ac787f(91,112,117)"
+   ]
+  },
+  "Py": {
+   "by_times_named": {
+    "0": {
+     "ACCEPT": 18,
+     "other": 17
+    },
+    "1": {
+     "ACCEPT": 18,
+     "other": 11
+    },
+    "4+": {
+     "ACCEPT": 6,
+     "other": 0
+    },
+    "2-3": {
+     "ACCEPT": 5,
+     "other": 2
+    }
+   },
+   "nonaccept_named_by_2plus_r5to9": [
+    "netbox/D-76eb6b(99,117)"
+   ]
+  }
+ },
+ "mechanisms": {
+  "r5:TS:M1 (no TS naming on plain-function roles)": [
+   94,
+   142
+  ],
+  "r5:TS:I1 (no ordering)": [
+   93,
+   142
+  ],
+  "r5:TS:I1+I2 (hide ordering, renders, calls)": [
+   89,
+   130
+  ],
+  "r5:TS:M1+I1+I2": [
+   89,
+   125
+  ],
+  "r5:Py:M1 (no TS naming on plain-function roles)": [
+   47,
+   77
+  ],
+  "r5:Py:I1 (no ordering)": [
+   47,
+   72
+  ],
+  "r5:Py:I1+I2 (hide ordering, repo)": [
+   47,
+   67
+  ],
+  "r5:Py:M1+I1+I2": [
+   47,
+   67
+  ],
+  "v3:TS:M1 (no TS naming on plain-function roles)": [
+   69,
+   158
+  ],
+  "v3:TS:I1 (no ordering)": [
+   68,
+   159
+  ],
+  "v3:TS:I1+I2 (hide ordering, renders, calls)": [
+   64,
+   134
+  ],
+  "v3:TS:M1+I1+I2": [
+   64,
+   130
+  ],
+  "v3:Py:M1 (no TS naming on plain-function roles)": [
+   31,
+   98
+  ],
+  "v3:Py:I1 (no ordering)": [
+   31,
+   90
+  ],
+  "v3:Py:I1+I2 (hide ordering, repo)": [
+   30,
+   83
+  ],
+  "v3:Py:M1+I1+I2": [
+   30,
+   83
+  ]
+ }
+}

@@ -1,0 +1,180 @@
+{
+  "seed": "drift-rubric-v3-calibration-2026-11-06",
+  "tier": {
+    "//": "Pre-registered 2026-11-05 by the product lead, before these sets were drawn. DEFAULT tier (blocking-eligible; its ACCEPT / shown is the headline default-tier accept rate) = the proposal's structured rule kind (lib.mjs ruleKind: conventions.yaml rule.type, rule.kind for wrapped_by, import vs other signal for avoids; never the summary text) is in default.rule_kinds AND its role has >= default.min_members members (PLAN: n >= 15 to allow blocking). SUGGESTION tier = every other shown proposal, including kinds listed in neither list and proposals without a structured rule. The not-wrong rate is reported over all shown proposals, both tiers. Amended 2026-11-05, before any held-out run (no held-out data existed): wrapped_by:jsx moved from suggestion to default (product lead).",
+    "kind": "rule_kind",
+    "default": {
+      "//": "call wrappers, decorators, base classes, required argument keys, layering (import avoidance), rendered components, rendered inside a (layout) wrapper",
+      "rule_kinds": [
+        "wrapped_by:call",
+        "wrapped_by:decorator",
+        "wrapped_by:extends",
+        "passes_key",
+        "avoids:import",
+        "renders",
+        "wrapped_by:jsx"
+      ],
+      "min_members": 15
+    },
+    "suggestion": {
+      "//": "named by the product lead: generic calls, naming, absence (any/console/bare Error and other non-import avoids), preferred libraries, ordering, file/model/package rules. Unmeasured, so suggestion tier (the default tier is an allowlist): wrapped_by:try, control, directive, throws.",
+      "rule_kinds": [
+        "calls",
+        "named",
+        "avoids:other",
+        "prefers_library",
+        "before",
+        "has_test",
+        "model_has",
+        "package_has",
+        "dependency_version",
+        "wrapped_by:try",
+        "control",
+        "directive",
+        "throws"
+      ]
+    },
+    "not_wrong_over": "all_shown"
+  },
+  "per_cell": 10,
+  "forced": {
+    "ts": {
+      "restated decorator": [
+        "twenty/D-6429a5",
+        "twenty/D-7e503c",
+        "immich/D-4fc758"
+      ],
+      "key the callee's type requires": [
+        "infisical/D-d9b44e",
+        "infisical/D-1b2542",
+        "twenty/D-47b768",
+        "twenty/D-006db2"
+      ],
+      "mandatory library primitives": [
+        "dub/D-e25af3",
+        "dub/D-a23ff8",
+        "dub/D-3fad9a",
+        "dub/D-024a81",
+        "dub/D-418256"
+      ],
+      "A/B disagreement, ts-r2": [
+        "ai/D-fc5ef7",
+        "supabase/D-d8dcea",
+        "novu/D-4512a2",
+        "midday/D-efc6d4",
+        "midday/D-98e729"
+      ]
+    },
+    "py": {
+      "A/B disagreement, py-r2": [
+        "polar/D-fb4011",
+        "netbox/D-310ec7",
+        "saleor/D-e36ea5",
+        "langchain/D-468530"
+      ],
+      "co-located helper outliers (one ACCEPT, one WRONG)": [
+        "CTFd/D-560792",
+        "CTFd/D-f6c1fb"
+      ]
+    }
+  },
+  "languages": {
+    "ts": {
+      "source": "eval/study/runs/dev-ts-r2-2026-11-05",
+      "uids": 37,
+      "repos": [
+        "dub",
+        "twenty",
+        "cal.com",
+        "documenso",
+        "ai",
+        "nest",
+        "supabase",
+        "novu",
+        "immich",
+        "midday",
+        "infisical"
+      ],
+      "cells": {
+        "default": {
+          "pool": 79,
+          "pool_r2": 9,
+          "drawn": [
+            "supabase/D-b10f47",
+            "cal.com/D-441d0e",
+            "documenso/D-c3b713",
+            "documenso/D-55ae12",
+            "cal.com/D-f26528",
+            "midday/D-f90103",
+            "midday/D-7da2b9",
+            "documenso/D-2a51e9",
+            "nest/D-f68b2a",
+            "immich/D-c10e8e"
+          ]
+        },
+        "suggestion": {
+          "pool": 66,
+          "pool_r2": 17,
+          "drawn": [
+            "twenty/D-868e25",
+            "supabase/D-c59437",
+            "midday/D-f6c709",
+            "midday/D-495f56",
+            "cal.com/D-554063",
+            "ai/D-224b9e",
+            "dub/D-742eb6",
+            "dub/D-79cc0a",
+            "immich/D-26380c",
+            "dub/D-258285"
+          ]
+        }
+      }
+    },
+    "py": {
+      "source": "eval/study/runs/dev-py-r2-2026-11-05",
+      "uids": 26,
+      "repos": [
+        "full-stack-fastapi-template",
+        "polar",
+        "netbox",
+        "saleor",
+        "CTFd",
+        "langchain"
+      ],
+      "cells": {
+        "default": {
+          "pool": 15,
+          "pool_r2": 7,
+          "drawn": [
+            "polar/D-093712",
+            "netbox/D-cc1341",
+            "netbox/D-e5e365",
+            "polar/D-e5f85b",
+            "polar/D-f53bba",
+            "polar/D-9c16e6",
+            "polar/D-77dc4b",
+            "netbox/D-bc0c7d",
+            "polar/D-26e577",
+            "polar/D-31bf00"
+          ]
+        },
+        "suggestion": {
+          "pool": 22,
+          "pool_r2": 9,
+          "drawn": [
+            "netbox/D-937c0c",
+            "polar/D-2ef961",
+            "netbox/D-73d13c",
+            "netbox/D-58913a",
+            "polar/D-f818d9",
+            "saleor/D-ac08d9",
+            "polar/D-5ef201",
+            "saleor/D-6af632",
+            "full-stack-fastapi-template/D-6e757d",
+            "netbox/D-4c4e2d"
+          ]
+        }
+      }
+    }
+  }
+}

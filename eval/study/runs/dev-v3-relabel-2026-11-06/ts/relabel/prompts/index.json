@@ -1,0 +1,291 @@
+[
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "dub",
+    "prompt": "/home/user/drift-wt/relabel/eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/A/dub.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/0c208ea4-be1e-4914-996a-818c225be185/out.jsonl",
+    "expected": [
+      "dub/D-345913"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T18:00:48.270Z",
+    "collected": {
+      "at": "2026-11-06T18:03:44.202Z",
+      "dest": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/labels/A/dub.jsonl",
+      "records": 1,
+      "sha256": "3f6b77e13340825f23847bfe43ed4fcd63d36a18e10203ae794dc0a432a07e11"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "cal.com",
+    "prompt": "/home/user/drift-wt/relabel/eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/A/cal.com.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/151aa444-ff0b-4e5b-b556-0cdd2dd7938e/out.jsonl",
+    "expected": [
+      "cal.com/D-c54406"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T18:00:48.272Z",
+    "collected": {
+      "at": "2026-11-06T18:03:44.205Z",
+      "dest": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/labels/A/cal.com.jsonl",
+      "records": 1,
+      "sha256": "79ce2d18bca6374ffb98aa6294491fcd2473c12662f9c942e927faa34ed22847"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "documenso",
+    "prompt": "/home/user/drift-wt/relabel/eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/A/documenso.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/79c90905-16ff-4ceb-90b2-588db904f9f8/out.jsonl",
+    "expected": [
+      "documenso/D-32c861",
+      "documenso/D-a0eee5"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T18:00:48.273Z",
+    "collected": {
+      "at": "2026-11-06T18:03:44.206Z",
+      "dest": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/labels/A/documenso.jsonl",
+      "records": 2,
+      "sha256": "cc04fb6a87a170078b3fcf0e27b21ffb7f6eda52a4f1f9938f890f7ab44b6b97"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "ai",
+    "prompt": "/home/user/drift-wt/relabel/eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/A/ai.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/3dd14e0a-9101-499e-9798-bb49fb819cba/out.jsonl",
+    "expected": [
+      "ai/D-fc5ef7"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T18:00:48.274Z",
+    "collected": {
+      "at": "2026-11-06T18:03:44.206Z",
+      "dest": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/labels/A/ai.jsonl",
+      "records": 1,
+      "sha256": "1abd43da938e517bd61d2302f00b069a91d63355090d4148a663a1da909ac9f0"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "supabase",
+    "prompt": "/home/user/drift-wt/relabel/eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/A/supabase.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/505f8824-8f65-42e2-ba84-756ea2801a20/out.jsonl",
+    "expected": [
+      "supabase/D-c2e88c"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T18:00:48.274Z",
+    "collected": {
+      "at": "2026-11-06T18:03:44.207Z",
+      "dest": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/labels/A/supabase.jsonl",
+      "records": 1,
+      "sha256": "23282aee643dc8dbc59a3f52814292f2d5aea3c79a573df2c2328f970061b6ef"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "midday",
+    "prompt": "/home/user/drift-wt/relabel/eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/A/midday.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/c8d9359f-81b7-424a-a5c4-202e3349eddd/out.jsonl",
+    "expected": [
+      "midday/D-50255f"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T18:00:48.274Z",
+    "collected": {
+      "at": "2026-11-06T18:03:44.208Z",
+      "dest": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/labels/A/midday.jsonl",
+      "records": 1,
+      "sha256": "b7bf65e981693ab012a57aa3897007a91f1820a35fd68dfe3eb0aceb95fc8382"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "infisical",
+    "prompt": "/home/user/drift-wt/relabel/eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/A/infisical.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/991018e6-6aad-4691-a140-27953d75afa6/out.jsonl",
+    "expected": [
+      "infisical/D-c4efb8",
+      "infisical/D-f674a5"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T18:00:48.274Z",
+    "collected": {
+      "at": "2026-11-06T18:03:44.209Z",
+      "dest": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/labels/A/infisical.jsonl",
+      "records": 2,
+      "sha256": "11607b81004bdfd225a9c230fbed133338cb5fab90ee81099dac1f7b08ae9032"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "dub",
+    "prompt": "/home/user/drift-wt/relabel/eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/B/dub.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/d54121f2-f9fa-4476-9aae-a703888d23ca/out.jsonl",
+    "expected": [
+      "dub/D-345913"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T18:03:44.249Z",
+    "collected": {
+      "at": "2026-11-06T18:05:40.186Z",
+      "dest": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/labels/B/dub.jsonl",
+      "records": 1,
+      "sha256": "7db7f8e221bf7714b6ac830e04bbee18cf0db7c811765a10a0c0cc8eeeef7ced"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "cal.com",
+    "prompt": "/home/user/drift-wt/relabel/eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/B/cal.com.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/fa487a0f-d7a1-4a26-a934-5c6f1e4c729d/out.jsonl",
+    "expected": [
+      "cal.com/D-c54406"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T18:03:44.250Z",
+    "collected": {
+      "at": "2026-11-06T18:07:17.256Z",
+      "dest": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/labels/B/cal.com.jsonl",
+      "records": 1,
+      "sha256": "7577c2d84a514090bfa1be928f37f7b792b103e47f32ec7e91c2ba674333fe34"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "documenso",
+    "prompt": "/home/user/drift-wt/relabel/eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/B/documenso.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/ee1e072b-f971-466c-a516-aaf2e4c5086c/out.jsonl",
+    "expected": [
+      "documenso/D-32c861",
+      "documenso/D-a0eee5"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T18:03:44.251Z",
+    "collected": {
+      "at": "2026-11-06T18:05:40.189Z",
+      "dest": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/labels/B/documenso.jsonl",
+      "records": 2,
+      "sha256": "652e7184317d39ca4c30c110657c7e7bab766cc29c73110848862993c9b86998"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "ai",
+    "prompt": "/home/user/drift-wt/relabel/eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/B/ai.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/859b7f4e-e85b-40ee-a912-e623ca668864/out.jsonl",
+    "expected": [
+      "ai/D-fc5ef7"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T18:03:44.251Z",
+    "collected": {
+      "at": "2026-11-06T18:05:40.190Z",
+      "dest": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/labels/B/ai.jsonl",
+      "records": 1,
+      "sha256": "61fb4309a93e204cc87405af99a13b1bca87d9cb6de6b060d77ed3e565874f57"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "supabase",
+    "prompt": "/home/user/drift-wt/relabel/eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/B/supabase.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/66e4200a-d5cc-467f-a4f5-45d71bd1c233/out.jsonl",
+    "expected": [
+      "supabase/D-c2e88c"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T18:03:44.251Z",
+    "collected": {
+      "at": "2026-11-06T18:05:40.193Z",
+      "dest": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/labels/B/supabase.jsonl",
+      "records": 1,
+      "sha256": "8443d45ee32010d77181062253e58c989bc0b19782e69a449e6861c3dd2b5d9d"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "midday",
+    "prompt": "/home/user/drift-wt/relabel/eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/B/midday.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/8a31494c-04bd-461f-9545-b670d8ea59f5/out.jsonl",
+    "expected": [
+      "midday/D-50255f"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T18:03:44.252Z",
+    "collected": {
+      "at": "2026-11-06T18:05:40.195Z",
+      "dest": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/labels/B/midday.jsonl",
+      "records": 1,
+      "sha256": "6c9fc2005418bc86b9a9f92a5c7aaa14588fa04e2bd5c69a915573d5342143ef"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "infisical",
+    "prompt": "/home/user/drift-wt/relabel/eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/label/B/infisical.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/44b8426d-1c3d-44bd-9a82-c12d3763c15e/out.jsonl",
+    "expected": [
+      "infisical/D-c4efb8",
+      "infisical/D-f674a5"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T18:03:44.252Z",
+    "collected": {
+      "at": "2026-11-06T18:07:17.257Z",
+      "dest": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/labels/B/infisical.jsonl",
+      "records": 2,
+      "sha256": "c2cfda1b1603e4c030821af8ff90f7256c6fe2e07cf35fbecfc4372e895b76e2"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "dub",
+    "prompt": "/home/user/drift-wt/relabel/eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/prompts/adjudicate/C/dub.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx5/outbox/789c99fc-6587-45a8-8301-792bb6f8ea16/out.jsonl",
+    "expected": [
+      "dub/D-345913"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T18:07:22.453Z",
+    "collected": {
+      "at": "2026-11-06T18:08:50.782Z",
+      "dest": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/labels/C/dub.jsonl",
+      "records": 1,
+      "sha256": "2ca5f31fc7e7fc9742df7c1f691133004d626fde1597e501c89ec66c4c58f291"
+    }
+  }
+]

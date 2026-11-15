@@ -1,0 +1,297 @@
+{
+  "labels_sha256": {
+    "A": "f7f86e8866742bc74279916a6ff3dda4f682199f16093bf4d3824b1148589f8c",
+    "B": "8ab2639a4ab89dff2a5c73bd42155d3f2c2ad66f129b379dd61bce4827cd8dfa"
+  },
+  "cases": [
+    {
+      "uid": "polar/D-fb4011",
+      "repo": "polar",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "polar/D-fb4011",
+          "rubric": "v2",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "clients/apps/app/hooks/polar/checkout_links.ts",
+            "clients/apps/app/hooks/polar/finance.ts",
+            "clients/apps/app/hooks/polar/metrics.ts",
+            "clients/apps/app/hooks/polar/users.ts",
+            "clients/apps/app/hooks/polar/orders.ts",
+            "clients/apps/app/hooks/polar/customers.ts",
+            "clients/apps/app/hooks/polar/retry.ts",
+            "clients/apps/app/.oxlintrc.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "usePayout",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "toISODate",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "toValueDataPoints",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "useDeleteUser",
+              "verdict": "look"
+            }
+          ],
+          "reason": "API hooks (orders.ts, customers.ts) use usePolarClient(), but the group also holds co-located pure helpers (toISODate, toValueDataPoints in metrics.ts, defaultRetry in retry.ts) and a cache-reading hook (usePayout), which would be flagged for nothing; useDeleteUser's raw fetch is the only real look. Hesitated with ACCEPT.",
+          "labeller": "A"
+        },
+        "B": {
+          "uid": "polar/D-fb4011",
+          "rubric": "v2",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "clients/apps/app/hooks/polar/checkout_links.ts",
+            "clients/apps/app/hooks/polar/finance.ts",
+            "clients/apps/app/hooks/polar/metrics.ts",
+            "clients/apps/app/hooks/polar/users.ts",
+            "clients/apps/app/hooks/polar/orders.ts",
+            "clients/apps/app/hooks/polar/notifications.ts",
+            "clients/apps/app/hooks/polar/retry.ts",
+            "clients/apps/app/providers/PolarClientProvider.tsx",
+            "clients/packages/client/src/v1.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "usePayout",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "toISODate",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "toValueDataPoints",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "useDeleteUser",
+              "verdict": "mistake"
+            }
+          ],
+          "reason": "API hooks (orders.ts, notifications.ts, checkout_links.ts) all get the client via usePolarClient(); useDeleteUser in users.ts hand-rolls fetch with its own base URL and auth header even though DELETE /v1/users/me exists in the typed client. The metrics.ts helpers and the cache-only usePayout are legit, so I hesitated with WRONG mixed_group, but there are only a few of them.",
+          "labeller": "B"
+        }
+      }
+    },
+    {
+      "uid": "netbox/D-310ec7",
+      "repo": "netbox",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "netbox/D-310ec7",
+          "rubric": "v2",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "false_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "netbox/ipam/tables/asn.py",
+            "netbox/ipam/tables/ip.py",
+            "netbox/ipam/tables/vlans.py",
+            "netbox/ipam/tables/vrfs.py",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "AnnotatedIPAddressTable",
+              "verdict": "not_violation"
+            }
+          ],
+          "reason": "ipam tables give every Column an explicit translated verbose_name (asn.py, vlans.py). The only outlier, AnnotatedIPAddressTable (ip.py:373), calls no Column() and passes verbose_name to its TemplateColumn, so it does not break the rule. Hesitated with ACCEPT, since the underlying i18n convention is real.",
+          "labeller": "A"
+        },
+        "B": {
+          "uid": "netbox/D-310ec7",
+          "rubric": "v2",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "netbox/ipam/tables/asn.py",
+            "netbox/ipam/tables/ip.py",
+            "netbox/ipam/tables/vrfs.py",
+            "netbox/ipam/tables/services.py",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "AnnotatedIPAddressTable",
+              "verdict": "legit"
+            }
+          ],
+          "reason": "ipam tables give every Column a translated verbose_name=_('...') (asn.py, vrfs.py, services.py), and a new Column without one would show an untranslated header. The only outlier, AnnotatedIPAddressTable, overrides just a TemplateColumn (which does have verbose_name) and calls no Column(). Hesitated with WRONG false_outliers.",
+          "labeller": "B"
+        }
+      }
+    },
+    {
+      "uid": "saleor/D-e36ea5",
+      "repo": "saleor",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "saleor/D-e36ea5",
+          "rubric": "v2",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "saleor/core/auth.py",
+            "saleor/core/development/random_data.py",
+            "saleor/core/jwt.py",
+            "saleor/core/search_tasks.py",
+            "saleor/core/views.py",
+            "saleor/core/cleaners/html.py",
+            "saleor/settings.py",
+            "pyproject.toml",
+            "setup.cfg",
+            "AGENTS.md",
+            "CLAUDE.md"
+          ],
+          "outliers": [
+            {
+              "symbol": "DEFAULT_CURRENCY",
+              "verdict": "look"
+            }
+          ],
+          "reason": "Module-level constants in core (auth.py, jwt.py, search_tasks.py) are literals and config comes via django.conf.settings, with settings.py holding the ~126 env reads; random_data.py:139 is the only module-level os.environ read in all of saleor/ outside settings.py, and no ruff rule in pyproject.toml bans it, so flagging a new import-time env read to route it through settings is a reasonable review comment. Hesitated with WRONG/incidental since most constants are plain literals anyway and views.py/html.py read env inside functions.",
+          "labeller": "A"
+        },
+        "B": {
+          "uid": "saleor/D-e36ea5",
+          "rubric": "v2",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "incidental",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "saleor/core/auth.py",
+            "saleor/core/development/random_data.py",
+            "saleor/core/jwt.py",
+            "saleor/core/rlimit.py",
+            "saleor/core/taxes.py",
+            "saleor/core/views.py",
+            "saleor/core/cleaners/html.py",
+            "pyproject.toml",
+            "AGENTS.md"
+          ],
+          "outliers": [
+            {
+              "symbol": "DEFAULT_CURRENCY",
+              "verdict": "legit"
+            }
+          ],
+          "reason": "Module-level constants in core (auth.py AUTH_HEADER_PREFIXES, jwt.py token-type strings, taxes.py, rlimit.py) are plain literals, so not reading os.environ follows from what constants are, not from a team choice; core reads os.environ elsewhere anyway (views.py home(), cleaners/html.py reload()), and the one outlier is the dev populatedb script random_data.py, where an env-driven DEFAULT_CURRENCY is reasonable. No ruff rule covers it. Hesitated with ACCEPT, since 'config goes through Django settings' is a defensible review point.",
+          "defects": [],
+          "labeller": "B"
+        }
+      }
+    },
+    {
+      "uid": "langchain/D-468530",
+      "repo": "langchain",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "langchain/D-468530",
+          "rubric": "v2",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "libs/core/pyproject.toml",
+            "libs/standard-tests/pyproject.toml",
+            "libs/partners/openai/pyproject.toml",
+            "libs/text-splitters/pyproject.toml",
+            "libs/langchain_v1/pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "langchain-tests",
+              "verdict": "legit"
+            }
+          ],
+          "reason": "Every package's test dependency group pins pytest>=9.0.3,<10.0.0 (core, openai, text-splitters, langchain_v1), so a new package drifting from that pin is worth a review flag; the outlier langchain-tests lists pytest as a published runtime dependency, where it leaves all deps uncapped on purpose. Hesitated with WRONG legit_outliers/mixed_group, because runtime deps and dev-group pins are mixed in one group.",
+          "labeller": "A"
+        },
+        "B": {
+          "uid": "langchain/D-468530",
+          "rubric": "v2",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "libs/core/pyproject.toml",
+            "libs/standard-tests/pyproject.toml",
+            "libs/partners/openai/pyproject.toml",
+            "libs/partners/groq/pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "langchain-tests",
+              "verdict": "legit"
+            }
+          ],
+          "reason": "Every other package pins pytest>=9.0.3,<10.0.0 in its `test` dependency group (core, openai, groq). langchain-tests is a pytest plugin that lists pytest as a published runtime dependency, and it leaves all its runtime deps without upper bounds (pytest-asyncio>=1.3.0, syrupy>=5.0.0), so the group mixes test-only dev groups with a runtime requirement. I hesitated with ACCEPT, since keeping test-group pins aligned has some value.",
+          "labeller": "B"
+        }
+      }
+    }
+  ]
+}

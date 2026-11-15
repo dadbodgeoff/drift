@@ -1,0 +1,101 @@
+{
+  "a": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/A",
+  "b": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/B",
+  "rubric_sha256s": [
+    "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+  ],
+  "n": 76,
+  "scope": 76,
+  "exact": 0.9078947368421053,
+  "kappa": 0.7850505050505051,
+  "kappa_boot": {
+    "lo": 0.664712778429074,
+    "hi": 0.9134615384615383,
+    "clusters": 12
+  },
+  "accept_vs_not": {
+    "n": 76,
+    "po": 0.9078947368421053,
+    "pe": 0.590027700831025,
+    "kappa": 0.7753378378378379
+  },
+  "wrong_vs_not": {
+    "n": 76,
+    "po": 0.9078947368421053,
+    "pe": 0.5789473684210527,
+    "kappa": 0.7812500000000001
+  },
+  "confusion": {
+    "ACCEPT": {
+      "ACCEPT": 18,
+      "TRIVIAL": 0,
+      "WRONG": 7
+    },
+    "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 1,
+      "WRONG": 0
+    },
+    "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 50
+    }
+  },
+  "mix": {
+    "A": {
+      "ACCEPT": 25,
+      "TRIVIAL": 1,
+      "WRONG": 50
+    },
+    "B": {
+      "ACCEPT": 18,
+      "TRIVIAL": 1,
+      "WRONG": 57
+    }
+  },
+  "disagreements": [
+    {
+      "uid": "Django-CRM/D-f135a4",
+      "repo": "Django-CRM",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "Django-CRM/D-8ee062",
+      "repo": "Django-CRM",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "Misago/D-90a5d9",
+      "repo": "Misago",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "lotus/D-e5b6fe",
+      "repo": "lotus",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "open-wearables/D-3b39dc",
+      "repo": "open-wearables",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "tasking-manager/D-cfe608",
+      "repo": "tasking-manager",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "tasking-manager/D-c373f7",
+      "repo": "tasking-manager",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    }
+  ]
+}

@@ -1,0 +1,176 @@
+[
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "netbox",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py/relabel/prompts/label/A/netbox.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/4b6bb315-8d74-4980-ae4d-0f949dccd062/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/e5ae30a2-388b-47d7-a45f-96c44996fb30",
+    "checkout_status": [],
+    "expected": [
+      "netbox/D-cc1341",
+      "netbox/D-281ae8",
+      "netbox/D-e2c3e4",
+      "netbox/D-bc0c7d",
+      "netbox/D-3ab42c",
+      "netbox/D-76eb6b",
+      "netbox/D-8a1131",
+      "netbox/D-b69a13",
+      "netbox/D-58913a",
+      "netbox/D-310ec7"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:23.076Z",
+    "rejected": [
+      {
+        "at": "2026-11-07T23:43:50.600Z",
+        "problems": [
+          "out.jsonl:6: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: netbox/tenancy/forms/model_forms.py (cannot hold a member of the role: outside its package, directory or file kind), netbox/templates/inc/filter_list.html (cannot hold a member of the role: outside its package, directory or file kind)"
+        ]
+      },
+      {
+        "at": "2026-11-07T23:44:51.859Z",
+        "problems": [
+          "out.jsonl:6: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: netbox/templates/inc/filter_list.html (cannot hold a member of the role: outside its package, directory or file kind)"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-07T23:58:18.942Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py/relabel/labels/A/netbox.jsonl",
+      "records": 10,
+      "sha256": "82cc45958b4d8b3256584de3ef9a1adc4138a3a2a5245830d35ff53d30cf13e6"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "saleor",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py/relabel/prompts/label/A/saleor.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/c1d0f91f-073a-4d34-bab1-6d0dbc728d06/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/835d92b2-df68-403c-9aa4-711802b737b7",
+    "checkout_status": [],
+    "expected": [
+      "saleor/D-7e57d6"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:23.091Z",
+    "collected": {
+      "at": "2026-11-07T23:41:25.907Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py/relabel/labels/A/saleor.jsonl",
+      "records": 1,
+      "sha256": "e95ff9ff60a0853648b04b9edacd0429c96066918a48d42a80f7f7cf4d419776"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "fastapi",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py/relabel/prompts/label/A/fastapi.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/d8eab036-501e-4471-852e-0ecdd76a33f5/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/184de8df-eed6-4eab-a676-ebf6e391c137",
+    "checkout_status": [],
+    "expected": [
+      "fastapi/D-499c0e"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:23.100Z",
+    "collected": {
+      "at": "2026-11-07T23:41:10.195Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py/relabel/labels/A/fastapi.jsonl",
+      "records": 1,
+      "sha256": "f9db874ad18ab3d35372bc4916a79e6587f5dc7545ccab5c7b18ae4e6191a8bd"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "fastapi",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py/relabel/prompts/label/B/fastapi.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/d0f648e5-dff6-40be-a203-355b5506fb18/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/6c88fea2-3f3a-4e36-8d20-b5034f831c8a",
+    "checkout_status": [],
+    "expected": [
+      "fastapi/D-499c0e"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:41:10.271Z",
+    "collected": {
+      "at": "2026-11-07T23:43:44.366Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py/relabel/labels/B/fastapi.jsonl",
+      "records": 1,
+      "sha256": "48860d4a9d4c3db0b0182f286f6faa4d432e027acf4f55331734848f0b9fbaa6"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "saleor",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py/relabel/prompts/label/B/saleor.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/a2e9f3d6-da97-4f4e-b51d-c6243d5b9e32/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/059ccfb8-47ba-45b5-b3eb-321356b28b2a",
+    "checkout_status": [],
+    "expected": [
+      "saleor/D-7e57d6"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:41:25.974Z",
+    "rejected": [
+      {
+        "at": "2026-11-07T23:43:50.494Z",
+        "problems": [
+          "out.jsonl:1: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: saleor/graphql/app/dataloaders/utils.py (cannot hold a member of the role: outside its package, directory or file kind), saleor/graphql/order/tests/mutations/test_draft_order_create.py (cannot hold a member of the role: outside its package, directory or file kind), saleor/graphql/app/tests/mutations/test_app_create.py (cannot hold a member of the role: outside its package, directory or file kind)"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-07T23:44:51.724Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py/relabel/labels/B/saleor.jsonl",
+      "records": 1,
+      "sha256": "158d0f620a9d382ab6313b8900f78e63052b8657e69c23d187a844e54e57dad8"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "netbox",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py/relabel/prompts/label/B/netbox.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/27933964-a93c-465c-8059-e47ada42a5b9/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/9612cd76-ad45-420f-a2a5-6e124b397379",
+    "checkout_status": [],
+    "expected": [
+      "netbox/D-cc1341",
+      "netbox/D-281ae8",
+      "netbox/D-e2c3e4",
+      "netbox/D-bc0c7d",
+      "netbox/D-3ab42c",
+      "netbox/D-76eb6b",
+      "netbox/D-8a1131",
+      "netbox/D-b69a13",
+      "netbox/D-58913a",
+      "netbox/D-310ec7"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:58:18.996Z",
+    "rejected": [
+      {
+        "at": "2026-11-08T00:01:29.103Z",
+        "problems": [
+          "out.jsonl:10: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: netbox/templates/ipam/vlan_edit.html (cannot hold a member of the role: outside its package, directory or file kind), netbox/templates/htmx/form.html (cannot hold a member of the role: outside its package, directory or file kind)"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T00:05:34.253Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py/relabel/labels/B/netbox.jsonl",
+      "records": 10,
+      "sha256": "f3c1429f0eedb968e314238e991f342488443d0817e0a54a8f4fae4d728c957e"
+    }
+  }
+]

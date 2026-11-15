@@ -1,0 +1,29 @@
+{
+  "repo": "ods",
+  "files": [
+    {
+      "path": "ARCHITECTURE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "ods/CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "ods/docs/CONTRIBUTOR-LEDGER-2026-09.md",
+      "kind": "doc"
+    },
+    {
+      "path": "ods/extensions/services/dashboard/eslint.config.js",
+      "kind": "lint"
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - apps
+  - layout
+  - page
+  - urls
+  suffixes:
+  - config
+  - service
+  - types
+conventions:
+- id: D-3552cb
+  status: proposed
+  mode: advise
+  summary: "frontend: exported values in mock/** are named `mock*`, except a companion (a helper or constant beside the members that follow it)"
+  role:
+    package: frontend
+    dir: mock
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: mock*
+  evidence:
+    holders: 40
+    total: 40
+    lower_bound: 0.912
+    lift: 4.928
+    role_members: 41
+  example: frontend/mock/config.ts#MOCK_DELAY
+  selector_version: 3
+- id: D-3a5714
+  status: proposed
+  mode: advise
+  summary: "frontend: functions in services/** (*.service files) declare their return type"
+  role:
+    package: frontend
+    dir: services
+    file: "*.service"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 52
+    total: 53
+    lower_bound: 0.901
+    lift: 2.01
+  example: frontend/services/auth.service.ts#changePassword
+  selector_version: 3

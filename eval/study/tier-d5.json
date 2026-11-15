@@ -1,0 +1,40 @@
+{
+ "//": "The default-tier definition of decision D5 (lead; approved by the founder 2026-11-06, before any held-out census). crates/drift-mine/src/tier.rs (tier_of) implements it; every registered held-out manifest (the two primary and, amended by the lead the same day, the two secondary sets) holds this tier block verbatim (cargo test, tier.test.mjs, select-holdout.mjs verify and prepare.mjs check it); eval/study/tier.test.mjs runs lib.mjs tierOf under it on tier-cases.json. Rule 5, as pre-registered, is eval/study/runs/*/views/rule5/run.json params.tier.",
+ "tier": {
+  "//": "Decision D5 (eval/study/README.md decision log; memo eval/study/TIER-ADMISSION.md), recorded 2026-11-06 by the lead and approved by the founder the same day, before any held-out census. Rule 5's tier (pre-registered 2026-11-05) with two changes: passes_key and renders move from the default to the suggestion tier, and a default-tier rule must name no symbol from outside the repository (default.target \"in_repo\": no pkg:, global# or unresolved: wrapper, decorator, base class or callee, and no import: avoidance of one; lib.mjs namesPackage, drift_mine::tier::names_package). A package object reached through a binding the repository defines has an in-repo id and counts as in-repo. DEFAULT tier = structured rule kind (lib.mjs ruleKind) in default.rule_kinds AND the rule names no symbol from outside the repository AND its role has >= default.min_members members. SUGGESTION tier = every other shown proposal. The not-wrong rate is reported over all shown proposals, both tiers. Written verbatim into both primary manifests on 2026-11-06, before any held-out census, and registered in holdout-manifests.json amendments.",
+  "kind": "rule_kind",
+  "default": {
+   "//": "call wrappers, decorators, base classes, layering (import avoidance), rendered inside a (layout) wrapper; each only when every symbol it names is defined in the repository (not a package, a built-in or global, or unresolved)",
+   "rule_kinds": [
+    "wrapped_by:call",
+    "wrapped_by:decorator",
+    "wrapped_by:extends",
+    "avoids:import",
+    "wrapped_by:jsx"
+   ],
+   "min_members": 15,
+   "target": "in_repo"
+  },
+  "suggestion": {
+   "//": "rule 5's suggestion kinds, plus required argument keys and rendered components (D5). Default-tier kinds whose rule names a package, built-in or unresolved symbol are suggestion tier too.",
+   "rule_kinds": [
+    "calls",
+    "named",
+    "avoids:other",
+    "prefers_library",
+    "before",
+    "has_test",
+    "model_has",
+    "package_has",
+    "dependency_version",
+    "wrapped_by:try",
+    "control",
+    "directive",
+    "throws",
+    "passes_key",
+    "renders"
+   ]
+  },
+  "not_wrong_over": "all_shown"
+ }
+}

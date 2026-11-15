@@ -1,0 +1,11 @@
+1 conventions from 3709 units in 175 roles (0 default tier, 1 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-468530] Python packages use the pytest version most workspace packages use
+    evidence: 21/22 (lower bound 0.78, lift 1.0)
+    tier:     suggestion (rule kind dependency_version)
+    split:    >=9.0.3,<10.0.0 21, >=9.0.3 1
+    example:  libs/core/pyproject.toml#langchain-core
+    outlier:  libs/standard-tests/pyproject.toml:1 langchain-tests
+

@@ -1,0 +1,205 @@
+{
+  "repo": "supabase",
+  "files": [
+    {
+      "path": ".agents/skills/api-types/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/ask-the-docs/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/clickhouse-logs-queries/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/code-review/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/copywriting/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/dev-toolbar-review/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/edit-the-docs/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/pm-the-docs/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/react-hook-form/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/review-the-docs/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/safe-sql-execution/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/studio-e2e-tests/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/studio-error-handling/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/studio-mock-api-tests/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/studio-queries/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/studio-shortcuts/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/studio-testing/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/studio-ui-patterns/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/telemetry-standards/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/test-the-docs/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/vercel-composition-patterns/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/vitest/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/write-the-docs/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".github/copilot-instructions.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/docs/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/docs/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/docs/CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/docs/content/guides/auth/architecture.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/docs/content/guides/functions/architecture.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/docs/content/guides/getting-started/architecture.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/docs/content/guides/platform/sso/testing-best-practices.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/docs/content/guides/realtime/architecture.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/kb/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/kb/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/learn/content/foundations/architecture.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/studio/.claude/skills/explorer/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": "apps/studio/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/studio/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/design-system/eslint.config.cjs",
+      "kind": "lint"
+    },
+    {
+      "path": "apps/docs/eslint.config.cjs",
+      "kind": "lint"
+    },
+    {
+      "path": "apps/learn/eslint.config.cjs",
+      "kind": "lint"
+    },
+    {
+      "path": "apps/studio/eslint.config.cjs",
+      "kind": "lint"
+    },
+    {
+      "path": "apps/ui-library/eslint.config.cjs",
+      "kind": "lint"
+    },
+    {
+      "path": "apps/www/eslint.config.cjs",
+      "kind": "lint"
+    },
+    {
+      "path": "apps/design-system/registry/.eslintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "apps/studio/scripts/eslint-rules/",
+      "kind": "lint_custom (custom rule implementations)"
+    },
+    {
+      "path": "apps/www/eslint-rules/",
+      "kind": "lint_custom (custom rule implementations)"
+    }
+  ]
+}

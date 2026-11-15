@@ -1,0 +1,310 @@
+{
+  "//": "dev4 census manifest (WS-E at F11): the current slot occupants of eval/dev4-2026-11-08.json (its repos after its `replaced` swaps), each named by an opaque key. Everything else as frozen there.",
+  "set_id": "ts-dev4-2026-11-08",
+  "role": "dev",
+  "holdout": false,
+  "language": "typescript/javascript",
+  "tier": {
+    "//": "Decision D7 (eval/study/README.md decision log), approved by the founder 2026-11-06 and recorded before any held-out census. D5 (tier-d5.json) narrowed by rule kind and language. TypeScript/JavaScript: the default tier admits only call wrappers (wrapped_by:call) and layering (avoids:import); wrapped_by:decorator, wrapped_by:extends and wrapped_by:jsx move to the suggestion tier. Python: no rule kind is in the default tier; Python advises only and every Python proposal is suggestion tier. D5's conditions still apply on top of the rule kind: every symbol the rule names is defined in the repository (default.target \"in_repo\": no pkg:, global# or unresolved: target; lib.mjs namesPackage, drift_mine::tier::names_package) and the role has >= default.min_members members. The language of a proposal is read conservatively (lib.mjs proposalLanguage, drift_mine::tier::convention_language): py when any member of its role is Python (conventions.yaml evidence.python_members) or its example path is (.py/.pyi files and Python package manifests), ts otherwise. Role members are counted as the role's size (evidence.role_members when set, else total; exempt members count). DEFAULT tier = language in default.languages AND structured rule kind (lib.mjs ruleKind) in default.rule_kinds AND the rule names no symbol from outside the repository AND its role has >= default.min_members members. SUGGESTION tier = every other shown proposal. The not-wrong rate is reported over all shown proposals, both tiers. Release gate unchanged: a language's default tier ships as advise until it measures >= 95% default-tier accept under rubric v3, judged per D1, on a primary held-out run.",
+    "kind": "rule_kind",
+    "decision": "D7",
+    "default": {
+      "//": "TypeScript/JavaScript call wrappers and layering (import avoidance), each only when every symbol it names is defined in the repository, in roles of 15 or more members",
+      "rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "languages": [
+        "ts"
+      ],
+      "min_members": 15,
+      "target": "in_repo"
+    },
+    "suggestion": {
+      "//": "D5's suggestion kinds, plus decorators, base classes and JSX layout wrappers (D7); every Python proposal (languages); and default-tier kinds whose rule names a package, built-in or unresolved symbol, or whose role is small",
+      "rule_kinds": [
+        "calls",
+        "named",
+        "avoids:other",
+        "prefers_library",
+        "before",
+        "has_test",
+        "model_has",
+        "package_has",
+        "dependency_version",
+        "wrapped_by:try",
+        "control",
+        "directive",
+        "throws",
+        "passes_key",
+        "renders",
+        "wrapped_by:decorator",
+        "wrapped_by:extends",
+        "wrapped_by:jsx"
+      ],
+      "languages": [
+        "py"
+      ]
+    },
+    "not_wrong_over": "all_shown"
+  },
+  "max": 15,
+  "pool": 200,
+  "source_manifest": "eval/dev4-2026-11-08.json",
+  "source_sha256": "d5ca1996f3e117f33ecfb200a164061ade7f70d9bbaa0ce6e8350090e09f5551",
+  "source_core_sha256": "89ef6d3a053a8f8716fa0b5ed54ad823da7db3765f7554dbaec955db8d99460e",
+  "repos": [
+    {
+      "name": "T01",
+      "url": "https://github.com/smp46/pingvin-share-x",
+      "sha": "b669cb34884bae73ce5e3e21bac4e1952b279404",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs"
+    },
+    {
+      "name": "T02",
+      "url": "https://github.com/keyshade-xyz/keyshade",
+      "sha": "840cf2c9f6e0a471f6b8191cbd6a94fe0aa60ffe",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs"
+    },
+    {
+      "name": "T03",
+      "url": "https://github.com/dodopayments/billingsdk",
+      "sha": "c6fb52d63f19bb8eb07ef48ceb3c7db02b31001e",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs"
+    },
+    {
+      "name": "T04",
+      "url": "https://github.com/yyhuni/xingrin",
+      "sha": "63dfbc13d3cfbb4184d85c8f7b9f23b2c7ebace1",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs"
+    },
+    {
+      "name": "T05",
+      "url": "https://github.com/Swetrix/swetrix",
+      "sha": "9e40f3d3598a50afa5239b9c38190042c07cacc8",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs"
+    },
+    {
+      "name": "T06",
+      "url": "https://github.com/enjalot/latent-scope",
+      "sha": "41f7305dffbbc0dd74d3605ac6af9df21fa1270f",
+      "language": "JavaScript",
+      "framework_bucket": "react_spa"
+    },
+    {
+      "name": "T07",
+      "url": "https://github.com/runtipi/runtipi",
+      "sha": "a8f22ed8bae48af0bce99a218c902261ea472d45",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs"
+    },
+    {
+      "name": "T08",
+      "url": "https://github.com/roninoss/rn-primitives",
+      "sha": "1bebe66b12e7ddd3c313226e0bc2ee02b6e78ab4",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs"
+    },
+    {
+      "name": "T09",
+      "url": "https://github.com/freeman-jiang/beatsync",
+      "sha": "94c38ab16ec861835ce0b4bc3a7db82dabbb9b88",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs"
+    },
+    {
+      "name": "T10",
+      "url": "https://github.com/taracodlabs/aiden",
+      "sha": "370420470ad567d91b0bb05a11a963cff810a27f",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs"
+    },
+    {
+      "name": "T11",
+      "url": "https://github.com/radix-ui/website",
+      "sha": "402e749613ab2e7ab7139c65b0029842b0360f07",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs"
+    },
+    {
+      "name": "T12",
+      "url": "https://github.com/safe-global/safe-wallet-monorepo",
+      "sha": "d36e38e110c0646f5044e3807b9928f841e8b50b",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs"
+    },
+    {
+      "name": "T13",
+      "url": "https://github.com/chapter-three/next-drupal",
+      "sha": "80a89f1466bcdc980b4de529241b42de296b2a7d",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs"
+    },
+    {
+      "name": "T14",
+      "url": "https://github.com/basementstudio/shader-lab",
+      "sha": "58b9d58d0370b96d67ede368e46ce9ef7912ba3e",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs"
+    },
+    {
+      "name": "T15",
+      "url": "https://github.com/textlint/textlint",
+      "sha": "4c916a878ee7ec60622ec795f5654e75f1cb4357",
+      "language": "TypeScript",
+      "framework_bucket": "other_node"
+    },
+    {
+      "name": "T16",
+      "url": "https://github.com/callstack/repack",
+      "sha": "948eb2ccbdb8f937f89771744f3a6e15de941849",
+      "language": "TypeScript",
+      "framework_bucket": "express_fastify_hono"
+    },
+    {
+      "name": "T17",
+      "url": "https://github.com/bemusic/bemuse",
+      "sha": "4bf3e7d98a44841b323741cc403ecb7b41618ade",
+      "language": "TypeScript",
+      "framework_bucket": "express_fastify_hono"
+    },
+    {
+      "name": "T18",
+      "url": "https://github.com/embroider-build/embroider",
+      "sha": "ef4667d2c8afa8e7d5ae73c5f0d06ef869c8e9ca",
+      "language": "TypeScript",
+      "framework_bucket": "express_fastify_hono"
+    },
+    {
+      "name": "T19",
+      "url": "https://github.com/coderaiser/putout",
+      "sha": "eb1cd0cde2e0d4bc430967ad86e0a8b54dcef194",
+      "language": "JavaScript",
+      "framework_bucket": "express_fastify_hono"
+    },
+    {
+      "name": "T20",
+      "url": "https://github.com/firebase/extensions",
+      "sha": "490b13beb52e7a4282e87f15ca507cf38fc246f8",
+      "language": "TypeScript",
+      "framework_bucket": "express_fastify_hono"
+    },
+    {
+      "name": "T21",
+      "url": "https://github.com/microsoft/SandDance",
+      "sha": "1f4ad1f49bd44f6da89003dcd690343b057b9505",
+      "language": "TypeScript",
+      "framework_bucket": "express_fastify_hono"
+    },
+    {
+      "name": "T22",
+      "url": "https://github.com/xiaojilele-glitch/WhyBuddy",
+      "sha": "f4a3cbf0b85d07158cfb75c9bbd3031c12c3ea90",
+      "language": "TypeScript",
+      "framework_bucket": "express_fastify_hono"
+    },
+    {
+      "name": "T23",
+      "url": "https://github.com/chaitin/MonkeyCode",
+      "sha": "ad169c9b946ea04a1fc19a7abff9815d38116a73",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa"
+    },
+    {
+      "name": "T24",
+      "url": "https://github.com/jaegertracing/jaeger-ui",
+      "sha": "b12c863f52b361ce5a9586acbbb098139c0d06cc",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa"
+    },
+    {
+      "name": "T25",
+      "url": "https://github.com/zenui-labs/zenui-library-react",
+      "sha": "e82857f98491af728e740f226cd849fb937c1e3d",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa"
+    },
+    {
+      "name": "T26",
+      "url": "https://github.com/Kha-kis/arr-dashboard",
+      "sha": "88f421ed2b4b998367ca216406aaa61e5f87e25e",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs"
+    },
+    {
+      "name": "T27",
+      "url": "https://github.com/slash9494/react-modern-audio-player",
+      "sha": "8631ddbe1ed0be603e61e9c4daebac3c6579e47a",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa"
+    },
+    {
+      "name": "T28",
+      "url": "https://github.com/felladrin/MiniSearch",
+      "sha": "0491afb47f26960040676609826c99a3684514bb",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa"
+    },
+    {
+      "name": "T29",
+      "url": "https://github.com/eclipsesource/jsonforms",
+      "sha": "942b76f9eb0bcfcf771fe8193c19a39cbe5497f6",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa"
+    },
+    {
+      "name": "T30",
+      "url": "https://github.com/openwong2kim/wmux",
+      "sha": "42cdd81f5c6ca61e85edf154e9d45bf9ed813d26",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa"
+    },
+    {
+      "name": "T31",
+      "url": "https://github.com/ankit/stylebot",
+      "sha": "cc4e8f1bf31c55f491d8de0d592854db9f9e59b0",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa"
+    },
+    {
+      "name": "T32",
+      "url": "https://github.com/nestjs/graphql",
+      "sha": "3cebe4fdeae6a5bbcb54621756876e5119c8dc67",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs"
+    },
+    {
+      "name": "T33",
+      "url": "https://github.com/SiriusScan/Sirius",
+      "sha": "823a80f663e585db775da4ce58b27ac0e5dcfbd2",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs"
+    },
+    {
+      "name": "T34",
+      "url": "https://github.com/open-telemetry/opentelemetry-js",
+      "sha": "ee94b842fd734e23064539c5f8069e0af0e92b9a",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs"
+    },
+    {
+      "name": "T35",
+      "url": "https://github.com/recurly/recurly-js",
+      "sha": "37c58aee85455a9d3ed38c5059dc2c4ced8394b2",
+      "language": "JavaScript",
+      "framework_bucket": "other_node"
+    },
+    {
+      "name": "T36",
+      "url": "https://github.com/Tencent/tdesign-vue-next",
+      "sha": "d3421d934fe2ea3ab4200188281afd9f2ba5fc91",
+      "language": "TypeScript",
+      "framework_bucket": "other_node"
+    }
+  ]
+}

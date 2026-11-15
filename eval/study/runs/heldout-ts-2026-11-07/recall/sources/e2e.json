@@ -1,0 +1,41 @@
+{
+  "repo": "e2e",
+  "files": [
+    {
+      "path": ".claude/skills/unbox-ai/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/unslop/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/mobile-benchmark/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/agents.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/coding-agents.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": ".oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "scripts/oxlint-plugin/",
+      "kind": "lint_custom (custom rule implementations)"
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+7 conventions from 2922 units in 139 roles (0 default tier, 7 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-08f310] classes in platypush/schemas/** are named `*Schema`
+    evidence: 138/139 (lower bound 0.96, lift 7.8)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  platypush/schemas/camera/android/ipcam.py#CameraStatusSchema
+    outlier:  platypush/schemas/mastodon.py:204 MastodonSubscriptionNotificationTypes
+    exempt:   platypush/schemas/matrix.py:7 MillisecondsTimestamp (shared part used by 2 members)
+    exempt:   platypush/schemas/switchbot.py:51 ColorField (another kind of class (extends fields.Field))
+
+ 2. [D-84701e] classes in platypush/plugins/** (__init__ files) are named `*Plugin`
+    evidence: 153/163 (lower bound 0.89, lift 7.5)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  platypush/plugins/adafruit/io/__init__.py#AdafruitIoPlugin
+    outlier:  platypush/plugins/__init__.py:371 PluginRegistry
+    outlier:  platypush/plugins/camera/android/ipcam/__init__.py:12 AndroidIpcam
+    outlier:  platypush/plugins/camera/model/writer/preview/__init__.py:16 PreviewWriterFactory
+    outlier:  platypush/plugins/camera/model/writer/preview/wx/__init__.py:7 WxPreviewWriter
+    outlier:  platypush/plugins/dbus/__init__.py:30 DBusService
+    outlier:  platypush/plugins/github/__init__.py:38 GithubResource
+    outlier:  platypush/plugins/leap/__init__.py:126 LeapListener
+    outlier:  platypush/plugins/media/_search/local/__init__.py:27 LocalMediaSearcher
+    outlier:  platypush/plugins/ml/cv/__init__.py:6 MlModel
+    outlier:  platypush/plugins/tts/picovoice/__init__.py:17 TextConversionUtils
+    exempt:   platypush/plugins/gpio/zeroborg/lib/__init__.py:229 ZeroBorg (shared part used by 3 members)
+    exempt:   platypush/plugins/leap/__init__.py:113 LeapFuture (another kind of class (extends Timer))
+    exempt:   platypush/plugins/log/http/__init__.py:21 LogEventHandler (another kind of class (extends events.FileSystemEventHandler))
+    exempt:   platypush/plugins/zeroconf/__init__.py:23 ZeroconfListener (another kind of class (extends ServiceListener))
+
+ 3. [D-27a639] classes in platypush/message/** are named `*Event`
+    evidence: 320/321 (lower bound 0.98, lift 3.2)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  platypush/message/event/adafruit.py#AdafruitConnectedEvent
+    outlier:  platypush/message/event/linode.py:12 LinodeInstanceStatusChanged
+
+ 4. [D-1200d2] classes in platypush/** (_schemas files) are named `*Schema`
+    evidence: 22/22 (lower bound 0.85, lift 7.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  platypush/schemas/linode/_schemas.py#LinodeInstanceAlertsSchema
+    exempt:   platypush/schemas/linode/_schemas.py:15 FieldWithId (another kind of class (extends fields.Function))
+
+ 5. [D-2fc4df] classes in platypush/message/** (__init__ files) are named `*Event`
+    evidence: 58/60 (lower bound 0.89, lift 3.1)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  platypush/message/event/assistant/__init__.py#AlarmEndEvent
+    outlier:  platypush/message/request/__init__.py:25 Request
+    outlier:  platypush/message/response/__init__.py:9 Response
+
+ 6. [D-bdd270] classes in platypush/entities/** pass `primary_key` to Column()
+    evidence: 52/52 (lower bound 0.93, lift 18.5)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  platypush/entities/acceleration.py#Accelerometer
+    exempt:   platypush/entities/_engine/queue.py:9 EntitiesQueue (does not call Column())
+    exempt:   platypush/entities/_engine/repo/db.py:24 EntitiesDb (does not call Column())
+    exempt:   platypush/entities/_engine/repo/merger.py:15 EntitiesMerger (does not call Column())
+
+ 7. [D-646cc1] sqlalchemy models have a `id` field
+    evidence: 66/74 (lower bound 0.80, lift 1.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  platypush/entities/_base.py#Entity
+    outlier:  platypush/plugins/github/__init__.py:38 GithubResource
+    outlier:  platypush/plugins/media/_search/local/db.py:88 MediaFileToken
+    outlier:  platypush/plugins/notes/db/_model.py:174 NoteContentIndex
+    outlier:  platypush/plugins/notes/db/_model.py:150 NoteNoteResource
+    outlier:  platypush/plugins/notes/db/_model.py:104 NoteTag
+    outlier:  platypush/user/_model.py:39 User
+    outlier:  platypush/user/_model.py:65 UserOtp
+    outlier:  platypush/user/_model.py:52 UserSession
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

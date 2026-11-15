@@ -1,0 +1,51 @@
+6 conventions from 2186 units in 106 roles (0 default tier, 6 suggestions)
+
+6 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-841abc] files in game/** do not import from qt_ui/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 314/315 (lower bound 0.98, lift 3.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 100% of 1)
+    example:  game/aircraftparkinglocation.py#(file)
+    outlier:  game/persistence/savemanager.py:1 (file)
+
+ 2. [D-9fa25f] files in game/** do not import from pydcs_extensions/highdigitsams/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 314/315 (lower bound 0.98, lift 3.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 100% of 1)
+    example:  game/aircraftparkinglocation.py#(file)
+    outlier:  game/data/radar_db.py:1 (file)
+
+ 3. [D-424840] classes in qt_ui/** call super().__init__(), except 2 classes (with no override) and a shared part (used by several members, not a member)
+    evidence: 181/181 (lower bound 0.98, lift 3.7)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 44% of 9)
+    example:  qt_ui/logging_handler.py#HookableInMemoryHandler
+    exempt:   qt_ui/dialogs.py:15 Dialog (shared part used by 5 members)
+    exempt:   qt_ui/widgets/map/QLiberationMap.py:14 LoggingWebPage (defines no __init__() of its own, so has no override that calls super().__init__())
+    exempt:   qt_ui/windows/mission/flight/waypoints/QFlightWaypointList.py:22 AltitudeEditorDelegate (defines no __init__() of its own, so has no override that calls super().__init__())
+
+ 4. [D-aad2db] HTTP handlers in game/** (routes files) are wrapped in GameContext.require()
+    evidence: 29/30 (lower bound 0.83, lift 6.7)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 75% of 8)
+    example:  game/server/controlpoints/routes.py#cancel_travel
+    outlier:  game/server/game/routes.py:10 game_state
+
+ 5. [D-8bb671] classes in game/** (models files) extend BaseModel
+    evidence: 20/21 (lower bound 0.77, lift 44.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 33% of 9)
+    example:  game/server/combat/models.py#FrozenCombatJs
+    outlier:  game/server/supplyroutes/models.py:19 TransportFinder
+
+ 6. [D-0de628] classes in game/missiongenerator/aircraft/waypoints/** extend PydcsWaypointBuilder
+    evidence: 19/20 (lower bound 0.76, lift 48.5)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 33% of 9)
+    example:  game/missiongenerator/aircraft/waypoints/antishipingress.py#AntiShipIngressBuilder
+    outlier:  game/missiongenerator/aircraft/waypoints/waypointgenerator.py:47 WaypointGenerator
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

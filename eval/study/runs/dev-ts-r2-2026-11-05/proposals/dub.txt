@@ -1,0 +1,181 @@
+15 conventions from 9139 units in 460 roles (10 default tier, 5 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-50df58] apps/web: server actions in lib/actions/** are wrapped in actionClient.inputSchema().action() or actionClient.inputSchema().use().action() or authActionClient.inputSchema().action() or authPartnerActionClient.action() or authPartnerActionClient.inputSchema().action() or authUserActionClient.inputSchema().action()
+    evidence: 106/109 (lower bound 0.92, lift 17.3)
+    tier:     default
+    split:    authActionClient.inputSchema().action 75, authPartnerActionClient.inputSchema().action 16, authPartnerActionClient.action 7, actionClient.inputSchema().use().action 4, actionClient.inputSchema().action 2, authUserActionClient.inputSchema().action 2
+    example:  apps/web/lib/actions/add-edit-integration.ts#addEditIntegration
+    outlier:  apps/web/lib/actions/generate-unsubscribe-url.ts:7 generateUnsubscribeTokenAction
+    outlier:  apps/web/lib/actions/partners/ban-partner.ts:50 banPartner
+    outlier:  apps/web/lib/actions/partners/force-withdrawal.ts:36 forceWithdrawal
+
+ 2. [D-d24d21] apps/web: HTTP handlers in app/api/** (route files) are wrapped in withSession() or withWorkspace()
+    evidence: 138/169 (lower bound 0.75, lift 6.5)
+    tier:     default
+    split:    withWorkspace 119, withSession 19
+    example:  apps/web/app/api/activity-logs/route.ts#GET
+    outlier:  apps/web/app/api/ai/sync-embeddings/route.ts:32 POST
+    outlier:  apps/web/app/api/analytics/dashboard/route.ts:17 GET
+    outlier:  apps/web/app/api/auth/reset-password/route.ts:12 POST
+    outlier:  apps/web/app/api/callback/bitly/route.ts:10 GET
+    outlier:  apps/web/app/api/callback/plain/partner/route.ts:21 POST
+    outlier:  apps/web/app/api/callback/plain/workspace/route.ts:18 POST
+    outlier:  apps/web/app/api/dub/webhook/route.ts:7 POST
+    outlier:  apps/web/app/api/links/exists/route.ts:12 GET
+    outlier:  apps/web/app/api/links/iframeable/route.ts:12 GET
+    outlier:  apps/web/app/api/links/metatags/route.ts:9 GET
+    outlier:  apps/web/app/api/links/random/route.ts:9 GET
+    outlier:  apps/web/app/api/oauth/token/route.ts:32 OPTIONS
+    outlier:  apps/web/app/api/oauth/token/route.ts:11 POST
+    outlier:  apps/web/app/api/oauth/userinfo/route.ts:16 GET
+    outlier:  apps/web/app/api/oauth/userinfo/route.ts:78 OPTIONS
+    outlier:  apps/web/app/api/postbacks/callback/route.ts:12 POST
+    outlier:  apps/web/app/api/providers/route.ts:9 GET
+    outlier:  apps/web/app/api/qr/route.tsx:18 GET
+    outlier:  apps/web/app/api/qr/route.tsx:106 OPTIONS
+    outlier:  apps/web/app/api/resend/webhook/route.ts:10 POST
+    outlier:  apps/web/app/api/resumes/upload-url/route.ts:13 POST
+    outlier:  apps/web/app/api/route.ts:6 GET
+    outlier:  apps/web/app/api/slack/callback/route.ts:14 GET
+    outlier:  apps/web/app/api/slack/slash-commands/route.ts:5 POST
+    outlier:  apps/web/app/api/supported-countries/route.ts:6 GET
+    outlier:  apps/web/app/api/unsplash/download/route.ts:4 POST
+    outlier:  apps/web/app/api/unsplash/search/route.ts:8 GET
+    outlier:  apps/web/app/api/user/notification-preferences/route.ts:18 GET
+    outlier:  apps/web/app/api/user/notification-preferences/route.ts:78 POST
+    outlier:  apps/web/app/api/veriff/webhook/route.ts:7 POST
+    outlier:  apps/web/app/api/webhooks/callback/route.ts:22 POST
+
+ 3. [D-83351e] apps/web: HTTP handlers in app/(ee)/api/partner-profile/** (route files) are wrapped in withPartnerProfile()
+    evidence: 53/54 (lower bound 0.90, lift 36.5)
+    tier:     default
+    example:  apps/web/app/(ee)/api/partner-profile/invites/route.ts#DELETE
+    outlier:  apps/web/app/(ee)/api/partner-profile/invites/accept/route.ts:7 POST
+
+ 4. [D-015190] apps/web: HTTP handlers in app/api/workspaces/[*]/** (route files) are wrapped in withWorkspace()
+    evidence: 40/42 (lower bound 0.84, lift 8.2)
+    tier:     default
+    example:  apps/web/app/api/workspaces/[idOrSlug]/billing/activate-paid-plan/route.ts#POST
+    outlier:  apps/web/app/api/workspaces/[idOrSlug]/invites/accept/route.ts:11 POST
+    outlier:  apps/web/app/api/workspaces/[idOrSlug]/invites/decline/route.ts:7 POST
+
+ 5. [D-e25af3] packages/email: components in src/** render <Footer>
+    evidence: 101/108 (lower bound 0.87, lift 16.5)
+    tier:     default
+    example:  packages/email/src/templates/advanced-plan-downgrade-notice.tsx#AdvancedPlanDowngradeNotice
+    outlier:  packages/email/src/components/bounty-thumbnail.tsx:3 BountyThumbnailImage
+    outlier:  packages/email/src/components/footer.tsx:3 Footer
+    outlier:  packages/email/src/templates/campaign-email.tsx:16 CampaignEmail
+    outlier:  packages/email/src/templates/feedback-email.tsx:15 FeedbackEmail
+    outlier:  packages/email/src/templates/trial/trial-3-days-remaining.tsx:12 Trial3DaysRemainingEmail
+    outlier:  packages/email/src/templates/trial/trial-7-days-remaining.tsx:12 Trial7DaysRemainingEmail
+    outlier:  packages/email/src/templates/upgrade-email.tsx:11 UpgradeEmail
+
+ 6. [D-ebbc30] apps/web: HTTP handlers in app/(ee)/api/partners/** (route files) are wrapped in withWorkspace()
+    evidence: 25/26 (lower bound 0.81, lift 8.3)
+    tier:     default
+    example:  apps/web/app/(ee)/api/partners/[partnerId]/application-risks/route.ts#GET
+    outlier:  apps/web/app/(ee)/api/partners/platforms/callback/route.ts:28 GET
+
+ 7. [D-3fad9a] packages/email: components in src/** render <Text>
+    evidence: 106/108 (lower bound 0.94, lift 16.5)
+    tier:     default
+    example:  packages/email/src/templates/advanced-plan-downgrade-notice.tsx#AdvancedPlanDowngradeNotice
+    outlier:  packages/email/src/components/bounty-thumbnail.tsx:3 BountyThumbnailImage
+    outlier:  packages/email/src/templates/partner-program-summary.tsx:74 PartnerProgramSummary
+
+ 8. [D-a23ff8] packages/email: components in src/** render <Preview>
+    evidence: 106/108 (lower bound 0.94, lift 16.5)
+    tier:     default
+    example:  packages/email/src/templates/advanced-plan-downgrade-notice.tsx#AdvancedPlanDowngradeNotice
+    outlier:  packages/email/src/components/bounty-thumbnail.tsx:3 BountyThumbnailImage
+    outlier:  packages/email/src/components/footer.tsx:3 Footer
+
+ 9. [D-024a81] packages/email: components in src/** render <Tailwind>
+    evidence: 104/108 (lower bound 0.91, lift 16.5)
+    tier:     default
+    example:  packages/email/src/templates/advanced-plan-downgrade-notice.tsx#AdvancedPlanDowngradeNotice
+    outlier:  packages/email/src/components/bounty-thumbnail.tsx:3 BountyThumbnailImage
+    outlier:  packages/email/src/templates/trial/trial-3-days-remaining.tsx:12 Trial3DaysRemainingEmail
+    outlier:  packages/email/src/templates/trial/trial-7-days-remaining.tsx:12 Trial7DaysRemainingEmail
+    outlier:  packages/email/src/templates/upgrade-email.tsx:11 UpgradeEmail
+
+10. [D-418256] packages/email: components in src/** render <Container>
+    evidence: 103/108 (lower bound 0.90, lift 16.5)
+    tier:     default
+    example:  packages/email/src/templates/advanced-plan-downgrade-notice.tsx#AdvancedPlanDowngradeNotice
+    outlier:  packages/email/src/components/bounty-thumbnail.tsx:3 BountyThumbnailImage
+    outlier:  packages/email/src/components/footer.tsx:3 Footer
+    outlier:  packages/email/src/templates/trial/trial-3-days-remaining.tsx:12 Trial3DaysRemainingEmail
+    outlier:  packages/email/src/templates/trial/trial-7-days-remaining.tsx:12 Trial7DaysRemainingEmail
+    outlier:  packages/email/src/templates/upgrade-email.tsx:11 UpgradeEmail
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+11. [D-742eb6] apps/web: HTTP handlers in app/** (route files) do not throw a bare Error
+    evidence: 522/536 (lower bound 0.96, lift 4.1)
+    tier:     suggestion (rule kind avoids:other)
+    example:  apps/web/app/(ee)/api/admin/analytics/route.ts#GET
+    outlier:  apps/web/app/(ee)/api/cron/disposable-emails/route.ts:11 POST
+    outlier:  apps/web/app/(ee)/api/cron/email-domains/update/route.ts:15 POST
+    outlier:  apps/web/app/(ee)/api/cron/import/firstpromoter/route.ts:13 POST
+    outlier:  apps/web/app/(ee)/api/cron/import/partnerstack/route.ts:15 POST
+    outlier:  apps/web/app/(ee)/api/cron/messages/notify-partner/route.ts:23 POST
+    outlier:  apps/web/app/(ee)/api/cron/messages/notify-program/route.ts:23 POST
+    outlier:  apps/web/app/(ee)/api/cron/partner-platforms/route.ts:26 POST
+    outlier:  apps/web/app/(ee)/api/cron/partner-platforms/youtube/route.ts:16 POST
+    outlier:  apps/web/app/(ee)/api/cron/rewards/process/route.ts:17 POST
+    outlier:  apps/web/app/(ee)/api/cron/send-batch-email/route.ts:38 POST
+    outlier:  apps/web/app/(ee)/api/network/partners/count/route.ts:14 GET
+    outlier:  apps/web/app/(ee)/api/paypal/callback/route.ts:13 GET
+    outlier:  apps/web/app/(ee)/api/paypal/webhook/route.ts:20 POST
+    outlier:  apps/web/app/api/links/sync/route.ts:10 POST
+
+12. [D-79cc0a] apps/web: HTTP handlers in app/(ee)/api/partners/** (route files) call getDefaultProgramIdOrThrow()
+    evidence: 24/26 (lower bound 0.76, lift 11.5)
+    tier:     suggestion (rule kind calls)
+    example:  apps/web/app/(ee)/api/partners/[partnerId]/application-risks/route.ts#GET
+    outlier:  apps/web/app/(ee)/api/partners/applications/reject/route.ts:8 POST
+    outlier:  apps/web/app/(ee)/api/partners/platforms/callback/route.ts:28 GET
+
+13. [D-258285] apps/web: functions in ui/modals/** are named `*Modal`
+    evidence: 113/122 (lower bound 0.87, lift 13.1)
+    tier:     suggestion (rule kind named)
+    example:  apps/web/ui/modals/add-customer-modal.tsx#useAddCustomerModal
+    outlier:  apps/web/ui/modals/disable-fraud-rules-modal.tsx:173 getRulesBeingDisabled
+    outlier:  apps/web/ui/modals/import-csv-modal/index.tsx:78 useCsvContext
+    outlier:  apps/web/ui/modals/link-builder/ab-testing-modal.tsx:493 getABTestingLabel
+    outlier:  apps/web/ui/modals/link-builder/ab-testing/ab-testing-modal.tsx:592 getABTestingLabel
+    outlier:  apps/web/ui/modals/link-builder/expiration-modal.tsx:202 getExpirationLabel
+    outlier:  apps/web/ui/modals/link-builder/index.tsx:342 useLinkBuilder
+    outlier:  apps/web/ui/modals/link-builder/password-modal.tsx:206 getPasswordLabel
+    outlier:  apps/web/ui/modals/link-builder/targeting-modal.tsx:378 getTargetingLabel
+    outlier:  apps/web/ui/modals/link-builder/use-link-drafts.ts:12 useLinkDrafts
+
+14. [D-2ea85b] apps/web: server actions in lib/actions/partners/** are named `*Action`
+    evidence: 80/86 (lower bound 0.86, lift 19.2)
+    tier:     suggestion (rule kind named)
+    example:  apps/web/lib/actions/partners/accept-program-invite.ts#acceptProgramInviteAction
+    outlier:  apps/web/lib/actions/partners/ban-partner.ts:50 banPartner
+    outlier:  apps/web/lib/actions/partners/force-withdrawal.ts:36 forceWithdrawal
+    outlier:  apps/web/lib/actions/partners/generate-paypal-oauth-url.ts:10 generatePaypalOAuthUrl
+    outlier:  apps/web/lib/actions/partners/generate-stripe-account-link.ts:12 generateStripeAccountLink
+    outlier:  apps/web/lib/actions/partners/generate-stripe-recipient-account-link.ts:12 generateStripeRecipientAccountLink
+    outlier:  apps/web/lib/actions/partners/update-partner-notification-preference.ts:14 updatePartnerNotificationPreference
+
+15. [D-ec6127] apps/web: components in app/** (page-client files) are named `*Client`
+    evidence: 62/71 (lower bound 0.78, lift 24.4)
+    tier:     suggestion (rule kind named)
+    example:  apps/web/app/(ee)/app.dub.co/(new-program)/[slug]/program/new/overview/page-client.tsx#PageClient
+    outlier:  apps/web/app/(ee)/partners.dub.co/(dashboard)/programs/[programSlug]/(enrolled)/bounties/[bountyId]/page-client.tsx:115 PartnerBountyPageHeader
+    outlier:  apps/web/app/app.dub.co/(dashboard)/[slug]/(ee)/settings/domains/default/page-client.tsx:44 DefaultDomains
+    outlier:  apps/web/app/app.dub.co/(dashboard)/[slug]/(ee)/settings/domains/email/page-client.tsx:15 EmailDomains
+    outlier:  apps/web/app/app.dub.co/(dashboard)/[slug]/(ee)/settings/domains/page-client.tsx:34 CustomDomains
+    outlier:  apps/web/app/app.dub.co/(dashboard)/[slug]/links/folders/page-client.tsx:87 FoldersPageControls
+    outlier:  apps/web/app/app.dub.co/(dashboard)/[slug]/links/page-client.tsx:88 WorkspaceLinksList
+    outlier:  apps/web/app/app.dub.co/(dashboard)/[slug]/links/page-client.tsx:75 WorkspaceLinksPageControls
+    outlier:  apps/web/app/app.dub.co/(dashboard)/[slug]/links/tags/page-client.tsx:105 TagsPageControls
+    outlier:  apps/web/app/app.dub.co/(dashboard)/[slug]/links/utm/page-client.tsx:80 UTMPageControls
+

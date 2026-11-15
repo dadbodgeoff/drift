@@ -1,0 +1,17 @@
+{
+  "repo": "fastapi",
+  "files": [
+    {
+      "path": "docs/en/docs/contributing.md",
+      "kind": "doc"
+    },
+    {
+      "path": "fastapi/.agents/skills/fastapi/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": "pyproject.toml",
+      "kind": "lint (python config sections)"
+    }
+  ]
+}

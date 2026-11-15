@@ -1,0 +1,63 @@
+{
+  "a": "eval/study/runs/dev-v3-relabel5-2026-11-07/py/relabel/labels/A",
+  "b": "eval/study/runs/dev-v3-relabel5-2026-11-07/py/relabel/labels/B",
+  "labels_sha256": {
+    "A": "bbd01c6e19a62116431d0f733529f8880b0f35eba93e479ad429d2a508886197",
+    "B": "fa1a33c9e4af25da1c23902e5c5e3ef4ce3fa82eb7c136b23daf96482bec67ba"
+  },
+  "computed_at": "2026-11-08T00:06:09.499Z",
+  "rubric_sha256s": [
+    "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+  ],
+  "n": 12,
+  "scope": 12,
+  "exact": 1,
+  "kappa": 1,
+  "kappa_boot": {
+    "lo": 1,
+    "hi": 1,
+    "clusters": 3
+  },
+  "accept_vs_not": {
+    "n": 12,
+    "po": 1,
+    "pe": 0.5555555555555556,
+    "kappa": 1
+  },
+  "wrong_vs_not": {
+    "n": 12,
+    "po": 1,
+    "pe": 0.5555555555555556,
+    "kappa": 1
+  },
+  "confusion": {
+    "ACCEPT": {
+      "ACCEPT": 8,
+      "TRIVIAL": 0,
+      "WRONG": 0
+    },
+    "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+    },
+    "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 4
+    }
+  },
+  "mix": {
+    "A": {
+      "ACCEPT": 8,
+      "TRIVIAL": 0,
+      "WRONG": 4
+    },
+    "B": {
+      "ACCEPT": 8,
+      "TRIVIAL": 0,
+      "WRONG": 4
+    }
+  },
+  "disagreements": []
+}

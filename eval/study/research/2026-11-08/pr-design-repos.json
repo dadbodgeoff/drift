@@ -1,0 +1,185 @@
+{
+ "how": "repos named (by name or by card id) in the What and Why sections of each round 5-9 product PR body; census and verification sections excluded",
+ "prs": [
+  {
+   "pr": 70,
+   "round": 5,
+   "design": [
+    "ai"
+   ]
+  },
+  {
+   "pr": 73,
+   "round": 5,
+   "design": []
+  },
+  {
+   "pr": 75,
+   "round": 5,
+   "design": [
+    "cal.com",
+    "midday",
+    "netbox",
+    "novu"
+   ]
+  },
+  {
+   "pr": 76,
+   "round": 5,
+   "design": [
+    "cal.com",
+    "documenso",
+    "dub"
+   ]
+  },
+  {
+   "pr": 78,
+   "round": 5,
+   "design": [
+    "supabase"
+   ]
+  },
+  {
+   "pr": 79,
+   "round": 5,
+   "design": [
+    "fastapi"
+   ]
+  },
+  {
+   "pr": 81,
+   "round": 5,
+   "design": []
+  },
+  {
+   "pr": 83,
+   "round": 5,
+   "design": []
+  },
+  {
+   "pr": 84,
+   "round": 5,
+   "design": []
+  },
+  {
+   "pr": 88,
+   "round": 5,
+   "design": [
+    "cal.com"
+   ]
+  },
+  {
+   "pr": 89,
+   "round": 6,
+   "design": [
+    "netbox",
+    "twenty"
+   ]
+  },
+  {
+   "pr": 91,
+   "round": 6,
+   "design": []
+  },
+  {
+   "pr": 95,
+   "round": 6,
+   "design": []
+  },
+  {
+   "pr": 96,
+   "round": 6,
+   "design": [
+    "tasking-manager"
+   ]
+  },
+  {
+   "pr": 97,
+   "round": 6,
+   "design": [
+    "Misago",
+    "ralph"
+   ]
+  },
+  {
+   "pr": 99,
+   "round": 6,
+   "design": []
+  },
+  {
+   "pr": 102,
+   "round": 6,
+   "design": [
+    "cal.com"
+   ]
+  },
+  {
+   "pr": 103,
+   "round": 6,
+   "design": []
+  },
+  {
+   "pr": 105,
+   "round": 6,
+   "design": [
+    "cal.com",
+    "dub",
+    "twenty"
+   ]
+  },
+  {
+   "pr": 109,
+   "round": 8,
+   "design": []
+  },
+  {
+   "pr": 110,
+   "round": 8,
+   "design": []
+  },
+  {
+   "pr": 112,
+   "round": 8,
+   "design": [
+    "netbox"
+   ]
+  },
+  {
+   "pr": 113,
+   "round": 8,
+   "design": []
+  },
+  {
+   "pr": 115,
+   "round": 9,
+   "design": []
+  },
+  {
+   "pr": 116,
+   "round": 9,
+   "design": []
+  },
+  {
+   "pr": 117,
+   "round": 9,
+   "design": []
+  },
+  {
+   "pr": 118,
+   "round": 9,
+   "design": []
+  },
+  {
+   "pr": 119,
+   "round": 9,
+   "design": []
+  },
+  {
+   "pr": 120,
+   "round": 9,
+   "design": [
+    "twenty"
+   ]
+  }
+ ]
+}

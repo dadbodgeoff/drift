@@ -1,0 +1,152 @@
+13 conventions from 28025 units in 1196 roles (0 default tier, 13 suggestions)
+
+13 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-148d14] futureagi: serializers in model_hub/** are named `*Serializer`
+    evidence: 422/424 (lower bound 0.98, lift 2.3)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 40% of 15)
+    example:  futureagi/model_hub/serializers/ai_filter.py#AIFilterConditionSerializer
+    outlier:  futureagi/model_hub/serializers/dataset_properties.py:25 Dataset
+    outlier:  futureagi/model_hub/serializers/dataset_properties.py:19 DatasetProperty
+
+ 2. [D-7fb332] futureagi: HTTP handlers in agentcc/** are wrapped in IsAdminToken() or permissions.IsAuthenticated()
+    evidence: 143/145 (lower bound 0.95, lift 7.4)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 75% of 8)
+    split:    permissions.IsAuthenticated 140, IsAdminToken 3
+    example:  futureagi/agentcc/views/analytics.py#AgentccAnalyticsViewSet.cost_breakdown
+    outlier:  futureagi/agentcc/views/shadow_webhook.py:34 ShadowResultWebhookView.post
+    outlier:  futureagi/agentcc/views/webhook.py:27 GatewayWebhookView.post
+
+ 3. [D-9873ea] futureagi: functions in simulate/services/** declare their return type, except 4 shared parts (used by several members, not a member)
+    evidence: 585/604 (lower bound 0.95, lift 2.8)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 100% of 4)
+    example:  futureagi/simulate/services/agent_fix_agents.py#agent_kind
+    outlier:  futureagi/simulate/services/alk_simulate_ingestion.py:433 append_alk_sim_scenarios
+    outlier:  futureagi/simulate/services/chat_sim.py:648 finalize_chat_execution
+    outlier:  futureagi/simulate/services/chat_sim.py:493 send_message_to_chat
+    outlier:  futureagi/simulate/services/eval_config_edit.py:49 update_eval_config
+    outlier:  futureagi/simulate/services/eval_config_edit.py:32 visible_eval_template_query
+    outlier:  futureagi/simulate/services/harness_credentials.py:79 store_credential_file
+    outlier:  futureagi/simulate/services/harness_provider.py:89 get_harness_provider
+    outlier:  futureagi/simulate/services/harness_provider.py:110 request_organization
+    outlier:  futureagi/simulate/services/harness_provider.py:115 request_workspace
+    outlier:  futureagi/simulate/services/harness_provider.py:893 run_preflight_checks
+    outlier:  futureagi/simulate/services/harness_provider.py:143 scope_jobs
+    outlier:  futureagi/simulate/services/harness_versioning/rebuild.py:1660 fail_landing
+    outlier:  futureagi/simulate/services/harness_versioning/rebuild.py:261 waiting_since
+    outlier:  futureagi/simulate/services/hosted_runner.py:826 agent_field_for_run
+    outlier:  futureagi/simulate/services/hosted_runner.py:788 agent_field_for_version
+    outlier:  futureagi/simulate/services/insert_system_personas.py:15 insert_system_personas
+    outlier:  futureagi/simulate/services/run_regrade.py:106 regrade_run_evals
+    outlier:  futureagi/simulate/services/run_regrade.py:80 regrade_still_finishing
+    outlier:  futureagi/simulate/services/scenario_service.py:16 create_scenario
+    exempt:   futureagi/simulate/services/harness_versioning/drafts.py:1475 draft_rows (shared part used by 4 members)
+    exempt:   futureagi/simulate/services/harness_versioning/drafts.py:158 fresh_draft (shared part used by 6 members)
+    exempt:   futureagi/simulate/services/harness_versioning/drafts.py:175 require_no_rebuild (shared part used by 5 members)
+    exempt:   futureagi/simulate/services/hosted_runner.py:795 resolve_run_agent_version (shared part used by 3 members)
+
+ 4. [D-a79a2e] futureagi: model classes in tracer/models/** extend BaseModel
+    evidence: 66/66 (lower bound 0.94, lift 21.4)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 33% of 9)
+    example:  futureagi/tracer/models/custom_eval_config.py#CustomEvalConfig
+
+ 5. [D-a0e724] futureagi: model classes in tracer/** pass `on_delete` to db.models.ForeignKey(), except 2 members (not calling the callee)
+    evidence: 64/64 (lower bound 0.94, lift 20.7)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 50% of 4)
+    example:  futureagi/tracer/models/custom_eval_config.py#CustomEvalConfig
+    exempt:   futureagi/tracer/models/trace_scan.py:23 TraceScanConfig (does not call db.models.ForeignKey())
+    exempt:   futureagi/tracer/models/trace_session.py:29 TraceSessionOverlay (does not call db.models.ForeignKey())
+
+ 6. [D-962248] frontend: exported values in src/config/** pass `maximum` to readBoundedRuntimeInteger(), except a member (not calling the callee)
+    evidence: 49/49 (lower bound 0.93, lift 86.8)
+    tier:     suggestion (rule kind passes_key)
+    agents:   not shown to agents (family below admission bar: 50% of 12)
+    example:  frontend/src/config/runtime_limits.js#AGGREGATION_POLL_BACKOFF_FACTOR
+    exempt:   frontend/src/config/runtime_limits.js:89 AGGREGATION_POLL_TIMEOUT_MS (does not call readBoundedRuntimeInteger())
+
+ 7. [D-30f7c8] futureagi: HTTP handlers in ee/**, simulate/** and tracer/** are wrapped in permissions.IsAuthenticated()
+    evidence: 321/337 (lower bound 0.92, lift 7.2)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 75% of 8)
+    example:  futureagi/tracer/views/alerts.py#AlertDetailView.delete
+    outlier:  futureagi/ee/falcon_ai/views_connectors.py:440 MCPConnectorOAuthCallbackView.get
+    outlier:  futureagi/simulate/views/harness_github_webhook.py:62 HarnessGitHubWebhookView.post
+    outlier:  futureagi/simulate/views/hosted_harness.py:290 HostedHarnessIngressProxyView.patch
+    outlier:  futureagi/simulate/views/hosted_harness.py:276 HostedHarnessIngressProxyView.post
+    outlier:  futureagi/simulate/views/hosted_harness.py:283 HostedHarnessIngressProxyView.put
+    outlier:  futureagi/simulate/views/livekit_api.py:232 CallConfigView.get
+    outlier:  futureagi/simulate/views/livekit_api.py:324 CallExecutionUpdateView.patch
+    outlier:  futureagi/simulate/views/livekit_api.py:666 LiveKitWebhookView.post
+    outlier:  futureagi/simulate/views/livekit_api.py:303 PhoneResolutionView.get
+    outlier:  futureagi/simulate/views/livekit_api.py:362 TemporalSignalView.post
+    outlier:  futureagi/simulate/views/livekit_api.py:253 TranscriptsView.post
+    outlier:  futureagi/tracer/views/clickhouse_health.py:39 ClickHouseHealthView.get
+    outlier:  futureagi/tracer/views/otlp.py:358 OTLPHealthView.get
+    outlier:  futureagi/tracer/views/shared_link.py:330 SharedIssueSidebarView.get
+    outlier:  futureagi/tracer/views/shared_link.py:284 resolve_shared_issue_trace
+    outlier:  futureagi/tracer/views/shared_link.py:247 resolve_shared_link
+
+ 8. [D-ad841f] futureagi: model classes in simulate/models/** extend BaseModel
+    evidence: 45/45 (lower bound 0.92, lift 21.4)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 33% of 9)
+    example:  futureagi/simulate/models/agent_optimiser.py#AgentOptimiser
+
+ 9. [D-402240] futureagi: functions in tfc/** (activities files) are decorated with activity.defn()
+    evidence: 77/82 (lower bound 0.86, lift 64.8)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 50% of 6)
+    example:  futureagi/tfc/temporal/agent_playground/activities.py#analyze_graph_activity
+    outlier:  futureagi/tfc/temporal/background_tasks/activities.py:53 delete_compare_folder_activity
+    outlier:  futureagi/tfc/temporal/background_tasks/activities.py:107 ingest_kb_files_activity
+    outlier:  futureagi/tfc/temporal/background_tasks/activities.py:69 prepare_compare_dataset_activity
+    outlier:  futureagi/tfc/temporal/background_tasks/activities.py:25 process_huggingface_dataset_activity
+    outlier:  futureagi/tfc/temporal/background_tasks/activities.py:11 run_post_registration_activity
+
+10. [D-85cfb8] futureagi: classes in tracer/management/** extend core.management.base.BaseCommand
+    evidence: 24/24 (lower bound 0.86, lift 87.8)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 33% of 9)
+    example:  futureagi/tracer/management/commands/backfill_blank_eval_status.py#Command
+
+11. [D-20c80e] frontend: components in src/sections/gateway/** render <Stack>
+    evidence: 78/89 (lower bound 0.79, lift 3.5)
+    tier:     suggestion (rule kind renders)
+    agents:   not shown to agents (family below admission bar: 40% of 10)
+    example:  frontend/src/sections/gateway/GatewayOverviewSection.jsx#GatewayOverviewSection
+    outlier:  frontend/src/sections/gateway/analytics/AnalyticsDashboardSection.jsx:55 AnalyticsDashboardSection
+    outlier:  frontend/src/sections/gateway/analytics/LatencyAnalytics.jsx:174 LatencyAnalytics
+    outlier:  frontend/src/sections/gateway/analytics/TimeRangeSelector.jsx:14 TimeRangeSelector
+    outlier:  frontend/src/sections/gateway/components/ConfirmDialog.jsx:13 ConfirmDialog
+    outlier:  frontend/src/sections/gateway/components/GatewayEmptyState.jsx:30 GatewayEmptyState
+    outlier:  frontend/src/sections/gateway/components/InheritedBadge.jsx:5 InheritedBadge
+    outlier:  frontend/src/sections/gateway/components/ResultCount.jsx:5 ResultCount
+    outlier:  frontend/src/sections/gateway/context/GatewayContext.jsx:21 GatewayProvider
+    outlier:  frontend/src/sections/gateway/logs/columns/ClippedColumnLabel.jsx:8 ClippedColumnLabel
+    outlier:  frontend/src/sections/gateway/logs/columns/MetadataCell.jsx:28 MetadataCell
+    outlier:  frontend/src/sections/gateway/mcp/MCPOverviewTab.jsx:35 MCPOverviewTab
+
+12. [D-a3b041] frontend: exported values in src/assets/** are wrapped in memo()
+    evidence: 21/22 (lower bound 0.78, lift 94.1)
+    tier:     suggestion (rule names a symbol from outside the repo)
+    agents:   not shown to agents (family below admission bar: 0% of 1)
+    example:  frontend/src/assets/icons/auto-annotate-icon.jsx#MemoizedSentIcon
+    outlier:  frontend/src/assets/data/countries.js:1 countries
+
+13. [D-12246d] futureagi: HTTP handlers in accounts/** are decorated with validated_request()
+    evidence: 32/35 (lower bound 0.78, lift 13.5)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 50% of 6)
+    example:  futureagi/accounts/views/keys.py#SecretKeyAPIViewSet.delete_secret_key
+    outlier:  futureagi/accounts/views/config.py:31 public_config
+    outlier:  futureagi/accounts/views/keys.py:118 SecretKeyAPIViewSet.get_secret_keys
+    outlier:  futureagi/accounts/views/organization_selection.py:347 get_current_organization
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

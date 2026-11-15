@@ -1,0 +1,73 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - api
+  - bridge
+  - config
+  - contracts
+  - lineage-store
+  - main
+  - normalize
+  - policy
+  - prompt
+  - render
+  - schema
+  - service
+  - sliderule-runtime
+  - socket
+  - summary-derivation
+  - tasks-store
+  - types
+  - web-aigc
+  suffixes:
+  - config
+  - test
+conventions:
+- id: D-638d89
+  status: proposed
+  mode: advise
+  summary: >-
+    files in server/routes/** do not import from server/sliderule/** (declared
+    dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: server/routes
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:server/sliderule
+  evidence:
+    holders: 254
+    total: 255
+    lower_bound: 0.978
+    lift: 3.0
+  example: server/routes/a2a-python-runtime.ts#(file)
+  selector_version: 3
+- id: D-30aed1
+  status: proposed
+  mode: advise
+  summary: >-
+    files in server/core/** do not import from server/routes/** (declared
+    dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: server/core
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:server/routes
+  evidence:
+    holders: 97
+    total: 100
+    lower_bound: 0.915
+    lift: 3.0
+  example: server/core/a2a-adapters/claude.ts#(file)
+  selector_version: 3

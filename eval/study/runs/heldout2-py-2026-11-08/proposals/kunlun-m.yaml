@@ -1,0 +1,39 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - builtin_knowledge
+  - engine
+  - normalizer
+  - parser
+  - run_newcore_tests
+  - source_discovery
+  - summary_generator
+  - urls
+  suffixes: []
+conventions:
+- id: D-9838d9
+  status: proposed
+  mode: advise
+  summary: functions in core/** (summary_generator files) declare their return type
+  role:
+    package: ""
+    dir: core
+    file: summary_generator
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 38
+    total: 39
+    lower_bound: 0.868
+    lift: 5.069
+    python_members: 39
+  example: core/core_engine/c/summary_generator.py#generate_file_summaries
+  selector_version: 3

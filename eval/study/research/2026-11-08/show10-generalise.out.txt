@@ -1,0 +1,209 @@
+# generalise: census before/after. Dev data; in-sample unless marked.
+
+## TS
+in-sample (relabel5 labels):
+   before 63.9% (94/147); not-wrong 67.3% (99/147); default 100.0% (30/30); WRONG 48; unlabelled 0; 11.3 cards/repo, 7.2 accepts/repo over 13 repos
+   after  93.5% (43/46); not-wrong 93.5% (43/46); default 100.0% (30/30); WRONG 3; unlabelled 0; 3.5 cards/repo, 3.3 accepts/repo over 13 repos
+   effect +29.5 pts accept
+undo-named reading (every change since dev-v3-2026-11-06 a round 4,5,6,8,9 PR names by id, undone; 48 restored cards):
+   before 43.6% (72/165); not-wrong 44.2% (73/165); default 75.0% (24/32); WRONG 92; unlabelled 0; 12.7 cards/repo, 5.5 accepts/repo over 13 repos
+   after  45.0% (36/80); not-wrong 45.0% (36/80); default 75.0% (24/32); WRONG 44; unlabelled 0; 6.2 cards/repo, 2.8 accepts/repo over 13 repos
+   effect +1.4 pts accept
+dev-v3 reading: n/a (a census change is not a policy; pass --policy for it)
+folds (in-sample):
+   fold 1: 32.0% (8/25) -> 80.0% (4/5) (+48.0 pts); helped 16 in 2 repos; ACCEPT lost 4
+   fold 2: 83.8% (31/37) -> 100.0% (19/19) (+16.2 pts); helped 6 in 3 repos; ACCEPT lost 12
+   fold 3: 61.0% (25/41) -> 100.0% (6/6) (+39.0 pts); helped 16 in 3 repos; ACCEPT lost 19
+   fold 4: 68.2% (30/44) -> 87.5% (14/16) (+19.3 pts); helped 12 in 3 repos; ACCEPT lost 16
+   in-sample: design folds n/a -> n/a (n/a); other folds 63.9% (94/147) -> 93.5% (43/46) (+29.5 pts; per repo: accepts -3.92, WRONG -3.46, shown -7.77; 13 repos)
+   undo-named: design folds n/a -> n/a (n/a); other folds 43.6% (72/165) -> 45.0% (36/80) (+1.4 pts; per repo: accepts -2.77, WRONG -3.69, shown -6.54; 13 repos)
+admission (§3.2): helps 11 repos across 4 folds (>= 3 across >= 2: yes); ACCEPT lost outside the design folds 51 (NO: ai/D-4683f7 ai/D-5baed4 ai/D-8fbbad cal.com/D-554063 cal.com/D-5722ba cal.com/D-777a50 cal.com/D-d690c0 cal.com/D-e5e923 cal.com/D-fafac1 documenso/D-aafe01 dub/D-2ea85b dub/D-3fad9a dub/D-a23ff8 excalidraw/D-553404 excalidraw/D-92af59 formbricks/D-ec0946 immich/D-d3f2f9 infisical/D-055c32 infisical/D-fd3f1a midday/D-5880dd midday/D-798f44 midday/D-7da2b9 midday/D-8fbbad midday/D-8fd473 midday/D-afc38b midday/D-f90103 nest/D-897eda novu/D-3f3e16 novu/D-462c2b novu/D-6d3bdc novu/D-7c65a3 novu/D-94d735 novu/D-99f229 novu/D-dbba9a novu/D-e79710 supabase/D-017ce5 supabase/D-100c39 supabase/D-3c4b60 supabase/D-7c4152 supabase/D-81b35e supabase/D-922bc7 supabase/D-9b2da2 supabase/D-d8dcea supabase/D-db9d80 supabase/D-df24f2 twenty/D-532878 twenty/D-6429a5 twenty/D-70d216 twenty/D-865fba twenty/D-bc65cf twenty/D-c39eb9); other-fold effect +29.5 pts (positive) -> NOT ADMITTED
+changed cards (101):
+   ai/D-224b9e fold 2 removed suggestion repo WRONG/mixed_group [helped]
+   ai/D-4683f7 fold 2 removed suggestion ordering ACCEPT [accept_lost]
+   ai/D-5baed4 fold 2 removed suggestion repo ACCEPT [accept_lost]
+   ai/D-80697a fold 2 removed suggestion repo WRONG/mixed_group [helped]
+   ai/D-8fbbad fold 2 removed suggestion repo ACCEPT [accept_lost]
+   cal.com/D-42ab67 fold 4 removed suggestion control WRONG/legit_outliers [helped]
+   cal.com/D-554063 fold 4 removed suggestion naming ACCEPT [accept_lost]
+   cal.com/D-5722ba fold 4 removed suggestion base_class ACCEPT [accept_lost]
+   cal.com/D-777a50 fold 4 removed suggestion decorator ACCEPT [accept_lost]
+   cal.com/D-d690c0 fold 4 removed suggestion naming ACCEPT [accept_lost]
+   cal.com/D-e5e923 fold 4 removed suggestion naming ACCEPT [accept_lost]
+   cal.com/D-ec4221 fold 4 removed suggestion decorator WRONG/legit_outliers [helped]
+   cal.com/D-fafac1 fold 4 removed suggestion naming ACCEPT [accept_lost]
+   documenso/D-545ea0 fold 2 removed suggestion renders WRONG/incidental [helped]
+   documenso/D-694c8a fold 2 removed suggestion repo WRONG/legit_outliers [helped]
+   documenso/D-aafe01 fold 2 removed suggestion naming ACCEPT [accept_lost]
+   dub/D-024a81 fold 4 removed suggestion renders WRONG/legit_outliers [helped]
+   dub/D-258285 fold 4 removed suggestion naming WRONG/mixed_group [helped]
+   dub/D-2ea85b fold 4 removed suggestion naming ACCEPT [accept_lost]
+   dub/D-3fad9a fold 4 removed suggestion renders ACCEPT [accept_lost]
+   dub/D-418256 fold 4 removed suggestion renders WRONG/legit_outliers [helped]
+   dub/D-742eb6 fold 4 removed suggestion avoids_other WRONG/legit_outliers [helped]
+   dub/D-79cc0a fold 4 removed suggestion calls WRONG/mixed_group [helped]
+   dub/D-a23ff8 fold 4 removed suggestion renders ACCEPT [accept_lost]
+   dub/D-e25af3 fold 4 removed suggestion renders WRONG/legit_outliers [helped]
+   dub/D-ec6127 fold 4 removed suggestion naming WRONG/mixed_group [helped]
+   excalidraw/D-553404 fold 3 removed suggestion avoids_other ACCEPT [accept_lost]
+   excalidraw/D-92af59 fold 3 removed suggestion naming ACCEPT [accept_lost]
+   formbricks/D-3bb3c1 fold 3 removed suggestion argument_key WRONG/legit_outliers [helped]
+   formbricks/D-43e309 fold 3 removed suggestion wrapper WRONG/mixed_group [helped]
+   formbricks/D-514f45 fold 3 removed suggestion repo WRONG/mixed_group [helped]
+   formbricks/D-66d37f fold 3 removed suggestion ordering WRONG/incidental [helped]
+   formbricks/D-71e798 fold 3 removed suggestion argument_key WRONG/legit_outliers [helped]
+   formbricks/D-b70b0a fold 3 removed suggestion argument_key WRONG/legit_outliers [helped]
+   formbricks/D-d64e88 fold 3 removed suggestion repo WRONG/legit_outliers [helped]
+   formbricks/D-ec0946 fold 3 removed suggestion argument_key ACCEPT [accept_lost]
+   immich/D-3b4f47 fold 1 removed suggestion base_class WRONG/legit_outliers [helped]
+   immich/D-4fc758 fold 1 removed suggestion decorator WRONG/legit_outliers [helped]
+   immich/D-63d2cd fold 1 removed suggestion argument_key WRONG/legit_outliers [helped]
+   immich/D-876763 fold 1 removed suggestion decorator TRIVIAL [helped]
+   immich/D-c10e8e fold 1 removed suggestion decorator WRONG/legit_outliers [helped]
+   immich/D-c8db80 fold 1 removed suggestion ordering WRONG/legit_outliers [helped]
+   immich/D-d3f2f9 fold 1 removed suggestion base_class ACCEPT [accept_lost]
+   immich/D-ed6dc0 fold 1 removed suggestion decorator WRONG/legit_outliers [helped]
+   immich/D-f0120c fold 1 removed suggestion naming WRONG/legit_outliers [helped]
+   infisical/D-055c32 fold 1 removed suggestion jsx_wrapper ACCEPT [accept_lost]
+   infisical/D-156a6f fold 1 removed suggestion naming WRONG/mixed_group [helped]
+   infisical/D-1b2542 fold 1 removed suggestion argument_key TRIVIAL [helped]
+   infisical/D-4be5e9 fold 1 removed suggestion naming WRONG/mixed_group [helped]
+   infisical/D-536c03 fold 1 removed suggestion naming WRONG/mixed_group [helped]
+   infisical/D-ac787f fold 1 removed suggestion naming WRONG/mixed_group [helped]
+   infisical/D-bf8c50 fold 1 removed suggestion renders WRONG/mixed_group [helped]
+   infisical/D-d7b5b7 fold 1 removed suggestion renders WRONG/incidental [helped]
+   infisical/D-d9b44e fold 1 removed suggestion argument_key TRIVIAL [helped]
+   infisical/D-fd3f1a fold 1 removed suggestion renders ACCEPT [accept_lost]
+   midday/D-48f0ae fold 4 removed suggestion ordering WRONG/incidental [helped]
+   midday/D-5880dd fold 4 removed suggestion base_class ACCEPT [accept_lost]
+   midday/D-798f44 fold 4 removed suggestion repo ACCEPT [accept_lost]
+   midday/D-7da2b9 fold 4 removed suggestion argument_key ACCEPT [accept_lost]
+   midday/D-8fbbad fold 4 removed suggestion repo ACCEPT [accept_lost]
+   midday/D-8fd473 fold 4 removed suggestion control ACCEPT [accept_lost]
+   midday/D-98e729 fold 4 removed suggestion naming WRONG/mixed_group [helped]
+   midday/D-a45d35 fold 4 removed suggestion ordering WRONG/incidental [helped]
+   midday/D-afc38b fold 4 removed suggestion argument_key ACCEPT [accept_lost]
+   midday/D-f90103 fold 4 removed suggestion argument_key ACCEPT [accept_lost]
+   nest/D-897eda fold 1 removed suggestion base_class ACCEPT [accept_lost]
+   novu/D-3f3e16 fold 2 removed suggestion decorator ACCEPT [accept_lost]
+   novu/D-462c2b fold 2 removed suggestion base_class ACCEPT [accept_lost]
+   novu/D-53fcf5 fold 2 removed suggestion base_class WRONG/legit_outliers [helped]
+   novu/D-6d3bdc fold 2 removed suggestion base_class ACCEPT [accept_lost]
+   novu/D-7c65a3 fold 2 removed suggestion base_class ACCEPT [accept_lost]
+   novu/D-808edd fold 2 removed suggestion naming WRONG/mixed_group [helped]
+   novu/D-94d735 fold 2 removed suggestion base_class ACCEPT [accept_lost]
+   novu/D-99f229 fold 2 removed suggestion decorator ACCEPT [accept_lost]
+   novu/D-dbba9a fold 2 removed suggestion naming ACCEPT [accept_lost]
+   novu/D-e79710 fold 2 removed suggestion naming ACCEPT [accept_lost]
+   supabase/D-017ce5 fold 3 removed suggestion control ACCEPT [accept_lost]
+   supabase/D-100c39 fold 3 removed suggestion repo ACCEPT [accept_lost]
+   supabase/D-3c4b60 fold 3 removed suggestion control ACCEPT [accept_lost]
+   supabase/D-7c4152 fold 3 removed suggestion repo ACCEPT [accept_lost]
+   supabase/D-81b35e fold 3 removed suggestion control ACCEPT [accept_lost]
+   supabase/D-922bc7 fold 3 removed suggestion argument_key ACCEPT [accept_lost]
+   supabase/D-9b2da2 fold 3 removed suggestion jsx_wrapper ACCEPT [accept_lost]
+   supabase/D-c59437 fold 3 removed suggestion repo WRONG/incidental [helped]
+   supabase/D-d8dcea fold 3 removed suggestion control ACCEPT [accept_lost]
+   supabase/D-db9d80 fold 3 removed suggestion renders ACCEPT [accept_lost]
+   supabase/D-df24f2 fold 3 removed suggestion repo ACCEPT [accept_lost]
+   supabase/D-e97861 fold 3 removed suggestion calls WRONG/legit_outliers [helped]
+   twenty/D-0cd62c fold 3 removed suggestion decorator WRONG/legit_outliers [helped]
+   twenty/D-2456fc fold 3 removed suggestion base_class WRONG/legit_outliers [helped]
+   twenty/D-2a3e38 fold 3 removed suggestion decorator WRONG/legit_outliers [helped]
+   twenty/D-2df337 fold 3 removed suggestion decorator WRONG/misdescribes [helped]
+   twenty/D-532878 fold 3 removed suggestion base_class ACCEPT [accept_lost]
+   twenty/D-6429a5 fold 3 removed suggestion decorator ACCEPT [accept_lost]
+   twenty/D-70d216 fold 3 removed suggestion decorator ACCEPT [accept_lost]
+   twenty/D-865fba fold 3 removed suggestion decorator ACCEPT [accept_lost]
+   twenty/D-8f867b fold 3 removed suggestion base_class TRIVIAL [helped]
+   twenty/D-bc65cf fold 3 removed suggestion argument_key ACCEPT [accept_lost]
+   twenty/D-c010e4 fold 3 removed suggestion base_class TRIVIAL [helped]
+   twenty/D-c39eb9 fold 3 removed suggestion base_class ACCEPT [accept_lost]
+   twenty/D-cfebe6 fold 3 removed suggestion decorator WRONG/legit_outliers [helped]
+
+## Python
+in-sample (relabel5 labels):
+   before 61.0% (47/77); not-wrong 61.0% (47/77); default n/a; WRONG 30; unlabelled 0; 4.5 cards/repo, 2.8 accepts/repo over 17 repos
+   after  100.0% (12/12); not-wrong 100.0% (12/12); default n/a; WRONG 0; unlabelled 0; 0.7 cards/repo, 0.7 accepts/repo over 17 repos
+   effect +39.0 pts accept
+undo-named reading (every change since dev-v3-2026-11-06 a round 4,5,6,8,9 PR names by id, undone; 46 restored cards):
+   before 34.3% (34/99); not-wrong 35.4% (35/99); default n/a; WRONG 64; unlabelled 0; 5.8 cards/repo, 2.0 accepts/repo over 17 repos
+   after  33.3% (17/51); not-wrong 35.3% (18/51); default n/a; WRONG 33; unlabelled 0; 3.0 cards/repo, 1.0 accepts/repo over 17 repos
+   effect -1.0 pts accept
+dev-v3 reading: n/a (a census change is not a policy; pass --policy for it)
+folds (in-sample):
+   fold 1: 57.7% (15/26) -> 100.0% (8/8) (+42.3 pts); helped 11 in 4 repos; ACCEPT lost 7
+   fold 2: 68.0% (17/25) -> 100.0% (2/2) (+32.0 pts); helped 8 in 5 repos; ACCEPT lost 15
+   fold 3: 50.0% (2/4) -> 100.0% (1/1) (+50.0 pts); helped 2 in 2 repos; ACCEPT lost 1
+   fold 4: 59.1% (13/22) -> 100.0% (1/1) (+40.9 pts); helped 9 in 4 repos; ACCEPT lost 12
+   in-sample: design folds n/a -> n/a (n/a); other folds 61.0% (47/77) -> 100.0% (12/12) (+39.0 pts; per repo: accepts -2.06, WRONG -1.76, shown -3.82; 17 repos)
+   undo-named: design folds n/a -> n/a (n/a); other folds 34.3% (34/99) -> 33.3% (17/51) (-1.0 pts; per repo: accepts -1.00, WRONG -1.82, shown -2.82; 17 repos)
+admission (§3.2): helps 15 repos across 4 folds (>= 3 across >= 2: yes); ACCEPT lost outside the design folds 35 (NO: Django-CRM/D-220569 Django-CRM/D-39c60a Django-CRM/D-4b232f Django-CRM/D-9c2214 InvenTree/D-90cbee Misago/D-90a5d9 Misago/D-c9ae1e Misago/D-d8703c Misago/D-d93d41 Misago/D-e72fc8 changedetection.io/D-129993 changedetection.io/D-1ce566 fastapi/D-499c0e langchain/D-0e154c lotus/D-7d8745 lotus/D-e5b6fe netbox/D-281ae8 netbox/D-310ec7 netbox/D-58913a netbox/D-bc0c7d netbox/D-cc1341 netbox/D-e2c3e4 open-wearables/D-262064 open-wearables/D-4c541f open-wearables/D-6606a8 paperless-ngx/D-0dfb1b paperless-ngx/D-c3460b pontoon/D-6957a9 ralph/D-40c349 ralph/D-c2b101 ralph/D-cfd5da simplelogin/D-2a4960 tasking-manager/D-68243e tasking-manager/D-c7acd1 tasking-manager/D-ee4d58); other-fold effect +39.0 pts (positive) -> NOT ADMITTED
+changed cards (65):
+   Django-CRM/D-220569 fold 4 removed suggestion wrapper ACCEPT [accept_lost]
+   Django-CRM/D-39c60a fold 4 removed suggestion wrapper ACCEPT [accept_lost]
+   Django-CRM/D-4b232f fold 4 removed suggestion wrapper ACCEPT [accept_lost]
+   Django-CRM/D-8ee062 fold 4 removed suggestion repo WRONG/incidental [helped]
+   Django-CRM/D-9c2214 fold 4 removed suggestion argument_key ACCEPT [accept_lost]
+   Django-CRM/D-b6f0b8 fold 4 removed suggestion control WRONG/false_outliers [helped]
+   InvenTree/D-100344 fold 1 removed suggestion decorator WRONG/false_outliers [helped]
+   InvenTree/D-455913 fold 1 removed suggestion naming WRONG/mixed_group [helped]
+   InvenTree/D-71f3ec fold 1 removed suggestion ordering WRONG/incidental [helped]
+   InvenTree/D-7e788c fold 1 removed suggestion ordering WRONG/incidental [helped]
+   InvenTree/D-90cbee fold 1 removed suggestion calls ACCEPT [accept_lost]
+   InvenTree/D-9838a4 fold 1 removed suggestion ordering WRONG/incidental [helped]
+   InvenTree/D-b24fe0 fold 1 removed suggestion ordering WRONG/incidental [helped]
+   InvenTree/D-b5f2f2 fold 1 removed suggestion base_class WRONG/mixed_group [helped]
+   Misago/D-5862f4 fold 2 removed suggestion base_class WRONG/false_outliers [helped]
+   Misago/D-90a5d9 fold 2 removed suggestion calls ACCEPT [accept_lost]
+   Misago/D-c9ae1e fold 2 removed suggestion base_class ACCEPT [accept_lost]
+   Misago/D-d8703c fold 2 removed suggestion calls ACCEPT [accept_lost]
+   Misago/D-d93d41 fold 2 removed suggestion control ACCEPT [accept_lost]
+   Misago/D-e72fc8 fold 2 removed suggestion base_class ACCEPT [accept_lost]
+   changedetection.io/D-129993 fold 4 removed suggestion calls ACCEPT [accept_lost]
+   changedetection.io/D-1ce566 fold 4 removed suggestion control ACCEPT [accept_lost]
+   changedetection.io/D-2619c7 fold 4 removed suggestion decorator WRONG/legit_outliers [helped]
+   fastapi/D-499c0e fold 3 removed suggestion control ACCEPT [accept_lost]
+   full-stack-fastapi-template/D-6e757d fold 3 removed suggestion repo WRONG/legit_outliers [helped]
+   langchain/D-0e154c fold 2 removed suggestion import_source ACCEPT [accept_lost]
+   langchain/D-468530 fold 2 removed suggestion repo WRONG/legit_outliers [helped]
+   lotus/D-2ab768 fold 2 removed suggestion repo WRONG/legit_outliers [helped]
+   lotus/D-7d8745 fold 2 removed suggestion naming ACCEPT [accept_lost]
+   lotus/D-e5b6fe fold 2 removed suggestion decorator ACCEPT [accept_lost]
+   netbox/D-281ae8 fold 2 removed suggestion decorator ACCEPT [accept_lost]
+   netbox/D-310ec7 fold 2 removed suggestion argument_key ACCEPT [accept_lost]
+   netbox/D-3ab42c fold 2 removed suggestion calls WRONG/misdescribes [helped]
+   netbox/D-58913a fold 2 removed suggestion calls ACCEPT [accept_lost]
+   netbox/D-73d13c fold 2 removed suggestion naming WRONG/legit_outliers [helped]
+   netbox/D-76eb6b fold 2 removed suggestion argument_key WRONG/legit_outliers [helped]
+   netbox/D-8a1131 fold 2 removed suggestion calls WRONG/mixed_group [helped]
+   netbox/D-bc0c7d fold 2 removed suggestion decorator ACCEPT [accept_lost]
+   netbox/D-cc1341 fold 2 removed suggestion decorator ACCEPT [accept_lost]
+   netbox/D-e2c3e4 fold 2 removed suggestion base_class ACCEPT [accept_lost]
+   open-wearables/D-262064 fold 4 removed suggestion base_class ACCEPT [accept_lost]
+   open-wearables/D-4c541f fold 4 removed suggestion calls ACCEPT [accept_lost]
+   open-wearables/D-6606a8 fold 4 removed suggestion calls ACCEPT [accept_lost]
+   open-wearables/D-b21ebc fold 4 removed suggestion calls WRONG/mixed_group [helped]
+   open-wearables/D-dadcea fold 4 removed suggestion wrapper WRONG/incidental [helped]
+   paperless-ngx/D-0dfb1b fold 1 removed suggestion calls ACCEPT [accept_lost]
+   paperless-ngx/D-1d6a6a fold 1 removed suggestion decorator WRONG/mixed_group [helped]
+   paperless-ngx/D-c3460b fold 1 removed suggestion base_class ACCEPT [accept_lost]
+   pontoon/D-6957a9 fold 1 removed suggestion control ACCEPT [accept_lost]
+   ralph/D-40c349 fold 1 removed suggestion base_class ACCEPT [accept_lost]
+   ralph/D-a68e99 fold 1 removed suggestion base_class WRONG/incidental [helped]
+   ralph/D-c2b101 fold 1 removed suggestion naming ACCEPT [accept_lost]
+   ralph/D-cfd5da fold 1 removed suggestion control ACCEPT [accept_lost]
+   saleor/D-7e57d6 fold 3 removed suggestion repo WRONG/mixed_group [helped]
+   simplelogin/D-2a4960 fold 2 removed suggestion layering ACCEPT [accept_lost]
+   simplelogin/D-7fa3b5 fold 2 removed suggestion avoids_other WRONG/misdescribes [helped]
+   tasking-manager/D-0dbb9f fold 4 removed suggestion ordering WRONG/false_outliers [helped]
+   tasking-manager/D-2dfb9d fold 4 removed suggestion base_class WRONG/mixed_group [helped]
+   tasking-manager/D-4ede9c fold 4 removed suggestion argument_key WRONG/false_outliers [helped]
+   tasking-manager/D-68243e fold 4 removed suggestion naming ACCEPT [accept_lost]
+   tasking-manager/D-6ec938 fold 4 removed suggestion base_class WRONG/mixed_group [helped]
+   tasking-manager/D-c7acd1 fold 4 removed suggestion wrapper ACCEPT [accept_lost]
+   tasking-manager/D-ee4d58 fold 4 removed suggestion wrapper ACCEPT [accept_lost]
+   wger/D-3755b1 fold 1 removed suggestion calls WRONG/mixed_group [helped]
+   wger/D-82d21d fold 1 removed suggestion decorator WRONG/legit_outliers [helped]
+
+admitted: no

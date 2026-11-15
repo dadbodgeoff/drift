@@ -1,0 +1,212 @@
+{
+  "run": "eval/study/runs/dev-py-r2-2026-11-05/views/rule5",
+  "prepared_at": "2026-11-05T23:06:24.932Z",
+  "manifest": {
+    "path": "eval/repos-py.json",
+    "sha256": "ef2493ecd01438471b750944a978de145cf54cd956f28a7f9a5a684d7b48994b",
+    "core_sha256": "1164a34341d2a4697cdd61c219684c3fc2ec2d9ab65a6fcac761834cedb86297",
+    "holdout": false,
+    "holdout_because": [],
+    "set_id": null,
+    "role": "dev"
+  },
+  "drift": {
+    "binary": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/bin/drift-2709f17",
+    "binary_sha256": "41054fadcecfca94837b5dfba5f3879292696a963c4165ebd11fadec9190020f",
+    "version": "drift 0.1.0-dev",
+    "commit": "2709f17fbbc2ef21a1612b9f8a94efcba45593a8",
+    "dirty": false,
+    "build": null
+  },
+  "params": {
+    "max": 15,
+    "pool": 200,
+    "tier": {
+      "//": "Pre-registered 2026-11-05 by the product lead, before these sets were drawn. DEFAULT tier (blocking-eligible; its ACCEPT / shown is the headline default-tier accept rate) = the proposal's structured rule kind (lib.mjs ruleKind: conventions.yaml rule.type, rule.kind for wrapped_by, import vs other signal for avoids; never the summary text) is in default.rule_kinds AND its role has >= default.min_members members (PLAN: n >= 15 to allow blocking). SUGGESTION tier = every other shown proposal, including kinds listed in neither list and proposals without a structured rule. The not-wrong rate is reported over all shown proposals, both tiers. Amended 2026-11-05, before any held-out run (no held-out data existed): wrapped_by:jsx moved from suggestion to default (product lead).",
+      "kind": "rule_kind",
+      "default": {
+        "//": "call wrappers, decorators, base classes, required argument keys, layering (import avoidance), rendered components, rendered inside a (layout) wrapper",
+        "rule_kinds": [
+          "wrapped_by:call",
+          "wrapped_by:decorator",
+          "wrapped_by:extends",
+          "passes_key",
+          "avoids:import",
+          "renders",
+          "wrapped_by:jsx"
+        ],
+        "min_members": 15
+      },
+      "suggestion": {
+        "//": "named by the product lead: generic calls, naming, absence (any/console/bare Error and other non-import avoids), preferred libraries, ordering, file/model/package rules. Unmeasured, so suggestion tier (the default tier is an allowlist): wrapped_by:try, control, directive, throws.",
+        "rule_kinds": [
+          "calls",
+          "named",
+          "avoids:other",
+          "prefers_library",
+          "before",
+          "has_test",
+          "model_has",
+          "package_has",
+          "dependency_version",
+          "wrapped_by:try",
+          "control",
+          "directive",
+          "throws"
+        ]
+      },
+      "not_wrong_over": "all_shown"
+    },
+    "tier_pre_registered": false,
+    "tier_pre_registered_note": "derived view: rule 5 rule-kind tier from eval/holdout-primary.json applied after labelling; not pre-registered for this dev manifest (marked 2026-11-06)",
+    "exposed": [],
+    "repos": [
+      "full-stack-fastapi-template@aabb90126964a164e02aff39e7c385bb0598236d",
+      "polar@d14892d27cf346f70e44e36ca5601577e6313b6d",
+      "netbox@56daec7debfd51fa991b45d6a40cb592b42b669d",
+      "saleor@89817cdd10423619d6d6be54a61ead11fca90cfa",
+      "CTFd@a6a81ddd921cd74f8aabc07c0f7a71cdcf5365b6",
+      "flask@49943b5a94413a530761350f04e896f76e8d620e",
+      "fastapi@1ca09c13584ca45aa0921e5e40b31d49c5e3135a",
+      "langchain@e649741517b9584aae63a6ebd6ada803967da1c9"
+    ],
+    "cache": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache",
+    "checkouts": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/repos",
+    "language_note": "repo languages added 2026-11-06 for re-scoring (the dev manifest records none): eval/repos-py.json is the Python dev set; polar and full-stack-fastapi-template also hold TypeScript, counted as Python here"
+  },
+  "repos": [
+    {
+      "name": "full-stack-fastapi-template",
+      "url": "https://github.com/fastapi/full-stack-fastapi-template",
+      "sha": "aabb90126964a164e02aff39e7c385bb0598236d",
+      "shape": "FastAPI app (SQLModel, Annotated dependencies) + React frontend",
+      "binary_sha256": "41054fadcecfca94837b5dfba5f3879292696a963c4165ebd11fadec9190020f",
+      "prepared_at": "2026-11-05T23:06:06.943Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/repos/full-stack-fastapi-template",
+      "status": "ok",
+      "units": 405,
+      "roles": 22,
+      "proposals": 1,
+      "pool": 1,
+      "census_ms": 38,
+      "language": "Python"
+    },
+    {
+      "name": "polar",
+      "url": "https://github.com/polarsource/polar",
+      "sha": "d14892d27cf346f70e44e36ca5601577e6313b6d",
+      "shape": "Large FastAPI + Dramatiq server in a TS monorepo",
+      "binary_sha256": "41054fadcecfca94837b5dfba5f3879292696a963c4165ebd11fadec9190020f",
+      "prepared_at": "2026-11-05T23:06:07.123Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/repos/polar",
+      "status": "ok",
+      "units": 14125,
+      "roles": 576,
+      "proposals": 15,
+      "pool": 19,
+      "census_ms": 1807,
+      "language": "Python"
+    },
+    {
+      "name": "netbox",
+      "url": "https://github.com/netbox-community/netbox",
+      "sha": "56daec7debfd51fa991b45d6a40cb592b42b669d",
+      "shape": "Django + DRF (class-based views, viewsets, routers)",
+      "binary_sha256": "41054fadcecfca94837b5dfba5f3879292696a963c4165ebd11fadec9190020f",
+      "prepared_at": "2026-11-05T23:06:12.430Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/repos/netbox",
+      "status": "ok",
+      "units": 6486,
+      "roles": 155,
+      "proposals": 15,
+      "pool": 19,
+      "census_ms": 1087,
+      "language": "Python"
+    },
+    {
+      "name": "saleor",
+      "url": "https://github.com/saleor/saleor",
+      "sha": "89817cdd10423619d6d6be54a61ead11fca90cfa",
+      "shape": "Django + GraphQL + Celery (largest)",
+      "binary_sha256": "41054fadcecfca94837b5dfba5f3879292696a963c4165ebd11fadec9190020f",
+      "prepared_at": "2026-11-05T23:06:15.490Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/repos/saleor",
+      "status": "ok",
+      "units": 7261,
+      "roles": 278,
+      "proposals": 7,
+      "pool": 7,
+      "census_ms": 1489,
+      "language": "Python"
+    },
+    {
+      "name": "CTFd",
+      "url": "https://github.com/CTFd/CTFd",
+      "sha": "a6a81ddd921cd74f8aabc07c0f7a71cdcf5365b6",
+      "shape": "Flask app: blueprints, flask-restx namespaces, app factory",
+      "binary_sha256": "41054fadcecfca94837b5dfba5f3879292696a963c4165ebd11fadec9190020f",
+      "prepared_at": "2026-11-05T23:06:20.323Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/repos/CTFd",
+      "status": "ok",
+      "units": 1567,
+      "roles": 85,
+      "proposals": 2,
+      "pool": 2,
+      "census_ms": 176,
+      "language": "Python"
+    },
+    {
+      "name": "flask",
+      "url": "https://github.com/pallets/flask",
+      "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+      "shape": "Library, src layout, examples",
+      "binary_sha256": "41054fadcecfca94837b5dfba5f3879292696a963c4165ebd11fadec9190020f",
+      "prepared_at": "2026-11-05T23:06:20.956Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/repos/flask",
+      "status": "ok",
+      "units": 218,
+      "roles": 9,
+      "proposals": 0,
+      "pool": 0,
+      "census_ms": 50,
+      "language": "Python"
+    },
+    {
+      "name": "fastapi",
+      "url": "https://github.com/fastapi/fastapi",
+      "sha": "1ca09c13584ca45aa0921e5e40b31d49c5e3135a",
+      "shape": "Library with heavy __init__ re-exports; docs_src has ~1,000 small apps",
+      "binary_sha256": "41054fadcecfca94837b5dfba5f3879292696a963c4165ebd11fadec9190020f",
+      "prepared_at": "2026-11-05T23:06:21.141Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/repos/fastapi",
+      "status": "ok",
+      "units": 2310,
+      "roles": 89,
+      "proposals": 1,
+      "pool": 1,
+      "census_ms": 292,
+      "language": "Python"
+    },
+    {
+      "name": "langchain",
+      "url": "https://github.com/langchain-ai/langchain",
+      "sha": "e649741517b9584aae63a6ebd6ada803967da1c9",
+      "shape": "Monorepo: libs/* packages with their own pyproject.toml",
+      "binary_sha256": "41054fadcecfca94837b5dfba5f3879292696a963c4165ebd11fadec9190020f",
+      "prepared_at": "2026-11-05T23:06:22.227Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/repos/langchain",
+      "status": "ok",
+      "units": 3709,
+      "roles": 175,
+      "proposals": 2,
+      "pool": 2,
+      "census_ms": 749,
+      "language": "Python"
+    }
+  ],
+  "view_of": {
+    "run": "eval/study/runs/dev-py-r2-2026-11-05",
+    "items": "all shown proposals",
+    "tier_from": "eval/holdout-primary-py.json (README rule 5, rule-kind tier), not pre-registered for this dev manifest"
+  }
+}

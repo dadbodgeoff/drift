@@ -1,0 +1,25 @@
+{
+  "repo": "zyfun",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/Conventional_Commits.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/vlc/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "eslint.config.js",
+      "kind": "lint"
+    }
+  ]
+}

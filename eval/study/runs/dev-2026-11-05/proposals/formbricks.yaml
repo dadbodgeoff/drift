@@ -1,0 +1,503 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - access
+  - actions
+  - api-client
+  - api-key
+  - auth
+  - authorization
+  - blocks
+  - client
+  - config
+  - constants
+  - contact
+  - contact-attribute-key
+  - contact-attribute-keys
+  - contact-attributes
+  - contacts
+  - context
+  - creatives
+  - custom-css
+  - data
+  - date-utils
+  - display
+  - email
+  - embedded-data
+  - error
+  - errors
+  - eslint
+  - events
+  - feedback-directory
+  - health
+  - helper
+  - i18n
+  - invite
+  - invites
+  - language
+  - layout
+  - loading
+  - loggable-error
+  - logger
+  - metrics
+  - migration
+  - openapi
+  - operations
+  - organization
+  - outbound
+  - page
+  - permission
+  - query
+  - query-client-provider
+  - recaptcha
+  - recipients
+  - render
+  - resources
+  - response
+  - responses
+  - route
+  - schemas
+  - segments
+  - serializers
+  - server
+  - service
+  - state
+  - storage
+  - stories
+  - survey
+  - surveys
+  - table-filters
+  - team
+  - teams
+  - templates
+  - types
+  - user
+  - users
+  - utils
+  - validation
+  - vite
+  - vitest
+  - webhook
+  - webhooks
+  - workflows
+  - workspace
+  - workspaces
+  suffixes:
+  - config
+  - mock
+  - prettierrc
+  - server
+  - spec
+  - stories
+  - test
+conventions:
+- id: D-b3462f
+  status: proposed
+  mode: advise
+  summary: files in apps/web/** do not import from packages/surveys/**
+  role:
+    package: apps/web
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:packages/surveys
+  evidence:
+    holders: 2952
+    total: 2953
+    lower_bound: 0.998
+    lift: 3.0
+  example: apps/web/.prettierrc.js#(file)
+- id: D-b8f1ee
+  status: proposed
+  mode: advise
+  summary: files in packages/surveys/** do not import from apps/web/**
+  role:
+    package: packages/surveys
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:apps/web
+  evidence:
+    holders: 115
+    total: 116
+    lower_bound: 0.953
+    lift: 3.0
+  example: packages/surveys/eslint.config.mjs#(file)
+- id: D-60208a
+  status: proposed
+  mode: advise
+  summary: "apps/web: server actions in modules/** (actions files) are wrapped in actionClient.action() or actionClient.inputSchema().action() or authenticatedActionClient.inputSchema().action()"
+  role:
+    package: apps/web
+    dir: modules
+    file: actions
+    entry: server_action
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - apps/web/lib/utils/action-client/index.ts#actionClient.action
+    - apps/web/lib/utils/action-client/index.ts#actionClient.inputSchema().action
+    - >-
+      apps/web/lib/utils/action-client/index.ts#authenticatedActionClient.inputSchema().action
+  evidence:
+    holders: 117
+    total: 119
+    lower_bound: 0.941
+    lift: 32.044
+    split:
+    - - >-
+        apps/web/lib/utils/action-client/index.ts#authenticatedActionClient.inputSchema().action
+      - 107
+    - - apps/web/lib/utils/action-client/index.ts#actionClient.inputSchema().action
+      - 8
+    - - apps/web/lib/utils/action-client/index.ts#actionClient.action
+      - 2
+  example: >-
+    apps/web/modules/analysis/components/SingleResponseCard/actions.ts#createTagAction
+- id: D-73b648
+  status: proposed
+  mode: advise
+  summary: "apps/web: server actions in modules/ee/** (actions files) are wrapped in authenticatedActionClient.inputSchema().action()"
+  role:
+    package: apps/web
+    dir: modules/ee
+    file: actions
+    entry: server_action
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - >-
+      apps/web/lib/utils/action-client/index.ts#authenticatedActionClient.inputSchema().action
+  evidence:
+    holders: 56
+    total: 58
+    lower_bound: 0.883
+    lift: 33.684
+  example: >-
+    apps/web/modules/ee/ai-translation/lib/actions.ts#checkAITranslationAvailableAction
+- id: D-87fcf9
+  status: proposed
+  mode: advise
+  summary: "apps/web: components in modules/** (page files) are named `*Page`"
+  role:
+    package: apps/web
+    dir: modules
+    file: page
+    entry: '-'
+    kind: component
+  rule:
+    type: named
+    pattern: "*Page"
+  evidence:
+    holders: 41
+    total: 42
+    lower_bound: 0.877
+    lift: 19.11
+  example: apps/web/modules/auth/account-deleted/page.tsx#AccountDeletedPage
+- id: D-c7604b
+  status: proposed
+  mode: advise
+  summary: "apps/web: exported values in lib/** (*.mock files) are named `mock*`"
+  role:
+    package: apps/web
+    dir: lib
+    file: "*.mock"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: mock*
+  evidence:
+    holders: 53
+    total: 55
+    lower_bound: 0.877
+    lift: 50.52
+  example: apps/web/lib/i18n/i18n.mock.ts#mockCalQuestion
+- id: D-cf32c5
+  status: proposed
+  mode: advise
+  summary: "apps/web: HTTP handlers in app/api/v3/** (route files) pass `auth` to withV3ApiWrapper()"
+  role:
+    package: apps/web
+    dir: app/api/v3
+    file: route
+    entry: http
+    kind: const
+  rule:
+    type: passes_key
+    callee: apps/web/app/api/v3/lib/api-wrapper.ts#withV3ApiWrapper
+    index: 0
+    key: auth
+  evidence:
+    holders: 88
+    total: 95
+    lower_bound: 0.856
+    lift: 23.84
+  example: apps/web/app/api/v3/action-classes/route.ts#GET
+- id: D-43e309
+  status: proposed
+  mode: advise
+  summary: "apps/web: functions in modules/ee/workflows/state/** are wrapped in atom()"
+  role:
+    package: apps/web
+    dir: modules/ee/workflows/state
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - pkg:jotai#atom
+  evidence:
+    holders: 42
+    total: 44
+    lower_bound: 0.849
+    lift: 112.591
+  example: apps/web/modules/ee/workflows/state/editor.ts#addWorkflowTriggerAtom
+- id: D-ec0946
+  status: proposed
+  mode: advise
+  summary: "apps/web: functions in modules/api/** (route files) pass `handler` to authenticatedApiClient()"
+  role:
+    package: apps/web
+    dir: modules/api
+    file: route
+    entry: '-'
+    kind: function
+  rule:
+    type: passes_key
+    callee: apps/web/modules/api/v2/auth/authenticated-api-client.ts#authenticatedApiClient
+    index: 0
+    key: handler
+  evidence:
+    holders: 31
+    total: 32
+    lower_bound: 0.843
+    lift: 145.43
+  example: >-
+    apps/web/modules/api/v2/management/contact-attribute-keys/[contactAttributeKeyId]/route.ts#DELETE
+- id: D-5303d3
+  status: proposed
+  mode: advise
+  summary: "apps/web: server actions in app/** (actions files) are wrapped in authenticatedActionClient.inputSchema().action()"
+  role:
+    package: apps/web
+    dir: app
+    file: actions
+    entry: server_action
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - >-
+      apps/web/lib/utils/action-client/index.ts#authenticatedActionClient.inputSchema().action
+  evidence:
+    holders: 28
+    total: 29
+    lower_bound: 0.828
+    lift: 33.684
+  example: >-
+    apps/web/app/(app)/account/settings/authorized-apps/actions.ts#revokeOAuthConsentAction
+- id: D-d64e88
+  status: proposed
+  mode: advise
+  summary: files in apps/web/** use @paralleldrive/cuid2 for ids, not uuid/nanoid/cuid/ulid
+  role:
+    package: apps/web
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: prefers_library
+    group: ids
+    preferred: "@paralleldrive/cuid2"
+  evidence:
+    holders: 50
+    total: 54
+    lower_bound: 0.824
+    lift: 1.0
+    split:
+    - - "@paralleldrive/cuid2"
+      - 50
+    - - uuid
+      - 4
+  example: >-
+    apps/web/app/(app)/workspaces/[workspaceId]/settings/workspace/integrations/notion/components/AddIntegrationModal.tsx#(file)
+- id: D-97495d
+  status: proposed
+  mode: advise
+  summary: "apps/web: functions in modules/** (route files) call authenticatedApiClient() before responses.successResponse()"
+  role:
+    package: apps/web
+    dir: modules
+    file: route
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: apps/web/modules/api/v2/auth/authenticated-api-client.ts#authenticatedApiClient
+    then: apps/web/modules/api/v2/lib/response.ts#responses.successResponse
+  evidence:
+    holders: 27
+    total: 28
+    lower_bound: 0.823
+    lift: 1.0
+  example: >-
+    apps/web/modules/api/v2/management/contact-attribute-keys/[contactAttributeKeyId]/route.ts#DELETE
+- id: D-5adbb0
+  status: proposed
+  mode: advise
+  summary: "apps/web: functions in modules/hub/** (service files) call createHubResultFromError()"
+  role:
+    package: apps/web
+    dir: modules/hub
+    file: service
+    entry: '-'
+    kind: function
+  rule:
+    type: calls
+    callee: apps/web/modules/hub/utils.ts#createHubResultFromError
+  evidence:
+    holders: 22
+    total: 23
+    lower_bound: 0.79
+    lift: 215.391
+  example: apps/web/modules/hub/service.ts#countFeedbackRecords
+- id: D-94667f
+  status: proposed
+  mode: advise
+  summary: "apps/web: components in modules/ui/components/sidebar/** call cn()"
+  role:
+    package: apps/web
+    dir: modules/ui/components/sidebar
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: calls
+    callee: apps/web/modules/ui/lib/utils.ts#cn
+  evidence:
+    holders: 22
+    total: 23
+    lower_bound: 0.79
+    lift: 17.406
+  example: apps/web/modules/ui/components/sidebar/index.tsx#Sidebar
+- id: D-ad4840
+  status: proposed
+  mode: advise
+  summary: "apps/web: exported values in modules/** (schemas files) are named `*Input`"
+  role:
+    package: apps/web
+    dir: modules
+    file: schemas
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Input"
+  evidence:
+    holders: 21
+    total: 22
+    lower_bound: 0.782
+    lift: 21.619
+  example: apps/web/modules/mcp/tools/schemas.ts#ZMcpCountFeedbackRecordsInput
+- id: D-3cabc8
+  status: proposed
+  mode: advise
+  summary: "apps/web: functions in modules/** (route files) call handleApiError() before responses.successResponse()"
+  role:
+    package: apps/web
+    dir: modules
+    file: route
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: apps/web/modules/api/v2/lib/utils.ts#handleApiError
+    then: apps/web/modules/api/v2/lib/response.ts#responses.successResponse
+  evidence:
+    holders: 26
+    total: 28
+    lower_bound: 0.774
+    lift: 1.0
+  example: >-
+    apps/web/modules/api/v2/management/contact-attribute-keys/[contactAttributeKeyId]/route.ts#DELETE
+- id: D-b70b0a
+  status: proposed
+  mode: advise
+  summary: "apps/web: functions in modules/api/** (route files) pass `schemas` to authenticatedApiClient()"
+  role:
+    package: apps/web
+    dir: modules/api
+    file: route
+    entry: '-'
+    kind: function
+  rule:
+    type: passes_key
+    callee: apps/web/modules/api/v2/auth/authenticated-api-client.ts#authenticatedApiClient
+    index: 0
+    key: schemas
+  evidence:
+    holders: 29
+    total: 32
+    lower_bound: 0.758
+    lift: 144.825
+  example: >-
+    apps/web/modules/api/v2/management/contact-attribute-keys/[contactAttributeKeyId]/route.ts#DELETE
+- id: D-514f45
+  status: proposed
+  mode: advise
+  summary: "apps/web: files in lib/** have a test file"
+  role:
+    package: apps/web
+    dir: lib
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 160
+    total: 197
+    lower_bound: 0.752
+    lift: 2.13
+  example: apps/web/lib/ai/availability.ts#(file)
+- id: D-71e798
+  status: proposed
+  mode: advise
+  summary: "apps/web: server actions in modules/ee/** (actions files) pass `id` to assertCan()"
+  role:
+    package: apps/web
+    dir: modules/ee
+    file: actions
+    entry: server_action
+    kind: function
+  rule:
+    type: passes_key
+    callee: apps/web/lib/authorization/index.ts#assertCan
+    index: 0
+    key: id
+  evidence:
+    holders: 50
+    total: 58
+    lower_bound: 0.751
+    lift: 33.106
+  example: >-
+    apps/web/modules/ee/ai-translation/lib/actions.ts#checkAITranslationAvailableAction

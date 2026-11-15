@@ -1,0 +1,529 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - client
+  - columns
+  - config
+  - config-base
+  - config-client
+  - data-table
+  - empty-states
+  - format
+  - header
+  - install-url
+  - layout
+  - logo
+  - oauth-callback
+  - page
+  - postcss
+  - rates
+  - route
+  - schema
+  - server
+  - skeleton
+  - table
+  - table-header
+  - transaction-matching
+  - transform
+  - types
+  - utils
+  suffixes:
+  - config
+  - test
+conventions:
+- id: D-495f56
+  status: proposed
+  mode: advise
+  summary: "apps/api: exported values in src/schemas/** are named `*Schema`"
+  role:
+    package: apps/api
+    dir: src/schemas
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Schema"
+  evidence:
+    holders: 308
+    total: 309
+    lower_bound: 0.982
+    lift: 2.708
+  example: apps/api/src/schemas/api-keys.ts#deleteApiKeySchema
+  selector_version: 2
+- id: D-50255f
+  status: proposed
+  mode: advise
+  summary: "apps/api: rpc entry points in src/** are wrapped in internalProcedure() or protectedProcedure()"
+  role:
+    package: apps/api
+    dir: src
+    file: "*"
+    entry: rpc
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - apps/api/src/trpc/init.ts#internalProcedure
+    - apps/api/src/trpc/init.ts#protectedProcedure
+  evidence:
+    holders: 248
+    total: 255
+    lower_bound: 0.944
+    lift: 7.569
+    split:
+    - - apps/api/src/trpc/init.ts#protectedProcedure
+      - 242
+    - - apps/api/src/trpc/init.ts#internalProcedure
+      - 6
+  example: apps/api/src/trpc/routers/accounting.ts#MUTATION disconnect
+  selector_version: 2
+- id: D-b8cff6
+  status: proposed
+  mode: advise
+  summary: >-
+    files in packages/db/** do not import from packages/notifications/** (declared
+    dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: packages/db
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:packages/notifications
+  evidence:
+    holders: 68
+    total: 69
+    lower_bound: 0.922
+    lift: 3.0
+  example: packages/db/drizzle.config.ts#(file)
+  selector_version: 2
+- id: D-5880dd
+  status: proposed
+  mode: advise
+  summary: "apps/worker: classes in src/processors/** extend BaseProcessor"
+  role:
+    package: apps/worker
+    dir: src/processors
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - apps/worker/src/processors/base.ts#BaseProcessor
+  evidence:
+    holders: 39
+    total: 39
+    lower_bound: 0.91
+    lift: 2.4
+    role_members: 40
+  example: >-
+    apps/worker/src/processors/accounting/export-transactions.ts#ExportTransactionsProcessor
+  selector_version: 2
+- id: D-b905f9
+  status: proposed
+  mode: advise
+  summary: "apps/website: exported values named `metadata` in src/** (page files) pass `description` to createPageMetadata()"
+  role:
+    package: apps/website
+    dir: src
+    file: page
+    entry: '-'
+    kind: const
+    export_name: metadata
+  rule:
+    type: passes_key
+    callee: apps/website/src/lib/metadata.ts#createPageMetadata
+    index: 0
+    key: description
+  evidence:
+    holders: 45
+    total: 46
+    lower_bound: 0.887
+    lift: 28.174
+  example: apps/website/src/app/about/page.tsx#metadata
+  selector_version: 2
+- id: D-86f372
+  status: proposed
+  mode: advise
+  summary: "apps/worker: classes in src/** do not use `any`"
+  role:
+    package: apps/worker
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: avoids
+    signal: any
+  evidence:
+    holders: 43
+    total: 44
+    lower_bound: 0.882
+    lift: 5.923
+  example: apps/worker/src/errors/invoice-errors.ts#RecurringInvoiceError
+  selector_version: 2
+- id: D-48f0ae
+  status: proposed
+  mode: advise
+  summary: "packages/db: functions in src/** (schema files) call timestamp() before index()"
+  role:
+    package: packages/db
+    dir: src
+    file: schema
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: pkg:drizzle-orm/pg-core#timestamp
+    then: pkg:drizzle-orm/pg-core#index
+  evidence:
+    holders: 41
+    total: 42
+    lower_bound: 0.877
+    lift: 1.0
+  example: packages/db/src/schema.ts#accountingSyncRecords
+  selector_version: 2
+- id: D-80f1c3
+  status: proposed
+  mode: advise
+  summary: "apps/worker: classes in src/processors/** are named `*Processor`"
+  role:
+    package: apps/worker
+    dir: src/processors
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Processor"
+  evidence:
+    holders: 39
+    total: 40
+    lower_bound: 0.871
+    lift: 2.283
+  example: >-
+    apps/worker/src/processors/accounting/export-transactions.ts#ExportTransactionsProcessor
+  selector_version: 2
+- id: D-7da2b9
+  status: proposed
+  mode: advise
+  summary: "packages/db: functions in src/** (schema files) pass `withTimezone` to timestamp()"
+  role:
+    package: packages/db
+    dir: src
+    file: schema
+    entry: '-'
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:drizzle-orm#timestamp
+    index: 1
+    key: withTimezone
+  evidence:
+    holders: 47
+    total: 49
+    lower_bound: 0.863
+    lift: 39.388
+  example: packages/db/src/schema.ts#accountingSyncRecords
+  selector_version: 2
+- id: D-98e729
+  status: proposed
+  mode: advise
+  summary: "apps/api: exported values in src/trpc/** are named `*Router`"
+  role:
+    package: apps/api
+    dir: src/trpc
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Router"
+  evidence:
+    holders: 39
+    total: 41
+    lower_bound: 0.839
+    lift: 21.628
+  example: apps/api/src/trpc/routers/_app.ts#appRouter
+  selector_version: 2
+- id: D-798f44
+  status: proposed
+  mode: advise
+  summary: drizzle models have a `createdAt` field
+  role:
+    package: ""
+    dir: drizzle
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: createdAt
+  evidence:
+    holders: 47
+    total: 50
+    lower_bound: 0.838
+    lift: 0.993
+  example: packages/db/src/schema.ts#accounting_sync_records
+  selector_version: 2
+- id: D-b98efb
+  status: proposed
+  mode: advise
+  summary: "packages/db: functions in src/** (schema files) call uuid()"
+  role:
+    package: packages/db
+    dir: src
+    file: schema
+    entry: '-'
+    kind: function
+  rule:
+    type: calls
+    callee: pkg:drizzle-orm#uuid
+  evidence:
+    holders: 46
+    total: 49
+    lower_bound: 0.835
+    lift: 39.388
+  example: packages/db/src/schema.ts#accountingSyncRecords
+  selector_version: 2
+- id: D-efc6d4
+  status: proposed
+  mode: advise
+  summary: "apps/api: exported values in src/trpc/** call createTRPCRouter()"
+  role:
+    package: apps/api
+    dir: src/trpc
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: calls
+    callee: apps/api/src/trpc/init.ts#createTRPCRouter
+  evidence:
+    holders: 38
+    total: 40
+    lower_bound: 0.835
+    lift: 31.61
+    role_members: 41
+  example: apps/api/src/trpc/routers/_app.ts#appRouter
+  selector_version: 2
+- id: D-f90103
+  status: proposed
+  mode: advise
+  summary: "packages/db: functions in src/** (schema files) pass `createdAt` to pgTable()"
+  role:
+    package: packages/db
+    dir: src
+    file: schema
+    entry: '-'
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:drizzle-orm#pgTable
+    index: 1
+    key: createdAt
+  evidence:
+    holders: 46
+    total: 49
+    lower_bound: 0.835
+    lift: 39.388
+  example: packages/db/src/schema.ts#accountingSyncRecords
+  selector_version: 2
+- id: D-404dbb
+  status: proposed
+  mode: advise
+  summary: workspace packages enable `skipLibCheck` in tsconfig
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: flag:skipLibCheck
+  evidence:
+    holders: 36
+    total: 38
+    lower_bound: 0.827
+    lift: 1.0
+  example: apps/api/package.json#@midday/api
+  selector_version: 2
+- id: D-17340a
+  status: proposed
+  mode: advise
+  summary: drizzle models have a `id` field
+  role:
+    package: ""
+    dir: drizzle
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: id
+  evidence:
+    holders: 46
+    total: 50
+    lower_bound: 0.812
+    lift: 1.01
+  example: packages/db/src/schema.ts#accounting_sync_records
+  selector_version: 2
+- id: D-afc38b
+  status: proposed
+  mode: advise
+  summary: "packages/db: functions in src/** (schema files) pass `mode` to timestamp()"
+  role:
+    package: packages/db
+    dir: src
+    file: schema
+    entry: '-'
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:drizzle-orm#timestamp
+    index: 1
+    key: mode
+  evidence:
+    holders: 45
+    total: 49
+    lower_bound: 0.808
+    lift: 39.388
+  example: packages/db/src/schema.ts#accountingSyncRecords
+  selector_version: 2
+- id: D-667807
+  status: proposed
+  mode: advise
+  summary: workspace packages define a `lint` script
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: script:lint
+  evidence:
+    holders: 35
+    total: 38
+    lower_bound: 0.792
+    lift: 1.0
+  example: apps/api/package.json#@midday/api
+  selector_version: 2
+- id: D-7d5872
+  status: proposed
+  mode: advise
+  summary: workspace packages enable `strict` in tsconfig
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: flag:strict
+  evidence:
+    holders: 35
+    total: 38
+    lower_bound: 0.792
+    lift: 1.0
+  example: apps/api/package.json#@midday/api
+  selector_version: 2
+- id: D-f6c709
+  status: proposed
+  mode: advise
+  summary: "apps/api: exported values in src/schemas/** call z.object()"
+  role:
+    package: apps/api
+    dir: src/schemas
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: calls
+    callee: pkg:@hono/zod-openapi#z.object
+  evidence:
+    holders: 256
+    total: 306
+    lower_bound: 0.791
+    lift: 4.194
+    role_members: 309
+  example: apps/api/src/schemas/api-keys.ts#deleteApiKeySchema
+  selector_version: 2
+- id: D-8fbbad
+  status: proposed
+  mode: advise
+  summary: workspace packages use the typescript version most workspace packages use
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: dependency_version
+    name: typescript
+  evidence:
+    holders: 22
+    total: 23
+    lower_bound: 0.79
+    lift: 1.0
+    split:
+    - - "catalog:"
+      - 22
+    - - ^6.0.2
+      - 1
+  example: apps/dashboard/package.json#@midday/dashboard
+  selector_version: 2
+- id: D-675545
+  status: proposed
+  mode: advise
+  summary: workspace packages define a `typecheck` script
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: script:typecheck
+  evidence:
+    holders: 34
+    total: 38
+    lower_bound: 0.759
+    lift: 1.0
+  example: apps/api/package.json#@midday/api
+  selector_version: 2
+- id: D-8fd473
+  status: proposed
+  mode: advise
+  summary: "packages/invoice: functions in src/utils/** declare their return type"
+  role:
+    package: packages/invoice
+    dir: src/utils
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 24
+    total: 26
+    lower_bound: 0.759
+    lift: 2.417
+  example: packages/invoice/src/utils/content.ts#isValidJSON
+  selector_version: 2

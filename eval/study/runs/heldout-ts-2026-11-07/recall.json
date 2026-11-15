@@ -1,0 +1,1341 @@
+{
+  "run": "eval/study/runs/heldout-ts-2026-11-07",
+  "overall": {
+    "n": 1746,
+    "shown_strict": {
+      "k": 2,
+      "n": 1746,
+      "p": 0.001145475372279496,
+      "lo": 0.0003141868853547751,
+      "hi": 0.00416705273866761,
+      "boot": {
+        "lo": 0,
+        "hi": 0.0024937655860349127,
+        "clusters": 18
+      }
+    },
+    "shown_lenient": {
+      "k": 14,
+      "n": 1746,
+      "p": 0.008018327605956471,
+      "lo": 0.0047823489932468126,
+      "hi": 0.013414418902316018,
+      "boot": {
+        "lo": 0.001092896174863388,
+        "hi": 0.015245623941276116,
+        "clusters": 18
+      }
+    },
+    "pool_strict": {
+      "k": 2,
+      "n": 1746,
+      "p": 0.001145475372279496,
+      "lo": 0.0003141868853547751,
+      "hi": 0.00416705273866761,
+      "boot": {
+        "lo": 0,
+        "hi": 0.0024937655860349127,
+        "clusters": 18
+      }
+    },
+    "pool_lenient": {
+      "k": 14,
+      "n": 1746,
+      "p": 0.008018327605956471,
+      "lo": 0.0047823489932468126,
+      "hi": 0.013414418902316018,
+      "boot": {
+        "lo": 0.001092896174863388,
+        "hi": 0.015245623941276116,
+        "clusters": 18
+      }
+    }
+  },
+  "followed": {
+    "n": 1288,
+    "shown_strict": {
+      "k": 2,
+      "n": 1288,
+      "p": 0.0015527950310559005,
+      "lo": 0.0004259357354092748,
+      "hi": 0.00564404973175983,
+      "boot": {
+        "lo": 0,
+        "hi": 0.0035310734463276836,
+        "clusters": 18
+      }
+    },
+    "shown_lenient": {
+      "k": 13,
+      "n": 1288,
+      "p": 0.010093167701863354,
+      "lo": 0.005907922807237531,
+      "hi": 0.017192016179964503,
+      "boot": {
+        "lo": 0.0014194464158978,
+        "hi": 0.020086083213773313,
+        "clusters": 18
+      }
+    },
+    "pool_strict": {
+      "k": 2,
+      "n": 1288,
+      "p": 0.0015527950310559005,
+      "lo": 0.0004259357354092748,
+      "hi": 0.00564404973175983,
+      "boot": {
+        "lo": 0,
+        "hi": 0.0035310734463276836,
+        "clusters": 18
+      }
+    },
+    "pool_lenient": {
+      "k": 13,
+      "n": 1288,
+      "p": 0.010093167701863354,
+      "lo": 0.005907922807237531,
+      "hi": 0.017192016179964503,
+      "boot": {
+        "lo": 0.0014194464158978,
+        "hi": 0.020086083213773313,
+        "clusters": 18
+      }
+    }
+  },
+  "by_source": {
+    "lint": {
+      "n": 413,
+      "shown_strict": {
+        "k": 0,
+        "n": 413,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.009215635343964029
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 413,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.009215635343964029
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 413,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.009215635343964029
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 413,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.009215635343964029
+      }
+    },
+    "prose": {
+      "n": 1333,
+      "shown_strict": {
+        "k": 2,
+        "n": 1333,
+        "p": 0.0015003750937734434,
+        "lo": 0.00041155343733856884,
+        "hi": 0.005454107617082902
+      },
+      "shown_lenient": {
+        "k": 14,
+        "n": 1333,
+        "p": 0.010502625656414103,
+        "lo": 0.006266414767579608,
+        "hi": 0.01755201087276653
+      },
+      "pool_strict": {
+        "k": 2,
+        "n": 1333,
+        "p": 0.0015003750937734434,
+        "lo": 0.00041155343733856884,
+        "hi": 0.005454107617082902
+      },
+      "pool_lenient": {
+        "k": 14,
+        "n": 1333,
+        "p": 0.010502625656414103,
+        "lo": 0.006266414767579608,
+        "hi": 0.01755201087276653
+      }
+    }
+  },
+  "categories": [
+    {
+      "category": "argument",
+      "n": 63,
+      "shown_strict": {
+        "k": 0,
+        "n": 63,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.05747120044339639
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 63,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.05747120044339639
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 63,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.05747120044339639
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 63,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.05747120044339639
+      }
+    },
+    {
+      "category": "avoid",
+      "n": 192,
+      "shown_strict": {
+        "k": 0,
+        "n": 192,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.019615146370127873
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 192,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.019615146370127873
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 192,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.019615146370127873
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 192,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.019615146370127873
+      }
+    },
+    {
+      "category": "base_class",
+      "n": 12,
+      "shown_strict": {
+        "k": 0,
+        "n": 12,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.2424940095530979
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 12,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.2424940095530979
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 12,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.2424940095530979
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 12,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.2424940095530979
+      }
+    },
+    {
+      "category": "calls",
+      "n": 213,
+      "shown_strict": {
+        "k": 0,
+        "n": 213,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.01771551852267745
+      },
+      "shown_lenient": {
+        "k": 4,
+        "n": 213,
+        "p": 0.018779342723004695,
+        "lo": 0.007326552167094758,
+        "hi": 0.04728228021388589
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 213,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.01771551852267745
+      },
+      "pool_lenient": {
+        "k": 4,
+        "n": 213,
+        "p": 0.018779342723004695,
+        "lo": 0.007326552167094758,
+        "hi": 0.04728228021388589
+      }
+    },
+    {
+      "category": "decorator",
+      "n": 29,
+      "shown_strict": {
+        "k": 0,
+        "n": 29,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.11696980012918376
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 29,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.11696980012918376
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 29,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.11696980012918376
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 29,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.11696980012918376
+      }
+    },
+    {
+      "category": "error_handling",
+      "n": 60,
+      "shown_strict": {
+        "k": 1,
+        "n": 60,
+        "p": 0.016666666666666666,
+        "lo": 0.0029481597621904,
+        "hi": 0.08855129817089587
+      },
+      "shown_lenient": {
+        "k": 3,
+        "n": 60,
+        "p": 0.05,
+        "lo": 0.01714950203090107,
+        "hi": 0.1370051656999034
+      },
+      "pool_strict": {
+        "k": 1,
+        "n": 60,
+        "p": 0.016666666666666666,
+        "lo": 0.0029481597621904,
+        "hi": 0.08855129817089587
+      },
+      "pool_lenient": {
+        "k": 3,
+        "n": 60,
+        "p": 0.05,
+        "lo": 0.01714950203090107,
+        "hi": 0.1370051656999034
+      }
+    },
+    {
+      "category": "file_layout",
+      "n": 166,
+      "shown_strict": {
+        "k": 0,
+        "n": 166,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.022617910294687446
+      },
+      "shown_lenient": {
+        "k": 2,
+        "n": 166,
+        "p": 0.012048192771084338,
+        "lo": 0.003310291296048321,
+        "hi": 0.042858994654188826
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 166,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.022617910294687446
+      },
+      "pool_lenient": {
+        "k": 2,
+        "n": 166,
+        "p": 0.012048192771084338,
+        "lo": 0.003310291296048321,
+        "hi": 0.042858994654188826
+      }
+    },
+    {
+      "category": "import_restriction",
+      "n": 100,
+      "shown_strict": {
+        "k": 0,
+        "n": 100,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.03699349876899627
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 100,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.03699349876899627
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 100,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.03699349876899627
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 100,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.03699349876899627
+      }
+    },
+    {
+      "category": "layering",
+      "n": 114,
+      "shown_strict": {
+        "k": 0,
+        "n": 114,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.03259853465634346
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 114,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.03259853465634346
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 114,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.03259853465634346
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 114,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.03259853465634346
+      }
+    },
+    {
+      "category": "naming",
+      "n": 114,
+      "shown_strict": {
+        "k": 1,
+        "n": 114,
+        "p": 0.008771929824561403,
+        "lo": 0.0015501429226501794,
+        "hi": 0.04802034726603813
+      },
+      "shown_lenient": {
+        "k": 3,
+        "n": 114,
+        "p": 0.02631578947368421,
+        "lo": 0.008989561238739792,
+        "hi": 0.07452484001463822
+      },
+      "pool_strict": {
+        "k": 1,
+        "n": 114,
+        "p": 0.008771929824561403,
+        "lo": 0.0015501429226501794,
+        "hi": 0.04802034726603813
+      },
+      "pool_lenient": {
+        "k": 3,
+        "n": 114,
+        "p": 0.02631578947368421,
+        "lo": 0.008989561238739792,
+        "hi": 0.07452484001463822
+      }
+    },
+    {
+      "category": "other",
+      "n": 338,
+      "shown_strict": {
+        "k": 0,
+        "n": 338,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.011237545304971161
+      },
+      "shown_lenient": {
+        "k": 1,
+        "n": 338,
+        "p": 0.0029585798816568047,
+        "lo": 0.000522453042073566,
+        "hi": 0.016565757675294217
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 338,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.011237545304971161
+      },
+      "pool_lenient": {
+        "k": 1,
+        "n": 338,
+        "p": 0.0029585798816568047,
+        "lo": 0.000522453042073566,
+        "hi": 0.016565757675294217
+      }
+    },
+    {
+      "category": "render",
+      "n": 83,
+      "shown_strict": {
+        "k": 0,
+        "n": 83,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.04423531030894942
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 83,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.04423531030894942
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 83,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.04423531030894942
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 83,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.04423531030894942
+      }
+    },
+    {
+      "category": "testing",
+      "n": 144,
+      "shown_strict": {
+        "k": 0,
+        "n": 144,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.025983637542296996
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 144,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.025983637542296996
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 144,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.025983637542296996
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 144,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.025983637542296996
+      }
+    },
+    {
+      "category": "typing",
+      "n": 101,
+      "shown_strict": {
+        "k": 0,
+        "n": 101,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.03664064695671004
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 101,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.03664064695671004
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 101,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.03664064695671004
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 101,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.03664064695671004
+      }
+    },
+    {
+      "category": "wrapper",
+      "n": 17,
+      "shown_strict": {
+        "k": 0,
+        "n": 17,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.18431813738065556
+      },
+      "shown_lenient": {
+        "k": 1,
+        "n": 17,
+        "p": 0.058823529411764705,
+        "lo": 0.010460400868949865,
+        "hi": 0.26982030858456973
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 17,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.18431813738065556
+      },
+      "pool_lenient": {
+        "k": 1,
+        "n": 17,
+        "p": 0.058823529411764705,
+        "lo": 0.010460400868949865,
+        "hi": 0.26982030858456973
+      }
+    }
+  ],
+  "repos": [
+    {
+      "name": "thunderhub",
+      "n": 30,
+      "shown_strict": {
+        "k": 0,
+        "n": 30,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.11351339476145204
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 30,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.11351339476145204
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 30,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.11351339476145204
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 30,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.11351339476145204
+      },
+      "followed": 27
+    },
+    {
+      "name": "fedify",
+      "n": 129,
+      "shown_strict": {
+        "k": 0,
+        "n": 129,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.028917620399883125
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 129,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.028917620399883125
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 129,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.028917620399883125
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 129,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.028917620399883125
+      },
+      "followed": 90
+    },
+    {
+      "name": "hedgedoc",
+      "n": 66,
+      "shown_strict": {
+        "k": 0,
+        "n": 66,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.05500255783352154
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 66,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.05500255783352154
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 66,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.05500255783352154
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 66,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.05500255783352154
+      },
+      "followed": 53
+    },
+    {
+      "name": "mercur",
+      "n": 330,
+      "shown_strict": {
+        "k": 1,
+        "n": 330,
+        "p": 0.0030303030303030303,
+        "lo": 0.0005351233177986522,
+        "hi": 0.016962580235471064
+      },
+      "shown_lenient": {
+        "k": 7,
+        "n": 330,
+        "p": 0.021212121212121213,
+        "lo": 0.010312322972736196,
+        "hi": 0.04313058654809682
+      },
+      "pool_strict": {
+        "k": 1,
+        "n": 330,
+        "p": 0.0030303030303030303,
+        "lo": 0.0005351233177986522,
+        "hi": 0.016962580235471064
+      },
+      "pool_lenient": {
+        "k": 7,
+        "n": 330,
+        "p": 0.021212121212121213,
+        "lo": 0.010312322972736196,
+        "hi": 0.04313058654809682
+      },
+      "followed": 202
+    },
+    {
+      "name": "genkit",
+      "n": 89,
+      "shown_strict": {
+        "k": 0,
+        "n": 89,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.04137654586198997
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 89,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.04137654586198997
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 89,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.04137654586198997
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 89,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.04137654586198997
+      },
+      "followed": 67
+    },
+    {
+      "name": "taxhacker",
+      "n": 5,
+      "shown_strict": {
+        "k": 0,
+        "n": 5,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.43448246865939283
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 5,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.43448246865939283
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 5,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.43448246865939283
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 5,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.43448246865939283
+      },
+      "followed": 4
+    },
+    {
+      "name": "computer-science-fundamentals",
+      "n": 95,
+      "shown_strict": {
+        "k": 0,
+        "n": 95,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.038864854128766085
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 95,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.038864854128766085
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 95,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.038864854128766085
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 95,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.038864854128766085
+      },
+      "followed": 88
+    },
+    {
+      "name": "memcode",
+      "n": 44,
+      "shown_strict": {
+        "k": 0,
+        "n": 44,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.08029560492349135
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 44,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.08029560492349135
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 44,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.08029560492349135
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 44,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.08029560492349135
+      },
+      "followed": 35
+    },
+    {
+      "name": "zyfun",
+      "n": 41,
+      "shown_strict": {
+        "k": 0,
+        "n": 41,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.08566757142012449
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 41,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.08566757142012449
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 41,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.08566757142012449
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 41,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.08566757142012449
+      },
+      "followed": 29
+    },
+    {
+      "name": "tududi",
+      "n": 120,
+      "shown_strict": {
+        "k": 1,
+        "n": 120,
+        "p": 0.008333333333333333,
+        "lo": 0.00147255571707176,
+        "hi": 0.04569629172758835
+      },
+      "shown_lenient": {
+        "k": 4,
+        "n": 120,
+        "p": 0.03333333333333333,
+        "lo": 0.01303755100780557,
+        "hi": 0.0825803380922108
+      },
+      "pool_strict": {
+        "k": 1,
+        "n": 120,
+        "p": 0.008333333333333333,
+        "lo": 0.00147255571707176,
+        "hi": 0.04569629172758835
+      },
+      "pool_lenient": {
+        "k": 4,
+        "n": 120,
+        "p": 0.03333333333333333,
+        "lo": 0.01303755100780557,
+        "hi": 0.0825803380922108
+      },
+      "followed": 81
+    },
+    {
+      "name": "cursorless",
+      "n": 75,
+      "shown_strict": {
+        "k": 0,
+        "n": 75,
+        "p": 0,
+        "lo": 3.469446951953614e-18,
+        "hi": 0.04872384321400895
+      },
+      "shown_lenient": {
+        "k": 1,
+        "n": 75,
+        "p": 0.013333333333333334,
+        "lo": 0.0023575511129896726,
+        "hi": 0.07173365628197906
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 75,
+        "p": 0,
+        "lo": 3.469446951953614e-18,
+        "hi": 0.04872384321400895
+      },
+      "pool_lenient": {
+        "k": 1,
+        "n": 75,
+        "p": 0.013333333333333334,
+        "lo": 0.0023575511129896726,
+        "hi": 0.07173365628197906
+      },
+      "followed": 53
+    },
+    {
+      "name": "backend",
+      "n": 234,
+      "shown_strict": {
+        "k": 0,
+        "n": 234,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.01615134257654057
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 234,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.01615134257654057
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 234,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.01615134257654057
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 234,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.01615134257654057
+      },
+      "followed": 227
+    },
+    {
+      "name": "kan",
+      "n": 63,
+      "shown_strict": {
+        "k": 0,
+        "n": 63,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.05747120044339639
+      },
+      "shown_lenient": {
+        "k": 2,
+        "n": 63,
+        "p": 0.031746031746031744,
+        "lo": 0.008749527482801306,
+        "hi": 0.10856477134514135
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 63,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.05747120044339639
+      },
+      "pool_lenient": {
+        "k": 2,
+        "n": 63,
+        "p": 0.031746031746031744,
+        "lo": 0.008749527482801306,
+        "hi": 0.10856477134514135
+      },
+      "followed": 52
+    },
+    {
+      "name": "ipfs-webui",
+      "n": 17,
+      "shown_strict": {
+        "k": 0,
+        "n": 17,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.18431813738065556
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 17,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.18431813738065556
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 17,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.18431813738065556
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 17,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.18431813738065556
+      },
+      "followed": 17
+    },
+    {
+      "name": "restty",
+      "n": 42,
+      "shown_strict": {
+        "k": 0,
+        "n": 42,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.08379879207691124
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 42,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.08379879207691124
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 42,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.08379879207691124
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 42,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.08379879207691124
+      },
+      "followed": 38
+    },
+    {
+      "name": "e2e",
+      "n": 78,
+      "shown_strict": {
+        "k": 0,
+        "n": 78,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.04693781041791674
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 78,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.04693781041791674
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 78,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.04693781041791674
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 78,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.04693781041791674
+      },
+      "followed": 58
+    },
+    {
+      "name": "glyph",
+      "n": 228,
+      "shown_strict": {
+        "k": 0,
+        "n": 228,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.016569335354565923
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 228,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.016569335354565923
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 228,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.016569335354565923
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 228,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.016569335354565923
+      },
+      "followed": 134
+    },
+    {
+      "name": "dyrectorio",
+      "n": 60,
+      "shown_strict": {
+        "k": 0,
+        "n": 60,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.060171853034227174
+      },
+      "shown_lenient": {
+        "k": 0,
+        "n": 60,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.060171853034227174
+      },
+      "pool_strict": {
+        "k": 0,
+        "n": 60,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.060171853034227174
+      },
+      "pool_lenient": {
+        "k": 0,
+        "n": 60,
+        "p": 0,
+        "lo": 0,
+        "hi": 0.060171853034227174
+      },
+      "followed": 33
+    }
+  ],
+  "cross": {
+    "documented": {
+      "n": 11,
+      "ACCEPT": 4,
+      "TRIVIAL": 0,
+      "WRONG": 7
+    },
+    "undocumented": {
+      "n": 46,
+      "ACCEPT": 18,
+      "TRIVIAL": 1,
+      "WRONG": 27
+    },
+    "conflicts": [
+      {
+        "uid": "mercur/D-c598ed",
+        "refs": [
+          "mercur#R62",
+          "mercur#R64",
+          "mercur#R144"
+        ],
+        "reason": "customers.tsx:20, offer-conditions.tsx:19, requests.tsx:13 and return-requests.tsx:17 are literally `= queryKeysFactory(...)`, and orders.tsx assigns _orderKeys built by queryKeysFactory; 5 of 7 listed outliers follow the rule, so the tool misread the code."
+      },
+      {
+        "uid": "mercur/D-a8afe2",
+        "refs": [
+          "mercur#R62"
+        ],
+        "reason": "Every exported non-function value in hooks/api is a queryKeysFactory-based query-key object named *QueryKeys (api-keys.tsx, promotions.tsx, orders.tsx), and no lint rule in eslint.config.mts or .oxlintrc.json enforces naming, so not TRIVIAL; but the only non-following member, sellers.tsx:257 SELLER_STATUS_LABELS, is a UI label map, a different kind of value that is neither a definition nor the aggregator and can recur, so by R1/R2 it counts as legit (0 of 1 mistakes) and an agent exporting another constant from a hooks file would be told to name it *Keys. Hesitated with ACCEPT since the tool exempts it; wording 'exported values' is also loose because exported const arrow functions (useX, sellerStatusOptions, meQueryOptions) are excluded."
+      },
+      {
+        "uid": "mercur/D-abfb09",
+        "refs": [
+          "mercur#R63",
+          "mercur#R208"
+        ],
+        "reason": "Mutation hooks invalidate inside useMutation's onSuccess (useDeleteCustomer, useCreateRegion), so the order is structural; the outlier transitionSellerStatus is a plain async helper (not a hook) orchestrating several SDK calls for store-edit forms, a different kind of function, 0 of 1."
+      },
+      {
+        "uid": "tududi/D-57d79e",
+        "refs": [
+          "tududi#R40"
+        ],
+        "reason": "Validation files also hold helpers that are not validators: a title builder (inbox), a date formatter (projects), a query parser and priority converter (search), a DB lookup getRecurringParentEndDate and an is* predicate (tasks/utils); naming them validate* would be wrong, so new helpers would get false alarms."
+      },
+      {
+        "uid": "tududi/D-744c2d",
+        "refs": [
+          "tududi#R09",
+          "tududi#R52"
+        ],
+        "reason": "Both outliers wrap every handler in a file-local handle() helper that does try { ... } catch (error) { next(error) } (habits/controller.js:5, webhooks/controller.js:13), the same error handling as the per-method try blocks in projects/notes controllers; the tool missed the indirection."
+      },
+      {
+        "uid": "cursorless/D-373f39",
+        "refs": [
+          "cursorless#R28"
+        ],
+        "reason": "Per-language LanguageScopeSupportFacetMap exports (c.ts, python.ts, typescriptreact.ts) are named *ScopeSupport, but both outliers are facet description tables (Record<Facet, ScopeSupportFacetInfo>), a different kind of export whose *Infos name is apt; 0 of 2 counted outliers are mistakes, so a new info/metadata table here would be wrongly flagged."
+      },
+      {
+        "uid": "kan/D-eda068",
+        "refs": [
+          "kan#R18"
+        ],
+        "reason": "Procedures throw TRPCError because they have error paths (not found, unauthorized) as in label.ts and checklist.ts; the only outlier, health in health.ts, has no failure to raise and reports errors as a status field instead, so the rule follows from what the code does rather than a choice, and a new procedure with no error path would be flagged for nothing."
+      }
+    ]
+  },
+  "m2": {
+    "n": 599,
+    "po": 0.998330550918197,
+    "pe": 0.9785006173338425,
+    "kappa": 0.9223489758879958
+  },
+  "e2": [
+    {
+      "repo": "hedgedoc",
+      "E1": 66,
+      "E2": 74
+    },
+    {
+      "repo": "genkit",
+      "E1": 89,
+      "E2": 91
+    },
+    {
+      "repo": "computer-science-fundamentals",
+      "E1": 95,
+      "E2": 135
+    }
+  ],
+  "not_extracted": [],
+  "not_matched": []
+}

@@ -1,0 +1,972 @@
+{
+  "run": "eval/study/runs/dev-v3-relabel4-2026-11-07/ts/relabel",
+  "items": [
+    {
+      "uid": "twenty/D-81a1f5",
+      "repo": "twenty",
+      "id": "D-81a1f5",
+      "rank": 12,
+      "summary": "packages/twenty-server: classes in src/engine/metadata-modules/metadata-side-effect/** (*.service files) extend MetadataSideEffectHandler()",
+      "role": {
+        "package": "packages/twenty-server",
+        "dir": "src/engine/metadata-modules/metadata-side-effect",
+        "file": "*.service",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/interfaces/base-metadata-side-effect-handler.service.ts#MetadataSideEffectHandler()"
+        ]
+      },
+      "evidence": {
+        "holders": 36,
+        "total": 39,
+        "lower_bound": 0.8,
+        "lift": 114.1
+      },
+      "members": 39,
+      "example": "packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/handlers/field-metadata/services/field-index-view-field-on-create-side-effect-handler.service.ts#FieldIndexViewFieldOnCreateSideEffectHandlerService",
+      "python_members": null,
+      "outliers": 3,
+      "outlier_files": [
+        "packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/interfaces/base-metadata-side-effect-handler.service.ts",
+        "packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/registry/metadata-side-effect-handler-registry.service.ts",
+        "packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/services/metadata-side-effect-engine.service.ts"
+      ],
+      "block": "12. [D-81a1f5] packages/twenty-server: classes in src/engine/metadata-modules/metadata-side-effect/** (*.service files) extend MetadataSideEffectHandler()\n    evidence: 36/39 (lower bound 0.80, lift 114.1)\n    example:  packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/handlers/field-metadata/services/field-index-view-field-on-create-side-effect-handler.service.ts#FieldIndexViewFieldOnCreateSideEffectHandlerService\n    outlier:  packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/interfaces/base-metadata-side-effect-handler.service.ts:20 BaseMetadataSideEffectHandlerService\n    outlier:  packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/registry/metadata-side-effect-handler-registry.service.ts:26 MetadataSideEffectHandlerRegistryService\n    outlier:  packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/services/metadata-side-effect-engine.service.ts:57 MetadataSideEffectEngineService",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "default"
+    },
+    {
+      "uid": "twenty/D-532878",
+      "repo": "twenty",
+      "id": "D-532878",
+      "rank": 13,
+      "summary": "packages/twenty-server: classes in src/** (*.workspace-entity files) extend BaseWorkspaceEntity",
+      "role": {
+        "package": "packages/twenty-server",
+        "dir": "src",
+        "file": "*.workspace-entity",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "packages/twenty-server/src/engine/twenty-orm/base.workspace-entity.ts#BaseWorkspaceEntity"
+        ]
+      },
+      "evidence": {
+        "holders": 38,
+        "total": 41,
+        "lower_bound": 0.81,
+        "lift": 106
+      },
+      "members": 42,
+      "example": "packages/twenty-server/src/engine/metadata-modules/ai/ai-history/standard-objects/agent-chat-thread-participant.workspace-entity.ts#AgentChatThreadParticipantWorkspaceEntity",
+      "python_members": null,
+      "outliers": 3,
+      "outlier_files": [
+        "packages/twenty-server/src/modules/company/standard-objects/company.workspace-entity.ts",
+        "packages/twenty-server/src/modules/emailing/standard-objects/campaign-delivery.workspace-entity.ts",
+        "packages/twenty-server/src/modules/emailing/standard-objects/message-suppression.workspace-entity.ts"
+      ],
+      "block": "13. [D-532878] packages/twenty-server: classes in src/** (*.workspace-entity files) extend BaseWorkspaceEntity\n    evidence: 38/41 (lower bound 0.81, lift 106.0)\n    example:  packages/twenty-server/src/engine/metadata-modules/ai/ai-history/standard-objects/agent-chat-thread-participant.workspace-entity.ts#AgentChatThreadParticipantWorkspaceEntity\n    outlier:  packages/twenty-server/src/modules/company/standard-objects/company.workspace-entity.ts:20 CompanyWorkspaceEntity\n    outlier:  packages/twenty-server/src/modules/emailing/standard-objects/campaign-delivery.workspace-entity.ts:5 CampaignDeliveryWorkspaceEntity\n    outlier:  packages/twenty-server/src/modules/emailing/standard-objects/message-suppression.workspace-entity.ts:4 MessageSuppressionWorkspaceEntity\n    exempt:   packages/twenty-server/src/engine/twenty-orm/base.workspace-entity.ts:1 BaseWorkspaceEntity (in the module that defines BaseWorkspaceEntity)",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "default"
+    },
+    {
+      "uid": "formbricks/D-3bb3c1",
+      "repo": "formbricks",
+      "id": "D-3bb3c1",
+      "rank": 3,
+      "summary": "apps/web: HTTP handlers in app/api/v3/** (route files) pass `schemas` to withV3ApiWrapper()",
+      "role": {
+        "package": "apps/web",
+        "dir": "app/api/v3",
+        "file": "route",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "apps/web/app/api/v3/lib/api-wrapper.ts#withV3ApiWrapper",
+        "index": 0,
+        "key": "schemas"
+      },
+      "evidence": {
+        "holders": 77,
+        "total": 88,
+        "lower_bound": 0.79,
+        "lift": 45
+      },
+      "members": 88,
+      "example": "apps/web/app/api/v3/action-classes/route.ts#GET",
+      "python_members": null,
+      "outliers": 11,
+      "outlier_files": [
+        "apps/web/app/api/v3/contact-attribute-keys/route.ts",
+        "apps/web/app/api/v3/contacts/route.ts",
+        "apps/web/app/api/v3/creatives/route.ts",
+        "apps/web/app/api/v3/feedbackRecords/token/route.ts",
+        "apps/web/app/api/v3/responses/count/route.ts",
+        "apps/web/app/api/v3/responses/route.ts",
+        "apps/web/app/api/v3/segments/route.ts",
+        "apps/web/app/api/v3/surveys/route.ts",
+        "apps/web/app/api/v3/workflows/route.ts",
+        "apps/web/app/api/v3/workflows/runs/route.ts"
+      ],
+      "block": " 3. [D-3bb3c1] apps/web: HTTP handlers in app/api/v3/** (route files) pass `schemas` to withV3ApiWrapper()\n    evidence: 77/88 (lower bound 0.79, lift 45.0)\n    example:  apps/web/app/api/v3/action-classes/route.ts#GET\n    outlier:  apps/web/app/api/v3/contact-attribute-keys/route.ts:10 GET\n    outlier:  apps/web/app/api/v3/contacts/route.ts:8 GET\n    outlier:  apps/web/app/api/v3/creatives/route.ts:13 GET\n    outlier:  apps/web/app/api/v3/feedbackRecords/token/route.ts:4 POST\n    outlier:  apps/web/app/api/v3/responses/count/route.ts:12 GET\n    outlier:  apps/web/app/api/v3/responses/route.ts:17 GET\n    outlier:  apps/web/app/api/v3/segments/route.ts:8 GET\n    outlier:  apps/web/app/api/v3/surveys/route.ts:9 GET\n    outlier:  apps/web/app/api/v3/workflows/route.ts:11 GET\n    outlier:  apps/web/app/api/v3/workflows/route.ts:17 POST\n    outlier:  apps/web/app/api/v3/workflows/runs/route.ts:13 GET",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "default"
+    },
+    {
+      "uid": "formbricks/D-66d37f",
+      "repo": "formbricks",
+      "id": "D-66d37f",
+      "rank": 11,
+      "summary": "apps/web: functions in modules/api/** (route files) call handleApiError() before responses.successResponse()",
+      "role": {
+        "package": "apps/web",
+        "dir": "modules/api",
+        "file": "route",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "before",
+        "first": "apps/web/modules/api/v2/lib/utils.ts#handleApiError",
+        "then": "apps/web/modules/api/v2/lib/response.ts#responses.successResponse"
+      },
+      "evidence": {
+        "holders": 25,
+        "total": 27,
+        "lower_bound": 0.77,
+        "lift": 1
+      },
+      "members": 27,
+      "example": "apps/web/modules/api/v2/management/contact-attribute-keys/[contactAttributeKeyId]/route.ts#DELETE",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "apps/web/modules/api/v2/health/route.ts",
+        "apps/web/modules/api/v2/roles/route.ts"
+      ],
+      "block": "11. [D-66d37f] apps/web: functions in modules/api/** (route files) call handleApiError() before responses.successResponse()\n    evidence: 25/27 (lower bound 0.77, lift 1.0)\n    example:  apps/web/modules/api/v2/management/contact-attribute-keys/[contactAttributeKeyId]/route.ts#DELETE\n    outlier:  apps/web/modules/api/v2/health/route.ts:4 GET\n    outlier:  apps/web/modules/api/v2/roles/route.ts:7 GET",
+      "family": "ordering",
+      "rule_kind": "before",
+      "tier": "default"
+    },
+    {
+      "uid": "cal.com/D-594d38",
+      "repo": "cal.com",
+      "id": "D-594d38",
+      "rank": 1,
+      "summary": "packages/trpc: rpc entry points in server/** (_router files) are wrapped in authedAdminProcedure() or authedProcedure() or createEventPbacProcedure() or authedAdminProcedureWithRequestedUser() or createWebhookProcedure()",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server",
+        "file": "_router",
+        "entry": "rpc",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "packages/trpc/server/procedures/authedProcedure.ts#authedAdminProcedure",
+          "packages/trpc/server/procedures/authedProcedure.ts#authedProcedure",
+          "packages/trpc/server/routers/viewer/eventTypes/util.ts#createEventPbacProcedure",
+          "packages/trpc/server/routers/viewer/users/_router.ts#authedAdminProcedureWithRequestedUser",
+          "packages/trpc/server/routers/viewer/webhook/util.ts#createWebhookProcedure"
+        ]
+      },
+      "evidence": {
+        "holders": 156,
+        "total": 171,
+        "lower_bound": 0.86,
+        "lift": 15.5
+      },
+      "members": 171,
+      "example": "packages/trpc/server/routers/loggedInViewer/_router.tsx#MUTATION addNotificationsSubscription",
+      "python_members": null,
+      "outliers": 15,
+      "outlier_files": [
+        "packages/trpc/server/routers/features/_router.ts",
+        "packages/trpc/server/routers/publicViewer/_router.tsx",
+        "packages/trpc/server/routers/publicViewer/timezones/_router.tsx",
+        "packages/trpc/server/routers/viewer/auth/_router.tsx",
+        "packages/trpc/server/routers/viewer/bookings/_router.tsx",
+        "packages/trpc/server/routers/viewer/i18n/_router.tsx",
+        "packages/trpc/server/routers/viewer/slots/_router.tsx"
+      ],
+      "block": " 1. [D-594d38] packages/trpc: rpc entry points in server/** (_router files) are wrapped in authedAdminProcedure() or authedProcedure() or createEventPbacProcedure() or authedAdminProcedureWithRequestedUser() or createWebhookProcedure()\n    evidence: 156/171 (lower bound 0.86, lift 15.5)\n    split:    authedProcedure 107, authedAdminProcedure 30, createEventPbacProcedure 9, createWebhookProcedure 7, authedAdminProcedureWithRequestedUser 3\n    derived:  bookingsProcedure 1 (built on authedProcedure), createTeamPbacProcedure 1 (built on authedProcedure)\n    example:  packages/trpc/server/routers/loggedInViewer/_router.tsx#MUTATION addNotificationsSubscription\n    outlier:  packages/trpc/server/routers/features/_router.ts:13 QUERY checkTeamFeature\n    outlier:  packages/trpc/server/routers/features/_router.ts:9 QUERY list\n    outlier:  packages/trpc/server/routers/publicViewer/_router.tsx:18 MUTATION markHostAsNoShow\n    outlier:  packages/trpc/server/routers/publicViewer/_router.tsx:14 MUTATION submitRating\n    outlier:  packages/trpc/server/routers/publicViewer/_router.tsx:24 QUERY checkIfUserEmailVerificationRequired\n    outlier:  packages/trpc/server/routers/publicViewer/_router.tsx:10 QUERY countryCode\n    outlier:  packages/trpc/server/routers/publicViewer/timezones/_router.tsx:11 QUERY cityTimezones\n    outlier:  packages/trpc/server/routers/viewer/auth/_router.tsx:48 MUTATION sendVerifyEmailCode\n    outlier:  packages/trpc/server/routers/viewer/auth/_router.tsx:40 MUTATION verifyCodeUnAuthenticated\n    outlier:  packages/trpc/server/routers/viewer/bookings/_router.tsx:91 QUERY find\n    outlier:  packages/trpc/server/routers/viewer/i18n/_router.tsx:6 QUERY get\n    outlier:  packages/trpc/server/routers/viewer/slots/_router.tsx:46 MUTATION removeSelectedSlotMark\n    outlier:  packages/trpc/server/routers/viewer/slots/_router.tsx:26 MUTATION reserveSlot\n    outlier:  packages/trpc/server/routers/viewer/slots/_router.tsx:18 QUERY getSchedule\n    outlier:  packages/trpc/server/routers/viewer/slots/_router.tsx:34 QUERY isAvailable",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "cal.com/D-85e09a",
+      "repo": "cal.com",
+      "id": "D-85e09a",
+      "rank": 2,
+      "summary": "apps/web: HTTP handlers in app/** (route files) are wrapped in defaultResponderForAppDir()",
+      "role": {
+        "package": "apps/web",
+        "dir": "app",
+        "file": "route",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "apps/web/app/api/defaultResponderForAppDir.ts#defaultResponderForAppDir"
+        ]
+      },
+      "evidence": {
+        "holders": 41,
+        "total": 45,
+        "lower_bound": 0.79,
+        "lift": 60.6
+      },
+      "members": 45,
+      "example": "apps/web/app/api/auth/forgot-password/route.ts#POST",
+      "python_members": null,
+      "outliers": 4,
+      "outlier_files": [
+        "apps/web/app/api/csrf/route.ts",
+        "apps/web/app/api/ip/route.ts",
+        "apps/web/app/api/social/og/image/route.tsx",
+        "apps/web/app/api/video/recording/route.ts"
+      ],
+      "block": " 2. [D-85e09a] apps/web: HTTP handlers in app/** (route files) are wrapped in defaultResponderForAppDir()\n    evidence: 41/45 (lower bound 0.79, lift 60.6)\n    example:  apps/web/app/api/auth/forgot-password/route.ts#POST\n    outlier:  apps/web/app/api/csrf/route.ts:6 GET\n    outlier:  apps/web/app/api/ip/route.ts:4 GET\n    outlier:  apps/web/app/api/social/og/image/route.tsx:34 handler\n    outlier:  apps/web/app/api/video/recording/route.ts:6 GET",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "cal.com/D-42ab67",
+      "repo": "cal.com",
+      "id": "D-42ab67",
+      "rank": 10,
+      "summary": "packages/trpc: rpc entry points in server/** (_router files) validate their input with a schema",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server",
+        "file": "_router",
+        "entry": "rpc",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "validates"
+      },
+      "evidence": {
+        "holders": 142,
+        "total": 171,
+        "lower_bound": 0.77,
+        "lift": 6.9
+      },
+      "members": 171,
+      "example": "packages/trpc/server/routers/loggedInViewer/_router.tsx#MUTATION addNotificationsSubscription",
+      "python_members": null,
+      "outliers": 29,
+      "outlier_files": [
+        "packages/trpc/server/routers/features/_router.ts",
+        "packages/trpc/server/routers/loggedInViewer/_router.tsx",
+        "packages/trpc/server/routers/publicViewer/_router.tsx",
+        "packages/trpc/server/routers/viewer/admin/_router.ts",
+        "packages/trpc/server/routers/viewer/admin/watchlist/_router.ts",
+        "packages/trpc/server/routers/viewer/apiKeys/_router.tsx",
+        "packages/trpc/server/routers/viewer/apps/_router.tsx",
+        "packages/trpc/server/routers/viewer/auth/_router.tsx",
+        "packages/trpc/server/routers/viewer/availability/_router.tsx",
+        "packages/trpc/server/routers/viewer/eventTypes/_router.ts",
+        "packages/trpc/server/routers/viewer/googleWorkspace/_router.tsx",
+        "packages/trpc/server/routers/viewer/holidays/_router.ts",
+        "packages/trpc/server/routers/viewer/me/_router.tsx",
+        "packages/trpc/server/routers/viewer/oAuth/_router.tsx",
+        "packages/trpc/server/routers/viewer/ooo/_router.tsx",
+        "packages/trpc/server/routers/viewer/travelSchedules/_router.tsx",
+        "packages/trpc/server/routers/viewer/users/_router.ts",
+        "packages/trpc/server/routers/viewer/webhook/_router.tsx"
+      ],
+      "block": "10. [D-42ab67] packages/trpc: rpc entry points in server/** (_router files) validate their input with a schema\n    evidence: 142/171 (lower bound 0.77, lift 6.9)\n    example:  packages/trpc/server/routers/loggedInViewer/_router.tsx#MUTATION addNotificationsSubscription\n    outlier:  packages/trpc/server/routers/features/_router.ts:9 QUERY list\n    outlier:  packages/trpc/server/routers/loggedInViewer/_router.tsx:28 MUTATION unlinkConnectedAccount\n    outlier:  packages/trpc/server/routers/loggedInViewer/_router.tsx:23 QUERY stripeCustomer\n    outlier:  packages/trpc/server/routers/publicViewer/_router.tsx:10 QUERY countryCode\n    outlier:  packages/trpc/server/routers/viewer/admin/_router.ts:38 QUERY getSMSLockStateTeamsUsers\n    outlier:  packages/trpc/server/routers/viewer/admin/watchlist/_router.ts:51 QUERY pendingReportsCount\n    outlier:  packages/trpc/server/routers/viewer/apiKeys/_router.tsx:18 QUERY list\n    outlier:  packages/trpc/server/routers/viewer/apps/_router.tsx:85 QUERY checkForGCal\n    outlier:  packages/trpc/server/routers/viewer/apps/_router.tsx:45 QUERY getUsersDefaultConferencingApp\n    outlier:  packages/trpc/server/routers/viewer/auth/_router.tsx:66 MUTATION createAccountPassword\n    outlier:  packages/trpc/server/routers/viewer/availability/_router.tsx:16 QUERY list\n    outlier:  packages/trpc/server/routers/viewer/eventTypes/_router.ts:115 QUERY bulkEventFetch\n    outlier:  packages/trpc/server/routers/viewer/eventTypes/_router.ts:86 QUERY list\n    outlier:  packages/trpc/server/routers/viewer/eventTypes/_router.ts:94 QUERY listWithTeam\n    outlier:  packages/trpc/server/routers/viewer/googleWorkspace/_router.tsx:18 MUTATION getUsersFromGWorkspace\n    outlier:  packages/trpc/server/routers/viewer/googleWorkspace/_router.tsx:25 MUTATION removeCurrentGoogleWorkspaceConnection\n    outlier:  packages/trpc/server/routers/viewer/googleWorkspace/_router.tsx:11 QUERY checkForGWorkspace\n    outlier:  packages/trpc/server/routers/viewer/holidays/_router.ts:9 QUERY getSupportedCountries\n    outlier:  packages/trpc/server/routers/viewer/me/_router.tsx:16 MUTATION deleteMeWithoutPassword\n    outlier:  packages/trpc/server/routers/viewer/me/_router.tsx:8 QUERY bookingUnconfirmedCount\n    outlier:  packages/trpc/server/routers/viewer/me/_router.tsx:21 QUERY getUserTopBanners\n    outlier:  packages/trpc/server/routers/viewer/me/_router.tsx:25 QUERY myStats\n    outlier:  packages/trpc/server/routers/viewer/me/_router.tsx:29 QUERY platformMe\n    outlier:  packages/trpc/server/routers/viewer/me/_router.tsx:33 QUERY shouldVerifyEmail\n    outlier:  packages/trpc/server/routers/viewer/oAuth/_router.tsx:62 QUERY listUserClients\n    outlier:  packages/trpc/server/routers/viewer/ooo/_router.tsx:22 QUERY outOfOfficeReasonList\n    outlier:  packages/trpc/server/routers/viewer/travelSchedules/_router.tsx:5 QUERY get\n    outlier:  packages/trpc/server/routers/viewer/users/_router.ts:57 QUERY list\n    outlier:  packages/trpc/server/routers/viewer/webhook/_router.tsx:135 QUERY getByViewer",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "default"
+    },
+    {
+      "uid": "cal.com/D-8d7d13",
+      "repo": "cal.com",
+      "id": "D-8d7d13",
+      "rank": 14,
+      "summary": "packages/emails: functions in ./** are named `send*`",
+      "role": {
+        "package": "packages/emails",
+        "dir": ".",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "send*"
+      },
+      "evidence": {
+        "holders": 44,
+        "total": 44,
+        "lower_bound": 0.92,
+        "lift": 40.7
+      },
+      "members": 46,
+      "example": "packages/emails/auth-email-service.ts#sendChangeOfEmailVerificationLink",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": "14. [D-8d7d13] packages/emails: functions in ./** are named `send*`\n    evidence: 44/44 (lower bound 0.92, lift 40.7)\n    example:  packages/emails/auth-email-service.ts#sendChangeOfEmailVerificationLink\n    exempt:   packages/emails/email-manager.ts:62 fetchOrganizationEmailSettings (a helper of sendAddGuestsEmailsAndSMS, which uses it in its file)\n    exempt:   packages/emails/email-manager.ts:67 shouldSkipAttendeeEmailWithSettings (a helper of sendAddGuestsEmailsAndSMS, which uses it in its file)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "documenso/D-d7fae5",
+      "repo": "documenso",
+      "id": "D-d7fae5",
+      "rank": 15,
+      "summary": "packages/trpc: exported values in server/** (schema files) are named `*Schema`",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server",
+        "file": "schema",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Schema"
+      },
+      "evidence": {
+        "holders": 120,
+        "total": 121,
+        "lower_bound": 0.95,
+        "lift": 1.7
+      },
+      "members": 124,
+      "example": "packages/trpc/server/auth-router/schema.ts#ZCurrentPasswordSchema",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/trpc/server/schema.ts"
+      ],
+      "block": "15. [D-d7fae5] packages/trpc: exported values in server/** (schema files) are named `*Schema`\n    evidence: 120/121 (lower bound 0.95, lift 1.7)\n    example:  packages/trpc/server/auth-router/schema.ts#ZCurrentPasswordSchema\n    outlier:  packages/trpc/server/schema.ts:12 ZGenericSuccessResponse\n    exempt:   packages/trpc/server/document-router/schema.ts:4 DOCUMENT_TITLE_MAX_LENGTH (a constant beside ZDocumentExternalIdSchema, which follows the scheme)\n    exempt:   packages/trpc/server/template-router/schema.ts:35 MAX_TEMPLATE_PUBLIC_DESCRIPTION_LENGTH (a constant beside ZBulkSendTemplateMutationSchema, which follows the scheme)\n    exempt:   packages/trpc/server/template-router/schema.ts:34 MAX_TEMPLATE_PUBLIC_TITLE_LENGTH (a constant beside ZBulkSendTemplateMutationSchema, which follows the scheme)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "ai/D-4683f7",
+      "repo": "ai",
+      "id": "D-4683f7",
+      "rank": 8,
+      "summary": "packages/openai: functions in src/tool/** call zodSchema() before z.object()",
+      "role": {
+        "package": "packages/openai",
+        "dir": "src/tool",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "before",
+        "first": "packages/provider-utils/src/schema.ts#zodSchema",
+        "then": "pkg:zod/v4#z.object"
+      },
+      "evidence": {
+        "holders": 24,
+        "total": 25,
+        "lower_bound": 0.81,
+        "lift": 1
+      },
+      "members": 25,
+      "example": "packages/openai/src/tool/apply-patch.ts#applyPatchArgsSchema",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/openai/src/tool/file-search.ts"
+      ],
+      "block": " 8. [D-4683f7] packages/openai: functions in src/tool/** call zodSchema() before z.object()\n    evidence: 24/25 (lower bound 0.81, lift 1.0)\n    example:  packages/openai/src/tool/apply-patch.ts#applyPatchArgsSchema\n    outlier:  packages/openai/src/tool/file-search.ts:65 fileSearch",
+      "family": "ordering",
+      "rule_kind": "before",
+      "tier": "default"
+    },
+    {
+      "uid": "supabase/D-922bc7",
+      "repo": "supabase",
+      "id": "D-922bc7",
+      "rank": 3,
+      "summary": "packages/icons: exported values in src/** pass `fill` to createLucideIcon()",
+      "role": {
+        "package": "packages/icons",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "packages/icons/src/createSupabaseIcon.ts#createLucideIcon",
+        "index": 2,
+        "key": "fill"
+      },
+      "evidence": {
+        "holders": 30,
+        "total": 30,
+        "lower_bound": 0.89,
+        "lift": 72.5
+      },
+      "members": 31,
+      "example": "packages/icons/src/icons/REST-api.ts#RESTApi",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 3. [D-922bc7] packages/icons: exported values in src/** pass `fill` to createLucideIcon()\n    evidence: 30/30 (lower bound 0.89, lift 72.5)\n    example:  packages/icons/src/icons/REST-api.ts#RESTApi\n    exempt:   packages/icons/src/defaultAttributes.ts:1 default (does not call createLucideIcon())",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "default"
+    },
+    {
+      "uid": "novu/D-6ded6b",
+      "repo": "novu",
+      "id": "D-6ded6b",
+      "rank": 15,
+      "summary": "packages/framework: classes in src/** (*.errors files) are named `*Error`",
+      "role": {
+        "package": "packages/framework",
+        "dir": "src",
+        "file": "*.errors",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Error"
+      },
+      "evidence": {
+        "holders": 39,
+        "total": 40,
+        "lower_bound": 0.87,
+        "lift": 22.8
+      },
+      "members": 40,
+      "example": "packages/framework/src/errors/base.errors.ts#BadRequestError",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/framework/src/errors/resource.errors.ts"
+      ],
+      "block": "15. [D-6ded6b] packages/framework: classes in src/** (*.errors files) are named `*Error`\n    evidence: 39/40 (lower bound 0.87, lift 22.8)\n    example:  packages/framework/src/errors/base.errors.ts#BadRequestError\n    outlier:  packages/framework/src/errors/resource.errors.ts:17 ResourceExecutionFailed",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "midday/D-98e729",
+      "repo": "midday",
+      "id": "D-98e729",
+      "rank": 3,
+      "summary": "apps/api: exported values in src/trpc/** are named `*Router`",
+      "role": {
+        "package": "apps/api",
+        "dir": "src/trpc",
+        "file": "*",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Router"
+      },
+      "evidence": {
+        "holders": 39,
+        "total": 41,
+        "lower_bound": 0.84,
+        "lift": 21.6
+      },
+      "members": 41,
+      "example": "apps/api/src/trpc/init.ts#createTRPCRouter",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "apps/api/src/trpc/init.ts"
+      ],
+      "block": " 3. [D-98e729] apps/api: exported values in src/trpc/** are named `*Router`\n    evidence: 39/41 (lower bound 0.84, lift 21.6)\n    example:  apps/api/src/trpc/init.ts#createTRPCRouter\n    outlier:  apps/api/src/trpc/init.ts:87 createCallerFactory\n    outlier:  apps/api/src/trpc/init.ts:120 publicProcedure",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "midday/D-495f56",
+      "repo": "midday",
+      "id": "D-495f56",
+      "rank": 5,
+      "summary": "apps/api: exported values in src/schemas/** are named `*Schema`",
+      "role": {
+        "package": "apps/api",
+        "dir": "src/schemas",
+        "file": "*",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Schema"
+      },
+      "evidence": {
+        "holders": 308,
+        "total": 309,
+        "lower_bound": 0.98,
+        "lift": 2.7
+      },
+      "members": 309,
+      "example": "apps/api/src/schemas/accounting.ts#accountingProviderIdSchema",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "apps/api/src/schemas/invoice.ts"
+      ],
+      "block": " 5. [D-495f56] apps/api: exported values in src/schemas/** are named `*Schema`\n    evidence: 308/309 (lower bound 0.98, lift 2.7)\n    example:  apps/api/src/schemas/accounting.ts#accountingProviderIdSchema\n    outlier:  apps/api/src/schemas/invoice.ts:337 draftInvoiceSchemaWithOpenApi",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "midday/D-7da2b9",
+      "repo": "midday",
+      "id": "D-7da2b9",
+      "rank": 6,
+      "summary": "packages/db: functions in src/** (schema files) pass `withTimezone` to timestamp()",
+      "role": {
+        "package": "packages/db",
+        "dir": "src",
+        "file": "schema",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:drizzle-orm#timestamp",
+        "index": 1,
+        "key": "withTimezone"
+      },
+      "evidence": {
+        "holders": 47,
+        "total": 47,
+        "lower_bound": 0.92,
+        "lift": 39.4
+      },
+      "members": 49,
+      "example": "packages/db/src/schema.ts#accountingSyncRecords",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 6. [D-7da2b9] packages/db: functions in src/** (schema files) pass `withTimezone` to timestamp()\n    evidence: 47/47 (lower bound 0.92, lift 39.4)\n    example:  packages/db/src/schema.ts#accountingSyncRecords\n    exempt:   packages/db/src/schema.ts:2720 documentTagAssignments (does not call timestamp())\n    exempt:   packages/db/src/schema.ts:308 documentTagEmbeddings (does not call timestamp())",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "default"
+    },
+    {
+      "uid": "midday/D-afc38b",
+      "repo": "midday",
+      "id": "D-afc38b",
+      "rank": 8,
+      "summary": "packages/db: functions in src/** (schema files) pass `mode` to timestamp()",
+      "role": {
+        "package": "packages/db",
+        "dir": "src",
+        "file": "schema",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:drizzle-orm#timestamp",
+        "index": 1,
+        "key": "mode"
+      },
+      "evidence": {
+        "holders": 45,
+        "total": 47,
+        "lower_bound": 0.86,
+        "lift": 39.4
+      },
+      "members": 49,
+      "example": "packages/db/src/schema.ts#accountingSyncRecords",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "packages/db/src/schema.ts"
+      ],
+      "block": " 8. [D-afc38b] packages/db: functions in src/** (schema files) pass `mode` to timestamp()\n    evidence: 45/47 (lower bound 0.86, lift 39.4)\n    example:  packages/db/src/schema.ts#accountingSyncRecords\n    outlier:  packages/db/src/schema.ts:4173 insightUserStatus\n    outlier:  packages/db/src/schema.ts:4086 insights\n    exempt:   packages/db/src/schema.ts:2720 documentTagAssignments (does not call timestamp())\n    exempt:   packages/db/src/schema.ts:308 documentTagEmbeddings (does not call timestamp())",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "default"
+    },
+    {
+      "uid": "midday/D-8fbbad",
+      "repo": "midday",
+      "id": "D-8fbbad",
+      "rank": 11,
+      "summary": "workspace packages use the typescript version most workspace packages use",
+      "role": {
+        "package": "",
+        "dir": ".",
+        "file": "package.json",
+        "entry": "-",
+        "kind": "package"
+      },
+      "rule": {
+        "type": "dependency_version",
+        "name": "typescript"
+      },
+      "evidence": {
+        "holders": 22,
+        "total": 23,
+        "lower_bound": 0.79,
+        "lift": 1
+      },
+      "members": 23,
+      "example": "apps/dashboard/package.json#@midday/dashboard",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/mcp-apps/package.json"
+      ],
+      "block": "11. [D-8fbbad] workspace packages use the typescript version most workspace packages use\n    evidence: 22/23 (lower bound 0.79, lift 1.0)\n    split:    catalog: 22, ^6.0.2 1\n    example:  apps/dashboard/package.json#@midday/dashboard\n    outlier:  packages/mcp-apps/package.json:1 @midday/mcp-apps",
+      "family": "repo",
+      "rule_kind": "dependency_version",
+      "tier": "default"
+    },
+    {
+      "uid": "midday/D-48f0ae",
+      "repo": "midday",
+      "id": "D-48f0ae",
+      "rank": 12,
+      "summary": "packages/db: functions in src/** (schema files) call timestamp() before index()",
+      "role": {
+        "package": "packages/db",
+        "dir": "src",
+        "file": "schema",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "before",
+        "first": "pkg:drizzle-orm/pg-core#timestamp",
+        "then": "pkg:drizzle-orm/pg-core#index"
+      },
+      "evidence": {
+        "holders": 41,
+        "total": 42,
+        "lower_bound": 0.88,
+        "lift": 1
+      },
+      "members": 42,
+      "example": "packages/db/src/schema.ts#accountingSyncRecords",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/db/src/schema.ts"
+      ],
+      "block": "12. [D-48f0ae] packages/db: functions in src/** (schema files) call timestamp() before index()\n    evidence: 41/42 (lower bound 0.88, lift 1.0)\n    example:  packages/db/src/schema.ts#accountingSyncRecords\n    outlier:  packages/db/src/schema.ts:2720 documentTagAssignments",
+      "family": "ordering",
+      "rule_kind": "before",
+      "tier": "default"
+    },
+    {
+      "uid": "midday/D-a45d35",
+      "repo": "midday",
+      "id": "D-a45d35",
+      "rank": 13,
+      "summary": "packages/db: functions in src/** (schema files) call foreignKey().onDelete() before foreignKey()",
+      "role": {
+        "package": "packages/db",
+        "dir": "src",
+        "file": "schema",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "before",
+        "first": "pkg:drizzle-orm/pg-core#foreignKey().onDelete",
+        "then": "pkg:drizzle-orm/pg-core#foreignKey"
+      },
+      "evidence": {
+        "holders": 40,
+        "total": 41,
+        "lower_bound": 0.87,
+        "lift": 1
+      },
+      "members": 41,
+      "example": "packages/db/src/schema.ts#accountingSyncRecords",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/db/src/schema.ts"
+      ],
+      "block": "13. [D-a45d35] packages/db: functions in src/** (schema files) call foreignKey().onDelete() before foreignKey()\n    evidence: 40/41 (lower bound 0.87, lift 1.0)\n    example:  packages/db/src/schema.ts#accountingSyncRecords\n    outlier:  packages/db/src/schema.ts:2765 usersOnTeam",
+      "family": "ordering",
+      "rule_kind": "before",
+      "tier": "default"
+    },
+    {
+      "uid": "midday/D-798f44",
+      "repo": "midday",
+      "id": "D-798f44",
+      "rank": 14,
+      "summary": "drizzle models have a `createdAt` field",
+      "role": {
+        "package": "",
+        "dir": "drizzle",
+        "file": "(model)",
+        "entry": "-",
+        "kind": "model"
+      },
+      "rule": {
+        "type": "model_has",
+        "field": "createdAt"
+      },
+      "evidence": {
+        "holders": 47,
+        "total": 50,
+        "lower_bound": 0.84,
+        "lift": 1
+      },
+      "members": 50,
+      "example": "packages/db/src/schema.ts#accounting_sync_records",
+      "python_members": null,
+      "outliers": 3,
+      "outlier_files": [
+        "packages/db/src/schema.ts"
+      ],
+      "block": "14. [D-798f44] drizzle models have a `createdAt` field\n    evidence: 47/50 (lower bound 0.84, lift 1.0)\n    example:  packages/db/src/schema.ts#accounting_sync_records\n    outlier:  packages/db/src/schema.ts:2720 document_tag_assignments\n    outlier:  packages/db/src/schema.ts:308 document_tag_embeddings\n    outlier:  packages/db/src/schema.ts:1155 exchange_rates",
+      "family": "repo",
+      "rule_kind": "model_has",
+      "tier": "default"
+    },
+    {
+      "uid": "infisical/D-d9b44e",
+      "repo": "infisical",
+      "id": "D-d9b44e",
+      "rank": 6,
+      "summary": "backend: functions in src/server/routes/v1/secret-sync-routers/** pass `createSchema` to registerSyncSecretsEndpoints()",
+      "role": {
+        "package": "backend",
+        "dir": "src/server/routes/v1/secret-sync-routers",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "backend/src/server/routes/v1/secret-sync-routers/secret-sync-endpoints.ts#registerSyncSecretsEndpoints",
+        "index": 0,
+        "key": "createSchema"
+      },
+      "evidence": {
+        "holders": 50,
+        "total": 50,
+        "lower_bound": 0.93,
+        "lift": 177.1
+      },
+      "members": 52,
+      "example": "backend/src/server/routes/v1/secret-sync-routers/1password-sync-router.ts#registerOnePassSyncRouter",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 6. [D-d9b44e] backend: functions in src/server/routes/v1/secret-sync-routers/** pass `createSchema` to registerSyncSecretsEndpoints()\n    evidence: 50/50 (lower bound 0.93, lift 177.1)\n    example:  backend/src/server/routes/v1/secret-sync-routers/1password-sync-router.ts#registerOnePassSyncRouter\n    exempt:   backend/src/server/routes/v1/secret-sync-routers/secret-sync-endpoints.ts:17 registerSyncSecretsEndpoints (does not call registerSyncSecretsEndpoints())\n    exempt:   backend/src/server/routes/v1/secret-sync-routers/secret-sync-router.ts:201 registerSecretSyncRouter (does not call registerSyncSecretsEndpoints())",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "default"
+    },
+    {
+      "uid": "infisical/D-1b2542",
+      "repo": "infisical",
+      "id": "D-1b2542",
+      "rank": 8,
+      "summary": "backend: functions in src/ee/routes/v2/secret-rotation-v2-routers/** pass `createSchema` to registerSecretRotationEndpoints()",
+      "role": {
+        "package": "backend",
+        "dir": "src/ee/routes/v2/secret-rotation-v2-routers",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "backend/src/ee/routes/v2/secret-rotation-v2-routers/secret-rotation-v2-endpoints.ts#registerSecretRotationEndpoints",
+        "index": 0,
+        "key": "createSchema"
+      },
+      "evidence": {
+        "holders": 30,
+        "total": 30,
+        "lower_bound": 0.89,
+        "lift": 299.3
+      },
+      "members": 32,
+      "example": "backend/src/ee/routes/v2/secret-rotation-v2-routers/auth0-client-secret-rotation-router.ts#registerAuth0ClientSecretRotationRouter",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 8. [D-1b2542] backend: functions in src/ee/routes/v2/secret-rotation-v2-routers/** pass `createSchema` to registerSecretRotationEndpoints()\n    evidence: 30/30 (lower bound 0.89, lift 299.3)\n    example:  backend/src/ee/routes/v2/secret-rotation-v2-routers/auth0-client-secret-rotation-router.ts#registerAuth0ClientSecretRotationRouter\n    exempt:   backend/src/ee/routes/v2/secret-rotation-v2-routers/secret-rotation-v2-endpoints.ts:21 registerSecretRotationEndpoints (does not call registerSecretRotationEndpoints())\n    exempt:   backend/src/ee/routes/v2/secret-rotation-v2-routers/secret-rotation-v2-router.ts:73 registerSecretRotationV2Router (does not call registerSecretRotationEndpoints())",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "default"
+    },
+    {
+      "uid": "infisical/D-156a6f",
+      "repo": "infisical",
+      "id": "D-156a6f",
+      "rank": 9,
+      "summary": "backend: functions in src/server/routes/** are named `register*`",
+      "role": {
+        "package": "backend",
+        "dir": "src/server/routes",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "register*"
+      },
+      "evidence": {
+        "holders": 330,
+        "total": 340,
+        "lower_bound": 0.95,
+        "lift": 18.8
+      },
+      "members": 352,
+      "example": "backend/src/server/routes/bdd/bdd-nock-router.dev.ts#registerBddNockRouter",
+      "python_members": null,
+      "outliers": 10,
+      "outlier_files": [
+        "backend/src/server/routes/mfa-step-up-fns.ts",
+        "backend/src/server/routes/sanitizedSchema/permission.ts",
+        "backend/src/server/routes/v1/dashboard-secret-search-fns.ts",
+        "backend/src/server/routes/v1/hsm-connector-router-schemas.ts",
+        "backend/src/server/routes/v1/sso-router.ts"
+      ],
+      "block": " 9. [D-156a6f] backend: functions in src/server/routes/** are named `register*`\n    evidence: 330/340 (lower bound 0.95, lift 18.8)\n    example:  backend/src/server/routes/bdd/bdd-nock-router.dev.ts#registerBddNockRouter\n    outlier:  backend/src/server/routes/mfa-step-up-fns.ts:117 ensureFactorEnrollmentStepUpMfa\n    outlier:  backend/src/server/routes/mfa-step-up-fns.ts:37 ensureStepUpMfa\n    outlier:  backend/src/server/routes/mfa-step-up-fns.ts:14 getStepUpSessionId\n    outlier:  backend/src/server/routes/sanitizedSchema/permission.ts:15 unpackPermissions\n    outlier:  backend/src/server/routes/v1/dashboard-secret-search-fns.ts:42 isInSecretSearchScope\n    outlier:  backend/src/server/routes/v1/dashboard-secret-search-fns.ts:10 parseSecretPathSearch\n    outlier:  backend/src/server/routes/v1/dashboard-secret-search-fns.ts:54 resolveSecretDeepSearch\n    outlier:  backend/src/server/routes/v1/hsm-connector-router-schemas.ts:54 UpdateHsmConnectorBodySchema\n    outlier:  backend/src/server/routes/v1/sso-router.ts:423 initializeOauthConfigSync\n    outlier:  backend/src/server/routes/v1/sso-router.ts:413 refreshOauthConfig\n    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:49 buildAppConnectionRouteContext (a helper of registerAppConnectionEndpoints, which uses it in its file)\n    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:319 buildCreateAppConnectionRoute (a helper of registerAppConnectionEndpoints, which uses it in its file)\n    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:502 buildDeleteAppConnectionRoute (a helper of registerAppConnectionEndpoints, which uses it in its file)\n    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:254 buildGetAppConnectionByNameRoute (a helper of registerAppConnectionEndpoints, which uses it in its file)\n    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:201 buildGetAppConnectionRoute (a helper of registerAppConnectionEndpoints, which uses it in its file)\n    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:86 buildListAppConnectionsRoute (a helper of registerAppConnectionEndpoints, which uses it in its file)\n    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:137 buildListAvailableAppConnectionsRoute (a helper of registerAppConnectionEndpoints, which uses it in its file)\n    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:568 buildRotateAppConnectionCredentialsRoute (a helper of registerAppConnectionEndpoints, which uses it in its file)\n    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:411 buildUpdateAppConnectionRoute (a helper of registerAppConnectionEndpoints, which uses it in its file)\n    exempt:   backend/src/server/routes/v1/dashboard-secret-search-fns.ts:40 isSecretPathMatch (shared part used by 2 members)\n    exempt:   backend/src/server/routes/v1/hsm-connector-router-schemas.ts:13 gatewayPickRefiner (shared part used by 2 members)\n    exempt:   backend/src/server/routes/v1/hsm-connector-router.ts:26 createHsmConnectorRouter (a helper of registerCertManagerHsmConnectorRouter, which uses it in its file)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "infisical/D-ac787f",
+      "repo": "infisical",
+      "id": "D-ac787f",
+      "rank": 11,
+      "summary": "backend: functions in src/server/routes/** are named `*Router`",
+      "role": {
+        "package": "backend",
+        "dir": "src/server/routes",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Router"
+      },
+      "evidence": {
+        "holders": 312,
+        "total": 348,
+        "lower_bound": 0.86,
+        "lift": 19.2
+      },
+      "members": 352,
+      "example": "backend/src/server/routes/bdd/bdd-nock-router.dev.ts#registerBddNockRouter",
+      "python_members": null,
+      "outliers": 36,
+      "outlier_files": [
+        "backend/src/server/routes/index.ts",
+        "backend/src/server/routes/mfa-step-up-fns.ts",
+        "backend/src/server/routes/sanitizedSchema/permission.ts",
+        "backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts",
+        "backend/src/server/routes/v1/approval-policy-routers/approval-policy-endpoints.ts",
+        "backend/src/server/routes/v1/auth-router.ts",
+        "backend/src/server/routes/v1/certificate-authority-routers/certificate-authority-endpoints.ts",
+        "backend/src/server/routes/v1/dashboard-secret-search-fns.ts",
+        "backend/src/server/routes/v1/deprecated-certificate-authority-routers/certificate-authority-endpoints.ts",
+        "backend/src/server/routes/v1/hsm-connector-router-schemas.ts",
+        "backend/src/server/routes/v1/index.ts",
+        "backend/src/server/routes/v1/pki-application-alert-router.ts",
+        "backend/src/server/routes/v1/pki-application-enrollment-routers/index.ts",
+        "backend/src/server/routes/v1/pki-application-membership-routers/index.ts",
+        "backend/src/server/routes/v1/pki-application-profile-router.ts",
+        "backend/src/server/routes/v1/pki-sync-routers/pki-sync-endpoints.ts",
+        "backend/src/server/routes/v1/secret-sync-routers/secret-sync-endpoints.ts",
+        "backend/src/server/routes/v1/signer-membership-routers/index.ts",
+        "backend/src/server/routes/v1/sso-router.ts",
+        "backend/src/server/routes/v2/index.ts",
+        "backend/src/server/routes/v3/index.ts",
+        "backend/src/server/routes/v4/index.ts"
+      ],
+      "block": "11. [D-ac787f] backend: functions in src/server/routes/** are named `*Router`\n    evidence: 312/348 (lower bound 0.86, lift 19.2)\n    example:  backend/src/server/routes/bdd/bdd-nock-router.dev.ts#registerBddNockRouter\n    outlier:  backend/src/server/routes/index.ts:660 registerRoutes\n    outlier:  backend/src/server/routes/mfa-step-up-fns.ts:117 ensureFactorEnrollmentStepUpMfa\n    outlier:  backend/src/server/routes/mfa-step-up-fns.ts:37 ensureStepUpMfa\n    outlier:  backend/src/server/routes/mfa-step-up-fns.ts:14 getStepUpSessionId\n    outlier:  backend/src/server/routes/sanitizedSchema/permission.ts:15 unpackPermissions\n    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:49 buildAppConnectionRouteContext\n    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:319 buildCreateAppConnectionRoute\n    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:502 buildDeleteAppConnectionRoute\n    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:254 buildGetAppConnectionByNameRoute\n    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:201 buildGetAppConnectionRoute\n    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:86 buildListAppConnectionsRoute\n    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:137 buildListAvailableAppConnectionsRoute\n    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:568 buildRotateAppConnectionCredentialsRoute\n    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:411 buildUpdateAppConnectionRoute\n    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:628 registerAppConnectionEndpoints\n    outlier:  backend/src/server/routes/v1/approval-policy-routers/approval-policy-endpoints.ts:53 registerApprovalPolicyEndpoints\n    outlier:  backend/src/server/routes/v1/auth-router.ts:10 registerAuthRoutes\n    outlier:  backend/src/server/routes/v1/certificate-authority-routers/certificate-authority-endpoints.ts:18 registerCertificateAuthorityEndpoints\n    outlier:  backend/src/server/routes/v1/dashboard-secret-search-fns.ts:42 isInSecretSearchScope\n    outlier:  backend/src/server/routes/v1/dashboard-secret-search-fns.ts:10 parseSecretPathSearch\n    outlier:  backend/src/server/routes/v1/dashboard-secret-search-fns.ts:54 resolveSecretDeepSearch\n    outlier:  backend/src/server/routes/v1/deprecated-certificate-authority-routers/certificate-authority-endpoints.ts:15 registerCertificateAuthorityEndpoints\n    outlier:  backend/src/server/routes/v1/hsm-connector-router-schemas.ts:54 UpdateHsmConnectorBodySchema\n    outlier:  backend/src/server/routes/v1/index.ts:109 registerV1Routes\n    outlier:  backend/src/server/routes/v1/pki-application-alert-router.ts:19 registerPkiApplicationAlertRoutes\n    outlier:  backend/src/server/routes/v1/pki-application-enrollment-routers/index.ts:7 registerPkiApplicationEnrollmentRoutes\n    outlier:  backend/src/server/routes/v1/pki-application-membership-routers/index.ts:5 registerPkiApplicationMembershipRoutes\n    outlier:  backend/src/server/routes/v1/pki-application-profile-router.ts:13 registerPkiApplicationProfileRoutes\n    outlier:  backend/src/server/routes/v1/pki-sync-routers/pki-sync-endpoints.ts:17 registerSyncPkiEndpoints\n    outlier:  backend/src/server/routes/v1/secret-sync-routers/secret-sync-endpoints.ts:17 registerSyncSecretsEndpoints\n    outlier:  backend/src/server/routes/v1/signer-membership-routers/index.ts:5 registerSignerMembershipRoutes\n    outlier:  backend/src/server/routes/v1/sso-router.ts:423 initializeOauthConfigSync\n    outlier:  backend/src/server/routes/v1/sso-router.ts:413 refreshOauthConfig\n    outlier:  backend/src/server/routes/v2/index.ts:21 registerV2Routes\n    outlier:  backend/src/server/routes/v3/index.ts:7 registerV3Routes\n    outlier:  backend/src/server/routes/v4/index.ts:3 registerV4Routes\n    exempt:   backend/src/server/routes/v1/dashboard-secret-search-fns.ts:40 isSecretPathMatch (shared part used by 2 members)\n    exempt:   backend/src/server/routes/v1/hsm-connector-router-schemas.ts:13 gatewayPickRefiner (shared part used by 2 members)\n    exempt:   backend/src/server/routes/v1/secret-validation-rule-routers/secret-validation-rule-endpoints.ts:24 registerSecretValidationRuleEndpoints (shared part used by 3 members)\n    exempt:   backend/src/server/routes/v1/sso-router.ts:79 registerOauthMiddlewares (shared part used by 2 members)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "infisical/D-536c03",
+      "repo": "infisical",
+      "id": "D-536c03",
+      "rank": 13,
+      "summary": "frontend: components in src/components/secret-syncs/forms/** are named `*Fields`",
+      "role": {
+        "package": "frontend",
+        "dir": "src/components/secret-syncs/forms",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Fields"
+      },
+      "evidence": {
+        "holders": 128,
+        "total": 134,
+        "lower_bound": 0.91,
+        "lift": 7.9
+      },
+      "members": 135,
+      "example": "frontend/src/components/secret-syncs/forms/AzureEntraIdScimSyncSourceFields.tsx#AzureEntraIdScimSyncSourceFields",
+      "python_members": null,
+      "outliers": 6,
+      "outlier_files": [
+        "frontend/src/components/secret-syncs/forms/CreateSecretSyncForm.tsx",
+        "frontend/src/components/secret-syncs/forms/DuplicateDestinationConfirmationModal.tsx",
+        "frontend/src/components/secret-syncs/forms/EditSecretSyncForm.tsx",
+        "frontend/src/components/secret-syncs/forms/SecretSyncConnectionField.tsx",
+        "frontend/src/components/secret-syncs/forms/SecretSyncDestinationFields/shared/AwsRegionSelect.tsx",
+        "frontend/src/components/secret-syncs/forms/SecretSyncOptionsFields/SecretSyncKeySchemaField.tsx"
+      ],
+      "block": "13. [D-536c03] frontend: components in src/components/secret-syncs/forms/** are named `*Fields`\n    evidence: 128/134 (lower bound 0.91, lift 7.9)\n    example:  frontend/src/components/secret-syncs/forms/AzureEntraIdScimSyncSourceFields.tsx#AzureEntraIdScimSyncSourceFields\n    outlier:  frontend/src/components/secret-syncs/forms/CreateSecretSyncForm.tsx:151 CreateSecretSyncForm\n    outlier:  frontend/src/components/secret-syncs/forms/DuplicateDestinationConfirmationModal.tsx:24 DuplicateDestinationConfirmationModal\n    outlier:  frontend/src/components/secret-syncs/forms/EditSecretSyncForm.tsx:130 EditSecretSyncForm\n    outlier:  frontend/src/components/secret-syncs/forms/SecretSyncConnectionField.tsx:34 SecretSyncConnectionField\n    outlier:  frontend/src/components/secret-syncs/forms/SecretSyncDestinationFields/shared/AwsRegionSelect.tsx:23 AwsRegionSelect\n    outlier:  frontend/src/components/secret-syncs/forms/SecretSyncOptionsFields/SecretSyncKeySchemaField.tsx:62 SecretSyncKeySchemaField\n    exempt:   frontend/src/components/secret-syncs/forms/SecretSyncInitialSyncBehaviorFields.tsx:286 InitialSyncAlerts (shared part used by 2 members)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    }
+  ]
+}

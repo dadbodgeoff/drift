@@ -1,0 +1,74 @@
+{
+  "run": "eval/study/runs/dev-v3-relabel4-2026-11-07/py/relabel",
+  "prepared_at": "2026-11-07T11:39:44.312Z",
+  "amendments": [],
+  "manifest": {
+    "path": "eval/repos-py.json",
+    "sha256": "4bba8c062d3efc9de8a33c491b268db079a50f9c7225671c2b47816a6f03c135",
+    "core_sha256": "1164a34341d2a4697cdd61c219684c3fc2ec2d9ab65a6fcac761834cedb86297",
+    "holdout": false,
+    "holdout_because": [],
+    "set_id": null,
+    "role": "dev",
+    "language": null
+  },
+  "drift": {
+    "binary": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel4/restage-2c81ba4/drift-main-2c81ba4",
+    "binary_sha256": "5d0cd386c9e791213074239ddac9c444426adc04a6f90e6e45f235d2d08b5afe",
+    "version": "drift 0.1.0-dev",
+    "commit": "2c81ba491d09f33dfcd209676572508e98923c4c",
+    "dirty": false,
+    "build": null
+  },
+  "params": {
+    "max": 15,
+    "pool": 200,
+    "tier": {
+      "kind": "min_members",
+      "value": 15
+    },
+    "tier_pre_registered": false,
+    "exposed": [],
+    "repos": [
+      "full-stack-fastapi-template@aabb90126964a164e02aff39e7c385bb0598236d",
+      "polar@d14892d27cf346f70e44e36ca5601577e6313b6d",
+      "netbox@56daec7debfd51fa991b45d6a40cb592b42b669d",
+      "saleor@89817cdd10423619d6d6be54a61ead11fca90cfa",
+      "CTFd@a6a81ddd921cd74f8aabc07c0f7a71cdcf5365b6",
+      "flask@49943b5a94413a530761350f04e896f76e8d620e",
+      "fastapi@1ca09c13584ca45aa0921e5e40b31d49c5e3135a",
+      "langchain@e649741517b9584aae63a6ebd6ada803967da1c9"
+    ],
+    "cache": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b",
+    "checkouts": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-clones/py"
+  },
+  "repos": [
+    {
+      "name": "netbox",
+      "url": "https://github.com/netbox-community/netbox",
+      "sha": "56daec7debfd51fa991b45d6a40cb592b42b669d",
+      "shape": "Django + DRF (class-based views, viewsets, routers)",
+      "language": null,
+      "framework_bucket": null,
+      "binary_sha256": "5d0cd386c9e791213074239ddac9c444426adc04a6f90e6e45f235d2d08b5afe",
+      "prepared_at": "2026-11-07T11:39:22.717Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-clones/py/netbox",
+      "status": "ok",
+      "units": 6486,
+      "roles": 155,
+      "proposals": 12,
+      "pool": 12,
+      "census_ms": 1126
+    }
+  ],
+  "relabel_of": {
+    "run": "eval/study/runs/dev-v3-relabel4-2026-11-07/py",
+    "uids": [
+      "netbox/D-76eb6b",
+      "netbox/D-58913a",
+      "netbox/D-afb64d",
+      "netbox/D-937c0c"
+    ],
+    "purpose": "rubric v3 blind relabel of the py dev proposals whose card is new, or whose outliers, D7 tier or other lines changed, at main 2c81ba4 since their newest label"
+  }
+}

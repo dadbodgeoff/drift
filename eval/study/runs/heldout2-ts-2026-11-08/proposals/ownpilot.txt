@@ -1,0 +1,121 @@
+10 conventions from 5762 units in 240 roles (0 default tier, 10 suggestions)
+
+10 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-357e62] packages/gateway: functions in src/db/** and src/services/** declare their return type
+    evidence: 501/506 (lower bound 0.98, lift 1.5)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  packages/gateway/src/services/agent/agent-context.ts#compactContext
+    outlier:  packages/gateway/src/db/data-stores.ts:539 createDataStores
+    outlier:  packages/gateway/src/services/agent/cache.ts:433 buildAgentConfigResponse
+    outlier:  packages/gateway/src/services/chat/streaming.ts:74 wireStreamApproval
+    outlier:  packages/gateway/src/services/custom/tool-registry.ts:28 getCustomToolDynamicRegistry
+    outlier:  packages/gateway/src/services/tool/source.ts:283 initToolSourceMappings
+
+ 2. [D-957723] packages/gateway: exported values in src/middleware/** are named `*Schema`
+    evidence: 111/112 (lower bound 0.95, lift 7.5)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/gateway/src/middleware/schemas/agent.ts#agentCommandSchema
+    outlier:  packages/gateway/src/middleware/ui-session.ts:147 uiSessionMiddleware
+
+ 3. [D-59b926] packages/gateway: classes in src/db/repositories/** extend BaseRepository, except a member (of the module that defines a rule's target)
+    evidence: 61/61 (lower bound 0.94, lift 3.8)
+    tier:     suggestion (rule kind wrapped_by:extends; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 61% of 18)
+    example:  packages/gateway/src/db/repositories/agents/index.ts#AgentsRepository
+    exempt:   packages/gateway/src/db/repositories/base.ts:19 BaseRepository (in the module that defines BaseRepository)
+
+ 4. [D-fe068c] packages/ui: exported values in src/api/** are named `*Api`
+    evidence: 61/62 (lower bound 0.91, lift 14.8)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/ui/src/api/endpoints/agentic.ts#agenticApi
+    outlier:  packages/ui/src/api/client.ts:312 apiClient
+
+ 5. [D-90d32c] packages/gateway: exported values in src/routes/** are named `*Routes`
+    evidence: 86/90 (lower bound 0.89, lift 9.6)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/gateway/src/routes/agentic.ts#agenticRoutes
+    outlier:  packages/gateway/src/routes/channels/inbox.ts:20 readMessageIds
+    outlier:  packages/gateway/src/routes/error-codes.ts:12 ERROR_CODES
+    outlier:  packages/gateway/src/routes/tunnel.ts:12 app
+    outlier:  packages/gateway/src/routes/workflow/copilot.ts:38 workflowCopilotRoute
+
+ 6. [D-925027] packages/gateway: files in src/routes/** have a test file
+    evidence: 89/96 (lower bound 0.86, lift 1.9)
+    tier:     suggestion (rule kind has_test)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  packages/gateway/src/routes/agentic.ts#(file)
+    outlier:  packages/gateway/src/routes/chat/legacy-send.ts:1 (file)
+    outlier:  packages/gateway/src/routes/index.ts:1 (file)
+    outlier:  packages/gateway/src/routes/pulse.ts:1 (file)
+    outlier:  packages/gateway/src/routes/register/agent.ts:1 (file)
+    outlier:  packages/gateway/src/routes/register/automation.ts:1 (file)
+    outlier:  packages/gateway/src/routes/register/platform.ts:1 (file)
+    outlier:  packages/gateway/src/routes/register/v2.ts:1 (file)
+
+ 7. [D-ba69a0] packages/gateway: files in src/db/repositories/** have a test file
+    evidence: 63/69 (lower bound 0.82, lift 1.9)
+    tier:     suggestion (rule kind has_test)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  packages/gateway/src/db/repositories/agents/index.ts#(file)
+    outlier:  packages/gateway/src/db/repositories/costs/provider-metrics.ts:1 (file)
+    outlier:  packages/gateway/src/db/repositories/costs/usage.ts:1 (file)
+    outlier:  packages/gateway/src/db/repositories/index.ts:1 (file)
+    outlier:  packages/gateway/src/db/repositories/interfaces.ts:1 (file)
+    outlier:  packages/gateway/src/db/repositories/jobs.ts:1 (file)
+    outlier:  packages/gateway/src/db/repositories/workflows/workflow-types.ts:1 (file)
+
+ 8. [D-04b2fd] packages/gateway: classes in src/db/** are named `*Repository`
+    evidence: 62/68 (lower bound 0.82, lift 3.5)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/gateway/src/db/repositories/agents/index.ts#AgentsRepository
+    outlier:  packages/gateway/src/db/adapters/postgres-adapter.ts:37 PostgresAdapter
+    outlier:  packages/gateway/src/db/data-stores.ts:28 BookmarkStore
+    outlier:  packages/gateway/src/db/data-stores.ts:329 CalendarStore
+    outlier:  packages/gateway/src/db/data-stores.ts:437 ContactStore
+    outlier:  packages/gateway/src/db/data-stores.ts:138 NoteStore
+    outlier:  packages/gateway/src/db/data-stores.ts:235 TaskStore
+
+ 9. [D-399322] sql models have a `id` field
+    evidence: 97/109 (lower bound 0.82, lift 1.0)
+    tier:     suggestion (rule kind model_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  packages/gateway/src/db/migrations/postgres/001_initial_schema.sql#agent_crews
+    outlier:  packages/gateway/src/db/migrations/postgres/001_initial_schema.sql:2012 )
+    outlier:  packages/gateway/src/db/migrations/postgres/001_initial_schema.sql:1291 agent_crew_members
+    outlier:  packages/gateway/src/db/migrations/postgres/001_initial_schema.sql:1435 claw_sessions
+    outlier:  packages/gateway/src/db/migrations/postgres/001_initial_schema.sql:690 execution_permissions
+    outlier:  packages/gateway/src/db/migrations/postgres/001_initial_schema.sql:140 idempotency_keys
+    outlier:  packages/gateway/src/db/migrations/postgres/001_initial_schema.sql:372 pomodoro_settings
+    outlier:  packages/gateway/src/db/migrations/postgres/001_initial_schema.sql:131 settings
+    outlier:  packages/gateway/src/db/migrations/postgres/001_initial_schema.sql:1616 system_settings
+    outlier:  packages/gateway/src/db/migrations/postgres/001_initial_schema.sql:1486 ui_sessions
+    outlier:  packages/gateway/src/db/migrations/postgres/001_initial_schema.sql:2064 user_extension_removals
+    outlier:  packages/gateway/src/db/migrations/postgres/archive/002_background_agents.sql:32 background_agent_sessions
+    outlier:  packages/gateway/src/db/migrations/postgres/archive/032_retention_policies.sql:7 retention_policies
+
+10. [D-57f216] packages/core: functions in src/services/** use `try`
+    evidence: 85/96 (lower bound 0.81, lift 2.5)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  packages/core/src/services/artifact-service.ts#getArtifactService
+    outlier:  packages/core/src/services/coding-agent-service.ts:25 getCustomProviderName
+    outlier:  packages/core/src/services/coding-agent-service.ts:20 isBuiltinProvider
+    outlier:  packages/core/src/services/error-utils.ts:12 getErrorMessage
+    outlier:  packages/core/src/services/id-utils.ts:40 generateId
+    outlier:  packages/core/src/services/registry.ts:180 getServiceRegistry
+    outlier:  packages/core/src/services/registry.ts:190 hasServiceRegistry
+    outlier:  packages/core/src/services/registry.ts:166 initServiceRegistry
+    outlier:  packages/core/src/services/registry.ts:198 resetServiceRegistry
+    outlier:  packages/core/src/services/runtime-context.ts:75 getRuntimeContext
+    outlier:  packages/core/src/services/runtime-context.ts:96 hasRuntimeContext
+    outlier:  packages/core/src/services/weather-service.ts:485 createWeatherDataService
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

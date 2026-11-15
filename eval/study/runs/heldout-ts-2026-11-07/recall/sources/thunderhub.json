@@ -1,0 +1,17 @@
+{
+  "repo": "thunderhub",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "eslint.config.js",
+      "kind": "lint"
+    }
+  ]
+}

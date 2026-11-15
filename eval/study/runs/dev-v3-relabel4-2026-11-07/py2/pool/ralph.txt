@@ -1,0 +1,51 @@
+5 conventions from 2489 units in 118 roles (0 default tier, 5 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-4529f9] classes in src/** (api files) extend RalphAPISerializer
+    evidence: 54/55 (lower bound 0.90, lift 7.3)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/ralph/access_cards/api.py#AccessCardSerializer
+    outlier:  src/ralph/lib/permissions/api.py:162 RalphPermission
+    exempt:   src/ralph/lib/mixins/api.py:8 ChoiceFieldWithOtherOptionField (another kind of class (extends serializers.ChoiceField))
+    exempt:   src/ralph/lib/permissions/api.py:152 IsAuthenticated (another kind of class (extends permissions.IsAuthenticated))
+    exempt:   src/ralph/lib/permissions/api.py:24 PermissionsForObjectFilter (another kind of class (extends filters.BaseFilterBackend))
+    ... 5 more exempt
+
+ 2. [D-5b6f70] classes in src/** (serializers files) extend RalphAPISerializer
+    evidence: 49/49 (lower bound 0.93, lift 7.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/ralph/assets/api/serializers.py#AssetHolderSerializer
+    exempt:   src/ralph/api/serializers.py:31 AdditionalLookupRelatedField (in the module that defines RalphAPISerializer)
+    exempt:   src/ralph/api/serializers.py:56 DeclaredFieldsMetaclass (in the module that defines RalphAPISerializer)
+    exempt:   src/ralph/api/serializers.py:297 RalphAPISerializerMetaclass (in the module that defines RalphAPISerializer)
+    ... 3 more exempt
+
+ 3. [D-b1df5c] classes in src/** (api files) are named `*Serializer`
+    evidence: 58/59 (lower bound 0.91, lift 7.1)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/ralph/access_cards/api.py#AccessCardSerializer
+    outlier:  src/ralph/lib/permissions/api.py:162 RalphPermission
+    exempt:   src/ralph/lib/mixins/api.py:8 ChoiceFieldWithOtherOptionField (another kind of class (extends serializers.ChoiceField))
+    exempt:   src/ralph/lib/permissions/api.py:152 IsAuthenticated (in the module that defines PermissionsPerFieldSerializerMixin)
+    exempt:   src/ralph/lib/permissions/api.py:24 PermissionsForObjectFilter (in the module that defines PermissionsPerFieldSerializerMixin)
+    ... 1 more exempt
+
+ 4. [D-43f01e] classes in src/** (serializers files) are named `*Serializer`
+    evidence: 51/52 (lower bound 0.90, lift 7.1)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/ralph/assets/api/serializers.py#AssetHolderSerializer
+    outlier:  src/ralph/dashboards/api/serializers.py:11 GraphSerializerDetail
+    exempt:   src/ralph/api/serializers.py:31 AdditionalLookupRelatedField (shared part used by 2 members)
+    exempt:   src/ralph/api/serializers.py:56 DeclaredFieldsMetaclass (in the module that defines RalphAPISerializer)
+    exempt:   src/ralph/api/serializers.py:297 RalphAPISerializerMetaclass (in the module that defines RalphAPISerializer)
+
+ 5. [D-cfd5da] functions in src/ralph/switchports/** declare their return type
+    evidence: 31/34 (lower bound 0.77, lift 5.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/ralph/switchports/connections/planning.py#switch_port_owner
+    outlier:  src/ralph/switchports/presentation.py:14 format_speed
+    outlier:  src/ralph/switchports/presentation.py:26 status_symbol
+    outlier:  src/ralph/switchports/sync/tasks.py:97 run_rack_refresh
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

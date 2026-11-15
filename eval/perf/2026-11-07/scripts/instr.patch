@@ -1,0 +1,197 @@
+diff --git a/crates/drift-cli/src/main.rs b/crates/drift-cli/src/main.rs
+index 3cce867..1889ef4 100644
+--- a/crates/drift-cli/src/main.rs
++++ b/crates/drift-cli/src/main.rs
+@@ -229,6 +229,7 @@ enum Format {
+ 
+ use project::cache_dir;
+ 
++pub(crate) fn __pt(n:&str,t:std::time::Instant){ if std::env::var_os("DRIFT_PERF").is_some(){ eprintln!("drift-perf {n} {:.3}", t.elapsed().as_secs_f64()); } }
+ fn engine() -> String {
+     format!("drift {}", env!("CARGO_PKG_VERSION"))
+ }
+@@ -811,9 +812,13 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
+                 let mut facts = scan(root, &opts)
+                     .with_context(|| format!("scanning {}", root.display()))?
+                     .0;
++                let __t = std::time::Instant::now();
+                 let mut mined = mine(&facts, &MineOptions { max_per_repo: *max });
++                __pt("mine", __t); let __t = std::time::Instant::now();
+                 let wired = wiring::extend(root, &mut facts, &mut mined)?;
++                __pt("wiring", __t); let __t = std::time::Instant::now();
+                 let mut out = census_json(root, &facts, &mined, *max, *filter)?;
++                __pt("census_json", __t);
+                 if let Some(w) = &wired {
+                     out["wiring"] = wiring::json(w);
+                 }
+diff --git a/crates/drift-cli/src/project.rs b/crates/drift-cli/src/project.rs
+index e31bae4..8e4d633 100644
+--- a/crates/drift-cli/src/project.rs
++++ b/crates/drift-cli/src/project.rs
+@@ -220,11 +220,18 @@ impl Project {
+             cache_dir: cache_dir(&self.root, false),
+             threads: 0,
+         };
+-        match scan_file(&self.root, &opts, rel) {
++        let __t = std::time::Instant::now();
++        let one = scan_file(&self.root, &opts, rel);
++        crate::__pt("scan_file", __t);
++        if std::env::var_os("DRIFT_PERF").is_some() {
++            eprintln!("drift-perf scan_file_result {}", match &one { Ok(Some(_)) => "some", Ok(None) => "none", Err(_) => "err" });
++        }
++        match one {
+             Ok(Some(facts)) if !drift_mine::check::needs_full_scan(&facts, &self.policy) => {
++                crate::__pt("scan_for_file.one", __t);
+                 Ok(facts)
+             }
+-            _ => self.scan(false),
++            _ => { let r = self.scan(false); crate::__pt("scan_for_file.full", __t); r }
+         }
+     }
+ 
+diff --git a/crates/drift-cli/src/scan.rs b/crates/drift-cli/src/scan.rs
+index d70705d..97c962e 100644
+--- a/crates/drift-cli/src/scan.rs
++++ b/crates/drift-cli/src/scan.rs
+@@ -9,13 +9,17 @@ pub use drift_ts::{ScanOptions, ScanStats};
+ 
+ /// Scan `root` with every language parser and merge the facts.
+ pub fn scan(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, ScanStats)> {
++    let __t = std::time::Instant::now();
+     let (mut repo, mut stats) = drift_ts::scan(root, opts)?;
++    crate::__pt("scan.ts", __t); let __t = std::time::Instant::now();
+     let py_opts = drift_py::ScanOptions {
+         cache_dir: opts.cache_dir.clone(),
+         threads: opts.threads,
+     };
+     let (py, py_stats) = drift_py::scan(root, &py_opts)?;
++    crate::__pt("scan.py", __t); let __t = std::time::Instant::now();
+     merge(&mut repo, py);
++    crate::__pt("scan.merge", __t);
+     stats.files += py_stats.files;
+     stats.cache_hits += py_stats.cache_hits;
+     stats.parse_errors += py_stats.parse_errors;
+diff --git a/crates/drift-mine/src/check.rs b/crates/drift-mine/src/check.rs
+index a5e9011..f17bb9f 100644
+--- a/crates/drift-mine/src/check.rs
++++ b/crates/drift-mine/src/check.rs
+@@ -629,7 +629,18 @@ fn extent(view: &View, starts: &BTreeMap<&str, Vec<u32>>) -> Extent {
+ ///   files.
+ ///
+ /// Hooks then scan the repo. Units and context are built once for all.
++pub static PERF_NO64: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+ pub fn needs_full_scan(repo: &RepoFacts, policy: &ConventionsFile) -> bool {
++    let r = needs_full_scan_inner(repo, policy);
++    if std::env::var_os("DRIFT_PERF").is_some() {
++        PERF_NO64.store(true, std::sync::atomic::Ordering::Relaxed);
++        let r0 = needs_full_scan_inner(repo, policy);
++        PERF_NO64.store(false, std::sync::atomic::Ordering::Relaxed);
++        eprintln!("drift-perf needs_full_scan {r} without64 {r0}");
++    }
++    r
++}
++fn needs_full_scan_inner(repo: &RepoFacts, policy: &ConventionsFile) -> bool {
+     // Conventions whose exemptions may be undecided: wrapper rules, and key rules (a
+     // class one may exempt is undecided in facts of one file).
+     let wrapped = |c: &Convention| {
+@@ -641,7 +652,7 @@ pub fn needs_full_scan(repo: &RepoFacts, policy: &ConventionsFile) -> bool {
+                     | drift_core::WrapKind::Call,
+                 ..
+             }
+-        ) || matches!(&c.rule, crate::mine::Rule::PassesKey { .. })
++        ) || (!PERF_NO64.load(std::sync::atomic::Ordering::Relaxed) && matches!(&c.rule, crate::mine::Rule::PassesKey { .. }))
+     };
+     // Conventions whose parts may be exempt, as far as the rule alone says (whether its
+     // target guards an entry point elsewhere is decided by the full scan).
+diff --git a/crates/drift-mine/src/mine.rs b/crates/drift-mine/src/mine.rs
+index 2176b9b..e99949e 100644
+--- a/crates/drift-mine/src/mine.rs
++++ b/crates/drift-mine/src/mine.rs
+@@ -1754,6 +1754,7 @@ impl Rule {
+         if let View::Symbol(_, s) = view
+             && s.kind == SymbolKind::Class
+             && ctx.holds_one_file()
++            && !crate::check::PERF_NO64.load(std::sync::atomic::Ordering::Relaxed)
+             && self.exemption_in(role, view, ctx).is_some()
+         {
+             return true;
+diff --git a/crates/drift-ts/src/lib.rs b/crates/drift-ts/src/lib.rs
+index faacd03..7350a03 100644
+--- a/crates/drift-ts/src/lib.rs
++++ b/crates/drift-ts/src/lib.rs
+@@ -78,9 +78,12 @@ pub fn scan(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, ScanS
+     drift_core::stack::pool(opts.threads)?.install(|| scan_inner(&root, opts))
+ }
+ 
++fn __pt(n:&str,t:std::time::Instant){ if std::env::var_os("DRIFT_PERF").is_some(){ eprintln!("drift-perf {n} {:.3}", t.elapsed().as_secs_f64()); } }
+ fn scan_inner(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, ScanStats)> {
+     let started = index::now_ns();
++    let __t = std::time::Instant::now();
+     let walked = ingest::walk(root, opts.threads, &repo::is_config_path)?;
++    __pt("ts.walk", __t); let __t = std::time::Instant::now();
+     let cache = opts
+         .cache_dir
+         .as_ref()
+@@ -94,6 +97,7 @@ fn scan_inner(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, Sca
+     if let Some(d) = &opts.cache_dir {
+         index::update(d, root, old_index.as_ref(), &known);
+     }
++    __pt("ts.classify", __t); let __t = std::time::Instant::now();
+     let mut skipped = walked.skipped;
+     skipped.extend(known.iter().filter_map(|k| {
+         k.skip.map(|reason| drift_core::Skipped {
+@@ -116,6 +120,7 @@ fn scan_inner(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, Sca
+             Err(None) => {}
+         }
+     }
++    __pt("ts.lower", __t); let __t = std::time::Instant::now();
+     let stats = ScanStats {
+         files: lowered.len(),
+         cache_hits: lowered.iter().filter(|(_, h)| *h).count(),
+@@ -124,27 +129,38 @@ fn scan_inner(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, Sca
+     let files: Vec<LoweredFile> = lowered.into_iter().map(|(f, _)| f).collect();
+ 
+     let config = repo::read_config(&walked.config);
++    __pt("ts.pre.config", __t);
+     let resolver = ModuleResolver::new(root, workspace_from(root, &config.package_jsons));
++    __pt("ts.pre.resolver", __t);
+     let linker = Linker::new(&resolver, &files);
++    __pt("ts.pre.linker", __t);
+     let mut memo = BTreeMap::new();
+     let packages: Vec<String> = files
+         .iter()
+         .map(|f| package_of(root, &f.abs_path, &mut memo))
+         .collect();
++    __pt("ts.pre.packages", __t);
+     let by_path: BTreeMap<&str, &LoweredFile> =
+         files.iter().map(|f| (f.rel_path.as_str(), f)).collect();
+     let repo_types = |rel: &str| by_path.get(rel).map(|f| f.raw.types.clone());
+     let augmented = typeres::augmented_names(root, files.iter().map(|f| &f.raw.types), &skipped);
++    __pt("ts.pre.augmented", __t);
++    __pt("ts.prelink", __t); let __t = std::time::Instant::now();
+     let types = typeres::TypeIndex::new(root, &resolver, &repo_types, augmented);
++    let __ann = std::sync::atomic::AtomicU64::new(0);
+     let facts: Vec<_> = files
+         .par_iter()
+         .zip(packages.into_par_iter())
+         .map(|(f, pkg)| {
+             let mut facts = linker.link(f, pkg);
++            let __a = std::time::Instant::now();
+             types.annotate(&mut facts);
++            __ann.fetch_add(__a.elapsed().as_micros() as u64, std::sync::atomic::Ordering::Relaxed);
+             facts
+         })
+         .collect();
++    __pt("ts.link+annotate", __t); let __t = std::time::Instant::now();
++    if std::env::var_os("DRIFT_PERF").is_some() { eprintln!("drift-perf ts.annotate.cpu {:.3}", __ann.into_inner() as f64/1e6); }
+ 
+     let mut models: Vec<drift_core::Model> = files
+         .iter()
+@@ -175,6 +191,7 @@ fn scan_inner(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, Sca
+     repo::pair_tests(&mut repo);
+     repo::client_leaks(&mut repo);
+     repo.normalize();
++    __pt("ts.post", __t);
+     Ok((repo, stats))
+ }
+ 

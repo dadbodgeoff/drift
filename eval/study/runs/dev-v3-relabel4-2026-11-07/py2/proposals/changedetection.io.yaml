@@ -1,0 +1,57 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - conftest
+  suffixes: []
+conventions:
+- id: D-2619c7
+  status: proposed
+  mode: advise
+  summary: >-
+    HTTP handlers in changedetectionio/** are decorated with
+    validate_openapi_request()
+  role:
+    package: ""
+    dir: changedetectionio
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - changedetectionio/api/__init__.py#validate_openapi_request
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 24.083
+    python_members: 24
+  example: changedetectionio/api/Changes.py#Changes.get
+  selector_version: 2
+- id: D-1ce566
+  status: proposed
+  mode: advise
+  summary: functions in changedetectionio/llm/** declare their return type
+  role:
+    package: ""
+    dir: changedetectionio/llm
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 29
+    total: 32
+    lower_bound: 0.758
+    lift: 8.878
+    python_members: 32
+  example: changedetectionio/llm/bm25_trim.py#trim_to_relevant
+  selector_version: 2

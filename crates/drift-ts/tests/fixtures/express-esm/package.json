@@ -1,0 +1,1 @@
+{ "name": "fixture-express-esm", "private": true, "type": "module", "dependencies": { "express": "4" } }

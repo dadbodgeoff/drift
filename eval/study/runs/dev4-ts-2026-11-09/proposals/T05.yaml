@@ -1,0 +1,74 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - alert
+  - api
+  - api-key
+  - blog
+  - bot-detection
+  - captcha
+  - data-export
+  - data-import
+  - experiment
+  - feature-flag
+  - filters
+  - goal
+  - logger
+  - notification-channel
+  - organisation
+  - pagination
+  - ping
+  - seo
+  - telegram
+  - types
+  - utils
+  suffixes:
+  - $
+  - $id
+  - $token
+  - _index
+  - config
+  - controller
+  - crypto
+  - decorator
+  - dto
+  - entity
+  - guard
+  - interface
+  - mapper
+  - module
+  - prettierrc
+  - processor
+  - scene
+  - server
+  - service
+  - spec
+  - strategy
+  - test
+  - utils
+conventions:
+- id: D-2aa20d
+  status: proposed
+  mode: advise
+  summary: "backend: classes in apps/cloud/src/analytics/** (*.dto files) are named `*Dto`, except 3 companions (a helper or constant beside the members that follow it)"
+  role:
+    package: backend
+    dir: apps/cloud/src/analytics
+    file: "*.dto"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Dto"
+  evidence:
+    holders: 68
+    total: 69
+    lower_bound: 0.922
+    lift: 2.169
+    role_members: 72
+  example: backend/apps/cloud/src/analytics/dto/data-deletion.dto.ts#DataDeletionDto
+  selector_version: 3

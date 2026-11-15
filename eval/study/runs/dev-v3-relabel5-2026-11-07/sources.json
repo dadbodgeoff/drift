@@ -1,0 +1,5 @@
+{
+  "ts": ["dev-v3-relabel4-2026-11-07/ts", "dev-v3-relabel3-2026-11-07/ts", "dev-v3-relabel2-2026-11-07/ts", "dev-v3-relabel-2026-11-06/ts", "dev-v3-2026-11-06/ts"],
+  "py": ["dev-v3-relabel4-2026-11-07/py", "dev-v3-relabel3-2026-11-07/py", "dev-v3-2026-11-06/py"],
+  "py2": ["dev-v3-relabel4-2026-11-07/py2", "dev-v3-relabel3-2026-11-07/py2", "dev-v3-2026-11-06/py2"]
+}

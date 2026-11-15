@@ -1,0 +1,2 @@
+Card diff (proposals of census --json --max 15), totals: {"added_test":1,"shown_added_test":1}
+  designsystemet                 {"added_test":1,"shown_added_test":1}

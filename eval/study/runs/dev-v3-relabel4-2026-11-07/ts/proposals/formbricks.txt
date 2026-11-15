@@ -1,0 +1,136 @@
+11 conventions from 12913 units in 967 roles (2 default tier, 9 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-73b648] apps/web: server actions in modules/ee/** (actions files) are wrapped in authenticatedActionClient.inputSchema().action()
+    evidence: 56/58 (lower bound 0.88, lift 34.6)
+    tier:     default
+    example:  apps/web/modules/ee/ai-translation/lib/actions.ts#checkAITranslationAvailableAction
+    outlier:  apps/web/modules/ee/sso/actions.ts:7 doesSamlConnectionExistAction
+    outlier:  apps/web/modules/ee/unify-feedback/sources/actions.ts:19 getSurveysForUnifyAction
+
+ 2. [D-b8f1ee] files in packages/surveys/** do not import from apps/web/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 115/116 (lower bound 0.95, lift 3.0)
+    tier:     default
+    example:  packages/surveys/eslint.config.mjs#(file)
+    outlier:  packages/surveys/src/lib/styles.ts:1 (file)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 3. [D-3bb3c1] apps/web: HTTP handlers in app/api/v3/** (route files) pass `schemas` to withV3ApiWrapper()
+    evidence: 77/88 (lower bound 0.79, lift 45.0)
+    tier:     suggestion (rule kind passes_key)
+    example:  apps/web/app/api/v3/action-classes/route.ts#GET
+    outlier:  apps/web/app/api/v3/contact-attribute-keys/route.ts:10 GET
+    outlier:  apps/web/app/api/v3/contacts/route.ts:8 GET
+    outlier:  apps/web/app/api/v3/creatives/route.ts:13 GET
+    outlier:  apps/web/app/api/v3/feedbackRecords/token/route.ts:4 POST
+    outlier:  apps/web/app/api/v3/responses/count/route.ts:12 GET
+    outlier:  apps/web/app/api/v3/responses/route.ts:17 GET
+    outlier:  apps/web/app/api/v3/segments/route.ts:8 GET
+    outlier:  apps/web/app/api/v3/surveys/route.ts:9 GET
+    outlier:  apps/web/app/api/v3/workflows/route.ts:11 GET
+    outlier:  apps/web/app/api/v3/workflows/route.ts:17 POST
+    outlier:  apps/web/app/api/v3/workflows/runs/route.ts:13 GET
+
+ 4. [D-ec0946] apps/web: functions in modules/api/** (route files) pass `handler` to authenticatedApiClient()
+    evidence: 31/32 (lower bound 0.84, lift 149.6)
+    tier:     suggestion (rule kind passes_key)
+    example:  apps/web/modules/api/v2/management/contact-attribute-keys/[contactAttributeKeyId]/route.ts#DELETE
+    outlier:  apps/web/modules/api/v2/health/route.ts:4 GET
+
+ 5. [D-b70b0a] apps/web: functions in modules/api/** (route files) pass `schemas` to authenticatedApiClient()
+    evidence: 29/32 (lower bound 0.76, lift 149.0)
+    tier:     suggestion (rule kind passes_key)
+    example:  apps/web/modules/api/v2/management/contact-attribute-keys/[contactAttributeKeyId]/route.ts#DELETE
+    outlier:  apps/web/modules/api/v2/health/route.ts:4 GET
+    outlier:  apps/web/modules/api/v2/me/route.ts:11 GET
+    outlier:  apps/web/modules/api/v2/roles/route.ts:7 GET
+
+ 6. [D-71e798] apps/web: server actions in modules/ee/** (actions files) pass `id` to assertCan()
+    evidence: 50/58 (lower bound 0.75, lift 34.1)
+    tier:     suggestion (rule kind passes_key)
+    example:  apps/web/modules/ee/ai-translation/lib/actions.ts#checkAITranslationAvailableAction
+    outlier:  apps/web/modules/ee/license-check/actions.ts:31 recheckLicenseAction
+    outlier:  apps/web/modules/ee/sso/actions.ts:7 doesSamlConnectionExistAction
+    outlier:  apps/web/modules/ee/teams/team-list/actions.ts:124 getTeamRoleAction
+    outlier:  apps/web/modules/ee/two-factor-auth/actions.ts:59 disableTwoFactorAuthAction
+    outlier:  apps/web/modules/ee/two-factor-auth/actions.ts:33 enableTwoFactorAuthAction
+    outlier:  apps/web/modules/ee/two-factor-auth/actions.ts:14 setupTwoFactorAuthAction
+    outlier:  apps/web/modules/ee/unify-feedback/actions.ts:60 deleteFeedbackRecordAction
+    outlier:  apps/web/modules/ee/unify-feedback/actions.ts:23 retrieveFeedbackRecordAction
+
+ 7. [D-43e309] apps/web: functions in modules/ee/workflows/state/** are wrapped in atom()
+    evidence: 42/44 (lower bound 0.85, lift 115.8)
+    tier:     suggestion (rule names a symbol from outside the repo)
+    example:  apps/web/modules/ee/workflows/state/editor.ts#addWorkflowTriggerAtom
+    outlier:  apps/web/modules/ee/workflows/state/editor.ts:439 deriveTriggerEndingProblems
+    outlier:  apps/web/modules/ee/workflows/state/editor.ts:367 deriveWorkflowValidation
+
+ 8. [D-87fcf9] apps/web: components in modules/** (page files) are named `*Page`
+    evidence: 41/42 (lower bound 0.88, lift 19.1)
+    tier:     suggestion (rule kind named)
+    example:  apps/web/modules/auth/account-deleted/page.tsx#AccountDeletedPage
+    outlier:  apps/web/modules/ee/teams/workspace-teams/page.tsx:9 WorkspaceTeams
+
+ 9. [D-514f45] apps/web: files in lib/** have a test file
+    evidence: 177/215 (lower bound 0.77, lift 2.2)
+    tier:     suggestion (rule kind has_test)
+    example:  apps/web/lib/ai/availability.ts#(file)
+    outlier:  apps/web/lib/analysis-export/files.ts:1 (file)
+    outlier:  apps/web/lib/authorization/evaluator.ts:1 (file)
+    outlier:  apps/web/lib/authzed/backfill-apply.ts:1 (file)
+    outlier:  apps/web/lib/authzed/backfill-cli-command.ts:1 (file)
+    outlier:  apps/web/lib/authzed/index.ts:1 (file)
+    outlier:  apps/web/lib/authzed/organization-parent.ts:1 (file)
+    outlier:  apps/web/lib/authzed/outbox-types.ts:1 (file)
+    outlier:  apps/web/lib/authzed/projection-boundary.ts:1 (file)
+    outlier:  apps/web/lib/authzed/projection.ts:1 (file)
+    outlier:  apps/web/lib/authzed/relationship-batches.ts:1 (file)
+    outlier:  apps/web/lib/authzed/survey-relationships.ts:1 (file)
+    outlier:  apps/web/lib/brand-color.ts:1 (file)
+    outlier:  apps/web/lib/cn.ts:1 (file)
+    outlier:  apps/web/lib/env-client.ts:1 (file)
+    outlier:  apps/web/lib/feedback-source/survey-elements.ts:1 (file)
+    outlier:  apps/web/lib/instance.ts:1 (file)
+    outlier:  apps/web/lib/jobs/recurring-registrations.ts:1 (file)
+    outlier:  apps/web/lib/localStorage.ts:1 (file)
+    outlier:  apps/web/lib/markdownIt.ts:1 (file)
+    outlier:  apps/web/lib/optimizable-image-hosts.mjs:1 (file)
+    outlier:  apps/web/lib/pollyfills/structuredClone.ts:1 (file)
+    outlier:  apps/web/lib/posthog/ai-tracing-feature.ts:1 (file)
+    outlier:  apps/web/lib/posthog/index.ts:1 (file)
+    outlier:  apps/web/lib/response/pagination.ts:1 (file)
+    outlier:  apps/web/lib/sentry/SentryClientConfigScript.tsx:1 (file)
+    outlier:  apps/web/lib/sentry/SentryUser.tsx:1 (file)
+    outlier:  apps/web/lib/sentry/client-runtime-config.ts:1 (file)
+    outlier:  apps/web/lib/sentry/replay-integration.ts:1 (file)
+    outlier:  apps/web/lib/survey/fill-codes.ts:1 (file)
+    outlier:  apps/web/lib/survey/visibility/actor-context.ts:1 (file)
+    outlier:  apps/web/lib/survey/visibility/api-key.ts:1 (file)
+    outlier:  apps/web/lib/survey/visibility/gates.ts:1 (file)
+    outlier:  apps/web/lib/user/public-user.ts:1 (file)
+    outlier:  apps/web/lib/utils/debounce.ts:1 (file)
+    outlier:  apps/web/lib/utils/hooks/useClickOutside.ts:1 (file)
+    outlier:  apps/web/lib/utils/hooks/useSyncScroll.ts:1 (file)
+    outlier:  apps/web/lib/utils/object.ts:1 (file)
+    outlier:  apps/web/lib/utils/postgres-text.ts:1 (file)
+
+10. [D-d64e88] files in apps/web/** use @paralleldrive/cuid2 for ids, not uuid/nanoid/cuid/ulid
+    evidence: 50/54 (lower bound 0.82, lift 1.0)
+    tier:     suggestion (rule kind prefers_library)
+    split:    @paralleldrive/cuid2 50, uuid 4
+    example:  apps/web/app/(app)/workspaces/[workspaceId]/settings/workspace/integrations/notion/components/AddIntegrationModal.tsx#(file)
+    outlier:  apps/web/lib/utils/action-client/index.ts:1 (file)
+    outlier:  apps/web/modules/integrations/webhooks/lib/webhook.ts:1 (file)
+    outlier:  apps/web/modules/survey/editor/components/validation-rules-editor.tsx:1 (file)
+    outlier:  apps/web/proxy.ts:1 (file)
+
+11. [D-66d37f] apps/web: functions in modules/api/** (route files) call handleApiError() before responses.successResponse()
+    evidence: 25/27 (lower bound 0.77, lift 1.0)
+    tier:     suggestion (rule kind before)
+    example:  apps/web/modules/api/v2/management/contact-attribute-keys/[contactAttributeKeyId]/route.ts#DELETE
+    outlier:  apps/web/modules/api/v2/health/route.ts:4 GET
+    outlier:  apps/web/modules/api/v2/roles/route.ts:7 GET
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

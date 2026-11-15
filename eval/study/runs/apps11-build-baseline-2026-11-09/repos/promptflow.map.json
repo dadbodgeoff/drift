@@ -1,0 +1,1160 @@
+{
+  "name": "promptflow",
+  "sha": "33a68c9d3cf349d7fdfad1f41969af27543c0406",
+  "check": {
+    "default": {
+      "roles": 213,
+      "census_roles": 213,
+      "units": 3545,
+      "census_units": 3545,
+      "proposals": 0,
+      "member_counts_match": 0
+    },
+    "python_opt_in": {
+      "roles": 213,
+      "census_roles": 213,
+      "units": 3545,
+      "census_units": 3545,
+      "proposals": 0,
+      "member_counts_match": 0
+    }
+  },
+  "repo": {
+    "files_parsed": {
+      "files": 1588,
+      "of_files": 1635,
+      "loc": 145848,
+      "of_loc": 167815
+    },
+    "files_in_package": {
+      "files": 1169,
+      "of_files": 1635,
+      "loc": 124504,
+      "of_loc": 167815
+    },
+    "files_in_nonroot_drift_package": {
+      "files": 1199,
+      "of_files": 1635,
+      "loc": 125432,
+      "of_loc": 167815
+    },
+    "files_in_role": {
+      "files": 407,
+      "of_files": 1635,
+      "loc": 67440,
+      "of_loc": 167815
+    },
+    "files_in_any_role": {
+      "files": 607,
+      "of_files": 1635,
+      "loc": 76626,
+      "of_loc": 167815
+    },
+    "imports": {
+      "internal_resolved": 703,
+      "internal_unresolved": 3519
+    },
+    "files_under_mined": {
+      "files": 0,
+      "of_files": 1635,
+      "loc": 0,
+      "of_loc": 167815
+    },
+    "files_under_shown": {
+      "files": 0,
+      "of_files": 1635,
+      "loc": 0,
+      "of_loc": 167815
+    },
+    "files_under_mined_py": {
+      "files": 0,
+      "of_files": 1635,
+      "loc": 0,
+      "of_loc": 167815
+    },
+    "files_under_shown_py": {
+      "files": 0,
+      "of_files": 1635,
+      "loc": 0,
+      "of_loc": 167815
+    }
+  },
+  "per_package": [
+    {
+      "dir": "migration-guide/PromptFlow-to-MAF",
+      "kind": "py",
+      "files_parsed": {
+        "files": 22,
+        "of_files": 22,
+        "loc": 1312,
+        "of_loc": 1312
+      },
+      "files_in_package": {
+        "files": 0,
+        "of_files": 22,
+        "loc": 0,
+        "of_loc": 1312
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 0,
+        "of_files": 22,
+        "loc": 0,
+        "of_loc": 1312
+      },
+      "files_in_role": {
+        "files": 19,
+        "of_files": 22,
+        "loc": 1250,
+        "of_loc": 1312
+      },
+      "files_in_any_role": {
+        "files": 22,
+        "of_files": 22,
+        "loc": 1312,
+        "of_loc": 1312
+      },
+      "imports": {
+        "internal_resolved": 5,
+        "internal_unresolved": 0
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 22,
+        "loc": 0,
+        "of_loc": 1312
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 22,
+        "loc": 0,
+        "of_loc": 1312
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 22,
+        "loc": 0,
+        "of_loc": 1312
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 22,
+        "loc": 0,
+        "of_loc": 1312
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    },
+    {
+      "dir": "scripts/runtime_mgmt/runtime-env/context",
+      "kind": "py",
+      "files_parsed": {
+        "files": 0,
+        "of_files": 0,
+        "loc": 0,
+        "of_loc": 0
+      },
+      "files_in_package": {
+        "files": 0,
+        "of_files": 0,
+        "loc": 0,
+        "of_loc": 0
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 0,
+        "of_files": 0,
+        "loc": 0,
+        "of_loc": 0
+      },
+      "files_in_role": {
+        "files": 0,
+        "of_files": 0,
+        "loc": 0,
+        "of_loc": 0
+      },
+      "files_in_any_role": {
+        "files": 0,
+        "of_files": 0,
+        "loc": 0,
+        "of_loc": 0
+      },
+      "imports": {
+        "internal_resolved": 0,
+        "internal_unresolved": 0
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 0,
+        "loc": 0,
+        "of_loc": 0
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 0,
+        "loc": 0,
+        "of_loc": 0
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 0,
+        "loc": 0,
+        "of_loc": 0
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 0,
+        "loc": 0,
+        "of_loc": 0
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    },
+    {
+      "dir": "src/promptflow",
+      "kind": "py",
+      "files_parsed": {
+        "files": 451,
+        "of_files": 454,
+        "loc": 20900,
+        "of_loc": 20963
+      },
+      "files_in_package": {
+        "files": 446,
+        "of_files": 454,
+        "loc": 20833,
+        "of_loc": 20963
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 451,
+        "of_files": 454,
+        "loc": 20900,
+        "of_loc": 20963
+      },
+      "files_in_role": {
+        "files": 0,
+        "of_files": 454,
+        "loc": 0,
+        "of_loc": 20963
+      },
+      "files_in_any_role": {
+        "files": 0,
+        "of_files": 454,
+        "loc": 0,
+        "of_loc": 20963
+      },
+      "imports": {
+        "internal_resolved": 97,
+        "internal_unresolved": 755
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 454,
+        "loc": 0,
+        "of_loc": 20963
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 454,
+        "loc": 0,
+        "of_loc": 20963
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 454,
+        "loc": 0,
+        "of_loc": 20963
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 454,
+        "loc": 0,
+        "of_loc": 20963
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    },
+    {
+      "dir": "src/promptflow-azure",
+      "kind": "py",
+      "files_parsed": {
+        "files": 95,
+        "of_files": 138,
+        "loc": 12946,
+        "of_loc": 32860
+      },
+      "files_in_package": {
+        "files": 95,
+        "of_files": 138,
+        "loc": 12946,
+        "of_loc": 32860
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 95,
+        "of_files": 138,
+        "loc": 12946,
+        "of_loc": 32860
+      },
+      "files_in_role": {
+        "files": 38,
+        "of_files": 138,
+        "loc": 6698,
+        "of_loc": 32860
+      },
+      "files_in_any_role": {
+        "files": 57,
+        "of_files": 138,
+        "loc": 7103,
+        "of_loc": 32860
+      },
+      "imports": {
+        "internal_resolved": 52,
+        "internal_unresolved": 430
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 138,
+        "loc": 0,
+        "of_loc": 32860
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 138,
+        "loc": 0,
+        "of_loc": 32860
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 138,
+        "loc": 0,
+        "of_loc": 32860
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 138,
+        "loc": 0,
+        "of_loc": 32860
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    },
+    {
+      "dir": "src/promptflow-core",
+      "kind": "py",
+      "files_parsed": {
+        "files": 173,
+        "of_files": 174,
+        "loc": 23682,
+        "of_loc": 25672
+      },
+      "files_in_package": {
+        "files": 173,
+        "of_files": 174,
+        "loc": 23682,
+        "of_loc": 25672
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 173,
+        "of_files": 174,
+        "loc": 23682,
+        "of_loc": 25672
+      },
+      "files_in_role": {
+        "files": 117,
+        "of_files": 174,
+        "loc": 19666,
+        "of_loc": 25672
+      },
+      "files_in_any_role": {
+        "files": 159,
+        "of_files": 174,
+        "loc": 21982,
+        "of_loc": 25672
+      },
+      "imports": {
+        "internal_resolved": 55,
+        "internal_unresolved": 598
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 174,
+        "loc": 0,
+        "of_loc": 25672
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 174,
+        "loc": 0,
+        "of_loc": 25672
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 174,
+        "loc": 0,
+        "of_loc": 25672
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 174,
+        "loc": 0,
+        "of_loc": 25672
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    },
+    {
+      "dir": "src/promptflow-devkit",
+      "kind": "py",
+      "files_parsed": {
+        "files": 212,
+        "of_files": 212,
+        "loc": 41768,
+        "of_loc": 41768
+      },
+      "files_in_package": {
+        "files": 212,
+        "of_files": 212,
+        "loc": 41768,
+        "of_loc": 41768
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 212,
+        "of_files": 212,
+        "loc": 41768,
+        "of_loc": 41768
+      },
+      "files_in_role": {
+        "files": 99,
+        "of_files": 212,
+        "loc": 23123,
+        "of_loc": 41768
+      },
+      "files_in_any_role": {
+        "files": 143,
+        "of_files": 212,
+        "loc": 25447,
+        "of_loc": 41768
+      },
+      "imports": {
+        "internal_resolved": 130,
+        "internal_unresolved": 1116
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 212,
+        "loc": 0,
+        "of_loc": 41768
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 212,
+        "loc": 0,
+        "of_loc": 41768
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 212,
+        "loc": 0,
+        "of_loc": 41768
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 212,
+        "loc": 0,
+        "of_loc": 41768
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    },
+    {
+      "dir": "src/promptflow-devkit/promptflow/_sdk/data/executable",
+      "kind": "py",
+      "files_parsed": {
+        "files": 3,
+        "of_files": 3,
+        "loc": 376,
+        "of_loc": 376
+      },
+      "files_in_package": {
+        "files": 0,
+        "of_files": 3,
+        "loc": 0,
+        "of_loc": 376
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 3,
+        "of_files": 3,
+        "loc": 376,
+        "of_loc": 376
+      },
+      "files_in_role": {
+        "files": 1,
+        "of_files": 3,
+        "loc": 140,
+        "of_loc": 376
+      },
+      "files_in_any_role": {
+        "files": 3,
+        "of_files": 3,
+        "loc": 376,
+        "of_loc": 376
+      },
+      "imports": {
+        "internal_resolved": 2,
+        "internal_unresolved": 9
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 3,
+        "loc": 0,
+        "of_loc": 376
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 3,
+        "loc": 0,
+        "of_loc": 376
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 3,
+        "loc": 0,
+        "of_loc": 376
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 3,
+        "loc": 0,
+        "of_loc": 376
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    },
+    {
+      "dir": "src/promptflow-evals",
+      "kind": "py",
+      "files_parsed": {
+        "files": 108,
+        "of_files": 108,
+        "loc": 11585,
+        "of_loc": 11585
+      },
+      "files_in_package": {
+        "files": 108,
+        "of_files": 108,
+        "loc": 11585,
+        "of_loc": 11585
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 108,
+        "of_files": 108,
+        "loc": 11585,
+        "of_loc": 11585
+      },
+      "files_in_role": {
+        "files": 39,
+        "of_files": 108,
+        "loc": 5816,
+        "of_loc": 11585
+      },
+      "files_in_any_role": {
+        "files": 74,
+        "of_files": 108,
+        "loc": 6969,
+        "of_loc": 11585
+      },
+      "imports": {
+        "internal_resolved": 116,
+        "internal_unresolved": 150
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 108,
+        "loc": 0,
+        "of_loc": 11585
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 108,
+        "loc": 0,
+        "of_loc": 11585
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 108,
+        "loc": 0,
+        "of_loc": 11585
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 108,
+        "loc": 0,
+        "of_loc": 11585
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    },
+    {
+      "dir": "src/promptflow-parallel",
+      "kind": "py",
+      "files_parsed": {
+        "files": 44,
+        "of_files": 44,
+        "loc": 1317,
+        "of_loc": 1317
+      },
+      "files_in_package": {
+        "files": 44,
+        "of_files": 44,
+        "loc": 1317,
+        "of_loc": 1317
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 44,
+        "of_files": 44,
+        "loc": 1317,
+        "of_loc": 1317
+      },
+      "files_in_role": {
+        "files": 11,
+        "of_files": 44,
+        "loc": 490,
+        "of_loc": 1317
+      },
+      "files_in_any_role": {
+        "files": 23,
+        "of_files": 44,
+        "loc": 842,
+        "of_loc": 1317
+      },
+      "imports": {
+        "internal_resolved": 1,
+        "internal_unresolved": 89
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 44,
+        "loc": 0,
+        "of_loc": 1317
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 44,
+        "loc": 0,
+        "of_loc": 1317
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 44,
+        "loc": 0,
+        "of_loc": 1317
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 44,
+        "loc": 0,
+        "of_loc": 1317
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    },
+    {
+      "dir": "src/promptflow-rag",
+      "kind": "py",
+      "files_parsed": {
+        "files": 14,
+        "of_files": 14,
+        "loc": 675,
+        "of_loc": 675
+      },
+      "files_in_package": {
+        "files": 14,
+        "of_files": 14,
+        "loc": 675,
+        "of_loc": 675
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 14,
+        "of_files": 14,
+        "loc": 675,
+        "of_loc": 675
+      },
+      "files_in_role": {
+        "files": 6,
+        "of_files": 14,
+        "loc": 255,
+        "of_loc": 675
+      },
+      "files_in_any_role": {
+        "files": 14,
+        "of_files": 14,
+        "loc": 675,
+        "of_loc": 675
+      },
+      "imports": {
+        "internal_resolved": 9,
+        "internal_unresolved": 9
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 14,
+        "loc": 0,
+        "of_loc": 675
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 14,
+        "loc": 0,
+        "of_loc": 675
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 14,
+        "loc": 0,
+        "of_loc": 675
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 14,
+        "loc": 0,
+        "of_loc": 675
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    },
+    {
+      "dir": "src/promptflow-recording",
+      "kind": "py",
+      "files_parsed": {
+        "files": 13,
+        "of_files": 13,
+        "loc": 1835,
+        "of_loc": 1835
+      },
+      "files_in_package": {
+        "files": 13,
+        "of_files": 13,
+        "loc": 1835,
+        "of_loc": 1835
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 13,
+        "of_files": 13,
+        "loc": 1835,
+        "of_loc": 1835
+      },
+      "files_in_role": {
+        "files": 6,
+        "of_files": 13,
+        "loc": 955,
+        "of_loc": 1835
+      },
+      "files_in_any_role": {
+        "files": 12,
+        "of_files": 13,
+        "loc": 1812,
+        "of_loc": 1835
+      },
+      "imports": {
+        "internal_resolved": 21,
+        "internal_unresolved": 9
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 13,
+        "loc": 0,
+        "of_loc": 1835
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 13,
+        "loc": 0,
+        "of_loc": 1835
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 13,
+        "loc": 0,
+        "of_loc": 1835
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 13,
+        "loc": 0,
+        "of_loc": 1835
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    },
+    {
+      "dir": "src/promptflow-tools",
+      "kind": "py",
+      "files_parsed": {
+        "files": 32,
+        "of_files": 32,
+        "loc": 6322,
+        "of_loc": 6322
+      },
+      "files_in_package": {
+        "files": 32,
+        "of_files": 32,
+        "loc": 6322,
+        "of_loc": 6322
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 32,
+        "of_files": 32,
+        "loc": 6322,
+        "of_loc": 6322
+      },
+      "files_in_role": {
+        "files": 14,
+        "of_files": 32,
+        "loc": 3297,
+        "of_loc": 6322
+      },
+      "files_in_any_role": {
+        "files": 16,
+        "of_files": 32,
+        "loc": 3361,
+        "of_loc": 6322
+      },
+      "imports": {
+        "internal_resolved": 14,
+        "internal_unresolved": 97
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 32,
+        "loc": 0,
+        "of_loc": 6322
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 32,
+        "loc": 0,
+        "of_loc": 6322
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 32,
+        "loc": 0,
+        "of_loc": 6322
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 32,
+        "loc": 0,
+        "of_loc": 6322
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    },
+    {
+      "dir": "src/promptflow-tracing",
+      "kind": "py",
+      "files_parsed": {
+        "files": 32,
+        "of_files": 32,
+        "loc": 3541,
+        "of_loc": 3541
+      },
+      "files_in_package": {
+        "files": 32,
+        "of_files": 32,
+        "loc": 3541,
+        "of_loc": 3541
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 32,
+        "of_files": 32,
+        "loc": 3541,
+        "of_loc": 3541
+      },
+      "files_in_role": {
+        "files": 10,
+        "of_files": 32,
+        "loc": 1558,
+        "of_loc": 3541
+      },
+      "files_in_any_role": {
+        "files": 19,
+        "of_files": 32,
+        "loc": 1738,
+        "of_loc": 3541
+      },
+      "imports": {
+        "internal_resolved": 29,
+        "internal_unresolved": 35
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 32,
+        "loc": 0,
+        "of_loc": 3541
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 32,
+        "loc": 0,
+        "of_loc": 3541
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 32,
+        "loc": 0,
+        "of_loc": 3541
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 32,
+        "loc": 0,
+        "of_loc": 3541
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    }
+  ],
+  "unmapped": [
+    {
+      "class": "test",
+      "why": "test path (forms no role)",
+      "files": 702,
+      "loc": 56665
+    },
+    {
+      "class": "other",
+      "why": "not parsed: generated",
+      "files": 37,
+      "loc": 15693
+    },
+    {
+      "class": "other",
+      "why": "demo or integration-suite code",
+      "files": 189,
+      "loc": 6914
+    },
+    {
+      "class": "pydantic/dataclass model",
+      "why": "demo or integration-suite code",
+      "files": 51,
+      "loc": 4499
+    },
+    {
+      "class": "ORM model",
+      "why": "not parsed: generated",
+      "files": 2,
+      "loc": 4129
+    },
+    {
+      "class": "index/__init__",
+      "why": "not parsed: generated",
+      "files": 5,
+      "loc": 2082
+    },
+    {
+      "class": "other",
+      "why": "Python role within fewer than 3 files",
+      "files": 7,
+      "loc": 1549
+    },
+    {
+      "class": "pydantic/dataclass model",
+      "why": "Python role within fewer than 3 files",
+      "files": 2,
+      "loc": 1305
+    },
+    {
+      "class": "other",
+      "why": "only base, abstract, view or type-variable classes",
+      "files": 12,
+      "loc": 1122
+    },
+    {
+      "class": "other",
+      "why": "largest role 4-7 members (< 8)",
+      "files": 17,
+      "loc": 1092
+    },
+    {
+      "class": "index/__init__",
+      "why": "no exported symbol",
+      "files": 95,
+      "loc": 940
+    },
+    {
+      "class": "other",
+      "why": "largest role 1-3 members (< 8)",
+      "files": 23,
+      "loc": 828
+    },
+    {
+      "class": "util",
+      "why": "demo or integration-suite code",
+      "files": 12,
+      "loc": 758
+    },
+    {
+      "class": "script",
+      "why": "largest role 4-7 members (< 8)",
+      "files": 5,
+      "loc": 436
+    },
+    {
+      "class": "pydantic/dataclass model",
+      "why": "largest role 1-3 members (< 8)",
+      "files": 4,
+      "loc": 396
+    },
+    {
+      "class": "script",
+      "why": "demo or integration-suite code",
+      "files": 14,
+      "loc": 314
+    },
+    {
+      "class": "other",
+      "why": "no exported symbol",
+      "files": 10,
+      "loc": 263
+    },
+    {
+      "class": "script",
+      "why": "largest role 1-3 members (< 8)",
+      "files": 2,
+      "loc": 181
+    },
+    {
+      "class": "config",
+      "why": "largest role 4-7 members (< 8)",
+      "files": 2,
+      "loc": 158
+    },
+    {
+      "class": "route/page",
+      "why": "largest role 4-7 members (< 8)",
+      "files": 1,
+      "loc": 157
+    },
+    {
+      "class": "component",
+      "why": "demo or integration-suite code",
+      "files": 3,
+      "loc": 148
+    },
+    {
+      "class": "index/__init__",
+      "why": "largest role 1-3 members (< 8)",
+      "files": 1,
+      "loc": 144
+    },
+    {
+      "class": "script",
+      "why": "Python role within fewer than 3 files",
+      "files": 2,
+      "loc": 135
+    },
+    {
+      "class": "pydantic/dataclass model",
+      "why": "largest role 4-7 members (< 8)",
+      "files": 2,
+      "loc": 66
+    },
+    {
+      "class": "route/page",
+      "why": "demo or integration-suite code",
+      "files": 1,
+      "loc": 65
+    },
+    {
+      "class": "test",
+      "why": "not in the fact index (not scanned)",
+      "files": 3,
+      "loc": 63
+    },
+    {
+      "class": "script",
+      "why": "no exported symbol",
+      "files": 6,
+      "loc": 57
+    },
+    {
+      "class": "util",
+      "why": "largest role 1-3 members (< 8)",
+      "files": 2,
+      "loc": 57
+    },
+    {
+      "class": "pydantic/dataclass model",
+      "why": "no exported symbol",
+      "files": 2,
+      "loc": 47
+    },
+    {
+      "class": "config",
+      "why": "Python role within fewer than 3 files",
+      "files": 1,
+      "loc": 23
+    },
+    {
+      "class": "route/page",
+      "why": "largest role 1-3 members (< 8)",
+      "files": 1,
+      "loc": 19
+    },
+    {
+      "class": "config",
+      "why": "largest role 1-3 members (< 8)",
+      "files": 2,
+      "loc": 19
+    },
+    {
+      "class": "config",
+      "why": "no exported symbol",
+      "files": 1,
+      "loc": 17
+    },
+    {
+      "class": "config",
+      "why": "demo or integration-suite code",
+      "files": 3,
+      "loc": 16
+    },
+    {
+      "class": "index/__init__",
+      "why": "demo or integration-suite code",
+      "files": 4,
+      "loc": 11
+    },
+    {
+      "class": "util",
+      "why": "no exported symbol",
+      "files": 2,
+      "loc": 7
+    }
+  ]
+}

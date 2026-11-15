@@ -1,0 +1,139 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - challenges
+  - config
+  - notifications
+  - pages
+  - scoreboard
+  - setup
+  - submissions
+  - teams
+  - test_challenges
+  - test_teams
+  - test_users
+  - users
+  suffixes:
+  - config
+conventions:
+- id: D-49130f
+  status: proposed
+  mode: advise
+  summary: files in the repo do not import from CTFd/cli/**
+  role:
+    package: ""
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:CTFd/cli
+  evidence:
+    holders: 228
+    total: 229
+    lower_bound: 0.976
+    lift: 3.0
+  example: .eslintrc.js#(file)
+- id: D-bd2596
+  status: proposed
+  mode: advise
+  summary: files in the repo do not import from CTFd/admin/**
+  role:
+    package: ""
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:CTFd/admin
+  evidence:
+    holders: 228
+    total: 229
+    lower_bound: 0.976
+    lift: 3.0
+  example: .eslintrc.js#(file)
+- id: D-ce2984
+  status: proposed
+  mode: advise
+  summary: files in the repo do not import from CTFd/api/**
+  role:
+    package: ""
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:CTFd/api
+  evidence:
+    holders: 227
+    total: 229
+    lower_bound: 0.969
+    lift: 3.0
+  example: .eslintrc.js#(file)
+- id: D-bf0172
+  status: proposed
+  mode: advise
+  summary: files in the repo do not import from CTFd/plugins/**
+  role:
+    package: ""
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:CTFd/plugins
+  evidence:
+    holders: 221
+    total: 229
+    lower_bound: 0.933
+    lift: 3.0
+  example: .eslintrc.js#(file)
+- id: D-3c0a0f
+  status: proposed
+  mode: advise
+  summary: files in the repo do not import from CTFd/**
+  role:
+    package: ""
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:CTFd
+  evidence:
+    holders: 220
+    total: 229
+    lower_bound: 0.927
+    lift: 3.0
+  example: .eslintrc.js#(file)
+- id: D-c4f6cb
+  status: proposed
+  mode: advise
+  summary: HTTP handlers in CTFd/api/** are decorated with admins_only()
+  role:
+    package: ""
+    dir: CTFd/api
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - CTFd/utils/decorators/__init__.py#admins_only
+  evidence:
+    holders: 61
+    total: 70
+    lower_bound: 0.773
+    lift: 3.949
+  example: CTFd/api/v1/audiences.py#Audience.delete

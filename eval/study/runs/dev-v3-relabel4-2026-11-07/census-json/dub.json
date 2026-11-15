@@ -1,0 +1,1227 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "cgu47-2c81ba4-1794051240",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel4/restage-2c81ba4/cache/repos/dub",
+  "units": 9139,
+  "roles": 455,
+  "conventions": 15,
+  "shown": 15,
+  "tiers": {
+    "default": 5,
+    "suggestion": 10
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-d24d21",
+      "rank": 1,
+      "summary": "apps/web: HTTP handlers in app/api/** (route files) are wrapped in withSession() or withWorkspace()",
+      "role": {
+        "package": "apps/web",
+        "dir": "app/api",
+        "file": "route",
+        "entry": "http",
+        "kind": "function",
+        "members": 169
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "apps/web/lib/auth/session.ts#withSession",
+          "apps/web/lib/auth/workspace.ts#withWorkspace"
+        ]
+      },
+      "evidence": {
+        "holders": 138,
+        "total": 169,
+        "lower_bound": 0.751,
+        "lift": 6.485,
+        "split": [
+          [
+            "apps/web/lib/auth/workspace.ts#withWorkspace",
+            119
+          ],
+          [
+            "apps/web/lib/auth/session.ts#withSession",
+            19
+          ]
+        ]
+      },
+      "rule_kind": "wrapped_by:call",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/web/app/api/activity-logs/route.ts",
+        "symbol": "GET",
+        "line": 13
+      },
+      "outliers": [
+        {
+          "path": "apps/web/app/api/ai/sync-embeddings/route.ts",
+          "symbol": "POST",
+          "line": 32
+        },
+        {
+          "path": "apps/web/app/api/analytics/dashboard/route.ts",
+          "symbol": "GET",
+          "line": 17
+        },
+        {
+          "path": "apps/web/app/api/auth/reset-password/route.ts",
+          "symbol": "POST",
+          "line": 12
+        },
+        {
+          "path": "apps/web/app/api/callback/bitly/route.ts",
+          "symbol": "GET",
+          "line": 10
+        },
+        {
+          "path": "apps/web/app/api/callback/plain/partner/route.ts",
+          "symbol": "POST",
+          "line": 21
+        },
+        {
+          "path": "apps/web/app/api/callback/plain/workspace/route.ts",
+          "symbol": "POST",
+          "line": 18
+        },
+        {
+          "path": "apps/web/app/api/dub/webhook/route.ts",
+          "symbol": "POST",
+          "line": 7
+        },
+        {
+          "path": "apps/web/app/api/links/exists/route.ts",
+          "symbol": "GET",
+          "line": 12
+        },
+        {
+          "path": "apps/web/app/api/links/iframeable/route.ts",
+          "symbol": "GET",
+          "line": 12
+        },
+        {
+          "path": "apps/web/app/api/links/metatags/route.ts",
+          "symbol": "GET",
+          "line": 9
+        },
+        {
+          "path": "apps/web/app/api/links/random/route.ts",
+          "symbol": "GET",
+          "line": 9
+        },
+        {
+          "path": "apps/web/app/api/oauth/token/route.ts",
+          "symbol": "OPTIONS",
+          "line": 32
+        },
+        {
+          "path": "apps/web/app/api/oauth/token/route.ts",
+          "symbol": "POST",
+          "line": 11
+        },
+        {
+          "path": "apps/web/app/api/oauth/userinfo/route.ts",
+          "symbol": "GET",
+          "line": 16
+        },
+        {
+          "path": "apps/web/app/api/oauth/userinfo/route.ts",
+          "symbol": "OPTIONS",
+          "line": 78
+        },
+        {
+          "path": "apps/web/app/api/postbacks/callback/route.ts",
+          "symbol": "POST",
+          "line": 12
+        },
+        {
+          "path": "apps/web/app/api/providers/route.ts",
+          "symbol": "GET",
+          "line": 9
+        },
+        {
+          "path": "apps/web/app/api/qr/route.tsx",
+          "symbol": "GET",
+          "line": 18
+        },
+        {
+          "path": "apps/web/app/api/qr/route.tsx",
+          "symbol": "OPTIONS",
+          "line": 106
+        },
+        {
+          "path": "apps/web/app/api/resend/webhook/route.ts",
+          "symbol": "POST",
+          "line": 10
+        },
+        {
+          "path": "apps/web/app/api/resumes/upload-url/route.ts",
+          "symbol": "POST",
+          "line": 13
+        },
+        {
+          "path": "apps/web/app/api/route.ts",
+          "symbol": "GET",
+          "line": 6
+        },
+        {
+          "path": "apps/web/app/api/slack/callback/route.ts",
+          "symbol": "GET",
+          "line": 14
+        },
+        {
+          "path": "apps/web/app/api/slack/slash-commands/route.ts",
+          "symbol": "POST",
+          "line": 5
+        },
+        {
+          "path": "apps/web/app/api/supported-countries/route.ts",
+          "symbol": "GET",
+          "line": 6
+        },
+        {
+          "path": "apps/web/app/api/unsplash/download/route.ts",
+          "symbol": "POST",
+          "line": 4
+        },
+        {
+          "path": "apps/web/app/api/unsplash/search/route.ts",
+          "symbol": "GET",
+          "line": 8
+        },
+        {
+          "path": "apps/web/app/api/user/notification-preferences/route.ts",
+          "symbol": "GET",
+          "line": 18
+        },
+        {
+          "path": "apps/web/app/api/user/notification-preferences/route.ts",
+          "symbol": "POST",
+          "line": 78
+        },
+        {
+          "path": "apps/web/app/api/veriff/webhook/route.ts",
+          "symbol": "POST",
+          "line": 7
+        },
+        {
+          "path": "apps/web/app/api/webhooks/callback/route.ts",
+          "symbol": "POST",
+          "line": 22
+        }
+      ],
+      "outliers_total": 31
+    },
+    {
+      "id": "D-345913",
+      "rank": 2,
+      "summary": "apps/web: server actions in lib/** are wrapped in authActionClient.inputSchema().action() or authPartnerActionClient.action() or authPartnerActionClient.inputSchema().action() or authUserActionClient.inputSchema().action()",
+      "role": {
+        "package": "apps/web",
+        "dir": "lib",
+        "file": "*",
+        "entry": "server_action",
+        "kind": "function",
+        "members": 124
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action",
+          "apps/web/lib/actions/safe-action.ts#authPartnerActionClient.action",
+          "apps/web/lib/actions/safe-action.ts#authPartnerActionClient.inputSchema().action",
+          "apps/web/lib/actions/safe-action.ts#authUserActionClient.inputSchema().action"
+        ]
+      },
+      "evidence": {
+        "holders": 109,
+        "total": 123,
+        "lower_bound": 0.818,
+        "lift": 16.524,
+        "split": [
+          [
+            "apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action",
+            83
+          ],
+          [
+            "apps/web/lib/actions/safe-action.ts#authPartnerActionClient.inputSchema().action",
+            17
+          ],
+          [
+            "apps/web/lib/actions/safe-action.ts#authPartnerActionClient.action",
+            7
+          ],
+          [
+            "apps/web/lib/actions/safe-action.ts#authUserActionClient.inputSchema().action",
+            2
+          ]
+        ],
+        "role_members": 124
+      },
+      "rule_kind": "wrapped_by:call",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/web/lib/actions/add-edit-integration.ts",
+        "symbol": "addEditIntegration",
+        "line": 14
+      },
+      "outliers": [
+        {
+          "path": "apps/web/lib/actions/check-account-exists.ts",
+          "symbol": "checkAccountExistsAction",
+          "line": 18
+        },
+        {
+          "path": "apps/web/lib/actions/create-user-account.ts",
+          "symbol": "createUserAccountAction",
+          "line": 23
+        },
+        {
+          "path": "apps/web/lib/actions/partners/ban-partner.ts",
+          "symbol": "banPartner",
+          "line": 50
+        },
+        {
+          "path": "apps/web/lib/actions/partners/create-program-application.ts",
+          "symbol": "createProgramApplicationAction",
+          "line": 117
+        },
+        {
+          "path": "apps/web/lib/actions/partners/force-withdrawal.ts",
+          "symbol": "forceWithdrawal",
+          "line": 36
+        },
+        {
+          "path": "apps/web/lib/actions/partners/upload-program-application-image.ts",
+          "symbol": "uploadProgramApplicationImageAction",
+          "line": 18
+        },
+        {
+          "path": "apps/web/lib/actions/request-password-reset.ts",
+          "symbol": "requestPasswordResetAction",
+          "line": 15
+        },
+        {
+          "path": "apps/web/lib/actions/send-otp.ts",
+          "symbol": "sendOtpAction",
+          "line": 24
+        },
+        {
+          "path": "apps/web/lib/ai/generate-csv-mapping.ts",
+          "symbol": "generateCsvMapping",
+          "line": 8
+        },
+        {
+          "path": "apps/web/lib/ai/generate-filters.ts",
+          "symbol": "generateFilters",
+          "line": 40
+        },
+        {
+          "path": "apps/web/lib/api/oauth/actions.ts",
+          "symbol": "validateAuthorizeRequest",
+          "line": 7
+        },
+        {
+          "path": "apps/web/lib/api/partners/create-and-enroll-partner.ts",
+          "symbol": "createAndEnrollPartner",
+          "line": 30
+        },
+        {
+          "path": "apps/web/lib/submitted-leads/mark-submitted-lead-closed-won.ts",
+          "symbol": "markSubmittedLeadClosedWon",
+          "line": 17
+        },
+        {
+          "path": "apps/web/lib/submitted-leads/mark-submitted-lead-qualified.ts",
+          "symbol": "markSubmittedLeadQualified",
+          "line": 16
+        }
+      ],
+      "outliers_total": 14,
+      "exempt": [
+        {
+          "path": "apps/web/lib/actions/generate-unsubscribe-url.ts",
+          "symbol": "generateUnsubscribeTokenAction",
+          "line": 7,
+          "code": "no_input",
+          "reason": "reads no input, so needs no .inputSchema() (authUserActionClient.action() without it)"
+        }
+      ]
+    },
+    {
+      "id": "D-83351e",
+      "rank": 3,
+      "summary": "apps/web: HTTP handlers in app/(ee)/api/partner-profile/** (route files) are wrapped in withPartnerProfile()",
+      "role": {
+        "package": "apps/web",
+        "dir": "app/(ee)/api/partner-profile",
+        "file": "route",
+        "entry": "http",
+        "kind": "function",
+        "members": 54
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "apps/web/lib/auth/partner.ts#withPartnerProfile"
+        ]
+      },
+      "evidence": {
+        "holders": 53,
+        "total": 54,
+        "lower_bound": 0.902,
+        "lift": 36.565
+      },
+      "rule_kind": "wrapped_by:call",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/web/app/(ee)/api/partner-profile/invites/route.ts",
+        "symbol": "DELETE",
+        "line": 215
+      },
+      "outliers": [
+        {
+          "path": "apps/web/app/(ee)/api/partner-profile/invites/accept/route.ts",
+          "symbol": "POST",
+          "line": 7
+        }
+      ],
+      "outliers_total": 1
+    },
+    {
+      "id": "D-015190",
+      "rank": 4,
+      "summary": "apps/web: HTTP handlers in app/api/workspaces/[*]/** (route files) are wrapped in withWorkspace()",
+      "role": {
+        "package": "apps/web",
+        "dir": "app/api/workspaces/[*]",
+        "file": "route",
+        "entry": "http",
+        "kind": "function",
+        "members": 42
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "apps/web/lib/auth/workspace.ts#withWorkspace"
+        ]
+      },
+      "evidence": {
+        "holders": 40,
+        "total": 42,
+        "lower_bound": 0.842,
+        "lift": 8.234
+      },
+      "rule_kind": "wrapped_by:call",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/web/app/api/workspaces/[idOrSlug]/billing/activate-paid-plan/route.ts",
+        "symbol": "POST",
+        "line": 7
+      },
+      "outliers": [
+        {
+          "path": "apps/web/app/api/workspaces/[idOrSlug]/invites/accept/route.ts",
+          "symbol": "POST",
+          "line": 11
+        },
+        {
+          "path": "apps/web/app/api/workspaces/[idOrSlug]/invites/decline/route.ts",
+          "symbol": "POST",
+          "line": 7
+        }
+      ],
+      "outliers_total": 2
+    },
+    {
+      "id": "D-ebbc30",
+      "rank": 5,
+      "summary": "apps/web: HTTP handlers in app/(ee)/api/partners/** (route files) are wrapped in withWorkspace()",
+      "role": {
+        "package": "apps/web",
+        "dir": "app/(ee)/api/partners",
+        "file": "route",
+        "entry": "http",
+        "kind": "function",
+        "members": 26
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "apps/web/lib/auth/workspace.ts#withWorkspace"
+        ]
+      },
+      "evidence": {
+        "holders": 25,
+        "total": 26,
+        "lower_bound": 0.811,
+        "lift": 8.313
+      },
+      "rule_kind": "wrapped_by:call",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/web/app/(ee)/api/partners/[partnerId]/application-risks/route.ts",
+        "symbol": "GET",
+        "line": 8
+      },
+      "outliers": [
+        {
+          "path": "apps/web/app/(ee)/api/partners/platforms/callback/route.ts",
+          "symbol": "GET",
+          "line": 28
+        }
+      ],
+      "outliers_total": 1
+    },
+    {
+      "id": "D-e25af3",
+      "rank": 6,
+      "summary": "packages/email: components in src/** render <Footer>",
+      "role": {
+        "package": "packages/email",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "component",
+        "members": 108
+      },
+      "rule": {
+        "type": "renders",
+        "component": "packages/email/src/components/footer.tsx#Footer"
+      },
+      "evidence": {
+        "holders": 101,
+        "total": 106,
+        "lower_bound": 0.894,
+        "lift": 16.537,
+        "role_members": 108
+      },
+      "rule_kind": "renders",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/email/src/templates/advanced-plan-downgrade-notice.tsx",
+        "symbol": "AdvancedPlanDowngradeNotice",
+        "line": 17
+      },
+      "outliers": [
+        {
+          "path": "packages/email/src/templates/campaign-email.tsx",
+          "symbol": "CampaignEmail",
+          "line": 16
+        },
+        {
+          "path": "packages/email/src/templates/feedback-email.tsx",
+          "symbol": "FeedbackEmail",
+          "line": 15
+        },
+        {
+          "path": "packages/email/src/templates/trial/trial-3-days-remaining.tsx",
+          "symbol": "Trial3DaysRemainingEmail",
+          "line": 12
+        },
+        {
+          "path": "packages/email/src/templates/trial/trial-7-days-remaining.tsx",
+          "symbol": "Trial7DaysRemainingEmail",
+          "line": 12
+        },
+        {
+          "path": "packages/email/src/templates/upgrade-email.tsx",
+          "symbol": "UpgradeEmail",
+          "line": 11
+        }
+      ],
+      "outliers_total": 5,
+      "exempt": [
+        {
+          "path": "packages/email/src/components/bounty-thumbnail.tsx",
+          "symbol": "BountyThumbnailImage",
+          "line": 3,
+          "code": "shared_part",
+          "reason": "shared part used by 4 members"
+        },
+        {
+          "path": "packages/email/src/components/footer.tsx",
+          "symbol": "Footer",
+          "line": 3,
+          "code": "shared_part",
+          "reason": "shared part used by 101 members"
+        }
+      ]
+    },
+    {
+      "id": "D-742eb6",
+      "rank": 7,
+      "summary": "apps/web: HTTP handlers in app/** (route files) do not throw a bare Error",
+      "role": {
+        "package": "apps/web",
+        "dir": "app",
+        "file": "route",
+        "entry": "http",
+        "kind": "function",
+        "members": 536
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "throw_error"
+      },
+      "evidence": {
+        "holders": 522,
+        "total": 536,
+        "lower_bound": 0.957,
+        "lift": 4.049
+      },
+      "rule_kind": "avoids:other",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/web/app/(ee)/api/admin/analytics/route.ts",
+        "symbol": "GET",
+        "line": 7
+      },
+      "outliers": [
+        {
+          "path": "apps/web/app/(ee)/api/cron/disposable-emails/route.ts",
+          "symbol": "POST",
+          "line": 11
+        },
+        {
+          "path": "apps/web/app/(ee)/api/cron/email-domains/update/route.ts",
+          "symbol": "POST",
+          "line": 15
+        },
+        {
+          "path": "apps/web/app/(ee)/api/cron/import/firstpromoter/route.ts",
+          "symbol": "POST",
+          "line": 13
+        },
+        {
+          "path": "apps/web/app/(ee)/api/cron/import/partnerstack/route.ts",
+          "symbol": "POST",
+          "line": 15
+        },
+        {
+          "path": "apps/web/app/(ee)/api/cron/messages/notify-partner/route.ts",
+          "symbol": "POST",
+          "line": 23
+        },
+        {
+          "path": "apps/web/app/(ee)/api/cron/messages/notify-program/route.ts",
+          "symbol": "POST",
+          "line": 23
+        },
+        {
+          "path": "apps/web/app/(ee)/api/cron/partner-platforms/route.ts",
+          "symbol": "POST",
+          "line": 26
+        },
+        {
+          "path": "apps/web/app/(ee)/api/cron/partner-platforms/youtube/route.ts",
+          "symbol": "POST",
+          "line": 16
+        },
+        {
+          "path": "apps/web/app/(ee)/api/cron/rewards/process/route.ts",
+          "symbol": "POST",
+          "line": 17
+        },
+        {
+          "path": "apps/web/app/(ee)/api/cron/send-batch-email/route.ts",
+          "symbol": "POST",
+          "line": 38
+        },
+        {
+          "path": "apps/web/app/(ee)/api/network/partners/count/route.ts",
+          "symbol": "GET",
+          "line": 14
+        },
+        {
+          "path": "apps/web/app/(ee)/api/paypal/callback/route.ts",
+          "symbol": "GET",
+          "line": 13
+        },
+        {
+          "path": "apps/web/app/(ee)/api/paypal/webhook/route.ts",
+          "symbol": "POST",
+          "line": 20
+        },
+        {
+          "path": "apps/web/app/api/links/sync/route.ts",
+          "symbol": "POST",
+          "line": 10
+        }
+      ],
+      "outliers_total": 14
+    },
+    {
+      "id": "D-3fad9a",
+      "rank": 8,
+      "summary": "packages/email: components in src/** render <Text>",
+      "role": {
+        "package": "packages/email",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "component",
+        "members": 108
+      },
+      "rule": {
+        "type": "renders",
+        "component": "pkg:@react-email/components#Text"
+      },
+      "evidence": {
+        "holders": 107,
+        "total": 107,
+        "lower_bound": 0.965,
+        "lift": 16.537,
+        "role_members": 108
+      },
+      "rule_kind": "renders",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "packages/email/src/templates/advanced-plan-downgrade-notice.tsx",
+        "symbol": "AdvancedPlanDowngradeNotice",
+        "line": 17
+      },
+      "outliers": [],
+      "outliers_total": 0,
+      "exempt": [
+        {
+          "path": "packages/email/src/components/bounty-thumbnail.tsx",
+          "symbol": "BountyThumbnailImage",
+          "line": 3,
+          "code": "shared_part",
+          "reason": "shared part used by 4 members"
+        }
+      ]
+    },
+    {
+      "id": "D-a23ff8",
+      "rank": 9,
+      "summary": "packages/email: components in src/** render <Preview>",
+      "role": {
+        "package": "packages/email",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "component",
+        "members": 108
+      },
+      "rule": {
+        "type": "renders",
+        "component": "pkg:@react-email/components#Preview"
+      },
+      "evidence": {
+        "holders": 106,
+        "total": 106,
+        "lower_bound": 0.965,
+        "lift": 16.537,
+        "role_members": 108
+      },
+      "rule_kind": "renders",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "packages/email/src/templates/advanced-plan-downgrade-notice.tsx",
+        "symbol": "AdvancedPlanDowngradeNotice",
+        "line": 17
+      },
+      "outliers": [],
+      "outliers_total": 0,
+      "exempt": [
+        {
+          "path": "packages/email/src/components/bounty-thumbnail.tsx",
+          "symbol": "BountyThumbnailImage",
+          "line": 3,
+          "code": "shared_part",
+          "reason": "shared part used by 4 members"
+        },
+        {
+          "path": "packages/email/src/components/footer.tsx",
+          "symbol": "Footer",
+          "line": 3,
+          "code": "shared_part",
+          "reason": "shared part used by 101 members"
+        }
+      ]
+    },
+    {
+      "id": "D-024a81",
+      "rank": 10,
+      "summary": "packages/email: components in src/** render <Tailwind>",
+      "role": {
+        "package": "packages/email",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "component",
+        "members": 108
+      },
+      "rule": {
+        "type": "renders",
+        "component": "pkg:@react-email/components#Tailwind"
+      },
+      "evidence": {
+        "holders": 104,
+        "total": 107,
+        "lower_bound": 0.921,
+        "lift": 16.537,
+        "role_members": 108
+      },
+      "rule_kind": "renders",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "packages/email/src/templates/advanced-plan-downgrade-notice.tsx",
+        "symbol": "AdvancedPlanDowngradeNotice",
+        "line": 17
+      },
+      "outliers": [
+        {
+          "path": "packages/email/src/templates/trial/trial-3-days-remaining.tsx",
+          "symbol": "Trial3DaysRemainingEmail",
+          "line": 12
+        },
+        {
+          "path": "packages/email/src/templates/trial/trial-7-days-remaining.tsx",
+          "symbol": "Trial7DaysRemainingEmail",
+          "line": 12
+        },
+        {
+          "path": "packages/email/src/templates/upgrade-email.tsx",
+          "symbol": "UpgradeEmail",
+          "line": 11
+        }
+      ],
+      "outliers_total": 3,
+      "exempt": [
+        {
+          "path": "packages/email/src/components/bounty-thumbnail.tsx",
+          "symbol": "BountyThumbnailImage",
+          "line": 3,
+          "code": "shared_part",
+          "reason": "shared part used by 4 members"
+        }
+      ]
+    },
+    {
+      "id": "D-79cc0a",
+      "rank": 11,
+      "summary": "apps/web: HTTP handlers in app/(ee)/api/partners/** (route files) call getDefaultProgramIdOrThrow()",
+      "role": {
+        "package": "apps/web",
+        "dir": "app/(ee)/api/partners",
+        "file": "route",
+        "entry": "http",
+        "kind": "function",
+        "members": 26
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "apps/web/lib/api/programs/get-default-program-id-or-throw.ts#getDefaultProgramIdOrThrow"
+      },
+      "evidence": {
+        "holders": 24,
+        "total": 26,
+        "lower_bound": 0.759,
+        "lift": 11.533
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/web/app/(ee)/api/partners/[partnerId]/application-risks/route.ts",
+        "symbol": "GET",
+        "line": 8
+      },
+      "outliers": [
+        {
+          "path": "apps/web/app/(ee)/api/partners/applications/reject/route.ts",
+          "symbol": "POST",
+          "line": 8
+        },
+        {
+          "path": "apps/web/app/(ee)/api/partners/platforms/callback/route.ts",
+          "symbol": "GET",
+          "line": 28
+        }
+      ],
+      "outliers_total": 2
+    },
+    {
+      "id": "D-418256",
+      "rank": 12,
+      "summary": "packages/email: components in src/** render <Container>",
+      "role": {
+        "package": "packages/email",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "component",
+        "members": 108
+      },
+      "rule": {
+        "type": "renders",
+        "component": "pkg:@react-email/components#Container"
+      },
+      "evidence": {
+        "holders": 103,
+        "total": 106,
+        "lower_bound": 0.92,
+        "lift": 16.537,
+        "role_members": 108
+      },
+      "rule_kind": "renders",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "packages/email/src/templates/advanced-plan-downgrade-notice.tsx",
+        "symbol": "AdvancedPlanDowngradeNotice",
+        "line": 17
+      },
+      "outliers": [
+        {
+          "path": "packages/email/src/templates/trial/trial-3-days-remaining.tsx",
+          "symbol": "Trial3DaysRemainingEmail",
+          "line": 12
+        },
+        {
+          "path": "packages/email/src/templates/trial/trial-7-days-remaining.tsx",
+          "symbol": "Trial7DaysRemainingEmail",
+          "line": 12
+        },
+        {
+          "path": "packages/email/src/templates/upgrade-email.tsx",
+          "symbol": "UpgradeEmail",
+          "line": 11
+        }
+      ],
+      "outliers_total": 3,
+      "exempt": [
+        {
+          "path": "packages/email/src/components/bounty-thumbnail.tsx",
+          "symbol": "BountyThumbnailImage",
+          "line": 3,
+          "code": "shared_part",
+          "reason": "shared part used by 4 members"
+        },
+        {
+          "path": "packages/email/src/components/footer.tsx",
+          "symbol": "Footer",
+          "line": 3,
+          "code": "shared_part",
+          "reason": "shared part used by 101 members"
+        }
+      ]
+    },
+    {
+      "id": "D-258285",
+      "rank": 13,
+      "summary": "apps/web: functions in ui/modals/** are named `*Modal`",
+      "role": {
+        "package": "apps/web",
+        "dir": "ui/modals",
+        "file": "*",
+        "entry": "-",
+        "kind": "function",
+        "members": 122
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Modal"
+      },
+      "evidence": {
+        "holders": 113,
+        "total": 121,
+        "lower_bound": 0.875,
+        "lift": 12.823,
+        "role_members": 122
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/web/ui/modals/add-customer-modal.tsx",
+        "symbol": "useAddCustomerModal",
+        "line": 515
+      },
+      "outliers": [
+        {
+          "path": "apps/web/ui/modals/disable-fraud-rules-modal.tsx",
+          "symbol": "getRulesBeingDisabled",
+          "line": 173
+        },
+        {
+          "path": "apps/web/ui/modals/link-builder/ab-testing-modal.tsx",
+          "symbol": "getABTestingLabel",
+          "line": 493
+        },
+        {
+          "path": "apps/web/ui/modals/link-builder/ab-testing/ab-testing-modal.tsx",
+          "symbol": "getABTestingLabel",
+          "line": 592
+        },
+        {
+          "path": "apps/web/ui/modals/link-builder/expiration-modal.tsx",
+          "symbol": "getExpirationLabel",
+          "line": 202
+        },
+        {
+          "path": "apps/web/ui/modals/link-builder/index.tsx",
+          "symbol": "useLinkBuilder",
+          "line": 342
+        },
+        {
+          "path": "apps/web/ui/modals/link-builder/password-modal.tsx",
+          "symbol": "getPasswordLabel",
+          "line": 206
+        },
+        {
+          "path": "apps/web/ui/modals/link-builder/targeting-modal.tsx",
+          "symbol": "getTargetingLabel",
+          "line": 378
+        },
+        {
+          "path": "apps/web/ui/modals/link-builder/use-link-drafts.ts",
+          "symbol": "useLinkDrafts",
+          "line": 12
+        }
+      ],
+      "outliers_total": 8,
+      "exempt": [
+        {
+          "path": "apps/web/ui/modals/import-csv-modal/index.tsx",
+          "symbol": "useCsvContext",
+          "line": 78,
+          "code": "shared_part",
+          "reason": "shared part used by 2 members"
+        }
+      ]
+    },
+    {
+      "id": "D-2ea85b",
+      "rank": 14,
+      "summary": "apps/web: server actions in lib/actions/partners/** are named `*Action`",
+      "role": {
+        "package": "apps/web",
+        "dir": "lib/actions/partners",
+        "file": "*",
+        "entry": "server_action",
+        "kind": "function",
+        "members": 86
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Action"
+      },
+      "evidence": {
+        "holders": 80,
+        "total": 86,
+        "lower_bound": 0.856,
+        "lift": 19.253
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/web/lib/actions/partners/accept-program-invite.ts",
+        "symbol": "acceptProgramInviteAction",
+        "line": 18
+      },
+      "outliers": [
+        {
+          "path": "apps/web/lib/actions/partners/ban-partner.ts",
+          "symbol": "banPartner",
+          "line": 50
+        },
+        {
+          "path": "apps/web/lib/actions/partners/force-withdrawal.ts",
+          "symbol": "forceWithdrawal",
+          "line": 36
+        },
+        {
+          "path": "apps/web/lib/actions/partners/generate-paypal-oauth-url.ts",
+          "symbol": "generatePaypalOAuthUrl",
+          "line": 10
+        },
+        {
+          "path": "apps/web/lib/actions/partners/generate-stripe-account-link.ts",
+          "symbol": "generateStripeAccountLink",
+          "line": 12
+        },
+        {
+          "path": "apps/web/lib/actions/partners/generate-stripe-recipient-account-link.ts",
+          "symbol": "generateStripeRecipientAccountLink",
+          "line": 12
+        },
+        {
+          "path": "apps/web/lib/actions/partners/update-partner-notification-preference.ts",
+          "symbol": "updatePartnerNotificationPreference",
+          "line": 14
+        }
+      ],
+      "outliers_total": 6
+    },
+    {
+      "id": "D-ec6127",
+      "rank": 15,
+      "summary": "apps/web: components in app/** (page-client files) are named `*Client`",
+      "role": {
+        "package": "apps/web",
+        "dir": "app",
+        "file": "page-client",
+        "entry": "-",
+        "kind": "component",
+        "members": 71
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Client"
+      },
+      "evidence": {
+        "holders": 62,
+        "total": 71,
+        "lower_bound": 0.776,
+        "lift": 24.369
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/web/app/(ee)/app.dub.co/(new-program)/[slug]/program/new/overview/page-client.tsx",
+        "symbol": "PageClient",
+        "line": 17
+      },
+      "outliers": [
+        {
+          "path": "apps/web/app/(ee)/partners.dub.co/(dashboard)/programs/[programSlug]/(enrolled)/bounties/[bountyId]/page-client.tsx",
+          "symbol": "PartnerBountyPageHeader",
+          "line": 115
+        },
+        {
+          "path": "apps/web/app/app.dub.co/(dashboard)/[slug]/(ee)/settings/domains/default/page-client.tsx",
+          "symbol": "DefaultDomains",
+          "line": 44
+        },
+        {
+          "path": "apps/web/app/app.dub.co/(dashboard)/[slug]/(ee)/settings/domains/email/page-client.tsx",
+          "symbol": "EmailDomains",
+          "line": 15
+        },
+        {
+          "path": "apps/web/app/app.dub.co/(dashboard)/[slug]/(ee)/settings/domains/page-client.tsx",
+          "symbol": "CustomDomains",
+          "line": 34
+        },
+        {
+          "path": "apps/web/app/app.dub.co/(dashboard)/[slug]/links/folders/page-client.tsx",
+          "symbol": "FoldersPageControls",
+          "line": 87
+        },
+        {
+          "path": "apps/web/app/app.dub.co/(dashboard)/[slug]/links/page-client.tsx",
+          "symbol": "WorkspaceLinksList",
+          "line": 88
+        },
+        {
+          "path": "apps/web/app/app.dub.co/(dashboard)/[slug]/links/page-client.tsx",
+          "symbol": "WorkspaceLinksPageControls",
+          "line": 75
+        },
+        {
+          "path": "apps/web/app/app.dub.co/(dashboard)/[slug]/links/tags/page-client.tsx",
+          "symbol": "TagsPageControls",
+          "line": 105
+        },
+        {
+          "path": "apps/web/app/app.dub.co/(dashboard)/[slug]/links/utm/page-client.tsx",
+          "symbol": "UTMPageControls",
+          "line": 80
+        }
+      ],
+      "outliers_total": 9
+    }
+  ],
+  "largest_role": null
+}

@@ -1,0 +1,1069 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "cgu29-7d63aa3-1794031224",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel3prep/restage-7d63aa3/cache/repos/midday",
+  "units": 6464,
+  "roles": 330,
+  "conventions": 15,
+  "shown": 15,
+  "tiers": {
+    "default": 2,
+    "suggestion": 13
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-50255f",
+      "rank": 1,
+      "summary": "apps/api: rpc entry points in src/** are wrapped in internalProcedure() or protectedProcedure()",
+      "role": {
+        "package": "apps/api",
+        "dir": "src",
+        "file": "*",
+        "entry": "rpc",
+        "kind": "function",
+        "members": 255
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "apps/api/src/trpc/init.ts#internalProcedure",
+          "apps/api/src/trpc/init.ts#protectedProcedure"
+        ]
+      },
+      "evidence": {
+        "holders": 248,
+        "total": 255,
+        "lower_bound": 0.944,
+        "lift": 7.569,
+        "split": [
+          [
+            "apps/api/src/trpc/init.ts#protectedProcedure",
+            242
+          ],
+          [
+            "apps/api/src/trpc/init.ts#internalProcedure",
+            6
+          ]
+        ]
+      },
+      "rule_kind": "wrapped_by:call",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/api/src/trpc/routers/accounting.ts",
+        "symbol": "MUTATION disconnect",
+        "line": 160
+      },
+      "outliers": [
+        {
+          "path": "apps/api/src/trpc/routers/banking.ts",
+          "symbol": "QUERY getProviderAccounts",
+          "line": 291
+        },
+        {
+          "path": "apps/api/src/trpc/routers/customers.ts",
+          "symbol": "QUERY getByPortalId",
+          "line": 221
+        },
+        {
+          "path": "apps/api/src/trpc/routers/customers.ts",
+          "symbol": "QUERY getPortalInvoices",
+          "line": 244
+        },
+        {
+          "path": "apps/api/src/trpc/routers/invoice.ts",
+          "symbol": "QUERY getInvoiceByToken",
+          "line": 81
+        },
+        {
+          "path": "apps/api/src/trpc/routers/reports.ts",
+          "symbol": "QUERY getByLinkId",
+          "line": 168
+        },
+        {
+          "path": "apps/api/src/trpc/routers/reports.ts",
+          "symbol": "QUERY getChartDataByLinkId",
+          "line": 174
+        },
+        {
+          "path": "apps/api/src/trpc/routers/short-links.ts",
+          "symbol": "QUERY get",
+          "line": 93
+        }
+      ],
+      "outliers_total": 7
+    },
+    {
+      "id": "D-b8cff6",
+      "rank": 2,
+      "summary": "files in packages/db/** do not import from packages/notifications/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "packages/db",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 69
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:packages/notifications"
+      },
+      "evidence": {
+        "holders": 68,
+        "total": 69,
+        "lower_bound": 0.922,
+        "lift": 3.0
+      },
+      "rule_kind": "avoids:import",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/db/drizzle.config.ts",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "packages/db/src/queries/notification-settings.ts",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 1
+    },
+    {
+      "id": "D-b905f9",
+      "rank": 3,
+      "summary": "apps/website: exported values named `metadata` in src/** (page files) pass `description` to createPageMetadata()",
+      "role": {
+        "package": "apps/website",
+        "dir": "src",
+        "file": "page",
+        "entry": "-",
+        "kind": "const",
+        "export_name": "metadata",
+        "members": 46
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "apps/website/src/lib/metadata.ts#createPageMetadata",
+        "index": 0,
+        "key": "description"
+      },
+      "evidence": {
+        "holders": 45,
+        "total": 46,
+        "lower_bound": 0.887,
+        "lift": 28.174
+      },
+      "rule_kind": "passes_key",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/website/src/app/about/page.tsx",
+        "symbol": "metadata",
+        "line": 3
+      },
+      "outliers": [
+        {
+          "path": "apps/website/src/app/compare/page.tsx",
+          "symbol": "metadata",
+          "line": 12
+        }
+      ],
+      "outliers_total": 1,
+      "key_type": "required"
+    },
+    {
+      "id": "D-efc6d4",
+      "rank": 4,
+      "summary": "apps/api: exported values in src/trpc/** call createTRPCRouter()",
+      "role": {
+        "package": "apps/api",
+        "dir": "src/trpc",
+        "file": "*",
+        "entry": "-",
+        "kind": "const",
+        "members": 41
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "apps/api/src/trpc/init.ts#createTRPCRouter"
+      },
+      "evidence": {
+        "holders": 38,
+        "total": 40,
+        "lower_bound": 0.835,
+        "lift": 31.61,
+        "role_members": 41
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/api/src/trpc/routers/_app.ts",
+        "symbol": "appRouter",
+        "line": 45
+      },
+      "outliers": [
+        {
+          "path": "apps/api/src/trpc/init.ts",
+          "symbol": "createCallerFactory",
+          "line": 87
+        },
+        {
+          "path": "apps/api/src/trpc/init.ts",
+          "symbol": "publicProcedure",
+          "line": 120
+        }
+      ],
+      "outliers_total": 2,
+      "exempt": [
+        {
+          "path": "apps/api/src/trpc/init.ts",
+          "symbol": "createTRPCRouter",
+          "line": 86,
+          "code": "own_target",
+          "reason": "the rule's own target"
+        }
+      ]
+    },
+    {
+      "id": "D-86f372",
+      "rank": 5,
+      "summary": "apps/worker: classes in src/** do not use `any`",
+      "role": {
+        "package": "apps/worker",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "members": 44
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "any"
+      },
+      "evidence": {
+        "holders": 43,
+        "total": 44,
+        "lower_bound": 0.882,
+        "lift": 5.923
+      },
+      "rule_kind": "avoids:other",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/worker/src/errors/invoice-errors.ts",
+        "symbol": "RecurringInvoiceError",
+        "line": 22
+      },
+      "outliers": [
+        {
+          "path": "apps/worker/src/processors/inbox/slack-upload.ts",
+          "symbol": "SlackUploadProcessor",
+          "line": 25
+        }
+      ],
+      "outliers_total": 1
+    },
+    {
+      "id": "D-98e729",
+      "rank": 6,
+      "summary": "apps/api: exported values in src/trpc/** are named `*Router`",
+      "role": {
+        "package": "apps/api",
+        "dir": "src/trpc",
+        "file": "*",
+        "entry": "-",
+        "kind": "const",
+        "members": 41
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Router"
+      },
+      "evidence": {
+        "holders": 39,
+        "total": 41,
+        "lower_bound": 0.839,
+        "lift": 21.628
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/api/src/trpc/routers/_app.ts",
+        "symbol": "appRouter",
+        "line": 45
+      },
+      "outliers": [
+        {
+          "path": "apps/api/src/trpc/init.ts",
+          "symbol": "createCallerFactory",
+          "line": 87
+        },
+        {
+          "path": "apps/api/src/trpc/init.ts",
+          "symbol": "publicProcedure",
+          "line": 120
+        }
+      ],
+      "outliers_total": 2
+    },
+    {
+      "id": "D-5880dd",
+      "rank": 7,
+      "summary": "apps/worker: classes in src/processors/** extend BaseProcessor",
+      "role": {
+        "package": "apps/worker",
+        "dir": "src/processors",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "members": 40
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "apps/worker/src/processors/base.ts#BaseProcessor"
+        ]
+      },
+      "evidence": {
+        "holders": 39,
+        "total": 39,
+        "lower_bound": 0.91,
+        "lift": 2.4,
+        "role_members": 40
+      },
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/worker/src/processors/accounting/export-transactions.ts",
+        "symbol": "ExportTransactionsProcessor",
+        "line": 123
+      },
+      "outliers": [],
+      "outliers_total": 0,
+      "exempt": [
+        {
+          "path": "apps/worker/src/processors/base.ts",
+          "symbol": "BaseProcessor",
+          "line": 17,
+          "code": "defining_module",
+          "reason": "in the module that defines BaseProcessor"
+        }
+      ]
+    },
+    {
+      "id": "D-495f56",
+      "rank": 8,
+      "summary": "apps/api: exported values in src/schemas/** are named `*Schema`",
+      "role": {
+        "package": "apps/api",
+        "dir": "src/schemas",
+        "file": "*",
+        "entry": "-",
+        "kind": "const",
+        "members": 309
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Schema"
+      },
+      "evidence": {
+        "holders": 308,
+        "total": 309,
+        "lower_bound": 0.982,
+        "lift": 2.708
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/api/src/schemas/api-keys.ts",
+        "symbol": "deleteApiKeySchema",
+        "line": 16
+      },
+      "outliers": [
+        {
+          "path": "apps/api/src/schemas/invoice.ts",
+          "symbol": "draftInvoiceSchemaWithOpenApi",
+          "line": 337
+        }
+      ],
+      "outliers_total": 1
+    },
+    {
+      "id": "D-f6c709",
+      "rank": 9,
+      "summary": "apps/api: exported values in src/schemas/** call z.object()",
+      "role": {
+        "package": "apps/api",
+        "dir": "src/schemas",
+        "file": "*",
+        "entry": "-",
+        "kind": "const",
+        "members": 309
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:@hono/zod-openapi#z.object"
+      },
+      "evidence": {
+        "holders": 256,
+        "total": 306,
+        "lower_bound": 0.791,
+        "lift": 4.194,
+        "role_members": 309
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "apps/api/src/schemas/api-keys.ts",
+        "symbol": "deleteApiKeySchema",
+        "line": 16
+      },
+      "outliers": [
+        {
+          "path": "apps/api/src/schemas/accounting.ts",
+          "symbol": "accountingProviderIdSchema",
+          "line": 6
+        },
+        {
+          "path": "apps/api/src/schemas/accounting.ts",
+          "symbol": "disconnectProviderSchema",
+          "line": 32
+        },
+        {
+          "path": "apps/api/src/schemas/accounting.ts",
+          "symbol": "exportToAccountingSchema",
+          "line": 16
+        },
+        {
+          "path": "apps/api/src/schemas/accounting.ts",
+          "symbol": "getAccountsSchema",
+          "line": 39
+        },
+        {
+          "path": "apps/api/src/schemas/accounting.ts",
+          "symbol": "getSyncStatusSchema",
+          "line": 24
+        },
+        {
+          "path": "apps/api/src/schemas/banking.ts",
+          "symbol": "accountTypeSchema",
+          "line": 10
+        },
+        {
+          "path": "apps/api/src/schemas/banking.ts",
+          "symbol": "connectionByReferenceSchema",
+          "line": 65
+        },
+        {
+          "path": "apps/api/src/schemas/banking.ts",
+          "symbol": "connectionStatusSchema",
+          "line": 53
+        },
+        {
+          "path": "apps/api/src/schemas/banking.ts",
+          "symbol": "deleteConnectionSchema",
+          "line": 59
+        },
+        {
+          "path": "apps/api/src/schemas/banking.ts",
+          "symbol": "enablebankingExchangeSchema",
+          "line": 48
+        },
+        {
+          "path": "apps/api/src/schemas/banking.ts",
+          "symbol": "enablebankingLinkSchema",
+          "line": 42
+        },
+        {
+          "path": "apps/api/src/schemas/banking.ts",
+          "symbol": "getBalanceSchema",
+          "line": 77
+        },
+        {
+          "path": "apps/api/src/schemas/banking.ts",
+          "symbol": "getProviderAccountsSchema",
+          "line": 70
+        },
+        {
+          "path": "apps/api/src/schemas/banking.ts",
+          "symbol": "getProviderTransactionsSchema",
+          "line": 85
+        },
+        {
+          "path": "apps/api/src/schemas/banking.ts",
+          "symbol": "gocardlessAgreementSchema",
+          "line": 37
+        },
+        {
+          "path": "apps/api/src/schemas/banking.ts",
+          "symbol": "gocardlessLinkSchema",
+          "line": 30
+        },
+        {
+          "path": "apps/api/src/schemas/banking.ts",
+          "symbol": "plaidExchangeSchema",
+          "line": 26
+        },
+        {
+          "path": "apps/api/src/schemas/banking.ts",
+          "symbol": "plaidLinkSchema",
+          "line": 19
+        },
+        {
+          "path": "apps/api/src/schemas/banking.ts",
+          "symbol": "providerSchema",
+          "line": 3
+        },
+        {
+          "path": "apps/api/src/schemas/billing.ts",
+          "symbol": "cancelSubscriptionSchema",
+          "line": 26
+        },
+        {
+          "path": "apps/api/src/schemas/billing.ts",
+          "symbol": "checkoutResponseSchema",
+          "line": 20
+        },
+        {
+          "path": "apps/api/src/schemas/billing.ts",
+          "symbol": "createCheckoutSchema",
+          "line": 10
+        },
+        {
+          "path": "apps/api/src/schemas/billing.ts",
+          "symbol": "getBillingOrdersSchema",
+          "line": 3
+        },
+        {
+          "path": "apps/api/src/schemas/documents.ts",
+          "symbol": "signedUrlsSchema",
+          "line": 136
+        },
+        {
+          "path": "apps/api/src/schemas/inbox.ts",
+          "symbol": "deleteInboxManySchema",
+          "line": 183
+        },
+        {
+          "path": "apps/api/src/schemas/invoice-recurring.ts",
+          "symbol": "invoiceRecurringEndTypeSchema",
+          "line": 29
+        },
+        {
+          "path": "apps/api/src/schemas/invoice.ts",
+          "symbol": "createInvoiceResponseSchema",
+          "line": 1366
+        },
+        {
+          "path": "apps/api/src/schemas/invoice.ts",
+          "symbol": "draftInvoiceRequestSchema",
+          "line": 1198
+        },
+        {
+          "path": "apps/api/src/schemas/invoice.ts",
+          "symbol": "draftInvoiceSchema",
+          "line": 268
+        },
+        {
+          "path": "apps/api/src/schemas/invoice.ts",
+          "symbol": "draftInvoiceSchemaWithOpenApi",
+          "line": 337
+        },
+        {
+          "path": "apps/api/src/schemas/invoice.ts",
+          "symbol": "draftLineItemSchema",
+          "line": 162
+        },
+        {
+          "path": "apps/api/src/schemas/invoice.ts",
+          "symbol": "restDraftInvoiceSchema",
+          "line": 286
+        },
+        {
+          "path": "apps/api/src/schemas/invoice.ts",
+          "symbol": "restDraftLineItemSchema",
+          "line": 168
+        },
+        {
+          "path": "apps/api/src/schemas/invoice.ts",
+          "symbol": "restInvoiceTemplateSchema",
+          "line": 749
+        },
+        {
+          "path": "apps/api/src/schemas/invoice.ts",
+          "symbol": "restUpsertInvoiceTemplateSchema",
+          "line": 136
+        },
+        {
+          "path": "apps/api/src/schemas/invoice.ts",
+          "symbol": "updateInvoiceResponseSchema",
+          "line": 1392
+        },
+        {
+          "path": "apps/api/src/schemas/invoice.ts",
+          "symbol": "upsertInvoiceTemplateSchema",
+          "line": 129
+        },
+        {
+          "path": "apps/api/src/schemas/jobs.ts",
+          "symbol": "getJobStatusSchema",
+          "line": 7
+        },
+        {
+          "path": "apps/api/src/schemas/jobs.ts",
+          "symbol": "jobStatusSchema",
+          "line": 14
+        },
+        {
+          "path": "apps/api/src/schemas/notification-settings.ts",
+          "symbol": "bulkUpdateNotificationSettingsSchema",
+          "line": 16
+        },
+        {
+          "path": "apps/api/src/schemas/notification-settings.ts",
+          "symbol": "getNotificationSettingsSchema",
+          "line": 5
+        },
+        {
+          "path": "apps/api/src/schemas/notification-settings.ts",
+          "symbol": "notificationChannelSchema",
+          "line": 3
+        },
+        {
+          "path": "apps/api/src/schemas/notification-settings.ts",
+          "symbol": "updateNotificationSettingSchema",
+          "line": 10
+        },
+        {
+          "path": "apps/api/src/schemas/oauth-flow.ts",
+          "symbol": "oauthTokenEndpointRequestSchema",
+          "line": 113
+        },
+        {
+          "path": "apps/api/src/schemas/reports.ts",
+          "symbol": "reportTypeSchema",
+          "line": 734
+        },
+        {
+          "path": "apps/api/src/schemas/tracker-entries.ts",
+          "symbol": "timerResponseSchema",
+          "line": 415
+        },
+        {
+          "path": "apps/api/src/schemas/transactions.ts",
+          "symbol": "createTransactionsResponseSchema",
+          "line": 960
+        },
+        {
+          "path": "apps/api/src/schemas/transactions.ts",
+          "symbol": "createTransactionsSchema",
+          "line": 897
+        },
+        {
+          "path": "apps/api/src/schemas/transactions.ts",
+          "symbol": "deleteTransactionsResponseSchema",
+          "line": 574
+        },
+        {
+          "path": "apps/api/src/schemas/transactions.ts",
+          "symbol": "deleteTransactionsSchema",
+          "line": 560
+        }
+      ],
+      "outliers_total": 50,
+      "exempt": [
+        {
+          "path": "apps/api/src/schemas/invoice-recurring.ts",
+          "symbol": "invoiceRecurringFrequencySchema",
+          "line": 26,
+          "code": "shared_part",
+          "reason": "shared part used by 2 members"
+        },
+        {
+          "path": "apps/api/src/schemas/invoice-recurring.ts",
+          "symbol": "invoiceRecurringStatusSchema",
+          "line": 32,
+          "code": "shared_part",
+          "reason": "shared part used by 2 members"
+        },
+        {
+          "path": "apps/api/src/schemas/invoice.ts",
+          "symbol": "editorFieldSchema",
+          "line": 69,
+          "code": "shared_part",
+          "reason": "shared part used by 4 members"
+        }
+      ]
+    },
+    {
+      "id": "D-7da2b9",
+      "rank": 10,
+      "summary": "packages/db: functions in src/** (schema files) pass `withTimezone` to timestamp()",
+      "role": {
+        "package": "packages/db",
+        "dir": "src",
+        "file": "schema",
+        "entry": "-",
+        "kind": "function",
+        "members": 49
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:drizzle-orm#timestamp",
+        "index": 1,
+        "key": "withTimezone"
+      },
+      "evidence": {
+        "holders": 47,
+        "total": 49,
+        "lower_bound": 0.863,
+        "lift": 39.388
+      },
+      "rule_kind": "passes_key",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "packages/db/src/schema.ts",
+        "symbol": "accountingSyncRecords",
+        "line": 3906
+      },
+      "outliers": [
+        {
+          "path": "packages/db/src/schema.ts",
+          "symbol": "documentTagAssignments",
+          "line": 2720
+        },
+        {
+          "path": "packages/db/src/schema.ts",
+          "symbol": "documentTagEmbeddings",
+          "line": 308
+        }
+      ],
+      "outliers_total": 2,
+      "key_type": "unknown"
+    },
+    {
+      "id": "D-b98efb",
+      "rank": 11,
+      "summary": "packages/db: functions in src/** (schema files) call uuid()",
+      "role": {
+        "package": "packages/db",
+        "dir": "src",
+        "file": "schema",
+        "entry": "-",
+        "kind": "function",
+        "members": 49
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:drizzle-orm#uuid"
+      },
+      "evidence": {
+        "holders": 46,
+        "total": 49,
+        "lower_bound": 0.835,
+        "lift": 39.388
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "packages/db/src/schema.ts",
+        "symbol": "accountingSyncRecords",
+        "line": 3906
+      },
+      "outliers": [
+        {
+          "path": "packages/db/src/schema.ts",
+          "symbol": "documentTagEmbeddings",
+          "line": 308
+        },
+        {
+          "path": "packages/db/src/schema.ts",
+          "symbol": "institutions",
+          "line": 1366
+        },
+        {
+          "path": "packages/db/src/schema.ts",
+          "symbol": "transactionCategoryEmbeddings",
+          "line": 326
+        }
+      ],
+      "outliers_total": 3
+    },
+    {
+      "id": "D-f90103",
+      "rank": 12,
+      "summary": "packages/db: functions in src/** (schema files) pass `createdAt` to pgTable()",
+      "role": {
+        "package": "packages/db",
+        "dir": "src",
+        "file": "schema",
+        "entry": "-",
+        "kind": "function",
+        "members": 49
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:drizzle-orm#pgTable",
+        "index": 1,
+        "key": "createdAt"
+      },
+      "evidence": {
+        "holders": 46,
+        "total": 49,
+        "lower_bound": 0.835,
+        "lift": 39.388
+      },
+      "rule_kind": "passes_key",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "packages/db/src/schema.ts",
+        "symbol": "accountingSyncRecords",
+        "line": 3906
+      },
+      "outliers": [
+        {
+          "path": "packages/db/src/schema.ts",
+          "symbol": "documentTagAssignments",
+          "line": 2720
+        },
+        {
+          "path": "packages/db/src/schema.ts",
+          "symbol": "documentTagEmbeddings",
+          "line": 308
+        },
+        {
+          "path": "packages/db/src/schema.ts",
+          "symbol": "exchangeRates",
+          "line": 1155
+        }
+      ],
+      "outliers_total": 3,
+      "key_type": "unknown"
+    },
+    {
+      "id": "D-afc38b",
+      "rank": 13,
+      "summary": "packages/db: functions in src/** (schema files) pass `mode` to timestamp()",
+      "role": {
+        "package": "packages/db",
+        "dir": "src",
+        "file": "schema",
+        "entry": "-",
+        "kind": "function",
+        "members": 49
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:drizzle-orm#timestamp",
+        "index": 1,
+        "key": "mode"
+      },
+      "evidence": {
+        "holders": 45,
+        "total": 49,
+        "lower_bound": 0.808,
+        "lift": 39.388
+      },
+      "rule_kind": "passes_key",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "packages/db/src/schema.ts",
+        "symbol": "accountingSyncRecords",
+        "line": 3906
+      },
+      "outliers": [
+        {
+          "path": "packages/db/src/schema.ts",
+          "symbol": "documentTagAssignments",
+          "line": 2720
+        },
+        {
+          "path": "packages/db/src/schema.ts",
+          "symbol": "documentTagEmbeddings",
+          "line": 308
+        },
+        {
+          "path": "packages/db/src/schema.ts",
+          "symbol": "insightUserStatus",
+          "line": 4173
+        },
+        {
+          "path": "packages/db/src/schema.ts",
+          "symbol": "insights",
+          "line": 4086
+        }
+      ],
+      "outliers_total": 4,
+      "key_type": "unknown"
+    },
+    {
+      "id": "D-80f1c3",
+      "rank": 14,
+      "summary": "apps/worker: classes in src/processors/** are named `*Processor`",
+      "role": {
+        "package": "apps/worker",
+        "dir": "src/processors",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "members": 40
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Processor"
+      },
+      "evidence": {
+        "holders": 39,
+        "total": 40,
+        "lower_bound": 0.871,
+        "lift": 2.283
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/worker/src/processors/accounting/export-transactions.ts",
+        "symbol": "ExportTransactionsProcessor",
+        "line": 123
+      },
+      "outliers": [
+        {
+          "path": "apps/worker/src/processors/accounting/base.ts",
+          "symbol": "AccountingProcessorBase",
+          "line": 100
+        }
+      ],
+      "outliers_total": 1
+    },
+    {
+      "id": "D-8fd473",
+      "rank": 15,
+      "summary": "packages/invoice: functions in src/utils/** declare their return type",
+      "role": {
+        "package": "packages/invoice",
+        "dir": "src/utils",
+        "file": "*",
+        "entry": "-",
+        "kind": "function",
+        "members": 26
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 24,
+        "total": 26,
+        "lower_bound": 0.759,
+        "lift": 2.417
+      },
+      "rule_kind": "control",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/invoice/src/utils/content.ts",
+        "symbol": "isValidJSON",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "packages/invoice/src/utils/calculate.ts",
+          "symbol": "calculateLineItemTotal",
+          "line": 66
+        },
+        {
+          "path": "packages/invoice/src/utils/calculate.ts",
+          "symbol": "calculateTotal",
+          "line": 1
+        }
+      ],
+      "outliers_total": 2
+    }
+  ],
+  "largest_role": null
+}

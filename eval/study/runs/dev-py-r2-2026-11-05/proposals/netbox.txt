@@ -1,0 +1,158 @@
+15 conventions from 6486 units in 155 roles (7 default tier, 8 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-281ae8] classes in netbox/** (types files) are decorated with register_type()
+    evidence: 133/134 (lower bound 0.96, lift 29.9)
+    tier:     default
+    example:  netbox/circuits/graphql/types.py#CircuitGroupAssignmentType
+    outlier:  netbox/netbox/graphql/types.py:153 NestedGroupObjectType
+
+ 2. [D-cc1341] classes in netbox/** (filtersets files) are decorated with register_filterset()
+    evidence: 138/141 (lower bound 0.94, lift 28.5)
+    tier:     default
+    example:  netbox/circuits/filtersets.py#CircuitFilterSet
+    outlier:  netbox/dcim/filtersets.py:3478 ConsoleConnectionFilterSet
+    outlier:  netbox/dcim/filtersets.py:3492 InterfaceConnectionFilterSet
+    outlier:  netbox/dcim/filtersets.py:3485 PowerConnectionFilterSet
+
+ 3. [D-76eb6b] classes in netbox/** (types files) pass `filters` to register_type()
+    evidence: 131/134 (lower bound 0.94, lift 29.9)
+    tier:     default
+    example:  netbox/circuits/graphql/types.py#CircuitGroupAssignmentType
+    outlier:  netbox/core/graphql/types.py:49 ContentType
+    outlier:  netbox/netbox/graphql/types.py:204 ContentTypeType
+    outlier:  netbox/netbox/graphql/types.py:153 NestedGroupObjectType
+
+ 4. [D-e5e365] classes in netbox/** (forms/filtersets files) pass `name` to FieldSet()
+    evidence: 129/136 (lower bound 0.90, lift 14.1)
+    tier:     default
+    example:  netbox/circuits/forms/filtersets.py#CircuitFilterForm
+    outlier:  netbox/core/forms/filtersets.py:190 ConfigRevisionFilterForm
+    outlier:  netbox/dcim/forms/filtersets.py:2495 ConsoleConnectionFilterForm
+    outlier:  netbox/dcim/forms/filtersets.py:2543 InterfaceConnectionFilterForm
+    outlier:  netbox/dcim/forms/filtersets.py:2519 PowerConnectionFilterForm
+    outlier:  netbox/extras/forms/filtersets.py:640 NotificationGroupFilterForm
+    outlier:  netbox/users/forms/filtersets.py:24 GroupFilterForm
+    outlier:  netbox/users/forms/filtersets.py:154 OwnerGroupFilterForm
+
+ 5. [D-bc0c7d] classes in netbox/** (search files) are decorated with register_search()
+    evidence: 98/100 (lower bound 0.93, lift 40.1)
+    tier:     default
+    example:  netbox/circuits/search.py#CircuitGroupIndex
+    outlier:  netbox/extras/models/search.py:16 CachedValue
+    outlier:  netbox/netbox/forms/search.py:18 SearchForm
+
+ 6. [D-e2c3e4] classes in netbox/** (choices files) extend ChoiceSet
+    evidence: 114/119 (lower bound 0.91, lift 33.7)
+    tier:     default
+    example:  netbox/circuits/choices.py#CircuitCommitRateChoices
+    outlier:  netbox/extras/choices.py:305 EventRuleActionChoices
+    outlier:  netbox/utilities/choices.py:19 Choice
+    outlier:  netbox/utilities/forms/fields/choices.py:76 ChoiceField
+    outlier:  netbox/utilities/forms/fields/choices.py:96 MultipleChoiceField
+    outlier:  netbox/utilities/forms/fields/choices.py:83 TypedChoiceField
+
+ 7. [D-310ec7] classes in netbox/ipam/tables/** pass `verbose_name` to Column()
+    evidence: 22/23 (lower bound 0.79, lift 26.1)
+    tier:     default
+    example:  netbox/ipam/tables/asn.py#ASNRangeTable
+    outlier:  netbox/ipam/tables/ip.py:373 AnnotatedIPAddressTable
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 8. [D-cc8d72] classes in netbox/** (forms/filtersets files) call FieldSet()
+    evidence: 132/136 (lower bound 0.93, lift 10.7)
+    tier:     suggestion (rule kind calls)
+    example:  netbox/circuits/forms/filtersets.py#CircuitFilterForm
+    outlier:  netbox/dcim/forms/filtersets.py:2495 ConsoleConnectionFilterForm
+    outlier:  netbox/dcim/forms/filtersets.py:2543 InterfaceConnectionFilterForm
+    outlier:  netbox/dcim/forms/filtersets.py:2519 PowerConnectionFilterForm
+    outlier:  netbox/extras/forms/filtersets.py:640 NotificationGroupFilterForm
+
+ 9. [D-4c4e2d] classes in netbox/** (model_forms files) call FieldSet()
+    evidence: 127/146 (lower bound 0.81, lift 9.6)
+    tier:     suggestion (rule kind calls)
+    example:  netbox/circuits/forms/model_forms.py#CircuitForm
+    outlier:  netbox/dcim/forms/model_forms.py:1044 CableForm
+    outlier:  netbox/dcim/forms/model_forms.py:1386 ConsolePortTemplateForm
+    outlier:  netbox/dcim/forms/model_forms.py:1400 ConsoleServerPortTemplateForm
+    outlier:  netbox/dcim/forms/model_forms.py:770 DeviceForm
+    outlier:  netbox/dcim/forms/model_forms.py:1260 DeviceVCMembershipForm
+    outlier:  netbox/dcim/forms/model_forms.py:2281 PopulateDeviceBayForm
+    outlier:  netbox/dcim/forms/model_forms.py:1301 VCMemberSelectForm
+    outlier:  netbox/dcim/forms/model_forms.py:1240 VirtualChassisForm
+    outlier:  netbox/extras/forms/model_forms.py:525 BookmarkForm
+    outlier:  netbox/extras/forms/model_forms.py:920 JournalEntryForm
+    outlier:  netbox/extras/forms/model_forms.py:536 NotificationGroupForm
+    outlier:  netbox/extras/forms/model_forms.py:562 SubscriptionForm
+    outlier:  netbox/extras/forms/model_forms.py:446 TableConfigForm
+    outlier:  netbox/ipam/forms/model_forms.py:551 IPAddressAssignForm
+    outlier:  netbox/ipam/forms/model_forms.py:703 VLANForm
+    outlier:  netbox/users/forms/model_forms.py:172 TokenForm
+    outlier:  netbox/users/forms/model_forms.py:128 UserTokenForm
+    outlier:  netbox/virtualization/forms/model_forms.py:106 ClusterAddDevicesForm
+    outlier:  netbox/virtualization/forms/model_forms.py:185 ClusterRemoveDevicesForm
+
+10. [D-58913a] classes in netbox/** (choices files) call Choice()
+    evidence: 106/119 (lower bound 0.82, lift 33.7)
+    tier:     suggestion (rule kind calls)
+    example:  netbox/circuits/choices.py#CircuitCommitRateChoices
+    outlier:  netbox/dcim/choices.py:2267 CoolingConnectorTypeChoices
+    outlier:  netbox/dcim/choices.py:2225 CoolingFeedStatusChoices
+    outlier:  netbox/dcim/choices.py:2177 CoolingMethodChoices
+    outlier:  netbox/dcim/choices.py:2209 CoolingSourceStatusChoices
+    outlier:  netbox/dcim/choices.py:2191 CoolingSourceTypeChoices
+    outlier:  netbox/dcim/choices.py:2241 FluidTypeChoices
+    outlier:  netbox/dcim/choices.py:2255 RackCoolingCapabilityChoices
+    outlier:  netbox/extras/choices.py:50 CustomFieldStatusChoices
+    outlier:  netbox/extras/choices.py:305 EventRuleActionChoices
+    outlier:  netbox/utilities/choices.py:19 Choice
+    outlier:  netbox/utilities/forms/fields/choices.py:76 ChoiceField
+    outlier:  netbox/utilities/forms/fields/choices.py:96 MultipleChoiceField
+    outlier:  netbox/utilities/forms/fields/choices.py:83 TypedChoiceField
+
+11. [D-73d13c] HTTP handlers in netbox/** (api/views files) are named `*Set`
+    evidence: 134/137 (lower bound 0.94, lift 12.1)
+    tier:     suggestion (rule kind named)
+    example:  netbox/circuits/api/views.py#CircuitGroupAssignmentViewSet
+    outlier:  netbox/extras/api/views.py:465 DashboardView
+    outlier:  netbox/ipam/api/views.py:460 IPRangeAvailableIPAddressesView
+    outlier:  netbox/ipam/api/views.py:454 PrefixAvailableIPAddressesView
+
+12. [D-afb64d] classes in netbox/** (choices files) are named `*Choices`
+    evidence: 115/119 (lower bound 0.92, lift 33.7)
+    tier:     suggestion (rule kind named)
+    example:  netbox/circuits/choices.py#CircuitCommitRateChoices
+    outlier:  netbox/utilities/choices.py:19 Choice
+    outlier:  netbox/utilities/forms/fields/choices.py:76 ChoiceField
+    outlier:  netbox/utilities/forms/fields/choices.py:96 MultipleChoiceField
+    outlier:  netbox/utilities/forms/fields/choices.py:83 TypedChoiceField
+
+13. [D-c50348] classes in netbox/** (graphql/filters files) call filter_field()
+    evidence: 126/135 (lower bound 0.88, lift 23.7)
+    tier:     suggestion (rule kind calls)
+    example:  netbox/circuits/graphql/filters.py#CircuitFilter
+    outlier:  netbox/circuits/graphql/filters.py:130 CircuitGroupFilter
+    outlier:  netbox/circuits/graphql/filters.py:125 CircuitTypeFilter
+    outlier:  netbox/circuits/graphql/filters.py:180 VirtualCircuitTypeFilter
+    outlier:  netbox/dcim/graphql/filters.py:732 ManufacturerFilter
+    outlier:  netbox/dcim/graphql/filters.py:1185 RackGroupFilter
+    outlier:  netbox/tenancy/graphql/filters.py:171 ContactRoleFilter
+    outlier:  netbox/virtualization/graphql/filters.py:67 ClusterTypeFilter
+    outlier:  netbox/vpn/graphql/filters.py:40 TunnelGroupFilter
+    outlier:  netbox/wireless/graphql/filters.py:29 WirelessLANGroupFilter
+
+14. [D-937c0c] classes in netbox/ipam/api/** are named `*Serializer`
+    evidence: 27/29 (lower bound 0.78, lift 18.2)
+    tier:     suggestion (rule kind named)
+    example:  netbox/ipam/api/serializers_/asns.py#ASNRangeSerializer
+    outlier:  netbox/ipam/api/field_serializers.py:11 IPAddressField
+    outlier:  netbox/ipam/api/field_serializers.py:31 IPNetworkField
+
+15. [D-89919d] classes in netbox/** (forms/filtersets files) call FieldSet() before TagFilterField()
+    evidence: 98/99 (lower bound 0.94, lift 1.0)
+    tier:     suggestion (rule kind before)
+    example:  netbox/circuits/forms/filtersets.py#CircuitFilterForm
+    outlier:  netbox/virtualization/forms/filtersets.py:42 ClusterGroupFilterForm
+

@@ -1,0 +1,37 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - admin
+  - forms
+  - models
+  - tests
+  - urls
+  - views
+  suffixes: []
+conventions:
+- id: D-4e8196
+  status: proposed
+  mode: advise
+  summary: functions in utils/** do not use redirects to computed URLs
+  role:
+    package: ""
+    dir: utils
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: avoids
+    signal: sink:dynamic_redirect
+  evidence:
+    holders: 149
+    total: 150
+    lower_bound: 0.963
+    lift: 15.332
+    python_members: 150
+  example: utils/audioprocessing/color_schemes.py#color_from_value
+  selector_version: 2

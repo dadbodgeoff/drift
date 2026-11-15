@@ -1,0 +1,48 @@
+6 conventions from 3568 units in 230 roles (0 default tier, 6 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-dadcea] backend: HTTP handlers in app/** are wrapped in _get_db_dependency()
+    evidence: 106/117 (lower bound 0.84, lift 8.2)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  backend/app/api/routes/v1/api_keys.py#create_api_key
+    outlier:  backend/app/api/routes/v1/import_xml.py:217 receive_sns_notification
+    outlier:  backend/app/api/routes/v1/meta.py:149 get_coverage
+    outlier:  backend/app/api/routes/v1/oura_webhooks.py:51 oura_webhook_health
+    ... 8 more outliers
+
+ 2. [D-6606a8] backend: functions in app/services/providers/garmin/backfill_state/** call _get_key()
+    evidence: 32/33 (lower bound 0.85, lift 29.4)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  backend/app/services/providers/garmin/backfill_state/core.py#acquire_backfill_lock
+    outlier:  backend/app/services/providers/garmin/backfill_state/window_state.py:91 update_window_cell
+
+ 3. [D-262064] backend: enums in app/schemas/** extend StrEnum
+    evidence: 53/57 (lower bound 0.83, lift 9.5)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  backend/app/schemas/auth/authentication_method.py#AuthenticationMethod
+    outlier:  backend/app/schemas/enums/aggregation_method.py:6 AggregationMethod
+    outlier:  backend/app/schemas/enums/provider.py:4 ProviderName
+    outlier:  backend/app/schemas/enums/series_types.py:23 SeriesType
+    ... 1 more outliers
+
+ 4. [D-b21ebc] backend: exported values in app/integrations/** call get_logger()
+    evidence: 31/33 (lower bound 0.80, lift 2.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  backend/app/integrations/celery/core.py#logger
+    outlier:  backend/app/integrations/celery/tasks/garmin/backfill_task.py:511 continue_garmin_backfill
+    outlier:  backend/app/integrations/celery/tasks/garmin/backfill_task.py:510 trigger_next_backfill
+
+ 5. [D-8ffd6f] backend: classes in app/repositories/** are named `*Repository`
+    evidence: 28/29 (lower bound 0.83, lift 23.8)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  backend/app/repositories/aggregate_backfill_repository.py#AggregateBackfillRepository
+    outlier:  backend/app/repositories/data_point_series_repository.py:144 WriteCounts
+
+ 6. [D-4c541f] frontend: functions in src/routes/(app)/** (*.server files) call requireToken()
+    evidence: 23/24 (lower bound 0.80, lift 30.1)
+    tier:     suggestion (rule kind calls)
+    example:  frontend/src/routes/(app)/dashboard/+page.server.ts#load
+    outlier:  frontend/src/routes/(app)/+layout.server.ts:7 load
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

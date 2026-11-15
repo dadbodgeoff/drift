@@ -1,0 +1,26 @@
+3 conventions from 1324 units in 57 roles (1 default tier, 2 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-2619c7] HTTP handlers in changedetectionio/** are decorated with validate_openapi_request()
+    evidence: 23/24 (lower bound 0.80, lift 24.1)
+    tier:     default
+    example:  changedetectionio/api/Changes.py#Changes.get
+    outlier:  changedetectionio/api/Spec.py:15 Spec.get
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 2. [D-7f369e] exported values in changedetectionio/blueprint/** do not read os.environ directly
+    evidence: 63/64 (lower bound 0.92, lift 6.4)
+    tier:     suggestion (rule kind avoids:other)
+    example:  changedetectionio/blueprint/add_watch_ui/browser_config.py#REQUIRED_CAPABILITIES
+    outlier:  changedetectionio/blueprint/mcp/tools.py:32 CHANGES_TIME_BUDGET
+
+ 3. [D-1ce566] functions in changedetectionio/llm/** declare their return type
+    evidence: 29/32 (lower bound 0.76, lift 8.9)
+    tier:     suggestion (rule kind control)
+    example:  changedetectionio/llm/bm25_trim.py#trim_to_relevant
+    outlier:  changedetectionio/llm/client.py:281 completion_isolated
+    outlier:  changedetectionio/llm/evaluator.py:310 tag_llm_decision
+    outlier:  changedetectionio/llm/model_list.py:101 list_models
+

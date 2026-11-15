@@ -1,0 +1,169 @@
+{
+  "repo": "polar",
+  "files": [
+    {
+      "path": ".agents/skills/add-locale/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/adr-check/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/api-surface-review/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/billing-review/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/conventions-check/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/fix-sentry/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/handbook-backend-development/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/interview-task/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/local-environment/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/open-pr/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/polar-code-review/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/render-env/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/reuse-check/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/ship-safety/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/slop-check/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/vercel-react-best-practices/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/verifier-web/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "clients/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "clients/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "clients/packages/cli/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "dev/cli/pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "lambda/image-resizer/pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "sdk/e2e/pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "sdk/generator/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "sdk/generator/pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "sdk/python/polar/.agents/skills/polar-python-sdk/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": "sdk/python/pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "sdk/typescript/.agents/skills/polar-typescript-sdk/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": "server/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "server/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "server/polar/backoffice/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "server/polar/backoffice/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "server/pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "clients/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "server/emails/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "16 more .oxlintrc.json files, e.g. clients/adapters/adapter-utils/.oxlintrc.json, clients/adapters/better-auth/.oxlintrc.json, clients/adapters/nextjs/.oxlintrc.json",
+      "kind": "lint (collapsed: read one or two)"
+    },
+    {
+      "path": "clients/apps/app/oxlint-plugins/",
+      "kind": "lint_custom (custom rule implementations)"
+    },
+    {
+      "path": "clients/apps/web/oxlint-plugins/",
+      "kind": "lint_custom (custom rule implementations)"
+    }
+  ]
+}

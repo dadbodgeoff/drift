@@ -1,0 +1,2858 @@
+diff --git a/crates/drift-cli/src/scan.rs b/crates/drift-cli/src/scan.rs
+index d70705d4..7e66bc6d 100644
+--- a/crates/drift-cli/src/scan.rs
++++ b/crates/drift-cli/src/scan.rs
+@@ -28,7 +28,8 @@ pub fn scan(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, ScanS
+ /// language's package facts and, for a file below an `integration` directory, its
+ /// `integration_files`. `Ok(None)` when a full scan is
+ /// needed (no index yet, a package manifest or schema file, or a file that cannot
+-/// be done exactly).
++/// be done exactly, or a file the repository's configuration may set apart:
++/// [`drift_core::declared`]).
+ pub fn scan_file(root: &Path, opts: &ScanOptions, rel: &str) -> anyhow::Result<Option<RepoFacts>> {
+     if drift_py::packages::is_manifest(rel) || opts.cache_dir.is_none() {
+         return Ok(None);
+@@ -44,6 +45,13 @@ pub fn scan_file(root: &Path, opts: &ScanOptions, rel: &str) -> anyhow::Result<O
+         .extension()
+         .and_then(|e| e.to_str())
+         .is_some_and(|e| drift_core::ingest::PYTHON_EXTENSIONS.contains(&e));
++    // A file the configuration's patterns set apart may still be reached from another
++    // file (an import, a registry): only a full scan knows, so it gets one.
++    let scopes = if python {
++        drift_py::declared_scopes(&root, &py)
++    } else {
++        drift_ts::declared_scopes(&root, &walked)
++    };
+     let mut facts = if python {
+         let py_opts = drift_py::ScanOptions {
+             cache_dir: opts.cache_dir.clone(),
+@@ -85,6 +93,11 @@ pub fn scan_file(root: &Path, opts: &ScanOptions, rel: &str) -> anyhow::Result<O
+         }
+         facts
+     };
++    if facts.files.iter().any(|f| {
++        drift_core::declared::pattern_out(&scopes, &f.path, &f.package).is_some() // mutation:declared-hook
++    }) {
++        return Ok(None);
++    }
+     facts.normalize();
+     Ok(Some(facts))
+ }
+@@ -96,6 +109,7 @@ fn merge(into: &mut RepoFacts, other: RepoFacts) {
+     into.packages.extend(other.packages);
+     into.context_files.extend(other.context_files);
+     into.integration_files.extend(other.integration_files);
++    into.declared.extend(other.declared);
+     into.normalize();
+ }
+ 
+@@ -136,6 +150,37 @@ mod tests {
+         assert_eq!(b.calls, ["api/c.py#f"]);
+     }
+ 
++    /// A file the configuration's patterns set apart may be reached from another file
++    /// (an import), which only a full scan sees: its hook scan is a full one, and the
++    /// full scan sets it apart or keeps it as reachability says.
++    #[test]
++    fn a_file_the_config_sets_apart_needs_a_full_scan() {
++        let dir = tempfile::tempdir().unwrap();
++        let r = dir.path();
++        std::fs::create_dir_all(r.join("src")).unwrap();
++        std::fs::create_dir_all(r.join("scripts")).unwrap();
++        std::fs::write(r.join("tsconfig.json"), r#"{ "include": ["src"] }"#).unwrap();
++        std::fs::write(
++            r.join("src/a.ts"),
++            "import { b } from \"../scripts/b\";\nexport const a = b;\n",
++        )
++        .unwrap();
++        std::fs::write(r.join("scripts/b.ts"), "export const b = 1;\n").unwrap();
++        std::fs::write(r.join("scripts/c.ts"), "export const c = 1;\n").unwrap();
++        let cache = tempfile::tempdir().unwrap();
++        let opts = ScanOptions {
++            cache_dir: Some(cache.path().to_path_buf()),
++            threads: 1,
++        };
++        let full = scan(r, &opts).unwrap().0;
++        assert_eq!(full.declared.len(), 1);
++        let apart = drift_core::declared::set_apart(&full);
++        assert_eq!(apart.keys().collect::<Vec<_>>(), ["scripts/c.ts"]);
++        assert!(scan_file(r, &opts, "src/a.ts").unwrap().is_some());
++        assert!(scan_file(r, &opts, "scripts/b.ts").unwrap().is_none()); // mutation:declared-hook
++        assert!(scan_file(r, &opts, "scripts/c.ts").unwrap().is_none());
++    }
++
+     #[test]
+     fn hostile_nesting_is_skipped_not_a_crash() {
+         let dir = tempfile::tempdir().unwrap();
+diff --git a/crates/drift-cli/tests/agent_text.rs b/crates/drift-cli/tests/agent_text.rs
+index cb3707ba..dcf9b20b 100644
+--- a/crates/drift-cli/tests/agent_text.rs
++++ b/crates/drift-cli/tests/agent_text.rs
+@@ -144,7 +144,7 @@ const LIBRARY_CONVENTION: &str = "- id: D-11b000
+     lower_bound: 0.75
+     lift: 1.0
+   example: src/ids/i10.ts#(file)
+-  selector_version: 3
++  selector_version: 4
+   agents: show
+ ";
+ 
+diff --git a/crates/drift-core/src/declared.rs b/crates/drift-core/src/declared.rs
+new file mode 100644
+index 00000000..f6a381fa
+--- /dev/null
++++ b/crates/drift-core/src/declared.rs
+@@ -0,0 +1,458 @@
++//! Declared scope: a file the repository's own configuration leaves out of its
++//! application graph is a member of no role.
++//!
++//! Language parsers read the configuration into [`DeclaredScope`]s
++//! ([`RepoFacts::declared`]): tsconfig projects (`files`, `include`, `exclude`, through
++//! `extends` and project references), ESLint global ignores (legacy `ignorePatterns`,
++//! flat-config `ignores`-only blocks and `globalIgnores()`; never rule overrides), the
++//! `files` of a published package, and Python package discovery (`pyproject.toml`,
++//! `setup.cfg`). This module decides which analysed files they set apart
++//! ([`set_apart`]). Deterministic and authored by the repo: no names, no thresholds.
++//!
++//! - **Governance.** For each source, the scopes that govern a file are those of the
++//!   deepest directory among the scopes that can govern it: any ancestor directory for
++//!   ESLint (the nearest config lints a file), a directory at or below the file's
++//!   package for a tsconfig, the file's own package for `npm-files` and
++//!   `python-packages`. A file is out by a source only when every scope governing it
++//!   was read, judges its extension and takes it in nowhere. Every `tsconfig*.json` of
++//!   a directory, and every project they reference, governs together: one that takes
++//!   the file in keeps it.
++//! - **Fail closed.** A config that could not be read is a scope with a
++//!   [`DeclaredScope::note`]: it still governs its directory and sets nothing apart, so
++//!   a config Drift cannot read never narrows a role, and never widens one.
++//! - **Reachable files are kept.** A file an adapter found an entry point in, a source
++//!   a package manifest exposes ([`crate::PackageFacts::entries`]), and every file a
++//!   kept file imports, registers or discovers (to any depth) stays a member, whatever
++//!   a config says: it is in the application graph.
++
++use std::collections::{BTreeMap, BTreeSet, VecDeque};
++
++use crate::facts::{DeclaredScope, FileFacts, RepoFacts};
++
++/// tsconfig projects.
++pub const TSCONFIG: &str = "tsconfig";
++/// ESLint global ignores.
++pub const ESLINT: &str = "eslint";
++/// A published package's `package.json` `files`.
++pub const NPM_FILES: &str = "npm-files";
++/// Python package discovery.
++pub const PYTHON_PACKAGES: &str = "python-packages";
++/// Every source, in the order [`pattern_out`] asks them.
++pub const SOURCES: &[&str] = &[TSCONFIG, ESLINT, NPM_FILES, PYTHON_PACKAGES];
++
++/// Most alternatives a pattern's `{a,b}` groups expand to.
++const MAX_ALTERNATIVES: usize = 64;
++/// Most `**` segments in a pattern (matching backtracks once per `**`).
++const MAX_GLOBSTARS: usize = 4;
++
++/// The pattern's `{a,b}` groups expanded. `None` when a group is unbalanced or the
++/// pattern expands to more than [`MAX_ALTERNATIVES`].
++pub fn expand_braces(glob: &str) -> Option<Vec<String>> {
++    let Some(open) = glob.find('{') else {
++        return (!glob.contains('}')).then(|| vec![glob.to_string()]);
++    };
++    let mut depth = 0usize;
++    let mut close = None;
++    let mut commas = Vec::new();
++    for (i, c) in glob[open..].char_indices() {
++        match c {
++            '{' => depth += 1,
++            '}' => {
++                depth -= 1;
++                if depth == 0 {
++                    close = Some(open + i);
++                    break;
++                }
++            }
++            ',' if depth == 1 => commas.push(open + i),
++            _ => {}
++        }
++    }
++    let close = close?;
++    let (head, tail) = (&glob[..open], &glob[close + 1..]);
++    let mut bounds = vec![open];
++    bounds.extend(commas);
++    bounds.push(close);
++    let mut out = Vec::new();
++    for w in bounds.windows(2) {
++        let alt = &glob[w[0] + 1..w[1]];
++        for rest in expand_braces(&format!("{head}{alt}{tail}"))? {
++            out.push(rest);
++            if out.len() > MAX_ALTERNATIVES {
++                return None;
++            }
++        }
++    }
++    Some(out)
++}
++
++/// True when [`glob_match`] reads `glob` exactly: `*`, `?`, `**` and `{a,b}` only. A
++/// negation, a character class, an escape, an extglob, a template variable or a `..`
++/// segment is not read, and the config holding it is read as unreadable.
++pub fn supported_glob(glob: &str) -> bool {
++    !glob.is_empty()
++        && !glob.starts_with('!')
++        && !glob.contains(['[', ']', '\\', '$'])
++        && !["+(", "@(", "!(", "?(", "*("]
++            .iter()
++            .any(|x| glob.contains(x))
++        && !glob.split('/').any(|s| s == "..")
++        && glob.split('/').filter(|s| *s == "**").count() <= MAX_GLOBSTARS
++        && expand_braces(glob).is_some()
++}
++
++/// `rel` (a config's path, POSIX) joined to the repo-relative directory `dir` and
++/// normalised (`./` and `.` dropped, `..` applied). `None` when it leaves the repo.
++pub fn join(dir: &str, rel: &str) -> Option<String> {
++    let mut out: Vec<&str> = dir.split('/').filter(|s| !s.is_empty()).collect();
++    for seg in rel.split('/') {
++        match seg {
++            "" | "." => {}
++            ".." => {
++                out.pop()?;
++            }
++            s => out.push(s),
++        }
++    }
++    Some(out.join("/"))
++}
++
++/// True when the repo-relative `path` matches the repo-relative `glob`: `*` and `?`
++/// within one path segment, `**` as a segment for any number of segments, `{a,b}`
++/// alternatives.
++pub fn glob_match(glob: &str, path: &str) -> bool {
++    let path: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
++    expand_braces(glob).is_some_and(|alts| {
++        alts.iter().any(|g| {
++            let g: Vec<&str> = g
++                .split('/')
++                .filter(|s| !s.is_empty() && *s != ".")
++                .collect();
++            segments_match(&g, &path)
++        })
++    })
++}
++
++fn segments_match(glob: &[&str], path: &[&str]) -> bool {
++    match glob.first() {
++        None => path.is_empty(),
++        Some(&"**") => (0..=path.len()).any(|i| segments_match(&glob[1..], &path[i..])),
++        Some(g) => {
++            !path.is_empty()
++                && segment_match(g.as_bytes(), path[0].as_bytes())
++                && segments_match(&glob[1..], &path[1..])
++        }
++    }
++}
++
++/// `*` and `?` within one segment.
++fn segment_match(p: &[u8], s: &[u8]) -> bool {
++    let (mut pi, mut si) = (0, 0);
++    let mut star: Option<(usize, usize)> = None;
++    while si < s.len() {
++        if pi < p.len() && (p[pi] == b'?' || p[pi] == s[si]) {
++            pi += 1;
++            si += 1;
++        } else if pi < p.len() && p[pi] == b'*' {
++            star = Some((pi, si));
++            pi += 1;
++        } else if let Some((sp, ss)) = star {
++            pi = sp + 1;
++            si = ss + 1;
++            star = Some((sp, ss + 1));
++        } else {
++            return false;
++        }
++    }
++    p[pi..].iter().all(|&c| c == b'*')
++}
++
++/// `path` is `dir` itself or below it.
++fn at_or_below(path: &str, dir: &str) -> bool {
++    dir.is_empty() || path == dir || path.strip_prefix(dir).is_some_and(|r| r.starts_with('/'))
++}
++
++fn extension(path: &str) -> &str {
++    let file = path.rsplit('/').next().unwrap_or(path);
++    file.rsplit_once('.').map_or("", |(_, e)| e)
++}
++
++impl DeclaredScope {
++    /// The scope says something about files of `path`'s extension.
++    pub fn judges(&self, path: &str) -> bool {
++        self.exts.is_empty() || self.exts.iter().any(|e| e == extension(path))
++    }
++
++    /// The scope takes `path` in: a listed file, or a match of an `include` pattern
++    /// and of no `exclude` pattern (an excluded directory excludes all below it).
++    pub fn takes_in(&self, path: &str) -> bool {
++        self.files.iter().any(|f| f == path)
++            || (self.include.iter().any(|g| glob_match(g, path))
++                && !self
++                    .exclude
++                    .iter()
++                    .any(|g| glob_match(g, path) || glob_match(&format!("{g}/**"), path)))
++    }
++
++    /// The scope can govern `path`, a file of workspace package `package`.
++    pub fn can_govern(&self, path: &str, package: &str) -> bool {
++        at_or_below(path, &self.dir)
++            && path != self.dir
++            && match self.source.as_str() {
++                TSCONFIG => at_or_below(&self.dir, package),
++                NPM_FILES | PYTHON_PACKAGES => self.dir == package,
++                _ => true,
++            }
++    }
++}
++
++/// The scope that sets `path` (in workspace package `package`) apart by its patterns
++/// alone, before reachability ([`set_apart`]): for the first source under which every
++/// governing scope was read, judges the file and takes it in nowhere.
++pub fn pattern_out<'s>(
++    scopes: &'s [DeclaredScope],
++    path: &str,
++    package: &str,
++) -> Option<&'s DeclaredScope> {
++    SOURCES.iter().find_map(|source| {
++        let candidates: Vec<&DeclaredScope> = scopes
++            .iter()
++            .filter(|s| s.source == *source && s.can_govern(path, package))
++            .collect();
++        // Every candidate's directory is an ancestor of `path`: the longest is deepest.
++        let deepest = candidates.iter().map(|s| s.dir.len()).max()?;
++        let governing: Vec<&DeclaredScope> = candidates
++            .into_iter()
++            .filter(|s| s.dir.len() == deepest)
++            .collect();
++        governing
++            .iter()
++            .all(|s| s.note.is_empty() && s.judges(path) && !s.takes_in(path)) // mutation:declared-note
++            .then(|| governing[0])
++    })
++}
++
++/// The analysed files the repository's configuration sets apart, each with the config
++/// that does ([`DeclaredScope::path`]): [`pattern_out`], less every reachable file
++/// (see the module documentation). Empty when the facts hold no scope (a single-file
++/// scan, whose file is sent to a full scan when its patterns set it apart).
++pub fn set_apart(repo: &RepoFacts) -> BTreeMap<String, String> {
++    if repo.declared.is_empty() {
++        return BTreeMap::new();
++    }
++    let mut out: BTreeMap<&str, &str> = repo
++        .files
++        .iter()
++        .filter_map(|f| {
++            pattern_out(&repo.declared, &f.path, &f.package)
++                .map(|s| (f.path.as_str(), s.path.as_str()))
++        })
++        .collect();
++    if out.is_empty() {
++        return BTreeMap::new();
++    }
++    // Entry points an adapter found, and what a package manifest exposes, are reached
++    // from outside the code: kept [STRICT].
++    let exposed: BTreeSet<&str> = repo
++        .packages
++        .iter()
++        .flat_map(|p| p.entries.iter().map(String::as_str))
++        .collect();
++    for f in &repo.files {
++        if !f.entry_points.is_empty() || exposed.contains(f.path.as_str()) {
++            out.remove(f.path.as_str()); // mutation:declared-entry
++        }
++    }
++    // Whatever a kept file imports, registers or discovers is in the graph too.
++    let by_path: BTreeMap<&str, &FileFacts> =
++        repo.files.iter().map(|f| (f.path.as_str(), f)).collect();
++    let mut queue: VecDeque<&FileFacts> = repo
++        .files
++        .iter()
++        .filter(|f| !out.contains_key(f.path.as_str()))
++        .collect();
++    while let Some(f) = queue.pop_front() {
++        if out.is_empty() {
++            break;
++        }
++        let mut reached: Vec<&str> = f.imports.iter().map(|i| i.module.as_str()).collect();
++        for r in &f.registries {
++            reached.extend(
++                r.items
++                    .iter()
++                    .map(|i| i.target.split('#').next().unwrap_or_default()),
++            );
++        }
++        for g in f.discovers.iter().filter(|g| !g.contains(':')) {
++            reached.extend(out.keys().copied().filter(|p| glob_match(g, p)));
++        }
++        for p in reached {
++            if out.remove(p).is_some() // mutation:declared-reach
++                && let Some(next) = by_path.get(p)
++            {
++                queue.push_back(next);
++            }
++        }
++    }
++    out.into_iter()
++        .map(|(p, c)| (p.to_string(), c.to_string()))
++        .collect()
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use crate::facts::{EntryPoint, Import, PackageFacts};
++
++    fn scope(source: &str, dir: &str, include: &[&str], exclude: &[&str]) -> DeclaredScope {
++        DeclaredScope {
++            path: format!("{dir}/cfg"),
++            source: source.into(),
++            dir: dir.into(),
++            include: include.iter().map(|s| s.to_string()).collect(),
++            exclude: exclude.iter().map(|s| s.to_string()).collect(),
++            ..Default::default()
++        }
++    }
++
++    fn file(path: &str, package: &str, imports: &[&str]) -> FileFacts {
++        FileFacts {
++            path: path.into(),
++            package: package.into(),
++            imports: imports
++                .iter()
++                .map(|m| Import {
++                    module: m.to_string(),
++                    names: vec![],
++                    type_only: false,
++                    load: Default::default(),
++                })
++                .collect(),
++            ..Default::default()
++        }
++    }
++
++    #[test]
++    fn globs() {
++        assert!(glob_match("src/**", "src/a/b.ts"));
++        assert!(glob_match("src/**/*.ts", "src/b.ts"));
++        assert!(!glob_match("src/*", "src/a/b.ts"));
++        assert!(glob_match("src/*", "src/b.ts"));
++        assert!(glob_match(
++            "**/*.config.{js,cjs}",
++            "apps/x/electron.config.cjs"
++        ));
++        assert!(!glob_match(
++            "**/*.config.{js,cjs}",
++            "apps/x/electron.config.ts"
++        ));
++        assert!(glob_match("a/?.ts", "a/b.ts"));
++        assert!(glob_match("**", "x"));
++        assert!(!glob_match("scripts", "scripts/a.ts"));
++        assert_eq!(
++            expand_braces("a{b,c{d,e}}f").unwrap(),
++            ["abf", "acdf", "acef"]
++        );
++        assert!(expand_braces("a{b").is_none());
++        assert!(!supported_glob("!dist"));
++        assert!(!supported_glob("src/[ab].ts"));
++        assert!(!supported_glob("../x/**"));
++        assert!(!supported_glob("${configDir}/src"));
++        assert!(supported_glob("app/(group)/**"));
++        assert_eq!(
++            join("apps/web", "./src/../lib").as_deref(),
++            Some("apps/web/lib")
++        );
++        assert_eq!(join("", "../x"), None);
++    }
++
++    #[test]
++    fn excluded_directories_exclude_all_below() {
++        let s = scope(TSCONFIG, "", &["**"], &["scripts"]);
++        assert!(!s.takes_in("scripts/a/b.ts"));
++        assert!(s.takes_in("src/a.ts"));
++        let mut f = scope(TSCONFIG, "", &["src/**"], &["src/gen"]);
++        f.files = vec!["src/gen/keep.ts".into()];
++        assert!(
++            f.takes_in("src/gen/keep.ts"),
++            "a listed file is in whatever exclude says"
++        );
++        assert!(!f.takes_in("src/gen/other.ts"));
++    }
++
++    #[test]
++    fn the_deepest_governing_configs_decide_together() {
++        let scopes = vec![
++            scope(ESLINT, "", &["**"], &["apps/web/**"]),
++            scope(ESLINT, "apps/web", &["apps/web/**"], &[]),
++            scope(TSCONFIG, "apps/api", &["apps/api/src/**"], &[]),
++            scope(TSCONFIG, "apps/api", &["apps/api/*.config.ts"], &[]),
++        ];
++        // The nearest ESLint config lints apps/web, and ignores nothing there.
++        assert!(pattern_out(&scopes, "apps/web/a.ts", "apps/web").is_none());
++        // One tsconfig of the directory takes the config file in: it is kept.
++        assert!(pattern_out(&scopes, "apps/api/vite.config.ts", "apps/api").is_none());
++        let out = pattern_out(&scopes, "apps/api/scripts/seed.ts", "apps/api").unwrap();
++        assert_eq!(out.source, TSCONFIG);
++        // A tsconfig above the file's package does not govern it.
++        let root = vec![scope(TSCONFIG, "", &["src/**"], &[])];
++        assert!(pattern_out(&root, "packages/x/a.ts", "packages/x").is_none());
++        assert!(pattern_out(&root, "lib/a.ts", "").is_some());
++        // A package's `files` governs that package only.
++        let npm = vec![scope(NPM_FILES, "", &["lib", "lib/**"], &[])];
++        assert!(pattern_out(&npm, "packages/x/a.ts", "packages/x").is_none());
++        assert!(pattern_out(&npm, "scripts/a.ts", "").is_some());
++        assert!(pattern_out(&npm, "lib/a.ts", "").is_none());
++    }
++
++    #[test]
++    fn a_config_that_was_not_read_sets_nothing_apart() {
++        let mut noted = scope(TSCONFIG, "", &[], &[]);
++        noted.note = "extends a config that could not be read".into();
++        let scopes = vec![scope(TSCONFIG, "", &["src/**"], &[]), noted];
++        assert!(pattern_out(&scopes, "scripts/a.ts", "").is_none());
++        // A file of an extension the scope does not judge is never out by it.
++        let mut ts = scope(TSCONFIG, "", &["src/**"], &[]);
++        ts.exts = vec!["ts".into()];
++        assert!(pattern_out(&[ts.clone()], "scripts/a.js", "").is_none());
++        assert!(pattern_out(&[ts], "scripts/a.ts", "").is_some());
++    }
++
++    #[test]
++    fn reachable_files_are_kept() {
++        let mut repo = RepoFacts {
++            declared: vec![scope(TSCONFIG, "", &["src/**"], &[])],
++            files: vec![
++                file("src/app.ts", "", &["tools/used.ts"]),
++                file("tools/used.ts", "", &["tools/deep.ts"]),
++                file("tools/deep.ts", "", &[]),
++                file("tools/alone.ts", "", &["src/app.ts"]),
++                file("tools/route.ts", "", &[]),
++                file("tools/exposed.ts", "", &[]),
++                file("tools/found.ts", "", &[]),
++            ],
++            packages: vec![PackageFacts {
++                entries: vec!["tools/exposed.ts".into()],
++                ..Default::default()
++            }],
++            ..Default::default()
++        };
++        repo.files[4].entry_points = vec![EntryPoint {
++            symbol: "GET".into(),
++            kind: "http".into(),
++            method: None,
++            route: None,
++            adapter: "nextjs".into(),
++        }];
++        repo.files[0].discovers = vec!["tools/f*.ts".into()];
++        let apart = set_apart(&repo);
++        assert_eq!(
++            apart.keys().map(String::as_str).collect::<Vec<_>>(),
++            ["tools/alone.ts"],
++            "imported (to any depth), entry-point, exposed and discovered files stay"
++        );
++        assert_eq!(apart["tools/alone.ts"], "/cfg");
++        repo.declared.clear();
++        assert!(set_apart(&repo).is_empty());
++    }
++}
+diff --git a/crates/drift-core/src/facts.rs b/crates/drift-core/src/facts.rs
+index 7ec2490e..f9cead0a 100644
+--- a/crates/drift-core/src/facts.rs
++++ b/crates/drift-core/src/facts.rs
+@@ -750,6 +750,41 @@ pub struct RepoFacts {
+     /// a full scan, where every file is in `files`.
+     #[serde(default, skip_serializing_if = "Vec::is_empty")]
+     pub integration_files: Vec<FileRef>,
++    /// What the repository's own configuration declares its application graph to be
++    /// ([`crate::declared`]): tsconfig projects, ESLint global ignores, a published
++    /// package's `files`, Python package discovery. A file it leaves out is in no role.
++    /// Full scans only; empty, and not serialised, otherwise.
++    #[serde(default, skip_serializing_if = "Vec::is_empty")]
++    pub declared: Vec<DeclaredScope>,
++}
++
++/// One configuration file's statement of which files belong to the project it
++/// governs ([`crate::declared`]). Patterns are repo-relative globs (`*`, `?`, `**`).
++#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
++pub struct DeclaredScope {
++    /// Repo-relative path of the config file.
++    pub path: String,
++    /// `tsconfig`, `eslint`, `npm-files` or `python-packages`.
++    pub source: String,
++    /// The directory whose files it governs ("" for the root).
++    pub dir: String,
++    /// The file extensions it judges; a file of another extension is never out by it.
++    #[serde(default, skip_serializing_if = "Vec::is_empty")]
++    pub exts: Vec<String>,
++    /// Files it always takes in (tsconfig `files`, a package's manifest entries).
++    #[serde(default, skip_serializing_if = "Vec::is_empty")]
++    pub files: Vec<String>,
++    /// A judged file is in when it matches one of these...
++    #[serde(default, skip_serializing_if = "Vec::is_empty")]
++    pub include: Vec<String>,
++    /// ...and no pattern here, where a pattern naming a directory takes in all below it.
++    #[serde(default, skip_serializing_if = "Vec::is_empty")]
++    pub exclude: Vec<String>,
++    /// Why the config could not be read. A scope with a note sets nothing apart, and it
++    /// still governs its directory, so no other config of its source decides there
++    /// (fail closed).
++    #[serde(default, skip_serializing_if = "String::is_empty")]
++    pub note: String,
+ }
+ 
+ /// The keys one file declares, for co-change rules.
+@@ -1034,6 +1069,18 @@ impl RepoFacts {
+             f.normalize();
+         }
+         self.context_files.sort_by(|a, b| a.path.cmp(&b.path));
++        for d in &mut self.declared {
++            d.exts.sort();
++            d.exts.dedup();
++            d.files.sort();
++            d.files.dedup();
++            d.include.sort();
++            d.include.dedup();
++            d.exclude.sort();
++            d.exclude.dedup();
++        }
++        self.declared.sort();
++        self.declared.dedup();
+         for k in &mut self.key_files {
+             k.keys.sort();
+             k.keys.dedup_by(|a, b| a.0 == b.0);
+diff --git a/crates/drift-core/src/lib.rs b/crates/drift-core/src/lib.rs
+index 1045a158..932fee38 100644
+--- a/crates/drift-core/src/lib.rs
++++ b/crates/drift-core/src/lib.rs
+@@ -1,6 +1,7 @@
+ //! Drift core: the language-neutral fact model, repository ingest and the fact cache.
+ 
+ pub mod cache;
++pub mod declared;
+ pub mod facts;
+ pub mod fsutil;
+ pub mod ingest;
+diff --git a/crates/drift-mine/src/mine.rs b/crates/drift-mine/src/mine.rs
+index e7739749..432846d5 100644
+--- a/crates/drift-mine/src/mine.rs
++++ b/crates/drift-mine/src/mine.rs
+@@ -3644,6 +3644,7 @@ fn mine_families(
+         crate::roles::Legacy {
+             export_names: false,
+             member_kinds: true,
++            declared: false,
+         },
+     )
+     .map(|before| {
+diff --git a/crates/drift-mine/src/policy.rs b/crates/drift-mine/src/policy.rs
+index 3f1b6824..fc41383c 100644
+--- a/crates/drift-mine/src/policy.rs
++++ b/crates/drift-mine/src/policy.rs
+@@ -18,8 +18,10 @@ pub const POLICY_VERSION: u32 = 1;
+ /// place. 2: exports of a reserved name are only in roles that name it; a selector
+ /// without [`RoleSelector::member_kind`] also holds the members of every member kind
+ /// at its place. 3: members of a member kind (a Python class's framework lineage) are
+-/// only in roles that name it ([`crate::roles::Legacy`]).
+-pub const SELECTOR_VERSION: u32 = 3;
++/// only in roles that name it ([`crate::roles::Legacy`]). 4: a member the repository's
++/// own configuration leaves out of its application graph is in no role
++/// ([`drift_core::declared`]); a selector of version 3 or lower still holds it.
++pub const SELECTOR_VERSION: u32 = 4;
+ 
+ fn legacy_selector() -> u32 {
+     1
+@@ -283,8 +285,9 @@ pub struct Convention {
+     pub example: String,
+     /// How [`Convention::role`] is read ([`SELECTOR_VERSION`]). A selector is frozen:
+     /// a convention written before reserved exports (no field, version 1) or member
+-    /// kinds (version 2) had roles of their own keeps checking the members it checked,
+-    /// reserved exports and members of every kind included
++    /// kinds (version 2) had roles of their own, or before declared scopes (version 3),
++    /// keeps checking the members it checked, reserved exports, members of every kind
++    /// and members a config sets apart included
+     /// ([`crate::roles::Unit::in_convention_role`]), whatever mining forms today. Only
+     /// a convention first written now gets the current version. Not part of the id.
+     #[serde(
+diff --git a/crates/drift-mine/src/roles.rs b/crates/drift-mine/src/roles.rs
+index 06d1d222..c3c913bb 100644
+--- a/crates/drift-mine/src/roles.rs
++++ b/crates/drift-mine/src/roles.rs
+@@ -214,6 +214,12 @@ pub struct Unit<'a> {
+     /// unit is a function (or component) of its own place, and what the function does
+     /// is what it does ([`crate::context::RepoContext::alias_target`]).
+     pub alias: Option<(&'a FileFacts, &'a Symbol)>,
++    /// For a unit of a file the repository's own configuration leaves out of its
++    /// application graph ([`drift_core::declared::set_apart`]): the roles it would have
++    /// had. Such a unit is in no role (`roles` is empty); a convention written before
++    /// declared scopes (`selector_version` 3 or lower, [`Legacy::declared`]) still holds
++    /// it. Empty for every other unit.
++    pub declared_out: Vec<RoleSelector>,
+ }
+ 
+ impl Unit<'_> {
+@@ -278,15 +284,20 @@ impl Unit<'_> {
+     /// 2) had roles of their own also holds the members of those roles at its place, as
+     /// it did when it was accepted.
+     pub fn in_convention_role(&self, role: &RoleSelector, selector_version: u32) -> bool {
+-        if self.in_role(role) {
+-            return true;
+-        }
+         let legacy = Legacy::of(role, selector_version);
++        // A selector written before declared scopes holds the members a config sets apart.
++        let roles = if legacy.declared && !self.declared_out.is_empty() {
++            &self.declared_out
++        } else {
++            &self.roles
++        };
+         match self.view {
+-            View::Symbol(f, _) if legacy.any() => {
+-                legacy.applies_to(&self.roles) && role.includes(&legacy.strip(&self.roles), &f.path)
++            View::Symbol(f, _) | View::File(f) if role.includes(roles, &f.path) => true,
++            View::Symbol(f, _) => {
++                legacy.applies_to(roles) && role.includes(&legacy.strip(roles), &f.path)
+             }
+-            _ => false,
++            View::File(_) => false,
++            View::Model(_) | View::Package(_) => self.roles.contains(role),
+         }
+     }
+ }
+@@ -302,6 +313,9 @@ pub struct Legacy {
+     /// Written before member kinds had roles of their own (versions 1 and 2): it names
+     /// no member kind, so it holds the members of every kind at its place too.
+     pub member_kinds: bool,
++    /// Written before declared scopes (versions 1 to 3): it holds the members a
++    /// repository's configuration sets apart ([`Unit::declared_out`]) too.
++    pub declared: bool,
+ }
+ 
+ impl Legacy {
+@@ -309,12 +323,28 @@ impl Legacy {
+         Legacy {
+             export_names: selector_version < 2 && role.export_name.is_none(),
+             member_kinds: selector_version < 3 && role.member_kind.is_none(),
++            declared: selector_version < 4,
+         }
+     }
+ 
+     /// True when the selector reads any role as it was before.
+     pub fn any(self) -> bool {
+-        self.export_names || self.member_kinds
++        self.export_names || self.member_kinds || self.declared
++    }
++
++    /// The roles `u` has under this reading, before [`Legacy::strip`]: those a config set
++    /// aside when the reading holds set-apart members.
++    fn roles_of<'u>(self, u: &'u Unit) -> &'u [RoleSelector] {
++        if self.declared && !u.declared_out.is_empty() {
++            &u.declared_out
++        } else {
++            &u.roles
++        }
++    }
++
++    /// True when `u`'s roles under this reading differ from its roles now.
++    fn changes(self, u: &Unit) -> bool {
++        (self.declared && !u.declared_out.is_empty()) || self.applies_to(&u.roles)
+     }
+ 
+     /// True when a unit with `roles` has one of the roles this reading sets aside.
+@@ -359,16 +389,21 @@ pub fn reads_as_legacy(role: &RoleSelector, selector_version: u32) -> bool {
+ /// that carry an opt-out decorator). `None` when no unit has such a role: the units
+ /// then read as they are.
+ pub fn units_before<'a>(units: &[Unit<'a>], legacy: Legacy) -> Option<Vec<Unit<'a>>> {
+-    if !legacy.any() || !units.iter().any(|u| legacy.applies_to(&u.roles)) {
++    if !legacy.any() || !units.iter().any(|u| legacy.changes(u)) {
+         return None;
+     }
+     Some(
+         units
+             .iter()
+             .map(|u| {
+-                if legacy.applies_to(&u.roles) {
++                if legacy.changes(u) {
++                    let roles = legacy.roles_of(u);
+                     Unit {
+-                        roles: legacy.strip(&u.roles),
++                        roles: if legacy.applies_to(roles) {
++                            legacy.strip(roles)
++                        } else {
++                            roles.to_vec()
++                        },
+                         ..u.clone()
+                     }
+                 } else {
+@@ -1260,11 +1295,15 @@ impl<'a> FunctionAliases<'a> {
+ pub fn units<'a>(repo: &'a RepoFacts, kinds: &FileKinds) -> Vec<Unit<'a>> {
+     let non_production = NonProduction::learn(repo);
+     let aliases = FunctionAliases::learn(repo);
++    // Files the repository's own configuration leaves out of its application graph:
++    // their units are in no role (a convention written before still holds them).
++    let apart = drift_core::declared::set_apart(repo);
+     let mut out = Vec::new();
+     for f in &repo.files {
+         if is_test_path(&f.path) || non_production.contains(&f.path, &f.package) {
+             continue;
+         }
++        let first = out.len();
+         for s in &f.symbols {
+             if s.exported_as.is_empty() || s.kind == SymbolKind::Module {
+                 continue;
+@@ -1283,6 +1322,7 @@ pub fn units<'a>(repo: &'a RepoFacts, kinds: &FileKinds) -> Vec<Unit<'a>> {
+                 entry,
+                 roles,
+                 alias,
++                declared_out: vec![],
+             });
+         }
+         out.push(Unit {
+@@ -1290,7 +1330,13 @@ pub fn units<'a>(repo: &'a RepoFacts, kinds: &FileKinds) -> Vec<Unit<'a>> {
+             entry: "-".to_string(),
+             roles: selectors_for(f, "-", SymbolKind::Module, kinds),
+             alias: None,
++            declared_out: vec![],
+         });
++        if apart.contains_key(&f.path) {
++            for u in &mut out[first..] {
++                u.declared_out = std::mem::take(&mut u.roles); // mutation:declared-apart
++            }
++        }
+     }
+     for m in &repo.models {
+         out.push(Unit {
+@@ -1298,6 +1344,7 @@ pub fn units<'a>(repo: &'a RepoFacts, kinds: &FileKinds) -> Vec<Unit<'a>> {
+             entry: "-".to_string(),
+             roles: vec![model_role(&m.source)],
+             alias: None,
++            declared_out: vec![],
+         });
+     }
+     // Packages of demo and test code are not peers of the workspace's packages.
+@@ -1327,6 +1374,7 @@ pub fn units<'a>(repo: &'a RepoFacts, kinds: &FileKinds) -> Vec<Unit<'a>> {
+             entry: "-".to_string(),
+             roles: vec![package_role(python)],
+             alias: None,
++            declared_out: vec![],
+         });
+     }
+     out
+diff --git a/crates/drift-mine/tests/declared.rs b/crates/drift-mine/tests/declared.rs
+new file mode 100644
+index 00000000..5d2bdfb9
+--- /dev/null
++++ b/crates/drift-mine/tests/declared.rs
+@@ -0,0 +1,203 @@
++//! Declared scope ([`drift_core::declared`]): a member the repository's own
++//! configuration leaves out of its application graph is in no role, so support,
++//! outliers and the Wilson bound are counted without it, and `drift check` agrees. A
++//! config that was not read, an entry point and a file reached from a kept file are
++//! never set apart; a convention written before declared scopes (`selector_version` 3)
++//! keeps checking the member.
++//!
++//! The fixtures are handler folders, not any dev repository's code.
++
++use drift_core::{
++    DeclaredScope, EntryPoint, FileFacts, Import, RepoFacts, Symbol, SymbolKind, Wrap, WrapKind,
++};
++use drift_mine::check::{Scope, check};
++use drift_mine::mine::{Candidate, MineOptions, Rule, mine_unshown as mine};
++use drift_mine::policy::{ConventionsFile, Lock, SELECTOR_VERSION, Status};
++
++const AUTH: &str = "web/lib/auth.ts#withAuth";
++
++fn file(path: &str, package: &str, symbols: Vec<Symbol>) -> FileFacts {
++    FileFacts {
++        path: path.into(),
++        package: package.into(),
++        lang: "ts".into(),
++        parse_ok: true,
++        symbols,
++        ..Default::default()
++    }
++}
++
++fn func(name: &str, wrapped: bool) -> Symbol {
++    Symbol {
++        name: name.into(),
++        kind: SymbolKind::Function,
++        exported_as: vec![name.into()],
++        line: 3,
++        wraps: if wrapped {
++            vec![Wrap {
++                wrapper: AUTH.into(),
++                kind: WrapKind::Call,
++            }]
++        } else {
++            vec![]
++        },
++        ..Default::default()
++    }
++}
++
++/// 30 handlers wrapped by `withAuth`, two that are not (`odd.ts`, `seed.ts`), the
++/// wrapper, 60 plain functions elsewhere (lift), and `scopes`; `edit` changes the files.
++fn repo(scopes: Vec<DeclaredScope>, edit: impl FnOnce(&mut Vec<FileFacts>)) -> RepoFacts {
++    let mut files: Vec<FileFacts> = (0..30)
++        .map(|i| {
++            file(
++                &format!("web/handlers/h{i}.ts"),
++                "web",
++                vec![func(&format!("h{i}"), true)],
++            )
++        })
++        .collect();
++    files.push(file("web/handlers/odd.ts", "web", vec![func("odd", false)]));
++    files.push(file(
++        "web/handlers/seed.ts",
++        "web",
++        vec![func("seed", false)],
++    ));
++    files.push(file(
++        "web/lib/auth.ts",
++        "web",
++        vec![func("withAuth", false)],
++    ));
++    for i in 0..60 {
++        files.push(file(
++            &format!("api/src/u{i}.ts"),
++            "api",
++            vec![func(&format!("u{i}"), false)],
++        ));
++    }
++    edit(&mut files);
++    let mut r = RepoFacts {
++        files,
++        declared: scopes,
++        ..Default::default()
++    };
++    r.normalize();
++    r
++}
++
++/// `web/tsconfig.json`: every file of `web` but `handlers/seed.ts`.
++fn tsconfig(note: &str) -> DeclaredScope {
++    DeclaredScope {
++        path: "web/tsconfig.json".into(),
++        source: drift_core::declared::TSCONFIG.into(),
++        dir: "web".into(),
++        exts: vec!["ts".into(), "tsx".into()],
++        include: vec!["web/**".into()],
++        exclude: vec!["web/handlers/seed.ts".into()],
++        note: note.into(),
++        ..Default::default()
++    }
++}
++
++fn candidate(r: &RepoFacts) -> Candidate {
++    mine(r, &MineOptions { max_per_repo: 200 })
++        .candidates
++        .into_iter()
++        .find(|c| {
++            c.rule
++                == Rule::WrappedBy {
++                    kind: WrapKind::Call,
++                    any_of: vec![AUTH.into()],
++                }
++        })
++        .expect("handlers wrap withAuth")
++}
++
++fn outliers(c: &Candidate) -> Vec<String> {
++    c.outliers.iter().map(|o| o.path.clone()).collect()
++}
++
++fn violations(r: &RepoFacts, c: &Candidate, selector_version: u32) -> Vec<String> {
++    let kinds = mine(r, &MineOptions { max_per_repo: 200 }).kinds;
++    let mut p = ConventionsFile::merge(None, "test", kinds, std::slice::from_ref(c));
++    p.conventions[0].status = Status::Accepted;
++    p.conventions[0].selector_version = selector_version;
++    check(r, &p, &Lock::default(), Scope::Accepted, None)
++        .violations
++        .iter()
++        .map(|v| v.path.clone())
++        .collect()
++}
++
++#[test]
++fn a_member_the_config_excludes_is_in_no_role() {
++    let before = candidate(&repo(vec![], |_| {}));
++    assert_eq!((before.evidence.holders, before.evidence.total), (30, 32));
++    let r = repo(vec![tsconfig("")], |_| {});
++    let c = candidate(&r);
++    assert_eq!((c.evidence.holders, c.evidence.total), (30, 31)); // mutation:declared-apart
++    assert_eq!(outliers(&c), ["web/handlers/odd.ts"]);
++    assert!(c.evidence.lower_bound > before.evidence.lower_bound);
++    // `check` agrees for a convention written now...
++    assert_eq!(SELECTOR_VERSION, 4);
++    assert_eq!(
++        violations(&r, &c, SELECTOR_VERSION),
++        ["web/handlers/odd.ts"]
++    );
++    // ...and one written before declared scopes keeps checking the set-apart member.
++    assert_eq!(
++        violations(&r, &c, 3),
++        ["web/handlers/odd.ts", "web/handlers/seed.ts"]
++    );
++}
++
++#[test]
++fn a_config_that_was_not_read_narrows_nothing() {
++    let c = candidate(&repo(
++        vec![tsconfig(
++            "extends `@x/base`, which is not a file in the repository",
++        )],
++        |_| {},
++    ));
++    assert_eq!((c.evidence.holders, c.evidence.total), (30, 32));
++}
++
++#[test]
++fn an_entry_point_is_never_set_apart() {
++    let r = repo(vec![tsconfig("")], |files| {
++        let seed = files
++            .iter_mut()
++            .find(|f| f.path == "web/handlers/seed.ts")
++            .unwrap();
++        seed.entry_points = vec![EntryPoint {
++            symbol: "seed".into(),
++            kind: "http".into(),
++            method: Some("POST".into()),
++            route: Some("/api/seed".into()),
++            adapter: "express".into(),
++        }];
++    });
++    assert!(drift_core::declared::set_apart(&r).is_empty()); // mutation:declared-entry
++    let kinds = mine(&r, &MineOptions { max_per_repo: 200 }).kinds;
++    let units = drift_mine::roles::units(&r, &kinds);
++    let seed = units.iter().find(|u| u.name() == "seed").unwrap();
++    assert!(!seed.roles.is_empty() && seed.declared_out.is_empty());
++}
++
++#[test]
++fn a_file_reached_from_a_kept_file_is_kept() {
++    let r = repo(vec![tsconfig("")], |files| {
++        let odd = files
++            .iter_mut()
++            .find(|f| f.path == "web/handlers/odd.ts")
++            .unwrap();
++        odd.imports.push(Import {
++            module: "web/handlers/seed.ts".into(),
++            names: vec!["seed".into()],
++            type_only: false,
++            load: Default::default(),
++        });
++    });
++    let c = candidate(&r);
++    assert_eq!((c.evidence.holders, c.evidence.total), (30, 32)); // mutation:declared-reach
++}
+diff --git a/crates/drift-mine/tests/reserved.rs b/crates/drift-mine/tests/reserved.rs
+index ebf8e62e..2550daf4 100644
+--- a/crates/drift-mine/tests/reserved.rs
++++ b/crates/drift-mine/tests/reserved.rs
+@@ -289,7 +289,7 @@ fn a_policy_accepted_before_the_split_keeps_checking_what_it_checked() {
+     p.save(dir.path()).unwrap();
+     let path = dir.path().join(".drift/conventions.yaml");
+     let written = std::fs::read_to_string(&path).unwrap();
+-    assert!(written.contains("selector_version: 3"), "{written}");
++    assert!(written.contains("selector_version: 4"), "{written}");
+     // A file written before this change has no `selector_version`.
+     let old: String = written
+         .lines()
+diff --git a/crates/drift-py/src/declared.rs b/crates/drift-py/src/declared.rs
+new file mode 100644
+index 00000000..1cf395e3
+--- /dev/null
++++ b/crates/drift-py/src/declared.rs
+@@ -0,0 +1,625 @@
++//! Declared scopes of Python package discovery ([`drift_core::declared`]): which
++//! files a project's build configuration packages.
++//!
++//! Read as data from `pyproject.toml` and `setup.cfg`, for the build backend the
++//! project names: setuptools (`[tool.setuptools]` `packages`, `packages.find`,
++//! `py-modules`, `package-dir`; `setup.cfg` `[options]`), Poetry (`packages`) and
++//! Hatch (wheel `packages`). A project that declares nothing gets no scope (nothing is
++//! inferred from an automatic discovery). Fail closed: a `setup.py` beside a
++//! declaration (it may pass its own `packages`), a TOML or INI error, a mapping or
++//! pattern Drift does not read, or two declarations give a scope with a note, which
++//! sets nothing apart.
++
++use std::collections::{BTreeMap, BTreeSet};
++use std::path::Path;
++
++use drift_core::DeclaredScope;
++use drift_core::declared::{PYTHON_PACKAGES, join};
++
++use crate::project::{has_file, is_project};
++
++/// The declared scopes of every Python project holding one of `files` (repo-relative
++/// Python files, analysed or skipped).
++pub fn scopes(root: &Path, files: &BTreeSet<String>) -> Vec<DeclaredScope> {
++    let mut projects = BTreeSet::new();
++    let mut seen = BTreeSet::new();
++    for f in files {
++        let mut dir = f.rsplit_once('/').map_or("", |(d, _)| d);
++        loop {
++            if !seen.insert(dir.to_string()) {
++                break;
++            }
++            if is_project(&root.join(dir)) {
++                projects.insert(dir.to_string());
++            }
++            match dir.rsplit_once('/') {
++                Some((up, _)) => dir = up,
++                None if !dir.is_empty() => dir = "",
++                None => break,
++            }
++        }
++    }
++    projects
++        .into_iter()
++        .filter_map(|d| project_scope(root, &d, files))
++        .collect()
++}
++
++fn scope(dir: &str, path: &str) -> DeclaredScope {
++    DeclaredScope {
++        path: path.to_string(),
++        source: PYTHON_PACKAGES.into(),
++        dir: dir.to_string(),
++        exts: vec!["py".into()],
++        ..Default::default()
++    }
++}
++
++fn in_dir(dir: &str, name: &str) -> String {
++    if dir.is_empty() {
++        name.to_string()
++    } else {
++        format!("{dir}/{name}")
++    }
++}
++
++/// `packages.find`: (where, include, exclude, namespaces).
++type Find = (Vec<String>, Vec<String>, Vec<String>, bool);
++
++/// What a setuptools configuration declares, before it is matched to directories.
++#[derive(Default)]
++struct Setuptools {
++    /// `package-dir` `""`: where packages are found.
++    base: String,
++    /// Explicit `packages`.
++    packages: Option<Vec<String>>,
++    /// `packages.find`: (where, include, exclude, namespaces).
++    find: Option<Find>,
++    py_modules: Vec<String>,
++}
++
++fn toml_at<'a>(t: &'a toml::Table, path: &[&str]) -> Option<&'a toml::Value> {
++    let mut cur = t.get(path[0])?;
++    for k in &path[1..] {
++        cur = cur.as_table()?.get(*k)?;
++    }
++    Some(cur)
++}
++
++fn toml_strings(v: &toml::Value, what: &str) -> Result<Vec<String>, String> {
++    match v {
++        toml::Value::String(s) => Ok(vec![s.clone()]),
++        toml::Value::Array(a) => a
++            .iter()
++            .map(|x| x.as_str().map(str::to_string))
++            .collect::<Option<_>>()
++            .ok_or_else(|| format!("`{what}` is not a list of strings")),
++        _ => Err(format!("`{what}` is not a list of strings")),
++    }
++}
++
++fn package_dir(map: &BTreeMap<String, String>) -> Result<String, String> {
++    match map.len() {
++        0 => Ok(String::new()),
++        1 if map.contains_key("") => Ok(map[""].trim_matches('/').to_string()),
++        _ => Err("`package-dir` maps packages Drift does not follow".into()),
++    }
++}
++
++/// The project's declaration, if any: `Ok(None)` when it declares nothing.
++fn project_scope(root: &Path, dir: &str, files: &BTreeSet<String>) -> Option<DeclaredScope> {
++    let abs = root.join(dir);
++    let pyproject = in_dir(dir, "pyproject.toml");
++    let setup_cfg = in_dir(dir, "setup.cfg");
++    let mut declared: Vec<(String, Result<DeclaredScope, String>)> = Vec::new();
++    if has_file(&abs, "pyproject.toml") {
++        let text = std::fs::read_to_string(abs.join("pyproject.toml")).unwrap_or_default();
++        match text.parse::<toml::Table>() {
++            Err(_) => return Some(noted(dir, &pyproject, "is not valid TOML")),
++            Ok(t) => {
++                if let Some(r) = pyproject_declaration(dir, &t, files) {
++                    declared.push((pyproject.clone(), r));
++                }
++            }
++        }
++    }
++    if has_file(&abs, "setup.cfg") {
++        let text = std::fs::read_to_string(abs.join("setup.cfg")).unwrap_or_default();
++        match ini(&text) {
++            None => return Some(noted(dir, &setup_cfg, "is not INI Drift reads")),
++            Some(cfg) => {
++                if let Some(r) = setup_cfg_declaration(&cfg) {
++                    declared.push((
++                        setup_cfg.clone(),
++                        r.and_then(|s| setuptools_scope(dir, &s, files)),
++                    ));
++                }
++            }
++        }
++    }
++    let (path, read) = match declared.len() {
++        0 => return None,
++        1 => declared.pop()?,
++        _ => {
++            return Some(noted(
++                dir,
++                &pyproject,
++                "and setup.cfg both declare packages",
++            ));
++        }
++    };
++    if has_file(&abs, "setup.py") {
++        return Some(noted(
++            dir,
++            &path,
++            "has a setup.py beside it, which may pass its own packages",
++        ));
++    }
++    Some(match read {
++        // A declaration that takes in none of the project's Python files was misread,
++        // or packages nothing Drift analyses: either way it is not read (fail closed).
++        Ok(s)
++            if !files
++                .iter()
++                .filter(|f| dir.is_empty() || f.starts_with(&format!("{dir}/")))
++                .any(|f| s.takes_in(f)) =>
++        // mutation:py-takes-none
++        {
++            noted(dir, &path, "takes in none of the project's Python files")
++        }
++        Ok(mut s) => {
++            s.path = path;
++            s
++        }
++        Err(note) => noted(dir, &path, &note),
++    })
++}
++
++fn noted(dir: &str, path: &str, note: &str) -> DeclaredScope {
++    DeclaredScope {
++        note: format!("{} {note}", path.rsplit('/').next().unwrap_or(path)),
++        ..scope(dir, path)
++    }
++}
++
++fn pyproject_declaration(
++    dir: &str,
++    t: &toml::Table,
++    files: &BTreeSet<String>,
++) -> Option<Result<DeclaredScope, String>> {
++    let backend = toml_at(t, &["build-system", "build-backend"]).and_then(|v| v.as_str());
++    match backend {
++        Some(b) if b.starts_with("poetry") => {
++            if toml_at(t, &["tool", "poetry", "package-mode"]).and_then(|v| v.as_bool())
++                == Some(false)
++            {
++                return None;
++            }
++            let pkgs = toml_at(t, &["tool", "poetry", "packages"])?;
++            Some(poetry_scope(dir, pkgs))
++        }
++        Some("hatchling.build") => {
++            let wheel = toml_at(t, &["tool", "hatch", "build", "targets", "wheel"])?.as_table()?;
++            let pkgs = wheel.get("packages")?;
++            Some((|| {
++                if [
++                    "only-include",
++                    "include",
++                    "exclude",
++                    "sources",
++                    "force-include",
++                    "only-packages",
++                ]
++                .iter()
++                .any(|k| wheel.contains_key(*k))
++                    || toml_at(t, &["tool", "hatch", "build"])
++                        .and_then(|b| b.as_table())
++                        .is_some_and(|b| {
++                            [
++                                "only-include",
++                                "include",
++                                "exclude",
++                                "sources",
++                                "force-include",
++                            ]
++                            .iter()
++                            .any(|k| b.contains_key(*k))
++                        })
++                {
++                    return Err("hatch build selects files Drift does not follow".to_string());
++                }
++                let mut s = scope(dir, "");
++                for p in toml_strings(pkgs, "packages")? {
++                    s.include.push(tree(dir, &p)?);
++                }
++                Ok(s)
++            })())
++        }
++        None | Some("setuptools.build_meta" | "setuptools.build_meta:__legacy__") => {
++            let st = toml_at(t, &["tool", "setuptools"])?.as_table()?;
++            if !["packages", "py-modules"]
++                .iter()
++                .any(|k| st.contains_key(*k))
++            {
++                return None;
++            }
++            Some((|| {
++                let mut s = Setuptools::default();
++                if let Some(pd) = st.get("package-dir") {
++                    let map: Option<BTreeMap<String, String>> = pd.as_table().and_then(|m| {
++                        m.iter()
++                            .map(|(k, v)| Some((k.clone(), v.as_str()?.to_string())))
++                            .collect()
++                    });
++                    s.base = package_dir(&map.ok_or("`package-dir` is not a table of strings")?)?;
++                }
++                match st.get("packages") {
++                    None => {}
++                    Some(toml::Value::Table(p)) => {
++                        let f = p
++                            .get("find")
++                            .and_then(|f| f.as_table())
++                            .ok_or("`packages` is a table without `find`")?;
++                        let list = |k: &str, d: &[&str]| -> Result<Vec<String>, String> {
++                            f.get(k)
++                                .map_or(Ok(d.iter().map(|x| x.to_string()).collect()), |v| {
++                                    toml_strings(v, k)
++                                })
++                        };
++                        let namespaces = f
++                            .get("namespaces")
++                            .map_or(Some(true), |v| v.as_bool())
++                            .ok_or("`namespaces` is not a boolean")?;
++                        s.find = Some((
++                            list("where", &["."])?,
++                            list("include", &["*"])?,
++                            list("exclude", &[])?,
++                            namespaces,
++                        ));
++                    }
++                    Some(v) => s.packages = Some(toml_strings(v, "packages")?),
++                }
++                if let Some(m) = st.get("py-modules") {
++                    s.py_modules = toml_strings(m, "py-modules")?;
++                }
++                setuptools_scope(dir, &s, files)
++            })())
++        }
++        Some(_) => None,
++    }
++}
++
++/// `dir/p/**`, repo-relative.
++fn tree(dir: &str, p: &str) -> Result<String, String> {
++    if p.contains(['*', '?', '[', '{']) {
++        return Err(format!("`{p}` is a pattern Drift does not read"));
++    }
++    let j =
++        join(dir, p.trim_end_matches('/')).ok_or_else(|| format!("`{p}` leaves the repository"))?;
++    Ok(if j.is_empty() {
++        "**".into()
++    } else {
++        format!("{j}/**")
++    })
++}
++
++fn poetry_scope(dir: &str, pkgs: &toml::Value) -> Result<DeclaredScope, String> {
++    let mut s = scope(dir, "");
++    let pkgs = pkgs.as_array().ok_or("`packages` is not a list")?;
++    for p in pkgs {
++        let include = p
++            .get("include")
++            .and_then(|v| v.as_str())
++            .ok_or("a package has no `include`")?;
++        let from = p.get("from").and_then(|v| v.as_str()).unwrap_or("");
++        let base = join(dir, from).ok_or("`from` leaves the repository")?;
++        if include.ends_with(".py") && !include.contains(['*', '?', '[', '{']) {
++            s.files
++                .push(join(&base, include).ok_or("`include` leaves the repository")?);
++        } else {
++            s.include.push(tree(&base, include)?);
++        }
++    }
++    Ok(s)
++}
++
++/// `fnmatch` on a dotted name: `*` matches any run, dots included.
++fn fnmatch(p: &str, name: &str) -> bool {
++    let (p, s) = (p.as_bytes(), name.as_bytes());
++    let (mut pi, mut si, mut star) = (0, 0, None);
++    while si < s.len() {
++        if pi < p.len() && (p[pi] == b'?' || p[pi] == s[si]) {
++            pi += 1;
++            si += 1;
++        } else if pi < p.len() && p[pi] == b'*' {
++            star = Some((pi, si));
++            pi += 1;
++        } else if let Some((sp, ss)) = star {
++            pi = sp + 1;
++            si = ss + 1;
++            star = Some((sp, ss + 1));
++        } else {
++            return false;
++        }
++    }
++    p[pi..].iter().all(|&c| c == b'*')
++}
++
++fn setuptools_scope(
++    dir: &str,
++    st: &Setuptools,
++    files: &BTreeSet<String>,
++) -> Result<DeclaredScope, String> {
++    let mut s = scope(dir, "");
++    let base = join(dir, &st.base).ok_or("`package-dir` leaves the repository")?;
++    // A package's own modules only: subpackages are packages of their own.
++    let package_glob = |pd: &str| {
++        if pd.is_empty() {
++            "*".to_string()
++        } else {
++            format!("{pd}/*")
++        }
++    };
++    if let Some(pkgs) = &st.packages {
++        for p in pkgs {
++            let pd = join(&base, &p.replace('.', "/")).ok_or("a package leaves the repository")?;
++            s.include.push(package_glob(&pd));
++        }
++    }
++    if let Some((wheres, include, exclude, namespaces)) = &st.find {
++        if include
++            .iter()
++            .chain(exclude)
++            .any(|p| p.contains(['[', '\\']))
++        {
++            return Err("a `find` pattern Drift does not read".into());
++        }
++        for w in wheres {
++            // `where` is relative to the project, not to `package-dir`.
++            let wd = join(dir, w).ok_or("`where` leaves the repository")?;
++            let below =
++                |d: &str| wd.is_empty() || d.strip_prefix(&wd).is_some_and(|r| r.starts_with('/'));
++            // Every directory below `where` that holds Python files, and its parents.
++            let mut dirs = BTreeSet::new();
++            for f in files {
++                let mut d = f.rsplit_once('/').map_or("", |(d, _)| d);
++                while below(d) && d != wd {
++                    dirs.insert(d.to_string());
++                    d = d.rsplit_once('/').map_or("", |(d, _)| d);
++                }
++            }
++            for d in &dirs {
++                let rel = if wd.is_empty() {
++                    d.as_str()
++                } else {
++                    &d[wd.len() + 1..]
++                };
++                // A regular package, and every parent up to `where`, has `__init__.py`.
++                let regular = || {
++                    let mut cur = d.as_str();
++                    loop {
++                        if !files.contains(&format!("{cur}/__init__.py")) {
++                            return false;
++                        }
++                        match cur.rsplit_once('/') {
++                            Some((up, _)) if up != wd && below(up) => cur = up,
++                            _ => return true,
++                        }
++                    }
++                };
++                let name = rel.replace('/', ".");
++                if (*namespaces || regular())
++                    && include.iter().any(|p| fnmatch(p, &name))
++                    && !exclude.iter().any(|p| fnmatch(p, &name))
++                {
++                    s.include.push(package_glob(d));
++                }
++            }
++        }
++    }
++    for m in &st.py_modules {
++        s.files.push(
++            join(&base, &format!("{}.py", m.replace('.', "/")))
++                .ok_or("a module leaves the repository")?,
++        );
++    }
++    Ok(s)
++}
++
++/// `[section] key = value` with indented continuation lines; `None` on a line it
++/// cannot place.
++fn ini(text: &str) -> Option<BTreeMap<String, BTreeMap<String, String>>> {
++    let mut out: BTreeMap<String, BTreeMap<String, String>> = BTreeMap::new();
++    let mut section: Option<String> = None;
++    let mut key: Option<String> = None;
++    for line in text.lines() {
++        let t = line.trim();
++        if t.is_empty() || t.starts_with('#') || t.starts_with(';') {
++            continue;
++        }
++        if line.starts_with([' ', '\t']) {
++            let (s, k) = (section.as_ref()?, key.as_ref()?);
++            let v = out.get_mut(s)?.get_mut(k)?;
++            v.push('\n');
++            v.push_str(t);
++            continue;
++        }
++        if let Some(name) = t.strip_prefix('[').and_then(|r| r.strip_suffix(']')) {
++            section = Some(name.trim().to_string());
++            out.entry(name.trim().to_string()).or_default();
++            key = None;
++            continue;
++        }
++        let (k, v) = t.split_once(['=', ':'])?;
++        let s = section.as_ref()?;
++        let k = k.trim().to_string();
++        out.get_mut(s)?.insert(k.clone(), v.trim().to_string());
++        key = Some(k);
++    }
++    Some(out)
++}
++
++fn ini_list(v: &str) -> Vec<String> {
++    v.split(['\n', ','])
++        .map(str::trim)
++        .filter(|s| !s.is_empty())
++        .map(str::to_string)
++        .collect()
++}
++
++fn setup_cfg_declaration(
++    cfg: &BTreeMap<String, BTreeMap<String, String>>,
++) -> Option<Result<Setuptools, String>> {
++    let opts = cfg.get("options")?;
++    if !opts.contains_key("packages") && !opts.contains_key("py_modules") {
++        return None;
++    }
++    Some((|| {
++        let mut s = Setuptools::default();
++        if let Some(pd) = opts.get("package_dir") {
++            let mut map = BTreeMap::new();
++            for e in ini_list(pd) {
++                let (k, v) = e.split_once('=').ok_or("`package_dir` is not a mapping")?;
++                map.insert(k.trim().to_string(), v.trim().to_string());
++            }
++            s.base = package_dir(&map)?;
++        }
++        match opts.get("packages").map(|p| p.trim()) {
++            None => {}
++            Some(f @ ("find:" | "find_namespace:")) => {
++                let find = cfg.get("options.packages.find");
++                let list = |k: &str, d: &[&str]| {
++                    find.and_then(|m| m.get(k))
++                        .map_or(d.iter().map(|x| x.to_string()).collect(), |v| ini_list(v))
++                };
++                s.find = Some((
++                    list("where", &["."]),
++                    list("include", &["*"]),
++                    list("exclude", &[]),
++                    f == "find_namespace:",
++                ));
++            }
++            Some(p) if p.starts_with("find") || p.starts_with("attr:") => {
++                return Err("`packages` is computed".to_string());
++            }
++            Some(p) => s.packages = Some(ini_list(p)),
++        }
++        if let Some(m) = opts.get("py_modules") {
++            s.py_modules = ini_list(m);
++        }
++        Ok(s)
++    })())
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use drift_core::declared::pattern_out;
++
++    fn write(root: &Path, rel: &str, body: &str) {
++        let p = root.join(rel);
++        std::fs::create_dir_all(p.parent().unwrap()).unwrap();
++        std::fs::write(p, body).unwrap();
++    }
++
++    #[test]
++    fn setuptools_find_poetry_hatch_and_fail_closed() {
++        let t = tempfile::tempdir().unwrap();
++        let r = t.path();
++        let mut files = BTreeSet::new();
++        let mut add = |p: &str| {
++            write(r, p, "");
++            files.insert(p.to_string());
++        };
++        for p in [
++            "st/app/__init__.py",
++            "st/app/views.py",
++            "st/app/tests/__init__.py",
++            "st/app/tests/t.py",
++            "st/manage.py",
++            "st/scripts/seed.py",
++            "po/src/lib/a.py",
++            "po/tools/b.py",
++            "ha/src/pkg/a.py",
++            "ha/bench/b.py",
++            "cfg/pkg/__init__.py",
++            "cfg/pkg/a.py",
++            "cfg/other/x.py",
++            "dyn/pkg/a.py",
++            "dyn/tools/x.py",
++            "none/x.py",
++        ] {
++            add(p);
++        }
++        write(
++            r,
++            "st/pyproject.toml",
++            "[tool.setuptools.packages.find]\nexclude = [\"app.tests*\"]\n",
++        );
++        write(
++            r,
++            "po/pyproject.toml",
++            "[build-system]\nbuild-backend = \"poetry.core.masonry.api\"\n[tool.poetry]\npackages = [{ include = \"lib\", from = \"src\" }]\n",
++        );
++        write(
++            r,
++            "ha/pyproject.toml",
++            "[build-system]\nbuild-backend = \"hatchling.build\"\n[tool.hatch.build.targets.wheel]\npackages = [\"src/pkg\"]\n",
++        );
++        write(
++            r,
++            "cfg/setup.cfg",
++            "[metadata]\nname = x\n[options]\npackages = find:\n",
++        );
++        write(
++            r,
++            "dyn/pyproject.toml",
++            "[tool.setuptools]\npackages = [\"pkg\"]\n",
++        );
++        write(r, "dyn/setup.py", "from setuptools import setup\nsetup()\n");
++        write(r, "none/pyproject.toml", "[project]\nname = \"x\"\n");
++        // `where` is relative to the project, `package-dir` or not.
++        for p in [
++            "srcd/src/app/__init__.py",
++            "srcd/src/app/a.py",
++            "srcd/tools/t.py",
++        ] {
++            write(r, p, "");
++            files.insert(p.to_string());
++        }
++        write(
++            r,
++            "srcd/setup.cfg",
++            "[options]\npackage_dir =\n    =src\npackages = find:\n[options.packages.find]\nwhere = src\n",
++        );
++        // A declaration that takes in nothing is not read.
++        write(r, "empty/x.py", "");
++        files.insert("empty/x.py".to_string());
++        write(
++            r,
++            "empty/pyproject.toml",
++            "[tool.setuptools]\npackages = [\"missing\"]\n",
++        );
++        let s = scopes(&r.canonicalize().unwrap(), &files);
++        let out = |p: &str| pattern_out(&s, p, p.split('/').next().unwrap()).is_some();
++        assert!(!out("st/app/views.py"));
++        assert!(out("st/app/tests/t.py"), "excluded by find");
++        assert!(out("st/manage.py"));
++        assert!(
++            !out("st/scripts/seed.py"),
++            "`find` takes namespace packages in by default"
++        );
++        assert!(!out("po/src/lib/a.py"));
++        assert!(out("po/tools/b.py"));
++        assert!(!out("ha/src/pkg/a.py"));
++        assert!(out("ha/bench/b.py"));
++        assert!(!out("cfg/pkg/a.py"));
++        assert!(out("cfg/other/x.py"), "not a regular package under `find:`");
++        assert!(!out("dyn/tools/x.py"), "setup.py may pass its own packages");
++        assert!(s.iter().any(|s| s.dir == "dyn" && !s.note.is_empty()));
++        assert!(!out("none/x.py"), "a project that declares nothing");
++        assert!(!out("srcd/src/app/a.py"));
++        assert!(out("srcd/tools/t.py"));
++        assert!(!out("empty/x.py"), "a declaration that takes in nothing");
++    }
++}
+diff --git a/crates/drift-py/src/lib.rs b/crates/drift-py/src/lib.rs
+index b8d43289..05bcbdd9 100644
+--- a/crates/drift-py/src/lib.rs
++++ b/crates/drift-py/src/lib.rs
+@@ -5,6 +5,7 @@
+ //! adapters (FastAPI, Flask, Django, DRF, Celery) -> [`RepoFacts`] in the same
+ //! language-neutral shape the TypeScript parser produces.
+ 
++pub mod declared;
+ mod docs;
+ mod index;
+ pub mod kinds;
+@@ -88,6 +89,7 @@ struct Prepared {
+     resolver: Resolver,
+     stats: ScanStats,
+     packages: Vec<PackageFacts>,
++    declared: Vec<drift_core::DeclaredScope>,
+ }
+ 
+ /// Absolute paths of every Python file a walk found, analysed or skipped: the
+@@ -106,6 +108,18 @@ pub fn packages_of(root: &Path, py: &PyWalked) -> Vec<PackageFacts> {
+     packages::packages(root, paths.iter().map(PathBuf::as_path))
+ }
+ 
++/// The declared scopes of the Python projects in a walk ([`declared::scopes`]): every
++/// Python file walked, analysed or skipped by path.
++pub fn declared_scopes(root: &Path, py: &PyWalked) -> Vec<drift_core::DeclaredScope> {
++    let files: BTreeSet<String> = py
++        .sources
++        .iter()
++        .map(|c| c.rel_path.clone())
++        .chain(py.skipped.iter().map(|s| s.path.clone()))
++        .collect();
++    declared::scopes(root, &files)
++}
++
+ /// Directories holding Python files that were read or skipped by path, so project
+ /// discovery sees every project (as [`ingest::ingest_lang`] would).
+ fn layout_dirs<'a>(
+@@ -130,6 +144,7 @@ fn prepare(root: &Path, opts: &ScanOptions) -> anyhow::Result<Prepared> {
+     let started = index::now_ns();
+     let py = ingest::walk(root, opts.threads, &|_| false)?.python;
+     let packages = packages_of(root, &py);
++    let declared = declared_scopes(root, &py);
+     let cache = opts
+         .cache_dir
+         .as_ref()
+@@ -183,6 +198,7 @@ fn prepare(root: &Path, opts: &ScanOptions) -> anyhow::Result<Prepared> {
+         resolver,
+         stats,
+         packages,
++        declared,
+     })
+ }
+ 
+@@ -219,6 +235,7 @@ fn scan_inner(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, Sca
+         context_files: vec![],
+         key_files: vec![],
+         integration_files: vec![],
++        declared: p.declared,
+     };
+     kinds::classify(&mut repo);
+     // A test file not parsed for lack of stack still exists: it pairs like the others.
+diff --git a/crates/drift-py/tests/snapshots/conformance__flask-app_facts.snap b/crates/drift-py/tests/snapshots/conformance__flask-app_facts.snap
+index 8fd0b5c0..0bf9caa0 100644
+--- a/crates/drift-py/tests/snapshots/conformance__flask-app_facts.snap
++++ b/crates/drift-py/tests/snapshots/conformance__flask-app_facts.snap
+@@ -1160,5 +1160,18 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
+       ]
+     }
+   ],
+-  "skipped": []
++  "skipped": [],
++  "declared": [
++    {
++      "path": "setup.cfg",
++      "source": "python-packages",
++      "dir": "",
++      "exts": [
++        "py"
++      ],
++      "include": [
++        "src/shop/*"
++      ]
++    }
++  ]
+ }
+diff --git a/crates/drift-py/tests/snapshots/conformance__pkg-relative_facts.snap b/crates/drift-py/tests/snapshots/conformance__pkg-relative_facts.snap
+index 59c9c911..0f92b409 100644
+--- a/crates/drift-py/tests/snapshots/conformance__pkg-relative_facts.snap
++++ b/crates/drift-py/tests/snapshots/conformance__pkg-relative_facts.snap
+@@ -608,5 +608,18 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
+       "compiler_flags": [],
+       "manifest": "pyproject.toml"
+     }
++  ],
++  "declared": [
++    {
++      "path": "pyproject.toml",
++      "source": "python-packages",
++      "dir": "",
++      "exts": [
++        "py"
++      ],
++      "include": [
++        "src/mylib/**"
++      ]
++    }
+   ]
+ }
+diff --git a/crates/drift-ts/src/declared.rs b/crates/drift-ts/src/declared.rs
+new file mode 100644
+index 00000000..9ef55be4
+--- /dev/null
++++ b/crates/drift-ts/src/declared.rs
+@@ -0,0 +1,939 @@
++//! Declared scopes of TypeScript/JavaScript configuration ([`drift_core::declared`]):
++//! tsconfig projects, ESLint global ignores and a published package's `files`.
++//!
++//! Every config is read as data, never run. Whatever cannot be read exactly (a JSONC
++//! error, an `extends` or a project reference that does not resolve to a file in the
++//! repository, a pattern Drift's globs do not read, a negation, ignores built at run
++//! time, a `files` entry that is not in the checkout) gives a scope with a note: it
++//! sets nothing apart in its directory (fail closed).
++
++use std::collections::BTreeSet;
++use std::path::{Path, PathBuf};
++
++use drift_core::DeclaredScope;
++use drift_core::declared::{ESLINT, NPM_FILES, TSCONFIG, join, supported_glob};
++use drift_core::ingest::{Candidate, rel_posix};
++use oxc_allocator::Allocator;
++use oxc_ast::ast::*;
++use oxc_parser::Parser;
++use oxc_span::SourceType;
++
++use crate::resolve::{ModuleResolver, strip_jsonc};
++
++/// Extensions a tsconfig judges; with `allowJs` or `checkJs`, also [`JS_EXTS`].
++const TS_EXTS: &[&str] = &["ts", "tsx", "mts", "cts"];
++const JS_EXTS: &[&str] = &["js", "jsx", "mjs", "cjs"];
++/// How deep `extends` chains and project references are followed.
++const MAX_DEPTH: usize = 8;
++
++/// `tsconfig.json`, `tsconfig.app.json`, `tsconfig.build.json`, ...
++pub fn is_tsconfig(rel: &str) -> bool {
++    let name = rel.rsplit('/').next().unwrap_or(rel);
++    name.starts_with("tsconfig") && name.ends_with(".json")
++}
++
++fn dir_of(rel: &str) -> String {
++    rel.rsplit_once('/')
++        .map_or(String::new(), |(d, _)| d.to_string())
++}
++
++fn exts(js: bool) -> Vec<String> {
++    TS_EXTS
++        .iter()
++        .chain(if js { JS_EXTS } else { &[] })
++        .map(|e| e.to_string())
++        .collect()
++}
++
++fn noted(path: &str, source: &str, dir: &str, note: String) -> DeclaredScope {
++    DeclaredScope {
++        path: path.to_string(),
++        source: source.to_string(),
++        dir: dir.to_string(),
++        note,
++        ..Default::default()
++    }
++}
++
++/// Every declared scope of the walked config files. `present` is every walked file
++/// (repo-relative), for whether a package's `files` names what is in the checkout.
++pub fn scopes(
++    root: &Path,
++    resolver: &ModuleResolver,
++    config: &[Candidate],
++    present: &BTreeSet<String>,
++) -> Vec<DeclaredScope> {
++    let mut out = Vec::new();
++    for c in config {
++        let rel = c.rel_path.as_str();
++        if is_tsconfig(rel) {
++            out.extend(tsconfig_scopes(root, resolver, rel));
++        } else if crate::lint::config_tool(rel) == Some("eslint") {
++            out.extend(eslint_scope(rel, &c.abs_path));
++        }
++        if rel == "package.json" || rel.ends_with("/package.json") {
++            out.extend(npm_files_scope(root, rel, &c.abs_path, present));
++        }
++    }
++    out
++}
++
++// ---------- tsconfig ----------
++
++/// What one tsconfig project takes in: `files`, `include`, `exclude` and `allowJs` as
++/// TypeScript reads them through `extends`, patterns repo-relative.
++struct Project {
++    files: Vec<String>,
++    include: Vec<String>,
++    exclude: Vec<String>,
++    js: bool,
++    references: Vec<PathBuf>,
++}
++
++/// `file` and what it extends, nearest first (a later entry of an `extends` array
++/// overrides an earlier one, so it comes first), with each config's repo-relative dir.
++fn chain(
++    root: &Path,
++    resolver: &ModuleResolver,
++    file: &Path,
++    depth: usize,
++    out: &mut Vec<(String, serde_json::Value)>,
++) -> Result<(), String> {
++    // `../tsconfig.base.json` is named through its parent: the file itself decides.
++    let file = &std::fs::canonicalize(file)
++        .map_err(|_| "extends a config that could not be read".to_string())?;
++    let rel = rel_posix(root, file)
++        .ok_or_else(|| "extends a config outside the repository".to_string())?;
++    if depth > MAX_DEPTH || out.len() > 4 * MAX_DEPTH {
++        return Err(format!("extends more than {MAX_DEPTH} configs deep"));
++    }
++    let text = std::fs::read_to_string(file).map_err(|_| format!("{rel} could not be read"))?;
++    let json: serde_json::Value = serde_json::from_str(&strip_jsonc(&text))
++        .map_err(|_| format!("{rel} is not valid JSON"))?;
++    let dir = dir_of(&rel);
++    let parents: Vec<String> = match json.get("extends") {
++        None => vec![],
++        Some(serde_json::Value::String(s)) => vec![s.clone()],
++        Some(serde_json::Value::Array(a)) => a
++            .iter()
++            .map(|v| v.as_str().map(str::to_string))
++            .collect::<Option<_>>()
++            .ok_or_else(|| format!("{rel}: `extends` is not a list of strings"))?,
++        Some(_) => return Err(format!("{rel}: `extends` is not a string")),
++    };
++    out.push((dir, json));
++    let abs_dir = file.parent().unwrap_or(root);
++    for p in parents.iter().rev() {
++        let base = resolver
++            .tsconfig_extends(abs_dir, p)
++            .filter(|b| b.is_file())
++            .ok_or_else(|| format!("{rel} extends `{p}`, which is not a file in the repository"))?;
++        chain(root, resolver, &base, depth + 1, out)?;
++    }
++    Ok(())
++}
++
++/// A tsconfig `include` or `exclude` entry, repo-relative. An `include` entry whose
++/// last segment has no wildcard and no extension names a directory.
++fn ts_pattern(dir: &str, p: &str, include: bool) -> Result<String, String> {
++    let p = p.trim_end_matches('/');
++    let joined = join(dir, p).ok_or_else(|| format!("`{p}` leaves the repository"))?;
++    // The repository root itself: everything below it for `include`.
++    if joined.is_empty() {
++        return if include {
++            Ok("**".to_string())
++        } else {
++            Err("excludes the whole project".to_string())
++        };
++    }
++    if !supported_glob(&joined) {
++        return Err(format!("`{p}` is a pattern Drift does not read"));
++    }
++    let last = joined.rsplit('/').next().unwrap_or(&joined);
++    Ok(if include && !last.contains(['*', '?', '.']) {
++        if joined.is_empty() {
++            "**".to_string()
++        } else {
++            format!("{joined}/**")
++        }
++    } else {
++        joined
++    })
++}
++
++fn string_list(v: &serde_json::Value, key: &str) -> Result<Vec<String>, String> {
++    v.as_array()
++        .and_then(|a| a.iter().map(|x| x.as_str().map(str::to_string)).collect())
++        .ok_or_else(|| format!("`{key}` is not a list of strings"))
++}
++
++fn project(root: &Path, resolver: &ModuleResolver, file: &Path) -> Result<Project, String> {
++    let mut configs = Vec::new();
++    chain(root, resolver, file, 0, &mut configs)?;
++    let leaf_dir = configs[0].0.clone();
++    // The nearest config that sets a key decides it, its paths relative to itself.
++    let first = |key: &str| configs.iter().find_map(|(d, j)| j.get(key).map(|v| (d, v)));
++    let mut files = Vec::new();
++    if let Some((d, v)) = first("files") {
++        for f in string_list(v, "files")? {
++            files.push(join(d, &f).ok_or_else(|| format!("`{f}` leaves the repository"))?);
++        }
++    }
++    let mut include = Vec::new();
++    match first("include") {
++        Some((d, v)) => {
++            for p in string_list(v, "include")? {
++                include.push(ts_pattern(d, &p, true)?);
++            }
++        }
++        // No `files` and no `include`: everything below the config.
++        None if first("files").is_none() => include.push(ts_pattern(&leaf_dir, "", true)?),
++        None => {}
++    }
++    let mut exclude = Vec::new();
++    if let Some((d, v)) = first("exclude") {
++        for p in string_list(v, "exclude")? {
++            exclude.push(ts_pattern(d, &p, false)?);
++        }
++    }
++    let js = ["allowJs", "checkJs"].iter().any(|k| {
++        configs
++            .iter()
++            .find_map(|(_, j)| j.get("compilerOptions")?.get(*k)?.as_bool())
++            .unwrap_or(false)
++    });
++    // References are not inherited: the config's own.
++    let abs_dir = file.parent().unwrap_or(root);
++    let mut references = Vec::new();
++    if let Some(refs) = configs[0].1.get("references") {
++        let refs = refs
++            .as_array()
++            .ok_or_else(|| "`references` is not a list".to_string())?;
++        for r in refs {
++            let p = r
++                .get("path")
++                .and_then(|p| p.as_str())
++                .ok_or_else(|| "a reference has no `path`".to_string())?;
++            let target = abs_dir.join(p);
++            let target = if target.is_dir() {
++                target.join("tsconfig.json")
++            } else {
++                target
++            };
++            match std::fs::canonicalize(&target) {
++                Ok(t) if t.is_file() && rel_posix(root, &t).is_some() => references.push(t),
++                _ => {
++                    return Err(format!(
++                        "references `{p}`, which is not a config in the repository"
++                    ));
++                }
++            }
++        }
++    }
++    Ok(Project {
++        files,
++        include,
++        exclude,
++        js,
++        references,
++    })
++}
++
++/// The scopes of the tsconfig `rel`: its own project and every project it references
++/// (to any depth), all governing its directory.
++fn tsconfig_scopes(root: &Path, resolver: &ModuleResolver, rel: &str) -> Vec<DeclaredScope> {
++    let dir = dir_of(rel);
++    let mut out = Vec::new();
++    let mut seen = BTreeSet::new();
++    let mut pending = vec![(
++        std::fs::canonicalize(root.join(rel)).unwrap_or_else(|_| root.join(rel)),
++        0usize,
++    )];
++    while let Some((file, depth)) = pending.pop() {
++        // Every queued file is canonical and in the repository (`project` checks
++        // references): a path it cannot name is a reference not read.
++        let Some(path) = rel_posix(root, &file) else {
++            out.push(noted(
++                rel,
++                TSCONFIG,
++                &dir,
++                "references a config outside the repository".into(),
++            ));
++            continue;
++        };
++        if !seen.insert(path.clone()) {
++            continue;
++        }
++        match project(root, resolver, &file) {
++            Ok(p) if depth <= MAX_DEPTH => {
++                pending.extend(p.references.iter().map(|r| (r.clone(), depth + 1)));
++                out.push(DeclaredScope {
++                    path,
++                    source: TSCONFIG.into(),
++                    dir: dir.clone(),
++                    exts: exts(p.js),
++                    files: p.files,
++                    include: p.include,
++                    exclude: p.exclude,
++                    note: String::new(),
++                });
++            }
++            Ok(_) => out.push(noted(
++                &path,
++                TSCONFIG,
++                &dir,
++                "references nested too deep".into(),
++            )),
++            Err(note) => out.push(noted(&path, TSCONFIG, &dir, note)),
++        }
++    }
++    out
++}
++
++// ---------- ESLint ----------
++
++/// An ignore pattern, repo-relative: gitignore-style for legacy `ignorePatterns` (a
++/// pattern without a slash matches at any depth), relative to the config's directory
++/// for flat-config `ignores`.
++fn ignore_pattern(dir: &str, p: &str, gitignore: bool) -> Result<String, String> {
++    if p.starts_with('!') {
++        return Err(format!("`{p}` un-ignores files"));
++    }
++    let p = p.trim_end_matches('/');
++    let anchored = p.starts_with('/') || p.contains('/');
++    let p = p.trim_start_matches('/');
++    let p = if gitignore && !anchored && !p.starts_with("**") {
++        format!("**/{p}")
++    } else {
++        p.to_string()
++    };
++    let joined = join(dir, &p).ok_or_else(|| format!("`{p}` leaves the repository"))?;
++    if !supported_glob(&joined) {
++        return Err(format!("`{p}` is a pattern Drift does not read"));
++    }
++    Ok(joined)
++}
++
++fn eslint_scope(rel: &str, abs: &Path) -> Option<DeclaredScope> {
++    let dir = dir_of(rel);
++    let file = rel.rsplit('/').next().unwrap_or(rel);
++    let Ok(text) = std::fs::read_to_string(abs) else {
++        return Some(noted(rel, ESLINT, &dir, "could not be read".into()));
++    };
++    let read: Result<(Vec<String>, bool), String> = if file == "package.json" {
++        let v = serde_json::from_str::<serde_json::Value>(&text).ok()?;
++        let e = v.get("eslintConfig")?;
++        json_ignore_patterns(e).map(|p| (p, true))
++    } else if file.ends_with("js") || file.ends_with("ts") {
++        let legacy = file.starts_with(".eslintrc");
++        js_ignores(rel, &text, legacy).map(|p| (p, legacy))
++    } else {
++        crate::lint::parse_jsonc(&text)
++            .ok_or_else(|| "is not JSON Drift reads".to_string())
++            .and_then(|v| json_ignore_patterns(&v))
++            .map(|p| (p, true))
++    };
++    let scope = read.and_then(|(patterns, gitignore)| {
++        patterns
++            .iter()
++            .map(|p| ignore_pattern(&dir, p, gitignore))
++            .collect::<Result<Vec<_>, _>>()
++    });
++    Some(match scope {
++        Ok(exclude) => DeclaredScope {
++            path: rel.to_string(),
++            source: ESLINT.into(),
++            dir: dir.clone(),
++            exts: exts(true),
++            include: vec![if dir.is_empty() {
++                "**".into()
++            } else {
++                format!("{dir}/**")
++            }],
++            exclude,
++            ..Default::default()
++        },
++        Err(note) => noted(rel, ESLINT, &dir, note),
++    })
++}
++
++fn json_ignore_patterns(v: &serde_json::Value) -> Result<Vec<String>, String> {
++    match v.get("ignorePatterns") {
++        None => Ok(vec![]),
++        Some(serde_json::Value::String(s)) => Ok(vec![s.clone()]),
++        Some(p) => string_list(p, "ignorePatterns"),
++    }
++}
++
++/// The global ignores of a JavaScript config, read syntactically: legacy
++/// `module.exports = { ignorePatterns }`, or flat-config blocks whose only keys are
++/// `ignores` (and `name`) and `globalIgnores([...])` calls, through arrays, spreads,
++/// call arguments and top-level constants of what the file exports. A block imported
++/// from another module is not seen (its ignores could only set more apart).
++fn js_ignores(rel: &str, text: &str, legacy: bool) -> Result<Vec<String>, String> {
++    let dialect = drift_core::speculation::Dialect::of_path(rel);
++    if drift_core::speculation::too_costly(text, dialect) {
++        return Err("too costly to parse".into());
++    }
++    drift_core::stack::with_stack_for(text.len(), || {
++        crate::arena::with_arena(text.len(), |allocator| {
++            js_ignores_in(allocator, rel, text, legacy)
++        })
++        .unwrap_or_else(|_| Err("over the parse budget".into()))
++    })
++    .unwrap_or_else(|_| Err("no stack to parse it on".into()))
++}
++
++fn js_ignores_in(
++    allocator: &Allocator,
++    rel: &str,
++    text: &str,
++    legacy: bool,
++) -> Result<Vec<String>, String> {
++    let source_type = SourceType::from_path(rel).unwrap_or_else(|_| SourceType::mjs());
++    let ret = Parser::new(allocator, text, source_type).parse();
++    if ret.fatal_error || !ret.diagnostics.is_empty() {
++        return Err("has syntax errors".into());
++    }
++    let mut v = Ignores {
++        consts: Default::default(),
++        out: Vec::new(),
++        visits: 0,
++    };
++    let mut exported: Vec<&Expression> = Vec::new();
++    for stmt in &ret.program.body {
++        match stmt {
++            Statement::VariableDeclaration(d) => v.declare(d),
++            Statement::ExportDeclaration(e) => {
++                if let Declaration::VariableDeclaration(d) = &e.declaration {
++                    v.declare(d);
++                }
++            }
++            Statement::ExportDefaultDeclaration(e) => {
++                if let Some(x) = e.declaration.as_expression() {
++                    exported.push(x);
++                }
++            }
++            Statement::ExpressionStatement(es) => {
++                if let Expression::AssignmentExpression(a) = &es.expression
++                    && let AssignmentTarget::StaticMemberExpression(m) = &a.left
++                    && m.property.name == "exports"
++                    && matches!(&m.object, Expression::Identifier(id) if id.name == "module")
++                {
++                    exported.push(&a.right);
++                }
++            }
++            _ => {}
++        }
++    }
++    for e in exported {
++        if legacy {
++            v.legacy(e, 0)?;
++        } else {
++            v.flat(e, 0)?;
++        }
++    }
++    Ok(v.out)
++}
++
++const MAX_VISITS: usize = 10_000;
++
++struct Ignores<'b, 'a> {
++    consts: std::collections::BTreeMap<String, &'b Expression<'a>>,
++    out: Vec<String>,
++    visits: usize,
++}
++
++fn unwrap_ts<'b, 'a>(mut e: &'b Expression<'a>) -> &'b Expression<'a> {
++    loop {
++        e = match e {
++            Expression::ParenthesizedExpression(p) => &p.expression,
++            Expression::TSAsExpression(x) => &x.expression,
++            Expression::TSSatisfiesExpression(x) => &x.expression,
++            _ => return e,
++        };
++    }
++}
++
++fn key_of(p: &ObjectProperty) -> Option<String> {
++    if p.computed {
++        return match &p.key {
++            PropertyKey::StringLiteral(s) => Some(s.value.display().to_string()),
++            _ => None,
++        };
++    }
++    p.key
++        .static_name()
++        .and_then(|n| n.as_str().map(str::to_string))
++}
++
++impl<'b, 'a> Ignores<'b, 'a> {
++    fn declare(&mut self, d: &'b VariableDeclaration<'a>) {
++        for decl in &d.declarations {
++            if let (BindingPattern::BindingIdentifier(id), Some(init)) = (&decl.id, &decl.init) {
++                self.consts.insert(id.name.to_string(), init);
++            }
++        }
++    }
++
++    fn budget(&mut self, depth: usize) -> Result<(), String> {
++        self.visits += 1;
++        if depth > 12 || self.visits > MAX_VISITS {
++            return Err("nested too deep to read".into());
++        }
++        Ok(())
++    }
++
++    /// The strings of an ignore list: literals, or a constant naming such a list.
++    fn strings(&mut self, e: &'b Expression<'a>, depth: usize) -> Result<(), String> {
++        self.budget(depth)?;
++        match unwrap_ts(e) {
++            Expression::StringLiteral(s) => self.out.push(s.value.display().to_string()),
++            Expression::TemplateLiteral(t) if t.expressions.is_empty() => {
++                self.out
++                    .push(t.quasis.iter().map(|q| q.value.raw.to_string()).collect());
++            }
++            Expression::ArrayExpression(a) => {
++                for el in &a.elements {
++                    match el {
++                        ArrayExpressionElement::SpreadElement(sp) => {
++                            self.strings(&sp.argument, depth + 1)?
++                        }
++                        other => match other.as_expression() {
++                            Some(x) => self.strings(x, depth + 1)?,
++                            None => return Err("an ignore list has a hole".into()),
++                        },
++                    }
++                }
++            }
++            Expression::Identifier(id) => match self.consts.get(id.name.as_str()).copied() {
++                Some(init) => self.strings(init, depth + 1)?,
++                None => return Err(format!("ignores `{}`, built elsewhere", id.name)),
++            },
++            _ => return Err("ignores built at run time".into()),
++        }
++        Ok(())
++    }
++
++    fn legacy(&mut self, e: &'b Expression<'a>, depth: usize) -> Result<(), String> {
++        self.budget(depth)?;
++        match unwrap_ts(e) {
++            Expression::ObjectExpression(o) => {
++                for p in &o.properties {
++                    match p {
++                        ObjectPropertyKind::ObjectProperty(p)
++                            if key_of(p).as_deref() == Some("ignorePatterns") =>
++                        {
++                            self.strings(&p.value, depth + 1)?;
++                        }
++                        ObjectPropertyKind::ObjectProperty(_) => {}
++                        ObjectPropertyKind::SpreadProperty(_) => {
++                            return Err("spreads a config built elsewhere".into());
++                        }
++                    }
++                }
++                Ok(())
++            }
++            Expression::Identifier(id) => match self.consts.get(id.name.as_str()).copied() {
++                Some(init) => self.legacy(init, depth + 1),
++                None => Err(format!("exports `{}`, built elsewhere", id.name)),
++            },
++            _ => Err("exports a config built at run time".into()),
++        }
++    }
++
++    fn flat(&mut self, e: &'b Expression<'a>, depth: usize) -> Result<(), String> {
++        self.budget(depth)?;
++        match unwrap_ts(e) {
++            Expression::ArrayExpression(a) => {
++                for el in &a.elements {
++                    match el {
++                        ArrayExpressionElement::SpreadElement(sp) => {
++                            self.flat(&sp.argument, depth + 1)?
++                        }
++                        other => {
++                            if let Some(x) = other.as_expression() {
++                                self.flat(x, depth + 1)?;
++                            }
++                        }
++                    }
++                }
++            }
++            Expression::CallExpression(c) => {
++                let callee = match &c.callee {
++                    Expression::Identifier(id) => Some(id.name.as_str()),
++                    Expression::StaticMemberExpression(m) => Some(m.property.name.as_str()),
++                    _ => None,
++                };
++                if callee == Some("globalIgnores") {
++                    match c.arguments.first().and_then(|a| a.as_expression()) {
++                        Some(x) => self.strings(x, depth + 1)?,
++                        None => return Err("`globalIgnores` of a list built at run time".into()),
++                    }
++                    return Ok(());
++                }
++                // `defineConfig(...)`, `tseslint.config(...)`: their arguments are blocks.
++                for a in &c.arguments {
++                    match a {
++                        Argument::SpreadElement(sp) => self.flat(&sp.argument, depth + 1)?,
++                        other => {
++                            if let Some(x) = other.as_expression() {
++                                self.flat(x, depth + 1)?;
++                            }
++                        }
++                    }
++                }
++            }
++            Expression::ObjectExpression(o) => {
++                // A block whose only keys are `ignores` (and `name`) ignores globally.
++                let keys: Option<Vec<String>> = o
++                    .properties
++                    .iter()
++                    .map(|p| match p {
++                        ObjectPropertyKind::ObjectProperty(p) => key_of(p),
++                        ObjectPropertyKind::SpreadProperty(_) => None,
++                    })
++                    .collect();
++                if let Some(keys) = &keys
++                    && keys.iter().any(|k| k == "ignores")
++                    && keys.iter().all(|k| k == "ignores" || k == "name")
++                {
++                    for p in &o.properties {
++                        if let ObjectPropertyKind::ObjectProperty(p) = p
++                            && key_of(p).as_deref() == Some("ignores")
++                        {
++                            self.strings(&p.value, depth + 1)?;
++                        }
++                    }
++                } else if keys.is_none()
++                    && o.properties.iter().any(|p| matches!(p, ObjectPropertyKind::ObjectProperty(p) if key_of(p).as_deref() == Some("ignores")))
++                {
++                    // `{ ...shared, ignores }`: whether it is global depends on what is spread.
++                    return Err("a block with `ignores` spreads a config built elsewhere".into());
++                }
++            }
++            Expression::Identifier(id) => {
++                if let Some(init) = self.consts.get(id.name.as_str()).copied() {
++                    self.flat(init, depth + 1)?;
++                }
++            }
++            _ => {}
++        }
++        Ok(())
++    }
++}
++
++// ---------- package.json `files` ----------
++
++/// The `files` of a published package (`private` not `true`): what it publishes. Read
++/// only when every entry names something in the checkout: a package that publishes a
++/// build output (`dist`) publishes sources Drift cannot map entry by entry.
++fn npm_files_scope(
++    root: &Path,
++    rel: &str,
++    abs: &Path,
++    present: &BTreeSet<String>,
++) -> Option<DeclaredScope> {
++    let dir = dir_of(rel);
++    let Some(v) = std::fs::read_to_string(abs)
++        .ok()
++        .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
++    else {
++        return Some(noted(rel, NPM_FILES, &dir, "is not valid JSON".into()));
++    };
++    if v.get("private").and_then(|p| p.as_bool()) == Some(true) {
++        return None;
++    }
++    let files = v.get("files")?;
++    let read = (|| -> Result<DeclaredScope, String> {
++        let entries = string_list(files, "files")?;
++        let mut include = Vec::new();
++        for e in &entries {
++            let g = ignore_pattern(&dir, e.trim_start_matches("./"), true)?;
++            let below = format!("{g}/**");
++            let literal = !e.contains(['*', '?', '{']);
++            let exists = if literal {
++                join(&dir, e.trim_start_matches('/')).is_some_and(|p| root.join(p).exists())
++            } else {
++                present.iter().any(|p| {
++                    drift_core::declared::glob_match(&g, p)
++                        || drift_core::declared::glob_match(&below, p)
++                })
++            };
++            if !exists {
++                return Err(format!(
++                    "`files` names `{e}`, which is not in the checkout (a build output)"
++                ));
++            }
++            include.push(g);
++            include.push(below);
++        }
++        // What npm always publishes: the manifest's `main` and `bin`.
++        let mut always = Vec::new();
++        let mut named = Vec::new();
++        if let Some(m) = v.get("main").and_then(|m| m.as_str()) {
++            named.push(m.to_string());
++        }
++        match v.get("bin") {
++            Some(serde_json::Value::String(b)) => named.push(b.clone()),
++            Some(serde_json::Value::Object(o)) => {
++                named.extend(o.values().filter_map(|b| b.as_str().map(str::to_string)));
++            }
++            _ => {}
++        }
++        for n in named {
++            if let Some(p) = join(&dir, &n) {
++                always.push(p);
++            }
++        }
++        Ok(DeclaredScope {
++            path: rel.to_string(),
++            source: NPM_FILES.into(),
++            dir: dir.clone(),
++            exts: exts(true),
++            files: always,
++            include,
++            ..Default::default()
++        })
++    })();
++    Some(read.unwrap_or_else(|note| noted(rel, NPM_FILES, &dir, note)))
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use drift_core::declared::pattern_out;
++
++    fn write(root: &Path, rel: &str, body: &str) {
++        let p = root.join(rel);
++        std::fs::create_dir_all(p.parent().unwrap()).unwrap();
++        std::fs::write(p, body).unwrap();
++    }
++
++    fn scopes_of(root: &Path, rels: &[&str]) -> Vec<DeclaredScope> {
++        let root = root.canonicalize().unwrap();
++        let resolver = ModuleResolver::new(&root, Default::default());
++        let config: Vec<Candidate> = rels
++            .iter()
++            .map(|r| Candidate {
++                rel_path: r.to_string(),
++                abs_path: root.join(r),
++                stamp: Default::default(),
++            })
++            .collect();
++        let present = rels.iter().map(|r| r.to_string()).collect();
++        let mut s = scopes(&root, &resolver, &config, &present);
++        s.sort();
++        s
++    }
++
++    #[test]
++    fn tsconfig_include_exclude_extends_and_references() {
++        let t = tempfile::tempdir().unwrap();
++        let r = t.path();
++        write(
++            r,
++            "tsconfig.base.json",
++            r#"{ "include": ["src"], "exclude": ["src/gen"] }"#,
++        );
++        write(
++            r,
++            "tsconfig.json",
++            "// solution\n{ \"files\": [], \"references\": [{ \"path\": \"./tsconfig.app.json\" }, { \"path\": \"./tools\" }] }",
++        );
++        write(
++            r,
++            "tsconfig.app.json",
++            r#"{ "extends": "./tsconfig.base.json", "compilerOptions": { "allowJs": true } }"#,
++        );
++        write(r, "tools/tsconfig.json", r#"{ "include": ["*.ts"] }"#);
++        let s = scopes_of(
++            r,
++            &[
++                "tsconfig.base.json",
++                "tsconfig.json",
++                "tsconfig.app.json",
++                "tools/tsconfig.json",
++            ],
++        );
++        let out = |p: &str| pattern_out(&s, p, "").map(|s| s.path.clone());
++        assert_eq!(out("src/a.ts"), None);
++        // Out by every project of the root directory (the first is reported).
++        assert!(out("src/gen/a.ts").is_some());
++        assert!(out("vite.config.ts").is_some());
++        assert_eq!(
++            out("vite.config.cjs"),
++            None,
++            "the solution config does not judge JS"
++        );
++        // tools/ has a tsconfig of its own, which takes its top-level files in.
++        assert_eq!(out("tools/a.ts"), None);
++        assert_eq!(
++            out("tools/deep/a.ts").as_deref(),
++            Some("tools/tsconfig.json")
++        );
++    }
++
++    /// `extends` and `references` through a parent directory are read, never dropped.
++    #[test]
++    fn parent_directory_extends_and_references() {
++        let t = tempfile::tempdir().unwrap();
++        let r = t.path();
++        write(r, "configs/base.json", r#"{ "include": ["../app/src"] }"#);
++        write(
++            r,
++            "app/tsconfig.json",
++            r#"{ "extends": "../configs/base.json", "references": [{ "path": "../app/tools" }] }"#,
++        );
++        write(
++            r,
++            "app/tools/tsconfig.json",
++            r#"{ "include": ["../scripts"] }"#,
++        );
++        let s = scopes_of(r, &["app/tsconfig.json", "app/tools/tsconfig.json"]);
++        assert!(s.iter().all(|s| s.note.is_empty()), "{s:#?}");
++        let out = |p: &str| pattern_out(&s, p, "app").is_some();
++        assert!(!out("app/src/a.ts"));
++        assert!(
++            !out("app/scripts/a.ts"),
++            "taken in by the referenced project"
++        );
++        assert!(out("app/vite.config.ts"));
++    }
++
++    /// A root tsconfig with neither `files` nor `include` takes in everything.
++    #[test]
++    fn a_root_tsconfig_without_include_takes_everything_in() {
++        let t = tempfile::tempdir().unwrap();
++        let r = t.path();
++        write(
++            r,
++            "tsconfig.json",
++            r#"{ "compilerOptions": { "strict": true }, "exclude": ["gen"] }"#,
++        );
++        let s = scopes_of(r, &["tsconfig.json"]);
++        assert!(s.iter().all(|s| s.note.is_empty()), "{s:#?}");
++        assert!(pattern_out(&s, "scripts/a.ts", "").is_none());
++        assert!(pattern_out(&s, "gen/a.ts", "").is_some());
++    }
++
++    #[test]
++    fn an_unreadable_tsconfig_sets_nothing_apart() {
++        let t = tempfile::tempdir().unwrap();
++        let r = t.path();
++        write(
++            r,
++            "tsconfig.json",
++            r#"{ "extends": "@tsconfig/node20/tsconfig.json", "include": ["src"] }"#,
++        );
++        write(r, "a/tsconfig.json", r#"{ "include": ["src"], }  oops"#);
++        write(r, "b/tsconfig.json", r#"{ "include": ["src/[ab]*.ts"] }"#);
++        let s = scopes_of(r, &["tsconfig.json", "a/tsconfig.json", "b/tsconfig.json"]);
++        assert!(s.iter().all(|s| !s.note.is_empty()), "{s:#?}");
++        assert!(pattern_out(&s, "scripts/x.ts", "").is_none());
++        assert!(pattern_out(&s, "a/scripts/x.ts", "").is_none());
++        assert!(pattern_out(&s, "b/x.ts", "").is_none());
++    }
++
++    #[test]
++    fn eslint_global_ignores_not_rule_overrides() {
++        let t = tempfile::tempdir().unwrap();
++        let r = t.path();
++        write(
++            r,
++            "eslint.config.mjs",
++            r#"import js from "@eslint/js";
++const generated = ["src/gen/**"];
++export default defineConfig([
++  globalIgnores(["dist/", "**/*.config.cjs"]),
++  { ignores: generated, name: "gen" },
++  { files: ["scripts/**"], ignores: ["scripts/keep.ts"], rules: { "no-console": "off" } },
++  ...js.configs.recommended,
++]);"#,
++        );
++        write(
++            r,
++            "web/.eslintrc.json",
++            r#"{ "root": true, "ignorePatterns": ["legacy", "/top.ts"] }"#,
++        );
++        write(
++            r,
++            "bad/eslint.config.js",
++            r#"export default [{ ignores: ["dist", ...shared] }];"#,
++        );
++        write(
++            r,
++            "neg/.eslintrc.json",
++            r#"{ "ignorePatterns": ["gen", "!gen/keep.ts"] }"#,
++        );
++        let s = scopes_of(
++            r,
++            &[
++                "eslint.config.mjs",
++                "web/.eslintrc.json",
++                "bad/eslint.config.js",
++                "neg/.eslintrc.json",
++            ],
++        );
++        let out = |p: &str| pattern_out(&s, p, "").is_some();
++        assert!(out("src/gen/a.ts"));
++        assert!(out("apps/electron-builder.config.cjs"));
++        assert!(out("dist/x.js"));
++        assert!(
++            !out("scripts/keep.ts"),
++            "ignores in a block with `files` are not global"
++        );
++        assert!(!out("src/a.ts"));
++        // The nearest config governs: web's own patterns, gitignore-style.
++        assert!(out("web/a/legacy/x.ts"));
++        assert!(out("web/top.ts"));
++        assert!(!out("web/a/top.ts"));
++        assert!(!out("web/src/gen/a.ts"));
++        // Unreadable ignores and negations set nothing apart.
++        assert!(!out("bad/dist/x.js"));
++        assert!(!out("neg/gen/x.ts"));
++    }
++
++    #[test]
++    fn published_files_only_when_in_the_checkout() {
++        let t = tempfile::tempdir().unwrap();
++        let r = t.path();
++        write(
++            r,
++            "lib/package.json",
++            r#"{ "name": "lib", "files": ["src", "index.js"], "bin": "cli.js" }"#,
++        );
++        write(r, "lib/src/a.ts", "");
++        write(r, "lib/index.js", "");
++        write(
++            r,
++            "built/package.json",
++            r#"{ "name": "built", "files": ["dist"] }"#,
++        );
++        write(
++            r,
++            "app/package.json",
++            r#"{ "private": true, "files": ["src"] }"#,
++        );
++        let s = scopes_of(
++            r,
++            &["lib/package.json", "built/package.json", "app/package.json"],
++        );
++        let out = |p: &str, pkg: &str| pattern_out(&s, p, pkg).is_some();
++        assert!(!out("lib/src/x/a.ts", "lib"));
++        assert!(!out("lib/cli.js", "lib"));
++        assert!(out("lib/scripts/release.ts", "lib"));
++        assert!(
++            !out("built/scripts/release.ts", "built"),
++            "`dist` is not in the checkout"
++        );
++        assert!(
++            !out("app/scripts/x.ts", "app"),
++            "a private package publishes nothing"
++        );
++        assert!(
++            s.iter()
++                .any(|s| s.path == "built/package.json" && !s.note.is_empty())
++        );
++    }
++}
+diff --git a/crates/drift-ts/src/lib.rs b/crates/drift-ts/src/lib.rs
+index d99a6333..c3634a96 100644
+--- a/crates/drift-ts/src/lib.rs
++++ b/crates/drift-ts/src/lib.rs
+@@ -4,6 +4,7 @@
+ //! modules and re-export chains -> framework adapters -> [`RepoFacts`].
+ 
+ pub mod arena;
++pub mod declared;
+ mod flow;
+ mod index;
+ pub mod lint;
+@@ -86,6 +87,7 @@ pub fn scan(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, ScanS
+ fn scan_inner(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, ScanStats)> {
+     let started = index::now_ns();
+     let walked = ingest::walk(root, opts.threads, &repo::is_config_path)?;
++    let present = present_paths(&walked);
+     let cache = opts
+         .cache_dir
+         .as_ref()
+@@ -186,6 +188,7 @@ fn scan_inner(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, Sca
+         context_files: vec![],
+         key_files: vec![],
+         integration_files: vec![],
++        declared: declared::scopes(root, &resolver, &walked.config, &present),
+     };
+     repo::pair_tests(&mut repo);
+     let reexports: BTreeMap<String, repo::Reexports> = files
+@@ -224,6 +227,26 @@ pub fn config_facts(
+     unread.is_empty().then_some((packages, lint))
+ }
+ 
++/// Every walked file, repo-relative: sources, config files and Python files.
++fn present_paths(walked: &ingest::Walked) -> std::collections::BTreeSet<String> {
++    walked
++        .sources
++        .iter()
++        .chain(&walked.config)
++        .chain(&walked.python.sources)
++        .map(|c| c.rel_path.clone())
++        .collect()
++}
++
++/// The declared scopes of the walked TypeScript/JavaScript configuration
++/// ([`drift_core::declared`]), as a full [`scan`] records them: for a single-file
++/// scan to tell whether its file needs the full scan's reachability.
++pub fn declared_scopes(root: &Path, walked: &ingest::Walked) -> Vec<drift_core::DeclaredScope> {
++    let config = repo::read_config(&walked.config);
++    let resolver = ModuleResolver::new(root, workspace_from(root, &config.package_jsons));
++    declared::scopes(root, &resolver, &walked.config, &present_paths(walked))
++}
++
+ /// Facts for a file that is about to be written, from its content alone.
+ ///
+ /// Used before a new file exists, to learn which symbol kinds and entry points it
+diff --git a/crates/drift-ts/src/repo.rs b/crates/drift-ts/src/repo.rs
+index f1c8d533..64dd723e 100644
+--- a/crates/drift-ts/src/repo.rs
++++ b/crates/drift-ts/src/repo.rs
+@@ -470,6 +470,7 @@ pub fn is_config_path(rel: &str) -> bool {
+         || name.ends_with(".prisma")
+         || name.ends_with(".sql")
+         || crate::lint::config_tool(rel).is_some()
++        || crate::declared::is_tsconfig(rel)
+ }
+ 
+ /// Read the config files found by [`drift_core::ingest::walk`].
+diff --git a/crates/drift-ts/src/resolve.rs b/crates/drift-ts/src/resolve.rs
+index 3d63d9e8..4a7a1871 100644
+--- a/crates/drift-ts/src/resolve.rs
++++ b/crates/drift-ts/src/resolve.rs
+@@ -320,7 +320,7 @@ impl ModuleResolver {
+         Some((base_url, paths, paths_dir))
+     }
+ 
+-    fn tsconfig_extends(&self, dir: &Path, ext: &str) -> Option<PathBuf> {
++    pub(crate) fn tsconfig_extends(&self, dir: &Path, ext: &str) -> Option<PathBuf> {
+         let with_json = |p: PathBuf| {
+             if p.extension().is_some() {
+                 p
+diff --git a/crates/drift-ts/tests/snapshots/conformance__next_app_facts.snap b/crates/drift-ts/tests/snapshots/conformance__next_app_facts.snap
+index af0022cb..e6128360 100644
+--- a/crates/drift-ts/tests/snapshots/conformance__next_app_facts.snap
++++ b/crates/drift-ts/tests/snapshots/conformance__next_app_facts.snap
+@@ -1381,5 +1381,21 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
+         "packages/ui/src/index.tsx"
+       ]
+     }
++  ],
++  "declared": [
++    {
++      "path": "tsconfig.json",
++      "source": "tsconfig",
++      "dir": "",
++      "exts": [
++        "cts",
++        "mts",
++        "ts",
++        "tsx"
++      ],
++      "include": [
++        "**"
++      ]
++    }
+   ]
+ }

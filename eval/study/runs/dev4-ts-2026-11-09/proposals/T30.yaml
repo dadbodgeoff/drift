@@ -1,0 +1,136 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - Composer
+  - DiffPanel
+  - NotificationPanel
+  - Types
+  - file
+  - inspection
+  - interaction
+  - memoryDiagnostics
+  - navigation
+  - pty
+  - rpc
+  - tool
+  - types
+  suffixes:
+  - config
+  - handler
+  - rpc
+  - test
+conventions:
+- id: D-fcb801
+  status: proposed
+  mode: advise
+  summary: >-
+    files in src/main/** do not import from src/renderer/** (declared dependencies,
+    and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: src/main
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:src/renderer
+  evidence:
+    holders: 644
+    total: 645
+    lower_bound: 0.991
+    lift: 3.0
+  example: src/main/DaemonClient.ts#(file)
+  selector_version: 3
+- id: D-00025a
+  status: proposed
+  mode: advise
+  summary: >-
+    files in src/daemon/** do not import from src/cli/** (declared dependencies,
+    and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: src/daemon
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:src/cli
+  evidence:
+    holders: 364
+    total: 366
+    lower_bound: 0.98
+    lift: 3.0
+  example: src/daemon/AgentProcessTracker.ts#(file)
+  selector_version: 3
+- id: D-48e1a6
+  status: proposed
+  mode: advise
+  summary: >-
+    files in src/shared/** do not import from src/main/** (declared dependencies,
+    and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: src/shared
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:src/main
+  evidence:
+    holders: 379
+    total: 382
+    lower_bound: 0.977
+    lift: 3.0
+  example: src/shared/ShellDetector.ts#(file)
+  selector_version: 3
+- id: D-c1a36d
+  status: proposed
+  mode: advise
+  summary: >-
+    files in src/shared/** do not import from src/daemon/** (declared dependencies,
+    and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: src/shared
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:src/daemon
+  evidence:
+    holders: 379
+    total: 382
+    lower_bound: 0.977
+    lift: 3.0
+  example: src/shared/ShellDetector.ts#(file)
+  selector_version: 3
+- id: D-e8699e
+  status: proposed
+  mode: advise
+  summary: >-
+    files in src/daemon/** do not import from src/main/** (declared dependencies,
+    and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: src/daemon
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:src/main
+  evidence:
+    holders: 351
+    total: 366
+    lower_bound: 0.933
+    lift: 3.0
+  example: src/daemon/AgentProcessTracker.ts#(file)
+  selector_version: 3

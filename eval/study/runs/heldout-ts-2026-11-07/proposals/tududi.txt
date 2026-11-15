@@ -1,0 +1,169 @@
+6 conventions from 4413 units in 185 roles (0 default tier, 6 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-815f43] functions in backend/** do not use requests to computed URLs
+    evidence: 1202/1204 (lower bound 0.99, lift 109.0)
+    tier:     suggestion (rule kind avoids:other)
+    example:  backend/config/authConfig.js#isPasswordAuthEnabled
+    outlier:  backend/middleware/captcha.js:32 verifyToken
+    outlier:  backend/modules/calendar-feeds/fetcher.js:90 fetchFeed
+
+ 2. [D-6c856c] components in frontend/components/** do not use requests to computed URLs
+    evidence: 293/325 (lower bound 0.86, lift 6.1)
+    tier:     suggestion (rule kind avoids:other)
+    example:  frontend/components/AI/DailyAssistant.tsx#DailyAssistant
+    outlier:  frontend/components/About.tsx:12 About
+    outlier:  frontend/components/Admin/AdminDashboardPage.tsx:68 AdminDashboardPage
+    outlier:  frontend/components/Admin/AdminUserStatusTable.tsx:77 AdminUserStatusTable
+    outlier:  frontend/components/Auth/ForgotPassword.tsx:10 ForgotPassword
+    outlier:  frontend/components/Auth/MfaCodeForm.tsx:12 MfaCodeForm
+    outlier:  frontend/components/Auth/ResetPassword.tsx:9 ResetPassword
+    outlier:  frontend/components/Billing/SubscriptionRequired.tsx:26 SubscriptionRequired
+    outlier:  frontend/components/Calendar.tsx:91 Calendar
+    outlier:  frontend/components/DemoEntry.tsx:8 DemoEntry
+    outlier:  frontend/components/Eisenhower/EisenhowerMatrix.tsx:32 EisenhowerMatrix
+    outlier:  frontend/components/Insights/BurndownChart.tsx:21 BurndownChart
+    outlier:  frontend/components/Insights/ReportsOverview.tsx:141 ReportsOverview
+    outlier:  frontend/components/Insights/ReportsPage.tsx:277 ReportsPage
+    outlier:  frontend/components/Kanban/KanbanBoard.tsx:130 KanbanBoard
+    outlier:  frontend/components/Login.tsx:12 Login
+    outlier:  frontend/components/Navbar.tsx:51 Navbar
+    outlier:  frontend/components/Note/NoteSidePanel.tsx:39 NoteSidePanel
+    outlier:  frontend/components/Notifications/NotificationsDropdown.tsx:54 NotificationsDropdown
+    outlier:  frontend/components/Profile/ProfileSettings.tsx:97 ProfileSettings
+    outlier:  frontend/components/Profile/tabs/McpTab.tsx:29 McpTab
+    outlier:  frontend/components/Project/BannerEditModal.tsx:19 BannerEditModal
+    outlier:  frontend/components/Project/ProjectDetails.tsx:71 ProjectDetails
+    outlier:  frontend/components/PublicNote/PublicNotePage.tsx:20 PublicNotePage
+    outlier:  frontend/components/Register.tsx:10 Register
+    outlier:  frontend/components/Shared/AttachmentPreview.tsx:11 AttachmentPreview
+    outlier:  frontend/components/Sidebar/SidebarFooter.tsx:54 SidebarFooter
+    outlier:  frontend/components/Sidebar/SidebarViews.tsx:103 SidebarViews
+    outlier:  frontend/components/Tag/TagDetails.tsx:35 TagDetails
+    outlier:  frontend/components/Tasks.tsx:49 Tasks
+    outlier:  frontend/components/UniversalSearch/SearchMenu.tsx:107 SearchMenu
+    outlier:  frontend/components/ViewDetail.tsx:51 ViewDetail
+    outlier:  frontend/components/Views.tsx:12 Views
+
+ 3. [D-9998f9] functions in frontend/** declare their return type
+    evidence: 571/615 (lower bound 0.91, lift 3.7)
+    tier:     suggestion (rule kind control)
+    example:  frontend/components/Admin/AdminTrends.tsx#percentOf
+    outlier:  frontend/components/Blog/BlogPostCard.tsx:6 formatPostDate
+    outlier:  frontend/components/Capture/useCaptureFiles.ts:77 useCaptureFiles
+    outlier:  frontend/components/Note/editor/highlightStyle.ts:25 neutralEditorTheme
+    outlier:  frontend/components/Note/editor/linkClicks.ts:12 linkClickHandlers
+    outlier:  frontend/components/Note/editor/textCommands.ts:62 insertLink
+    outlier:  frontend/components/Note/editor/textCommands.ts:41 setHeading
+    outlier:  frontend/components/Note/editor/textCommands.ts:3 wrapSelection
+    outlier:  frontend/components/Project/useCompleteProject.tsx:22 useCompleteProject
+    outlier:  frontend/components/Project/useProjectCardActions.tsx:15 useProjectCardActions
+    outlier:  frontend/components/Project/useProjectMetrics.ts:18 useProjectMetrics
+    outlier:  frontend/components/Shared/ToastContext.tsx:80 useToast
+    outlier:  frontend/components/Task/getTitleAndIcon.ts:13 getTitleAndIcon
+    outlier:  frontend/components/Task/statusStyles.ts:65 getStatusBorderColorClasses
+    outlier:  frontend/contexts/SidebarContext.tsx:11 useSidebar
+    outlier:  frontend/contexts/TelegramStatusContext.tsx:136 dispatchTelegramStatusChange
+    outlier:  frontend/contexts/TelegramStatusContext.tsx:125 useTelegramStatus
+    outlier:  frontend/hooks/useKeyboardShortcuts.ts:29 useKeyboardShortcuts
+    outlier:  frontend/hooks/useNotesTreeExpansion.ts:34 useNotesTreeExpansion
+    outlier:  frontend/hooks/usePersistedModal.ts:12 usePersistedModal
+    outlier:  frontend/store/useStore.ts:210 useStore
+    outlier:  frontend/utils/billingPlans.ts:47 formatMoney
+    outlier:  frontend/utils/captcha.ts:27 resetCaptchaConfigCache
+    outlier:  frontend/utils/featureFlags.ts:51 clearFeatureFlagsCache
+    outlier:  frontend/utils/habitsService.ts:114 fetchHabitStats
+    outlier:  frontend/utils/keyboardShortcutsService.ts:77 parseKeyboardEvent
+    outlier:  frontend/utils/membersService.ts:225 redeemSignInLink
+    outlier:  frontend/utils/mfaService.ts:70 disableMfa
+    outlier:  frontend/utils/mfaService.ts:67 enableMfa
+    outlier:  frontend/utils/mfaService.ts:75 regenerateRecoveryCodes
+    outlier:  frontend/utils/mfaService.ts:78 reverify
+    outlier:  frontend/utils/mfaService.ts:65 startMfaSetup
+    outlier:  frontend/utils/sidebarWidth.ts:19 sidebarPxToPercent
+    outlier:  frontend/utils/spreadsheetService.ts:328 commitImport
+    outlier:  frontend/utils/spreadsheetService.ts:343 discardImport
+    outlier:  frontend/utils/spreadsheetService.ts:346 listImports
+    outlier:  frontend/utils/spreadsheetService.ts:308 loadImportColumns
+    outlier:  frontend/utils/spreadsheetService.ts:320 previewImport
+    outlier:  frontend/utils/webhooksService.ts:105 createWebhook
+    outlier:  frontend/utils/webhooksService.ts:116 deleteWebhook
+    outlier:  frontend/utils/webhooksService.ts:137 listWebhookDeliveries
+    outlier:  frontend/utils/webhooksService.ts:102 listWebhooks
+    outlier:  frontend/utils/webhooksService.ts:123 rotateWebhookSecret
+    outlier:  frontend/utils/webhooksService.ts:130 testWebhook
+    outlier:  frontend/utils/webhooksService.ts:108 updateWebhook
+    exempt:   frontend/components/Admin/SortableTable.tsx:27 useSortedRows (shared part used by 5 members)
+    exempt:   frontend/components/Auth/useReverify.tsx:19 useReverify (shared part used by 2 members)
+    exempt:   frontend/components/DailyPlan/tips.ts:32 lateItems (shared part used by 2 members)
+    exempt:   frontend/components/Shared/sortableList.ts:44 resetSortableCursor (shared part used by 6 members)
+    exempt:   frontend/components/Shared/sortableList.ts:25 swallowNextClick (shared part used by 6 members)
+    exempt:   frontend/components/Shared/sortableList.ts:12 useSortableSensors (shared part used by 7 members)
+    exempt:   frontend/components/Task/statusStyles.ts:58 getStatusButtonColorClasses (shared part used by 2 members)
+    exempt:   frontend/store/dailyPlanStore.ts:9 useDailyPlanProgress (shared part used by 3 members)
+    exempt:   frontend/store/taskPanelStore.ts:18 openTaskPanel (shared part used by 14 members)
+    exempt:   frontend/store/taskPanelStore.ts:12 useTaskPanel (shared part used by 2 members)
+    exempt:   frontend/utils/avatarTint.ts:11 avatarTint (shared part used by 3 members)
+    exempt:   frontend/utils/habitUtils.ts:19 habitAccentStyle (shared part used by 2 members)
+    exempt:   frontend/utils/spreadsheetService.ts:283 downloadImportTemplate (shared part used by 2 members)
+    exempt:   frontend/utils/spreadsheetService.ts:266 exportTasks (shared part used by 2 members)
+    exempt:   frontend/utils/spreadsheetService.ts:336 undoImport (shared part used by 2 members)
+
+ 4. [D-57d79e] functions in backend/** (validation files) are named `validate*`
+    evidence: 43/49 (lower bound 0.76, lift 33.9)
+    tier:     suggestion (rule kind named)
+    example:  backend/modules/admin/validation.js#validateCreateUser
+    outlier:  backend/modules/inbox/validation.js:44 buildTitleFromContent
+    outlier:  backend/modules/projects/validation.js:35 formatDate
+    outlier:  backend/modules/search/validation.js:20 parseSearchParams
+    outlier:  backend/modules/search/validation.js:93 priorityToInt
+    outlier:  backend/modules/tasks/utils/validation.js:256 getRecurringParentEndDate
+    outlier:  backend/modules/tasks/utils/validation.js:16 isValidTaskUid
+
+ 5. [D-744c2d] exported values in backend/** (controller files) use `try`
+    evidence: 33/35 (lower bound 0.81, lift 13.9)
+    tier:     suggestion (rule kind control)
+    example:  backend/modules/admin-ai-usage/controller.js#controller
+    outlier:  backend/modules/habits/controller.js:13 habitsController
+    outlier:  backend/modules/webhooks/controller.js:21 controller
+
+ 6. [D-f7d289] components in frontend/components/** call useTranslation() before useState()
+    evidence: 170/203 (lower bound 0.78, lift 1.0)
+    tier:     suggestion (rule kind before)
+    example:  frontend/components/AI/DailyAssistant.tsx#DailyAssistant
+    outlier:  frontend/components/Auth/AuthPageShell.tsx:11 AuthPageShell
+    outlier:  frontend/components/Blog/BlogApp.tsx:23 BlogApp
+    outlier:  frontend/components/Calendar/CalendarWeekView.tsx:35 CalendarWeekView
+    outlier:  frontend/components/Goal/GoalHero.tsx:38 GoalHero
+    outlier:  frontend/components/Insights/AreaDonut.tsx:42 AreaDonut
+    outlier:  frontend/components/Insights/BurndownChart.tsx:21 BurndownChart
+    outlier:  frontend/components/Insights/LifeBalance.tsx:67 LifeBalance
+    outlier:  frontend/components/Login.tsx:12 Login
+    outlier:  frontend/components/Note/SlashCommandMenu.tsx:247 SlashCommandMenu
+    outlier:  frontend/components/People/PeopleList.tsx:23 PeopleList
+    outlier:  frontend/components/People/PersonModal.tsx:44 PersonModal
+    outlier:  frontend/components/Project/ProjectAttachmentsWidget.tsx:21 ProjectAttachmentsWidget
+    outlier:  frontend/components/Project/ProjectBanner.tsx:33 ProjectBanner
+    outlier:  frontend/components/Project/ProjectHero.tsx:52 ProjectHero
+    outlier:  frontend/components/Project/ProjectOverviewRail.tsx:141 ProjectOverviewRail
+    outlier:  frontend/components/Project/Timeline/ProjectTimeline.tsx:65 ProjectTimeline
+    outlier:  frontend/components/Register.tsx:10 Register
+    outlier:  frontend/components/Shared/AttachmentPreview.tsx:11 AttachmentPreview
+    outlier:  frontend/components/Shared/GoalDropdown.tsx:13 GoalDropdown
+    outlier:  frontend/components/Shared/IconSortDropdown.tsx:32 IconSortDropdown
+    outlier:  frontend/components/Shared/MermaidDiagram.tsx:72 MermaidDiagram
+    outlier:  frontend/components/Shared/NumberSelectDropdown.tsx:15 NumberSelectDropdown
+    outlier:  frontend/components/Shared/PersonDropdown.tsx:38 PersonDropdown
+    outlier:  frontend/components/Shared/RecurrenceSelectDropdown.tsx:19 RecurrenceSelectDropdown
+    outlier:  frontend/components/Shared/SelectMenu.tsx:24 SelectMenu
+    outlier:  frontend/components/Shared/SortFilterButton.tsx:17 SortFilterButton
+    outlier:  frontend/components/Shared/ToastContext.tsx:22 ToastProvider
+    outlier:  frontend/components/Shared/Tooltip.tsx:10 Tooltip
+    outlier:  frontend/components/Sidebar.tsx:60 Sidebar
+    outlier:  frontend/components/Task/NewTask.tsx:10 NewTask
+    outlier:  frontend/components/Task/TaskDetails/TaskAssignedToCard.tsx:13 TaskAssignedToCard
+    outlier:  frontend/components/Task/TaskDetails/TaskSubtasksCard.tsx:17 TaskSubtasksCard
+    outlier:  frontend/components/Task/TaskRow/TaskRowExpansionContext.tsx:19 TaskRowExpansionProvider
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

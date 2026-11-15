@@ -1,0 +1,1334 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "cgu47-2c81ba4-1794051240",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel4/restage-2c81ba4/cache/repos/cal.com",
+  "units": 11444,
+  "roles": 690,
+  "conventions": 15,
+  "shown": 15,
+  "tiers": {
+    "default": 6,
+    "suggestion": 9
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-594d38",
+      "rank": 1,
+      "summary": "packages/trpc: rpc entry points in server/** (_router files) are wrapped in authedAdminProcedure() or authedProcedure() or createEventPbacProcedure() or authedAdminProcedureWithRequestedUser() or createWebhookProcedure()",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server",
+        "file": "_router",
+        "entry": "rpc",
+        "kind": "function",
+        "members": 171
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "packages/trpc/server/procedures/authedProcedure.ts#authedAdminProcedure",
+          "packages/trpc/server/procedures/authedProcedure.ts#authedProcedure",
+          "packages/trpc/server/routers/viewer/eventTypes/util.ts#createEventPbacProcedure",
+          "packages/trpc/server/routers/viewer/users/_router.ts#authedAdminProcedureWithRequestedUser",
+          "packages/trpc/server/routers/viewer/webhook/util.ts#createWebhookProcedure"
+        ]
+      },
+      "evidence": {
+        "holders": 156,
+        "total": 171,
+        "lower_bound": 0.86,
+        "lift": 15.537,
+        "split": [
+          [
+            "packages/trpc/server/procedures/authedProcedure.ts#authedProcedure",
+            107
+          ],
+          [
+            "packages/trpc/server/procedures/authedProcedure.ts#authedAdminProcedure",
+            30
+          ],
+          [
+            "packages/trpc/server/routers/viewer/eventTypes/util.ts#createEventPbacProcedure",
+            9
+          ],
+          [
+            "packages/trpc/server/routers/viewer/webhook/util.ts#createWebhookProcedure",
+            7
+          ],
+          [
+            "packages/trpc/server/routers/viewer/users/_router.ts#authedAdminProcedureWithRequestedUser",
+            3
+          ]
+        ]
+      },
+      "rule_kind": "wrapped_by:call",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/trpc/server/routers/loggedInViewer/_router.tsx",
+        "symbol": "MUTATION addNotificationsSubscription",
+        "line": 49
+      },
+      "outliers": [
+        {
+          "path": "packages/trpc/server/routers/features/_router.ts",
+          "symbol": "QUERY checkTeamFeature",
+          "line": 13
+        },
+        {
+          "path": "packages/trpc/server/routers/features/_router.ts",
+          "symbol": "QUERY list",
+          "line": 9
+        },
+        {
+          "path": "packages/trpc/server/routers/publicViewer/_router.tsx",
+          "symbol": "MUTATION markHostAsNoShow",
+          "line": 18
+        },
+        {
+          "path": "packages/trpc/server/routers/publicViewer/_router.tsx",
+          "symbol": "MUTATION submitRating",
+          "line": 14
+        },
+        {
+          "path": "packages/trpc/server/routers/publicViewer/_router.tsx",
+          "symbol": "QUERY checkIfUserEmailVerificationRequired",
+          "line": 24
+        },
+        {
+          "path": "packages/trpc/server/routers/publicViewer/_router.tsx",
+          "symbol": "QUERY countryCode",
+          "line": 10
+        },
+        {
+          "path": "packages/trpc/server/routers/publicViewer/timezones/_router.tsx",
+          "symbol": "QUERY cityTimezones",
+          "line": 11
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/auth/_router.tsx",
+          "symbol": "MUTATION sendVerifyEmailCode",
+          "line": 48
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/auth/_router.tsx",
+          "symbol": "MUTATION verifyCodeUnAuthenticated",
+          "line": 40
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/bookings/_router.tsx",
+          "symbol": "QUERY find",
+          "line": 91
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/i18n/_router.tsx",
+          "symbol": "QUERY get",
+          "line": 6
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/slots/_router.tsx",
+          "symbol": "MUTATION removeSelectedSlotMark",
+          "line": 46
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/slots/_router.tsx",
+          "symbol": "MUTATION reserveSlot",
+          "line": 26
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/slots/_router.tsx",
+          "symbol": "QUERY getSchedule",
+          "line": 18
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/slots/_router.tsx",
+          "symbol": "QUERY isAvailable",
+          "line": 34
+        }
+      ],
+      "outliers_total": 15,
+      "derived": [
+        {
+          "path": "packages/trpc/server/routers/viewer/bookings/_router.tsx",
+          "symbol": "MUTATION editLocation",
+          "line": 42,
+          "wrapper": "packages/trpc/server/routers/viewer/bookings/util.ts#bookingsProcedure",
+          "from": "packages/trpc/server/procedures/authedProcedure.ts#authedProcedure"
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/bookings/_router.tsx",
+          "symbol": "QUERY getWrongAssignmentReports",
+          "line": 136,
+          "wrapper": "packages/trpc/server/procedures/pbacProcedures.ts#createTeamPbacProcedure",
+          "from": "packages/trpc/server/procedures/authedProcedure.ts#authedProcedure"
+        }
+      ]
+    },
+    {
+      "id": "D-85e09a",
+      "rank": 2,
+      "summary": "apps/web: HTTP handlers in app/** (route files) are wrapped in defaultResponderForAppDir()",
+      "role": {
+        "package": "apps/web",
+        "dir": "app",
+        "file": "route",
+        "entry": "http",
+        "kind": "function",
+        "members": 45
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "apps/web/app/api/defaultResponderForAppDir.ts#defaultResponderForAppDir"
+        ]
+      },
+      "evidence": {
+        "holders": 41,
+        "total": 45,
+        "lower_bound": 0.793,
+        "lift": 60.556
+      },
+      "rule_kind": "wrapped_by:call",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/web/app/api/auth/forgot-password/route.ts",
+        "symbol": "POST",
+        "line": 41
+      },
+      "outliers": [
+        {
+          "path": "apps/web/app/api/csrf/route.ts",
+          "symbol": "GET",
+          "line": 6
+        },
+        {
+          "path": "apps/web/app/api/ip/route.ts",
+          "symbol": "GET",
+          "line": 4
+        },
+        {
+          "path": "apps/web/app/api/social/og/image/route.tsx",
+          "symbol": "handler",
+          "line": 34
+        },
+        {
+          "path": "apps/web/app/api/video/recording/route.ts",
+          "symbol": "GET",
+          "line": 6
+        }
+      ],
+      "outliers_total": 4
+    },
+    {
+      "id": "D-2f232d",
+      "rank": 3,
+      "summary": "files in packages/lib/** do not import from apps/web/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "packages/lib",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 236
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:apps/web"
+      },
+      "evidence": {
+        "holders": 235,
+        "total": 236,
+        "lower_bound": 0.976,
+        "lift": 3.0
+      },
+      "rule_kind": "avoids:import",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/lib/CalEventParser.ts",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "packages/lib/hooks/useLocale.ts",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 1
+    },
+    {
+      "id": "D-441d0e",
+      "rank": 4,
+      "summary": "files in packages/lib/** do not import from packages/features/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "packages/lib",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 236
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:packages/features"
+      },
+      "evidence": {
+        "holders": 234,
+        "total": 236,
+        "lower_bound": 0.97,
+        "lift": 3.0
+      },
+      "rule_kind": "avoids:import",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/lib/CalEventParser.ts",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "packages/lib/holidays/HolidayService.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/holidays/HolidayServiceCachingProxy.ts",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 2
+    },
+    {
+      "id": "D-31be39",
+      "rank": 5,
+      "summary": "files in packages/emails/** do not import from packages/app-store/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "packages/emails",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 139
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:packages/app-store"
+      },
+      "evidence": {
+        "holders": 137,
+        "total": 139,
+        "lower_bound": 0.949,
+        "lift": 3.0
+      },
+      "rule_kind": "avoids:import",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/emails/auth-email-service.ts",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "packages/emails/src/components/LocationInfo.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/emails/src/templates/BrokenIntegrationEmail.tsx",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 2
+    },
+    {
+      "id": "D-f26528",
+      "rank": 6,
+      "summary": "files in packages/emails/** do not import from packages/features/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "packages/emails",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 139
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:packages/features"
+      },
+      "evidence": {
+        "holders": 136,
+        "total": 139,
+        "lower_bound": 0.938,
+        "lift": 3.0
+      },
+      "rule_kind": "avoids:import",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/emails/auth-email-service.ts",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "packages/emails/email-manager.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/emails/templates/_base-email.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/emails/templates/organizer-request-email.ts",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 3
+    },
+    {
+      "id": "D-777a50",
+      "rank": 7,
+      "summary": "apps/api/v2: HTTP handlers in src/** (*.controller files) are decorated with UseGuards()",
+      "role": {
+        "package": "apps/api/v2",
+        "dir": "src",
+        "file": "*.controller",
+        "entry": "http",
+        "kind": "function",
+        "members": 175
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:@nestjs/common#UseGuards"
+        ]
+      },
+      "evidence": {
+        "holders": 156,
+        "total": 175,
+        "lower_bound": 0.837,
+        "lift": 15.571
+      },
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "apps/api/v2/src/modules/api-keys/controllers/api-keys.controller.ts",
+        "symbol": "POST /v2/api-keys/refresh",
+        "line": 23
+      },
+      "outliers": [
+        {
+          "path": "apps/api/v2/src/app.controller.ts",
+          "symbol": "GET /health",
+          "line": 5
+        },
+        {
+          "path": "apps/api/v2/src/modules/atoms/controllers/atoms.event-types.controller.ts",
+          "symbol": "GET /v2/atoms/event-types/:eventSlug/public",
+          "line": 55
+        },
+        {
+          "path": "apps/api/v2/src/modules/atoms/controllers/atoms.verification.controller.ts",
+          "symbol": "GET /v2/atoms/verification/email/check",
+          "line": 61
+        },
+        {
+          "path": "apps/api/v2/src/modules/atoms/controllers/atoms.verification.controller.ts",
+          "symbol": "POST /v2/atoms/verification/email/send-code",
+          "line": 41
+        },
+        {
+          "path": "apps/api/v2/src/modules/atoms/controllers/atoms.verification.controller.ts",
+          "symbol": "POST /v2/atoms/verification/email/verify-code",
+          "line": 78
+        },
+        {
+          "path": "apps/api/v2/src/modules/auth/oauth2/controllers/atoms-oauth2.controller.ts",
+          "symbol": "GET /v2/atoms/auth/oauth2/clients/:clientId",
+          "line": 30
+        },
+        {
+          "path": "apps/api/v2/src/modules/auth/oauth2/controllers/oauth2.controller.ts",
+          "symbol": "POST /v2/auth/oauth2/token",
+          "line": 65
+        },
+        {
+          "path": "apps/api/v2/src/modules/oauth-clients/controllers/oauth-flow/oauth-flow.controller.ts",
+          "symbol": "POST /v2/oauth/:clientId/exchange",
+          "line": 83
+        },
+        {
+          "path": "apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts",
+          "symbol": "DELETE /v2/slots/selected-slot",
+          "line": 76
+        },
+        {
+          "path": "apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts",
+          "symbol": "GET /v2/slots/available",
+          "line": 100
+        },
+        {
+          "path": "apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts",
+          "symbol": "POST /v2/slots/reserve",
+          "line": 45
+        },
+        {
+          "path": "apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/slots.controller.ts",
+          "symbol": "DELETE /v2/slots/reservations/:uid",
+          "line": 334
+        },
+        {
+          "path": "apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/slots.controller.ts",
+          "symbol": "GET /v2/slots",
+          "line": 60
+        },
+        {
+          "path": "apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/slots.controller.ts",
+          "symbol": "GET /v2/slots/reservations/:uid",
+          "line": 298
+        },
+        {
+          "path": "apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/slots.controller.ts",
+          "symbol": "PATCH /v2/slots/reservations/:uid",
+          "line": 314
+        },
+        {
+          "path": "apps/api/v2/src/modules/timezones/controllers/timezones.controller.ts",
+          "symbol": "GET /v2/timezones",
+          "line": 20
+        },
+        {
+          "path": "apps/api/v2/src/platform/calendars/controllers/calendars.controller.ts",
+          "symbol": "GET /v2/calendars/:calendar/save",
+          "line": 195
+        },
+        {
+          "path": "apps/api/v2/src/platform/gcal/gcal.controller.ts",
+          "symbol": "GET /v2/gcal/oauth/save",
+          "line": 76
+        },
+        {
+          "path": "apps/api/v2/src/platform/provider/provider.controller.ts",
+          "symbol": "GET /v2/provider/:clientId",
+          "line": 34
+        }
+      ],
+      "outliers_total": 19
+    },
+    {
+      "id": "D-ec4221",
+      "rank": 8,
+      "summary": "apps/api/v2: HTTP handlers in src/modules/** (*.controller files) are decorated with ApiTags()",
+      "role": {
+        "package": "apps/api/v2",
+        "dir": "src/modules",
+        "file": "*.controller",
+        "entry": "http",
+        "kind": "function",
+        "members": 100
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:@nestjs/swagger#ApiTags"
+        ]
+      },
+      "evidence": {
+        "holders": 95,
+        "total": 100,
+        "lower_bound": 0.888,
+        "lift": 17.853
+      },
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "apps/api/v2/src/modules/api-keys/controllers/api-keys.controller.ts",
+        "symbol": "POST /v2/api-keys/refresh",
+        "line": 23
+      },
+      "outliers": [
+        {
+          "path": "apps/api/v2/src/modules/oauth-clients/controllers/oauth-flow/oauth-flow.controller.ts",
+          "symbol": "POST /v2/oauth/:clientId/authorize",
+          "line": 48
+        },
+        {
+          "path": "apps/api/v2/src/modules/oauth-clients/controllers/oauth-flow/oauth-flow.controller.ts",
+          "symbol": "POST /v2/oauth/:clientId/exchange",
+          "line": 83
+        },
+        {
+          "path": "apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts",
+          "symbol": "DELETE /v2/slots/selected-slot",
+          "line": 76
+        },
+        {
+          "path": "apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts",
+          "symbol": "GET /v2/slots/available",
+          "line": 100
+        },
+        {
+          "path": "apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts",
+          "symbol": "POST /v2/slots/reserve",
+          "line": 45
+        }
+      ],
+      "outliers_total": 5
+    },
+    {
+      "id": "D-5722ba",
+      "rank": 9,
+      "summary": "packages/emails: classes in templates/** extend BaseEmail",
+      "role": {
+        "package": "packages/emails",
+        "dir": "templates",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "members": 48
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "packages/emails/templates/_base-email.ts#BaseEmail"
+        ]
+      },
+      "evidence": {
+        "holders": 47,
+        "total": 47,
+        "lower_bound": 0.924,
+        "lift": 21.563,
+        "role_members": 48
+      },
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/emails/templates/account-verify-email.ts",
+        "symbol": "AccountVerifyEmail",
+        "line": 18
+      },
+      "outliers": [],
+      "outliers_total": 0,
+      "exempt": [
+        {
+          "path": "packages/emails/templates/_base-email.ts",
+          "symbol": "BaseEmail",
+          "line": 14,
+          "code": "defining_module",
+          "reason": "in the module that defines BaseEmail"
+        }
+      ]
+    },
+    {
+      "id": "D-42ab67",
+      "rank": 10,
+      "summary": "packages/trpc: rpc entry points in server/** (_router files) validate their input with a schema",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server",
+        "file": "_router",
+        "entry": "rpc",
+        "kind": "function",
+        "members": 171
+      },
+      "rule": {
+        "type": "control",
+        "value": "validates"
+      },
+      "evidence": {
+        "holders": 142,
+        "total": 171,
+        "lower_bound": 0.767,
+        "lift": 6.92
+      },
+      "rule_kind": "control",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/trpc/server/routers/loggedInViewer/_router.tsx",
+        "symbol": "MUTATION addNotificationsSubscription",
+        "line": 49
+      },
+      "outliers": [
+        {
+          "path": "packages/trpc/server/routers/features/_router.ts",
+          "symbol": "QUERY list",
+          "line": 9
+        },
+        {
+          "path": "packages/trpc/server/routers/loggedInViewer/_router.tsx",
+          "symbol": "MUTATION unlinkConnectedAccount",
+          "line": 28
+        },
+        {
+          "path": "packages/trpc/server/routers/loggedInViewer/_router.tsx",
+          "symbol": "QUERY stripeCustomer",
+          "line": 23
+        },
+        {
+          "path": "packages/trpc/server/routers/publicViewer/_router.tsx",
+          "symbol": "QUERY countryCode",
+          "line": 10
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/admin/_router.ts",
+          "symbol": "QUERY getSMSLockStateTeamsUsers",
+          "line": 38
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/admin/watchlist/_router.ts",
+          "symbol": "QUERY pendingReportsCount",
+          "line": 51
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/apiKeys/_router.tsx",
+          "symbol": "QUERY list",
+          "line": 18
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/apps/_router.tsx",
+          "symbol": "QUERY checkForGCal",
+          "line": 85
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/apps/_router.tsx",
+          "symbol": "QUERY getUsersDefaultConferencingApp",
+          "line": 45
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/auth/_router.tsx",
+          "symbol": "MUTATION createAccountPassword",
+          "line": 66
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/availability/_router.tsx",
+          "symbol": "QUERY list",
+          "line": 16
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/eventTypes/_router.ts",
+          "symbol": "QUERY bulkEventFetch",
+          "line": 115
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/eventTypes/_router.ts",
+          "symbol": "QUERY list",
+          "line": 86
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/eventTypes/_router.ts",
+          "symbol": "QUERY listWithTeam",
+          "line": 94
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/googleWorkspace/_router.tsx",
+          "symbol": "MUTATION getUsersFromGWorkspace",
+          "line": 18
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/googleWorkspace/_router.tsx",
+          "symbol": "MUTATION removeCurrentGoogleWorkspaceConnection",
+          "line": 25
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/googleWorkspace/_router.tsx",
+          "symbol": "QUERY checkForGWorkspace",
+          "line": 11
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/holidays/_router.ts",
+          "symbol": "QUERY getSupportedCountries",
+          "line": 9
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/me/_router.tsx",
+          "symbol": "MUTATION deleteMeWithoutPassword",
+          "line": 16
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/me/_router.tsx",
+          "symbol": "QUERY bookingUnconfirmedCount",
+          "line": 8
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/me/_router.tsx",
+          "symbol": "QUERY getUserTopBanners",
+          "line": 21
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/me/_router.tsx",
+          "symbol": "QUERY myStats",
+          "line": 25
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/me/_router.tsx",
+          "symbol": "QUERY platformMe",
+          "line": 29
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/me/_router.tsx",
+          "symbol": "QUERY shouldVerifyEmail",
+          "line": 33
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/oAuth/_router.tsx",
+          "symbol": "QUERY listUserClients",
+          "line": 62
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/ooo/_router.tsx",
+          "symbol": "QUERY outOfOfficeReasonList",
+          "line": 22
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/travelSchedules/_router.tsx",
+          "symbol": "QUERY get",
+          "line": 5
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/users/_router.ts",
+          "symbol": "QUERY list",
+          "line": 57
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/webhook/_router.tsx",
+          "symbol": "QUERY getByViewer",
+          "line": 135
+        }
+      ],
+      "outliers_total": 29
+    },
+    {
+      "id": "D-d690c0",
+      "rank": 11,
+      "summary": "packages/trpc: exported values in server/** (*.schema files) are named `*Schema`",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server",
+        "file": "*.schema",
+        "entry": "-",
+        "kind": "const",
+        "members": 133
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Schema"
+      },
+      "evidence": {
+        "holders": 125,
+        "total": 131,
+        "lower_bound": 0.904,
+        "lift": 4.343,
+        "role_members": 133
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/trpc/server/routers/loggedInViewer/addNotificationsSubscription.schema.ts",
+        "symbol": "ZAddNotificationsSubscriptionInputSchema",
+        "line": 7
+      },
+      "outliers": [
+        {
+          "path": "packages/trpc/server/routers/viewer/admin/removeTwoFactor.schema.ts",
+          "symbol": "ZAdminRemoveTwoFactor",
+          "line": 3
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/admin/setSMSLockState.schema.ts",
+          "symbol": "ZSetSMSLockState",
+          "line": 3
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/availability/team/listTeamAvailability.schema.ts",
+          "symbol": "ZListTeamAvailaiblityScheme",
+          "line": 3
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/bookings/getWrongAssignmentReports.schema.ts",
+          "symbol": "statusToEnumMap",
+          "line": 16
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/me/updateProfile.schema.ts",
+          "symbol": "updateUserMetadataAllowedKeys",
+          "line": 11
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/ooo/outOfOfficeEntryDelete.schema.ts",
+          "symbol": "ZOutOfOfficeDelete",
+          "line": 3
+        }
+      ],
+      "outliers_total": 6,
+      "exempt": [
+        {
+          "path": "packages/trpc/server/routers/viewer/calendars/setDestinationReminder.schema.ts",
+          "symbol": "VALID_REMINDER_MINUTES",
+          "line": 3,
+          "code": "companion",
+          "reason": "a constant beside ZSetDestinationReminderInputSchema, which follows the scheme"
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/eventTypes/getByViewer.schema.ts",
+          "symbol": "filterQuerySchemaStrict",
+          "line": 12,
+          "code": "shared_part",
+          "reason": "shared part used by 2 members"
+        }
+      ]
+    },
+    {
+      "id": "D-fafac1",
+      "rank": 12,
+      "summary": "packages/trpc: functions in server/routers/viewer/** (*.handler files) are named `*Handler`",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server/routers/viewer",
+        "file": "*.handler",
+        "entry": "-",
+        "kind": "function",
+        "members": 167
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Handler"
+      },
+      "evidence": {
+        "holders": 137,
+        "total": 154,
+        "lower_bound": 0.83,
+        "lift": 13.386,
+        "role_members": 167
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/trpc/server/routers/viewer/admin/assignFeatureToTeam.handler.ts",
+        "symbol": "assignFeatureToTeamHandler",
+        "line": 16
+      },
+      "outliers": [
+        {
+          "path": "packages/trpc/server/routers/viewer/admin/createCoupon.handler.ts",
+          "symbol": "createCoupon",
+          "line": 53
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/admin/createSelfHostedLicenseKey.handler.ts",
+          "symbol": "createSelfHostedInstance",
+          "line": 53
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/admin/getSMSLockStateTeamsUsers.handler.ts",
+          "symbol": "getSMSLockStateTeamsUsers",
+          "line": 12
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/admin/setSMSLockState.handler.ts",
+          "symbol": "setSMSLockState",
+          "line": 16
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/auth/resendVerifyEmail.handler.ts",
+          "symbol": "resendVerifyEmail",
+          "line": 22
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/bookings/editLocation.handler.ts",
+          "symbol": "getLocationForOrganizerDefaultConferencingAppInEvtFormat",
+          "line": 213
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/bookings/get.handler.ts",
+          "symbol": "getBookings",
+          "line": 93
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/eventTypes/getActiveOnOptions.handler.ts",
+          "symbol": "getActiveOnOptions",
+          "line": 200
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/eventTypes/getEventTypesFromGroup.handler.ts",
+          "symbol": "getEventTypesFromGroup",
+          "line": 26
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/eventTypes/getUserEventGroups.handler.ts",
+          "symbol": "getUserEventGroups",
+          "line": 29
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/googleWorkspace/googleWorkspace.handler.ts",
+          "symbol": "checkForGWorkspace",
+          "line": 25
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/googleWorkspace/googleWorkspace.handler.ts",
+          "symbol": "getUsersFromGWorkspace",
+          "line": 36
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/googleWorkspace/googleWorkspace.handler.ts",
+          "symbol": "removeCurrentGoogleWorkspaceConnection",
+          "line": 72
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/ooo/outOfOfficeCreateOrUpdate.handler.ts",
+          "symbol": "outOfOfficeCreateOrUpdate",
+          "line": 27
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/ooo/outOfOfficeEntriesList.handler.ts",
+          "symbol": "outOfOfficeEntriesList",
+          "line": 17
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/ooo/outOfOfficeEntryDelete.handler.ts",
+          "symbol": "outOfOfficeEntryDelete",
+          "line": 18
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/ooo/outOfOfficeReasons.handler.ts",
+          "symbol": "outOfOfficeReasonList",
+          "line": 3
+        }
+      ],
+      "outliers_total": 17,
+      "exempt": [
+        {
+          "path": "packages/trpc/server/routers/viewer/apps/updateAppCredentials.handler.ts",
+          "symbol": "handleCustomValidations",
+          "line": 20,
+          "code": "companion",
+          "reason": "a helper of updateAppCredentialsHandler, which uses it in its file"
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/auth/sendVerifyEmailCode.handler.ts",
+          "symbol": "sendVerifyEmailCode",
+          "line": 20,
+          "code": "companion",
+          "reason": "a helper of sendVerifyEmailCodeHandler, which uses it in its file"
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts",
+          "symbol": "buildCalendarEvent",
+          "line": 272,
+          "code": "companion",
+          "reason": "a helper of addGuestsHandler, which uses it in its file"
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts",
+          "symbol": "getBooking",
+          "line": 95,
+          "code": "companion",
+          "reason": "a helper of addGuestsHandler, which uses it in its file"
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts",
+          "symbol": "getOrganizerData",
+          "line": 129,
+          "code": "companion",
+          "reason": "a helper of addGuestsHandler, which uses it in its file"
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts",
+          "symbol": "prepareAttendeesList",
+          "line": 256,
+          "code": "companion",
+          "reason": "a helper of addGuestsHandler, which uses it in its file"
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts",
+          "symbol": "sanitizeAndFilterGuests",
+          "line": 187,
+          "code": "companion",
+          "reason": "a helper of addGuestsHandler, which uses it in its file"
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts",
+          "symbol": "updateBookingAttendees",
+          "line": 237,
+          "code": "companion",
+          "reason": "a helper of addGuestsHandler, which uses it in its file"
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts",
+          "symbol": "updateCalendarEvent",
+          "line": 333,
+          "code": "companion",
+          "reason": "a helper of addGuestsHandler, which uses it in its file"
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts",
+          "symbol": "validateGuestsFieldEnabled",
+          "line": 115,
+          "code": "companion",
+          "reason": "a helper of addGuestsHandler, which uses it in its file"
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts",
+          "symbol": "validateUserPermissions",
+          "line": 106,
+          "code": "companion",
+          "reason": "a helper of addGuestsHandler, which uses it in its file"
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/calendars/setDestinationCalendar.handler.ts",
+          "symbol": "getFirstConnectedCalendar",
+          "line": 30,
+          "code": "companion",
+          "reason": "a helper of setDestinationCalendarHandler, which uses it in its file"
+        },
+        {
+          "path": "packages/trpc/server/routers/viewer/eventTypes/getHostsWithLocationOptions.handler.ts",
+          "symbol": "transformHostsToResponse",
+          "line": 66,
+          "code": "companion",
+          "reason": "a helper of getHostsWithLocationOptionsHandler, which uses it in its file"
+        }
+      ]
+    },
+    {
+      "id": "D-554063",
+      "rank": 13,
+      "summary": "packages/emails: components in src/templates/** are named `*Email`",
+      "role": {
+        "package": "packages/emails",
+        "dir": "src/templates",
+        "file": "*",
+        "entry": "-",
+        "kind": "component",
+        "members": 47
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Email"
+      },
+      "evidence": {
+        "holders": 45,
+        "total": 47,
+        "lower_bound": 0.858,
+        "lift": 26.258
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/emails/src/templates/AdminOAuthClientNotificationEmail.tsx",
+        "symbol": "AdminOAuthClientNotificationEmail",
+        "line": 17
+      },
+      "outliers": [
+        {
+          "path": "packages/emails/src/templates/BookingRedirectEmailNotification.tsx",
+          "symbol": "BookingRedirectEmailNotification",
+          "line": 4
+        },
+        {
+          "path": "packages/emails/src/templates/VerifyEmailByCode.tsx",
+          "symbol": "VerifyEmailByCode",
+          "line": 9
+        }
+      ],
+      "outliers_total": 2
+    },
+    {
+      "id": "D-8d7d13",
+      "rank": 14,
+      "summary": "packages/emails: functions in ./** are named `send*`",
+      "role": {
+        "package": "packages/emails",
+        "dir": ".",
+        "file": "*",
+        "entry": "-",
+        "kind": "function",
+        "members": 46
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "send*"
+      },
+      "evidence": {
+        "holders": 44,
+        "total": 44,
+        "lower_bound": 0.92,
+        "lift": 40.727,
+        "role_members": 46
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/emails/auth-email-service.ts",
+        "symbol": "sendChangeOfEmailVerificationLink",
+        "line": 35
+      },
+      "outliers": [],
+      "outliers_total": 0,
+      "exempt": [
+        {
+          "path": "packages/emails/email-manager.ts",
+          "symbol": "fetchOrganizationEmailSettings",
+          "line": 62,
+          "code": "companion",
+          "reason": "a helper of sendAddGuestsEmailsAndSMS, which uses it in its file"
+        },
+        {
+          "path": "packages/emails/email-manager.ts",
+          "symbol": "shouldSkipAttendeeEmailWithSettings",
+          "line": 67,
+          "code": "companion",
+          "reason": "a helper of sendAddGuestsEmailsAndSMS, which uses it in its file"
+        }
+      ]
+    },
+    {
+      "id": "D-e5e923",
+      "rank": 15,
+      "summary": "packages/emails: classes in templates/** are named `*Email`",
+      "role": {
+        "package": "packages/emails",
+        "dir": "templates",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "members": 48
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Email"
+      },
+      "evidence": {
+        "holders": 44,
+        "total": 48,
+        "lower_bound": 0.804,
+        "lift": 21.562
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/emails/templates/account-verify-email.ts",
+        "symbol": "AccountVerifyEmail",
+        "line": 18
+      },
+      "outliers": [
+        {
+          "path": "packages/emails/templates/admin-oauth-client-notification.ts",
+          "symbol": "AdminOAuthClientNotification",
+          "line": 18
+        },
+        {
+          "path": "packages/emails/templates/admin-organization-notification.ts",
+          "symbol": "AdminOrganizationNotification",
+          "line": 16
+        },
+        {
+          "path": "packages/emails/templates/booking-redirect-notification.ts",
+          "symbol": "BookingRedirectNotification",
+          "line": 9
+        },
+        {
+          "path": "packages/emails/templates/organization-email-verification.ts",
+          "symbol": "OrganizationEmailVerification",
+          "line": 16
+        }
+      ],
+      "outliers_total": 4
+    }
+  ],
+  "largest_role": null
+}

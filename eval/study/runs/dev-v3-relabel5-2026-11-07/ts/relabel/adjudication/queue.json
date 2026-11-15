@@ -1,0 +1,897 @@
+{
+  "labels_sha256": {
+    "A": "6ef4b67d214d6709e70c0ba48da6e02416c608055a5d8cc7897643185481ac46",
+    "B": "81a4c6d4f7553565f234733e6ff67103cbf21270a2a7455042a43f1336794484"
+  },
+  "cases": [
+    {
+      "uid": "formbricks/D-ec0946",
+      "repo": "formbricks",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "formbricks/D-ec0946",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "apps/web/modules/api/v2/management/contact-attribute-keys/[contactAttributeKeyId]/route.ts",
+            "apps/web/modules/api/v2/health/route.ts",
+            "apps/web/modules/api/v2/management/webhooks/route.ts",
+            "apps/web/modules/api/v2/organizations/[organizationId]/teams/route.ts",
+            "apps/web/modules/api/v2/me/route.ts",
+            "apps/web/modules/api/v2/roles/route.ts",
+            "apps/web/modules/api/v2/auth/authenticated-api-client.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "health GET",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R5"
+          ],
+          "reason": "handler is required in authenticatedApiClient's signature, so the real violation is not using the auth client at all; the only outlier, health/route.ts, is a public endpoint that skips it, an exception worth confirming (R3), while webhooks and teams routes all go through it.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "formbricks/D-ec0946",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/web/modules/api/v2/management/contact-attribute-keys/[contactAttributeKeyId]/route.ts",
+            "apps/web/modules/api/v2/health/route.ts",
+            "apps/web/modules/api/v2/auth/authenticated-api-client.ts",
+            "apps/web/modules/api/v2/management/webhooks/route.ts",
+            "apps/web/modules/api/v2/me/route.ts",
+            "apps/web/modules/api/v2/roles/route.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "health GET",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2",
+            "R5"
+          ],
+          "reason": "handler is a required parameter of authenticatedApiClient, but the only outlier, health/route.ts, never calls it (a public, unauthenticated probe), so the type checker does not apply and it is a different kind of route (legit, not a one-off). Hesitated with TRIVIAL (types) and ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "formbricks/D-514f45",
+      "repo": "formbricks",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "formbricks/D-514f45",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/web/lib/ai/availability.ts",
+            "apps/web/lib/ai/availability.test.ts",
+            "apps/web/lib/cn.ts",
+            "apps/web/lib/utils/debounce.ts",
+            "apps/web/lib/authzed/index.ts",
+            "apps/web/lib/authzed/outbox-types.ts",
+            "apps/web/lib/brand-color.ts",
+            "apps/web/lib/response/pagination.ts",
+            "apps/web/lib/authzed/backfill-apply.ts",
+            "apps/web/lib/utils/helper.ts",
+            "apps/web/lib/utils/helper.test.ts",
+            "apps/web/lib/response/where-clause.ts",
+            "apps/web/lib/response/where-clause.test.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "lib/cn.ts",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "lib/utils/debounce.ts",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "lib/authzed/index.ts",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "lib/authzed/outbox-types.ts",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "lib/brand-color.ts",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "lib/response/pagination.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "lib/authzed/backfill-apply.ts",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Logic modules like helper.ts and where-clause.ts have tests, and debounce.ts and pagination.ts are untested logic, but most outliers opened are things a test adds nothing to: a barrel re-export (authzed/index.ts), a single constant (brand-color.ts), a constants-plus-types module (outbox-types.ts), a one-line clsx/twMerge wrapper (cn.ts) and a wiring factory (backfill-apply.ts); 2 of 7 counted, so mixed_group. Hesitated with ACCEPT if cn.ts and backfill-apply.ts were read as look.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "formbricks/D-514f45",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/web/lib/ai/availability.ts",
+            "apps/web/lib/cn.ts",
+            "apps/web/lib/utils/debounce.ts",
+            "apps/web/lib/brand-color.ts",
+            "apps/web/lib/instance.ts",
+            "apps/web/lib/survey/fill-codes.ts",
+            "apps/web/lib/user/public-user.ts",
+            "apps/web/lib/utils/object.ts",
+            "apps/web/lib/response/pagination.ts",
+            "apps/web/lib/analysis-export/files.ts",
+            "apps/web/lib/authzed/survey-relationships.ts",
+            "apps/web/lib/utils/helper.ts",
+            "apps/web/lib/posthog/capture.ts",
+            "apps/web/vite.config.mts"
+          ],
+          "outliers": [
+            {
+              "symbol": "analysis-export/files.ts",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "authzed/survey-relationships.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "brand-color.ts",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "cn.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "instance.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "survey/fill-codes.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "user/public-user.ts",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "utils/debounce.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "utils/object.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "response/pagination.ts",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "Members like helper.ts and posthog/capture.ts have sibling .test.ts files, and vite.config.mts puts lib/**/*.ts in the coverage gate. Of 10 outliers opened, 7 are real logic with no test (debounce, object, pagination, cn, instance, fill-codes, survey-relationships): look. 3 are a constant, a re-export and a select const (legit). Hesitated with WRONG mixed_group because the outlier list is large and mixed; nothing enforces it.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "cal.com/D-85e09a",
+      "repo": "cal.com",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "cal.com/D-85e09a",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/web/app/api/auth/forgot-password/route.ts",
+            "apps/web/app/api/csrf/route.ts",
+            "apps/web/app/api/ip/route.ts",
+            "apps/web/app/api/social/og/image/route.tsx",
+            "apps/web/app/api/video/recording/route.ts",
+            "apps/web/app/api/version/route.ts",
+            "apps/web/app/api/me/route.ts",
+            "apps/web/app/api/defaultResponderForAppDir.ts",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "GET (csrf/route.ts)",
+              "verdict": "look"
+            },
+            {
+              "symbol": "GET (ip/route.ts)",
+              "verdict": "look"
+            },
+            {
+              "symbol": "handler (social/og/image/route.tsx)",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "GET (video/recording/route.ts)",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "36 of 40 route files export handlers through defaultResponderForAppDir (version, me, forgot-password), which normalizes errors and reports to Sentry; csrf, ip and video/recording are plain Node routes that could use it (video/recording hand-rolls try/catch), while og/image runs on the edge runtime, a legit difference. 3 of 4 look, nothing lints it; hesitated with WRONG legit_outliers since the outliers are trivial routes.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "cal.com/D-85e09a",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/web/app/api/auth/forgot-password/route.ts",
+            "apps/web/app/api/csrf/route.ts",
+            "apps/web/app/api/ip/route.ts",
+            "apps/web/app/api/social/og/image/route.tsx",
+            "apps/web/app/api/video/recording/route.ts",
+            "apps/web/app/api/availability/calendar/route.ts",
+            "apps/web/app/api/username/route.ts",
+            "apps/web/app/api/defaultResponderForAppDir.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "GET csrf",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "GET ip",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "handler og image",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "GET video recording",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "Members export POST = defaultResponderForAppDir(handler) (forgot-password, username, availability/calendar), which adds error-to-JSON mapping, Sentry and perf marks. The outliers are tiny self-contained handlers: csrf and ip cannot meaningfully throw, og/image runs on the edge runtime (export runtime = 'edge') where the node-based responder is a poor fit, and video/recording handles its own errors with try/catch. Mostly legitimate, so a warning would mostly be noise; hesitated with ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "cal.com/D-5722ba",
+      "repo": "cal.com",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "cal.com/D-5722ba",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/emails/templates/account-verify-email.ts",
+            "packages/emails/templates/_base-email.ts",
+            "packages/emails/templates/attendee-cancelled-email.ts",
+            "packages/emails/templates/feedback-email.ts",
+            "packages/emails/tsconfig.json",
+            "packages/emails/organization-email-service.ts",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "BaseEmail",
+              "verdict": "one_off"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Every template class extends BaseEmail directly (FeedbackEmail, AccountVerifyEmail) or through a subclass (AttendeeCancelledEmail extends AttendeeScheduledEmail); BaseEmail itself is the definition. A required base class carrying the kill switch and test-mode handling: ACCEPT. Hesitated with TRIVIAL types, since BaseEmail's protected members would make a non-subclass fail where sendEmail(prepare: () => BaseEmail) is used, but nothing forces a new template through that helper.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "cal.com/D-5722ba",
+          "rubric": "v3",
+          "label": "TRIVIAL",
+          "trivial_by": "types",
+          "trivial_evidence": "packages/emails service files take sendEmail(prepare: () => BaseEmail) and call email.sendEmail(); BaseEmail (templates/_base-email.ts) has protected members (getTimezone, getLocale, getNodeMailerPayload), so a class that does not extend it is not assignable and fails tsc under packages/emails/tsconfig.json (includes **/*.ts)",
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/emails/templates/account-verify-email.ts",
+            "packages/emails/templates/_base-email.ts",
+            "packages/emails/templates/forgot-password-email.ts",
+            "packages/emails/templates/attendee-declined-email.ts",
+            "packages/emails/auth-email-service.ts",
+            "packages/emails/email-manager.ts",
+            "packages/emails/tsconfig.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "BaseEmail",
+              "verdict": "one_off"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "All 47 templates extend BaseEmail (directly or via another template, e.g. AttendeeDeclinedEmail extends AttendeeScheduledEmail); the only exempt member is the definition itself. Every sender wraps templates as sendEmail(prepare: () => BaseEmail) and BaseEmail has protected members, so a template class not extending it cannot be passed and tsc fails. Hesitated with ACCEPT because an unused class would not fail.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "cal.com/D-8d7d13",
+      "repo": "cal.com",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "cal.com/D-8d7d13",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "packages/emails/auth-email-service.ts",
+            "packages/emails/email-manager.ts",
+            "packages/emails/organization-email-service.ts",
+            "packages/emails/daily-video-emails.ts",
+            "packages/emails/lib/sanitizeDisplayName.ts",
+            "biome.json"
+          ],
+          "outliers": [],
+          "rules": [
+            "R2",
+            "R9"
+          ],
+          "reason": "The 44 members are exactly the exported send* functions of the top-level *-email-service.ts/email-manager.ts files (organization-email-service.ts, daily-video-emails.ts), a deliberate public API naming scheme; no counted outliers, and a new exported email sender named otherwise is worth flagging. clear false because the scope './**' suggests lib/ helpers like sanitizeDisplayName too, which the tool evidently did not count; hesitated with WRONG mixed_group if lib/ is in scope.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "cal.com/D-8d7d13",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "packages/emails/auth-email-service.ts",
+            "packages/emails/email-manager.ts",
+            "packages/emails/src/templates/BrokenIntegrationEmail.tsx",
+            "packages/emails/src/components/EmailSchedulingBodyHeader.tsx",
+            "packages/emails/lib/sanitizeDisplayName.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "fetchOrganizationEmailSettings",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "shouldSkipAttendeeEmailWithSettings",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "The members are the sender functions in the top-level service files (auth-email-service.ts, email-manager.ts) and are all send*. But the rule is worded for the whole package (./**), which also holds React components (BrokenIntegrationEmail, EmailSchedulingBodyHeader, getHeadImage) and lib helpers (sanitizeDisplayName), so a new component or helper in src/ or lib/ would be told to be named send*. Hesitated with ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "supabase/D-e93eb6",
+      "repo": "supabase",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "supabase/D-e93eb6",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "apps/docs/app/guides/ai-tools/[[...slug]]/page.tsx",
+            "apps/docs/app/guides/ai-tools/ai-prompts/[slug]/page.tsx",
+            "apps/docs/app/guides/getting-started/ai-prompts/[slug]/AiPrompts.utils.ts",
+            "apps/docs/app/guides/self-hosting/auth/config/page.tsx",
+            "apps/docs/app/guides/database/[[...slug]]/page.tsx",
+            "apps/docs/features/docs/GuidesMdx.utils.tsx"
+          ],
+          "outliers": [
+            {
+              "symbol": "ai-prompts/[slug]/page.tsx#generateMetadata",
+              "verdict": "mistake"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R6"
+          ],
+          "reason": "Guide pages build metadata via genGuideMeta (database, self-hosting/auth/config), which adds description, canonical, md alternates and OG images; the ai-prompts page uses generateAiPromptMetadata, which does not call genGuideMeta and returns only a title, so it misses canonical/OG metadata. Nothing in Next.js or lint requires the wrapper.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "supabase/D-e93eb6",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/docs/app/guides/ai-tools/[[...slug]]/page.tsx",
+            "apps/docs/app/guides/ai-tools/ai-prompts/[slug]/page.tsx",
+            "apps/docs/app/guides/getting-started/ai-prompts/[slug]/AiPrompts.utils.ts",
+            "apps/docs/features/docs/GuidesMdx.utils.tsx",
+            "apps/docs/app/guides/auth/[[...slug]]/page.tsx",
+            "apps/docs/app/guides/self-hosting/realtime/config/page.tsx"
+          ],
+          "outliers": [
+            {
+              "symbol": "generateMetadata (ai-prompts)",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "Members wrap a markdown-guide loader in genGuideMeta (auth, ai-tools, realtime config). The single outlier builds its title from an AI prompt file via generateAiPromptMetadata, not guide markdown, so genGuideMeta does not fit; 0 of 1 counted. Hesitated with ACCEPT.",
+          "defects": [],
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "supabase/D-922bc7",
+      "repo": "supabase",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "supabase/D-922bc7",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "packages/icons/src/icons/REST-api.ts",
+            "packages/icons/src/defaultAttributes.ts",
+            "packages/icons/src/createSupabaseIcon.ts",
+            "packages/icons/src/icons/database.ts",
+            "packages/icons/src/icons/auth.ts",
+            "packages/icons/tsconfig.json",
+            "packages/icons/package.json",
+            "packages/icons/README.md",
+            "packages/icons/scripts/exportTemplate.mjs",
+            "packages/icons/scripts/validateIcons.mjs"
+          ],
+          "outliers": [],
+          "rules": [
+            "R1",
+            "R2",
+            "R5",
+            "R9"
+          ],
+          "reason": "Icons call createSupabaseIcon (the default export of createSupabaseIcon.ts, internally named createLucideIcon) with svgDefaults like { fill: 'none', ... } (REST-api.ts, database.ts, auth.ts); svgDefaults is optional so tsc does not catch a missing fill, and fill-only icons would render wrong with the defaultAttributes fill 'none'. No counted outliers (defaultAttributes is exempt). Wording names createLucideIcon while callers import createSupabaseIcon, so clear:false; hesitated with WRONG incidental since files are generated from SVG root attributes by exportTemplate.mjs.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "supabase/D-922bc7",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/icons/src/icons/REST-api.ts",
+            "packages/icons/src/defaultAttributes.ts",
+            "packages/icons/src/createSupabaseIcon.ts",
+            "packages/icons/src/icons/home.ts",
+            "packages/icons/src/icons/google.ts",
+            "packages/icons/src/icons/index.ts",
+            "packages/icons/package.json"
+          ],
+          "rules": [
+            "R1",
+            "R8"
+          ],
+          "reason": "Every icon in src/icons is emitted by the build-icons script (package.json build:icons) from raw SVGs, and createSupabaseIcon's default export is createLucideIcon; the fill argument comes from the SVG, not a hand-written choice, so the rule would fire on generated output. Hesitated with ACCEPT.",
+          "defects": [],
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "novu/D-dbba9a",
+      "repo": "novu",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "novu/D-dbba9a",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "apps/dashboard/src/pages/access-denied-page.tsx",
+            "apps/dashboard/src/pages/activity-feed.tsx",
+            "apps/dashboard/src/pages/new-layout-drawer.tsx",
+            "apps/dashboard/src/pages/test-workflow-route-handler.tsx",
+            "apps/dashboard/src/pages/workflows.tsx",
+            "apps/dashboard/src/pages/layouts.tsx",
+            "apps/dashboard/src/pages/subscribers.tsx",
+            "apps/dashboard/src/pages/create-layout.tsx",
+            "apps/dashboard/src/pages/duplicate-layout-page.tsx",
+            "apps/dashboard/src/pages/index.ts",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "ActivityFeed",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "NewLayoutDrawer",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "TestWorkflowRouteHandler",
+              "verdict": "look"
+            },
+            {
+              "symbol": "TemplateModal",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2",
+            "R8"
+          ],
+          "reason": "Route-level page components are named *Page (LayoutsPage, SubscribersPage); ActivityFeed, TestWorkflowRouteHandler and TemplateModal are route elements in main.tsx that drift from the scheme, while NewLayoutDrawer is a shared part used by create-layout.tsx and duplicate-layout-page.tsx, like the exempted NewWorkflowDrawer. No biome naming rule enforces the suffix.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "novu/D-dbba9a",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/dashboard/src/pages/access-denied-page.tsx",
+            "apps/dashboard/src/pages/activity-feed.tsx",
+            "apps/dashboard/src/pages/new-layout-drawer.tsx",
+            "apps/dashboard/src/pages/test-workflow-route-handler.tsx",
+            "apps/dashboard/src/pages/workflows.tsx",
+            "apps/dashboard/src/pages/new-workflow-drawer.tsx",
+            "apps/dashboard/src/pages/sign-up.tsx",
+            "apps/dashboard/src/pages/edit-layout.tsx",
+            "apps/dashboard/src/pages/domains.tsx",
+            "apps/dashboard/src/pages/index.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "ActivityFeed",
+              "verdict": "look"
+            },
+            {
+              "symbol": "NewLayoutDrawer",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "TestWorkflowRouteHandler",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "TemplateModal",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Full pages are named *Page (AccessDeniedPage, SignUpPage, EditLayoutPage). Three of four outliers are other kinds of components living in pages/: a drawer, a redirect route handler and a modal (TemplateModal inside workflows.tsx), so a new drawer or modal would be told to take the Page suffix; only ActivityFeed is a real page that drifted. 1 of 4 is a look. Hesitated with ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "novu/D-3f3e16",
+      "repo": "novu",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "novu/D-3f3e16",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/api/src/app/integrations/integrations-mobile-configure-public.controller.ts",
+            "apps/api/src/app/integrations/integrations.controller.ts",
+            "apps/api/src/app/integrations/integrations-public.controller.ts",
+            "apps/api/src/app/integrations/integrations-whatsapp-signup-public.controller.ts",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "GET /integrations/:channelType/limit",
+              "verdict": "look"
+            },
+            {
+              "symbol": "GET /integrations/in-app/status",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Every handler in the integrations controllers carries @ApiOperation, including many @ApiExcludeEndpoint ones (msteams-arm-template, whatsapp endpoints) and the @ApiExcludeController public controllers; the two outliers are excluded endpoints that simply omit it. Hesitated with WRONG legit_outliers since ApiOperation has no visible effect on excluded endpoints.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "novu/D-3f3e16",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/api/src/app/integrations/integrations-mobile-configure-public.controller.ts",
+            "apps/api/src/app/integrations/integrations.controller.ts",
+            "apps/api/src/app/integrations/integrations-public.controller.ts",
+            "apps/api/src/app/integrations/integrations-whatsapp-signup-public.controller.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "GET /integrations/:channelType/limit",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "GET /integrations/in-app/status",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "Both outliers in integrations.controller.ts carry @ApiExcludeEndpoint(), i.e. internal endpoints hidden from the OpenAPI docs, so a summary adds nothing; the members shown (mobile-configure, public controllers) document themselves with ApiOperation. Internal doc-excluded endpoints are a recurring category that would get false alarms. Hesitated with ACCEPT because some doc-excluded endpoints (e.g. the msteams deploy-url one) still have ApiOperation.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "midday/D-f90103",
+      "repo": "midday",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "midday/D-f90103",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/db/src/schema.ts",
+            "packages/db/tsconfig.json",
+            "packages/tsconfig/base.json",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "documentTagAssignments",
+              "verdict": "look"
+            },
+            {
+              "symbol": "documentTagEmbeddings",
+              "verdict": "look"
+            },
+            {
+              "symbol": "exchangeRates",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Comparable tables carry createdAt: join tables transactionTags and usersOnTeam, and the sibling transactionCategoryEmbeddings, so documentTagAssignments and documentTagEmbeddings lacking it is drift, and exchangeRates has only updatedAt; nothing in drizzle types or biome.json requires the column. Hesitated with WRONG legit_outliers, since join or cache tables can reasonably omit an audit column.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "midday/D-f90103",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "incidental",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/db/src/schema.ts",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "documentTagAssignments",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "documentTagEmbeddings",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "exchangeRates",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Most tables have createdAt (e.g. transactionCategoryEmbeddings), but the outliers are a pure junction table (schema.ts:2720), an embeddings lookup keyed by slug (308) and a reference-rate table with only updatedAt (1155) that do not track creation, so new such tables would be flagged for nothing. Hesitated with ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    }
+  ]
+}

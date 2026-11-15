@@ -1,0 +1,67 @@
+# generalise: census before/after. Dev data; in-sample unless marked.
+
+## TS
+in-sample (relabel5 labels):
+   before 63.9% (94/147); not-wrong 67.3% (99/147); default 100.0% (30/30); WRONG 48; unlabelled 0; 11.3 cards/repo, 7.2 accepts/repo over 13 repos
+   after  61.5% (88/143); not-wrong 65.0% (93/143); default 100.0% (30/30); WRONG 42; unlabelled 8; 11.0 cards/repo, 6.8 accepts/repo over 13 repos
+   effect -2.4 pts accept
+undo-named reading (every change since dev-v3-2026-11-06 a round 4,5,6,8,9 PR names by id, undone; 48 restored cards):
+   before 43.6% (72/165); not-wrong 44.2% (73/165); default 75.0% (24/32); WRONG 92; unlabelled 0; 12.7 cards/repo, 5.5 accepts/repo over 13 repos
+   after  41.8% (69/165); not-wrong 42.4% (70/165); default 75.0% (24/32); WRONG 87; unlabelled 8; 12.7 cards/repo, 5.3 accepts/repo over 13 repos
+   effect -1.8 pts accept
+dev-v3 reading: n/a (a census change is not a policy; pass --policy for it)
+folds (in-sample):
+   fold 1 [design]: 32.0% (8/25) -> 33.3% (8/24) (+1.3 pts); helped 4 in 2 repos; ACCEPT lost 0
+   fold 2 [design]: 83.8% (31/37) -> 77.8% (28/36) (-6.0 pts); helped 1 in 1 repos; ACCEPT lost 3
+   fold 3: 61.0% (25/41) -> 59.0% (23/39) (-2.0 pts); helped 0 in 0 repos; ACCEPT lost 2
+   fold 4 [design]: 68.2% (30/44) -> 65.9% (29/44) (-2.3 pts); helped 1 in 1 repos; ACCEPT lost 1
+   in-sample: design folds 65.1% (69/106) -> 62.5% (65/104) (-2.6 pts); other folds 61.0% (25/41) -> 59.0% (23/39) (-2.0 pts; per repo: accepts -0.50, WRONG 0.00, shown -0.50; 4 repos)
+   undo-named: design folds 42.4% (50/118) -> 40.8% (49/120) (-1.5 pts); other folds 46.8% (22/47) -> 44.4% (20/45) (-2.4 pts; per repo: accepts -0.50, WRONG 0.00, shown -0.50; 4 repos)
+admission (§3.2): helps 4 repos across 3 folds (>= 3 across >= 2: yes); ACCEPT lost outside the design folds 2 (NO: excalidraw/D-553404 supabase/D-017ce5); other-fold effect -2.0 pts (NOT positive) -> NOT ADMITTED
+changed cards (20):
+   ai/D-4683f7 fold 2 removed suggestion ordering ACCEPT [accept_lost]
+   cal.com/D-8d7d13 fold 4 removed suggestion naming WRONG/mixed_group [helped]
+   cal.com/D-c2e733 fold 4 added suggestion naming UNLABELLED
+   excalidraw/D-553404 fold 3 removed suggestion avoids_other ACCEPT [accept_lost]
+   immich/D-26380c fold 1 removed suggestion naming WRONG/mixed_group [helped]
+   infisical/D-156a6f fold 1 removed suggestion naming WRONG/mixed_group [helped]
+   infisical/D-48958f fold 1 added suggestion renders UNLABELLED
+   infisical/D-4be5e9 fold 1 removed suggestion naming WRONG/mixed_group [helped]
+   infisical/D-7fa4fe fold 1 added suggestion naming UNLABELLED
+   infisical/D-ac787f fold 1 removed suggestion naming WRONG/mixed_group [helped]
+   infisical/D-b0614f fold 1 added suggestion renders UNLABELLED
+   midday/D-404dbb fold 4 added suggestion repo UNLABELLED
+   midday/D-8fd473 fold 4 removed suggestion control ACCEPT [accept_lost]
+   novu/D-1b8741 fold 2 added suggestion naming UNLABELLED
+   novu/D-74374a fold 2 added suggestion naming UNLABELLED
+   novu/D-7b0a0f fold 2 added suggestion jsx_wrapper UNLABELLED
+   novu/D-808edd fold 2 removed suggestion naming WRONG/mixed_group [helped]
+   novu/D-bdd970 fold 2 removed suggestion naming ACCEPT [accept_lost]
+   novu/D-e79710 fold 2 removed suggestion naming ACCEPT [accept_lost]
+   supabase/D-017ce5 fold 3 removed suggestion control ACCEPT [accept_lost]
+
+## Python
+in-sample (relabel5 labels):
+   before 61.0% (47/77); not-wrong 61.0% (47/77); default n/a; WRONG 30; unlabelled 0; 4.5 cards/repo, 2.8 accepts/repo over 17 repos
+   after  60.0% (45/75); not-wrong 60.0% (45/75); default n/a; WRONG 29; unlabelled 1; 4.4 cards/repo, 2.6 accepts/repo over 17 repos
+   effect -1.0 pts accept
+undo-named reading (every change since dev-v3-2026-11-06 a round 4,5,6,8,9 PR names by id, undone; 46 restored cards):
+   before 34.3% (34/99); not-wrong 35.4% (35/99); default n/a; WRONG 64; unlabelled 0; 5.8 cards/repo, 2.0 accepts/repo over 17 repos
+   after  33.7% (33/98); not-wrong 34.7% (34/98); default n/a; WRONG 63; unlabelled 1; 5.8 cards/repo, 1.9 accepts/repo over 17 repos
+   effect -0.7 pts accept
+dev-v3 reading: n/a (a census change is not a policy; pass --policy for it)
+folds (in-sample):
+   fold 1 [design]: 57.7% (15/26) -> 54.2% (13/24) (-3.5 pts); helped 0 in 0 repos; ACCEPT lost 2
+   fold 2 [design]: 68.0% (17/25) -> 68.0% (17/25) (+0.0 pts); helped 1 in 1 repos; ACCEPT lost 0
+   fold 3: 50.0% (2/4) -> 50.0% (2/4) (+0.0 pts); helped 0 in 0 repos; ACCEPT lost 0
+   fold 4 [design]: 59.1% (13/22) -> 59.1% (13/22) (+0.0 pts); helped 0 in 0 repos; ACCEPT lost 0
+   in-sample: design folds 61.6% (45/73) -> 60.6% (43/71) (-1.1 pts); other folds 50.0% (2/4) -> 50.0% (2/4) (+0.0 pts; per repo: accepts 0.00, WRONG 0.00, shown 0.00; 3 repos)
+   undo-named: design folds 32.2% (29/90) -> 31.5% (28/89) (-0.8 pts); other folds 55.6% (5/9) -> 55.6% (5/9) (+0.0 pts; per repo: accepts 0.00, WRONG 0.00, shown 0.00; 3 repos)
+admission (§3.2): helps 1 repos across 1 folds (>= 3 across >= 2: NO); ACCEPT lost outside the design folds 0 (yes); other-fold effect +0.0 pts (NOT positive) -> NOT ADMITTED
+changed cards (4):
+   InvenTree/D-16c1ac fold 1 removed suggestion control ACCEPT [accept_lost]
+   Misago/D-5862f4 fold 2 removed suggestion base_class WRONG/false_outliers [helped]
+   Misago/D-8a6943 fold 2 added suggestion base_class UNLABELLED
+   pontoon/D-6957a9 fold 1 removed suggestion control ACCEPT [accept_lost]
+
+admitted: no

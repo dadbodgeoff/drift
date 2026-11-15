@@ -1,0 +1,275 @@
+{
+  "//": "apps13 BLIND set (40 repos), committed only as hashes (lib.mjs poolHash): slug_sha256 = poolHash('slug', owner/repo), name_sha256 = poolHash('name', repo), owner_sha256 = poolHash('owner', owner), pin_sha256 = poolHash('pin', owner/repo@sha). Only the apps13 operator reads the repos (scratchpad/apps13-blind*). select-holdout.mjs excludes these slug and name hashes from every later selection, and exclusion-hashes lists the owner hashes. core_sha256 is sha256 of the key map's repos array. Selected by eval/study/select-apps13.mjs; pre-registration eval/study/PREREG-R13-practices.md.",
+  "set_id": "apps13-blind-2026-11-09",
+  "role": "apps13-blind",
+  "holdout": false,
+  "n": 40,
+  "core_sha256": "25bac5d17d94f00a3cdc6d2e9b930011866f3c1890945d0a59f54b0f4e1c32b3",
+  "record_sha256": "c0b9611eca35857ad1c9fd8367ac03454efebde959d1528b0cea065874094ca1",
+  "seed_public": "drift-apps13-2026-11-09:81a1d01a81ad609ba7304cf112e6eca4b4ab3cc8",
+  "secret_sha256": "de32f02e35c2eca7a2c4a96271588629219ab44996d63b501eb9e9eac5d7bc87",
+  "counts": {
+    "results": 31491,
+    "excluded": {
+      "no permissive licence": 10585,
+      "non-application (topic)": 1184,
+      "non-application (name)": 974,
+      "template repository": 334,
+      "in another pool or mentioned by the Drift repository": 360,
+      "an organisation of another pool": 643,
+      "never drawn": 3
+    },
+    "eligible": 17408,
+    "walked": 963,
+    "accepted": 40,
+    "skipped": {
+      "C1: not mixed TS + Python, multi-package TS or multi-service Python": 616,
+      "C2: no frontend plus backend, nor several services": 289,
+      "C4: lines outside 20000-500000": 18
+    },
+    "api_calls": 388
+  },
+  "repos_sha256": [
+    {
+      "slug_sha256": "0a6cb3531167b65141c9b9cb8fa8a8074444a4e6172b16936c14a8dfbe12494f",
+      "name_sha256": "5eef9888fb7cc048a86f9a3af7cc026fca4e6ebf56a71b3a5389911f5dede2b4",
+      "pin_sha256": "3cb2b858189dff032d00bcbf0a4e456fcb5ccedfebc894c995483e603ab9cbc1",
+      "owner_sha256": "e326ba48784adcd35b165414c23f12d32cc5aba83fe26b635cf68b96fd7bde05"
+    },
+    {
+      "slug_sha256": "1db042c3d93088620e664ee40605c986391ada72534f0caa4ac2d88f6acc1d84",
+      "name_sha256": "460cf8f6024e4143d79aaeef7acfcb6e216575ec425e891217d258438e641cc3",
+      "pin_sha256": "8c05b05ed287d1be9c50b6a7594085240d5646f66ce8e83ce65b1b8e6609168e",
+      "owner_sha256": "bbe1791b8cd990103f360917d10ecf4819e0c7d2566eedd4c68049d9c8673a59"
+    },
+    {
+      "slug_sha256": "2b5c63dfa606f97d70ba6eaaf2eae071b3d166e28173972c6fb27b26224d5004",
+      "name_sha256": "ced18c9407778b8db136c894b837eeed0c8de4dea55ea951ecad21f0b3ca6842",
+      "pin_sha256": "17b57d3a73b43bd7789ae3d0c974ab4c403f8912f133b474cb0627a3c48670f3",
+      "owner_sha256": "c0abdb5d78a2afb6c685a3eef81d7c68962bbb090ea05f4bc124e2b64f381a2d"
+    },
+    {
+      "slug_sha256": "2f2ccf422c273a1e854e7756a97856c3d2838e147074ed83edfec0a70abf0fcc",
+      "name_sha256": "a7c02611ea0eb928ee1a32bc46653ee24d489952e9fecef74fe4cecf047d8844",
+      "pin_sha256": "aed64bf33e80b7dc85d00f23e96511d09965e4b01ca5eac4485264300350dcf1",
+      "owner_sha256": "e127c6f8093ed344711ba8da00aecbbb7de895b57a60b4211870645c906adf20"
+    },
+    {
+      "slug_sha256": "30066d04aa786e4766886bea6dd4b169ac6450356adecba404a01e711f7574d3",
+      "name_sha256": "47989a40f9a7ed20bd21b6ae0a86d16fea591249e3c6abb75c3a60e5e743edd7",
+      "pin_sha256": "b8d604a2c820b5ffef616aabd9f0b531530e5536600dc5019487565d60e39f8a",
+      "owner_sha256": "64a89fa8afc2c40c2ff094b176030dd624b0135c59467dd5384bd68c387062c8"
+    },
+    {
+      "slug_sha256": "316ef0b9e899b8bee7fd3e16994aeda1303c67b14cfa37894c6d24676f26b8cb",
+      "name_sha256": "ff74de00bd49f7f60b04cd21c10b73b118362ce1c04ec009934f06597200900d",
+      "pin_sha256": "db47a13e77cd3145206fe0b4b62f291621b40f163b82e97d9d8bb6c01fe6c3ba",
+      "owner_sha256": "8dae71de6279dff5d60eb0af2768f67263484172af028d105f0b41b649454775"
+    },
+    {
+      "slug_sha256": "3b2cc22fbfa426486ea7d4b3565df2bbc6f1dbb39a1ed55db478e4e5e74ffa26",
+      "name_sha256": "12cdb66eee23fbe6fef053a167f5c410bc2559a7d5597c24f243169ae2d341e2",
+      "pin_sha256": "4e68f06b98e94d4aec02f626c2a90fdd36ab7463576935289775a46febd45409",
+      "owner_sha256": "db26a01239f100dabf7f46bd15c6ab1e36916096e0f64017f8eb99f3266c1b44"
+    },
+    {
+      "slug_sha256": "3b374202fe8af5404c5c8aa1f9b7bcb4cca04f418a1eda78380cff52a50e35a4",
+      "name_sha256": "ca2b7df12fa8fb20032e356cc61a5357bc8f99fc0b946ed6ae18249d4acf3455",
+      "pin_sha256": "a6d86b86aaf2135d10cd0fd7a6ed13d4c9fd8826d78fe284e574df19dcf19a1d",
+      "owner_sha256": "81ea9273d59cb341499837f714b8ff21d446244404abc16566667b80a4df28cf"
+    },
+    {
+      "slug_sha256": "3cc946ea852c326c93c2908aaf8b944ef673081d7b79030a8aa214823642526b",
+      "name_sha256": "3ad784e611a3a5cbed3705ddc2e051b0bc603db532af5c5eb082e4cacd86488b",
+      "pin_sha256": "0ab3d9945a9de51351cb8bcb9b334d9c751d316e0fd5732a787f8e28fdfca18e",
+      "owner_sha256": "fd17c0fbd3c86af6e1a80d32b95b50070692e1da7d4b88ce4811b90ee3078c9c"
+    },
+    {
+      "slug_sha256": "4889b4a144228ca47afde1dd66f2a4d3119a4ad8cdca6599d4121caf36e32232",
+      "name_sha256": "3569fba5d2225165134cabc6d8b5438b2aab5e39c6ef3d2cbc5ac96e74eab15f",
+      "pin_sha256": "1be67786ec14704da2ec402be170b3e55fff0c1c7ee72f7c670d588c7550ff28",
+      "owner_sha256": "02e31ec65b4ef926b7d1765feb9495624686279bc32bf414ad095cc86aab0bc2"
+    },
+    {
+      "slug_sha256": "4e51177e5effcbbcd3113b19945f99193b46b2114e975dd7708847bfbe9bab12",
+      "name_sha256": "fb764223635e46f4012106de24587f027669298a06b4a0bd083c43c0281bd4ca",
+      "pin_sha256": "b3e5836b976c27dd8a27731f611aa64a97de3491b79a3bfc89db2d93a5a0d0b2",
+      "owner_sha256": "5938214572b7516e7d37fee7ebde58ea95f330ad4b80285bbacee577a8870d18"
+    },
+    {
+      "slug_sha256": "4f84188213c11c703d34e89c56fa70ae68e9ecbf8bdcca860bef58cf6a38831a",
+      "name_sha256": "4ec49cd496ad487e303aabfa3cfcf2b1e4e391d380e245c2641109ebace13302",
+      "pin_sha256": "0ff7920544549308f8c53a80c182be1e4555e9d6a4caa7dad33d0a11d5416470",
+      "owner_sha256": "942ef72992dc9334f7c5eb0db71664033933b3122a47bfe78193c5c2670e756f"
+    },
+    {
+      "slug_sha256": "530398ac36abfa6de32d6a8391166e54f7c57937ec60537e8208f69e83faeaf2",
+      "name_sha256": "d6639c5460d97607f1ccc018cc4a559ef215caf680af31229c1b665d8dae6a52",
+      "pin_sha256": "a2416600087ca8d585b820fe947a2b1df9a846a5aea3111797ea2204e7f32de7",
+      "owner_sha256": "95290c9d1f82f7e3e777504fd5afb96b4e611570c038ef326f8384d2fefef9e0"
+    },
+    {
+      "slug_sha256": "5406c8541f858ccf23dced94bb668bafb7b29bd12d62b9ee8a9a2b3d8f82b753",
+      "name_sha256": "fd9dfafac719cc60a59585ed01aa4ad0df9858d0cb75ac3df445e3aaa9cf7d35",
+      "pin_sha256": "e4968c54d15a06c09a88b42589d36269cbbe95dc97b31cb43ff5536bd239483a",
+      "owner_sha256": "bcdde92473c42f993edae328bdd46f48ffc28e83d702716132fa4cfcde3b1b27"
+    },
+    {
+      "slug_sha256": "5aabf168fe7a9b2165ee2b7dd0bb9c2a86d6c1bca56eb5e644651f258d8f9b63",
+      "name_sha256": "86478d84ae6e3ffecbf3ce7cc3ba612500a5d64d8b682401c9bdb776f223a8ca",
+      "pin_sha256": "9104ab65d7c2b22e029aa80de0dc9cadf20c0f1279eb3f60493cb767a68ec084",
+      "owner_sha256": "e6f98512ea3f4084d051cc47a2f7fa283372ccfd1271ae7bda648c156652fad2"
+    },
+    {
+      "slug_sha256": "5b3bb4eb878b29542835874ac5f96c05b60f254efc27f5d480680523a7c024ed",
+      "name_sha256": "832134ec6a586883a95fec296ef2e8889211e5e85a9b0024d33f4147b42fe4a5",
+      "pin_sha256": "d3e361e7b20b53066f044e5cac65b2557c224295111e7a4b3b80e56b01da56bc",
+      "owner_sha256": "d4750f84921788f869e4be3d8c1cbc5771ff9ad6b8202e1dc239f81381c6f6b9"
+    },
+    {
+      "slug_sha256": "653982589f3c6c86dbe36760df48a4dfa9066b316c1a750980c13d2ceef6347f",
+      "name_sha256": "50e0095fff8518d2ba743022ab6aa796d1fa4fd8d250895f2e541a90565ed15d",
+      "pin_sha256": "798f5b66354a17dc9f0c123d762b6996644aa839840f0c0fb6816c0a31dcd2dc",
+      "owner_sha256": "d8a87c039b97fc3c69dd1566730abe06f64ebb0837a3c75276cefad72a0c3370"
+    },
+    {
+      "slug_sha256": "69170ef7a5174c1e7e64ff8262005408ea207801a6eda2c7cb0e22b6df96bebd",
+      "name_sha256": "28f816ede5a3c68acf172c402185966fd08d59b368ace1c2531270795dcbb032",
+      "pin_sha256": "dbc4e5c62d9ecb3d431046f0473ec92a8e48b97c47e2ea32c087838ea40e8661",
+      "owner_sha256": "9ec8d310a72e39df03edce5ee65ab0ef05521eb59cae185372e2b90741b1fe67"
+    },
+    {
+      "slug_sha256": "6a999cdbf805df32224487a06d952b4ca1d2839a705f6c71929a82c83b1c972c",
+      "name_sha256": "380e10e9b29e3e58e37154b695f0f825f0b669bfe64bd350e2a5da13d5aa8dae",
+      "pin_sha256": "2fab0a10742e36784483a7afffc733e8887ef01ba99cf70692fe129cbd8c8e14",
+      "owner_sha256": "6f4fb8c56953dce3ae7b6f4d169ff48d2f05f3af8a760560070dc46f469eb5a4"
+    },
+    {
+      "slug_sha256": "6d83bcfb8a05ee6ce6c42bd9138fb73f627f58f4daab6df8dc6569455fe2c91c",
+      "name_sha256": "76de75c5582b19f6326e5a63969d2e482e8f231947c1e988ab493f311f4e5d04",
+      "pin_sha256": "3385a09a7af94a678898f2dad143a0357d2b74712677806c4954c2168d6046ee",
+      "owner_sha256": "b352981aee34ef6a036566bbde45377b98dfad88875959930304a97d9b556ce7"
+    },
+    {
+      "slug_sha256": "72400a39d43caa84ef58edf1b41e3d503a34a6acf76f5bde5ccbf840e7b84dc6",
+      "name_sha256": "1a3790c75f71863c72b3b1f2d612d0d775662a30287befc467c12b4a81951068",
+      "pin_sha256": "1e67e2bb37222bf5ff15c5c7c74d071dbdcbd4843529750849c023d6ea3bdac0",
+      "owner_sha256": "88209df38ce599f84aa7c32ed6e32767e87cab7d465134da32378ae7c14ecd5c"
+    },
+    {
+      "slug_sha256": "828ec4bf6a3f26455e91b977368cfdc5f5a82f7195a43dfb1fa70e106d88f9f9",
+      "name_sha256": "484d682912ccf4ff12fb099723cc3b642e5aeaa2dd918a237a6ab8bf4f4ffbd0",
+      "pin_sha256": "27f66428181b88069ab596bd524f3258dfdc0ca0b24e304eeee677b8733aa8fc",
+      "owner_sha256": "428c88819457c125698f65f4ca0f7929311774d7fdb9e3ad71106338f76c8323"
+    },
+    {
+      "slug_sha256": "8315eb718ab806073656ca34641c78937926745dd496b8692b2c1fe761affe39",
+      "name_sha256": "0f3e84388c4bfaa13b8c4d838224787eba15c8381f72132da6c43cdeec3c9ecc",
+      "pin_sha256": "0721f355b7c3e39491db9afa52b12ae54b12046466c28250e52efd5d83278de3",
+      "owner_sha256": "22a3c8f5e238c1f2b0f855b8075cd1a347be89d933a5cb5b2e007822220e1fb4"
+    },
+    {
+      "slug_sha256": "83ad62bd901bb94921c11e0f2a453f948f4fddba3cbe7fbb02b535fa0ed1bf3d",
+      "name_sha256": "53a30e8af9d78c9233fb36cd7049d7c094d02d7d2870a01f2b0c4b5d3867ba2c",
+      "pin_sha256": "1b4e255709f318e16ecac733f8c02b38b6eba3098c42f702dd61b53a9701d1c8",
+      "owner_sha256": "ebd29955a01a461c3ae49b7973c66fd2b06366d61d188adbcd4c76032ec48389"
+    },
+    {
+      "slug_sha256": "85cd1da89111541271fdc1ce254d019b37d2be79bdf58030d6af9c1296190cb2",
+      "name_sha256": "b3c39e99d3d197b169af0a302907b79f02fce2287ca9980065ed9fcded79d334",
+      "pin_sha256": "7d3918aec6875049a5fd1ef517b9df123c8c28cc8c2db94e8db09e8af2502699",
+      "owner_sha256": "684a69d2247f0a72c6cdae6bd2070633459eff2be7c2279118f5b11ecacb41e3"
+    },
+    {
+      "slug_sha256": "8ff9857f5e28994286438fb62627b44e8f88c4f23f8a1506dcf6e239d7c4d3f5",
+      "name_sha256": "6c01a30dc102b3fe2c285a4ddef836c3bb9821a2098809f4e20dc43ec5062158",
+      "pin_sha256": "cabc169d6e84ba9e4f6ef4c3f40e6978a411d529e9da2b5a483010c4d56311fd",
+      "owner_sha256": "22f35bca69845b932071bea2d7f7e39967a383f013f6fdef482d208b8b96f45a"
+    },
+    {
+      "slug_sha256": "93be3136fc0bcf1604f9e736207af245a3d43bd3e464dd09f0a365c341be62c7",
+      "name_sha256": "abd8d8e75fa58c32aec9a63db0a05c30df6da969aa22949a8f2b0237154d25f8",
+      "pin_sha256": "a3157569678247d537e56e0200b4578b7d9f9ac8668ecce34d8ebd4474f3ce09",
+      "owner_sha256": "ba6bbb9df6ce5b2846a67d1ca952fc93ca41c41dfa3fdeee85aca093379f9d9e"
+    },
+    {
+      "slug_sha256": "97770e4841746763645f90d175bfda83e72dc21d281e9b24420bf9e098aadc96",
+      "name_sha256": "b4d9475feef20de26286f5b7a898d0cbcbbd6c05fee39bbe861c105aacd3538c",
+      "pin_sha256": "966c80ed7f789be98dca2d26908c97da7667193779c6fa4f2cfa54832165b447",
+      "owner_sha256": "9a61fdeae89de6b4c3b3a963e96947736c7ddd02bc645e280e86ce3d186ed66e"
+    },
+    {
+      "slug_sha256": "a6a73f45989fb1a406c29a6081ff869576bc7209d83ba13925e21417f6c26433",
+      "name_sha256": "f41200bc1dfb7124d74525cb0acf4b96142a48273c22aaacfbaeab9833bb369f",
+      "pin_sha256": "b00ad7afeb01480109c579e73a2063a658c8a52362bbd6c590117adf45e1eb36",
+      "owner_sha256": "07efe16f8ae8db6d413ca54c78628e825b91147b44397e64171111e6406a9bcc"
+    },
+    {
+      "slug_sha256": "ad02bc20dd4e66118688f940a692a5a72fd1bcb436d439c8ad9170b3a0ff466f",
+      "name_sha256": "34b6ce1431e7eeb36d1ad06fa185ab171fd6d640208e01f039e08c58c3aa77a3",
+      "pin_sha256": "b08d59640bc325e129234f557d91786dbf034b97d8d5e0374be36973170dd09f",
+      "owner_sha256": "373444b5921f64356824f6ace0e25211db3f7e1de59f521602322cc191318b3e"
+    },
+    {
+      "slug_sha256": "aeb5785ff5ce9a9bb0ab7d3d6d2c03c8b1b253866da2a64a1192809d99065bcb",
+      "name_sha256": "426af1fe6106c1c403b39f0ec55d4c0a1d847143530cd7316f5adb0ecfe322d8",
+      "pin_sha256": "84956f285c635b3b54f0922b07d4cae60077657c7f7d4d81a113582bd19b552b",
+      "owner_sha256": "21f519f63e995404e7e37bf715e9136acbb02287a5f50ad022f5408ff4606873"
+    },
+    {
+      "slug_sha256": "b733164e6ea557d271d07934a2f83f30192c5edac560c2825b4f5a0cfa3d2262",
+      "name_sha256": "b439cb8625d23eaa2c70051d77b011b0ffd2106e3b115c70dba0cbaa12557e7d",
+      "pin_sha256": "caa69cef00657f9097722025cca51d9df7cc0ee95747d9d6db5b741f24e4f046",
+      "owner_sha256": "3c4db4319173f37d1c15e51990f848c0ef7b22d49818c2501a809b7ee8d2ebef"
+    },
+    {
+      "slug_sha256": "d236d7713580aa64c63638cbda2e0a66d8ab7760cddf950a28426131585f01d1",
+      "name_sha256": "50496b822dc2d20a85f3c70e26ebf2a4f612a7e9e0c6caf7b17b84ccdf448e63",
+      "pin_sha256": "63844e9a014bb65b6407c5bfe230adfd61f015e55af743fe2d3bed9ac5d0b456",
+      "owner_sha256": "3623349eeffe23e4e94b779ae6acd05d9eb8fdabd444c992762de1aacb5af7a1"
+    },
+    {
+      "slug_sha256": "d36922af327258d46d33037430716693869bcd9fdcb0d839e58d113153015870",
+      "name_sha256": "d378554eb692e539f1145d9f1bcf9d649b94333a3ecd19a2c9a843b41735b182",
+      "pin_sha256": "e2ce3887db54494a44e96e77d1b1575035c3e62fb714cb6928bf8a1212f7c983",
+      "owner_sha256": "edff8e386913dc4628a1c58f742f388ce00cd5fa67098e737d9cf4fabc314936"
+    },
+    {
+      "slug_sha256": "de01c0e44201654d08dc2810a9f2d6cdc69799d49fc33e43d07c7e9438a69136",
+      "name_sha256": "6686e3070c5eca327a12b33d40c7ac3429771fe2eb49dadf10caeca944509085",
+      "pin_sha256": "d3328df2cb958a4f663470ab3b7672fd23799aa51e25a461bdd7e659c989037a",
+      "owner_sha256": "de9cd14eff0158d38ee42c98e1aebd752d2de117221fc7f5acde9a4284d0b346"
+    },
+    {
+      "slug_sha256": "e9d4c26836ef2cd475a130c7723f439d29a1682bd75ca20b4ca5320ebd6124eb",
+      "name_sha256": "76dfbceec28959d8185e1eb6d6d60958b86e508294c247fba23ff1c95f45b6d9",
+      "pin_sha256": "7b5cc622b40048ce6f4dd734441f87329b4782cc26cb6665671a6f02ebbacede",
+      "owner_sha256": "0259bf59dcdde4636d8d56519d68ec6bb7b70a1ad8dd43fcdb0a28b94cf67a62"
+    },
+    {
+      "slug_sha256": "ead393d104869ae92801566ebb70209c2aad061f7571bb548cc8819d44eee81a",
+      "name_sha256": "d83834e5e9e94906e900c5f5d37a24783462ddb98ceaa4cad0dec0ba48b1c64a",
+      "pin_sha256": "a8b3775ad17d721e35a78ce1ea4fb3aa5d368a80c842befcd99ac55de318119c",
+      "owner_sha256": "eec99a79f0f9b890b6cf94142cbe2184d56ec1573a4da29efd13b41f8274d7c3"
+    },
+    {
+      "slug_sha256": "ed0e0a1fd65a97b5ff95686aacfc295514c07211c2e59145ce9982c669166072",
+      "name_sha256": "26faf699125fbbc0c47c82465c25c4f7fa374a06ad7be5a70a526f45016e30e2",
+      "pin_sha256": "8aea468003bd39f4d0f25974161233aea60b5127b8e34ce3043c7f9ec7400f41",
+      "owner_sha256": "c38fe06282ee03143e9a014f5577925b09a5aad369bc8b05f8e2da0ab47a8f04"
+    },
+    {
+      "slug_sha256": "f045e1491bea60ffa1beef21ea8557509532ec6239303137d0be83ee6904700f",
+      "name_sha256": "656ee3f516e5cdb349d6f5588addbbc70000d633f3f2e4f1ee292ef517582096",
+      "pin_sha256": "0eec0cf271d1e4e73f624311fc1c2aa7028444813b8a6299696d1b988ca1c3af",
+      "owner_sha256": "f65a18d0a0b07c136e5aff741030f76f6120387be99f1341ac8cc6b0f5220d85"
+    },
+    {
+      "slug_sha256": "f40ffe567f487e5ab3a53fbc0594a11f827644f4f111a86c882937baa8e65867",
+      "name_sha256": "7d365e039aadd695912a99eb427ca48de2b5d56217ff4a55a3d622ab6c7bb0ee",
+      "pin_sha256": "d6f41daeb9481c532194287c72984dd516c1a15afcdb4c9ce72daff2f28ee45f",
+      "owner_sha256": "63072f0c6660ebd0a4f837213c3bc14493e9934549de809f64ad11cd9c191ebd"
+    }
+  ],
+  "frozen_at": "2026-11-09T21:16:59Z"
+}

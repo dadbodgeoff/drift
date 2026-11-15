@@ -1,0 +1,119 @@
+{
+  "labels_sha256": {
+    "A": "409656f3b6c29fe5f81b42ae898359cd2b74a092e832612b5cab928322d91295",
+    "B": "a4aa13ff2733b57f70cd6533646baad49c10e12cc2bb03bd5eec9343f8d16c90"
+  },
+  "excluded": {
+    "repos": [
+      "T19"
+    ],
+    "uids": [
+      "T19/D-afc638",
+      "T19/D-b24e52",
+      "T19/D-c79a9e"
+    ],
+    "reason": "labeller B missing after 3 INVALID attempts (cap of 3, lead decision in README); its cards are labelled by A and a blind third labeller (blindC-T19): final ACCEPT only if both say ACCEPT, else WRONG",
+    "at": "2026-11-09T04:11:00.548Z"
+  },
+  "cases": [
+    {
+      "uid": "T05/D-2aa20d",
+      "repo": "T05",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "T05/D-2aa20d",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "backend/apps/cloud/src/analytics/dto/data-deletion.dto.ts",
+            "backend/apps/cloud/src/analytics/dto/get-custom-event-meta.dto.ts",
+            "backend/apps/cloud/src/analytics/dto/events.dto.ts",
+            "backend/apps/cloud/src/analytics/dto/get-filters.dto.ts",
+            "backend/apps/cloud/src/analytics/dto/identify.dto.ts",
+            "backend/.oxlintrc.json",
+            "backend/package.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "GetCustomEventMetadata",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "MetadataSizeLimit",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "MetadataKeysQuantity",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "MetadataValueType",
+              "verdict": "not_violation"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2",
+            "R8"
+          ],
+          "reason": "Request DTO classes are named *Dto (DataDeletionDto, DataDeletionPreviewDto, GetFiltersDto, EventsDto); the only counted outlier, GetCustomEventMetadata in get-custom-event-meta.dto.ts, is an ordinary query DTO extending PickType(GetDataDto) that simply drops the suffix, a naming choice slip, while the @ValidatorConstraint companions in events.dto.ts are exempted by the rule itself. No naming-convention rule exists in backend/.oxlintrc.json, so nothing catches it.",
+          "defects": [],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "T05/D-2aa20d",
+          "rubric": "v3",
+          "label": "WRONG",
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "backend/apps/cloud/src/analytics/dto/data-deletion.dto.ts",
+            "backend/apps/cloud/src/analytics/dto/get-custom-event-meta.dto.ts",
+            "backend/apps/cloud/src/analytics/dto/events.dto.ts",
+            "backend/apps/cloud/src/analytics/dto/identify.dto.ts",
+            "backend/apps/cloud/src/analytics/dto/get-id.dto.ts",
+            "backend/apps/cloud/src/analytics/dto/pageviews.dto.ts",
+            "backend/tsconfig.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "GetCustomEventMetadata",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "MetadataKeysQuantity",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "MetadataSizeLimit",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "MetadataValueType",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Only GetCustomEventMetadata is a real DTO missing the Dto suffix; the three ValidatorConstraint classes in events.dto.ts (and similar ones in identify.dto.ts) are validators, not DTOs, so 1 of 4 counted outliers is a mistake. No lint rule enforces the name; hesitated with ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    }
+  ]
+}

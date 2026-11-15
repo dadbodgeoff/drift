@@ -1,0 +1,401 @@
+{
+  "labels_sha256": {
+    "A": "5b4e18bae0ae4b7332aa40d20e22499eeb09ce5086aa68f2e54eca1735352df0",
+    "B": "c53336d691208b3ea764baf59fc1393abd351844132e085fb6a393e88cea9dbf"
+  },
+  "cases": [
+    {
+      "uid": "cal.com/D-8d7d13",
+      "repo": "cal.com",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "cal.com/D-8d7d13",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "packages/emails/auth-email-service.ts",
+            "packages/emails/email-manager.ts",
+            "packages/emails/workflow-email-service.ts",
+            "packages/emails/billing-email-service.ts",
+            "packages/emails/organization-email-service.ts",
+            "biome.json"
+          ],
+          "outliers": [],
+          "rules": [
+            "R1",
+            "R2",
+            "R8",
+            "R9"
+          ],
+          "reason": "Every exported function of the top-level *-email-service.ts files and email-manager.ts is a send* function (workflow-email-service.ts, billing-email-service.ts); the only non-send exports, fetchOrganizationEmailSettings and shouldSkipAttendeeEmailWithSettings in email-manager.ts, are in-file helpers the tool exempts, so nothing is left to count and a new email-sending export off the send* scheme is a naming-scheme deviation worth flagging; no biome naming rule enforces it. clear: false because the scope ./** reads as if lib/ helpers (getICalUID, sanitizeDisplayName) were included; hesitated with WRONG mixed_group if those helpers are counted.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "cal.com/D-8d7d13",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/emails/auth-email-service.ts",
+            "packages/emails/email-manager.ts",
+            "packages/emails/billing-email-service.ts",
+            "packages/emails/organization-email-service.ts",
+            "biome.json"
+          ],
+          "outliers": [],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Service functions are named send* (auth-email-service.ts, billing, organization), but email-manager.ts also exports non-send helpers fetchOrganizationEmailSettings and shouldSkipAttendeeEmailWithSettings plus private helpers, so the group mixes senders with helpers and a new helper would be warned for nothing. Hesitated with ACCEPT as a naming scheme.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "ai/D-4683f7",
+      "repo": "ai",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "ai/D-4683f7",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "packages/openai/src/tool/apply-patch.ts",
+            "packages/openai/src/tool/file-search.ts",
+            "packages/openai/src/tool/web-search.ts",
+            "packages/openai/src/tool/code-interpreter.ts",
+            "packages/openai/src/tool/local-shell.ts",
+            "packages/openai/src/tool/custom.ts",
+            "packages/openai/src/tool/shell.ts",
+            "packages/provider-utils/src/schema.ts",
+            "packages/provider-utils/src/provider-executed-tool-factory.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "fileSearch",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Tool schemas wrap z.object in lazySchema(() => zodSchema(...)) (apply-patch.ts, web-search.ts webSearchInputSchema = zodSchema(z.object({})), local-shell.ts); file-search.ts:146 passes a bare z.object({}) as inputSchema, which compiles because FlexibleSchema accepts raw Zod (schema.ts), so it is an unenforced inconsistency worth a look. Wording 'call zodSchema() before z.object()' really means 'wrap z.object in zodSchema', hence clear=false; hesitated with WRONG incidental given a single minor outlier.",
+          "defects": [
+            "packages/openai/src/tool/file-search.ts:146 inputSchema is a bare z.object({}) instead of lazySchema(() => zodSchema(z.object({}))) like other tools"
+          ],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "ai/D-4683f7",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/openai/src/tool/apply-patch.ts",
+            "packages/openai/src/tool/file-search.ts",
+            "packages/openai/src/tool/web-search.ts",
+            "packages/openai/src/tool/shell.ts",
+            "packages/openai/src/tool/mcp.ts",
+            "packages/openai/src/tool/code-interpreter.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "fileSearch",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Schema constants (apply-patch.ts, shell.ts, web-search.ts) wrap z.object in zodSchema; the sole outlier fileSearch in file-search.ts is a tool factory with explicit TS generic types, not a schema definition, so the rule would flag every new tool factory (same shape as shell/webSearch factories). Hesitated with ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "supabase/D-922bc7",
+      "repo": "supabase",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "supabase/D-922bc7",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "packages/icons/src/icons/REST-api.ts",
+            "packages/icons/src/defaultAttributes.ts",
+            "packages/icons/src/createSupabaseIcon.ts",
+            "packages/icons/src/icons/database.ts",
+            "packages/icons/src/icons/sentry.ts",
+            "packages/icons/src/icons/_example-template.ts",
+            "packages/icons/src/icons/index.ts",
+            "packages/icons/src/raw-icons/sentry.svg",
+            "packages/icons/scripts/exportTemplate.mjs",
+            "packages/icons/scripts/validateIcons.mjs",
+            "packages/icons/tsconfig.json",
+            "packages/icons/package.json",
+            "packages/icons/README.md",
+            ".github/workflows/library-tests.yml"
+          ],
+          "outliers": [
+            {
+              "symbol": "default (defaultAttributes.ts)",
+              "verdict": "one_off"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2",
+            "R5",
+            "R8",
+            "R9"
+          ],
+          "reason": "Every generated icon (REST-api.ts, database.ts, sentry.ts) passes an svgDefaults object with fill to the default export of createSupabaseIcon.ts (locally named createLucideIcon, imported as createSupabaseIcon, hence clear: false); svgDefaults is optional so tsc does not catch omission, and validateIcons.mjs only checks raw SVGs in the local build:icons script, not in CI. With no counted outliers, a fill-only icon like sentry.ts without fill would fall back to defaultAttributes fill 'none' and render blank, so flagging is worth it; hesitated with WRONG incidental since for stroke icons fill 'none' duplicates the default and the attribute is just copied by exportTemplate.mjs.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "supabase/D-922bc7",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "incidental",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/icons/src/icons/REST-api.ts",
+            "packages/icons/src/defaultAttributes.ts",
+            "packages/icons/src/createSupabaseIcon.ts",
+            "packages/icons/src/icons/auth.ts",
+            "packages/icons/src/icons/axiom.ts",
+            "packages/icons/src/icons/api-docs.ts",
+            "packages/icons/scripts/validateIcons.mjs",
+            "packages/icons/tsconfig.json"
+          ],
+          "outliers": [],
+          "rules": [
+            "R8"
+          ],
+          "reason": "True for all 30 icons (the local createSupabaseIcon is the renamed createLucideIcon; svgDefaults is optional so tsc will not catch omission), but defaultAttributes.ts already sets fill 'none', so passing fill is generated boilerplate with no effect for stroke icons; icons are generated from raw SVGs and checked by validateIcons.mjs. Hesitated with ACCEPT.",
+          "defects": [],
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "midday/D-8fbbad",
+      "repo": "midday",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "midday/D-8fbbad",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "apps/dashboard/package.json",
+            "packages/mcp-apps/package.json",
+            "apps/desktop/package.json",
+            "packages/email/package.json",
+            "packages/ui/package.json",
+            "packages/logger/package.json",
+            "package.json",
+            "packages/mcp-apps/tsconfig.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "@midday/mcp-apps",
+              "verdict": "mistake"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "Role members are workspace package.json files, so any other member is necessarily a package.json. I opened apps/desktop/package.json and packages/email/package.json, and both use \"typescript\": \"catalog:\", as do dashboard, ui, logger and the rest. apps/desktop is a Vite + React package like mcp-apps and still uses the catalog, so the hardcoded ^6.0.2 in packages/mcp-apps/package.json (the same value as the root catalog) is drift with no reason. Bun does not prevent it.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "midday/D-8fbbad",
+          "label": "WRONG",
+          "wrong_because": "false_outliers",
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "apps/dashboard/package.json",
+            "packages/mcp-apps/package.json",
+            "packages/db/package.json",
+            "packages/trpc/package.json",
+            "packages/ui/package.json",
+            "package.json",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "@midday/mcp-apps",
+              "verdict": "not_violation"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R6"
+          ],
+          "reason": "Root catalog defines typescript ^6.0.2 and mcp-apps pins the identical ^6.0.2, so it uses the same version as the others, just not through catalog:. Wording says 'version', so the outlier follows it; the real drift risk is mild. Hesitated with ACCEPT.",
+          "rubric": "v3",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "midday/D-798f44",
+      "repo": "midday",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "midday/D-798f44",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/db/src/schema.ts",
+            "packages/db/src/queries/tags.ts",
+            "packages/db/src/queries/transaction-tags.ts",
+            "packages/db/src/queries/exhange-rates.ts",
+            "packages/db/src/queries/document-tag-assignments.ts",
+            "packages/db/src/queries/document-tag-embedings.ts",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "document_tag_assignments",
+              "verdict": "look"
+            },
+            {
+              "symbol": "document_tag_embeddings",
+              "verdict": "look"
+            },
+            {
+              "symbol": "exchange_rates",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Every drizzle model is defined in packages/db/src/schema.ts; no other file contains a pgTable, so the extra files I opened are the query modules for member and outlier tables. createdAt is an audit column on nearly every table, including the sibling join tables transactionTags, customerTags and trackerProjectTags and the sibling embedding table transactionCategoryEmbeddings, and queries/tags.ts reads tags.createdAt. The parallel document_tag_assignments and document_tag_embeddings tables lack it for no visible reason (look). exchange_rates is an upserted rate cache keyed on base/target that tracks only updatedAt (queries/exhange-rates.ts), so it is legit. That is 2 of 3 worth a look. I hesitated with WRONG legit_outliers.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "midday/D-798f44",
+          "label": "WRONG",
+          "wrong_because": "incidental",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/db/src/schema.ts",
+            "biome.json",
+            "packages/db/drizzle.config.ts",
+            "packages/db/src/queries/tags.ts",
+            "packages/db/src/queries/accounting-sync.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "document_tag_assignments",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "document_tag_embeddings",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "exchange_rates",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Outliers are a join table (documentTagAssignments), a lookup/embedding table (documentTagEmbeddings) and a reference table with only updatedAt (exchangeRates); they lack the need for createdAt, so new such tables would be flagged for nothing. Hesitated with legit_outliers. schema.ts is the only file defining drizzle models in the repo (grep for pgTable), so other members (tags, transactionCategoryEmbeddings, usersOnTeam) were sampled in the same file. queries/tags.ts selects tags.createdAt and queries/accounting-sync.ts uses accountingSyncRecords.createdAt, confirming members are used with createdAt.",
+          "rubric": "v3",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - announcements
+  - layout
+  - page
+  - route
+  suffixes:
+  - config
+  - spec
+  - test
+conventions:
+- id: D-006a69
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/** do not use raw HTML (innerHTML, dangerouslySetInnerHTML)"
+  role:
+    package: frontend
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: avoids
+    signal: sink:raw_html
+  evidence:
+    holders: 190
+    total: 193
+    lower_bound: 0.955
+    lift: 13.646
+  example: frontend/src/app/error.tsx#ErrorPage
+  selector_version: 3
+- id: D-b27acc
+  status: proposed
+  mode: advise
+  summary: "backend: HTTP handlers in src/** are wrapped in get_db()"
+  role:
+    package: backend
+    dir: src
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - unresolved:...database#get_db
+  evidence:
+    holders: 85
+    total: 90
+    lower_bound: 0.876
+    lift: 13.6
+    python_members: 90
+  example: backend/src/api/routes/account.py#send_affiliate_email
+  selector_version: 3
+- id: D-f0ff81
+  status: proposed
+  mode: advise
+  summary: "frontend: pages in src/** (page files) render <next>"
+  role:
+    package: frontend
+    dir: src
+    file: page
+    entry: page
+    kind: component
+  rule:
+    type: renders
+    component: pkg:next#default
+  evidence:
+    holders: 25
+    total: 26
+    lower_bound: 0.811
+    lift: 3.622
+  example: frontend/src/app/[slug]/page.tsx#SeoLandingPage
+  selector_version: 3

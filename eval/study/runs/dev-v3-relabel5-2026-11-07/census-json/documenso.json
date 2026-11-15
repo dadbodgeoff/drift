@@ -1,0 +1,1172 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "cgu65-de57356-1794092874",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel5/restage-de57356/cache/repos/documenso",
+  "units": 6375,
+  "roles": 323,
+  "conventions": 15,
+  "shown": 15,
+  "tiers": {
+    "default": 9,
+    "suggestion": 6
+  },
+  "agents": {
+    "hidden": 6,
+    "admission": {
+      "kind": "family_table",
+      "file": "crates/drift-mine/data/family-admission.json",
+      "run": "eval/study/runs/dev-v3-relabel4-2026-11-07",
+      "date": "2026-11-07",
+      "min_accept": 0.85,
+      "min_cards": 10
+    }
+  },
+  "suggestion_cap": {
+    "cap": 5,
+    "from": "default",
+    "suggestions": 6,
+    "listed": 5
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-32c861",
+      "rank": 1,
+      "shown_by_default": true,
+      "summary": "packages/trpc: rpc entry points in server/** are wrapped in adminProcedure() or authenticatedProcedure()",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server",
+        "file": "*",
+        "entry": "rpc",
+        "kind": "function",
+        "members": 215
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "packages/trpc/server/trpc.ts#adminProcedure",
+          "packages/trpc/server/trpc.ts#authenticatedProcedure"
+        ]
+      },
+      "evidence": {
+        "holders": 191,
+        "total": 215,
+        "lower_bound": 0.839,
+        "lift": 5.656,
+        "split": [
+          [
+            "packages/trpc/server/trpc.ts#authenticatedProcedure",
+            146
+          ],
+          [
+            "packages/trpc/server/trpc.ts#adminProcedure",
+            45
+          ]
+        ]
+      },
+      "rule_kind": "wrapped_by:call",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": true,
+        "reason": "default_tier",
+        "source": "default tier",
+        "text": "shown to agents (default tier)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "packages/trpc/server/admin-router/admin-search.ts",
+        "symbol": "adminSearchRoute",
+        "line": 6
+      },
+      "outliers": [
+        {
+          "path": "packages/trpc/server/auth-router/create-passkey-signin-options.ts",
+          "symbol": "createPasskeySigninOptionsRoute",
+          "line": 10
+        },
+        {
+          "path": "packages/trpc/server/document-router/access-auth-request-2fa-email.ts",
+          "symbol": "accessAuthRequest2FAEmailRoute",
+          "line": 18
+        },
+        {
+          "path": "packages/trpc/server/document-router/share-document.ts",
+          "symbol": "shareDocumentRoute",
+          "line": 7
+        },
+        {
+          "path": "packages/trpc/server/embedding-router/create-embedding-document.ts",
+          "symbol": "createEmbeddingDocumentRoute",
+          "line": 14
+        },
+        {
+          "path": "packages/trpc/server/embedding-router/create-embedding-envelope.ts",
+          "symbol": "createEmbeddingEnvelopeRoute",
+          "line": 11
+        },
+        {
+          "path": "packages/trpc/server/embedding-router/create-embedding-presign-token.ts",
+          "symbol": "createEmbeddingPresignTokenRoute",
+          "line": 17
+        },
+        {
+          "path": "packages/trpc/server/embedding-router/create-embedding-template.ts",
+          "symbol": "createEmbeddingTemplateRoute",
+          "line": 15
+        },
+        {
+          "path": "packages/trpc/server/embedding-router/get-multi-sign-document.ts",
+          "symbol": "getMultiSignDocumentRoute",
+          "line": 14
+        },
+        {
+          "path": "packages/trpc/server/embedding-router/persist-embed-signature.ts",
+          "symbol": "persistEmbedSignatureRoute",
+          "line": 16
+        },
+        {
+          "path": "packages/trpc/server/embedding-router/update-embedding-document.ts",
+          "symbol": "updateEmbeddingDocumentRoute",
+          "line": 14
+        },
+        {
+          "path": "packages/trpc/server/embedding-router/update-embedding-envelope.ts",
+          "symbol": "updateEmbeddingEnvelopeRoute",
+          "line": 35
+        },
+        {
+          "path": "packages/trpc/server/embedding-router/update-embedding-template.ts",
+          "symbol": "updateEmbeddingTemplateRoute",
+          "line": 13
+        },
+        {
+          "path": "packages/trpc/server/embedding-router/verify-embedding-presign-token.ts",
+          "symbol": "verifyEmbeddingPresignTokenRoute",
+          "line": 14
+        },
+        {
+          "path": "packages/trpc/server/enterprise-router/csc-sign-envelope.ts",
+          "symbol": "cscSignEnvelopeRoute",
+          "line": 19
+        },
+        {
+          "path": "packages/trpc/server/enterprise-router/decline-link-organisation-account.ts",
+          "symbol": "declineLinkOrganisationAccountRoute",
+          "line": 13
+        },
+        {
+          "path": "packages/trpc/server/enterprise-router/link-organisation-account.ts",
+          "symbol": "linkOrganisationAccountRoute",
+          "line": 14
+        },
+        {
+          "path": "packages/trpc/server/envelope-router/attachment/find-attachments.ts",
+          "symbol": "findAttachmentsRoute",
+          "line": 12
+        },
+        {
+          "path": "packages/trpc/server/envelope-router/envelope-recipients/report-recipient.ts",
+          "symbol": "reportRecipientRoute",
+          "line": 15
+        },
+        {
+          "path": "packages/trpc/server/envelope-router/get-envelope-items-by-token.ts",
+          "symbol": "getEnvelopeItemsByTokenRoute",
+          "line": 15
+        },
+        {
+          "path": "packages/trpc/server/envelope-router/sign-envelope-field.ts",
+          "symbol": "signEnvelopeFieldRoute",
+          "line": 18
+        },
+        {
+          "path": "packages/trpc/server/envelope-router/signing-status-envelope.ts",
+          "symbol": "signingStatusEnvelopeRoute",
+          "line": 12
+        },
+        {
+          "path": "packages/trpc/server/organisation-router/accept-organisation-member-invite.ts",
+          "symbol": "acceptOrganisationMemberInviteRoute",
+          "line": 9
+        },
+        {
+          "path": "packages/trpc/server/organisation-router/decline-organisation-member-invite.ts",
+          "symbol": "declineOrganisationMemberInviteRoute",
+          "line": 11
+        },
+        {
+          "path": "packages/trpc/server/team-router/complete-team-email-verification.ts",
+          "symbol": "completeTeamEmailVerificationRoute",
+          "line": 13
+        }
+      ],
+      "outliers_total": 24
+    },
+    {
+      "id": "D-a0eee5",
+      "rank": 2,
+      "shown_by_default": true,
+      "summary": "packages/trpc: rpc entry points in server/** (router files) are wrapped in authenticatedProcedure()",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server",
+        "file": "router",
+        "entry": "rpc",
+        "kind": "function",
+        "members": 64
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "packages/trpc/server/trpc.ts#authenticatedProcedure"
+        ]
+      },
+      "evidence": {
+        "holders": 59,
+        "total": 64,
+        "lower_bound": 0.83,
+        "lift": 7.201
+      },
+      "rule_kind": "wrapped_by:call",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": true,
+        "reason": "default_tier",
+        "source": "default tier",
+        "text": "shown to agents (default tier)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "packages/trpc/server/field-router/router.ts",
+        "symbol": "MUTATION createDocumentField",
+        "line": 83
+      },
+      "outliers": [
+        {
+          "path": "packages/trpc/server/field-router/router.ts",
+          "symbol": "MUTATION removeSignedFieldWithToken",
+          "line": 653
+        },
+        {
+          "path": "packages/trpc/server/field-router/router.ts",
+          "symbol": "MUTATION signFieldWithToken",
+          "line": 616
+        },
+        {
+          "path": "packages/trpc/server/recipient-router/router.ts",
+          "symbol": "MUTATION completeDocumentWithToken",
+          "line": 590
+        },
+        {
+          "path": "packages/trpc/server/recipient-router/router.ts",
+          "symbol": "MUTATION rejectDocumentWithToken",
+          "line": 679
+        },
+        {
+          "path": "packages/trpc/server/template-router/router.ts",
+          "symbol": "MUTATION createDocumentFromDirectTemplate",
+          "line": 613
+        }
+      ],
+      "outliers_total": 5
+    },
+    {
+      "id": "D-55ae12",
+      "rank": 3,
+      "shown_by_default": true,
+      "summary": "packages/trpc: rpc entry points in server/envelope-router/** are wrapped in authenticatedProcedure()",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server/envelope-router",
+        "file": "*",
+        "entry": "rpc",
+        "kind": "function",
+        "members": 47
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "packages/trpc/server/trpc.ts#authenticatedProcedure"
+        ]
+      },
+      "evidence": {
+        "holders": 42,
+        "total": 47,
+        "lower_bound": 0.774,
+        "lift": 6.981
+      },
+      "rule_kind": "wrapped_by:call",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": true,
+        "reason": "default_tier",
+        "source": "default tier",
+        "text": "shown to agents (default tier)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "packages/trpc/server/envelope-router/attachment/create-attachment.ts",
+        "symbol": "createAttachmentRoute",
+        "line": 10
+      },
+      "outliers": [
+        {
+          "path": "packages/trpc/server/envelope-router/attachment/find-attachments.ts",
+          "symbol": "findAttachmentsRoute",
+          "line": 12
+        },
+        {
+          "path": "packages/trpc/server/envelope-router/envelope-recipients/report-recipient.ts",
+          "symbol": "reportRecipientRoute",
+          "line": 15
+        },
+        {
+          "path": "packages/trpc/server/envelope-router/get-envelope-items-by-token.ts",
+          "symbol": "getEnvelopeItemsByTokenRoute",
+          "line": 15
+        },
+        {
+          "path": "packages/trpc/server/envelope-router/sign-envelope-field.ts",
+          "symbol": "signEnvelopeFieldRoute",
+          "line": 18
+        },
+        {
+          "path": "packages/trpc/server/envelope-router/signing-status-envelope.ts",
+          "symbol": "signingStatusEnvelopeRoute",
+          "line": 12
+        }
+      ],
+      "outliers_total": 5
+    },
+    {
+      "id": "D-d51d70",
+      "rank": 4,
+      "shown_by_default": true,
+      "summary": "packages/trpc: rpc entry points in server/organisation-router/** are wrapped in authenticatedProcedure()",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server/organisation-router",
+        "file": "*",
+        "entry": "rpc",
+        "kind": "function",
+        "members": 30
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "packages/trpc/server/trpc.ts#authenticatedProcedure"
+        ]
+      },
+      "evidence": {
+        "holders": 28,
+        "total": 30,
+        "lower_bound": 0.787,
+        "lift": 7.291
+      },
+      "rule_kind": "wrapped_by:call",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": true,
+        "reason": "default_tier",
+        "source": "default tier",
+        "text": "shown to agents (default tier)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "packages/trpc/server/organisation-router/create-organisation-group.ts",
+        "symbol": "createOrganisationGroupRoute",
+        "line": 15
+      },
+      "outliers": [
+        {
+          "path": "packages/trpc/server/organisation-router/accept-organisation-member-invite.ts",
+          "symbol": "acceptOrganisationMemberInviteRoute",
+          "line": 9
+        },
+        {
+          "path": "packages/trpc/server/organisation-router/decline-organisation-member-invite.ts",
+          "symbol": "declineOrganisationMemberInviteRoute",
+          "line": 11
+        }
+      ],
+      "outliers_total": 2
+    },
+    {
+      "id": "D-9b91c3",
+      "rank": 5,
+      "shown_by_default": true,
+      "summary": "packages/trpc: rpc entry points in server/team-router/** are wrapped in authenticatedProcedure()",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server/team-router",
+        "file": "*",
+        "entry": "rpc",
+        "kind": "function",
+        "members": 22
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "packages/trpc/server/trpc.ts#authenticatedProcedure"
+        ]
+      },
+      "evidence": {
+        "holders": 21,
+        "total": 22,
+        "lower_bound": 0.782,
+        "lift": 7.457
+      },
+      "rule_kind": "wrapped_by:call",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": true,
+        "reason": "default_tier",
+        "source": "default tier",
+        "text": "shown to agents (default tier)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "packages/trpc/server/team-router/create-team-groups.ts",
+        "symbol": "createTeamGroupsRoute",
+        "line": 12
+      },
+      "outliers": [
+        {
+          "path": "packages/trpc/server/team-router/complete-team-email-verification.ts",
+          "symbol": "completeTeamEmailVerificationRoute",
+          "line": 13
+        }
+      ],
+      "outliers_total": 1
+    },
+    {
+      "id": "D-041293",
+      "rank": 6,
+      "shown_by_default": true,
+      "summary": "files in packages/lib/** do not import from packages/trpc/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "packages/lib",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 641
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:packages/trpc"
+      },
+      "evidence": {
+        "holders": 637,
+        "total": 641,
+        "lower_bound": 0.984,
+        "lift": 3.0
+      },
+      "rule_kind": "avoids:import",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": true,
+        "reason": "default_tier",
+        "source": "default tier",
+        "text": "shown to agents (default tier)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "packages/lib/advanced-fields-validation/validate-dropdown.ts",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "packages/lib/client-only/hooks/use-copy-share-link.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/client-only/providers/envelope-editor-provider.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/client-only/providers/session.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/utils/team-analytics-range.ts",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 4
+    },
+    {
+      "id": "D-7b5140",
+      "rank": 7,
+      "shown_by_default": true,
+      "summary": "files in packages/lib/** do not import from packages/auth/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "packages/lib",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 641
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:packages/auth"
+      },
+      "evidence": {
+        "holders": 637,
+        "total": 641,
+        "lower_bound": 0.984,
+        "lift": 3.0
+      },
+      "rule_kind": "avoids:import",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": true,
+        "reason": "default_tier",
+        "source": "default tier",
+        "text": "shown to agents (default tier)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "packages/lib/advanced-fields-validation/validate-dropdown.ts",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "packages/lib/client-only/hooks/use-embed-popup-auth.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/client-only/hooks/use-password-setup-request.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/client-only/providers/session.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/jobs/client/bullmq.ts",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 4
+    },
+    {
+      "id": "D-2a51e9",
+      "rank": 8,
+      "shown_by_default": true,
+      "summary": "files in packages/lib/** do not import from packages/ee/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "packages/lib",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 641
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:packages/ee"
+      },
+      "evidence": {
+        "holders": 633,
+        "total": 641,
+        "lower_bound": 0.976,
+        "lift": 3.0
+      },
+      "rule_kind": "avoids:import",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": true,
+        "reason": "default_tier",
+        "source": "default tier",
+        "text": "shown to agents (default tier)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "packages/lib/advanced-fields-validation/validate-dropdown.ts",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "packages/lib/jobs/definitions/internal/seal-document.handler.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/jobs/definitions/internal/sync-email-domains.handler.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/jobs/definitions/internal/sync-organisation-seats.handler.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/server-only/document/send-document.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/server-only/organisation/accept-organisation-invitation.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/server-only/organisation/create-organisation.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/server-only/team/find-organisation-invoices.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/utils/organisations-claims.ts",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 8
+    },
+    {
+      "id": "D-c3b713",
+      "rank": 9,
+      "shown_by_default": true,
+      "summary": "files in packages/lib/** do not import from packages/ui/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "packages/lib",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 641
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:packages/ui"
+      },
+      "evidence": {
+        "holders": 633,
+        "total": 641,
+        "lower_bound": 0.976,
+        "lift": 3.0
+      },
+      "rule_kind": "avoids:import",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": true,
+        "reason": "default_tier",
+        "source": "default tier",
+        "text": "shown to agents (default tier)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "packages/lib/advanced-fields-validation/validate-dropdown.ts",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "packages/lib/advanced-fields-validation/validate-checkbox.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/advanced-fields-validation/validate-number.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/client-only/providers/envelope-editor-provider.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/client-only/providers/envelope-render-provider.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/server-only/document/send-document.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/universal/field-renderer/field-canvas-style.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/universal/field-renderer/field-generic-items.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/lib/utils/envelope-signing.ts",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 8
+    },
+    {
+      "id": "D-d7fae5",
+      "rank": 10,
+      "shown_by_default": true,
+      "summary": "packages/trpc: exported values in server/** (schema files) are named `*Schema`, except 3 companions (a helper or constant beside the members that follow it) and a plain value (not a schema)",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server",
+        "file": "schema",
+        "entry": "-",
+        "kind": "const",
+        "members": 127
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Schema"
+      },
+      "evidence": {
+        "holders": 123,
+        "total": 123,
+        "lower_bound": 0.97,
+        "lift": 1.64,
+        "role_members": 127
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": false,
+        "reason": "below_bar",
+        "source": "crates/drift-mine/data/family-admission.json (eval/study/runs/dev-v3-relabel4-2026-11-07, bar 85% of 10)",
+        "family": "naming",
+        "accepted": 21,
+        "n": 37,
+        "text": "not shown to agents (family below admission bar: 56% of 37)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "packages/trpc/server/auth-router/schema.ts",
+        "symbol": "ZCurrentPasswordSchema",
+        "line": 3
+      },
+      "outliers": [],
+      "outliers_total": 0,
+      "exempt": [
+        {
+          "path": "packages/trpc/server/document-router/schema.ts",
+          "symbol": "DOCUMENT_TITLE_MAX_LENGTH",
+          "line": 4,
+          "code": "companion",
+          "reason": "a constant beside ZDocumentExternalIdSchema, which follows the scheme"
+        },
+        {
+          "path": "packages/trpc/server/schema.ts",
+          "symbol": "ZGenericSuccessResponse",
+          "line": 12,
+          "code": "plain_value",
+          "reason": "a plain value (literals or built-ins only), not a schema like the members named `*Schema`"
+        },
+        {
+          "path": "packages/trpc/server/template-router/schema.ts",
+          "symbol": "MAX_TEMPLATE_PUBLIC_DESCRIPTION_LENGTH",
+          "line": 35,
+          "code": "companion",
+          "reason": "a constant beside ZBulkSendTemplateMutationSchema, which follows the scheme"
+        },
+        {
+          "path": "packages/trpc/server/template-router/schema.ts",
+          "symbol": "MAX_TEMPLATE_PUBLIC_TITLE_LENGTH",
+          "line": 34,
+          "code": "companion",
+          "reason": "a constant beside ZBulkSendTemplateMutationSchema, which follows the scheme"
+        }
+      ]
+    },
+    {
+      "id": "D-4785b8",
+      "rank": 11,
+      "shown_by_default": true,
+      "summary": "apps/remix: components in app/components/dialogs/** are named `*Dialog`, except a shared part (used by several members, not a member)",
+      "role": {
+        "package": "apps/remix",
+        "dir": "app/components/dialogs",
+        "file": "*",
+        "entry": "-",
+        "kind": "component",
+        "members": 94
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Dialog"
+      },
+      "evidence": {
+        "holders": 93,
+        "total": 93,
+        "lower_bound": 0.96,
+        "lift": 7.67,
+        "role_members": 94
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": false,
+        "reason": "below_bar",
+        "source": "crates/drift-mine/data/family-admission.json (eval/study/runs/dev-v3-relabel4-2026-11-07, bar 85% of 10)",
+        "family": "naming",
+        "accepted": 21,
+        "n": 37,
+        "text": "not shown to agents (family below admission bar: 56% of 37)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "apps/remix/app/components/dialogs/account-delete-dialog.tsx",
+        "symbol": "AccountDeleteDialog",
+        "line": 27
+      },
+      "outliers": [],
+      "outliers_total": 0,
+      "exempt": [
+        {
+          "path": "apps/remix/app/components/dialogs/organisation-email-domain-records-dialog.tsx",
+          "symbol": "OrganisationEmailDomainRecordContent",
+          "line": 47,
+          "code": "shared_part",
+          "reason": "shared part used by 2 members"
+        }
+      ]
+    },
+    {
+      "id": "D-694c8a",
+      "rank": 12,
+      "shown_by_default": true,
+      "summary": "files in apps/remix/** use lucide-react for icons, not react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react",
+      "role": {
+        "package": "apps/remix",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 216
+      },
+      "rule": {
+        "type": "prefers_library",
+        "group": "icons",
+        "preferred": "lucide-react"
+      },
+      "evidence": {
+        "holders": 213,
+        "total": 216,
+        "lower_bound": 0.96,
+        "lift": 1.0,
+        "split": [
+          [
+            "lucide-react",
+            215
+          ],
+          [
+            "react-icons",
+            3
+          ]
+        ]
+      },
+      "rule_kind": "prefers_library",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": false,
+        "reason": "below_bar",
+        "source": "crates/drift-mine/data/family-admission.json (eval/study/runs/dev-v3-relabel4-2026-11-07, bar 85% of 10)",
+        "family": "repo",
+        "accepted": 7,
+        "n": 15,
+        "text": "not shown to agents (family below admission bar: 46% of 15)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "apps/remix/app/components/dialogs/ai-field-detection-dialog.tsx",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "apps/remix/app/components/embed/embed-popup-auth.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/remix/app/components/forms/signin.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/remix/app/components/forms/signup.tsx",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 3
+    },
+    {
+      "id": "D-a10f62",
+      "rank": 13,
+      "shown_by_default": true,
+      "summary": "packages/trpc: exported values in server/admin-router/** (*.types files) are named `*Schema`, except a companion (a helper or constant beside the members that follow it)",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server/admin-router",
+        "file": "*.types",
+        "entry": "-",
+        "kind": "const",
+        "members": 99
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Schema"
+      },
+      "evidence": {
+        "holders": 97,
+        "total": 98,
+        "lower_bound": 0.944,
+        "lift": 1.659,
+        "role_members": 99
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": false,
+        "reason": "below_bar",
+        "source": "crates/drift-mine/data/family-admission.json (eval/study/runs/dev-v3-relabel4-2026-11-07, bar 85% of 10)",
+        "family": "naming",
+        "accepted": 21,
+        "n": 37,
+        "text": "not shown to agents (family below admission bar: 56% of 37)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "packages/trpc/server/admin-router/admin-search.types.ts",
+        "symbol": "ZAdminSearchRequestSchema",
+        "line": 21
+      },
+      "outliers": [
+        {
+          "path": "packages/trpc/server/admin-router/update-organisation-member-role.types.ts",
+          "symbol": "ZAdminRoleSelection",
+          "line": 8
+        }
+      ],
+      "outliers_total": 1,
+      "exempt": [
+        {
+          "path": "packages/trpc/server/admin-router/admin-search.types.ts",
+          "symbol": "ADMIN_SEARCH_MAX_QUERY_LENGTH",
+          "line": 19,
+          "code": "companion",
+          "reason": "a constant beside ZAdminSearchRequestSchema, which follows the scheme"
+        }
+      ]
+    },
+    {
+      "id": "D-545ea0",
+      "rank": 14,
+      "shown_by_default": true,
+      "summary": "apps/remix: components in app/components/dialogs/** render <Button>",
+      "role": {
+        "package": "apps/remix",
+        "dir": "app/components/dialogs",
+        "file": "*",
+        "entry": "-",
+        "kind": "component",
+        "members": 94
+      },
+      "rule": {
+        "type": "renders",
+        "component": "packages/ui/primitives/button.tsx#Button"
+      },
+      "evidence": {
+        "holders": 92,
+        "total": 94,
+        "lower_bound": 0.926,
+        "lift": 2.852
+      },
+      "rule_kind": "renders",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": false,
+        "reason": "below_bar",
+        "source": "crates/drift-mine/data/family-admission.json (eval/study/runs/dev-v3-relabel4-2026-11-07, bar 85% of 10)",
+        "family": "renders",
+        "accepted": 4,
+        "n": 10,
+        "text": "not shown to agents (family below admission bar: 40% of 10)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "apps/remix/app/components/dialogs/account-delete-dialog.tsx",
+        "symbol": "AccountDeleteDialog",
+        "line": 27
+      },
+      "outliers": [
+        {
+          "path": "apps/remix/app/components/dialogs/organisation-email-domain-records-dialog.tsx",
+          "symbol": "OrganisationEmailDomainRecordsDialog",
+          "line": 31
+        },
+        {
+          "path": "apps/remix/app/components/dialogs/sign-field-dropdown-dialog.tsx",
+          "symbol": "SignFieldDropdownDialog",
+          "line": 17
+        }
+      ],
+      "outliers_total": 2
+    },
+    {
+      "id": "D-aafe01",
+      "rank": 15,
+      "shown_by_default": false,
+      "summary": "packages/email: components in templates/** are named `*Template`",
+      "role": {
+        "package": "packages/email",
+        "dir": "templates",
+        "file": "*",
+        "entry": "-",
+        "kind": "component",
+        "members": 31
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Template"
+      },
+      "evidence": {
+        "holders": 28,
+        "total": 31,
+        "lower_bound": 0.751,
+        "lift": 27.258
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": false,
+        "reason": "below_bar",
+        "source": "crates/drift-mine/data/family-admission.json (eval/study/runs/dev-v3-relabel4-2026-11-07, bar 85% of 10)",
+        "family": "naming",
+        "accepted": 21,
+        "n": 37,
+        "text": "not shown to agents (family below admission bar: 56% of 37)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "packages/email/templates/access-auth-2fa.tsx",
+        "symbol": "AccessAuth2FAEmailTemplate",
+        "line": 18
+      },
+      "outliers": [
+        {
+          "path": "packages/email/templates/bulk-send-complete.tsx",
+          "symbol": "BulkSendCompleteEmail",
+          "line": 17
+        },
+        {
+          "path": "packages/email/templates/document-rejected.tsx",
+          "symbol": "DocumentRejectedEmail",
+          "line": 17
+        },
+        {
+          "path": "packages/email/templates/document-rejection-confirmed.tsx",
+          "symbol": "DocumentRejectionConfirmedEmail",
+          "line": 17
+        }
+      ],
+      "outliers_total": 3
+    }
+  ],
+  "largest_role": null
+}

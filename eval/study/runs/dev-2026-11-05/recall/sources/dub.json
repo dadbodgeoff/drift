@@ -1,0 +1,13 @@
+{
+  "repo": "dub",
+  "files": [
+    {
+      "path": "packages/hubspot-app/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/stripe-app/package.json",
+      "kind": "lint (package.json eslintConfig)"
+    }
+  ]
+}

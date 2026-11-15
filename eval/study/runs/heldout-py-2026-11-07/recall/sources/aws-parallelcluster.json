@@ -1,0 +1,17 @@
+{
+  "repo": "aws-parallelcluster",
+  "files": [
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "cli/.flake8",
+      "kind": "lint"
+    },
+    {
+      "path": "cli/.pylintrc",
+      "kind": "lint"
+    }
+  ]
+}

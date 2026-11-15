@@ -1,0 +1,14 @@
+{
+ "entry_points": [],
+ "guard_gaps": [],
+ "boundaries": {
+  "rules": []
+ },
+ "sinks": [],
+ "client_leaks": [],
+ "env": {},
+ "left_out": {
+  "files": 0,
+  "dirs": []
+ }
+}

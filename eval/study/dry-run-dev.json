@@ -1,0 +1,75 @@
+{
+  "//": "DEV dry-run manifest for eval/study/dry-run.mjs and HELDOUT-RUNBOOK.md step 2: two TypeScript and one Python DEV repo (same url and sha as eval/repos.json and eval/repos-py.json), never a held-out repo. language and framework_bucket are assigned by hand, in the primary sets' bucket ids, so the per-language and per-framework tables are exercised; tier, max and pool are copied from eval/holdout-primary.json (pipeline.test.mjs checks both).",
+  "tier": {
+    "//": "Decision D7 (eval/study/README.md decision log), approved by the founder 2026-11-06 and recorded before any held-out census. D5 (tier-d5.json) narrowed by rule kind and language. TypeScript/JavaScript: the default tier admits only call wrappers (wrapped_by:call) and layering (avoids:import); wrapped_by:decorator, wrapped_by:extends and wrapped_by:jsx move to the suggestion tier. Python: no rule kind is in the default tier; Python advises only and every Python proposal is suggestion tier. D5's conditions still apply on top of the rule kind: every symbol the rule names is defined in the repository (default.target \"in_repo\": no pkg:, global# or unresolved: target; lib.mjs namesPackage, drift_mine::tier::names_package) and the role has >= default.min_members members. The language of a proposal is read conservatively (lib.mjs proposalLanguage, drift_mine::tier::convention_language): py when any member of its role is Python (conventions.yaml evidence.python_members) or its example path is (.py/.pyi files and Python package manifests), ts otherwise. Role members are counted as the role's size (evidence.role_members when set, else total; exempt members count). DEFAULT tier = language in default.languages AND structured rule kind (lib.mjs ruleKind) in default.rule_kinds AND the rule names no symbol from outside the repository AND its role has >= default.min_members members. SUGGESTION tier = every other shown proposal. The not-wrong rate is reported over all shown proposals, both tiers. Release gate unchanged: a language's default tier ships as advise until it measures >= 95% default-tier accept under rubric v3, judged per D1, on a primary held-out run.",
+    "kind": "rule_kind",
+    "decision": "D7",
+    "default": {
+      "//": "TypeScript/JavaScript call wrappers and layering (import avoidance), each only when every symbol it names is defined in the repository, in roles of 15 or more members",
+      "rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "languages": [
+        "ts"
+      ],
+      "min_members": 15,
+      "target": "in_repo"
+    },
+    "suggestion": {
+      "//": "D5's suggestion kinds, plus decorators, base classes and JSX layout wrappers (D7); every Python proposal (languages); and default-tier kinds whose rule names a package, built-in or unresolved symbol, or whose role is small",
+      "rule_kinds": [
+        "calls",
+        "named",
+        "avoids:other",
+        "prefers_library",
+        "before",
+        "has_test",
+        "model_has",
+        "package_has",
+        "dependency_version",
+        "wrapped_by:try",
+        "control",
+        "directive",
+        "throws",
+        "passes_key",
+        "renders",
+        "wrapped_by:decorator",
+        "wrapped_by:extends",
+        "wrapped_by:jsx"
+      ],
+      "languages": [
+        "py"
+      ]
+    },
+    "not_wrong_over": "all_shown"
+  },
+  "max": 15,
+  "pool": 200,
+  "repos": [
+    {
+      "name": "documenso",
+      "url": "https://github.com/documenso/documenso",
+      "sha": "fdd0337bdd8f6afac64faf97113c65ed2dd0e2a2",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa",
+      "shape": "Remix + tRPC monorepo"
+    },
+    {
+      "name": "immich",
+      "url": "https://github.com/immich-app/immich",
+      "sha": "335f65a057d9fddbdf09b2386a102ca3c892820f",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs",
+      "shape": "NestJS server (+ Svelte web, not parsed)"
+    },
+    {
+      "name": "netbox",
+      "url": "https://github.com/netbox-community/netbox",
+      "sha": "56daec7debfd51fa991b45d6a40cb592b42b669d",
+      "language": "Python",
+      "framework_bucket": "django",
+      "shape": "Django + DRF (class-based views, viewsets, routers)"
+    }
+  ]
+}

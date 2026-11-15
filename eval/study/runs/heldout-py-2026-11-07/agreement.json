@@ -1,0 +1,94 @@
+{
+  "a": "eval/study/runs/heldout-py-2026-11-07/labels/A",
+  "b": "eval/study/runs/heldout-py-2026-11-07/labels/B",
+  "labels_sha256": {
+    "A": "0fc255097d6ac4b9210b0a9512b591ef097bd6717e22e1812cd6bfecf98eafbc",
+    "B": "42c720763369d5697ee117bff7145b4c29f35a25b98464662f408ead49004339"
+  },
+  "computed_at": "2026-11-07T20:11:22.646Z",
+  "rubric_sha256s": [
+    "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+  ],
+  "n": 44,
+  "scope": 44,
+  "exact": 0.8863636363636364,
+  "kappa": 0.7868217054263565,
+  "kappa_boot": {
+    "lo": 0.6189735614307932,
+    "hi": 0.9485981308411215,
+    "clusters": 9
+  },
+  "accept_vs_not": {
+    "n": 44,
+    "po": 0.9090909090909091,
+    "pe": 0.5,
+    "kappa": 0.8181818181818181
+  },
+  "wrong_vs_not": {
+    "n": 44,
+    "po": 0.8863636363636364,
+    "pe": 0.5,
+    "kappa": 0.7727272727272727
+  },
+  "confusion": {
+    "ACCEPT": {
+      "ACCEPT": 19,
+      "TRIVIAL": 0,
+      "WRONG": 3
+    },
+    "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 1,
+      "WRONG": 0
+    },
+    "WRONG": {
+      "ACCEPT": 1,
+      "TRIVIAL": 1,
+      "WRONG": 19
+    }
+  },
+  "mix": {
+    "A": {
+      "ACCEPT": 22,
+      "TRIVIAL": 1,
+      "WRONG": 21
+    },
+    "B": {
+      "ACCEPT": 20,
+      "TRIVIAL": 2,
+      "WRONG": 22
+    }
+  },
+  "disagreements": [
+    {
+      "uid": "dbt-charts/D-e818b0",
+      "repo": "dbt-charts",
+      "a": "WRONG",
+      "b": "ACCEPT"
+    },
+    {
+      "uid": "aws-parallelcluster/D-51bdb8",
+      "repo": "aws-parallelcluster",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "veritasgraph/D-1d585e",
+      "repo": "veritasgraph",
+      "a": "WRONG",
+      "b": "TRIVIAL"
+    },
+    {
+      "uid": "ods/D-4c758e",
+      "repo": "ods",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "ods/D-6e9535",
+      "repo": "ods",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+11 conventions from 12913 units in 967 roles (2 default tier, 9 suggestions)
+
+9 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-73b648] apps/web: server actions in modules/ee/** (actions files) are wrapped in authenticatedActionClient.inputSchema().action()
+    evidence: 56/58 (lower bound 0.88, lift 34.3)
+    tier:     default
+    example:  apps/web/modules/ee/ai-translation/lib/actions.ts#checkAITranslationAvailableAction
+    outlier:  apps/web/modules/ee/sso/actions.ts:7 doesSamlConnectionExistAction
+    outlier:  apps/web/modules/ee/unify-feedback/sources/actions.ts:19 getSurveysForUnifyAction
+
+ 2. [D-b8f1ee] files in packages/surveys/** do not import from apps/web/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 115/116 (lower bound 0.95, lift 3.0)
+    tier:     default
+    example:  packages/surveys/eslint.config.mjs#(file)
+    outlier:  packages/surveys/src/lib/styles.ts:1 (file)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 3. [D-87fcf9] apps/web: components in modules/** (page files) are named `*Page`
+    evidence: 41/42 (lower bound 0.88, lift 19.1)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/web/modules/auth/account-deleted/page.tsx#AccountDeletedPage
+    outlier:  apps/web/modules/ee/teams/workspace-teams/page.tsx:9 WorkspaceTeams
+
+ 4. [D-43e309] apps/web: functions in modules/ee/workflows/state/** are wrapped in atom()
+    evidence: 42/44 (lower bound 0.85, lift 114.5)
+    tier:     suggestion (rule names a symbol from outside the repo)
+    agents:   not shown to agents (family below admission bar: 0% of 1)
+    example:  apps/web/modules/ee/workflows/state/editor.ts#addWorkflowTriggerAtom
+    outlier:  apps/web/modules/ee/workflows/state/editor.ts:439 deriveTriggerEndingProblems
+    outlier:  apps/web/modules/ee/workflows/state/editor.ts:367 deriveWorkflowValidation
+
+ 5. [D-ec0946] apps/web: functions in modules/api/** (route files) pass `handler` to authenticatedApiClient()
+    evidence: 31/32 (lower bound 0.84, lift 147.9)
+    tier:     suggestion (rule kind passes_key)
+    agents:   not shown to agents (family below admission bar: 50% of 12)
+    example:  apps/web/modules/api/v2/management/contact-attribute-keys/[contactAttributeKeyId]/route.ts#DELETE
+    outlier:  apps/web/modules/api/v2/health/route.ts:4 GET
+
+ 6. [D-d64e88] files in apps/web/** use @paralleldrive/cuid2 for ids, not uuid/nanoid/cuid/ulid
+    evidence: 50/54 (lower bound 0.82, lift 1.0)
+    tier:     suggestion (rule kind prefers_library)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    split:    @paralleldrive/cuid2 50, uuid 4
+    example:  apps/web/app/(app)/workspaces/[workspaceId]/settings/workspace/integrations/notion/components/AddIntegrationModal.tsx#(file)
+    outlier:  apps/web/lib/utils/action-client/index.ts:1 (file)
+    outlier:  apps/web/modules/integrations/webhooks/lib/webhook.ts:1 (file)
+    outlier:  apps/web/modules/survey/editor/components/validation-rules-editor.tsx:1 (file)
+    ... 1 more outliers
+
+ 7. [D-3bb3c1] apps/web: HTTP handlers in app/api/v3/** (route files) pass `schemas` to withV3ApiWrapper()
+    evidence: 77/88 (lower bound 0.79, lift 44.5)
+    tier:     suggestion (rule kind passes_key)
+    agents:   not shown to agents (family below admission bar: 50% of 12)
+    example:  apps/web/app/api/v3/action-classes/route.ts#GET
+    outlier:  apps/web/app/api/v3/contact-attribute-keys/route.ts:10 GET
+    outlier:  apps/web/app/api/v3/contacts/route.ts:8 GET
+    outlier:  apps/web/app/api/v3/creatives/route.ts:13 GET
+    ... 8 more outliers
+
+ 8. [D-514f45] apps/web: files in lib/** have a test file, except a module of types (with no code to test)
+    evidence: 177/214 (lower bound 0.77, lift 2.2)
+    tier:     suggestion (rule kind has_test)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  apps/web/lib/ai/availability.ts#(file)
+    outlier:  apps/web/lib/analysis-export/files.ts:1 (file)
+    outlier:  apps/web/lib/authzed/backfill-apply.ts:1 (file)
+    outlier:  apps/web/lib/authzed/backfill-cli-command.ts:1 (file)
+    ... 34 more outliers
+    exempt:   apps/web/lib/authorization/evaluator.ts:1 (file) (declares types only: no code that runs to test)
+
+ 9. [D-66d37f] apps/web: functions in modules/api/** (route files) call handleApiError() before responses.successResponse()
+    evidence: 25/27 (lower bound 0.77, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  apps/web/modules/api/v2/management/contact-attribute-keys/[contactAttributeKeyId]/route.ts#DELETE
+    outlier:  apps/web/modules/api/v2/health/route.ts:4 GET
+    outlier:  apps/web/modules/api/v2/roles/route.ts:7 GET
+
+10. [D-b70b0a] apps/web: functions in modules/api/** (route files) pass `schemas` to authenticatedApiClient()
+    evidence: 29/32 (lower bound 0.76, lift 147.3)
+    tier:     suggestion (rule kind passes_key)
+    agents:   not shown to agents (family below admission bar: 50% of 12)
+    example:  apps/web/modules/api/v2/management/contact-attribute-keys/[contactAttributeKeyId]/route.ts#DELETE
+    outlier:  apps/web/modules/api/v2/health/route.ts:4 GET
+    outlier:  apps/web/modules/api/v2/me/route.ts:11 GET
+    outlier:  apps/web/modules/api/v2/roles/route.ts:7 GET
+
+11. [D-71e798] apps/web: server actions in modules/ee/** (actions files) pass `id` to assertCan()
+    evidence: 50/58 (lower bound 0.75, lift 33.7)
+    tier:     suggestion (rule kind passes_key)
+    agents:   not shown to agents (family below admission bar: 50% of 12)
+    example:  apps/web/modules/ee/ai-translation/lib/actions.ts#checkAITranslationAvailableAction
+    outlier:  apps/web/modules/ee/license-check/actions.ts:31 recheckLicenseAction
+    outlier:  apps/web/modules/ee/sso/actions.ts:7 doesSamlConnectionExistAction
+    outlier:  apps/web/modules/ee/teams/team-list/actions.ts:124 getTeamRoleAction
+    ... 5 more outliers
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

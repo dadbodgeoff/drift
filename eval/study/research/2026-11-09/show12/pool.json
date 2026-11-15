@@ -1,0 +1,891 @@
+{
+ "sensitivity": null,
+ "bar": {
+  "min_accept": 0.6,
+  "min_cards": 5
+ },
+ "max_outliers": 1,
+ "hidden": {
+  "ts": [
+   "calls",
+   "ordering",
+   "renders"
+  ],
+  "py": [
+   "ordering",
+   "repo"
+  ]
+ },
+ "admitted_now": {
+  "ts": [
+   "control 14/18 LORO min 71.4% (13 repos), pooled Wilson 54.8-91.0",
+   "naming 48/69 LORO min 67.2% (22 repos), pooled Wilson 57.9-79.2"
+  ],
+  "py": [
+   "naming 14/18 LORO min 75.0% (14 repos), pooled Wilson 54.8-91.0"
+  ]
+ },
+ "changes": [],
+ "summary": {
+  "by_source": {
+   "relabel5": {
+    "cards": 221,
+    "suggestion": 191,
+    "labelled": 221,
+    "ACCEPT": 139,
+    "TRIVIAL": 5,
+    "WRONG": 77
+   },
+   "map11-clean-relabel": {
+    "cards": 18,
+    "suggestion": 9,
+    "labelled": 18,
+    "ACCEPT": 13,
+    "TRIVIAL": 0,
+    "WRONG": 5
+   },
+   "dev3": {
+    "cards": 14,
+    "suggestion": 9,
+    "labelled": 14,
+    "ACCEPT": 8,
+    "TRIVIAL": 1,
+    "WRONG": 5
+   },
+   "dev4": {
+    "cards": 19,
+    "suggestion": 9,
+    "labelled": 19,
+    "ACCEPT": 13,
+    "TRIVIAL": 0,
+    "WRONG": 6
+   },
+   "show-before-cap-run2": {
+    "cards": 22,
+    "suggestion": 22,
+    "labelled": 22,
+    "ACCEPT": 14,
+    "TRIVIAL": 0,
+    "WRONG": 8
+   }
+  },
+  "by_language": {
+   "ts": {
+    "cards": 230,
+    "suggestion": 176,
+    "labelled": 230,
+    "ACCEPT": 144,
+    "TRIVIAL": 6,
+    "WRONG": 80
+   },
+   "py": {
+    "cards": 64,
+    "suggestion": 64,
+    "labelled": 64,
+    "ACCEPT": 43,
+    "TRIVIAL": 0,
+    "WRONG": 21
+   }
+  },
+  "by_pool": {
+   "dev": {
+    "cards": 258,
+    "suggestion": 219,
+    "labelled": 258,
+    "ACCEPT": 164,
+    "TRIVIAL": 5,
+    "WRONG": 89
+   },
+   "dev3": {
+    "cards": 17,
+    "suggestion": 12,
+    "labelled": 17,
+    "ACCEPT": 10,
+    "TRIVIAL": 1,
+    "WRONG": 6
+   },
+   "dev4": {
+    "cards": 19,
+    "suggestion": 9,
+    "labelled": 19,
+    "ACCEPT": 13,
+    "TRIVIAL": 0,
+    "WRONG": 6
+   }
+  },
+  "suggestion_by_language_family": {
+   "ts/argument_key": "6/12 (LORO min 33.3%, 6 repos)",
+   "ts/avoids_other": "1/2 (LORO min 0.0%, 2 repos)",
+   "ts/base_class": "11/18 (LORO min 53.8%, 9 repos)",
+   "ts/calls": "1/3 (LORO min 0.0%, 3 repos)",
+   "ts/control": "14/18 (LORO min 71.4%, 13 repos)",
+   "ts/decorator": "6/16 (LORO min 28.6%, 5 repos)",
+   "ts/jsx_wrapper": "2/2 (LORO min 100.0%, 2 repos)",
+   "ts/naming": "48/69 (LORO min 67.2%, 22 repos)",
+   "ts/ordering": "1/10 (LORO min 0.0%, 6 repos)",
+   "ts/renders": "4/10 (LORO min 33.3%, 4 repos)",
+   "ts/repo": "7/15 (LORO min 36.4%, 7 repos)",
+   "ts/wrapper": "0/1 (LORO min 0.0%, 1 repos)",
+   "py/argument_key": "2/4 (LORO min 33.3%, 3 repos)",
+   "py/avoids_other": "0/1 (LORO min 0.0%, 1 repos)",
+   "py/base_class": "5/8 (LORO min 50.0%, 6 repos)",
+   "py/calls": "7/11 (LORO min 55.6%, 7 repos)",
+   "py/control": "4/4 (LORO min 100.0%, 4 repos)",
+   "py/decorator": "4/7 (LORO min 25.0%, 5 repos)",
+   "py/import_source": "1/1 (LORO min 0.0%, 1 repos)",
+   "py/layering": "1/1 (LORO min 0.0%, 1 repos)",
+   "py/naming": "14/18 (LORO min 75.0%, 14 repos)",
+   "py/repo": "0/3 (LORO min 0.0%, 3 repos)",
+   "py/wrapper": "5/6 (LORO min 66.7%, 3 repos)"
+  },
+  "superseded": 3
+ },
+ "languages": {
+  "ts": {
+   "argument_key": {
+    "accepted": 6,
+    "n": 12,
+    "rate": 0.5,
+    "loro_min_rate": 0.333,
+    "hidden": false,
+    "admitted": false,
+    "repos": {
+     "formbricks": {
+      "accepted": 1,
+      "n": 4
+     },
+     "immich": {
+      "accepted": 0,
+      "n": 1
+     },
+     "infisical": {
+      "accepted": 0,
+      "n": 2
+     },
+     "midday": {
+      "accepted": 3,
+      "n": 3
+     },
+     "supabase": {
+      "accepted": 1,
+      "n": 1
+     },
+     "twenty": {
+      "accepted": 1,
+      "n": 1
+     }
+    }
+   },
+   "avoids_other": {
+    "accepted": 1,
+    "n": 2,
+    "rate": 0.5,
+    "loro_min_rate": 0,
+    "hidden": false,
+    "admitted": false,
+    "repos": {
+     "dub": {
+      "accepted": 0,
+      "n": 1
+     },
+     "excalidraw": {
+      "accepted": 1,
+      "n": 1
+     }
+    }
+   },
+   "base_class": {
+    "accepted": 11,
+    "n": 18,
+    "rate": 0.611,
+    "loro_min_rate": 0.538,
+    "hidden": false,
+    "admitted": false,
+    "repos": {
+     "Misago": {
+      "accepted": 0,
+      "n": 1
+     },
+     "cal.com": {
+      "accepted": 1,
+      "n": 1
+     },
+     "immich": {
+      "accepted": 1,
+      "n": 2
+     },
+     "midday": {
+      "accepted": 1,
+      "n": 1
+     },
+     "nest": {
+      "accepted": 1,
+      "n": 1
+     },
+     "novu": {
+      "accepted": 4,
+      "n": 5
+     },
+     "paperless-ngx": {
+      "accepted": 1,
+      "n": 1
+     },
+     "tasking-manager": {
+      "accepted": 0,
+      "n": 1
+     },
+     "twenty": {
+      "accepted": 2,
+      "n": 5
+     }
+    }
+   },
+   "calls": {
+    "accepted": 1,
+    "n": 3,
+    "rate": 0.333,
+    "loro_min_rate": 0,
+    "hidden": true,
+    "admitted": false,
+    "repos": {
+     "dub": {
+      "accepted": 0,
+      "n": 1
+     },
+     "open-wearables": {
+      "accepted": 1,
+      "n": 1
+     },
+     "supabase": {
+      "accepted": 0,
+      "n": 1
+     }
+    }
+   },
+   "control": {
+    "accepted": 14,
+    "n": 18,
+    "rate": 0.778,
+    "loro_min_rate": 0.714,
+    "hidden": false,
+    "admitted": true,
+    "repos": {
+     "Django-CRM": {
+      "accepted": 0,
+      "n": 1
+     },
+     "InvenTree": {
+      "accepted": 2,
+      "n": 2
+     },
+     "cal.com": {
+      "accepted": 0,
+      "n": 1
+     },
+     "dev3:T02": {
+      "accepted": 0,
+      "n": 1
+     },
+     "dev3:T07": {
+      "accepted": 1,
+      "n": 1
+     },
+     "dev3:T18": {
+      "accepted": 1,
+      "n": 1
+     },
+     "dev4:T03": {
+      "accepted": 1,
+      "n": 1
+     },
+     "dev4:T04": {
+      "accepted": 1,
+      "n": 1
+     },
+     "midday": {
+      "accepted": 1,
+      "n": 1
+     },
+     "novu": {
+      "accepted": 1,
+      "n": 2
+     },
+     "pontoon": {
+      "accepted": 1,
+      "n": 1
+     },
+     "supabase": {
+      "accepted": 4,
+      "n": 4
+     },
+     "twenty": {
+      "accepted": 1,
+      "n": 1
+     }
+    }
+   },
+   "decorator": {
+    "accepted": 6,
+    "n": 16,
+    "rate": 0.375,
+    "loro_min_rate": 0.286,
+    "hidden": false,
+    "admitted": false,
+    "repos": {
+     "cal.com": {
+      "accepted": 1,
+      "n": 2
+     },
+     "immich": {
+      "accepted": 0,
+      "n": 4
+     },
+     "novu": {
+      "accepted": 2,
+      "n": 2
+     },
+     "paperless-ngx": {
+      "accepted": 0,
+      "n": 1
+     },
+     "twenty": {
+      "accepted": 3,
+      "n": 7
+     }
+    }
+   },
+   "jsx_wrapper": {
+    "accepted": 2,
+    "n": 2,
+    "rate": 1,
+    "loro_min_rate": 1,
+    "hidden": false,
+    "admitted": false,
+    "repos": {
+     "infisical": {
+      "accepted": 1,
+      "n": 1
+     },
+     "supabase": {
+      "accepted": 1,
+      "n": 1
+     }
+    }
+   },
+   "naming": {
+    "accepted": 48,
+    "n": 69,
+    "rate": 0.696,
+    "loro_min_rate": 0.672,
+    "hidden": false,
+    "admitted": true,
+    "repos": {
+     "InvenTree": {
+      "accepted": 0,
+      "n": 1
+     },
+     "ai": {
+      "accepted": 2,
+      "n": 2
+     },
+     "cal.com": {
+      "accepted": 5,
+      "n": 5
+     },
+     "dev3:T02": {
+      "accepted": 3,
+      "n": 3
+     },
+     "dev3:T08": {
+      "accepted": 0,
+      "n": 1
+     },
+     "dev3:T13": {
+      "accepted": 3,
+      "n": 3
+     },
+     "dev4:T02": {
+      "accepted": 1,
+      "n": 1
+     },
+     "dev4:T04": {
+      "accepted": 1,
+      "n": 1
+     },
+     "dev4:T05": {
+      "accepted": 1,
+      "n": 1
+     },
+     "dev4:T23": {
+      "accepted": 0,
+      "n": 1
+     },
+     "documenso": {
+      "accepted": 5,
+      "n": 5
+     },
+     "dub": {
+      "accepted": 1,
+      "n": 4
+     },
+     "excalidraw": {
+      "accepted": 1,
+      "n": 1
+     },
+     "formbricks": {
+      "accepted": 1,
+      "n": 1
+     },
+     "immich": {
+      "accepted": 0,
+      "n": 2
+     },
+     "infisical": {
+      "accepted": 3,
+      "n": 8
+     },
+     "midday": {
+      "accepted": 2,
+      "n": 4
+     },
+     "novu": {
+      "accepted": 7,
+      "n": 9
+     },
+     "paperless-ngx": {
+      "accepted": 1,
+      "n": 1
+     },
+     "supabase": {
+      "accepted": 2,
+      "n": 2
+     },
+     "tasking-manager": {
+      "accepted": 1,
+      "n": 1
+     },
+     "twenty": {
+      "accepted": 8,
+      "n": 12
+     }
+    }
+   },
+   "ordering": {
+    "accepted": 1,
+    "n": 10,
+    "rate": 0.1,
+    "loro_min_rate": 0,
+    "hidden": true,
+    "admitted": false,
+    "repos": {
+     "InvenTree": {
+      "accepted": 0,
+      "n": 4
+     },
+     "ai": {
+      "accepted": 1,
+      "n": 1
+     },
+     "formbricks": {
+      "accepted": 0,
+      "n": 1
+     },
+     "immich": {
+      "accepted": 0,
+      "n": 1
+     },
+     "midday": {
+      "accepted": 0,
+      "n": 2
+     },
+     "tasking-manager": {
+      "accepted": 0,
+      "n": 1
+     }
+    }
+   },
+   "renders": {
+    "accepted": 4,
+    "n": 10,
+    "rate": 0.4,
+    "loro_min_rate": 0.333,
+    "hidden": true,
+    "admitted": false,
+    "repos": {
+     "documenso": {
+      "accepted": 0,
+      "n": 1
+     },
+     "dub": {
+      "accepted": 2,
+      "n": 5
+     },
+     "infisical": {
+      "accepted": 1,
+      "n": 3
+     },
+     "supabase": {
+      "accepted": 1,
+      "n": 1
+     }
+    }
+   },
+   "repo": {
+    "accepted": 7,
+    "n": 15,
+    "rate": 0.467,
+    "loro_min_rate": 0.364,
+    "hidden": false,
+    "admitted": false,
+    "repos": {
+     "Django-CRM": {
+      "accepted": 0,
+      "n": 1
+     },
+     "ai": {
+      "accepted": 2,
+      "n": 4
+     },
+     "documenso": {
+      "accepted": 0,
+      "n": 1
+     },
+     "formbricks": {
+      "accepted": 0,
+      "n": 2
+     },
+     "full-stack-fastapi-template": {
+      "accepted": 0,
+      "n": 1
+     },
+     "midday": {
+      "accepted": 2,
+      "n": 2
+     },
+     "supabase": {
+      "accepted": 3,
+      "n": 4
+     }
+    }
+   },
+   "wrapper": {
+    "accepted": 0,
+    "n": 1,
+    "rate": 0,
+    "loro_min_rate": 0,
+    "hidden": false,
+    "admitted": false,
+    "repos": {
+     "formbricks": {
+      "accepted": 0,
+      "n": 1
+     }
+    }
+   }
+  },
+  "py": {
+   "argument_key": {
+    "accepted": 2,
+    "n": 4,
+    "rate": 0.5,
+    "loro_min_rate": 0.333,
+    "hidden": false,
+    "admitted": false,
+    "repos": {
+     "Django-CRM": {
+      "accepted": 1,
+      "n": 1
+     },
+     "netbox": {
+      "accepted": 1,
+      "n": 2
+     },
+     "tasking-manager": {
+      "accepted": 0,
+      "n": 1
+     }
+    }
+   },
+   "avoids_other": {
+    "accepted": 0,
+    "n": 1,
+    "rate": 0,
+    "loro_min_rate": 0,
+    "hidden": false,
+    "admitted": false,
+    "repos": {
+     "simplelogin": {
+      "accepted": 0,
+      "n": 1
+     }
+    }
+   },
+   "base_class": {
+    "accepted": 5,
+    "n": 8,
+    "rate": 0.625,
+    "loro_min_rate": 0.5,
+    "hidden": false,
+    "admitted": false,
+    "repos": {
+     "InvenTree": {
+      "accepted": 0,
+      "n": 1
+     },
+     "Misago": {
+      "accepted": 2,
+      "n": 2
+     },
+     "netbox": {
+      "accepted": 1,
+      "n": 1
+     },
+     "open-wearables": {
+      "accepted": 1,
+      "n": 1
+     },
+     "ralph": {
+      "accepted": 1,
+      "n": 2
+     },
+     "tasking-manager": {
+      "accepted": 0,
+      "n": 1
+     }
+    }
+   },
+   "calls": {
+    "accepted": 7,
+    "n": 11,
+    "rate": 0.636,
+    "loro_min_rate": 0.556,
+    "hidden": false,
+    "admitted": false,
+    "repos": {
+     "InvenTree": {
+      "accepted": 1,
+      "n": 1
+     },
+     "Misago": {
+      "accepted": 2,
+      "n": 2
+     },
+     "changedetection.io": {
+      "accepted": 1,
+      "n": 1
+     },
+     "netbox": {
+      "accepted": 1,
+      "n": 3
+     },
+     "open-wearables": {
+      "accepted": 1,
+      "n": 2
+     },
+     "paperless-ngx": {
+      "accepted": 1,
+      "n": 1
+     },
+     "wger": {
+      "accepted": 0,
+      "n": 1
+     }
+    }
+   },
+   "control": {
+    "accepted": 4,
+    "n": 4,
+    "rate": 1,
+    "loro_min_rate": 1,
+    "hidden": false,
+    "admitted": false,
+    "repos": {
+     "Misago": {
+      "accepted": 1,
+      "n": 1
+     },
+     "changedetection.io": {
+      "accepted": 1,
+      "n": 1
+     },
+     "fastapi": {
+      "accepted": 1,
+      "n": 1
+     },
+     "ralph": {
+      "accepted": 1,
+      "n": 1
+     }
+    }
+   },
+   "decorator": {
+    "accepted": 4,
+    "n": 7,
+    "rate": 0.571,
+    "loro_min_rate": 0.25,
+    "hidden": false,
+    "admitted": false,
+    "repos": {
+     "InvenTree": {
+      "accepted": 0,
+      "n": 1
+     },
+     "changedetection.io": {
+      "accepted": 0,
+      "n": 1
+     },
+     "lotus": {
+      "accepted": 1,
+      "n": 1
+     },
+     "netbox": {
+      "accepted": 3,
+      "n": 3
+     },
+     "wger": {
+      "accepted": 0,
+      "n": 1
+     }
+    }
+   },
+   "import_source": {
+    "accepted": 1,
+    "n": 1,
+    "rate": 1,
+    "loro_min_rate": 0,
+    "hidden": false,
+    "admitted": false,
+    "repos": {
+     "langchain": {
+      "accepted": 1,
+      "n": 1
+     }
+    }
+   },
+   "layering": {
+    "accepted": 1,
+    "n": 1,
+    "rate": 1,
+    "loro_min_rate": 0,
+    "hidden": false,
+    "admitted": false,
+    "repos": {
+     "simplelogin": {
+      "accepted": 1,
+      "n": 1
+     }
+    }
+   },
+   "naming": {
+    "accepted": 14,
+    "n": 18,
+    "rate": 0.778,
+    "loro_min_rate": 0.75,
+    "hidden": false,
+    "admitted": true,
+    "repos": {
+     "InvenTree": {
+      "accepted": 2,
+      "n": 2
+     },
+     "Misago": {
+      "accepted": 1,
+      "n": 1
+     },
+     "dev3:P03": {
+      "accepted": 1,
+      "n": 1
+     },
+     "dev3:P09": {
+      "accepted": 0,
+      "n": 1
+     },
+     "dev4:P04": {
+      "accepted": 1,
+      "n": 1
+     },
+     "dev4:P11": {
+      "accepted": 1,
+      "n": 1
+     },
+     "dev4:P13": {
+      "accepted": 0,
+      "n": 1
+     },
+     "lotus": {
+      "accepted": 1,
+      "n": 1
+     },
+     "netbox": {
+      "accepted": 1,
+      "n": 2
+     },
+     "paperless-ngx": {
+      "accepted": 1,
+      "n": 1
+     },
+     "ralph": {
+      "accepted": 2,
+      "n": 2
+     },
+     "saleor": {
+      "accepted": 1,
+      "n": 1
+     },
+     "tasking-manager": {
+      "accepted": 1,
+      "n": 1
+     },
+     "wger": {
+      "accepted": 1,
+      "n": 2
+     }
+    }
+   },
+   "repo": {
+    "accepted": 0,
+    "n": 3,
+    "rate": 0,
+    "loro_min_rate": 0,
+    "hidden": true,
+    "admitted": false,
+    "repos": {
+     "langchain": {
+      "accepted": 0,
+      "n": 1
+     },
+     "lotus": {
+      "accepted": 0,
+      "n": 1
+     },
+     "saleor": {
+      "accepted": 0,
+      "n": 1
+     }
+    }
+   },
+   "wrapper": {
+    "accepted": 5,
+    "n": 6,
+    "rate": 0.833,
+    "loro_min_rate": 0.667,
+    "hidden": false,
+    "admitted": false,
+    "repos": {
+     "Django-CRM": {
+      "accepted": 3,
+      "n": 3
+     },
+     "open-wearables": {
+      "accepted": 0,
+      "n": 1
+     },
+     "tasking-manager": {
+      "accepted": 2,
+      "n": 2
+     }
+    }
+   }
+  }
+ }
+}

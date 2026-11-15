@@ -1,0 +1,9 @@
+{
+  "repo": "flask",
+  "files": [
+    {
+      "path": "pyproject.toml",
+      "kind": "lint (python config sections)"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "repo": "midday",
+  "files": [
+    {
+      "path": "packages/accounting/ARCHITECTURE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "biome.json",
+      "kind": "lint"
+    }
+  ]
+}

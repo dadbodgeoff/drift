@@ -1,0 +1,164 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - actions
+  - api
+  - build
+  - eslint
+  - jcode
+  - layout
+  - loading
+  - page
+  - service
+  - skills
+  suffixes:
+  - config
+  - test
+conventions:
+- id: D-cc64dd
+  status: proposed
+  mode: advise
+  summary: prisma models have a `id` field
+  role:
+    package: ""
+    dir: prisma
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: id
+  evidence:
+    holders: 83
+    total: 91
+    lower_bound: 0.836
+    lift: 1.013
+  example: packages/db/prisma/schema.prisma#Account
+  selector_version: 3
+- id: D-b911e8
+  status: proposed
+  mode: advise
+  summary: "packages/api: functions in src/routes/** are named `*Routes`, except 3 companions (a helper or constant beside the members that follow it) and 2 shared parts (used by several members, not a member)"
+  role:
+    package: packages/api
+    dir: src/routes
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: "*Routes"
+  evidence:
+    holders: 75
+    total: 82
+    lower_bound: 0.834
+    lift: 26.689
+    role_members: 87
+  example: packages/api/src/routes/agent-approval-outcomes.ts#agentApprovalOutcomeRoutes
+  selector_version: 3
+- id: D-1e0151
+  status: proposed
+  mode: advise
+  summary: "packages/api: functions in src/ee/routes/** are named `*Routes`, except a shared part (used by several members, not a member)"
+  role:
+    package: packages/api
+    dir: src/ee/routes
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: "*Routes"
+  evidence:
+    holders: 19
+    total: 19
+    lower_bound: 0.832
+    lift: 29.412
+    role_members: 20
+  example: packages/api/src/ee/routes/aws-marketplace.ts#awsMarketplaceRoutes
+  selector_version: 3
+- id: D-391beb
+  status: proposed
+  mode: advise
+  summary: prisma models have a `createdAt` field
+  role:
+    package: ""
+    dir: prisma
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: createdAt
+  evidence:
+    holders: 82
+    total: 91
+    lower_bound: 0.823
+    lift: 1.006
+  example: packages/db/prisma/schema.prisma#Account
+  selector_version: 3
+- id: D-399322
+  status: proposed
+  mode: advise
+  summary: sql models have a `id` field
+  role:
+    package: ""
+    dir: sql
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: id
+  evidence:
+    holders: 98
+    total: 110
+    lower_bound: 0.819
+    lift: 0.989
+  example: packages/db/prisma/migrations/0_init/migration.sql#AuditLog
+  selector_version: 3
+- id: D-608b7b
+  status: proposed
+  mode: advise
+  summary: sql models have a `created_at` field
+  role:
+    package: ""
+    dir: sql
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: created_at
+  evidence:
+    holders: 98
+    total: 110
+    lower_bound: 0.819
+    lift: 0.995
+  example: packages/db/prisma/migrations/0_init/migration.sql#AuditLog
+  selector_version: 3
+- id: D-e596bb
+  status: proposed
+  mode: advise
+  summary: "apps/web: pages in src/app/(dashboard)/** (page files) are named `*Page`"
+  role:
+    package: apps/web
+    dir: src/app/(dashboard)
+    file: page
+    entry: page
+    kind: component
+  rule:
+    type: named
+    pattern: "*Page"
+  evidence:
+    holders: 30
+    total: 33
+    lower_bound: 0.764
+    lift: 9.503
+  example: >-
+    apps/web/src/app/(dashboard)/org/[orgId]/(admin)/channels/page.tsx#ChannelsSettingsPage
+  selector_version: 3

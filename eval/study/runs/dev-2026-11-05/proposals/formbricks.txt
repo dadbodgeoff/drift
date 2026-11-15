@@ -1,0 +1,97 @@
+15 conventions from 12937 units in 990 roles
+
+ 1. [D-60208a] apps/web: server actions in modules/** (actions files) are wrapped in actionClient.action() or actionClient.inputSchema().action() or authenticatedActionClient.inputSchema().action()
+    evidence: 117/119 (lower bound 0.94, lift 32.0)
+    split:    authenticatedActionClient.inputSchema().action 107, actionClient.inputSchema().action 8, actionClient.action 2
+    example:  apps/web/modules/analysis/components/SingleResponseCard/actions.ts#createTagAction
+    outlier:  apps/web/modules/account/components/DeleteAccountModal/actions.ts:16 requestSsoAccountDeletionEmailAction
+    outlier:  apps/web/modules/ee/unify-feedback/sources/actions.ts:19 getSurveysForUnifyAction
+
+ 2. [D-73b648] apps/web: server actions in modules/ee/** (actions files) are wrapped in authenticatedActionClient.inputSchema().action()
+    evidence: 56/58 (lower bound 0.88, lift 33.7)
+    example:  apps/web/modules/ee/ai-translation/lib/actions.ts#checkAITranslationAvailableAction
+    outlier:  apps/web/modules/ee/sso/actions.ts:7 doesSamlConnectionExistAction
+    outlier:  apps/web/modules/ee/unify-feedback/sources/actions.ts:19 getSurveysForUnifyAction
+
+ 3. [D-5303d3] apps/web: server actions in app/** (actions files) are wrapped in authenticatedActionClient.inputSchema().action()
+    evidence: 28/29 (lower bound 0.83, lift 33.7)
+    example:  apps/web/app/(app)/account/settings/authorized-apps/actions.ts#revokeOAuthConsentAction
+    outlier:  apps/web/app/(app)/workspaces/[workspaceId]/settings/account/profile/actions.ts:126 resetPasswordAction
+
+ 4. [D-cf32c5] apps/web: HTTP handlers in app/api/v3/** (route files) pass `auth` to withV3ApiWrapper()
+    evidence: 88/95 (lower bound 0.86, lift 23.8)
+    example:  apps/web/app/api/v3/action-classes/route.ts#GET
+    outlier:  apps/web/app/api/v3/feedbackRecords/[[...path]]/route.ts:12 DELETE
+    outlier:  apps/web/app/api/v3/feedbackRecords/[[...path]]/route.ts:8 GET
+    outlier:  apps/web/app/api/v3/feedbackRecords/[[...path]]/route.ts:13 HEAD
+    outlier:  apps/web/app/api/v3/feedbackRecords/[[...path]]/route.ts:14 OPTIONS
+    outlier:  apps/web/app/api/v3/feedbackRecords/[[...path]]/route.ts:11 PATCH
+    outlier:  apps/web/app/api/v3/feedbackRecords/[[...path]]/route.ts:9 POST
+    outlier:  apps/web/app/api/v3/feedbackRecords/[[...path]]/route.ts:10 PUT
+
+ 5. [D-ec0946] apps/web: functions in modules/api/** (route files) pass `handler` to authenticatedApiClient()
+    evidence: 31/32 (lower bound 0.84, lift 145.4)
+    example:  apps/web/modules/api/v2/management/contact-attribute-keys/[contactAttributeKeyId]/route.ts#DELETE
+    outlier:  apps/web/modules/api/v2/health/route.ts:4 GET
+
+ 6. [D-b3462f] files in apps/web/** do not import from packages/surveys/**
+    evidence: 2952/2953 (lower bound 1.00, lift 3.0)
+    example:  apps/web/.prettierrc.js#(file)
+    outlier:  apps/web/modules/api/lib/validation.ts:1 (file)
+
+ 7. [D-b70b0a] apps/web: functions in modules/api/** (route files) pass `schemas` to authenticatedApiClient()
+    evidence: 29/32 (lower bound 0.76, lift 144.8)
+    example:  apps/web/modules/api/v2/management/contact-attribute-keys/[contactAttributeKeyId]/route.ts#DELETE
+    outlier:  apps/web/modules/api/v2/health/route.ts:4 GET
+    outlier:  apps/web/modules/api/v2/me/route.ts:11 GET
+    outlier:  apps/web/modules/api/v2/roles/route.ts:7 GET
+
+ 8. [D-71e798] apps/web: server actions in modules/ee/** (actions files) pass `id` to assertCan()
+    evidence: 50/58 (lower bound 0.75, lift 33.1)
+    example:  apps/web/modules/ee/ai-translation/lib/actions.ts#checkAITranslationAvailableAction
+    outlier:  apps/web/modules/ee/license-check/actions.ts:31 recheckLicenseAction
+    outlier:  apps/web/modules/ee/sso/actions.ts:7 doesSamlConnectionExistAction
+    outlier:  apps/web/modules/ee/teams/team-list/actions.ts:124 getTeamRoleAction
+    outlier:  apps/web/modules/ee/two-factor-auth/actions.ts:59 disableTwoFactorAuthAction
+    outlier:  apps/web/modules/ee/two-factor-auth/actions.ts:33 enableTwoFactorAuthAction
+    outlier:  apps/web/modules/ee/two-factor-auth/actions.ts:14 setupTwoFactorAuthAction
+    outlier:  apps/web/modules/ee/unify-feedback/actions.ts:60 deleteFeedbackRecordAction
+    outlier:  apps/web/modules/ee/unify-feedback/actions.ts:23 retrieveFeedbackRecordAction
+
+ 9. [D-5adbb0] apps/web: functions in modules/hub/** (service files) call createHubResultFromError()
+    evidence: 22/23 (lower bound 0.79, lift 215.4)
+    example:  apps/web/modules/hub/service.ts#countFeedbackRecords
+    outlier:  apps/web/modules/hub/service.ts:373 getFeedbackRecordTenant
+
+10. [D-94667f] apps/web: components in modules/ui/components/sidebar/** call cn()
+    evidence: 22/23 (lower bound 0.79, lift 17.4)
+    example:  apps/web/modules/ui/components/sidebar/index.tsx#Sidebar
+    outlier:  apps/web/modules/ui/components/sidebar/index.tsx:635 SidebarMenuSubItem
+
+11. [D-43e309] apps/web: functions in modules/ee/workflows/state/** are wrapped in atom()
+    evidence: 42/44 (lower bound 0.85, lift 112.6)
+    example:  apps/web/modules/ee/workflows/state/editor.ts#addWorkflowTriggerAtom
+    outlier:  apps/web/modules/ee/workflows/state/editor.ts:439 deriveTriggerEndingProblems
+    outlier:  apps/web/modules/ee/workflows/state/editor.ts:367 deriveWorkflowValidation
+
+12. [D-b8f1ee] files in packages/surveys/** do not import from apps/web/**
+    evidence: 115/116 (lower bound 0.95, lift 3.0)
+    example:  packages/surveys/eslint.config.mjs#(file)
+    outlier:  packages/surveys/src/lib/styles.ts:1 (file)
+
+13. [D-87fcf9] apps/web: components in modules/** (page files) are named `*Page`
+    evidence: 41/42 (lower bound 0.88, lift 19.1)
+    example:  apps/web/modules/auth/account-deleted/page.tsx#AccountDeletedPage
+    outlier:  apps/web/modules/ee/teams/workspace-teams/page.tsx:9 WorkspaceTeams
+
+14. [D-c7604b] apps/web: exported values in lib/** (*.mock files) are named `mock*`
+    evidence: 53/55 (lower bound 0.88, lift 50.5)
+    example:  apps/web/lib/i18n/i18n.mock.ts#mockCalQuestion
+    outlier:  apps/web/lib/survey/__mock__/survey.mock.ts:325 createSurveyInput
+    outlier:  apps/web/lib/survey/__mock__/survey.mock.ts:333 updateSurveyInput
+
+15. [D-ad4840] apps/web: exported values in modules/** (schemas files) are named `*Input`
+    evidence: 21/22 (lower bound 0.78, lift 21.6)
+    example:  apps/web/modules/mcp/tools/schemas.ts#ZMcpCountFeedbackRecordsInput
+    outlier:  apps/web/modules/mcp/tools/schemas.ts:174 SURVEY_BLOCK_EXAMPLE
+

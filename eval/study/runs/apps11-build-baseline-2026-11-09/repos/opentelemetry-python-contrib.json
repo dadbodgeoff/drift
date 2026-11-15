@@ -1,0 +1,2209 @@
+{
+  "name": "opentelemetry-python-contrib",
+  "repo": "open-telemetry/opentelemetry-python-contrib",
+  "sha": "201e796eeb9fb3f078b6f52489a19a8e0f8b0543",
+  "loc": 121843,
+  "shape": {
+    "mix": "multi-py",
+    "shape": "services",
+    "js_dirs": 0,
+    "py_dirs": 73,
+    "workspace_files": [],
+    "frontend_dirs": [],
+    "backend_dirs": [
+      "instrumentation/opentelemetry-instrumentation-django",
+      "instrumentation/opentelemetry-instrumentation-fastapi",
+      "instrumentation/opentelemetry-instrumentation-flask"
+    ]
+  },
+  "packages": [
+    {
+      "dir": "_template",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 2,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 2,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "exporter/opentelemetry-exporter-credential-provider-gcp",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "exporter/opentelemetry-exporter-prometheus-remote-write",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 8,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 8,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "exporter/opentelemetry-exporter-richconsole",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 4,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 4,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation-genai/opentelemetry-instrumentation-openai-agents-v2",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 17,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 17,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation-genai/opentelemetry-instrumentation-openai-v2",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 61,
+        "roles": 13,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 61,
+        "roles": 13,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation-genai/opentelemetry-instrumentation-vertexai",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 27,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 27,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-aio-pika",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 12,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 12,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-aiohttp-client",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 6,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 6,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-aiohttp-server",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 21,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 21,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-aiokafka",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 8,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 8,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-aiopg",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 21,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 21,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-asgi",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 18,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 18,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-asyncclick",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 7,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 7,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-asyncio",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 22,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 22,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-asyncpg",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-aws-lambda",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 11,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 11,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-boto3sqs",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 9,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 9,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-botocore",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 34,
+        "roles": 6,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 34,
+        "roles": 6,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-cassandra",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-celery",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 26,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 26,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-click",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-confluent-kafka",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 13,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 13,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-dbapi",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 17,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 17,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-django",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 13,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 13,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-exceptions",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-falcon",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-fastapi",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-flask",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 7,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 7,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-grpc",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 42,
+        "roles": 13,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 42,
+        "roles": 13,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-httpx",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 16,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 16,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-jinja2",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 10,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 10,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-kafka-python",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 11,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 11,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-logging",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 17,
+        "roles": 4,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 17,
+        "roles": 4,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-mysql",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-mysqlclient",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-pika",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 10,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 10,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-psycopg",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 10,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 10,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-psycopg2",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 7,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 7,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-pymemcache",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 7,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 7,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-pymongo",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 13,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 13,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-pymssql",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-pymysql",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-pyramid",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 11,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 11,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-redis",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 14,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 14,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-remoulade",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 10,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 10,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-requests",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 6,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 6,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-sqlalchemy",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 7,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 7,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-sqlite3",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 6,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 6,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-starlette",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-structlog",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 6,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 6,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-system-metrics",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 7,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 7,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-threading",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-tornado",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 13,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 13,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-tortoiseorm",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 8,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 8,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-urllib",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-urllib3",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 6,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 6,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-valkey-py",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 4,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 4,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "instrumentation/opentelemetry-instrumentation-wsgi",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 17,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 17,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "opamp/opentelemetry-opamp-client",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 36,
+        "roles": 4,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 36,
+        "roles": 4,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "opentelemetry-contrib-instrumentations",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 2,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 2,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "opentelemetry-distro",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "opentelemetry-instrumentation",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 67,
+        "roles": 10,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 67,
+        "roles": 10,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "processor/opentelemetry-processor-baggage",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 11,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 11,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "propagator/opentelemetry-propagator-aws-xray",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 24,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 24,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "propagator/opentelemetry-propagator-ot-trace",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 8,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 8,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "resource/opentelemetry-resource-detector-azure",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 13,
+        "roles": 6,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 13,
+        "roles": 6,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "resource/opentelemetry-resource-detector-containerid",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 5,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "resource/opentelemetry-resourcedetector-gcp",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 72,
+        "roles": 13,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 72,
+        "roles": 13,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "sdk-extension/opentelemetry-sdk-extension-aws",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 40,
+        "roles": 6,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 40,
+        "roles": 6,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "util/opentelemetry-util-genai",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 85,
+        "roles": 21,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 85,
+        "roles": 21,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "util/opentelemetry-util-http",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 35,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 35,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    }
+  ],
+  "root": {
+    "default": {
+      "shown": 0,
+      "conventions": 0,
+      "units": 1226,
+      "roles": 72,
+      "tiers": {
+        "default": 0,
+        "suggestion": 0
+      },
+      "python_withheld": 0,
+      "secs": 3,
+      "cards": []
+    },
+    "python_opt_in": {
+      "shown": 0,
+      "conventions": 0,
+      "units": 1226,
+      "roles": 72,
+      "tiers": {
+        "default": 0,
+        "suggestion": 0
+      },
+      "python_withheld": null,
+      "secs": 1,
+      "cards": []
+    }
+  }
+}

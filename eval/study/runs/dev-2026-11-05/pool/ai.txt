@@ -1,0 +1,138 @@
+21 conventions from 11281 units in 706 roles
+
+ 1. [D-20e2d4] examples/harness-e2e-next: pages in app/** (page files) render inside <ChatIdProvider>
+    evidence: 95/96 (lower bound 0.94, lift 5.8)
+    example:  examples/harness-e2e-next/app/harness/acp-codex/ai-sdk-coding/page.tsx#CodexACPAiSdkCodingPage
+    outlier:  examples/harness-e2e-next/app/page.tsx:188 Home
+
+ 2. [D-fc5ef7] packages/codemod: functions in src/codemods/** are wrapped in createTransformer()
+    evidence: 105/110 (lower bound 0.90, lift 22.4)
+    example:  packages/codemod/src/codemods/v4/remove-ai-stream-methods-from-stream-text-result.ts#default
+    outlier:  packages/codemod/src/codemods/lib/add-await-fn.ts:3 addAwaitFn
+    outlier:  packages/codemod/src/codemods/lib/add-comment.ts:26 insertCommentOnce
+    outlier:  packages/codemod/src/codemods/lib/create-transformer.ts:32 createTransformer
+    ... 2 more outliers
+
+ 3. [D-a08166] examples/ai-e2e-next: exported values in agent/** call ToolLoopAgent(new)()
+    evidence: 40/41 (lower bound 0.87, lift 29.4)
+    example:  examples/ai-e2e-next/agent/anthropic/advisor-20260301-agent.ts#anthropicAdvisor20260301Agent
+    outlier:  examples/ai-e2e-next/agent/openai/metadata-agent.ts:5 exampleMetadataSchema
+
+ 4. [D-e8c51d] examples/ai-e2e-next: pages in app/chat/** (page files) call useChat()
+    evidence: 98/104 (lower bound 0.88, lift 3.7)
+    example:  examples/ai-e2e-next/app/chat/anthropic-advisor-tool/page.tsx#TestAnthropicAdvisor20260301
+    outlier:  examples/ai-e2e-next/app/chat/persistence-metadata/[chatId]/page.tsx:5 Page
+    outlier:  examples/ai-e2e-next/app/chat/persistence-single-message/[id]/page.tsx:4 Page
+    outlier:  examples/ai-e2e-next/app/chat/persistence/[id]/page.tsx:4 Page
+    ... 3 more outliers
+
+ 5. [D-6ac837] examples/ai-e2e-next: pages in app/chat/** (page files) pass `transport` to useChat()
+    evidence: 94/104 (lower bound 0.83, lift 3.9)
+    example:  examples/ai-e2e-next/app/chat/anthropic-advisor-tool/page.tsx#TestAnthropicAdvisor20260301
+    outlier:  examples/ai-e2e-next/app/chat/attachments-append/page.tsx:7 Page
+    outlier:  examples/ai-e2e-next/app/chat/attachments-url/page.tsx:9 Page
+    outlier:  examples/ai-e2e-next/app/chat/attachments/page.tsx:7 Page
+    ... 7 more outliers
+
+ 6. [D-352fc3] examples/ai-e2e-next: pages in app/chat/** (page files) call DefaultChatTransport(new)()
+    evidence: 89/104 (lower bound 0.78, lift 4.1)
+    example:  examples/ai-e2e-next/app/chat/anthropic-advisor-tool/page.tsx#TestAnthropicAdvisor20260301
+    outlier:  examples/ai-e2e-next/app/chat/attachments-append/page.tsx:7 Page
+    outlier:  examples/ai-e2e-next/app/chat/attachments-url/page.tsx:9 Page
+    outlier:  examples/ai-e2e-next/app/chat/attachments/page.tsx:7 Page
+    ... 12 more outliers
+
+ 7. [D-17ad34] packages/ai: classes in src/error/** call AISDKError.hasMarker()
+    evidence: 19/20 (lower bound 0.76, lift 5.8)
+    example:  packages/ai/src/error/invalid-argument-error.ts#InvalidArgumentError
+    outlier:  packages/ai/src/error/unsupported-model-version-error.ts:6 UnsupportedModelVersionError
+
+ 8. [D-55e44c] examples/ai-e2e-next: components in components/tool/** are named `*View`
+    evidence: 31/32 (lower bound 0.84, lift 13.2)
+    example:  examples/ai-e2e-next/components/tool/anthropic-advisor-20260301-view.tsx#AnthropicAdvisor20260301View
+    outlier:  examples/ai-e2e-next/components/tool/responses-text.tsx:34 ResponsesText
+
+ 9. [D-7d20a8] examples/ai-e2e-next: exported values in app/** (route files) are named `max*`
+    evidence: 45/48 (lower bound 0.83, lift 20.9)
+    example:  examples/ai-e2e-next/app/api/chat/anthropic-compaction/route.ts#maxDuration
+    outlier:  examples/ai-e2e-next/app/api/chat/code-mode/route.ts:4 runtime
+    outlier:  examples/ai-e2e-next/app/api/code-execution-files/anthropic-microsoft/[file]/route.ts:1 dynamic
+    outlier:  examples/ai-e2e-next/app/api/code-execution-files/anthropic/[file]/route.ts:1 dynamic
+
+10. [D-5590d9] packages/harness: exported values in src/v1/** are named `harness*`
+    evidence: 45/49 (lower bound 0.81, lift 26.5)
+    example:  packages/harness/src/v1/harness-v1-bridge-protocol.ts#harnessV1BridgeAbortInboundSchema
+    outlier:  packages/harness/src/v1/harness-v1-bridge-protocol.ts:316 experimental_harnessV1BridgeUserMessageInboundSchema
+    outlier:  packages/harness/src/v1/harness-v1-bridge-protocol.ts:148 experimental_harnessV1BridgeUserMessageResponseSchema
+    outlier:  packages/harness/src/v1/harness-v1-builtin-tool.ts:14 HARNESS_V1_BUILTIN_TOOLS
+    ... 1 more outliers
+
+11. [D-1c736f] files in packages/harness-opencode/src/bridge/** have a test file
+    evidence: 18/19 (lower bound 0.75, lift 6.5)
+    example:  packages/harness-opencode/src/bridge/create-emit-stream-event.ts#(file)
+    outlier:  packages/harness-opencode/src/bridge/opencode-types.ts:1 (file)
+
+12. [D-da3a46] packages/gateway: classes in src/** do not throw a bare Error
+    evidence: 23/24 (lower bound 0.80, lift 4.0)
+    example:  packages/gateway/src/errors/gateway-authentication-error.ts#GatewayAuthenticationError
+    outlier:  packages/gateway/src/gateway-realtime-model.ts:40 GatewayRealtimeModel
+
+13. [D-9c077a] files in examples/ai-functions/** use zod for validation, not yup/joi/valibot/superstruct
+    evidence: 582/583 (lower bound 0.99, lift 1.0)
+    split:    zod 582, valibot 1
+    example:  examples/ai-functions/src/agent/anthropic/generate-output-array.ts#(file)
+    outlier:  examples/ai-functions/src/generate-text/anthropic/output-object-valibot.ts:1 (file)
+
+14. [D-85dab9] workspace packages depend on typescript@6.0.3
+    evidence: 112/114 (lower bound 0.94, lift 1.0)
+    split:    6.0.3 112, 5.8.3 2
+    example:  apps/docs/package.json#ai-sdk-docs
+    outlier:  packages/heygen/package.json:1 @ai-sdk/heygen
+    outlier:  packages/topaz/package.json:1 @ai-sdk/topaz
+
+15. [D-474a89] workspace packages depend on zod@3.25.76
+    evidence: 90/101 (lower bound 0.81, lift 1.0)
+    split:    3.25.76 90, 4.4.3 7, 4.5.4 1, ^3.25.76 1, ^4.1.8 1, ^4.4.3 1
+    example:  examples/ai-e2e-next/package.json#@example/next-openai
+    outlier:  examples/ai-functions/src/lib/codex-acp-bridge/package.json:1 codex-acp-bridge
+    outlier:  examples/harness-e2e-next/agent/harness/acp-codex/bridge/package.json:1 acp-codex-bridge
+    outlier:  examples/next-langchain/package.json:1 @example/next-langchain
+    ... 8 more outliers
+
+16. [D-60b107] packages/ai: functions in src/** declare their return type
+    evidence: 231/252 (lower bound 0.88, lift 1.6)
+    example:  packages/ai/src/agent/create-agent-ui-stream-response.ts#createAgentUIStreamResponse
+    outlier:  packages/ai/src/batch/batch.ts:350 getBatchResults
+    outlier:  packages/ai/src/decide/validate-decision.ts:187 validateDecisionAnswers
+    outlier:  packages/ai/src/decide/validate-decision.ts:49 validateDecisionInput
+    ... 18 more outliers
+
+17. [D-9b8f07] files in examples/ai-e2e-next/** use zod for validation, not yup/joi/valibot/superstruct
+    evidence: 40/42 (lower bound 0.84, lift 1.0)
+    split:    zod 40, valibot 2
+    example:  examples/ai-e2e-next/agent/anthropic/code-execution-agent.ts#(file)
+    outlier:  examples/ai-e2e-next/app/api/use-object-valibot/schema.ts:1 (file)
+    outlier:  examples/ai-e2e-next/tool/weather-tool-valibot.ts:1 (file)
+
+18. [D-9d44b7] packages/mcp: functions in src/** declare their return type
+    evidence: 46/48 (lower bound 0.86, lift 1.6)
+    example:  packages/mcp/src/tool/json-rpc-message.ts#parseJSONRPCMessage
+    outlier:  packages/mcp/src/tool/mcp-event-types.ts:46 MCPEventControlSchema
+    outlier:  packages/mcp/src/tool/oauth-types.ts:5 SafeUrlSchema
+
+19. [D-942c51] packages/code-mode: functions in src/** declare their return type
+    evidence: 30/31 (lower bound 0.84, lift 1.6)
+    example:  packages/code-mode/src/approval-continuation.ts#continueCodeModeApproval
+    outlier:  packages/code-mode/src/utils/test-helpers.ts:5 deferred
+
+20. [D-232917] packages/harness: exported values in src/** call z.object() before z.string()
+    evidence: 30/32 (lower bound 0.80, lift 1.0)
+    example:  packages/harness/src/v1/harness-v1-bridge-protocol.ts#experimental_harnessV1BridgeUserMessageResponseSchema
+    outlier:  packages/harness/src/utils/extract-harness-prompt-content.ts:24 harnessPromptContentSchema
+    outlier:  packages/harness/src/v1/harness-v1-bridge-protocol.ts:316 experimental_harnessV1BridgeUserMessageInboundSchema
+
+21. [D-d1e696] packages/harness-opencode/src/bridge: functions in ./** declare their return type
+    evidence: 29/30 (lower bound 0.83, lift 1.6)
+    example:  packages/harness-opencode/src/bridge/host-tool-schemas.ts#readHostToolSchemasFromEnvironment
+    outlier:  packages/harness-opencode/src/bridge/opencode-prompt.ts:3 toOpenCodePromptParts
+

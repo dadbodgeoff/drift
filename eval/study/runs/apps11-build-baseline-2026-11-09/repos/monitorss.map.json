@@ -1,0 +1,776 @@
+{
+  "name": "monitorss",
+  "sha": "1f8255f4787c1993bab4b9d9e6811abab956f215",
+  "check": {
+    "default": {
+      "roles": 228,
+      "census_roles": 228,
+      "units": 3095,
+      "census_units": 3095,
+      "proposals": 2,
+      "member_counts_match": 2
+    },
+    "python_opt_in": {
+      "roles": 228,
+      "census_roles": 228,
+      "units": 3095,
+      "census_units": 3095,
+      "proposals": 2,
+      "member_counts_match": 2
+    }
+  },
+  "repo": {
+    "files_parsed": {
+      "files": 1641,
+      "of_files": 1642,
+      "loc": 263110,
+      "of_loc": 263502
+    },
+    "files_in_package": {
+      "files": 1548,
+      "of_files": 1642,
+      "loc": 245314,
+      "of_loc": 263502
+    },
+    "files_in_nonroot_drift_package": {
+      "files": 1640,
+      "of_files": 1642,
+      "loc": 263108,
+      "of_loc": 263502
+    },
+    "files_in_role": {
+      "files": 991,
+      "of_files": 1642,
+      "loc": 129257,
+      "of_loc": 263502
+    },
+    "files_in_any_role": {
+      "files": 1215,
+      "of_files": 1642,
+      "loc": 138519,
+      "of_loc": 263502
+    },
+    "imports": {
+      "internal_resolved": 5252,
+      "internal_unresolved": 0
+    },
+    "files_under_mined": {
+      "files": 44,
+      "of_files": 1642,
+      "loc": 5890,
+      "of_loc": 263502
+    },
+    "files_under_shown": {
+      "files": 44,
+      "of_files": 1642,
+      "loc": 5890,
+      "of_loc": 263502
+    },
+    "files_under_mined_py": {
+      "files": 44,
+      "of_files": 1642,
+      "loc": 5890,
+      "of_loc": 263502
+    },
+    "files_under_shown_py": {
+      "files": 44,
+      "of_files": 1642,
+      "loc": 5890,
+      "of_loc": 263502
+    }
+  },
+  "per_package": [
+    {
+      "dir": "packages/contracts",
+      "kind": "ts",
+      "files_parsed": {
+        "files": 13,
+        "of_files": 13,
+        "loc": 366,
+        "of_loc": 366
+      },
+      "files_in_package": {
+        "files": 13,
+        "of_files": 13,
+        "loc": 366,
+        "of_loc": 366
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 13,
+        "of_files": 13,
+        "loc": 366,
+        "of_loc": 366
+      },
+      "files_in_role": {
+        "files": 12,
+        "of_files": 13,
+        "loc": 317,
+        "of_loc": 366
+      },
+      "files_in_any_role": {
+        "files": 13,
+        "of_files": 13,
+        "loc": 366,
+        "of_loc": 366
+      },
+      "imports": {
+        "internal_resolved": 13,
+        "internal_unresolved": 0
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 13,
+        "loc": 0,
+        "of_loc": 366
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 13,
+        "loc": 0,
+        "of_loc": 366
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 13,
+        "loc": 0,
+        "of_loc": 366
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 13,
+        "loc": 0,
+        "of_loc": 366
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    },
+    {
+      "dir": "packages/logger",
+      "kind": "ts",
+      "files_parsed": {
+        "files": 7,
+        "of_files": 7,
+        "loc": 265,
+        "of_loc": 265
+      },
+      "files_in_package": {
+        "files": 7,
+        "of_files": 7,
+        "loc": 265,
+        "of_loc": 265
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 7,
+        "of_files": 7,
+        "loc": 265,
+        "of_loc": 265
+      },
+      "files_in_role": {
+        "files": 0,
+        "of_files": 7,
+        "loc": 0,
+        "of_loc": 265
+      },
+      "files_in_any_role": {
+        "files": 0,
+        "of_files": 7,
+        "loc": 0,
+        "of_loc": 265
+      },
+      "imports": {
+        "internal_resolved": 8,
+        "internal_unresolved": 0
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 7,
+        "loc": 0,
+        "of_loc": 265
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 7,
+        "loc": 0,
+        "of_loc": 265
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 7,
+        "loc": 0,
+        "of_loc": 265
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 7,
+        "loc": 0,
+        "of_loc": 265
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    },
+    {
+      "dir": "scripts/generate-curated-feeds",
+      "kind": "ts",
+      "files_parsed": {
+        "files": 3,
+        "of_files": 3,
+        "loc": 2141,
+        "of_loc": 2141
+      },
+      "files_in_package": {
+        "files": 3,
+        "of_files": 3,
+        "loc": 2141,
+        "of_loc": 2141
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 3,
+        "of_files": 3,
+        "loc": 2141,
+        "of_loc": 2141
+      },
+      "files_in_role": {
+        "files": 0,
+        "of_files": 3,
+        "loc": 0,
+        "of_loc": 2141
+      },
+      "files_in_any_role": {
+        "files": 0,
+        "of_files": 3,
+        "loc": 0,
+        "of_loc": 2141
+      },
+      "imports": {
+        "internal_resolved": 0,
+        "internal_unresolved": 0
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 3,
+        "loc": 0,
+        "of_loc": 2141
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 3,
+        "loc": 0,
+        "of_loc": 2141
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 3,
+        "loc": 0,
+        "of_loc": 2141
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 3,
+        "loc": 0,
+        "of_loc": 2141
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    },
+    {
+      "dir": "services/backend-api",
+      "kind": "ts",
+      "files_parsed": {
+        "files": 402,
+        "of_files": 402,
+        "loc": 93543,
+        "of_loc": 93543
+      },
+      "files_in_package": {
+        "files": 402,
+        "of_files": 402,
+        "loc": 93543,
+        "of_loc": 93543
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 402,
+        "of_files": 402,
+        "loc": 93543,
+        "of_loc": 93543
+      },
+      "files_in_role": {
+        "files": 194,
+        "of_files": 402,
+        "loc": 31949,
+        "of_loc": 93543
+      },
+      "files_in_any_role": {
+        "files": 256,
+        "of_files": 402,
+        "loc": 36043,
+        "of_loc": 93543
+      },
+      "imports": {
+        "internal_resolved": 1443,
+        "internal_unresolved": 0
+      },
+      "files_under_mined": {
+        "files": 19,
+        "of_files": 402,
+        "loc": 3509,
+        "of_loc": 93543
+      },
+      "files_under_shown": {
+        "files": 19,
+        "of_files": 402,
+        "loc": 3509,
+        "of_loc": 93543
+      },
+      "files_under_mined_py": {
+        "files": 19,
+        "of_files": 402,
+        "loc": 3509,
+        "of_loc": 93543
+      },
+      "files_under_shown_py": {
+        "files": 19,
+        "of_files": 402,
+        "loc": 3509,
+        "of_loc": 93543
+      },
+      "silent": {
+        "default": false,
+        "python_opt_in": false
+      }
+    },
+    {
+      "dir": "services/backend-api/client",
+      "kind": "ts",
+      "files_parsed": {
+        "files": 903,
+        "of_files": 903,
+        "loc": 105196,
+        "of_loc": 105196
+      },
+      "files_in_package": {
+        "files": 903,
+        "of_files": 903,
+        "loc": 105196,
+        "of_loc": 105196
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 903,
+        "of_files": 903,
+        "loc": 105196,
+        "of_loc": 105196
+      },
+      "files_in_role": {
+        "files": 684,
+        "of_files": 903,
+        "loc": 80701,
+        "of_loc": 105196
+      },
+      "files_in_any_role": {
+        "files": 793,
+        "of_files": 903,
+        "loc": 82741,
+        "of_loc": 105196
+      },
+      "imports": {
+        "internal_resolved": 2874,
+        "internal_unresolved": 0
+      },
+      "files_under_mined": {
+        "files": 25,
+        "of_files": 903,
+        "loc": 2381,
+        "of_loc": 105196
+      },
+      "files_under_shown": {
+        "files": 25,
+        "of_files": 903,
+        "loc": 2381,
+        "of_loc": 105196
+      },
+      "files_under_mined_py": {
+        "files": 25,
+        "of_files": 903,
+        "loc": 2381,
+        "of_loc": 105196
+      },
+      "files_under_shown_py": {
+        "files": 25,
+        "of_files": 903,
+        "loc": 2381,
+        "of_loc": 105196
+      },
+      "silent": {
+        "default": false,
+        "python_opt_in": false
+      }
+    },
+    {
+      "dir": "services/bot-presence",
+      "kind": "ts",
+      "files_parsed": {
+        "files": 8,
+        "of_files": 8,
+        "loc": 408,
+        "of_loc": 408
+      },
+      "files_in_package": {
+        "files": 8,
+        "of_files": 8,
+        "loc": 408,
+        "of_loc": 408
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 8,
+        "of_files": 8,
+        "loc": 408,
+        "of_loc": 408
+      },
+      "files_in_role": {
+        "files": 0,
+        "of_files": 8,
+        "loc": 0,
+        "of_loc": 408
+      },
+      "files_in_any_role": {
+        "files": 8,
+        "of_files": 8,
+        "loc": 408,
+        "of_loc": 408
+      },
+      "imports": {
+        "internal_resolved": 13,
+        "internal_unresolved": 0
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 8,
+        "loc": 0,
+        "of_loc": 408
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 8,
+        "loc": 0,
+        "of_loc": 408
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 8,
+        "loc": 0,
+        "of_loc": 408
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 8,
+        "loc": 0,
+        "of_loc": 408
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    },
+    {
+      "dir": "services/discord-rest-listener",
+      "kind": "ts",
+      "files_parsed": {
+        "files": 27,
+        "of_files": 27,
+        "loc": 1992,
+        "of_loc": 1992
+      },
+      "files_in_package": {
+        "files": 27,
+        "of_files": 27,
+        "loc": 1992,
+        "of_loc": 1992
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 27,
+        "of_files": 27,
+        "loc": 1992,
+        "of_loc": 1992
+      },
+      "files_in_role": {
+        "files": 10,
+        "of_files": 27,
+        "loc": 284,
+        "of_loc": 1992
+      },
+      "files_in_any_role": {
+        "files": 18,
+        "of_files": 27,
+        "loc": 863,
+        "of_loc": 1992
+      },
+      "imports": {
+        "internal_resolved": 37,
+        "internal_unresolved": 0
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 27,
+        "loc": 0,
+        "of_loc": 1992
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 27,
+        "loc": 0,
+        "of_loc": 1992
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 27,
+        "loc": 0,
+        "of_loc": 1992
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 27,
+        "loc": 0,
+        "of_loc": 1992
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    },
+    {
+      "dir": "services/feed-requests",
+      "kind": "ts",
+      "files_parsed": {
+        "files": 44,
+        "of_files": 45,
+        "loc": 7160,
+        "of_loc": 7552
+      },
+      "files_in_package": {
+        "files": 44,
+        "of_files": 45,
+        "loc": 7160,
+        "of_loc": 7552
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 44,
+        "of_files": 45,
+        "loc": 7160,
+        "of_loc": 7552
+      },
+      "files_in_role": {
+        "files": 22,
+        "of_files": 45,
+        "loc": 3378,
+        "of_loc": 7552
+      },
+      "files_in_any_role": {
+        "files": 28,
+        "of_files": 45,
+        "loc": 4074,
+        "of_loc": 7552
+      },
+      "imports": {
+        "internal_resolved": 125,
+        "internal_unresolved": 0
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 45,
+        "loc": 0,
+        "of_loc": 7552
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 45,
+        "loc": 0,
+        "of_loc": 7552
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 45,
+        "loc": 0,
+        "of_loc": 7552
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 45,
+        "loc": 0,
+        "of_loc": 7552
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    },
+    {
+      "dir": "services/user-feeds-next",
+      "kind": "ts",
+      "files_parsed": {
+        "files": 141,
+        "of_files": 141,
+        "loc": 34243,
+        "of_loc": 34243
+      },
+      "files_in_package": {
+        "files": 141,
+        "of_files": 141,
+        "loc": 34243,
+        "of_loc": 34243
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 141,
+        "of_files": 141,
+        "loc": 34243,
+        "of_loc": 34243
+      },
+      "files_in_role": {
+        "files": 69,
+        "of_files": 141,
+        "loc": 12628,
+        "of_loc": 34243
+      },
+      "files_in_any_role": {
+        "files": 99,
+        "of_files": 141,
+        "loc": 14024,
+        "of_loc": 34243
+      },
+      "imports": {
+        "internal_resolved": 488,
+        "internal_unresolved": 0
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 141,
+        "loc": 0,
+        "of_loc": 34243
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 141,
+        "loc": 0,
+        "of_loc": 34243
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 141,
+        "loc": 0,
+        "of_loc": 34243
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 141,
+        "loc": 0,
+        "of_loc": 34243
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    }
+  ],
+  "unmapped": [
+    {
+      "class": "test",
+      "why": "test path (forms no role)",
+      "files": 415,
+      "loc": 122183
+    },
+    {
+      "class": "service",
+      "why": "no exported symbol",
+      "files": 150,
+      "loc": 3762
+    },
+    {
+      "class": "script",
+      "why": "no exported symbol",
+      "files": 14,
+      "loc": 3436
+    },
+    {
+      "class": "service",
+      "why": "largest role 4-7 members (< 8)",
+      "files": 16,
+      "loc": 1893
+    },
+    {
+      "class": "service",
+      "why": "largest role 1-3 members (< 8)",
+      "files": 14,
+      "loc": 1509
+    },
+    {
+      "class": "config",
+      "why": "largest role 1-3 members (< 8)",
+      "files": 7,
+      "loc": 564
+    },
+    {
+      "class": "service",
+      "why": "not parsed: generated",
+      "files": 1,
+      "loc": 392
+    },
+    {
+      "class": "other",
+      "why": "largest role 4-7 members (< 8)",
+      "files": 4,
+      "loc": 127
+    },
+    {
+      "class": "index/__init__",
+      "why": "largest role 1-3 members (< 8)",
+      "files": 1,
+      "loc": 120
+    },
+    {
+      "class": "hook",
+      "why": "no exported symbol",
+      "files": 13,
+      "loc": 111
+    },
+    {
+      "class": "router/dep",
+      "why": "no exported symbol",
+      "files": 9,
+      "loc": 88
+    },
+    {
+      "class": "index/__init__",
+      "why": "no exported symbol",
+      "files": 1,
+      "loc": 49
+    },
+    {
+      "class": "types",
+      "why": "no exported symbol",
+      "files": 1,
+      "loc": 4
+    },
+    {
+      "class": "pydantic/dataclass model",
+      "why": "no exported symbol",
+      "files": 2,
+      "loc": 3
+    },
+    {
+      "class": "other",
+      "why": "no exported symbol",
+      "files": 1,
+      "loc": 2
+    },
+    {
+      "class": "route/page",
+      "why": "no exported symbol",
+      "files": 2,
+      "loc": 2
+    }
+  ]
+}

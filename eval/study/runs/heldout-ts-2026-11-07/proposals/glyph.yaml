@@ -1,0 +1,63 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - bitmap
+  - definition
+  - live-check
+  - msdf
+  - scene
+  - slug
+  - test
+  - transform
+  suffixes:
+  - bench
+  - config
+  - probe
+  - test
+conventions:
+- id: D-63bbfd
+  status: proposed
+  mode: advise
+  summary: >-
+    files in packages/glyph/** do not import from benches/scripts/** (declared
+    dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: packages/glyph
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:benches/scripts
+  evidence:
+    holders: 277
+    total: 278
+    lower_bound: 0.98
+    lift: 3.0
+  example: packages/glyph/bin/glyph.js#(file)
+  selector_version: 2
+- id: D-4cec41
+  status: proposed
+  mode: advise
+  summary: "packages/glyph: functions in src/** do not throw a bare Error"
+  role:
+    package: packages/glyph
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: avoids
+    signal: throw_error
+  evidence:
+    holders: 478
+    total: 497
+    lower_bound: 0.941
+    lift: 5.181
+  example: packages/glyph/src/bake.ts#defineRasterBaker
+  selector_version: 2

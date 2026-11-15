@@ -1,0 +1,63 @@
+{
+  "a": "eval/study/runs/dev3-ts-2026-11-08/labels/A",
+  "b": "eval/study/runs/dev3-ts-2026-11-08/labels/B",
+  "labels_sha256": {
+    "A": "24b9c3f030aefae8674c67d79b1297a65a73db877622180b97bdc4e14df12fc8",
+    "B": "1c68bf91b7f613351c95eb9c58243ffab73657ac908c9e681f0cb4c9cb9600f5"
+  },
+  "computed_at": "2026-11-08T16:36:25.840Z",
+  "rubric_sha256s": [
+    "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+  ],
+  "n": 12,
+  "scope": 12,
+  "exact": 1,
+  "kappa": 1,
+  "kappa_boot": {
+    "lo": 1,
+    "hi": 1,
+    "clusters": 5
+  },
+  "accept_vs_not": {
+    "n": 12,
+    "po": 1,
+    "pe": 0.513888888888889,
+    "kappa": 1
+  },
+  "wrong_vs_not": {
+    "n": 12,
+    "po": 1,
+    "pe": 0.5555555555555556,
+    "kappa": 1
+  },
+  "confusion": {
+    "ACCEPT": {
+      "ACCEPT": 7,
+      "TRIVIAL": 0,
+      "WRONG": 0
+    },
+    "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 1,
+      "WRONG": 0
+    },
+    "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 4
+    }
+  },
+  "mix": {
+    "A": {
+      "ACCEPT": 7,
+      "TRIVIAL": 1,
+      "WRONG": 4
+    },
+    "B": {
+      "ACCEPT": 7,
+      "TRIVIAL": 1,
+      "WRONG": 4
+    }
+  },
+  "disagreements": []
+}

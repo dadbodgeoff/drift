@@ -1,0 +1,53 @@
+{
+  "repo": "kan",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/web/eslint.config.js",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/api/eslint.config.js",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/auth/eslint.config.js",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/db/eslint.config.js",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/e2e/eslint.config.js",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/email/eslint.config.js",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/shared/eslint.config.js",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/stripe/eslint.config.js",
+      "kind": "lint"
+    },
+    {
+      "path": "tooling/tailwind/eslint.config.js",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/email/.react-email/.eslintrc.json",
+      "kind": "lint"
+    }
+  ]
+}

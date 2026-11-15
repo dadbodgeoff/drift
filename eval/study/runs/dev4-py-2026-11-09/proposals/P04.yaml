@@ -1,0 +1,42 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - apps
+  - conftest
+  - forms
+  - models
+  - services
+  - settings
+  - tests
+  - urls
+  - utils
+  - views
+  suffixes: []
+conventions:
+- id: D-9de24d
+  status: proposed
+  mode: advise
+  summary: forms in lfs/** (forms files) are named `*Form`
+  role:
+    package: ""
+    dir: lfs
+    file: forms
+    entry: '-'
+    kind: class
+    member_kind: form
+  rule:
+    type: named
+    pattern: "*Form"
+  evidence:
+    holders: 58
+    total: 58
+    lower_bound: 0.938
+    lift: 6.25
+    python_members: 58
+  example: lfs/addresses/forms.py#AddressBaseForm
+  selector_version: 3

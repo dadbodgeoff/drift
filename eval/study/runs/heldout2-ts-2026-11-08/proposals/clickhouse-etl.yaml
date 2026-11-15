@@ -1,0 +1,123 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - _meta
+  - page
+  - route
+  - types
+  - utils
+  suffixes:
+  - config
+  - figma
+  - scheme
+  - store
+  - test
+conventions:
+- id: D-3345d1
+  status: proposed
+  mode: advise
+  summary: "ui: functions in src/app/** do not use requests to computed URLs"
+  role:
+    package: ui
+    dir: src/app
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: avoids
+    signal: sink:dynamic_fetch
+  evidence:
+    holders: 52
+    total: 53
+    lower_bound: 0.901
+    lift: 6.383
+  example: ui/src/app/ui-api/clickhouse/clickhouse-utils.ts#buildFallbackSchemaQuery
+  selector_version: 3
+- id: D-b006e4
+  status: proposed
+  mode: advise
+  summary: "ui: HTTP handlers in src/** (route files) pass `status` to NextResponse.json()"
+  role:
+    package: ui
+    dir: src
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:next#NextResponse.json
+    index: 1
+    key: status
+  evidence:
+    holders: 72
+    total: 78
+    lower_bound: 0.842
+    lift: 7.6
+  example: ui/src/app/ui-api/clickhouse/alter-table/route.ts#POST
+  selector_version: 3
+- id: D-08b385
+  status: proposed
+  mode: advise
+  summary: "ui: HTTP handlers in src/** (route files) use `try`"
+  role:
+    package: ui
+    dir: src
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: control
+    value: try
+  evidence:
+    holders: 67
+    total: 78
+    lower_bound: 0.765
+    lift: 3.167
+  example: ui/src/app/ui-api/clickhouse/alter-table/route.ts#POST
+  selector_version: 3
+- id: D-c2cda4
+  status: proposed
+  mode: advise
+  summary: "ui: pages in src/** (page files) are named `*Page`"
+  role:
+    package: ui
+    dir: src
+    file: page
+    entry: page
+    kind: component
+  rule:
+    type: named
+    pattern: "*Page"
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 17.811
+  example: ui/src/app/dev/components/buttons/page.tsx#ButtonsPage
+  selector_version: 3
+- id: D-b1729f
+  status: proposed
+  mode: advise
+  summary: "ui: HTTP handlers in src/** (route files) pass `error` to NextResponse.json()"
+  role:
+    package: ui
+    dir: src
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:next#NextResponse.json
+    index: 0
+    key: error
+  evidence:
+    holders: 66
+    total: 78
+    lower_bound: 0.75
+    lift: 7.59
+  example: ui/src/app/ui-api/clickhouse/alter-table/route.ts#POST
+  selector_version: 3

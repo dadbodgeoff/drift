@@ -1,0 +1,215 @@
+{
+  "run": "eval/study/runs/dev3-py-2026-11-08",
+  "prepared_at": "2026-11-08T16:26:45.169Z",
+  "amendments": [],
+  "manifest": {
+    "path": "eval/study/runs/dev3-py-2026-11-08/manifest.json",
+    "sha256": "f1d9ac70d0345a1c4cf3944acfb73acf35887496a79410fb89210e57dc308126",
+    "core_sha256": "c2d4393c43342acef0b14538251817ab7d25e6121c508413c899c28d9e7112f4",
+    "holdout": false,
+    "holdout_because": [],
+    "set_id": "py-dev3-2026-11-08",
+    "role": "dev",
+    "language": "python"
+  },
+  "drift": {
+    "binary": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev3/f10/drift-F10",
+    "binary_sha256": "bf33e175ede9283c26ba7cca1ac257820867e8874e5f76171bac63785db65b11",
+    "version": "drift 0.1.0-dev",
+    "commit": "5151e5cb40b980f3db61416662dadbcf47c2f1ba",
+    "dirty": null,
+    "build": null
+  },
+  "params": {
+    "max": 15,
+    "pool": 200,
+    "tier": {
+      "//": "Decision D7 (eval/study/README.md decision log), approved by the founder 2026-11-06 and recorded before any held-out census. D5 (tier-d5.json) narrowed by rule kind and language. TypeScript/JavaScript: the default tier admits only call wrappers (wrapped_by:call) and layering (avoids:import); wrapped_by:decorator, wrapped_by:extends and wrapped_by:jsx move to the suggestion tier. Python: no rule kind is in the default tier; Python advises only and every Python proposal is suggestion tier. D5's conditions still apply on top of the rule kind: every symbol the rule names is defined in the repository (default.target \"in_repo\": no pkg:, global# or unresolved: target; lib.mjs namesPackage, drift_mine::tier::names_package) and the role has >= default.min_members members. The language of a proposal is read conservatively (lib.mjs proposalLanguage, drift_mine::tier::convention_language): py when any member of its role is Python (conventions.yaml evidence.python_members) or its example path is (.py/.pyi files and Python package manifests), ts otherwise. Role members are counted as the role's size (evidence.role_members when set, else total; exempt members count). DEFAULT tier = language in default.languages AND structured rule kind (lib.mjs ruleKind) in default.rule_kinds AND the rule names no symbol from outside the repository AND its role has >= default.min_members members. SUGGESTION tier = every other shown proposal. The not-wrong rate is reported over all shown proposals, both tiers. Release gate unchanged: a language's default tier ships as advise until it measures >= 95% default-tier accept under rubric v3, judged per D1, on a primary held-out run.",
+      "kind": "rule_kind",
+      "decision": "D7",
+      "default": {
+        "//": "TypeScript/JavaScript call wrappers and layering (import avoidance), each only when every symbol it names is defined in the repository, in roles of 15 or more members",
+        "rule_kinds": [
+          "wrapped_by:call",
+          "avoids:import"
+        ],
+        "languages": [
+          "ts"
+        ],
+        "min_members": 15,
+        "target": "in_repo"
+      },
+      "suggestion": {
+        "//": "D5's suggestion kinds, plus decorators, base classes and JSX layout wrappers (D7); every Python proposal (languages); and default-tier kinds whose rule names a package, built-in or unresolved symbol, or whose role is small",
+        "rule_kinds": [
+          "calls",
+          "named",
+          "avoids:other",
+          "prefers_library",
+          "before",
+          "has_test",
+          "model_has",
+          "package_has",
+          "dependency_version",
+          "wrapped_by:try",
+          "control",
+          "directive",
+          "throws",
+          "passes_key",
+          "renders",
+          "wrapped_by:decorator",
+          "wrapped_by:extends",
+          "wrapped_by:jsx"
+        ],
+        "languages": [
+          "py"
+        ]
+      },
+      "not_wrong_over": "all_shown"
+    },
+    "tier_pre_registered": true,
+    "exposed": [],
+    "repos": [
+      "P01@32aa94e9c67e3559593eab4e9e4e9cb44268afe4",
+      "P09@5bc81d522a4363ae93294e7dcd3b0b66ac522456",
+      "P03@b1ecd31ae7c6abec38fc03078a4383551e54aa65",
+      "P04@ba14b1916eff02b4cd9dcd5ce8ba879d209c7df7",
+      "P10@8cdb82b84670466041aed02640bb747f81ddca96",
+      "P06@82270cf0e014c1c03a0a0acfe4fb9c851f3c69f5",
+      "P07@e337f3b177b4b53abff70b31d1695a7b66cc6d2e",
+      "P12@ef0dd820cc0ff9862d50fe56ed69b36fffe97d81"
+    ],
+    "cache": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev3/cache",
+    "checkouts": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev3/cache/repos"
+  },
+  "repos": [
+    {
+      "name": "P01",
+      "url": "https://github.com/duriantaco/skylos",
+      "sha": "32aa94e9c67e3559593eab4e9e4e9cb44268afe4",
+      "language": "Python",
+      "framework_bucket": "django",
+      "binary_sha256": "bf33e175ede9283c26ba7cca1ac257820867e8874e5f76171bac63785db65b11",
+      "prepared_at": "2026-11-08T16:25:40.063Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev3/cache/repos/P01",
+      "status": "ok",
+      "units": 7846,
+      "roles": 211,
+      "proposals": 0,
+      "pool": 0,
+      "census_ms": 3019
+    },
+    {
+      "name": "P09",
+      "url": "https://github.com/ohcnetwork/care",
+      "sha": "5bc81d522a4363ae93294e7dcd3b0b66ac522456",
+      "language": "Python",
+      "framework_bucket": "django",
+      "binary_sha256": "bf33e175ede9283c26ba7cca1ac257820867e8874e5f76171bac63785db65b11",
+      "prepared_at": "2026-11-08T16:25:52.991Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev3/cache/repos/P09",
+      "status": "ok",
+      "units": 2558,
+      "roles": 108,
+      "proposals": 1,
+      "pool": 1,
+      "census_ms": 525
+    },
+    {
+      "name": "P03",
+      "url": "https://github.com/scaleapi/scale-agentex",
+      "sha": "b1ecd31ae7c6abec38fc03078a4383551e54aa65",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "binary_sha256": "bf33e175ede9283c26ba7cca1ac257820867e8874e5f76171bac63785db65b11",
+      "prepared_at": "2026-11-08T16:25:56.414Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev3/cache/repos/P03",
+      "status": "ok",
+      "units": 1375,
+      "roles": 78,
+      "proposals": 1,
+      "pool": 1,
+      "census_ms": 266
+    },
+    {
+      "name": "P04",
+      "url": "https://github.com/aipotheosis-labs/aci",
+      "sha": "ba14b1916eff02b4cd9dcd5ce8ba879d209c7df7",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "binary_sha256": "bf33e175ede9283c26ba7cca1ac257820867e8874e5f76171bac63785db65b11",
+      "prepared_at": "2026-11-08T16:25:58.643Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev3/cache/repos/P04",
+      "status": "ok",
+      "units": 1317,
+      "roles": 73,
+      "proposals": 0,
+      "pool": 0,
+      "census_ms": 165
+    },
+    {
+      "name": "P10",
+      "url": "https://github.com/Sallyn0225/eidolon-sc",
+      "sha": "8cdb82b84670466041aed02640bb747f81ddca96",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "binary_sha256": "bf33e175ede9283c26ba7cca1ac257820867e8874e5f76171bac63785db65b11",
+      "prepared_at": "2026-11-08T16:26:00.831Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev3/cache/repos/P10",
+      "status": "ok",
+      "units": 4312,
+      "roles": 97,
+      "proposals": 0,
+      "pool": 0,
+      "census_ms": 839
+    },
+    {
+      "name": "P06",
+      "url": "https://github.com/Ostorlab/oxo",
+      "sha": "82270cf0e014c1c03a0a0acfe4fb9c851f3c69f5",
+      "language": "Python",
+      "framework_bucket": "flask",
+      "binary_sha256": "bf33e175ede9283c26ba7cca1ac257820867e8874e5f76171bac63785db65b11",
+      "prepared_at": "2026-11-08T16:26:07.206Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev3/cache/repos/P06",
+      "status": "ok",
+      "units": 1179,
+      "roles": 74,
+      "proposals": 0,
+      "pool": 0,
+      "census_ms": 431
+    },
+    {
+      "name": "P07",
+      "url": "https://github.com/hshi74/toddlerbot",
+      "sha": "e337f3b177b4b53abff70b31d1695a7b66cc6d2e",
+      "language": "Python",
+      "framework_bucket": "other_python",
+      "binary_sha256": "bf33e175ede9283c26ba7cca1ac257820867e8874e5f76171bac63785db65b11",
+      "prepared_at": "2026-11-08T16:26:14.609Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev3/cache/repos/P07",
+      "status": "ok",
+      "units": 966,
+      "roles": 51,
+      "proposals": 0,
+      "pool": 0,
+      "census_ms": 143
+    },
+    {
+      "name": "P12",
+      "url": "https://github.com/dstl/Stone-Soup",
+      "sha": "ef0dd820cc0ff9862d50fe56ed69b36fffe97d81",
+      "language": "Python",
+      "framework_bucket": "other_python",
+      "binary_sha256": "bf33e175ede9283c26ba7cca1ac257820867e8874e5f76171bac63785db65b11",
+      "prepared_at": "2026-11-08T16:26:38.936Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev3/cache/repos/P12",
+      "status": "ok",
+      "units": 3287,
+      "roles": 59,
+      "proposals": 0,
+      "pool": 0,
+      "census_ms": 881
+    }
+  ]
+}

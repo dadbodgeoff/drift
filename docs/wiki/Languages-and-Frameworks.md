@@ -1,0 +1,119 @@
+# Languages and Frameworks
+
+What Drift reads, and for which languages and frameworks it lists routes, reads authentication and authorization, and tells where an entry point is reachable from. This page is for the engineer deciding whether Drift fits a repository and for the reader who needs to know why a route is missing or reads `unknown`. It uses three words consistently: **listed** (Drift finds the entry point and shows it), **read** (Drift reads what guards it, or what deploys it, and can prove an answer), and **not listed** (Drift does not find it, so it appears in no inventory, recipe or card).
+
+How each statement was checked is marked in the tables: **run** means a small repository using that framework was scanned with `drift 0.1.0-dev` and the entry point appeared in `drift security --json`; **source** means the statement comes from the code or its documentation and was not run for this page.
+
+## Languages
+
+| Language | Files read | Parser |
+| --- | --- | --- |
+| TypeScript and JavaScript | `.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, `.cjs` | oxc |
+| Python | `.py` | ruff's parser |
+
+No other language is read. A Go, Java, Ruby, Rust, C#, PHP or shell source file is not parsed, mined, checked or inventoried; a repository that is mostly another language gets little from Drift.
+
+Left out on purpose, in every language: files over 1 MiB, generated code (a generated-file header, `@generated`, protobuf output, files marked `linguist-generated` in `.gitattributes`), minified code (a line over 5,000 characters), declaration files (`.d.ts`, `.pyi`), files nested or costly enough to endanger the parser, and files that are not UTF-8. Directories never entered: `node_modules`, `.git`, `.next`, `.turbo`, `.vercel`, `.drift`, `dist`, `build`, `out`, `coverage`, `vendor`, `storybook-static`, and for Python also `__pycache__`, virtual environments (`.venv`, `venv`, any directory holding `pyvenv.cfg` or `conda-meta/`), `site-packages`, `.tox`, `.nox`, `.eggs`, `*.egg-info` and tool caches. Python schema migrations (numbered Django migrations, Alembic and Flask-Migrate revisions) are skipped. `.gitignore` and `.ignore` files in each directory are respected; a global git ignore and `.git/info/exclude` are not, so results do not depend on the machine. `drift scan --json` lists skipped files and the reason.
+
+Conventions are mined from any parsed code, whatever the framework. What follows concerns the parts of Drift that need to know where a request enters: the security inventory, the practice map, a file's card and the hooks' recipes.
+
+## Entry points that are listed
+
+| Framework | Language | What is listed | Checked |
+| --- | --- | --- | --- |
+| Express | TS/JS | Routes registered on an app or router (`app.get("/a", ...)`), with the middleware given on the way | run |
+| Fastify | TS/JS | Routes on an instance; plugin routes with their prefix | run |
+| Hono | TS/JS | Routes on an app, with `basePath` | run |
+| NestJS | TS/JS | Controller routes (`@Controller` with `@Get`, `@Post`, ...); GraphQL resolvers (`@Query`, `@Mutation`, `@Subscription`, `@ResolveField`); schedules (`@Cron`, `@Interval`, `@Timeout`) | run (HTTP, GraphQL query, cron) |
+| Next.js | TS/JS | App-router route handlers (`route.ts`), pages (`page.tsx`), server actions (`"use server"`), pages-router API routes (`pages/api/*`) | run |
+| tRPC | TS/JS | Procedures, as `rpc` entry points (`QUERY hello`) | run |
+| Inngest | TS/JS | Functions (`createFunction`), as `job` or, with a cron trigger, `cron` | run (job) |
+| BullMQ | TS/JS | Workers, as `job` | run |
+| Trigger.dev | TS/JS | Tasks, as `job` | run |
+| Message consumers (kafkajs, amqplib) | TS/JS | `consumer` entry points | source |
+| `package.json` `bin` scripts | TS/JS | `cli` entry points (local: no remote caller) | source |
+| FastAPI | Python | Routes on an app or `APIRouter`, with prefixes from `include_router`, and the dependencies on them | run |
+| Flask | Python | `@app.route` / `@bp.route` and verb decorators, blueprints and their prefixes, hooks (`before_request`) as guards | run |
+| flask-restx, Flask-RESTful | Python | `Resource` classes on namespaces and APIs | run (flask-restx) |
+| Django | Python | `urlpatterns` reachable from `ROOT_URLCONF` (`path`, `re_path`, `include`, `decorator_include`), the admin as one entry point | run |
+| Django REST framework | Python | `APIView`, `ViewSet` and `@api_view` handlers, with their `permission_classes` | run (`APIView`) |
+| Starlette | Python | `Route` tables, with the middleware of mounts and routes | run |
+| Celery, Dramatiq, rq | Python | Tasks, as `job`; Celery beat schedules as `cron` | run (Celery, Dramatiq) |
+| Message consumers (aio_pika, kombu) | Python | `consumer` entry points | source |
+| LangGraph | Python | `agent_graph` entry points | source |
+
+Entry points carry a kind: `http`, `page`, `server_action`, `rpc`, `graphql`, `job`, `cron`, `consumer`, `cli`, `agent_graph`. A `consumer` takes what a broker hands it, so it is listed apart and counted in no authentication or authorization concern; a `cli` entry point is local and never counted as having no guard.
+
+A route registered in a way Drift cannot read (a loop it cannot unroll, `getattr(views, name)`, a router built from a non-literal) is not listed, or is listed with its path shown as `?`; the card and the inventory say so under what is not known.
+
+## Frameworks not listed
+
+These were tried on a small repository and their routes did not appear (**run**): Koa, Hapi, Restify, Remix, SvelteKit, Nuxt, Astro, Sanic, Tornado, aiohttp, Litestar, Bottle and Quart. The same holds, unverified, for any framework not in the table above. For such a repository:
+
+- `drift security` lists none of its routes, `drift practices` has no recipe for them, and a card says it knows no entry point for the file.
+- Convention mining, `drift check`, the review flow and the hooks' rule priming still work on the code as code.
+- The statement "no guard" or "none" cannot be made about a route Drift does not list; absence from the inventory is not a finding.
+
+Treat a missing route as a gap in what Drift read, and check it yourself.
+
+## Authentication and authorization: what is read
+
+What stands where a guard goes (a middleware argument, a hook, a wrapper, a decorator, a dependency, a permission class, a tRPC step) is read by one rule per language. The answer is one of three things, and **unknown is the default**.
+
+| Where the guard comes from | Read as |
+| --- | --- |
+| A function or class of the repository whose body is read to refuse every request without identity | a guard |
+| A function of the repository whose body is read to the end and never refuses | nothing |
+| A function of the repository that refuses some requests only, or is not read to the end, or hands back something Drift cannot read | unknown |
+| A library's guard in a call shape on a closed list | a guard; with an option that lets a request without identity through (`credentialsRequired: false`, `optional=True`, `auto_error=False`), nothing |
+| A library value on the list of things that never authenticate (`cors`, `helmet`, body parsers and similar) | nothing |
+| A package on neither list, a value of unknown origin (a parameter, a computed access, a conditional), a composition that is not read | unknown, never "no guard" |
+
+The closed lists are `crates/drift-core/src/guard_lists.rs` (TypeScript and JavaScript; it includes, for example, passport, express-jwt, Hono's `jwt`, `bearerAuth` and `basicAuth`, `@nestjs/passport`, `@fastify/auth`, next-auth, Clerk and Supabase helpers) and `crates/drift-mine/src/py_guards.rs` (Python; for example Django's `login_required` and `permission_required`, `flask_login`, `flask_jwt_extended`, FastAPI's `HTTPBearer`, Starlette's `requires`). A guard is read from its body, never from its name.
+
+`known` for authorization needs a check that was read where it is and is proven to run, and to decide, on every request to the route, comparing the caller with the resource or the request. A check that was found and is not proven (under a branch, after a return, in a callback, not awaited, after a write) leaves the unit `unknown` with the reason `check_not_proven`, worded as an unknown. A value of the caller handed to a query or compared is also `unknown`, never `none`. For TypeScript, a query filtered by the session's own value is `unknown`, because where a filter's value comes from is not recorded for TypeScript.
+
+The consequence for how to read an answer: `known` is proven; `none` and `internal` mean **nothing found in what Drift read**, and on code Drift was not tuned on a share of them are wrong. See [Accuracy and Limits](Accuracy-and-Limits).
+
+`identified` is the state of authentication that identifies the caller and turns no one away; it is counted apart from `known`. `none` and `internal` carry what Drift read and what it saw and did not read (`basis`, `exposure_basis`); see [How Drift Works](How-Drift-Works#what-a-none-or-internal-carries).
+
+Readings worth knowing, one sentence each:
+
+- **Python class-based views** are read per handler method (`Class.get`, `Class.post`), through the method that runs, in C3 order, with what the framework runs for every request before the handler; a check in one method is never another's. Where the order cannot be worked out, the unit is unknown.
+- **A check, a guard or a webhook verifier counts only when it runs for every request before any work** (any call other than reading the request) and with no earlier return that serves; a verifier may be in a function the handler calls. Otherwise the unit is unknown, never known (Python; TypeScript reads "for some requests only" the same way).
+- **TypeScript: a branch on a value of the caller whose exit Drift does not read** (a refusal builder's response returned through a local, a ternary or an `else`; a refusal after a branch that serves; a status written as a name) is unknown, never "identified" or "no guard found". `unauthorized()` / `forbidden()` refuse by what they resolve to (Next.js and the listed HTTP-error packages), not by name. Stripe `constructEventAsync` counts only when awaited or returned; a verifier given a secret written in the code is `signature_not_proven`. A Next.js configuration spread in, re-exported or merged into (`...base`, `export { default } from`, `Object.assign`) is not read. A sign-in check that refuses where the secret matches, or one read through a local assigned more than once, is unknown. An order comparison of a member of the caller with a literal (`level >= 3`) is a role gate, not "no scope"; only an expiry or a count compared with a clock or a bound is. A 401 under a condition that reads nothing of the request or the caller (a maintenance flag, a size limit) is no sign-in check.
+- **A tenant filter's answer does not depend on the column's name** (Python and TypeScript): a key on no list reads unknown, never `none`.
+- **TypeScript: a response built as a value** refuses only where it is returned; a refusal builder checks no one.
+- **Nest providers, ORM configuration and Next.js configuration** Drift cannot follow make the routes they may reach unknown.
+- **A Next.js page under a layout that turns away whoever is not signed in** reads *guard unknown* (`layout_may_redirect`), naming the layout's file and line: a layout and its page render in parallel and a layout is not re-run on client navigation, so Drift does not count it as guarding the page. Check in the page or its data layer. Route handlers and server actions are not covered by layouts.
+- **A webhook that verifies the sender's signature** (svix or standard-webhooks `Webhook.verify`, Stripe `construct_event` / `webhooks.constructEvent`, Slack `SignatureVerifier.is_valid_request`), for every request, with a failure that leaves the handler, is service authentication, listed by `drift security` under *Entry points that verify a webhook signature (no sign-in by design)*. A verification that is swallowed, only logged, made for some requests only, or whose result is ignored reads `unknown` (`signature_not_proven`), never known. Not yet recognised: TypeScript standard-webhooks and Slack verifiers. A constant-time compare (`timingSafeEqual`, `hmac.compare_digest`) is a check only where its answer decides a refusal.
+- **Lowering versions in this build:** Python 68, TypeScript 75 (see [Versioning and Upgrades](Versioning-and-Upgrades)).
+
+### Known gaps stated in the project's documents
+
+- Django: views registered by a custom decorator that stores them in a registry are not listed; settings are read as literals only (`DJANGO_SETTINGS_MODULE` from `manage.py`, `wsgi.py` or `asgi.py`, not from the environment); a `ModelAdmin`'s permissions are not modelled.
+- DRF: `get_permissions()` and `get_authenticators()` overrides are not read (the defaults are assumed), nor are `permission_classes` set by third-party base classes.
+- Flask: hooks registered through extensions (`init_app`) of installed packages are not seen. A blueprint built in a factory that takes its guard as a parameter is not yet read.
+- FastAPI: ASGI middleware is not a guard; a prefix that is not a literal shows as `?`. A router mounted under several parents gets the routes and dependencies of one parent only.
+- NestJS: a guard whose body reads the request through a local is unknown; an `APP_GUARD` provided by a factory or a condition is not read.
+- Python: dynamic imports (`importlib.import_module`) are not imports.
+
+The Python adapter record (`docs/v2/PYTHON.md`) is dated 2026-11-05 and is kept as a historical record; the lines above are the ones the project's accuracy notes restate for the current build.
+
+## Errors, validation and the rest of the practice map
+
+The practice map covers nine concerns: `authn`, `authz`, `errors`, `logging`, `api`, `validation`, `config`, `data_access` and `testing`. `authn`, `authz`, `validation`, `errors` and `api` make the recipe agents are given; `logging`, `config`, `data_access` and `testing` are a preview, shown in a recipe only where at least 60% of the package does the same. Both languages feed the same map, and a unit Drift cannot classify is `unknown` with a reason (`unparsed`, `opaque_wrapper`, `unresolved`, `no_symbol`, `dynamic`, `body_unreadable`, `not_followed`, `route_not_matched`, `unclassified`, `check_not_proven`), counted against coverage and never hidden. A table of support per language and concern is not published: run `drift practices --package <dir>` and read the `unknown` reasons for your own code. `drift practices --hints` lists the `.drift/config.yaml` lines that would classify what Drift cannot tell alone. See [Practices Map](Practices-Map).
+
+## Exposure: what Drift reads to say where an entry point is reachable from
+
+| Description | Read? |
+| --- | --- |
+| Docker Compose files (`compose.yaml`, `compose.yml`, `docker-compose.yaml`, `docker-compose.yml`, and any YAML file with a `services` mapping, to six levels deep), with their override files | Read: a service that publishes `ports` is `public`, one that does not is `internal`, unless a gateway in the file fronts it. |
+| nginx configuration, Traefik labels, Caddyfiles, read from a compose gateway | Read, route by route: a service a location proxies to is public, one nothing proxies to is internal when everything was read and `unknown` otherwise. HAProxy and Envoy images are recognised as gateways, but their configuration is not read. |
+| Terraform | Read only where a person tied the code to a target group with `security.terraform`: then its load-balancer listener rules are read for that code. Otherwise recognised, not read. |
+| Kubernetes, Helm and Helmfile, Kustomize, CloudFormation, Serverless, Pulumi, Nomad, Fly.io, Render, Netlify, Vercel, Procfile, App Engine, Terragrunt | Recognised and **not read**. While one is in the repository and is not left out with `security.not_deployed`, nothing is said to be `internal`. |
+| `security.internal`, `security.public` in `.drift/config.yaml` | Read: a person's statement, which wins over compose. |
+
+`drift security --json` lists the recognised-but-unread descriptions under `boundaries.unread`. See [Security Inventory](Security-Inventory) and [Configuration Reference](Configuration-Reference).
+
+See also: [Accuracy and Limits](Accuracy-and-Limits), [How Drift Works](How-Drift-Works), [Practices Map](Practices-Map), [Security Inventory](Security-Inventory), [Command Reference](Command-Reference), [Glossary](Glossary)

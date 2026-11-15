@@ -1,0 +1,4791 @@
+{
+  "schema_version": 11,
+  "files": [
+    {
+      "path": "app/api/access/route.ts",
+      "hash": "7e1561bb952806cfd9dabf8bb35338cc63718dde6418494b1e20234b6cd04872",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "unresolved:./access",
+          "names": [
+            "checkAccess"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "origin": "app/api/access/route.ts#GET",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "exported_as": [
+            "GET"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:next/server#NextResponse.json",
+            "unresolved:./access#checkAccess"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "no_input"
+          ],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/access",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/acl/route.ts",
+      "hash": "f1a46089b7a11dde33ecd2339e41f3de7da677fbfe129a368b262a705709949d",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:acl-lib",
+          "names": [
+            "authorize"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "origin": "app/api/acl/route.ts#GET",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "exported_as": [
+            "GET"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:acl-lib#authorize",
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/acl",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/admin/route.ts",
+      "hash": "cefb40e5259fc46304816022d5b44921cd73cffbaccef738133c46e43962f029",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/auth.ts",
+          "names": [
+            "getUser"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:next/server",
+          "names": [
+            "NextResponse"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "origin": "app/api/admin/route.ts#GET",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "exported_as": [
+            "GET"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/auth.ts#getUser",
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "no_input",
+            "rejects_caller"
+          ],
+          "string_literals": 0,
+          "body_checks": [
+            {
+              "source": "lib/auth.ts#getUser",
+              "reads": "",
+              "compares": "",
+              "outcome": "unauthenticated"
+            },
+            {
+              "source": "lib/auth.ts#getUser",
+              "reads": ".role",
+              "compares": "literal",
+              "outcome": "forbidden"
+            }
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            },
+            {
+              "status": 401,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [
+                "error"
+              ],
+              "in_catch": false
+            },
+            {
+              "status": 403,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [
+                "error"
+              ],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/admin",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/authz/helper/route.ts",
+      "hash": "704748e9519241816e1f412e0fa6a0ba0b7a0cc6fc312b971d6fd18c87257cbb",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/perm.ts",
+          "names": [
+            "canEditProject"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "POST",
+          "origin": "app/api/authz/helper/route.ts#POST",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "POST",
+          "kind": "function",
+          "exported_as": [
+            "POST"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "lib/auth.ts#withAuth",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "lib/perm.ts#canEditProject",
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "no_input"
+          ],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "POST",
+          "kind": "http",
+          "method": "POST",
+          "route": "/api/authz/helper",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/authz/owned/route.ts",
+      "hash": "5a3e9075aabd18f8b226fa0a6ccbb2ba64230adb0d73c1bf540cb4ee2fb3cd13",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/db.ts",
+          "names": [
+            "db"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "origin": "app/api/authz/owned/route.ts#GET",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "exported_as": [
+            "GET"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "lib/auth.ts#withAuth",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "lib/db.ts#db.project.findMany",
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [
+            "lib/db.ts#db.project.findMany@0:select.userId",
+            "lib/db.ts#db.project.findMany@0:where.userId"
+          ],
+          "controls": [
+            "await",
+            "no_input"
+          ],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/authz/owned",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/authz/plain/route.ts",
+      "hash": "02ffa682b9fa7198208b0959f360f521da4f5924b7abd252e3eacbbc3ec9cec9",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "GET",
+          "origin": "app/api/authz/plain/route.ts#GET",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "exported_as": [
+            "GET"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "lib/auth.ts#withAuth",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/authz/plain",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/authz/service/route.ts",
+      "hash": "20e534ad4534e767469367f9262736bc63c13b2ddd01ae37d3799cb76729c790",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/svc.ts",
+          "names": [
+            "ProjectService"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "origin": "app/api/authz/service/route.ts#GET",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "exported_as": [
+            "GET"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "lib/auth.ts#withAuth",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "lib/svc.ts#ProjectService.list",
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "no_input"
+          ],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/authz/service",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/authz/twohop/route.ts",
+      "hash": "a6cddefb1c5fa4662079e75ac8520fe29143e82773d8674aaddfc46e3e3cc303",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/load.ts",
+          "names": [
+            "loadProject"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "origin": "app/api/authz/twohop/route.ts#GET",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "exported_as": [
+            "GET"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "lib/auth.ts#withAuth",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "lib/load.ts#loadProject",
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "no_input"
+          ],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/authz/twohop",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/calendar/route.ts",
+      "hash": "8e1b7f875cb0e224f314d606777a5b4f57ce427dcd5dff3859bdc175a93216e6",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "app/api/respond.ts",
+          "names": [
+            "respond"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "DELETE",
+          "origin": "app/api/calendar/route.ts#DELETE",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "DELETE",
+          "kind": "function",
+          "exported_as": [
+            "DELETE"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "app/api/respond.ts#respond",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "app/api/calendar/route.ts#deleteHandler(ref)"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "authMiddleware",
+          "kind": "function",
+          "exported_as": [],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/auth.ts#getUser"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "rejects_caller",
+            "throw"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "bodySchema",
+          "kind": "const",
+          "exported_as": [],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/zod/schemas/b.ts#bSchema.extend"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "deleteHandler",
+          "kind": "function",
+          "exported_as": [],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "app/api/calendar/route.ts#authMiddleware",
+            "app/api/calendar/route.ts#bodySchema.parse",
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "reads_input",
+            "validates"
+          ],
+          "string_literals": 0,
+          "inputs": [
+            "app/api/calendar/route.ts#bodySchema"
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "DELETE",
+          "kind": "http",
+          "method": "DELETE",
+          "route": "/api/calendar",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/cron/aggregate/route.ts",
+      "hash": "dd8b0f5fd0d6d270ff68e0a2cba5128ec265e222705445de5ecc37468886c66e",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/cron/verify-qstash.ts",
+          "names": [
+            "verifyQstashSignature"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "POST",
+          "origin": "app/api/cron/aggregate/route.ts#POST",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "POST",
+          "kind": "function",
+          "exported_as": [
+            "POST"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/cron/verify-qstash.ts#verifyQstashSignature",
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "reads_input"
+          ],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "POST",
+          "kind": "http",
+          "method": "POST",
+          "route": "/api/cron/aggregate",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/cron/route.ts",
+      "hash": "38c616c2b65a5a134da06b07ca3583d579857c8bed8c7d462720e2783d3f9237",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:crypto",
+          "names": [
+            "timingSafeEqual"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "origin": "app/api/cron/route.ts#GET",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "exported_as": [
+            "GET"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:crypto#timingSafeEqual",
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "rejects_caller"
+          ],
+          "string_literals": 0,
+          "body_checks": [
+            {
+              "source": "pkg:crypto#timingSafeEqual",
+              "reads": "",
+              "compares": "env",
+              "outcome": "unauthenticated"
+            }
+          ],
+          "headers": [
+            "authorization"
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            },
+            {
+              "status": 401,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [
+                "error"
+              ],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/cron",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/cron/sync/route.ts",
+      "hash": "f4c379258f7aeb7f4a9b5b8cbeb5cfc5b673a065acbc3f1cea749e40bffe42d3",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "app/api/cron/utils.ts",
+          "names": [
+            "logAndRespond"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "origin": "app/api/cron/sync/route.ts#GET",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "exported_as": [
+            "GET"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "app/api/cron/utils.ts#logAndRespond",
+            "packages/prisma/index.ts#prisma.link.findMany"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "no_input"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/cron/sync",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/cron/utils.ts",
+      "hash": "9173ba00730afa6aac5ad416b0920a272b304bf3253d44b78df12f269ce8a03f",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "logAndRespond",
+          "origin": "app/api/cron/utils.ts#logAndRespond",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "logAndRespond",
+          "kind": "function",
+          "exported_as": [
+            "logAndRespond"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "global#Response(new)",
+            "global#console.log"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "log_calls": [
+            {
+              "callee": "global#console.log",
+              "level": "log",
+              "in_catch": false,
+              "structured": false,
+              "passes_error": false
+            }
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "global#Response(new)",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "app/api/form/route.ts",
+      "hash": "a0da4a253e240a548262d1c8ed5f627daeeeaff07b6be3c25adaf922145c8634",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/check.ts",
+          "names": [
+            "check"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "POST",
+          "origin": "app/api/form/route.ts#POST",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "POST",
+          "kind": "function",
+          "exported_as": [
+            "POST"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/check.ts#check",
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input",
+            "validates"
+          ],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "POST",
+          "kind": "http",
+          "method": "POST",
+          "route": "/api/form",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/maybe/route.ts",
+      "hash": "bcf9618684679176f4a47f5c1ce54aeb46847aa188fc3e43ada9316ce5020641",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "GET",
+          "origin": "app/api/maybe/route.ts#GET",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "exported_as": [
+            "GET"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/maybe",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/opaque-helper/route.ts",
+      "hash": "61cb3fa00c94f4545b9cb79aac5a605a54557a699730d389e43a57f65a2a0616",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/missing.ts",
+          "names": [
+            "loadStuff"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "origin": "app/api/opaque-helper/route.ts#GET",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "exported_as": [
+            "GET"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/missing.ts#loadStuff",
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "no_input"
+          ],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/opaque-helper",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/opaque/route.ts",
+      "hash": "852cce62e66c0eb1ad9573212dad9a81c1f845eccd65b9aaf8bc82cf65b1ee74",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/wrap.ts",
+          "names": [
+            "withThing"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "origin": "app/api/opaque/route.ts#GET",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "exported_as": [
+            "GET"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "lib/wrap.ts#withThing",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input"
+          ],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/opaque",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/open/route.ts",
+      "hash": "7a046fd46e60468faea9b8584b062abb61b5881e603644ed50e7f1778ac9f940",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:next/server",
+          "names": [
+            "NextResponse"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "origin": "app/api/open/route.ts#GET",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "exported_as": [
+            "GET"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0,
+          "reads": [
+            "process.env.FEATURE_BETA"
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/open",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/r39/route.ts",
+      "hash": "13a9c410365d5be90c04a08d264e88b5cf9317189efb374cf9575469eecef0ca",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "POST",
+          "origin": "app/api/r39/route.ts#POST",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "POST",
+          "kind": "function",
+          "exported_as": [
+            "POST"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "global#Response.json",
+            "global#eval"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "reads_input"
+          ],
+          "string_literals": 0,
+          "reads": [
+            "process.env.SECRET_KEY"
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "global#Response.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "POST",
+          "kind": "http",
+          "method": "POST",
+          "route": "/api/r39",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/respond.ts",
+      "hash": "d4d87904cf958cb62f4af94eb2ccae2d8db4edb19153302ab988e43dc0cbca3b",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "respond",
+          "origin": "app/api/respond.ts#respond",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "respond",
+          "kind": "function",
+          "exported_as": [
+            "respond"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "try"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "app/api/session/route.ts",
+      "hash": "8a746b443213f54b7a812577c276b6b90ad7ff9463bf334fab88d0b92bf047d8",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:next-auth",
+          "names": [
+            "getServerSession"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "origin": "app/api/session/route.ts#GET",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "exported_as": [
+            "GET"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:next-auth#getServerSession"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "reads_input"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/session",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/signup/route.ts",
+      "hash": "83ebfd77402ae82c5707de88fe6e4bd03a3676ccef2298f2dd909d448d11d41b",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/check.ts",
+          "names": [
+            "verifyEmailFormat"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "POST",
+          "origin": "app/api/signup/route.ts#POST",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "POST",
+          "kind": "function",
+          "exported_as": [
+            "POST"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/check.ts#verifyEmailFormat",
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input"
+          ],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 201,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "POST",
+          "kind": "http",
+          "method": "POST",
+          "route": "/api/signup",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/ws/[workspaceId]/route.ts",
+      "hash": "3f72c14a6e110d5c9e5c6a7591765091272b473e8461ebebadaa57df9da8e8df",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/auth.ts",
+          "names": [
+            "withAuth"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "lib/db.ts",
+          "names": [
+            "db"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "origin": "app/api/ws/[workspaceId]/route.ts#GET",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "exported_as": [
+            "GET"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "lib/auth.ts#withAuth",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "lib/db.ts#db.project.findMany",
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [
+            "lib/db.ts#db.project.findMany@0:where"
+          ],
+          "controls": [
+            "await",
+            "reads_input"
+          ],
+          "string_literals": 0,
+          "headers": [
+            "x-workspace-id"
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/ws/[workspaceId]",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "apps/acme/src/alerts/alerts.controller.ts",
+      "hash": "3b5fbf73090f99c1a6b893bdd791db6e9a28959905db7751453aa64f07ade64a",
+      "lang": "ts",
+      "package": "apps/acme",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "apps/acme/src/framework/decorators.ts",
+          "names": [
+            "ApiCommonResponses",
+            "RequireAuthentication",
+            "RequirePermissions"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:@nestjs/common",
+          "names": [
+            "Controller",
+            "ForbiddenException"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "AlertsController",
+          "origin": "apps/acme/src/alerts/alerts.controller.ts#AlertsController",
+          "kind": "local"
+        },
+        {
+          "name": "GET /alerts",
+          "origin": "apps/acme/src/alerts/alerts.controller.ts#GET /alerts",
+          "kind": "local"
+        },
+        {
+          "name": "GET /alerts/open",
+          "origin": "apps/acme/src/alerts/alerts.controller.ts#GET /alerts/open",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "AlertsController",
+          "kind": "class",
+          "exported_as": [
+            "AlertsController"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:@nestjs/common#Controller",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "GET /alerts",
+          "kind": "function",
+          "exported_as": [
+            "GET /alerts"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "apps/acme/src/framework/decorators.ts#RequireAuthentication",
+              "kind": "decorator"
+            },
+            {
+              "wrapper": "apps/acme/src/framework/decorators.ts#RequirePermissions",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "GET /alerts/open",
+          "kind": "function",
+          "exported_as": [
+            "GET /alerts/open"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "apps/acme/src/framework/decorators.ts#ApiCommonResponses",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [
+            "pkg:@nestjs/common#ForbiddenException(new)"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "throw"
+          ],
+          "string_literals": 0,
+          "throws": [
+            "pkg:@nestjs/common#ForbiddenException"
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET /alerts",
+          "kind": "http",
+          "method": "GET",
+          "route": "/alerts",
+          "adapter": "nestjs"
+        },
+        {
+          "symbol": "GET /alerts/open",
+          "kind": "http",
+          "method": "GET",
+          "route": "/alerts/open",
+          "adapter": "nestjs"
+        }
+      ]
+    },
+    {
+      "path": "apps/acme/src/common/auth.guard.ts",
+      "hash": "67a4ec7ea4d0214bb4ee8dddfa9909bcf9da22cdee76054099379af80fa4d97d",
+      "lang": "ts",
+      "package": "apps/acme",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@nestjs/common",
+          "names": [
+            "CanActivate",
+            "ExecutionContext",
+            "Injectable"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "AuthGuard",
+          "origin": "apps/acme/src/common/auth.guard.ts#AuthGuard",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "AuthGuard",
+          "kind": "class",
+          "exported_as": [
+            "AuthGuard"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:@nestjs/common#Injectable",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [
+            "global#Boolean",
+            "pkg:@nestjs/common#Injectable"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "members": [
+            {
+              "name": "canActivate",
+              "calls": [
+                "global#Boolean"
+              ]
+            }
+          ],
+          "headers": [
+            "authorization"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "apps/acme/src/framework/decorators.ts",
+      "hash": "b986a4d0d260d56dc84b49ded2afbe6bbf4ff227150da09b8c8e02f6998c4cb2",
+      "lang": "ts",
+      "package": "apps/acme",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@nestjs/common",
+          "names": [
+            "SetMetadata",
+            "UseGuards",
+            "applyDecorators"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "RequireAuthentication",
+          "origin": "apps/acme/src/framework/decorators.ts#RequireAuthentication",
+          "kind": "local"
+        },
+        {
+          "name": "ApiCommonResponses",
+          "origin": "apps/acme/src/framework/decorators.ts#ApiCommonResponses",
+          "kind": "local"
+        },
+        {
+          "name": "RequirePermissions",
+          "origin": "apps/acme/src/framework/decorators.ts#RequirePermissions",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "ApiCommonResponses",
+          "kind": "function",
+          "exported_as": [
+            "ApiCommonResponses"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:@nestjs/common#applyDecorators"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "rejects_caller"
+          ],
+          "string_literals": 0,
+          "returns_wrapped_by": [
+            "pkg:@nestjs/common#applyDecorators"
+          ]
+        },
+        {
+          "name": "RequireAuthentication",
+          "kind": "function",
+          "exported_as": [
+            "RequireAuthentication"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:@nestjs/common#UseGuards",
+            "pkg:@nestjs/common#applyDecorators"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0,
+          "returns_wrapped_by": [
+            "pkg:@nestjs/common#applyDecorators",
+            "pkg:@nestjs/common#UseGuards"
+          ]
+        },
+        {
+          "name": "RequirePermissions",
+          "kind": "function",
+          "exported_as": [
+            "RequirePermissions"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:@nestjs/common#SetMetadata",
+            "pkg:@nestjs/common#applyDecorators"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "apps/acme/src/projects/projects.controller.ts",
+      "hash": "c011a3363db69178aed6ee84e3db9424da3c7f9cd9e6616c172b5482dac35491",
+      "lang": "ts",
+      "package": "apps/acme",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "apps/acme/src/common/auth.guard.ts",
+          "names": [
+            "AuthGuard"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:@nestjs/common",
+          "names": [
+            "Controller",
+            "Get",
+            "UseGuards"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "ProjectsController",
+          "origin": "apps/acme/src/projects/projects.controller.ts#ProjectsController",
+          "kind": "local"
+        },
+        {
+          "name": "GET /projects/:id",
+          "origin": "apps/acme/src/projects/projects.controller.ts#GET /projects/:id",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET /projects/:id",
+          "kind": "function",
+          "exported_as": [
+            "GET /projects/:id"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:@nestjs/common#UseGuards",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input"
+          ],
+          "string_literals": 0,
+          "decorator_args": [
+            "pkg:@nestjs/common#UseGuards=apps/acme/src/common/auth.guard.ts#AuthGuard"
+          ]
+        },
+        {
+          "name": "ProjectsController",
+          "kind": "class",
+          "exported_as": [
+            "ProjectsController"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:@nestjs/common#Controller",
+              "kind": "decorator"
+            },
+            {
+              "wrapper": "pkg:@nestjs/common#UseGuards",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "decorator_args": [
+            "pkg:@nestjs/common#UseGuards=apps/acme/src/common/auth.guard.ts#AuthGuard"
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET /projects/:id",
+          "kind": "http",
+          "method": "GET",
+          "route": "/projects/:id",
+          "adapter": "nestjs"
+        }
+      ]
+    },
+    {
+      "path": "apps/acme/src/teams/teams.controller.ts",
+      "hash": "334931655132454bfe2a673030d056f64a6b34f29017d4c4156a2a90b35adbb7",
+      "lang": "ts",
+      "package": "apps/acme",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "apps/acme/src/common/auth.guard.ts",
+          "names": [
+            "AuthGuard"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:@nestjs/common",
+          "names": [
+            "Controller",
+            "Get",
+            "UseGuards"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "TeamsController",
+          "origin": "apps/acme/src/teams/teams.controller.ts#TeamsController",
+          "kind": "local"
+        },
+        {
+          "name": "GET /teams/:id",
+          "origin": "apps/acme/src/teams/teams.controller.ts#GET /teams/:id",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET /teams/:id",
+          "kind": "function",
+          "exported_as": [
+            "GET /teams/:id"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:@nestjs/common#UseGuards",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "TeamsController",
+          "kind": "class",
+          "exported_as": [
+            "TeamsController"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:@nestjs/common#Controller",
+              "kind": "decorator"
+            },
+            {
+              "wrapper": "pkg:@nestjs/common#UseGuards",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET /teams/:id",
+          "kind": "http",
+          "method": "GET",
+          "route": "/teams/:id",
+          "adapter": "nestjs"
+        }
+      ]
+    },
+    {
+      "path": "apps/mw/app/api/x/route.test.ts",
+      "hash": "9418668cb819dcdb57d33189b2f2b5a087d59f7b06c8808d1f74115d597c595b",
+      "lang": "ts",
+      "package": "apps/mw",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:vitest",
+          "names": [
+            "it"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [],
+      "symbols": [
+        {
+          "name": "<module>",
+          "kind": "module",
+          "exported_as": [],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:vitest#it"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [],
+      "test_requests": [
+        {
+          "method": "GET",
+          "route": "",
+          "target": "",
+          "statuses": [
+            200
+          ]
+        }
+      ]
+    },
+    {
+      "path": "apps/mw/app/api/x/route.ts",
+      "hash": "a89276690ef1490a1f1f793b348028ac08e9ae8704d546f9f1f3f4766751d3d5",
+      "lang": "ts",
+      "package": "apps/mw",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "GET",
+          "origin": "apps/mw/app/api/x/route.ts#GET",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "exported_as": [
+            "GET"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/x",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "apps/mw/middleware.ts",
+      "hash": "e8d840022a32c725e48d9ce718bdb1bcff9481d29c29fa31475b4e1e5cae6d61",
+      "lang": "ts",
+      "package": "apps/mw",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@clerk/nextjs/server",
+          "names": [
+            "clerkMiddleware"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "default",
+          "origin": "apps/mw/middleware.ts#default",
+          "kind": "local"
+        },
+        {
+          "name": "config",
+          "origin": "apps/mw/middleware.ts#config",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "config",
+          "kind": "const",
+          "exported_as": [
+            "config"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "default",
+          "kind": "function",
+          "exported_as": [
+            "default"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:@clerk/nextjs/server#clerkMiddleware",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "pkg:@clerk/nextjs/server#auth.protect"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "default",
+          "kind": "middleware",
+          "method": null,
+          "route": null,
+          "adapter": "nextjs"
+        }
+      ],
+      "route_matchers": [
+        {
+          "binding": "config.matcher",
+          "patterns": []
+        }
+      ]
+    },
+    {
+      "path": "apps/nest/src/app.module.ts",
+      "hash": "0305eed661800243074647e509f991b3be66e22515beb4a5390367f29f84377e",
+      "lang": "ts",
+      "package": "apps/nest",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@nestjs/common",
+          "names": [
+            "Module"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:@nestjs/core",
+          "names": [
+            "APP_GUARD"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "AppModule",
+          "origin": "apps/nest/src/app.module.ts#AppModule",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "AppModule",
+          "kind": "class",
+          "exported_as": [
+            "AppModule"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:@nestjs/common#Module",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "decorator_args": [
+            "APP_GUARD=apps/nest/src/auth.guard.ts#AuthGuard"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "apps/nest/src/auth.guard.ts",
+      "hash": "8efc5678d99f4172d72a0b26ac8c2d0f09617be412d8477ddcf5cc0d192c1b18",
+      "lang": "ts",
+      "package": "apps/nest",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "AuthGuard",
+          "origin": "apps/nest/src/auth.guard.ts#AuthGuard",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "AuthGuard",
+          "kind": "class",
+          "exported_as": [
+            "AuthGuard"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "rejects_caller"
+          ],
+          "string_literals": 0,
+          "body_checks": [
+            {
+              "source": "param:context",
+              "reads": ".user",
+              "compares": "",
+              "outcome": "unauthenticated"
+            }
+          ],
+          "responses": [
+            {
+              "status": 401,
+              "via": "throw",
+              "builder": "pkg:@nestjs/common#UnauthorizedException(new)",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "apps/nest/src/health.controller.ts",
+      "hash": "e0246bdcd6e6518777fd4aa64fad7f2dd141ef710ac8c6ab770d9cee9103d470",
+      "lang": "ts",
+      "package": "apps/nest",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "apps/nest/src/public.decorator.ts",
+          "names": [
+            "Public"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:@nestjs/common",
+          "names": [
+            "Controller",
+            "Get"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "HealthController",
+          "origin": "apps/nest/src/health.controller.ts#HealthController",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET /health",
+          "kind": "function",
+          "exported_as": [],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "apps/nest/src/public.decorator.ts#Public",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "GET /status",
+          "kind": "function",
+          "exported_as": [],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "HealthController",
+          "kind": "class",
+          "exported_as": [
+            "HealthController"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:@nestjs/common#Controller",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET /health",
+          "kind": "http",
+          "method": "GET",
+          "route": "/health",
+          "adapter": "nestjs"
+        },
+        {
+          "symbol": "GET /status",
+          "kind": "http",
+          "method": "GET",
+          "route": "/status",
+          "adapter": "nestjs"
+        }
+      ]
+    },
+    {
+      "path": "apps/nest/src/items.controller.ts",
+      "hash": "59107ec82d693e57aea58ea232f7fa702c8646fdecde28668b28708bc4c97b04",
+      "lang": "ts",
+      "package": "apps/nest",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "apps/nest/src/jwt.guard.ts",
+          "names": [
+            "JwtGuard"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "apps/nest/src/roles.guard.ts",
+          "names": [
+            "RolesGuard"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:@nestjs/common",
+          "names": [
+            "Controller",
+            "Get",
+            "UseGuards"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "ItemsController",
+          "origin": "apps/nest/src/items.controller.ts#ItemsController",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET /items",
+          "kind": "function",
+          "exported_as": [],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 200,
+              "via": "declared",
+              "builder": "",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        },
+        {
+          "name": "ItemsController",
+          "kind": "class",
+          "exported_as": [
+            "ItemsController"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:@nestjs/common#Controller",
+              "kind": "decorator"
+            },
+            {
+              "wrapper": "pkg:@nestjs/common#UseGuards",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "decorator_args": [
+            "pkg:@nestjs/common#UseGuards=apps/nest/src/jwt.guard.ts#JwtGuard",
+            "pkg:@nestjs/common#UseGuards=apps/nest/src/roles.guard.ts#RolesGuard"
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET /items",
+          "kind": "http",
+          "method": "GET",
+          "route": "/items",
+          "adapter": "nestjs"
+        }
+      ]
+    },
+    {
+      "path": "apps/nest/src/jwt.guard.ts",
+      "hash": "f305c5eed8ac60828f4cf45c5d34845121893096a9823c5e065c0ceb6d61511c",
+      "lang": "ts",
+      "package": "apps/nest",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@nestjs/passport",
+          "names": [
+            "AuthGuard"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "JwtGuard",
+          "origin": "apps/nest/src/jwt.guard.ts#JwtGuard",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "JwtGuard",
+          "kind": "class",
+          "exported_as": [
+            "JwtGuard"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:@nestjs/passport#AuthGuard",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [],
+      "listed": {
+        "entry_points": [],
+        "guard_calls": [
+          {
+            "symbol": "JwtGuard",
+            "line": 1,
+            "calls": [
+              {
+                "callee": "pkg:@nestjs/passport#AuthGuard",
+                "args": [
+                  [
+                    {
+                      "text": "jwt"
+                    }
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "path": "apps/nest/src/public.decorator.ts",
+      "hash": "c8c1f3768660607dddfddaa8f9ebd21ad96cb3352240201e9ac7dbbc68d5a76c",
+      "lang": "ts",
+      "package": "apps/nest",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@nestjs/common",
+          "names": [
+            "SetMetadata"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "Public",
+          "origin": "apps/nest/src/public.decorator.ts#Public",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "Public",
+          "kind": "const",
+          "exported_as": [
+            "Public"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:@nestjs/common#SetMetadata"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "apps/nest/src/roles.guard.ts",
+      "hash": "159e2ecf5113803f8a3af93d8600c575ab060b0f9ef0f0c226f152bd991b8387",
+      "lang": "ts",
+      "package": "apps/nest",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "RolesGuard",
+          "origin": "apps/nest/src/roles.guard.ts#RolesGuard",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "RolesGuard",
+          "kind": "class",
+          "exported_as": [
+            "RolesGuard"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "rejects_caller"
+          ],
+          "string_literals": 0,
+          "body_checks": [
+            {
+              "source": "param:context",
+              "reads": ".user.role",
+              "compares": "call:pkg:@nestjs/core#Reflector.get",
+              "outcome": "forbidden"
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "apps/open/app/api/thing/route.ts",
+      "hash": "338ca671c6834188b1889984abce70b3187e2e3506a0ff3641be9ac2c92215b4",
+      "lang": "ts",
+      "package": "apps/open",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "POST",
+          "origin": "apps/open/app/api/thing/route.ts#POST",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "POST",
+          "kind": "function",
+          "exported_as": [
+            "POST"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input"
+          ],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 201,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            },
+            {
+              "status": 400,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [
+                "error"
+              ],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "POST",
+          "kind": "http",
+          "method": "POST",
+          "route": "/api/thing",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "apps/open/lib/swr-errors.tsx",
+      "hash": "072c0c90d58aeb0ecd140e1b979425dd249e157c9634032b732291d56c070cb0",
+      "lang": "tsx",
+      "package": "apps/open",
+      "parse_ok": true,
+      "directives": [
+        "use client"
+      ],
+      "imports": [],
+      "exports": [
+        {
+          "name": "onError",
+          "origin": "apps/open/lib/swr-errors.tsx#onError",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "onError",
+          "kind": "function",
+          "exported_as": [
+            "onError"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "handles_errors": [
+            "*"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "apps/open/middleware.ts",
+      "hash": "f1b09d1cd2cad744e05973dbaa17b7ff08750bf933b4ee440fc82855139339e0",
+      "lang": "ts",
+      "package": "apps/open",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@clerk/nextjs/server",
+          "names": [
+            "clerkMiddleware"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "default",
+          "origin": "apps/open/middleware.ts#default",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "default",
+          "kind": "function",
+          "exported_as": [
+            "default"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:@clerk/nextjs/server#clerkMiddleware",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "default",
+          "kind": "middleware",
+          "method": null,
+          "route": null,
+          "adapter": "nextjs"
+        }
+      ],
+      "route_matchers": [
+        {
+          "binding": "config.matcher",
+          "patterns": [
+            "/((?!_next).*)"
+          ],
+          "opaque": true
+        }
+      ]
+    },
+    {
+      "path": "backend/auth/verify-auth.ts",
+      "hash": "31e2606716ece5b7bc8ae8dac63cf6cd56139cefd59978044f20364f0c625b89",
+      "lang": "ts",
+      "package": "backend",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "verifyAuth",
+          "origin": "backend/auth/verify-auth.ts#verifyAuth",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "verifyAuth",
+          "kind": "function",
+          "exported_as": [
+            "verifyAuth"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "rejects_caller",
+            "throw"
+          ],
+          "string_literals": 0,
+          "responses": [
+            {
+              "status": 401,
+              "via": "throw",
+              "builder": "backend/errors.ts#UnauthorizedError(new)",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "backend/routes/acme.ts",
+      "hash": "695bde6d010828a6041fcf3e7129505760132a3dc33a38e2b505b2894415c203",
+      "lang": "ts",
+      "package": "backend",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:fastify",
+          "names": [
+            "FastifyInstance"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "POST /new-account",
+          "origin": "backend/routes/acme.ts#POST /new-account",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "POST /new-account",
+          "kind": "function",
+          "exported_as": [
+            "POST /new-account"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "global#URL(new)"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "reads_input"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "POST /new-account",
+          "kind": "http",
+          "method": "POST",
+          "route": "/acme/new-account",
+          "adapter": "fastify"
+        }
+      ]
+    },
+    {
+      "path": "backend/routes/secrets.ts",
+      "hash": "18958dbc0c106518e5fee9c042a666832f883aaa34888b8d0b686444c5084ac0",
+      "lang": "ts",
+      "package": "backend",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "backend/auth/verify-auth.ts",
+          "names": [
+            "verifyAuth"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "DELETE /secrets/:id",
+          "origin": "backend/routes/secrets.ts#DELETE /secrets/:id",
+          "kind": "local"
+        },
+        {
+          "name": "GET /secrets/raw",
+          "origin": "backend/routes/secrets.ts#GET /secrets/raw",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "DELETE /secrets/:id",
+          "kind": "function",
+          "exported_as": [
+            "DELETE /secrets/:id"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "backend/auth/verify-auth.ts#verifyAuth",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "param:server.services.secret.canRevoke",
+            "param:server.services.secret.deleteSecret"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "reads_input"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "GET /secrets/raw",
+          "kind": "function",
+          "exported_as": [
+            "GET /secrets/raw"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "param:server.services.secret.canRevoke",
+            "param:server.services.secret.deleteSecret"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "reads_input"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "DELETE /secrets/:id",
+          "kind": "http",
+          "method": "DELETE",
+          "route": "/secrets/:id",
+          "adapter": "fastify"
+        },
+        {
+          "symbol": "GET /secrets/raw",
+          "kind": "http",
+          "method": "GET",
+          "route": "/secrets/raw",
+          "adapter": "fastify"
+        }
+      ]
+    },
+    {
+      "path": "components/pay.tsx",
+      "hash": "bf8a0fc2d48612f49bfc7d3a58ed4c932b7cee059a9de367fc5e2e8666aca955",
+      "lang": "tsx",
+      "package": "",
+      "parse_ok": true,
+      "directives": [
+        "use client"
+      ],
+      "imports": [],
+      "exports": [
+        {
+          "name": "Pay",
+          "origin": "components/pay.tsx#Pay",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "Pay",
+          "kind": "component",
+          "exported_as": [
+            "Pay"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "return_jsx"
+          ],
+          "string_literals": 0,
+          "reads": [
+            "process.env.STRIPE_SECRET_KEY"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/a.ts",
+      "hash": "9520999e692561c35d7d1d04acf1b9023af07ca12889290f519478ba7f5b09a6",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/env.ts",
+          "names": [
+            "env"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "lib/log.ts",
+          "names": [
+            "log"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "work",
+          "origin": "lib/a.ts#work",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "work",
+          "kind": "function",
+          "exported_as": [
+            "work"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/log.ts#log.info"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "log_calls": [
+            {
+              "callee": "lib/log.ts#log.info",
+              "level": "info",
+              "in_catch": false,
+              "structured": false,
+              "passes_error": false
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/auth.ts",
+      "hash": "cd41b427b38a554f9a1a2d2e848e41ddc39bc7d68dba54c1398d7384d6aaf4f7",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:next-auth",
+          "names": [
+            "getServerSession"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "getUser",
+          "origin": "lib/auth.ts#getUser",
+          "kind": "local"
+        },
+        {
+          "name": "withAuth",
+          "origin": "lib/auth.ts#withAuth",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "getUser",
+          "kind": "function",
+          "exported_as": [
+            "getUser"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:next-auth#getServerSession"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "withAuth",
+          "kind": "function",
+          "exported_as": [
+            "withAuth"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/auth.ts#getUser"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "rejects_caller"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/b.ts",
+      "hash": "5f69e1a36016f0963efc306c70a63a1a3f4c1f84cdaa2f9dfdf29486aecf59e1",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/env.ts",
+          "names": [
+            "env"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "lib/log.ts",
+          "names": [
+            "log"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "work",
+          "origin": "lib/b.ts#work",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "work",
+          "kind": "function",
+          "exported_as": [
+            "work"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/log.ts#log.info"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "log_calls": [
+            {
+              "callee": "lib/log.ts#log.info",
+              "level": "info",
+              "in_catch": false,
+              "structured": false,
+              "passes_error": false
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/c.ts",
+      "hash": "d596e1b37071c9dcbe03da48fc955787bfa6f6dba00f591a63b1c82086f82985",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/env.ts",
+          "names": [
+            "env"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "lib/log.ts",
+          "names": [
+            "log"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "work",
+          "origin": "lib/c.ts#work",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "work",
+          "kind": "function",
+          "exported_as": [
+            "work"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/log.ts#log.info"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "log_calls": [
+            {
+              "callee": "lib/log.ts#log.info",
+              "level": "info",
+              "in_catch": false,
+              "structured": false,
+              "passes_error": false
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/check.ts",
+      "hash": "e3b81d79f0a6cfc51010ff0fcef34fc90907d5e29c6d83af098152db7b7f0120",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "check",
+          "origin": "lib/check.ts#check",
+          "kind": "local"
+        },
+        {
+          "name": "verifyEmailFormat",
+          "origin": "lib/check.ts#verifyEmailFormat",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "check",
+          "kind": "function",
+          "exported_as": [
+            "check"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "throw"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "verifyEmailFormat",
+          "kind": "function",
+          "exported_as": [
+            "verifyEmailFormat"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "throw"
+          ],
+          "string_literals": 0,
+          "throws": [
+            "lib/errors.ts#ValidationError"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/cron/verify-qstash.ts",
+      "hash": "bcdd43be167384d99f0ab335c2d0bbecdb5ec9d611270311d73e56d3d3e1336e",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "verifyQstashSignature",
+          "origin": "lib/cron/verify-qstash.ts#verifyQstashSignature",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "verifyQstashSignature",
+          "kind": "function",
+          "exported_as": [
+            "verifyQstashSignature"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:@upstash/qstash#Receiver.verify"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "rejects_caller",
+            "throw"
+          ],
+          "string_literals": 0,
+          "throws": [
+            "lib/errors.ts#DubApiError"
+          ],
+          "responses": [
+            {
+              "status": 401,
+              "via": "throw",
+              "builder": "lib/errors.ts#DubApiError(new)",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/db.ts",
+      "hash": "bee0685f8d74755f4a791657dee5a60eed8eb93923f5b0602bdb6339733ab266",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@prisma/client",
+          "names": [
+            "PrismaClient"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "db",
+          "origin": "lib/db.ts#db",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "db",
+          "kind": "const",
+          "exported_as": [
+            "db"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:@prisma/client#PrismaClient(new)"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/env.ts",
+      "hash": "8e80df407bc3dc35ee87c4b832b6a879263808697d8554a9039ce1debe6929e7",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "env",
+          "origin": "lib/env.ts#env",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "env",
+          "kind": "const",
+          "exported_as": [
+            "env"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "reads": [
+            "process.env.DATABASE_URL",
+            "process.env.NEXTAUTH_URL",
+            "process.env.STRIPE_SECRET_KEY"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/env2.ts",
+      "hash": "b0e6324cc6b73777ba3171544870e2851ba771b4aad5bd8f2881061a78bc5183",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@t3-oss/env-nextjs",
+          "names": [
+            "createEnv"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "env",
+          "origin": "lib/env2.ts#env",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "env",
+          "kind": "const",
+          "exported_as": [
+            "env"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:@t3-oss/env-nextjs#createEnv"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/flags.ts",
+      "hash": "9a6a29d901bb32b5d7ea88c446705af686e873935aad9720beaf2a8897d0b704",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@growthbook/growthbook",
+          "names": [
+            "GrowthBook"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "growthbook",
+          "origin": "lib/flags.ts#growthbook",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "growthbook",
+          "kind": "const",
+          "exported_as": [
+            "growthbook"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:@growthbook/growthbook#GrowthBook(new)"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/load.ts",
+      "hash": "b1ed5dd140bf629abc5aa7f170af2926c14c58fe7f681424d0f056da648d6704",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/db.ts",
+          "names": [
+            "db"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "loadProject",
+          "origin": "lib/load.ts#loadProject",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "loadProject",
+          "kind": "function",
+          "exported_as": [
+            "loadProject"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/db.ts#db.project.findFirst"
+          ],
+          "renders": [],
+          "args": [
+            "lib/db.ts#db.project.findFirst@0:where.organizationId"
+          ],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/log.ts",
+      "hash": "8e88de0bd7925a69fa4cbbdc389300032f7fac37cceab81df9e97bec49d87c50",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:winston",
+          "names": [
+            "createLogger"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "log",
+          "origin": "lib/log.ts#log",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "log",
+          "kind": "const",
+          "exported_as": [
+            "log"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:winston#createLogger"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/logger2.ts",
+      "hash": "b9a4ce81d4b59dc5ab92d82083031e53448605d09306eac88c8925e127ab1b9e",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:pino",
+          "names": [
+            "default"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "base",
+          "origin": "lib/logger2.ts#base",
+          "kind": "local"
+        },
+        {
+          "name": "extended",
+          "origin": "lib/logger2.ts#extended",
+          "kind": "local"
+        },
+        {
+          "name": "logger",
+          "origin": "lib/logger2.ts#logger",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "base",
+          "kind": "const",
+          "exported_as": [
+            "base"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:pino#default",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "extended",
+          "kind": "const",
+          "exported_as": [
+            "extended"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/logger2.ts#base.child"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "logger",
+          "kind": "const",
+          "exported_as": [
+            "logger"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "derives_from": "lib/logger2.ts#extended"
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/logger3.ts",
+      "hash": "973ae39d17492bd09f636032bb133bdf072b546b0cf722f57ce23d4d6c7913f1",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:pino",
+          "names": [
+            "default"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "logger",
+          "origin": "lib/logger3.ts#logger",
+          "kind": "local"
+        },
+        {
+          "name": "initLogger",
+          "origin": "lib/logger3.ts#initLogger",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "initLogger",
+          "kind": "function",
+          "exported_as": [
+            "initLogger"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:pino#default"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "logger",
+          "kind": "variable",
+          "exported_as": [
+            "logger"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/perm.ts",
+      "hash": "e8eade2ae7b19593f44e282b4eafba3a4e099b62f8d9de19adaef40b75220434",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "canEditProject",
+          "origin": "lib/perm.ts#canEditProject",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "canEditProject",
+          "kind": "function",
+          "exported_as": [
+            "canEditProject"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "rejects_caller",
+            "throw"
+          ],
+          "string_literals": 0,
+          "throws": [
+            "lib/errors.ts#ForbiddenError"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/repo/keys.ts",
+      "hash": "69710de8ebae23bf1e99657c1ead7adb1e266a7f14cf3e2bb7c752db721b156d",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "KeyRepository",
+          "origin": "lib/repo/keys.ts#KeyRepository",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "KeyRepository",
+          "kind": "class",
+          "exported_as": [
+            "KeyRepository"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/db.ts#db.apiKey.findMany"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "members": [
+            {
+              "name": "list",
+              "calls": [
+                "lib/db.ts#db.apiKey.findMany"
+              ]
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/repo/users.ts",
+      "hash": "5c8265dc245e7abd76d35fdc306b2c2f525f6fe46e91b47b2399b5348e5e7972",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "findUser",
+          "origin": "lib/repo/users.ts#findUser",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "findUser",
+          "kind": "function",
+          "exported_as": [
+            "findUser"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "sinks": [
+            "raw_sql"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/svc.ts",
+      "hash": "008ce6a45e5dda3a99fcc2084991882c91a0ae33fb11597f3d8e05f0c3db2cc3",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "ProjectService",
+          "origin": "lib/svc.ts#ProjectService",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "ProjectService",
+          "kind": "class",
+          "exported_as": [
+            "ProjectService"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/db.ts#db.project.findMany"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/toast.ts",
+      "hash": "5ee1d2d88420bdeb09a041d59aa56371580418b4c010624dba16594ea0f463a4",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:sonner",
+          "names": [
+            "toast"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "notify",
+          "origin": "lib/toast.ts#notify",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "notify",
+          "kind": "function",
+          "exported_as": [
+            "notify"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:sonner#toast.error"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "log_calls": [
+            {
+              "callee": "pkg:sonner#toast.error",
+              "level": "error",
+              "in_catch": false,
+              "structured": false,
+              "passes_error": false
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/use-loggers.ts",
+      "hash": "df03d8c5c9c63e0827a3feb3b22dfe79c732830dc3b5ce6577340ae8da98f182",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/logger2.ts",
+          "names": [
+            "logger"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "lib/logger3.ts",
+          "names": [
+            "logger"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:nestjs-pino",
+          "names": [
+            "PinoLogger"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "stepwise",
+          "origin": "lib/use-loggers.ts#stepwise",
+          "kind": "local"
+        },
+        {
+          "name": "assigned",
+          "origin": "lib/use-loggers.ts#assigned",
+          "kind": "local"
+        },
+        {
+          "name": "injected",
+          "origin": "lib/use-loggers.ts#injected",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "assigned",
+          "kind": "function",
+          "exported_as": [
+            "assigned"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/logger3.ts#logger.warn"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "log_calls": [
+            {
+              "callee": "lib/logger3.ts#logger.warn",
+              "level": "warn",
+              "in_catch": false,
+              "structured": false,
+              "passes_error": false
+            }
+          ]
+        },
+        {
+          "name": "injected",
+          "kind": "function",
+          "exported_as": [
+            "injected"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:nestjs-pino#PinoLogger.info"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "log_calls": [
+            {
+              "callee": "pkg:nestjs-pino#PinoLogger.info",
+              "level": "info",
+              "in_catch": false,
+              "structured": true,
+              "passes_error": false
+            }
+          ]
+        },
+        {
+          "name": "stepwise",
+          "kind": "function",
+          "exported_as": [
+            "stepwise"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/logger2.ts#logger.info"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "log_calls": [
+            {
+              "callee": "lib/logger2.ts#logger.info",
+              "level": "info",
+              "in_catch": false,
+              "structured": false,
+              "passes_error": false
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/util.ts",
+      "hash": "1c8c7cd39f192c10d4cc0fb11260aefb8333593c1e2446cbd21e313267fe4e2f",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:mixpanel",
+          "names": [
+            "init"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "tracker",
+          "origin": "lib/util.ts#tracker",
+          "kind": "local"
+        },
+        {
+          "name": "report",
+          "origin": "lib/util.ts#report",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "report",
+          "kind": "function",
+          "exported_as": [
+            "report"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/util.ts#tracker.info"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "log_calls": [
+            {
+              "callee": "lib/util.ts#tracker.info",
+              "level": "info",
+              "in_catch": false,
+              "structured": false,
+              "passes_error": false
+            }
+          ]
+        },
+        {
+          "name": "tracker",
+          "kind": "const",
+          "exported_as": [
+            "tracker"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:mixpanel#init"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/zod/schemas/a.ts",
+      "hash": "1d50afaa9bc0a1f5e911f05c4a00b5adcee5f373ccf66a92283a6184441d087b",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:zod",
+          "names": [
+            "z"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "aSchema",
+          "origin": "lib/zod/schemas/a.ts#aSchema",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "aSchema",
+          "kind": "const",
+          "exported_as": [
+            "aSchema"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:zod#z.object",
+            "pkg:zod#z.string"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/zod/schemas/b.ts",
+      "hash": "bafc77d63b79fa39f8f3a98612e3762f303e7707e7f2a9985d1673a2877d3216",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/zod/schemas/a.ts",
+          "names": [
+            "aSchema"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "bSchema",
+          "origin": "lib/zod/schemas/b.ts#bSchema",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "bSchema",
+          "kind": "const",
+          "exported_as": [
+            "bSchema"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/zod/schemas/a.ts#aSchema.omit"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "packages/trpc/procedures.ts",
+      "hash": "1be0edde6717ee7dc326c4dd792291d934d510e9baf87439a151bd02dc996d14",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "authedProcedure",
+          "origin": "packages/trpc/procedures.ts#authedProcedure",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "authedProcedure",
+          "kind": "const",
+          "exported_as": [
+            "authedProcedure"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "rejects_caller"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "packages/trpc/routers/keys/_router.ts",
+      "hash": "bc615f01e6beccff754211cecba7937261bcb91372029b2e8c3a048ef242747f",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "packages/trpc/procedures.ts",
+          "names": [
+            "authedProcedure"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "packages/trpc/routers/keys/edit.handler.ts",
+          "names": [
+            "default"
+          ],
+          "type_only": false,
+          "load": "dynamic"
+        },
+        {
+          "module": "packages/trpc/routers/keys/list.handler.ts",
+          "names": [
+            "default"
+          ],
+          "type_only": false,
+          "load": "dynamic"
+        },
+        {
+          "module": "packages/trpc/routers/keys/remove.handler.ts",
+          "names": [
+            "default"
+          ],
+          "type_only": false,
+          "load": "dynamic"
+        }
+      ],
+      "exports": [
+        {
+          "name": "MUTATION edit",
+          "origin": "packages/trpc/routers/keys/_router.ts#MUTATION edit",
+          "kind": "local"
+        },
+        {
+          "name": "MUTATION remove",
+          "origin": "packages/trpc/routers/keys/_router.ts#MUTATION remove",
+          "kind": "local"
+        },
+        {
+          "name": "QUERY ping",
+          "origin": "packages/trpc/routers/keys/_router.ts#QUERY ping",
+          "kind": "local"
+        },
+        {
+          "name": "QUERY list",
+          "origin": "packages/trpc/routers/keys/_router.ts#QUERY list",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "MUTATION edit",
+          "kind": "function",
+          "exported_as": [
+            "MUTATION edit"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "packages/trpc/procedures.ts#authedProcedure",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "reads_input"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "MUTATION remove",
+          "kind": "function",
+          "exported_as": [
+            "MUTATION remove"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "packages/trpc/procedures.ts#authedProcedure",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "reads_input"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "QUERY list",
+          "kind": "function",
+          "exported_as": [
+            "QUERY list"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "packages/trpc/procedures.ts#authedProcedure",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "no_input"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "QUERY ping",
+          "kind": "function",
+          "exported_as": [
+            "QUERY ping"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "packages/trpc/procedures.ts#authedProcedure",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "no_input"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "MUTATION edit",
+          "kind": "rpc",
+          "method": "ANY",
+          "route": "edit",
+          "adapter": "trpc"
+        },
+        {
+          "symbol": "MUTATION remove",
+          "kind": "rpc",
+          "method": "ANY",
+          "route": "remove",
+          "adapter": "trpc"
+        },
+        {
+          "symbol": "QUERY ping",
+          "kind": "rpc",
+          "method": "ANY",
+          "route": "ping",
+          "adapter": "trpc"
+        },
+        {
+          "symbol": "QUERY list",
+          "kind": "rpc",
+          "method": "ANY",
+          "route": "list",
+          "adapter": "trpc"
+        }
+      ]
+    },
+    {
+      "path": "packages/trpc/routers/keys/edit.handler.ts",
+      "hash": "b65c36af3d2ec9fd5bd1b75af901879b733670cca3ea34313afadb9b86ce526f",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/db.ts",
+          "names": [
+            "db"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "editHandler",
+          "origin": "packages/trpc/routers/keys/edit.handler.ts#editHandler",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "editHandler",
+          "kind": "function",
+          "exported_as": [
+            "editHandler"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/db.ts#db.apiKey.update"
+          ],
+          "renders": [],
+          "args": [
+            "lib/db.ts#db.apiKey.update@0:data",
+            "lib/db.ts#db.apiKey.update@0:where",
+            "lib/db.ts#db.apiKey.update@0:where.id"
+          ],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "packages/trpc/routers/keys/list.handler.ts",
+      "hash": "ef2a3c116e73591d496bcd00f60cdf47e888c4aedc863c3136fd5d206897dce5",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/repo/keys.ts",
+          "names": [
+            "KeyRepository"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "listHandler",
+          "origin": "packages/trpc/routers/keys/list.handler.ts#listHandler",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "listHandler",
+          "kind": "function",
+          "exported_as": [
+            "listHandler"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "lib/errors.ts#NotFoundError(new)",
+            "lib/repo/keys.ts#KeyRepository(new)"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "packages/trpc/routers/keys/remove.handler.ts",
+      "hash": "9b3b2034237e589bcae533799f2fb2f01be0b862a602708e7e6aae402adbcad7",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "packages/prisma/index.ts",
+          "names": [
+            "prisma"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "removeHandler",
+          "origin": "packages/trpc/routers/keys/remove.handler.ts#removeHandler",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "removeHandler",
+          "kind": "function",
+          "exported_as": [
+            "removeHandler"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "packages/prisma/index.ts#prisma.apiKey.delete"
+          ],
+          "renders": [],
+          "args": [
+            "packages/prisma/index.ts#prisma.apiKey.delete@0:where.userId"
+          ],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "scripts/seed.ts",
+      "hash": "dc31c45b12f01153e351ab68c73d2d8b069b987d4595344f79b9af5e3116f924",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@prisma/client",
+          "names": [
+            "PrismaClient"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "main",
+          "origin": "scripts/seed.ts#main",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "main",
+          "kind": "function",
+          "exported_as": [
+            "main"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:@prisma/client#PrismaClient(new)"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    }
+  ],
+  "skipped": [],
+  "packages": [
+    {
+      "path": "",
+      "name": "cases-ts",
+      "scripts": [],
+      "dependencies": [
+        "@growthbook/growthbook@^1.0.0",
+        "@prisma/client@^5.20.0",
+        "@t3-oss/env-nextjs@^0.10.0",
+        "next-auth@^4.24.0",
+        "next@15.0.3",
+        "sonner@^1.0.0",
+        "winston@^3.0.0"
+      ],
+      "compiler_flags": []
+    },
+    {
+      "path": "apps/mw",
+      "name": "mw",
+      "scripts": [],
+      "dependencies": [
+        "@clerk/nextjs@^6.0.0",
+        "vitest@^2.1.0"
+      ],
+      "compiler_flags": [],
+      "dev_only": [
+        "vitest"
+      ]
+    }
+  ]
+}

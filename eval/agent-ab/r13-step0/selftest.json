@@ -1,0 +1,380 @@
+[
+  {
+    "task": "dub-tags-count",
+    "variant": "original",
+    "eps": [
+      "GET[withWorkspace]+v"
+    ],
+    "res": [
+      {
+        "concern": "authn",
+        "auto": "pass",
+        "why": null
+      },
+      {
+        "concern": "validation",
+        "auto": "pass",
+        "why": null
+      }
+    ],
+    "ok": true
+  },
+  {
+    "task": "dub-tags-count",
+    "variant": "empty",
+    "eps": [],
+    "res": [
+      {
+        "concern": "authn",
+        "auto": "none",
+        "why": "no added entry point in Drift's inventory"
+      },
+      {
+        "concern": "validation",
+        "auto": "none",
+        "why": "no added entry point in Drift's inventory"
+      }
+    ],
+    "ok": true
+  },
+  {
+    "task": "dub-log-by-id",
+    "variant": "original",
+    "eps": [
+      "GET[withWorkspace]"
+    ],
+    "res": [
+      {
+        "concern": "authn",
+        "auto": "pass",
+        "why": null
+      },
+      {
+        "concern": "errors",
+        "auto": "pass",
+        "why": null
+      }
+    ],
+    "ok": true
+  },
+  {
+    "task": "dub-log-by-id",
+    "variant": "empty",
+    "eps": [],
+    "res": [
+      {
+        "concern": "authn",
+        "auto": "none",
+        "why": "no added entry point in Drift's inventory"
+      },
+      {
+        "concern": "errors",
+        "auto": "fail",
+        "why": "no match for /new DubApiError\\(/"
+      }
+    ],
+    "ok": true
+  },
+  {
+    "task": "immich-view-controller",
+    "variant": "original",
+    "eps": [
+      "GET /view/folder[ApiTags,Authenticated,Endpoint]",
+      "GET /view/folder/unique-paths[ApiTags,Authenticated,Endpoint]"
+    ],
+    "res": [
+      {
+        "concern": "authn",
+        "auto": "pass",
+        "why": null
+      }
+    ],
+    "ok": true
+  },
+  {
+    "task": "immich-view-controller",
+    "variant": "empty",
+    "eps": [],
+    "res": [
+      {
+        "concern": "authn",
+        "auto": "none",
+        "why": "no added entry point in Drift's inventory"
+      }
+    ],
+    "ok": true
+  },
+  {
+    "task": "immich-tag-get",
+    "variant": "original",
+    "eps": [
+      "GET /tags/:id[ApiTags,Authenticated,Endpoint]"
+    ],
+    "res": [
+      {
+        "concern": "authn",
+        "auto": "pass",
+        "why": null
+      },
+      {
+        "concern": "validation",
+        "auto": "pass",
+        "why": null
+      }
+    ],
+    "ok": true
+  },
+  {
+    "task": "immich-tag-get",
+    "variant": "empty",
+    "eps": [],
+    "res": [
+      {
+        "concern": "authn",
+        "auto": "none",
+        "why": "no added entry point in Drift's inventory"
+      },
+      {
+        "concern": "validation",
+        "auto": "fail",
+        "why": "no match for /@Param\\(\\)\\s*\\{\\s*id\\s*\\}\\s*:\\s*UUIDParamDto/"
+      }
+    ],
+    "ok": true
+  },
+  {
+    "task": "infisical-user-action",
+    "variant": "original",
+    "eps": [
+      "GET /[verifyAuth]",
+      "POST /[verifyAuth]"
+    ],
+    "res": [
+      {
+        "concern": "authn",
+        "auto": "pass",
+        "why": null
+      },
+      {
+        "concern": "validation",
+        "auto": "pass",
+        "why": null
+      }
+    ],
+    "ok": true
+  },
+  {
+    "task": "infisical-user-action",
+    "variant": "empty",
+    "eps": [],
+    "res": [
+      {
+        "concern": "authn",
+        "auto": "none",
+        "why": "no added entry point in Drift's inventory"
+      },
+      {
+        "concern": "validation",
+        "auto": "fail",
+        "why": "no match for /schema:\\s*\\{[\\s\\S]*(body|querystring):\\s*z\\.object/"
+      }
+    ],
+    "ok": true
+  },
+  {
+    "task": "infisical-project-key",
+    "variant": "original",
+    "eps": [
+      "POST /:workspaceId/key[verifyAuth]"
+    ],
+    "res": [
+      {
+        "concern": "authn",
+        "auto": "pass",
+        "why": null
+      },
+      {
+        "concern": "validation",
+        "auto": "pass",
+        "why": null
+      }
+    ],
+    "ok": true
+  },
+  {
+    "task": "infisical-project-key",
+    "variant": "empty",
+    "eps": [],
+    "res": [
+      {
+        "concern": "authn",
+        "auto": "none",
+        "why": "no added entry point in Drift's inventory"
+      },
+      {
+        "concern": "validation",
+        "auto": "fail",
+        "why": "no match for /schema:\\s*\\{[\\s\\S]*body:\\s*z\\.object/"
+      }
+    ],
+    "ok": true
+  },
+  {
+    "task": "midday-tags-router",
+    "variant": "original",
+    "eps": [
+      "MUTATION create[protectedProcedure]+v",
+      "MUTATION delete[protectedProcedure]+v",
+      "MUTATION update[protectedProcedure]+v",
+      "QUERY get[protectedProcedure]"
+    ],
+    "res": [
+      {
+        "concern": "authn",
+        "auto": "pass",
+        "why": null
+      },
+      {
+        "concern": "validation",
+        "auto": "pass",
+        "why": null
+      }
+    ],
+    "ok": true
+  },
+  {
+    "task": "midday-tags-router",
+    "variant": "empty",
+    "eps": [],
+    "res": [
+      {
+        "concern": "authn",
+        "auto": "none",
+        "why": "no added entry point in Drift's inventory"
+      },
+      {
+        "concern": "validation",
+        "auto": "fail",
+        "why": "no match for /\\.input\\(\\s*(createTagSchema|updateTagSchema|deleteTagSchema)/"
+      }
+    ],
+    "ok": true
+  },
+  {
+    "task": "fastapi-delete-item",
+    "variant": "original",
+    "eps": [
+      "delete_item[get_db,get_current_user,security.OAuth2PasswordBearer]"
+    ],
+    "res": [
+      {
+        "concern": "authn",
+        "auto": "pass",
+        "why": null
+      },
+      {
+        "concern": "errors",
+        "auto": "pass",
+        "why": null
+      }
+    ],
+    "ok": true
+  },
+  {
+    "task": "fastapi-delete-item",
+    "variant": "empty",
+    "eps": [],
+    "res": [
+      {
+        "concern": "authn",
+        "auto": "none",
+        "why": "no added entry point in Drift's inventory"
+      },
+      {
+        "concern": "errors",
+        "auto": "fail",
+        "why": "no match for /raise HTTPException\\(\\s*status_code=404[\\s\\S]*raise HTTPException\\(\\s*status_code=403/"
+      }
+    ],
+    "ok": true
+  },
+  {
+    "task": "crm-account-export",
+    "variant": "original",
+    "eps": [
+      "AccountExportView[permissions.IsAuthenticated,HasOrgContext]"
+    ],
+    "res": [
+      {
+        "concern": "authn",
+        "auto": "pass",
+        "why": null
+      },
+      {
+        "concern": "scoping",
+        "auto": "pass",
+        "why": null
+      }
+    ],
+    "ok": true
+  },
+  {
+    "task": "crm-account-export",
+    "variant": "empty",
+    "eps": [],
+    "res": [
+      {
+        "concern": "authn",
+        "auto": "none",
+        "why": "no added entry point in Drift's inventory"
+      },
+      {
+        "concern": "scoping",
+        "auto": "fail",
+        "why": "no match for /account_list_queryset\\(|RecordExportView/"
+      }
+    ],
+    "ok": true
+  },
+  {
+    "task": "crm-case-watch",
+    "variant": "original",
+    "eps": [
+      "WatchView.delete[permissions.IsAuthenticated,HasOrgContext]",
+      "WatchView.post[permissions.IsAuthenticated,HasOrgContext]",
+      "WatchersListView.get[permissions.IsAuthenticated,HasOrgContext]",
+      "WatchingListView.get[permissions.IsAuthenticated,HasOrgContext]"
+    ],
+    "res": [
+      {
+        "concern": "authn",
+        "auto": "pass",
+        "why": null
+      },
+      {
+        "concern": "scoping",
+        "auto": "pass",
+        "why": null
+      }
+    ],
+    "ok": true
+  },
+  {
+    "task": "crm-case-watch",
+    "variant": "empty",
+    "eps": [],
+    "res": [
+      {
+        "concern": "authn",
+        "auto": "none",
+        "why": "no added entry point in Drift's inventory"
+      },
+      {
+        "concern": "scoping",
+        "auto": "fail",
+        "why": "no match for /visible_cases_qs/"
+      }
+    ],
+    "ok": true
+  }
+]

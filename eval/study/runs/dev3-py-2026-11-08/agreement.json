@@ -1,0 +1,63 @@
+{
+  "a": "eval/study/runs/dev3-py-2026-11-08/labels/A",
+  "b": "eval/study/runs/dev3-py-2026-11-08/labels/B",
+  "labels_sha256": {
+    "A": "d01d91c63abb83f6a7291ebe60d067ecebc0034d07a0852194de882e4e6ca833",
+    "B": "64e3c8761ed74067193fd4b0fcd52b0d3fc5e8242a1a969822d29e5a39bf5b0a"
+  },
+  "computed_at": "2026-11-08T16:32:20.376Z",
+  "rubric_sha256s": [
+    "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+  ],
+  "n": 2,
+  "scope": 2,
+  "exact": 1,
+  "kappa": 1,
+  "kappa_boot": {
+    "lo": 1,
+    "hi": 1,
+    "clusters": 2
+  },
+  "accept_vs_not": {
+    "n": 2,
+    "po": 1,
+    "pe": 0.5,
+    "kappa": 1
+  },
+  "wrong_vs_not": {
+    "n": 2,
+    "po": 1,
+    "pe": 0.5,
+    "kappa": 1
+  },
+  "confusion": {
+    "ACCEPT": {
+      "ACCEPT": 1,
+      "TRIVIAL": 0,
+      "WRONG": 0
+    },
+    "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+    },
+    "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 1
+    }
+  },
+  "mix": {
+    "A": {
+      "ACCEPT": 1,
+      "TRIVIAL": 0,
+      "WRONG": 1
+    },
+    "B": {
+      "ACCEPT": 1,
+      "TRIVIAL": 0,
+      "WRONG": 1
+    }
+  },
+  "disagreements": []
+}

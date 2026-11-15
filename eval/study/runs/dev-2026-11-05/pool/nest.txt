@@ -1,0 +1,104 @@
+17 conventions from 3823 units in 213 roles
+
+ 1. [D-934dfa] classes in integration/** (*.controller files) are decorated with Controller()
+    evidence: 93/100 (lower bound 0.86, lift 6.3)
+    example:  integration/cookies/src/app.controller.ts#AppController
+    outlier:  integration/nest-application/observable-response/src/app.controller.ts:48 CommitInterceptor
+    outlier:  integration/nest-application/observable-response/src/app.controller.ts:37 RecordingExceptionFilter
+    outlier:  integration/nest-application/observable-response/src/app.controller.ts:62 WrapInterceptor
+    ... 4 more outliers
+
+ 2. [D-d13c39] HTTP handlers in integration/** (*.controller files) do not use `any`
+    evidence: 227/234 (lower bound 0.94, lift 5.1)
+    example:  integration/cookies/src/app.controller.ts#GET /clear
+    outlier:  integration/microservices/src/grpc-advanced/advanced.grpc.controller.ts:37 POST /
+    outlier:  integration/microservices/src/grpc-advanced/advanced.grpc.controller.ts:48 POST /client-streaming
+    outlier:  integration/microservices/src/grpc/grpc.controller.ts:169 POST /error
+    ... 4 more outliers
+
+ 3. [D-71cafa] classes in integration/** (*.module files) do not use `any`
+    evidence: 160/165 (lower bound 0.93, lift 9.2)
+    example:  integration/cookies/src/app.module.ts#AppModule
+    outlier:  integration/http-adapters/src/node-specifics/node-specifics.module.ts:70 CatchEverythingFilter
+    outlier:  integration/http-adapters/src/responses/responses.module.ts:84 RequestScopedService
+    outlier:  integration/http-adapters/src/responses/responses.module.ts:20 ResponsesController
+    ... 2 more outliers
+
+ 4. [D-897eda] packages/core: classes in errors/** (*.exception files) extend RuntimeException
+    evidence: 22/23 (lower bound 0.79, lift 31.4)
+    example:  packages/core/errors/exceptions/circular-dependency.exception.ts#CircularDependencyException
+    outlier:  packages/core/errors/exceptions/runtime.exception.ts:1 RuntimeException
+
+ 5. [D-535ff3] message entry points in integration/** (*.controller files) do not use `any`
+    evidence: 68/70 (lower bound 0.90, lift 4.4)
+    example:  integration/inspector/src/external-svc/external-svc.controller.ts#MESSAGE ExternalSvcController.create
+    outlier:  integration/microservices/src/mqtt/mqtt.controller.ts:188 MESSAGE MqttController.sharedWildcardMessageHandler
+    outlier:  integration/microservices/src/mqtt/mqtt.controller.ts:140 MESSAGE MqttController.wildcardMessageHandler
+
+ 6. [D-3f85ec] classes in integration/injector/** (*.module files) are decorated with Module()
+    evidence: 21/22 (lower bound 0.78, lift 4.3)
+    example:  integration/injector/src/app.module.ts#ApplicationModule
+    outlier:  integration/injector/src/circular-structure-dynamic-module/circular.module.ts:4 CircularModule
+
+ 7. [D-44a46d] files in packages/core/** do not import from packages/platform-express/**
+    evidence: 202/203 (lower bound 0.97, lift 3.0)
+    example:  packages/core/adapters/http-adapter.ts#(file)
+    outlier:  packages/core/nest-factory.ts:1 (file)
+
+ 8. [D-48b32a] files in packages/core/** do not import from packages/websockets/**
+    evidence: 202/203 (lower bound 0.97, lift 3.0)
+    example:  packages/core/adapters/http-adapter.ts#(file)
+    outlier:  packages/core/nest-application.ts:1 (file)
+
+ 9. [D-f68b2a] files in packages/core/** do not import from packages/microservices/**
+    evidence: 201/203 (lower bound 0.96, lift 3.0)
+    example:  packages/core/adapters/http-adapter.ts#(file)
+    outlier:  packages/core/nest-application.ts:1 (file)
+    outlier:  packages/core/nest-factory.ts:1 (file)
+
+10. [D-89aaf3] classes in integration/** (*.service files) are named `*Service`
+    evidence: 81/83 (lower bound 0.92, lift 8.1)
+    example:  integration/auto-mock/src/bar.service.ts#BarService
+    outlier:  integration/scopes/src/inject-inquirer/hello-request/request-logger.service.ts:5 RequestLogger
+    outlier:  integration/scopes/src/inject-inquirer/hello-transient/transient-logger.service.ts:5 TransientLogger
+
+11. [D-088146] classes in integration/scopes/** (*.service files) do not use `any`
+    evidence: 26/27 (lower bound 0.82, lift 6.6)
+    example:  integration/scopes/src/circular-hello/hello.service.ts#HelloService
+    outlier:  integration/scopes/src/inject-inquirer/hello-transient/transient-logger.service.ts:5 TransientLogger
+
+12. [D-3915b0] packages/microservices: classes in errors/** (*.exception files) do not use `any`
+    evidence: 20/21 (lower bound 0.77, lift 5.1)
+    example:  packages/microservices/errors/corrupted-packet-length.exception.ts#CorruptedPacketLengthException
+    outlier:  packages/microservices/errors/invalid-tcp-data-reception.exception.ts:3 InvalidTcpDataReceptionException
+
+13. [D-77d720] packages/common: functions in decorators/** (*.decorator files) declare their return type
+    evidence: 60/64 (lower bound 0.85, lift 3.4)
+    example:  packages/common/decorators/core/bind.decorator.ts#Bind
+    outlier:  packages/common/decorators/core/exception-filters.decorator.ts:29 UseFilters
+    outlier:  packages/common/decorators/core/injectable.decorator.ts:56 mixin
+    outlier:  packages/common/decorators/http/route-params.decorator.ts:159 Response
+    ... 1 more outliers
+
+14. [D-21d90e] packages/microservices: functions in decorators/** (*.decorator files) declare their return type
+    evidence: 18/19 (lower bound 0.75, lift 3.5)
+    example:  packages/microservices/decorators/client.decorator.ts#Client
+    outlier:  packages/microservices/decorators/message-pattern.decorator.ts:210 createGrpcMethodMetadata
+
+15. [D-f87098] workspace packages depend on @nestjs/common@12.3.3
+    evidence: 48/49 (lower bound 0.89, lift 1.0)
+    split:    12.3.3 48, ^12.0.0 1
+    example:  packages/core/package.json#@nestjs/core
+    outlier:  tools/benchmarks/package.json:1 @nestjs/benchmarks
+
+16. [D-eb6107] workspace packages enable `emitDecoratorMetadata` in tsconfig
+    evidence: 53/54 (lower bound 0.90, lift 1.0)
+    example:  packages/common/package.json#@nestjs/common
+    outlier:  sample/09-babel-example/package.json:1 babel-example
+
+17. [D-60e290] workspace packages enable `declaration` in tsconfig
+    evidence: 52/54 (lower bound 0.88, lift 1.0)
+    example:  packages/common/package.json#@nestjs/common
+    outlier:  sample/09-babel-example/package.json:1 babel-example
+    outlier:  tools/benchmarks/package.json:1 @nestjs/benchmarks
+

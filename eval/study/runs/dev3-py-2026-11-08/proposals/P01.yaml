@@ -1,0 +1,34 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - actions
+  - adapter
+  - api
+  - app
+  - auth
+  - b
+  - cli
+  - client
+  - core
+  - danger
+  - models
+  - module
+  - pipeline
+  - policy
+  - quality
+  - route
+  - routes
+  - security
+  - service
+  - signatures
+  - store
+  suffixes:
+  - test
+  layers:
+  - archive/service
+conventions: []

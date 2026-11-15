@@ -1,0 +1,69 @@
+{
+  "repo": "netbox",
+  "files": [
+    {
+      "path": ".claude/skills/add-config-param/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/add-model-field/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/add-model/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/draft-release-notes/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/prepare-release/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/publish-release/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/remove-config-param/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/remove-model-field/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/remove-model/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/run-tests/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/development/style-guide.md",
+      "kind": "doc"
+    },
+    {
+      "path": "pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "netbox/project-static/eslint.config.js",
+      "kind": "lint"
+    }
+  ]
+}

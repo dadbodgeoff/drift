@@ -1,0 +1,373 @@
+{
+  "//": "HELD-OUT set, role SECONDARY (see `decision`): exploratory check only, never a headline result. FROZEN since `frozen_at`: the core (set_id, role, frozen_at, repos, reserves, tier, max, pool) never changes; only the append-only lists `replaced`, `burned` and `exposed` may grow. Rules: eval/study/README.md#held-out-rules. None of these repos is in eval/repos.json (the dev set).",
+  "set_id": "ts-2026-11-05",
+  "role": "secondary",
+  "decision": "Decision 2026-11-05 (product lead, before any held-out data): the current sets (holdout.json, holdout-py.json) are demoted to `secondary`: no headline result may come from them; they may be reported only as an exploratory secondary check, with exposure disclosed. The primary held-out sets will be fresh, selected by a code-blind script (seeded random sample from GitHub search by language/size/activity, framework detected only from dependency manifests, recording only url/sha/shape), frozen in a follow-up PR before any held-out run.",
+  "holdout": true,
+  "status": "frozen",
+  "frozen_on": "2026-11-05",
+  "frozen_at": "2026-11-05T17:40:31Z",
+  "language": "typescript/javascript",
+  "tier": {
+    "//": "Decision D7 (eval/study/README.md decision log), approved by the founder 2026-11-06 and recorded before any held-out census. D5 (tier-d5.json) narrowed by rule kind and language. TypeScript/JavaScript: the default tier admits only call wrappers (wrapped_by:call) and layering (avoids:import); wrapped_by:decorator, wrapped_by:extends and wrapped_by:jsx move to the suggestion tier. Python: no rule kind is in the default tier; Python advises only and every Python proposal is suggestion tier. D5's conditions still apply on top of the rule kind: every symbol the rule names is defined in the repository (default.target \"in_repo\": no pkg:, global# or unresolved: target; lib.mjs namesPackage, drift_mine::tier::names_package) and the role has >= default.min_members members. The language of a proposal is read conservatively (lib.mjs proposalLanguage, drift_mine::tier::convention_language): py when any member of its role is Python (conventions.yaml evidence.python_members) or its example path is (.py/.pyi files and Python package manifests), ts otherwise. Role members are counted as the role's size (evidence.role_members when set, else total; exempt members count). DEFAULT tier = language in default.languages AND structured rule kind (lib.mjs ruleKind) in default.rule_kinds AND the rule names no symbol from outside the repository AND its role has >= default.min_members members. SUGGESTION tier = every other shown proposal. The not-wrong rate is reported over all shown proposals, both tiers. Release gate unchanged: a language's default tier ships as advise until it measures >= 95% default-tier accept under rubric v3, judged per D1, on a primary held-out run.",
+    "kind": "rule_kind",
+    "decision": "D7",
+    "default": {
+      "//": "TypeScript/JavaScript call wrappers and layering (import avoidance), each only when every symbol it names is defined in the repository, in roles of 15 or more members",
+      "rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "languages": [
+        "ts"
+      ],
+      "min_members": 15,
+      "target": "in_repo"
+    },
+    "suggestion": {
+      "//": "D5's suggestion kinds, plus decorators, base classes and JSX layout wrappers (D7); every Python proposal (languages); and default-tier kinds whose rule names a package, built-in or unresolved symbol, or whose role is small",
+      "rule_kinds": [
+        "calls",
+        "named",
+        "avoids:other",
+        "prefers_library",
+        "before",
+        "has_test",
+        "model_has",
+        "package_has",
+        "dependency_version",
+        "wrapped_by:try",
+        "control",
+        "directive",
+        "throws",
+        "passes_key",
+        "renders",
+        "wrapped_by:decorator",
+        "wrapped_by:extends",
+        "wrapped_by:jsx"
+      ],
+      "languages": [
+        "py"
+      ]
+    },
+    "not_wrong_over": "all_shown"
+  },
+  "max": 15,
+  "pool": 200,
+  "provenance": "Facts only, no conventions. Shape = frameworks from the repo's own dependency manifests (package.json, pyproject.toml, requirements.in, read from raw.githubusercontent.com) plus the top-level layout; files / code_files from `git ls-tree -r` of a blob-less shallow fetch at the pinned sha; docs and lint = which agent/contributor docs and lint configs exist, by file name in that tree. Selection reasons and any notes about the code itself are kept out of this repository (they would be an answer key) and pre-registered by sha256 in `notes_sha256`; they are revealed with the held-out results.",
+  "notes_sha256": {
+    "provenance.md": "7ff0bf1537db4627014348867abe3192ec4f16c88082649b837353a850349fbe",
+    "holdout.notes.md": "584c27bba1d506d09cd286cba32ceeca03e69a3ad1eb503f0fb697cf77a9c733"
+  },
+  "//lists": "Append-only lists outside the frozen core (repos, reserves, tier, max, pool; its canonical hash is registered in eval/study/holdout-manifests.json). replaced: [{date, repo, reserve, reason}], the i-th swap uses the i-th reserve. burned: [{date, name, reason}]. exposed: [{name, where}], repos whose conventions were named somewhere product engineers can read; held-out reports give every headline rate with and without them (README, isolation note).",
+  "replaced": [],
+  "burned": [],
+  "repos": [
+    {
+      "name": "umami",
+      "url": "https://github.com/umami-software/umami",
+      "sha": "559e3c607c23d2c72d9bd4f6481bda428255323c",
+      "branch": "master",
+      "shape": "Next.js (app router), single app",
+      "files": 2026,
+      "code_files": 1393,
+      "docs": "CONTRIBUTING.md",
+      "lint": "biome"
+    },
+    {
+      "name": "inbox-zero",
+      "url": "https://github.com/elie222/inbox-zero",
+      "sha": "1964b32179aff8b87cda90cd6f6f76b03c6cdffd",
+      "branch": "main",
+      "shape": "Next.js (app router) monorepo",
+      "files": 4940,
+      "code_files": 4025,
+      "docs": "AGENTS.md, CLAUDE.md, .cursor/rules",
+      "lint": "biome"
+    },
+    {
+      "name": "papermark",
+      "url": "https://github.com/mfts/papermark",
+      "sha": "ed19717ec02a1ac79aecf5569159aa9d2d869312",
+      "branch": "main",
+      "shape": "Next.js 14, pages and app router",
+      "files": 1767,
+      "code_files": 1380,
+      "docs": "AGENTS.md, .cursor/rules",
+      "lint": "eslint"
+    },
+    {
+      "name": "openstatus",
+      "url": "https://github.com/openstatusHQ/openstatus",
+      "sha": "f3767e1ab2936434dbef5ca5ce50229b02026d94",
+      "branch": "main",
+      "shape": "Turborepo: Hono server, Next.js apps, tRPC package",
+      "files": 4818,
+      "code_files": 2946,
+      "docs": "AGENTS.md (9), CLAUDE.md, CONTRIBUTING.md",
+      "lint": "none found by file name"
+    },
+    {
+      "name": "karakeep",
+      "url": "https://github.com/karakeep-app/karakeep",
+      "sha": "6a1e71d67c10b2f56d55e8d771be0dd0c2cf6316",
+      "branch": "main",
+      "shape": "Turborepo: Next.js app, tRPC package, Hono API package, workers",
+      "files": 2332,
+      "code_files": 1019,
+      "docs": "AGENTS.md, CLAUDE.md, CONTRIBUTING.md",
+      "lint": "oxlint (20 configs)"
+    },
+    {
+      "name": "rallly",
+      "url": "https://github.com/lukevella/rallly",
+      "sha": "021b204cc6525e8b6b98716fc684af88a26cb3d5",
+      "branch": "main",
+      "shape": "Turborepo: Next.js (app router), tRPC, Hono",
+      "files": 1995,
+      "code_files": 1209,
+      "docs": "AGENTS.md, CLAUDE.md, CONTRIBUTING.md",
+      "lint": "biome, oxlint"
+    },
+    {
+      "name": "langfuse",
+      "url": "https://github.com/langfuse/langfuse",
+      "sha": "ed8696f2b17b9768191d2cc059b6dbac7e7f113e",
+      "branch": "main",
+      "shape": "Turborepo: Next.js (pages router) with tRPC, Express worker",
+      "files": 7553,
+      "code_files": 6185,
+      "docs": "AGENTS.md (16), CONTRIBUTING.md",
+      "lint": "none found by file name"
+    },
+    {
+      "name": "shelf",
+      "url": "https://github.com/Shelf-nu/shelf.nu",
+      "sha": "197f3b4d92533486388d1333725219e2826ae944",
+      "branch": "main",
+      "shape": "React Router 7 app (Remix lineage), Turborepo",
+      "files": 4067,
+      "code_files": 3248,
+      "docs": "AGENTS.md, CLAUDE.md, CONTRIBUTING.md, .claude/rules",
+      "lint": "eslint"
+    },
+    {
+      "name": "uptime-kuma",
+      "url": "https://github.com/louislam/uptime-kuma",
+      "sha": "f6f6e6da26a29176ae0a2c928f507674eb593f66",
+      "branch": "master",
+      "shape": "Express, CommonJS JavaScript server; Vue frontend (not parsed)",
+      "files": 919,
+      "code_files": 491,
+      "docs": "AGENTS.md, CLAUDE.md, CONTRIBUTING.md",
+      "lint": "eslint"
+    },
+    {
+      "name": "unleash",
+      "url": "https://github.com/Unleash/unleash",
+      "sha": "c171fb976547477ab33a1d1475b57562335e3d93",
+      "branch": "main",
+      "shape": "Express, TypeScript server; React frontend",
+      "files": 7097,
+      "code_files": 6438,
+      "docs": "AGENTS.md, CLAUDE.md, CONTRIBUTING.md",
+      "lint": "biome"
+    },
+    {
+      "name": "hoppscotch",
+      "url": "https://github.com/hoppscotch/hoppscotch",
+      "sha": "55908a76a1d0555c9bbb5d74244c14173df95b06",
+      "branch": "main",
+      "shape": "NestJS backend; Vue frontends (not parsed)",
+      "files": 2523,
+      "code_files": 1179,
+      "docs": "CONTRIBUTING.md",
+      "lint": "eslint (7 configs)"
+    },
+    {
+      "name": "tooljet",
+      "url": "https://github.com/ToolJet/ToolJet",
+      "sha": "7f8ac7d54b0492819d64485eb7621d486b1115c3",
+      "branch": "main",
+      "shape": "NestJS server; React frontend in JavaScript",
+      "files": 12511,
+      "code_files": 5958,
+      "docs": "AGENTS.md (20), CLAUDE.md, CONTRIBUTING.md",
+      "lint": "eslint (6 configs)"
+    },
+    {
+      "name": "rybbit",
+      "url": "https://github.com/rybbit-io/rybbit",
+      "sha": "4288204761ed2fc801fcaa0b3bbfacd1b8cc3936",
+      "branch": "master",
+      "shape": "Fastify server, Next.js client",
+      "files": 2857,
+      "code_files": 1978,
+      "docs": "AGENTS.md, CLAUDE.md",
+      "lint": "eslint"
+    },
+    {
+      "name": "activepieces",
+      "url": "https://github.com/activepieces/activepieces",
+      "sha": "f0e068f8900e9e583435467df7f6ec25822c4c37",
+      "branch": "main",
+      "shape": "Large Turborepo: Fastify server, React web, ~745 integration packages",
+      "files": 35676,
+      "code_files": 23344,
+      "docs": "AGENTS.md (8), CLAUDE.md (12), CONTRIBUTING.md",
+      "lint": "eslint (~790 configs)"
+    },
+    {
+      "name": "mantine",
+      "url": "https://github.com/mantinedev/mantine",
+      "sha": "82fb128c43f9927c1370a2732cd5aa9e6663ca11",
+      "branch": "master",
+      "shape": "React component library monorepo",
+      "files": 6821,
+      "code_files": 5715,
+      "docs": "AGENTS.md, CLAUDE.md, CONTRIBUTING.md",
+      "lint": "none found by file name"
+    },
+    {
+      "name": "knex",
+      "url": "https://github.com/knex/knex",
+      "sha": "e25d54bcb707714a17f5a5744eba5c4246bb4d1d",
+      "branch": "master",
+      "shape": "Node library, CommonJS JavaScript",
+      "files": 601,
+      "code_files": 477,
+      "docs": "CONTRIBUTING.md",
+      "lint": "eslint"
+    },
+    {
+      "name": "insomnia",
+      "url": "https://github.com/Kong/insomnia",
+      "sha": "31901f0d8c4baa1e4dfd7b242193ffd650327ea4",
+      "branch": "develop",
+      "shape": "Electron desktop app, React Router renderer",
+      "files": 2388,
+      "code_files": 1744,
+      "docs": "AGENTS.md, CLAUDE.md, CONTRIBUTING.md",
+      "lint": "eslint"
+    },
+    {
+      "name": "n8n",
+      "url": "https://github.com/n8n-io/n8n",
+      "sha": "e87308ea697b08f49aaa137b1f0c271c0695a2bd",
+      "branch": "master",
+      "shape": "Large pnpm + Turborepo monorepo: Express server, Vue editor (not parsed), integration packages",
+      "files": 33264,
+      "code_files": 24595,
+      "docs": "AGENTS.md (26), CLAUDE.md (11), CONTRIBUTING.md",
+      "lint": "eslint, biome, oxlint"
+    }
+  ],
+  "reserves": {
+    "//": "Pre-registered replacements, used in this order only when a primary repo fails a technical check before any proposal is looked at (clone fails, `drift scan` errors, or fewer than 200 parseable files), or (Python) overlaps the dev set. Record each swap in `replaced` with date and reason.",
+    "repos": [
+      {
+        "name": "dittofeed",
+        "url": "https://github.com/dittofeed/dittofeed",
+        "sha": "91277939a9afcee797ab2562025f6b02d823b00c",
+        "branch": "main",
+        "shape": "Fastify server, Next.js dashboard"
+      },
+      {
+        "name": "trigger.dev",
+        "url": "https://github.com/triggerdotdev/trigger.dev",
+        "sha": "41ad1995b30573a9b55cfaab80c3293b7c35c1f8",
+        "branch": "main",
+        "shape": "Remix webapp, SDK monorepo"
+      },
+      {
+        "name": "bruno",
+        "url": "https://github.com/usebruno/bruno",
+        "sha": "47f9698dcdf161d3405f245987f561611acbb951",
+        "branch": "main",
+        "shape": "Electron app, CommonJS JavaScript, React"
+      },
+      {
+        "name": "dokploy",
+        "url": "https://github.com/Dokploy/dokploy",
+        "sha": "fe9ae2a7db22730ff1ab72939e10806848c7cccd",
+        "branch": "canary",
+        "shape": "Next.js + tRPC monorepo"
+      }
+    ]
+  },
+  "//exposed": "Strict criterion: a repo is exposed if any text product engineers can read (commits, PR descriptions, review comments, replies, reports) named a convention of it, a convention category (wrappers, guards, decorators, base classes, procedures, layering...) or where one lives. All original primaries are exposed; reserves are not.",
+  "exposed": [
+    {
+      "name": "umami",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); PR #2 review comment r4483351630; PR #2 reply r4483588228; the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "inbox-zero",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); PR #2 review comment r4483351630; PR #2 reply r4483588228; the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "papermark",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "openstatus",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "karakeep",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "rallly",
+      "where": "commit bddf1d6 (`why` field: convention categories and locations); PR #2 review comment r4483833401"
+    },
+    {
+      "name": "langfuse",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "shelf",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); PR #2 review comment r4483351630; PR #2 reply r4483588228; the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "uptime-kuma",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); PR #2 reply r4483588228; the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "unleash",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "hoppscotch",
+      "where": "commit bddf1d6 (`why` field: convention categories and locations); PR #2 review comment r4483833401"
+    },
+    {
+      "name": "tooljet",
+      "where": "commit bddf1d6 (`why` field: convention categories and locations); PR #2 review comment r4483833401"
+    },
+    {
+      "name": "rybbit",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); PR #2 review comment r4483351630; the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "activepieces",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); PR #2 review comment r4483351630; PR #2 reply r4483588228; the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "mantine",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); PR #2 review comment r4483351630; PR #2 reply r4483588228; the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "knex",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "insomnia",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "n8n",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); PR #2 reply r4483588228; the study-v2 agent's first report to the coordinator"
+    }
+  ]
+}

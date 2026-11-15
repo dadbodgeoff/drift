@@ -1,0 +1,105 @@
+{
+  "repo": "mercur",
+  "files": [
+    {
+      "path": ".agents/skills/playwright-skill/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/playwright-skill/ci/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/playwright-skill/core/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/playwright-skill/migration/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/playwright-skill/playwright-cli/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/playwright-skill/pom/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/figma-ui/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/linear-task/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/mercur-figure/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/mercur-review/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/release-note/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/admin-test/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/docs/learn/architecture.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/docs/references/api/conventions.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/docs/resources/integrations/magento2/architecture.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/docs/resources/integrations/stripe-connect/architecture.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/storefront/package.json",
+      "kind": "lint (package.json eslintConfig)"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/core/ARCHITECTURE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/dashboard-shared/ARCHITECTURE.md",
+      "kind": "doc"
+    },
+    {
+      "path": ".oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "apps/admin-test/eslint.config.js",
+      "kind": "lint"
+    },
+    {
+      "path": "eslint.config.mts",
+      "kind": "lint"
+    }
+  ]
+}

@@ -1,0 +1,128 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - settings
+  suffixes:
+  - component
+  - config
+  - directive
+  - guard
+  - interceptor
+  - pipe
+  - service
+  - spec
+conventions:
+- id: D-de2489
+  status: proposed
+  mode: advise
+  summary: "src-ui: classes in src/** (*.component files) are named `*Component`, except 5 shared parts (used by several members, not a member)"
+  role:
+    package: src-ui
+    dir: src
+    file: "*.component"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Component"
+  evidence:
+    holders: 114
+    total: 114
+    lower_bound: 0.967
+    lift: 5.19
+    role_members: 119
+  example: src-ui/src/app/app.component.ts#AppComponent
+  selector_version: 3
+- id: D-b958b1
+  status: proposed
+  mode: advise
+  summary: serializers in src/** are named `*Serializer`
+  role:
+    package: ""
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: class
+    member_kind: serializer
+  rule:
+    type: named
+    pattern: "*Serializer"
+  evidence:
+    holders: 60
+    total: 61
+    lower_bound: 0.913
+    lift: 9.427
+    python_members: 61
+  example: src/documents/serialisers.py#AcknowledgeTasksViewSerializer
+  selector_version: 3
+- id: D-1d6a6a
+  status: proposed
+  mode: advise
+  summary: "src-ui: classes in src/** (*.service files) are decorated with Injectable()"
+  role:
+    package: src-ui
+    dir: src
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@angular/core#Injectable
+  evidence:
+    holders: 35
+    total: 36
+    lower_bound: 0.858
+    lift: 13.766
+  example: src-ui/src/app/services/chat.service.ts#ChatService
+  selector_version: 3
+- id: D-0dfb1b
+  status: proposed
+  mode: advise
+  summary: model classes in src/** call utils.translation.gettext_lazy()
+  role:
+    package: ""
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: class
+    member_kind: model
+  rule:
+    type: calls
+    callee: pkg:django#utils.translation.gettext_lazy
+  evidence:
+    holders: 24
+    total: 25
+    lower_bound: 0.805
+    lift: 12.46
+    python_members: 25
+  example: src/documents/models.py#Correspondent
+  selector_version: 3
+- id: D-c3460b
+  status: proposed
+  mode: advise
+  summary: "src-ui: classes in src/app/components/common/input/** (*.component files) extend AbstractInputComponent"
+  role:
+    package: src-ui
+    dir: src/app/components/common/input
+    file: "*.component"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - src-ui/src/app/components/common/input/abstract-input.ts#AbstractInputComponent
+  evidence:
+    holders: 19
+    total: 20
+    lower_bound: 0.764
+    lift: 31.15
+  example: src-ui/src/app/components/common/input/check/check.component.ts#CheckComponent
+  selector_version: 3

@@ -1,0 +1,748 @@
+114 conventions from 57201 units in 3685 roles
+
+ 1. [D-6429a5] packages/twenty-server: graphql entry points in src/engine/metadata-modules/** (*.resolver files) are decorated with MetadataResolver()
+    evidence: 286/292 (lower bound 0.96, lift 21.1)
+    example:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-run.resolver.ts#MUTATION AgentRunResolver.generate
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts:15 FIELD AgentMessagePartResolver.createdAt
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts:36 FIELD AgentMessagePartResolver.fileMediaType
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts:20 FIELD AgentMessagePartResolver.fileUrl
+    ... 3 more outliers
+
+ 2. [D-0cd62c] packages/twenty-server: graphql entry points in src/engine/core-modules/application/** (*.resolver files) are decorated with MetadataResolver()
+    evidence: 87/88 (lower bound 0.94, lift 21.3)
+    example:  packages/twenty-server/src/engine/core-modules/application/application-authorization/application-authorization.resolver.ts#MUTATION ApplicationAuthorizationResolver.revokeApplicationAuthorization
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-monitoring/admin-application-monitoring.resolver.ts:42 QUERY AdminApplicationMonitoringResolver.findAdminApplicationRegistrationMonitoring
+
+ 3. [D-2df337] packages/twenty-server: classes in src/database/commands/** are decorated with RegisteredInstanceCommand()
+    evidence: 288/289 (lower bound 0.98, lift 15.4)
+    example:  packages/twenty-server/src/database/commands/upgrade-version-command/1-21/1-21-instance-command-fast-1775129420309-add-view-field-group-id-index-on-view-field.ts#AddViewFieldGroupIdIndexOnViewFieldFastInstanceCommand
+    outlier:  packages/twenty-server/src/database/commands/questions/confirmation.question.ts:6 ConfirmationQuestion
+
+ 4. [D-70d216] packages/twenty-server: graphql entry points in src/** (*.resolver files) are decorated with UseFilters()
+    evidence: 686/712 (lower bound 0.95, lift 14.5)
+    example:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-ai-provider.resolver.ts#MUTATION AdminPanelAiProviderResolver.addAiProvider
+    outlier:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts:67 FIELD AdminPanelApplicationRegistrationResolver.author
+    outlier:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts:37 FIELD AdminPanelApplicationRegistrationResolver.configurationIssues
+    outlier:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts:81 FIELD AdminPanelApplicationRegistrationResolver.galleryImagesUrls
+    ... 23 more outliers
+
+ 5. [D-2456fc] packages/twenty-server: classes in src/database/** (*.command files) extend ProvisionedWorkspaceCommandRunner
+    evidence: 295/305 (lower bound 0.94, lift 14.4)
+    example:  packages/twenty-server/src/database/commands/install-pre-installed-apps.command.ts#InstallPreInstalledAppsCommand
+    outlier:  packages/twenty-server/src/database/commands/cron-register-all.command.ts:47 CronRegisterAllCommand
+    outlier:  packages/twenty-server/src/database/commands/data-seed-dev-workspace.command.ts:21 DataSeedWorkspaceCommand
+    outlier:  packages/twenty-server/src/database/commands/generate-instance-command.command.ts:32 GenerateInstanceCommandCommand
+    ... 7 more outliers
+
+ 6. [D-3c8584] packages/twenty-server: classes in src/engine/workspace-manager/workspace-migration/workspace-migration-runner/** (*.service files) extend WorkspaceMigrationRunnerActionHandler()
+    evidence: 126/136 (lower bound 0.87, lift 32.7)
+    example:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/action-handlers/agent-chat-channel-role/services/create-agent-chat-channel-role-action-handler.service.ts#CreateAgentChatChannelRoleActionHandlerService
+    outlier:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/deferred-action-handlers/services/build-index-deferred-action-handler.service.ts:17 BuildIndexDeferredActionHandlerService
+    outlier:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/deferred-action-handlers/services/delete-logic-function-resources-deferred-action-handler.service.ts:24 DeleteLogicFunctionResourcesDeferredActionHandlerService
+    outlier:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/deferred-action-handlers/services/validate-foreign-key-deferred-action-handler.service.ts:17 ValidateForeignKeyDeferredActionHandlerService
+    ... 7 more outliers
+
+ 7. [D-c39eb9] packages/twenty-server: classes in src/** (*.exception files) extend CustomException
+    evidence: 126/136 (lower bound 0.87, lift 31.9)
+    example:  packages/twenty-server/src/database/clickhouse/clickhouse.exception.ts#ClickHouseException
+    outlier:  packages/twenty-server/src/engine/core-modules/usage-limit/exceptions/usage-limit-http.exception.ts:6 UsageLimitHttpException
+    outlier:  packages/twenty-server/src/engine/guards/exceptions/auth-principal-refused.exception.ts:9 AuthPrincipalRefusedException
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-front-component/exceptions/front-component-build.exception.ts:10 FrontComponentBuildException
+    ... 7 more outliers
+
+ 8. [D-ed1cd4] packages/twenty-server: classes in src/** (*.resolver files) call AccessPolicyGuard()
+    evidence: 133/144 (lower bound 0.87, lift 26.1)
+    example:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-ai-provider.resolver.ts#AdminPanelAiProviderResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts:12 AdminPanelApplicationRegistrationResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-marketplace/marketplace-public.resolver.ts:18 MarketplacePublicResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-registration/application-registration-summary.resolver.ts:9 ApplicationRegistrationSummaryResolver
+    ... 8 more outliers
+
+ 9. [D-5cb05f] packages/twenty-server: classes in src/database/commands/upgrade-version-command/** (*.command files) call WorkspaceCacheService.getOrRecompute()
+    evidence: 240/295 (lower bound 0.77, lift 10.3)
+    example:  packages/twenty-server/src/database/commands/upgrade-version-command/1-21/1-21-workspace-command-1775500001000-add-compose-email-command-menu-item.command.ts#AddComposeEmailCommandMenuItemCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/1-21/1-21-workspace-command-1775500002000-add-global-key-value-pair-unique-index.command.ts:18 AddGlobalKeyValuePairUniqueIndexCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/1-21/1-21-workspace-command-1775500003000-backfill-datasource-to-workspace.command.ts:21 BackfillDatasourceToWorkspaceCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/1-21/1-21-workspace-command-1775500009000-update-edit-layout-command-menu-item-label.command.ts:19 UpdateEditLayoutCommandMenuItemLabelCommand
+    ... 52 more outliers
+
+10. [D-2a3e38] packages/twenty-server: HTTP handlers in src/** (*.controller files) are decorated with UseFilters()
+    evidence: 140/154 (lower bound 0.85, lift 13.7)
+    example:  packages/twenty-server/src/engine/api/mcp/controllers/mcp-core.controller.ts#POST /
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-oauth/controllers/oauth-discovery.controller.ts:23 GET /oauth-authorization-server
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-oauth/controllers/oauth-discovery.controller.ts:66 GET /oauth-protected-resource
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-oauth/controllers/oauth-discovery.controller.ts:74 GET /oauth-protected-resource/mcp
+    ... 11 more outliers
+
+11. [D-1d8e8b] packages/twenty-server: classes in src/** (*.module files) are decorated with Module()
+    evidence: 453/457 (lower bound 0.98, lift 9.7)
+    example:  packages/twenty-server/src/app.module.ts#AppModule
+    outlier:  packages/twenty-server/src/engine/core-modules/captcha/captcha.module.ts:9 CaptchaModule
+    outlier:  packages/twenty-server/src/engine/core-modules/code-interpreter/code-interpreter.module.ts:8 CodeInterpreterModule
+    outlier:  packages/twenty-server/src/engine/core-modules/email/email.module.ts:9 EmailModule
+    ... 1 more outliers
+
+12. [D-0929de] packages/twenty-server: classes in src/** (*.dto files) are decorated with ObjectType()
+    evidence: 402/406 (lower bound 0.97, lift 9.8)
+    example:  packages/twenty-server/src/engine/core-modules/admin-panel/dtos/admin-chat-message-part.dto.ts#AdminChatMessagePartDTO
+    outlier:  packages/twenty-server/src/engine/core-modules/application/connection-provider/connections/dtos/get-app-connection.dto.ts:3 GetAppConnectionDto
+    outlier:  packages/twenty-server/src/engine/core-modules/application/connection-provider/connections/dtos/list-app-connections.dto.ts:6 ListAppConnectionsDto
+    outlier:  packages/twenty-server/src/engine/core-modules/billing/app-billing/dtos/charge.dto.ts:22 ChargeDto
+    ... 1 more outliers
+
+13. [D-cb8a28] packages/twenty-server: classes in src/engine/metadata-modules/** (*.resolver files) call AuthWorkspace()
+    evidence: 51/53 (lower bound 0.87, lift 30.8)
+    example:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-run.resolver.ts#AgentRunResolver
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message.resolver.ts:7 AgentMessageResolver
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/resolvers/agent-inbox-thread.resolver.ts:46 AgentInboxThreadResolver
+
+14. [D-47b768] packages/twenty-front: exported values in src/modules/client-config/** pass `defaultValue` to createAtomState()
+    evidence: 36/37 (lower bound 0.86, lift 35.0)
+    example:  packages/twenty-front/src/modules/client-config/states/aiEvaluationModelsState.ts#aiEvaluationModelsState
+    outlier:  packages/twenty-front/src/modules/client-config/constants/ClientConfigCacheVersion.ts:1 CLIENT_CONFIG_CACHE_VERSION
+
+15. [D-7e503c] packages/twenty-server: classes in src/engine/metadata-modules/** (*.resolver files) are decorated with MetadataResolver()
+    evidence: 50/53 (lower bound 0.85, lift 34.3)
+    example:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-run.resolver.ts#AgentRunResolver
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts:12 AgentMessagePartResolver
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message.resolver.ts:7 AgentMessageResolver
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-tool-call-answer/resolvers/tool-call-answer.resolver.ts:57 ToolCallAnswerResolver
+
+16. [D-bc65cf] packages/twenty-ui: exported values in design-tokens/color/** pass `dark` to token()
+    evidence: 31/32 (lower bound 0.84, lift 226.5)
+    example:  packages/twenty-ui/design-tokens/color/amber.ts#AMBER_COLOR_TOKENS
+    outlier:  packages/twenty-ui/design-tokens/color/index.ts:33 COLOR_TOKENS
+
+17. [D-006db2] packages/twenty-shared: functions in src/application/** (*.util files) pass `applicationUniversalIdentifier` to computeDeterministicUuid()
+    evidence: 40/43 (lower bound 0.81, lift 289.8)
+    example:  packages/twenty-shared/src/application/deterministic-identifier/get-agent-universal-identifier.util.ts#getAgentUniversalIdentifier
+    outlier:  packages/twenty-shared/src/application/deterministic-identifier/compute-deterministic-uuid.util.ts:5 computeDeterministicUuid
+    outlier:  packages/twenty-shared/src/application/deterministic-identifier/get-system-record-form-page-layout-universal-identifier.util.ts:4 getSystemRecordFormPageLayoutUniversalIdentifier
+    outlier:  packages/twenty-shared/src/application/deterministic-identifier/get-system-record-page-layout-universal-identifier.util.ts:7 getSystemRecordPageLayoutUniversalIdentifier
+
+18. [D-10ad29] packages/twenty-sdk: exported values in src/sdk/define/** call createExpressionOnlyPlaceholder()
+    evidence: 31/33 (lower bound 0.80, lift 255.1)
+    example:  packages/twenty-sdk/src/sdk/define/conditional-availability/conditional-availability-variables.ts#canAccessFullAdminPanel
+    outlier:  packages/twenty-sdk/src/sdk/define/conditional-availability/conditional-availability-variable-names.ts:1 CONDITIONAL_AVAILABILITY_VARIABLE_NAMES
+    outlier:  packages/twenty-sdk/src/sdk/define/validation-rules/rule-expression.ts:75 ruleExpression
+
+19. [D-868e25] packages/twenty-front: components in src/modules/command-menu-item/engine-command/record/** call useHeadlessCommandContextApi()
+    evidence: 49/54 (lower bound 0.80, lift 64.2)
+    example:  packages/twenty-front/src/modules/command-menu-item/engine-command/record/components/AddRecordsToMessageListCommand.tsx#AddRecordsToMessageListCommand
+    outlier:  packages/twenty-front/src/modules/command-menu-item/engine-command/record/components/OpenEmailBlockSettingsSingleRecordCommand.tsx:4 OpenEmailBlockSettingsSingleRecordCommand
+    outlier:  packages/twenty-front/src/modules/command-menu-item/engine-command/record/components/OpenEmailPageStyleSingleRecordCommand.tsx:4 OpenEmailPageStyleSingleRecordCommand
+    outlier:  packages/twenty-front/src/modules/command-menu-item/engine-command/record/no-selection/components/CreateGlobalRecordCommand.tsx:9 CreateGlobalRecordCommand
+    ... 2 more outliers
+
+20. [D-81a1f5] packages/twenty-server: classes in src/engine/metadata-modules/metadata-side-effect/** (*.service files) extend MetadataSideEffectHandler()
+    evidence: 36/39 (lower bound 0.80, lift 113.9)
+    example:  packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/handlers/field-metadata/services/field-index-view-field-on-create-side-effect-handler.service.ts#FieldIndexViewFieldOnCreateSideEffectHandlerService
+    outlier:  packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/interfaces/base-metadata-side-effect-handler.service.ts:20 BaseMetadataSideEffectHandlerService
+    outlier:  packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/registry/metadata-side-effect-handler-registry.service.ts:26 MetadataSideEffectHandlerRegistryService
+    outlier:  packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/services/metadata-side-effect-engine.service.ts:57 MetadataSideEffectEngineService
+
+21. [D-532878] packages/twenty-server: classes in src/** (*.workspace-entity files) extend BaseWorkspaceEntity
+    evidence: 38/42 (lower bound 0.78, lift 105.8)
+    example:  packages/twenty-server/src/engine/metadata-modules/ai/ai-history/standard-objects/agent-chat-thread-participant.workspace-entity.ts#AgentChatThreadParticipantWorkspaceEntity
+    outlier:  packages/twenty-server/src/engine/twenty-orm/base.workspace-entity.ts:1 BaseWorkspaceEntity
+    outlier:  packages/twenty-server/src/modules/company/standard-objects/company.workspace-entity.ts:20 CompanyWorkspaceEntity
+    outlier:  packages/twenty-server/src/modules/emailing/standard-objects/campaign-delivery.workspace-entity.ts:5 CampaignDeliveryWorkspaceEntity
+    ... 1 more outliers
+
+22. [D-1fa42f] packages/twenty-server: graphql entry points in src/engine/metadata-modules/ai/ai-chat/** (*.resolver files) are decorated with UseGuards()
+    evidence: 37/38 (lower bound 0.86, lift 16.1)
+    example:  packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/resolvers/agent-chat-channel.resolver.ts#MUTATION AgentChatChannelResolver.createAgentChatChannel
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/resolvers/agent-chat-channel.resolver.ts:91 FIELD AgentChatChannelResolver.isCustom
+
+23. [D-2814ee] packages/twenty-ui: components in src/icon/** call useTheme()
+    evidence: 43/48 (lower bound 0.78, lift 9.0)
+    example:  packages/twenty-ui/src/icon/components/IconAddressBook.tsx#IconAddressBook
+    outlier:  packages/twenty-ui/src/icon/components/IconSparkle2.tsx:8 IconSparkle2
+    outlier:  packages/twenty-ui/src/icon/components/IllustrationIconWrapper.tsx:8 IllustrationIconWrapper
+    outlier:  packages/twenty-ui/src/icon/components/ThinkingOrbitLoaderIcon.tsx:8 ThinkingOrbitLoaderIcon
+    ... 2 more outliers
+
+24. [D-b9ed84] packages/twenty-server: classes in src/engine/metadata-modules/** (*.input files) are decorated with InputType()
+    evidence: 140/143 (lower bound 0.94, lift 17.2)
+    example:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/dtos/generate.input.ts#GenerateInputDTO
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/dtos/agent-chat-conversation.input.ts:7 AgentChatConversationInput
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/dtos/agent-chat-event.input.ts:8 AgentChatEventInput
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-generate-text/dtos/generate-text.input.ts:3 GenerateTextInput
+
+25. [D-f8c724] packages/twenty-server: graphql entry points in src/engine/metadata-modules/ai/ai-chat/** (*.resolver files) are decorated with UseInterceptors()
+    evidence: 36/38 (lower bound 0.83, lift 53.9)
+    example:  packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/resolvers/agent-chat-channel.resolver.ts#MUTATION AgentChatChannelResolver.createAgentChatChannel
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/resolvers/ai-chat-usage.resolver.ts:42 QUERY AiChatUsageResolver.aiChatUsage
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/resolvers/ai-chat-usage.resolver.ts:50 QUERY AiChatUsageResolver.aiChatUserCreditsUsage
+
+26. [D-3c6a15] packages/twenty-server: classes in src/** (*.service files) are named `*Service`
+    evidence: 1077/1099 (lower bound 0.97, lift 3.9)
+    example:  packages/twenty-server/src/database/clickhouse/clickhouse.service.ts#ClickHouseService
+    outlier:  packages/twenty-server/src/engine/core-entity-cache/interfaces/core-entity-cache-provider.service.ts:11 CoreEntityCacheProvider
+    outlier:  packages/twenty-server/src/engine/core-modules/emailing-domain/drivers/aws-ses/services/aws-ses-driver.service.ts:45 AwsSesDriver
+    outlier:  packages/twenty-server/src/engine/core-modules/emailing-domain/drivers/log/services/log-emailing-domain-driver.service.ts:32 LogEmailingDomainDriver
+    ... 19 more outliers
+
+27. [D-9eabd8] packages/twenty-server: classes in src/** (*.resolver files) are decorated with UseFilters()
+    evidence: 130/144 (lower bound 0.84, lift 23.5)
+    example:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-ai-provider.resolver.ts#AdminPanelAiProviderResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts:12 AdminPanelApplicationRegistrationResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-registration/application-registration-summary.resolver.ts:9 ApplicationRegistrationSummaryResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/geo-map/resolver/geo-map.resolver.ts:27 GeoMapResolver
+    ... 11 more outliers
+
+28. [D-64892b] packages/twenty-server: classes in src/** (*.service files) are decorated with Injectable()
+    evidence: 1077/1099 (lower bound 0.97, lift 3.1)
+    example:  packages/twenty-server/src/database/clickhouse/clickhouse.service.ts#ClickHouseService
+    outlier:  packages/twenty-server/src/engine/core-modules/emailing-domain/drivers/aws-ses/services/aws-ses-driver.service.ts:45 AwsSesDriver
+    outlier:  packages/twenty-server/src/engine/core-modules/emailing-domain/drivers/resend/services/resend-driver.service.ts:33 ResendDriver
+    outlier:  packages/twenty-server/src/engine/core-modules/key-value-pair/key-value-pair.service.ts:10 KeyValuePairService
+    ... 19 more outliers
+
+29. [D-236371] packages/twenty-server: classes in src/** (*.input files) are named `*Input`
+    evidence: 292/323 (lower bound 0.87, lift 13.6)
+    example:  packages/twenty-server/src/engine/core-modules/admin-panel/dtos/admin-panel-usage-limit.input.ts#AdminPanelCreateUsageLimitInput
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-job/dtos/enqueue-job-item.input.ts:12 EnqueueJobItemInputDTO
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-job/dtos/enqueue-job.input.ts:26 EnqueueJobInputDTO
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-job/dtos/enqueue-jobs.input.ts:27 EnqueueJobsInputDTO
+    ... 28 more outliers
+
+30. [D-8c0443] packages/twenty-server: classes in src/** (*.resolver files) are named `*Resolver`
+    evidence: 143/144 (lower bound 0.96, lift 30.8)
+    example:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-ai-provider.resolver.ts#AdminPanelAiProviderResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/tool-provider/resolvers/tool-index.resolver.ts:21 ToolIndexEntryDTO
+
+31. [D-43f9b2] packages/twenty-apps/public/people-data-labs: files in src/logic-functions/utils/** have a test file
+    evidence: 67/73 (lower bound 0.83, lift 8.3)
+    example:  packages/twenty-apps/public/people-data-labs/src/logic-functions/utils/aggregate-bulk-enrich-result.ts#(file)
+    outlier:  packages/twenty-apps/public/people-data-labs/src/logic-functions/utils/build-invalid-likelihood-message.ts:1 (file)
+    outlier:  packages/twenty-apps/public/people-data-labs/src/logic-functions/utils/enrich-chunk.ts:1 (file)
+    outlier:  packages/twenty-apps/public/people-data-labs/src/logic-functions/utils/get-configured-min-likelihood.ts:1 (file)
+    ... 3 more outliers
+
+32. [D-ef410a] packages/twenty-server: classes in src/** (*.job files) are named `*Job`
+    evidence: 123/124 (lower bound 0.96, lift 35.5)
+    example:  packages/twenty-server/src/engine/core-modules/application/application-install/jobs/trigger-install-application.job.ts#TriggerInstallApplicationJob
+    outlier:  packages/twenty-server/src/modules/timeline/jobs/upsert-timeline-activity-from-internal-event.job.ts:12 UpsertTimelineActivityFromInternalEvent
+
+33. [D-c75a75] packages/twenty-server: exported values in src/** (*.exception files) are named `*Code`
+    evidence: 122/136 (lower bound 0.83, lift 55.9)
+    example:  packages/twenty-server/src/database/clickhouse/clickhouse.exception.ts#ClickHouseExceptionCode
+    outlier:  packages/twenty-server/src/engine/core-modules/user-workspace/user-workspace.exception.ts:36 UserWorkspaceNotFoundDefaultError
+    outlier:  packages/twenty-server/src/engine/core-modules/workspace/workspace.exception.ts:75 WorkspaceNotFoundDefaultError
+    outlier:  packages/twenty-server/src/engine/metadata-modules/flat-entity/exceptions/flat-entity-maps.exception.ts:19 flatEntityMapsExceptionContextSchema
+    ... 11 more outliers
+
+34. [D-ae07f6] packages/twenty-front: components in src/modules/command-menu-item/engine-command/** are named `*Command`
+    evidence: 62/63 (lower bound 0.92, lift 58.5)
+    example:  packages/twenty-front/src/modules/command-menu-item/engine-command/components/HeadlessNavigateEngineCommand.tsx#HeadlessNavigateEngineCommand
+    outlier:  packages/twenty-front/src/modules/command-menu-item/engine-command/components/CommandRunner.tsx:9 CommandRunner
+
+35. [D-fbc4dc] packages/twenty-server: classes in src/engine/metadata-modules/** (*.entity files) are decorated with Index()
+    evidence: 43/46 (lower bound 0.82, lift 58.5)
+    example:  packages/twenty-server/src/engine/metadata-modules/agent-chat-channel/entities/agent-chat-channel-role.entity.ts#AgentChatChannelRoleEntity
+    outlier:  packages/twenty-server/src/engine/metadata-modules/front-component/entities/front-component.entity.ts:23 FrontComponentEntity
+    outlier:  packages/twenty-server/src/engine/metadata-modules/logic-function-layer/logic-function-layer.entity.ts:13 LogicFunctionLayerEntity
+    outlier:  packages/twenty-server/src/engine/metadata-modules/role/role.entity.ts:26 RoleEntity
+
+36. [D-1b7a4a] packages/twenty-server: functions in src/** (*.tool files) are named `create*`
+    evidence: 47/48 (lower bound 0.89, lift 32.2)
+    example:  packages/twenty-server/src/engine/api/mcp/tools/list-object-metadata-names.tool.ts#createListObjectMetadataNamesTool
+    outlier:  packages/twenty-server/src/engine/core-modules/tool-provider/tools/execute-tool.tool.ts:21 executeToolInputSchema
+
+37. [D-f2b3ac] packages/twenty-shared: functions in src/application/** (*.util files) are named `get*`
+    evidence: 42/43 (lower bound 0.88, lift 7.2)
+    example:  packages/twenty-shared/src/application/deterministic-identifier/get-agent-universal-identifier.util.ts#getAgentUniversalIdentifier
+    outlier:  packages/twenty-shared/src/application/deterministic-identifier/compute-deterministic-uuid.util.ts:5 computeDeterministicUuid
+
+38. [D-0f3537] packages/twenty-shared: exported values in src/workflow/schemas/** are named `workflow*`
+    evidence: 70/83 (lower bound 0.75, lift 70.3)
+    example:  packages/twenty-shared/src/workflow/schemas/ai-agent-action-schema.ts#workflowAiAgentActionSchema
+    outlier:  packages/twenty-shared/src/workflow/schemas/agent-response-format-schema.ts:27 agentResponseFormatSchema
+    outlier:  packages/twenty-shared/src/workflow/schemas/base-trigger-schema.ts:3 baseTriggerSchema
+    outlier:  packages/twenty-shared/src/workflow/schemas/base-workflow-action-schema.ts:3 baseWorkflowActionSchema
+    ... 10 more outliers
+
+39. [D-b10be1] packages/twenty-server: classes in src/** (*.dto files) call Field()
+    evidence: 401/406 (lower bound 0.97, lift 5.8)
+    example:  packages/twenty-server/src/engine/core-modules/admin-panel/dtos/admin-chat-message-part.dto.ts#AdminChatMessagePartDTO
+    outlier:  packages/twenty-server/src/engine/core-modules/admin-panel/dtos/admin-panel-workspace-usage-limits.dto.ts:48 AdminPanelUsageLimitDTO
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-variable/dtos/user-application-variable-value.dto.ts:6 UserApplicationVariableValueDTO
+    outlier:  packages/twenty-server/src/engine/core-modules/application/connection-provider/connections/dtos/get-app-connection.dto.ts:3 GetAppConnectionDto
+    ... 2 more outliers
+
+40. [D-a6a57c] packages/twenty-server: classes in src/** (*.input files) call Field()
+    evidence: 315/323 (lower bound 0.95, lift 5.7)
+    example:  packages/twenty-server/src/engine/core-modules/admin-panel/dtos/admin-panel-usage-limit.input.ts#AdminPanelCreateUsageLimitInput
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-oauth/dtos/oauth-introspect.input.ts:3 OAuthIntrospectInput
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-oauth/dtos/oauth-register.input.ts:10 OAuthRegisterInput
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-oauth/dtos/oauth-revoke.input.ts:3 OAuthRevokeInput
+    ... 5 more outliers
+
+41. [D-6052c0] packages/twenty-server: classes in src/** (*.module files) pass `providers` to Module()
+    evidence: 432/457 (lower bound 0.92, lift 9.7)
+    example:  packages/twenty-server/src/app.module.ts#AppModule
+    outlier:  packages/twenty-server/src/command/command.module.ts:20 CommandModule
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/workspace-command-provider.module.ts:116 WorkspaceCommandProviderModule
+    outlier:  packages/twenty-server/src/engine/api/graphql/admin-panel-graphql-api.module.ts:40 AdminPanelGraphQLApiModule
+    ... 22 more outliers
+
+42. [D-3abdac] packages/twenty-cli: functions in src/commands/** are named `run*`
+    evidence: 40/43 (lower bound 0.81, lift 170.5)
+    example:  packages/twenty-cli/src/commands/api/graphql/run-api-graphql-command.ts#runApiGraphqlCommand
+    outlier:  packages/twenty-cli/src/commands/api/format-body.ts:4 formatBody
+    outlier:  packages/twenty-cli/src/commands/auth/login/read-api-key-from-standard-input.ts:8 readApiKeyFromStandardInput
+    outlier:  packages/twenty-cli/src/commands/open/resolve-workspace-page-url.ts:6 resolveWorkspacePageUrl
+
+43. [D-fea4d7] packages/twenty-server: functions in src/** (*.guard files) are named `is*`
+    evidence: 31/33 (lower bound 0.80, lift 9.3)
+    example:  packages/twenty-server/src/engine/api/common/common-args-processors/data-arg-processor/types/file-item.guard.ts#isFileOutputArray
+    outlier:  packages/twenty-server/src/engine/guards/access-policy.guard.ts:18 AccessPolicyGuard
+    outlier:  packages/twenty-server/src/engine/permissions/view/guards/view-child-entity-permission.guard.ts:15 ViewChildEntityPermissionGuard
+
+44. [D-4d66c6] packages/twenty-server: classes in src/** (*.resolver files) call UseGuards()
+    evidence: 135/144 (lower bound 0.89, lift 22.5)
+    example:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-ai-provider.resolver.ts#AdminPanelAiProviderResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts:12 AdminPanelApplicationRegistrationResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-registration/application-registration-summary.resolver.ts:9 ApplicationRegistrationSummaryResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/billing/billing-subscription-item.resolver.ts:21 BillingSubscriptionItemResolver
+    ... 6 more outliers
+
+45. [D-5f30f5] packages/twenty-server: classes in src/** (*.factory files) are named `*Factory`
+    evidence: 28/29 (lower bound 0.83, lift 143.0)
+    example:  packages/twenty-server/src/engine/api/common/common-args-processors/query-runner-args.factory.ts#QueryRunnerArgsFactory
+    outlier:  packages/twenty-server/src/engine/api/graphql/workspace-schema-builder/workspace-graphql-schema.factory.ts:15 WorkspaceGraphQLSchemaGenerator
+
+46. [D-f5fb0d] packages/twenty-front: exported values in src/modules/ai/states/selectors/** are named `agent*`
+    evidence: 27/28 (lower bound 0.82, lift 115.9)
+    example:  packages/twenty-front/src/modules/ai/states/selectors/agentChatAccessibleChannelsSelector.ts#agentChatAccessibleChannelsSelector
+    outlier:  packages/twenty-front/src/modules/ai/states/selectors/currentAiChatThreadDataSelector.ts:6 currentAiChatThreadDataSelector
+
+47. [D-ea0a7d] packages/twenty-front-component-renderer: functions in src/__stories__/twenty-ui-gallery/** call expect()
+    evidence: 116/127 (lower bound 0.85, lift 78.5)
+    example:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/animatedIconCrossfadeTest.ts#animatedIconCrossfadeTest
+    outlier:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/computePopupAnchorGapAndOverlap.ts:8 computePopupAnchorGapAndOverlap
+    outlier:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/createDropdownOpenTest.ts:9 createDropdownOpenTest
+    outlier:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/createGalleryStory.ts:12 createGalleryStory
+    ... 8 more outliers
+
+48. [D-b54f48] packages/twenty-server: functions in src/engine/metadata-modules/flat-page-layout-widget/validators/** (*.util files) are named `validate*`
+    evidence: 25/26 (lower bound 0.81, lift 57.1)
+    example:  packages/twenty-server/src/engine/metadata-modules/flat-page-layout-widget/validators/utils/validate-bar-chart-configuration.util.ts#validateBarChartConfiguration
+    outlier:  packages/twenty-server/src/engine/metadata-modules/flat-page-layout-widget/validators/utils/reject-widget-type.util.ts:9 rejectWidgetType
+
+49. [D-020796] packages/twenty-server: exported values in src/** (*.input-type files) are named `*Type`
+    evidence: 20/21 (lower bound 0.77, lift 67.4)
+    example:  packages/twenty-server/src/engine/api/graphql/workspace-schema-builder/graphql-types/input/actor-context.input-type.ts#ActorContextInputType
+    outlier:  packages/twenty-server/src/engine/api/graphql/workspace-schema-builder/graphql-types/input/filter-is.input-type.ts:3 FilterIs
+
+50. [D-019880] packages/twenty-front: functions in src/modules/ai/components/** are named `*Effect`
+    evidence: 25/27 (lower bound 0.77, lift 43.9)
+    example:  packages/twenty-front/src/modules/ai/components/AgentChatChannelThreadsLoadEffect.tsx#AgentChatChannelThreadsLoadEffect
+    outlier:  packages/twenty-front/src/modules/ai/components/__stories__/getAiChatApprovalReviewRecordStatus.ts:3 getAiChatApprovalReviewRecordStatus
+    outlier:  packages/twenty-front/src/modules/ai/components/suggested-prompts/getAiChatSuggestedPrompts.ts:12 getAiChatSuggestedPrompts
+
+51. [D-b995e0] packages/twenty-server: classes in src/** (*.resolver files) call Args()
+    evidence: 123/144 (lower bound 0.79, lift 30.8)
+    example:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-ai-provider.resolver.ts#AdminPanelAiProviderResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts:12 AdminPanelApplicationRegistrationResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-development/application-export.resolver.ts:45 ApplicationExportResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-development/application-schema.resolver.ts:38 ApplicationSchemaResolver
+    ... 18 more outliers
+
+52. [D-e7c0aa] packages/twenty-server: classes in src/database/** (*.module files) pass `imports` to Module()
+    evidence: 63/65 (lower bound 0.90, lift 11.0)
+    example:  packages/twenty-server/src/database/commands/agent-history/agent-history-migration.module.ts#AgentHistoryMigrationModule
+    outlier:  packages/twenty-server/src/database/clickhouse/clickhouse.module.ts:9 ClickHouseModule
+    outlier:  packages/twenty-server/src/database/commands/command-runners/command-shutdown.module.ts:9 CommandShutdownModule
+
+53. [D-b9a9ed] packages/twenty-server: classes in src/** (*.guard files) are decorated with Injectable()
+    evidence: 31/33 (lower bound 0.80, lift 3.0)
+    example:  packages/twenty-server/src/engine/api/mcp/guards/mcp-auth.guard.ts#McpAuthGuard
+    outlier:  packages/twenty-server/src/engine/guards/admin-panel-or-impersonate.guard.ts:10 AdminPanelOrImpersonateGuard
+    outlier:  packages/twenty-server/src/engine/guards/server-level-impersonate.guard.ts:7 ServerLevelImpersonateGuard
+
+54. [D-24fef5] packages/twenty-server: functions in src/modules/** (*.tool files) use `try`
+    evidence: 27/28 (lower bound 0.82, lift 16.3)
+    example:  packages/twenty-server/src/modules/dashboard/tools/add-dashboard-tab.tool.ts#createAddDashboardTabTool
+    outlier:  packages/twenty-server/src/modules/workflow/workflow-tools/tools/list-logic-function-tools.tool.ts:10 createListLogicFunctionToolsTool
+
+55. [D-0b57c0] packages/twenty-server: classes in src/** (*.command files) call RegisteredWorkspaceCommand() before WorkspaceCacheService.getOrRecompute()
+    evidence: 240/241 (lower bound 0.98, lift 1.0)
+    example:  packages/twenty-server/src/database/commands/upgrade-version-command/1-21/1-21-workspace-command-1775500001000-add-compose-email-command-menu-item.command.ts#AddComposeEmailCommandMenuItemCommand
+    outlier:  packages/twenty-server/src/database/commands/rebuild-application-default-deps.command.ts:20 RebuildApplicationDefaultDepsCommand
+
+56. [D-c3298e] packages/twenty-server: classes in src/engine/core-modules/** (*.service files) call Injectable() before isDefined()
+    evidence: 214/222 (lower bound 0.93, lift 1.0)
+    example:  packages/twenty-server/src/engine/core-modules/actor/services/actor-from-auth-context.service.ts#ActorFromAuthContextService
+    outlier:  packages/twenty-server/src/engine/core-modules/emailing-domain/drivers/resend/services/resend-driver.service.ts:33 ResendDriver
+    outlier:  packages/twenty-server/src/engine/core-modules/logic-function/logic-function-drivers/drivers/lambda/services/lambda-aws-client.service.ts:32 LambdaAwsClientService
+    outlier:  packages/twenty-server/src/engine/core-modules/logic-function/logic-function-drivers/drivers/lambda/services/lambda-executor-manager.service.ts:58 LambdaExecutorManagerService
+    ... 5 more outliers
+
+57. [D-78657c] packages/twenty-server: classes in src/modules/workflow/** (*.module files) pass `exports` to Module()
+    evidence: 35/38 (lower bound 0.79, lift 14.1)
+    example:  packages/twenty-server/src/modules/workflow/common/workflow-common.module.ts#WorkflowCommonModule
+    outlier:  packages/twenty-server/src/modules/workflow/common/query-hooks/workflow-query-hook.module.ts:64 WorkflowQueryHookModule
+    outlier:  packages/twenty-server/src/modules/workflow/workflow-trigger/workflow-trigger.module.ts:28 WorkflowTriggerModule
+    outlier:  packages/twenty-server/src/modules/workflow/workflow.module.ts:9 WorkflowModule
+
+58. [D-782bb4] packages/twenty-server: classes in src/** (*.workflow-action files) are decorated with Injectable()
+    evidence: 22/23 (lower bound 0.79, lift 3.0)
+    example:  packages/twenty-server/src/modules/workflow/workflow-executor/workflow-actions/ai-agent/ai-agent.workflow-action.ts#AiAgentWorkflowAction
+    outlier:  packages/twenty-server/src/modules/workflow/workflow-executor/workflow-actions/tool-backed/tool-backed.workflow-action.ts:26 ToolBackedWorkflowAction
+
+59. [D-65f290] packages/twenty-server: classes in src/engine/metadata-modules/page-layout-widget/** (*.dto files) call IsNotEmpty()
+    evidence: 33/36 (lower bound 0.78, lift 19.5)
+    example:  packages/twenty-server/src/engine/metadata-modules/page-layout-widget/dtos/aggregate-chart-configuration.dto.ts#AggregateChartConfigurationDTO
+    outlier:  packages/twenty-server/src/engine/metadata-modules/page-layout-widget/dtos/page-layout-widget.dto.ts:24 GridPositionDTO
+    outlier:  packages/twenty-server/src/engine/metadata-modules/page-layout-widget/dtos/page-layout-widget.dto.ts:39 PageLayoutWidgetDTO
+    outlier:  packages/twenty-server/src/engine/metadata-modules/page-layout-widget/dtos/rich-text-body.dto.ts:8 RichTextBodyDTO
+
+60. [D-1b8502] packages/twenty-front: components in src/pages/settings/** call useLingui() before getSettingsPath()
+    evidence: 94/98 (lower bound 0.90, lift 1.0)
+    example:  packages/twenty-front/src/pages/settings/accounts/SettingsAccountDetail.tsx#SettingsAccountDetail
+    outlier:  packages/twenty-front/src/pages/settings/developers/playground/SettingsGraphQLPlayground.tsx:12 SettingsGraphQLPlayground
+    outlier:  packages/twenty-front/src/pages/settings/developers/playground/SettingsRestPlayground.tsx:12 SettingsRestPlayground
+    outlier:  packages/twenty-front/src/pages/settings/members/roles/SettingsRoleEdit.tsx:11 SettingsRoleEdit
+    ... 1 more outliers
+
+61. [D-60358e] packages/twenty-front-component-renderer: components in src/__stories__/twenty-ui-gallery/** call useState()
+    evidence: 26/28 (lower bound 0.77, lift 5.7)
+    example:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/animated-icon-crossfade-example.tsx#AnimatedIconCrossfadeExample
+    outlier:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/components/ScrollBoundaryDecorator.tsx:5 ScrollBoundaryDecorator
+    outlier:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/directional-resize-example.tsx:3 DirectionalResizeExample
+
+62. [D-359530] packages/twenty-server: classes in src/engine/core-modules/** (*.resolver files) call AccessPolicyGuard() before AuthWorkspace()
+    evidence: 60/61 (lower bound 0.91, lift 1.0)
+    example:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel.resolver.ts#AdminPanelResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/usage-limit/billing-subscription-item-cap.resolver.ts:21 BillingSubscriptionItemCapResolver
+
+63. [D-f37b9d] packages/twenty-server: classes in src/** (*.dto files) call ObjectType() before Field()
+    evidence: 400/401 (lower bound 0.99, lift 1.0)
+    example:  packages/twenty-server/src/engine/core-modules/admin-panel/dtos/admin-chat-message-part.dto.ts#AdminChatMessagePartDTO
+    outlier:  packages/twenty-server/src/engine/permissions/record-share/dtos/record-sharing.dto.ts:25 RecordSharePrincipalInput
+
+64. [D-ab4b2b] packages/twenty-server: classes in src/engine/metadata-modules/** (*.resolver files) call MetadataResolver() before Args()
+    evidence: 45/46 (lower bound 0.89, lift 1.0)
+    example:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-run.resolver.ts#AgentRunResolver
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-tool-call-answer/resolvers/tool-call-answer.resolver.ts:57 ToolCallAnswerResolver
+
+65. [D-b9badb] packages/twenty-server: classes in src/engine/metadata-modules/** (*.resolver files) call MetadataResolver() before AuthWorkspace()
+    evidence: 49/51 (lower bound 0.87, lift 1.0)
+    example:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-run.resolver.ts#AgentRunResolver
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts:12 AgentMessagePartResolver
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-tool-call-answer/resolvers/tool-call-answer.resolver.ts:57 ToolCallAnswerResolver
+
+66. [D-7ee0d6] packages/twenty-front: components in src/modules/command-menu-item/engine-command/** call isDefined() before doNotTranslate()
+    evidence: 41/43 (lower bound 0.84, lift 1.0)
+    example:  packages/twenty-front/src/modules/command-menu-item/engine-command/record/components/AddRecordsToMessageListCommand.tsx#AddRecordsToMessageListCommand
+    outlier:  packages/twenty-front/src/modules/command-menu-item/engine-command/components/HeadlessFrontComponentRendererEngineCommand.tsx:15 HeadlessFrontComponentRendererEngineCommand
+    outlier:  packages/twenty-front/src/modules/command-menu-item/engine-command/record/components/TriggerWorkflowVersionEngineCommand.tsx:19 TriggerWorkflowVersionEngineCommand
+
+67. [D-16a83f] packages/twenty-apps/public/slack: functions in src/** declare their return type
+    evidence: 228/234 (lower bound 0.94, lift 1.6)
+    example:  packages/twenty-apps/public/slack/src/front-components/hooks/use-can-manage-slack-user-links.ts#useCanManageSlackUserLinks
+    outlier:  packages/twenty-apps/public/slack/src/front-components/hooks/use-auto-resolve-slack-user.ts:18 useAutoResolveSlackUser
+    outlier:  packages/twenty-apps/public/slack/src/front-components/hooks/use-match-slack-user-links.ts:20 useMatchSlackUserLinks
+    outlier:  packages/twenty-apps/public/slack/src/logic-functions/handlers/slack-app-uninstall-handler.ts:3 slackAppUninstallHandler
+    ... 3 more outliers
+
+68. [D-24dc14] packages/twenty-apps/public/call-recorder: functions in src/** (*.util files) declare their return type
+    evidence: 216/223 (lower bound 0.94, lift 1.6)
+    example:  packages/twenty-apps/public/call-recorder/src/front-components/utils/build-call-participant-display-items.util.ts#buildCallParticipantDisplayItems
+    outlier:  packages/twenty-apps/public/call-recorder/src/front-components/utils/create-application-variable-save-queue.util.ts:10 createApplicationVariableSaveQueue
+    outlier:  packages/twenty-apps/public/call-recorder/src/front-components/utils/get-settings-control-styles.util.ts:6 getSettingsControlStyles
+    outlier:  packages/twenty-apps/public/call-recorder/src/front-components/utils/is-call-recording-in-progress.util.ts:4 isCallRecordingInProgress
+    ... 4 more outliers
+
+69. [D-7d539b] packages/twenty-server: classes in src/engine/metadata-modules/** (*.input files) call InputType() before Field()
+    evidence: 139/141 (lower bound 0.95, lift 1.0)
+    example:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/dtos/generate.input.ts#GenerateInputDTO
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/dtos/agent-chat-conversation.input.ts:7 AgentChatConversationInput
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/dtos/agent-chat-event.input.ts:8 AgentChatEventInput
+
+70. [D-312474] packages/twenty-server: functions in src/engine/core-modules/application/** (*.util files) declare their return type
+    evidence: 220/231 (lower bound 0.92, lift 1.5)
+    example:  packages/twenty-server/src/engine/core-modules/application/application-health/utils/build-user-health-check-rate-limit-key.util.ts#buildUserHealthCheckRateLimitKey
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-manifest/utils/build-workflow-manifest-inverse-reference-resolvers.util.ts:31 buildWorkflowManifestInverseReferenceResolvers
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-manifest/utils/build-workflow-manifest-reference-resolvers.util.ts:13 buildWorkflowManifestReferenceResolvers
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-manifest/utils/create-child-decider.util.ts:20 createChildDecider
+    ... 8 more outliers
+
+71. [D-f8b237] packages/twenty-server: functions in src/database/** (*.util files) declare their return type
+    evidence: 197/207 (lower bound 0.91, lift 1.5)
+    example:  packages/twenty-server/src/database/clickhouse/utils/format-date-time-for-clickhouse.util.ts#formatDateTimeForClickHouse
+    outlier:  packages/twenty-server/src/database/commands/agent-history/utils/get-agent-history-schema-additions.util.ts:34 getAgentHistorySchemaAdditions
+    outlier:  packages/twenty-server/src/database/commands/command-runners/utils/activation-status-in.util.ts:5 activationStatusIn
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-1/utils/replace-legacy-page-edit-mode-identifier.util.ts:11 replaceLegacyPageEditModeIdentifier
+    ... 7 more outliers
+
+72. [D-407e3b] packages/twenty-apps/public/teams: functions in src/features/** declare their return type
+    evidence: 148/158 (lower bound 0.89, lift 1.5)
+    example:  packages/twenty-apps/public/teams/src/features/chat/logic-functions/data/claim-teams-assistant-request.ts#claimTeamsAssistantRequest
+    outlier:  packages/twenty-apps/public/teams/src/features/chat/front-components/hooks/use-remove-teams-user-link.ts:7 useRemoveTeamsUserLink
+    outlier:  packages/twenty-apps/public/teams/src/features/chat/front-components/hooks/use-teams-user-links.ts:71 useTeamsUserLinks
+    outlier:  packages/twenty-apps/public/teams/src/features/chat/logic-functions/teams-register-connection.ts:8 teamsRegisterConnectionHandler
+    ... 7 more outliers
+
+73. [D-e5bbb3] files in packages/twenty-apps/public/call-recorder/** use @emotion/styled for css-in-js, not styled-components/@emotion/react/@stitches/react
+    evidence: 31/32 (lower bound 0.84, lift 1.0)
+    split:    @emotion/styled 32, @emotion/react 1
+    example:  packages/twenty-apps/public/call-recorder/src/front-components/components/CallParticipantsWidget.tsx#(file)
+    outlier:  packages/twenty-apps/public/call-recorder/src/front-components/components/StyledChipSkeleton.tsx:1 (file)
+
+74. [D-0d6a96] packages/twenty-shared: functions in src/** (*.util files) declare their return type
+    evidence: 102/105 (lower bound 0.92, lift 1.6)
+    example:  packages/twenty-shared/src/ai/utils/apply-agent-chat-inbox-action.util.ts#applyAgentChatInboxAction
+    outlier:  packages/twenty-shared/src/metadata/utils/internal/build-standard-object-base-fields.util.ts:3 buildStandardObjectBaseFields
+    outlier:  packages/twenty-shared/src/utils/from-array-to-unique-key-record.util.ts:4 fromArrayToUniqueKeyRecord
+    outlier:  packages/twenty-shared/src/utils/fromArrayToValuesByKeyRecord.util.ts:4 fromArrayToValuesByKeyRecord
+
+75. [D-8fef85] packages/twenty-server: functions in src/engine/permissions/** (*.util files) declare their return type
+    evidence: 93/96 (lower bound 0.91, lift 1.6)
+    example:  packages/twenty-server/src/engine/permissions/access-group/utils/build-access-group-ids-index-definition.util.ts#buildAccessGroupIdsIndexDefinition
+    outlier:  packages/twenty-server/src/engine/permissions/record-share/utils/record-share-graphql-api-exception-handler.util.ts:14 recordShareGraphqlApiExceptionHandler
+    outlier:  packages/twenty-server/src/engine/permissions/role/utils/validate-operation-is-permitted-or-throw.util.ts:33 validateOperationIsPermittedOrThrow
+    outlier:  packages/twenty-server/src/engine/permissions/utils/permission-graphql-api-exception-handler.util.ts:14 permissionGraphqlApiExceptionHandler
+
+76. [D-3c2576] packages/twenty-front-component-renderer: functions in src/polyfills/dom/** declare their return type
+    evidence: 69/71 (lower bound 0.90, lift 1.6)
+    example:  packages/twenty-front-component-renderer/src/polyfills/dom/utils/buildAttributeCacheKey.ts#buildAttributeCacheKey
+    outlier:  packages/twenty-front-component-renderer/src/polyfills/dom/utils/createMutationObserverClass.ts:16 createMutationObserverClass
+    outlier:  packages/twenty-front-component-renderer/src/polyfills/dom/utils/createWorkerFocusTransport.ts:8 createWorkerFocusTransport
+
+77. [D-10bd76] packages/twenty-apps/public/people-data-labs: functions in src/** declare their return type
+    evidence: 77/80 (lower bound 0.90, lift 1.5)
+    example:  packages/twenty-apps/public/people-data-labs/src/front-components/utils/build-enrichment-snackbar-params.ts#buildEnrichmentSnackbarParams
+    outlier:  packages/twenty-apps/public/people-data-labs/src/constants/pdl-company-required-field-values.ts:3 PDL_COMPANY_REQUIRED_FIELD_VALUES
+    outlier:  packages/twenty-apps/public/people-data-labs/src/constants/pdl-person-required-field-values.ts:3 PDL_PERSON_REQUIRED_FIELD_VALUES
+    outlier:  packages/twenty-apps/public/people-data-labs/src/utils/build-select-options.ts:3 buildSelectOptions
+
+78. [D-c26126] packages/twenty-server: functions in src/engine/api/common/** (*.util files) declare their return type
+    evidence: 91/95 (lower bound 0.90, lift 1.5)
+    example:  packages/twenty-server/src/engine/api/common/common-args-processors/data-arg-processor/transformer-utils/transform-actor-field.util.ts#transformActorField
+    outlier:  packages/twenty-server/src/engine/api/common/common-args-processors/data-arg-processor/utils/find-postgres-default-null-equivalent-value.util.ts:10 findPostgresDefaultNullEquivalentValue
+    outlier:  packages/twenty-server/src/engine/api/common/common-args-processors/group-by-arg-processor/utils/validate-and-transform-relation-group-by-field-or-throw.util.ts:176 validateAndTransformRelationGroupByFieldOrThrow
+    outlier:  packages/twenty-server/src/engine/api/common/common-query-runners/utils/common-query-runner-to-graphql-api-exception-handler.util.ts:14 commonQueryRunnerToGraphqlApiExceptionHandler
+    ... 1 more outliers
+
+79. [D-01fb4b] packages/twenty-apps/public/linkedin: functions in src/** (*.util files) declare their return type
+    evidence: 71/74 (lower bound 0.89, lift 1.5)
+    example:  packages/twenty-apps/public/linkedin/src/front-components/utils/format-linkedin-sync-progress-label.util.ts#formatLinkedinSyncProgressLabel
+    outlier:  packages/twenty-apps/public/linkedin/src/logic-functions/utils/build-person-name-filter.util.ts:3 buildPersonNameFilter
+    outlier:  packages/twenty-apps/public/linkedin/src/logic-functions/utils/get-linkedin-public-identifier-key.util.ts:1 getLinkedinPublicIdentifierKey
+    outlier:  packages/twenty-apps/public/linkedin/src/unipile/utils/get-unipile-request-options.util.ts:3 getUnipileRequestOptions
+
+80. [D-08084a] packages/twenty-apps/public/fathom: functions in src/** (*.util files) declare their return type
+    evidence: 85/89 (lower bound 0.89, lift 1.5)
+    example:  packages/twenty-apps/public/fathom/src/logic-functions/utils/apply-fathom-media-download.util.ts#applyFathomMediaDownload
+    outlier:  packages/twenty-apps/public/fathom/src/logic-functions/utils/build-fathom-media-write-fence.util.ts:4 buildFathomMediaWriteFence
+    outlier:  packages/twenty-apps/public/fathom/src/logic-functions/utils/cleanup-disconnected-fathom-media-imports.util.ts:11 cleanupDisconnectedFathomMediaImports
+    outlier:  packages/twenty-apps/public/fathom/src/logic-functions/utils/reconcile-fathom-media-imports.util.ts:18 reconcileFathomMediaImports
+    ... 1 more outliers
+
+81. [D-6ba4de] packages/twenty-server: classes in src/engine/metadata-modules/metadata-side-effect/** (*.service files) call MetadataSideEffectHandler() before isDefined()
+    evidence: 24/26 (lower bound 0.76, lift 1.0)
+    example:  packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/handlers/field-metadata/services/field-index-view-field-on-create-side-effect-handler.service.ts#FieldIndexViewFieldOnCreateSideEffectHandlerService
+    outlier:  packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/registry/metadata-side-effect-handler-registry.service.ts:26 MetadataSideEffectHandlerRegistryService
+    outlier:  packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/services/metadata-side-effect-engine.service.ts:57 MetadataSideEffectEngineService
+
+82. [D-c9e843] packages/twenty-front-component-renderer: functions in src/__stories__/twenty-ui-gallery/** call expect() before expect().not.toHaveBeenCalled()
+    evidence: 79/83 (lower bound 0.88, lift 1.0)
+    example:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/animatedIconCrossfadeTest.ts#animatedIconCrossfadeTest
+    outlier:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/createAutocompleteLongInputTest.ts:25 createAutocompleteLongInputTest
+    outlier:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/dropdownSelectionEventsTest.ts:6 dropdownSelectionEventsTest
+    outlier:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/overflowingListPopupTest.ts:168 overflowingListPopupTest
+    ... 1 more outliers
+
+83. [D-5b3142] packages/twenty-server: functions in src/engine/metadata-modules/flat-field-metadata/** (*.util files) declare their return type
+    evidence: 82/87 (lower bound 0.87, lift 1.5)
+    example:  packages/twenty-server/src/engine/metadata-modules/flat-field-metadata/utils/build-field-by-object-id-and-name-key.util.ts#buildFieldByObjectIdAndNameKey
+    outlier:  packages/twenty-server/src/engine/metadata-modules/flat-field-metadata/utils/from-morph-or-relation-flat-field-metadata-to-relation-dto.util.ts:13 fromMorphOrRelationFlatFieldMetadataToRelationDto
+    outlier:  packages/twenty-server/src/engine/metadata-modules/flat-field-metadata/utils/get-default-flat-field-metadata-from-create-field-input.util.ts:21 getDefaultFlatFieldMetadata
+    outlier:  packages/twenty-server/src/engine/metadata-modules/flat-field-metadata/utils/is-flat-field-metadata-name-synced-with-label.util.ts:7 isFlatFieldMetadataNameSyncedWithLabel
+    ... 2 more outliers
+
+84. [D-7edef0] packages/twenty-front-component-renderer: functions in src/__stories__/twenty-ui-gallery/** call within() before userEvent.click()
+    evidence: 74/78 (lower bound 0.88, lift 1.0)
+    example:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/animatedIconCrossfadeTest.ts#animatedIconCrossfadeTest
+    outlier:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/createDropdownOutsideDismissalTest.ts:9 createDropdownOutsideDismissalTest
+    outlier:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/dropdownOutsidePreventedTest.ts:7 dropdownOutsidePreventedTest
+    outlier:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/dropdownReopeningTest.ts:8 dropdownReopeningTest
+    ... 1 more outliers
+
+85. [D-dd54e2] packages/twenty-server: classes in src/** (*.entity files) call Column() before CreateDateColumn()
+    evidence: 80/85 (lower bound 0.87, lift 1.0)
+    example:  packages/twenty-server/src/engine/core-modules/app-token/app-token.entity.ts#AppTokenEntity
+    outlier:  packages/twenty-server/src/engine/core-modules/approved-access-domain/approved-access-domain.entity.ts:20 ApprovedAccessDomainEntity
+    outlier:  packages/twenty-server/src/engine/core-modules/emailing-domain/emailing-domain.entity.ts:21 EmailingDomainEntity
+    outlier:  packages/twenty-server/src/engine/core-modules/emailing-domain/unsubscribe-topic.entity.ts:15 UnsubscribeTopicEntity
+    ... 2 more outliers
+
+86. [D-1277a9] packages/twenty-front-component-renderer: functions in src/__stories__/twenty-ui-gallery/** call within() before expect().not.toHaveBeenCalled()
+    evidence: 78/83 (lower bound 0.87, lift 1.0)
+    example:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/animatedIconCrossfadeTest.ts#animatedIconCrossfadeTest
+    outlier:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/createDropdownOutsideDismissalTest.ts:9 createDropdownOutsideDismissalTest
+    outlier:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/dropdownOutsidePreventedTest.ts:7 dropdownOutsidePreventedTest
+    outlier:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/dropdownReopeningTest.ts:8 dropdownReopeningTest
+    ... 2 more outliers
+
+87. [D-cab5e5] packages/twenty-server: classes in src/** (*.entity files) call Entity() before Index()
+    evidence: 67/72 (lower bound 0.85, lift 1.0)
+    example:  packages/twenty-server/src/engine/core-modules/app-token/app-token.entity.ts#AppTokenEntity
+    outlier:  packages/twenty-server/src/engine/core-modules/api-key/api-key.entity.ts:17 ApiKeyEntity
+    outlier:  packages/twenty-server/src/engine/core-modules/two-factor-authentication/entities/two-factor-authentication-method.entity.ts:27 TwoFactorAuthenticationMethodEntity
+    outlier:  packages/twenty-server/src/engine/metadata-modules/deferred-workspace-migration-action/deferred-workspace-migration-action.entity.ts:19 DeferredWorkspaceMigrationActionEntity
+    ... 2 more outliers
+
+88. [D-56545a] packages/twenty-front-component-renderer: functions in src/__stories__/twenty-ui-gallery/** call within() before waitFor()
+    evidence: 91/102 (lower bound 0.82, lift 1.0)
+    example:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/animatedIconCrossfadeTest.ts#animatedIconCrossfadeTest
+    outlier:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/createDropdownOutsideDismissalTest.ts:9 createDropdownOutsideDismissalTest
+    outlier:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/dropdownOutsidePreventedTest.ts:7 dropdownOutsidePreventedTest
+    outlier:  packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/dropdownReopeningTest.ts:8 dropdownReopeningTest
+    ... 8 more outliers
+
+89. [D-399632] packages/twenty-server: functions in src/modules/dashboard/chart-data/** (*.util files) declare their return type
+    evidence: 50/51 (lower bound 0.90, lift 1.6)
+    example:  packages/twenty-server/src/modules/dashboard/chart-data/utils/apply-cumulative-to-line-data-points.util.ts#applyCumulativeToLineDataPoints
+    outlier:  packages/twenty-server/src/modules/dashboard/chart-data/utils/chart-data-graphql-api-exception-handler.util.ts:18 chartDataGraphqlApiExceptionHandler
+
+90. [D-2dfdfd] packages/twenty-front-component-renderer: functions in src/remote/** declare their return type
+    evidence: 58/60 (lower bound 0.89, lift 1.6)
+    example:  packages/twenty-front-component-renderer/src/remote/elements/utils/acknowledgeNativeEdit.ts#acknowledgeNativeEdit
+    outlier:  packages/twenty-front-component-renderer/src/remote/worker/environment/utils/setWorkerEnvironmentVariables.ts:1 setWorkerEnvironmentVariables
+    outlier:  packages/twenty-front-component-renderer/src/remote/worker/thread/utils/handleCommandConfirmationModalResult.ts:4 handleCommandConfirmationModalResult
+
+91. [D-3e18e7] packages/twenty-server: functions in src/modules/calendar/** (*.util files) declare their return type
+    evidence: 35/36 (lower bound 0.86, lift 1.6)
+    example:  packages/twenty-server/src/modules/calendar/calendar-event-creation-manager/drivers/utils/to-google-event-input.util.ts#toGoogleEventInput
+    outlier:  packages/twenty-server/src/modules/calendar/calendar-event-import-manager/utils/filter-out-blocklisted-events.util.ts:4 filterOutBlocklistedEvents
+
+92. [D-9301d0] packages/twenty-server: functions in src/engine/api/graphql/direct-execution/** (*.util files) declare their return type
+    evidence: 33/34 (lower bound 0.85, lift 1.6)
+    example:  packages/twenty-server/src/engine/api/graphql/direct-execution/utils/assert-create-many-args.util.ts#assertCreateManyArgs
+    outlier:  packages/twenty-server/src/engine/api/graphql/direct-execution/utils/graphql-direct-execution-to-graphql-api-exception-handler.util.ts:12 graphqlDirectExecutionToGraphqlApiExceptionHandler
+
+93. [D-5ab5c8] packages/twenty-server: functions in src/modules/emailing/** (*.util files) declare their return type
+    evidence: 32/33 (lower bound 0.85, lift 1.6)
+    example:  packages/twenty-server/src/modules/emailing/utils/build-add-people-to-message-list-job-id.util.ts#buildAddPeopleToMessageListJobId
+    outlier:  packages/twenty-server/src/modules/emailing/utils/message-list-graphql-api-exception-handler.util.ts:14 messageListGraphqlApiExceptionHandler
+
+94. [D-dec8d8] packages/twenty-server: functions in src/engine/metadata-modules/ai/ai-agent-execution/** (*.util files) declare their return type
+    evidence: 44/46 (lower bound 0.85, lift 1.5)
+    example:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/pausing-tools/utils/build-email-proposal.util.ts#buildEmailProposal
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/pausing-tools/wait-tools/build-second-wait-refusal-output.util.ts:2 buildSecondWaitRefusalOutput
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/pausing-tools/wait-tools/create-agent-wait-tools.util.ts:10 createAgentWaitTools
+
+95. [D-3ce1f5] packages/twenty-server: functions in src/engine/api/rest/** (*.util files) declare their return type
+    evidence: 31/32 (lower bound 0.84, lift 1.6)
+    example:  packages/twenty-server/src/engine/api/rest/core/utils/pick-rest-response-fields.util.ts#pickRestResponseFields
+    outlier:  packages/twenty-server/src/engine/api/rest/input-request-parsers/order-by-parser-utils/add-default-order-by-id.util.ts:4 addDefaultOrderById
+
+96. [D-d3193e] packages/twenty-front: functions in src/modules/validation-rules/utils/** declare their return type
+    evidence: 30/31 (lower bound 0.84, lift 1.6)
+    example:  packages/twenty-front/src/modules/validation-rules/utils/buildValidationRuleEditorFields.ts#buildValidationRuleEditorFields
+    outlier:  packages/twenty-front/src/modules/validation-rules/utils/insertValidationRuleHelperItem.ts:8 insertValidationRuleHelperItem
+
+97. [D-c50d74] packages/twenty-server: classes in src/engine/metadata-modules/page-layout-widget/** (*.dto files) call IsIn() before IsNotEmpty()
+    evidence: 32/33 (lower bound 0.85, lift 1.0)
+    example:  packages/twenty-server/src/engine/metadata-modules/page-layout-widget/dtos/aggregate-chart-configuration.dto.ts#AggregateChartConfigurationDTO
+    outlier:  packages/twenty-server/src/engine/metadata-modules/page-layout-widget/dtos/ratio-aggregate-config.dto.ts:12 RatioAggregateConfigDTO
+
+98. [D-76a1c2] packages/twenty-server: classes in src/engine/metadata-modules/** (*.entity files) call Column() before JoinColumn()
+    evidence: 31/32 (lower bound 0.84, lift 1.0)
+    example:  packages/twenty-server/src/engine/metadata-modules/agent-chat-channel/entities/agent-chat-channel-role.entity.ts#AgentChatChannelRoleEntity
+    outlier:  packages/twenty-server/src/engine/metadata-modules/navigation-menu-item/entities/navigation-menu-item.entity.ts:70 NavigationMenuItemEntity
+
+99. [D-6f062c] packages/twenty-server: functions in src/engine/core-modules/logic-function/** (*.util files) declare their return type
+    evidence: 45/48 (lower bound 0.83, lift 1.5)
+    example:  packages/twenty-server/src/engine/core-modules/logic-function/logic-function-drivers/drivers/lambda/utils/build-lambda-resource-name.util.ts#buildLambdaResourceName
+    outlier:  packages/twenty-server/src/engine/core-modules/logic-function/logic-function-drivers/drivers/lambda/utils/add-lambda-rate-limit-error-middleware.util.ts:9 addLambdaRateLimitErrorMiddleware
+    outlier:  packages/twenty-server/src/engine/core-modules/logic-function/logic-function-executor/utils/get-workflow-code-step-logic-function-id.util.ts:7 getWorkflowCodeStepLogicFunctionId
+    outlier:  packages/twenty-server/src/engine/core-modules/logic-function/logic-function-trigger/triggers/route/utils/route-trigger-response.util.ts:33 sendRouteTriggerResponse
+
+100. [D-0b296a] packages/twenty-server: functions in src/engine/workspace-manager/workspace-migration/workspace-migration-runner/** (*.util files) declare their return type
+    evidence: 34/36 (lower bound 0.82, lift 1.5)
+    example:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/action-handlers/command-menu-item/services/utils/from-universal-overrides-to-command-menu-item-overrides.util.ts#fromUniversalOverridesToCommandMenuItemOverrides
+    outlier:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/action-handlers/field/services/utils/compute-foreign-key-on-delete.util.ts:5 computeForeignKeyOnDelete
+    outlier:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/utils/is-text-column-type.util.ts:5 isTextColumnType
+
+101. [D-6a54b8] packages/twenty-server: exported values in src/** (*.schema files) call z.object() before z.string()
+    evidence: 31/33 (lower bound 0.80, lift 1.0)
+    example:  packages/twenty-server/src/database/commands/upgrade-version-command/2-9/ai-model-preferences.schema.ts#aiModelPreferencesSchema
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-front-component/schemas/front-component-dependencies-build-result.schema.ts:5 frontComponentDependenciesBuildResultSchema
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-models/types/ai-providers-config.schema.ts:5 aiProvidersConfigSchema
+
+102. [D-0811d0] packages/twenty-server: classes in src/** (*.controller files) call UseFilters() before Post()
+    evidence: 30/32 (lower bound 0.80, lift 1.0)
+    example:  packages/twenty-server/src/engine/api/mcp/controllers/mcp-core.controller.ts#McpCoreController
+    outlier:  packages/twenty-server/src/engine/core-modules/application/connection-provider/connection-provider-custom.controller.ts:36 ConnectionProviderCustomController
+    outlier:  packages/twenty-server/src/engine/core-modules/billing/app-billing/app-billing.controller.ts:62 AppBillingController
+
+103. [D-0fc444] packages/twenty-server: classes in src/** (*.controller files) call UseFilters() before Req()
+    evidence: 34/38 (lower bound 0.76, lift 1.0)
+    example:  packages/twenty-server/src/engine/api/mcp/controllers/mcp-core.controller.ts#McpCoreController
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-oauth/controllers/oauth-discovery.controller.ts:16 OAuthDiscoveryController
+    outlier:  packages/twenty-server/src/engine/core-modules/application/connection-provider/connection-provider-custom.controller.ts:36 ConnectionProviderCustomController
+    outlier:  packages/twenty-server/src/engine/core-modules/billing/app-billing/app-billing.controller.ts:62 AppBillingController
+    ... 1 more outliers
+
+104. [D-10e82c] packages/twenty-cli: functions in src/app/manifest/** declare their return type
+    evidence: 27/28 (lower bound 0.82, lift 1.6)
+    example:  packages/twenty-cli/src/app/manifest/build-and-validate-manifest.ts#buildAndValidateManifest
+    outlier:  packages/twenty-cli/src/app/manifest/manifest-validate.ts:264 manifestValidate
+
+105. [D-2ade4b] packages/twenty-server: functions in src/modules/timeline/** (*.util files) declare their return type
+    evidence: 27/28 (lower bound 0.82, lift 1.6)
+    example:  packages/twenty-server/src/modules/timeline/query-hooks/utils/timeline-activity-mutation-input.util.ts#assertTimelineActivityCreationInputIsValid
+    outlier:  packages/twenty-server/src/modules/timeline/utils/timeline-activity-related-morph-field-metadata-name-builder.util.ts:3 buildTimelineActivityRelatedMorphFieldMetadataName
+
+106. [D-4fa554] packages/twenty-front-component-renderer: functions in scripts/** declare their return type
+    evidence: 24/25 (lower bound 0.81, lift 1.5)
+    example:  packages/twenty-front-component-renderer/scripts/front-component-stories/createAvatarImageFixturePlugin.ts#createAvatarImageFixturePlugin
+    outlier:  packages/twenty-front-component-renderer/scripts/front-component-stories/native-tests/readBounds.ts:4 readBounds
+
+107. [D-bd81cc] packages/twenty-front-component-renderer: functions in src/utils/** declare their return type
+    evidence: 23/24 (lower bound 0.80, lift 1.5)
+    example:  packages/twenty-front-component-renderer/src/utils/clonable-error/buildClonableErrorPayload.ts#buildClonableErrorPayload
+    outlier:  packages/twenty-front-component-renderer/src/utils/getHostTagName.ts:3 getHostTagName
+
+108. [D-dce5ce] packages/twenty-shared: functions in src/utils/tiptap/** declare their return type
+    evidence: 23/24 (lower bound 0.80, lift 1.5)
+    example:  packages/twenty-shared/src/utils/tiptap/convert-blocknote-to-rich-text-document.ts#convertBlockNoteToRichTextDocument
+    outlier:  packages/twenty-shared/src/utils/tiptap/convert-email-body-to-email-document.ts:11 convertEmailBodyToEmailDocument
+
+109. [D-09b0f9] packages/twenty-server: functions in src/modules/workflow/workflow-builder/** (*.util files) declare their return type
+    evidence: 22/23 (lower bound 0.79, lift 1.5)
+    example:  packages/twenty-server/src/modules/workflow/workflow-builder/utils/apply-workflow-step-positions.util.ts#applyWorkflowStepPositions
+    outlier:  packages/twenty-server/src/modules/workflow/workflow-builder/utils/compute-workflow-version-step-updates.util.ts:7 computeWorkflowVersionStepChanges
+
+110. [D-85bd6f] packages/twenty-server: functions in src/engine/api/graphql/graphql-query-runner/** (*.util files) declare their return type
+    evidence: 28/30 (lower bound 0.79, lift 1.5)
+    example:  packages/twenty-server/src/engine/api/graphql/graphql-query-runner/graphql-query-parsers/graphql-query-order/utils/build-order-by-column-expression.util.ts#buildOrderByColumnExpression
+    outlier:  packages/twenty-server/src/engine/api/graphql/graphql-query-runner/graphql-query-parsers/graphql-query-order/utils/prepare-for-order-by-relation-field-parsing.util.ts:19 prepareForOrderByRelationFieldParsing
+    outlier:  packages/twenty-server/src/engine/api/graphql/graphql-query-runner/utils/cursors.util.ts:94 encodeCursorData
+
+111. [D-86d446] packages/twenty-server: functions in src/engine/workspace-manager/workspace-migration/utils/** (*.util files) declare their return type
+    evidence: 28/30 (lower bound 0.79, lift 1.5)
+    example:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/utils/add-flat-entity-to-flat-entity-maps-through-mutation-or-throw.util.ts#addFlatEntityToFlatEntityMapsThroughMutationOrThrow
+    outlier:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/utils/aggregate-orchestrator-actions-report.util.ts:7 aggregateOrchestratorActionsReport
+    outlier:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/utils/get-metadata-empty-workspace-migration-action-record.util.ts:5 getMetadataEmptyWorkspaceMigrationActionRecord
+
+112. [D-dd831e] packages/twenty-apps/public/call-recorder: functions in src/logic-functions/** declare their return type
+    evidence: 19/20 (lower bound 0.76, lift 1.5)
+    example:  packages/twenty-apps/public/call-recorder/src/logic-functions/cancel-recall-bot-on-call-recording-delete.ts#cancelRecallBotOnCallRecordingDeleteHandler
+    outlier:  packages/twenty-apps/public/call-recorder/src/logic-functions/process-recall-webhook.ts:9 processRecallWebhookHandler
+
+113. [D-ca2f11] packages/twenty-server: functions in src/engine/core-modules/auth/utils/** (*.util files) declare their return type
+    evidence: 18/19 (lower bound 0.75, lift 1.5)
+    example:  packages/twenty-server/src/engine/core-modules/auth/utils/acquire-user-authentication-lock.util.ts#acquireUserAuthenticationLock
+    outlier:  packages/twenty-server/src/engine/core-modules/auth/utils/auth-graphql-api-exception-handler.util.ts:15 authGraphqlApiExceptionHandler
+
+114. [D-e9ec70] packages/twenty-front: functions in src/modules/settings/admin-panel/utils/** declare their return type
+    evidence: 18/19 (lower bound 0.75, lift 1.5)
+    example:  packages/twenty-front/src/modules/settings/admin-panel/utils/buildAdminUsageLimitRows.ts#buildAdminUsageLimitRows
+    outlier:  packages/twenty-front/src/modules/settings/admin-panel/utils/getWorkspaceDataExportSummary.ts:3 getWorkspaceDataExportSummary
+

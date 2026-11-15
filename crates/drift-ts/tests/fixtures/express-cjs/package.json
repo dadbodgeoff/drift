@@ -1,0 +1,1 @@
+{ "name": "fixture-express-cjs", "private": true, "dependencies": { "express": "4" } }

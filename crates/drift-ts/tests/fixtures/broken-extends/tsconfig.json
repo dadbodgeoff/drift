@@ -1,0 +1,5 @@
+{
+  // Extends a workspace package that is not installed: the resolver cannot load this file.
+  "extends": "@acme/tsconfig/nextjs.json",
+  "compilerOptions": { "baseUrl": ".", "paths": { "~/*": ["./lib/*"] } }
+}

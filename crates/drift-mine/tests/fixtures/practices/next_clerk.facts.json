@@ -1,0 +1,1043 @@
+{
+  "schema_version": 11,
+  "files": [
+    {
+      "path": "app/api/legacy/route.ts",
+      "hash": "d8cc13971138744e64d776674fadc505fb367f2bc6153a01835bfd2a436524f9",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/handlers.ts",
+          "names": [
+            "legacyGet"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "origin": "lib/handlers.ts#legacyGet",
+          "kind": "re_export"
+        }
+      ],
+      "symbols": [],
+      "entry_points": [
+        {
+          "symbol": "GET",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/legacy",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/api/projects/[projectId]/route.test.ts",
+      "hash": "5542fe296d15e3c52cfa75624c25c83e4ad963d35da0cd2d99a1d1c2207f067d",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "app/api/projects/[projectId]/route.ts",
+          "names": [
+            "GET"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:vitest",
+          "names": [
+            "describe",
+            "expect",
+            "it",
+            "vi"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [],
+      "symbols": [
+        {
+          "name": "<module>",
+          "kind": "module",
+          "exported_as": [],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "app/api/projects/[projectId]/route.ts#GET",
+            "pkg:vitest#describe",
+            "pkg:vitest#expect",
+            "pkg:vitest#it",
+            "pkg:vitest#vi.mock"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 6
+        }
+      ],
+      "entry_points": [],
+      "test_requests": [
+        {
+          "method": "GET",
+          "route": "",
+          "target": "app/api/projects/[projectId]/route.ts",
+          "statuses": [
+            200,
+            401,
+            403,
+            404
+          ]
+        }
+      ],
+      "mocks": [
+        "lib/db.ts",
+        "pkg:@clerk/nextjs/server"
+      ]
+    },
+    {
+      "path": "app/api/projects/[projectId]/route.ts",
+      "hash": "4f3984adf5500536b288c0c288b0185261ff1882b610fada00fc059a9aaa3906",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/db.ts",
+          "names": [
+            "db"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "lib/logger.ts",
+          "names": [
+            "logger"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "lib/schemas.ts",
+          "names": [
+            "CreateProject"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:@clerk/nextjs/server",
+          "names": [
+            "auth"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:next/headers",
+          "names": [
+            "headers"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:next/server",
+          "names": [
+            "NextResponse"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "GET",
+          "origin": "app/api/projects/[projectId]/route.ts#GET",
+          "kind": "local"
+        },
+        {
+          "name": "POST",
+          "origin": "app/api/projects/[projectId]/route.ts#POST",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "GET",
+          "kind": "function",
+          "exported_as": [
+            "GET"
+          ],
+          "line": 6,
+          "wraps": [],
+          "calls": [
+            "global#headers().get",
+            "lib/db.ts#db.project.findFirst",
+            "lib/logger.ts#logger.error",
+            "pkg:@clerk/nextjs/server#auth",
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:next/server#NextResponse.json@0:error",
+            "pkg:next/server#NextResponse.json@1:status"
+          ],
+          "controls": [
+            "await",
+            "reads_input",
+            "rejects_caller",
+            "try"
+          ],
+          "string_literals": 4,
+          "body_checks": [
+            {
+              "source": "lib/db.ts#db.project.findFirst",
+              "reads": "",
+              "compares": "",
+              "outcome": "not_found"
+            },
+            {
+              "source": "pkg:@clerk/nextjs/server#auth",
+              "reads": ".orgId",
+              "compares": "header:x-org-id",
+              "outcome": "forbidden"
+            },
+            {
+              "source": "pkg:@clerk/nextjs/server#auth",
+              "reads": ".userId",
+              "compares": "",
+              "outcome": "unauthenticated"
+            }
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            },
+            {
+              "status": 401,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [
+                "error"
+              ],
+              "in_catch": false
+            },
+            {
+              "status": 403,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [
+                "error"
+              ],
+              "in_catch": false
+            },
+            {
+              "status": 404,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [
+                "error"
+              ],
+              "in_catch": false
+            },
+            {
+              "status": 500,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [
+                "error"
+              ],
+              "in_catch": true
+            }
+          ],
+          "log_calls": [
+            {
+              "callee": "lib/logger.ts#logger.error",
+              "level": "error",
+              "in_catch": true,
+              "structured": true,
+              "passes_error": true
+            }
+          ],
+          "catches": [
+            {
+              "catches": [
+                "*"
+              ],
+              "does": [
+                "log",
+                "respond:500"
+              ]
+            }
+          ],
+          "headers": [
+            "x-org-id"
+          ]
+        },
+        {
+          "name": "POST",
+          "kind": "function",
+          "exported_as": [
+            "POST"
+          ],
+          "line": 30,
+          "wraps": [],
+          "calls": [
+            "lib/db.ts#db.project.create",
+            "lib/schemas.ts#CreateProject.parse",
+            "pkg:@clerk/nextjs/server#auth",
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:next/server#NextResponse.json@1:status"
+          ],
+          "controls": [
+            "await",
+            "reads_input",
+            "rejects_caller",
+            "validates"
+          ],
+          "string_literals": 1,
+          "body_checks": [
+            {
+              "source": "pkg:@clerk/nextjs/server#auth",
+              "reads": ".userId",
+              "compares": "",
+              "outcome": "unauthenticated"
+            }
+          ],
+          "responses": [
+            {
+              "status": 201,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            },
+            {
+              "status": 401,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [
+                "error"
+              ],
+              "in_catch": false
+            }
+          ],
+          "inputs": [
+            "lib/schemas.ts#CreateProject"
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "GET",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/projects/[projectId]",
+          "adapter": "nextjs"
+        },
+        {
+          "symbol": "POST",
+          "kind": "http",
+          "method": "POST",
+          "route": "/api/projects/[projectId]",
+          "adapter": "nextjs"
+        }
+      ],
+      "has_test": true
+    },
+    {
+      "path": "app/api/webhooks/stripe/route.ts",
+      "hash": "ef6714b96cfd4cf784343d81140585ba2a22f6adb8edcb55958c18f0ff00b327",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "lib/ratelimit.ts",
+          "names": [
+            "ratelimit"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:next/server",
+          "names": [
+            "NextResponse"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:stripe",
+          "names": [
+            "default"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "POST",
+          "origin": "app/api/webhooks/stripe/route.ts#POST",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "POST",
+          "kind": "function",
+          "exported_as": [
+            "POST"
+          ],
+          "line": 5,
+          "wraps": [],
+          "calls": [
+            "global#console.warn",
+            "lib/ratelimit.ts#ratelimit.limit",
+            "pkg:next/server#NextResponse.json",
+            "pkg:stripe#webhooks.constructEvent"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "reads_input",
+            "try"
+          ],
+          "string_literals": 3,
+          "body_checks": [
+            {
+              "source": "lib/ratelimit.ts#ratelimit.limit",
+              "reads": ".success",
+              "compares": "",
+              "outcome": "throttled"
+            }
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [
+                "received"
+              ],
+              "in_catch": false
+            },
+            {
+              "status": 400,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [
+                "error"
+              ],
+              "in_catch": true
+            },
+            {
+              "status": 429,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [
+                "error"
+              ],
+              "in_catch": false
+            }
+          ],
+          "log_calls": [
+            {
+              "callee": "global#console.warn",
+              "level": "warn",
+              "in_catch": true,
+              "structured": false,
+              "passes_error": true
+            }
+          ],
+          "catches": [
+            {
+              "catches": [
+                "pkg:stripe#errors.StripeSignatureVerificationError"
+              ],
+              "does": [
+                "log",
+                "respond:400"
+              ]
+            }
+          ],
+          "headers": [
+            "stripe-signature"
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "POST",
+          "kind": "http",
+          "method": "POST",
+          "route": "/api/webhooks/stripe",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "app/dashboard/page.tsx",
+      "hash": "f36031697d1a8213a28148b9f95587f8189eb5ac8bc4560da355628270a320e4",
+      "lang": "tsx",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@clerk/nextjs/server",
+          "names": [
+            "currentUser"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:next/navigation",
+          "names": [
+            "redirect"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "default",
+          "origin": "app/dashboard/page.tsx#default",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "default",
+          "kind": "component",
+          "exported_as": [
+            "default"
+          ],
+          "line": 4,
+          "wraps": [],
+          "calls": [
+            "pkg:@clerk/nextjs/server#currentUser",
+            "pkg:next/navigation#redirect"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "return_jsx"
+          ],
+          "string_literals": 1,
+          "body_checks": [
+            {
+              "source": "pkg:@clerk/nextjs/server#currentUser",
+              "reads": "",
+              "compares": "",
+              "outcome": "sign_in_redirect"
+            }
+          ],
+          "responses": [
+            {
+              "status": 307,
+              "via": "redirect",
+              "builder": "pkg:next/navigation#redirect",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "default",
+          "kind": "page",
+          "method": null,
+          "route": "/dashboard",
+          "adapter": "nextjs"
+        }
+      ]
+    },
+    {
+      "path": "e2e/projects.spec.ts",
+      "hash": "bb2a12cc905798e8a91f2d44d3df77e28980bcd799186e953aa68b4a2225d8f8",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@playwright/test",
+          "names": [
+            "expect",
+            "test"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [],
+      "symbols": [
+        {
+          "name": "<module>",
+          "kind": "module",
+          "exported_as": [],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:@playwright/test#expect",
+            "pkg:@playwright/test#test"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 3
+        }
+      ],
+      "entry_points": [],
+      "test_requests": [
+        {
+          "method": "GET",
+          "route": "/api/projects/[*]",
+          "target": "",
+          "statuses": [
+            401
+          ]
+        },
+        {
+          "method": "POST",
+          "route": "/api/webhooks/stripe",
+          "target": "",
+          "statuses": [
+            400
+          ]
+        }
+      ],
+      "mocks": [
+        "msw:/api/external/billing"
+      ]
+    },
+    {
+      "path": "lib/db.ts",
+      "hash": "354a853e94a6b08e9cf8f80092463b698e066acc0fad0b8cd114c58257e0ee59",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@prisma/client",
+          "names": [
+            "PrismaClient"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "db",
+          "origin": "lib/db.ts#db",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "db",
+          "kind": "const",
+          "exported_as": [
+            "db"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:@prisma/client#PrismaClient(new)"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/handlers.ts",
+      "hash": "4e94507a91790d9aba0d0aa58b976af5de63cacac651abb3734d2c418df41db4",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@clerk/nextjs/server",
+          "names": [
+            "auth"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:next/server",
+          "names": [
+            "NextResponse"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "legacyGet",
+          "origin": "lib/handlers.ts#legacyGet",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "legacyGet",
+          "kind": "function",
+          "exported_as": [
+            "legacyGet"
+          ],
+          "line": 3,
+          "wraps": [],
+          "calls": [
+            "pkg:@clerk/nextjs/server#auth",
+            "pkg:next/server#NextResponse.json"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "rejects_caller"
+          ],
+          "string_literals": 1,
+          "body_checks": [
+            {
+              "source": "pkg:@clerk/nextjs/server#auth",
+              "reads": ".userId",
+              "compares": "",
+              "outcome": "unauthenticated"
+            }
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            },
+            {
+              "status": 401,
+              "via": "return",
+              "builder": "pkg:next/server#NextResponse.json",
+              "model": "",
+              "keys": [
+                "error"
+              ],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/logger.ts",
+      "hash": "10d65a0a84e89f6f0b90f5e2e4370732940653ac666cd3e593705aa1cf41b540",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:pino",
+          "names": [
+            "default"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "logger",
+          "origin": "lib/logger.ts#logger",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "logger",
+          "kind": "const",
+          "exported_as": [
+            "logger"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:pino#default"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "order": [
+            "pkg:pino#default"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/ratelimit.ts",
+      "hash": "cdb606ba8d7a5b2a03e12e4361ac79ba1eea5581d2debf93958594a6f39fc786",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@upstash/ratelimit",
+          "names": [
+            "Ratelimit"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "ratelimit",
+          "origin": "lib/ratelimit.ts#ratelimit",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "ratelimit",
+          "kind": "const",
+          "exported_as": [
+            "ratelimit"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:@upstash/ratelimit#Ratelimit(new)"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "lib/schemas.ts",
+      "hash": "54a8883f6151f99d6d8a0f6c91c4f359d5fe10ee21896c67ccca14409e945f19",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:zod",
+          "names": [
+            "z"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "CreateProject",
+          "origin": "lib/schemas.ts#CreateProject",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "CreateProject",
+          "kind": "const",
+          "exported_as": [
+            "CreateProject"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:zod#z.object",
+            "pkg:zod#z.string"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:zod#z.object@0:name"
+          ],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "middleware.ts",
+      "hash": "3fd8a035c68f5e7cc67aa81359b3820fa2ba09f89083a4c620c2e3b398e025ca",
+      "lang": "ts",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:@clerk/nextjs/server",
+          "names": [
+            "clerkMiddleware",
+            "createRouteMatcher"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "config",
+          "origin": "middleware.ts#config",
+          "kind": "local"
+        },
+        {
+          "name": "default",
+          "origin": "middleware.ts#default",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "config",
+          "kind": "const",
+          "exported_as": [
+            "config"
+          ],
+          "line": 12,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 3
+        },
+        {
+          "name": "default",
+          "kind": "function",
+          "exported_as": [
+            "default"
+          ],
+          "line": 6,
+          "wraps": [
+            {
+              "wrapper": "pkg:@clerk/nextjs/server#clerkMiddleware",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "middleware.ts#isPublicRoute",
+            "pkg:@clerk/nextjs/server#auth.protect"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "isPublicRoute",
+          "kind": "const",
+          "exported_as": [],
+          "line": 3,
+          "wraps": [],
+          "calls": [
+            "pkg:@clerk/nextjs/server#createRouteMatcher"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 2,
+          "order": [
+            "pkg:@clerk/nextjs/server#createRouteMatcher"
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "default",
+          "kind": "middleware",
+          "method": null,
+          "route": null,
+          "adapter": "nextjs"
+        }
+      ],
+      "route_matchers": [
+        {
+          "binding": "config.matcher",
+          "patterns": [
+            "/api/(.*)",
+            "/trpc/(.*)"
+          ]
+        },
+        {
+          "binding": "isPublicRoute",
+          "patterns": [
+            "/api/webhooks(.*)",
+            "/sign-in(.*)"
+          ]
+        }
+      ]
+    }
+  ],
+  "skipped": [],
+  "packages": [
+    {
+      "path": "",
+      "name": "next-clerk-app",
+      "scripts": [
+        "build",
+        "dev",
+        "test"
+      ],
+      "dependencies": [
+        "@clerk/nextjs@^6.0.0",
+        "@playwright/test@^1.48.0",
+        "@prisma/client@^5.20.0",
+        "@upstash/ratelimit@^2.0.0",
+        "msw@^2.4.0",
+        "next@15.0.3",
+        "pino@^9.5.0",
+        "stripe@^17.0.0",
+        "vitest@^2.1.0",
+        "zod@^3.23.8"
+      ],
+      "compiler_flags": [
+        "strict"
+      ],
+      "dev_only": [
+        "@playwright/test",
+        "msw",
+        "vitest"
+      ]
+    }
+  ]
+}

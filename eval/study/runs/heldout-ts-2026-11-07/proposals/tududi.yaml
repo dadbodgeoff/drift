@@ -1,0 +1,140 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - Notes
+  - controller
+  - repository
+  - routes
+  - service
+  - validation
+  suffixes:
+  - config
+  - spec
+  - test
+conventions:
+- id: D-815f43
+  status: proposed
+  mode: advise
+  summary: functions in backend/** do not use requests to computed URLs
+  role:
+    package: ""
+    dir: backend
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: avoids
+    signal: sink:dynamic_fetch
+  evidence:
+    holders: 1202
+    total: 1204
+    lower_bound: 0.994
+    lift: 109.028
+  example: backend/config/authConfig.js#isPasswordAuthEnabled
+  selector_version: 2
+- id: D-9998f9
+  status: proposed
+  mode: advise
+  summary: functions in frontend/** declare their return type
+  role:
+    package: ""
+    dir: frontend
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 571
+    total: 615
+    lower_bound: 0.905
+    lift: 3.743
+    role_members: 630
+  example: frontend/components/Admin/AdminTrends.tsx#percentOf
+  selector_version: 2
+- id: D-6c856c
+  status: proposed
+  mode: advise
+  summary: components in frontend/components/** do not use requests to computed URLs
+  role:
+    package: ""
+    dir: frontend/components
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: avoids
+    signal: sink:dynamic_fetch
+  evidence:
+    holders: 293
+    total: 325
+    lower_bound: 0.864
+    lift: 6.094
+  example: frontend/components/AI/DailyAssistant.tsx#DailyAssistant
+  selector_version: 2
+- id: D-744c2d
+  status: proposed
+  mode: advise
+  summary: exported values in backend/** (controller files) use `try`
+  role:
+    package: ""
+    dir: backend
+    file: controller
+    entry: '-'
+    kind: const
+  rule:
+    type: control
+    value: try
+  evidence:
+    holders: 33
+    total: 35
+    lower_bound: 0.814
+    lift: 13.943
+  example: backend/modules/admin-ai-usage/controller.js#controller
+  selector_version: 2
+- id: D-f7d289
+  status: proposed
+  mode: advise
+  summary: components in frontend/components/** call useTranslation() before useState()
+  role:
+    package: ""
+    dir: frontend/components
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: before
+    first: pkg:react-i18next#useTranslation
+    then: pkg:react#useState
+  evidence:
+    holders: 170
+    total: 203
+    lower_bound: 0.781
+    lift: 1.0
+  example: frontend/components/AI/DailyAssistant.tsx#DailyAssistant
+  selector_version: 2
+- id: D-57d79e
+  status: proposed
+  mode: advise
+  summary: functions in backend/** (validation files) are named `validate*`
+  role:
+    package: ""
+    dir: backend
+    file: validation
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: validate*
+  evidence:
+    holders: 43
+    total: 49
+    lower_bound: 0.758
+    lift: 33.922
+  example: backend/modules/admin/validation.js#validateCreateUser
+  selector_version: 2

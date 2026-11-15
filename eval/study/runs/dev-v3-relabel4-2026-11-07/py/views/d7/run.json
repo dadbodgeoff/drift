@@ -1,0 +1,195 @@
+{
+  "run": "eval/study/runs/dev-v3-relabel4-2026-11-07/py/views/d7",
+  "prepared_at": "2026-11-07T11:39:44.312Z",
+  "amendments": [],
+  "manifest": {
+    "path": "eval/repos-py.json",
+    "sha256": "4bba8c062d3efc9de8a33c491b268db079a50f9c7225671c2b47816a6f03c135",
+    "core_sha256": "1164a34341d2a4697cdd61c219684c3fc2ec2d9ab65a6fcac761834cedb86297",
+    "holdout": false,
+    "holdout_because": [],
+    "set_id": null,
+    "role": "dev",
+    "language": null
+  },
+  "drift": {
+    "binary": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel4/restage-2c81ba4/drift-main-2c81ba4",
+    "binary_sha256": "5d0cd386c9e791213074239ddac9c444426adc04a6f90e6e45f235d2d08b5afe",
+    "version": "drift 0.1.0-dev",
+    "commit": "2c81ba491d09f33dfcd209676572508e98923c4c",
+    "dirty": false,
+    "build": null
+  },
+  "params": {
+    "max": 15,
+    "pool": 200,
+    "tier": {
+      "//": "Decision D7 (eval/study/README.md decision log), approved by the founder 2026-11-06 and recorded before any held-out census. D5 (tier-d5.json) narrowed by rule kind and language. TypeScript/JavaScript: the default tier admits only call wrappers (wrapped_by:call) and layering (avoids:import); wrapped_by:decorator, wrapped_by:extends and wrapped_by:jsx move to the suggestion tier. Python: no rule kind is in the default tier; Python advises only and every Python proposal is suggestion tier. D5's conditions still apply on top of the rule kind: every symbol the rule names is defined in the repository (default.target \"in_repo\": no pkg:, global# or unresolved: target; lib.mjs namesPackage, drift_mine::tier::names_package) and the role has >= default.min_members members. The language of a proposal is read conservatively (lib.mjs proposalLanguage, drift_mine::tier::convention_language): py when any member of its role is Python (conventions.yaml evidence.python_members) or its example path is (.py/.pyi files and Python package manifests), ts otherwise. Role members are counted as the role's size (evidence.role_members when set, else total; exempt members count). DEFAULT tier = language in default.languages AND structured rule kind (lib.mjs ruleKind) in default.rule_kinds AND the rule names no symbol from outside the repository AND its role has >= default.min_members members. SUGGESTION tier = every other shown proposal. The not-wrong rate is reported over all shown proposals, both tiers. Release gate unchanged: a language's default tier ships as advise until it measures >= 95% default-tier accept under rubric v3, judged per D1, on a primary held-out run.",
+      "kind": "rule_kind",
+      "decision": "D7",
+      "default": {
+        "//": "TypeScript/JavaScript call wrappers and layering (import avoidance), each only when every symbol it names is defined in the repository, in roles of 15 or more members",
+        "rule_kinds": [
+          "wrapped_by:call",
+          "avoids:import"
+        ],
+        "languages": [
+          "ts"
+        ],
+        "min_members": 15,
+        "target": "in_repo"
+      },
+      "suggestion": {
+        "//": "D5's suggestion kinds, plus decorators, base classes and JSX layout wrappers (D7); every Python proposal (languages); and default-tier kinds whose rule names a package, built-in or unresolved symbol, or whose role is small",
+        "rule_kinds": [
+          "calls",
+          "named",
+          "avoids:other",
+          "prefers_library",
+          "before",
+          "has_test",
+          "model_has",
+          "package_has",
+          "dependency_version",
+          "wrapped_by:try",
+          "control",
+          "directive",
+          "throws",
+          "passes_key",
+          "renders",
+          "wrapped_by:decorator",
+          "wrapped_by:extends",
+          "wrapped_by:jsx"
+        ],
+        "languages": [
+          "py"
+        ]
+      },
+      "not_wrong_over": "all_shown"
+    },
+    "tier_pre_registered": false,
+    "exposed": [],
+    "repos": [
+      "full-stack-fastapi-template@aabb90126964a164e02aff39e7c385bb0598236d",
+      "polar@d14892d27cf346f70e44e36ca5601577e6313b6d",
+      "netbox@56daec7debfd51fa991b45d6a40cb592b42b669d",
+      "saleor@89817cdd10423619d6d6be54a61ead11fca90cfa",
+      "CTFd@a6a81ddd921cd74f8aabc07c0f7a71cdcf5365b6",
+      "flask@49943b5a94413a530761350f04e896f76e8d620e",
+      "fastapi@1ca09c13584ca45aa0921e5e40b31d49c5e3135a",
+      "langchain@e649741517b9584aae63a6ebd6ada803967da1c9"
+    ],
+    "cache": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel4/restage-2c81ba4/cache",
+    "checkouts": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel4/restage-2c81ba4/cache/repos",
+    "tier_pre_registered_note": "derived view: decision D7's tier (eval/study/tier-d7.json) applied after the census; not pre-registered for this dev manifest"
+  },
+  "repos": [
+    {
+      "name": "full-stack-fastapi-template",
+      "url": "https://github.com/fastapi/full-stack-fastapi-template",
+      "sha": "aabb90126964a164e02aff39e7c385bb0598236d",
+      "shape": "FastAPI app (SQLModel, Annotated dependencies) + React frontend",
+      "language": null,
+      "framework_bucket": null,
+      "binary_sha256": "5d0cd386c9e791213074239ddac9c444426adc04a6f90e6e45f235d2d08b5afe",
+      "prepared_at": "2026-11-07T11:39:21.323Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel4/restage-2c81ba4/cache/repos/full-stack-fastapi-template",
+      "status": "ok",
+      "units": 405,
+      "roles": 22,
+      "proposals": 1,
+      "pool": 1,
+      "census_ms": 45
+    },
+    {
+      "name": "netbox",
+      "url": "https://github.com/netbox-community/netbox",
+      "sha": "56daec7debfd51fa991b45d6a40cb592b42b669d",
+      "shape": "Django + DRF (class-based views, viewsets, routers)",
+      "language": null,
+      "framework_bucket": null,
+      "binary_sha256": "5d0cd386c9e791213074239ddac9c444426adc04a6f90e6e45f235d2d08b5afe",
+      "prepared_at": "2026-11-07T11:39:22.717Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel4/restage-2c81ba4/cache/repos/netbox",
+      "status": "ok",
+      "units": 6486,
+      "roles": 155,
+      "proposals": 12,
+      "pool": 12,
+      "census_ms": 1126
+    },
+    {
+      "name": "saleor",
+      "url": "https://github.com/saleor/saleor",
+      "sha": "89817cdd10423619d6d6be54a61ead11fca90cfa",
+      "shape": "Django + GraphQL + Celery (largest)",
+      "language": null,
+      "framework_bucket": null,
+      "binary_sha256": "5d0cd386c9e791213074239ddac9c444426adc04a6f90e6e45f235d2d08b5afe",
+      "prepared_at": "2026-11-07T11:39:29.948Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel4/restage-2c81ba4/cache/repos/saleor",
+      "status": "ok",
+      "units": 7261,
+      "roles": 278,
+      "proposals": 6,
+      "pool": 6,
+      "census_ms": 1658
+    },
+    {
+      "name": "flask",
+      "url": "https://github.com/pallets/flask",
+      "sha": "49943b5a94413a530761350f04e896f76e8d620e",
+      "shape": "Library, src layout, examples",
+      "language": null,
+      "framework_bucket": null,
+      "binary_sha256": "5d0cd386c9e791213074239ddac9c444426adc04a6f90e6e45f235d2d08b5afe",
+      "prepared_at": "2026-11-07T11:39:37.545Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel4/restage-2c81ba4/cache/repos/flask",
+      "status": "ok",
+      "units": 218,
+      "roles": 9,
+      "proposals": 0,
+      "pool": 0,
+      "census_ms": 46
+    },
+    {
+      "name": "fastapi",
+      "url": "https://github.com/fastapi/fastapi",
+      "sha": "1ca09c13584ca45aa0921e5e40b31d49c5e3135a",
+      "shape": "Library with heavy __init__ re-exports; docs_src has ~1,000 small apps",
+      "language": null,
+      "framework_bucket": null,
+      "binary_sha256": "5d0cd386c9e791213074239ddac9c444426adc04a6f90e6e45f235d2d08b5afe",
+      "prepared_at": "2026-11-07T11:39:38.690Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel4/restage-2c81ba4/cache/repos/fastapi",
+      "status": "ok",
+      "units": 2310,
+      "roles": 89,
+      "proposals": 1,
+      "pool": 1,
+      "census_ms": 300
+    },
+    {
+      "name": "langchain",
+      "url": "https://github.com/langchain-ai/langchain",
+      "sha": "e649741517b9584aae63a6ebd6ada803967da1c9",
+      "shape": "Monorepo: libs/* packages with their own pyproject.toml",
+      "language": null,
+      "framework_bucket": null,
+      "binary_sha256": "5d0cd386c9e791213074239ddac9c444426adc04a6f90e6e45f235d2d08b5afe",
+      "prepared_at": "2026-11-07T11:39:41.295Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel4/restage-2c81ba4/cache/repos/langchain",
+      "status": "ok",
+      "units": 3709,
+      "roles": 175,
+      "proposals": 2,
+      "pool": 2,
+      "census_ms": 943
+    }
+  ],
+  "view_of": {
+    "run": "eval/study/runs/dev-v3-relabel4-2026-11-07/py",
+    "items": "all shown proposals",
+    "tier_from": "eval/study/tier-d7.json (decision D7), the tier the product ships and both primary held-out manifests hold"
+  }
+}

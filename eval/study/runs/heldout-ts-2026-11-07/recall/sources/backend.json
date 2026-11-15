@@ -1,0 +1,21 @@
+{
+  "repo": "backend",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "eslint.config.ts",
+      "kind": "lint"
+    }
+  ]
+}

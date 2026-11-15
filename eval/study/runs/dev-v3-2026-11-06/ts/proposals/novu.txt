@@ -1,0 +1,157 @@
+15 conventions from 20012 units in 1313 roles (5 default tier, 10 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-7c65a3] packages/providers: classes in src/** (*.provider files) extend BaseProvider
+    evidence: 86/88 (lower bound 0.92, lift 33.5)
+    tier:     default
+    example:  packages/providers/src/lib/chat/chat-webhook/chat-webhook.provider.ts#ChatWebhookProvider
+    outlier:  packages/providers/src/base.provider.ts:21 BaseProvider
+    outlier:  packages/providers/src/lib/tool/tool-webhook/tool-webhook.provider.ts:29 ToolWebhookProvider
+
+ 2. [D-462c2b] libs/application-generic: classes in src/factories/sms/** (*.handler files) extend BaseSmsHandler
+    evidence: 39/40 (lower bound 0.87, lift 75.4)
+    tier:     default
+    example:  libs/application-generic/src/factories/sms/handlers/africas-talking.handler.ts#AfricasTalkingSmsHandler
+    outlier:  libs/application-generic/src/factories/sms/handlers/base.handler.ts:6 BaseSmsHandler
+
+ 3. [D-6d3bdc] libs/application-generic: classes in src/factories/mail/** (*.handler files) extend BaseEmailHandler
+    evidence: 21/22 (lower bound 0.78, lift 137.1)
+    tier:     default
+    example:  libs/application-generic/src/factories/mail/handlers/anypost.handler.ts#AnypostHandler
+    outlier:  libs/application-generic/src/factories/mail/handlers/base.handler.ts:7 BaseEmailHandler
+
+ 4. [D-53fcf5] apps/api: classes in src/app/inbox/** (*.command files) extend EnvironmentWithSubscriber
+    evidence: 18/19 (lower bound 0.75, lift 81.6)
+    tier:     default
+    example:  apps/api/src/app/inbox/usecases/bulk-update-preferences/bulk-update-preferences.command.ts#BulkUpdatePreferencesCommand
+    outlier:  apps/api/src/app/inbox/usecases/session/session.command.ts:7 SessionCommand
+
+ 5. [D-94d735] libs/application-generic: classes in src/factories/chat/** (*.handler files) extend BaseChatHandler
+    evidence: 18/19 (lower bound 0.75, lift 158.7)
+    tier:     default
+    example:  libs/application-generic/src/factories/chat/handlers/chat-webhook.handler.ts#ChatWebhookHandler
+    outlier:  libs/application-generic/src/factories/chat/handlers/base.handler.ts:7 BaseChatHandler
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 6. [D-af3463] packages/js: functions in src/** (helpers files) call NovuError(new)()
+    evidence: 36/37 (lower bound 0.86, lift 133.4)
+    tier:     suggestion (rule kind calls)
+    example:  packages/js/src/channel-connections/helpers.ts#deleteChannelConnection
+    outlier:  packages/js/src/notifications/helpers.ts:20 ensureNotificationInstance
+
+ 7. [D-36a604] apps/api: HTTP handlers in src/app/inbox/** (*.controller files) are decorated with UseGuards()
+    evidence: 36/37 (lower bound 0.86, lift 53.1)
+    tier:     suggestion (rule names a symbol from outside the repo)
+    example:  apps/api/src/app/inbox/inbox.controller.ts#DELETE /inbox/channel-connections/:identifier
+    outlier:  apps/api/src/app/inbox/inbox.controller.ts:161 POST /inbox/session
+
+ 8. [D-3f3e16] apps/api: HTTP handlers in src/app/integrations/** (*.controller files) are decorated with ApiOperation()
+    evidence: 32/34 (lower bound 0.81, lift 16.0)
+    tier:     suggestion (rule names a symbol from outside the repo)
+    example:  apps/api/src/app/integrations/integrations-mobile-configure-public.controller.ts#GET /integrations/mobile-configure/status
+    outlier:  apps/api/src/app/integrations/integrations.controller.ts:478 GET /integrations/:channelType/limit
+    outlier:  apps/api/src/app/integrations/integrations.controller.ts:502 GET /integrations/in-app/status
+
+ 9. [D-2e9dcc] apps/api: classes in src/** (*.command files) are named `*Command`
+    evidence: 409/415 (lower bound 0.97, lift 5.6)
+    tier:     suggestion (rule kind named)
+    example:  apps/api/src/app/activity/usecases/build-active-subscribers-chart/build-active-subscribers-chart.command.ts#BuildActiveSubscribersChartCommand
+    outlier:  apps/api/src/app/agents/conversation-runtime/reply/handle-agent-reply/handle-agent-reply.command.ts:16 QuoteReplyContextDto
+    outlier:  apps/api/src/app/bridge/usecases/sync/sync.command.ts:60 WorkflowDefine
+    outlier:  apps/api/src/app/shared/commands/project.command.ts:17 EnvironmentWithSubscriber
+    outlier:  apps/api/src/app/step-resolvers/usecases/sync-step-resolver-to-environment/sync-step-resolver-to-environment.command.ts:7 StepResolverSourceData
+    outlier:  apps/api/src/app/step-resolvers/usecases/sync-step-resolver-to-environment/sync-step-resolver-to-environment.command.ts:23 StepResolverTargetData
+    outlier:  apps/api/src/app/subscriptions/usecases/create-subscriptions/create-subscriptions.command.ts:8 TopicSubscriberIdentifier
+
+10. [D-52c44b] apps/api: HTTP handlers in src/app/widgets/** (*.controller files) are decorated with UseGuards()
+    evidence: 18/19 (lower bound 0.75, lift 51.7)
+    tier:     suggestion (rule names a symbol from outside the repo)
+    example:  apps/api/src/app/widgets/widgets.controller.ts#DELETE /widgets/messages
+    outlier:  apps/api/src/app/widgets/widgets.controller.ts:102 POST /widgets/session/initialize
+
+11. [D-e79710] apps/api: classes in src/** (*.dto files) are named `*Dto`
+    evidence: 642/678 (lower bound 0.93, lift 3.6)
+    tier:     suggestion (rule kind named)
+    example:  apps/api/src/app/activity/dtos/get-charts.request.dto.ts#GetChartsRequestDto
+    outlier:  apps/api/src/app/agents/shared/dtos/agent-reply-payload.dto.ts:46 IsValidReplyContent
+    outlier:  apps/api/src/app/agents/shared/dtos/agent-reply-payload.dto.ts:94 IsValidTypingOp
+    outlier:  apps/api/src/app/agents/shared/dtos/agent-signal.dto.ts:131 IsValidTriggerRecipient
+    outlier:  apps/api/src/app/blueprint/dtos/get-blueprint.response.dto.ts:3 GetBlueprintResponse
+    outlier:  apps/api/src/app/blueprint/dtos/grouped-blueprint.response.dto.ts:3 GroupedBlueprintResponse
+    outlier:  apps/api/src/app/events/dtos/trigger-event-request.dto.ts:115 ChannelOverrides
+    outlier:  apps/api/src/app/events/dtos/trigger-event-request.dto.ts:103 EmailChannelOverrides
+    outlier:  apps/api/src/app/events/dtos/trigger-event-request.dto.ts:76 StepsOverrides
+    outlier:  apps/api/src/app/events/dtos/trigger-event-request.dto.ts:123 TriggerOverrides
+    outlier:  apps/api/src/app/inbox/dtos/get-notifications-count-request.dto.ts:9 NotificationsFilter
+    outlier:  apps/api/src/app/invites/dtos/bulk-invite-members.dto.ts:5 EmailInvitee
+    outlier:  apps/api/src/app/layouts-v2/dtos/generate-layout-preview-response.dto.ts:8 EmailLayoutRenderOutput
+    outlier:  apps/api/src/app/notifications/dtos/activities-response.dto.ts:312 NotificationTriggerVariable
+    outlier:  apps/api/src/app/notifications/dtos/activity-graph-states-response.dto.ts:4 ActivityGraphStatesResponse
+    outlier:  apps/api/src/app/organization/dtos/member-response.dto.ts:23 MemberInviteDTO
+    outlier:  apps/api/src/app/preferences/dtos/preferences.dto.ts:27 ChannelPreference
+    outlier:  apps/api/src/app/preferences/dtos/preferences.dto.ts:39 Channels
+    outlier:  apps/api/src/app/preferences/dtos/preferences.dto.ts:9 WorkflowPreference
+    outlier:  apps/api/src/app/storage/dtos/upload-url-response.dto.ts:3 UploadUrlResponse
+    outlier:  apps/api/src/app/subscribers-v2/dtos/get-subscriber-notifications-count-query.dto.ts:10 SubscriberNotificationsFilter
+    outlier:  apps/api/src/app/support/dtos/plain-card.dto.ts:3 PlainCustomer
+    outlier:  apps/api/src/app/support/dtos/plain-card.dto.ts:14 PlainTenant
+    outlier:  apps/api/src/app/support/dtos/plain-card.dto.ts:22 PlainThread
+    outlier:  apps/api/src/app/testing/dtos/idempotency.dto.ts:17 IdempotenceTestingResponse
+    outlier:  apps/api/src/app/user/usecases/get-my-profile/get-my-profile.dto.ts:3 GetMyProfileCommand
+    outlier:  apps/api/src/app/widgets/dtos/message-response.dto.ts:25 EmailBlock
+    outlier:  apps/api/src/app/widgets/dtos/message-response.dto.ts:119 MessageCTA
+    outlier:  apps/api/src/app/widgets/dtos/unseen-count-response.dto.ts:3 UnseenCountResponse
+    outlier:  apps/api/src/app/widgets/dtos/update-subscriber-preference-response.dto.ts:63 NotificationTriggerResponse
+    outlier:  apps/api/src/app/widgets/dtos/update-subscriber-preference-response.dto.ts:28 NotificationTriggerVariableResponse
+    outlier:  apps/api/src/app/widgets/dtos/update-subscriber-preference-response.dto.ts:49 TriggerReservedVariableResponse
+    outlier:  apps/api/src/app/workflows-v1/dtos/workflow-response.dto.ts:12 NotificationGroup
+    outlier:  apps/api/src/app/workflows-v1/dtos/workflow-response.dto.ts:33 NotificationTrigger
+    outlier:  apps/api/src/app/workflows-v1/dtos/workflow-response.dto.ts:29 NotificationTriggerVariable
+    outlier:  apps/api/src/app/workflows-v1/dtos/workflow-response.dto.ts:54 WorkflowResponse
+    outlier:  apps/api/src/app/workflows-v2/dtos/list-workflow.dto.ts:6 ListWorkflowResponse
+
+12. [D-67ddb9] packages/providers: classes in src/** (*.provider files) are named `*Provider`
+    evidence: 88/89 (lower bound 0.94, lift 32.8)
+    tier:     suggestion (rule kind named)
+    example:  packages/providers/src/lib/chat/chat-webhook/chat-webhook.provider.ts#ChatWebhookProvider
+    outlier:  packages/providers/src/lib/email/email-webhook/email-webhook.provider.ts:35 EmailWebhookUrlBlockedError
+
+13. [D-4512a2] libs/application-generic: classes in src/** (*.service files) are named `*Service`
+    evidence: 69/72 (lower bound 0.89, lift 17.3)
+    tier:     suggestion (rule kind named)
+    example:  libs/application-generic/src/services/agent-email-inbox-quota/agent-email-inbox-quota.service.ts#AgentEmailInboxQuotaService
+    outlier:  libs/application-generic/src/health/queue-health-indicator.service.ts:8 QueueHealthIndicator
+    outlier:  libs/application-generic/src/services/agent-email-inbox-quota/agent-email-inbox-quota.service.ts:56 AgentEmailInboxQuotaExceededException
+    outlier:  libs/application-generic/src/services/queues/queue-base.service.ts:25 PartialDispatchError
+
+14. [D-dbba9a] apps/dashboard: components in src/pages/** are named `*Page`
+    evidence: 62/67 (lower bound 0.84, lift 20.6)
+    tier:     suggestion (rule kind named)
+    example:  apps/dashboard/src/pages/access-denied-page.tsx#AccessDeniedPage
+    outlier:  apps/dashboard/src/pages/activity-feed.tsx:17 ActivityFeed
+    outlier:  apps/dashboard/src/pages/new-layout-drawer.tsx:44 NewLayoutDrawer
+    outlier:  apps/dashboard/src/pages/new-workflow-drawer.tsx:31 NewWorkflowDrawer
+    outlier:  apps/dashboard/src/pages/test-workflow-route-handler.tsx:5 TestWorkflowRouteHandler
+    outlier:  apps/dashboard/src/pages/workflows.tsx:639 TemplateModal
+
+15. [D-808edd] libs/application-generic: classes in src/** (*.command files) are named `*Command`
+    evidence: 90/104 (lower bound 0.79, lift 4.9)
+    tier:     suggestion (rule kind named)
+    example:  libs/application-generic/src/commands/authenticated.command.ts#AuthenticatedCommand
+    outlier:  libs/application-generic/src/commands/base.command.ts:95 CommandValidationException
+    outlier:  libs/application-generic/src/commands/base.command.ts:35 ConstraintValidation
+    outlier:  libs/application-generic/src/commands/project.command.ts:74 EnvironmentWithSubscriber
+    outlier:  libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:23 ChannelPreferencePartial
+    outlier:  libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:96 ChannelPreferenceRequired
+    outlier:  libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:29 ChannelPreferencesPartial
+    outlier:  libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:101 ChannelPreferencesRequired
+    outlier:  libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:67 PreferencesPartial
+    outlier:  libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:133 PreferencesRequired
+    outlier:  libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:13 WorkflowPreferencePartial
+    outlier:  libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:88 WorkflowPreferenceRequired
+    outlier:  libs/application-generic/src/usecases/upsert-workflow/upsert-workflow.command.ts:32 ChannelPreferenceData
+    outlier:  libs/application-generic/src/usecases/upsert-workflow/upsert-workflow.command.ts:37 WorkflowPreferenceData
+    outlier:  libs/application-generic/src/usecases/upsert-workflow/upsert-workflow.command.ts:45 WorkflowPreferencesUpsertData
+

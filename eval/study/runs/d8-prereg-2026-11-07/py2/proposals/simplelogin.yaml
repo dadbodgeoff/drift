@@ -1,0 +1,223 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - base
+  - dataTables
+  - plugin
+  suffixes:
+  - min
+  layers:
+  - views/index
+conventions:
+- id: D-7fa3b5
+  status: proposed
+  mode: advise
+  summary: functions in app/** do not use redirects to computed URLs
+  role:
+    package: ""
+    dir: app
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: avoids
+    signal: sink:dynamic_redirect
+  evidence:
+    holders: 360
+    total: 361
+    lower_bound: 0.984
+    lift: 40.347
+    python_members: 361
+  example: app/abuser.py#mark_user_as_abuser
+- id: D-2a4960
+  status: proposed
+  mode: advise
+  summary: >-
+    files in app/** do not import from events/** (declared dependencies, and lazy
+    loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: app
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:events
+  evidence:
+    holders: 193
+    total: 195
+    lower_bound: 0.963
+    lift: 3.0
+    python_members: 195
+  example: app/abuser.py#(file)
+- id: D-ace6d1
+  status: proposed
+  mode: advise
+  summary: HTTP handlers in app/api/** call jsonify()
+  role:
+    package: ""
+    dir: app/api
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: calls
+    callee: pkg:flask#jsonify
+  evidence:
+    holders: 51
+    total: 52
+    lower_bound: 0.899
+    lift: 11.854
+    python_members: 52
+  example: app/api/views/alias.py#create_contact_route
+- id: D-a9b19b
+  status: proposed
+  mode: advise
+  summary: HTTP handlers in app/dashboard/** call flash() before redirect()
+  role:
+    package: ""
+    dir: app/dashboard
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: before
+    first: pkg:flask#flash
+    then: pkg:flask#redirect
+  evidence:
+    holders: 42
+    total: 45
+    lower_bound: 0.821
+    lift: 1.0
+    python_members: 45
+  example: app/dashboard/views/account_setting.py#account_setting
+- id: D-e29828
+  status: proposed
+  mode: advise
+  summary: classes in app/dashboard/** extend FlaskForm
+  role:
+    package: ""
+    dir: app/dashboard
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - pkg:flask_wtf#FlaskForm
+  evidence:
+    holders: 25
+    total: 26
+    lower_bound: 0.811
+    lift: 7.596
+    python_members: 26
+  example: app/dashboard/views/alias_contact_manager.py#NewContactForm
+- id: D-a4e9f4
+  status: proposed
+  mode: advise
+  summary: HTTP handlers in app/dashboard/** call redirect()
+  role:
+    package: ""
+    dir: app/dashboard
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: calls
+    callee: pkg:flask#redirect
+  evidence:
+    holders: 45
+    total: 49
+    lower_bound: 0.808
+    lift: 7.233
+    python_members: 49
+  example: app/dashboard/views/account_setting.py#account_setting
+- id: D-dd624b
+  status: proposed
+  mode: advise
+  summary: HTTP handlers in app/dashboard/** call flash() before render_template()
+  role:
+    package: ""
+    dir: app/dashboard
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: before
+    first: pkg:flask#flash
+    then: pkg:flask#render_template
+  evidence:
+    holders: 36
+    total: 39
+    lower_bound: 0.797
+    lift: 1.0
+    python_members: 39
+  example: app/dashboard/views/account_setting.py#account_setting
+- id: D-8ab5d8
+  status: proposed
+  mode: advise
+  summary: HTTP handlers in app/dashboard/** call url_for()
+  role:
+    package: ""
+    dir: app/dashboard
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: calls
+    callee: pkg:flask#url_for
+  evidence:
+    holders: 44
+    total: 49
+    lower_bound: 0.782
+    lift: 7.319
+    python_members: 49
+  example: app/dashboard/views/account_setting.py#account_setting
+- id: D-dbae61
+  status: proposed
+  mode: advise
+  summary: HTTP handlers in app/dashboard/** call flash()
+  role:
+    package: ""
+    dir: app/dashboard
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: calls
+    callee: pkg:flask#flash
+  evidence:
+    holders: 44
+    total: 49
+    lower_bound: 0.782
+    lift: 7.771
+    python_members: 49
+  example: app/dashboard/views/account_setting.py#account_setting
+- id: D-a1dfa4
+  status: proposed
+  mode: advise
+  summary: HTTP handlers in app/auth/** call redirect() before url_for()
+  role:
+    package: ""
+    dir: app/auth
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: before
+    first: pkg:flask#redirect
+    then: pkg:flask#url_for
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 1.0
+    python_members: 21
+  example: app/auth/views/activate.py#activate

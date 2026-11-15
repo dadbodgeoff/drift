@@ -1,0 +1,61 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - config
+  - image01
+  - main
+  - test_list
+  - test_main
+  - test_nullable_and_defaults
+  - test_optional_list
+  - test_optional_str
+  - test_required_str
+  - test_tutorial001
+  - test_tutorial002
+  - test_tutorial003
+  - test_tutorial004
+  - test_tutorial005
+  - test_tutorial006
+  - test_tutorial007
+  - test_tutorial008
+  - tutorial001_an_py310
+  - tutorial001_py310
+  - tutorial002_an_py310
+  - tutorial002_py310
+  - tutorial003_an_py310
+  - tutorial003_py310
+  - tutorial004_an_py310
+  - tutorial004_py310
+  - tutorial005_an_py310
+  - tutorial005_py310
+  - tutorial006_an_py310
+  - tutorial006_py310
+  - tutorial007_py310
+  - tutorial008_py310
+  - utils
+  suffixes: []
+conventions:
+- id: D-499c0e
+  status: proposed
+  mode: advise
+  summary: functions in scripts/** declare their return type
+  role:
+    package: ""
+    dir: scripts
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 94
+    total: 103
+    lower_bound: 0.842
+    lift: 3.056
+  example: scripts/add_latest_release_date.py#main

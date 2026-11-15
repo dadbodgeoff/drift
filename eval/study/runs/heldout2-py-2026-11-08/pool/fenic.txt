@@ -1,0 +1,52 @@
+5 conventions from 1397 units in 93 roles (0 default tier, 5 suggestions)
+
+5 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-a2ea38] classes in src/fenic/core/_logical_plan/expressions/** extend LogicalExpr
+    evidence: 119/121 (lower bound 0.94, lift 4.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 33% of 9)
+    example:  src/fenic/core/_logical_plan/expressions/aggregate.py#ApproxCountDistinctExpr
+    outlier:  src/fenic/core/_logical_plan/expressions/text.py:249 RecursiveTextChunkExprConfiguration
+    outlier:  src/fenic/core/_logical_plan/expressions/text.py:217 TextChunkExprConfiguration
+
+ 2. [D-e8fcfa] functions in src/fenic/api/functions/** call Column._from_logical_expr()
+    evidence: 116/123 (lower bound 0.89, lift 2.5)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 44% of 9)
+    example:  src/fenic/api/functions/array.py#compact
+    outlier:  src/fenic/api/functions/builtin.py:603 asc
+    outlier:  src/fenic/api/functions/builtin.py:616 asc_nulls_first
+    outlier:  src/fenic/api/functions/builtin.py:629 asc_nulls_last
+    ... 4 more outliers
+
+ 3. [D-7ef79c] functions in src/fenic/api/** are decorated with validate_call()
+    evidence: 120/130 (lower bound 0.86, lift 2.3)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 50% of 6)
+    example:  src/fenic/api/functions/array.py#compact
+    outlier:  src/fenic/api/dataframe/_join_utils.py:53 build_join_conditions
+    outlier:  src/fenic/api/dataframe/_join_utils.py:10 validate_join_parameters
+    outlier:  src/fenic/api/functions/core.py:66 empty
+    ... 7 more outliers
+
+ 4. [D-7ab0d9] classes in src/fenic/_backends/local/physical_plan/** pass `cache_info` to super().__init__(), except a member (not calling the callee)
+    evidence: 23/23 (lower bound 0.86, lift 20.9)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 50% of 4)
+    example:  src/fenic/_backends/local/physical_plan/aggregate.py#AggregateExec
+    exempt:   src/fenic/_backends/local/physical_plan/optimizer/merge_duckdb_nodes.py:24 MergeDuckDBNodesRule (does not call super().__init__())
+
+ 5. [D-c30a2b] functions in src/fenic/api/** call Column._from_col_or_name()
+    evidence: 112/130 (lower bound 0.79, lift 2.3)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 44% of 9)
+    example:  src/fenic/api/functions/array.py#compact
+    outlier:  src/fenic/api/dataframe/_join_utils.py:10 validate_join_parameters
+    outlier:  src/fenic/api/functions/builtin.py:729 when
+    outlier:  src/fenic/api/functions/core.py:17 col
+    ... 15 more outliers
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

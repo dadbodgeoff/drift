@@ -1,0 +1,155 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "5cfbbb4-d8",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/cache/repos/pontoon",
+  "units": 1931,
+  "roles": 104,
+  "conventions": 2,
+  "shown": 2,
+  "tiers": {
+    "default": 0,
+    "suggestion": 2
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    },
+    "candidate": {
+      "decision": "D8",
+      "status": "candidate (pre-registered, not adopted)",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts",
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15,
+      "py": {
+        "min_members": 50,
+        "call_wrappers": "guards"
+      }
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-94fc85",
+      "rank": 1,
+      "summary": "translate: functions in src/api/** declare their return type",
+      "role": {
+        "package": "translate",
+        "dir": "src/api",
+        "file": "*",
+        "entry": "-",
+        "kind": "function",
+        "members": 46
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 45,
+        "total": 46,
+        "lower_bound": 0.887,
+        "lift": 2.215
+      },
+      "rule_kind": "control",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "translate/src/api/comment.ts",
+        "symbol": "addComment",
+        "line": 35
+      },
+      "outliers": [
+        {
+          "path": "translate/src/api/machinery.ts",
+          "symbol": "abortMachineryRequests",
+          "line": 57
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-ddba4b",
+      "rank": 2,
+      "summary": "translate: functions in src/utils/** declare their return type",
+      "role": {
+        "package": "translate",
+        "dir": "src/utils",
+        "file": "*",
+        "entry": "-",
+        "kind": "function",
+        "members": 30
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 29,
+        "total": 30,
+        "lower_bound": 0.833,
+        "lift": 2.189
+      },
+      "rule_kind": "control",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "translate/src/utils/asLocaleString.ts",
+        "symbol": "asLocaleString",
+        "line": 10
+      },
+      "outliers": [
+        {
+          "path": "translate/src/utils/hooks/useOnDiscard.ts",
+          "symbol": "useOnDiscard",
+          "line": 9
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    }
+  ],
+  "largest_role": null
+}

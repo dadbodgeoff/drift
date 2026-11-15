@@ -1,0 +1,846 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - apps
+  - base
+  - bulk_edit
+  - bulk_import
+  - choices
+  - columns
+  - constants
+  - enums
+  - events
+  - exceptions
+  - fields
+  - filter_mixins
+  - filters
+  - filtersets
+  - jobs
+  - mixins
+  - model_forms
+  - models
+  - nested
+  - panels
+  - racks
+  - schema
+  - search
+  - serializers
+  - signals
+  - tables
+  - template_code
+  - test_api
+  - test_filtersets
+  - test_forms
+  - test_management_commands
+  - test_models
+  - test_signals
+  - test_tables
+  - test_views
+  - types
+  - urls
+  - utils
+  - views
+  suffixes: []
+conventions:
+- id: D-7d7f0c
+  status: proposed
+  mode: advise
+  summary: files in the repo do not import from netbox/account/**
+  role:
+    package: ""
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:netbox/account
+  evidence:
+    holders: 785
+    total: 786
+    lower_bound: 0.993
+    lift: 3.0
+  example: .claude/skills/draft-release-notes/audit_milestone.py#(file)
+- id: D-7f5847
+  status: proposed
+  mode: advise
+  summary: files in the repo do not import from netbox/vpn/**
+  role:
+    package: ""
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:netbox/vpn
+  evidence:
+    holders: 777
+    total: 786
+    lower_bound: 0.978
+    lift: 3.0
+  example: .claude/skills/draft-release-notes/audit_milestone.py#(file)
+- id: D-593fc9
+  status: proposed
+  mode: advise
+  summary: files in the repo do not import from netbox/circuits/**
+  role:
+    package: ""
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:netbox/circuits
+  evidence:
+    holders: 776
+    total: 786
+    lower_bound: 0.977
+    lift: 3.0
+  example: .claude/skills/draft-release-notes/audit_milestone.py#(file)
+- id: D-51c506
+  status: proposed
+  mode: advise
+  summary: classes in netbox/** (panels files) are named `*Panel`
+  role:
+    package: ""
+    dir: netbox
+    file: panels
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Panel"
+  evidence:
+    holders: 179
+    total: 180
+    lower_bound: 0.969
+    lift: 22.248
+  example: netbox/circuits/ui/panels.py#CircuitCircuitTerminationPanel
+- id: D-94948e
+  status: proposed
+  mode: advise
+  summary: classes in netbox/** (views files) are named `*View`
+  role:
+    package: ""
+    dir: netbox
+    file: views
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*View"
+  evidence:
+    holders: 1164
+    total: 1189
+    lower_bound: 0.969
+    lift: 3.231
+  example: netbox/account/views.py#UserTokenDeleteView
+- id: D-dd6307
+  status: proposed
+  mode: advise
+  summary: files in the repo do not import from netbox/wireless/**
+  role:
+    package: ""
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:netbox/wireless
+  evidence:
+    holders: 771
+    total: 786
+    lower_bound: 0.969
+    lift: 3.0
+  example: .claude/skills/draft-release-notes/audit_milestone.py#(file)
+- id: D-f803be
+  status: proposed
+  mode: advise
+  summary: classes in netbox/** (filters files) are named `*Filter`
+  role:
+    package: ""
+    dir: netbox
+    file: filters
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Filter"
+  evidence:
+    holders: 161
+    total: 162
+    lower_bound: 0.966
+    lift: 24.403
+  example: netbox/circuits/graphql/filters.py#CircuitFilter
+- id: D-c2d5f2
+  status: proposed
+  mode: advise
+  summary: classes in netbox/** (types files) are named `*Type`
+  role:
+    package: ""
+    dir: netbox
+    file: types
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Type"
+  evidence:
+    holders: 142
+    total: 143
+    lower_bound: 0.961
+    lift: 25.634
+  example: netbox/circuits/graphql/types.py#CircuitGroupAssignmentType
+- id: D-e162ab
+  status: proposed
+  mode: advise
+  summary: classes in netbox/** (bulk_import files) are named `*Form`
+  role:
+    package: ""
+    dir: netbox
+    file: bulk_import
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Form"
+  evidence:
+    holders: 119
+    total: 120
+    lower_bound: 0.954
+    lift: 6.41
+  example: netbox/circuits/forms/bulk_import.py#CircuitGroupAssignmentImportForm
+- id: D-ac4dc2
+  status: proposed
+  mode: advise
+  summary: files in netbox/** (__init__ files) do not import from netbox/core/**
+  role:
+    package: ""
+    dir: netbox
+    file: __init__
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:netbox/core
+  evidence:
+    holders: 115
+    total: 117
+    lower_bound: 0.94
+    lift: 3.0
+  example: netbox/account/__init__.py#(file)
+- id: D-9dcc21
+  status: proposed
+  mode: advise
+  summary: files in the repo do not import from netbox/virtualization/**
+  role:
+    package: ""
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:netbox/virtualization
+  evidence:
+    holders: 749
+    total: 786
+    lower_bound: 0.936
+    lift: 3.0
+  example: .claude/skills/draft-release-notes/audit_milestone.py#(file)
+- id: D-bc0c7d
+  status: proposed
+  mode: advise
+  summary: classes in netbox/** (search files) are decorated with register_search()
+  role:
+    package: ""
+    dir: netbox
+    file: search
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - netbox/netbox/search/__init__.py#register_search
+  evidence:
+    holders: 98
+    total: 100
+    lower_bound: 0.93
+    lift: 40.27
+  example: netbox/circuits/search.py#CircuitGroupIndex
+- id: D-ffde02
+  status: proposed
+  mode: advise
+  summary: files in netbox/** (__init__ files) do not import from netbox/utilities/**
+  role:
+    package: ""
+    dir: netbox
+    file: __init__
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:netbox/utilities
+  evidence:
+    holders: 114
+    total: 117
+    lower_bound: 0.927
+    lift: 3.0
+  example: netbox/account/__init__.py#(file)
+- id: D-99150d
+  status: proposed
+  mode: advise
+  summary: files in netbox/utilities/** do not import from netbox/dcim/**
+  role:
+    package: ""
+    dir: netbox/utilities
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:netbox/dcim
+  evidence:
+    holders: 66
+    total: 67
+    lower_bound: 0.92
+    lift: 3.0
+  example: netbox/utilities/api.py#(file)
+- id: D-436c3c
+  status: proposed
+  mode: advise
+  summary: classes in netbox/** (views files) are decorated with register_model_view()
+  role:
+    package: ""
+    dir: netbox
+    file: views
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - netbox/utilities/views.py#register_model_view
+  evidence:
+    holders: 1100
+    total: 1189
+    lower_bound: 0.909
+    lift: 3.378
+  example: netbox/account/views.py#UserTokenDeleteView
+- id: D-afb64d
+  status: proposed
+  mode: advise
+  summary: classes in netbox/** (choices files) are named `*Choices`
+  role:
+    package: ""
+    dir: netbox
+    file: choices
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Choices"
+  evidence:
+    holders: 115
+    total: 120
+    lower_bound: 0.906
+    lift: 33.558
+  example: netbox/circuits/choices.py#CircuitCommitRateChoices
+- id: D-bb8000
+  status: proposed
+  mode: advise
+  summary: files in netbox/netbox/** do not import from netbox/dcim/**
+  role:
+    package: ""
+    dir: netbox/netbox
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:netbox/dcim
+  evidence:
+    holders: 54
+    total: 55
+    lower_bound: 0.904
+    lift: 3.0
+  example: netbox/netbox/__main__.py#(file)
+- id: D-184b7e
+  status: proposed
+  mode: advise
+  summary: classes in netbox/dcim/forms/** are named `*Form`
+  role:
+    package: ""
+    dir: netbox/dcim/forms
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Form"
+  evidence:
+    holders: 52
+    total: 53
+    lower_bound: 0.901
+    lift: 6.342
+  example: netbox/dcim/forms/bulk_create.py#ConsolePortBulkCreateForm
+- id: D-0eddf0
+  status: proposed
+  mode: advise
+  summary: HTTP handlers in netbox/dcim/api/** (views files) extend NetBoxModelViewSet
+  role:
+    package: ""
+    dir: netbox/dcim/api
+    file: views
+    entry: http
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - netbox/netbox/api/viewsets/__init__.py#NetBoxModelViewSet
+  evidence:
+    holders: 51
+    total: 52
+    lower_bound: 0.899
+    lift: 29.921
+  example: netbox/dcim/api/views.py#CableBundleViewSet
+- id: D-e2c3e4
+  status: proposed
+  mode: advise
+  summary: classes in netbox/** (choices files) extend ChoiceSet
+  role:
+    package: ""
+    dir: netbox
+    file: choices
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - netbox/utilities/choices.py#ChoiceSet
+  evidence:
+    holders: 113
+    total: 120
+    lower_bound: 0.884
+    lift: 33.558
+  example: netbox/circuits/choices.py#CircuitCommitRateChoices
+- id: D-f1c995
+  status: proposed
+  mode: advise
+  summary: classes in netbox/dcim/** (filters files) call filter_field()
+  role:
+    package: ""
+    dir: netbox/dcim
+    file: filters
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: pkg:strawberry_django#filter_field
+  evidence:
+    holders: 53
+    total: 55
+    lower_bound: 0.877
+    lift: 24.561
+  example: netbox/dcim/graphql/filters.py#CableBundleFilter
+- id: D-281ae8
+  status: proposed
+  mode: advise
+  summary: classes in netbox/** (types files) are decorated with register_type()
+  role:
+    package: ""
+    dir: netbox
+    file: types
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - netbox/netbox/graphql/types.py#register_type
+  evidence:
+    holders: 133
+    total: 143
+    lower_bound: 0.876
+    lift: 28.161
+  example: netbox/circuits/graphql/types.py#CircuitGroupAssignmentType
+- id: D-e8f429
+  status: proposed
+  mode: advise
+  summary: classes in netbox/** (mixins files) are named `*Mixin`
+  role:
+    package: ""
+    dir: netbox
+    file: mixins
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Mixin"
+  evidence:
+    holders: 56
+    total: 59
+    lower_bound: 0.861
+    lift: 31.075
+  example: netbox/core/forms/mixins.py#SyncedDataMixin
+- id: D-76eb6b
+  status: proposed
+  mode: advise
+  summary: classes in netbox/** (types files) pass `filters` to register_type()
+  role:
+    package: ""
+    dir: netbox
+    file: types
+    entry: '-'
+    kind: class
+  rule:
+    type: passes_key
+    callee: netbox/netbox/graphql/types.py#register_type
+    index: 99
+    key: filters
+  evidence:
+    holders: 131
+    total: 143
+    lower_bound: 0.859
+    lift: 28.161
+  example: netbox/circuits/graphql/types.py#CircuitGroupAssignmentType
+- id: D-4cf3e5
+  status: proposed
+  mode: advise
+  summary: classes in netbox/dcim/forms/** (filtersets files) pass `name` to FieldSet()
+  role:
+    package: ""
+    dir: netbox/dcim/forms
+    file: filtersets
+    entry: '-'
+    kind: class
+  rule:
+    type: passes_key
+    callee: netbox/utilities/forms/rendering.py#FieldSet
+    index: 99
+    key: name
+  evidence:
+    holders: 53
+    total: 56
+    lower_bound: 0.854
+    lift: 14.116
+  example: netbox/dcim/forms/filtersets.py#CableBundleFilterForm
+- id: D-046d92
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in netbox/** (bulk_edit files) call utils.translation.gettext_lazy()
+    before FieldSet()
+  role:
+    package: ""
+    dir: netbox
+    file: bulk_edit
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: pkg:django#utils.translation.gettext_lazy
+    then: netbox/utilities/forms/rendering.py#FieldSet
+  evidence:
+    holders: 92
+    total: 101
+    lower_bound: 0.839
+    lift: 1.0
+  example: netbox/circuits/forms/bulk_edit.py#CircuitBulkEditForm
+- id: D-7bacb2
+  status: proposed
+  mode: advise
+  summary: classes in netbox/** (tables files) are named `*Table`
+  role:
+    package: ""
+    dir: netbox
+    file: tables
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Table"
+  evidence:
+    holders: 34
+    total: 36
+    lower_bound: 0.819
+    lift: 21.247
+  example: netbox/extras/tables/tables.py#BookmarkTable
+- id: D-58913a
+  status: proposed
+  mode: advise
+  summary: classes in netbox/** (choices files) call Choice()
+  role:
+    package: ""
+    dir: netbox
+    file: choices
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: netbox/utilities/choices.py#Choice
+  evidence:
+    holders: 106
+    total: 120
+    lower_bound: 0.814
+    lift: 33.558
+  example: netbox/circuits/choices.py#CircuitCommitRateChoices
+- id: D-da44f6
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in netbox/dcim/models/** call utils.translation.gettext_lazy() before
+    core.exceptions.ValidationError()
+  role:
+    package: ""
+    dir: netbox/dcim/models
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: pkg:django#utils.translation.gettext_lazy
+    then: pkg:django#core.exceptions.ValidationError
+  evidence:
+    holders: 33
+    total: 35
+    lower_bound: 0.814
+    lift: 1.0
+  example: netbox/dcim/models/cables.py#Cable
+- id: D-310ec7
+  status: proposed
+  mode: advise
+  summary: classes in netbox/ipam/tables/** pass `verbose_name` to Column()
+  role:
+    package: ""
+    dir: netbox/ipam/tables
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: passes_key
+    callee: pkg:django_tables2#Column
+    index: 99
+    key: verbose_name
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 26.253
+  example: netbox/ipam/tables/asn.py#ASNRangeTable
+- id: D-408ce9
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in netbox/dcim/** (bulk_import files) call
+    utils.translation.gettext_lazy() before CSVChoiceField()
+  role:
+    package: ""
+    dir: netbox/dcim
+    file: bulk_import
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: pkg:django#utils.translation.gettext_lazy
+    then: netbox/utilities/forms/fields/csv.py#CSVChoiceField
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 1.0
+  example: netbox/dcim/forms/bulk_import.py#CableImportForm
+- id: D-41d415
+  status: proposed
+  mode: advise
+  summary: classes in netbox/** (nested files) extend WritableNestedSerializer
+  role:
+    package: ""
+    dir: netbox
+    file: nested
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - netbox/netbox/api/serializers/nested.py#WritableNestedSerializer
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 167.792
+  example: netbox/circuits/api/serializers_/nested.py#NestedProviderAccountSerializer
+- id: D-7e0f41
+  status: proposed
+  mode: advise
+  summary: classes in netbox/** (columns files) are named `*Column`
+  role:
+    package: ""
+    dir: netbox
+    file: columns
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Column"
+  evidence:
+    holders: 29
+    total: 31
+    lower_bound: 0.793
+    lift: 129.903
+  example: netbox/circuits/tables/columns.py#CommitRateColumn
+- id: D-a54245
+  status: proposed
+  mode: advise
+  summary: classes in netbox/extras/** (tables files) pass `verbose_name` to Column()
+  role:
+    package: ""
+    dir: netbox/extras
+    file: tables
+    entry: '-'
+    kind: class
+  rule:
+    type: passes_key
+    callee: pkg:django_tables2#Column
+    index: 99
+    key: verbose_name
+  evidence:
+    holders: 21
+    total: 22
+    lower_bound: 0.782
+    lift: 26.149
+  example: netbox/extras/tables/tables.py#BookmarkTable
+- id: D-4c4e2d
+  status: proposed
+  mode: advise
+  summary: classes in netbox/** (model_forms files) call FieldSet()
+  role:
+    package: ""
+    dir: netbox
+    file: model_forms
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: netbox/utilities/forms/rendering.py#FieldSet
+  evidence:
+    holders: 127
+    total: 150
+    lower_bound: 0.78
+    lift: 9.393
+  example: netbox/circuits/forms/model_forms.py#CircuitForm
+- id: D-937c0c
+  status: proposed
+  mode: advise
+  summary: classes in netbox/ipam/api/** are named `*Serializer`
+  role:
+    package: ""
+    dir: netbox/ipam/api
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Serializer"
+  evidence:
+    holders: 27
+    total: 29
+    lower_bound: 0.78
+    lift: 18.289
+  example: netbox/ipam/api/serializers_/asns.py#ASNRangeSerializer
+- id: D-0e0dfc
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in netbox/dcim/** (bulk_import files) call CSVModelChoiceField() before
+    utils.translation.gettext_lazy()
+  role:
+    package: ""
+    dir: netbox/dcim
+    file: bulk_import
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: netbox/utilities/forms/fields/csv.py#CSVModelChoiceField
+    then: pkg:django#utils.translation.gettext_lazy
+  evidence:
+    holders: 31
+    total: 34
+    lower_bound: 0.77
+    lift: 1.0
+  example: netbox/dcim/forms/bulk_import.py#CableImportForm
+- id: D-4fabef
+  status: proposed
+  mode: advise
+  summary: classes in netbox/** (filters files) are decorated with register_filter()
+  role:
+    package: ""
+    dir: netbox
+    file: filters
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - netbox/netbox/graphql/filters.py#register_filter
+  evidence:
+    holders: 135
+    total: 162
+    lower_bound: 0.768
+    lift: 24.858
+  example: netbox/circuits/graphql/filters.py#CircuitFilter
+- id: D-a30f5e
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in netbox/** (choices files) call Choice() before
+    utils.translation.gettext_lazy()
+  role:
+    package: ""
+    dir: netbox
+    file: choices
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: netbox/utilities/choices.py#Choice
+    then: pkg:django#utils.translation.gettext_lazy
+  evidence:
+    holders: 81
+    total: 95
+    lower_bound: 0.768
+    lift: 1.0
+  example: netbox/circuits/choices.py#CircuitPriorityChoices
+- id: D-650131
+  status: proposed
+  mode: advise
+  summary: HTTP handlers in netbox/** (views files) are named `*Set`
+  role:
+    package: ""
+    dir: netbox
+    file: views
+    entry: http
+    kind: class
+  rule:
+    type: named
+    pattern: "*Set"
+  evidence:
+    holders: 134
+    total: 164
+    lower_bound: 0.751
+    lift: 10.155
+  example: netbox/circuits/api/views.py#CircuitGroupAssignmentViewSet

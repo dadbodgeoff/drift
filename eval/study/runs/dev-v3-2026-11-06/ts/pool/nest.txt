@@ -1,0 +1,37 @@
+5 conventions from 1610 units in 67 roles (4 default tier, 1 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-897eda] packages/core: classes in errors/** (*.exception files) extend RuntimeException
+    evidence: 22/23 (lower bound 0.79, lift 9.7)
+    tier:     default
+    example:  packages/core/errors/exceptions/circular-dependency.exception.ts#CircularDependencyException
+    outlier:  packages/core/errors/exceptions/runtime.exception.ts:1 RuntimeException
+
+ 2. [D-44a46d] files in packages/core/** do not import from packages/platform-express/** (declared dependencies excepted)
+    evidence: 202/203 (lower bound 0.97, lift 3.0)
+    tier:     default
+    example:  packages/core/adapters/http-adapter.ts#(file)
+    outlier:  packages/core/nest-factory.ts:1 (file)
+
+ 3. [D-48b32a] files in packages/core/** do not import from packages/websockets/** (declared dependencies excepted)
+    evidence: 202/203 (lower bound 0.97, lift 3.0)
+    tier:     default
+    example:  packages/core/adapters/http-adapter.ts#(file)
+    outlier:  packages/core/nest-application.ts:1 (file)
+
+ 4. [D-f68b2a] files in packages/core/** do not import from packages/microservices/** (declared dependencies excepted)
+    evidence: 201/203 (lower bound 0.96, lift 3.0)
+    tier:     default
+    example:  packages/core/adapters/http-adapter.ts#(file)
+    outlier:  packages/core/nest-application.ts:1 (file)
+    outlier:  packages/core/nest-factory.ts:1 (file)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 5. [D-3915b0] packages/microservices: classes in errors/** (*.exception files) do not use `any`
+    evidence: 20/21 (lower bound 0.77, lift 12.1)
+    tier:     suggestion (rule kind avoids:other)
+    example:  packages/microservices/errors/corrupted-packet-length.exception.ts#CorruptedPacketLengthException
+    outlier:  packages/microservices/errors/invalid-tcp-data-reception.exception.ts:3 InvalidTcpDataReceptionException
+

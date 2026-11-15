@@ -1,0 +1,67 @@
+7 conventions from 6150 units in 150 roles (0 default tier, 7 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-4c758e] HTTP handlers in ods/** are wrapped in verify_api_key() or verify_api_key() or verify_api_key()
+    evidence: 178/199 (lower bound 0.84, lift 12.9)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    split:    verify_api_key 174, verify_api_key 2, verify_api_key 2
+    example:  ods/extensions/services/dashboard-api/routers/agents.py#get_agent_metrics
+    outlier:  ods/extensions/library/services/bark/server.py:142 health
+    outlier:  ods/extensions/library/services/bark/server.py:220 list_voices
+    outlier:  ods/extensions/library/services/bark/server.py:147 text_to_speech
+    ... 18 more outliers
+
+ 2. [D-6e9535] HTTP handlers in ods/** are wrapped in security_scheme()
+    evidence: 174/199 (lower bound 0.82, lift 12.8)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  ods/extensions/services/dashboard-api/routers/agents.py#get_agent_metrics
+    outlier:  ods/extensions/library/services/bark/server.py:142 health
+    outlier:  ods/extensions/library/services/bark/server.py:220 list_voices
+    outlier:  ods/extensions/library/services/bark/server.py:147 text_to_speech
+    ... 22 more outliers
+
+ 3. [D-80b356] functions in ods/** do not throw a bare Error
+    evidence: 1892/1911 (lower bound 0.98, lift 11.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  ods/bin/extension_assets.py#check_space
+    outlier:  ods/extensions/library/services/umami/ods-config.mjs:1 environment
+    outlier:  ods/extensions/services/n8n/n8n-prepare.mjs:143 ensureOwnerHash
+    outlier:  ods/extensions/services/perplexica/patch-client-citations.js:31 patchClientChunk
+    ... 16 more outliers
+
+ 4. [D-2264ef] functions in ods/scripts/** declare their return type
+    evidence: 292/351 (lower bound 0.79, lift 2.7)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  ods/scripts/assign_gpus.py#assign_services
+    outlier:  ods/scripts/assign_gpus.py:467 main
+    outlier:  ods/scripts/backup-native-preflight.py:20 main
+    outlier:  ods/scripts/backup-native-preflight.py:10 native_state
+    ... 56 more outliers
+    exempt:   ods/scripts/cleanup-wsl-pixel-mounts.py:31 run (shared part used by 2 members)
+    exempt:   ods/scripts/prepare-containerd-console.py:102 classify (shared part used by 2 members)
+    exempt:   ods/scripts/refresh-hermes-mounts.py:60 desktop_source_matches (shared part used by 2 members)
+    ... 12 more exempt
+
+ 5. [D-c72ce2] files in ods/extensions/services/dashboard-api/** have a test file
+    evidence: 94/104 (lower bound 0.83, lift 2.1)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  ods/extensions/services/dashboard-api/agent_monitor.py#(file)
+    outlier:  ods/extensions/services/dashboard-api/builtin_source_recipes.py:1 (file)
+    outlier:  ods/extensions/services/dashboard-api/context_policy.py:1 (file)
+    outlier:  ods/extensions/services/dashboard-api/dashboard_password.py:1 (file)
+    ... 7 more outliers
+
+ 6. [D-f40096] functions in ods/bin/remote_provider/** declare their return type
+    evidence: 30/31 (lower bound 0.84, lift 3.3)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  ods/bin/remote_provider/egress.py#connection_header_names
+    outlier:  ods/bin/remote_provider/telemetry.py:7 route_fingerprint
+
+ 7. [D-637b72] functions in ods/bin/model_switchboard/** declare their return type
+    evidence: 25/26 (lower bound 0.81, lift 3.3)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  ods/bin/model_switchboard/adapters.py#result
+    outlier:  ods/bin/model_switchboard/wsl_runtime.py:56 env_value
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

@@ -1,0 +1,1220 @@
+{
+  "//": "Decision D9 (lead, 2026-11-07, before any held-out census, blind to outcomes): further reserves of the primary held-out sets after reserve exhaustion at runbook step 4, drawn by continuing the selection's own walk (same pool, seed, walk order, classifier) with reserve_order continued cyclically. Metadata only. `select-holdout.mjs verify` replays it.",
+  "decision": "D9",
+  "script": "eval/study/select-holdout.mjs",
+  "base_record": "eval/study/selection/primary-2026-11-05.json",
+  "base_record_sha256": "a3d574af03b5d5a59a57b4214e4331562a038a7a87786c310f1664b795b27ca8",
+  "seed": "drift-heldout-primary-2026-11-05:859542f401a358c1bf32e43fefd9e048fd88be92",
+  "sets": {
+    "ts": {
+      "add": 8,
+      "walked_from": 116,
+      "walked": [
+        {
+          "repo": "endojs/endo",
+          "sha": "679d9afaa4acd089f578055118b6711a22537f05",
+          "bucket": "express_fastify_hono"
+        },
+        {
+          "repo": "teaql/teaql-agent-kit",
+          "sha": "92c79101f725655d5356078938742bd633f341a2",
+          "bucket": "other_node"
+        },
+        {
+          "repo": "bdenizkoca/tideflow-md-to-pdf",
+          "sha": "b718ad621fd003a6f2c1119876c60e0438bed702",
+          "bucket": "react_spa"
+        },
+        {
+          "repo": "onblog/miaomiao-bar",
+          "sha": "bcf470faf45fc8f0a034f0a55162a8fafd7f24bd",
+          "bucket": "other_node"
+        },
+        {
+          "repo": "yilewang/llm-for-zotero",
+          "sha": "e0553224af95e1f568def73bb03e795353c685fc",
+          "bucket": "other_node"
+        },
+        {
+          "repo": "aws/jsii",
+          "sha": "ea63ef31d6899a72a35cd5a22ded43660c5c141e",
+          "bucket": "other_node"
+        },
+        {
+          "repo": "ridafkih/keeper.sh",
+          "sha": "9f7e73bdcc229a507f1bd371a543730b089d1185",
+          "bucket": "react_spa"
+        },
+        {
+          "repo": "hellogithub-team/geese",
+          "sha": "ffe09d0bdb12d40fcbd79def400e858d44fe93fe",
+          "bucket": "nextjs"
+        },
+        {
+          "repo": "duolahypercho/codex-router",
+          "sha": "1a71b56e526a0718ebafc9be2ef5e29ff004c6b4",
+          "bucket": "react_spa"
+        },
+        {
+          "repo": "electron/get",
+          "sha": "a1de8da883625c64f37f05f182471dddc4685ea1",
+          "bucket": "other_node"
+        },
+        {
+          "repo": "garronej/tss-react",
+          "sha": "8c82e275f449852ec4be3c6bc7f16c43421bef83",
+          "bucket": "react_spa"
+        },
+        {
+          "repo": "lce-hub/lce-emerald-launcher",
+          "sha": "b611c97aeef376f9c19f8ab62f9b24c9285809be",
+          "bucket": "react_spa"
+        },
+        {
+          "repo": "xuanyustudio/localminidrama",
+          "sha": "a4f009b98692be806f462ede6b84d9ae8cd6ee13",
+          "bucket": "express_fastify_hono"
+        },
+        {
+          "repo": "sassanix/warracker",
+          "sha": null,
+          "bucket": null,
+          "skip": "no package.json found"
+        },
+        {
+          "repo": "whoami-wiki/whoami",
+          "sha": "4465b6f623d03d4fc25650ed401712ff7445ed3d",
+          "bucket": "nextjs"
+        },
+        {
+          "repo": "mihonapp/website",
+          "sha": null,
+          "bucket": null,
+          "skip": "no package.json found"
+        },
+        {
+          "repo": "kite-org/kite",
+          "sha": "6f492bb5b0214a3bcbd8176de9fb9c02f9cd79bd",
+          "bucket": "react_spa"
+        },
+        {
+          "repo": "yyhuni/xingrin",
+          "sha": "63dfbc13d3cfbb4184d85c8f7b9f23b2c7ebace1",
+          "bucket": "nextjs"
+        },
+        {
+          "repo": "apidevtools/json-schema-ref-parser",
+          "sha": "daaacb83a2e44d610559bd197969ada000813174",
+          "bucket": "other_node"
+        },
+        {
+          "repo": "deeplifestudio/deepseekai",
+          "sha": "742f3d2776032a07af939be4be39367b00af55f2",
+          "bucket": "other_node"
+        },
+        {
+          "repo": "breadboard-ai/breadboard",
+          "sha": "d873581099287ed737ab833349d90dc7e5652727",
+          "bucket": "express_fastify_hono"
+        },
+        {
+          "repo": "theorcdev/8bitcn-ui",
+          "sha": "9642217f41d66d5410cc3fb54a4d582c14bd8d18",
+          "bucket": "nextjs"
+        },
+        {
+          "repo": "cidrblock/drawthe.net",
+          "sha": "8aeeacccfa3ebea9dca7e7cdb0085e64e97061d6",
+          "bucket": "other_node"
+        },
+        {
+          "repo": "nextcloud/tasks",
+          "sha": "73a80e3381809f9ad033af727dbb61c1aa73b0d4",
+          "bucket": "other_node"
+        },
+        {
+          "repo": "lemomo-ai/lemo-opuscar",
+          "sha": "5c05490cc55dfb54f8f4c333f0f0e79cb6500564",
+          "bucket": "other_node"
+        },
+        {
+          "repo": "dyrector-io/dyrectorio",
+          "sha": "98fe402eb61b88e5472dd3008cabc59d2ebce60b",
+          "bucket": "nestjs"
+        }
+      ],
+      "reskipped": [],
+      "reserves": [
+        {
+          "repo": "tester-army/e2e",
+          "url": "https://github.com/tester-army/e2e",
+          "sha": "f185ca8ba2d8a0b1eb68776df832f44b645277ea",
+          "language": "TypeScript",
+          "framework_bucket": "nextjs",
+          "size_kb": 107643,
+          "stars": 13435,
+          "pushed_at": "2026-11-07T16:20:06Z",
+          "metadata_retrieved_at": "2026-11-07T18:19:41Z"
+        },
+        {
+          "repo": "pmndrs/glyph",
+          "url": "https://github.com/pmndrs/glyph",
+          "sha": "4e25a96a57462fef5ad0d19065a822695b480f60",
+          "language": "TypeScript",
+          "framework_bucket": "react_spa",
+          "size_kb": 34836,
+          "stars": 406,
+          "pushed_at": "2026-11-05T02:16:29Z",
+          "metadata_retrieved_at": "2026-11-07T18:19:41Z"
+        },
+        {
+          "repo": "kawamataryo/sky-follower-bridge",
+          "url": "https://github.com/kawamataryo/sky-follower-bridge",
+          "sha": "64bfb53148dad76bb737bf2e0e1b0856ea023d19",
+          "language": "TypeScript",
+          "framework_bucket": "express_fastify_hono",
+          "size_kb": 23448,
+          "stars": 879,
+          "pushed_at": "2026-09-20T12:49:09Z",
+          "metadata_retrieved_at": "2026-11-07T18:19:41Z"
+        },
+        {
+          "repo": "dyrector-io/dyrectorio",
+          "url": "https://github.com/dyrector-io/dyrectorio",
+          "sha": "98fe402eb61b88e5472dd3008cabc59d2ebce60b",
+          "language": "TypeScript",
+          "framework_bucket": "nestjs",
+          "size_kb": 32647,
+          "stars": 1846,
+          "pushed_at": "2026-10-13T13:00:36Z",
+          "metadata_retrieved_at": "2026-11-07T18:19:41Z"
+        },
+        {
+          "repo": "mailgun/mailgun.js",
+          "url": "https://github.com/mailgun/mailgun.js",
+          "sha": "11a1b5dd6b9b1ec7d24a8e2e465375123a1d6191",
+          "language": "TypeScript",
+          "framework_bucket": "other_node",
+          "size_kb": 51682,
+          "stars": 551,
+          "pushed_at": "2026-11-02T10:07:35Z",
+          "metadata_retrieved_at": "2026-11-07T18:19:41Z"
+        },
+        {
+          "repo": "c15t/c15t",
+          "url": "https://github.com/c15t/c15t",
+          "sha": "c9f646e1a8ee9a74fc4a2ec3e3eb000223757cac",
+          "language": "TypeScript",
+          "framework_bucket": "nextjs",
+          "size_kb": 59019,
+          "stars": 2020,
+          "pushed_at": "2026-11-06T18:18:15Z",
+          "metadata_retrieved_at": "2026-11-07T18:19:41Z"
+        },
+        {
+          "repo": "open-slide/open-slide",
+          "url": "https://github.com/open-slide/open-slide",
+          "sha": "327dd09bcd530eb97647fc33fa67e99f8137d860",
+          "language": "TypeScript",
+          "framework_bucket": "nextjs",
+          "size_kb": 61959,
+          "stars": 9696,
+          "pushed_at": "2026-11-05T22:55:28Z",
+          "metadata_retrieved_at": "2026-11-07T18:19:41Z"
+        },
+        {
+          "repo": "wisher567/portpal",
+          "url": "https://github.com/wisher567/Portpal",
+          "sha": "f3acb8bbfd9416cb5a7554b7aff984a87d35eaa7",
+          "language": "TypeScript",
+          "framework_bucket": "react_spa",
+          "size_kb": 46568,
+          "stars": 529,
+          "pushed_at": "2026-10-30T13:45:53Z",
+          "metadata_retrieved_at": "2026-11-07T18:19:41Z"
+        }
+      ],
+      "exhausted": false,
+      "retrieved_at": "2026-11-07T18:19:41Z"
+    },
+    "py": {
+      "add": 4,
+      "walked_from": 55,
+      "walked": [
+        {
+          "repo": "darwin-agent/harnessx",
+          "sha": "ccb411691343d06b4a5c44c4e11104d694318e8f",
+          "bucket": "fastapi"
+        },
+        {
+          "repo": "isaackogan/tiktoklive",
+          "sha": "4158e6a0a55ee1dabb9a8495ae86ec9e4116c42e",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "betastreetomnis/xhs_ai_publisher",
+          "sha": "d76c8fc19b188aa18d75ab1e73a88e189aa9f10e",
+          "bucket": "fastapi"
+        },
+        {
+          "repo": "openstack/openstack-ansible",
+          "sha": "31741f90bf13deb4ad4081f44b0b6b11a2693fed",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "oca/l10n-brazil",
+          "sha": "853f03b8ea1f95ea1d0edefd58b322095b123748",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "seedds/nxnative",
+          "sha": "bd979ced3ae6bad60bf86429a71d172297d93471",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "ibm/lale",
+          "sha": "2ae8c9030f044b0a52b76fc0f2632764b5e89622",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "zai-org/glm-v",
+          "sha": "e584620b056a03545f3038cb7e7f8d83fc67fc14",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "hkjarral/ava-ai-voice-agent-for-asterisk",
+          "sha": "6c00084295345ce6ea695b636f356d83b08077f2",
+          "bucket": "fastapi"
+        },
+        {
+          "repo": "guardicore/monkey",
+          "sha": "bea2f415c8966de235798bbf9d2dbcd06fd37ae4",
+          "bucket": "flask"
+        },
+        {
+          "repo": "mherrmann/helium",
+          "sha": null,
+          "bucket": null,
+          "skip": "no Python dependency manifest found"
+        },
+        {
+          "repo": "vigil-soc/vigil",
+          "sha": "36efaeed0240f4080cd4a07f76eb46bf69e38c0d",
+          "bucket": "fastapi"
+        },
+        {
+          "repo": "1061700625/wechat_article",
+          "sha": "568ce7f74ac87808edb87decfc328afce3f3e047",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "thousandbrainsproject/tbp.monty",
+          "sha": "8f88b667be7e3e15f0f47817fcc6d577914b5838",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "nachifur/mulimgviewer",
+          "sha": "5a3b36aa4ae987e7630df0f25f25906f0462724c",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "kagisearch/smallweb",
+          "sha": "79e3c7502b52071ca2a202ac4695b75b43ba3447",
+          "bucket": "flask"
+        },
+        {
+          "repo": "enderfga/solarrenderer",
+          "sha": "0ca4f5e45b062cc9e9aee506de46aabdc22e4c3d",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "honeynet/droidbot",
+          "sha": "cc4cc93cc53941ccc188c59ef45ab173e2347113",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "nvidia/isaac-gr00t",
+          "sha": "9fbe86ad985f909d412165033267e9cff239b64c",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "niosus/easyclangcomplete",
+          "sha": null,
+          "bucket": null,
+          "skip": "no Python dependency manifest found"
+        },
+        {
+          "repo": "anning01/novelvids",
+          "sha": "f00ac0ce1e80d04bbbfe0572265afe2046232732",
+          "bucket": "fastapi"
+        },
+        {
+          "repo": "helpmeeadice/bandori-pet-rev",
+          "sha": "2ed1304c25a9000bdbe75c64ca1b0acac123be38",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "n0bel/piclock",
+          "sha": null,
+          "bucket": null,
+          "skip": "no Python dependency manifest found"
+        },
+        {
+          "repo": "mypaint/mypaint",
+          "sha": "fb6f7d6b12238d125294496b105f5f36e658bc61",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "nvlabs/aspire",
+          "sha": "fa00f0ef2bc1d91d594b9aa502c22133c9f538f7",
+          "bucket": "fastapi"
+        },
+        {
+          "repo": "ttlequals0/minuspod",
+          "sha": "fa853d2b7da8c614bcc1f766f7a984feb37fc377",
+          "bucket": "flask"
+        },
+        {
+          "repo": "brainglobe/brainrender",
+          "sha": "a1ef6545ba05c81857a28735493dd14a08e4fcc9",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "microsoft/agent-framework",
+          "sha": "924a6e50ec0336f3c965ee8b1151c54085888b6e",
+          "bucket": "fastapi"
+        },
+        {
+          "repo": "opengeos/leafmap",
+          "sha": "6af9e80129b8600e7a71bb372bbefd23b24267ee",
+          "bucket": "flask"
+        },
+        {
+          "repo": "titlecardmaker/titlecardmaker",
+          "sha": "a62f83b98d110c45b369cb58a845ab6215c76862",
+          "bucket": "fastapi"
+        },
+        {
+          "repo": "lesserkuma/flashgbx",
+          "sha": "5b2398bb36a0c2de0acbea9982fe65869317b02d",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "nvidia/model-optimizer",
+          "sha": "86bd9b78425a23a45b329c7c9b86ea772d7a9e77",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "posit-dev/py-shiny",
+          "sha": "c5bd09d076ec766e884b87ac2183e7f887f04d0c",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "alban1911/rose",
+          "sha": "f23254e38f3065b2395f65068dcdcee09a979d43",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "zvtvz/zvt",
+          "sha": "8509990e6608750d0c08fa748682cc997d2813cc",
+          "bucket": "fastapi"
+        },
+        {
+          "repo": "kanishka-linux/kawaii-player",
+          "sha": "3e9a0cec41915d78be706ab0b1fa024c17200dc7",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "aniqfakhrul/powerview.py",
+          "sha": "ea133da24ac9f51879f89a559c3fe575e3d1c801",
+          "bucket": "flask"
+        },
+        {
+          "repo": "bleachbit/bleachbit",
+          "sha": "68f9d5c568e5a2fa526b5b9f4b613eb57981cd97",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "scverse/scanpy",
+          "sha": "117682e1b233cb689e87e3009870d131cf72bae5",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "jxxghp/moviepilot",
+          "sha": "8e9e89c6361ff314583c86acb829f2d7c14e4b67",
+          "bucket": "fastapi"
+        },
+        {
+          "repo": "tongyi-mai/mobileworld",
+          "sha": "a026188705f4a494a12d14ddab3786a23fd2c537",
+          "bucket": "fastapi"
+        },
+        {
+          "repo": "decoderesearch/saelens",
+          "sha": "4571d19dd9fd48a6be9ac1d3a2ca468960357a7f",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "ishandutta2007/top-ai-repos",
+          "sha": "3a3a24872c8862a47be84edb3d752535ac4b4d7c",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "kingkongrobotics/jumper",
+          "sha": "198686eac0d188815d0943e9fee50de415edc80a",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "bit-datalab/edit-banana",
+          "sha": "df08f079bb2767303610c9df7d70819ad9bc8dd8",
+          "bucket": "fastapi"
+        },
+        {
+          "repo": "nvidia-cosmos/cosmos-cookbook",
+          "sha": "d0857364e8a727be41b181731e03f478213e4558",
+          "bucket": "other_python"
+        },
+        {
+          "repo": "mtg/freesound",
+          "sha": "da3a786e2e5bdcaec1265b0798d4e212d2015720",
+          "bucket": "django"
+        }
+      ],
+      "reskipped": [],
+      "reserves": [
+        {
+          "repo": "mtg/freesound",
+          "url": "https://github.com/MTG/freesound",
+          "sha": "da3a786e2e5bdcaec1265b0798d4e212d2015720",
+          "language": "Python",
+          "framework_bucket": "django",
+          "size_kb": 83299,
+          "stars": 387,
+          "pushed_at": "2026-11-06T18:02:32Z",
+          "metadata_retrieved_at": "2026-11-07T18:24:30Z"
+        },
+        {
+          "repo": "nvlabs/omnivinci",
+          "url": "https://github.com/NVlabs/OmniVinci",
+          "sha": "9307faa7017651f9734994f2a55fc0e5a9f60add",
+          "language": "Python",
+          "framework_bucket": "fastapi",
+          "size_kb": 101263,
+          "stars": 684,
+          "pushed_at": "2026-08-31T06:28:41Z",
+          "metadata_retrieved_at": "2026-11-07T18:24:30Z"
+        },
+        {
+          "repo": "guardicore/monkey",
+          "url": "https://github.com/guardicore/monkey",
+          "sha": "bea2f415c8966de235798bbf9d2dbcd06fd37ae4",
+          "language": "Python",
+          "framework_bucket": "flask",
+          "size_kb": 91608,
+          "stars": 7124,
+          "pushed_at": "2026-11-03T11:56:39Z",
+          "metadata_retrieved_at": "2026-11-07T18:24:30Z"
+        },
+        {
+          "repo": "exon-research/genomi",
+          "url": "https://github.com/exon-research/genomi",
+          "sha": "1df4f5bfb635e2d08f93a1102b70b840fbe80d86",
+          "language": "Python",
+          "framework_bucket": "other_python",
+          "size_kb": 34308,
+          "stars": 491,
+          "pushed_at": "2026-08-31T19:30:56Z",
+          "metadata_retrieved_at": "2026-11-07T18:24:30Z"
+        }
+      ],
+      "exhausted": false,
+      "retrieved_at": "2026-11-07T18:24:30Z"
+    }
+  },
+  "exclusions": {
+    "refs": {
+      "refs/remotes/driftv22/chore/process-and-deny": "457db59d7d334ce94fc5daf506e7b8868f776e0f",
+      "refs/remotes/driftv22/ci/macos-nonblocking": "453638e6c6b20760cfd749ac7eec8ca65dd1a06f",
+      "refs/remotes/driftv22/main": "c1d9b92920afc4a5b80d08181a3bf0937566f590",
+      "refs/remotes/driftv22/pr12": "a3b6232fe0b209c32b1fc7d1347e9b4a67f8680c",
+      "refs/remotes/driftv22/pyplan/py-plan-2026-11-07": "a1934bb1cd1aa9c9c232ef374545ac51def79013",
+      "refs/remotes/driftv22/ws/ab-v2": "bdb95b989bcb4276baa36633d99a1df62e686c30",
+      "refs/remotes/driftv22/ws/auth-vocab": "dd394ba6ec521079c6f3f50771b3a648692f8a58",
+      "refs/remotes/driftv22/ws/beta-readiness": "cb3b06e2f9924c60d938399e169eb7ab1a195fb0",
+      "refs/remotes/driftv22/ws/d7-tier": "1d1766b5b62c5ad77e701ab7c2dc2d8ac820baa2",
+      "refs/remotes/driftv22/ws/d7a-secondary": "9a9ab03b85aaac0de2f72cec70286b135dcf3b12",
+      "refs/remotes/driftv22/ws/design-system": "47c9e08cfaa1c5145e787d436fea454b38f97290",
+      "refs/remotes/driftv22/ws/dev-v3": "37dccffa5150cda7e6bc148f0d6496f4c14a22dc",
+      "refs/remotes/driftv22/ws/devx-gates": "27a6b048f117fb77e6aa23d284dc9062bef5c026",
+      "refs/remotes/driftv22/ws/docs-accuracy": "2a33f95a5acb75970721384b784647532e51492f",
+      "refs/remotes/driftv22/ws/docs-r6": "822a9a0ef7fac16d3cee205ae8558741c8560f16",
+      "refs/remotes/driftv22/ws/entry-classes": "f12fa2f70f3f287d1d6e660c4f82b327271c591d",
+      "refs/remotes/driftv22/ws/first-run-qa": "be45568a7cdbb8590ccf60f18693baa1f98cae3e",
+      "refs/remotes/driftv22/ws/flow-js": "297435429256abbf80c38fb6fbf722d9630e556e",
+      "refs/remotes/driftv22/ws/fn-factory-consts": "148ed0a4882d21b10fb0e37933755b07254d8614",
+      "refs/remotes/driftv22/ws/followups-1": "bee2566ac9b441a1b2f1d0e988d5be6613e12ea9",
+      "refs/remotes/driftv22/ws/frozen-exemptions": "1f86f34e9765b5e4cfe2abf50a19242613e4fc4d",
+      "refs/remotes/driftv22/ws/gate-harden": "00d2d0114077e6c97b1abe4d49de396447f4e955",
+      "refs/remotes/driftv22/ws/heldout-primary": "f965fee8b2a4ee997217d5cd97c4eb142870b5ed",
+      "refs/remotes/driftv22/ws/heldout-primary-run": "5839837cf082e1a4dd616b337a797bc90abcdbad",
+      "refs/remotes/driftv22/ws/heldout-readiness": "efa75729066e89c71c02668f920a979d81868420",
+      "refs/remotes/driftv22/ws/heldout-ready": "a9469cd94d5ed8bb8fba6cba1b7a9c0e2faa6289",
+      "refs/remotes/driftv22/ws/honest-messages": "6e27c6400f17e7a9212c741145c9eb618fcb6799",
+      "refs/remotes/driftv22/ws/hooks": "e7083ba5d95ab055799c495d73405612761e3601",
+      "refs/remotes/driftv22/ws/incremental-parity": "9d47841be472abc29f1aca2e28b8db8e9228e2d1",
+      "refs/remotes/driftv22/ws/label-py-r2": "ccc6130b259113fc06b4a087e0694dd68af74948",
+      "refs/remotes/driftv22/ws/label-ts-r2": "19f7c70f168dfbf0759bd7d2c85ac339fe8dd20e",
+      "refs/remotes/driftv22/ws/layering-reexport": "a5b2ed4c0f1ffd07ed5f3d46217e265feb7ffaff",
+      "refs/remotes/driftv22/ws/lazy-imports": "7f204c16cdc19fbf0cff2cf285ad355e5fbf7e81",
+      "refs/remotes/driftv22/ws/mcp-conformance": "8841efe415daaea78d768ec64c42e58934f0b022",
+      "refs/remotes/driftv22/ws/mixed-auth-sets": "8fcfaa79716765b74c078ac5bd144e2c8a34350e",
+      "refs/remotes/driftv22/ws/nesting-regex": "e8d50ae1c8a84faeff9ed0f2cb672021ffde71c1",
+      "refs/remotes/driftv22/ws/opt-out": "75b442cfc823f55ed8ce93f1fac8f9823d3d0737",
+      "refs/remotes/driftv22/ws/parts-roots-2": "06d8ef1c2acf41b0757457977b24d370941c6fb7",
+      "refs/remotes/driftv22/ws/perf-2026-11-07": "bf7f4f96fa9efffe46a54b6de8119b7ac017e435",
+      "refs/remotes/driftv22/ws/perf-fixes-2": "15a5e27e885e11f1e64bc7377fc08fb4904ef63c",
+      "refs/remotes/driftv22/ws/perf-ts-cpu": "d019201e2784c9cd8e8e61ab6d5d0e59ecba2857",
+      "refs/remotes/driftv22/ws/plan-round8": "82c3172a8a683fcb9c355f63c853033866fc0054",
+      "refs/remotes/driftv22/ws/plan-round8-par": "c5eae4a73676acc9f2e49e5f8baa56765d976457",
+      "refs/remotes/driftv22/ws/pr-mode": "368d304b82f74a3cb1e36320bac3325926effe30",
+      "refs/remotes/driftv22/ws/precision": "da45fe6bfbe1283deb0eb1d8194cc89129a811b4",
+      "refs/remotes/driftv22/ws/py-classes": "6c33a847d6995d160949477e613007b2049ddc31",
+      "refs/remotes/driftv22/ws/py-continuation": "654b40563def7ce1f897d701a1083b98101a7652",
+      "refs/remotes/driftv22/ws/py-d8-prereg": "14862a71013d9bec9355623ca2caf82136f2506c",
+      "refs/remotes/driftv22/ws/py-depends": "a6a05c03e408f61aa85edeb51f71070f236104fb",
+      "refs/remotes/driftv22/ws/py-hooks": "a3b6232fe0b209c32b1fc7d1347e9b4a67f8680c",
+      "refs/remotes/driftv22/ws/py-precision": "24120de7bd6100a898fb29f5584e302349b50ed4",
+      "refs/remotes/driftv22/ws/py-precision-2": "5204015433198aeca2972eb126b10ccb3c3be2d2",
+      "refs/remotes/driftv22/ws/py-precision-3": "3e611b7c4e6e769bd80f860fb47e87654647a0b8",
+      "refs/remotes/driftv22/ws/py-precision-4": "35e6cc5aa63ef5b3572219ab30df77d1e17cc314",
+      "refs/remotes/driftv22/ws/py-registry-docs": "17c425541f34badd8443b8368c725e3ac93e51ee",
+      "refs/remotes/driftv22/ws/py-security": "f9001460da2ce0d83aab08b102b3506935500088",
+      "refs/remotes/driftv22/ws/py-study": "31acbd55daa224952eca5c304e0f2fa9a5d25578",
+      "refs/remotes/driftv22/ws/python": "6bf792ebe00d2c14e7dec6f8a46d6efa63a3560a",
+      "refs/remotes/driftv22/ws/recall-audit": "4489d9ede72396a0347576d129858cfff30894fd",
+      "refs/remotes/driftv22/ws/relabel-2026-11-06": "d414095bb1e8a4247f4f2169ba4f9802d7ff9e30",
+      "refs/remotes/driftv22/ws/relabel2-2026-11-07": "2ddcd8034f524167c99ff54cfb241b15dc17bf53",
+      "refs/remotes/driftv22/ws/relabel3-stage": "8e71ea6998ee637398cbed954713df9a1ab700f6",
+      "refs/remotes/driftv22/ws/relabel4": "86a6f2ae7d01e768035b37db551eebe9306e31f7",
+      "refs/remotes/driftv22/ws/release-dry-run": "e21206641595c7533bee2a7a45d1fc84bc26dfb0",
+      "refs/remotes/driftv22/ws/robustness": "2cc4744dae36d6a0ecae7f88a4f105040d5a6880",
+      "refs/remotes/driftv22/ws/role-parts": "fef6446a11c479bcb58640c37a811db4019a037e",
+      "refs/remotes/driftv22/ws/role-scope": "c7351a9b8b3e195d2eadebaa845e503a4c12a006",
+      "refs/remotes/driftv22/ws/rubric-v3": "b20591f4652ebf5d2dd200a6264de88b0c58490d",
+      "refs/remotes/driftv22/ws/security-precision": "8e5e4f07ffc5c1bfa51913b1c94351ad461d3cbd",
+      "refs/remotes/driftv22/ws/siblings-roots": "9d997a3cf83ad1e397c93b71caa61dc694c46694",
+      "refs/remotes/driftv22/ws/small-precision": "cd43ce0f28247636ed94c6122c8ef9a35b8f0610",
+      "refs/remotes/driftv22/ws/stack-bound": "7788199148a45de6c32f88b27d453e4cb1236c99",
+      "refs/remotes/driftv22/ws/studio": "00a5d1247ee75178f205f0d5a18cf3cc167d7443",
+      "refs/remotes/driftv22/ws/studio-d5": "3311b45a881fd14d93f5f090a108af67a84dede7",
+      "refs/remotes/driftv22/ws/studio-design": "2848eac30dc9b9ff6e8018d7181dde4d513307d9",
+      "refs/remotes/driftv22/ws/studio-dev-v3": "f15d4b4a45047a915dd0cdd1a8b4a25ea52fca65",
+      "refs/remotes/driftv22/ws/studio-families": "9eec96e060eac7bd655dcc264be94f4dfa75c942",
+      "refs/remotes/driftv22/ws/studio-gaps-r6": "2b51f7770dfe76bd28b5829cc7f836d5fd5404a0",
+      "refs/remotes/driftv22/ws/studio-parity-2026-11-07": "44839094e2eb63871cc839872f84c2ddbabd360f",
+      "refs/remotes/driftv22/ws/studio-py-classes": "a45b4dead95149ee6a9e94e5b0e246ec0e1c338c",
+      "refs/remotes/driftv22/ws/studio-py-precision-3": "ab7b0f353d4d35c716247c658fd32c6124c2e205",
+      "refs/remotes/driftv22/ws/studio-qa-r6": "bab45a96fb5c11b56b30f8f7a2bcb39e0b6cf56a",
+      "refs/remotes/driftv22/ws/studio-relabel4": "c78b0d2ea8ca348eeecd63150f4caa4fc42ccf37",
+      "refs/remotes/driftv22/ws/studio-role-scope": "9290b9752d4fe2836c0a5c3bd985c0281a949c1a",
+      "refs/remotes/driftv22/ws/studio-rubric-v3": "248d77f2144fb1ab3034d4f0a2685971b30f0534",
+      "refs/remotes/driftv22/ws/studio-sync": "c9bf755f42a45e96b9486a57f9da445f2bd440a7",
+      "refs/remotes/driftv22/ws/studio-ts-precision-4": "6c01ee9cf8f8879c7bd071fe96ca2294877ef1b6",
+      "refs/remotes/driftv22/ws/studio-ts-types": "1969fe87d1616c560a5dfa79cdd3b7be81838262",
+      "refs/remotes/driftv22/ws/studio-unchecked": "6278ebbc7a6f495b00e409b613281cd55f918cdd",
+      "refs/remotes/driftv22/ws/studio-wiring": "d3a27e022baa5c819a51a7b0d2d452aeec9fd998",
+      "refs/remotes/driftv22/ws/study-protocol-hardening": "9038e363db06f0dac3fbdb218933ce60c1f82483",
+      "refs/remotes/driftv22/ws/study-v2": "d8f8407bff242666cf6abdd22f51ef8b863feb06",
+      "refs/remotes/driftv22/ws/subtree-scope": "a152944403610bc1913faff3600be3c639e0ae24",
+      "refs/remotes/driftv22/ws/suggestion-precision": "7add1110b9e0f6a8d1fed496a9d20082efbe9443",
+      "refs/remotes/driftv22/ws/test-bin-override": "f491dbb7052b2305e79a56c86d1a3ac2b77abecf",
+      "refs/remotes/driftv22/ws/tier-admission": "a28756fb2bfae33c7ea34b1ca35a98859687085f",
+      "refs/remotes/driftv22/ws/tiering": "24357c6bbced65d35621d9d401be779538ad56c0",
+      "refs/remotes/driftv22/ws/trpc-builder-factories": "58aba64fa971a61ec9c686f85d96ce6f232efc9d",
+      "refs/remotes/driftv22/ws/trpc-builder-origin": "7e93d730041e7c8f71bb63ef92290c07d831843b",
+      "refs/remotes/driftv22/ws/trpc-default-import": "37dc4d825bacf4f5e8aaeb1506b953b82cdccc1a",
+      "refs/remotes/driftv22/ws/ts-fixes": "ad11f696fd76afad6de93c21b33c70efa9275f02",
+      "refs/remotes/driftv22/ws/ts-parse-memory": "d4543f86c0b947f2d7152a6c07efce9acb850b3a",
+      "refs/remotes/driftv22/ws/ts-precision-2": "02bbbc09b8e9b8e3fa8de928e3a47bb265cb3f9e",
+      "refs/remotes/driftv22/ws/ts-precision-3": "4a3a857dd4dc295fa54922e8e8cf7ad6cde3b67f",
+      "refs/remotes/driftv22/ws/ts-precision-4": "57541f6fed0c99cd35500e1d07ab8fee6c1cc3eb",
+      "refs/remotes/driftv22/ws/ts-suggestion-precision": "ce6f23a3a1614ec936ff6ff08eb331d19354cab0",
+      "refs/remotes/driftv22/ws/ts-types": "01f9e4f9a28d7f51daf68080ea54c40e12a682be",
+      "refs/remotes/driftv22/ws/verify-cmd": "f02e54f1fadf9f8ca873516d5bb874eae471ac24",
+      "refs/remotes/driftv22/ws/wiring": "6f57ae89d4ed70fd752214c940aaaf0b34c63a0f",
+      "refs/remotes/driftv22/ws/wrapper-identity": "5bf4b58c636df82b1d4f9a64719b66b9bc416884"
+    },
+    "owners": [
+      "geoffreyfernald"
+    ],
+    "slugs": {
+      "activepieces/activepieces": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "allegro/ralph": [
+        "manifest eval/repos-py-2.json",
+        "tracked files"
+      ],
+      "calcom/cal.com": [
+        "manifest eval/repos.json",
+        "tracked files"
+      ],
+      "ctfd/ctfd": [
+        "manifest eval/holdout-py.json",
+        "manifest eval/repos-py.json",
+        "tracked files"
+      ],
+      "dadbodgeoff/drift": [
+        "PR/issue bodies",
+        "tracked files"
+      ],
+      "dgtlmoon/changedetection.io": [
+        "manifest eval/repos-py-2.json",
+        "tracked files"
+      ],
+      "dittofeed/dittofeed": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "django-crm/django-crm": [
+        "manifest eval/repos-py-2.json",
+        "tracked files"
+      ],
+      "documenso/documenso": [
+        "manifest eval/repos.json",
+        "tracked files"
+      ],
+      "dokploy/dokploy": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "elie222/inbox-zero": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "example/released": [
+        "tracked files"
+      ],
+      "example/same-name": [
+        "tracked files"
+      ],
+      "example/same-name-elsewhere": [
+        "tracked files"
+      ],
+      "example/unrelated": [
+        "tracked files"
+      ],
+      "example/unrelated-sha": [
+        "tracked files"
+      ],
+      "example/v": [
+        "tracked files"
+      ],
+      "example/w": [
+        "tracked files"
+      ],
+      "example/x": [
+        "tracked files"
+      ],
+      "example/y": [
+        "tracked files"
+      ],
+      "example/z": [
+        "tracked files"
+      ],
+      "excalidraw/excalidraw": [
+        "manifest eval/repos.json",
+        "tracked files"
+      ],
+      "fastapi/fastapi": [
+        "manifest eval/repos-py.json",
+        "tracked files"
+      ],
+      "fastapi/full-stack-fastapi-template": [
+        "manifest eval/repos-py.json",
+        "tracked files"
+      ],
+      "formbricks/formbricks": [
+        "manifest eval/repos.json",
+        "tracked files"
+      ],
+      "geoffreyfernald/driftv22": [
+        "PR/issue bodies",
+        "PR/issue comments",
+        "tracked files"
+      ],
+      "geoffreyfernald/dub": [
+        "manifest eval/repos.json",
+        "tracked files"
+      ],
+      "goauthentik/authentik": [
+        "manifest eval/holdout-py.json",
+        "tracked files"
+      ],
+      "hagopj13/node-express-boilerplate": [
+        "manifest eval/repos.json",
+        "tracked files"
+      ],
+      "healthchecks/healthchecks": [
+        "manifest eval/holdout-py.json",
+        "tracked files"
+      ],
+      "hoppscotch/hoppscotch": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "hotosm/tasking-manager": [
+        "manifest eval/repos-py-2.json",
+        "tracked files"
+      ],
+      "immich-app/immich": [
+        "manifest eval/repos.json",
+        "tracked files"
+      ],
+      "indico/indico": [
+        "manifest eval/holdout-py.json",
+        "tracked files"
+      ],
+      "infisical/infisical": [
+        "manifest eval/repos.json",
+        "tracked files"
+      ],
+      "inventree/inventree": [
+        "manifest eval/repos-py-2.json",
+        "tracked files"
+      ],
+      "karakeep-app/karakeep": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "knex/knex": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "kobotoolbox/kpi": [
+        "manifest eval/holdout-py.json",
+        "tracked files"
+      ],
+      "kong/insomnia": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "langchain-ai/langchain": [
+        "manifest eval/repos-py.json",
+        "tracked files"
+      ],
+      "langfuse/langfuse": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "lnbits/lnbits": [
+        "manifest eval/holdout-py.json",
+        "tracked files"
+      ],
+      "louislam/uptime-kuma": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "lukevella/rallly": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "mantinedev/mantine": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "mealie-recipes/mealie": [
+        "manifest eval/holdout-py.json",
+        "tracked files"
+      ],
+      "mfts/papermark": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "midday-ai/midday": [
+        "manifest eval/repos.json",
+        "tracked files"
+      ],
+      "mozilla/pontoon": [
+        "manifest eval/repos-py-2.json",
+        "tracked files"
+      ],
+      "n8n-io/n8n": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "nestjs/nest": [
+        "manifest eval/repos.json",
+        "tracked files"
+      ],
+      "netbox-community/netbox": [
+        "manifest eval/repos-py.json",
+        "tracked files"
+      ],
+      "novuhq/novu": [
+        "manifest eval/repos.json",
+        "tracked files"
+      ],
+      "openstatushq/openstatus": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "pallets/flask": [
+        "manifest eval/repos-py.json",
+        "tracked files"
+      ],
+      "paperless-ngx/paperless-ngx": [
+        "manifest eval/repos-py-2.json",
+        "tracked files"
+      ],
+      "polarsource/polar": [
+        "manifest eval/holdout-py.json",
+        "manifest eval/repos-py.json",
+        "tracked files"
+      ],
+      "pretalx/pretalx": [
+        "manifest eval/holdout-py.json",
+        "tracked files"
+      ],
+      "rafalp/misago": [
+        "manifest eval/repos-py-2.json",
+        "tracked files"
+      ],
+      "rust-lang/crates.io-index": [
+        "tracked files"
+      ],
+      "rybbit-io/rybbit": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "saleor/saleor": [
+        "manifest eval/repos-py.json",
+        "tracked files"
+      ],
+      "shelf-nu/shelf.nu": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "simple-login/app": [
+        "manifest eval/repos-py-2.json",
+        "tracked files"
+      ],
+      "sponsors/ai": [
+        "tracked files"
+      ],
+      "sponsors/ayuhito": [
+        "tracked files"
+      ],
+      "sponsors/colinhacks": [
+        "tracked files"
+      ],
+      "sponsors/eemeli": [
+        "tracked files"
+      ],
+      "sponsors/epoberezkin": [
+        "tracked files"
+      ],
+      "sponsors/isaacs": [
+        "tracked files"
+      ],
+      "sponsors/jonschlinkert": [
+        "tracked files"
+      ],
+      "sponsors/nzakas": [
+        "tracked files"
+      ],
+      "sponsors/oxc-project": [
+        "tracked files"
+      ],
+      "sponsors/sindresorhus": [
+        "tracked files"
+      ],
+      "sponsors/superchupudev": [
+        "tracked files"
+      ],
+      "sponsors/sxzz": [
+        "tracked files"
+      ],
+      "sponsors/tannerlinsley": [
+        "tracked files"
+      ],
+      "supabase/supabase": [
+        "manifest eval/repos.json",
+        "tracked files"
+      ],
+      "t3-oss/create-t3-app": [
+        "manifest eval/repos.json",
+        "tracked files"
+      ],
+      "textualize/textual": [
+        "manifest eval/holdout-py.json",
+        "tracked files"
+      ],
+      "the-momentum/open-wearables": [
+        "manifest eval/repos-py-2.json",
+        "tracked files"
+      ],
+      "tooljet/tooljet": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "triggerdotdev/trigger.dev": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "trpc/trpc": [
+        "manifest eval/repos.json",
+        "tracked files"
+      ],
+      "twentyhq/twenty": [
+        "manifest eval/repos.json",
+        "tracked files"
+      ],
+      "umami-software/umami": [
+        "PR review comments",
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "unleash/unleash": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "usebruno/bruno": [
+        "manifest eval/holdout.json",
+        "tracked files"
+      ],
+      "uselotus/lotus": [
+        "manifest eval/repos-py-2.json",
+        "tracked files"
+      ],
+      "vercel/ai": [
+        "manifest eval/repos.json",
+        "tracked files"
+      ],
+      "vitejs/vite": [
+        "tracked files"
+      ],
+      "weblateorg/weblate": [
+        "manifest eval/holdout-py.json",
+        "tracked files"
+      ],
+      "wger-project/wger": [
+        "manifest eval/repos-py-2.json",
+        "tracked files"
+      ]
+    },
+    "names": {
+      "activepieces": [
+        "manifest eval/holdout.json"
+      ],
+      "ai": [
+        "manifest eval/repos.json"
+      ],
+      "app": [
+        "manifest eval/repos-py-2.json"
+      ],
+      "authentik": [
+        "manifest eval/holdout-py.json"
+      ],
+      "bruno": [
+        "manifest eval/holdout.json"
+      ],
+      "cal.com": [
+        "manifest eval/repos.json"
+      ],
+      "changedetection.io": [
+        "manifest eval/repos-py-2.json"
+      ],
+      "create-t3-app": [
+        "manifest eval/repos.json"
+      ],
+      "ctfd": [
+        "manifest eval/holdout-py.json",
+        "manifest eval/repos-py.json"
+      ],
+      "dittofeed": [
+        "manifest eval/holdout.json"
+      ],
+      "django-crm": [
+        "manifest eval/repos-py-2.json"
+      ],
+      "documenso": [
+        "manifest eval/repos.json"
+      ],
+      "dokploy": [
+        "manifest eval/holdout.json"
+      ],
+      "dub": [
+        "manifest eval/repos.json"
+      ],
+      "excalidraw": [
+        "manifest eval/repos.json"
+      ],
+      "fastapi": [
+        "manifest eval/repos-py.json"
+      ],
+      "flask": [
+        "manifest eval/repos-py.json"
+      ],
+      "formbricks": [
+        "manifest eval/repos.json"
+      ],
+      "full-stack-fastapi-template": [
+        "manifest eval/repos-py.json"
+      ],
+      "healthchecks": [
+        "manifest eval/holdout-py.json"
+      ],
+      "hoppscotch": [
+        "manifest eval/holdout.json"
+      ],
+      "immich": [
+        "manifest eval/repos.json"
+      ],
+      "inbox-zero": [
+        "manifest eval/holdout.json"
+      ],
+      "indico": [
+        "manifest eval/holdout-py.json"
+      ],
+      "infisical": [
+        "manifest eval/repos.json"
+      ],
+      "insomnia": [
+        "manifest eval/holdout.json"
+      ],
+      "inventree": [
+        "manifest eval/repos-py-2.json"
+      ],
+      "karakeep": [
+        "manifest eval/holdout.json"
+      ],
+      "knex": [
+        "manifest eval/holdout.json"
+      ],
+      "kpi": [
+        "manifest eval/holdout-py.json"
+      ],
+      "langchain": [
+        "manifest eval/repos-py.json"
+      ],
+      "langfuse": [
+        "manifest eval/holdout.json"
+      ],
+      "lnbits": [
+        "manifest eval/holdout-py.json"
+      ],
+      "lotus": [
+        "manifest eval/repos-py-2.json"
+      ],
+      "mantine": [
+        "manifest eval/holdout.json"
+      ],
+      "mealie": [
+        "manifest eval/holdout-py.json"
+      ],
+      "midday": [
+        "manifest eval/repos.json"
+      ],
+      "misago": [
+        "manifest eval/repos-py-2.json"
+      ],
+      "n8n": [
+        "manifest eval/holdout.json"
+      ],
+      "nest": [
+        "manifest eval/repos.json"
+      ],
+      "netbox": [
+        "manifest eval/repos-py.json"
+      ],
+      "node-express-boilerplate": [
+        "manifest eval/repos.json"
+      ],
+      "novu": [
+        "manifest eval/repos.json"
+      ],
+      "open-wearables": [
+        "manifest eval/repos-py-2.json"
+      ],
+      "openstatus": [
+        "manifest eval/holdout.json"
+      ],
+      "paperless-ngx": [
+        "manifest eval/repos-py-2.json"
+      ],
+      "papermark": [
+        "manifest eval/holdout.json"
+      ],
+      "polar": [
+        "manifest eval/holdout-py.json",
+        "manifest eval/repos-py.json"
+      ],
+      "pontoon": [
+        "manifest eval/repos-py-2.json"
+      ],
+      "pretalx": [
+        "manifest eval/holdout-py.json"
+      ],
+      "rallly": [
+        "manifest eval/holdout.json"
+      ],
+      "ralph": [
+        "manifest eval/repos-py-2.json"
+      ],
+      "rybbit": [
+        "manifest eval/holdout.json"
+      ],
+      "saleor": [
+        "manifest eval/repos-py.json"
+      ],
+      "shelf": [
+        "manifest eval/holdout.json"
+      ],
+      "shelf.nu": [
+        "manifest eval/holdout.json"
+      ],
+      "simplelogin": [
+        "manifest eval/repos-py-2.json"
+      ],
+      "supabase": [
+        "manifest eval/repos.json"
+      ],
+      "tasking-manager": [
+        "manifest eval/repos-py-2.json"
+      ],
+      "textual": [
+        "manifest eval/holdout-py.json"
+      ],
+      "tooljet": [
+        "manifest eval/holdout.json"
+      ],
+      "trigger.dev": [
+        "manifest eval/holdout.json"
+      ],
+      "trpc": [
+        "manifest eval/repos.json"
+      ],
+      "twenty": [
+        "manifest eval/repos.json"
+      ],
+      "umami": [
+        "manifest eval/holdout.json"
+      ],
+      "unleash": [
+        "manifest eval/holdout.json"
+      ],
+      "uptime-kuma": [
+        "manifest eval/holdout.json"
+      ],
+      "weblate": [
+        "manifest eval/holdout-py.json"
+      ],
+      "wger": [
+        "manifest eval/repos-py-2.json"
+      ]
+    }
+  },
+  "exclusions_retrieved_at": "2026-11-07T18:16:10Z"
+}

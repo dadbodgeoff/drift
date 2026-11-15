@@ -1,0 +1,130 @@
+{
+  "a": "eval/study/runs/heldout2-ts-2026-11-08/labels/A",
+  "b": "eval/study/runs/heldout2-ts-2026-11-08/labels/B",
+  "labels_sha256": {
+    "A": "ed4e050a83834387b61ef2b96a6d1f5df76377d8201c6d5aa1e6072486366b4d",
+    "B": "2d960fbc411f1e2210dbed13aae1d6f2fb8e90ebeaa58af3a541e6773aaa53ae"
+  },
+  "computed_at": "2026-11-08T02:14:36.872Z",
+  "rubric_sha256s": [
+    "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+  ],
+  "n": 109,
+  "scope": 109,
+  "exact": 0.8990825688073395,
+  "kappa": 0.7924528301886793,
+  "kappa_boot": {
+    "lo": 0.6422654014158757,
+    "hi": 0.9040793825799337,
+    "clusters": 16
+  },
+  "accept_vs_not": {
+    "n": 109,
+    "po": 0.908256880733945,
+    "pe": 0.5305108997559128,
+    "kappa": 0.8045894585873072
+  },
+  "wrong_vs_not": {
+    "n": 109,
+    "po": 0.8990825688073395,
+    "pe": 0.5241982998064136,
+    "kappa": 0.7879002299663896
+  },
+  "confusion": {
+    "ACCEPT": {
+      "ACCEPT": 36,
+      "TRIVIAL": 0,
+      "WRONG": 6
+    },
+    "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 1,
+      "WRONG": 0
+    },
+    "WRONG": {
+      "ACCEPT": 4,
+      "TRIVIAL": 1,
+      "WRONG": 61
+    }
+  },
+  "mix": {
+    "A": {
+      "ACCEPT": 42,
+      "TRIVIAL": 1,
+      "WRONG": 66
+    },
+    "B": {
+      "ACCEPT": 40,
+      "TRIVIAL": 2,
+      "WRONG": 67
+    }
+  },
+  "disagreements": [
+    {
+      "uid": "ever-demand/D-d08791",
+      "repo": "ever-demand",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "ever-demand/D-5b38bb",
+      "repo": "ever-demand",
+      "a": "WRONG",
+      "b": "ACCEPT"
+    },
+    {
+      "uid": "ngx-bootstrap/D-f1448a",
+      "repo": "ngx-bootstrap",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "ngx-bootstrap/D-c0155e",
+      "repo": "ngx-bootstrap",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "better-chatbot/D-ad0dad",
+      "repo": "better-chatbot",
+      "a": "WRONG",
+      "b": "ACCEPT"
+    },
+    {
+      "uid": "mitosis/D-e375ce",
+      "repo": "mitosis",
+      "a": "WRONG",
+      "b": "ACCEPT"
+    },
+    {
+      "uid": "webstudio/D-50ff6f",
+      "repo": "webstudio",
+      "a": "WRONG",
+      "b": "ACCEPT"
+    },
+    {
+      "uid": "webstudio/D-07af70",
+      "repo": "webstudio",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "responsible-ai-toolbox/D-a5a9f0",
+      "repo": "responsible-ai-toolbox",
+      "a": "WRONG",
+      "b": "TRIVIAL"
+    },
+    {
+      "uid": "ownpilot/D-ba69a0",
+      "repo": "ownpilot",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "planarally/D-988115",
+      "repo": "planarally",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    }
+  ]
+}

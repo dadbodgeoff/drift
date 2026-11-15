@@ -1,0 +1,439 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - any-files
+  - app
+  - audio
+  - auth
+  - cat
+  - cats
+  - circular
+  - constants
+  - container
+  - core
+  - create-cat
+  - database
+  - date
+  - drizzle
+  - durable
+  - events
+  - express
+  - fastify
+  - file
+  - file-fields
+  - files
+  - get-media-type-version
+  - hello
+  - input
+  - kafka
+  - logger
+  - logging
+  - main
+  - math
+  - merge-map-bounded
+  - mqtt
+  - multer
+  - multipart
+  - nats
+  - no-files
+  - node
+  - orders
+  - parse-int
+  - photo
+  - posts
+  - recipes
+  - redis
+  - request-chain
+  - request-scoped
+  - rmq
+  - roles
+  - test
+  - user
+  - user-by-id
+  - users
+  - utils
+  - validation
+  - vitest
+  suffixes:
+  - args
+  - builder
+  - config
+  - constants
+  - context
+  - controller
+  - decorator
+  - deserializer
+  - dto
+  - e2e
+  - e2e-spec
+  - entity
+  - enum
+  - events
+  - exception
+  - filter
+  - gateway
+  - guard
+  - hook
+  - input
+  - interceptor
+  - interface
+  - interfaces
+  - middleware
+  - model
+  - module
+  - pipe
+  - plugin
+  - record-builder
+  - resolver
+  - scalar
+  - schema
+  - serializer
+  - service
+  - spec
+  - strategy
+  - util
+  - utils
+conventions:
+- id: D-44a46d
+  status: proposed
+  mode: advise
+  summary: files in packages/core/** do not import from packages/platform-express/**
+  role:
+    package: packages/core
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:packages/platform-express
+  evidence:
+    holders: 202
+    total: 203
+    lower_bound: 0.973
+    lift: 3.0
+  example: packages/core/adapters/http-adapter.ts#(file)
+- id: D-48b32a
+  status: proposed
+  mode: advise
+  summary: files in packages/core/** do not import from packages/websockets/**
+  role:
+    package: packages/core
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:packages/websockets
+  evidence:
+    holders: 202
+    total: 203
+    lower_bound: 0.973
+    lift: 3.0
+  example: packages/core/adapters/http-adapter.ts#(file)
+- id: D-f68b2a
+  status: proposed
+  mode: advise
+  summary: files in packages/core/** do not import from packages/microservices/**
+  role:
+    package: packages/core
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:packages/microservices
+  evidence:
+    holders: 201
+    total: 203
+    lower_bound: 0.965
+    lift: 3.0
+  example: packages/core/adapters/http-adapter.ts#(file)
+- id: D-d13c39
+  status: proposed
+  mode: advise
+  summary: HTTP handlers in integration/** (*.controller files) do not use `any`
+  role:
+    package: ""
+    dir: integration
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: avoids
+    signal: any
+  evidence:
+    holders: 227
+    total: 234
+    lower_bound: 0.94
+    lift: 5.067
+  example: integration/cookies/src/app.controller.ts#GET /clear
+- id: D-71cafa
+  status: proposed
+  mode: advise
+  summary: classes in integration/** (*.module files) do not use `any`
+  role:
+    package: ""
+    dir: integration
+    file: "*.module"
+    entry: '-'
+    kind: class
+  rule:
+    type: avoids
+    signal: any
+  evidence:
+    holders: 160
+    total: 165
+    lower_bound: 0.931
+    lift: 9.2
+  example: integration/cookies/src/app.module.ts#AppModule
+- id: D-89aaf3
+  status: proposed
+  mode: advise
+  summary: classes in integration/** (*.service files) are named `*Service`
+  role:
+    package: ""
+    dir: integration
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Service"
+  evidence:
+    holders: 81
+    total: 83
+    lower_bound: 0.916
+    lift: 8.076
+  example: integration/auto-mock/src/bar.service.ts#BarService
+- id: D-535ff3
+  status: proposed
+  mode: advise
+  summary: message entry points in integration/** (*.controller files) do not use `any`
+  role:
+    package: ""
+    dir: integration
+    file: "*.controller"
+    entry: message
+    kind: function
+  rule:
+    type: avoids
+    signal: any
+  evidence:
+    holders: 68
+    total: 70
+    lower_bound: 0.902
+    lift: 4.363
+  example: >-
+    integration/inspector/src/external-svc/external-svc.controller.ts#MESSAGE
+    ExternalSvcController.create
+- id: D-eb6107
+  status: proposed
+  mode: advise
+  summary: workspace packages enable `emitDecoratorMetadata` in tsconfig
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: flag:emitDecoratorMetadata
+  evidence:
+    holders: 53
+    total: 54
+    lower_bound: 0.902
+    lift: 1.0
+  example: packages/common/package.json#@nestjs/common
+- id: D-f87098
+  status: proposed
+  mode: advise
+  summary: workspace packages depend on @nestjs/common@12.3.3
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: dependency_version
+    name: "@nestjs/common"
+    range: "12.3.3"
+  evidence:
+    holders: 48
+    total: 49
+    lower_bound: 0.893
+    lift: 1.0
+    split:
+    - - "12.3.3"
+      - 48
+    - - ^12.0.0
+      - 1
+  example: packages/core/package.json#@nestjs/core
+- id: D-60e290
+  status: proposed
+  mode: advise
+  summary: workspace packages enable `declaration` in tsconfig
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: flag:declaration
+  evidence:
+    holders: 52
+    total: 54
+    lower_bound: 0.875
+    lift: 1.0
+  example: packages/common/package.json#@nestjs/common
+- id: D-934dfa
+  status: proposed
+  mode: advise
+  summary: classes in integration/** (*.controller files) are decorated with Controller()
+  role:
+    package: ""
+    dir: integration
+    file: "*.controller"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - packages/common/decorators/core/controller.decorator.ts#Controller
+  evidence:
+    holders: 93
+    total: 100
+    lower_bound: 0.863
+    lift: 6.266
+  example: integration/cookies/src/app.controller.ts#AppController
+- id: D-77d720
+  status: proposed
+  mode: advise
+  summary: "packages/common: functions in decorators/** (*.decorator files) declare their return type"
+  role:
+    package: packages/common
+    dir: decorators
+    file: "*.decorator"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 60
+    total: 64
+    lower_bound: 0.85
+    lift: 3.428
+  example: packages/common/decorators/core/bind.decorator.ts#Bind
+- id: D-088146
+  status: proposed
+  mode: advise
+  summary: classes in integration/scopes/** (*.service files) do not use `any`
+  role:
+    package: ""
+    dir: integration/scopes
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: avoids
+    signal: any
+  evidence:
+    holders: 26
+    total: 27
+    lower_bound: 0.817
+    lift: 6.618
+  example: integration/scopes/src/circular-hello/hello.service.ts#HelloService
+- id: D-897eda
+  status: proposed
+  mode: advise
+  summary: "packages/core: classes in errors/** (*.exception files) extend RuntimeException"
+  role:
+    package: packages/core
+    dir: errors
+    file: "*.exception"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - packages/core/errors/exceptions/runtime.exception.ts#RuntimeException
+  evidence:
+    holders: 22
+    total: 23
+    lower_bound: 0.79
+    lift: 31.416
+  example: >-
+    packages/core/errors/exceptions/circular-dependency.exception.ts#CircularDependencyException
+- id: D-3f85ec
+  status: proposed
+  mode: advise
+  summary: classes in integration/injector/** (*.module files) are decorated with Module()
+  role:
+    package: ""
+    dir: integration/injector
+    file: "*.module"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - packages/common/decorators/modules/module.decorator.ts#Module
+  evidence:
+    holders: 21
+    total: 22
+    lower_bound: 0.782
+    lift: 4.306
+  example: integration/injector/src/app.module.ts#ApplicationModule
+- id: D-3915b0
+  status: proposed
+  mode: advise
+  summary: "packages/microservices: classes in errors/** (*.exception files) do not use `any`"
+  role:
+    package: packages/microservices
+    dir: errors
+    file: "*.exception"
+    entry: '-'
+    kind: class
+  rule:
+    type: avoids
+    signal: any
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 5.117
+  example: >-
+    packages/microservices/errors/corrupted-packet-length.exception.ts#CorruptedPacketLengthException
+- id: D-21d90e
+  status: proposed
+  mode: advise
+  summary: "packages/microservices: functions in decorators/** (*.decorator files) declare their return type"
+  role:
+    package: packages/microservices
+    dir: decorators
+    file: "*.decorator"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 3.464
+  example: packages/microservices/decorators/client.decorator.ts#Client

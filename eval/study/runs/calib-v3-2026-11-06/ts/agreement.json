@@ -1,0 +1,62 @@
+{
+  "a": "eval/study/runs/calib-v3-2026-11-06/ts/labels/A",
+  "b": "eval/study/runs/calib-v3-2026-11-06/ts/labels/B",
+  "n": 37,
+  "scope": 37,
+  "exact": 0.972972972972973,
+  "kappa": 0.9335727109515262,
+  "kappa_boot": {
+    "lo": 0.7843137254901962,
+    "hi": 1,
+    "clusters": 11
+  },
+  "accept_vs_not": {
+    "n": 37,
+    "po": 0.972972972972973,
+    "pe": 0.5931336742147553,
+    "kappa": 0.9335727109515262
+  },
+  "wrong_vs_not": {
+    "n": 37,
+    "po": 0.972972972972973,
+    "pe": 0.5931336742147553,
+    "kappa": 0.9335727109515262
+  },
+  "confusion": {
+    "ACCEPT": {
+      "ACCEPT": 10,
+      "TRIVIAL": 0,
+      "WRONG": 0
+    },
+    "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+    },
+    "WRONG": {
+      "ACCEPT": 1,
+      "TRIVIAL": 0,
+      "WRONG": 26
+    }
+  },
+  "mix": {
+    "A": {
+      "ACCEPT": 10,
+      "TRIVIAL": 0,
+      "WRONG": 27
+    },
+    "B": {
+      "ACCEPT": 11,
+      "TRIVIAL": 0,
+      "WRONG": 26
+    }
+  },
+  "disagreements": [
+    {
+      "uid": "documenso/D-2a51e9",
+      "repo": "documenso",
+      "a": "WRONG",
+      "b": "ACCEPT"
+    }
+  ]
+}

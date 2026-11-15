@@ -1,0 +1,77 @@
+{
+  "a": "eval/study/runs/dev4-ts-2026-11-09/labels/A",
+  "b": "eval/study/runs/dev4-ts-2026-11-09/labels/B",
+  "labels_sha256": {
+    "A": "409656f3b6c29fe5f81b42ae898359cd2b74a092e832612b5cab928322d91295",
+    "B": "a4aa13ff2733b57f70cd6533646baad49c10e12cc2bb03bd5eec9343f8d16c90"
+  },
+  "computed_at": "2026-11-09T04:10:49.082Z",
+  "incomplete": {
+    "reason": "labeller B missing for one repo after 3 INVALID attempts (cap of 3, lead decision recorded in the run README before the third output); its cards go to a blind third labeller (blindC-T19); agreement is over the 8 repos with complete A and B",
+    "gaps": [
+      "B T19: 0 of 3 labelled (prompt rendered, output not collected)"
+    ],
+    "at": "2026-11-09T04:10:49.053Z"
+  },
+  "rubric_sha256s": [
+    "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+  ],
+  "n": 13,
+  "scope": 16,
+  "exact": 0.9230769230769231,
+  "kappa": 0.7547169811320756,
+  "kappa_boot": {
+    "lo": 0,
+    "hi": 1,
+    "clusters": 8
+  },
+  "accept_vs_not": {
+    "n": 13,
+    "po": 0.9230769230769231,
+    "pe": 0.6863905325443787,
+    "kappa": 0.7547169811320756
+  },
+  "wrong_vs_not": {
+    "n": 13,
+    "po": 0.9230769230769231,
+    "pe": 0.6863905325443787,
+    "kappa": 0.7547169811320756
+  },
+  "confusion": {
+    "ACCEPT": {
+      "ACCEPT": 10,
+      "TRIVIAL": 0,
+      "WRONG": 1
+    },
+    "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+    },
+    "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 2
+    }
+  },
+  "mix": {
+    "A": {
+      "ACCEPT": 11,
+      "TRIVIAL": 0,
+      "WRONG": 5
+    },
+    "B": {
+      "ACCEPT": 10,
+      "TRIVIAL": 0,
+      "WRONG": 3
+    }
+  },
+  "disagreements": [
+    {
+      "uid": "T05/D-2aa20d",
+      "repo": "T05",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    }
+  ]
+}

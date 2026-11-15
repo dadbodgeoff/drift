@@ -1,0 +1,1259 @@
+---
+source: crates/drift-py/tests/conformance.rs
+expression: "serde_json::to_string_pretty(&r).unwrap()"
+---
+{
+  "schema_version": 11,
+  "files": [
+    {
+      "path": "src/shop/__init__.py",
+      "hash": "2d14b4bc7d0b3f8f1e0f407bbcd07b6c9876f022bc944737e595c9935b77f3ea",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:flask",
+          "names": [
+            "Flask"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/shop/admin.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/shop/api.py",
+          "names": [
+            "api_bp"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/shop/auth.py",
+          "names": [
+            "bp"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/shop/hooks.py",
+          "names": [
+            "check_csrf",
+            "init_hooks"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/shop/reports.py",
+          "names": [
+            "bp"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "admin",
+          "origin": "src/shop/admin.py#*",
+          "kind": "re_export"
+        },
+        {
+          "name": "api_bp",
+          "origin": "src/shop/api.py#api_bp",
+          "kind": "re_export"
+        },
+        {
+          "name": "auth_bp",
+          "origin": "src/shop/auth.py#bp",
+          "kind": "re_export"
+        },
+        {
+          "name": "check_csrf",
+          "origin": "src/shop/hooks.py#check_csrf",
+          "kind": "re_export"
+        },
+        {
+          "name": "create_app",
+          "origin": "src/shop/__init__.py#create_app",
+          "kind": "local"
+        },
+        {
+          "name": "init_hooks",
+          "origin": "src/shop/hooks.py#init_hooks",
+          "kind": "re_export"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "create_app",
+          "kind": "function",
+          "exported_as": [
+            "create_app"
+          ],
+          "line": 9,
+          "wraps": [],
+          "calls": [
+            "pkg:flask#Flask",
+            "src/shop/hooks.py#init_hooks"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "arg_value:src/shop/hooks.py#init_hooks\t#0\tcall pkg:flask#Flask",
+            "drops_result_of:pkg:flask#Flask().before_request",
+            "drops_result_of:pkg:flask#Flask().register_blueprint",
+            "returns_unread",
+            "typed_return",
+            "unread_call"
+          ],
+          "string_literals": 2,
+          "order": [
+            "pkg:flask#Flask",
+            "src/shop/hooks.py#init_hooks"
+          ],
+          "returns_instance": "pkg:flask#Flask",
+          "returns_type": "pkg:flask#Flask"
+        }
+      ],
+      "entry_points": [],
+      "registries": [
+        {
+          "slot": "calls:src/shop/__init__.py#~app",
+          "line": 11,
+          "items": [
+            {
+              "target": "src/shop/admin.py#bp",
+              "line": 19
+            },
+            {
+              "target": "src/shop/api.py#api_bp",
+              "line": 20
+            },
+            {
+              "target": "src/shop/auth.py#bp",
+              "line": 18
+            },
+            {
+              "target": "src/shop/hooks.py#check_csrf",
+              "line": 11
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/shop/admin.py",
+      "hash": "930532278ee15a4c5d2e9118ae70165b481de6d375740d1e73add5d96abfb06d",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:flask",
+          "names": [
+            "Blueprint"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:flask_login",
+          "names": [
+            "login_required"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "ban",
+          "origin": "src/shop/admin.py#ban",
+          "kind": "local"
+        },
+        {
+          "name": "bp",
+          "origin": "src/shop/admin.py#bp",
+          "kind": "local"
+        },
+        {
+          "name": "index",
+          "origin": "src/shop/admin.py#index",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "ban",
+          "kind": "function",
+          "exported_as": [
+            "ban"
+          ],
+          "line": 13,
+          "wraps": [
+            {
+              "wrapper": "src/shop/auth.py#load_session",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/__init__.py#create_app.require_tenant",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/hooks.py#check_csrf",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/hooks.py#init_hooks.track",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "pkg:flask_login#login_required",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input",
+            "typed_return"
+          ],
+          "string_literals": 1
+        },
+        {
+          "name": "bp",
+          "kind": "variable",
+          "exported_as": [
+            "bp"
+          ],
+          "line": 4,
+          "wraps": [],
+          "calls": [
+            "pkg:flask#Blueprint"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:flask#Blueprint@99:url_prefix"
+          ],
+          "controls": [
+            "shape:=pkg:flask#Blueprint(lit,?,url_prefix=lit)"
+          ],
+          "string_literals": 2,
+          "order": [
+            "pkg:flask#Blueprint"
+          ]
+        },
+        {
+          "name": "index",
+          "kind": "function",
+          "exported_as": [
+            "index"
+          ],
+          "line": 7,
+          "wraps": [
+            {
+              "wrapper": "src/shop/auth.py#load_session",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/__init__.py#create_app.require_tenant",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/hooks.py#check_csrf",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/hooks.py#init_hooks.track",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "pkg:flask_login#login_required",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 1
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "ban",
+          "kind": "http",
+          "method": "POST",
+          "route": "/admin/users/<int:user_id>/ban",
+          "adapter": "flask"
+        },
+        {
+          "symbol": "index",
+          "kind": "http",
+          "method": "GET",
+          "route": "/admin",
+          "adapter": "flask"
+        }
+      ]
+    },
+    {
+      "path": "src/shop/admin_app.py",
+      "hash": "93c8c4735491ce130842b61f5b43f462fea274f28a88f2c1581d20f721cc560a",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:flask",
+          "names": [
+            "Flask"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/shop/console.py",
+          "names": [
+            "bp"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/shop/hooks.py",
+          "names": [
+            "init_hooks"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "create_admin_app",
+          "origin": "src/shop/admin_app.py#create_admin_app",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "create_admin_app",
+          "kind": "function",
+          "exported_as": [
+            "create_admin_app"
+          ],
+          "line": 7,
+          "wraps": [],
+          "calls": [
+            "pkg:flask#Flask",
+            "src/shop/hooks.py#init_hooks"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "arg_value:src/shop/hooks.py#init_hooks\t#0\tcall pkg:flask#Flask",
+            "drops_result_of:pkg:flask#Flask().register_blueprint",
+            "returns_unread",
+            "typed_return",
+            "unread_call"
+          ],
+          "string_literals": 0,
+          "order": [
+            "pkg:flask#Flask",
+            "src/shop/hooks.py#init_hooks"
+          ],
+          "returns_instance": "pkg:flask#Flask",
+          "returns_type": "pkg:flask#Flask"
+        }
+      ],
+      "entry_points": [],
+      "registries": [
+        {
+          "slot": "calls:src/shop/admin_app.py#~app",
+          "line": 11,
+          "items": [
+            {
+              "target": "src/shop/console.py#bp",
+              "line": 11
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/shop/api.py",
+      "hash": "3b0b0f20692a059c67f3ec70b723b34d91beb1b4608e1e5702c08dfb76dc740c",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:flask",
+          "names": [
+            "Blueprint"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:flask_restx",
+          "names": [
+            "Api",
+            "Namespace",
+            "Resource"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/shop/auth.py",
+          "names": [
+            "admins_only"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "UserResource",
+          "origin": "src/shop/api.py#UserResource",
+          "kind": "local"
+        },
+        {
+          "name": "api",
+          "origin": "src/shop/api.py#api",
+          "kind": "local"
+        },
+        {
+          "name": "api_bp",
+          "origin": "src/shop/api.py#api_bp",
+          "kind": "local"
+        },
+        {
+          "name": "users",
+          "origin": "src/shop/api.py#users",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "(module)",
+          "kind": "module",
+          "exported_as": [],
+          "line": 9,
+          "wraps": [],
+          "calls": [
+            "src/shop/api.py#api.add_namespace"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "arg_value:src/shop/api.py#api.add_namespace\t#0\tcaller\t#1\tliteral"
+          ],
+          "string_literals": 1,
+          "order": [
+            "src/shop/api.py#api.add_namespace"
+          ]
+        },
+        {
+          "name": "UserResource",
+          "kind": "class",
+          "exported_as": [
+            "UserResource"
+          ],
+          "line": 12,
+          "wraps": [
+            {
+              "wrapper": "src/shop/auth.py#load_session",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/__init__.py#create_app.require_tenant",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/hooks.py#check_csrf",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/hooks.py#init_hooks.track",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "pkg:flask_restx#Resource",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "delete=",
+            "get="
+          ],
+          "controls": [],
+          "string_literals": 1,
+          "traits": [
+            "lineage_view",
+            "view"
+          ],
+          "members": [
+            {
+              "name": "delete",
+              "decorators": [
+                "src/shop/auth.py#admins_only"
+              ]
+            },
+            {
+              "name": "get"
+            }
+          ]
+        },
+        {
+          "name": "UserResource.delete",
+          "kind": "function",
+          "exported_as": [
+            "UserResource.delete"
+          ],
+          "line": 17,
+          "wraps": [
+            {
+              "wrapper": "src/shop/auth.py#load_session",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/__init__.py#create_app.require_tenant",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/hooks.py#check_csrf",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/hooks.py#init_hooks.track",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "pkg:flask_restx#Resource",
+              "kind": "extends"
+            },
+            {
+              "wrapper": "src/shop/auth.py#admins_only",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "UserResource.get",
+          "kind": "function",
+          "exported_as": [
+            "UserResource.get"
+          ],
+          "line": 14,
+          "wraps": [
+            {
+              "wrapper": "src/shop/auth.py#load_session",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/__init__.py#create_app.require_tenant",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/hooks.py#check_csrf",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/hooks.py#init_hooks.track",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "pkg:flask_restx#Resource",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input",
+            "typed_return"
+          ],
+          "string_literals": 1
+        },
+        {
+          "name": "api",
+          "kind": "variable",
+          "exported_as": [
+            "api"
+          ],
+          "line": 7,
+          "wraps": [],
+          "calls": [
+            "pkg:flask_restx#Api"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "shape:=pkg:flask_restx#Api(?)"
+          ],
+          "string_literals": 0,
+          "order": [
+            "pkg:flask_restx#Api"
+          ]
+        },
+        {
+          "name": "api_bp",
+          "kind": "variable",
+          "exported_as": [
+            "api_bp"
+          ],
+          "line": 6,
+          "wraps": [],
+          "calls": [
+            "pkg:flask#Blueprint"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:flask#Blueprint@99:url_prefix"
+          ],
+          "controls": [
+            "shape:=pkg:flask#Blueprint(lit,?,url_prefix=lit)"
+          ],
+          "string_literals": 2,
+          "order": [
+            "pkg:flask#Blueprint"
+          ]
+        },
+        {
+          "name": "users",
+          "kind": "variable",
+          "exported_as": [
+            "users"
+          ],
+          "line": 8,
+          "wraps": [],
+          "calls": [
+            "pkg:flask_restx#Namespace"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "shape:=pkg:flask_restx#Namespace(lit)"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:flask_restx#Namespace"
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "UserResource.delete",
+          "kind": "http",
+          "method": "DELETE",
+          "route": "/api/v1/people/<int:user_id>",
+          "adapter": "flask_restx"
+        },
+        {
+          "symbol": "UserResource.get",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/v1/people/<int:user_id>",
+          "adapter": "flask_restx"
+        }
+      ],
+      "registries": [
+        {
+          "slot": "calls:src/shop/api.py#api",
+          "line": 9,
+          "items": [
+            {
+              "target": "src/shop/api.py#users",
+              "line": 9
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "src/shop/auth.py",
+      "hash": "f47047d1d8c1d79fe9c00e2271f688d838c8da174c14ed5c9786ab14ca371860",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:flask",
+          "names": [
+            "Blueprint",
+            "abort",
+            "redirect",
+            "request",
+            "session"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:python:functools",
+          "names": [
+            "wraps"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "admins_only",
+          "origin": "src/shop/auth.py#admins_only",
+          "kind": "local"
+        },
+        {
+          "name": "bp",
+          "origin": "src/shop/auth.py#bp",
+          "kind": "local"
+        },
+        {
+          "name": "load_session",
+          "origin": "src/shop/auth.py#load_session",
+          "kind": "local"
+        },
+        {
+          "name": "load_user",
+          "origin": "src/shop/auth.py#load_user",
+          "kind": "local"
+        },
+        {
+          "name": "login",
+          "origin": "src/shop/auth.py#login",
+          "kind": "local"
+        },
+        {
+          "name": "logout",
+          "origin": "src/shop/auth.py#logout",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "admins_only",
+          "kind": "function",
+          "exported_as": [
+            "admins_only"
+          ],
+          "line": 28,
+          "wraps": [],
+          "calls": [
+            "pkg:flask#abort",
+            "pkg:flask#session.get",
+            "pkg:python:functools#wraps"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "param_flows",
+            "refuses_every",
+            "rejects_caller",
+            "unread_call"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:python:functools#wraps",
+            "pkg:flask#session.get",
+            "pkg:flask#abort"
+          ],
+          "body_checks": [
+            {
+              "source": "pkg:flask#session.get",
+              "reads": "",
+              "compares": "",
+              "outcome": "forbidden"
+            }
+          ],
+          "responses": [
+            {
+              "status": 403,
+              "via": "abort",
+              "builder": "pkg:flask#abort",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        },
+        {
+          "name": "bp",
+          "kind": "variable",
+          "exported_as": [
+            "bp"
+          ],
+          "line": 5,
+          "wraps": [],
+          "calls": [
+            "pkg:flask#Blueprint"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:flask#Blueprint@99:url_prefix"
+          ],
+          "controls": [
+            "shape:=pkg:flask#Blueprint(lit,?,url_prefix=lit)"
+          ],
+          "string_literals": 2,
+          "order": [
+            "pkg:flask#Blueprint"
+          ]
+        },
+        {
+          "name": "load_session",
+          "kind": "function",
+          "exported_as": [
+            "load_session"
+          ],
+          "line": 13,
+          "wraps": [],
+          "calls": [
+            "pkg:flask#session.get"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "drops_result_of:pkg:flask#session.get",
+            "typed_return"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:flask#session.get"
+          ]
+        },
+        {
+          "name": "load_user",
+          "kind": "function",
+          "exported_as": [
+            "load_user"
+          ],
+          "line": 8,
+          "wraps": [],
+          "calls": [
+            "pkg:flask#session.get"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "drops_result_of:pkg:flask#session.get",
+            "typed_return"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:flask#session.get"
+          ]
+        },
+        {
+          "name": "login",
+          "kind": "function",
+          "exported_as": [
+            "login"
+          ],
+          "line": 18,
+          "wraps": [
+            {
+              "wrapper": "src/shop/auth.py#load_session",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/__init__.py#create_app.require_tenant",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/hooks.py#check_csrf",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/hooks.py#init_hooks.track",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/auth.py#load_user",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "pkg:flask#redirect"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input"
+          ],
+          "string_literals": 1,
+          "sinks": [
+            "dynamic_redirect"
+          ],
+          "order": [
+            "pkg:flask#redirect"
+          ],
+          "responses": [
+            {
+              "status": 0,
+              "via": "redirect",
+              "builder": "pkg:flask#redirect",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ],
+          "returns_calls": [
+            "pkg:flask#redirect"
+          ]
+        },
+        {
+          "name": "logout",
+          "kind": "function",
+          "exported_as": [
+            "logout"
+          ],
+          "line": 23,
+          "wraps": [
+            {
+              "wrapper": "src/shop/auth.py#load_session",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/__init__.py#create_app.require_tenant",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/hooks.py#check_csrf",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/hooks.py#init_hooks.track",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/auth.py#load_user",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "pkg:flask#redirect"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:flask#redirect"
+          ],
+          "responses": [
+            {
+              "status": 0,
+              "via": "redirect",
+              "builder": "pkg:flask#redirect",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ],
+          "returns_calls": [
+            "pkg:flask#redirect"
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "login",
+          "kind": "http",
+          "method": "GET",
+          "route": "/auth/login",
+          "adapter": "flask"
+        },
+        {
+          "symbol": "login",
+          "kind": "http",
+          "method": "POST",
+          "route": "/auth/login",
+          "adapter": "flask"
+        },
+        {
+          "symbol": "logout",
+          "kind": "http",
+          "method": "GET",
+          "route": "/auth/logout",
+          "adapter": "flask"
+        }
+      ]
+    },
+    {
+      "path": "src/shop/console.py",
+      "hash": "db23de871b868826c8a7004edfcf0e0886eb512900f731fc791d2552a1117aa9",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:flask",
+          "names": [
+            "Blueprint"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "bp",
+          "origin": "src/shop/console.py#bp",
+          "kind": "local"
+        },
+        {
+          "name": "purge",
+          "origin": "src/shop/console.py#purge",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "bp",
+          "kind": "variable",
+          "exported_as": [
+            "bp"
+          ],
+          "line": 3,
+          "wraps": [],
+          "calls": [
+            "pkg:flask#Blueprint"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:flask#Blueprint@99:url_prefix"
+          ],
+          "controls": [
+            "shape:=pkg:flask#Blueprint(lit,?,url_prefix=lit)"
+          ],
+          "string_literals": 2,
+          "order": [
+            "pkg:flask#Blueprint"
+          ]
+        },
+        {
+          "name": "purge",
+          "kind": "function",
+          "exported_as": [
+            "purge"
+          ],
+          "line": 6,
+          "wraps": [
+            {
+              "wrapper": "src/shop/hooks.py#init_hooks.track",
+              "kind": "app_hook"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 1
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "purge",
+          "kind": "http",
+          "method": "POST",
+          "route": "/console/purge",
+          "adapter": "flask"
+        }
+      ]
+    },
+    {
+      "path": "src/shop/hooks.py",
+      "hash": "e4dc7a9879210a8664d13f60b24ee23f737d617633440b199d39c623e05dbf50",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:flask",
+          "names": [
+            "request"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "check_csrf",
+          "origin": "src/shop/hooks.py#check_csrf",
+          "kind": "local"
+        },
+        {
+          "name": "init_hooks",
+          "origin": "src/shop/hooks.py#init_hooks",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "check_csrf",
+          "kind": "function",
+          "exported_as": [
+            "check_csrf"
+          ],
+          "line": 4,
+          "wraps": [],
+          "calls": [
+            "pkg:flask#request.headers.get"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "drops_result_of:pkg:flask#request.headers.get",
+            "typed_return"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:flask#request.headers.get"
+          ],
+          "headers": [
+            "x-csrf"
+          ]
+        },
+        {
+          "name": "init_hooks",
+          "kind": "function",
+          "exported_as": [
+            "init_hooks"
+          ],
+          "line": 8,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "src/shop/reports.py",
+      "hash": "f9e121dd1a3a6579f4df61c877af067bbac58baf4605b8386d69d0f881cf5511",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:flask",
+          "names": [
+            "Blueprint"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "bp",
+          "origin": "src/shop/reports.py#bp",
+          "kind": "local"
+        },
+        {
+          "name": "daily",
+          "origin": "src/shop/reports.py#daily",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "bp",
+          "kind": "variable",
+          "exported_as": [
+            "bp"
+          ],
+          "line": 3,
+          "wraps": [],
+          "calls": [
+            "pkg:flask#Blueprint"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "shape:=pkg:flask#Blueprint(lit,?)"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:flask#Blueprint"
+          ]
+        },
+        {
+          "name": "daily",
+          "kind": "function",
+          "exported_as": [
+            "daily"
+          ],
+          "line": 6,
+          "wraps": [
+            {
+              "wrapper": "src/shop/auth.py#load_session",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/__init__.py#create_app.require_tenant",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/hooks.py#check_csrf",
+              "kind": "app_hook"
+            },
+            {
+              "wrapper": "src/shop/hooks.py#init_hooks.track",
+              "kind": "app_hook"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 1
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "daily",
+          "kind": "http",
+          "method": "GET",
+          "route": "/reports/daily",
+          "adapter": "flask"
+        }
+      ]
+    }
+  ],
+  "skipped": []
+}

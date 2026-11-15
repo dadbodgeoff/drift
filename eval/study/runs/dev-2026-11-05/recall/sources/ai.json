@@ -1,0 +1,49 @@
+{
+  "repo": "ai",
+  "files": [
+    {
+      "path": ".agents/guidelines/_TEMPLATE.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/guidelines/harness-bridge-assets.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/guidelines/package-readme.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/docs/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/docs/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "content/docs/02-getting-started/09-coding-agents.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/ai/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": ".oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "tools/oxlint-plugin-ai-sdk/",
+      "kind": "lint_custom (custom rule implementations)"
+    }
+  ]
+}

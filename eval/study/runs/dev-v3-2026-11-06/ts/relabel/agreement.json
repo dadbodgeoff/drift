@@ -1,0 +1,119 @@
+{
+  "a": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/labels/A",
+  "b": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/labels/B",
+  "rubric_sha256s": [
+    "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+  ],
+  "n": 125,
+  "scope": 125,
+  "exact": 0.92,
+  "kappa": 0.8428266063120836,
+  "kappa_boot": {
+    "lo": 0.7033018867924529,
+    "hi": 0.9510891353735133,
+    "clusters": 13
+  },
+  "accept_vs_not": {
+    "n": 125,
+    "po": 0.92,
+    "pe": 0.503744,
+    "kappa": 0.8387928810936292
+  },
+  "wrong_vs_not": {
+    "n": 125,
+    "po": 0.928,
+    "pe": 0.502016,
+    "kappa": 0.855417041511374
+  },
+  "confusion": {
+    "ACCEPT": {
+      "ACCEPT": 52,
+      "TRIVIAL": 1,
+      "WRONG": 5
+    },
+    "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 1,
+      "WRONG": 0
+    },
+    "WRONG": {
+      "ACCEPT": 4,
+      "TRIVIAL": 0,
+      "WRONG": 62
+    }
+  },
+  "mix": {
+    "A": {
+      "ACCEPT": 58,
+      "TRIVIAL": 1,
+      "WRONG": 66
+    },
+    "B": {
+      "ACCEPT": 56,
+      "TRIVIAL": 2,
+      "WRONG": 67
+    }
+  },
+  "disagreements": [
+    {
+      "uid": "dub/D-50df58",
+      "repo": "dub",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "dub/D-d24d21",
+      "repo": "dub",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "cal.com/D-0b36fb",
+      "repo": "cal.com",
+      "a": "WRONG",
+      "b": "ACCEPT"
+    },
+    {
+      "uid": "cal.com/D-5722ba",
+      "repo": "cal.com",
+      "a": "ACCEPT",
+      "b": "TRIVIAL"
+    },
+    {
+      "uid": "cal.com/D-fafac1",
+      "repo": "cal.com",
+      "a": "WRONG",
+      "b": "ACCEPT"
+    },
+    {
+      "uid": "nest/D-44a46d",
+      "repo": "nest",
+      "a": "WRONG",
+      "b": "ACCEPT"
+    },
+    {
+      "uid": "nest/D-48b32a",
+      "repo": "nest",
+      "a": "WRONG",
+      "b": "ACCEPT"
+    },
+    {
+      "uid": "novu/D-3f3e16",
+      "repo": "novu",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "novu/D-dbba9a",
+      "repo": "novu",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "immich/D-d3f2f9",
+      "repo": "immich",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    }
+  ]
+}

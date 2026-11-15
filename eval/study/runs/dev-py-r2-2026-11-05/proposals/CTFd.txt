@@ -1,0 +1,17 @@
+2 conventions from 1567 units in 85 roles (2 default tier, 0 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-560792] classes in CTFd/forms/** extend BaseForm
+    evidence: 34/35 (lower bound 0.85, lift 8.5)
+    tier:     default
+    example:  CTFd/forms/auth.py#ConfirmForm
+    outlier:  CTFd/forms/fields.py:4 SubmitField
+
+ 2. [D-f6c1fb] classes in CTFd/schemas/** extend ma.ModelSchema
+    evidence: 28/30 (lower bound 0.79, lift 9.9)
+    tier:     default
+    example:  CTFd/schemas/audiences.py#AudienceMemberSchema
+    outlier:  CTFd/schemas/challenges.py:8 ChallengeRequirementsValidator
+    outlier:  CTFd/schemas/config.py:9 ConfigValueField
+

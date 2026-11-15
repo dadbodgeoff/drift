@@ -1,0 +1,32 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  suffixes: []
+conventions:
+- id: D-5199d3
+  status: proposed
+  mode: advise
+  summary: exceptions in jesse/services/** are named `*Error`
+  role:
+    package: ""
+    dir: jesse/services
+    file: "*"
+    entry: '-'
+    kind: class
+    member_kind: exception
+  rule:
+    type: named
+    pattern: "*Error"
+  evidence:
+    holders: 30
+    total: 31
+    lower_bound: 0.838
+    lift: 12.705
+    python_members: 31
+  example: jesse/services/auth.py#InvalidAuthError
+  selector_version: 3

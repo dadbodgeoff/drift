@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "cgu29-7d63aa3-1794031224",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel3prep/restage-7d63aa3/cache/repos/create-t3-app",
+  "units": 557,
+  "roles": 65,
+  "conventions": 0,
+  "shown": 0,
+  "tiers": {
+    "default": 0,
+    "suggestion": 0
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    }
+  },
+  "proposals": [],
+  "largest_role": {
+    "role": {
+      "package": "cli",
+      "dir": "template/extras",
+      "file": "*",
+      "entry": "-",
+      "kind": "const"
+    },
+    "members": 110,
+    "summary": "cli: exported values in template/extras/**"
+  }
+}

@@ -1,0 +1,333 @@
+{
+  "run": "eval/study/runs/heldout-py-2026-11-07",
+  "prepared_at": "2026-11-07T19:29:28.786Z",
+  "amendments": [
+    {
+      "superseded_core": "6fc408189780be6df93e63075d73103205e85273193b2116551ee3cc56668efb",
+      "core": "2cbf10577e1bd0b86cdf6df5c5b78fe70e42a59f76af390350f05978f74c7d64",
+      "fields": [
+        "tier"
+      ],
+      "decision": "D5",
+      "date": "2026-11-06",
+      "by": "founder (approved), lead (applied)"
+    },
+    {
+      "superseded_core": "6fc408189780be6df93e63075d73103205e85273193b2116551ee3cc56668efb",
+      "core": "409a10236e353fe05574affdb525e26147203c47e87466b33cd1f2fbe8538f38",
+      "fields": [
+        "tier"
+      ],
+      "decision": "D7",
+      "date": "2026-11-06",
+      "by": "founder (approved), lead (applied)"
+    },
+    {
+      "superseded_core": "2cbf10577e1bd0b86cdf6df5c5b78fe70e42a59f76af390350f05978f74c7d64",
+      "core": "409a10236e353fe05574affdb525e26147203c47e87466b33cd1f2fbe8538f38",
+      "fields": [
+        "tier"
+      ],
+      "decision": "D7",
+      "date": "2026-11-06",
+      "by": "founder (approved), lead (applied)"
+    },
+    {
+      "superseded_core": "6fc408189780be6df93e63075d73103205e85273193b2116551ee3cc56668efb",
+      "core": "dcc7fdb945992d50da0968f06d33554175c70940e1ec0489c330723c612efd8d",
+      "fields": [
+        "tier",
+        "reserves"
+      ],
+      "decision": "D9",
+      "date": "2026-11-07",
+      "by": "lead (decided), held-out run operator (applied)"
+    },
+    {
+      "superseded_core": "2cbf10577e1bd0b86cdf6df5c5b78fe70e42a59f76af390350f05978f74c7d64",
+      "core": "dcc7fdb945992d50da0968f06d33554175c70940e1ec0489c330723c612efd8d",
+      "fields": [
+        "tier",
+        "reserves"
+      ],
+      "decision": "D9",
+      "date": "2026-11-07",
+      "by": "lead (decided), held-out run operator (applied)"
+    },
+    {
+      "superseded_core": "409a10236e353fe05574affdb525e26147203c47e87466b33cd1f2fbe8538f38",
+      "core": "dcc7fdb945992d50da0968f06d33554175c70940e1ec0489c330723c612efd8d",
+      "fields": [
+        "reserves"
+      ],
+      "decision": "D9",
+      "date": "2026-11-07",
+      "by": "lead (decided), held-out run operator (applied)"
+    }
+  ],
+  "manifest": {
+    "path": "eval/holdout-primary-py.json",
+    "sha256": "0da9766ca7218a92270f020931ea23e7e9b4ff7995d1b7a0ab93349d1fd9083d",
+    "core_sha256": "dcc7fdb945992d50da0968f06d33554175c70940e1ec0489c330723c612efd8d",
+    "holdout": true,
+    "holdout_because": [
+      "it says \"holdout\": true",
+      "its file is named holdout*.json",
+      "its core hash is a registered held-out manifest",
+      "it pins a held-out repo's commit",
+      "it lists a held-out repo"
+    ],
+    "set_id": "py-primary-2026-11-05",
+    "role": "primary",
+    "language": "python"
+  },
+  "drift": {
+    "binary": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-py-2026-11-07-4354fab9/drift-ab1a8f348039",
+    "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+    "version": "drift 0.1.0-dev",
+    "commit": "ab1a8f348039310fcf908f65b99cb6d90cc1f5e3",
+    "dirty": false,
+    "build": {
+      "binary": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-py-2026-11-07-4354fab9/drift-ab1a8f348039",
+      "from": "git archive of the commit, built in a fresh CARGO_TARGET_DIR",
+      "built_at": "2026-11-07T19:25:19.599Z",
+      "tree": "3de3267420f1cab8acf981b2bb379735bfe24b1d",
+      "cargo": "cargo 1.97.0 (c980f4866 2026-06-30)",
+      "rustc": "rustc 1.97.0 (2d8144b78 2026-07-07)\nbinary: rustc\ncommit-hash: 2d8144b7880597b6e6d3dfd63a9a9efae3f533d3\ncommit-date: 2026-07-07\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.0\nLLVM version: 22.1.6",
+      "env": {
+        "CARGO_HTTP_CAINFO": "/root/.ccr/ca-bundle.crt",
+        "RUSTUP_HOME": "/root/.rustup",
+        "RUST_BACKTRACE": "1"
+      },
+      "user_cargo_config": [],
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "reused_at": "2026-11-07T19:27:56.628Z"
+    }
+  },
+  "params": {
+    "max": 15,
+    "pool": 200,
+    "tier": {
+      "//": "Decision D7 (eval/study/README.md decision log), approved by the founder 2026-11-06 and recorded before any held-out census. D5 (tier-d5.json) narrowed by rule kind and language. TypeScript/JavaScript: the default tier admits only call wrappers (wrapped_by:call) and layering (avoids:import); wrapped_by:decorator, wrapped_by:extends and wrapped_by:jsx move to the suggestion tier. Python: no rule kind is in the default tier; Python advises only and every Python proposal is suggestion tier. D5's conditions still apply on top of the rule kind: every symbol the rule names is defined in the repository (default.target \"in_repo\": no pkg:, global# or unresolved: target; lib.mjs namesPackage, drift_mine::tier::names_package) and the role has >= default.min_members members. The language of a proposal is read conservatively (lib.mjs proposalLanguage, drift_mine::tier::convention_language): py when any member of its role is Python (conventions.yaml evidence.python_members) or its example path is (.py/.pyi files and Python package manifests), ts otherwise. Role members are counted as the role's size (evidence.role_members when set, else total; exempt members count). DEFAULT tier = language in default.languages AND structured rule kind (lib.mjs ruleKind) in default.rule_kinds AND the rule names no symbol from outside the repository AND its role has >= default.min_members members. SUGGESTION tier = every other shown proposal. The not-wrong rate is reported over all shown proposals, both tiers. Release gate unchanged: a language's default tier ships as advise until it measures >= 95% default-tier accept under rubric v3, judged per D1, on a primary held-out run.",
+      "kind": "rule_kind",
+      "decision": "D7",
+      "default": {
+        "//": "TypeScript/JavaScript call wrappers and layering (import avoidance), each only when every symbol it names is defined in the repository, in roles of 15 or more members",
+        "rule_kinds": [
+          "wrapped_by:call",
+          "avoids:import"
+        ],
+        "languages": [
+          "ts"
+        ],
+        "min_members": 15,
+        "target": "in_repo"
+      },
+      "suggestion": {
+        "//": "D5's suggestion kinds, plus decorators, base classes and JSX layout wrappers (D7); every Python proposal (languages); and default-tier kinds whose rule names a package, built-in or unresolved symbol, or whose role is small",
+        "rule_kinds": [
+          "calls",
+          "named",
+          "avoids:other",
+          "prefers_library",
+          "before",
+          "has_test",
+          "model_has",
+          "package_has",
+          "dependency_version",
+          "wrapped_by:try",
+          "control",
+          "directive",
+          "throws",
+          "passes_key",
+          "renders",
+          "wrapped_by:decorator",
+          "wrapped_by:extends",
+          "wrapped_by:jsx"
+        ],
+        "languages": [
+          "py"
+        ]
+      },
+      "not_wrong_over": "all_shown"
+    },
+    "tier_pre_registered": true,
+    "exposed": [],
+    "repos": [
+      "codex-autorunner@7a2f78db84e1ca9b96a1f02f16b07cf3ce57314c",
+      "dbt-charts@90f9ded7ac8f17c67ad5dd35215e895157ddc959",
+      "aws-parallelcluster@28c28bac550a2c4a6fd458f763e06a3a4d23ee23",
+      "taos@0c5225f0a07b31fc2f949cad1b8a16b484d8e4c4",
+      "veritasgraph@6b14ce7a56772bbd354754054bc5bda10800c7ef",
+      "ods@891f722ab7cca7715fa719cff5f8b3ac3b09c1ac",
+      "platypush@cef2e08866054cb25934cac899793841cbdd794c",
+      "trimesh@6c158cce226500fc64b12acd265af0cf01d1c212",
+      "freesound@da3a786e2e5bdcaec1265b0798d4e212d2015720",
+      "cosmos-transfer1@5005e823dbd478ad8e51f6bc28a913a13a994b5f"
+    ],
+    "cache": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache",
+    "checkouts": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-py-2026-11-07-4354fab9/repos"
+  },
+  "repos": [
+    {
+      "name": "codex-autorunner",
+      "url": "https://github.com/Git-on-my-level/codex-autorunner",
+      "sha": "7a2f78db84e1ca9b96a1f02f16b07cf3ce57314c",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:27:56.636Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-py-2026-11-07-4354fab9/repos/codex-autorunner",
+      "status": "ok",
+      "units": 8390,
+      "roles": 232,
+      "proposals": 1,
+      "pool": 1,
+      "census_ms": 4595
+    },
+    {
+      "name": "dbt-charts",
+      "url": "https://github.com/dbt-labs/dbt-charts",
+      "sha": "90f9ded7ac8f17c67ad5dd35215e895157ddc959",
+      "language": "Python",
+      "framework_bucket": "django",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:28:15.407Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-py-2026-11-07-4354fab9/repos/dbt-charts",
+      "status": "ok",
+      "units": 5341,
+      "roles": 144,
+      "proposals": 5,
+      "pool": 5,
+      "census_ms": 2816
+    },
+    {
+      "name": "aws-parallelcluster",
+      "url": "https://github.com/aws/aws-parallelcluster",
+      "sha": "28c28bac550a2c4a6fd458f763e06a3a4d23ee23",
+      "language": "Python",
+      "framework_bucket": "flask",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:28:30.498Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-py-2026-11-07-4354fab9/repos/aws-parallelcluster",
+      "status": "ok",
+      "units": 1632,
+      "roles": 67,
+      "proposals": 7,
+      "pool": 7,
+      "census_ms": 796
+    },
+    {
+      "name": "taos",
+      "url": "https://github.com/jaylfc/taOS",
+      "sha": "0c5225f0a07b31fc2f949cad1b8a16b484d8e4c4",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:28:34.237Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-py-2026-11-07-4354fab9/repos/taos",
+      "status": "ok",
+      "units": 6377,
+      "roles": 169,
+      "proposals": 8,
+      "pool": 8,
+      "census_ms": 3115
+    },
+    {
+      "name": "veritasgraph",
+      "url": "https://github.com/bibinprathap/VeritasGraph",
+      "sha": "6b14ce7a56772bbd354754054bc5bda10800c7ef",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:28:47.287Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-py-2026-11-07-4354fab9/repos/veritasgraph",
+      "status": "ok",
+      "units": 2456,
+      "roles": 110,
+      "proposals": 5,
+      "pool": 5,
+      "census_ms": 863
+    },
+    {
+      "name": "ods",
+      "url": "https://github.com/Osmantic/ODS",
+      "sha": "891f722ab7cca7715fa719cff5f8b3ac3b09c1ac",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:28:57.701Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-py-2026-11-07-4354fab9/repos/ods",
+      "status": "ok",
+      "units": 6150,
+      "roles": 150,
+      "proposals": 7,
+      "pool": 7,
+      "census_ms": 3303
+    },
+    {
+      "name": "platypush",
+      "url": "https://github.com/blacklight/platypush",
+      "sha": "cef2e08866054cb25934cac899793841cbdd794c",
+      "language": "Python",
+      "framework_bucket": "flask",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:29:11.422Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-py-2026-11-07-4354fab9/repos/platypush",
+      "status": "ok",
+      "units": 2922,
+      "roles": 139,
+      "proposals": 7,
+      "pool": 7,
+      "census_ms": 917
+    },
+    {
+      "name": "trimesh",
+      "url": "https://github.com/mikedh/trimesh",
+      "sha": "6c158cce226500fc64b12acd265af0cf01d1c212",
+      "language": "Python",
+      "framework_bucket": "other_python",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:29:16.724Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-py-2026-11-07-4354fab9/repos/trimesh",
+      "status": "ok",
+      "units": 872,
+      "roles": 18,
+      "proposals": 0,
+      "pool": 0,
+      "census_ms": 500
+    },
+    {
+      "name": "freesound",
+      "url": "https://github.com/MTG/freesound",
+      "sha": "da3a786e2e5bdcaec1265b0798d4e212d2015720",
+      "language": "Python",
+      "framework_bucket": "django",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:29:19.832Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-py-2026-11-07-4354fab9/repos/freesound",
+      "status": "ok",
+      "units": 2239,
+      "roles": 68,
+      "proposals": 1,
+      "pool": 1,
+      "census_ms": 401
+    },
+    {
+      "name": "cosmos-transfer1",
+      "url": "https://github.com/nvidia-cosmos/cosmos-transfer1",
+      "sha": "5005e823dbd478ad8e51f6bc28a913a13a994b5f",
+      "language": "Python",
+      "framework_bucket": "other_python",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:29:23.092Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-py-2026-11-07-4354fab9/repos/cosmos-transfer1",
+      "status": "ok",
+      "units": 1392,
+      "roles": 90,
+      "proposals": 3,
+      "pool": 3,
+      "census_ms": 270
+    }
+  ]
+}

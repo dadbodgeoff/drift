@@ -1,0 +1,73 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - "[trpc]"
+  - _app
+  - auth
+  - basic
+  - blog
+  - client
+  - codegen
+  - context
+  - handles
+  - httpSubscriptionLink
+  - next
+  - page
+  - playwright
+  - polymorphism
+  - post
+  - postcss
+  - procedureErrors
+  - route
+  - router
+  - server
+  - smoke
+  - standalone
+  - transformer
+  - trpc
+  - tsdown
+  - types
+  - utils
+  - vite
+  - vitest
+  - websockets
+  suffixes:
+  - $
+  - config
+  - router
+  - snap
+  - spec
+  - test
+  - trpc
+conventions:
+- id: D-5f7728
+  status: proposed
+  mode: advise
+  summary: workspace packages depend on zod@^4.2.1
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: dependency_version
+    name: zod
+    range: ^4.2.1
+  evidence:
+    holders: 35
+    total: 37
+    lower_bound: 0.823
+    lift: 1.0
+    split:
+    - - ^4.2.1
+      - 35
+    - - catalog:www
+      - 1
+    - - npm:zod@^3.0.0
+      - 1
+  example: examples/.experimental/next-app-dir/package.json#examples-next-app-dir

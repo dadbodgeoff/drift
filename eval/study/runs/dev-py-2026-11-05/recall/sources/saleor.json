@@ -1,0 +1,89 @@
+{
+  "repo": "saleor",
+  "files": [
+    {
+      "path": ".claude/skills/filter-benchmark/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/port-changes/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/pytest-runner/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/saleor-commit/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/saleor-django-migration/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/saleor-graphql-api-change/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/saleor-migrations/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/saleor-pr-checklist/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "saleor/graphql/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "saleor/graphql/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": ".semgrep/best-practice/add-index-concurrently.yaml",
+      "kind": "lint"
+    },
+    {
+      "path": ".semgrep/correctness/celery/celery-migration-task-missing-dedicated-queue.yaml",
+      "kind": "lint"
+    },
+    {
+      "path": ".semgrep/correctness/celery/task-logger-without-suffix.yaml",
+      "kind": "lint"
+    },
+    {
+      "path": ".semgrep/correctness/django/django-migration-wrong-app-config.yaml",
+      "kind": "lint"
+    },
+    {
+      "path": ".semgrep/correctness/django/django-no-default-token-generator.yaml",
+      "kind": "lint"
+    },
+    {
+      "path": ".semgrep/security/logging/exception-object-in-logger-extra.yaml",
+      "kind": "lint"
+    },
+    {
+      "path": ".semgrep/security/requests/no-use-requests-lib.yaml",
+      "kind": "lint"
+    }
+  ]
+}

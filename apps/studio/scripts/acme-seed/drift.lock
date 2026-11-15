@@ -1,0 +1,21 @@
+# drift.lock: legacy violations that never block. Fix code to remove lines.
+D-288d8d apps/web/app/api/admin/health/route.ts#GET
+D-50ba36 apps/web/lib/actions/ban-customer.ts#banCustomer
+D-69e735 apps/web/app/(dashboard)/[slug]/onboarding/page.tsx#OnboardingPage
+D-82ce0b services/agents/agents/handoff.py#HandoffEvent
+D-987321 packages/ui/src/stat.tsx#(file)
+D-b0d245 apps/web/app/api/admin/health/route.ts#GET
+D-b0d245 apps/web/app/api/oauth/callback/route.ts#GET
+D-b0d245 apps/web/app/api/public/preview/route.ts#GET
+D-b0d245 apps/web/app/api/public/status/route.ts#GET
+D-b0d245 apps/web/app/api/workspaces/[id]/invites/route.ts#GET
+D-b0d245 apps/web/app/api/workspaces/[id]/regions/route.ts#GET
+D-be239c apps/api/src/releases/releases.controller.ts#ReleasesController
+D-ccf957 apps/api/src/releases/releases.controller.ts#GET /releases/:id
+D-ccf957 apps/api/src/releases/releases.controller.ts#POST /releases
+D-d779d0 apps/api/src/jobs/job47.ts#runJob47
+D-d779d0 apps/api/src/jobs/job48.ts#runJob48
+D-da92a0 packages/emails/src/templates/goodbye.tsx#GoodbyeEmail
+D-df89fd apps/api/src/audits/audits.service.ts#AuditsService
+D-ed1ec0 apps/web/app/api/workspaces/[id]/invites/route.ts#GET
+D-ed1ec0 apps/web/app/api/workspaces/[id]/regions/route.ts#GET

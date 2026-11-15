@@ -1,0 +1,229 @@
+{
+  "repo": "novu",
+  "files": [
+    {
+      "path": ".agents/skills/add-channel-connect-button/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/add-channel-setup-guide/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/add-channel-whats-next-onboarding/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/address-pr-review/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/better-auth-best-practices/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/email-best-practices/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/enterprise-submodule/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/figma-use/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/frontend-design/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/ink-tui/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/linear-release-setup/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/novu-prepare-pr/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/nv-endpoint-routed-tool-provider/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/nv-implement/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/nv-onboard-dcr-mcp/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/nv-park-and-review/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/nv-worktree-cleanup/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/nv-worktree-commands/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/nv-worktree-create/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/react-email/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/run-api-e2e-tests/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/sanity-changelog/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/testerarmy-cli/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/triage-agent-eval-failures/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/verify-in-box/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".cursor/rules/api-property-optionality-hygiene.mdc",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".cursor/rules/api.mdc",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".cursor/rules/clickhouse.mdc",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".cursor/rules/context-engineering.mdc",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".cursor/rules/dal-repository.mdc",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".cursor/rules/dashboard.mdc",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".cursor/rules/dependency-graph.mdc",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".cursor/rules/docs-mintlify-steps.mdc",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".cursor/rules/infrastructure.mdc",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".cursor/rules/novu.mdc",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".cursor/rules/packages.mdc",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".cursor/rules/pnpm-release-age.mdc",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".cursor/rules/pullrequest.mdc",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".cursor/rules/safe-api-tests.mdc",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".cursor/rules/testing.mdc",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".cursor/rules/worker.mdc",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".cursor/rules/ws.mdc",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".deepsec/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/human-dashboard/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/human-dashboard/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/.mintlify/skills/trigger-notification/references/best-practices.md",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/agents.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "libs/internal-sdk/CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/mcp-server/biome.json",
+      "kind": "lint"
+    },
+    {
+      "path": "biome.json",
+      "kind": "lint"
+    },
+    {
+      "path": "docs/platform/sdks/javascript/.eslintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "docs/platform/sdks/react/.eslintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "libs/internal-sdk/eslint.config.mjs",
+      "kind": "lint"
+    }
+  ]
+}

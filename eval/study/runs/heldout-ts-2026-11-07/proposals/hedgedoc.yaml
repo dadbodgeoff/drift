@@ -1,0 +1,58 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - alias
+  - api-token
+  - auth
+  - frontend-config
+  - initial-state
+  - media
+  - methods
+  - page
+  - private-api
+  - public-api
+  - realtime-note
+  - session
+  - slice
+  - types
+  - utils
+  suffixes:
+  - config
+  - controller
+  - decorator
+  - dto
+  - e2e-spec
+  - enum
+  - guard
+  - interface
+  - mock
+  - module
+  - service
+  - spec
+  - test
+conventions:
+- id: D-12d3c2
+  status: proposed
+  mode: advise
+  summary: "frontend: classes in src/extensions/external-lib-app-extensions/** are named `*Extension`"
+  role:
+    package: frontend
+    dir: src/extensions/external-lib-app-extensions
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Extension"
+  evidence:
+    holders: 24
+    total: 26
+    lower_bound: 0.759
+    lift: 3.885
+  example: >-
+    frontend/src/extensions/external-lib-app-extensions/abcjs/abcjs-app-extension.ts#AbcjsAppExtension
+  selector_version: 2

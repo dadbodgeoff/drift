@@ -1,0 +1,77 @@
+{
+  "run": "eval/study/runs/dev3-py-2026-11-08",
+  "items": [
+    {
+      "uid": "P09/D-5bc712",
+      "repo": "P09",
+      "id": "D-5bc712",
+      "rank": 1,
+      "summary": "enums in care/security/permissions/** are named `*Permissions`",
+      "role": {
+        "package": "",
+        "dir": "care/security/permissions",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "variety": "enum"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Permissions"
+      },
+      "evidence": {
+        "holders": 35,
+        "total": 36,
+        "lower_bound": 0.86,
+        "lift": 33.8
+      },
+      "members": 36,
+      "example": "care/security/permissions/account.py#AccountPermissions",
+      "python_members": 36,
+      "outliers": 1,
+      "outlier_files": [
+        "care/security/permissions/constants.py"
+      ],
+      "block": " 1. [D-5bc712] enums in care/security/permissions/** are named `*Permissions`\n    evidence: 35/36 (lower bound 0.86, lift 33.8)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  care/security/permissions/account.py#AccountPermissions\n    outlier:  care/security/permissions/constants.py:5 PermissionContext",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "P03/D-1062a8",
+      "repo": "P03",
+      "id": "D-1062a8",
+      "rank": 1,
+      "summary": "agentex: exceptions in src/** (exceptions files) are named `*Error`",
+      "role": {
+        "package": "agentex",
+        "dir": "src",
+        "file": "exceptions",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "exception"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Error"
+      },
+      "evidence": {
+        "holders": 21,
+        "total": 22,
+        "lower_bound": 0.78,
+        "lift": 11.4
+      },
+      "members": 22,
+      "example": "agentex/src/adapters/authentication/exceptions.py#AuthenticationError",
+      "python_members": 22,
+      "outliers": 1,
+      "outlier_files": [
+        "agentex/src/adapters/crud_store/exceptions.py"
+      ],
+      "block": " 1. [D-1062a8] agentex: exceptions in src/** (exceptions files) are named `*Error`\n    evidence: 21/22 (lower bound 0.78, lift 11.4)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  agentex/src/adapters/authentication/exceptions.py#AuthenticationError\n    outlier:  agentex/src/adapters/crud_store/exceptions.py:12 ItemDoesNotExist",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    }
+  ]
+}

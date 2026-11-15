@@ -1,0 +1,937 @@
+{
+ "about": "map11 coverage on apps-build (eval/apps11-build.json, 12 repos at their pins), final binary. before = test and kind roles off; after = --test-roles --kind-roles. role_places is the F11 definition. Aggregates only.",
+ "pool_after": {
+  "parsed": {
+   "median": 99.6,
+   "mean": 99.2,
+   "at_or_above": 12,
+   "of": 12
+  },
+  "package": {
+   "median": 99.4,
+   "mean": 84.9,
+   "at_or_above": 9,
+   "of": 12
+  },
+  "role": {
+   "median": 98.5,
+   "mean": 94.9,
+   "at_or_above": 10,
+   "of": 12
+  },
+  "role_places": {
+   "median": 76.1,
+   "mean": 74.2,
+   "at_or_above": 3,
+   "of": 12
+  },
+  "role_test": {
+   "median": 21.7,
+   "mean": 21.7,
+   "at_or_above": 0,
+   "of": 12
+  },
+  "role_kind": {
+   "median": 43.6,
+   "mean": 45.7,
+   "at_or_above": 1,
+   "of": 12
+  },
+  "imports": {
+   "median": 99.6,
+   "mean": 84.1,
+   "at_or_above": 9,
+   "of": 12
+  },
+  "prod_role": {
+   "median": 99.2,
+   "mean": 95,
+   "at_or_above": 11,
+   "of": 12
+  },
+  "prod_narrow": {
+   "median": 96,
+   "mean": 91.8,
+   "at_or_above": 9,
+   "of": 12
+  },
+  "prod_kind": {
+   "median": 57.4,
+   "mean": 60,
+   "at_or_above": 2,
+   "of": 12
+  },
+  "prod_mined": {
+   "median": 1.7,
+   "mean": 16.1,
+   "at_or_above": 0,
+   "of": 12
+  },
+  "prod_shown": {
+   "median": 0,
+   "mean": 1.1,
+   "at_or_above": 0,
+   "of": 12
+  },
+  "test_role": {
+   "median": 96.6,
+   "mean": 85.1,
+   "at_or_above": 9,
+   "of": 12
+  },
+  "test_mined": {
+   "median": 0,
+   "mean": 17.2,
+   "at_or_above": 1,
+   "of": 12
+  },
+  "mined": {
+   "median": 2.1,
+   "mean": 16.9,
+   "at_or_above": 0,
+   "of": 12
+  },
+  "shown": {
+   "median": 0,
+   "mean": 1.1,
+   "at_or_above": 0,
+   "of": 12
+  },
+  "folds": {
+   "-": {
+    "parsed": {
+     "median": 99.6,
+     "mean": 99.2,
+     "at_or_above": 12,
+     "of": 12
+    },
+    "package": {
+     "median": 99.4,
+     "mean": 84.9,
+     "at_or_above": 9,
+     "of": 12
+    },
+    "role": {
+     "median": 98.5,
+     "mean": 94.9,
+     "at_or_above": 10,
+     "of": 12
+    },
+    "role_places": {
+     "median": 76.1,
+     "mean": 74.2,
+     "at_or_above": 3,
+     "of": 12
+    },
+    "role_test": {
+     "median": 21.7,
+     "mean": 21.7,
+     "at_or_above": 0,
+     "of": 12
+    },
+    "role_kind": {
+     "median": 43.6,
+     "mean": 45.7,
+     "at_or_above": 1,
+     "of": 12
+    },
+    "imports": {
+     "median": 99.6,
+     "mean": 84.1,
+     "at_or_above": 9,
+     "of": 12
+    },
+    "prod_role": {
+     "median": 99.2,
+     "mean": 95,
+     "at_or_above": 11,
+     "of": 12
+    },
+    "prod_narrow": {
+     "median": 96,
+     "mean": 91.8,
+     "at_or_above": 9,
+     "of": 12
+    },
+    "prod_kind": {
+     "median": 57.4,
+     "mean": 60,
+     "at_or_above": 2,
+     "of": 12
+    },
+    "prod_mined": {
+     "median": 1.7,
+     "mean": 16.1,
+     "at_or_above": 0,
+     "of": 12
+    },
+    "prod_shown": {
+     "median": 0,
+     "mean": 1.1,
+     "at_or_above": 0,
+     "of": 12
+    },
+    "test_role": {
+     "median": 96.6,
+     "mean": 85.1,
+     "at_or_above": 9,
+     "of": 12
+    },
+    "test_mined": {
+     "median": 0,
+     "mean": 17.2,
+     "at_or_above": 1,
+     "of": 12
+    },
+    "mined": {
+     "median": 2.1,
+     "mean": 16.9,
+     "at_or_above": 0,
+     "of": 12
+    },
+    "shown": {
+     "median": 0,
+     "mean": 1.1,
+     "at_or_above": 0,
+     "of": 12
+    }
+   }
+  },
+  "unmapped": {
+   "demo or example code": {
+    "files": 293,
+    "share": 1.6,
+    "reasons": {
+     "demonstration or integration-suite code: no production role": 293
+    }
+   },
+   "python module": {
+    "files": 188,
+    "share": 1.9,
+    "reasons": {
+     "its groups are too small to be roles": 144,
+     "not parsed (skipped)": 44
+    }
+   },
+   "python test": {
+    "files": 57,
+    "share": 0.4,
+    "reasons": {
+     "its groups are too small to be roles": 2,
+     "not parsed (skipped)": 2,
+     "demonstration or integration-suite code: no production role": 53
+    }
+   },
+   "TS module": {
+    "files": 25,
+    "share": 0.3,
+    "reasons": {
+     "its groups are too small to be roles": 16,
+     "not parsed (skipped)": 9
+    }
+   },
+   "type declarations": {
+    "files": 24,
+    "share": 0.3,
+    "reasons": {
+     "not parsed (skipped)": 23,
+     "its groups are too small to be roles": 1
+    }
+   },
+   "python package __init__": {
+    "files": 6,
+    "share": 0,
+    "reasons": {
+     "not parsed (skipped)": 6
+    }
+   },
+   "python test fixture": {
+    "files": 5,
+    "share": 0.1,
+    "reasons": {
+     "its groups are too small to be roles": 5
+    }
+   },
+   "TS end-to-end test": {
+    "files": 4,
+    "share": 0.2,
+    "reasons": {
+     "its groups are too small to be roles": 4
+    }
+   },
+   "TS unit test": {
+    "files": 4,
+    "share": 0.1,
+    "reasons": {
+     "its groups are too small to be roles": 3,
+     "not parsed (skipped)": 1
+    }
+   },
+   "barrel index": {
+    "files": 4,
+    "share": 0,
+    "reasons": {
+     "its groups are too small to be roles": 3,
+     "not parsed (skipped)": 1
+    }
+   },
+   "config": {
+    "files": 4,
+    "share": 0,
+    "reasons": {
+     "not parsed (skipped)": 3,
+     "its groups are too small to be roles": 1
+    }
+   },
+   "React component": {
+    "files": 3,
+    "share": 0,
+    "reasons": {
+     "not parsed (skipped)": 3
+    }
+   },
+   "ORM or schema models": {
+    "files": 3,
+    "share": 0,
+    "reasons": {
+     "not parsed (skipped)": 3
+    }
+   },
+   "lib or util": {
+    "files": 2,
+    "share": 0,
+    "reasons": {
+     "its groups are too small to be roles": 2
+    }
+   },
+   "TS test fixture or mock": {
+    "files": 1,
+    "share": 0,
+    "reasons": {
+     "its groups are too small to be roles": 1
+    }
+   },
+   "service or repository": {
+    "files": 1,
+    "share": 0,
+    "reasons": {
+     "not parsed (skipped)": 1
+    }
+   }
+  },
+  "by_keying": {
+   "path": {
+    "mined_cards": 10,
+    "shown_cards": 2,
+    "files_mined": 289,
+    "files_shown": 49
+   },
+   "kind": {
+    "mined_cards": 37,
+    "shown_cards": 3,
+    "files_mined": 1646,
+    "files_shown": 79
+   },
+   "package": {
+    "mined_cards": 4,
+    "shown_cards": 0,
+    "files_mined": 304,
+    "files_shown": 0
+   }
+  }
+ },
+ "pool_before": {
+  "parsed": {
+   "median": 99.6,
+   "mean": 99.2,
+   "at_or_above": 12,
+   "of": 12
+  },
+  "package": {
+   "median": 99.4,
+   "mean": 84.9,
+   "at_or_above": 9,
+   "of": 12
+  },
+  "role": {
+   "median": 97.9,
+   "mean": 93.7,
+   "at_or_above": 10,
+   "of": 12
+  },
+  "role_places": {
+   "median": 76.1,
+   "mean": 74.2,
+   "at_or_above": 3,
+   "of": 12
+  },
+  "role_test": {
+   "median": 21.7,
+   "mean": 21.7,
+   "at_or_above": 0,
+   "of": 12
+  },
+  "role_kind": {
+   "median": 43.6,
+   "mean": 45.7,
+   "at_or_above": 1,
+   "of": 12
+  },
+  "imports": {
+   "median": 99.6,
+   "mean": 84.1,
+   "at_or_above": 9,
+   "of": 12
+  },
+  "prod_role": {
+   "median": 99.1,
+   "mean": 92.8,
+   "at_or_above": 11,
+   "of": 12
+  },
+  "prod_narrow": {
+   "median": 93.7,
+   "mean": 86.5,
+   "at_or_above": 8,
+   "of": 12
+  },
+  "prod_kind": {
+   "median": 19.4,
+   "mean": 16.9,
+   "at_or_above": 0,
+   "of": 12
+  },
+  "prod_mined": {
+   "median": 1.7,
+   "mean": 9.8,
+   "at_or_above": 0,
+   "of": 12
+  },
+  "prod_shown": {
+   "median": 0,
+   "mean": 1.1,
+   "at_or_above": 0,
+   "of": 12
+  },
+  "test_role": {
+   "median": 96.6,
+   "mean": 85.1,
+   "at_or_above": 9,
+   "of": 12
+  },
+  "test_mined": {
+   "median": 0,
+   "mean": 0,
+   "at_or_above": 0,
+   "of": 12
+  },
+  "mined": {
+   "median": 0.9,
+   "mean": 8.4,
+   "at_or_above": 0,
+   "of": 12
+  },
+  "shown": {
+   "median": 0,
+   "mean": 0.8,
+   "at_or_above": 0,
+   "of": 12
+  },
+  "folds": {
+   "-": {
+    "parsed": {
+     "median": 99.6,
+     "mean": 99.2,
+     "at_or_above": 12,
+     "of": 12
+    },
+    "package": {
+     "median": 99.4,
+     "mean": 84.9,
+     "at_or_above": 9,
+     "of": 12
+    },
+    "role": {
+     "median": 97.9,
+     "mean": 93.7,
+     "at_or_above": 10,
+     "of": 12
+    },
+    "role_places": {
+     "median": 76.1,
+     "mean": 74.2,
+     "at_or_above": 3,
+     "of": 12
+    },
+    "role_test": {
+     "median": 21.7,
+     "mean": 21.7,
+     "at_or_above": 0,
+     "of": 12
+    },
+    "role_kind": {
+     "median": 43.6,
+     "mean": 45.7,
+     "at_or_above": 1,
+     "of": 12
+    },
+    "imports": {
+     "median": 99.6,
+     "mean": 84.1,
+     "at_or_above": 9,
+     "of": 12
+    },
+    "prod_role": {
+     "median": 99.1,
+     "mean": 92.8,
+     "at_or_above": 11,
+     "of": 12
+    },
+    "prod_narrow": {
+     "median": 93.7,
+     "mean": 86.5,
+     "at_or_above": 8,
+     "of": 12
+    },
+    "prod_kind": {
+     "median": 19.4,
+     "mean": 16.9,
+     "at_or_above": 0,
+     "of": 12
+    },
+    "prod_mined": {
+     "median": 1.7,
+     "mean": 9.8,
+     "at_or_above": 0,
+     "of": 12
+    },
+    "prod_shown": {
+     "median": 0,
+     "mean": 1.1,
+     "at_or_above": 0,
+     "of": 12
+    },
+    "test_role": {
+     "median": 96.6,
+     "mean": 85.1,
+     "at_or_above": 9,
+     "of": 12
+    },
+    "test_mined": {
+     "median": 0,
+     "mean": 0,
+     "at_or_above": 0,
+     "of": 12
+    },
+    "mined": {
+     "median": 0.9,
+     "mean": 8.4,
+     "at_or_above": 0,
+     "of": 12
+    },
+    "shown": {
+     "median": 0,
+     "mean": 0.8,
+     "at_or_above": 0,
+     "of": 12
+    }
+   }
+  },
+  "unmapped": {
+   "demo or example code": {
+    "files": 293,
+    "share": 1.6,
+    "reasons": {
+     "demonstration or integration-suite code: no production role": 293
+    }
+   },
+   "python module": {
+    "files": 188,
+    "share": 1.9,
+    "reasons": {
+     "its groups are too small to be roles": 144,
+     "not parsed (skipped)": 44
+    }
+   },
+   "python test": {
+    "files": 57,
+    "share": 0.4,
+    "reasons": {
+     "its groups are too small to be roles": 2,
+     "not parsed (skipped)": 2,
+     "demonstration or integration-suite code: no production role": 53
+    }
+   },
+   "TS module": {
+    "files": 25,
+    "share": 0.3,
+    "reasons": {
+     "its groups are too small to be roles": 16,
+     "not parsed (skipped)": 9
+    }
+   },
+   "type declarations": {
+    "files": 24,
+    "share": 0.3,
+    "reasons": {
+     "not parsed (skipped)": 23,
+     "its groups are too small to be roles": 1
+    }
+   },
+   "python package __init__": {
+    "files": 6,
+    "share": 0,
+    "reasons": {
+     "not parsed (skipped)": 6
+    }
+   },
+   "python test fixture": {
+    "files": 5,
+    "share": 0.1,
+    "reasons": {
+     "its groups are too small to be roles": 5
+    }
+   },
+   "TS end-to-end test": {
+    "files": 4,
+    "share": 0.2,
+    "reasons": {
+     "its groups are too small to be roles": 4
+    }
+   },
+   "TS unit test": {
+    "files": 4,
+    "share": 0.1,
+    "reasons": {
+     "its groups are too small to be roles": 3,
+     "not parsed (skipped)": 1
+    }
+   },
+   "barrel index": {
+    "files": 4,
+    "share": 0,
+    "reasons": {
+     "its groups are too small to be roles": 3,
+     "not parsed (skipped)": 1
+    }
+   },
+   "config": {
+    "files": 4,
+    "share": 0,
+    "reasons": {
+     "not parsed (skipped)": 3,
+     "its groups are too small to be roles": 1
+    }
+   },
+   "React component": {
+    "files": 3,
+    "share": 0,
+    "reasons": {
+     "not parsed (skipped)": 3
+    }
+   },
+   "ORM or schema models": {
+    "files": 3,
+    "share": 0,
+    "reasons": {
+     "not parsed (skipped)": 3
+    }
+   },
+   "lib or util": {
+    "files": 2,
+    "share": 0,
+    "reasons": {
+     "its groups are too small to be roles": 2
+    }
+   },
+   "TS test fixture or mock": {
+    "files": 1,
+    "share": 0,
+    "reasons": {
+     "its groups are too small to be roles": 1
+    }
+   },
+   "service or repository": {
+    "files": 1,
+    "share": 0,
+    "reasons": {
+     "not parsed (skipped)": 1
+    }
+   }
+  },
+  "by_keying": {
+   "path": {
+    "mined_cards": 10,
+    "shown_cards": 2,
+    "files_mined": 289,
+    "files_shown": 49
+   },
+   "kind": {
+    "mined_cards": 8,
+    "shown_cards": 2,
+    "files_mined": 113,
+    "files_shown": 54
+   },
+   "package": {
+    "mined_cards": 4,
+    "shown_cards": 0,
+    "files_mined": 304,
+    "files_shown": 0
+   }
+  }
+ },
+ "repos_after": {
+  "chunky": {
+   "files": 156,
+   "production": 123,
+   "tests": 33,
+   "parsed": 99.4,
+   "package": 99.4,
+   "role": 97.4,
+   "role_places": 78.2,
+   "role_test": 19.2,
+   "role_kind": 52.6,
+   "imports": 100,
+   "prod_role": 99.2,
+   "prod_narrow": 95.9,
+   "prod_kind": 66.7,
+   "prod_mined": 0,
+   "prod_shown": 0,
+   "test_role": 90.9,
+   "test_mined": 0,
+   "mined": 0,
+   "shown": 0
+  },
+  "deepv-ki": {
+   "files": 195,
+   "production": 185,
+   "tests": 10,
+   "parsed": 100,
+   "package": 100,
+   "role": 99,
+   "role_places": 94.4,
+   "role_test": 4.1,
+   "role_kind": 60,
+   "imports": 100,
+   "prod_role": 100,
+   "prod_narrow": 94.1,
+   "prod_kind": 63.2,
+   "prod_mined": 15.7,
+   "prod_shown": 0,
+   "test_role": 80,
+   "test_mined": 0,
+   "mined": 14.9,
+   "shown": 0
+  },
+  "designsystemet": {
+   "files": 798,
+   "production": 605,
+   "tests": 193,
+   "parsed": 97.6,
+   "package": 97.6,
+   "role": 97.6,
+   "role_places": 73.3,
+   "role_test": 24.1,
+   "role_kind": 48.7,
+   "imports": 98,
+   "prod_role": 97,
+   "prod_narrow": 89.8,
+   "prod_kind": 71.6,
+   "prod_mined": 22.8,
+   "prod_shown": 9.8,
+   "test_role": 99.5,
+   "test_mined": 13,
+   "mined": 20.4,
+   "shown": 10.5
+  },
+  "doska": {
+   "files": 863,
+   "production": 711,
+   "tests": 151,
+   "parsed": 99.4,
+   "package": 99.4,
+   "role": 98.6,
+   "role_places": 78.7,
+   "role_test": 17.5,
+   "role_kind": 54.9,
+   "imports": 100,
+   "prod_role": 98.5,
+   "prod_narrow": 96.2,
+   "prod_kind": 66.9,
+   "prod_mined": 42.8,
+   "prod_shown": 0,
+   "test_role": 100,
+   "test_mined": 100,
+   "mined": 52.7,
+   "shown": 0
+  },
+  "hyper-alpha-arena": {
+   "files": 408,
+   "production": 407,
+   "tests": 1,
+   "parsed": 99.8,
+   "package": 99.8,
+   "role": 99.5,
+   "role_places": 99.5,
+   "role_test": 0,
+   "role_kind": 90.2,
+   "imports": 99.9,
+   "prod_role": 99.8,
+   "prod_narrow": 96.1,
+   "prod_kind": 90.9,
+   "prod_mined": 26,
+   "prod_shown": 0,
+   "test_role": 0,
+   "test_mined": 0,
+   "mined": 26,
+   "shown": 0
+  },
+  "laya": {
+   "files": 412,
+   "production": 282,
+   "tests": 130,
+   "parsed": 99.8,
+   "package": 21.8,
+   "role": 99.5,
+   "role_places": 68.2,
+   "role_test": 31.3,
+   "role_kind": 32,
+   "imports": 100,
+   "prod_role": 99.6,
+   "prod_narrow": 98.2,
+   "prod_kind": 46.8,
+   "prod_mined": 0,
+   "prod_shown": 0,
+   "test_role": 99.2,
+   "test_mined": 0,
+   "mined": 0,
+   "shown": 0
+  },
+  "metascreener": {
+   "files": 576,
+   "production": 353,
+   "tests": 223,
+   "parsed": 100,
+   "package": 100,
+   "role": 99.3,
+   "role_places": 60.8,
+   "role_test": 38.5,
+   "role_kind": 31.6,
+   "imports": 99.1,
+   "prod_role": 99.2,
+   "prod_narrow": 99.2,
+   "prod_kind": 51.6,
+   "prod_mined": 2.3,
+   "prod_shown": 0,
+   "test_role": 99.6,
+   "test_mined": 0,
+   "mined": 1.4,
+   "shown": 0
+  },
+  "monitorss": {
+   "files": 1644,
+   "production": 1229,
+   "tests": 415,
+   "parsed": 99.8,
+   "package": 99.8,
+   "role": 99.3,
+   "role_places": 73.9,
+   "role_test": 25.1,
+   "role_kind": 74.1,
+   "imports": 100,
+   "prod_role": 99.3,
+   "prod_narrow": 99.3,
+   "prod_kind": 99.2,
+   "prod_mined": 82.7,
+   "prod_shown": 3.6,
+   "test_role": 99.5,
+   "test_mined": 88,
+   "mined": 84,
+   "shown": 2.7
+  },
+  "openmanus-rl": {
+   "files": 190,
+   "production": 183,
+   "tests": 6,
+   "parsed": 100,
+   "package": 100,
+   "role": 98.4,
+   "role_places": 96.3,
+   "role_test": 2.1,
+   "role_kind": 38.4,
+   "imports": 47.1,
+   "prod_role": 100,
+   "prod_narrow": 99.5,
+   "prod_kind": 47,
+   "prod_mined": 0,
+   "prod_shown": 0,
+   "test_role": 66.7,
+   "test_mined": 0,
+   "mined": 0,
+   "shown": 0
+  },
+  "opentelemetry-python-contrib": {
+   "files": 734,
+   "production": 364,
+   "tests": 356,
+   "parsed": 98.5,
+   "package": 98.5,
+   "role": 77.1,
+   "role_places": 18.3,
+   "role_test": 48.2,
+   "role_kind": 17.4,
+   "imports": 49.6,
+   "prod_role": 58.2,
+   "prod_narrow": 52.2,
+   "prod_kind": 35.2,
+   "prod_mined": 0,
+   "prod_shown": 0,
+   "test_role": 99.4,
+   "test_mined": 5.6,
+   "mined": 2.7,
+   "shown": 0
+  },
+  "promptflow": {
+   "files": 1638,
+   "production": 659,
+   "tests": 702,
+   "parsed": 96.9,
+   "package": 73.2,
+   "role": 76.7,
+   "role_places": 62.8,
+   "role_test": 39.6,
+   "role_kind": 15.8,
+   "imports": 16.7,
+   "prod_role": 92.1,
+   "prod_narrow": 86.6,
+   "prod_kind": 41,
+   "prod_mined": 1.1,
+   "prod_shown": 0,
+   "test_role": 92.5,
+   "test_mined": 0,
+   "mined": 0.4,
+   "shown": 0
+  },
+  "xiaokeai": {
+   "files": 420,
+   "production": 371,
+   "tests": 49,
+   "parsed": 98.8,
+   "package": 29,
+   "role": 96.4,
+   "role_places": 85.5,
+   "role_test": 11,
+   "role_kind": 32.9,
+   "imports": 99.2,
+   "prod_role": 96.8,
+   "prod_narrow": 94.1,
+   "prod_kind": 40.2,
+   "prod_mined": 0,
+   "prod_shown": 0,
+   "test_role": 93.9,
+   "test_mined": 0,
+   "mined": 0,
+   "shown": 0
+  }
+ }
+}

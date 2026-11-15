@@ -1,0 +1,402 @@
+[
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "full-stack-fastapi-template",
+    "prompt": "/home/user/drift-wt/py-study/eval/study/runs/dev-py-2026-11-05/prompts/label/A/full-stack-fastapi-template.md",
+    "output": "/tmp/claude-0/-home-user-dub/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/eval-py/outbox/a4da1564-4959-4dca-9a6e-d631f86a340a/out.jsonl",
+    "expected": [
+      "full-stack-fastapi-template/D-6e757d"
+    ],
+    "rendered_at": "2026-11-05T18:59:29.231Z",
+    "collected": {
+      "at": "2026-11-05T19:14:34.439Z",
+      "dest": "eval/study/runs/dev-py-2026-11-05/labels/A/full-stack-fastapi-template.jsonl",
+      "records": 1,
+      "sha256": "df3664c8989d3816b9d9b60a00cb47f91534329738950da666a0c1aaf18ac8cc"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "polar",
+    "prompt": "/home/user/drift-wt/py-study/eval/study/runs/dev-py-2026-11-05/prompts/label/A/polar.md",
+    "output": "/tmp/claude-0/-home-user-dub/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/eval-py/outbox/9bf1abc1-2551-4029-a42a-7e040e133d2d/out.jsonl",
+    "expected": [
+      "polar/D-31bf00",
+      "polar/D-39ba94",
+      "polar/D-999ecc",
+      "polar/D-093712",
+      "polar/D-9c6828",
+      "polar/D-dfae92",
+      "polar/D-f80e7c",
+      "polar/D-9c16e6",
+      "polar/D-fba5aa",
+      "polar/D-fb4011",
+      "polar/D-27ad3b",
+      "polar/D-26e577",
+      "polar/D-b63162",
+      "polar/D-b33f83",
+      "polar/D-5e2fc5"
+    ],
+    "rendered_at": "2026-11-05T18:59:29.232Z",
+    "collected": {
+      "at": "2026-11-05T19:17:38.634Z",
+      "dest": "eval/study/runs/dev-py-2026-11-05/labels/A/polar.jsonl",
+      "records": 15,
+      "sha256": "d532593bad5aa1d2ec4c8a3388df78fd04df723b7ff22105cc4fb19c71a3e4aa"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "netbox",
+    "prompt": "/home/user/drift-wt/py-study/eval/study/runs/dev-py-2026-11-05/prompts/label/A/netbox.md",
+    "output": "/tmp/claude-0/-home-user-dub/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/eval-py/outbox/cf353aa3-80ad-4dbc-b4b9-f64b45bd0aae/out.jsonl",
+    "expected": [
+      "netbox/D-281ae8",
+      "netbox/D-76eb6b",
+      "netbox/D-436c3c",
+      "netbox/D-bc0c7d",
+      "netbox/D-4c4e2d",
+      "netbox/D-e2c3e4",
+      "netbox/D-4fabef",
+      "netbox/D-58913a",
+      "netbox/D-0eddf0",
+      "netbox/D-4cf3e5",
+      "netbox/D-7d7f0c",
+      "netbox/D-7f5847",
+      "netbox/D-593fc9",
+      "netbox/D-dd6307",
+      "netbox/D-41d415"
+    ],
+    "rendered_at": "2026-11-05T18:59:29.232Z",
+    "collected": {
+      "at": "2026-11-05T19:17:38.636Z",
+      "dest": "eval/study/runs/dev-py-2026-11-05/labels/A/netbox.jsonl",
+      "records": 15,
+      "sha256": "e0369dc0c2693b53f63542cd91a0382d6c3cff698e9e7d3b9955566cd3b07d2c"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "saleor",
+    "prompt": "/home/user/drift-wt/py-study/eval/study/runs/dev-py-2026-11-05/prompts/label/A/saleor.md",
+    "output": "/tmp/claude-0/-home-user-dub/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/eval-py/outbox/809e946c-5c68-4b3f-9338-f0466ec8df64/out.jsonl",
+    "expected": [
+      "saleor/D-f5882d",
+      "saleor/D-e36ea5",
+      "saleor/D-049c39",
+      "saleor/D-9cc87c",
+      "saleor/D-6488c7",
+      "saleor/D-71795b",
+      "saleor/D-d756c3",
+      "saleor/D-1cef87",
+      "saleor/D-5a6c4f",
+      "saleor/D-6b1d3c",
+      "saleor/D-a6847e",
+      "saleor/D-6acdcd",
+      "saleor/D-fb56f8",
+      "saleor/D-e86c5d"
+    ],
+    "rendered_at": "2026-11-05T18:59:29.233Z",
+    "collected": {
+      "at": "2026-11-05T19:17:38.638Z",
+      "dest": "eval/study/runs/dev-py-2026-11-05/labels/A/saleor.jsonl",
+      "records": 14,
+      "sha256": "20c341bdadab4ecf6977ae82873c31297f1e77b9693f816ddde9084f46643d67"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "CTFd",
+    "prompt": "/home/user/drift-wt/py-study/eval/study/runs/dev-py-2026-11-05/prompts/label/A/CTFd.md",
+    "output": "/tmp/claude-0/-home-user-dub/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/eval-py/outbox/f9400641-9eeb-4458-97fd-0e1ce2831138/out.jsonl",
+    "expected": [
+      "CTFd/D-c4f6cb",
+      "CTFd/D-49130f",
+      "CTFd/D-bd2596",
+      "CTFd/D-ce2984",
+      "CTFd/D-bf0172"
+    ],
+    "rendered_at": "2026-11-05T18:59:29.233Z",
+    "collected": {
+      "at": "2026-11-05T19:17:38.640Z",
+      "dest": "eval/study/runs/dev-py-2026-11-05/labels/A/CTFd.jsonl",
+      "records": 5,
+      "sha256": "c49720e1da02c087919e2df5f2ba1c8b4c3693c360892c04b2942d9fc6dfcdf1"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "flask",
+    "prompt": "/home/user/drift-wt/py-study/eval/study/runs/dev-py-2026-11-05/prompts/label/A/flask.md",
+    "output": "/tmp/claude-0/-home-user-dub/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/eval-py/outbox/abd0f861-26cf-414f-8f50-84cc99843263/out.jsonl",
+    "expected": [
+      "flask/D-03e2be"
+    ],
+    "rendered_at": "2026-11-05T18:59:29.233Z",
+    "collected": {
+      "at": "2026-11-05T19:14:34.445Z",
+      "dest": "eval/study/runs/dev-py-2026-11-05/labels/A/flask.jsonl",
+      "records": 1,
+      "sha256": "9a9e2b0e9629b548696d030e59fb60910589d12cf818deecd5d2cb2fd74f3a8d"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "fastapi",
+    "prompt": "/home/user/drift-wt/py-study/eval/study/runs/dev-py-2026-11-05/prompts/label/A/fastapi.md",
+    "output": "/tmp/claude-0/-home-user-dub/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/eval-py/outbox/dde106d6-51d3-40c3-a2bb-928c2fc1fadb/out.jsonl",
+    "expected": [
+      "fastapi/D-499c0e"
+    ],
+    "rendered_at": "2026-11-05T18:59:29.234Z",
+    "collected": {
+      "at": "2026-11-05T19:14:34.445Z",
+      "dest": "eval/study/runs/dev-py-2026-11-05/labels/A/fastapi.jsonl",
+      "records": 1,
+      "sha256": "ef76b7789222c451cd37fe1cca16a54e7ce4ec175d6d9a7db9996c650e213d99"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "langchain",
+    "prompt": "/home/user/drift-wt/py-study/eval/study/runs/dev-py-2026-11-05/prompts/label/A/langchain.md",
+    "output": "/tmp/claude-0/-home-user-dub/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/eval-py/outbox/13d7729f-6edf-4e51-9f9f-9c53ee1b62cd/out.jsonl",
+    "expected": [
+      "langchain/D-077efe"
+    ],
+    "rendered_at": "2026-11-05T18:59:29.235Z",
+    "collected": {
+      "at": "2026-11-05T19:14:34.446Z",
+      "dest": "eval/study/runs/dev-py-2026-11-05/labels/A/langchain.jsonl",
+      "records": 1,
+      "sha256": "8a92beb17129c6ea90f9f76fc9abea1164419ff425b9d3b17b9ecf8f31b53dab"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "full-stack-fastapi-template",
+    "prompt": "/home/user/drift-wt/py-study/eval/study/runs/dev-py-2026-11-05/prompts/label/B/full-stack-fastapi-template.md",
+    "output": "/tmp/claude-0/-home-user-dub/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/eval-py/outbox/45489c3a-6781-4776-bf50-0f9f4f9ed690/out.jsonl",
+    "expected": [
+      "full-stack-fastapi-template/D-6e757d"
+    ],
+    "rendered_at": "2026-11-05T19:14:34.477Z",
+    "collected": {
+      "at": "2026-11-05T19:17:38.641Z",
+      "dest": "eval/study/runs/dev-py-2026-11-05/labels/B/full-stack-fastapi-template.jsonl",
+      "records": 1,
+      "sha256": "9ebd0cad6d2e5e0899d2a77d5e2416946fcc3b108c95c2f4ebbe5c768a871917"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "flask",
+    "prompt": "/home/user/drift-wt/py-study/eval/study/runs/dev-py-2026-11-05/prompts/label/B/flask.md",
+    "output": "/tmp/claude-0/-home-user-dub/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/eval-py/outbox/9c8f5c16-03a8-40e8-a42e-35db37b0307a/out.jsonl",
+    "expected": [
+      "flask/D-03e2be"
+    ],
+    "rendered_at": "2026-11-05T19:14:34.480Z",
+    "collected": {
+      "at": "2026-11-05T19:17:38.642Z",
+      "dest": "eval/study/runs/dev-py-2026-11-05/labels/B/flask.jsonl",
+      "records": 1,
+      "sha256": "f851f65dd2e8e38938226f5444a77fb2d44bfe761c6a41959d733dd76f05a188"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "fastapi",
+    "prompt": "/home/user/drift-wt/py-study/eval/study/runs/dev-py-2026-11-05/prompts/label/B/fastapi.md",
+    "output": "/tmp/claude-0/-home-user-dub/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/eval-py/outbox/0bd6e30e-0ec8-4f80-b912-703cd8d88c12/out.jsonl",
+    "expected": [
+      "fastapi/D-499c0e"
+    ],
+    "rendered_at": "2026-11-05T19:14:34.480Z",
+    "collected": {
+      "at": "2026-11-05T19:17:38.645Z",
+      "dest": "eval/study/runs/dev-py-2026-11-05/labels/B/fastapi.jsonl",
+      "records": 1,
+      "sha256": "b339a4823b5d17540551b9d1a8c545ba7c9edb5ad89b574ca8da1ce19c34c5fc"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "langchain",
+    "prompt": "/home/user/drift-wt/py-study/eval/study/runs/dev-py-2026-11-05/prompts/label/B/langchain.md",
+    "output": "/tmp/claude-0/-home-user-dub/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/eval-py/outbox/27dd6c63-8846-4c40-b603-5ea4f102a777/out.jsonl",
+    "expected": [
+      "langchain/D-077efe"
+    ],
+    "rendered_at": "2026-11-05T19:14:34.480Z",
+    "collected": {
+      "at": "2026-11-05T19:17:38.645Z",
+      "dest": "eval/study/runs/dev-py-2026-11-05/labels/B/langchain.jsonl",
+      "records": 1,
+      "sha256": "dcd1338ec93ed3a9cb2c28ed6ddc98697282e8f0a8eb7f30301799cca1a3ac11"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "polar",
+    "prompt": "/home/user/drift-wt/py-study/eval/study/runs/dev-py-2026-11-05/prompts/label/B/polar.md",
+    "output": "/tmp/claude-0/-home-user-dub/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/eval-py/outbox/e1938158-229b-4250-b7a4-b3e56f48dcda/out.jsonl",
+    "expected": [
+      "polar/D-31bf00",
+      "polar/D-39ba94",
+      "polar/D-999ecc",
+      "polar/D-093712",
+      "polar/D-9c6828",
+      "polar/D-dfae92",
+      "polar/D-f80e7c",
+      "polar/D-9c16e6",
+      "polar/D-fba5aa",
+      "polar/D-fb4011",
+      "polar/D-27ad3b",
+      "polar/D-26e577",
+      "polar/D-b63162",
+      "polar/D-b33f83",
+      "polar/D-5e2fc5"
+    ],
+    "rendered_at": "2026-11-05T19:17:45.996Z",
+    "collected": {
+      "at": "2026-11-05T19:28:13.056Z",
+      "dest": "eval/study/runs/dev-py-2026-11-05/labels/B/polar.jsonl",
+      "records": 15,
+      "sha256": "803868b8554fa986ca830b3df28fbd92d4614fc000ec166dc7590270067dbb00"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "netbox",
+    "prompt": "/home/user/drift-wt/py-study/eval/study/runs/dev-py-2026-11-05/prompts/label/B/netbox.md",
+    "output": "/tmp/claude-0/-home-user-dub/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/eval-py/outbox/c54588b5-48d6-41b2-a023-cefec3d3cbf3/out.jsonl",
+    "expected": [
+      "netbox/D-281ae8",
+      "netbox/D-76eb6b",
+      "netbox/D-436c3c",
+      "netbox/D-bc0c7d",
+      "netbox/D-4c4e2d",
+      "netbox/D-e2c3e4",
+      "netbox/D-4fabef",
+      "netbox/D-58913a",
+      "netbox/D-0eddf0",
+      "netbox/D-4cf3e5",
+      "netbox/D-7d7f0c",
+      "netbox/D-7f5847",
+      "netbox/D-593fc9",
+      "netbox/D-dd6307",
+      "netbox/D-41d415"
+    ],
+    "rendered_at": "2026-11-05T19:17:46.080Z",
+    "collected": {
+      "at": "2026-11-05T19:29:06.494Z",
+      "dest": "eval/study/runs/dev-py-2026-11-05/labels/B/netbox.jsonl",
+      "records": 15,
+      "sha256": "f9af6495838c52aa42221058e86e0227d374982429d6e29f8da323d350fbb19c"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "saleor",
+    "prompt": "/home/user/drift-wt/py-study/eval/study/runs/dev-py-2026-11-05/prompts/label/B/saleor.md",
+    "output": "/tmp/claude-0/-home-user-dub/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/eval-py/outbox/292009e6-9309-4b65-bdf3-d81b1b8e8078/out.jsonl",
+    "expected": [
+      "saleor/D-f5882d",
+      "saleor/D-e36ea5",
+      "saleor/D-049c39",
+      "saleor/D-9cc87c",
+      "saleor/D-6488c7",
+      "saleor/D-71795b",
+      "saleor/D-d756c3",
+      "saleor/D-1cef87",
+      "saleor/D-5a6c4f",
+      "saleor/D-6b1d3c",
+      "saleor/D-a6847e",
+      "saleor/D-6acdcd",
+      "saleor/D-fb56f8",
+      "saleor/D-e86c5d"
+    ],
+    "rendered_at": "2026-11-05T19:17:46.131Z",
+    "collected": {
+      "at": "2026-11-05T19:29:06.497Z",
+      "dest": "eval/study/runs/dev-py-2026-11-05/labels/B/saleor.jsonl",
+      "records": 14,
+      "sha256": "bc14115cabc5cbaffb472ac75b85fdfef5814f2b7e7fef92c08fe612bb9bac9f"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "CTFd",
+    "prompt": "/home/user/drift-wt/py-study/eval/study/runs/dev-py-2026-11-05/prompts/label/B/CTFd.md",
+    "output": "/tmp/claude-0/-home-user-dub/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/eval-py/outbox/12c3c333-4311-4de3-8e44-5ae9bbe7c4c7/out.jsonl",
+    "expected": [
+      "CTFd/D-c4f6cb",
+      "CTFd/D-49130f",
+      "CTFd/D-bd2596",
+      "CTFd/D-ce2984",
+      "CTFd/D-bf0172"
+    ],
+    "rendered_at": "2026-11-05T19:17:46.180Z",
+    "collected": {
+      "at": "2026-11-05T19:28:13.059Z",
+      "dest": "eval/study/runs/dev-py-2026-11-05/labels/B/CTFd.jsonl",
+      "records": 5,
+      "sha256": "f68f4236b6d98c7b9037202a9258a38e9e8983a0e54b69ed9149a9376032406b"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "netbox",
+    "prompt": "/home/user/drift-wt/py-study/eval/study/runs/dev-py-2026-11-05/prompts/adjudicate/C/netbox.md",
+    "output": "/tmp/claude-0/-home-user-dub/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/eval-py/outbox/61dcc977-8a4e-49ee-959d-66279e6ac68a/out.jsonl",
+    "expected": [
+      "netbox/D-bc0c7d",
+      "netbox/D-0eddf0",
+      "netbox/D-7d7f0c"
+    ],
+    "rendered_at": "2026-11-05T19:29:10.784Z",
+    "collected": {
+      "at": "2026-11-05T19:31:37.483Z",
+      "dest": "eval/study/runs/dev-py-2026-11-05/labels/C/netbox.jsonl",
+      "records": 3,
+      "sha256": "c6d3b643ba4e28cd0277ef300465ccdf1c5c2a7b394b74eff3c7fc44984b0fc4"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "CTFd",
+    "prompt": "/home/user/drift-wt/py-study/eval/study/runs/dev-py-2026-11-05/prompts/adjudicate/C/CTFd.md",
+    "output": "/tmp/claude-0/-home-user-dub/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/eval-py/outbox/29be8c9f-fdac-41a6-aa78-c5e0b9c3de1d/out.jsonl",
+    "expected": [
+      "CTFd/D-49130f",
+      "CTFd/D-bd2596",
+      "CTFd/D-ce2984"
+    ],
+    "rendered_at": "2026-11-05T19:29:10.786Z",
+    "collected": {
+      "at": "2026-11-05T19:31:37.487Z",
+      "dest": "eval/study/runs/dev-py-2026-11-05/labels/C/CTFd.jsonl",
+      "records": 3,
+      "sha256": "6e0a5f735bb096adf2e1f0da965887a3e0eaf7181722485862c0ecbe673dbe21"
+    }
+  }
+]

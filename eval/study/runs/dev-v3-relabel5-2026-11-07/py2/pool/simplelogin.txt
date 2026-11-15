@@ -1,0 +1,22 @@
+2 conventions from 1953 units in 51 roles (0 default tier, 2 suggestions)
+
+2 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-7fa3b5] functions in app/** do not use redirects to computed URLs
+    evidence: 360/361 (lower bound 0.98, lift 40.3)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 0% of 1)
+    example:  app/abuser.py#mark_user_as_abuser
+    outlier:  app/auth/views/login_utils.py:13 after_login
+
+ 2. [D-2a4960] files in app/** do not import from events/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 193/195 (lower bound 0.96, lift 3.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 100% of 1)
+    example:  app/abuser.py#(file)
+    outlier:  app/jobs/send_event_job.py:1 (file)
+    outlier:  app/jobs/sync_subscription_job.py:1 (file)
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

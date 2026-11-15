@@ -1,0 +1,1065 @@
+{
+  "//": "BLIND DEV pool dev4 (PLAN-R11 section 4.1), role DEV: not a held-out set (no D1/D4 verdict); its dev4-check (PREREG-F11-dev4-check.md) gates the next held-out draw. Drawn with the held-out procedure and exclusions. FROZEN since `frozen_at`: the core (set_id, role, frozen_at, repos, reserves, tier, max, pool) never changes (registered in `selection.registry`); only the append-only lists `replaced`, `burned` and `exposed` may grow. Nobody building product opens these repos, cards or labels before the round-11 freeze; only the dev4 operator runs its census and blind labelling, once, at the freeze. After its report it joins the build set.",
+  "set_id": "ts-dev4-2026-11-08",
+  "role": "dev",
+  "decision": "PLAN-R11 section 4.1 (adopted with D13, 2026-11-08): a blind dev pool, dev4: select-holdout.mjs --selection dev4 with the held-out procedure and exclusions (every dev set, dev3 and every held-out set), 36 TS/JS and 24 Python repos (twice the held-out quotas), role dev, reserves fixed before the draw; census at the round-11 freeze on the frozen binary (TS/JS shown cards; the Python opt-in view) and blind labelling (rubric v3).",
+  "holdout": false,
+  "status": "frozen",
+  "frozen_on": "2026-11-08",
+  "frozen_at": "2026-11-08T23:02:54Z",
+  "language": "typescript/javascript",
+  "tier": {
+    "//": "Decision D7 (eval/study/README.md decision log), approved by the founder 2026-11-06 and recorded before any held-out census. D5 (tier-d5.json) narrowed by rule kind and language. TypeScript/JavaScript: the default tier admits only call wrappers (wrapped_by:call) and layering (avoids:import); wrapped_by:decorator, wrapped_by:extends and wrapped_by:jsx move to the suggestion tier. Python: no rule kind is in the default tier; Python advises only and every Python proposal is suggestion tier. D5's conditions still apply on top of the rule kind: every symbol the rule names is defined in the repository (default.target \"in_repo\": no pkg:, global# or unresolved: target; lib.mjs namesPackage, drift_mine::tier::names_package) and the role has >= default.min_members members. The language of a proposal is read conservatively (lib.mjs proposalLanguage, drift_mine::tier::convention_language): py when any member of its role is Python (conventions.yaml evidence.python_members) or its example path is (.py/.pyi files and Python package manifests), ts otherwise. Role members are counted as the role's size (evidence.role_members when set, else total; exempt members count). DEFAULT tier = language in default.languages AND structured rule kind (lib.mjs ruleKind) in default.rule_kinds AND the rule names no symbol from outside the repository AND its role has >= default.min_members members. SUGGESTION tier = every other shown proposal. The not-wrong rate is reported over all shown proposals, both tiers. Release gate unchanged: a language's default tier ships as advise until it measures >= 95% default-tier accept under rubric v3, judged per D1, on a primary held-out run.",
+    "kind": "rule_kind",
+    "decision": "D7",
+    "default": {
+      "//": "TypeScript/JavaScript call wrappers and layering (import avoidance), each only when every symbol it names is defined in the repository, in roles of 15 or more members",
+      "rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "languages": [
+        "ts"
+      ],
+      "min_members": 15,
+      "target": "in_repo"
+    },
+    "suggestion": {
+      "//": "D5's suggestion kinds, plus decorators, base classes and JSX layout wrappers (D7); every Python proposal (languages); and default-tier kinds whose rule names a package, built-in or unresolved symbol, or whose role is small",
+      "rule_kinds": [
+        "calls",
+        "named",
+        "avoids:other",
+        "prefers_library",
+        "before",
+        "has_test",
+        "model_has",
+        "package_has",
+        "dependency_version",
+        "wrapped_by:try",
+        "control",
+        "directive",
+        "throws",
+        "passes_key",
+        "renders",
+        "wrapped_by:decorator",
+        "wrapped_by:extends",
+        "wrapped_by:jsx"
+      ],
+      "languages": [
+        "py"
+      ]
+    },
+    "not_wrong_over": "all_shown"
+  },
+  "max": 15,
+  "//max_pool": "Same as the secondary sets: max 15 (census --max, proposals shown) and pool 200 (recall pool).",
+  "pool": 200,
+  "provenance": "Metadata only. Candidates: GitHub repository search (queries in `selection.record`), filtered by OSI licence, not archived, not a fork or template, and excluding every repo the Drift repository mentions (dev sets, polar and CTFd, every held-out set (primary, secondary and both later draws) and every earlier blind dev pool (dev3) with its reserves, replaced, burned and exposed entries, any github.com URL on any branch, commit messages, PR and issue text) and obvious non-applications by name or topic. framework_bucket from the repo's dependency manifests only (package.json; pyproject.toml, requirements*.txt, setup.cfg, Pipfile), queried through GitHub code search restricted to those file names on the default branch; nothing else. sha = default-branch HEAD from git ls-remote. size_kb, stars, pushed_at from search metadata at retrieval. No notes about the code exist: nobody read it.",
+  "selection": {
+    "script": "eval/study/select-holdout.mjs",
+    "selection": "dev4",
+    "record": "eval/dev4-2026-11-08-selection.json",
+    "record_sha256": "e942a8c7c6bcdf4a7715b081c8cea28a6e67a94936f093c3c917a7359faf20ae",
+    "registry": "eval/dev4-2026-11-08-registry.json",
+    "seed": "drift-dev4-2026-11-08:bb1d45ed129027d3c65349dc0ca653e68b13d125:abedc84078600f8fdfce1b9318162139",
+    "retrieved_at": "2026-11-08T20:34:29Z",
+    "buckets": {
+      "nestjs": 6,
+      "nextjs": 8,
+      "express_fastify_hono": 8,
+      "react_spa": 8,
+      "other_node": 6
+    }
+  },
+  "//lists": "Append-only lists outside the frozen core. replaced: [{date, repo, reserve, reason}], the i-th swap uses the i-th reserve, only for a failed technical check (clone fails, `drift scan` errors, fewer than 200 parseable files) or (Python) overlap with the dev set. burned: [{date, name, reason}]. exposed: [{name, where}], repos whose conventions were named where product engineers can read.",
+  "replaced": [
+    {
+      "date": "2026-11-08",
+      "repo": "terminus",
+      "reserve": "xingrin",
+      "reason": "technical check: fewer than 200 parseable files (150)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "nodepress",
+      "reserve": "latent-scope",
+      "reason": "technical check: fewer than 200 parseable files (166)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "wireflow",
+      "reserve": "spec-workflow-mcp",
+      "reason": "technical check: fewer than 200 parseable files (142)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "spec-workflow-mcp",
+      "reserve": "runtipi",
+      "reason": "technical check: fewer than 200 parseable files (165)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "spotify-dl",
+      "reserve": "textlint",
+      "reason": "technical check: fewer than 200 parseable files (20)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "gatsby-woocommerce-themes",
+      "reserve": "arr-dashboard",
+      "reason": "technical check: fewer than 200 parseable files (109)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "security",
+      "reserve": "terraform-visual",
+      "reason": "technical check: fewer than 200 parseable files (17)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "terraform-visual",
+      "reserve": "stylebot",
+      "reason": "technical check: fewer than 200 parseable files (51)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "puzzlescript",
+      "reserve": "openapi-typescript-codegen",
+      "reason": "technical check: fewer than 200 parseable files (64)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "openapi-typescript-codegen",
+      "reserve": "graphql",
+      "reason": "technical check: fewer than 200 parseable files (196)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "kratos-rebirth",
+      "reserve": "onedark-pro",
+      "reason": "technical check: fewer than 200 parseable files (20)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "onedark-pro",
+      "reserve": "sirius",
+      "reason": "technical check: fewer than 200 parseable files (39)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "labeler",
+      "reserve": "opentelemetry-js",
+      "reason": "technical check: fewer than 200 parseable files (23)"
+    }
+  ],
+  "burned": [],
+  "exposed": [],
+  "repos": [
+    {
+      "name": "pingvin-share-x",
+      "url": "https://github.com/smp46/pingvin-share-x",
+      "sha": "b669cb34884bae73ce5e3e21bac4e1952b279404",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs",
+      "size_kb": 33921,
+      "stars": 569,
+      "pushed_at": "2026-11-07T02:05:11Z"
+    },
+    {
+      "name": "keyshade",
+      "url": "https://github.com/keyshade-xyz/keyshade",
+      "sha": "840cf2c9f6e0a471f6b8191cbd6a94fe0aa60ffe",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs",
+      "size_kb": 52150,
+      "stars": 770,
+      "pushed_at": "2026-10-31T06:49:23Z"
+    },
+    {
+      "name": "billingsdk",
+      "url": "https://github.com/dodopayments/billingsdk",
+      "sha": "c6fb52d63f19bb8eb07ef48ceb3c7db02b31001e",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs",
+      "size_kb": 22143,
+      "stars": 511,
+      "pushed_at": "2026-10-26T01:18:00Z"
+    },
+    {
+      "name": "terminus",
+      "url": "https://github.com/nestjs/terminus",
+      "sha": "e2ccc7143d95b92b54b0d704b3d0159e8edf7b79",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs",
+      "size_kb": 59326,
+      "stars": 747,
+      "pushed_at": "2026-11-06T18:29:42Z"
+    },
+    {
+      "name": "swetrix",
+      "url": "https://github.com/Swetrix/swetrix",
+      "sha": "9e40f3d3598a50afa5239b9c38190042c07cacc8",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs",
+      "size_kb": 98124,
+      "stars": 1219,
+      "pushed_at": "2026-11-06T02:46:31Z"
+    },
+    {
+      "name": "nodepress",
+      "url": "https://github.com/surmon-china/nodepress",
+      "sha": "56ed59f3fec216ff9f82a54c00a9dc25f134f71c",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs",
+      "size_kb": 59217,
+      "stars": 1522,
+      "pushed_at": "2026-06-19T07:06:44Z"
+    },
+    {
+      "name": "wireflow",
+      "url": "https://github.com/vanila-io/wireflow",
+      "sha": "edd39711677175daf200c8ff279b33e480df49ea",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "size_kb": 37262,
+      "stars": 4171,
+      "pushed_at": "2026-11-01T20:35:37Z"
+    },
+    {
+      "name": "rn-primitives",
+      "url": "https://github.com/roninoss/rn-primitives",
+      "sha": "1bebe66b12e7ddd3c313226e0bc2ee02b6e78ab4",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "size_kb": 23093,
+      "stars": 945,
+      "pushed_at": "2026-08-08T19:32:50Z"
+    },
+    {
+      "name": "beatsync",
+      "url": "https://github.com/freeman-jiang/beatsync",
+      "sha": "94c38ab16ec861835ce0b4bc3a7db82dabbb9b88",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "size_kb": 70042,
+      "stars": 3217,
+      "pushed_at": "2026-06-12T18:53:27Z"
+    },
+    {
+      "name": "aiden",
+      "url": "https://github.com/taracodlabs/aiden",
+      "sha": "370420470ad567d91b0bb05a11a963cff810a27f",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "size_kb": 136777,
+      "stars": 877,
+      "pushed_at": "2026-10-19T16:54:19Z"
+    },
+    {
+      "name": "website",
+      "url": "https://github.com/radix-ui/website",
+      "sha": "402e749613ab2e7ab7139c65b0029842b0360f07",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "size_kb": 22659,
+      "stars": 1043,
+      "pushed_at": "2026-10-07T16:01:09Z"
+    },
+    {
+      "name": "safe-wallet-monorepo",
+      "url": "https://github.com/safe-global/safe-wallet-monorepo",
+      "sha": "d36e38e110c0646f5044e3807b9928f841e8b50b",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "size_kb": 182623,
+      "stars": 598,
+      "pushed_at": "2026-11-08T01:15:47Z"
+    },
+    {
+      "name": "next-drupal",
+      "url": "https://github.com/chapter-three/next-drupal",
+      "sha": "80a89f1466bcdc980b4de529241b42de296b2a7d",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "size_kb": 99372,
+      "stars": 709,
+      "pushed_at": "2026-10-23T23:02:36Z"
+    },
+    {
+      "name": "shader-lab",
+      "url": "https://github.com/basementstudio/shader-lab",
+      "sha": "58b9d58d0370b96d67ede368e46ce9ef7912ba3e",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "size_kb": 33453,
+      "stars": 719,
+      "pushed_at": "2026-11-06T23:58:17Z"
+    },
+    {
+      "name": "spotify-dl",
+      "url": "https://github.com/SwapnilSoni1999/spotify-dl",
+      "sha": "50257ac179c307fe94725d5edebac44c4c81b295",
+      "language": "JavaScript",
+      "framework_bucket": "express_fastify_hono",
+      "size_kb": 27926,
+      "stars": 1683,
+      "pushed_at": "2026-11-04T19:30:11Z"
+    },
+    {
+      "name": "repack",
+      "url": "https://github.com/callstack/repack",
+      "sha": "948eb2ccbdb8f937f89771744f3a6e15de941849",
+      "language": "TypeScript",
+      "framework_bucket": "express_fastify_hono",
+      "size_kb": 35097,
+      "stars": 1947,
+      "pushed_at": "2026-11-04T17:11:24Z"
+    },
+    {
+      "name": "bemuse",
+      "url": "https://github.com/bemusic/bemuse",
+      "sha": "4bf3e7d98a44841b323741cc403ecb7b41618ade",
+      "language": "TypeScript",
+      "framework_bucket": "express_fastify_hono",
+      "size_kb": 34921,
+      "stars": 1255,
+      "pushed_at": "2026-10-08T16:18:49Z"
+    },
+    {
+      "name": "embroider",
+      "url": "https://github.com/embroider-build/embroider",
+      "sha": "ef4667d2c8afa8e7d5ae73c5f0d06ef869c8e9ca",
+      "language": "TypeScript",
+      "framework_bucket": "express_fastify_hono",
+      "size_kb": 26249,
+      "stars": 353,
+      "pushed_at": "2026-11-03T19:26:04Z"
+    },
+    {
+      "name": "putout",
+      "url": "https://github.com/coderaiser/putout",
+      "sha": "eb1cd0cde2e0d4bc430967ad86e0a8b54dcef194",
+      "language": "JavaScript",
+      "framework_bucket": "express_fastify_hono",
+      "size_kb": 25284,
+      "stars": 801,
+      "pushed_at": "2026-11-08T20:24:08Z"
+    },
+    {
+      "name": "extensions",
+      "url": "https://github.com/firebase/extensions",
+      "sha": "490b13beb52e7a4282e87f15ca507cf38fc246f8",
+      "language": "TypeScript",
+      "framework_bucket": "express_fastify_hono",
+      "size_kb": 47104,
+      "stars": 979,
+      "pushed_at": "2026-11-05T12:27:36Z"
+    },
+    {
+      "name": "sanddance",
+      "url": "https://github.com/microsoft/SandDance",
+      "sha": "1f4ad1f49bd44f6da89003dcd690343b057b9505",
+      "language": "TypeScript",
+      "framework_bucket": "express_fastify_hono",
+      "size_kb": 72362,
+      "stars": 7155,
+      "pushed_at": "2026-10-27T16:08:04Z"
+    },
+    {
+      "name": "whybuddy",
+      "url": "https://github.com/xiaojilele-glitch/WhyBuddy",
+      "sha": "f4a3cbf0b85d07158cfb75c9bbd3031c12c3ea90",
+      "language": "TypeScript",
+      "framework_bucket": "express_fastify_hono",
+      "size_kb": 344006,
+      "stars": 380,
+      "pushed_at": "2026-09-22T07:20:39Z"
+    },
+    {
+      "name": "monkeycode",
+      "url": "https://github.com/chaitin/MonkeyCode",
+      "sha": "ad169c9b946ea04a1fc19a7abff9815d38116a73",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa",
+      "size_kb": 152475,
+      "stars": 5102,
+      "pushed_at": "2026-11-06T13:28:09Z"
+    },
+    {
+      "name": "jaeger-ui",
+      "url": "https://github.com/jaegertracing/jaeger-ui",
+      "sha": "b12c863f52b361ce5a9586acbbb098139c0d06cc",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa",
+      "size_kb": 23322,
+      "stars": 1546,
+      "pushed_at": "2026-11-08T20:31:16Z"
+    },
+    {
+      "name": "zenui-library-react",
+      "url": "https://github.com/zenui-labs/zenui-library-react",
+      "sha": "e82857f98491af728e740f226cd849fb937c1e3d",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa",
+      "size_kb": 45559,
+      "stars": 384,
+      "pushed_at": "2026-10-01T04:34:27Z"
+    },
+    {
+      "name": "gatsby-woocommerce-themes",
+      "url": "https://github.com/imranhsayed/gatsby-woocommerce-themes",
+      "sha": "2698fb0e4d3cbdd4a3226d6b5cafc5bbedf0e21e",
+      "language": "JavaScript",
+      "framework_bucket": "react_spa",
+      "size_kb": 362269,
+      "stars": 617,
+      "pushed_at": "2026-09-21T08:21:26Z"
+    },
+    {
+      "name": "react-modern-audio-player",
+      "url": "https://github.com/slash9494/react-modern-audio-player",
+      "sha": "8631ddbe1ed0be603e61e9c4daebac3c6579e47a",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa",
+      "size_kb": 29065,
+      "stars": 353,
+      "pushed_at": "2026-10-15T11:53:36Z"
+    },
+    {
+      "name": "minisearch",
+      "url": "https://github.com/felladrin/MiniSearch",
+      "sha": "0491afb47f26960040676609826c99a3684514bb",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa",
+      "size_kb": 35301,
+      "stars": 608,
+      "pushed_at": "2026-11-08T14:04:02Z"
+    },
+    {
+      "name": "jsonforms",
+      "url": "https://github.com/eclipsesource/jsonforms",
+      "sha": "942b76f9eb0bcfcf771fe8193c19a39cbe5497f6",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa",
+      "size_kb": 32902,
+      "stars": 2752,
+      "pushed_at": "2026-11-05T08:27:23Z"
+    },
+    {
+      "name": "wmux",
+      "url": "https://github.com/openwong2kim/wmux",
+      "sha": "42cdd81f5c6ca61e85edf154e9d45bf9ed813d26",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa",
+      "size_kb": 156714,
+      "stars": 447,
+      "pushed_at": "2026-11-08T20:32:51Z"
+    },
+    {
+      "name": "security",
+      "url": "https://github.com/gemini-cli-extensions/security",
+      "sha": "2227f3cf7150972baac695b8233abc2186408538",
+      "language": "TypeScript",
+      "framework_bucket": "other_node",
+      "size_kb": 30061,
+      "stars": 794,
+      "pushed_at": "2026-07-25T06:57:14Z"
+    },
+    {
+      "name": "puzzlescript",
+      "url": "https://github.com/increpare/PuzzleScript",
+      "sha": "421328df500fc05ba35c1b4a8ccc32c82328ede5",
+      "language": "JavaScript",
+      "framework_bucket": "other_node",
+      "size_kb": 58262,
+      "stars": 1116,
+      "pushed_at": "2026-11-04T16:53:19Z"
+    },
+    {
+      "name": "kratos-rebirth",
+      "url": "https://github.com/Candinya/Kratos-Rebirth",
+      "sha": "8f73e376a68e1fba1f4c01f497c6af7d7a95587c",
+      "language": "JavaScript",
+      "framework_bucket": "other_node",
+      "size_kb": 23085,
+      "stars": 779,
+      "pushed_at": "2026-10-16T13:05:07Z"
+    },
+    {
+      "name": "labeler",
+      "url": "https://github.com/actions/labeler",
+      "sha": "bc32c493030cc908233048429a1f81da3057fbbc",
+      "language": "TypeScript",
+      "framework_bucket": "other_node",
+      "size_kb": 26716,
+      "stars": 2512,
+      "pushed_at": "2026-10-31T20:11:48Z"
+    },
+    {
+      "name": "recurly-js",
+      "url": "https://github.com/recurly/recurly-js",
+      "sha": "37c58aee85455a9d3ed38c5059dc2c4ced8394b2",
+      "language": "JavaScript",
+      "framework_bucket": "other_node",
+      "size_kb": 22566,
+      "stars": 646,
+      "pushed_at": "2026-11-05T18:33:21Z"
+    },
+    {
+      "name": "tdesign-vue-next",
+      "url": "https://github.com/Tencent/tdesign-vue-next",
+      "sha": "d3421d934fe2ea3ab4200188281afd9f2ba5fc91",
+      "language": "TypeScript",
+      "framework_bucket": "other_node",
+      "size_kb": 80508,
+      "stars": 2203,
+      "pushed_at": "2026-11-07T15:31:17Z"
+    }
+  ],
+  "reserves": {
+    "//": "Pre-registered replacements, used in this order only (rule 1). Reserve i comes from bucket spec.sets.<set>.reserve_order[i] of the selection record.",
+    "repos": [
+      {
+        "name": "xingrin",
+        "url": "https://github.com/yyhuni/xingrin",
+        "sha": "63dfbc13d3cfbb4184d85c8f7b9f23b2c7ebace1",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 244639,
+        "stars": 671,
+        "pushed_at": "2026-09-21T06:08:05Z"
+      },
+      {
+        "name": "latent-scope",
+        "url": "https://github.com/enjalot/latent-scope",
+        "sha": "41f7305dffbbc0dd74d3605ac6af9df21fa1270f",
+        "language": "JavaScript",
+        "framework_bucket": "react_spa",
+        "size_kb": 83409,
+        "stars": 798,
+        "pushed_at": "2026-08-21T00:45:04Z"
+      },
+      {
+        "name": "spec-workflow-mcp",
+        "url": "https://github.com/Pimzino/spec-workflow-mcp",
+        "sha": "d38e82eaa8a6a2f5480285fa1feb8cf8378c86e0",
+        "language": "TypeScript",
+        "framework_bucket": "express_fastify_hono",
+        "size_kb": 65256,
+        "stars": 4306,
+        "pushed_at": "2026-07-03T19:19:12Z"
+      },
+      {
+        "name": "runtipi",
+        "url": "https://github.com/runtipi/runtipi",
+        "sha": "a8f22ed8bae48af0bce99a218c902261ea472d45",
+        "language": "TypeScript",
+        "framework_bucket": "nestjs",
+        "size_kb": 26078,
+        "stars": 9730,
+        "pushed_at": "2026-11-08T20:37:37Z"
+      },
+      {
+        "name": "textlint",
+        "url": "https://github.com/textlint/textlint",
+        "sha": "4c916a878ee7ec60622ec795f5654e75f1cb4357",
+        "language": "TypeScript",
+        "framework_bucket": "other_node",
+        "size_kb": 54906,
+        "stars": 3207,
+        "pushed_at": "2026-11-08T14:11:08Z"
+      },
+      {
+        "name": "arr-dashboard",
+        "url": "https://github.com/Kha-kis/arr-dashboard",
+        "sha": "88f421ed2b4b998367ca216406aaa61e5f87e25e",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 119702,
+        "stars": 324,
+        "pushed_at": "2026-11-02T05:46:34Z"
+      },
+      {
+        "name": "terraform-visual",
+        "url": "https://github.com/hieven/terraform-visual",
+        "sha": "3ef0b2074babfc74613b527175209743e3ada0e6",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 26383,
+        "stars": 674,
+        "pushed_at": "2026-10-31T10:53:38Z"
+      },
+      {
+        "name": "stylebot",
+        "url": "https://github.com/ankit/stylebot",
+        "sha": "cc4e8f1bf31c55f491d8de0d592854db9f9e59b0",
+        "language": "TypeScript",
+        "framework_bucket": "react_spa",
+        "size_kb": 172960,
+        "stars": 1712,
+        "pushed_at": "2026-11-06T13:58:27Z"
+      },
+      {
+        "name": "openapi-typescript-codegen",
+        "url": "https://github.com/ferdikoomen/openapi-typescript-codegen",
+        "sha": "36bd0cf5963ca69470a661a703f67a88bd5c925c",
+        "language": "TypeScript",
+        "framework_bucket": "express_fastify_hono",
+        "size_kb": 31750,
+        "stars": 3376,
+        "pushed_at": "2026-10-25T12:43:32Z"
+      },
+      {
+        "name": "graphql",
+        "url": "https://github.com/nestjs/graphql",
+        "sha": "3cebe4fdeae6a5bbcb54621756876e5119c8dc67",
+        "language": "TypeScript",
+        "framework_bucket": "nestjs",
+        "size_kb": 20357,
+        "stars": 1556,
+        "pushed_at": "2026-11-08T18:43:25Z"
+      },
+      {
+        "name": "onedark-pro",
+        "url": "https://github.com/Binaryify/OneDark-Pro",
+        "sha": "75c80ab18d90655e05ad837bb8d89f5e68d5ce53",
+        "language": "TypeScript",
+        "framework_bucket": "other_node",
+        "size_kb": 22339,
+        "stars": 1805,
+        "pushed_at": "2026-10-29T13:47:24Z"
+      },
+      {
+        "name": "sirius",
+        "url": "https://github.com/SiriusScan/Sirius",
+        "sha": "823a80f663e585db775da4ce58b27ac0e5dcfbd2",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 205287,
+        "stars": 1702,
+        "pushed_at": "2026-08-23T19:19:20Z"
+      },
+      {
+        "name": "opentelemetry-js",
+        "url": "https://github.com/open-telemetry/opentelemetry-js",
+        "sha": "ee94b842fd734e23064539c5f8069e0af0e92b9a",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 104509,
+        "stars": 3516,
+        "pushed_at": "2026-11-06T21:49:05Z"
+      },
+      {
+        "name": "hub",
+        "url": "https://github.com/artifacthub/hub",
+        "sha": "b8f423643ac8132628d7e50728f8b8ff44282e75",
+        "language": "TypeScript",
+        "framework_bucket": "react_spa",
+        "size_kb": 92207,
+        "stars": 2116,
+        "pushed_at": "2026-11-05T09:17:59Z"
+      },
+      {
+        "name": "pockethost",
+        "url": "https://github.com/pockethost/pockethost",
+        "sha": "1e8795375ec4882f1e643ec27d7e00bacdd891af",
+        "language": "TypeScript",
+        "framework_bucket": "express_fastify_hono",
+        "size_kb": 121429,
+        "stars": 1444,
+        "pushed_at": "2026-11-08T19:59:16Z"
+      },
+      {
+        "name": "mere-medical",
+        "url": "https://github.com/cfu288/mere-medical",
+        "sha": "7cd6a22dffd15005c562dd2e4f42aaecaed419fd",
+        "language": "TypeScript",
+        "framework_bucket": "nestjs",
+        "size_kb": 99557,
+        "stars": 323,
+        "pushed_at": "2026-11-07T00:11:04Z"
+      },
+      {
+        "name": "oas",
+        "url": "https://github.com/readmeio/oas",
+        "sha": "33d54d0c3e7e4c24ac77398dcd8afd2875621607",
+        "language": "TypeScript",
+        "framework_bucket": "other_node",
+        "size_kb": 71628,
+        "stars": 401,
+        "pushed_at": "2026-11-08T11:16:02Z"
+      },
+      {
+        "name": "flujo",
+        "url": "https://github.com/mario-andreschak/FLUJO",
+        "sha": "c32b6ab2d32705c26a31ca086af07a6c72f9bb2d",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 315500,
+        "stars": 673,
+        "pushed_at": "2026-11-08T18:23:22Z"
+      },
+      {
+        "name": "transfer.zip-web",
+        "url": "https://github.com/robinkarlberg/transfer.zip-web",
+        "sha": "dee6d837fb9471ffd2c7fcfd013a40ef3f49f1cc",
+        "language": "JavaScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 115476,
+        "stars": 1510,
+        "pushed_at": "2026-10-23T19:55:48Z"
+      },
+      {
+        "name": "jarallax",
+        "url": "https://github.com/nk-o/jarallax",
+        "sha": "5f674308ad2cb43b86c36d97b05cbed87dec2401",
+        "language": "TypeScript",
+        "framework_bucket": "react_spa",
+        "size_kb": 71135,
+        "stars": 1454,
+        "pushed_at": "2026-08-18T08:23:23Z"
+      },
+      {
+        "name": "bb",
+        "url": "https://github.com/get-bb/bb",
+        "sha": "55135d1e5045d6c5d3c24f5a4d5556ed3e11cb00",
+        "language": "TypeScript",
+        "framework_bucket": "express_fastify_hono",
+        "size_kb": 335787,
+        "stars": 5100,
+        "pushed_at": "2026-11-08T17:29:40Z"
+      },
+      {
+        "name": "ssr",
+        "url": "https://github.com/zhangyuang/ssr",
+        "sha": "eb0d0fdc4d6e7415303d01420d5b0a3d5244f4ae",
+        "language": "TypeScript",
+        "framework_bucket": "nestjs",
+        "size_kb": 30565,
+        "stars": 2685,
+        "pushed_at": "2026-08-17T04:35:47Z"
+      },
+      {
+        "name": "webplotdigitizer",
+        "url": "https://github.com/automeris-io/WebPlotDigitizer",
+        "sha": "3a3ecb11606945d0701c8a488777e6861be70056",
+        "language": "JavaScript",
+        "framework_bucket": "other_node",
+        "size_kb": 50461,
+        "stars": 3185,
+        "pushed_at": "2026-07-27T07:48:41Z"
+      },
+      {
+        "name": "ditto.site",
+        "url": "https://github.com/ion-design/ditto.site",
+        "sha": "3860a1a3a340069eabbfc550fd49807dd10f4f2c",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 102495,
+        "stars": 1737,
+        "pushed_at": "2026-10-22T00:47:21Z"
+      },
+      {
+        "name": "contexto",
+        "url": "https://github.com/ekailabs/contexto",
+        "sha": "e53db0999f6d9d599d3d57e8cc595d3668f8888f",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 102639,
+        "stars": 618,
+        "pushed_at": "2026-06-10T00:43:06Z"
+      },
+      {
+        "name": "craftstation",
+        "url": "https://github.com/HernanJiang/CraftStation",
+        "sha": "181e7e1de64ae9d2ec6193bb0bba9fab803b193a",
+        "language": "TypeScript",
+        "framework_bucket": "react_spa",
+        "size_kb": 43895,
+        "stars": 933,
+        "pushed_at": "2026-10-29T14:01:07Z"
+      },
+      {
+        "name": "gantt",
+        "url": "https://github.com/DHTMLX/gantt",
+        "sha": "67d4425db50009705fbe41538d75c8f5f5ac9276",
+        "language": "JavaScript",
+        "framework_bucket": "express_fastify_hono",
+        "size_kb": 58373,
+        "stars": 1871,
+        "pushed_at": "2026-09-03T12:14:19Z"
+      },
+      {
+        "name": "laf",
+        "url": "https://github.com/labring/laf",
+        "sha": "16aa4824b11fac5f83f9cc8c20ce35e5c51f50b2",
+        "language": "TypeScript",
+        "framework_bucket": "nestjs",
+        "size_kb": 85799,
+        "stars": 7544,
+        "pushed_at": "2026-07-30T07:50:51Z"
+      },
+      {
+        "name": "aws-toolkit-vscode",
+        "url": "https://github.com/aws/aws-toolkit-vscode",
+        "sha": "5bd02935a43f31bef06ddd4b680096159d4b5bab",
+        "language": "TypeScript",
+        "framework_bucket": "other_node",
+        "size_kb": 174841,
+        "stars": 1997,
+        "pushed_at": "2026-11-04T22:30:21Z"
+      },
+      {
+        "name": "nextfaster",
+        "url": "https://github.com/ethanniser/NextFaster",
+        "sha": "cc38b9983aa2b80f71c8a50e6440cca83deebc6e",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 71202,
+        "stars": 4877,
+        "pushed_at": "2026-09-02T06:12:05Z"
+      },
+      {
+        "name": "git-city",
+        "url": "https://github.com/srizzon/git-city",
+        "sha": "a79bb4eb538c291b341c59d4ba585e22e9b2f518",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 35597,
+        "stars": 5983,
+        "pushed_at": "2026-11-08T19:01:55Z"
+      },
+      {
+        "name": "realm-studio",
+        "url": "https://github.com/realm/realm-studio",
+        "sha": "b501e044ad59010d45cd8b773f1b96149aa302e2",
+        "language": "TypeScript",
+        "framework_bucket": "react_spa",
+        "size_kb": 20967,
+        "stars": 347,
+        "pushed_at": "2026-10-21T18:07:47Z"
+      },
+      {
+        "name": "fes.js",
+        "url": "https://github.com/WeBankFinTech/fes.js",
+        "sha": "cb23443d441147387feb8006edaa790ae0eecf2f",
+        "language": "TypeScript",
+        "framework_bucket": "express_fastify_hono",
+        "size_kb": 25632,
+        "stars": 1659,
+        "pushed_at": "2026-09-14T08:33:58Z"
+      },
+      {
+        "name": "orpc",
+        "url": "https://github.com/middleapi/orpc",
+        "sha": "e60dd338830e5f4566fb87214f1247ac0ec688b4",
+        "language": "TypeScript",
+        "framework_bucket": "nestjs",
+        "size_kb": 32464,
+        "stars": 5757,
+        "pushed_at": "2026-11-08T20:21:01Z"
+      },
+      {
+        "name": "simple-web-server",
+        "url": "https://github.com/terreng/simple-web-server",
+        "sha": "1698c152fc799971f67eb843e62427b0eb35ea00",
+        "language": "JavaScript",
+        "framework_bucket": "other_node",
+        "size_kb": 200528,
+        "stars": 578,
+        "pushed_at": "2026-07-20T22:34:21Z"
+      },
+      {
+        "name": "jotty",
+        "url": "https://github.com/fccview/jotty",
+        "sha": "30bbbaea4675d2adb6f2e5ff113f1994be2fb8e2",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 98807,
+        "stars": 2038,
+        "pushed_at": "2026-11-07T14:51:34Z"
+      },
+      {
+        "name": "cossistant",
+        "url": "https://github.com/cossistantcom/cossistant",
+        "sha": "23b0a53e6a54aa90d111c1dfcf76b11e673cdfc9",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 96327,
+        "stars": 739,
+        "pushed_at": "2026-09-18T12:36:57Z"
+      },
+      {
+        "name": "shimmer-from-structure",
+        "url": "https://github.com/darula-hpp/shimmer-from-structure",
+        "sha": "29e2374b538c84c7c174b6ebd4625b86a1a3ea89",
+        "language": "TypeScript",
+        "framework_bucket": "react_spa",
+        "size_kb": 47795,
+        "stars": 1134,
+        "pushed_at": "2026-10-04T19:57:33Z"
+      },
+      {
+        "name": "mindcraft",
+        "url": "https://github.com/mindcraft-bots/mindcraft",
+        "sha": "e1c1fc3ffa481506c2445fc639e16dba504b5920",
+        "language": "JavaScript",
+        "framework_bucket": "express_fastify_hono",
+        "size_kb": 50984,
+        "stars": 5982,
+        "pushed_at": "2026-10-27T09:03:58Z"
+      },
+      {
+        "name": "graphql-yoga",
+        "url": "https://github.com/graphql-hive/graphql-yoga",
+        "sha": "3e205de150fa569b20606b2f71b3bced7059418f",
+        "language": "TypeScript",
+        "framework_bucket": "nestjs",
+        "size_kb": 147517,
+        "stars": 8539,
+        "pushed_at": "2026-11-08T16:53:56Z"
+      },
+      {
+        "name": "stale",
+        "url": "https://github.com/actions/stale",
+        "sha": "3467b6485bf80d2be20f30ec1a3d2d2aea0330e9",
+        "language": "TypeScript",
+        "framework_bucket": "other_node",
+        "size_kb": 31422,
+        "stars": 1730,
+        "pushed_at": "2026-10-28T16:42:19Z"
+      },
+      {
+        "name": "better-hub",
+        "url": "https://github.com/better-auth/better-hub",
+        "sha": "8c695742434742a42ba000515a9f7ec6b1f0c124",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 133850,
+        "stars": 1268,
+        "pushed_at": "2026-05-31T12:51:56Z"
+      },
+      {
+        "name": "docs.page",
+        "url": "https://github.com/invertase/docs.page",
+        "sha": "81e770a1a6981c3007859d29c6fd5f58917f0493",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 170347,
+        "stars": 678,
+        "pushed_at": "2026-10-29T18:15:00Z"
+      },
+      {
+        "name": "wannacut",
+        "url": "https://github.com/ter-9001/WannaCut",
+        "sha": "1b0eb48065d688c7e81a57ecf36805f0a2bc67c7",
+        "language": "TypeScript",
+        "framework_bucket": "react_spa",
+        "size_kb": 123029,
+        "stars": 317,
+        "pushed_at": "2026-10-03T16:08:02Z"
+      },
+      {
+        "name": "ng-bootstrap",
+        "url": "https://github.com/ng-bootstrap/ng-bootstrap",
+        "sha": "2a45c97082c66c955ac9c4865cf66d8d4dfd27fc",
+        "language": "TypeScript",
+        "framework_bucket": "express_fastify_hono",
+        "size_kb": 20880,
+        "stars": 8218,
+        "pushed_at": "2026-06-22T14:39:41Z"
+      },
+      {
+        "name": "ts-proto",
+        "url": "https://github.com/stephenh/ts-proto",
+        "sha": "abeae874f2c0ef000ef0be059a3b5c64e375a20e",
+        "language": "TypeScript",
+        "framework_bucket": "nestjs",
+        "size_kb": 27767,
+        "stars": 2595,
+        "pushed_at": "2026-11-04T03:03:59Z"
+      },
+      {
+        "name": "province-city-china",
+        "url": "https://github.com/uiwjs/province-city-china",
+        "sha": "a708f0df0ebdb68f09f5fcf6345367f7d5e9a7dc",
+        "language": "JavaScript",
+        "framework_bucket": "other_node",
+        "size_kb": 22945,
+        "stars": 3074,
+        "pushed_at": "2026-10-11T02:14:30Z"
+      },
+      {
+        "name": "db",
+        "url": "https://github.com/TanStack/db",
+        "sha": "d054a7721a7565ee41a87f864a6396edf46344a0",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 48585,
+        "stars": 3980,
+        "pushed_at": "2026-11-08T11:00:44Z"
+      },
+      {
+        "name": "babysitter",
+        "url": "https://github.com/a5c-ai/babysitter",
+        "sha": "feb68abe397acc14f32b34984975c48fedba2b33",
+        "language": "JavaScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 261102,
+        "stars": 1898,
+        "pushed_at": "2026-11-01T17:01:59Z"
+      },
+      {
+        "name": "panzoom",
+        "url": "https://github.com/timmywil/panzoom",
+        "sha": "1c8de6bc5d644419f22319243cb013aa2dda9ef7",
+        "language": "TypeScript",
+        "framework_bucket": "react_spa",
+        "size_kb": 348221,
+        "stars": 2475,
+        "pushed_at": "2026-11-02T15:22:45Z"
+      },
+      {
+        "name": "openrig",
+        "url": "https://github.com/mvschwarz/openrig",
+        "sha": "0964fb7bd45b379a3bbbcfd27faa51853dd2884f",
+        "language": "TypeScript",
+        "framework_bucket": "express_fastify_hono",
+        "size_kb": 62072,
+        "stars": 8757,
+        "pushed_at": "2026-11-08T20:38:44Z"
+      },
+      {
+        "name": "meelo",
+        "url": "https://github.com/Arthi-chaud/Meelo",
+        "sha": "7ad4cb901234ae2563272c605b8bad02ef656527",
+        "language": "TypeScript",
+        "framework_bucket": "nestjs",
+        "size_kb": 109540,
+        "stars": 1448,
+        "pushed_at": "2026-11-07T04:57:09Z"
+      },
+      {
+        "name": "azure-devops-mcp",
+        "url": "https://github.com/microsoft/azure-devops-mcp",
+        "sha": "7f2a6b9fae78903682f4c6328cab17986f3f1cc5",
+        "language": "TypeScript",
+        "framework_bucket": "other_node",
+        "size_kb": 41719,
+        "stars": 2083,
+        "pushed_at": "2026-11-06T10:54:24Z"
+      },
+      {
+        "name": "smarthr-ui",
+        "url": "https://github.com/kufu/smarthr-ui",
+        "sha": "e4b9df81e1290d49e6ae0075db61bb9d10b68e6d",
+        "language": "TypeScript",
+        "framework_bucket": "nextjs",
+        "size_kb": 51865,
+        "stars": 977,
+        "pushed_at": "2026-11-06T11:24:20Z"
+      }
+    ]
+  }
+}

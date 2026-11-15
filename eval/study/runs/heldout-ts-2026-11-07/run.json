@@ -1,0 +1,469 @@
+{
+  "run": "eval/study/runs/heldout-ts-2026-11-07",
+  "prepared_at": "2026-11-07T19:27:33.901Z",
+  "amendments": [
+    {
+      "superseded_core": "b48222ed54dc1508a9f553a5f757f1374756a1761a9f5f506e9477e09a964da3",
+      "core": "32eaec101864064205038c7cf6bd75f89d676d929898e399c3b9470a297fe5ef",
+      "fields": [
+        "tier"
+      ],
+      "decision": "D5",
+      "date": "2026-11-06",
+      "by": "founder (approved), lead (applied)"
+    },
+    {
+      "superseded_core": "b48222ed54dc1508a9f553a5f757f1374756a1761a9f5f506e9477e09a964da3",
+      "core": "ebd52c7b07fc487a718c86cc2bc2e2264f1e30b45b6d4aa5c9696c3df3c64ed3",
+      "fields": [
+        "tier"
+      ],
+      "decision": "D7",
+      "date": "2026-11-06",
+      "by": "founder (approved), lead (applied)"
+    },
+    {
+      "superseded_core": "32eaec101864064205038c7cf6bd75f89d676d929898e399c3b9470a297fe5ef",
+      "core": "ebd52c7b07fc487a718c86cc2bc2e2264f1e30b45b6d4aa5c9696c3df3c64ed3",
+      "fields": [
+        "tier"
+      ],
+      "decision": "D7",
+      "date": "2026-11-06",
+      "by": "founder (approved), lead (applied)"
+    },
+    {
+      "superseded_core": "b48222ed54dc1508a9f553a5f757f1374756a1761a9f5f506e9477e09a964da3",
+      "core": "6b8c9a25ee556846e7b5bf7061487a550f73f74c3fd97686153b229a53881d1c",
+      "fields": [
+        "tier",
+        "reserves"
+      ],
+      "decision": "D9",
+      "date": "2026-11-07",
+      "by": "lead (decided), held-out run operator (applied)"
+    },
+    {
+      "superseded_core": "32eaec101864064205038c7cf6bd75f89d676d929898e399c3b9470a297fe5ef",
+      "core": "6b8c9a25ee556846e7b5bf7061487a550f73f74c3fd97686153b229a53881d1c",
+      "fields": [
+        "tier",
+        "reserves"
+      ],
+      "decision": "D9",
+      "date": "2026-11-07",
+      "by": "lead (decided), held-out run operator (applied)"
+    },
+    {
+      "superseded_core": "ebd52c7b07fc487a718c86cc2bc2e2264f1e30b45b6d4aa5c9696c3df3c64ed3",
+      "core": "6b8c9a25ee556846e7b5bf7061487a550f73f74c3fd97686153b229a53881d1c",
+      "fields": [
+        "reserves"
+      ],
+      "decision": "D9",
+      "date": "2026-11-07",
+      "by": "lead (decided), held-out run operator (applied)"
+    }
+  ],
+  "manifest": {
+    "path": "eval/holdout-primary.json",
+    "sha256": "b8b9033f7da70dcc21a4f8b450452042effe07429e137be7c9999e0008525884",
+    "core_sha256": "6b8c9a25ee556846e7b5bf7061487a550f73f74c3fd97686153b229a53881d1c",
+    "holdout": true,
+    "holdout_because": [
+      "it says \"holdout\": true",
+      "its file is named holdout*.json",
+      "its core hash is a registered held-out manifest",
+      "it pins a held-out repo's commit",
+      "it lists a held-out repo"
+    ],
+    "set_id": "ts-primary-2026-11-05",
+    "role": "primary",
+    "language": "typescript/javascript"
+  },
+  "drift": {
+    "binary": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/drift-ab1a8f348039",
+    "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+    "version": "drift 0.1.0-dev",
+    "commit": "ab1a8f348039310fcf908f65b99cb6d90cc1f5e3",
+    "dirty": false,
+    "build": {
+      "binary": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/drift-ab1a8f348039",
+      "from": "git archive of the commit, built in a fresh CARGO_TARGET_DIR",
+      "built_at": "2026-11-07T19:19:59.388Z",
+      "tree": "3de3267420f1cab8acf981b2bb379735bfe24b1d",
+      "cargo": "cargo 1.97.0 (c980f4866 2026-06-30)",
+      "rustc": "rustc 1.97.0 (2d8144b78 2026-07-07)\nbinary: rustc\ncommit-hash: 2d8144b7880597b6e6d3dfd63a9a9efae3f533d3\ncommit-date: 2026-07-07\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.0\nLLVM version: 22.1.6",
+      "env": {
+        "CARGO_HTTP_CAINFO": "/root/.ccr/ca-bundle.crt",
+        "RUSTUP_HOME": "/root/.rustup",
+        "RUST_BACKTRACE": "1"
+      },
+      "user_cargo_config": [],
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "reused_at": "2026-11-07T19:26:20.682Z"
+    }
+  },
+  "params": {
+    "max": 15,
+    "pool": 200,
+    "tier": {
+      "//": "Decision D7 (eval/study/README.md decision log), approved by the founder 2026-11-06 and recorded before any held-out census. D5 (tier-d5.json) narrowed by rule kind and language. TypeScript/JavaScript: the default tier admits only call wrappers (wrapped_by:call) and layering (avoids:import); wrapped_by:decorator, wrapped_by:extends and wrapped_by:jsx move to the suggestion tier. Python: no rule kind is in the default tier; Python advises only and every Python proposal is suggestion tier. D5's conditions still apply on top of the rule kind: every symbol the rule names is defined in the repository (default.target \"in_repo\": no pkg:, global# or unresolved: target; lib.mjs namesPackage, drift_mine::tier::names_package) and the role has >= default.min_members members. The language of a proposal is read conservatively (lib.mjs proposalLanguage, drift_mine::tier::convention_language): py when any member of its role is Python (conventions.yaml evidence.python_members) or its example path is (.py/.pyi files and Python package manifests), ts otherwise. Role members are counted as the role's size (evidence.role_members when set, else total; exempt members count). DEFAULT tier = language in default.languages AND structured rule kind (lib.mjs ruleKind) in default.rule_kinds AND the rule names no symbol from outside the repository AND its role has >= default.min_members members. SUGGESTION tier = every other shown proposal. The not-wrong rate is reported over all shown proposals, both tiers. Release gate unchanged: a language's default tier ships as advise until it measures >= 95% default-tier accept under rubric v3, judged per D1, on a primary held-out run.",
+      "kind": "rule_kind",
+      "decision": "D7",
+      "default": {
+        "//": "TypeScript/JavaScript call wrappers and layering (import avoidance), each only when every symbol it names is defined in the repository, in roles of 15 or more members",
+        "rule_kinds": [
+          "wrapped_by:call",
+          "avoids:import"
+        ],
+        "languages": [
+          "ts"
+        ],
+        "min_members": 15,
+        "target": "in_repo"
+      },
+      "suggestion": {
+        "//": "D5's suggestion kinds, plus decorators, base classes and JSX layout wrappers (D7); every Python proposal (languages); and default-tier kinds whose rule names a package, built-in or unresolved symbol, or whose role is small",
+        "rule_kinds": [
+          "calls",
+          "named",
+          "avoids:other",
+          "prefers_library",
+          "before",
+          "has_test",
+          "model_has",
+          "package_has",
+          "dependency_version",
+          "wrapped_by:try",
+          "control",
+          "directive",
+          "throws",
+          "passes_key",
+          "renders",
+          "wrapped_by:decorator",
+          "wrapped_by:extends",
+          "wrapped_by:jsx"
+        ],
+        "languages": [
+          "py"
+        ]
+      },
+      "not_wrong_over": "all_shown"
+    },
+    "tier_pre_registered": true,
+    "exposed": [],
+    "repos": [
+      "thunderhub@7c9f7354009040cacf51d544c951db809bcf984a",
+      "fedify@88aa7efd5c46187bb50e4077438aa06f5a532cf2",
+      "hedgedoc@c937fd26b5d20ca8b2c5fd26e5b467f0a5c03e08",
+      "mercur@fd4e5a3e311fe1d39596f6b53c5e729a65ff2d4d",
+      "genkit@63fba09ba65b3d29261501e8d91d7c6d845cd9d7",
+      "taxhacker@636b6b9c98ed8df82f1c252a4cf3819202d8f111",
+      "computer-science-fundamentals@1fa8d8fecb8a6f90466f466f409199506086dbfd",
+      "memcode@782b0c0293d7c2ab9b7f0ce30786d47f5f84fa24",
+      "zyfun@ffba0e2c8b72a9d40e7484fb3053dc4922934950",
+      "tududi@71da9d7b34dfd1600657e9c5ddf40420206fd263",
+      "cursorless@ff86743f2ed8c282219d8228132610f13ae22fbe",
+      "backend@91218553b2d12006cd1370f4cf7c37861519ccf8",
+      "kan@18f42912c1399a745ec81bc793a27e2ce249717a",
+      "ipfs-webui@24ddaa89894b7069c6b973a5526111c19a55c7b0",
+      "restty@3db45b0e10dbe53c52a77131d366f519546e4f04",
+      "e2e@f185ca8ba2d8a0b1eb68776df832f44b645277ea",
+      "glyph@4e25a96a57462fef5ad0d19065a822695b480f60",
+      "dyrectorio@98fe402eb61b88e5472dd3008cabc59d2ebce60b"
+    ],
+    "cache": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache",
+    "checkouts": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/repos"
+  },
+  "repos": [
+    {
+      "name": "thunderhub",
+      "url": "https://github.com/apotdevin/thunderhub",
+      "sha": "7c9f7354009040cacf51d544c951db809bcf984a",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:26:20.898Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/repos/thunderhub",
+      "status": "ok",
+      "units": 1758,
+      "roles": 130,
+      "proposals": 0,
+      "pool": 0,
+      "census_ms": 255
+    },
+    {
+      "name": "fedify",
+      "url": "https://github.com/fedify-dev/fedify",
+      "sha": "88aa7efd5c46187bb50e4077438aa06f5a532cf2",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:26:22.871Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/repos/fedify",
+      "status": "ok",
+      "units": 2026,
+      "roles": 88,
+      "proposals": 1,
+      "pool": 1,
+      "census_ms": 908
+    },
+    {
+      "name": "hedgedoc",
+      "url": "https://github.com/hedgedoc/hedgedoc",
+      "sha": "c937fd26b5d20ca8b2c5fd26e5b467f0a5c03e08",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:26:28.293Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/repos/hedgedoc",
+      "status": "ok",
+      "units": 4513,
+      "roles": 214,
+      "proposals": 1,
+      "pool": 1,
+      "census_ms": 464
+    },
+    {
+      "name": "mercur",
+      "url": "https://github.com/mercurjs/mercur",
+      "sha": "fd4e5a3e311fe1d39596f6b53c5e729a65ff2d4d",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:26:31.501Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/repos/mercur",
+      "status": "ok",
+      "units": 9348,
+      "roles": 701,
+      "proposals": 9,
+      "pool": 9,
+      "census_ms": 1328
+    },
+    {
+      "name": "genkit",
+      "url": "https://github.com/genkit-ai/genkit",
+      "sha": "63fba09ba65b3d29261501e8d91d7c6d845cd9d7",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:26:42.826Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/repos/genkit",
+      "status": "ok",
+      "units": 4806,
+      "roles": 258,
+      "proposals": 7,
+      "pool": 7,
+      "census_ms": 904
+    },
+    {
+      "name": "taxhacker",
+      "url": "https://github.com/vas3k/TaxHacker",
+      "sha": "636b6b9c98ed8df82f1c252a4cf3819202d8f111",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:26:48.984Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/repos/taxhacker",
+      "status": "ok",
+      "units": 763,
+      "roles": 48,
+      "proposals": 1,
+      "pool": 1,
+      "census_ms": 120
+    },
+    {
+      "name": "computer-science-fundamentals",
+      "url": "https://github.com/AlexGalhardo/computer-science-fundamentals",
+      "sha": "1fa8d8fecb8a6f90466f466f409199506086dbfd",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:26:50.910Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/repos/computer-science-fundamentals",
+      "status": "ok",
+      "units": 3176,
+      "roles": 197,
+      "proposals": 2,
+      "pool": 2,
+      "census_ms": 408
+    },
+    {
+      "name": "memcode",
+      "url": "https://github.com/lakesare/memcode",
+      "sha": "782b0c0293d7c2ab9b7f0ce30786d47f5f84fa24",
+      "language": "JavaScript",
+      "framework_bucket": "express_fastify_hono",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:26:58.033Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/repos/memcode",
+      "status": "ok",
+      "units": 752,
+      "roles": 57,
+      "proposals": 1,
+      "pool": 1,
+      "census_ms": 119
+    },
+    {
+      "name": "zyfun",
+      "url": "https://github.com/Hiram-Wong/zyfun",
+      "sha": "ffba0e2c8b72a9d40e7484fb3053dc4922934950",
+      "language": "TypeScript",
+      "framework_bucket": "express_fastify_hono",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:27:01.496Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/repos/zyfun",
+      "status": "ok",
+      "units": 1716,
+      "roles": 119,
+      "proposals": 3,
+      "pool": 3,
+      "census_ms": 387
+    },
+    {
+      "name": "tududi",
+      "url": "https://github.com/chrisvel/tududi",
+      "sha": "71da9d7b34dfd1600657e9c5ddf40420206fd263",
+      "language": "JavaScript",
+      "framework_bucket": "express_fastify_hono",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:27:04.502Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/repos/tududi",
+      "status": "ok",
+      "units": 4413,
+      "roles": 185,
+      "proposals": 6,
+      "pool": 6,
+      "census_ms": 1166
+    },
+    {
+      "name": "cursorless",
+      "url": "https://github.com/cursorless-dev/cursorless",
+      "sha": "ff86743f2ed8c282219d8228132610f13ae22fbe",
+      "language": "TypeScript",
+      "framework_bucket": "express_fastify_hono",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:27:10.679Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/repos/cursorless",
+      "status": "ok",
+      "units": 2378,
+      "roles": 168,
+      "proposals": 2,
+      "pool": 2,
+      "census_ms": 403
+    },
+    {
+      "name": "backend",
+      "url": "https://github.com/prod-forge/backend",
+      "sha": "91218553b2d12006cd1370f4cf7c37861519ccf8",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:27:14.297Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/repos/backend",
+      "status": "ok",
+      "units": 362,
+      "roles": 33,
+      "proposals": 0,
+      "pool": 0,
+      "census_ms": 88
+    },
+    {
+      "name": "kan",
+      "url": "https://github.com/kanbn/kan",
+      "sha": "18f42912c1399a745ec81bc793a27e2ce249717a",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:27:15.725Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/repos/kan",
+      "status": "ok",
+      "units": 1383,
+      "roles": 83,
+      "proposals": 5,
+      "pool": 5,
+      "census_ms": 222
+    },
+    {
+      "name": "ipfs-webui",
+      "url": "https://github.com/ipfs/ipfs-webui",
+      "sha": "24ddaa89894b7069c6b973a5526111c19a55c7b0",
+      "language": "JavaScript",
+      "framework_bucket": "react_spa",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:27:17.589Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/repos/ipfs-webui",
+      "status": "ok",
+      "units": 934,
+      "roles": 38,
+      "proposals": 3,
+      "pool": 3,
+      "census_ms": 122
+    },
+    {
+      "name": "restty",
+      "url": "https://github.com/wiedymi/restty",
+      "sha": "3db45b0e10dbe53c52a77131d366f519546e4f04",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:27:19.259Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/repos/restty",
+      "status": "ok",
+      "units": 666,
+      "roles": 52,
+      "proposals": 0,
+      "pool": 0,
+      "census_ms": 143
+    },
+    {
+      "name": "e2e",
+      "url": "https://github.com/tester-army/e2e",
+      "sha": "f185ca8ba2d8a0b1eb68776df832f44b645277ea",
+      "language": "TypeScript",
+      "framework_bucket": "nextjs",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:27:21.614Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/repos/e2e",
+      "status": "ok",
+      "units": 791,
+      "roles": 40,
+      "proposals": 3,
+      "pool": 3,
+      "census_ms": 882
+    },
+    {
+      "name": "glyph",
+      "url": "https://github.com/pmndrs/glyph",
+      "sha": "4e25a96a57462fef5ad0d19065a822695b480f60",
+      "language": "TypeScript",
+      "framework_bucket": "react_spa",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:27:26.527Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/repos/glyph",
+      "status": "ok",
+      "units": 2126,
+      "roles": 130,
+      "proposals": 2,
+      "pool": 2,
+      "census_ms": 791
+    },
+    {
+      "name": "dyrectorio",
+      "url": "https://github.com/dyrector-io/dyrectorio",
+      "sha": "98fe402eb61b88e5472dd3008cabc59d2ebce60b",
+      "language": "TypeScript",
+      "framework_bucket": "nestjs",
+      "binary_sha256": "e199f1cfd067e232273c0ac61e9784335d27e5e28b85923d843e2c1c24dc991c",
+      "prepared_at": "2026-11-07T19:27:30.756Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout-run/cache/runs/heldout-ts-2026-11-07-94c2fb3f/repos/dyrectorio",
+      "status": "ok",
+      "units": 2658,
+      "roles": 172,
+      "proposals": 11,
+      "pool": 11,
+      "census_ms": 716
+    }
+  ]
+}

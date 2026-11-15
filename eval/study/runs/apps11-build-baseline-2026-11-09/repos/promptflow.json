@@ -1,0 +1,439 @@
+{
+  "name": "promptflow",
+  "repo": "microsoft/promptflow",
+  "sha": "33a68c9d3cf349d7fdfad1f41969af27543c0406",
+  "loc": 167815,
+  "shape": {
+    "mix": "multi-py",
+    "shape": "services",
+    "js_dirs": 0,
+    "py_dirs": 14,
+    "workspace_files": [],
+    "frontend_dirs": [],
+    "backend_dirs": [
+      "migration-guide/PromptFlow-to-MAF",
+      "src/promptflow-core",
+      "src/promptflow-devkit/promptflow/_sdk/data/executable"
+    ]
+  },
+  "packages": [
+    {
+      "dir": "migration-guide/PromptFlow-to-MAF",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 115,
+        "roles": 12,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 115,
+        "roles": 12,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "scripts/runtime_mgmt/runtime-env/context",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 0,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 0,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "src/promptflow",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 11,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 11,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "src/promptflow-azure",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 220,
+        "roles": 20,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 220,
+        "roles": 20,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "src/promptflow-core",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 1024,
+        "roles": 47,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 1024,
+        "roles": 47,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "src/promptflow-devkit",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 1169,
+        "roles": 55,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 1169,
+        "roles": 55,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "src/promptflow-devkit/promptflow/_sdk/data/executable",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 31,
+        "roles": 1,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 31,
+        "roles": 1,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "src/promptflow-evals",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 208,
+        "roles": 22,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 208,
+        "roles": 22,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "src/promptflow-parallel",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 48,
+        "roles": 5,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 48,
+        "roles": 5,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "src/promptflow-rag",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 41,
+        "roles": 5,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 41,
+        "roles": 5,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "src/promptflow-recording",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 82,
+        "roles": 9,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 82,
+        "roles": 9,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "src/promptflow-tools",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 150,
+        "roles": 9,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 150,
+        "roles": 9,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "src/promptflow-tracing",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 90,
+        "roles": 9,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 90,
+        "roles": 9,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    }
+  ],
+  "root": {
+    "default": {
+      "shown": 0,
+      "conventions": 0,
+      "units": 3545,
+      "roles": 213,
+      "tiers": {
+        "default": 0,
+        "suggestion": 0
+      },
+      "python_withheld": 0,
+      "secs": 2,
+      "cards": []
+    },
+    "python_opt_in": {
+      "shown": 0,
+      "conventions": 0,
+      "units": 3545,
+      "roles": 213,
+      "tiers": {
+        "default": 0,
+        "suggestion": 0
+      },
+      "python_withheld": null,
+      "secs": 1,
+      "cards": []
+    }
+  }
+}

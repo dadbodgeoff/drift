@@ -1,0 +1,28 @@
+[package]
+name = "drift-ts"
+description = "Drift TypeScript/JavaScript language parser (oxc) and framework adapters"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+drift-core.workspace = true
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+rayon.workspace = true
+ignore.workspace = true
+oxc_allocator.workspace = true
+oxc_ast.workspace = true
+oxc_ast_visit.workspace = true
+oxc_parser.workspace = true
+oxc_semantic.workspace = true
+oxc_span.workspace = true
+oxc_resolver.workspace = true
+
+[dev-dependencies]
+insta.workspace = true
+tempfile.workspace = true

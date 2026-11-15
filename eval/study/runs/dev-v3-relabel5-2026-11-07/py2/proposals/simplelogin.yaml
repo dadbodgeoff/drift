@@ -1,0 +1,60 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - base
+  - dataTables
+  - plugin
+  suffixes:
+  - min
+  layers:
+  - views/index
+conventions:
+- id: D-7fa3b5
+  status: proposed
+  mode: advise
+  summary: functions in app/** do not use redirects to computed URLs
+  role:
+    package: ""
+    dir: app
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: avoids
+    signal: sink:dynamic_redirect
+  evidence:
+    holders: 360
+    total: 361
+    lower_bound: 0.984
+    lift: 40.347
+    python_members: 361
+  example: app/abuser.py#mark_user_as_abuser
+  selector_version: 3
+- id: D-2a4960
+  status: proposed
+  mode: advise
+  summary: >-
+    files in app/** do not import from events/** (declared dependencies, and lazy
+    loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: app
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:events
+  evidence:
+    holders: 193
+    total: 195
+    lower_bound: 0.963
+    lift: 3.0
+    python_members: 195
+  example: app/abuser.py#(file)
+  selector_version: 3

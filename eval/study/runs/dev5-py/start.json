@@ -1,0 +1,23 @@
+{
+  "//": "Start record of the dev5 census (PREREG-F12-dev5-py-check.md section 3), committed and pushed before the census. held_out is false: dev5 is a blind dev pool (role dev), not a held-out set.",
+  "held_out": false,
+  "status": "started",
+  "role": "dev",
+  "manifest": "eval/study/runs/dev5-py/manifest.json",
+  "manifest_sha256": "131defcb886f99e75bf8cd3ad77e3b54a4643500f619c2906b3a93e73e058fc7",
+  "set_id": "py-dev5",
+  "source_manifest": "eval/dev5-py.json",
+  "source_sha256": "ee894713d0147b91ff70fc872d156d4a28753629567f1a0ce1cb1dcec62ad879",
+  "source_core_sha256": "3be7bf10d7619b770b128521c52f51bc03416c95ffb2522eaa3ffa8dc12a151c",
+  "max": 15,
+  "pool": 200,
+  "product_commit": "5bafc43d4366f183ab0a25d780533c9bb1725077",
+  "binary": "/tmp/claude-0/-home-user/4171c86d-7359-5961-a82e-0bb2a6a458e2/scratchpad/f12/drift-f12",
+  "binary_sha256": "18681df2dce171063be1128a2c4fd27489456270fc26b83f3d04d12dc55580ba",
+  "tooling_base": "0a65c43d2a08743b6b8624b41677220fbe53ab26",
+  "python_proposals": true,
+  "strict_tier": true,
+  "rubric": "v3",
+  "prereg": "eval/study/PREREG-F12-dev5-py-check.md",
+  "started_at": "2026-11-11T02:00:26.853Z"
+}

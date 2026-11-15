@@ -1,0 +1,61 @@
+{
+  "repo": "trpc",
+  "files": [
+    {
+      "path": ".agents/skills/pr-agent-callout/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/principle-boundary-discipline/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/principle-encode-lessons-in-structure/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/principle-type-system-discipline/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/tdd/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/trpc-conventions/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/typescript-best-practices/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "www/v10/docs/community/contributing.md",
+      "kind": "doc"
+    },
+    {
+      "path": "www/v11/docs/community/contributing.md",
+      "kind": "doc"
+    },
+    {
+      "path": "www/v9/docs/contributing.md",
+      "kind": "doc"
+    },
+    {
+      "path": ".oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "tooling/oxlint-plugin/",
+      "kind": "lint_custom (custom rule implementations)"
+    }
+  ]
+}

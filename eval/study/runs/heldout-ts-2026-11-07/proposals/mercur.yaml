@@ -1,0 +1,222 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - breadcrumb
+  - client
+  - common
+  - constants
+  - helpers
+  - jest
+  - layout
+  - loader
+  - middlewares
+  - mutations
+  - page
+  - query-config
+  - registry
+  - route
+  - schema
+  - service
+  - tsup
+  - types
+  - utils
+  - validators
+  suffixes:
+  - config
+  - spec
+conventions:
+- id: D-abfb09
+  status: proposed
+  mode: advise
+  summary: "packages/admin: functions in src/hooks/api/** call useMutation() before queryClient.invalidateQueries()"
+  role:
+    package: packages/admin
+    dir: src/hooks/api
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: pkg:@tanstack/react-query#useMutation
+    then: packages/admin/src/lib/query-client.ts#queryClient.invalidateQueries
+  evidence:
+    holders: 241
+    total: 242
+    lower_bound: 0.977
+    lift: 1.0
+  example: packages/admin/src/hooks/api/api-keys.tsx#useBatchAddSalesChannelsToApiKey
+  selector_version: 2
+- id: D-a8afe2
+  status: proposed
+  mode: advise
+  summary: "packages/admin: exported values in src/hooks/** are named `*Keys`"
+  role:
+    package: packages/admin
+    dir: src/hooks
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Keys"
+  evidence:
+    holders: 55
+    total: 55
+    lower_bound: 0.935
+    lift: 24.639
+    role_members: 56
+  example: packages/admin/src/hooks/api/api-keys.tsx#apiKeysQueryKeys
+  selector_version: 2
+- id: D-7af930
+  status: proposed
+  mode: advise
+  summary: "packages/core: functions in src/workflows/seller/steps/** are wrapped in createStep()"
+  role:
+    package: packages/core
+    dir: src/workflows/seller/steps
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - pkg:@medusajs/framework#createStep
+  evidence:
+    holders: 25
+    total: 25
+    lower_bound: 0.867
+    lift: 26.61
+  example: >-
+    packages/core/src/workflows/seller/steps/check-seller-has-owner.ts#checkSellerHasOwnerStep
+  selector_version: 2
+- id: D-032618
+  status: proposed
+  mode: advise
+  summary: "packages/core: exported values in src/** (middlewares files) are named `*Middlewares`"
+  role:
+    package: packages/core
+    dir: src
+    file: middlewares
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Middlewares"
+  evidence:
+    holders: 37
+    total: 38
+    lower_bound: 0.865
+    lift: 34.397
+  example: packages/core/src/api/admin/campaigns/middlewares.ts#adminCampaignsMiddlewares
+  selector_version: 2
+- id: D-db72ed
+  status: proposed
+  mode: advise
+  summary: "packages/admin: functions in src/hooks/table/columns/** are named `*Columns`"
+  role:
+    package: packages/admin
+    dir: src/hooks/table/columns
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: "*Columns"
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 35.192
+  example: >-
+    packages/admin/src/hooks/table/columns/use-attribute-table-columns.tsx#useAttributeTableColumns
+  selector_version: 2
+- id: D-aa499e
+  status: proposed
+  mode: advise
+  summary: "packages/admin: components in src/** (breadcrumb files) are named `*Breadcrumb`"
+  role:
+    package: packages/admin
+    dir: src
+    file: breadcrumb
+    entry: '-'
+    kind: component
+  rule:
+    type: named
+    pattern: "*Breadcrumb"
+  evidence:
+    holders: 29
+    total: 31
+    lower_bound: 0.793
+    lift: 41.342
+  example: >-
+    packages/admin/src/pages/api-key-management/api-key-management-detail/breadcrumb.tsx#ApiKeyManagementDetailBreadcrumb
+  selector_version: 2
+- id: D-2a2839
+  status: proposed
+  mode: advise
+  summary: "packages/admin: functions in src/** (loader files) are named `*Loader`"
+  role:
+    package: packages/admin
+    dir: src
+    file: loader
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: "*Loader"
+  evidence:
+    holders: 37
+    total: 41
+    lower_bound: 0.775
+    lift: 42.608
+  example: >-
+    packages/admin/src/pages/api-key-management/api-key-management-detail/loader.ts#apiKeyLoader
+  selector_version: 2
+- id: D-b363c0
+  status: proposed
+  mode: advise
+  summary: "packages/admin: functions in src/hooks/table/query/** validate their input with a schema"
+  role:
+    package: packages/admin
+    dir: src/hooks/table/query
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: validates
+  evidence:
+    holders: 25
+    total: 27
+    lower_bound: 0.766
+    lift: 27.002
+  example: >-
+    packages/admin/src/hooks/table/query/use-attribute-table-query.tsx#useAttributeTableQuery
+  selector_version: 2
+- id: D-c598ed
+  status: proposed
+  mode: advise
+  summary: "packages/admin: exported values in src/hooks/** are wrapped in queryKeysFactory()"
+  role:
+    package: packages/admin
+    dir: src/hooks
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - packages/admin/src/lib/query-key-factory.ts#queryKeysFactory
+  evidence:
+    holders: 49
+    total: 56
+    lower_bound: 0.764
+    lift: 30.911
+  example: packages/admin/src/hooks/api/api-keys.tsx#apiKeysQueryKeys
+  selector_version: 2

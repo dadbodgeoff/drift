@@ -1,0 +1,607 @@
+{
+ "entry_points": [
+  {
+   "path": "apps/portal/app/api/accounts/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/accounts",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/alerts/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/alerts",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/audit/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/audit",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/billing/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/billing",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/branding/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/branding",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/budgets/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/budgets",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/channels/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/channels",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/comments/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/comments",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/domains/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/domains",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/events/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/events",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/exports/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/exports",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/feeds/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/feeds",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/files/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/files",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/groups/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/groups",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/health/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 1,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/health",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/imports/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/imports",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/invoices/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/invoices",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/keys/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/keys",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/labels/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/labels",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/members/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/members",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/notes/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/notes",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/orders/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/orders",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/plans/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/plans",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/projects/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/projects",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/quotas/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/quotas",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/refunds/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 1,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/refunds",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/reports/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/reports",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/roles/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/roles",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/status/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 1,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/status",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/tags/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/tags",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/teams/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/teams",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/tokens/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/tokens",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/usage/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/usage",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/portal/app/api/webhooks/route.ts",
+   "package": "apps/portal",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/webhooks",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  }
+ ],
+ "guard_gaps": [
+  {
+   "package": "apps/portal",
+   "kind": "http",
+   "dir": "",
+   "guard": "withSession",
+   "members": 34,
+   "with_guard": 31,
+   "exceptions": [
+    {
+     "path": "apps/portal/app/api/health/route.ts",
+     "symbol": "GET",
+     "line": 1,
+     "kind": "http",
+     "method": "GET",
+     "route": "/api/health",
+     "guards": []
+    },
+    {
+     "path": "apps/portal/app/api/refunds/route.ts",
+     "symbol": "GET",
+     "line": 1,
+     "kind": "http",
+     "method": "GET",
+     "route": "/api/refunds",
+     "guards": []
+    },
+    {
+     "path": "apps/portal/app/api/status/route.ts",
+     "symbol": "GET",
+     "line": 1,
+     "kind": "http",
+     "method": "GET",
+     "route": "/api/status",
+     "guards": []
+    }
+   ],
+   "example": {
+    "path": "apps/portal/app/api/accounts/route.ts",
+    "symbol": "GET",
+    "line": 3,
+    "kind": "http",
+    "method": "GET",
+    "route": "/api/accounts",
+    "guards": [
+     "withSession"
+    ]
+   },
+   "convention": {
+    "id": "D-8394d6",
+    "status": "accepted",
+    "mode": "advise"
+   }
+  }
+ ],
+ "boundaries": {
+  "rules": []
+ },
+ "sinks": [],
+ "client_leaks": [],
+ "env": {},
+ "left_out": {
+  "files": 0,
+  "dirs": []
+ }
+}

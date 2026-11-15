@@ -1,0 +1,3174 @@
+{
+ "entry_points": [
+  {
+   "path": "apps/api/src/alerts/alerts.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /alerts/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/alerts/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/alerts/alerts.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /alerts",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/alerts",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/artifacts/artifacts.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /artifacts/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/artifacts/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/artifacts/artifacts.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /artifacts",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/artifacts",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/audits/audits.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /audits/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/audits/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/audits/audits.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /audits",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/audits",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/billing/billing.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /billing/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/billing/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/billing/billing.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /billing",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/billing",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/comments/comments.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /comments/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/comments/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/comments/comments.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /comments",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/comments",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/deployments/deployments.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /deployments/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/deployments/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/deployments/deployments.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /deployments",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/deployments",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/environments/environments.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /environments/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/environments/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/environments/environments.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /environments",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/environments",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/files/files.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /files/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/files/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/files/files.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /files",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/files",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/invoices/invoices.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /invoices/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/invoices/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/invoices/invoices.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /invoices",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/invoices",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/labels/labels.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /labels/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/labels/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/labels/labels.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /labels",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/labels",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/milestones/milestones.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /milestones/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/milestones/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/milestones/milestones.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /milestones",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/milestones",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/notifications/notifications.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /notifications/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/notifications/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/notifications/notifications.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /notifications",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/notifications",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/pipelines/pipelines.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /pipelines/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/pipelines/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/pipelines/pipelines.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /pipelines",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/pipelines",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/projects/projects.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /projects/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/projects/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/projects/projects.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /projects",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/projects",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/quotas/quotas.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /quotas/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/quotas/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/quotas/quotas.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /quotas",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/quotas",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/refunds/refunds.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /refunds/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/refunds/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/regions/regions.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /regions/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/regions/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/regions/regions.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /regions",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/regions",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/releases/releases.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /releases/:id",
+   "line": 8,
+   "kind": "http",
+   "method": "GET",
+   "route": "/releases/:id",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/releases/releases.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /releases",
+   "line": 13,
+   "kind": "http",
+   "method": "POST",
+   "route": "/releases",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/reports/reports.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /reports/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/reports/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/reports/reports.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /reports",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/reports",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/secrets/secrets.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /secrets/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/secrets/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/secrets/secrets.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /secrets",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/secrets",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/sessions/sessions.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /sessions/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/sessions/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/sessions/sessions.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /sessions",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/sessions",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/teams/teams.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /teams/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/teams/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/teams/teams.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /teams",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/teams",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/tokens/tokens.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /tokens/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/tokens/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/tokens/tokens.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /tokens",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/tokens",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/users/users.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /users/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/users/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/users/users.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /users",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/users",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/webhooks/webhooks.controller.ts",
+   "package": "apps/api",
+   "symbol": "GET /webhooks/:id",
+   "line": 10,
+   "kind": "http",
+   "method": "GET",
+   "route": "/webhooks/:id",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/api/src/webhooks/webhooks.controller.ts",
+   "package": "apps/api",
+   "symbol": "POST /webhooks",
+   "line": 15,
+   "kind": "http",
+   "method": "POST",
+   "route": "/webhooks",
+   "guards": [
+    "AuthGuard"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/alerts/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 4,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/alerts",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/analytics/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 4,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/analytics",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/billing/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 4,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/billing",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/campaigns/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 4,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/campaigns",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/customers/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 4,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/customers",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/domains/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 4,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/domains",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/events/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 4,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/events",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/exports/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 4,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/exports",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/folders/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 4,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/folders",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/integrations/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 4,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/integrations",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/links/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 4,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/links",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/members/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 4,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/members",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/onboarding/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 3,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/onboarding",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/overview/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 4,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/overview",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/reports/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 4,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/reports",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/segments/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 4,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/segments",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/settings/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 4,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/settings",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/tags/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 4,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/tags",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/tokens/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 4,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/tokens",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/usage/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 4,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/usage",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/(dashboard)/[slug]/webhooks/page.tsx",
+   "package": "apps/web",
+   "symbol": "default",
+   "line": 4,
+   "kind": "page",
+   "method": null,
+   "route": "/[slug]/webhooks",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/admin/abuse/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/admin/abuse",
+   "guards": [
+    "withAdmin"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/admin/audit/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/admin/audit",
+   "guards": [
+    "withAdmin"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/admin/cache/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/admin/cache",
+   "guards": [
+    "withAdmin"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/admin/domains/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/admin/domains",
+   "guards": [
+    "withAdmin"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/admin/emails/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/admin/emails",
+   "guards": [
+    "withAdmin"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/admin/exports/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/admin/exports",
+   "guards": [
+    "withAdmin"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/admin/flags/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/admin/flags",
+   "guards": [
+    "withAdmin"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/admin/health/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/admin/health",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/admin/impersonate/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/admin/impersonate",
+   "guards": [
+    "withAdmin"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/admin/invoices/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/admin/invoices",
+   "guards": [
+    "withAdmin"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/admin/jobs/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/admin/jobs",
+   "guards": [
+    "withAdmin"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/admin/metrics/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/admin/metrics",
+   "guards": [
+    "withAdmin"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "raw_sql",
+     "via": [
+      "apps/web/app/api/admin/metrics/route.ts#GET",
+      "apps/web/lib/analytics.ts#eventsFor"
+     ]
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/admin/payouts/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/admin/payouts",
+   "guards": [
+    "withAdmin"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/admin/plans/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/admin/plans",
+   "guards": [
+    "withAdmin"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/admin/queues/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/admin/queues",
+   "guards": [
+    "withAdmin"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/admin/refunds/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/admin/refunds",
+   "guards": [
+    "withAdmin"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/admin/regions/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/admin/regions",
+   "guards": [
+    "withAdmin"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/admin/sso/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/admin/sso",
+   "guards": [
+    "withAdmin"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/admin/users/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/admin/users",
+   "guards": [
+    "withAdmin"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/admin/workspaces/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/admin/workspaces",
+   "guards": [
+    "withAdmin"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/oauth/callback/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/oauth/callback",
+   "guards": [],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "dynamic_redirect",
+     "via": [
+      "apps/web/app/api/oauth/callback/route.ts#GET"
+     ]
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/public/preview/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/public/preview",
+   "guards": [],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "dynamic_fetch",
+     "via": [
+      "apps/web/app/api/public/preview/route.ts#GET"
+     ]
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/public/status/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/public/status",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/alerts",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/alerts",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/archive-all",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/audit",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/audit",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/billing/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/billing",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/billing/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/billing",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/branding/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/branding",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/branding/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/branding",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/budgets/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/budgets",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/budgets/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/budgets",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/campaigns/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/campaigns",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/campaigns/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/campaigns",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/channels/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/channels",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/channels/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/channels",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/customers/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/customers",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/customers/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/customers",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/devices/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/devices",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/devices/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/devices",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/domains/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/domains",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/domains/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/domains",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/events/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/events",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/events/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/events",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/export-all/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/export-all",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/exports/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/exports",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/exports/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/exports",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/files/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/files",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/files/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/files",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/folders/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/folders",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/folders/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/folders",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/imports/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/imports",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/imports/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/imports",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/integrations/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/integrations",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/integrations/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/integrations",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/invites",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/keys/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/keys",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/keys/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/keys",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/limits/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/limits",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/limits/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/limits",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/link-count/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/link-count",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/links/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/links",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/links/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/links",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/members/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/members",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/members/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/members",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/notes/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/notes",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/notes/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/notes",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/ping",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/projects/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/projects",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/projects/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/projects",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/quotas/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/quotas",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/quotas/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/quotas",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/regions",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/reports/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/reports",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/reports/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/reports",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/roles/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/roles",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/roles/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/roles",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/rules/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/rules",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/rules/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/rules",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/segments/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/segments",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/segments/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/segments",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/sessions/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/sessions",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/sessions/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/sessions",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/settings/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/settings",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/settings/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/settings",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/tags/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/tags",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/tags/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/tags",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/teams/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/teams",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/teams/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/teams",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/tokens/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/tokens",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/tokens/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/tokens",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/usage/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/usage",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/usage/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/usage",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/webhooks/route.ts",
+   "package": "apps/web",
+   "symbol": "GET",
+   "line": 5,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/workspaces/[id]/webhooks",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/app/api/workspaces/[id]/webhooks/route.ts",
+   "package": "apps/web",
+   "symbol": "POST",
+   "line": 10,
+   "kind": "http",
+   "method": "POST",
+   "route": "/api/workspaces/[id]/webhooks",
+   "guards": [
+    "withWorkspace"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/lib/actions/archive-link.ts",
+   "package": "apps/web",
+   "symbol": "archiveLinkAction",
+   "line": 7,
+   "kind": "server_action",
+   "method": null,
+   "route": null,
+   "guards": [
+    "authActionClient.inputSchema().action"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/lib/actions/ban-customer.ts",
+   "package": "apps/web",
+   "symbol": "banCustomer",
+   "line": 5,
+   "kind": "server_action",
+   "method": null,
+   "route": null,
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/lib/actions/cancel-plan.ts",
+   "package": "apps/web",
+   "symbol": "cancelPlanAction",
+   "line": 7,
+   "kind": "server_action",
+   "method": null,
+   "route": null,
+   "guards": [
+    "authActionClient.inputSchema().action"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/lib/actions/create-campaign.ts",
+   "package": "apps/web",
+   "symbol": "createCampaignAction",
+   "line": 7,
+   "kind": "server_action",
+   "method": null,
+   "route": null,
+   "guards": [
+    "authActionClient.inputSchema().action"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/lib/actions/create-folder.ts",
+   "package": "apps/web",
+   "symbol": "createFolderAction",
+   "line": 7,
+   "kind": "server_action",
+   "method": null,
+   "route": null,
+   "guards": [
+    "authActionClient.inputSchema().action"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/lib/actions/create-link.ts",
+   "package": "apps/web",
+   "symbol": "createLinkAction",
+   "line": 7,
+   "kind": "server_action",
+   "method": null,
+   "route": null,
+   "guards": [
+    "authActionClient.inputSchema().action"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/lib/actions/create-tag.ts",
+   "package": "apps/web",
+   "symbol": "createTagAction",
+   "line": 7,
+   "kind": "server_action",
+   "method": null,
+   "route": null,
+   "guards": [
+    "authActionClient.inputSchema().action"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/lib/actions/create-webhook.ts",
+   "package": "apps/web",
+   "symbol": "createWebhookAction",
+   "line": 7,
+   "kind": "server_action",
+   "method": null,
+   "route": null,
+   "guards": [
+    "authActionClient.inputSchema().action"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/lib/actions/delete-link.ts",
+   "package": "apps/web",
+   "symbol": "deleteLinkAction",
+   "line": 7,
+   "kind": "server_action",
+   "method": null,
+   "route": null,
+   "guards": [
+    "authActionClient.inputSchema().action"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/lib/actions/export-events.ts",
+   "package": "apps/web",
+   "symbol": "exportEventsAction",
+   "line": 7,
+   "kind": "server_action",
+   "method": null,
+   "route": null,
+   "guards": [
+    "authActionClient.inputSchema().action"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/lib/actions/invite-member.ts",
+   "package": "apps/web",
+   "symbol": "inviteMemberAction",
+   "line": 7,
+   "kind": "server_action",
+   "method": null,
+   "route": null,
+   "guards": [
+    "authActionClient.inputSchema().action"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/lib/actions/move-folder.ts",
+   "package": "apps/web",
+   "symbol": "moveFolderAction",
+   "line": 7,
+   "kind": "server_action",
+   "method": null,
+   "route": null,
+   "guards": [
+    "authActionClient.inputSchema().action"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/lib/actions/pause-campaign.ts",
+   "package": "apps/web",
+   "symbol": "pauseCampaignAction",
+   "line": 7,
+   "kind": "server_action",
+   "method": null,
+   "route": null,
+   "guards": [
+    "authActionClient.inputSchema().action"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/lib/actions/remove-member.ts",
+   "package": "apps/web",
+   "symbol": "removeMemberAction",
+   "line": 7,
+   "kind": "server_action",
+   "method": null,
+   "route": null,
+   "guards": [
+    "authActionClient.inputSchema().action"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/lib/actions/rename-tag.ts",
+   "package": "apps/web",
+   "symbol": "renameTagAction",
+   "line": 7,
+   "kind": "server_action",
+   "method": null,
+   "route": null,
+   "guards": [
+    "authActionClient.inputSchema().action"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/lib/actions/rotate-token.ts",
+   "package": "apps/web",
+   "symbol": "rotateTokenAction",
+   "line": 7,
+   "kind": "server_action",
+   "method": null,
+   "route": null,
+   "guards": [
+    "authActionClient.inputSchema().action"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/lib/actions/update-billing.ts",
+   "package": "apps/web",
+   "symbol": "updateBillingAction",
+   "line": 7,
+   "kind": "server_action",
+   "method": null,
+   "route": null,
+   "guards": [
+    "authActionClient.inputSchema().action"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/lib/actions/update-branding.ts",
+   "package": "apps/web",
+   "symbol": "updateBrandingAction",
+   "line": 7,
+   "kind": "server_action",
+   "method": null,
+   "route": null,
+   "guards": [
+    "authActionClient.inputSchema().action"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "apps/web/lib/actions/update-link.ts",
+   "package": "apps/web",
+   "symbol": "updateLinkAction",
+   "line": 7,
+   "kind": "server_action",
+   "method": null,
+   "route": null,
+   "guards": [
+    "authActionClient.inputSchema().action"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  }
+ ],
+ "guard_gaps": [
+  {
+   "package": "apps/api",
+   "kind": "http",
+   "dir": "",
+   "guard": "AuthGuard",
+   "members": 49,
+   "with_guard": 47,
+   "exceptions": [
+    {
+     "path": "apps/api/src/releases/releases.controller.ts",
+     "symbol": "GET /releases/:id",
+     "line": 8,
+     "kind": "http",
+     "method": "GET",
+     "route": "/releases/:id",
+     "guards": []
+    },
+    {
+     "path": "apps/api/src/releases/releases.controller.ts",
+     "symbol": "POST /releases",
+     "line": 13,
+     "kind": "http",
+     "method": "POST",
+     "route": "/releases",
+     "guards": []
+    }
+   ],
+   "example": {
+    "path": "apps/api/src/alerts/alerts.controller.ts",
+    "symbol": "GET /alerts/:id",
+    "line": 10,
+    "kind": "http",
+    "method": "GET",
+    "route": "/alerts/:id",
+    "guards": [
+     "AuthGuard"
+    ]
+   }
+  },
+  {
+   "package": "apps/web",
+   "kind": "http",
+   "dir": "apps/web/app/api/admin",
+   "guard": "withAdmin",
+   "members": 20,
+   "with_guard": 19,
+   "exceptions": [
+    {
+     "path": "apps/web/app/api/admin/health/route.ts",
+     "symbol": "GET",
+     "line": 3,
+     "kind": "http",
+     "method": "GET",
+     "route": "/api/admin/health",
+     "guards": []
+    }
+   ],
+   "example": {
+    "path": "apps/web/app/api/admin/abuse/route.ts",
+    "symbol": "GET",
+    "line": 4,
+    "kind": "http",
+    "method": "GET",
+    "route": "/api/admin/abuse",
+    "guards": [
+     "withAdmin"
+    ]
+   },
+   "convention": {
+    "id": "D-288d8d",
+    "status": "accepted",
+    "mode": "advise"
+   }
+  },
+  {
+   "package": "apps/web",
+   "kind": "http",
+   "dir": "apps/web/app/api/workspaces",
+   "guard": "withWorkspace",
+   "members": 74,
+   "with_guard": 70,
+   "exceptions": [
+    {
+     "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+     "symbol": "GET",
+     "line": 4,
+     "kind": "http",
+     "method": "GET",
+     "route": "/api/workspaces/[id]/archive-all",
+     "guards": []
+    },
+    {
+     "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+     "symbol": "GET",
+     "line": 4,
+     "kind": "http",
+     "method": "GET",
+     "route": "/api/workspaces/[id]/invites",
+     "guards": []
+    },
+    {
+     "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+     "symbol": "GET",
+     "line": 5,
+     "kind": "http",
+     "method": "GET",
+     "route": "/api/workspaces/[id]/ping",
+     "guards": []
+    },
+    {
+     "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+     "symbol": "GET",
+     "line": 4,
+     "kind": "http",
+     "method": "GET",
+     "route": "/api/workspaces/[id]/regions",
+     "guards": []
+    }
+   ],
+   "example": {
+    "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+    "symbol": "GET",
+    "line": 5,
+    "kind": "http",
+    "method": "GET",
+    "route": "/api/workspaces/[id]/alerts",
+    "guards": [
+     "withWorkspace"
+    ]
+   },
+   "convention": {
+    "id": "D-b0d245",
+    "status": "accepted",
+    "mode": "block"
+   }
+  },
+  {
+   "package": "apps/web",
+   "kind": "server_action",
+   "dir": "",
+   "guard": "authActionClient.inputSchema().action",
+   "members": 19,
+   "with_guard": 18,
+   "exceptions": [
+    {
+     "path": "apps/web/lib/actions/ban-customer.ts",
+     "symbol": "banCustomer",
+     "line": 5,
+     "kind": "server_action",
+     "method": null,
+     "route": null,
+     "guards": []
+    }
+   ],
+   "example": {
+    "path": "apps/web/lib/actions/archive-link.ts",
+    "symbol": "archiveLinkAction",
+    "line": 7,
+    "kind": "server_action",
+    "method": null,
+    "route": null,
+    "guards": [
+     "authActionClient.inputSchema().action"
+    ]
+   },
+   "convention": {
+    "id": "D-50ba36",
+    "status": "proposed",
+    "mode": "advise"
+   }
+  }
+ ],
+ "boundaries": {
+  "rules": []
+ },
+ "sinks": [
+  {
+   "kind": "dynamic_fetch",
+   "path": "apps/web/app/api/public/preview/route.ts",
+   "symbol": "GET",
+   "line": 4
+  },
+  {
+   "kind": "dynamic_redirect",
+   "path": "apps/web/app/api/oauth/callback/route.ts",
+   "symbol": "GET",
+   "line": 3
+  },
+  {
+   "kind": "raw_sql",
+   "path": "apps/web/lib/analytics.ts",
+   "symbol": "eventsFor",
+   "line": 3
+  },
+  {
+   "kind": "weak_hash",
+   "path": "packages/utils/src/hash.ts",
+   "symbol": "fingerprint",
+   "line": 4
+  }
+ ],
+ "client_leaks": [
+  {
+   "reaches": "env:STRIPE_SECRET_KEY",
+   "clients": [
+    "apps/web/components/billing-card.tsx"
+   ],
+   "example": [
+    "apps/web/components/billing-card.tsx",
+    "env:STRIPE_SECRET_KEY"
+   ]
+  },
+  {
+   "reaches": "packages/db/src/client.ts",
+   "clients": [
+    "apps/web/components/usage-chart.tsx"
+   ],
+   "example": [
+    "apps/web/components/usage-chart.tsx",
+    "packages/db/src/index.ts",
+    "packages/db/src/client.ts"
+   ]
+  }
+ ],
+ "env": {
+  "process.env.STRIPE_SECRET_KEY": [
+   "apps/web/components/billing-card.tsx"
+  ]
+ },
+ "left_out": {
+  "files": 25,
+  "dirs": [
+   "examples/"
+  ]
+ }
+}

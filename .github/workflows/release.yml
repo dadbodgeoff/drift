@@ -1,0 +1,157 @@
+name: Release
+
+# Releases are built and published only from CI, never from a laptop.
+# Tag `vX.Y.Z` -> cross-platform binaries -> checksums + build provenance ->
+# GitHub Release -> (after manual approval) npm packages via trusted publishing.
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # The tag, Cargo.toml and the plugin must agree, or npm would publish 0.1.0
+  # wrapping a binary that reports another version (the release job also checks
+  # the built binary's `drift --version`).
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - name: Tag matches the workspace and plugin versions
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          cargo_version=$(sed -n '/^\[workspace.package\]/,/^\[/s/^version = "\(.*\)"/\1/p' Cargo.toml)
+          plugin_version=$(node -p 'require("./integrations/claude-code/.claude-plugin/plugin.json").version')
+          echo "tag $tag, Cargo.toml $cargo_version, plugin.json $plugin_version"
+          [ "$tag" = "$cargo_version" ] || { echo "::error::tag v$tag does not match Cargo.toml version $cargo_version"; exit 1; }
+          [ "$tag" = "$plugin_version" ] || { echo "::error::tag v$tag does not match plugin.json version $plugin_version"; exit 1; }
+
+  build:
+    needs: verify
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { target: x86_64-unknown-linux-musl, os: ubuntu-latest, exe: drift }
+          - { target: aarch64-unknown-linux-musl, os: ubuntu-24.04-arm, exe: drift }
+          # Cross-compiled on Apple silicon: the Intel macOS runner images are being retired.
+          - { target: x86_64-apple-darwin, os: macos-latest, exe: drift }
+          - { target: aarch64-apple-darwin, os: macos-latest, exe: drift }
+          - { target: x86_64-pc-windows-msvc, os: windows-latest, exe: drift.exe }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - name: Install musl tools
+        if: contains(matrix.target, 'musl')
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - run: rustup show && rustup target add ${{ matrix.target }}
+      - name: Build
+        shell: bash
+        run: cargo build --release --locked -p drift-cli --target ${{ matrix.target }}
+      - name: Stage binary
+        shell: bash
+        run: |
+          mkdir -p dist/${{ matrix.target }}
+          cp target/${{ matrix.target }}/release/${{ matrix.exe }} dist/${{ matrix.target }}/
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bin-${{ matrix.target }}
+          path: dist/
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: bin-*
+          path: dist
+          merge-multiple: true
+      - name: The binary reports the tag version
+        run: |
+          chmod +x dist/x86_64-unknown-linux-musl/drift
+          said=$(dist/x86_64-unknown-linux-musl/drift --version)
+          [ "$said" = "drift ${GITHUB_REF_NAME#v}" ] || { echo "::error::the binary says '$said', the tag is $GITHUB_REF_NAME"; exit 1; }
+      - name: Archive and checksum
+        run: |
+          mkdir -p out
+          # Artifacts lose the executable bit between jobs; restore it before archiving.
+          find dist -type f -exec chmod +x {} +
+          for dir in dist/*/; do
+            target=$(basename "$dir")
+            tar -C "$dir" -czf "out/drift-${GITHUB_REF_NAME}-${target}.tar.gz" .
+          done
+          (cd out && sha256sum *.tar.gz > SHA256SUMS)
+      - name: Attest build provenance (SLSA)
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: out/*.tar.gz
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pre=""
+          # A `-` before any `+build` metadata marks a semver prerelease.
+          case "${GITHUB_REF_NAME%%+*}" in *-*) pre="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" out/* --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes --verify-tag $pre
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-binaries
+          path: dist/
+
+  npm:
+    needs: release
+    runs-on: ubuntu-latest
+    # A person approves every npm publish (Settings > Environments > npm).
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-binaries
+          path: dist
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+      - name: Build packages
+        run: node npm/build.mjs "${GITHUB_REF_NAME#v}" dist npm-out
+      - name: Publish (trusted publishing, provenance; platform packages first)
+        # npm refuses a prerelease (v0.1.0-beta.1) without an explicit dist-tag.
+        # A version already on the registry is skipped, so a re-run after a partial
+        # publish finishes the rest instead of failing on the first package.
+        run: |
+          tag=latest
+          case "${GITHUB_REF_NAME%%+*}" in *-*) tag=next ;; esac
+          publish() {
+            id=$(node -p 'const p = require(process.argv[1]); p.name + "@" + p.version' "$PWD/$1/package.json")
+            if npm view "$id" version >/dev/null 2>&1; then
+              echo "$id is already published: skipped"
+            else
+              npm publish "$1" --provenance --access public --tag "$tag"
+            fi
+          }
+          for dir in npm-out/*/; do
+            [ "$(basename "$dir")" = main ] && continue
+            publish "${dir%/}"
+          done
+          publish npm-out/main

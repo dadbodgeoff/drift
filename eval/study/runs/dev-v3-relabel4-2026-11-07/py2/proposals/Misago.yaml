@@ -1,0 +1,201 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - api
+  - apps
+  - auth
+  - base
+  - cache
+  - categories
+  - conftest
+  - context_processors
+  - decorators
+  - delete
+  - enums
+  - forms
+  - middleware
+  - misago_plugin
+  - models
+  - permissions
+  - post
+  - root
+  - signals
+  - snackbar
+  - tasks
+  - test
+  - threads
+  - urls
+  - utils
+  - validators
+  - views
+  suffixes:
+  - config
+  layers:
+  - admin/forms
+  - admin/views
+  - tests/conftest
+conventions:
+- id: D-d8703c
+  status: proposed
+  mode: advise
+  summary: classes in misago/permissions/** call super().__call__()
+  role:
+    package: ""
+    dir: misago/permissions
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: global#super().__call__
+  evidence:
+    holders: 68
+    total: 68
+    lower_bound: 0.947
+    lift: 7.612
+    role_members: 74
+    python_members: 74
+  example: >-
+    misago/permissions/hooks/build_user_category_permissions.py#BuildUserCategoryPermissionsHook
+  selector_version: 2
+- id: D-c9ae1e
+  status: proposed
+  mode: advise
+  summary: classes in misago/permissions/hooks/** extend FilterHook
+  role:
+    package: ""
+    dir: misago/permissions/hooks
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - misago/plugins/hooks.py#FilterHook
+  evidence:
+    holders: 67
+    total: 67
+    lower_bound: 0.946
+    lift: 8.241
+    role_members: 68
+    python_members: 68
+  example: >-
+    misago/permissions/hooks/build_user_category_permissions.py#BuildUserCategoryPermissionsHook
+  selector_version: 2
+- id: D-90a5d9
+  status: proposed
+  mode: advise
+  summary: HTTP handlers in misago/** (urls files) call extensions.get()
+  role:
+    package: ""
+    dir: misago
+    file: urls
+    entry: http
+    kind: variable
+  rule:
+    type: calls
+    callee: misago/plugins/extensions.py#extensions.get
+  evidence:
+    holders: 49
+    total: 50
+    lower_bound: 0.895
+    lift: 9.6
+    python_members: 50
+  example: misago/likes/urls.py#private_thread_post_like_view
+  selector_version: 2
+- id: D-e72fc8
+  status: proposed
+  mode: advise
+  summary: classes in misago/posting/hooks/** extend FilterHook
+  role:
+    package: ""
+    dir: misago/posting/hooks
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - misago/plugins/hooks.py#FilterHook
+  evidence:
+    holders: 29
+    total: 29
+    lower_bound: 0.883
+    lift: 8.085
+    role_members: 30
+    python_members: 30
+  example: >-
+    misago/posting/hooks/get_private_thread_edit_formset.py#GetPrivateThreadEditFormsetHook
+  selector_version: 2
+- id: D-b4e5ff
+  status: proposed
+  mode: advise
+  summary: classes in misago/** (forms files) are named `*Form`
+  role:
+    package: ""
+    dir: misago
+    file: forms
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Form"
+  evidence:
+    holders: 28
+    total: 28
+    lower_bound: 0.879
+    lift: 16.734
+    role_members: 31
+    python_members: 31
+  example: misago/account/forms.py#AccountDeleteForm
+  selector_version: 2
+- id: D-5862f4
+  status: proposed
+  mode: advise
+  summary: "frontend: classes in src/components/** extend react.Component"
+  role:
+    package: frontend
+    dir: src/components
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - pkg:react#default.Component
+  evidence:
+    holders: 133
+    total: 159
+    lower_bound: 0.771
+    lift: 10.222
+  example: frontend/src/components/Api/ApiFetch.jsx#ApiFetch
+  selector_version: 2
+- id: D-d93d41
+  status: proposed
+  mode: advise
+  summary: functions in misago/posting/** declare their return type
+  role:
+    package: ""
+    dir: misago/posting
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 28
+    total: 31
+    lower_bound: 0.751
+    lift: 3.156
+    python_members: 31
+  example: misago/posting/approval.py#require_private_thread_approval
+  selector_version: 2

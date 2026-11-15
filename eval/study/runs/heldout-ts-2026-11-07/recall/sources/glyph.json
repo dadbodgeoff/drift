@@ -1,0 +1,3797 @@
+{
+  "repo": "glyph",
+  "files": [
+    {
+      "path": ".agents/docs/attestations/2026-10-05-glyph-281d781f.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-05-glyph-2e00762e.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-05-glyph-b90c1414.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-05-glyph-benchmarks-54ce073f.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-05-glyph-benchmarks-71414971.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-05-glyph-benchmarks-732bcf69.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-05-glyph-benchmarks-afbea6f3.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-05-glyph-benchmarks-b3127579.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-05-glyph-benchmarks-c7529920.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-05-glyph-benchmarks-d44b971c.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-05-glyph-f75ed481.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-05-glyph-fb80caf6.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-06-glyph-75e9b292.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-06-glyph-7a31e4b8.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-06-glyph-9a029abf.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-06-glyph-b34070cf.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-07-glyph-425b9e16.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-07-glyph-638bf6dd.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-07-glyph-7169d037.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-07-glyph-9ceb09ce.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-07-glyph-benchmarks-10ccba9b.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-07-glyph-dab6f175.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-07-glyph-e844498e.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-08b1148d.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-123b4848.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-16f0595a.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-1c096091.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-31e901ab.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-326347e1.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-39a56ff9.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-54df1d97.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-553e6096.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-69965953.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-7f29d0e4.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-85c9df4b.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-93ede139.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-94cc7921.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-958e2a37.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-96c8ee91.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-96db4ba6.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-96fc375d.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-a43e85b4.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-aa390afe.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-ac3916b5.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-ade2f83f.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-b0dd0239.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-b2380483.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-benchmarks-0089e543.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-benchmarks-280c897c.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-benchmarks-44285a1f.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-benchmarks-502f2c01.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-benchmarks-575f9ef9.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-benchmarks-5ced4146.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-benchmarks-617d32e7.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-benchmarks-6c24b31d.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-benchmarks-844b6165.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-benchmarks-abed38b2.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-benchmarks-bd3febfe.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-benchmarks-c5d96d30.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-benchmarks-c67d088e.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-benchmarks-cd114765.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-benchmarks-dae1ed4a.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-benchmarks-f4c15ff6.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-d8dfd45a.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-e27519e5.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-e285e96e.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-examples-a42da1e2.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-f002dae9.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-f011ba17.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-08-glyph-f6bf1218.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-06794e84.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-120400a5.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-2055de6e.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-4d68221c.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-51c1436a.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-5d54fb1d.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-715500f6.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-78ab161a.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-79be7452.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-80a73b68.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-95b35aa7.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-99a0900e.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-a027545b.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-a4b19d34.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-aff66ed3.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-b0d68260.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-b2baa277.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-bb87af1e.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-0c28a343.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-1268791e.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-22856b12.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-25136345.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-3568aecc.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-38463581.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-5a1b1122.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-68169028.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-6fabdc4f.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-79937836.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-7beff0be.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-8050b562.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-89568a1b.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-8c9d6a7e.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-9393c809.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-95db70fe.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-acf33d41.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-bbac49bf.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-bf7e27e8.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-ccd9dd57.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-cd4d5c0e.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-d31a51fc.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-d690f049.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-benchmarks-fccfd63f.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-bf53684c.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-c34fc44c.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-ead50fac.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-09-glyph-f532ad30.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-01c9e02c.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-0d5d10e2.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-3695a27e.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-4998aacc.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-71abe306.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-7587bc45.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-8bb88432.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-9551ec3e.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-a1c42da5.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-ba2b16a3.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-bdcd45c3.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-benchmarks-2c29f476.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-benchmarks-38627158.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-benchmarks-558d7898.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-benchmarks-6640cd56.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-benchmarks-e0d611a8.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-benchmarks-e5f0aee6.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-benchmarks-f223f2c8.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-c4a30a06.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-d0246bd9.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-d4ea6e9c.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-ddd4f869.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-e19d0540.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-ece2eea8.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-10-glyph-efb2c71f.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-13-glyph-benchmarks-0bc5f952.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-13-glyph-benchmarks-2c2be6fd.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-13-glyph-benchmarks-b677e675.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-13-glyph-e9393838.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-13-glyph-f56587e5.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-15-glyph-0334c1b4.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-15-glyph-0d282147.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-15-glyph-1c5c6c50.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-15-glyph-32831511.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-15-glyph-7498f5e2.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-15-glyph-8d4d6bcd.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-15-glyph-a766ab5c.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-15-glyph-b14759d2.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-15-glyph-benchmarks-a7a6af83.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/attestations/2026-10-15-glyph-benchmarks-cc4ea4bb.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/engineering/code-style.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/guides/react.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/guides/renderer-integration.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/guides/technique-implementation-report.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/guides/vue.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/index.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-correction.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-decision-2.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-decision.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-governance-2.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-governance.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-hardening.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-implementation-2.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-implementation-3.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-implementation-4.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-implementation-5.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-implementation-6.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-implementation-7.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-implementation-8.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-implementation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-migration.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-tooling.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-update-10.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-update-11.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-update-12.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-update-2.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-update-3.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-update-4.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-update-5.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-update-6.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-update-7.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-update-8.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-update-9.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-update.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-verification-2.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-verification-3.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-24-verification.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-benchmark-correctness.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-cleanup.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-correction-2.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-correction-3.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-correction.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-correctness-2.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-correctness-3.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-correctness.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-filesystem-safety.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-fuzzing.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-governance-2.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-governance.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-hardening-2.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-hardening-3.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-hardening-4.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-hardening-5.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-hardening-6.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-hardening-7.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-hardening-8.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-hardening.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-implementation-10.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-implementation-11.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-implementation-12.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-implementation-13.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-implementation-14.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-implementation-2.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-implementation-3.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-implementation-4.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-implementation-5.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-implementation-6.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-implementation-7.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-implementation-8.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-implementation-9.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-implementation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-memory-hardening.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-performance-2.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-performance-3.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-performance.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-planning.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-research.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-security.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-size-enforcement.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-test-reliability.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-tooling.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-verification-2.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-verification-3.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-verification.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-version-authority.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-25-worker-lifecycle.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-advanced-shaping-conformance.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-advanced-shaping-fixtures.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-advanced-shaping-live-path.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-advanced-shaping-motion.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-advanced-shaping-performance.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-bake-host-baseline.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-benchmark-correction.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-bitmap-correctness.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-ci.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-correction.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-dynamic-layout-first-frame-continuity.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-extension-schemas.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-fixed-mtsdf-baker.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-fixed-mtsdf-coordinates.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-governance-baseline.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-gpu-timing.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-implementation-2.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-implementation-3.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-implementation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-live-benchmark-telemetry.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-milestone-6-4-product-correction.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-milestone-6-adversarial-remediation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-milestone-7-1-hardening.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-mtsdf-candidate-size.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-mtsdf-direct-memory-abi.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-mtsdf-generator-admission-closed.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-mtsdf-generator-admission.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-mtsdf-oracle-corpus.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-mtsdf-package-integration.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-mtsdf-quality-oracle.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-mtsdf-runtime-foundation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-owned-mtsdf-evidence.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-packed-consumer.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-paragraph-stress-volume-correction.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-planning.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-r3f-v10-integration-pin.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-repository-owned-mtsdf-core.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-responsive-spacing.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-shared-lossless-raster-artifacts.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-sharp-telemetry-graphs.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-26-tooling.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-abi-decision.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-activity-lifecycle.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-advanced-shaping-evidence.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-advanced-shaping-playback.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-advanced-shaping-typewriter.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-allocator-research.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-benchmark-payload-terminology.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-benchmark-responsive-shell.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-captured-system-timings.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-ci-evidence-closure.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-cjk-showcase-fidelity.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-closure-verification.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-compiler-derived-abi-layouts.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-conformance.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-continuous-benchmark-presentation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-correction.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-crisp-live-telemetry.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-decision.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-density-and-lifecycle-closure.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-evidence-correction.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-evidence-index.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-explicit-runtime-delivery.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-hardening-2.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-hardening-3.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-hardening.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-implementation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-inspector-density.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-live-suite-isolation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-live-workload-inspection.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-milestone-8-6-planning.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-mtsdf-acceleration-scope.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-mtsdf-compute-research.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-mtsdf-runtime-and-validator.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-mtsdf-runtime-size.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-mtsdf-scene-evidence.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-observable-long-bakes.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-opaque-canvas-presentation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-payload-inspection.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-performance.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-probe-lifecycle.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-raf-telemetry-presentation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-range-controls.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-renderer-integration-sequencing.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-retained-controls.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-reviewed-size-movement.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-rust-container-review.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-telemetry-graphs.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-transfer-size-clarity.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-tsl-boundary.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-validation-research.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-vertical-writing-research.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-27-workload-lifecycle.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-dynamic-talc-allocator.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-mtsdf-base-level-sampling-decision.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-mtsdf-minification-decision.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-native-typescript-containment.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-slug-adaptive-band-rejection.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-slug-analytic-outline.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-slug-analytic-runtime.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-slug-artifact-validation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-slug-baker-host.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-slug-benchmark-fixtures-and-adapter.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-slug-capped-adaptive-rejection.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-slug-external-residency.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-slug-fixed-band-calibration.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-slug-hull-rejection.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-slug-multi-source-evidence.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-slug-product-and-performance-evidence.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-slug-product-integration.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-slug-release-role-evidence.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-slug-root-branch-rejection.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-slug-tsl-runtime-correction.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-28-tsl-compiler-reduction.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-activity-canvas-handoff.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-authenticated-mtsdf-bake-quality.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-autoresearch-evidence-refresh.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-benchmark-presentation-boundaries.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-benchmark-presentation-mode.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-bounded-workload-rail.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-buffered-telemetry-presentation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-canonical-schema-formatter-boundary.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-clean-checkout-ci-prerequisites.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-corrected-mtsdf-evidence-closure.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-darwin-size-evidence-refresh.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-fully-external-slug-framebuffer-parity.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-glyph-local-mtsdf-correction-and-quadratic-solve.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-harfbuzz-build-tool-authority.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-harfbuzz-cli-prerequisite.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-icon-font-comparison-workload.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-icon-grid-font-accounting.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-icon-grid-resize-and-teardown.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-icon-grid-submission-containment.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-milestone-9-slug-closure.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-mtsdf-direct-browser-gate-refreshed.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-observable-claude-review-workflow.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-packed-consumer-fixture.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-portable-mtsdf-framebuffer-gate.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-presentation-chrome-density.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-presentation-scale-presentation-chrome.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-realtime-msdf-slug-comparison.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-render-controls-boundary.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-repository-formatter-authority.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-responsive-shell-boundary.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-retained-icon-scaling.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-retained-multilingual-zoom.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-retained-presentation-renderer.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-rolling-chromium-ci-canary.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-slug-exact-outline-removal.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-slug-outline-framebuffer-authority.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-synchronized-frame-telemetry.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-timestamped-raf-telemetry.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-typescript-declaration-fix.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-viewport-scaled-benchmark-workloads.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-29-webgl-renderer-handoff.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-30-advanced-shaping-frame-cadence.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-30-async-retained-scene-transitions.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-30-benchmark-isolation-and-allocation-hardening.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-30-benchmark-runtime-state.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-30-benchmark-selection-controls.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-30-continuous-presentation-visibility.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-30-exclusive-finite-renderer-jobs.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-30-off-axis-content-control.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-30-presentation-completion-and-pacing.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-30-presentation-control-dock.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-30-presentation-demo-input-and-state-isolation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-30-reproducible-benchmark-commands.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-30-retained-bitmap-layout-buffers.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-30-retained-paragraph-width.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-30-sequential-presentation-isolation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-30-stable-fps-domain-and-shuffled-zoom-corpus.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-31-adjacent-texel-simd-decision.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-31-claude-code-agent-compatibility.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-31-continuous-word-and-script-handoffs.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-31-coverage-era-size-gates.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-31-fresh-checkout-harfbuzz-bootstrap.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-31-host-scoped-mtsdf-admission-evidence.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-31-milestone-8-6-regeneration.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-31-package-artifact-identity.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-31-portable-raster-fixture-identity.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-31-presentation-cadence-and-full-catalog-icon-grid-motion.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-07-31-react-doctor-closure.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-01-bounded-coverage-size-remediation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-01-bounded-retained-raster-capacity.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-01-committed-text-invalidation-identity.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-01-configured-mtsdf-outline-authority.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-01-lifecycle-owned-warm-publication.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-01-lifecycle-payload-refresh.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-01-milestone-6-8-closure.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-01-mtsdf-phase-attribution.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-01-pending-text-no-op-lifecycle.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-01-presentation-retained-workload-closure.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-01-public-external-raster-proof.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-01-renderer-neutral-raster-transaction.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-01-scoped-contributor-toolchains.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-01-scoped-text-invalidation-recovery.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-01-single-coverage-validation-authority.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-01-thin-baker-diagnostics-boundary.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-01-warm-presentation-publication-and-continuity.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-benchmark-driven-api-discovery.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-benchmark-public-api-and-ownership-audit.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-benchmark-verification-consolidation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-benchmark-workload-policy-and-target-ownership.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-bitmap-conformance-target-ownership.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-canonical-benchmark-asset-and-raster-metadata-boundaries.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-canonical-benchmark-font-assets.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-canonical-single-paragraph-scenes.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-complete-workload-phase-ownership.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-explicit-low-level-target-hierarchy.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-final-benchmark-boundary-locality.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-finite-product-target-ownership.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-milestone-10-v0-review-closure.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-persistent-renderer-api-cleanup.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-persistent-viewport-hierarchy.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-slug-conformance-scene-locality.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-target-owned-raster-conformance-captures.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-workload-controller-boundary.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-workload-instance-and-low-level-target-isolation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-workload-owned-retained-comparison-scene.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-03-workload-scene-and-conformance-locality.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-04-contributor-workflow-cleanup.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-04-human-facing-repository-orientation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-04-renderer-agnostic-engine-boundary-planning.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-04-text-layering-contract.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-05-renderer-neutral-batch-api-hardening.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-05-renderer-portability-orientation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-06-canonical-paragraph-batching-api.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-06-identity-preserving-capacity-changes.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-06-portable-raster-and-engine-resource-split.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-06-raster-technique-type-preservation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-06-renderer-attachment-verification.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-06-separate-three-js-api-contract.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-06-three-js-synchronization-ownership.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-06-typegpu-authored-three-shader-experiment.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-06-variants-reusable-raster-shaders-and-direct-typegpu-engine.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-07-exact-target-v1-bitmap-rasterization.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-07-exported-canonical-technique-shaders.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-07-full-external-review-disposition.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-07-maintained-integration-subpaths.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-07-maintained-typegpu-engine-boundary.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-07-merged-v0-target-v1-and-external-gpucat-fitness.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-07-portable-built-in-technique-selection-and-packing.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-07-recorded-three-material-authority-as-follow-up-work.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-07-renderer-neutral-raster-foundation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-07-technique-selection-and-packing-corrections.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-07-three-raster-program-registry-and-r3f-lifecycle-corrections.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-07-typegpu-first-shader-authority-review.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-added-a-lazy-three-owned-engine-coordinator.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-admitted-explicit-simd-render-policy-execution.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-admitted-one-call-editorial-geometry-into-the-rust-frame-tra.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-admitted-transactional-retained-styles-in-rust.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-avoided-identity-hashing-for-order-preserving-reflow.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-began-the-rust-render-policy-foundation-without-growing-ship.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-bound-three-plan-consumption-directly-to-wasm-publication-me.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-boundary-reshaping-was-redundant-by-construction.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-compiled-mixed-allocation-strategies-without-semantic-partit.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-compiled-the-first-production-three-policy-and-raster-bindin.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-completed-ordered-direct-display-list-compilation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-completed-the-capability-shaped-policy-abi.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-connected-policy-directed-gather-to-the-rust-plan-pipeline.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-distance-field-subpaths-renamed-and-the-line-that-made-it-sa.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-executed-msdf-from-the-rust-command-buffer.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-executed-slug-from-the-rust-command-buffer.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-fixed-the-compiler-mapped-render-plan-wire-grammar.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-fixed-the-retained-style-wire-semantics-before-admission.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-fixed-the-semantic-update-record-grammar-in-the-compiler-der.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-implemented-retained-ordered-direct-physical-patches.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-locked-the-rust-text-engine-and-retained-render-plan-archite.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-made-physical-render-plan-patches-dependency-directed.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-made-policy-work-dependency-directed-from-gather-through-exe.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-made-render-policy-input-shaping-explicit-data.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-made-rust-render-plan-state-session-owned-and-fence-safe.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-made-transform-batching-policy-selectable-and-executed-index.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-made-transform-ownership-explicit-and-removed-per-cluster-dr.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-made-wasm-engine-initialization-explicit-and-eager.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-measured-exact-retained-rust-frame-invalidation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-phase-attribution-replaces-sampling-for-phase-level-decision.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-preserved-multi-paragraph-three-batching-in-the-rust-session.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-prewarmed-retained-text-capacity-without-multiplying-shaping.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-primary-harfrust-shaping-now-runs-inside-text-update.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-promoted-complete-frame-request-serialization-into-productio.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-promoted-the-retained-frame-abi-into-a-production-host.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-proved-all-three-canonical-render-policy-shapes.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-proved-the-retained-a-b-frame-transaction-in-the-optimized-w.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-proved-worker-owned-frame-transfer-and-return.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-published-multiple-retained-paragraphs-as-one-rust-command-b.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-registered-fixed-layout-render-policies-at-the-rust-wasm-bou.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-registered-normalized-per-font-render-bindings-in-rust.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-registered-ordered-font-stack-ownership-in-rust.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-removed-the-layout-profiler-and-moved-debouncing-to-the-cont.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-removed-visual-order-scratch-from-proven-ltr-positioning.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-replaced-the-unimplemented-effects-vocabulary-with-material.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-resolved-rust-resource-references-directly-in-three.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-resolved-the-retained-style-cascade-in-rust.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-retained-bidi-and-shaping-run-itemization-moved-inside-text.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-retained-ordered-utf-16-edits-transactionally-inside-rust-se.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-retained-unicode-17-analysis-moved-inside-text-update.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-reusable-harfrust-initialization-workspace.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-selected-the-first-simd-shaped-retained-storage.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-separated-shaping-font-identity-from-render-binding-identity.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-08-tiered-paragraph-layout-by-dependency.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-added-narrow-paragraph-editing-without-exposing-engine-compl.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-added-the-missing-middle-splice-workload-before-choosing-edi.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-bounded-localized-reshaping-to-one-stable-shaping-run.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-bounded-three-residency-and-retained-draw-identity.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-carried-three-material-factories-through-rust-material-ids.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-closed-the-retained-paragraph-browser-matrix-under-the-f32-f.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-closed-the-three-command-buffer-retry-and-ownership-gaps.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-completed-adaptive-rust-planning-for-physical-and-stable-ord.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-completed-material-naming-through-three-and-r3f.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-completed-stable-indirect-three-record-addressing-without-ch.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-continued-recomposition-until-the-edited-line-cursor-actuall.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-cut-imperative-three-rendering-over-to-the-rust-command-buff.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-deduplicated-exact-ordered-stable-planner-machinery-with-mea.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-deleted-the-duplicate-typescript-raster-packing-and-lifecycl.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-deleted-the-redundant-three-paragraph-target-transaction.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-executed-both-policy-selected-transform-modes-in-three.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-kept-layout-inspection-and-presentation-outside-rendering-au.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-kept-transactional-text-buffers-synchronized-across-equal-le.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-made-application-gates-respect-their-shared-build-artifact-d.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-made-cold-command-buffer-growth-recover-instead-of-failing-t.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-made-compositing-freedom-an-explicit-rust-planning-input.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-made-multi-workload-rust-sessions-recycle-storage-without-re.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-made-presentation-workflow-failures-and-command-buffer-work.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-made-raster-policy-origins-exact-without-widening-retained-g.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-made-semantic-queries-share-the-retained-update-that-invalid.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-made-the-25-515-glyph-rust-benchmark-self-validating.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-made-warm-harfrust-plan-lookup-allocation-free-without-claim.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-moved-ellipsis-and-its-real-boundary-reshape-into-the-rust-f.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-moved-ordered-and-stable-physical-writes-onto-per-buffer-ran.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-narrowed-content-revision-work-to-the-recomposed-line.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-ported-the-external-raster-proof-off-the-deleted-host-packer.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-prevented-test-only-wasm-variants-from-entering-published-ba.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-proved-external-rust-plan-programs-on-both-three-backends.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-proved-mixed-fallback-techniques-and-the-r3f-example-in-a-li.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-queued-adaptive-dirty-range-upload-refinement-from-three-fla.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-rebuilt-clusters-only-for-the-incrementally-shaped-source-ru.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-recorded-the-paragraph-stress-integration-defects-without-ch.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-regenerated-package-size-and-edit-latency-truth-from-the-fin.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-regenerated-package-size-truth-after-isolating-baker-build-v.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-removed-authored-technique-from-three-grouping-and-font-stac.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-removed-the-redundant-homogeneous-policy-glyph-scan-and-pres.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-removed-timing-instrumentation-and-stale-output-risk-from-th.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-retained-ordered-plan-topology-when-physical-storage-members.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-retained-policy-inputs-and-rebuilt-only-from-the-first-stora.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-separated-final-customer-timing-from-temporary-phase-instrum.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-separated-semantic-measurement-from-the-render-plan.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-shared-the-compiled-draw-emitter-and-removed-a-quadratic-sta.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-specified-paragraph-scoped-synchronous-preparation-without-t.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-started-per-physical-buffer-dirty-range-costing-without-chan.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-09-stopped-layout-and-positioning-after-a-proven-line-state-con.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-10-centered-and-simplified-the-r3f-hello-world-scene.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-10-closed-detached-webgl2-pbo-updates.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-10-closed-the-final-adversarial-three-lifecycle-findings.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-10-final-renderer-lifecycle-size-evidence.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-10-fixed-stacked-pr-size-reporting-at-the-action-boundary.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-10-made-multi-technique-fonts-one-authored-load-and-one-cli-bak.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-10-package-owned-font-preparation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-10-passed-the-complete-foundation-gate-and-refreshed-release-ev.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-10-provisioned-the-r3f-asset-subsetter-on-clean-ci-hosts.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-10-removed-product-harfbuzz-subprocesses.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-10-removed-redundant-warm-transform-scans.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-10-reproducible-typescript-to-rust-migration-evidence.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-10-restored-executable-contract-generation-and-compiled-abi-fuz.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-10-restored-retained-paragraph-scaling-and-bitmap-cpu-batching.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-10-simplified-publishing-size-evidence.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-10-single-package-bake-ownership.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-10-stabilized-retained-icon-grid-recycling.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-10-standardized-the-react-entry-and-polished-the-r3f-example.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-11-baked-decoration-metrics-d-246.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-11-binaryen-merge-pipeline-and-outlining-verdict-d-244.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-11-break-inserted-hyphen-contract-proof-d-247.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-11-core-api-surface-d-249.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-11-decoration-rendering-d-248.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-11-kernel-lab-simd-admission-evidence-d-245.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-11-policy-authoring-dsl-d-250.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-11-policy-interpreter-tail-measurement.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-11-reconciled-the-public-readme-and-formatter-owned-boundaries.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-11-recorded-per-crate-opt-level-evidence-d-242.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-11-shared-engine-sort-kernel-d-243.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-11-technique-contract-review-closure-d-250-d-251.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-11-technique-schema-authority-d-251.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-12-column-flow-11-18-slice.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-12-editorial-workload-11-14-layer-5.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-12-justification-controls-11-14-layer-3.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-12-paragraph-spacing-and-first-line-indent-11-14-layer-2.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-12-simd-kernels-reach-their-consumers-11-14-layer-4-d-245.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-12-typography-tier-wire-contract-11-14-layer-1.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-13-external-runtime-bake-routing.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-13-uikit-measurement-feedback-discipline.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-14-integer-layout-units-complete-d-254.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-15-canary-publishing.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-15-glyph-package-identity.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-16-integer-pen-and-state-machine-follow-ups-recorded-slice-6.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-17-commit-time-digest-hook.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-17-engine-correctness-pass-three-status-6-defects-the-hanging-w.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-18-line-breaking-is-linear-again-and-cjk-paid-for-it.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-23-a-refused-frame-now-says-what-is-wrong-whose-fault-it-is-and.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-23-a-retained-host-can-now-hold-the-render-plan-without-holding.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-23-the-animation-api-is-a-snapshot-you-can-hold-and-the-extents.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-24-raster-plans-now-cross-renderer-boundaries-as-named-portable.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-25-first-party-plans-now-use-the-portable-resource-contract.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-25-gpu-publication-is-serialized-through-its-acceptance-fence.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-25-pipelined-gpu-submission-is-measured-and-size-priced.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-25-renderer-failures-no-longer-wait-for-input-churn.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-25-the-external-renderer-now-proves-hardware-pixels-and-retaine.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-25-the-external-renderer-now-separates-owned-bytes-from-device.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-26-attached-text-can-measure-desired-layout-before-its-first-fr.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-26-core-host-and-session-ownership-are-now-enforceable.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-26-external-agent-work-now-has-one-resumable-operating-guide.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-26-final-layout-and-renderer-performance-gates-found-no-materia.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-26-portable-renderer-review-closed-lifecycle-and-ownership-gaps.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-26-reviewed-the-final-portability-size-delta.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-26-runtime-id-provenance-now-has-an-owner-and-a-teardown.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-26-three-font-bindings-now-retire-at-their-real-ownership-bound.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-27-accepted-the-font-runtime-ownership-correction.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-27-clarified-host-versus-renderer-resource-ownership.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-27-closed-the-ownership-plan-s-input-measurement-and-entry-poin.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-27-closed-the-target-control-follow-up.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-27-kept-zero-copy-publication-as-the-default-target-path.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-27-moved-runtime-construction-to-the-integrator-surface.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-27-validated-the-ownership-plan-with-opus-high.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-28-aligned-react-font-loading-with-r3f-s-cache-and-nested-text.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-28-balanced-retained-style-mutation-accounting-across-shrinking.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-28-closed-retained-renderer-lifecycle-and-scaling-gaps.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-28-enabled-workspace-source-condition-development.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-28-implemented-explicit-font-runtime-host-session-ownership.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-28-kept-renderer-oracles-on-the-authenticated-portable-techniqu.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-28-rebuilt-the-renderer-and-technique-implementation-guides.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-28-removed-raw-abi-authoring-and-decoding-from-core.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-29-baked-identities-no-longer-depend-on-web-crypto.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-29-build-time-typegpu-metadata.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-29-framework-neutral-raster-shaders.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-29-portable-slug-source-gate.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-30-implemented-planner-assisted-detached-glyph-slices.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-30-raised-layout-fitting-from-f26-6-to-f16-16-units.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-30-typegpu-is-the-shader-authority.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-08-31-added-direct-bake-glyph-lookups.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-01-a-raster-and-its-core-font-agree-through-one-fingerprint.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-01-accepted-the-load-before-use-fontface-direction.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-01-canonicalized-fontface-declaration-and-handle-relative-forma.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-01-collapsed-the-planned-fontface-cache-surfaces-into-glyph.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-01-finished-the-ordinary-glyph-adapter-cutover.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-01-kept-policy-identifiers-out-of-the-three-material-api.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-01-made-loaded-r3f-fontface-use-synchronous.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-01-pinned-cached-promise-identity-to-cache-ownership.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-01-reduced-r3f-font-loading-to-resolution-plus-readiness.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-01-required-a-content-addressed-fontface-dependency-graph.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-02-authenticated-rich-text-font-values-by-package-identity.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-02-kept-explicit-fontface-transfer-off-the-initial-graph.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-02-made-fontface-transfer-explicit-and-content-addressed.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-02-proved-the-real-fontface-worker-boundary.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-02-removed-the-example-renderer-s-parallel-font-publication-rec.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-02-removed-the-full-validator-from-runtime-baking.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-02-removed-the-last-single-root-publication-fallback.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-02-removed-the-unreachable-owned-render-plan-pipeline.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-02-retired-the-duplicate-public-font-loader-story.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-02-single-owned-transferred-font-identity-validation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-03-closed-the-raw-command-projection-surface.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-03-closed-the-source-condition-three-root-backdoor.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-03-kept-textures-out-of-glsl-function-parameters.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-03-made-glyphconfig-construction-data-only.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-03-narrowed-codec-identity-authoring-to-the-actual-dsl.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-03-narrowed-wildcard-config-leaves-to-integrator-owned-operatio.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-03-restored-mtsdf-paragraph-orientation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-03-retired-stale-renderer-vocabulary.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-03-separated-three-s-public-registration-dsl-from-its-registry.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-03-trusted-constraint-ownership-identities.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-03-trusted-constraint-region-partitions.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-03-trusted-planner-owned-paragraph-identity.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-03-trusted-region-and-transform-identities.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-04-captured-the-disposable-alpha-fast-follow.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-04-lowered-bitmap-array-loads-through-three-s-backend-boundary.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-04-made-packed-decoration-shifts-explicitly-unsigned.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-04-normalized-bitmap-texture-dimensions-across-shader-backends.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-07-activated-the-camera-ranked-label-proof.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-07-closed-benchmark-and-query-evidence-gaps.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-07-closed-the-adversarial-retained-transaction-review.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-07-closed-the-final-opus-review-findings.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-07-completed-retained-word-flow-and-width-only-positioning-reus.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-07-completed-the-scoped-maintainability-pass.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-07-corrected-retained-performance-attribution.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-07-made-explicit-line-height-authoritative-across-font-fallback.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-07-made-justification-consume-completed-shaped-words.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-07-opened-optional-language-resource-follow-up.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-07-recovered-paragraph-batching-without-rank-packed-glyph-keys.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-07-repaired-the-complete-timed-presentation-proof.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-07-split-retained-invalidation-by-data-ownership.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-08-added-synchronous-demand-read-glyph-inspection.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-08-corrected-the-post-typegpu-integration-boundary.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-08-made-rich-text-mutation-load-refresh-rate-independent.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-08-pinned-the-paragraph-batching-and-typegpu-recovery.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-08-planned-fragment-relative-reflow-after-merged-pr-161.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-08-removed-benchmark-shell-work-from-active-paragraph-reflow.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-09-corrected-the-external-three-raster-gate.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-09-cut-direct-occurrence-offsets-through-codec-and-both-rendere.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-09-cut-the-retained-layoutrun-placement-contract-through-core-a.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-09-gave-retained-layoutruns-planner-scoped-transactional-identi.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-09-isolated-the-remaining-layoutrun-cpu-regression.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-09-measured-and-corrected-the-first-complete-cutover.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-09-re-pinned-final-layoutrun-coordinate-arithmetic.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-09-staged-compact-layoutrun-placement-below-existing-batching.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-09-started-the-production-layoutrun-cutover.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-09-withdrew-indexed-placement-before-release.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-10-added-a-shaping-safe-same-source-drop-cap-slice-without-chan.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-10-added-attached-three-glyph-deformation-without-reopening-lay.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-10-added-the-vue-and-tresjs-adapter.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-10-authored-normalized-same-source-drop-cap-contours.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-10-closed-direct-occurrence-origin-and-ellipsis-conformance.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-10-closed-the-public-bidi-exclusion-and-drop-cap-query-matrix.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-10-exposed-stable-keyed-public-2d-flow-without-adding-a-second.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-10-extended-localized-exclusion-convergence-through-drop-cap-pa.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-10-internalized-codec-system-buffer-layout-below-raster-authori.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-10-kept-typegpu-slug-inside-the-eight-buffer-contract-and-compl.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-10-measured-the-retained-placement-checkpoint-against-freshly-f.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-10-projected-explicit-three-silhouettes-without-flattening-thei.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-10-projected-known-three-bounds-into-the-existing-2d-flow-model.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-10-recomposed-moved-exclusions-only-through-their-future-dirty.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-10-removed-repeated-placement-root-discovery-from-retained-refl.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-10-retained-same-length-edits-through-drop-cap-source-changes.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-10-retained-static-glyph-geometry-across-changed-width-position.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-10-separated-placement-occurrence-identity-from-run-geometry-re.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-10-separated-retained-positioning-from-publication-cost.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-10-skipped-retained-raster-reconstruction-for-position-only-cha.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-11-closed-the-layoutrun-browser-size-and-performance-matrix.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-11-deferred-absolute-semantic-placement-to-query-and-bounds-edg.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-11-migrated-the-public-example-renderer-to-the-retained-placeme.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-12-deferred-attached-glyph-deformation-outside-the-cleanup-stac.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-12-kept-adapter-placement-packing-out-of-codec-authoring.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-12-reduced-the-completed-fragment-reflow-stack-without-changing.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-12-removed-the-duplicate-placement-handle-mirror.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-12-removed-the-superseded-planner-run-handle-proof.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-12-retired-the-completed-m1-shadow-oracles.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-12-specialized-retained-slot-ownership-to-placement.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-13-aligned-same-source-drop-caps-to-typographic-cap-height.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-13-closed-cumulative-retained-edit-revision-loss.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-13-closed-ordered-only-planner-verification-on-the-final-cleanu.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-13-closed-the-final-fragment-reflow-cleanup-against-current-art.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-13-closed-the-line-break-feedback-seam.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-13-collapsed-borrowed-publication-bytes-to-one-arena-per-root.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-13-collapsed-redundant-positioning-specializations.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-13-finished-the-placement-slot-vocabulary-fold.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-13-made-wasm-branchlessness-evidence-gated.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-13-pruned-retired-stable-planner-guidance.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-13-refreshed-retained-contracts-for-outward-measurement-roundin.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-13-removed-the-justified-placement-segmentation-penalty.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-13-repaired-fresh-clone-bootstrap-guidance.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-13-restored-the-codec-host-assembly-boundary.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-13-started-the-accepted-stable-indirect-retirement.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-15-corrected-the-mtsdf-reference-and-isolated-remaining-generat.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-15-exposed-msdf-signed-distances-to-custom-materials.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-15-reproduced-mtsdf-pinch-artifacts-from-issue-145.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-15-update.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-16-moved-built-in-format-selection-to-the-root.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-16-named-the-integration-building-blocks-core.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-16-reduced-the-0-1-0-public-surface.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-16-removed-the-project-baker-s-consumer-typescript-requirement.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-17-moved-okf-maintenance-onto-the-pinned-node-js-toolchain.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-17-moved-searched-unicode-properties-onto-generated-code-point.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-17-removed-harfbuzz-compilation-from-ordinary-ci.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-17-removed-the-repository-local-external-agent-router-and-clear.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-18-added-tagged-stable-publishing-alongside-canaries.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-22-routed-package-performance-by-intent.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-09-30-broke-lines-at-unsafe-legal-boundaries-with-shaped-correctio.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-05-added-optional-glyph-outlines-to-the-core-font.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-05-baseline-agent-docs.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-05-commit-hook-ignores-merged-main-changes.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-05-fixed-paragraph-removal-across-the-measurement-boundary.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-05-knowledge-records-without-conflicts.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-05-rejected-codec-programs-over-the-draw-buffer-limit.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-05-renamed-detached-text-copies-to-split.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-05-stopped-publishing-dangling-source-map-references.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-06-slug-dilation-half-pixel-per-axis.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-06-slug-dilation-per-edge.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-06-stream-default-wasm-into-the-compiler.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-08-measured-slim-ktx-runtime-bundles.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-08-published-placement-snapshot.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-08-renamed-borrowed-glyph-reads.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-08-resolved-codec-buffer-limits.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-08-reused-unchanged-span-alignment.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-08-simplified-native-ktx-payload-reader.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-08-slimmed-native-ktx-runtime-reader.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-08-split-rename-review.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-09-adopted-owned-span-style-snapshots.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-09-bindless-font-page-research.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-09-browser-module-filenames.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-09-coherent-retirement-publication.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-09-edit-sized-patch-publication.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-09-glyph-02-migration-notes.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-09-measured-native-ktx-runtime.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-09-published-source-maps.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-09-release-scale-manual-visibility-regression.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-09-retained-span-update-flow.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-09-retained-sparse-text-invalidation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-09-retained-text-assignment-plan.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-09-retained-three-buffer-uploads.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-09-rope-science-layout-mapping.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-09-webgpu-retirement-probe-order.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-09-webgpu-timestamp-retirement.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-13-slug-coverage-at.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-15-anchor-coordinate-contract.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-15-anchor-rejection-retry.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-15-anchor-review-corrections.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-15-inherited-presentation-anchor-acceptance.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-15-offline-consumer-peers-and-constraint-anchors.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-15-split-owner-local-pivot.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-15-three-ink-bounds-cache.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-15-typographic-measurement-and-anchors.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/log/2026-10-15-typographic-query-publication-cost.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/packages/benchmarks.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/packages/examples.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/packages/glyph-example-raster.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/packages/glyph-example-renderer.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/packages/glyph.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/packages/index.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/packages/tres-playground.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/packages/typegpu-hello-world.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/api-alpha-fast-follow.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/architecture.md",
+      "kind": "doc"
+    },
+    {
+      "path": ".agents/docs/planning/autoresearch.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/benchmark-ipsum.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/benchmark-plan.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/benchmark-trust.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/bitmap-hinting-research.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/conformance-plan.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/core-api.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/decision-register.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/decisions/0001-package-runtime-boundaries.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/decisions/0002-shaping-and-font-identity.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/decisions/0003-raster-and-container-contracts.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/decisions/0004-verification-and-optimization.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/decisions/append-only-knowledge-records.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/decisions/attested-docs-intent.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/decisions/authored-text-group-batch-boundaries.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/decisions/glyph-outlines.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/decisions/locate-before-reading.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/decisions/package-size-review-evidence.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/decisions/read-glyphs.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/decisions/retained-text-assignment-invalidation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/decisions/shaper-abi-1.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/decisions/text-split.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/decisions/trusted-cluster-aligned-span-handoffs.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/decisions/typographic-references-and-box-anchors.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/detached-glyph-slice.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/dirty-range-upload-research.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/editorial-flow-layout.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/example-renderer.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/extensions/PMNDRS_font/README.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/extensions/PMNDRS_font_bitmap/README.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/extensions/PMNDRS_font_distance_field/README.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/extensions/PMNDRS_font_slug/README.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/extensions/index.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/font-baker-allocator.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/font-baker-implementation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/fragment-relative-reflow.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/gltf-extension-registration.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/gpu-compression.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/gpucat-integration.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/implementation-difficulty.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/index.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/integer-layout-units.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/language-and-strike-bundles.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/mtsdf-generation-research.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/mtsdf-generator-admission.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/open-questions.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/paragraph-query-preparation.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/payload-budget.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/project-brief.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/raster-baker-plugin.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/raster-data-contract.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/raster-technique-contract.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/renderer-capabilities.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/retained-text-assignment.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/session-handoff.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/shaping-compilation-research.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/shaping-data-contract.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/slug-audit.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/slug-outline-research.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/sync-measure-plan.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/technique-implementability.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/test-coverage-duplication-audit.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/three-api.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/tooling-fixtures.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/typegpu-first-shader-authority.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/uikit-integration.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/untrusted-validation-research.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/version-contract.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/vertical-writing.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/planning/wasm-size-reduction.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/reports/2026-10-09-bindless-font-pages.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/reports/index.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/docs/roadmap/roadmap.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/skills/codemod/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/diataxis-docs/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/engine-call-contract/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/evidence-first/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/gh-stack/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/maintainability-review/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/open-knowledge-format/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/tsl/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/typegpu/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/r3f-hello-world/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "apps/tres-playground/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "benches/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/glyph/.oxlintrc.json",
+      "kind": "lint"
+    }
+  ]
+}

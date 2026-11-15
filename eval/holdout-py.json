@@ -1,0 +1,233 @@
+{
+  "//": "HELD-OUT set, role SECONDARY (see `decision`): exploratory check only, never a headline result. FROZEN since `frozen_at`: the core (set_id, role, frozen_at, repos, reserves, tier, max, pool) never changes; only the append-only lists `replaced`, `burned` and `exposed` may grow. Rules: eval/study/README.md#held-out-rules. None of these repos is in eval/repos.json (the dev set). The Python dev set must not overlap it; on overlap the held-out repo gives way to the next reserve (recorded in `replaced`).",
+  "set_id": "py-2026-11-05",
+  "role": "secondary",
+  "decision": "Decision 2026-11-05 (product lead, before any held-out data): the current sets (holdout.json, holdout-py.json) are demoted to `secondary`: no headline result may come from them; they may be reported only as an exploratory secondary check, with exposure disclosed. The primary held-out sets will be fresh, selected by a code-blind script (seeded random sample from GitHub search by language/size/activity, framework detected only from dependency manifests, recording only url/sha/shape), frozen in a follow-up PR before any held-out run.",
+  "holdout": true,
+  "status": "frozen",
+  "frozen_on": "2026-11-05",
+  "frozen_at": "2026-11-05T17:40:31Z",
+  "language": "python",
+  "tier": {
+    "//": "Decision D7 (eval/study/README.md decision log), approved by the founder 2026-11-06 and recorded before any held-out census. D5 (tier-d5.json) narrowed by rule kind and language. TypeScript/JavaScript: the default tier admits only call wrappers (wrapped_by:call) and layering (avoids:import); wrapped_by:decorator, wrapped_by:extends and wrapped_by:jsx move to the suggestion tier. Python: no rule kind is in the default tier; Python advises only and every Python proposal is suggestion tier. D5's conditions still apply on top of the rule kind: every symbol the rule names is defined in the repository (default.target \"in_repo\": no pkg:, global# or unresolved: target; lib.mjs namesPackage, drift_mine::tier::names_package) and the role has >= default.min_members members. The language of a proposal is read conservatively (lib.mjs proposalLanguage, drift_mine::tier::convention_language): py when any member of its role is Python (conventions.yaml evidence.python_members) or its example path is (.py/.pyi files and Python package manifests), ts otherwise. Role members are counted as the role's size (evidence.role_members when set, else total; exempt members count). DEFAULT tier = language in default.languages AND structured rule kind (lib.mjs ruleKind) in default.rule_kinds AND the rule names no symbol from outside the repository AND its role has >= default.min_members members. SUGGESTION tier = every other shown proposal. The not-wrong rate is reported over all shown proposals, both tiers. Release gate unchanged: a language's default tier ships as advise until it measures >= 95% default-tier accept under rubric v3, judged per D1, on a primary held-out run.",
+    "kind": "rule_kind",
+    "decision": "D7",
+    "default": {
+      "//": "TypeScript/JavaScript call wrappers and layering (import avoidance), each only when every symbol it names is defined in the repository, in roles of 15 or more members",
+      "rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "languages": [
+        "ts"
+      ],
+      "min_members": 15,
+      "target": "in_repo"
+    },
+    "suggestion": {
+      "//": "D5's suggestion kinds, plus decorators, base classes and JSX layout wrappers (D7); every Python proposal (languages); and default-tier kinds whose rule names a package, built-in or unresolved symbol, or whose role is small",
+      "rule_kinds": [
+        "calls",
+        "named",
+        "avoids:other",
+        "prefers_library",
+        "before",
+        "has_test",
+        "model_has",
+        "package_has",
+        "dependency_version",
+        "wrapped_by:try",
+        "control",
+        "directive",
+        "throws",
+        "passes_key",
+        "renders",
+        "wrapped_by:decorator",
+        "wrapped_by:extends",
+        "wrapped_by:jsx"
+      ],
+      "languages": [
+        "py"
+      ]
+    },
+    "not_wrong_over": "all_shown"
+  },
+  "max": 15,
+  "pool": 200,
+  "provenance": "Facts only, no conventions. Shape = frameworks from the repo's own dependency manifests (package.json, pyproject.toml, requirements.in, read from raw.githubusercontent.com) plus the top-level layout; files / code_files from `git ls-tree -r` of a blob-less shallow fetch at the pinned sha; docs and lint = which agent/contributor docs and lint configs exist, by file name in that tree. Selection reasons and any notes about the code itself are kept out of this repository (they would be an answer key) and pre-registered by sha256 in `notes_sha256`; they are revealed with the held-out results.",
+  "notes_sha256": {
+    "provenance.md": "7ff0bf1537db4627014348867abe3192ec4f16c88082649b837353a850349fbe",
+    "holdout-py.notes.md": "13e8d55aa8e81569e22fece1182983f840c170dd29fea391d668d8e8df3e42e0"
+  },
+  "//lists": "Append-only lists outside the frozen core (repos, reserves, tier, max, pool; its canonical hash is registered in eval/study/holdout-manifests.json). replaced: [{date, repo, reserve, reason}], the i-th swap uses the i-th reserve. burned: [{date, name, reason}]. exposed: [{name, where}], repos whose conventions were named somewhere product engineers can read; held-out reports give every headline rate with and without them (README, isolation note).",
+  "replaced": [
+    {
+      "date": "2026-11-05",
+      "repo": "polar",
+      "reserve": "pretalx",
+      "reason": "overlap with Python dev set, chosen independently"
+    },
+    {
+      "date": "2026-11-05",
+      "repo": "ctfd",
+      "reserve": "lnbits",
+      "reason": "overlap with Python dev set, chosen independently"
+    }
+  ],
+  "burned": [],
+  "repos": [
+    {
+      "name": "polar",
+      "url": "https://github.com/polarsource/polar",
+      "sha": "071d4ffb0b9fe5e51d8e5439536045637606993d",
+      "branch": "main",
+      "shape": "FastAPI backend (Dramatiq workers), Next.js frontend",
+      "files": 6475,
+      "code_files": 2377,
+      "docs": "AGENTS.md (8), CLAUDE.md, CONTRIBUTING.md",
+      "lint": "not checked (pyproject.toml present)"
+    },
+    {
+      "name": "mealie",
+      "url": "https://github.com/mealie-recipes/mealie",
+      "sha": "0afeeb34fc28ce70835016fe164aaa1f21fd2851",
+      "branch": "mealie-next",
+      "shape": "FastAPI backend, Nuxt frontend (not parsed)",
+      "files": 1736,
+      "code_files": 705,
+      "docs": "AGENTS.md, CLAUDE.md",
+      "lint": "pylint, pre-commit"
+    },
+    {
+      "name": "authentik",
+      "url": "https://github.com/goauthentik/authentik",
+      "sha": "a18573e4635b78ce244450a57c253f8d52ff0357",
+      "branch": "main",
+      "shape": "Django + DRF (Dramatiq); Go and TypeScript parts",
+      "files": 6651,
+      "code_files": 2341,
+      "docs": "AGENTS.md (7), CLAUDE.md (7), CONTRIBUTING.md",
+      "lint": "not checked (pyproject.toml present)"
+    },
+    {
+      "name": "kpi",
+      "url": "https://github.com/kobotoolbox/kpi",
+      "sha": "5b1721fdbe91a02ac1cccb63037b3bf8d85a322f",
+      "branch": "main",
+      "shape": "Django + DRF + Celery, React frontend",
+      "files": 4939,
+      "code_files": 1722,
+      "docs": "CONTRIBUTING.md",
+      "lint": "not checked (pyproject.toml present)"
+    },
+    {
+      "name": "weblate",
+      "url": "https://github.com/WeblateOrg/weblate",
+      "sha": "685c08347ae2c02b7a0267f43ec60edf348c5c3d",
+      "branch": "main",
+      "shape": "Django + DRF + Celery",
+      "files": 3047,
+      "code_files": 1237,
+      "docs": "AGENTS.md",
+      "lint": "pyproject.toml (mypy, pylint), pre-commit"
+    },
+    {
+      "name": "ctfd",
+      "url": "https://github.com/CTFd/CTFd",
+      "sha": "a6a81ddd921cd74f8aabc07c0f7a71cdcf5365b6",
+      "branch": "master",
+      "shape": "Flask",
+      "files": 1051,
+      "code_files": 357,
+      "docs": "CONTRIBUTING.md",
+      "lint": "setup.cfg"
+    },
+    {
+      "name": "indico",
+      "url": "https://github.com/indico/indico",
+      "sha": "12dff35e617ab35d0e560e18b7c4f89cc7eb4481",
+      "branch": "master",
+      "shape": "Flask + SQLAlchemy + Celery, React frontend",
+      "files": 3675,
+      "code_files": 1300,
+      "docs": "CONTRIBUTING.md",
+      "lint": "ruff.toml"
+    },
+    {
+      "name": "textual",
+      "url": "https://github.com/Textualize/textual",
+      "sha": "5e5b7ef58b8c5572c13a3ff9027d756623661495",
+      "branch": "main",
+      "shape": "Python library",
+      "files": 2120,
+      "code_files": 987,
+      "docs": "CONTRIBUTING.md",
+      "lint": "pre-commit"
+    }
+  ],
+  "reserves": {
+    "//": "Pre-registered replacements, used in this order only when a primary repo fails a technical check before any proposal is looked at (clone fails, `drift scan` errors, or fewer than 200 parseable files), or (Python) overlaps the dev set. Record each swap in `replaced` with date and reason.",
+    "repos": [
+      {
+        "name": "pretalx",
+        "url": "https://github.com/pretalx/pretalx",
+        "sha": "2dc032b9eba1fbd68316674b5689c135f249909d",
+        "branch": "main",
+        "shape": "Django app"
+      },
+      {
+        "name": "lnbits",
+        "url": "https://github.com/lnbits/lnbits",
+        "sha": "ea2686d154a96ba71c8eb8d363f117987487c420",
+        "branch": "dev",
+        "shape": "FastAPI app"
+      },
+      {
+        "name": "healthchecks",
+        "url": "https://github.com/healthchecks/healthchecks",
+        "sha": "5b9a198bca9dc959326f6492e460166373530499",
+        "branch": "master",
+        "shape": "Django app"
+      }
+    ]
+  },
+  "//exposed": "Strict criterion: a repo is exposed if any text product engineers can read (commits, PR descriptions, review comments, replies, reports) named a convention of it, a convention category (wrappers, guards, decorators, base classes, procedures, layering...) or where one lives. All original primaries are exposed; reserves are not.",
+  "exposed": [
+    {
+      "name": "polar",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "mealie",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); PR #2 reply r4483588228; the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "authentik",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "kpi",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "weblate",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "ctfd",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); PR #2 review comment r4483351630; PR #2 reply r4483588228; the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "indico",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); PR #2 review comment r4483351630; PR #2 reply r4483588228; the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "textual",
+      "where": "commit bddf1d6 (`why` field, on the PR branch); the study-v2 agent's first report to the coordinator"
+    },
+    {
+      "name": "healthchecks",
+      "where": "census output (2 proposals) read by the agent building repos-py-2.json, 2026-11-06; deleted"
+    }
+  ]
+}

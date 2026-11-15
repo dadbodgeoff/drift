@@ -1,0 +1,17 @@
+{
+  "repo": "CTFd",
+  "files": [
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": ".eslintrc.js",
+      "kind": "lint"
+    }
+  ]
+}

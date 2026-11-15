@@ -1,0 +1,635 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "5cfbbb4-d8",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/cache/repos/simplelogin",
+  "units": 1953,
+  "roles": 49,
+  "conventions": 10,
+  "shown": 10,
+  "tiers": {
+    "default": 0,
+    "suggestion": 10
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    },
+    "candidate": {
+      "decision": "D8",
+      "status": "candidate (pre-registered, not adopted)",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts",
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15,
+      "py": {
+        "min_members": 50,
+        "call_wrappers": "guards"
+      }
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-7fa3b5",
+      "rank": 1,
+      "summary": "functions in app/** do not use redirects to computed URLs",
+      "role": {
+        "package": "",
+        "dir": "app",
+        "file": "*",
+        "entry": "-",
+        "kind": "function",
+        "members": 361
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "sink:dynamic_redirect"
+      },
+      "evidence": {
+        "holders": 360,
+        "total": 361,
+        "lower_bound": 0.984,
+        "lift": 40.347,
+        "python_members": 361
+      },
+      "rule_kind": "avoids:other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "app/abuser.py",
+        "symbol": "mark_user_as_abuser",
+        "line": 10
+      },
+      "outliers": [
+        {
+          "path": "app/auth/views/login_utils.py",
+          "symbol": "after_login",
+          "line": 13
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-2a4960",
+      "rank": 2,
+      "summary": "files in app/** do not import from events/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "app",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 195
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:events"
+      },
+      "evidence": {
+        "holders": 193,
+        "total": 195,
+        "lower_bound": 0.963,
+        "lift": 3.0,
+        "python_members": 195
+      },
+      "rule_kind": "avoids:import",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "app/abuser.py",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "app/jobs/send_event_job.py",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "app/jobs/sync_subscription_job.py",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 2,
+      "candidate": {
+        "decision": "D8",
+        "tier": "default",
+        "reason": null,
+        "guards": null
+      }
+    },
+    {
+      "id": "D-e29828",
+      "rank": 3,
+      "summary": "classes in app/dashboard/** extend FlaskForm",
+      "role": {
+        "package": "",
+        "dir": "app/dashboard",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "members": 26
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:flask_wtf#FlaskForm"
+        ]
+      },
+      "evidence": {
+        "holders": 25,
+        "total": 26,
+        "lower_bound": 0.811,
+        "lift": 7.596,
+        "python_members": 26
+      },
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "app/dashboard/views/alias_contact_manager.py",
+        "symbol": "NewContactForm",
+        "line": 84
+      },
+      "outliers": [
+        {
+          "path": "app/dashboard/views/alias_log.py",
+          "symbol": "AliasLog",
+          "line": 11
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-ace6d1",
+      "rank": 4,
+      "summary": "HTTP handlers in app/api/** call jsonify()",
+      "role": {
+        "package": "",
+        "dir": "app/api",
+        "file": "*",
+        "entry": "http",
+        "kind": "function",
+        "members": 52
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:flask#jsonify"
+      },
+      "evidence": {
+        "holders": 51,
+        "total": 52,
+        "lower_bound": 0.899,
+        "lift": 11.854,
+        "python_members": 52
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "app/api/views/alias.py",
+        "symbol": "create_contact_route",
+        "line": 419
+      },
+      "outliers": [
+        {
+          "path": "app/api/views/export.py",
+          "symbol": "export_aliases",
+          "line": 40
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-a4e9f4",
+      "rank": 5,
+      "summary": "HTTP handlers in app/dashboard/** call redirect()",
+      "role": {
+        "package": "",
+        "dir": "app/dashboard",
+        "file": "*",
+        "entry": "http",
+        "kind": "function",
+        "members": 49
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:flask#redirect"
+      },
+      "evidence": {
+        "holders": 45,
+        "total": 49,
+        "lower_bound": 0.808,
+        "lift": 7.233,
+        "python_members": 49
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "app/dashboard/views/account_setting.py",
+        "symbol": "account_setting",
+        "line": 74
+      },
+      "outliers": [
+        {
+          "path": "app/dashboard/views/alias_export.py",
+          "symbol": "alias_export_route",
+          "line": 8
+        },
+        {
+          "path": "app/dashboard/views/notification.py",
+          "symbol": "notifications_route",
+          "line": 41
+        },
+        {
+          "path": "app/dashboard/views/pricing.py",
+          "symbol": "subscription_success",
+          "line": 77
+        },
+        {
+          "path": "app/dashboard/views/refused_email.py",
+          "symbol": "refused_email_route",
+          "line": 9
+        }
+      ],
+      "outliers_total": 4,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-8ab5d8",
+      "rank": 6,
+      "summary": "HTTP handlers in app/dashboard/** call url_for()",
+      "role": {
+        "package": "",
+        "dir": "app/dashboard",
+        "file": "*",
+        "entry": "http",
+        "kind": "function",
+        "members": 49
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:flask#url_for"
+      },
+      "evidence": {
+        "holders": 44,
+        "total": 49,
+        "lower_bound": 0.782,
+        "lift": 7.319,
+        "python_members": 49
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "app/dashboard/views/account_setting.py",
+        "symbol": "account_setting",
+        "line": 74
+      },
+      "outliers": [
+        {
+          "path": "app/dashboard/views/alias_export.py",
+          "symbol": "alias_export_route",
+          "line": 8
+        },
+        {
+          "path": "app/dashboard/views/app.py",
+          "symbol": "app_route",
+          "line": 12
+        },
+        {
+          "path": "app/dashboard/views/notification.py",
+          "symbol": "notifications_route",
+          "line": 41
+        },
+        {
+          "path": "app/dashboard/views/pricing.py",
+          "symbol": "subscription_success",
+          "line": 77
+        },
+        {
+          "path": "app/dashboard/views/refused_email.py",
+          "symbol": "refused_email_route",
+          "line": 9
+        }
+      ],
+      "outliers_total": 5,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-dbae61",
+      "rank": 7,
+      "summary": "HTTP handlers in app/dashboard/** call flash()",
+      "role": {
+        "package": "",
+        "dir": "app/dashboard",
+        "file": "*",
+        "entry": "http",
+        "kind": "function",
+        "members": 49
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:flask#flash"
+      },
+      "evidence": {
+        "holders": 44,
+        "total": 49,
+        "lower_bound": 0.782,
+        "lift": 7.771,
+        "python_members": 49
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "app/dashboard/views/account_setting.py",
+        "symbol": "account_setting",
+        "line": 74
+      },
+      "outliers": [
+        {
+          "path": "app/dashboard/views/alias_export.py",
+          "symbol": "alias_export_route",
+          "line": 8
+        },
+        {
+          "path": "app/dashboard/views/notification.py",
+          "symbol": "notifications_route",
+          "line": 41
+        },
+        {
+          "path": "app/dashboard/views/pricing.py",
+          "symbol": "subscription_success",
+          "line": 77
+        },
+        {
+          "path": "app/dashboard/views/refused_email.py",
+          "symbol": "refused_email_route",
+          "line": 9
+        },
+        {
+          "path": "app/dashboard/views/setup_done.py",
+          "symbol": "setup_done",
+          "line": 9
+        }
+      ],
+      "outliers_total": 5,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-a9b19b",
+      "rank": 8,
+      "summary": "HTTP handlers in app/dashboard/** call flash() before redirect()",
+      "role": {
+        "package": "",
+        "dir": "app/dashboard",
+        "file": "*",
+        "entry": "http",
+        "kind": "function",
+        "members": 45
+      },
+      "rule": {
+        "type": "before",
+        "first": "pkg:flask#flash",
+        "then": "pkg:flask#redirect"
+      },
+      "evidence": {
+        "holders": 42,
+        "total": 45,
+        "lower_bound": 0.821,
+        "lift": 1.0,
+        "python_members": 45
+      },
+      "rule_kind": "before",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "app/dashboard/views/account_setting.py",
+        "symbol": "account_setting",
+        "line": 74
+      },
+      "outliers": [
+        {
+          "path": "app/dashboard/views/enter_admin.py",
+          "symbol": "enter_admin",
+          "line": 24
+        },
+        {
+          "path": "app/dashboard/views/enter_sudo.py",
+          "symbol": "enter_sudo",
+          "line": 26
+        },
+        {
+          "path": "app/dashboard/views/setup_done.py",
+          "symbol": "setup_done",
+          "line": 9
+        }
+      ],
+      "outliers_total": 3,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-dd624b",
+      "rank": 9,
+      "summary": "HTTP handlers in app/dashboard/** call flash() before render_template()",
+      "role": {
+        "package": "",
+        "dir": "app/dashboard",
+        "file": "*",
+        "entry": "http",
+        "kind": "function",
+        "members": 39
+      },
+      "rule": {
+        "type": "before",
+        "first": "pkg:flask#flash",
+        "then": "pkg:flask#render_template"
+      },
+      "evidence": {
+        "holders": 36,
+        "total": 39,
+        "lower_bound": 0.797,
+        "lift": 1.0,
+        "python_members": 39
+      },
+      "rule_kind": "before",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "app/dashboard/views/account_setting.py",
+        "symbol": "account_setting",
+        "line": 74
+      },
+      "outliers": [
+        {
+          "path": "app/dashboard/views/notification.py",
+          "symbol": "notifications_route",
+          "line": 41
+        },
+        {
+          "path": "app/dashboard/views/pricing.py",
+          "symbol": "subscription_success",
+          "line": 77
+        },
+        {
+          "path": "app/dashboard/views/refused_email.py",
+          "symbol": "refused_email_route",
+          "line": 9
+        }
+      ],
+      "outliers_total": 3,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-a1dfa4",
+      "rank": 10,
+      "summary": "HTTP handlers in app/auth/** call redirect() before url_for()",
+      "role": {
+        "package": "",
+        "dir": "app/auth",
+        "file": "*",
+        "entry": "http",
+        "kind": "function",
+        "members": 21
+      },
+      "rule": {
+        "type": "before",
+        "first": "pkg:flask#redirect",
+        "then": "pkg:flask#url_for"
+      },
+      "evidence": {
+        "holders": 20,
+        "total": 21,
+        "lower_bound": 0.773,
+        "lift": 1.0,
+        "python_members": 21
+      },
+      "rule_kind": "before",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "app/auth/views/activate.py",
+        "symbol": "activate",
+        "line": 14
+      },
+      "outliers": [
+        {
+          "path": "app/auth/views/reset_password.py",
+          "symbol": "reset_password",
+          "line": 22
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    }
+  ],
+  "largest_role": null
+}

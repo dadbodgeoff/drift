@@ -1,0 +1,177 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - asset
+  - core
+  - emits
+  - events
+  - floor
+  - helpers
+  - models
+  - options
+  - shape
+  - socket
+  - state
+  - text
+  - types
+  - utils
+  suffixes:
+  - config
+conventions:
+- id: D-dde3e1
+  status: proposed
+  mode: advise
+  summary: "server: classes in src/db/models/** call cast()"
+  role:
+    package: server
+    dir: src/db/models
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: pkg:python:typing#cast
+  evidence:
+    holders: 43
+    total: 44
+    lower_bound: 0.882
+    lift: 6.008
+    python_members: 44
+  example: server/src/db/models/asset_entry.py#AssetEntry
+  selector_version: 3
+- id: D-901af2
+  status: proposed
+  mode: advise
+  summary: "server: classes in src/db/** extend BaseDbModel, except 4 classes (of another kind)"
+  role:
+    package: server
+    dir: src/db
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - server/src/db/base.py#BaseDbModel
+  evidence:
+    holders: 44
+    total: 46
+    lower_bound: 0.855
+    lift: 5.432
+    role_members: 50
+    python_members: 50
+  example: server/src/db/models/asset_entry.py#AssetEntry
+  selector_version: 3
+- id: D-988115
+  status: proposed
+  mode: advise
+  summary: "client: exported values in src/** (emits files) are named `send*`"
+  role:
+    package: client
+    dir: src
+    file: emits
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: send*
+  evidence:
+    holders: 64
+    total: 69
+    lower_bound: 0.841
+    lift: 2.41
+  example: client/src/assets/emits.ts#sendAssetRemove
+  selector_version: 3
+- id: D-4e7e50
+  status: proposed
+  mode: advise
+  summary: "server: functions in src/api/socket/** are decorated with sio.on()"
+  role:
+    package: server
+    dir: src/api/socket
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - server/src/app.py#sio.on
+  evidence:
+    holders: 95
+    total: 105
+    lower_bound: 0.834
+    lift: 3.214
+    python_members: 105
+  example: server/src/api/socket/character.py#create_character
+  selector_version: 3
+- id: D-4bcf91
+  status: proposed
+  mode: advise
+  summary: "server: functions in src/api/socket/** are decorated with login_required()"
+  role:
+    package: server
+    dir: src/api/socket
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - server/src/auth.py#login_required
+  evidence:
+    holders: 92
+    total: 105
+    lower_bound: 0.8
+    lift: 3.395
+    python_members: 105
+  example: server/src/api/socket/character.py#create_character
+  selector_version: 3
+- id: D-157d31
+  status: proposed
+  mode: advise
+  summary: "server: functions in src/api/socket/** call game_state.get()"
+  role:
+    package: server
+    dir: src/api/socket
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: calls
+    callee: server/src/state/game.py#game_state.get
+  evidence:
+    holders: 90
+    total: 105
+    lower_bound: 0.778
+    lift: 3.595
+    python_members: 105
+  example: server/src/api/socket/character.py#create_character
+  selector_version: 3
+- id: D-d0cb99
+  status: proposed
+  mode: advise
+  summary: "client: exported values in src/game/systems/** (state files) are named `*State`"
+  role:
+    package: client
+    dir: src/game/systems
+    file: state
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*State"
+  evidence:
+    holders: 25
+    total: 27
+    lower_bound: 0.766
+    lift: 9.989
+  example: client/src/game/systems/access/state.ts#accessState
+  selector_version: 3

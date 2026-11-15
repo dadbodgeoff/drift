@@ -1,0 +1,57 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - layout
+  - loading
+  - page
+  - postcss
+  - utils
+  suffixes:
+  - config
+  - test
+conventions:
+- id: D-569610
+  status: proposed
+  mode: advise
+  summary: "packages/ui: components in src/** declare their return type"
+  role:
+    package: packages/ui
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 302
+    total: 318
+    lower_bound: 0.92
+    lift: 3.144
+  example: packages/ui/src/chat/chat-bubble.tsx#ChatBubbleReactions
+  selector_version: 3
+- id: D-d24287
+  status: proposed
+  mode: advise
+  summary: "apps/ui: functions in registry/default/ui/** call cn() before mergeProps()"
+  role:
+    package: apps/ui
+    dir: registry/default/ui
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: apps/ui/registry/default/lib/utils.ts#cn
+    then: pkg:@base-ui/react/merge-props#mergeProps
+  evidence:
+    holders: 34
+    total: 35
+    lower_bound: 0.855
+    lift: 1.0
+  example: apps/ui/registry/default/ui/badge.tsx#Badge
+  selector_version: 3

@@ -1,0 +1,161 @@
+{
+ "repos": [
+  {
+   "id": "acme",
+   "path": "/work/acme",
+   "name": "acme",
+   "practices": true,
+   "map": true
+  },
+  {
+   "id": "beacon",
+   "path": "/work/beacon",
+   "name": "beacon"
+  },
+  {
+   "id": "quiet",
+   "path": "/work/quiet",
+   "name": "quiet",
+   "practices": true
+  },
+  {
+   "id": "broken",
+   "path": "/work/broken",
+   "name": "broken",
+   "errors": true
+  }
+ ],
+ "sessions": [
+  {
+   "id": "7a3c9e15-4b2d-4f6a-8c1e-0d9b2f4a6e83",
+   "project": "/work/acme",
+   "title": "Sort links newest first (real hooks, one block)",
+   "bytes": 27247,
+   "modified": 1793781636030,
+   "hasState": true,
+   "realHooks": true
+  },
+  {
+   "id": "1e7d0b9a-5c2f-4e8d-b6a1-3f9c8e2d4a10",
+   "project": "/work/acme",
+   "title": "Set up the export bucket. The access key is AKIAIOSFODNN7EXAMPLE; put the credentials in apps/web/.env.local.",
+   "bytes": 5494,
+   "modified": 1793783532700,
+   "hasState": true
+  },
+  {
+   "id": "5f0c2a7e-1b3d-4c8a-9e21-7a6b4c3d2e10",
+   "project": "/work/acme",
+   "title": "Add a link-count endpoint",
+   "bytes": 19638,
+   "modified": 1793783577200,
+   "hasState": true
+  },
+  {
+   "id": "8d41e6b2-77c0-4f2e-a5d3-1c9e0b6a4f27",
+   "project": "/work/acme",
+   "title": "Export all links (blocked once)",
+   "bytes": 24699,
+   "modified": 1793783618400,
+   "hasState": true
+  },
+  {
+   "id": "c3a9f1d4-2e6b-4a70-8b15-f0e2d7c6b5a3",
+   "project": "/work/acme",
+   "title": "Public uptime probe (suppressed)",
+   "bytes": 16745,
+   "modified": 1793783645200,
+   "hasState": true
+  },
+  {
+   "id": "e5b2c8d1-7a4f-4c3e-9d6b-2a1f0e9c8b7d",
+   "project": "/work/acme",
+   "title": "Refunds API (registered after wiring advice)",
+   "bytes": 17254,
+   "modified": 1793783686200,
+   "hasState": true
+  }
+ ],
+ "studies": {
+  "census": [
+   "ai",
+   "cal.com",
+   "create-t3-app",
+   "documenso",
+   "dub",
+   "excalidraw",
+   "formbricks",
+   "immich",
+   "infisical",
+   "midday",
+   "nest",
+   "node-express-boilerplate",
+   "novu",
+   "supabase",
+   "trpc",
+   "twenty"
+  ],
+  "ab": [
+   "haiku",
+   "opus"
+  ],
+  "runs": [
+   "eval/study/runs/calib-v3-2026-11-06/py",
+   "eval/study/runs/calib-v3-2026-11-06/ts",
+   "eval/study/runs/dev-py-2026-11-05",
+   "eval/study/runs/dev-py-r2-2026-11-05",
+   "eval/study/runs/dev-py-r2-2026-11-05/views/rule5",
+   "eval/study/runs/dev-py-r2-2026-11-05/views/rule5-py",
+   "eval/study/runs/dev-ts-r2-2026-11-05",
+   "eval/study/runs/dev-ts-r2-2026-11-05/views/rule5",
+   "eval/study/runs/dev-v3-2026-11-06/py/views/d5",
+   "eval/study/runs/dev-v3-2026-11-06/py/views/d7",
+   "eval/study/runs/dev-v3-2026-11-06/py2/views/d5",
+   "eval/study/runs/dev-v3-2026-11-06/py2/views/d7",
+   "eval/study/runs/dev-v3-2026-11-06/ts/views/d5",
+   "eval/study/runs/dev-v3-2026-11-06/ts/views/d7",
+   "eval/study/runs/dev-v3-relabel-2026-11-06/ts/views/d7",
+   "eval/study/runs/dev-v3-relabel2-2026-11-07/ts/views/d7",
+   "eval/study/runs/dev-v3-relabel3-2026-11-07/py",
+   "eval/study/runs/dev-v3-relabel3-2026-11-07/py2",
+   "eval/study/runs/dev-v3-relabel3-2026-11-07/ts",
+   "eval/study/runs/dev-v3-relabel4-2026-11-07/py",
+   "eval/study/runs/dev-v3-relabel4-2026-11-07/py2",
+   "eval/study/runs/dev-v3-relabel4-2026-11-07/ts"
+  ],
+  "variants": [
+   {
+    "path": "eval/study/runs/dev-v3-2026-11-06/py/views/d5",
+    "variant": "without-CTFd"
+   },
+   {
+    "path": "eval/study/runs/dev-v3-2026-11-06/py/views/d7",
+    "variant": "without-CTFd"
+   },
+   {
+    "path": "eval/study/runs/dev-v3-relabel3-2026-11-07/py/views/d7",
+    "variant": "carried-only"
+   },
+   {
+    "path": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/views/d7",
+    "variant": "carried-only"
+   },
+   {
+    "path": "eval/study/runs/dev-v3-relabel3-2026-11-07/ts/views/d7",
+    "variant": "carried-only"
+   },
+   {
+    "path": "eval/study/runs/dev-v3-relabel4-2026-11-07/py/views/d7",
+    "variant": "carried-only"
+   },
+   {
+    "path": "eval/study/runs/dev-v3-relabel4-2026-11-07/py2/views/d7",
+    "variant": "carried-only"
+   },
+   {
+    "path": "eval/study/runs/dev-v3-relabel4-2026-11-07/ts/views/d7",
+    "variant": "carried-only"
+   }
+  ]
+ }
+}

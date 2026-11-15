@@ -1,0 +1,220 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - actions
+  - menu
+  - messages
+  - resources
+  - statistics
+  - test_actions
+  - test_resources
+  - test_statistics
+  suffixes:
+  - test
+conventions:
+- id: D-2dfb9d
+  status: proposed
+  mode: advise
+  summary: classes in backend/models/dtos/** extend BaseModel
+  role:
+    package: ""
+    dir: backend/models/dtos
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - pkg:pydantic#BaseModel
+  evidence:
+    holders: 147
+    total: 148
+    lower_bound: 0.963
+    lift: 2.689
+  example: backend/models/dtos/application_dto.py#ApplicationDTO
+- id: D-6ec938
+  status: proposed
+  mode: advise
+  summary: "frontend: classes in src/** extend PureComponent"
+  role:
+    package: frontend
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - pkg:react#PureComponent
+  evidence:
+    holders: 101
+    total: 103
+    lower_bound: 0.932
+    lift: 3.826
+  example: frontend/src/components/svgIcons/alert.js#AlertIcon
+- id: D-cfe608
+  status: proposed
+  mode: advise
+  summary: HTTP handlers in backend/** (resources files) are wrapped in get_db()
+  role:
+    package: ""
+    dir: backend
+    file: resources
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - backend/db.py#get_db
+  evidence:
+    holders: 94
+    total: 98
+    lower_bound: 0.9
+    lift: 2.836
+  example: backend/api/annotations/resources.py#get_annotations
+- id: D-68243e
+  status: proposed
+  mode: advise
+  summary: "frontend: classes in src/** are named `*Icon`"
+  role:
+    package: frontend
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Icon"
+  evidence:
+    holders: 98
+    total: 103
+    lower_bound: 0.891
+    lift: 3.825
+  example: frontend/src/components/svgIcons/alert.js#AlertIcon
+- id: D-3e220e
+  status: proposed
+  mode: advise
+  summary: HTTP handlers in backend/** (actions files) are wrapped in get_db()
+  role:
+    package: ""
+    dir: backend
+    file: actions
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - backend/db.py#get_db
+  evidence:
+    holders: 42
+    total: 43
+    lower_bound: 0.879
+    lift: 2.888
+  example: backend/api/licenses/actions.py#accept_license
+- id: D-86bd7f
+  status: proposed
+  mode: advise
+  summary: >-
+    HTTP handlers in backend/** (actions files) are wrapped in
+    security.api_key.APIKeyHeader()
+  role:
+    package: ""
+    dir: backend
+    file: actions
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - pkg:fastapi#security.api_key.APIKeyHeader
+  evidence:
+    holders: 42
+    total: 43
+    lower_bound: 0.879
+    lift: 3.936
+  example: backend/api/licenses/actions.py#accept_license
+- id: D-0dbb9f
+  status: proposed
+  mode: advise
+  summary: "frontend: functions in src/api/** call api() before useQuery()"
+  role:
+    package: frontend
+    dir: src/api
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: frontend/src/api/apiClient.js#api
+    then: pkg:@tanstack/react-query#useQuery
+  evidence:
+    holders: 26
+    total: 27
+    lower_bound: 0.817
+    lift: 1.0
+  example: frontend/src/api/badges.js#useBadgesQuery
+- id: D-4ede9c
+  status: proposed
+  mode: advise
+  summary: >-
+    HTTP handlers in backend/** (actions files) pass `content` to
+    responses.JSONResponse()
+  role:
+    package: ""
+    dir: backend
+    file: actions
+    entry: http
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:fastapi#responses.JSONResponse
+    index: 99
+    key: content
+  evidence:
+    holders: 40
+    total: 43
+    lower_bound: 0.814
+    lift: 4.016
+  example: backend/api/licenses/actions.py#accept_license
+- id: D-c373f7
+  status: proposed
+  mode: advise
+  summary: >-
+    HTTP handlers in backend/** are wrapped in get_db() or login_required() or
+    login_required_optional()
+  role:
+    package: ""
+    dir: backend
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - backend/db.py#get_db
+    - backend/services/users/authentication_service.py#login_required
+    - backend/services/users/authentication_service.py#login_required_optional
+  evidence:
+    holders: 36
+    total: 40
+    lower_bound: 0.769
+    lift: 2.632
+    split:
+    - - backend/db.py#get_db
+      - 20
+    - - backend/services/users/authentication_service.py#login_required
+      - 13
+    - - backend/services/users/authentication_service.py#login_required_optional
+      - 3
+  example: backend/api/organisations/campaigns.py#delete_organisation_campaign

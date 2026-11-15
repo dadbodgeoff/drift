@@ -1,0 +1,211 @@
+15 conventions from 11444 units in 690 roles (6 default tier, 9 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-594d38] packages/trpc: rpc entry points in server/** (_router files) are wrapped in authedAdminProcedure() or authedProcedure() or createEventPbacProcedure() or authedAdminProcedureWithRequestedUser() or createWebhookProcedure()
+    evidence: 156/171 (lower bound 0.86, lift 15.5)
+    tier:     default
+    split:    authedProcedure 107, authedAdminProcedure 30, createEventPbacProcedure 9, createWebhookProcedure 7, authedAdminProcedureWithRequestedUser 3
+    derived:  bookingsProcedure 1 (built on authedProcedure), createTeamPbacProcedure 1 (built on authedProcedure)
+    example:  packages/trpc/server/routers/loggedInViewer/_router.tsx#MUTATION addNotificationsSubscription
+    outlier:  packages/trpc/server/routers/features/_router.ts:13 QUERY checkTeamFeature
+    outlier:  packages/trpc/server/routers/features/_router.ts:9 QUERY list
+    outlier:  packages/trpc/server/routers/publicViewer/_router.tsx:18 MUTATION markHostAsNoShow
+    outlier:  packages/trpc/server/routers/publicViewer/_router.tsx:14 MUTATION submitRating
+    outlier:  packages/trpc/server/routers/publicViewer/_router.tsx:24 QUERY checkIfUserEmailVerificationRequired
+    outlier:  packages/trpc/server/routers/publicViewer/_router.tsx:10 QUERY countryCode
+    outlier:  packages/trpc/server/routers/publicViewer/timezones/_router.tsx:11 QUERY cityTimezones
+    outlier:  packages/trpc/server/routers/viewer/auth/_router.tsx:48 MUTATION sendVerifyEmailCode
+    outlier:  packages/trpc/server/routers/viewer/auth/_router.tsx:40 MUTATION verifyCodeUnAuthenticated
+    outlier:  packages/trpc/server/routers/viewer/bookings/_router.tsx:91 QUERY find
+    outlier:  packages/trpc/server/routers/viewer/i18n/_router.tsx:6 QUERY get
+    outlier:  packages/trpc/server/routers/viewer/slots/_router.tsx:46 MUTATION removeSelectedSlotMark
+    outlier:  packages/trpc/server/routers/viewer/slots/_router.tsx:26 MUTATION reserveSlot
+    outlier:  packages/trpc/server/routers/viewer/slots/_router.tsx:18 QUERY getSchedule
+    outlier:  packages/trpc/server/routers/viewer/slots/_router.tsx:34 QUERY isAvailable
+
+ 2. [D-85e09a] apps/web: HTTP handlers in app/** (route files) are wrapped in defaultResponderForAppDir()
+    evidence: 41/45 (lower bound 0.79, lift 60.6)
+    tier:     default
+    example:  apps/web/app/api/auth/forgot-password/route.ts#POST
+    outlier:  apps/web/app/api/csrf/route.ts:6 GET
+    outlier:  apps/web/app/api/ip/route.ts:4 GET
+    outlier:  apps/web/app/api/social/og/image/route.tsx:34 handler
+    outlier:  apps/web/app/api/video/recording/route.ts:6 GET
+
+ 3. [D-2f232d] files in packages/lib/** do not import from apps/web/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 235/236 (lower bound 0.98, lift 3.0)
+    tier:     default
+    example:  packages/lib/CalEventParser.ts#(file)
+    outlier:  packages/lib/hooks/useLocale.ts:1 (file)
+
+ 4. [D-441d0e] files in packages/lib/** do not import from packages/features/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 234/236 (lower bound 0.97, lift 3.0)
+    tier:     default
+    example:  packages/lib/CalEventParser.ts#(file)
+    outlier:  packages/lib/holidays/HolidayService.ts:1 (file)
+    outlier:  packages/lib/holidays/HolidayServiceCachingProxy.ts:1 (file)
+
+ 5. [D-31be39] files in packages/emails/** do not import from packages/app-store/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 137/139 (lower bound 0.95, lift 3.0)
+    tier:     default
+    example:  packages/emails/auth-email-service.ts#(file)
+    outlier:  packages/emails/src/components/LocationInfo.tsx:1 (file)
+    outlier:  packages/emails/src/templates/BrokenIntegrationEmail.tsx:1 (file)
+
+ 6. [D-f26528] files in packages/emails/** do not import from packages/features/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 136/139 (lower bound 0.94, lift 3.0)
+    tier:     default
+    example:  packages/emails/auth-email-service.ts#(file)
+    outlier:  packages/emails/email-manager.ts:1 (file)
+    outlier:  packages/emails/templates/_base-email.ts:1 (file)
+    outlier:  packages/emails/templates/organizer-request-email.ts:1 (file)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 7. [D-777a50] apps/api/v2: HTTP handlers in src/** (*.controller files) are decorated with UseGuards()
+    evidence: 156/175 (lower bound 0.84, lift 15.6)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    example:  apps/api/v2/src/modules/api-keys/controllers/api-keys.controller.ts#POST /v2/api-keys/refresh
+    outlier:  apps/api/v2/src/app.controller.ts:5 GET /health
+    outlier:  apps/api/v2/src/modules/atoms/controllers/atoms.event-types.controller.ts:55 GET /v2/atoms/event-types/:eventSlug/public
+    outlier:  apps/api/v2/src/modules/atoms/controllers/atoms.verification.controller.ts:61 GET /v2/atoms/verification/email/check
+    outlier:  apps/api/v2/src/modules/atoms/controllers/atoms.verification.controller.ts:41 POST /v2/atoms/verification/email/send-code
+    outlier:  apps/api/v2/src/modules/atoms/controllers/atoms.verification.controller.ts:78 POST /v2/atoms/verification/email/verify-code
+    outlier:  apps/api/v2/src/modules/auth/oauth2/controllers/atoms-oauth2.controller.ts:30 GET /v2/atoms/auth/oauth2/clients/:clientId
+    outlier:  apps/api/v2/src/modules/auth/oauth2/controllers/oauth2.controller.ts:65 POST /v2/auth/oauth2/token
+    outlier:  apps/api/v2/src/modules/oauth-clients/controllers/oauth-flow/oauth-flow.controller.ts:83 POST /v2/oauth/:clientId/exchange
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts:76 DELETE /v2/slots/selected-slot
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts:100 GET /v2/slots/available
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts:45 POST /v2/slots/reserve
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/slots.controller.ts:334 DELETE /v2/slots/reservations/:uid
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/slots.controller.ts:60 GET /v2/slots
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/slots.controller.ts:298 GET /v2/slots/reservations/:uid
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-09-04/controllers/slots.controller.ts:314 PATCH /v2/slots/reservations/:uid
+    outlier:  apps/api/v2/src/modules/timezones/controllers/timezones.controller.ts:20 GET /v2/timezones
+    outlier:  apps/api/v2/src/platform/calendars/controllers/calendars.controller.ts:195 GET /v2/calendars/:calendar/save
+    outlier:  apps/api/v2/src/platform/gcal/gcal.controller.ts:76 GET /v2/gcal/oauth/save
+    outlier:  apps/api/v2/src/platform/provider/provider.controller.ts:34 GET /v2/provider/:clientId
+
+ 8. [D-ec4221] apps/api/v2: HTTP handlers in src/modules/** (*.controller files) are decorated with ApiTags()
+    evidence: 95/100 (lower bound 0.89, lift 17.9)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    example:  apps/api/v2/src/modules/api-keys/controllers/api-keys.controller.ts#POST /v2/api-keys/refresh
+    outlier:  apps/api/v2/src/modules/oauth-clients/controllers/oauth-flow/oauth-flow.controller.ts:48 POST /v2/oauth/:clientId/authorize
+    outlier:  apps/api/v2/src/modules/oauth-clients/controllers/oauth-flow/oauth-flow.controller.ts:83 POST /v2/oauth/:clientId/exchange
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts:76 DELETE /v2/slots/selected-slot
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts:100 GET /v2/slots/available
+    outlier:  apps/api/v2/src/modules/slots/slots-2024-04-15/controllers/slots.controller.ts:45 POST /v2/slots/reserve
+
+ 9. [D-5722ba] packages/emails: classes in templates/** extend BaseEmail
+    evidence: 47/47 (lower bound 0.92, lift 21.6)
+    tier:     suggestion (rule kind wrapped_by:extends; decision D7 keeps only call wrappers and layering)
+    example:  packages/emails/templates/account-verify-email.ts#AccountVerifyEmail
+    exempt:   packages/emails/templates/_base-email.ts:14 BaseEmail (in the module that defines BaseEmail)
+
+10. [D-42ab67] packages/trpc: rpc entry points in server/** (_router files) validate their input with a schema
+    evidence: 142/171 (lower bound 0.77, lift 6.9)
+    tier:     suggestion (rule kind control)
+    example:  packages/trpc/server/routers/loggedInViewer/_router.tsx#MUTATION addNotificationsSubscription
+    outlier:  packages/trpc/server/routers/features/_router.ts:9 QUERY list
+    outlier:  packages/trpc/server/routers/loggedInViewer/_router.tsx:28 MUTATION unlinkConnectedAccount
+    outlier:  packages/trpc/server/routers/loggedInViewer/_router.tsx:23 QUERY stripeCustomer
+    outlier:  packages/trpc/server/routers/publicViewer/_router.tsx:10 QUERY countryCode
+    outlier:  packages/trpc/server/routers/viewer/admin/_router.ts:38 QUERY getSMSLockStateTeamsUsers
+    outlier:  packages/trpc/server/routers/viewer/admin/watchlist/_router.ts:51 QUERY pendingReportsCount
+    outlier:  packages/trpc/server/routers/viewer/apiKeys/_router.tsx:18 QUERY list
+    outlier:  packages/trpc/server/routers/viewer/apps/_router.tsx:85 QUERY checkForGCal
+    outlier:  packages/trpc/server/routers/viewer/apps/_router.tsx:45 QUERY getUsersDefaultConferencingApp
+    outlier:  packages/trpc/server/routers/viewer/auth/_router.tsx:66 MUTATION createAccountPassword
+    outlier:  packages/trpc/server/routers/viewer/availability/_router.tsx:16 QUERY list
+    outlier:  packages/trpc/server/routers/viewer/eventTypes/_router.ts:115 QUERY bulkEventFetch
+    outlier:  packages/trpc/server/routers/viewer/eventTypes/_router.ts:86 QUERY list
+    outlier:  packages/trpc/server/routers/viewer/eventTypes/_router.ts:94 QUERY listWithTeam
+    outlier:  packages/trpc/server/routers/viewer/googleWorkspace/_router.tsx:18 MUTATION getUsersFromGWorkspace
+    outlier:  packages/trpc/server/routers/viewer/googleWorkspace/_router.tsx:25 MUTATION removeCurrentGoogleWorkspaceConnection
+    outlier:  packages/trpc/server/routers/viewer/googleWorkspace/_router.tsx:11 QUERY checkForGWorkspace
+    outlier:  packages/trpc/server/routers/viewer/holidays/_router.ts:9 QUERY getSupportedCountries
+    outlier:  packages/trpc/server/routers/viewer/me/_router.tsx:16 MUTATION deleteMeWithoutPassword
+    outlier:  packages/trpc/server/routers/viewer/me/_router.tsx:8 QUERY bookingUnconfirmedCount
+    outlier:  packages/trpc/server/routers/viewer/me/_router.tsx:21 QUERY getUserTopBanners
+    outlier:  packages/trpc/server/routers/viewer/me/_router.tsx:25 QUERY myStats
+    outlier:  packages/trpc/server/routers/viewer/me/_router.tsx:29 QUERY platformMe
+    outlier:  packages/trpc/server/routers/viewer/me/_router.tsx:33 QUERY shouldVerifyEmail
+    outlier:  packages/trpc/server/routers/viewer/oAuth/_router.tsx:62 QUERY listUserClients
+    outlier:  packages/trpc/server/routers/viewer/ooo/_router.tsx:22 QUERY outOfOfficeReasonList
+    outlier:  packages/trpc/server/routers/viewer/travelSchedules/_router.tsx:5 QUERY get
+    outlier:  packages/trpc/server/routers/viewer/users/_router.ts:57 QUERY list
+    outlier:  packages/trpc/server/routers/viewer/webhook/_router.tsx:135 QUERY getByViewer
+
+11. [D-d690c0] packages/trpc: exported values in server/** (*.schema files) are named `*Schema`
+    evidence: 125/131 (lower bound 0.90, lift 4.3)
+    tier:     suggestion (rule kind named)
+    example:  packages/trpc/server/routers/loggedInViewer/addNotificationsSubscription.schema.ts#ZAddNotificationsSubscriptionInputSchema
+    outlier:  packages/trpc/server/routers/viewer/admin/removeTwoFactor.schema.ts:3 ZAdminRemoveTwoFactor
+    outlier:  packages/trpc/server/routers/viewer/admin/setSMSLockState.schema.ts:3 ZSetSMSLockState
+    outlier:  packages/trpc/server/routers/viewer/availability/team/listTeamAvailability.schema.ts:3 ZListTeamAvailaiblityScheme
+    outlier:  packages/trpc/server/routers/viewer/bookings/getWrongAssignmentReports.schema.ts:16 statusToEnumMap
+    outlier:  packages/trpc/server/routers/viewer/me/updateProfile.schema.ts:11 updateUserMetadataAllowedKeys
+    outlier:  packages/trpc/server/routers/viewer/ooo/outOfOfficeEntryDelete.schema.ts:3 ZOutOfOfficeDelete
+    exempt:   packages/trpc/server/routers/viewer/calendars/setDestinationReminder.schema.ts:3 VALID_REMINDER_MINUTES (a constant beside ZSetDestinationReminderInputSchema, which follows the scheme)
+    exempt:   packages/trpc/server/routers/viewer/eventTypes/getByViewer.schema.ts:12 filterQuerySchemaStrict (shared part used by 2 members)
+
+12. [D-fafac1] packages/trpc: functions in server/routers/viewer/** (*.handler files) are named `*Handler`
+    evidence: 137/154 (lower bound 0.83, lift 13.4)
+    tier:     suggestion (rule kind named)
+    example:  packages/trpc/server/routers/viewer/admin/assignFeatureToTeam.handler.ts#assignFeatureToTeamHandler
+    outlier:  packages/trpc/server/routers/viewer/admin/createCoupon.handler.ts:53 createCoupon
+    outlier:  packages/trpc/server/routers/viewer/admin/createSelfHostedLicenseKey.handler.ts:53 createSelfHostedInstance
+    outlier:  packages/trpc/server/routers/viewer/admin/getSMSLockStateTeamsUsers.handler.ts:12 getSMSLockStateTeamsUsers
+    outlier:  packages/trpc/server/routers/viewer/admin/setSMSLockState.handler.ts:16 setSMSLockState
+    outlier:  packages/trpc/server/routers/viewer/auth/resendVerifyEmail.handler.ts:22 resendVerifyEmail
+    outlier:  packages/trpc/server/routers/viewer/bookings/editLocation.handler.ts:213 getLocationForOrganizerDefaultConferencingAppInEvtFormat
+    outlier:  packages/trpc/server/routers/viewer/bookings/get.handler.ts:93 getBookings
+    outlier:  packages/trpc/server/routers/viewer/eventTypes/getActiveOnOptions.handler.ts:200 getActiveOnOptions
+    outlier:  packages/trpc/server/routers/viewer/eventTypes/getEventTypesFromGroup.handler.ts:26 getEventTypesFromGroup
+    outlier:  packages/trpc/server/routers/viewer/eventTypes/getUserEventGroups.handler.ts:29 getUserEventGroups
+    outlier:  packages/trpc/server/routers/viewer/googleWorkspace/googleWorkspace.handler.ts:25 checkForGWorkspace
+    outlier:  packages/trpc/server/routers/viewer/googleWorkspace/googleWorkspace.handler.ts:36 getUsersFromGWorkspace
+    outlier:  packages/trpc/server/routers/viewer/googleWorkspace/googleWorkspace.handler.ts:72 removeCurrentGoogleWorkspaceConnection
+    outlier:  packages/trpc/server/routers/viewer/ooo/outOfOfficeCreateOrUpdate.handler.ts:27 outOfOfficeCreateOrUpdate
+    outlier:  packages/trpc/server/routers/viewer/ooo/outOfOfficeEntriesList.handler.ts:17 outOfOfficeEntriesList
+    outlier:  packages/trpc/server/routers/viewer/ooo/outOfOfficeEntryDelete.handler.ts:18 outOfOfficeEntryDelete
+    outlier:  packages/trpc/server/routers/viewer/ooo/outOfOfficeReasons.handler.ts:3 outOfOfficeReasonList
+    exempt:   packages/trpc/server/routers/viewer/apps/updateAppCredentials.handler.ts:20 handleCustomValidations (a helper of updateAppCredentialsHandler, which uses it in its file)
+    exempt:   packages/trpc/server/routers/viewer/auth/sendVerifyEmailCode.handler.ts:20 sendVerifyEmailCode (a helper of sendVerifyEmailCodeHandler, which uses it in its file)
+    exempt:   packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts:272 buildCalendarEvent (a helper of addGuestsHandler, which uses it in its file)
+    exempt:   packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts:95 getBooking (a helper of addGuestsHandler, which uses it in its file)
+    exempt:   packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts:129 getOrganizerData (a helper of addGuestsHandler, which uses it in its file)
+    exempt:   packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts:256 prepareAttendeesList (a helper of addGuestsHandler, which uses it in its file)
+    exempt:   packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts:187 sanitizeAndFilterGuests (a helper of addGuestsHandler, which uses it in its file)
+    exempt:   packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts:237 updateBookingAttendees (a helper of addGuestsHandler, which uses it in its file)
+    exempt:   packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts:333 updateCalendarEvent (a helper of addGuestsHandler, which uses it in its file)
+    exempt:   packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts:115 validateGuestsFieldEnabled (a helper of addGuestsHandler, which uses it in its file)
+    exempt:   packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts:106 validateUserPermissions (a helper of addGuestsHandler, which uses it in its file)
+    exempt:   packages/trpc/server/routers/viewer/calendars/setDestinationCalendar.handler.ts:30 getFirstConnectedCalendar (a helper of setDestinationCalendarHandler, which uses it in its file)
+    exempt:   packages/trpc/server/routers/viewer/eventTypes/getHostsWithLocationOptions.handler.ts:66 transformHostsToResponse (a helper of getHostsWithLocationOptionsHandler, which uses it in its file)
+
+13. [D-554063] packages/emails: components in src/templates/** are named `*Email`
+    evidence: 45/47 (lower bound 0.86, lift 26.3)
+    tier:     suggestion (rule kind named)
+    example:  packages/emails/src/templates/AdminOAuthClientNotificationEmail.tsx#AdminOAuthClientNotificationEmail
+    outlier:  packages/emails/src/templates/BookingRedirectEmailNotification.tsx:4 BookingRedirectEmailNotification
+    outlier:  packages/emails/src/templates/VerifyEmailByCode.tsx:9 VerifyEmailByCode
+
+14. [D-8d7d13] packages/emails: functions in ./** are named `send*`
+    evidence: 44/44 (lower bound 0.92, lift 40.7)
+    tier:     suggestion (rule kind named)
+    example:  packages/emails/auth-email-service.ts#sendChangeOfEmailVerificationLink
+    exempt:   packages/emails/email-manager.ts:62 fetchOrganizationEmailSettings (a helper of sendAddGuestsEmailsAndSMS, which uses it in its file)
+    exempt:   packages/emails/email-manager.ts:67 shouldSkipAttendeeEmailWithSettings (a helper of sendAddGuestsEmailsAndSMS, which uses it in its file)
+
+15. [D-e5e923] packages/emails: classes in templates/** are named `*Email`
+    evidence: 44/48 (lower bound 0.80, lift 21.6)
+    tier:     suggestion (rule kind named)
+    example:  packages/emails/templates/account-verify-email.ts#AccountVerifyEmail
+    outlier:  packages/emails/templates/admin-oauth-client-notification.ts:18 AdminOAuthClientNotification
+    outlier:  packages/emails/templates/admin-organization-notification.ts:16 AdminOrganizationNotification
+    outlier:  packages/emails/templates/booking-redirect-notification.ts:9 BookingRedirectNotification
+    outlier:  packages/emails/templates/organization-email-verification.ts:16 OrganizationEmailVerification
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

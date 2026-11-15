@@ -1,0 +1,828 @@
+{
+  "run": "eval/study/runs/d8-prereg-2026-11-07/py2",
+  "rubric": {
+    "version": "v3",
+    "sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+  },
+  "product": {
+    "commit": "5cfbbb48c350ebe459021a8f803261d9c44f40e6",
+    "binary_sha256": "38488a10a44939c2e4f348f1f21ff659b7d702ad234392c46269e5ae4368afbc"
+  },
+  "tier": {
+    "from": "eval/study/tier-d8-candidate.json",
+    "decision": "D8",
+    "view": "eval/study/runs/d8-prereg-2026-11-07/py2/views/d8"
+  },
+  "candidate_json": {
+    "dir": "eval/study/runs/d8-prereg-2026-11-07/census-candidate",
+    "commits": [
+      "5cfbbb4-d8"
+    ],
+    "agrees": 75
+  },
+  "census_tier_mismatches": [
+    {
+      "uid": "Django-CRM/D-f135a4",
+      "census": "suggestion",
+      "applied": "default"
+    },
+    {
+      "uid": "simplelogin/D-2a4960",
+      "census": "suggestion",
+      "applied": "default"
+    }
+  ],
+  "census_tier_mismatches_allowed": "the census tier lines are D7's (what ships); the view is decision D8's pre-registered candidate, which the product reports only through census --json --candidate d8",
+  "carry_from": null,
+  "carry_summary_only": null,
+  "relabel_scope": "default",
+  "default": {
+    "shown": 2,
+    "carried": 0,
+    "carried_summary_only": 0,
+    "to_label": 2,
+    "unlabelled": 0
+  },
+  "suggestion": {
+    "shown": 73,
+    "carried": 0,
+    "carried_summary_only": 0,
+    "to_label": 0,
+    "unlabelled": 73
+  },
+  "all": {
+    "shown": 75,
+    "carried": 0,
+    "carried_summary_only": 0,
+    "to_label": 2,
+    "unlabelled": 73
+  },
+  "relabel": [
+    "Django-CRM/D-f135a4",
+    "simplelogin/D-2a4960"
+  ],
+  "unlabelled": [
+    "Django-CRM/D-220569",
+    "Django-CRM/D-4a6ea2",
+    "Django-CRM/D-4b232f",
+    "Django-CRM/D-e62e87",
+    "Django-CRM/D-8ee062",
+    "Django-CRM/D-0bd0ec",
+    "Django-CRM/D-9c2214",
+    "Django-CRM/D-f01192",
+    "InvenTree/D-47d790",
+    "InvenTree/D-43f01e",
+    "InvenTree/D-455913",
+    "InvenTree/D-6f225b",
+    "InvenTree/D-16c1ac",
+    "InvenTree/D-095ebc",
+    "InvenTree/D-7e788c",
+    "InvenTree/D-9838a4",
+    "InvenTree/D-f31910",
+    "InvenTree/D-b24fe0",
+    "InvenTree/D-71f3ec",
+    "ralph/D-4529f9",
+    "ralph/D-5b6f70",
+    "ralph/D-5bf491",
+    "ralph/D-b1df5c",
+    "ralph/D-43f01e",
+    "ralph/D-cfd5da",
+    "Misago/D-c9ae1e",
+    "Misago/D-90a5d9",
+    "Misago/D-e72fc8",
+    "Misago/D-5862f4",
+    "Misago/D-b4e5ff",
+    "Misago/D-d8703c",
+    "Misago/D-d01155",
+    "Misago/D-d93d41",
+    "paperless-ngx/D-c3460b",
+    "paperless-ngx/D-de2489",
+    "paperless-ngx/D-1d6a6a",
+    "wger/D-82d21d",
+    "wger/D-db04dc",
+    "wger/D-3755b1",
+    "lotus/D-e5b6fe",
+    "lotus/D-26d6a0",
+    "lotus/D-1cbdac",
+    "lotus/D-2ab768",
+    "pontoon/D-94fc85",
+    "pontoon/D-ddba4b",
+    "open-wearables/D-dadcea",
+    "open-wearables/D-ff3192",
+    "open-wearables/D-6606a8",
+    "open-wearables/D-262064",
+    "open-wearables/D-b21ebc",
+    "open-wearables/D-8ffd6f",
+    "open-wearables/D-baa886",
+    "open-wearables/D-4c541f",
+    "tasking-manager/D-c7acd1",
+    "tasking-manager/D-cfe608",
+    "tasking-manager/D-3e220e",
+    "tasking-manager/D-6ec938",
+    "tasking-manager/D-2dfb9d",
+    "tasking-manager/D-68243e",
+    "tasking-manager/D-4ede9c",
+    "tasking-manager/D-0dbb9f",
+    "simplelogin/D-7fa3b5",
+    "simplelogin/D-e29828",
+    "simplelogin/D-ace6d1",
+    "simplelogin/D-a4e9f4",
+    "simplelogin/D-8ab5d8",
+    "simplelogin/D-dbae61",
+    "simplelogin/D-a9b19b",
+    "simplelogin/D-dd624b",
+    "simplelogin/D-a1dfa4",
+    "changedetection.io/D-2619c7",
+    "changedetection.io/D-7f369e",
+    "changedetection.io/D-1ce566"
+  ],
+  "not_carried": [],
+  "repos": [
+    {
+      "repo": "Django-CRM",
+      "shown": 9,
+      "carried": 0,
+      "to_label": 1,
+      "unlabelled": 8
+    },
+    {
+      "repo": "InvenTree",
+      "shown": 11,
+      "carried": 0,
+      "to_label": 0,
+      "unlabelled": 11
+    },
+    {
+      "repo": "ralph",
+      "shown": 6,
+      "carried": 0,
+      "to_label": 0,
+      "unlabelled": 6
+    },
+    {
+      "repo": "Misago",
+      "shown": 8,
+      "carried": 0,
+      "to_label": 0,
+      "unlabelled": 8
+    },
+    {
+      "repo": "paperless-ngx",
+      "shown": 3,
+      "carried": 0,
+      "to_label": 0,
+      "unlabelled": 3
+    },
+    {
+      "repo": "wger",
+      "shown": 3,
+      "carried": 0,
+      "to_label": 0,
+      "unlabelled": 3
+    },
+    {
+      "repo": "lotus",
+      "shown": 4,
+      "carried": 0,
+      "to_label": 0,
+      "unlabelled": 4
+    },
+    {
+      "repo": "pontoon",
+      "shown": 2,
+      "carried": 0,
+      "to_label": 0,
+      "unlabelled": 2
+    },
+    {
+      "repo": "open-wearables",
+      "shown": 8,
+      "carried": 0,
+      "to_label": 0,
+      "unlabelled": 8
+    },
+    {
+      "repo": "tasking-manager",
+      "shown": 8,
+      "carried": 0,
+      "to_label": 0,
+      "unlabelled": 8
+    },
+    {
+      "repo": "simplelogin",
+      "shown": 10,
+      "carried": 0,
+      "to_label": 1,
+      "unlabelled": 9
+    },
+    {
+      "repo": "changedetection.io",
+      "shown": 3,
+      "carried": 0,
+      "to_label": 0,
+      "unlabelled": 3
+    }
+  ],
+  "proposals": [
+    {
+      "uid": "Django-CRM/D-220569",
+      "tier": "suggestion",
+      "kind": "wrapped_by:call",
+      "reason": "names_package",
+      "guards": true,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "Django-CRM/D-4a6ea2",
+      "tier": "suggestion",
+      "kind": "wrapped_by:call",
+      "reason": "small_role",
+      "guards": true,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "Django-CRM/D-f135a4",
+      "tier": "default",
+      "kind": "wrapped_by:call",
+      "reason": null,
+      "guards": true,
+      "action": "relabel"
+    },
+    {
+      "uid": "Django-CRM/D-4b232f",
+      "tier": "suggestion",
+      "kind": "wrapped_by:call",
+      "reason": "names_package",
+      "guards": true,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "Django-CRM/D-e62e87",
+      "tier": "suggestion",
+      "kind": "calls",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "Django-CRM/D-8ee062",
+      "tier": "suggestion",
+      "kind": "has_test",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "Django-CRM/D-0bd0ec",
+      "tier": "suggestion",
+      "kind": "calls",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "Django-CRM/D-9c2214",
+      "tier": "suggestion",
+      "kind": "passes_key",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "Django-CRM/D-f01192",
+      "tier": "suggestion",
+      "kind": "calls",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "InvenTree/D-47d790",
+      "tier": "suggestion",
+      "kind": "wrapped_by:extends",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "InvenTree/D-43f01e",
+      "tier": "suggestion",
+      "kind": "named",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "InvenTree/D-455913",
+      "tier": "suggestion",
+      "kind": "named",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "InvenTree/D-6f225b",
+      "tier": "suggestion",
+      "kind": "named",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "InvenTree/D-16c1ac",
+      "tier": "suggestion",
+      "kind": "control",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "InvenTree/D-095ebc",
+      "tier": "suggestion",
+      "kind": "control",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "InvenTree/D-7e788c",
+      "tier": "suggestion",
+      "kind": "before",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "InvenTree/D-9838a4",
+      "tier": "suggestion",
+      "kind": "before",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "InvenTree/D-f31910",
+      "tier": "suggestion",
+      "kind": "calls",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "InvenTree/D-b24fe0",
+      "tier": "suggestion",
+      "kind": "before",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "InvenTree/D-71f3ec",
+      "tier": "suggestion",
+      "kind": "before",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "ralph/D-4529f9",
+      "tier": "suggestion",
+      "kind": "wrapped_by:extends",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "ralph/D-5b6f70",
+      "tier": "suggestion",
+      "kind": "wrapped_by:extends",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "ralph/D-5bf491",
+      "tier": "suggestion",
+      "kind": "avoids:other",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "ralph/D-b1df5c",
+      "tier": "suggestion",
+      "kind": "named",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "ralph/D-43f01e",
+      "tier": "suggestion",
+      "kind": "named",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "ralph/D-cfd5da",
+      "tier": "suggestion",
+      "kind": "control",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "Misago/D-c9ae1e",
+      "tier": "suggestion",
+      "kind": "wrapped_by:extends",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "Misago/D-90a5d9",
+      "tier": "suggestion",
+      "kind": "calls",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "Misago/D-e72fc8",
+      "tier": "suggestion",
+      "kind": "wrapped_by:extends",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "Misago/D-5862f4",
+      "tier": "suggestion",
+      "kind": "wrapped_by:extends",
+      "reason": "rule_kind_d7",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "Misago/D-b4e5ff",
+      "tier": "suggestion",
+      "kind": "named",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "Misago/D-d8703c",
+      "tier": "suggestion",
+      "kind": "calls",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "Misago/D-d01155",
+      "tier": "suggestion",
+      "kind": "calls",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "Misago/D-d93d41",
+      "tier": "suggestion",
+      "kind": "control",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "paperless-ngx/D-c3460b",
+      "tier": "suggestion",
+      "kind": "wrapped_by:extends",
+      "reason": "rule_kind_d7",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "paperless-ngx/D-de2489",
+      "tier": "suggestion",
+      "kind": "named",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "paperless-ngx/D-1d6a6a",
+      "tier": "suggestion",
+      "kind": "wrapped_by:decorator",
+      "reason": "rule_kind_d7",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "wger/D-82d21d",
+      "tier": "suggestion",
+      "kind": "wrapped_by:decorator",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "wger/D-db04dc",
+      "tier": "suggestion",
+      "kind": "named",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "wger/D-3755b1",
+      "tier": "suggestion",
+      "kind": "calls",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "lotus/D-e5b6fe",
+      "tier": "suggestion",
+      "kind": "wrapped_by:decorator",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "lotus/D-26d6a0",
+      "tier": "suggestion",
+      "kind": "named",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "lotus/D-1cbdac",
+      "tier": "suggestion",
+      "kind": "named",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "lotus/D-2ab768",
+      "tier": "suggestion",
+      "kind": "model_has",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "pontoon/D-94fc85",
+      "tier": "suggestion",
+      "kind": "control",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "pontoon/D-ddba4b",
+      "tier": "suggestion",
+      "kind": "control",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "open-wearables/D-dadcea",
+      "tier": "suggestion",
+      "kind": "wrapped_by:call",
+      "reason": "not_guard",
+      "guards": false,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "open-wearables/D-ff3192",
+      "tier": "suggestion",
+      "kind": "calls",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "open-wearables/D-6606a8",
+      "tier": "suggestion",
+      "kind": "calls",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "open-wearables/D-262064",
+      "tier": "suggestion",
+      "kind": "wrapped_by:extends",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "open-wearables/D-b21ebc",
+      "tier": "suggestion",
+      "kind": "calls",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "open-wearables/D-8ffd6f",
+      "tier": "suggestion",
+      "kind": "named",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "open-wearables/D-baa886",
+      "tier": "suggestion",
+      "kind": "calls",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "open-wearables/D-4c541f",
+      "tier": "suggestion",
+      "kind": "calls",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "tasking-manager/D-c7acd1",
+      "tier": "suggestion",
+      "kind": "wrapped_by:call",
+      "reason": "small_role",
+      "guards": true,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "tasking-manager/D-cfe608",
+      "tier": "suggestion",
+      "kind": "wrapped_by:call",
+      "reason": "not_guard",
+      "guards": false,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "tasking-manager/D-3e220e",
+      "tier": "suggestion",
+      "kind": "wrapped_by:call",
+      "reason": "not_guard",
+      "guards": false,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "tasking-manager/D-6ec938",
+      "tier": "suggestion",
+      "kind": "wrapped_by:extends",
+      "reason": "rule_kind_d7",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "tasking-manager/D-2dfb9d",
+      "tier": "suggestion",
+      "kind": "wrapped_by:extends",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "tasking-manager/D-68243e",
+      "tier": "suggestion",
+      "kind": "named",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "tasking-manager/D-4ede9c",
+      "tier": "suggestion",
+      "kind": "passes_key",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "tasking-manager/D-0dbb9f",
+      "tier": "suggestion",
+      "kind": "before",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "simplelogin/D-7fa3b5",
+      "tier": "suggestion",
+      "kind": "avoids:other",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "simplelogin/D-2a4960",
+      "tier": "default",
+      "kind": "avoids:import",
+      "reason": null,
+      "guards": null,
+      "action": "relabel"
+    },
+    {
+      "uid": "simplelogin/D-e29828",
+      "tier": "suggestion",
+      "kind": "wrapped_by:extends",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "simplelogin/D-ace6d1",
+      "tier": "suggestion",
+      "kind": "calls",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "simplelogin/D-a4e9f4",
+      "tier": "suggestion",
+      "kind": "calls",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "simplelogin/D-8ab5d8",
+      "tier": "suggestion",
+      "kind": "calls",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "simplelogin/D-dbae61",
+      "tier": "suggestion",
+      "kind": "calls",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "simplelogin/D-a9b19b",
+      "tier": "suggestion",
+      "kind": "before",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "simplelogin/D-dd624b",
+      "tier": "suggestion",
+      "kind": "before",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "simplelogin/D-a1dfa4",
+      "tier": "suggestion",
+      "kind": "before",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "changedetection.io/D-2619c7",
+      "tier": "suggestion",
+      "kind": "wrapped_by:decorator",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "changedetection.io/D-7f369e",
+      "tier": "suggestion",
+      "kind": "avoids:other",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "changedetection.io/D-1ce566",
+      "tier": "suggestion",
+      "kind": "control",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    }
+  ]
+}

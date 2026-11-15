@@ -1,0 +1,45 @@
+{
+  "repo": "cal.com",
+  "files": [
+    {
+      "path": ".opencode/skill/vercel-react-best-practices/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "agents/skills/vercel-react-best-practices/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/app-store/CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "specs/_templates/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "specs/_templates/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "specs/cancellation-reason-requirement/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "biome.json",
+      "kind": "lint"
+    }
+  ]
+}

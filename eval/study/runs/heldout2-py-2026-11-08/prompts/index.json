@@ -1,0 +1,554 @@
+[
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "statsmodels",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/label/A/statsmodels.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/e9d67998-7718-4dba-b612-8e0a11ab11b7/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/2085a31f-1097-45ba-922c-2723ac13f25e",
+    "checkout_status": [],
+    "expected": [
+      "statsmodels/D-7a9fce",
+      "statsmodels/D-c38d19",
+      "statsmodels/D-2cf8e5"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:35.622Z",
+    "collected": {
+      "at": "2026-11-08T02:04:58.348Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/A/statsmodels.jsonl",
+      "records": 3,
+      "sha256": "3409d5f2310c8c0e201a909f094a34bb56af1e77abdd4d84acf8ebaa4995b0fc"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "flagsmith",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/label/A/flagsmith.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/7511d512-699f-43bb-a617-b6e51a8698f7/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/0623f147-af27-4355-9e2b-5801c1e7312a",
+    "checkout_status": [],
+    "expected": [
+      "flagsmith/D-d1bd09",
+      "flagsmith/D-1e2cee",
+      "flagsmith/D-aecbf8"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:35.674Z",
+    "collected": {
+      "at": "2026-11-08T02:05:41.253Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/A/flagsmith.jsonl",
+      "records": 3,
+      "sha256": "694d28e782a25718c502843e033457422a0799fdc12014a43524a78d427bf5eb"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "kunlun-m",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/label/A/kunlun-m.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/51bd40f1-a865-4b3f-a50e-efa9331e51bd/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/b8d9e704-febf-4b9c-a2ee-6eed90bf3c3f",
+    "checkout_status": [],
+    "expected": [
+      "kunlun-m/D-9838d9"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:35.721Z",
+    "collected": {
+      "at": "2026-11-08T02:06:01.673Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/A/kunlun-m.jsonl",
+      "records": 1,
+      "sha256": "eb978562567c0638f478545a6ca4d581441cfeff7be806ca8b83ec95448aed5b"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "django-oscar",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/label/A/django-oscar.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/5ebd02db-072a-43ea-a52c-83f95bbfdfa7/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/bb6e2c94-8722-443b-8c17-7d435d08d3c7",
+    "checkout_status": [],
+    "expected": [
+      "django-oscar/D-982b49"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:35.768Z",
+    "collected": {
+      "at": "2026-11-08T02:06:09.076Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/A/django-oscar.jsonl",
+      "records": 1,
+      "sha256": "95f2814c8b5b1b1e95c7fa89b86570e3bee76689d892ae64160d0bf91427056c"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "dcs_liberation",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/label/A/dcs_liberation.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/fae52878-7ce1-45de-987f-71f068acb2ea/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/b96dae2b-d336-4aaf-8c90-86106651da8d",
+    "checkout_status": [],
+    "expected": [
+      "dcs_liberation/D-841abc",
+      "dcs_liberation/D-9fa25f",
+      "dcs_liberation/D-424840",
+      "dcs_liberation/D-aad2db",
+      "dcs_liberation/D-8bb671",
+      "dcs_liberation/D-0de628"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:35.817Z",
+    "collected": {
+      "at": "2026-11-08T01:59:33.799Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/A/dcs_liberation.jsonl",
+      "records": 6,
+      "sha256": "6f94df1c3f61683dd16d9a60bc889a4dee31e9a5c9025b97e3638b090ab6ad07"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "supoclip",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/label/A/supoclip.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/b74bb8f3-5cc0-43ab-bc6f-da4dd33605e1/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/74a43982-5d23-4e88-8483-4923ae2baeb1",
+    "checkout_status": [],
+    "expected": [
+      "supoclip/D-006a69",
+      "supoclip/D-b27acc",
+      "supoclip/D-f0ff81"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:35.863Z",
+    "collected": {
+      "at": "2026-11-08T02:06:27.962Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/A/supoclip.jsonl",
+      "records": 3,
+      "sha256": "f868b81166e3e0657f919a493a7c38badfb3a46776139083cfee07627a8be9a9"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "vmlx",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/label/A/vmlx.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/0feb9864-7734-4b27-871a-94b6fb4cceae/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/541df3e9-c611-496e-b49d-35afe5174910",
+    "checkout_status": [],
+    "expected": [
+      "vmlx/D-081097",
+      "vmlx/D-5e79e4",
+      "vmlx/D-0bfd57",
+      "vmlx/D-56a575",
+      "vmlx/D-5c3955",
+      "vmlx/D-47df1d",
+      "vmlx/D-0fbf2a",
+      "vmlx/D-c1c977"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:35.909Z",
+    "collected": {
+      "at": "2026-11-08T01:58:20.819Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/A/vmlx.jsonl",
+      "records": 8,
+      "sha256": "456882b72b3fada09ba9d97e78b201244cb5bf31b2917c91a75ae172c3f32758"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "fenic",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/label/A/fenic.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/29ab3015-5023-4a99-bd87-c11aafdb8538/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/173e1e98-99cf-4296-9d05-f6da862a874a",
+    "checkout_status": [],
+    "expected": [
+      "fenic/D-a2ea38",
+      "fenic/D-e8fcfa",
+      "fenic/D-7ef79c",
+      "fenic/D-7ab0d9",
+      "fenic/D-c30a2b"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:35.952Z",
+    "collected": {
+      "at": "2026-11-08T02:01:08.868Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/A/fenic.jsonl",
+      "records": 5,
+      "sha256": "2d0505db0d48eb509bffcccdd797584acb0116807fea4fef2eab861427991630"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "future-agi",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/label/A/future-agi.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/43eea1a1-c70c-435d-96a3-1ec2e2f539f9/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/2dc671cb-6101-43d8-8ce8-0cdf995ef0cd",
+    "checkout_status": [],
+    "expected": [
+      "future-agi/D-148d14",
+      "future-agi/D-7fb332",
+      "future-agi/D-9873ea",
+      "future-agi/D-a79a2e",
+      "future-agi/D-a0e724",
+      "future-agi/D-962248",
+      "future-agi/D-30f7c8",
+      "future-agi/D-ad841f",
+      "future-agi/D-402240",
+      "future-agi/D-85cfb8",
+      "future-agi/D-20c80e",
+      "future-agi/D-a3b041",
+      "future-agi/D-12246d"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:51:36.024Z",
+    "rejected": [
+      {
+        "at": "2026-11-08T01:59:49.037Z",
+        "problems": [
+          "out.jsonl:4: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: futureagi/pyproject.toml (a config file), futureagi/.pre-commit-config.yaml (a config file), futureagi/.flake8 (a config file)",
+          "out.jsonl:6: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: frontend/.eslintrc.cjs (a config file), frontend/jsconfig.json (a config file)"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T02:07:08.918Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/A/future-agi.jsonl",
+      "records": 13,
+      "sha256": "c8f30c7b31ecea9e86eda256f34f002f0e22b7a21d41f2be8005bfabeec8a8c3"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "vmlx",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/label/B/vmlx.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/375baea2-0df4-4bd4-9570-6f34e50698b1/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/95d36e49-28f7-49a6-9323-0f51f12ccb91",
+    "checkout_status": [],
+    "expected": [
+      "vmlx/D-081097",
+      "vmlx/D-5e79e4",
+      "vmlx/D-0bfd57",
+      "vmlx/D-56a575",
+      "vmlx/D-5c3955",
+      "vmlx/D-47df1d",
+      "vmlx/D-0fbf2a",
+      "vmlx/D-c1c977"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:58:20.923Z",
+    "rejected": [
+      {
+        "at": "2026-11-08T02:01:30.087Z",
+        "problems": [
+          "out.jsonl:7: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T02:04:13.197Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/B/vmlx.jsonl",
+      "records": 8,
+      "sha256": "0b486a131d9bf78b5dc109240b1733c95c6aa0ca8fb517863fe15e080301de1b"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "dcs_liberation",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/label/B/dcs_liberation.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/5e7a19c8-f3a3-4bd3-be12-4083076659c6/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/3d96c9c3-dbd8-4d2f-be50-b75455b8dd9f",
+    "checkout_status": [],
+    "expected": [
+      "dcs_liberation/D-841abc",
+      "dcs_liberation/D-9fa25f",
+      "dcs_liberation/D-424840",
+      "dcs_liberation/D-aad2db",
+      "dcs_liberation/D-8bb671",
+      "dcs_liberation/D-0de628"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T01:59:33.867Z",
+    "collected": {
+      "at": "2026-11-08T02:02:17.926Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/B/dcs_liberation.jsonl",
+      "records": 6,
+      "sha256": "615a245b6632d5447ddcc4e6b15d3eef6d9b2f2c9c139dd64f1fb7cd06e6b49e"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "fenic",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/label/B/fenic.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/203d8f47-32c9-43c3-94f3-abc74df658d1/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/501139f0-5ecb-4af1-9e40-2045aa72033c",
+    "checkout_status": [],
+    "expected": [
+      "fenic/D-a2ea38",
+      "fenic/D-e8fcfa",
+      "fenic/D-7ef79c",
+      "fenic/D-7ab0d9",
+      "fenic/D-c30a2b"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:01:08.966Z",
+    "rejected": [
+      {
+        "at": "2026-11-08T02:03:23.419Z",
+        "problems": [
+          "out.jsonl:3: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:4: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: src/fenic/api/column.py (cannot hold a member of the role: outside its package, directory or file kind)"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T02:06:38.130Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/B/fenic.jsonl",
+      "records": 5,
+      "sha256": "6ebcc974b718ea1b623c047f42628f8a53e1dff6afece26f94714097ed7d52e9"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "statsmodels",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/label/B/statsmodels.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/2efdae62-4022-4674-9024-19dc6a66b8b2/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/cef10fe2-97a3-48e4-99cd-ab829ffc642c",
+    "checkout_status": [],
+    "expected": [
+      "statsmodels/D-7a9fce",
+      "statsmodels/D-c38d19",
+      "statsmodels/D-2cf8e5"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:04:58.812Z",
+    "collected": {
+      "at": "2026-11-08T02:06:37.922Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/B/statsmodels.jsonl",
+      "records": 3,
+      "sha256": "32952c57d0f44b47a54e8f84f50db98591cb9d136da1d920127d02ee42d563aa"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "flagsmith",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/label/B/flagsmith.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/6de81056-656d-4d34-8c0a-ce19b64708d8/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/f5a5d639-217b-4296-ab50-c2fb79e74ae4",
+    "checkout_status": [],
+    "expected": [
+      "flagsmith/D-d1bd09",
+      "flagsmith/D-1e2cee",
+      "flagsmith/D-aecbf8"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:05:41.746Z",
+    "collected": {
+      "at": "2026-11-08T02:07:41.168Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/B/flagsmith.jsonl",
+      "records": 3,
+      "sha256": "86ddd28a63945503cef1f73535eb983e101adc8b65fed7305f782c3335aa7418"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "kunlun-m",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/label/B/kunlun-m.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/dac4ffb6-148f-4208-b350-4aca043f76ec/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/5f5da70f-83c3-430f-a308-1d2ce9aa8d0e",
+    "checkout_status": [],
+    "expected": [
+      "kunlun-m/D-9838d9"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:06:02.123Z",
+    "collected": {
+      "at": "2026-11-08T02:07:42.248Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/B/kunlun-m.jsonl",
+      "records": 1,
+      "sha256": "f460b5c6527990e64c4c301f4230f269f51c806f043caece98fcd6e20efc81bd"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "django-oscar",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/label/B/django-oscar.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/8e61e04c-1821-48d1-842c-1b7b6c83b599/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/672dfb37-5e49-4f25-af9c-3195eafd7708",
+    "checkout_status": [],
+    "expected": [
+      "django-oscar/D-982b49"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:06:09.130Z",
+    "collected": {
+      "at": "2026-11-08T02:07:42.457Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/B/django-oscar.jsonl",
+      "records": 1,
+      "sha256": "a2a5d7f801d1961c297b7459f688559971d24fa5159aacbf75af31aab1404ef8"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "supoclip",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/label/B/supoclip.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/5a8a0188-e644-4e82-ba90-9a89ce2d7acd/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/fcecce2d-5d56-4dff-abdd-12e35249a83f",
+    "checkout_status": [],
+    "expected": [
+      "supoclip/D-006a69",
+      "supoclip/D-b27acc",
+      "supoclip/D-f0ff81"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:06:28.017Z",
+    "collected": {
+      "at": "2026-11-08T02:08:41.565Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/B/supoclip.jsonl",
+      "records": 3,
+      "sha256": "8b693470247c8683cb06713acdfab63251b9425faa6b0f1b0ee3a77bc4930b0b"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "future-agi",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/label/B/future-agi.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/d386a3b3-ef51-4885-8907-4984a6f47e2a/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/aaab90fa-a90d-4ad5-8c5f-bd83ea37b7ec",
+    "checkout_status": [],
+    "expected": [
+      "future-agi/D-148d14",
+      "future-agi/D-7fb332",
+      "future-agi/D-9873ea",
+      "future-agi/D-a79a2e",
+      "future-agi/D-a0e724",
+      "future-agi/D-962248",
+      "future-agi/D-30f7c8",
+      "future-agi/D-ad841f",
+      "future-agi/D-402240",
+      "future-agi/D-85cfb8",
+      "future-agi/D-20c80e",
+      "future-agi/D-a3b041",
+      "future-agi/D-12246d"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:07:08.994Z",
+    "rejected": [
+      {
+        "at": "2026-11-08T02:10:48.806Z",
+        "problems": [
+          "out.jsonl:4: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: futureagi/pyproject.toml (a config file)",
+          "out.jsonl:7: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: futureagi/pyproject.toml (a config file)",
+          "out.jsonl:10: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: frontend/jsconfig.json (a config file), frontend/.eslintrc.cjs (a config file)",
+          "out.jsonl:13: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'"
+        ]
+      },
+      {
+        "at": "2026-11-08T02:14:52.909Z",
+        "problems": [
+          "out.jsonl:4: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: futureagi/pyproject.toml (a config file)"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T02:19:57.786Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/B/future-agi.jsonl",
+      "records": 13,
+      "sha256": "ef6c3051ad725b984d361092c6a61a7abad2a5e273ca9424190f6a63c705fe1d"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "dcs_liberation",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/adjudicate/C/dcs_liberation.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/41eaa10f-a0ea-4331-9365-cf2ccd8142e5/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/a44caa2d-9fa4-4f47-9dba-d88fc9d9fe26",
+    "checkout_status": [],
+    "expected": [
+      "dcs_liberation/D-0de628"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:19:58.241Z",
+    "collected": {
+      "at": "2026-11-08T02:21:56.863Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/C/dcs_liberation.jsonl",
+      "records": 1,
+      "sha256": "8d053d9e885892bafab6b3954bdf6a918a948161f3ebfe0a553c98dc12e30db8"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "vmlx",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/adjudicate/C/vmlx.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/5380ada6-7c42-4f3b-bd9a-bf99c4427a1a/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/4cb0b7bb-3763-46b3-b657-30632534ce92",
+    "checkout_status": [],
+    "expected": [
+      "vmlx/D-5e79e4"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:19:58.249Z",
+    "collected": {
+      "at": "2026-11-08T02:21:40.190Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/C/vmlx.jsonl",
+      "records": 1,
+      "sha256": "733b4fa4f957a129af3a60a219d2e035ce77a198692d36bc8be413842efab333"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "future-agi",
+    "prompt": "/home/user/drift-wt/heldout2-run/eval/study/runs/heldout2-py-2026-11-08/prompts/adjudicate/C/future-agi.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/outbox/81197687-6445-455d-87fc-f444dead8090/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/heldout2/lbx-d435e0/workdirs/99054930-af64-46be-8fb7-7a151fd2c8a3",
+    "checkout_status": [],
+    "expected": [
+      "future-agi/D-12246d"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T02:19:58.283Z",
+    "collected": {
+      "at": "2026-11-08T02:21:26.240Z",
+      "dest": "eval/study/runs/heldout2-py-2026-11-08/labels/C/future-agi.jsonl",
+      "records": 1,
+      "sha256": "77de8839f1cbb1d550c714a458f47f86857a262a1fc10a443a8aedf6d8105991"
+    }
+  }
+]

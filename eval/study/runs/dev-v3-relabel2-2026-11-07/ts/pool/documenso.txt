@@ -1,0 +1,176 @@
+21 conventions from 6375 units in 322 roles (9 default tier, 12 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-32c861] packages/trpc: rpc entry points in server/** are wrapped in adminProcedure() or authenticatedProcedure()
+    evidence: 191/215 (lower bound 0.84, lift 5.7)
+    tier:     default
+    split:    authenticatedProcedure 146, adminProcedure 45
+    example:  packages/trpc/server/admin-router/admin-search.ts#adminSearchRoute
+    outlier:  packages/trpc/server/auth-router/create-passkey-signin-options.ts:10 createPasskeySigninOptionsRoute
+    outlier:  packages/trpc/server/document-router/access-auth-request-2fa-email.ts:18 accessAuthRequest2FAEmailRoute
+    outlier:  packages/trpc/server/document-router/share-document.ts:7 shareDocumentRoute
+    ... 21 more outliers
+
+ 2. [D-a0eee5] packages/trpc: rpc entry points in server/** (router files) are wrapped in authenticatedProcedure()
+    evidence: 59/64 (lower bound 0.83, lift 7.3)
+    tier:     default
+    example:  packages/trpc/server/field-router/router.ts#MUTATION createDocumentField
+    outlier:  packages/trpc/server/field-router/router.ts:653 MUTATION removeSignedFieldWithToken
+    outlier:  packages/trpc/server/field-router/router.ts:616 MUTATION signFieldWithToken
+    outlier:  packages/trpc/server/recipient-router/router.ts:590 MUTATION completeDocumentWithToken
+    ... 2 more outliers
+
+ 3. [D-55ae12] packages/trpc: rpc entry points in server/envelope-router/** are wrapped in authenticatedProcedure()
+    evidence: 42/47 (lower bound 0.77, lift 7.1)
+    tier:     default
+    example:  packages/trpc/server/envelope-router/attachment/create-attachment.ts#createAttachmentRoute
+    outlier:  packages/trpc/server/envelope-router/attachment/find-attachments.ts:12 findAttachmentsRoute
+    outlier:  packages/trpc/server/envelope-router/envelope-recipients/report-recipient.ts:15 reportRecipientRoute
+    outlier:  packages/trpc/server/envelope-router/get-envelope-items-by-token.ts:15 getEnvelopeItemsByTokenRoute
+    ... 2 more outliers
+
+ 4. [D-d51d70] packages/trpc: rpc entry points in server/organisation-router/** are wrapped in authenticatedProcedure()
+    evidence: 28/30 (lower bound 0.79, lift 7.4)
+    tier:     default
+    example:  packages/trpc/server/organisation-router/create-organisation-group.ts#createOrganisationGroupRoute
+    outlier:  packages/trpc/server/organisation-router/accept-organisation-member-invite.ts:9 acceptOrganisationMemberInviteRoute
+    outlier:  packages/trpc/server/organisation-router/decline-organisation-member-invite.ts:11 declineOrganisationMemberInviteRoute
+
+ 5. [D-9b91c3] packages/trpc: rpc entry points in server/team-router/** are wrapped in authenticatedProcedure()
+    evidence: 21/22 (lower bound 0.78, lift 7.5)
+    tier:     default
+    example:  packages/trpc/server/team-router/create-team-groups.ts#createTeamGroupsRoute
+    outlier:  packages/trpc/server/team-router/complete-team-email-verification.ts:13 completeTeamEmailVerificationRoute
+
+ 6. [D-041293] files in packages/lib/** do not import from packages/trpc/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 637/641 (lower bound 0.98, lift 3.0)
+    tier:     default
+    example:  packages/lib/advanced-fields-validation/validate-dropdown.ts#(file)
+    outlier:  packages/lib/client-only/hooks/use-copy-share-link.ts:1 (file)
+    outlier:  packages/lib/client-only/providers/envelope-editor-provider.tsx:1 (file)
+    outlier:  packages/lib/client-only/providers/session.tsx:1 (file)
+    ... 1 more outliers
+
+ 7. [D-7b5140] files in packages/lib/** do not import from packages/auth/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 637/641 (lower bound 0.98, lift 3.0)
+    tier:     default
+    example:  packages/lib/advanced-fields-validation/validate-dropdown.ts#(file)
+    outlier:  packages/lib/client-only/hooks/use-embed-popup-auth.ts:1 (file)
+    outlier:  packages/lib/client-only/hooks/use-password-setup-request.ts:1 (file)
+    outlier:  packages/lib/client-only/providers/session.tsx:1 (file)
+    ... 1 more outliers
+
+ 8. [D-2a51e9] files in packages/lib/** do not import from packages/ee/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 633/641 (lower bound 0.98, lift 3.0)
+    tier:     default
+    example:  packages/lib/advanced-fields-validation/validate-dropdown.ts#(file)
+    outlier:  packages/lib/jobs/definitions/internal/seal-document.handler.ts:1 (file)
+    outlier:  packages/lib/jobs/definitions/internal/sync-email-domains.handler.ts:1 (file)
+    outlier:  packages/lib/jobs/definitions/internal/sync-organisation-seats.handler.ts:1 (file)
+    ... 5 more outliers
+
+ 9. [D-c3b713] files in packages/lib/** do not import from packages/ui/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 633/641 (lower bound 0.98, lift 3.0)
+    tier:     default
+    example:  packages/lib/advanced-fields-validation/validate-dropdown.ts#(file)
+    outlier:  packages/lib/advanced-fields-validation/validate-checkbox.ts:1 (file)
+    outlier:  packages/lib/advanced-fields-validation/validate-number.ts:1 (file)
+    outlier:  packages/lib/client-only/providers/envelope-editor-provider.tsx:1 (file)
+    ... 5 more outliers
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+10. [D-fc0990] apps/remix: components in app/components/dialogs/** call useToast()
+    evidence: 79/94 (lower bound 0.75, lift 3.7)
+    tier:     suggestion (rule kind calls)
+    example:  apps/remix/app/components/dialogs/account-delete-dialog.tsx#AccountDeleteDialog
+    outlier:  apps/remix/app/components/dialogs/ai-features-enable-dialog.tsx:18 AiFeaturesEnableDialog
+    outlier:  apps/remix/app/components/dialogs/ai-field-detection-dialog.tsx:49 AiFieldDetectionDialog
+    outlier:  apps/remix/app/components/dialogs/ai-recipient-detection-dialog.tsx:39 AiRecipientDetectionDialog
+    ... 12 more outliers
+
+11. [D-545ea0] apps/remix: components in app/components/dialogs/** render <Button>
+    evidence: 92/94 (lower bound 0.93, lift 2.9)
+    tier:     suggestion (rule kind renders)
+    example:  apps/remix/app/components/dialogs/account-delete-dialog.tsx#AccountDeleteDialog
+    outlier:  apps/remix/app/components/dialogs/organisation-email-domain-records-dialog.tsx:31 OrganisationEmailDomainRecordsDialog
+    outlier:  apps/remix/app/components/dialogs/sign-field-dropdown-dialog.tsx:17 SignFieldDropdownDialog
+
+12. [D-4785b8] apps/remix: components in app/components/dialogs/** are named `*Dialog`
+    evidence: 93/93 (lower bound 0.96, lift 7.7)
+    tier:     suggestion (rule kind named)
+    example:  apps/remix/app/components/dialogs/account-delete-dialog.tsx#AccountDeleteDialog
+    exempt:   apps/remix/app/components/dialogs/organisation-email-domain-records-dialog.tsx:47 OrganisationEmailDomainRecordContent (shared part used by 2 members)
+
+13. [D-aafe01] packages/email: components in templates/** are named `*Template`
+    evidence: 28/31 (lower bound 0.75, lift 27.3)
+    tier:     suggestion (rule kind named)
+    example:  packages/email/templates/access-auth-2fa.tsx#AccessAuth2FAEmailTemplate
+    outlier:  packages/email/templates/bulk-send-complete.tsx:17 BulkSendCompleteEmail
+    outlier:  packages/email/templates/document-rejected.tsx:17 DocumentRejectedEmail
+    outlier:  packages/email/templates/document-rejection-confirmed.tsx:17 DocumentRejectionConfirmedEmail
+
+14. [D-694c8a] files in apps/remix/** use lucide-react for icons, not react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react
+    evidence: 213/216 (lower bound 0.96, lift 1.0)
+    tier:     suggestion (rule kind prefers_library)
+    split:    lucide-react 215, react-icons 3
+    example:  apps/remix/app/components/dialogs/ai-field-detection-dialog.tsx#(file)
+    outlier:  apps/remix/app/components/embed/embed-popup-auth.tsx:1 (file)
+    outlier:  apps/remix/app/components/forms/signin.tsx:1 (file)
+    outlier:  apps/remix/app/components/forms/signup.tsx:1 (file)
+
+15. [D-a10f62] packages/trpc: exported values in server/admin-router/** (*.types files) are named `*Schema`
+    evidence: 97/99 (lower bound 0.93, lift 1.7)
+    tier:     suggestion (rule kind named)
+    example:  packages/trpc/server/admin-router/admin-search.types.ts#ZAdminSearchRequestSchema
+    outlier:  packages/trpc/server/admin-router/admin-search.types.ts:19 ADMIN_SEARCH_MAX_QUERY_LENGTH
+    outlier:  packages/trpc/server/admin-router/update-organisation-member-role.types.ts:8 ZAdminRoleSelection
+
+16. [D-d7fae5] packages/trpc: exported values in server/** (schema files) are named `*Schema`
+    evidence: 120/124 (lower bound 0.92, lift 1.7)
+    tier:     suggestion (rule kind named)
+    example:  packages/trpc/server/auth-router/schema.ts#ZCurrentPasswordSchema
+    outlier:  packages/trpc/server/document-router/schema.ts:4 DOCUMENT_TITLE_MAX_LENGTH
+    outlier:  packages/trpc/server/schema.ts:12 ZGenericSuccessResponse
+    outlier:  packages/trpc/server/template-router/schema.ts:35 MAX_TEMPLATE_PUBLIC_DESCRIPTION_LENGTH
+    ... 1 more outliers
+
+17. [D-388bc9] files in packages/ui/** use lucide-react for icons, not react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react
+    evidence: 57/58 (lower bound 0.91, lift 1.0)
+    tier:     suggestion (rule kind prefers_library)
+    split:    lucide-react 58, react-icons 1
+    example:  packages/ui/components/common/copy-text-button.tsx#(file)
+    outlier:  packages/ui/components/document/document-share-button.tsx:1 (file)
+
+18. [D-3959b6] packages/trpc: exported values in server/enterprise-router/** (*.types files) are named `*Schema`
+    evidence: 35/36 (lower bound 0.86, lift 1.7)
+    tier:     suggestion (rule kind named)
+    example:  packages/trpc/server/enterprise-router/create-organisation-email-domain.types.ts#ZCreateOrganisationEmailDomainRequestSchema
+    outlier:  packages/trpc/server/enterprise-router/create-organisation-email-domain.types.ts:4 domainRegex
+
+19. [D-adb7ca] packages/trpc: exported values in server/team-router/** (*.types files) are named `*Schema`
+    evidence: 49/51 (lower bound 0.87, lift 1.6)
+    tier:     suggestion (rule kind named)
+    example:  packages/trpc/server/team-router/complete-team-email-verification.types.ts#ZCompleteTeamEmailVerificationRequestSchema
+    outlier:  packages/trpc/server/team-router/get-team-analytics.types.ts:13 ANALYTICS_CUSTOM_RANGE_MAX_LOOKBACK
+    outlier:  packages/trpc/server/team-router/update-team.types.ts:6 MAX_PROFILE_BIO_LENGTH
+
+20. [D-399322] sql models have a `id` field
+    evidence: 58/65 (lower bound 0.79, lift 1.0)
+    tier:     suggestion (rule kind model_has)
+    example:  packages/prisma/migrations/20230404095503_initial_migration/migration.sql#Account
+    outlier:  packages/prisma/migrations/20240205040421_add_teams/migration.sql:56 TeamEmail
+    outlier:  packages/prisma/migrations/20240205040421_add_teams/migration.sql:66 TeamEmailVerification
+    outlier:  packages/prisma/migrations/20240205040421_add_teams/migration.sql:78 TeamTransferVerification
+    ... 4 more outliers
+
+21. [D-cc64dd] prisma models have a `id` field
+    evidence: 51/55 (lower bound 0.83, lift 1.0)
+    tier:     suggestion (rule kind model_has)
+    example:  packages/prisma/schema.prisma#Account
+    outlier:  packages/prisma/schema.prisma:1325 EmbedSignature
+    outlier:  packages/prisma/schema.prisma:1343 RateLimit
+    outlier:  packages/prisma/schema.prisma:1127 TeamEmail
+    ... 1 more outliers
+

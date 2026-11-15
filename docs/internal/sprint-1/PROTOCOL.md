@@ -1,1 +1,0 @@
-../autonomous-run/PROTOCOL.md

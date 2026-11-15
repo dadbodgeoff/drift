@@ -1,0 +1,779 @@
+{
+  "run": "eval/study/runs/dev-v3-relabel3-2026-11-07/ts/relabel",
+  "items": [
+    {
+      "uid": "cal.com/D-c54406",
+      "repo": "cal.com",
+      "id": "D-c54406",
+      "rank": 1,
+      "summary": "packages/trpc: rpc entry points in server/** (_router files) are wrapped in authedAdminProcedure() or authedProcedure() or authedAdminProcedureWithRequestedUser()",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server",
+        "file": "_router",
+        "entry": "rpc",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "packages/trpc/server/procedures/authedProcedure.ts#authedAdminProcedure",
+          "packages/trpc/server/procedures/authedProcedure.ts#authedProcedure",
+          "packages/trpc/server/routers/viewer/users/_router.ts#authedAdminProcedureWithRequestedUser"
+        ]
+      },
+      "evidence": {
+        "holders": 139,
+        "total": 154,
+        "lower_bound": 0.85,
+        "lift": 16.3
+      },
+      "members": 154,
+      "example": "packages/trpc/server/routers/loggedInViewer/_router.tsx#MUTATION addNotificationsSubscription",
+      "python_members": null,
+      "outliers": 15,
+      "outlier_files": [
+        "packages/trpc/server/routers/features/_router.ts",
+        "packages/trpc/server/routers/publicViewer/_router.tsx",
+        "packages/trpc/server/routers/publicViewer/timezones/_router.tsx",
+        "packages/trpc/server/routers/viewer/auth/_router.tsx",
+        "packages/trpc/server/routers/viewer/bookings/_router.tsx",
+        "packages/trpc/server/routers/viewer/i18n/_router.tsx",
+        "packages/trpc/server/routers/viewer/slots/_router.tsx"
+      ],
+      "block": " 1. [D-c54406] packages/trpc: rpc entry points in server/** (_router files) are wrapped in authedAdminProcedure() or authedProcedure() or authedAdminProcedureWithRequestedUser()\n    evidence: 139/154 (lower bound 0.85, lift 16.3)\n    split:    authedProcedure 106, authedAdminProcedure 30, authedAdminProcedureWithRequestedUser 3\n    derived:  bookingsProcedure 1 (built on authedProcedure)\n    example:  packages/trpc/server/routers/loggedInViewer/_router.tsx#MUTATION addNotificationsSubscription\n    outlier:  packages/trpc/server/routers/features/_router.ts:13 QUERY checkTeamFeature\n    outlier:  packages/trpc/server/routers/features/_router.ts:9 QUERY list\n    outlier:  packages/trpc/server/routers/publicViewer/_router.tsx:18 MUTATION markHostAsNoShow\n    outlier:  packages/trpc/server/routers/publicViewer/_router.tsx:14 MUTATION submitRating\n    outlier:  packages/trpc/server/routers/publicViewer/_router.tsx:24 QUERY checkIfUserEmailVerificationRequired\n    outlier:  packages/trpc/server/routers/publicViewer/_router.tsx:10 QUERY countryCode\n    outlier:  packages/trpc/server/routers/publicViewer/timezones/_router.tsx:11 QUERY cityTimezones\n    outlier:  packages/trpc/server/routers/viewer/auth/_router.tsx:48 MUTATION sendVerifyEmailCode\n    outlier:  packages/trpc/server/routers/viewer/auth/_router.tsx:40 MUTATION verifyCodeUnAuthenticated\n    outlier:  packages/trpc/server/routers/viewer/bookings/_router.tsx:91 QUERY find\n    outlier:  packages/trpc/server/routers/viewer/i18n/_router.tsx:6 QUERY get\n    outlier:  packages/trpc/server/routers/viewer/slots/_router.tsx:46 MUTATION removeSelectedSlotMark\n    outlier:  packages/trpc/server/routers/viewer/slots/_router.tsx:26 MUTATION reserveSlot\n    outlier:  packages/trpc/server/routers/viewer/slots/_router.tsx:18 QUERY getSchedule\n    outlier:  packages/trpc/server/routers/viewer/slots/_router.tsx:34 QUERY isAvailable",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "cal.com/D-6c77ce",
+      "repo": "cal.com",
+      "id": "D-6c77ce",
+      "rank": 9,
+      "summary": "apps/web: functions named `generateMetadata` in app/(use-page-wrapper)/** (page files) call _generateMetadata()",
+      "role": {
+        "package": "apps/web",
+        "dir": "app/(use-page-wrapper)",
+        "file": "page",
+        "entry": "-",
+        "kind": "function",
+        "export_name": "generateMetadata"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "apps/web/app/_utils.tsx#_generateMetadata"
+      },
+      "evidence": {
+        "holders": 57,
+        "total": 59,
+        "lower_bound": 0.89,
+        "lift": 40.3
+      },
+      "members": 59,
+      "example": "apps/web/app/(use-page-wrapper)/(main-nav)/availability/page.tsx#generateMetadata",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "apps/web/app/(use-page-wrapper)/apps/[slug]/page.tsx",
+        "apps/web/app/(use-page-wrapper)/video/[uid]/page.tsx"
+      ],
+      "block": " 9. [D-6c77ce] apps/web: functions named `generateMetadata` in app/(use-page-wrapper)/** (page files) call _generateMetadata()\n    evidence: 57/59 (lower bound 0.89, lift 40.3)\n    example:  apps/web/app/(use-page-wrapper)/(main-nav)/availability/page.tsx#generateMetadata\n    outlier:  apps/web/app/(use-page-wrapper)/apps/[slug]/page.tsx:14 generateMetadata\n    outlier:  apps/web/app/(use-page-wrapper)/video/[uid]/page.tsx:14 generateMetadata",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "default"
+    },
+    {
+      "uid": "cal.com/D-bcef5c",
+      "repo": "cal.com",
+      "id": "D-bcef5c",
+      "rank": 10,
+      "summary": "packages/trpc: rpc entry points in server/routers/viewer/** (_router files) validate their input with a schema",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server/routers/viewer",
+        "file": "_router",
+        "entry": "rpc",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "validates"
+      },
+      "evidence": {
+        "holders": 115,
+        "total": 139,
+        "lower_bound": 0.76,
+        "lift": 6.9
+      },
+      "members": 139,
+      "example": "packages/trpc/server/routers/viewer/admin/_router.ts#MUTATION assignFeatureToTeam",
+      "python_members": null,
+      "outliers": 24,
+      "outlier_files": [
+        "packages/trpc/server/routers/viewer/admin/_router.ts",
+        "packages/trpc/server/routers/viewer/admin/watchlist/_router.ts",
+        "packages/trpc/server/routers/viewer/apiKeys/_router.tsx",
+        "packages/trpc/server/routers/viewer/apps/_router.tsx",
+        "packages/trpc/server/routers/viewer/auth/_router.tsx",
+        "packages/trpc/server/routers/viewer/availability/_router.tsx",
+        "packages/trpc/server/routers/viewer/eventTypes/_router.ts",
+        "packages/trpc/server/routers/viewer/googleWorkspace/_router.tsx",
+        "packages/trpc/server/routers/viewer/holidays/_router.ts",
+        "packages/trpc/server/routers/viewer/me/_router.tsx",
+        "packages/trpc/server/routers/viewer/oAuth/_router.tsx",
+        "packages/trpc/server/routers/viewer/ooo/_router.tsx",
+        "packages/trpc/server/routers/viewer/travelSchedules/_router.tsx",
+        "packages/trpc/server/routers/viewer/users/_router.ts"
+      ],
+      "block": "10. [D-bcef5c] packages/trpc: rpc entry points in server/routers/viewer/** (_router files) validate their input with a schema\n    evidence: 115/139 (lower bound 0.76, lift 6.9)\n    example:  packages/trpc/server/routers/viewer/admin/_router.ts#MUTATION assignFeatureToTeam\n    outlier:  packages/trpc/server/routers/viewer/admin/_router.ts:38 QUERY getSMSLockStateTeamsUsers\n    outlier:  packages/trpc/server/routers/viewer/admin/watchlist/_router.ts:51 QUERY pendingReportsCount\n    outlier:  packages/trpc/server/routers/viewer/apiKeys/_router.tsx:18 QUERY list\n    outlier:  packages/trpc/server/routers/viewer/apps/_router.tsx:85 QUERY checkForGCal\n    outlier:  packages/trpc/server/routers/viewer/apps/_router.tsx:45 QUERY getUsersDefaultConferencingApp\n    outlier:  packages/trpc/server/routers/viewer/auth/_router.tsx:66 MUTATION createAccountPassword\n    outlier:  packages/trpc/server/routers/viewer/availability/_router.tsx:16 QUERY list\n    outlier:  packages/trpc/server/routers/viewer/eventTypes/_router.ts:115 QUERY bulkEventFetch\n    outlier:  packages/trpc/server/routers/viewer/eventTypes/_router.ts:86 QUERY list\n    outlier:  packages/trpc/server/routers/viewer/eventTypes/_router.ts:94 QUERY listWithTeam\n    outlier:  packages/trpc/server/routers/viewer/googleWorkspace/_router.tsx:18 MUTATION getUsersFromGWorkspace\n    outlier:  packages/trpc/server/routers/viewer/googleWorkspace/_router.tsx:25 MUTATION removeCurrentGoogleWorkspaceConnection\n    outlier:  packages/trpc/server/routers/viewer/googleWorkspace/_router.tsx:11 QUERY checkForGWorkspace\n    outlier:  packages/trpc/server/routers/viewer/holidays/_router.ts:9 QUERY getSupportedCountries\n    outlier:  packages/trpc/server/routers/viewer/me/_router.tsx:16 MUTATION deleteMeWithoutPassword\n    outlier:  packages/trpc/server/routers/viewer/me/_router.tsx:8 QUERY bookingUnconfirmedCount\n    outlier:  packages/trpc/server/routers/viewer/me/_router.tsx:21 QUERY getUserTopBanners\n    outlier:  packages/trpc/server/routers/viewer/me/_router.tsx:25 QUERY myStats\n    outlier:  packages/trpc/server/routers/viewer/me/_router.tsx:29 QUERY platformMe\n    outlier:  packages/trpc/server/routers/viewer/me/_router.tsx:33 QUERY shouldVerifyEmail\n    outlier:  packages/trpc/server/routers/viewer/oAuth/_router.tsx:62 QUERY listUserClients\n    outlier:  packages/trpc/server/routers/viewer/ooo/_router.tsx:22 QUERY outOfOfficeReasonList\n    outlier:  packages/trpc/server/routers/viewer/travelSchedules/_router.tsx:5 QUERY get\n    outlier:  packages/trpc/server/routers/viewer/users/_router.ts:57 QUERY list",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "default"
+    },
+    {
+      "uid": "cal.com/D-d690c0",
+      "repo": "cal.com",
+      "id": "D-d690c0",
+      "rank": 11,
+      "summary": "packages/trpc: exported values in server/** (*.schema files) are named `*Schema`",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server",
+        "file": "*.schema",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Schema"
+      },
+      "evidence": {
+        "holders": 125,
+        "total": 131,
+        "lower_bound": 0.9,
+        "lift": 4.6
+      },
+      "members": 133,
+      "example": "packages/trpc/server/routers/loggedInViewer/addNotificationsSubscription.schema.ts#ZAddNotificationsSubscriptionInputSchema",
+      "python_members": null,
+      "outliers": 6,
+      "outlier_files": [
+        "packages/trpc/server/routers/viewer/admin/removeTwoFactor.schema.ts",
+        "packages/trpc/server/routers/viewer/admin/setSMSLockState.schema.ts",
+        "packages/trpc/server/routers/viewer/availability/team/listTeamAvailability.schema.ts",
+        "packages/trpc/server/routers/viewer/bookings/getWrongAssignmentReports.schema.ts",
+        "packages/trpc/server/routers/viewer/me/updateProfile.schema.ts",
+        "packages/trpc/server/routers/viewer/ooo/outOfOfficeEntryDelete.schema.ts"
+      ],
+      "block": "11. [D-d690c0] packages/trpc: exported values in server/** (*.schema files) are named `*Schema`\n    evidence: 125/131 (lower bound 0.90, lift 4.6)\n    example:  packages/trpc/server/routers/loggedInViewer/addNotificationsSubscription.schema.ts#ZAddNotificationsSubscriptionInputSchema\n    outlier:  packages/trpc/server/routers/viewer/admin/removeTwoFactor.schema.ts:3 ZAdminRemoveTwoFactor\n    outlier:  packages/trpc/server/routers/viewer/admin/setSMSLockState.schema.ts:3 ZSetSMSLockState\n    outlier:  packages/trpc/server/routers/viewer/availability/team/listTeamAvailability.schema.ts:3 ZListTeamAvailaiblityScheme\n    outlier:  packages/trpc/server/routers/viewer/bookings/getWrongAssignmentReports.schema.ts:16 statusToEnumMap\n    outlier:  packages/trpc/server/routers/viewer/me/updateProfile.schema.ts:11 updateUserMetadataAllowedKeys\n    outlier:  packages/trpc/server/routers/viewer/ooo/outOfOfficeEntryDelete.schema.ts:3 ZOutOfOfficeDelete\n    exempt:   packages/trpc/server/routers/viewer/calendars/setDestinationReminder.schema.ts:3 VALID_REMINDER_MINUTES (a constant beside ZSetDestinationReminderInputSchema, which follows the scheme)\n    exempt:   packages/trpc/server/routers/viewer/eventTypes/getByViewer.schema.ts:12 filterQuerySchemaStrict (shared part used by 2 members)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "cal.com/D-fafac1",
+      "repo": "cal.com",
+      "id": "D-fafac1",
+      "rank": 12,
+      "summary": "packages/trpc: functions in server/routers/viewer/** (*.handler files) are named `*Handler`",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server/routers/viewer",
+        "file": "*.handler",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Handler"
+      },
+      "evidence": {
+        "holders": 137,
+        "total": 154,
+        "lower_bound": 0.83,
+        "lift": 12.7
+      },
+      "members": 167,
+      "example": "packages/trpc/server/routers/viewer/admin/assignFeatureToTeam.handler.ts#assignFeatureToTeamHandler",
+      "python_members": null,
+      "outliers": 17,
+      "outlier_files": [
+        "packages/trpc/server/routers/viewer/admin/createCoupon.handler.ts",
+        "packages/trpc/server/routers/viewer/admin/createSelfHostedLicenseKey.handler.ts",
+        "packages/trpc/server/routers/viewer/admin/getSMSLockStateTeamsUsers.handler.ts",
+        "packages/trpc/server/routers/viewer/admin/setSMSLockState.handler.ts",
+        "packages/trpc/server/routers/viewer/auth/resendVerifyEmail.handler.ts",
+        "packages/trpc/server/routers/viewer/bookings/editLocation.handler.ts",
+        "packages/trpc/server/routers/viewer/bookings/get.handler.ts",
+        "packages/trpc/server/routers/viewer/eventTypes/getActiveOnOptions.handler.ts",
+        "packages/trpc/server/routers/viewer/eventTypes/getEventTypesFromGroup.handler.ts",
+        "packages/trpc/server/routers/viewer/eventTypes/getUserEventGroups.handler.ts",
+        "packages/trpc/server/routers/viewer/googleWorkspace/googleWorkspace.handler.ts",
+        "packages/trpc/server/routers/viewer/ooo/outOfOfficeCreateOrUpdate.handler.ts",
+        "packages/trpc/server/routers/viewer/ooo/outOfOfficeEntriesList.handler.ts",
+        "packages/trpc/server/routers/viewer/ooo/outOfOfficeEntryDelete.handler.ts",
+        "packages/trpc/server/routers/viewer/ooo/outOfOfficeReasons.handler.ts"
+      ],
+      "block": "12. [D-fafac1] packages/trpc: functions in server/routers/viewer/** (*.handler files) are named `*Handler`\n    evidence: 137/154 (lower bound 0.83, lift 12.7)\n    example:  packages/trpc/server/routers/viewer/admin/assignFeatureToTeam.handler.ts#assignFeatureToTeamHandler\n    outlier:  packages/trpc/server/routers/viewer/admin/createCoupon.handler.ts:53 createCoupon\n    outlier:  packages/trpc/server/routers/viewer/admin/createSelfHostedLicenseKey.handler.ts:53 createSelfHostedInstance\n    outlier:  packages/trpc/server/routers/viewer/admin/getSMSLockStateTeamsUsers.handler.ts:12 getSMSLockStateTeamsUsers\n    outlier:  packages/trpc/server/routers/viewer/admin/setSMSLockState.handler.ts:16 setSMSLockState\n    outlier:  packages/trpc/server/routers/viewer/auth/resendVerifyEmail.handler.ts:22 resendVerifyEmail\n    outlier:  packages/trpc/server/routers/viewer/bookings/editLocation.handler.ts:213 getLocationForOrganizerDefaultConferencingAppInEvtFormat\n    outlier:  packages/trpc/server/routers/viewer/bookings/get.handler.ts:93 getBookings\n    outlier:  packages/trpc/server/routers/viewer/eventTypes/getActiveOnOptions.handler.ts:200 getActiveOnOptions\n    outlier:  packages/trpc/server/routers/viewer/eventTypes/getEventTypesFromGroup.handler.ts:26 getEventTypesFromGroup\n    outlier:  packages/trpc/server/routers/viewer/eventTypes/getUserEventGroups.handler.ts:29 getUserEventGroups\n    outlier:  packages/trpc/server/routers/viewer/googleWorkspace/googleWorkspace.handler.ts:25 checkForGWorkspace\n    outlier:  packages/trpc/server/routers/viewer/googleWorkspace/googleWorkspace.handler.ts:36 getUsersFromGWorkspace\n    outlier:  packages/trpc/server/routers/viewer/googleWorkspace/googleWorkspace.handler.ts:72 removeCurrentGoogleWorkspaceConnection\n    outlier:  packages/trpc/server/routers/viewer/ooo/outOfOfficeCreateOrUpdate.handler.ts:27 outOfOfficeCreateOrUpdate\n    outlier:  packages/trpc/server/routers/viewer/ooo/outOfOfficeEntriesList.handler.ts:17 outOfOfficeEntriesList\n    outlier:  packages/trpc/server/routers/viewer/ooo/outOfOfficeEntryDelete.handler.ts:18 outOfOfficeEntryDelete\n    outlier:  packages/trpc/server/routers/viewer/ooo/outOfOfficeReasons.handler.ts:3 outOfOfficeReasonList\n    exempt:   packages/trpc/server/routers/viewer/apps/updateAppCredentials.handler.ts:20 handleCustomValidations (a helper of updateAppCredentialsHandler, which uses it in its file)\n    exempt:   packages/trpc/server/routers/viewer/auth/sendVerifyEmailCode.handler.ts:20 sendVerifyEmailCode (a helper of sendVerifyEmailCodeHandler, which uses it in its file)\n    exempt:   packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts:272 buildCalendarEvent (a helper of addGuestsHandler, which uses it in its file)\n    exempt:   packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts:95 getBooking (a helper of addGuestsHandler, which uses it in its file)\n    exempt:   packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts:129 getOrganizerData (a helper of addGuestsHandler, which uses it in its file)\n    exempt:   packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts:256 prepareAttendeesList (a helper of addGuestsHandler, which uses it in its file)\n    exempt:   packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts:187 sanitizeAndFilterGuests (a helper of addGuestsHandler, which uses it in its file)\n    exempt:   packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts:237 updateBookingAttendees (a helper of addGuestsHandler, which uses it in its file)\n    exempt:   packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts:333 updateCalendarEvent (a helper of addGuestsHandler, which uses it in its file)\n    exempt:   packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts:115 validateGuestsFieldEnabled (a helper of addGuestsHandler, which uses it in its file)\n    exempt:   packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts:106 validateUserPermissions (a helper of addGuestsHandler, which uses it in its file)\n    exempt:   packages/trpc/server/routers/viewer/calendars/setDestinationCalendar.handler.ts:30 getFirstConnectedCalendar (a helper of setDestinationCalendarHandler, which uses it in its file)\n    exempt:   packages/trpc/server/routers/viewer/eventTypes/getHostsWithLocationOptions.handler.ts:66 transformHostsToResponse (a helper of getHostsWithLocationOptionsHandler, which uses it in its file)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "cal.com/D-8d7d13",
+      "repo": "cal.com",
+      "id": "D-8d7d13",
+      "rank": 14,
+      "summary": "packages/emails: functions in ./** are named `send*`",
+      "role": {
+        "package": "packages/emails",
+        "dir": ".",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "send*"
+      },
+      "evidence": {
+        "holders": 40,
+        "total": 40,
+        "lower_bound": 0.91,
+        "lift": 41.1
+      },
+      "members": 42,
+      "example": "packages/emails/auth-email-service.ts#sendChangeOfEmailVerificationLink",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": "14. [D-8d7d13] packages/emails: functions in ./** are named `send*`\n    evidence: 40/40 (lower bound 0.91, lift 41.1)\n    example:  packages/emails/auth-email-service.ts#sendChangeOfEmailVerificationLink\n    exempt:   packages/emails/email-manager.ts:62 fetchOrganizationEmailSettings (a helper of sendAddGuestsEmailsAndSMS, which uses it in its file)\n    exempt:   packages/emails/email-manager.ts:67 shouldSkipAttendeeEmailWithSettings (a helper of sendAddGuestsEmailsAndSMS, which uses it in its file)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "cal.com/D-e5e923",
+      "repo": "cal.com",
+      "id": "D-e5e923",
+      "rank": 15,
+      "summary": "packages/emails: classes in templates/** are named `*Email`",
+      "role": {
+        "package": "packages/emails",
+        "dir": "templates",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Email"
+      },
+      "evidence": {
+        "holders": 44,
+        "total": 48,
+        "lower_bound": 0.8,
+        "lift": 21.6
+      },
+      "members": 48,
+      "example": "packages/emails/templates/account-verify-email.ts#AccountVerifyEmail",
+      "python_members": null,
+      "outliers": 4,
+      "outlier_files": [
+        "packages/emails/templates/admin-oauth-client-notification.ts",
+        "packages/emails/templates/admin-organization-notification.ts",
+        "packages/emails/templates/booking-redirect-notification.ts",
+        "packages/emails/templates/organization-email-verification.ts"
+      ],
+      "block": "15. [D-e5e923] packages/emails: classes in templates/** are named `*Email`\n    evidence: 44/48 (lower bound 0.80, lift 21.6)\n    example:  packages/emails/templates/account-verify-email.ts#AccountVerifyEmail\n    outlier:  packages/emails/templates/admin-oauth-client-notification.ts:18 AdminOAuthClientNotification\n    outlier:  packages/emails/templates/admin-organization-notification.ts:16 AdminOrganizationNotification\n    outlier:  packages/emails/templates/booking-redirect-notification.ts:9 BookingRedirectNotification\n    outlier:  packages/emails/templates/organization-email-verification.ts:16 OrganizationEmailVerification",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "documenso/D-a10f62",
+      "repo": "documenso",
+      "id": "D-a10f62",
+      "rank": 15,
+      "summary": "packages/trpc: exported values in server/admin-router/** (*.types files) are named `*Schema`",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server/admin-router",
+        "file": "*.types",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Schema"
+      },
+      "evidence": {
+        "holders": 97,
+        "total": 98,
+        "lower_bound": 0.94,
+        "lift": 1.7
+      },
+      "members": 99,
+      "example": "packages/trpc/server/admin-router/admin-search.types.ts#ZAdminSearchRequestSchema",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/trpc/server/admin-router/update-organisation-member-role.types.ts"
+      ],
+      "block": "15. [D-a10f62] packages/trpc: exported values in server/admin-router/** (*.types files) are named `*Schema`\n    evidence: 97/98 (lower bound 0.94, lift 1.7)\n    example:  packages/trpc/server/admin-router/admin-search.types.ts#ZAdminSearchRequestSchema\n    outlier:  packages/trpc/server/admin-router/update-organisation-member-role.types.ts:8 ZAdminRoleSelection\n    exempt:   packages/trpc/server/admin-router/admin-search.types.ts:19 ADMIN_SEARCH_MAX_QUERY_LENGTH (a constant beside ZAdminSearchRequestSchema, which follows the scheme)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "ai/D-fc5ef7",
+      "repo": "ai",
+      "id": "D-fc5ef7",
+      "rank": 1,
+      "summary": "packages/codemod: functions in src/codemods/** are wrapped in createTransformer()",
+      "role": {
+        "package": "packages/codemod",
+        "dir": "src/codemods",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "packages/codemod/src/codemods/lib/create-transformer.ts#createTransformer"
+        ]
+      },
+      "evidence": {
+        "holders": 109,
+        "total": 109,
+        "lower_bound": 0.97,
+        "lift": 18
+      },
+      "members": 114,
+      "example": "packages/codemod/src/codemods/v4/remove-ai-stream-methods-from-stream-text-result.ts#default",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 1. [D-fc5ef7] packages/codemod: functions in src/codemods/** are wrapped in createTransformer()\n    evidence: 109/109 (lower bound 0.97, lift 18.0)\n    example:  packages/codemod/src/codemods/v4/remove-ai-stream-methods-from-stream-text-result.ts#default\n    exempt:   packages/codemod/src/codemods/lib/add-await-fn.ts:3 addAwaitFn (a factory: returns a function wrapped in createTransformer())\n    exempt:   packages/codemod/src/codemods/lib/add-comment.ts:26 insertCommentOnce (shared part used by 3 members)\n    exempt:   packages/codemod/src/codemods/lib/create-transformer.ts:32 createTransformer (shared part used by 112 members)\n    exempt:   packages/codemod/src/codemods/lib/remove-await-fn.ts:3 removeAwaitFn (a factory: returns a function wrapped in createTransformer())\n    exempt:   packages/codemod/src/codemods/lib/remove-facade.ts:9 removeFacade (a factory: returns a function wrapped in createTransformer())",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "supabase/D-e93eb6",
+      "repo": "supabase",
+      "id": "D-e93eb6",
+      "rank": 1,
+      "summary": "apps/docs: functions named `generateMetadata` in app/guides/** (page files) are wrapped in genGuideMeta()",
+      "role": {
+        "package": "apps/docs",
+        "dir": "app/guides",
+        "file": "page",
+        "entry": "-",
+        "kind": "function",
+        "export_name": "generateMetadata"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "apps/docs/features/docs/GuidesMdx.utils.tsx#genGuideMeta"
+        ]
+      },
+      "evidence": {
+        "holders": 29,
+        "total": 30,
+        "lower_bound": 0.83,
+        "lift": 176.4
+      },
+      "members": 30,
+      "example": "apps/docs/app/guides/ai-tools/[[...slug]]/page.tsx#generateMetadata",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "apps/docs/app/guides/ai-tools/ai-prompts/[slug]/page.tsx"
+      ],
+      "block": " 1. [D-e93eb6] apps/docs: functions named `generateMetadata` in app/guides/** (page files) are wrapped in genGuideMeta()\n    evidence: 29/30 (lower bound 0.83, lift 176.4)\n    example:  apps/docs/app/guides/ai-tools/[[...slug]]/page.tsx#generateMetadata\n    outlier:  apps/docs/app/guides/ai-tools/ai-prompts/[slug]/page.tsx:58 generateMetadata",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "supabase/D-5bd6b4",
+      "repo": "supabase",
+      "id": "D-5bd6b4",
+      "rank": 6,
+      "summary": "apps/studio: exported values in data/** (keys files) are named `*Keys`",
+      "role": {
+        "package": "apps/studio",
+        "dir": "data",
+        "file": "keys",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Keys"
+      },
+      "evidence": {
+        "holders": 85,
+        "total": 86,
+        "lower_bound": 0.94,
+        "lift": 30
+      },
+      "members": 87,
+      "example": "apps/studio/data/__templates/keys.ts#resourceKeys",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "apps/studio/data/third-party-auth/keys.ts"
+      ],
+      "block": " 6. [D-5bd6b4] apps/studio: exported values in data/** (keys files) are named `*Keys`\n    evidence: 85/86 (lower bound 0.94, lift 30.0)\n    example:  apps/studio/data/__templates/keys.ts#resourceKeys\n    outlier:  apps/studio/data/third-party-auth/keys.ts:1 keys\n    exempt:   apps/studio/data/projects/keys.ts:1 INFINITE_PROJECTS_KEY_PREFIX (a constant beside projectKeys, which follows the scheme)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "novu/D-2e9dcc",
+      "repo": "novu",
+      "id": "D-2e9dcc",
+      "rank": 6,
+      "summary": "apps/api: classes in src/** (*.command files) are named `*Command`",
+      "role": {
+        "package": "apps/api",
+        "dir": "src",
+        "file": "*.command",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Command"
+      },
+      "evidence": {
+        "holders": 409,
+        "total": 409,
+        "lower_bound": 0.99,
+        "lift": 5.6
+      },
+      "members": 415,
+      "example": "apps/api/src/app/activity/usecases/build-active-subscribers-chart/build-active-subscribers-chart.command.ts#BuildActiveSubscribersChartCommand",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 6. [D-2e9dcc] apps/api: classes in src/** (*.command files) are named `*Command`\n    evidence: 409/409 (lower bound 0.99, lift 5.6)\n    example:  apps/api/src/app/activity/usecases/build-active-subscribers-chart/build-active-subscribers-chart.command.ts#BuildActiveSubscribersChartCommand\n    exempt:   apps/api/src/app/agents/conversation-runtime/reply/handle-agent-reply/handle-agent-reply.command.ts:16 QuoteReplyContextDto (a plain class beside HandleAgentReplyCommand, which follows the scheme on its base)\n    exempt:   apps/api/src/app/bridge/usecases/sync/sync.command.ts:60 WorkflowDefine (a plain class beside SyncCommand, which follows the scheme on its base)\n    exempt:   apps/api/src/app/shared/commands/project.command.ts:17 EnvironmentWithSubscriber (shared part used by 35 members)\n    exempt:   apps/api/src/app/step-resolvers/usecases/sync-step-resolver-to-environment/sync-step-resolver-to-environment.command.ts:7 StepResolverSourceData (a plain class beside SyncStepResolverToEnvironmentCommand, which follows the scheme on its base)\n    exempt:   apps/api/src/app/step-resolvers/usecases/sync-step-resolver-to-environment/sync-step-resolver-to-environment.command.ts:23 StepResolverTargetData (a plain class beside SyncStepResolverToEnvironmentCommand, which follows the scheme on its base)\n    exempt:   apps/api/src/app/subscriptions/usecases/create-subscriptions/create-subscriptions.command.ts:8 TopicSubscriberIdentifier (a plain class beside CreateSubscriptionsCommand, which follows the scheme on its base)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "novu/D-e79710",
+      "repo": "novu",
+      "id": "D-e79710",
+      "rank": 11,
+      "summary": "apps/api: classes in src/** (*.dto files) are named `*Dto`",
+      "role": {
+        "package": "apps/api",
+        "dir": "src",
+        "file": "*.dto",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Dto"
+      },
+      "evidence": {
+        "holders": 642,
+        "total": 675,
+        "lower_bound": 0.93,
+        "lift": 3.6
+      },
+      "members": 678,
+      "example": "apps/api/src/app/activity/dtos/get-charts.request.dto.ts#GetChartsRequestDto",
+      "python_members": null,
+      "outliers": 33,
+      "outlier_files": [
+        "apps/api/src/app/blueprint/dtos/get-blueprint.response.dto.ts",
+        "apps/api/src/app/blueprint/dtos/grouped-blueprint.response.dto.ts",
+        "apps/api/src/app/events/dtos/trigger-event-request.dto.ts",
+        "apps/api/src/app/inbox/dtos/get-notifications-count-request.dto.ts",
+        "apps/api/src/app/invites/dtos/bulk-invite-members.dto.ts",
+        "apps/api/src/app/layouts-v2/dtos/generate-layout-preview-response.dto.ts",
+        "apps/api/src/app/notifications/dtos/activities-response.dto.ts",
+        "apps/api/src/app/notifications/dtos/activity-graph-states-response.dto.ts",
+        "apps/api/src/app/organization/dtos/member-response.dto.ts",
+        "apps/api/src/app/preferences/dtos/preferences.dto.ts",
+        "apps/api/src/app/storage/dtos/upload-url-response.dto.ts",
+        "apps/api/src/app/subscribers-v2/dtos/get-subscriber-notifications-count-query.dto.ts",
+        "apps/api/src/app/support/dtos/plain-card.dto.ts",
+        "apps/api/src/app/testing/dtos/idempotency.dto.ts",
+        "apps/api/src/app/user/usecases/get-my-profile/get-my-profile.dto.ts",
+        "apps/api/src/app/widgets/dtos/message-response.dto.ts",
+        "apps/api/src/app/widgets/dtos/unseen-count-response.dto.ts",
+        "apps/api/src/app/widgets/dtos/update-subscriber-preference-response.dto.ts",
+        "apps/api/src/app/workflows-v1/dtos/workflow-response.dto.ts",
+        "apps/api/src/app/workflows-v2/dtos/list-workflow.dto.ts"
+      ],
+      "block": "11. [D-e79710] apps/api: classes in src/** (*.dto files) are named `*Dto`\n    evidence: 642/675 (lower bound 0.93, lift 3.6)\n    example:  apps/api/src/app/activity/dtos/get-charts.request.dto.ts#GetChartsRequestDto\n    outlier:  apps/api/src/app/blueprint/dtos/get-blueprint.response.dto.ts:3 GetBlueprintResponse\n    outlier:  apps/api/src/app/blueprint/dtos/grouped-blueprint.response.dto.ts:3 GroupedBlueprintResponse\n    outlier:  apps/api/src/app/events/dtos/trigger-event-request.dto.ts:115 ChannelOverrides\n    outlier:  apps/api/src/app/events/dtos/trigger-event-request.dto.ts:103 EmailChannelOverrides\n    outlier:  apps/api/src/app/events/dtos/trigger-event-request.dto.ts:76 StepsOverrides\n    outlier:  apps/api/src/app/events/dtos/trigger-event-request.dto.ts:123 TriggerOverrides\n    outlier:  apps/api/src/app/inbox/dtos/get-notifications-count-request.dto.ts:9 NotificationsFilter\n    outlier:  apps/api/src/app/invites/dtos/bulk-invite-members.dto.ts:5 EmailInvitee\n    outlier:  apps/api/src/app/layouts-v2/dtos/generate-layout-preview-response.dto.ts:8 EmailLayoutRenderOutput\n    outlier:  apps/api/src/app/notifications/dtos/activities-response.dto.ts:312 NotificationTriggerVariable\n    outlier:  apps/api/src/app/notifications/dtos/activity-graph-states-response.dto.ts:4 ActivityGraphStatesResponse\n    outlier:  apps/api/src/app/organization/dtos/member-response.dto.ts:23 MemberInviteDTO\n    outlier:  apps/api/src/app/preferences/dtos/preferences.dto.ts:27 ChannelPreference\n    outlier:  apps/api/src/app/preferences/dtos/preferences.dto.ts:39 Channels\n    outlier:  apps/api/src/app/preferences/dtos/preferences.dto.ts:9 WorkflowPreference\n    outlier:  apps/api/src/app/storage/dtos/upload-url-response.dto.ts:3 UploadUrlResponse\n    outlier:  apps/api/src/app/subscribers-v2/dtos/get-subscriber-notifications-count-query.dto.ts:10 SubscriberNotificationsFilter\n    outlier:  apps/api/src/app/support/dtos/plain-card.dto.ts:3 PlainCustomer\n    outlier:  apps/api/src/app/support/dtos/plain-card.dto.ts:14 PlainTenant\n    outlier:  apps/api/src/app/support/dtos/plain-card.dto.ts:22 PlainThread\n    outlier:  apps/api/src/app/testing/dtos/idempotency.dto.ts:17 IdempotenceTestingResponse\n    outlier:  apps/api/src/app/user/usecases/get-my-profile/get-my-profile.dto.ts:3 GetMyProfileCommand\n    outlier:  apps/api/src/app/widgets/dtos/message-response.dto.ts:25 EmailBlock\n    outlier:  apps/api/src/app/widgets/dtos/message-response.dto.ts:119 MessageCTA\n    outlier:  apps/api/src/app/widgets/dtos/unseen-count-response.dto.ts:3 UnseenCountResponse\n    outlier:  apps/api/src/app/widgets/dtos/update-subscriber-preference-response.dto.ts:63 NotificationTriggerResponse\n    outlier:  apps/api/src/app/widgets/dtos/update-subscriber-preference-response.dto.ts:28 NotificationTriggerVariableResponse\n    outlier:  apps/api/src/app/widgets/dtos/update-subscriber-preference-response.dto.ts:49 TriggerReservedVariableResponse\n    outlier:  apps/api/src/app/workflows-v1/dtos/workflow-response.dto.ts:12 NotificationGroup\n    outlier:  apps/api/src/app/workflows-v1/dtos/workflow-response.dto.ts:33 NotificationTrigger\n    outlier:  apps/api/src/app/workflows-v1/dtos/workflow-response.dto.ts:29 NotificationTriggerVariable\n    outlier:  apps/api/src/app/workflows-v1/dtos/workflow-response.dto.ts:54 WorkflowResponse\n    outlier:  apps/api/src/app/workflows-v2/dtos/list-workflow.dto.ts:6 ListWorkflowResponse\n    exempt:   apps/api/src/app/agents/shared/dtos/agent-reply-payload.dto.ts:46 IsValidReplyContent (another kind of class (decorated with ValidatorConstraint()) beside AddReactionPayloadDto, which follows the scheme)\n    exempt:   apps/api/src/app/agents/shared/dtos/agent-reply-payload.dto.ts:94 IsValidTypingOp (another kind of class (decorated with ValidatorConstraint()) beside AddReactionPayloadDto, which follows the scheme)\n    exempt:   apps/api/src/app/agents/shared/dtos/agent-signal.dto.ts:131 IsValidTriggerRecipient (another kind of class (decorated with ValidatorConstraint()) beside HumanSignalDto, which follows the scheme)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "novu/D-67ddb9",
+      "repo": "novu",
+      "id": "D-67ddb9",
+      "rank": 12,
+      "summary": "packages/providers: classes in src/** (*.provider files) are named `*Provider`",
+      "role": {
+        "package": "packages/providers",
+        "dir": "src",
+        "file": "*.provider",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Provider"
+      },
+      "evidence": {
+        "holders": 88,
+        "total": 88,
+        "lower_bound": 0.96,
+        "lift": 32.8
+      },
+      "members": 89,
+      "example": "packages/providers/src/lib/chat/chat-webhook/chat-webhook.provider.ts#ChatWebhookProvider",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": "12. [D-67ddb9] packages/providers: classes in src/** (*.provider files) are named `*Provider`\n    evidence: 88/88 (lower bound 0.96, lift 32.8)\n    example:  packages/providers/src/lib/chat/chat-webhook/chat-webhook.provider.ts#ChatWebhookProvider\n    exempt:   packages/providers/src/lib/email/email-webhook/email-webhook.provider.ts:35 EmailWebhookUrlBlockedError (another kind of class (extends Error) beside EmailWebhookProvider, which follows the scheme)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "novu/D-bdd970",
+      "repo": "novu",
+      "id": "D-bdd970",
+      "rank": 13,
+      "summary": "libs/application-generic: classes in src/services/** (*.service files) are named `*Service`",
+      "role": {
+        "package": "libs/application-generic",
+        "dir": "src/services",
+        "file": "*.service",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Service"
+      },
+      "evidence": {
+        "holders": 65,
+        "total": 65,
+        "lower_bound": 0.94,
+        "lift": 17.3
+      },
+      "members": 67,
+      "example": "libs/application-generic/src/services/agent-email-inbox-quota/agent-email-inbox-quota.service.ts#AgentEmailInboxQuotaService",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": "13. [D-bdd970] libs/application-generic: classes in src/services/** (*.service files) are named `*Service`\n    evidence: 65/65 (lower bound 0.94, lift 17.3)\n    example:  libs/application-generic/src/services/agent-email-inbox-quota/agent-email-inbox-quota.service.ts#AgentEmailInboxQuotaService\n    exempt:   libs/application-generic/src/services/agent-email-inbox-quota/agent-email-inbox-quota.service.ts:56 AgentEmailInboxQuotaExceededException (another kind of class (extends HttpException) beside AgentEmailInboxQuotaService, which follows the scheme)\n    exempt:   libs/application-generic/src/services/queues/queue-base.service.ts:25 PartialDispatchError (another kind of class (extends Error) beside QueueBaseService, which follows the scheme)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "novu/D-808edd",
+      "repo": "novu",
+      "id": "D-808edd",
+      "rank": 15,
+      "summary": "libs/application-generic: classes in src/** (*.command files) are named `*Command`",
+      "role": {
+        "package": "libs/application-generic",
+        "dir": "src",
+        "file": "*.command",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Command"
+      },
+      "evidence": {
+        "holders": 90,
+        "total": 95,
+        "lower_bound": 0.88,
+        "lift": 4.9
+      },
+      "members": 104,
+      "example": "libs/application-generic/src/commands/authenticated.command.ts#AuthenticatedCommand",
+      "python_members": null,
+      "outliers": 5,
+      "outlier_files": [
+        "libs/application-generic/src/commands/base.command.ts",
+        "libs/application-generic/src/commands/project.command.ts",
+        "libs/application-generic/src/usecases/upsert-workflow/upsert-workflow.command.ts"
+      ],
+      "block": "15. [D-808edd] libs/application-generic: classes in src/** (*.command files) are named `*Command`\n    evidence: 90/95 (lower bound 0.88, lift 4.9)\n    example:  libs/application-generic/src/commands/authenticated.command.ts#AuthenticatedCommand\n    outlier:  libs/application-generic/src/commands/base.command.ts:35 ConstraintValidation\n    outlier:  libs/application-generic/src/commands/project.command.ts:74 EnvironmentWithSubscriber\n    outlier:  libs/application-generic/src/usecases/upsert-workflow/upsert-workflow.command.ts:32 ChannelPreferenceData\n    outlier:  libs/application-generic/src/usecases/upsert-workflow/upsert-workflow.command.ts:37 WorkflowPreferenceData\n    outlier:  libs/application-generic/src/usecases/upsert-workflow/upsert-workflow.command.ts:45 WorkflowPreferencesUpsertData\n    exempt:   libs/application-generic/src/commands/base.command.ts:95 CommandValidationException (another kind of class (extends BadRequestException) beside BaseCommand, which follows the scheme)\n    exempt:   libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:23 ChannelPreferencePartial (a plain class beside UpsertPreferencesPartialBaseCommand, which follows the scheme on its base)\n    exempt:   libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:96 ChannelPreferenceRequired (a plain class beside UpsertPreferencesPartialBaseCommand, which follows the scheme on its base)\n    exempt:   libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:29 ChannelPreferencesPartial (a plain class beside UpsertPreferencesPartialBaseCommand, which follows the scheme on its base)\n    exempt:   libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:101 ChannelPreferencesRequired (a plain class beside UpsertPreferencesPartialBaseCommand, which follows the scheme on its base)\n    exempt:   libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:67 PreferencesPartial (a plain class beside UpsertPreferencesPartialBaseCommand, which follows the scheme on its base)\n    exempt:   libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:133 PreferencesRequired (a plain class beside UpsertPreferencesPartialBaseCommand, which follows the scheme on its base)\n    exempt:   libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:13 WorkflowPreferencePartial (a plain class beside UpsertPreferencesPartialBaseCommand, which follows the scheme on its base)\n    exempt:   libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:88 WorkflowPreferenceRequired (a plain class beside UpsertPreferencesPartialBaseCommand, which follows the scheme on its base)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "immich/D-26380c",
+      "repo": "immich",
+      "id": "D-26380c",
+      "rank": 7,
+      "summary": "server: classes in src/** (*.repository files) are named `*Repository`",
+      "role": {
+        "package": "server",
+        "dir": "src",
+        "file": "*.repository",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Repository"
+      },
+      "evidence": {
+        "holders": 61,
+        "total": 62,
+        "lower_bound": 0.91,
+        "lift": 10.4
+      },
+      "members": 63,
+      "example": "server/src/maintenance/maintenance-health.repository.ts#MaintenanceHealthRepository",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "server/src/repositories/sync.repository.ts"
+      ],
+      "block": " 7. [D-26380c] server: classes in src/** (*.repository files) are named `*Repository`\n    evidence: 61/62 (lower bound 0.91, lift 10.4)\n    example:  server/src/maintenance/maintenance-health.repository.ts#MaintenanceHealthRepository\n    outlier:  server/src/repositories/sync.repository.ts:101 BaseSync\n    exempt:   server/src/repositories/logging.repository.ts:25 MyConsoleLogger (another kind of class (extends ConsoleLogger) beside LoggingRepository, which follows the scheme)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "midday/D-b905f9",
+      "repo": "midday",
+      "id": "D-b905f9",
+      "rank": 3,
+      "summary": "apps/website: exported values named `metadata` in src/** (page files) pass `description` to createPageMetadata()",
+      "role": {
+        "package": "apps/website",
+        "dir": "src",
+        "file": "page",
+        "entry": "-",
+        "kind": "const",
+        "export_name": "metadata"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "apps/website/src/lib/metadata.ts#createPageMetadata",
+        "index": 0,
+        "key": "description"
+      },
+      "evidence": {
+        "holders": 45,
+        "total": 46,
+        "lower_bound": 0.89,
+        "lift": 28.2
+      },
+      "members": 46,
+      "example": "apps/website/src/app/about/page.tsx#metadata",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "apps/website/src/app/compare/page.tsx"
+      ],
+      "block": " 3. [D-b905f9] apps/website: exported values named `metadata` in src/** (page files) pass `description` to createPageMetadata()\n    evidence: 45/46 (lower bound 0.89, lift 28.2)\n    example:  apps/website/src/app/about/page.tsx#metadata\n    outlier:  apps/website/src/app/compare/page.tsx:12 metadata",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "default"
+    },
+    {
+      "uid": "midday/D-98e729",
+      "repo": "midday",
+      "id": "D-98e729",
+      "rank": 6,
+      "summary": "apps/api: exported values in src/trpc/** are named `*Router`",
+      "role": {
+        "package": "apps/api",
+        "dir": "src/trpc",
+        "file": "*",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Router"
+      },
+      "evidence": {
+        "holders": 39,
+        "total": 41,
+        "lower_bound": 0.84,
+        "lift": 21.6
+      },
+      "members": 41,
+      "example": "apps/api/src/trpc/routers/_app.ts#appRouter",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "apps/api/src/trpc/init.ts"
+      ],
+      "block": " 6. [D-98e729] apps/api: exported values in src/trpc/** are named `*Router`\n    evidence: 39/41 (lower bound 0.84, lift 21.6)\n    example:  apps/api/src/trpc/routers/_app.ts#appRouter\n    outlier:  apps/api/src/trpc/init.ts:87 createCallerFactory\n    outlier:  apps/api/src/trpc/init.ts:120 publicProcedure",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "infisical/D-156a6f",
+      "repo": "infisical",
+      "id": "D-156a6f",
+      "rank": 12,
+      "summary": "backend: functions in src/server/routes/** are named `register*`",
+      "role": {
+        "package": "backend",
+        "dir": "src/server/routes",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "register*"
+      },
+      "evidence": {
+        "holders": 327,
+        "total": 338,
+        "lower_bound": 0.94,
+        "lift": 18.9
+      },
+      "members": 349,
+      "example": "backend/src/server/routes/bdd/bdd-nock-router.dev.ts#registerBddNockRouter",
+      "python_members": null,
+      "outliers": 11,
+      "outlier_files": [
+        "backend/src/server/routes/mfa-step-up-fns.ts",
+        "backend/src/server/routes/sanitizedSchema/permission.ts",
+        "backend/src/server/routes/v1/dashboard-secret-search-fns.ts",
+        "backend/src/server/routes/v1/hsm-connector-router-schemas.ts",
+        "backend/src/server/routes/v1/hsm-connector-router.ts",
+        "backend/src/server/routes/v1/sso-router.ts"
+      ],
+      "block": "12. [D-156a6f] backend: functions in src/server/routes/** are named `register*`\n    evidence: 327/338 (lower bound 0.94, lift 18.9)\n    example:  backend/src/server/routes/bdd/bdd-nock-router.dev.ts#registerBddNockRouter\n    outlier:  backend/src/server/routes/mfa-step-up-fns.ts:117 ensureFactorEnrollmentStepUpMfa\n    outlier:  backend/src/server/routes/mfa-step-up-fns.ts:37 ensureStepUpMfa\n    outlier:  backend/src/server/routes/mfa-step-up-fns.ts:14 getStepUpSessionId\n    outlier:  backend/src/server/routes/sanitizedSchema/permission.ts:15 unpackPermissions\n    outlier:  backend/src/server/routes/v1/dashboard-secret-search-fns.ts:42 isInSecretSearchScope\n    outlier:  backend/src/server/routes/v1/dashboard-secret-search-fns.ts:10 parseSecretPathSearch\n    outlier:  backend/src/server/routes/v1/dashboard-secret-search-fns.ts:54 resolveSecretDeepSearch\n    outlier:  backend/src/server/routes/v1/hsm-connector-router-schemas.ts:54 UpdateHsmConnectorBodySchema\n    outlier:  backend/src/server/routes/v1/hsm-connector-router.ts:26 createHsmConnectorRouter\n    outlier:  backend/src/server/routes/v1/sso-router.ts:423 initializeOauthConfigSync\n    outlier:  backend/src/server/routes/v1/sso-router.ts:413 refreshOauthConfig\n    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:49 buildAppConnectionRouteContext (a helper of registerAppConnectionEndpoints, which uses it in its file)\n    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:319 buildCreateAppConnectionRoute (a helper of registerAppConnectionEndpoints, which uses it in its file)\n    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:502 buildDeleteAppConnectionRoute (a helper of registerAppConnectionEndpoints, which uses it in its file)\n    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:254 buildGetAppConnectionByNameRoute (a helper of registerAppConnectionEndpoints, which uses it in its file)\n    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:201 buildGetAppConnectionRoute (a helper of registerAppConnectionEndpoints, which uses it in its file)\n    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:86 buildListAppConnectionsRoute (a helper of registerAppConnectionEndpoints, which uses it in its file)\n    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:137 buildListAvailableAppConnectionsRoute (a helper of registerAppConnectionEndpoints, which uses it in its file)\n    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:568 buildRotateAppConnectionCredentialsRoute (a helper of registerAppConnectionEndpoints, which uses it in its file)\n    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:411 buildUpdateAppConnectionRoute (a helper of registerAppConnectionEndpoints, which uses it in its file)\n    exempt:   backend/src/server/routes/v1/dashboard-secret-search-fns.ts:40 isSecretPathMatch (shared part used by 2 members)\n    exempt:   backend/src/server/routes/v1/hsm-connector-router-schemas.ts:13 gatewayPickRefiner (shared part used by 2 members)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    }
+  ]
+}

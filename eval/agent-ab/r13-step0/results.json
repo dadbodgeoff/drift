@@ -1,0 +1,3568 @@
+{
+  "summary": {
+    "strong": {
+      "runs": 30,
+      "invalid": 0,
+      "pairs": 57,
+      "conformant": 56,
+      "wilson": [
+        0.9070903306173727,
+        0.9968964152933198
+      ],
+      "none": 0,
+      "runs_all_conformant": 29,
+      "cost_usd": 2.6207217000000003,
+      "medians": {
+        "turns": 11,
+        "input_tokens": 14,
+        "output_tokens": 2856.5,
+        "cache_read_tokens": 87356,
+        "cache_creation_tokens": 11160.5,
+        "reads_before_edit": 5,
+        "exploration_calls": 5.5,
+        "seconds": 23.5
+      }
+    },
+    "cheap": {
+      "runs": 30,
+      "invalid": 1,
+      "pairs": 55,
+      "conformant": 53,
+      "wilson": [
+        0.8767630702509827,
+        0.989970669144275
+      ],
+      "none": 1,
+      "runs_all_conformant": 27,
+      "cost_usd": 0.24469617999999996,
+      "medians": {
+        "turns": 14,
+        "input_tokens": 16,
+        "output_tokens": 4941,
+        "cache_read_tokens": 143154,
+        "cache_creation_tokens": 18840,
+        "reads_before_edit": 5,
+        "exploration_calls": 6,
+        "seconds": 24
+      }
+    }
+  },
+  "rows": [
+    {
+      "run": "crm-account-export__cheap__r1",
+      "task": "crm-account-export",
+      "repo": "Django-CRM",
+      "files_changed": 2,
+      "changed": [
+        "backend/accounts/urls.py",
+        "backend/accounts/export_views.py"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/accounts/export_views.py",
+          "symbol": "AccountExportView",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "scoping",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 17,
+      "cost_usd": 0.015497550000000004,
+      "seconds": 32,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 20,
+      "output_tokens": 5585,
+      "cache_read_tokens": 358105,
+      "cache_creation_tokens": 45610,
+      "tool_calls": 16,
+      "reads_before_edit": 9,
+      "exploration_calls": 10,
+      "first_edit_s": 24,
+      "calls_before_edit": 13,
+      "edited": true,
+      "label": "cheap",
+      "rep": 1,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "crm-account-export__cheap__r2",
+      "task": "crm-account-export",
+      "repo": "Django-CRM",
+      "files_changed": 2,
+      "changed": [
+        "backend/accounts/urls.py",
+        "backend/accounts/export_views.py"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/accounts/export_views.py",
+          "symbol": "AccountExportView",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "scoping",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 9,
+      "cost_usd": 0.00823388,
+      "seconds": 26,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 14,
+      "output_tokens": 4941,
+      "cache_read_tokens": 127598,
+      "cache_creation_tokens": 22430,
+      "tool_calls": 8,
+      "reads_before_edit": 1,
+      "exploration_calls": 2,
+      "first_edit_s": 19,
+      "calls_before_edit": 6,
+      "edited": true,
+      "label": "cheap",
+      "rep": 2,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "crm-account-export__cheap__r3",
+      "task": "crm-account-export",
+      "repo": "Django-CRM",
+      "files_changed": 2,
+      "changed": [
+        "backend/accounts/urls.py",
+        "backend/accounts/export_views.py"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/accounts/export_views.py",
+          "symbol": "AccountExportView",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "scoping",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 20,
+      "cost_usd": 0.01733185,
+      "seconds": 37,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 24,
+      "output_tokens": 6853,
+      "cache_read_tokens": 406135,
+      "cache_creation_tokens": 49208,
+      "tool_calls": 19,
+      "reads_before_edit": 14,
+      "exploration_calls": 14,
+      "first_edit_s": 29,
+      "calls_before_edit": 16,
+      "edited": true,
+      "label": "cheap",
+      "rep": 3,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "crm-account-export__strong__r1",
+      "task": "crm-account-export",
+      "repo": "Django-CRM",
+      "files_changed": 2,
+      "changed": [
+        "backend/accounts/urls.py",
+        "backend/accounts/export_views.py"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/accounts/export_views.py",
+          "symbol": "AccountExportView",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "scoping",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 12,
+      "cost_usd": 0.128657,
+      "seconds": 31,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 20,
+      "output_tokens": 3511,
+      "cache_read_tokens": 170590,
+      "cache_creation_tokens": 19112,
+      "tool_calls": 11,
+      "reads_before_edit": 1,
+      "exploration_calls": 3,
+      "first_edit_s": 19,
+      "calls_before_edit": 8,
+      "edited": true,
+      "label": "strong",
+      "rep": 1,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "crm-account-export__strong__r2",
+      "task": "crm-account-export",
+      "repo": "Django-CRM",
+      "files_changed": 2,
+      "changed": [
+        "backend/accounts/urls.py",
+        "backend/accounts/export_views.py"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/accounts/export_views.py",
+          "symbol": "AccountExportView",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "scoping",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 10,
+      "cost_usd": 0.13117800000000002,
+      "seconds": 30,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 18,
+      "output_tokens": 3699,
+      "cache_read_tokens": 159600,
+      "cache_creation_tokens": 19548,
+      "tool_calls": 9,
+      "reads_before_edit": 1,
+      "exploration_calls": 2,
+      "first_edit_s": 21,
+      "calls_before_edit": 7,
+      "edited": true,
+      "label": "strong",
+      "rep": 2,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "crm-account-export__strong__r3",
+      "task": "crm-account-export",
+      "repo": "Django-CRM",
+      "files_changed": 2,
+      "changed": [
+        "backend/accounts/urls.py",
+        "backend/accounts/export_views.py"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/accounts/export_views.py",
+          "symbol": "AccountExportView",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "scoping",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 10,
+      "cost_usd": 0.12761070000000002,
+      "seconds": 27,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 16,
+      "output_tokens": 3748,
+      "cache_read_tokens": 133947,
+      "cache_creation_tokens": 19176,
+      "tool_calls": 9,
+      "reads_before_edit": 0,
+      "exploration_calls": 1,
+      "first_edit_s": 20,
+      "calls_before_edit": 6,
+      "edited": true,
+      "label": "strong",
+      "rep": 3,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "crm-case-watch__cheap__r1",
+      "task": "crm-case-watch",
+      "repo": "Django-CRM",
+      "files_changed": 2,
+      "changed": [
+        "backend/cases/urls.py",
+        "backend/cases/watcher_views.py"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/cases/watcher_views.py",
+          "symbol": "CaseWatchView.delete",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/cases/watcher_views.py",
+          "symbol": "CaseWatchView.post",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/cases/watcher_views.py",
+          "symbol": "CaseWatchersListView.get",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/cases/watcher_views.py",
+          "symbol": "CaseWatchingListView.get",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "scoping",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 14,
+      "cost_usd": 0.018635940000000004,
+      "seconds": 50,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 22,
+      "output_tokens": 10117,
+      "cache_read_tokens": 382484,
+      "cache_creation_tokens": 48752,
+      "tool_calls": 13,
+      "reads_before_edit": 1,
+      "exploration_calls": 5,
+      "first_edit_s": 40,
+      "calls_before_edit": 9,
+      "edited": true,
+      "label": "cheap",
+      "rep": 1,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "crm-case-watch__cheap__r2",
+      "task": "crm-case-watch",
+      "repo": "Django-CRM",
+      "files_changed": 2,
+      "changed": [
+        "backend/cases/urls.py",
+        "backend/cases/watcher_views.py"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/cases/watcher_views.py",
+          "symbol": "CaseWatchView.delete",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/cases/watcher_views.py",
+          "symbol": "CaseWatchView.post",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/cases/watcher_views.py",
+          "symbol": "CaseWatchersListView.get",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/cases/watcher_views.py",
+          "symbol": "WatchingCasesListView.get",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "scoping",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": null,
+      "cost_usd": null,
+      "seconds": null,
+      "is_error": true,
+      "terminal": null,
+      "input_tokens": null,
+      "output_tokens": null,
+      "cache_read_tokens": null,
+      "cache_creation_tokens": null,
+      "tool_calls": 22,
+      "reads_before_edit": 13,
+      "exploration_calls": 15,
+      "first_edit_s": 56,
+      "calls_before_edit": 18,
+      "edited": true,
+      "label": "cheap",
+      "rep": 2,
+      "invalid": [
+        "no result message"
+      ],
+      "timed_out": false
+    },
+    {
+      "run": "crm-case-watch__cheap__r3",
+      "task": "crm-case-watch",
+      "repo": "Django-CRM",
+      "files_changed": 2,
+      "changed": [
+        "backend/cases/urls.py",
+        "backend/cases/watcher_views.py"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/cases/watcher_views.py",
+          "symbol": "CaseWatchView.delete",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/cases/watcher_views.py",
+          "symbol": "CaseWatchView.post",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/cases/watcher_views.py",
+          "symbol": "CaseWatchersView.get",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/cases/watcher_views.py",
+          "symbol": "CaseWatchingListView.get",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "scoping",
+          "auto": "fail",
+          "why": "no match for /visible_cases_qs/"
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 19,
+      "cost_usd": 0.02258314,
+      "seconds": 72,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 34,
+      "output_tokens": 14352,
+      "cache_read_tokens": 618514,
+      "cache_creation_tokens": 46093,
+      "tool_calls": 18,
+      "reads_before_edit": 4,
+      "exploration_calls": 5,
+      "first_edit_s": 56,
+      "calls_before_edit": 13,
+      "edited": true,
+      "label": "cheap",
+      "rep": 3,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "crm-case-watch__strong__r1",
+      "task": "crm-case-watch",
+      "repo": "Django-CRM",
+      "files_changed": 2,
+      "changed": [
+        "backend/cases/urls.py",
+        "backend/cases/watcher_views.py"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/cases/watcher_views.py",
+          "symbol": "CaseWatchView.delete",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/cases/watcher_views.py",
+          "symbol": "CaseWatchView.post",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/cases/watcher_views.py",
+          "symbol": "CaseWatchersListView.get",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/cases/watcher_views.py",
+          "symbol": "CaseWatchingListView.get",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "scoping",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 21,
+      "cost_usd": 0.19563129999999995,
+      "seconds": 38,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 26,
+      "output_tokens": 5076,
+      "cache_read_tokens": 297473,
+      "cache_creation_tokens": 28768,
+      "tool_calls": 20,
+      "reads_before_edit": 10,
+      "exploration_calls": 11,
+      "first_edit_s": 29,
+      "calls_before_edit": 17,
+      "edited": true,
+      "label": "strong",
+      "rep": 1,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "crm-case-watch__strong__r2",
+      "task": "crm-case-watch",
+      "repo": "Django-CRM",
+      "files_changed": 2,
+      "changed": [
+        "backend/cases/urls.py",
+        "backend/cases/watch_views.py"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/cases/watch_views.py",
+          "symbol": "CaseWatchView.delete",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/cases/watch_views.py",
+          "symbol": "CaseWatchView.post",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/cases/watch_views.py",
+          "symbol": "CaseWatchersView.get",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/cases/watch_views.py",
+          "symbol": "WatchingListView.get",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "scoping",
+          "auto": "fail",
+          "why": "no match for /visible_cases_qs/"
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 16,
+      "cost_usd": 0.15602110000000002,
+      "seconds": 34,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 16,
+      "output_tokens": 5008,
+      "cache_read_tokens": 157051,
+      "cache_creation_tokens": 22551,
+      "tool_calls": 15,
+      "reads_before_edit": 5,
+      "exploration_calls": 7,
+      "first_edit_s": 20,
+      "calls_before_edit": 9,
+      "edited": true,
+      "label": "strong",
+      "rep": 2,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "crm-case-watch__strong__r3",
+      "task": "crm-case-watch",
+      "repo": "Django-CRM",
+      "files_changed": 2,
+      "changed": [
+        "backend/cases/urls.py",
+        "backend/cases/watch_views.py"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/cases/watch_views.py",
+          "symbol": "CaseWatchView.delete",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/cases/watch_views.py",
+          "symbol": "CaseWatchView.post",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/cases/watch_views.py",
+          "symbol": "CaseWatchersListView.get",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/cases/watch_views.py",
+          "symbol": "CaseWatchingListView.get",
+          "guards": [
+            "permissions.IsAuthenticated",
+            "HasOrgContext"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "scoping",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 11,
+      "cost_usd": 0.14200120000000002,
+      "seconds": 31,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 16,
+      "output_tokens": 4955,
+      "cache_read_tokens": 143872,
+      "cache_creation_tokens": 19508,
+      "tool_calls": 10,
+      "reads_before_edit": 1,
+      "exploration_calls": 5,
+      "first_edit_s": 23,
+      "calls_before_edit": 7,
+      "edited": true,
+      "label": "strong",
+      "rep": 3,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "dub-log-by-id__cheap__r1",
+      "task": "dub-log-by-id",
+      "repo": "dub",
+      "files_changed": 2,
+      "changed": [
+        "apps/web/lib/api-logs/api-log-retention.ts",
+        "apps/web/app/api/logs/[logId]/route.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "apps/web/app/api/logs/[logId]/route.ts",
+          "symbol": "GET",
+          "guards": [
+            "withWorkspace"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "errors",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 10,
+      "cost_usd": 0.008292850000000001,
+      "seconds": 30,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 20,
+      "output_tokens": 5553,
+      "cache_read_tokens": 174635,
+      "cache_creation_tokens": 18840,
+      "tool_calls": 9,
+      "reads_before_edit": 1,
+      "exploration_calls": 3,
+      "first_edit_s": 21,
+      "calls_before_edit": 6,
+      "edited": true,
+      "label": "cheap",
+      "rep": 1,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "dub-log-by-id__cheap__r2",
+      "task": "dub-log-by-id",
+      "repo": "dub",
+      "files_changed": 2,
+      "changed": [
+        "apps/web/lib/api-logs/api-log-retention.ts",
+        "apps/web/app/api/logs/[logId]/route.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "apps/web/app/api/logs/[logId]/route.ts",
+          "symbol": "GET",
+          "guards": [
+            "withWorkspace"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "errors",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 23,
+      "cost_usd": 0.011588509999999998,
+      "seconds": 38,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 26,
+      "output_tokens": 7455,
+      "cache_read_tokens": 272681,
+      "cache_creation_tokens": 25658,
+      "tool_calls": 22,
+      "reads_before_edit": 15,
+      "exploration_calls": 17,
+      "first_edit_s": 30,
+      "calls_before_edit": 19,
+      "edited": true,
+      "label": "cheap",
+      "rep": 2,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "dub-log-by-id__cheap__r3",
+      "task": "dub-log-by-id",
+      "repo": "dub",
+      "files_changed": 1,
+      "changed": [
+        "apps/web/app/api/logs/[logId]/route.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "apps/web/app/api/logs/[logId]/route.ts",
+          "symbol": "GET",
+          "guards": [
+            "withWorkspace"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "errors",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 13,
+      "cost_usd": 0.008361180000000001,
+      "seconds": 29,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 20,
+      "output_tokens": 6264,
+      "cache_read_tokens": 186178,
+      "cache_creation_tokens": 16827,
+      "tool_calls": 12,
+      "reads_before_edit": 3,
+      "exploration_calls": 6,
+      "first_edit_s": 23,
+      "calls_before_edit": 10,
+      "edited": true,
+      "label": "cheap",
+      "rep": 3,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "dub-log-by-id__strong__r1",
+      "task": "dub-log-by-id",
+      "repo": "dub",
+      "files_changed": 1,
+      "changed": [
+        "apps/web/app/api/logs/[logId]/route.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "apps/web/app/api/logs/[logId]/route.ts",
+          "symbol": "GET",
+          "guards": [
+            "withWorkspace"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "errors",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 13,
+      "cost_usd": 0.09079409999999999,
+      "seconds": 26,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 20,
+      "output_tokens": 3087,
+      "cache_read_tokens": 131921,
+      "cache_creation_tokens": 11673,
+      "tool_calls": 12,
+      "reads_before_edit": 4,
+      "exploration_calls": 9,
+      "first_edit_s": 21,
+      "calls_before_edit": 11,
+      "edited": true,
+      "label": "strong",
+      "rep": 1,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "dub-log-by-id__strong__r2",
+      "task": "dub-log-by-id",
+      "repo": "dub",
+      "files_changed": 1,
+      "changed": [
+        "apps/web/app/api/logs/[logId]/route.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "apps/web/app/api/logs/[logId]/route.ts",
+          "symbol": "GET",
+          "guards": [
+            "withWorkspace"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "errors",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 18,
+      "cost_usd": 0.1211749,
+      "seconds": 31,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 24,
+      "output_tokens": 3887,
+      "cache_read_tokens": 184449,
+      "cache_creation_tokens": 15953,
+      "tool_calls": 17,
+      "reads_before_edit": 10,
+      "exploration_calls": 12,
+      "first_edit_s": 23,
+      "calls_before_edit": 15,
+      "edited": true,
+      "label": "strong",
+      "rep": 2,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "dub-log-by-id__strong__r3",
+      "task": "dub-log-by-id",
+      "repo": "dub",
+      "files_changed": 1,
+      "changed": [
+        "apps/web/app/api/logs/[logId]/route.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "apps/web/app/api/logs/[logId]/route.ts",
+          "symbol": "GET",
+          "guards": [
+            "withWorkspace"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "errors",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 11,
+      "cost_usd": 0.09366769999999999,
+      "seconds": 22,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 20,
+      "output_tokens": 2875,
+      "cache_read_tokens": 137417,
+      "cache_creation_tokens": 12784,
+      "tool_calls": 10,
+      "reads_before_edit": 3,
+      "exploration_calls": 8,
+      "first_edit_s": 17,
+      "calls_before_edit": 9,
+      "edited": true,
+      "label": "strong",
+      "rep": 3,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "dub-tags-count__cheap__r1",
+      "task": "dub-tags-count",
+      "repo": "dub",
+      "files_changed": 1,
+      "changed": [
+        "apps/web/app/api/tags/count/route.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "apps/web/app/api/tags/count/route.ts",
+          "symbol": "GET",
+          "guards": [
+            "withWorkspace"
+          ],
+          "validates": true
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 9,
+      "cost_usd": 0.004836640000000001,
+      "seconds": 15,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 14,
+      "output_tokens": 2898,
+      "cache_read_tokens": 91584,
+      "cache_creation_tokens": 12352,
+      "tool_calls": 8,
+      "reads_before_edit": 2,
+      "exploration_calls": 6,
+      "first_edit_s": 12,
+      "calls_before_edit": 7,
+      "edited": true,
+      "label": "cheap",
+      "rep": 1,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "dub-tags-count__cheap__r2",
+      "task": "dub-tags-count",
+      "repo": "dub",
+      "files_changed": 1,
+      "changed": [
+        "apps/web/app/api/tags/count/route.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "apps/web/app/api/tags/count/route.ts",
+          "symbol": "GET",
+          "guards": [
+            "withWorkspace"
+          ],
+          "validates": true
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 8,
+      "cost_usd": 0.00385164,
+      "seconds": 12,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 12,
+      "output_tokens": 2285,
+      "cache_read_tokens": 79454,
+      "cache_creation_tokens": 9567,
+      "tool_calls": 7,
+      "reads_before_edit": 6,
+      "exploration_calls": 6,
+      "first_edit_s": 8,
+      "calls_before_edit": 6,
+      "edited": true,
+      "label": "cheap",
+      "rep": 2,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "dub-tags-count__cheap__r3",
+      "task": "dub-tags-count",
+      "repo": "dub",
+      "files_changed": 1,
+      "changed": [
+        "apps/web/app/api/tags/count/route.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "apps/web/app/api/tags/count/route.ts",
+          "symbol": "GET",
+          "guards": [
+            "withWorkspace"
+          ],
+          "validates": true
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 9,
+      "cost_usd": 0.00496751,
+      "seconds": 15,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 14,
+      "output_tokens": 2893,
+      "cache_read_tokens": 105081,
+      "cache_creation_tokens": 12344,
+      "tool_calls": 8,
+      "reads_before_edit": 5,
+      "exploration_calls": 6,
+      "first_edit_s": 12,
+      "calls_before_edit": 7,
+      "edited": true,
+      "label": "cheap",
+      "rep": 3,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "dub-tags-count__strong__r1",
+      "task": "dub-tags-count",
+      "repo": "dub",
+      "files_changed": 1,
+      "changed": [
+        "apps/web/app/api/tags/count/route.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "apps/web/app/api/tags/count/route.ts",
+          "symbol": "GET",
+          "guards": [
+            "withWorkspace"
+          ],
+          "validates": true
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 7,
+      "cost_usd": 0.053088399999999994,
+      "seconds": 12,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 10,
+      "output_tokens": 1462,
+      "cache_read_tokens": 54004,
+      "cache_creation_tokens": 8262,
+      "tool_calls": 6,
+      "reads_before_edit": 5,
+      "exploration_calls": 5,
+      "first_edit_s": 8,
+      "calls_before_edit": 5,
+      "edited": true,
+      "label": "strong",
+      "rep": 1,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "dub-tags-count__strong__r2",
+      "task": "dub-tags-count",
+      "repo": "dub",
+      "files_changed": 1,
+      "changed": [
+        "apps/web/app/api/tags/count/route.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "apps/web/app/api/tags/count/route.ts",
+          "symbol": "GET",
+          "guards": [
+            "withWorkspace"
+          ],
+          "validates": true
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 7,
+      "cost_usd": 0.04926880000000001,
+      "seconds": 12,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 12,
+      "output_tokens": 1315,
+      "cache_read_tokens": 65588,
+      "cache_creation_tokens": 7384,
+      "tool_calls": 6,
+      "reads_before_edit": 4,
+      "exploration_calls": 4,
+      "first_edit_s": 8,
+      "calls_before_edit": 5,
+      "edited": true,
+      "label": "strong",
+      "rep": 2,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "dub-tags-count__strong__r3",
+      "task": "dub-tags-count",
+      "repo": "dub",
+      "files_changed": 1,
+      "changed": [
+        "apps/web/app/api/tags/count/route.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "apps/web/app/api/tags/count/route.ts",
+          "symbol": "GET",
+          "guards": [
+            "withWorkspace"
+          ],
+          "validates": true
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 7,
+      "cost_usd": 0.047546599999999994,
+      "seconds": 12,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 10,
+      "output_tokens": 1327,
+      "cache_read_tokens": 54086,
+      "cache_creation_tokens": 7212,
+      "tool_calls": 6,
+      "reads_before_edit": 5,
+      "exploration_calls": 5,
+      "first_edit_s": 8,
+      "calls_before_edit": 5,
+      "edited": true,
+      "label": "strong",
+      "rep": 3,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "fastapi-delete-item__cheap__r1",
+      "task": "fastapi-delete-item",
+      "repo": "full-stack-fastapi-template",
+      "files_changed": 1,
+      "changed": [
+        "backend/app/api/routes/items.py"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/app/api/routes/items.py",
+          "symbol": "delete_item",
+          "guards": [
+            "get_db",
+            "get_current_user",
+            "security.OAuth2PasswordBearer"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "errors",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 5,
+      "cost_usd": 0.0023568499999999997,
+      "seconds": 7,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 10,
+      "output_tokens": 1260,
+      "cache_read_tokens": 55325,
+      "cache_creation_tokens": 5863,
+      "tool_calls": 4,
+      "reads_before_edit": 2,
+      "exploration_calls": 3,
+      "first_edit_s": 5,
+      "calls_before_edit": 3,
+      "edited": true,
+      "label": "cheap",
+      "rep": 1,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "fastapi-delete-item__cheap__r2",
+      "task": "fastapi-delete-item",
+      "repo": "full-stack-fastapi-template",
+      "files_changed": 1,
+      "changed": [
+        "backend/app/api/routes/items.py"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/app/api/routes/items.py",
+          "symbol": "delete_item",
+          "guards": [
+            "get_db",
+            "get_current_user",
+            "security.OAuth2PasswordBearer"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "errors",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 5,
+      "cost_usd": 0.00269065,
+      "seconds": 8,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 10,
+      "output_tokens": 1503,
+      "cache_read_tokens": 56615,
+      "cache_creation_tokens": 6860,
+      "tool_calls": 4,
+      "reads_before_edit": 1,
+      "exploration_calls": 2,
+      "first_edit_s": 3,
+      "calls_before_edit": 2,
+      "edited": true,
+      "label": "cheap",
+      "rep": 2,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "fastapi-delete-item__cheap__r3",
+      "task": "fastapi-delete-item",
+      "repo": "full-stack-fastapi-template",
+      "files_changed": 1,
+      "changed": [
+        "backend/app/api/routes/items.py"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/app/api/routes/items.py",
+          "symbol": "delete_item",
+          "guards": [
+            "get_db",
+            "get_current_user",
+            "security.OAuth2PasswordBearer"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "errors",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 4,
+      "cost_usd": 0.0022097700000000002,
+      "seconds": 9,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 8,
+      "output_tokens": 1235,
+      "cache_read_tokens": 43587,
+      "cache_creation_tokens": 5778,
+      "tool_calls": 3,
+      "reads_before_edit": 1,
+      "exploration_calls": 2,
+      "first_edit_s": 5,
+      "calls_before_edit": 2,
+      "edited": true,
+      "label": "cheap",
+      "rep": 3,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "fastapi-delete-item__strong__r1",
+      "task": "fastapi-delete-item",
+      "repo": "full-stack-fastapi-template",
+      "files_changed": 1,
+      "changed": [
+        "backend/app/api/routes/items.py"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/app/api/routes/items.py",
+          "symbol": "delete_item",
+          "guards": [
+            "get_db",
+            "get_current_user",
+            "security.OAuth2PasswordBearer"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "errors",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 3,
+      "cost_usd": 0.0267869,
+      "seconds": 5,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 6,
+      "output_tokens": 564,
+      "cache_read_tokens": 28989,
+      "cache_creation_tokens": 4559,
+      "tool_calls": 2,
+      "reads_before_edit": 0,
+      "exploration_calls": 1,
+      "first_edit_s": null,
+      "calls_before_edit": 2,
+      "edited": false,
+      "label": "strong",
+      "rep": 1,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "fastapi-delete-item__strong__r2",
+      "task": "fastapi-delete-item",
+      "repo": "full-stack-fastapi-template",
+      "files_changed": 1,
+      "changed": [
+        "backend/app/api/routes/items.py"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/app/api/routes/items.py",
+          "symbol": "delete_item",
+          "guards": [
+            "get_db",
+            "get_current_user",
+            "security.OAuth2PasswordBearer"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "errors",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 3,
+      "cost_usd": 0.0290871,
+      "seconds": 6,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 6,
+      "output_tokens": 553,
+      "cache_read_tokens": 28371,
+      "cache_creation_tokens": 5177,
+      "tool_calls": 2,
+      "reads_before_edit": 0,
+      "exploration_calls": 1,
+      "first_edit_s": null,
+      "calls_before_edit": 2,
+      "edited": false,
+      "label": "strong",
+      "rep": 2,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "fastapi-delete-item__strong__r3",
+      "task": "fastapi-delete-item",
+      "repo": "full-stack-fastapi-template",
+      "files_changed": 1,
+      "changed": [
+        "backend/app/api/routes/items.py"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/app/api/routes/items.py",
+          "symbol": "delete_item",
+          "guards": [
+            "get_db",
+            "get_current_user",
+            "security.OAuth2PasswordBearer"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "errors",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 3,
+      "cost_usd": 0.028319900000000002,
+      "seconds": 5,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 6,
+      "output_tokens": 508,
+      "cache_read_tokens": 28959,
+      "cache_creation_tokens": 5083,
+      "tool_calls": 2,
+      "reads_before_edit": 0,
+      "exploration_calls": 1,
+      "first_edit_s": null,
+      "calls_before_edit": 2,
+      "edited": false,
+      "label": "strong",
+      "rep": 3,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "immich-tag-get__cheap__r1",
+      "task": "immich-tag-get",
+      "repo": "immich",
+      "files_changed": 1,
+      "changed": [
+        "server/src/controllers/tag.controller.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "server/src/controllers/tag.controller.ts",
+          "symbol": "GET /tags/:id",
+          "guards": [
+            "ApiTags",
+            "Authenticated",
+            "Endpoint"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 6,
+      "cost_usd": 0.0036065600000000004,
+      "seconds": 10,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 10,
+      "output_tokens": 1706,
+      "cache_read_tokens": 65556,
+      "cache_creation_tokens": 10485,
+      "tool_calls": 5,
+      "reads_before_edit": 4,
+      "exploration_calls": 4,
+      "first_edit_s": 7,
+      "calls_before_edit": 4,
+      "edited": true,
+      "label": "cheap",
+      "rep": 1,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "immich-tag-get__cheap__r2",
+      "task": "immich-tag-get",
+      "repo": "immich",
+      "files_changed": 1,
+      "changed": [
+        "server/src/controllers/tag.controller.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "server/src/controllers/tag.controller.ts",
+          "symbol": "GET /tags/:id",
+          "guards": [
+            "ApiTags",
+            "Authenticated",
+            "Endpoint"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 7,
+      "cost_usd": 0.0038753599999999996,
+      "seconds": 11,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 10,
+      "output_tokens": 1865,
+      "cache_read_tokens": 68266,
+      "cache_creation_tokens": 11296,
+      "tool_calls": 6,
+      "reads_before_edit": 5,
+      "exploration_calls": 5,
+      "first_edit_s": 7,
+      "calls_before_edit": 5,
+      "edited": true,
+      "label": "cheap",
+      "rep": 2,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "immich-tag-get__cheap__r3",
+      "task": "immich-tag-get",
+      "repo": "immich",
+      "files_changed": 1,
+      "changed": [
+        "server/src/controllers/tag.controller.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "server/src/controllers/tag.controller.ts",
+          "symbol": "GET /tags/:id",
+          "guards": [
+            "ApiTags",
+            "Authenticated",
+            "Endpoint"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 6,
+      "cost_usd": 0.0033464500000000004,
+      "seconds": 9,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 8,
+      "output_tokens": 1466,
+      "cache_read_tokens": 47185,
+      "cache_creation_tokens": 10704,
+      "tool_calls": 5,
+      "reads_before_edit": 4,
+      "exploration_calls": 4,
+      "first_edit_s": 5,
+      "calls_before_edit": 4,
+      "edited": true,
+      "label": "cheap",
+      "rep": 3,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "immich-tag-get__strong__r1",
+      "task": "immich-tag-get",
+      "repo": "immich",
+      "files_changed": 1,
+      "changed": [
+        "server/src/controllers/tag.controller.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "server/src/controllers/tag.controller.ts",
+          "symbol": "GET /tags/:id",
+          "guards": [
+            "ApiTags",
+            "Authenticated",
+            "Endpoint"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 3,
+      "cost_usd": 0.0328677,
+      "seconds": 7,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 6,
+      "output_tokens": 790,
+      "cache_read_tokens": 29637,
+      "cache_creation_tokens": 5498,
+      "tool_calls": 2,
+      "reads_before_edit": 0,
+      "exploration_calls": 0,
+      "first_edit_s": 3,
+      "calls_before_edit": 1,
+      "edited": true,
+      "label": "strong",
+      "rep": 1,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "immich-tag-get__strong__r2",
+      "task": "immich-tag-get",
+      "repo": "immich",
+      "files_changed": 1,
+      "changed": [
+        "server/src/controllers/tag.controller.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "server/src/controllers/tag.controller.ts",
+          "symbol": "GET /tags/:id",
+          "guards": [
+            "ApiTags",
+            "Authenticated",
+            "Endpoint"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 5,
+      "cost_usd": 0.041998,
+      "seconds": 10,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 8,
+      "output_tokens": 1167,
+      "cache_read_tokens": 41800,
+      "cache_creation_tokens": 6533,
+      "tool_calls": 4,
+      "reads_before_edit": 3,
+      "exploration_calls": 3,
+      "first_edit_s": 5,
+      "calls_before_edit": 3,
+      "edited": true,
+      "label": "strong",
+      "rep": 2,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "immich-tag-get__strong__r3",
+      "task": "immich-tag-get",
+      "repo": "immich",
+      "files_changed": 1,
+      "changed": [
+        "server/src/controllers/tag.controller.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "server/src/controllers/tag.controller.ts",
+          "symbol": "GET /tags/:id",
+          "guards": [
+            "ApiTags",
+            "Authenticated",
+            "Endpoint"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 5,
+      "cost_usd": 0.044676099999999996,
+      "seconds": 10,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 8,
+      "output_tokens": 1200,
+      "cache_read_tokens": 41201,
+      "cache_creation_tokens": 7135,
+      "tool_calls": 4,
+      "reads_before_edit": 3,
+      "exploration_calls": 3,
+      "first_edit_s": 5,
+      "calls_before_edit": 3,
+      "edited": true,
+      "label": "strong",
+      "rep": 3,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "immich-view-controller__cheap__r1",
+      "task": "immich-view-controller",
+      "repo": "immich",
+      "files_changed": 3,
+      "changed": [
+        "server/src/controllers/index.ts",
+        "server/src/controllers/view.controller.ts",
+        "server/src/dtos/view.dto.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "server/src/controllers/view.controller.ts",
+          "symbol": "GET /view/folder",
+          "guards": [
+            "ApiTags",
+            "Authenticated",
+            "Endpoint"
+          ],
+          "validates": false
+        },
+        {
+          "path": "server/src/controllers/view.controller.ts",
+          "symbol": "GET /view/folder/unique-paths",
+          "guards": [
+            "ApiTags",
+            "Authenticated",
+            "Endpoint"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 15,
+      "cost_usd": 0.00850833,
+      "seconds": 28,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 18,
+      "output_tokens": 5923,
+      "cache_read_tokens": 165703,
+      "cache_creation_tokens": 19440,
+      "tool_calls": 14,
+      "reads_before_edit": 4,
+      "exploration_calls": 4,
+      "first_edit_s": 18,
+      "calls_before_edit": 9,
+      "edited": true,
+      "label": "cheap",
+      "rep": 1,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "immich-view-controller__cheap__r2",
+      "task": "immich-view-controller",
+      "repo": "immich",
+      "files_changed": 3,
+      "changed": [
+        "server/src/controllers/index.ts",
+        "server/src/controllers/view.controller.ts",
+        "server/src/dtos/view.dto.ts"
+      ],
+      "new_entry_points": [],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "none",
+          "why": "no added entry point in Drift's inventory"
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 14,
+      "cost_usd": 0.00711654,
+      "seconds": 28,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 16,
+      "output_tokens": 5476,
+      "cache_read_tokens": 143154,
+      "cache_creation_tokens": 14727,
+      "tool_calls": 13,
+      "reads_before_edit": 4,
+      "exploration_calls": 6,
+      "first_edit_s": 17,
+      "calls_before_edit": 8,
+      "edited": true,
+      "label": "cheap",
+      "rep": 2,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "immich-view-controller__cheap__r3",
+      "task": "immich-view-controller",
+      "repo": "immich",
+      "files_changed": 3,
+      "changed": [
+        "server/src/controllers/index.ts",
+        "server/src/controllers/view.controller.ts",
+        "server/src/dtos/view.dto.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "server/src/controllers/view.controller.ts",
+          "symbol": "GET /view/folder",
+          "guards": [
+            "ApiTags",
+            "Authenticated",
+            "Endpoint"
+          ],
+          "validates": false
+        },
+        {
+          "path": "server/src/controllers/view.controller.ts",
+          "symbol": "GET /view/folder/unique-paths",
+          "guards": [
+            "ApiTags",
+            "Authenticated",
+            "Endpoint"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 27,
+      "cost_usd": 0.01208946,
+      "seconds": 42,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 24,
+      "output_tokens": 8675,
+      "cache_read_tokens": 264916,
+      "cache_creation_tokens": 25502,
+      "tool_calls": 26,
+      "reads_before_edit": 15,
+      "exploration_calls": 15,
+      "first_edit_s": 19,
+      "calls_before_edit": 15,
+      "edited": true,
+      "label": "cheap",
+      "rep": 3,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "immich-view-controller__strong__r1",
+      "task": "immich-view-controller",
+      "repo": "immich",
+      "files_changed": 3,
+      "changed": [
+        "server/src/controllers/index.ts",
+        "server/src/controllers/view.controller.ts",
+        "server/src/dtos/view.dto.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "server/src/controllers/view.controller.ts",
+          "symbol": "GET /view/folder",
+          "guards": [
+            "ApiTags",
+            "Authenticated",
+            "Endpoint"
+          ],
+          "validates": false
+        },
+        {
+          "path": "server/src/controllers/view.controller.ts",
+          "symbol": "GET /view/folder/unique-paths",
+          "guards": [
+            "ApiTags",
+            "Authenticated",
+            "Endpoint"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 11,
+      "cost_usd": 0.0988771,
+      "seconds": 27,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 14,
+      "output_tokens": 4045,
+      "cache_read_tokens": 89871,
+      "cache_creation_tokens": 12353,
+      "tool_calls": 10,
+      "reads_before_edit": 0,
+      "exploration_calls": 2,
+      "first_edit_s": 16,
+      "calls_before_edit": 6,
+      "edited": true,
+      "label": "strong",
+      "rep": 1,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "immich-view-controller__strong__r2",
+      "task": "immich-view-controller",
+      "repo": "immich",
+      "files_changed": 3,
+      "changed": [
+        "server/src/controllers/index.ts",
+        "server/src/controllers/view.controller.ts",
+        "server/src/dtos/view.dto.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "server/src/controllers/view.controller.ts",
+          "symbol": "GET /view/folder",
+          "guards": [
+            "ApiTags",
+            "Authenticated",
+            "Endpoint"
+          ],
+          "validates": false
+        },
+        {
+          "path": "server/src/controllers/view.controller.ts",
+          "symbol": "GET /view/folder/unique-paths",
+          "guards": [
+            "ApiTags",
+            "Authenticated",
+            "Endpoint"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 16,
+      "cost_usd": 0.0906951,
+      "seconds": 24,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 16,
+      "output_tokens": 3526,
+      "cache_read_tokens": 105191,
+      "cache_creation_tokens": 11221,
+      "tool_calls": 15,
+      "reads_before_edit": 10,
+      "exploration_calls": 10,
+      "first_edit_s": 11,
+      "calls_before_edit": 10,
+      "edited": true,
+      "label": "strong",
+      "rep": 2,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "immich-view-controller__strong__r3",
+      "task": "immich-view-controller",
+      "repo": "immich",
+      "files_changed": 3,
+      "changed": [
+        "server/src/controllers/index.ts",
+        "server/src/controllers/view.controller.ts",
+        "server/src/dtos/view.dto.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "server/src/controllers/view.controller.ts",
+          "symbol": "GET /view/folder",
+          "guards": [
+            "ApiTags",
+            "Authenticated",
+            "Endpoint"
+          ],
+          "validates": false
+        },
+        {
+          "path": "server/src/controllers/view.controller.ts",
+          "symbol": "GET /view/folder/unique-paths",
+          "guards": [
+            "ApiTags",
+            "Authenticated",
+            "Endpoint"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 13,
+      "cost_usd": 0.0821573,
+      "seconds": 25,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 14,
+      "output_tokens": 3511,
+      "cache_read_tokens": 83793,
+      "cache_creation_tokens": 9660,
+      "tool_calls": 12,
+      "reads_before_edit": 8,
+      "exploration_calls": 8,
+      "first_edit_s": 13,
+      "calls_before_edit": 8,
+      "edited": true,
+      "label": "strong",
+      "rep": 3,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "infisical-project-key__cheap__r1",
+      "task": "infisical-project-key",
+      "repo": "infisical",
+      "files_changed": 2,
+      "changed": [
+        "backend/src/server/routes/v1/index.ts",
+        "backend/src/server/routes/v1/project-key-router.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/src/server/routes/v1/project-key-router.ts",
+          "symbol": "POST /:workspaceId/key",
+          "guards": [
+            "verifyAuth"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 16,
+      "cost_usd": 0.010762649999999999,
+      "seconds": 29,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 22,
+      "output_tokens": 5536,
+      "cache_read_tokens": 274105,
+      "cache_creation_tokens": 26257,
+      "tool_calls": 15,
+      "reads_before_edit": 12,
+      "exploration_calls": 12,
+      "first_edit_s": 21,
+      "calls_before_edit": 12,
+      "edited": true,
+      "label": "cheap",
+      "rep": 1,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "infisical-project-key__cheap__r2",
+      "task": "infisical-project-key",
+      "repo": "infisical",
+      "files_changed": 2,
+      "changed": [
+        "backend/src/server/routes/v1/index.ts",
+        "backend/src/server/routes/v1/project-key-router.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/src/server/routes/v1/project-key-router.ts",
+          "symbol": "POST /:workspaceId/key",
+          "guards": [
+            "verifyAuth"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 15,
+      "cost_usd": 0.01123496,
+      "seconds": 31,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 18,
+      "output_tokens": 5850,
+      "cache_read_tokens": 222296,
+      "cache_creation_tokens": 30426,
+      "tool_calls": 14,
+      "reads_before_edit": 9,
+      "exploration_calls": 9,
+      "first_edit_s": 20,
+      "calls_before_edit": 9,
+      "edited": true,
+      "label": "cheap",
+      "rep": 2,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "infisical-project-key__cheap__r3",
+      "task": "infisical-project-key",
+      "repo": "infisical",
+      "files_changed": 2,
+      "changed": [
+        "backend/src/server/routes/v1/index.ts",
+        "backend/src/server/routes/v1/deprecated-project-key-router.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/src/server/routes/v1/deprecated-project-key-router.ts",
+          "symbol": "POST /:workspaceId/key",
+          "guards": [
+            "verifyAuth"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 15,
+      "cost_usd": 0.0081689,
+      "seconds": 24,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 16,
+      "output_tokens": 5327,
+      "cache_read_tokens": 138960,
+      "cache_creation_tokens": 20571,
+      "tool_calls": 14,
+      "reads_before_edit": 10,
+      "exploration_calls": 10,
+      "first_edit_s": 16,
+      "calls_before_edit": 10,
+      "edited": true,
+      "label": "cheap",
+      "rep": 3,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "infisical-project-key__strong__r1",
+      "task": "infisical-project-key",
+      "repo": "infisical",
+      "files_changed": 1,
+      "changed": [
+        "backend/src/server/routes/v1/deprecated-project-router.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/src/server/routes/v1/deprecated-project-router.ts",
+          "symbol": "POST /:workspaceId/key",
+          "guards": [
+            "verifyAuth"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 11,
+      "cost_usd": 0.09776510000000001,
+      "seconds": 23,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 14,
+      "output_tokens": 2418,
+      "cache_read_tokens": 101571,
+      "cache_creation_tokens": 15850,
+      "tool_calls": 10,
+      "reads_before_edit": 7,
+      "exploration_calls": 8,
+      "first_edit_s": 15,
+      "calls_before_edit": 9,
+      "edited": true,
+      "label": "strong",
+      "rep": 1,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "infisical-project-key__strong__r2",
+      "task": "infisical-project-key",
+      "repo": "infisical",
+      "files_changed": 2,
+      "changed": [
+        "backend/src/server/routes/v1/index.ts",
+        "backend/src/server/routes/v1/deprecated-project-key-router.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/src/server/routes/v1/deprecated-project-key-router.ts",
+          "symbol": "POST /:workspaceId/key",
+          "guards": [
+            "verifyAuth"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 12,
+      "cost_usd": 0.09736380000000001,
+      "seconds": 25,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 14,
+      "output_tokens": 2838,
+      "cache_read_tokens": 93838,
+      "cache_creation_tokens": 14893,
+      "tool_calls": 11,
+      "reads_before_edit": 7,
+      "exploration_calls": 7,
+      "first_edit_s": 17,
+      "calls_before_edit": 8,
+      "edited": true,
+      "label": "strong",
+      "rep": 2,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "infisical-project-key__strong__r3",
+      "task": "infisical-project-key",
+      "repo": "infisical",
+      "files_changed": 2,
+      "changed": [
+        "backend/src/server/routes/v1/index.ts",
+        "backend/src/server/routes/v1/deprecated-project-key-router.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/src/server/routes/v1/deprecated-project-key-router.ts",
+          "symbol": "POST /:workspaceId/key",
+          "guards": [
+            "verifyAuth"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 13,
+      "cost_usd": 0.0932894,
+      "seconds": 20,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 12,
+      "output_tokens": 2747,
+      "cache_read_tokens": 79834,
+      "cache_creation_tokens": 14453,
+      "tool_calls": 12,
+      "reads_before_edit": 7,
+      "exploration_calls": 8,
+      "first_edit_s": 13,
+      "calls_before_edit": 9,
+      "edited": true,
+      "label": "strong",
+      "rep": 3,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "infisical-user-action__cheap__r1",
+      "task": "infisical-user-action",
+      "repo": "infisical",
+      "files_changed": 2,
+      "changed": [
+        "backend/src/server/routes/v1/index.ts",
+        "backend/src/server/routes/v1/user-action-router.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/src/server/routes/v1/user-action-router.ts",
+          "symbol": "GET /",
+          "guards": [
+            "verifyAuth"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/src/server/routes/v1/user-action-router.ts",
+          "symbol": "POST /",
+          "guards": [
+            "verifyAuth"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 14,
+      "cost_usd": 0.007981470000000001,
+      "seconds": 22,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 18,
+      "output_tokens": 4386,
+      "cache_read_tokens": 180547,
+      "cache_creation_tokens": 19906,
+      "tool_calls": 13,
+      "reads_before_edit": 10,
+      "exploration_calls": 10,
+      "first_edit_s": 14,
+      "calls_before_edit": 10,
+      "edited": true,
+      "label": "cheap",
+      "rep": 1,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "infisical-user-action__cheap__r2",
+      "task": "infisical-user-action",
+      "repo": "infisical",
+      "files_changed": 2,
+      "changed": [
+        "backend/src/server/routes/v1/index.ts",
+        "backend/src/server/routes/v1/user-action-router.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/src/server/routes/v1/user-action-router.ts",
+          "symbol": "GET /",
+          "guards": [
+            "verifyAuth"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/src/server/routes/v1/user-action-router.ts",
+          "symbol": "POST /",
+          "guards": [
+            "verifyAuth"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 14,
+      "cost_usd": 0.008598689999999999,
+      "seconds": 22,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 16,
+      "output_tokens": 4276,
+      "cache_read_tokens": 175869,
+      "cache_creation_tokens": 23502,
+      "tool_calls": 13,
+      "reads_before_edit": 9,
+      "exploration_calls": 9,
+      "first_edit_s": 13,
+      "calls_before_edit": 9,
+      "edited": true,
+      "label": "cheap",
+      "rep": 2,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "infisical-user-action__cheap__r3",
+      "task": "infisical-user-action",
+      "repo": "infisical",
+      "files_changed": 2,
+      "changed": [
+        "backend/src/server/routes/v1/index.ts",
+        "backend/src/server/routes/v1/user-action-router.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/src/server/routes/v1/user-action-router.ts",
+          "symbol": "GET /",
+          "guards": [
+            "verifyAuth"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/src/server/routes/v1/user-action-router.ts",
+          "symbol": "POST /",
+          "guards": [
+            "verifyAuth"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 17,
+      "cost_usd": 0.00876958,
+      "seconds": 27,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 20,
+      "output_tokens": 5348,
+      "cache_read_tokens": 222358,
+      "cache_creation_tokens": 19350,
+      "tool_calls": 16,
+      "reads_before_edit": 12,
+      "exploration_calls": 12,
+      "first_edit_s": 18,
+      "calls_before_edit": 12,
+      "edited": true,
+      "label": "cheap",
+      "rep": 3,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "infisical-user-action__strong__r1",
+      "task": "infisical-user-action",
+      "repo": "infisical",
+      "files_changed": 2,
+      "changed": [
+        "backend/src/server/routes/v1/index.ts",
+        "backend/src/server/routes/v1/user-action-router.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/src/server/routes/v1/user-action-router.ts",
+          "symbol": "GET /",
+          "guards": [
+            "verifyAuth"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/src/server/routes/v1/user-action-router.ts",
+          "symbol": "POST /",
+          "guards": [
+            "verifyAuth"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 14,
+      "cost_usd": 0.0830881,
+      "seconds": 27,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 14,
+      "output_tokens": 3600,
+      "cache_read_tokens": 84841,
+      "cache_creation_tokens": 9644,
+      "tool_calls": 13,
+      "reads_before_edit": 7,
+      "exploration_calls": 8,
+      "first_edit_s": 14,
+      "calls_before_edit": 8,
+      "edited": true,
+      "label": "strong",
+      "rep": 1,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "infisical-user-action__strong__r2",
+      "task": "infisical-user-action",
+      "repo": "infisical",
+      "files_changed": 2,
+      "changed": [
+        "backend/src/server/routes/v1/index.ts",
+        "backend/src/server/routes/v1/user-action-router.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/src/server/routes/v1/user-action-router.ts",
+          "symbol": "GET /",
+          "guards": [
+            "verifyAuth"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/src/server/routes/v1/user-action-router.ts",
+          "symbol": "POST /",
+          "guards": [
+            "verifyAuth"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 13,
+      "cost_usd": 0.12848880000000001,
+      "seconds": 28,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 14,
+      "output_tokens": 4112,
+      "cache_read_tokens": 113008,
+      "cache_creation_tokens": 19010,
+      "tool_calls": 12,
+      "reads_before_edit": 5,
+      "exploration_calls": 6,
+      "first_edit_s": 20,
+      "calls_before_edit": 8,
+      "edited": true,
+      "label": "strong",
+      "rep": 2,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "infisical-user-action__strong__r3",
+      "task": "infisical-user-action",
+      "repo": "infisical",
+      "files_changed": 2,
+      "changed": [
+        "backend/src/server/routes/v1/index.ts",
+        "backend/src/server/routes/v1/user-action-router.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "backend/src/server/routes/v1/user-action-router.ts",
+          "symbol": "GET /",
+          "guards": [
+            "verifyAuth"
+          ],
+          "validates": false
+        },
+        {
+          "path": "backend/src/server/routes/v1/user-action-router.ts",
+          "symbol": "POST /",
+          "guards": [
+            "verifyAuth"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 16,
+      "cost_usd": 0.0938423,
+      "seconds": 31,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 16,
+      "output_tokens": 4145,
+      "cache_read_tokens": 104363,
+      "cache_creation_tokens": 10481,
+      "tool_calls": 15,
+      "reads_before_edit": 10,
+      "exploration_calls": 10,
+      "first_edit_s": 16,
+      "calls_before_edit": 10,
+      "edited": true,
+      "label": "strong",
+      "rep": 3,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "midday-tags-router__cheap__r1",
+      "task": "midday-tags-router",
+      "repo": "midday",
+      "files_changed": 2,
+      "changed": [
+        "apps/api/src/trpc/routers/_app.ts",
+        "apps/api/src/trpc/routers/tags.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "MUTATION create",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": true
+        },
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "MUTATION delete",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": true
+        },
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "MUTATION update",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": true
+        },
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "QUERY get",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 14,
+      "cost_usd": 0.00656576,
+      "seconds": 19,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 16,
+      "output_tokens": 4199,
+      "cache_read_tokens": 133146,
+      "cache_creation_tokens": 15666,
+      "tool_calls": 13,
+      "reads_before_edit": 9,
+      "exploration_calls": 9,
+      "first_edit_s": 13,
+      "calls_before_edit": 9,
+      "edited": true,
+      "label": "cheap",
+      "rep": 1,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "midday-tags-router__cheap__r2",
+      "task": "midday-tags-router",
+      "repo": "midday",
+      "files_changed": 2,
+      "changed": [
+        "apps/api/src/trpc/routers/_app.ts",
+        "apps/api/src/trpc/routers/tags.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "MUTATION create",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": true
+        },
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "MUTATION delete",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": true
+        },
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "MUTATION update",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": true
+        },
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "QUERY get",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 12,
+      "cost_usd": 0.005866510000000001,
+      "seconds": 16,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 12,
+      "output_tokens": 3708,
+      "cache_read_tokens": 94851,
+      "cache_creation_tokens": 15314,
+      "tool_calls": 11,
+      "reads_before_edit": 6,
+      "exploration_calls": 6,
+      "first_edit_s": 10,
+      "calls_before_edit": 7,
+      "edited": true,
+      "label": "cheap",
+      "rep": 2,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "midday-tags-router__cheap__r3",
+      "task": "midday-tags-router",
+      "repo": "midday",
+      "files_changed": 2,
+      "changed": [
+        "apps/api/src/trpc/routers/_app.ts",
+        "apps/api/src/trpc/routers/tags.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "MUTATION create",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": true
+        },
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "MUTATION delete",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": true
+        },
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "MUTATION update",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": true
+        },
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "QUERY get",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 14,
+      "cost_usd": 0.0067670000000000004,
+      "seconds": 20,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 14,
+      "output_tokens": 4512,
+      "cache_read_tokens": 112840,
+      "cache_creation_tokens": 16906,
+      "tool_calls": 13,
+      "reads_before_edit": 9,
+      "exploration_calls": 9,
+      "first_edit_s": 13,
+      "calls_before_edit": 9,
+      "edited": true,
+      "label": "cheap",
+      "rep": 3,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "midday-tags-router__strong__r1",
+      "task": "midday-tags-router",
+      "repo": "midday",
+      "files_changed": 2,
+      "changed": [
+        "apps/api/src/trpc/routers/_app.ts",
+        "apps/api/src/trpc/routers/tags.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "MUTATION create",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": true
+        },
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "MUTATION delete",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": true
+        },
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "MUTATION update",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": true
+        },
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "QUERY get",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 11,
+      "cost_usd": 0.07210210000000002,
+      "seconds": 16,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 10,
+      "output_tokens": 2232,
+      "cache_read_tokens": 59341,
+      "cache_creation_tokens": 10957,
+      "tool_calls": 10,
+      "reads_before_edit": 6,
+      "exploration_calls": 6,
+      "first_edit_s": 9,
+      "calls_before_edit": 7,
+      "edited": true,
+      "label": "strong",
+      "rep": 1,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "midday-tags-router__strong__r2",
+      "task": "midday-tags-router",
+      "repo": "midday",
+      "files_changed": 2,
+      "changed": [
+        "apps/api/src/trpc/routers/_app.ts",
+        "apps/api/src/trpc/routers/tags.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "MUTATION create",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": true
+        },
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "MUTATION delete",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": true
+        },
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "MUTATION update",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": true
+        },
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "QUERY get",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 11,
+      "cost_usd": 0.0737855,
+      "seconds": 18,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 12,
+      "output_tokens": 2383,
+      "cache_read_tokens": 72635,
+      "cache_creation_tokens": 10667,
+      "tool_calls": 10,
+      "reads_before_edit": 6,
+      "exploration_calls": 6,
+      "first_edit_s": 11,
+      "calls_before_edit": 7,
+      "edited": true,
+      "label": "strong",
+      "rep": 2,
+      "invalid": null,
+      "timed_out": false
+    },
+    {
+      "run": "midday-tags-router__strong__r3",
+      "task": "midday-tags-router",
+      "repo": "midday",
+      "files_changed": 2,
+      "changed": [
+        "apps/api/src/trpc/routers/_app.ts",
+        "apps/api/src/trpc/routers/tags.ts"
+      ],
+      "new_entry_points": [
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "MUTATION create",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": true
+        },
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "MUTATION delete",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": true
+        },
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "MUTATION update",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": true
+        },
+        {
+          "path": "apps/api/src/trpc/routers/tags.ts",
+          "symbol": "QUERY get",
+          "guards": [
+            "protectedProcedure"
+          ],
+          "validates": false
+        }
+      ],
+      "concerns": [
+        {
+          "concern": "authn",
+          "auto": "pass",
+          "why": null
+        },
+        {
+          "concern": "validation",
+          "auto": "pass",
+          "why": null
+        }
+      ],
+      "sec_guard_gaps": 0,
+      "turns": 9,
+      "cost_usd": 0.0688916,
+      "seconds": 14,
+      "is_error": false,
+      "terminal": "success",
+      "input_tokens": 8,
+      "output_tokens": 1987,
+      "cache_read_tokens": 46056,
+      "cache_creation_tokens": 11100,
+      "tool_calls": 8,
+      "reads_before_edit": 5,
+      "exploration_calls": 5,
+      "first_edit_s": 8,
+      "calls_before_edit": 5,
+      "edited": true,
+      "label": "strong",
+      "rep": 3,
+      "invalid": null,
+      "timed_out": false
+    }
+  ]
+}

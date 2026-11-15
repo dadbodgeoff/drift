@@ -1,3 +1,0 @@
-# T102: a nested ignore file, and a negation. Attempt 1 honoured neither.
-ignored-here.ts
-!kept.ts

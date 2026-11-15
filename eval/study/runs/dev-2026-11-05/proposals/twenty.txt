@@ -1,0 +1,220 @@
+15 conventions from 57201 units in 3685 roles
+
+ 1. [D-6429a5] packages/twenty-server: graphql entry points in src/engine/metadata-modules/** (*.resolver files) are decorated with MetadataResolver()
+    evidence: 286/292 (lower bound 0.96, lift 21.1)
+    example:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-run.resolver.ts#MUTATION AgentRunResolver.generate
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts:15 FIELD AgentMessagePartResolver.createdAt
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts:36 FIELD AgentMessagePartResolver.fileMediaType
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts:20 FIELD AgentMessagePartResolver.fileUrl
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message.resolver.ts:8 FIELD AgentMessageResolver.createdAt
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message.resolver.ts:13 FIELD AgentMessageResolver.processedAt
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-tool-call-answer/resolvers/tool-call-answer.resolver.ts:60 MUTATION ToolCallAnswerResolver.answerToolCall
+
+ 2. [D-0cd62c] packages/twenty-server: graphql entry points in src/engine/core-modules/application/** (*.resolver files) are decorated with MetadataResolver()
+    evidence: 87/88 (lower bound 0.94, lift 21.3)
+    example:  packages/twenty-server/src/engine/core-modules/application/application-authorization/application-authorization.resolver.ts#MUTATION ApplicationAuthorizationResolver.revokeApplicationAuthorization
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-monitoring/admin-application-monitoring.resolver.ts:42 QUERY AdminApplicationMonitoringResolver.findAdminApplicationRegistrationMonitoring
+
+ 3. [D-2df337] packages/twenty-server: classes in src/database/commands/** are decorated with RegisteredInstanceCommand()
+    evidence: 288/289 (lower bound 0.98, lift 15.4)
+    example:  packages/twenty-server/src/database/commands/upgrade-version-command/1-21/1-21-instance-command-fast-1775129420309-add-view-field-group-id-index-on-view-field.ts#AddViewFieldGroupIdIndexOnViewFieldFastInstanceCommand
+    outlier:  packages/twenty-server/src/database/commands/questions/confirmation.question.ts:6 ConfirmationQuestion
+
+ 4. [D-70d216] packages/twenty-server: graphql entry points in src/** (*.resolver files) are decorated with UseFilters()
+    evidence: 686/712 (lower bound 0.95, lift 14.5)
+    example:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-ai-provider.resolver.ts#MUTATION AdminPanelAiProviderResolver.addAiProvider
+    outlier:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts:67 FIELD AdminPanelApplicationRegistrationResolver.author
+    outlier:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts:37 FIELD AdminPanelApplicationRegistrationResolver.configurationIssues
+    outlier:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts:81 FIELD AdminPanelApplicationRegistrationResolver.galleryImagesUrls
+    outlier:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts:50 FIELD AdminPanelApplicationRegistrationResolver.installCount
+    outlier:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts:17 FIELD AdminPanelApplicationRegistrationResolver.isConfigured
+    outlier:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts:72 FIELD AdminPanelApplicationRegistrationResolver.logoUrl
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-registration/application-registration-summary.resolver.ts:14 FIELD ApplicationRegistrationSummaryResolver.logoUrl
+    outlier:  packages/twenty-server/src/engine/core-modules/geo-map/resolver/geo-map.resolver.ts:45 QUERY GeoMapResolver.getAddressDetails
+    outlier:  packages/twenty-server/src/engine/core-modules/geo-map/resolver/geo-map.resolver.ts:30 QUERY GeoMapResolver.getAutoCompleteAddress
+    outlier:  packages/twenty-server/src/engine/core-modules/tool-provider/resolvers/tool-index.resolver.ts:70 QUERY ToolIndexResolver.getToolIndex
+    outlier:  packages/twenty-server/src/engine/core-modules/tool-provider/resolvers/tool-index.resolver.ts:89 QUERY ToolIndexResolver.getToolInputSchema
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts:15 FIELD AgentMessagePartResolver.createdAt
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts:36 FIELD AgentMessagePartResolver.fileMediaType
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts:20 FIELD AgentMessagePartResolver.fileUrl
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message.resolver.ts:8 FIELD AgentMessageResolver.createdAt
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message.resolver.ts:13 FIELD AgentMessageResolver.processedAt
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/resolvers/agent-chat-subscription.resolver.ts:67 SUBSCRIPTION AgentChatSubscriptionResolver.onAgentChatEvent
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-workspace-stats/resolvers/ai-workspace-stats.resolver.ts:36 QUERY AiWorkspaceStatsResolver.findWorkspaceAiStats
+    outlier:  packages/twenty-server/src/engine/metadata-modules/metadata-translation/metadata-translation.resolver.ts:36 QUERY MetadataTranslationResolver.metadataTranslations
+    outlier:  packages/twenty-server/src/engine/metadata-modules/minimal-metadata/minimal-metadata.resolver.ts:36 QUERY MinimalMetadataResolver.minimalMetadata
+    outlier:  packages/twenty-server/src/engine/permissions/record-permissions/record-permissions.resolver.ts:48 QUERY RecordPermissionsResolver.recordPermissions
+    outlier:  packages/twenty-server/src/engine/permissions/record-share/resolvers/record-sharing.resolver.ts:81 MUTATION RecordSharingResolver.removeRecordShare
+    outlier:  packages/twenty-server/src/engine/permissions/record-share/resolvers/record-sharing.resolver.ts:50 MUTATION RecordSharingResolver.setRecordPrivate
+    outlier:  packages/twenty-server/src/engine/permissions/record-share/resolvers/record-sharing.resolver.ts:64 MUTATION RecordSharingResolver.setRecordShare
+    outlier:  packages/twenty-server/src/engine/permissions/record-share/resolvers/record-sharing.resolver.ts:42 QUERY RecordSharingResolver.recordSharing
+    outlier:  packages/twenty-server/src/modules/call-recording/resolvers/call-recording.resolver.ts:31 QUERY CallRecordingResolver.callRecordingIdForCalendarEvent
+
+ 5. [D-2456fc] packages/twenty-server: classes in src/database/** (*.command files) extend ProvisionedWorkspaceCommandRunner
+    evidence: 295/305 (lower bound 0.94, lift 14.4)
+    example:  packages/twenty-server/src/database/commands/install-pre-installed-apps.command.ts#InstallPreInstalledAppsCommand
+    outlier:  packages/twenty-server/src/database/commands/cron-register-all.command.ts:47 CronRegisterAllCommand
+    outlier:  packages/twenty-server/src/database/commands/data-seed-dev-workspace.command.ts:21 DataSeedWorkspaceCommand
+    outlier:  packages/twenty-server/src/database/commands/generate-instance-command.command.ts:32 GenerateInstanceCommandCommand
+    outlier:  packages/twenty-server/src/database/commands/list-and-delete-orphaned-workspace-entities.command.ts:117 ListOrphanedWorkspaceEntitiesCommand
+    outlier:  packages/twenty-server/src/database/commands/rebuild-application-default-deps.command.ts:20 RebuildApplicationDefaultDepsCommand
+    outlier:  packages/twenty-server/src/database/commands/run-instance-commands.command.ts:27 RunInstanceCommandsCommand
+    outlier:  packages/twenty-server/src/database/commands/secret-encryption-rotation/rotate-secret-encryption.command.ts:20 RotateSecretEncryptionCommand
+    outlier:  packages/twenty-server/src/database/commands/update-feature-flag.command.ts:28 UpdateFeatureFlagCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/upgrade.command.ts:31 UpgradeCommand
+    outlier:  packages/twenty-server/src/database/commands/workspace-export/workspace-export.command.ts:17 WorkspaceExportCommand
+
+ 6. [D-3c8584] packages/twenty-server: classes in src/engine/workspace-manager/workspace-migration/workspace-migration-runner/** (*.service files) extend WorkspaceMigrationRunnerActionHandler()
+    evidence: 126/136 (lower bound 0.87, lift 32.7)
+    example:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/action-handlers/agent-chat-channel-role/services/create-agent-chat-channel-role-action-handler.service.ts#CreateAgentChatChannelRoleActionHandlerService
+    outlier:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/deferred-action-handlers/services/build-index-deferred-action-handler.service.ts:17 BuildIndexDeferredActionHandlerService
+    outlier:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/deferred-action-handlers/services/delete-logic-function-resources-deferred-action-handler.service.ts:24 DeleteLogicFunctionResourcesDeferredActionHandlerService
+    outlier:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/deferred-action-handlers/services/validate-foreign-key-deferred-action-handler.service.ts:17 ValidateForeignKeyDeferredActionHandlerService
+    outlier:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/registry/deferred-workspace-migration-action-handler-registry.service.ts:16 DeferredWorkspaceMigrationActionHandlerRegistryService
+    outlier:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/registry/workspace-migration-runner-action-handler-registry.service.ts:20 WorkspaceMigrationRunnerActionHandlerRegistryService
+    outlier:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/services/deferred-workspace-migration-action-gauge.service.ts:17 DeferredWorkspaceMigrationActionGaugeService
+    outlier:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/services/deferred-workspace-migration-action-recovery.service.ts:15 DeferredWorkspaceMigrationActionRecoveryService
+    outlier:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/services/deferred-workspace-migration-action-runner.service.ts:37 DeferredWorkspaceMigrationActionRunnerService
+    outlier:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/services/in-flight-deferred-workspace-migration-actions.service.ts:15 InFlightDeferredWorkspaceMigrationActionsService
+    outlier:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/services/workspace-migration-runner.service.ts:41 WorkspaceMigrationRunnerService
+
+ 7. [D-c39eb9] packages/twenty-server: classes in src/** (*.exception files) extend CustomException
+    evidence: 126/136 (lower bound 0.87, lift 31.9)
+    example:  packages/twenty-server/src/database/clickhouse/clickhouse.exception.ts#ClickHouseException
+    outlier:  packages/twenty-server/src/engine/core-modules/usage-limit/exceptions/usage-limit-http.exception.ts:6 UsageLimitHttpException
+    outlier:  packages/twenty-server/src/engine/guards/exceptions/auth-principal-refused.exception.ts:9 AuthPrincipalRefusedException
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-front-component/exceptions/front-component-build.exception.ts:10 FrontComponentBuildException
+    outlier:  packages/twenty-server/src/engine/metadata-modules/page-layout-widget/exceptions/page-layout-widget-field-validation.exception.ts:1 PageLayoutWidgetFieldValidationException
+    outlier:  packages/twenty-server/src/engine/metadata-modules/validation-rule/exceptions/record-validation-rule-http.exception.ts:20 RecordValidationRuleHttpException
+    outlier:  packages/twenty-server/src/engine/twenty-orm/upgrade-aware/exceptions/upgrade-unavailable-entity-write.exception.ts:1 UpgradeUnavailableEntityWriteException
+    outlier:  packages/twenty-server/src/engine/workspace-datasource/exceptions/workspace-datasource.exception.ts:20 WorkspaceDataSourceException
+    outlier:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/exceptions/workspace-migration-action-execution.exception.ts:44 WorkspaceMigrationActionExecutionException
+    outlier:  packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/exceptions/workspace-migration-runner.exception.ts:83 WorkspaceMigrationRunnerException
+    outlier:  packages/twenty-server/src/modules/messaging/message-import-manager/drivers/exceptions/message-import-driver.exception.ts:3 MessageImportDriverException
+
+ 8. [D-ed1cd4] packages/twenty-server: classes in src/** (*.resolver files) call AccessPolicyGuard()
+    evidence: 133/144 (lower bound 0.87, lift 26.1)
+    example:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-ai-provider.resolver.ts#AdminPanelAiProviderResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts:12 AdminPanelApplicationRegistrationResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-marketplace/marketplace-public.resolver.ts:18 MarketplacePublicResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-registration/application-registration-summary.resolver.ts:9 ApplicationRegistrationSummaryResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/billing/billing-subscription-item.resolver.ts:21 BillingSubscriptionItemResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/email-verification/email-verification.resolver.ts:24 EmailVerificationResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/tool-provider/resolvers/tool-index.resolver.ts:21 ToolIndexEntryDTO
+    outlier:  packages/twenty-server/src/engine/core-modules/usage-limit/billing-subscription-item-cap.resolver.ts:21 BillingSubscriptionItemCapResolver
+    outlier:  packages/twenty-server/src/engine/core-modules/usage-limit/billing-subscription-user-credits.resolver.ts:15 BillingSubscriptionUserCreditsResolver
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts:12 AgentMessagePartResolver
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message.resolver.ts:7 AgentMessageResolver
+    outlier:  packages/twenty-server/src/engine/metadata-modules/settings-menu-item/settings-menu-item.resolver.ts:20 SettingsMenuItemResolver
+
+ 9. [D-5cb05f] packages/twenty-server: classes in src/database/commands/upgrade-version-command/** (*.command files) call WorkspaceCacheService.getOrRecompute()
+    evidence: 240/295 (lower bound 0.77, lift 10.3)
+    example:  packages/twenty-server/src/database/commands/upgrade-version-command/1-21/1-21-workspace-command-1775500001000-add-compose-email-command-menu-item.command.ts#AddComposeEmailCommandMenuItemCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/1-21/1-21-workspace-command-1775500002000-add-global-key-value-pair-unique-index.command.ts:18 AddGlobalKeyValuePairUniqueIndexCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/1-21/1-21-workspace-command-1775500003000-backfill-datasource-to-workspace.command.ts:21 BackfillDatasourceToWorkspaceCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/1-21/1-21-workspace-command-1775500009000-update-edit-layout-command-menu-item-label.command.ts:19 UpdateEditLayoutCommandMenuItemLabelCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/1-21/1-21-workspace-command-1775500010000-drop-workspace-messaging-fks.command.ts:32 DropWorkspaceMessagingFksCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/1-21/1-21-workspace-command-1775500011000-migrate-message-folder-parent-id-to-external-id.command.ts:21 MigrateMessageFolderParentIdToExternalIdCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/1-21/1-21-workspace-command-1775500012000-migrate-messaging-infrastructure-to-metadata.command.ts:44 MigrateMessagingInfrastructureToMetadataCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-19/2-19-workspace-command-1782853718000-backfill-workspace-custom-application-registration.command.ts:21 BackfillWorkspaceCustomApplicationRegistrationCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-20/2-20-workspace-command-1783526282685-backfill-workflow-version-to-core.command.ts:19 BackfillWorkflowVersionToCoreCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-22/2-22-workspace-command-1784193207000-backfill-workflow-version-core-links.command.ts:27 BackfillWorkflowVersionCoreLinksCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-23/2-23-workspace-command-1784286707000-backfill-workflow-core-links.command.ts:26 BackfillWorkflowCoreLinksCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-23/2-23-workspace-command-1784565137000-upgrade-people-data-labs-application.command.ts:31 UpgradePeopleDataLabsApplicationCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-28/2-28-workspace-command-1785600000000-repair-orphan-core-workflow-versions.command.ts:27 RepairOrphanCoreWorkflowVersionsCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-33/2-33-workspace-command-1787138325228-mark-search-vector-fields-system.command.ts:17 MarkSearchVectorFieldsSystemCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-34/2-34-workspace-command-1787461587487-repair-activity-targets-junction-target.command.ts:54 RepairActivityTargetsJunctionTargetCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-36/2-36-workspace-command-1787748136001-backfill-workflow-run-core-ids.command.ts:15 BackfillWorkflowRunCoreIdsCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-37/2-37-workspace-command-1787832413051-backfill-message-calendar-targets.command.ts:26 BackfillMessageCalendarTargetsCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-38/2-38-workspace-command-1787918663365-configure-timeline-activity-happens-at.command.ts:19 ConfigureTimelineActivityHappensAtCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-38/2-38-workspace-command-1787935130000-normalize-company-domain-names.command.ts:31 NormalizeCompanyDomainNamesCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-38/2-38-workspace-command-1788197000000-enable-standard-activity-target-fields.command.ts:27 EnableStandardActivityTargetFieldsCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-39/2-39-workspace-command-1788338950836-convert-logic-functions-to-prebuilt.command.ts:40 ConvertLogicFunctionsToPrebuiltCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-39/2-39-workspace-command-1788616958245-mark-platform-owned-standard-objects-system.command.ts:36 MarkPlatformOwnedStandardObjectsSystemCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-4/2-4-workspace-command-1797000001000-migrate-to-billing-v2.command.ts:16 MigrateToBillingV2Command
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-40/2-40-workspace-command-1788960408162-backfill-core-workflow-id-on-workflow-versions.command.ts:20 BackfillCoreWorkflowIdOnWorkflowVersionsCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-41/2-41-workspace-command-1789331219041-correct-standard-field-acronym-casing.command.ts:58 CorrectStandardFieldAcronymCasingCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-41/2-41-workspace-command-1789350000002-backfill-workspace-workflow-id-on-workflows.command.ts:17 BackfillWorkspaceWorkflowIdOnWorkflowsCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-41/2-41-workspace-command-1789370101009-backfill-core-version-pointers.command.ts:18 BackfillCoreVersionPointersCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-41/2-41-workspace-command-1789373200001-make-standard-child-objects-inherited.command.ts:71 MakeStandardChildObjectsInheritedCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-41/2-41-workspace-command-1789373200002-make-notes-and-tasks-inherit-their-targets.command.ts:53 MakeNotesAndTasksInheritTheirTargetsCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-42/2-42-workspace-command-1789645879295-relink-workflow-versions-to-core-workflows.command.ts:17 RelinkWorkflowVersionsToCoreWorkflowsCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-42/2-42-workspace-command-1789652804001-backfill-workspace-workflow-version-id.command.ts:17 BackfillWorkspaceWorkflowVersionIdCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-42/2-42-workspace-command-1789719131001-backfill-workflow-execution-core-ids.command.ts:18 BackfillWorkflowExecutionCoreIdsCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-42/2-42-workspace-command-1789719131002-make-workflow-run-projection-relations-nullable.command.ts:17 MakeWorkflowRunProjectionRelationsNullableCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-42/2-42-workspace-command-1789914239896-migrate-agent-history-to-workspace.command.ts:29 MigrateAgentHistoryToWorkspaceCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-42/2-42-workspace-command-1790155020340-delete-orphan-core-workflows.command.ts:19 DeleteOrphanCoreWorkflowsCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-43/2-43-workspace-command-1790171503075-attribute-chat-message-senders.command.ts:17 AttributeChatMessageSendersCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-43/2-43-workspace-command-1790266078808-relabel-attachment-target-fields.command.ts:67 RelabelAttachmentTargetFieldsCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-43/2-43-workspace-command-1790339692474-repair-initial-company-targets.command.ts:19 RepairInitialCompanyTargetsCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-43/2-43-workspace-command-1790352791059-backfill-oauth-only-application-source-type.command.ts:22 BackfillOAuthOnlyApplicationSourceTypeCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-44/2-44-workspace-command-1790590808102-verify-common-record-sharing.command.ts:18 VerifyCommonRecordSharingCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-44/2-44-workspace-command-1790672076234-open-agent-chat-thread-archived-at-writability.command.ts:19 OpenAgentChatThreadArchivedAtWritabilityCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-46/2-46-workspace-command-1791130332894-backfill-agent-and-workflow-is-system.command.ts:71 BackfillAgentAndWorkflowIsSystemCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-46/2-46-workspace-command-1791369613345-delete-orphaned-workflow-runs.command.ts:36 DeleteOrphanedWorkflowRunsCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-47/2-47-workspace-command-1791811310066-convert-workflow-email-bodies-to-email-documents.command.ts:35 ConvertWorkflowEmailBodiesToEmailDocumentsCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-47/2-47-workspace-command-1791926793834-relabel-note-and-task-target-fields.command.ts:62 RelabelNoteAndTaskTargetFieldsCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-48/2-48-workspace-command-1792068879353-flush-workflow-automated-trigger-maps.command.ts:15 FlushWorkflowAutomatedTriggerMapsCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-51/2-51-workspace-command-1792675225627-delete-connected-accounts-outside-provider-scope.command.ts:17 DeleteConnectedAccountsOutsideProviderScopeCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-52/2-52-workspace-command-1792766943126-seed-workspace-frontend-dependencies.command.ts:17 SeedWorkspaceFrontendDependenciesCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-53/2-53-workspace-command-1793176233512-move-application-and-system-access-to-disabled-actions.command.ts:55 MoveApplicationAndSystemAccessToDisabledActionsCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-53/2-53-workspace-command-1793205123864-move-application-and-system-field-writability-to-disabled-actions.command.ts:28 MoveApplicationAndSystemFieldWritabilityToDisabledActionsCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-54/2-54-workspace-command-1793352708113-strip-server-routes-from-custom-app-logic-functions.command.ts:20 StripServerRoutesFromCustomAppLogicFunctionsCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-56/2-56-workspace-command-1793697418663-make-agent-turn-thread-optional.command.ts:17 MakeAgentTurnThreadOptionalCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-56/2-56-workspace-command-1793783100802-convert-workflow-navigation-menu-items-to-native-page.command.ts:64 ConvertWorkflowNavigationMenuItemsToNativePageCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-56/2-56-workspace-command-1793783100804-scope-workflow-command-menu-items-to-core-object.command.ts:20 ScopeWorkflowCommandMenuItemsToCoreObjectCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/2-9/2-9-workspace-command-1799000000000-migrate-ai-model-preferences.command.ts:37 MigrateAiModelPreferencesCommand
+    outlier:  packages/twenty-server/src/database/commands/upgrade-version-command/upgrade.command.ts:31 UpgradeCommand
+
+10. [D-2a3e38] packages/twenty-server: HTTP handlers in src/** (*.controller files) are decorated with UseFilters()
+    evidence: 140/154 (lower bound 0.85, lift 13.7)
+    example:  packages/twenty-server/src/engine/api/mcp/controllers/mcp-core.controller.ts#POST /
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-oauth/controllers/oauth-discovery.controller.ts:23 GET /oauth-authorization-server
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-oauth/controllers/oauth-discovery.controller.ts:66 GET /oauth-protected-resource
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-oauth/controllers/oauth-discovery.controller.ts:74 GET /oauth-protected-resource/mcp
+    outlier:  packages/twenty-server/src/engine/core-modules/application/application-registration/application-registration-claim.controller.ts:32 GET /github/callback
+    outlier:  packages/twenty-server/src/engine/core-modules/application/connection-provider/connection-provider-custom.controller.ts:42 GET /callback
+    outlier:  packages/twenty-server/src/engine/core-modules/application/connection-provider/connection-provider-oauth.controller.ts:43 GET /authorize
+    outlier:  packages/twenty-server/src/engine/core-modules/application/connection-provider/connection-provider-oauth.controller.ts:150 GET /callback
+    outlier:  packages/twenty-server/src/engine/core-modules/billing/app-billing/app-billing.controller.ts:71 GET /credits
+    outlier:  packages/twenty-server/src/engine/core-modules/billing/app-billing/app-billing.controller.ts:112 POST /charge
+    outlier:  packages/twenty-server/src/engine/core-modules/client-config/client-config.controller.ts:14 GET /
+    outlier:  packages/twenty-server/src/engine/core-modules/health/controllers/health.controller.ts:12 GET /
+    outlier:  packages/twenty-server/src/engine/core-modules/well-known/controllers/well-known.controller.ts:37 GET /api-catalog
+    outlier:  packages/twenty-server/src/engine/core-modules/well-known/controllers/well-known.controller.ts:21 GET /mcp/server-card.json
+    outlier:  packages/twenty-server/src/modules/emailing/controllers/campaign-tracking.controller.ts:86 GET /o/:token
+
+11. [D-1d8e8b] packages/twenty-server: classes in src/** (*.module files) are decorated with Module()
+    evidence: 453/457 (lower bound 0.98, lift 9.7)
+    example:  packages/twenty-server/src/app.module.ts#AppModule
+    outlier:  packages/twenty-server/src/engine/core-modules/captcha/captcha.module.ts:9 CaptchaModule
+    outlier:  packages/twenty-server/src/engine/core-modules/code-interpreter/code-interpreter.module.ts:8 CodeInterpreterModule
+    outlier:  packages/twenty-server/src/engine/core-modules/email/email.module.ts:9 EmailModule
+    outlier:  packages/twenty-server/src/engine/core-modules/file-storage/file-storage.module.ts:16 FileStorageModule
+
+12. [D-0929de] packages/twenty-server: classes in src/** (*.dto files) are decorated with ObjectType()
+    evidence: 402/406 (lower bound 0.97, lift 9.8)
+    example:  packages/twenty-server/src/engine/core-modules/admin-panel/dtos/admin-chat-message-part.dto.ts#AdminChatMessagePartDTO
+    outlier:  packages/twenty-server/src/engine/core-modules/application/connection-provider/connections/dtos/get-app-connection.dto.ts:3 GetAppConnectionDto
+    outlier:  packages/twenty-server/src/engine/core-modules/application/connection-provider/connections/dtos/list-app-connections.dto.ts:6 ListAppConnectionsDto
+    outlier:  packages/twenty-server/src/engine/core-modules/billing/app-billing/dtos/charge.dto.ts:22 ChargeDto
+    outlier:  packages/twenty-server/src/engine/permissions/record-share/dtos/record-sharing.dto.ts:25 RecordSharePrincipalInput
+
+13. [D-cb8a28] packages/twenty-server: classes in src/engine/metadata-modules/** (*.resolver files) call AuthWorkspace()
+    evidence: 51/53 (lower bound 0.87, lift 30.8)
+    example:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-run.resolver.ts#AgentRunResolver
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message.resolver.ts:7 AgentMessageResolver
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/resolvers/agent-inbox-thread.resolver.ts:46 AgentInboxThreadResolver
+
+14. [D-47b768] packages/twenty-front: exported values in src/modules/client-config/** pass `defaultValue` to createAtomState()
+    evidence: 36/37 (lower bound 0.86, lift 35.0)
+    example:  packages/twenty-front/src/modules/client-config/states/aiEvaluationModelsState.ts#aiEvaluationModelsState
+    outlier:  packages/twenty-front/src/modules/client-config/constants/ClientConfigCacheVersion.ts:1 CLIENT_CONFIG_CACHE_VERSION
+
+15. [D-7e503c] packages/twenty-server: classes in src/engine/metadata-modules/** (*.resolver files) are decorated with MetadataResolver()
+    evidence: 50/53 (lower bound 0.85, lift 34.3)
+    example:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-run.resolver.ts#AgentRunResolver
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts:12 AgentMessagePartResolver
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message.resolver.ts:7 AgentMessageResolver
+    outlier:  packages/twenty-server/src/engine/metadata-modules/ai/ai-tool-call-answer/resolvers/tool-call-answer.resolver.ts:57 ToolCallAnswerResolver
+

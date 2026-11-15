@@ -1,0 +1,53 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - app
+  - auth
+  - author
+  - cats
+  - config
+  - date
+  - federation-users
+  - main
+  - post
+  - recipe
+  - recipes
+  - shared-context
+  - type-metadata-storage
+  - user
+  - users
+  - vitest
+  suffixes:
+  - args
+  - collection
+  - config
+  - decorator
+  - driver
+  - dto
+  - entity
+  - enum
+  - error
+  - factory
+  - fixture
+  - guard
+  - helper
+  - input
+  - interface
+  - interfaces
+  - metadata
+  - model
+  - module
+  - resolver
+  - resolvers
+  - scalar
+  - service
+  - spec
+  - storage
+  - union
+  - util
+  - utils
+conventions: []

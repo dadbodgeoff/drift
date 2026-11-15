@@ -1,0 +1,17 @@
+{
+  "repo": "memcode",
+  "files": [
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "Contributing.md",
+      "kind": "doc"
+    },
+    {
+      "path": "eslint.config.js",
+      "kind": "lint"
+    }
+  ]
+}

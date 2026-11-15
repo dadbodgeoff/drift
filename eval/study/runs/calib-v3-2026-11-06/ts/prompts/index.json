@@ -1,0 +1,491 @@
+[
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "dub",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/A/dub.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/b294033e-6b15-4669-b2fc-681421a70ba4/out.jsonl",
+    "expected": [
+      "dub/D-e25af3",
+      "dub/D-3fad9a",
+      "dub/D-a23ff8",
+      "dub/D-024a81",
+      "dub/D-418256",
+      "dub/D-742eb6",
+      "dub/D-79cc0a",
+      "dub/D-258285"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:09:49.210Z",
+    "collected": {
+      "at": "2026-11-06T01:23:22.911Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/A/dub.jsonl",
+      "records": 8,
+      "sha256": "5a5e828be0c58988f7c131e3d20478a4dd037ba4f3f2063c4857f7d2004af972"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "twenty",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/A/twenty.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/5c59521b-488c-487f-96d4-19d5eae6b236/out.jsonl",
+    "expected": [
+      "twenty/D-6429a5",
+      "twenty/D-47b768",
+      "twenty/D-7e503c",
+      "twenty/D-006db2",
+      "twenty/D-868e25"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:09:49.234Z",
+    "collected": {
+      "at": "2026-11-06T01:23:22.922Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/A/twenty.jsonl",
+      "records": 5,
+      "sha256": "96e4971a67a5cee8668209c0dc6b94faaeeb49e5778b1f8a255195641c93868d"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "cal.com",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/A/cal.com.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/e3eb4eac-e8ff-4b5d-8146-a587704fb672/out.jsonl",
+    "expected": [
+      "cal.com/D-441d0e",
+      "cal.com/D-f26528",
+      "cal.com/D-554063"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:09:49.242Z",
+    "collected": {
+      "at": "2026-11-06T01:23:22.926Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/A/cal.com.jsonl",
+      "records": 3,
+      "sha256": "c2b189a7849b119c0da351e0cf0fdf856ebabb8fd83858de266646c77dd73c2c"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "documenso",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/A/documenso.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/1880200b-ee48-4976-96cd-32aea5337cf4/out.jsonl",
+    "expected": [
+      "documenso/D-55ae12",
+      "documenso/D-2a51e9",
+      "documenso/D-c3b713"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:09:49.244Z",
+    "collected": {
+      "at": "2026-11-06T01:23:22.930Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/A/documenso.jsonl",
+      "records": 3,
+      "sha256": "04efb94fe8d633d80a04ec6f68b37879611e4e1b8713d4fb0cd3b00bfae02a73"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "ai",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/A/ai.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/e3e427b3-6c5b-4f0f-b7fb-6c2199d31cba/out.jsonl",
+    "expected": [
+      "ai/D-fc5ef7",
+      "ai/D-224b9e"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:09:49.250Z",
+    "collected": {
+      "at": "2026-11-06T01:23:22.933Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/A/ai.jsonl",
+      "records": 2,
+      "sha256": "4c9e814cf0c43b9dc68c6e4f1e5631930611edec012f6c9988bf931f9672f8e3"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "nest",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/A/nest.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/f0109b2f-c58a-4934-9074-387363b79d92/out.jsonl",
+    "expected": [
+      "nest/D-f68b2a"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:09:49.258Z",
+    "collected": {
+      "at": "2026-11-06T01:23:22.934Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/A/nest.jsonl",
+      "records": 1,
+      "sha256": "8e9ba83f7309fed278ef2861164f7c511ff5e90b3fda3e455e22220c84c17398"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "supabase",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/A/supabase.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/75df1d69-ace4-4184-845e-15e05ccecbfb/out.jsonl",
+    "expected": [
+      "supabase/D-b10f47",
+      "supabase/D-d8dcea",
+      "supabase/D-c59437"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:09:49.266Z",
+    "collected": {
+      "at": "2026-11-06T01:23:22.940Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/A/supabase.jsonl",
+      "records": 3,
+      "sha256": "06f9c283bf926d81ca3df9dc1168c4ad497c903ef1cf73121e8d8a9e239fe706"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "novu",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/A/novu.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/4d9400dd-9f1e-4252-ae57-44ef906f763e/out.jsonl",
+    "expected": [
+      "novu/D-4512a2"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:09:49.274Z",
+    "collected": {
+      "at": "2026-11-06T01:23:22.944Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/A/novu.jsonl",
+      "records": 1,
+      "sha256": "381c18b93db36b263e29eccf99a1b8508b370451f34d4332c9f12d89c4941170"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "immich",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/A/immich.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/3c593c01-2d5f-4201-a982-8cc32f56689a/out.jsonl",
+    "expected": [
+      "immich/D-c10e8e",
+      "immich/D-4fc758",
+      "immich/D-26380c"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:09:49.286Z",
+    "collected": {
+      "at": "2026-11-06T01:23:22.946Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/A/immich.jsonl",
+      "records": 3,
+      "sha256": "0b9a95cfa278b045b7a209f14f2b20f6702da60dd27098b8e3d29df0d564b3cf"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "midday",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/A/midday.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/2c598fbc-be4a-4652-8ab5-6b06da10b585/out.jsonl",
+    "expected": [
+      "midday/D-7da2b9",
+      "midday/D-f90103",
+      "midday/D-efc6d4",
+      "midday/D-98e729",
+      "midday/D-495f56",
+      "midday/D-f6c709"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:09:49.289Z",
+    "collected": {
+      "at": "2026-11-06T01:24:15.430Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/A/midday.jsonl",
+      "records": 6,
+      "sha256": "e94e39360aa927d4b91ba6a6d674d735bac6f1ddea32f10b297279e982fdd3b0"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "infisical",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/A/infisical.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/5ebf86dd-688e-4817-896f-291fc8ac02f4/out.jsonl",
+    "expected": [
+      "infisical/D-d9b44e",
+      "infisical/D-1b2542"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:09:49.294Z",
+    "collected": {
+      "at": "2026-11-06T01:23:22.958Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/A/infisical.jsonl",
+      "records": 2,
+      "sha256": "b2146613fd1eaeb80623f1d5d134bcb53748d3e4060eb22344f6c7e316cf137a"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "ai",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/B/ai.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/d29568c2-f0e0-4fce-b8a5-96aa79ca7981/out.jsonl",
+    "expected": [
+      "ai/D-fc5ef7",
+      "ai/D-224b9e"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:23:33.885Z",
+    "collected": {
+      "at": "2026-11-06T01:27:22.426Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/B/ai.jsonl",
+      "records": 2,
+      "sha256": "f2113984b97b14b0716258c62764747a2014378989cfe8c121a5bdbf0e08ecd9"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "cal.com",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/B/cal.com.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/517b170a-b7af-4d0c-916c-16e7307d80de/out.jsonl",
+    "expected": [
+      "cal.com/D-441d0e",
+      "cal.com/D-f26528",
+      "cal.com/D-554063"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:23:34.052Z",
+    "collected": {
+      "at": "2026-11-06T01:27:22.474Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/B/cal.com.jsonl",
+      "records": 3,
+      "sha256": "e278bce53719ac5c110dace574c191bacc5518a01e5ea93744365e93ba8b8d8e"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "documenso",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/B/documenso.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/a7b09c30-2d79-4263-8d86-7417ab5f2f58/out.jsonl",
+    "expected": [
+      "documenso/D-55ae12",
+      "documenso/D-2a51e9",
+      "documenso/D-c3b713"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:23:34.207Z",
+    "collected": {
+      "at": "2026-11-06T01:27:22.490Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/B/documenso.jsonl",
+      "records": 3,
+      "sha256": "8d3384359bbd409355adeab10584abf3f187b813d763a2b1373340c66302bb68"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "dub",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/B/dub.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/87ca79db-2204-4595-a285-eb3ca9e6c730/out.jsonl",
+    "expected": [
+      "dub/D-e25af3",
+      "dub/D-3fad9a",
+      "dub/D-a23ff8",
+      "dub/D-024a81",
+      "dub/D-418256",
+      "dub/D-742eb6",
+      "dub/D-79cc0a",
+      "dub/D-258285"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:23:34.372Z",
+    "collected": {
+      "at": "2026-11-06T01:27:22.506Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/B/dub.jsonl",
+      "records": 8,
+      "sha256": "f136a7af868b66f5deafade2ebae9a92536b0994e2c4269ecc11975875833a0d"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "immich",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/B/immich.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/f9300e76-2a0a-47d1-86e0-859609dc51ae/out.jsonl",
+    "expected": [
+      "immich/D-c10e8e",
+      "immich/D-4fc758",
+      "immich/D-26380c"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:23:34.581Z",
+    "collected": {
+      "at": "2026-11-06T01:27:22.510Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/B/immich.jsonl",
+      "records": 3,
+      "sha256": "6108e6de73f602e6b31d4cd411586dac589a1d9e9a0e2b50e391581fde27cfe9"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "infisical",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/B/infisical.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/652b1096-a3d0-4dfd-9309-b5c85ea22934/out.jsonl",
+    "expected": [
+      "infisical/D-d9b44e",
+      "infisical/D-1b2542"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:23:34.676Z",
+    "collected": {
+      "at": "2026-11-06T01:27:22.518Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/B/infisical.jsonl",
+      "records": 2,
+      "sha256": "f0a2152a595642404a23fff1373a3fe4cac72e162b39a08d7b3a334fc2ae000d"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "nest",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/B/nest.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/b80145e3-d502-4b42-be1d-163322713117/out.jsonl",
+    "expected": [
+      "nest/D-f68b2a"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:23:34.796Z",
+    "collected": {
+      "at": "2026-11-06T01:27:22.523Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/B/nest.jsonl",
+      "records": 1,
+      "sha256": "f69b2d5cb5eb1da9fe11f1ec98f0dce3bce3f826d4efbc527a54d59077a35a35"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "novu",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/B/novu.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/786b4f1c-e5d8-4093-9d3c-63204710bf2b/out.jsonl",
+    "expected": [
+      "novu/D-4512a2"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:23:34.876Z",
+    "collected": {
+      "at": "2026-11-06T01:27:22.534Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/B/novu.jsonl",
+      "records": 1,
+      "sha256": "d38c96a074cb9b4eeac9f9ad8e6e0f3e48201c79b4b9e2accc8b5dde9446aa5d"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "supabase",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/B/supabase.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/bb171243-85c4-44e8-9016-b055b598fdd1/out.jsonl",
+    "expected": [
+      "supabase/D-b10f47",
+      "supabase/D-d8dcea",
+      "supabase/D-c59437"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:23:34.951Z",
+    "collected": {
+      "at": "2026-11-06T01:27:22.542Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/B/supabase.jsonl",
+      "records": 3,
+      "sha256": "567bff6d2e850908f95c57c5b07f63e7185346a4b0aee9647cb2a65b3dea0710"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "twenty",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/B/twenty.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/ae529cfb-88a9-47e9-9e74-2d36db642f1a/out.jsonl",
+    "expected": [
+      "twenty/D-6429a5",
+      "twenty/D-47b768",
+      "twenty/D-7e503c",
+      "twenty/D-006db2",
+      "twenty/D-868e25"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:23:35.095Z",
+    "collected": {
+      "at": "2026-11-06T01:27:22.550Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/B/twenty.jsonl",
+      "records": 5,
+      "sha256": "f37413014454eeec2d4397e34972c90eb026ce6fa7b8c6988bc90cfccc452000"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "midday",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/label/B/midday.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/821d5cf9-952e-4494-afa7-632990996e95/out.jsonl",
+    "expected": [
+      "midday/D-7da2b9",
+      "midday/D-f90103",
+      "midday/D-efc6d4",
+      "midday/D-98e729",
+      "midday/D-495f56",
+      "midday/D-f6c709"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:24:15.483Z",
+    "collected": {
+      "at": "2026-11-06T01:27:22.558Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/B/midday.jsonl",
+      "records": 6,
+      "sha256": "524a8e7074c4230f4f8c8cc5b5a433a2e8cae8a41878af90f3fc4e53de8587ce"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "documenso",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/ts/prompts/adjudicate/C/documenso.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/d22e2d48-3d4e-459e-87fc-59ccbd1a7276/out.jsonl",
+    "expected": [
+      "documenso/D-2a51e9"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:27:31.451Z",
+    "collected": {
+      "at": "2026-11-06T01:29:05.966Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/ts/labels/C/documenso.jsonl",
+      "records": 1,
+      "sha256": "4298ab04c5c9b54223369aaad34c5d9385b0490f877eb0f8db6caf6cb2e50b52"
+    }
+  }
+]

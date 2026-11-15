@@ -1,0 +1,119 @@
+{
+  "labels_sha256": {
+    "A": "4ed2f8e74e8e14e9e3116c70f63a70d9e7354e0f58ec93dbdb87f41b353c10d8",
+    "B": "3dc487d9267ec71f4811a9bddcba0cfd28b93b1810f20bea61b090fefe2e55c6"
+  },
+  "cases": [
+    {
+      "uid": "polar/D-093712",
+      "repo": "polar",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "polar/D-093712",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "server/polar/customer_portal/endpoints/benefit_grant.py",
+            "server/polar/customer_portal/endpoints/customer.py",
+            "server/polar/customer_portal/endpoints/customer_email_update.py",
+            "server/polar/customer_portal/endpoints/oauth_accounts.py",
+            "server/polar/oauth2/endpoints/well_known.py",
+            "server/polar/customer_portal/auth/__init__.py",
+            "server/polar/customer_portal/endpoints/order.py",
+            "server/polar/oauth2/endpoints/oauth2.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "list_payment_methods",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "check_email_update",
+              "verdict": "look"
+            },
+            {
+              "symbol": "authorize",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "well_known_jwks",
+              "verdict": "look"
+            },
+            {
+              "symbol": "well_known_oauth_protected_resource",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R6",
+            "R9"
+          ],
+          "reason": "list_payment_methods uses _UnionBillingRoleCheckRead (a subclass of _UnionBillingRoleCheck) and oauth_accounts authorize uses CustomerPortalOAuthAccount = Authenticator(...), so both comply; the other three are public unauthenticated endpoints (email-token check, well-known metadata) that a reviewer would want to confirm (R3), 3 of 3 counted. clear:false since get_db_session/get_token/get_authorization_server are not auth; hesitated with WRONG legit_outliers for well-known endpoints.",
+          "labeller": "A"
+        },
+        "B": {
+          "uid": "polar/D-093712",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "server/polar/customer_portal/endpoints/benefit_grant.py",
+            "server/polar/customer_portal/endpoints/customer.py",
+            "server/polar/customer_portal/endpoints/customer_email_update.py",
+            "server/polar/customer_portal/endpoints/oauth_accounts.py",
+            "server/polar/oauth2/endpoints/well_known.py",
+            "server/polar/customer_portal/auth/__init__.py",
+            "server/polar/customer_portal/endpoints/order.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "list_payment_methods",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "check_email_update",
+              "verdict": "look"
+            },
+            {
+              "symbol": "authorize",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "well_known_jwks",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "well_known_oauth_protected_resource",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R6",
+            "R9"
+          ],
+          "reason": "list_payment_methods uses CustomerPortalUnionBillingRead like members in order.py, and authorize uses an Authenticator plus get_db_session, so both comply; check_email_update is a token-checked public endpoint worth confirming, but the two .well-known endpoints publish public metadata and take no input, 1 of 3. get_db_session in the list is not auth (clear false). Hesitated with ACCEPT.",
+          "labeller": "B"
+        }
+      }
+    }
+  ]
+}

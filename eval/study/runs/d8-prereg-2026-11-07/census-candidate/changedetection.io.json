@@ -1,0 +1,219 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "5cfbbb4-d8",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/cache/repos/changedetection.io",
+  "units": 1324,
+  "roles": 57,
+  "conventions": 3,
+  "shown": 3,
+  "tiers": {
+    "default": 0,
+    "suggestion": 3
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    },
+    "candidate": {
+      "decision": "D8",
+      "status": "candidate (pre-registered, not adopted)",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts",
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15,
+      "py": {
+        "min_members": 50,
+        "call_wrappers": "guards"
+      }
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-2619c7",
+      "rank": 1,
+      "summary": "HTTP handlers in changedetectionio/** are decorated with validate_openapi_request()",
+      "role": {
+        "package": "",
+        "dir": "changedetectionio",
+        "file": "*",
+        "entry": "http",
+        "kind": "function",
+        "members": 24
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "changedetectionio/api/__init__.py#validate_openapi_request"
+        ]
+      },
+      "evidence": {
+        "holders": 23,
+        "total": 24,
+        "lower_bound": 0.798,
+        "lift": 24.083,
+        "python_members": 24
+      },
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "changedetectionio/api/Changes.py",
+        "symbol": "Changes.get",
+        "line": 29
+      },
+      "outliers": [
+        {
+          "path": "changedetectionio/api/Spec.py",
+          "symbol": "Spec.get",
+          "line": 15
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-7f369e",
+      "rank": 2,
+      "summary": "exported values in changedetectionio/blueprint/** do not read os.environ directly",
+      "role": {
+        "package": "",
+        "dir": "changedetectionio/blueprint",
+        "file": "*",
+        "entry": "-",
+        "kind": "const",
+        "members": 64
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "os_environ"
+      },
+      "evidence": {
+        "holders": 63,
+        "total": 64,
+        "lower_bound": 0.917,
+        "lift": 6.436,
+        "python_members": 64
+      },
+      "rule_kind": "avoids:other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "changedetectionio/blueprint/add_watch_ui/browser_config.py",
+        "symbol": "REQUIRED_CAPABILITIES",
+        "line": 22
+      },
+      "outliers": [
+        {
+          "path": "changedetectionio/blueprint/mcp/tools.py",
+          "symbol": "CHANGES_TIME_BUDGET",
+          "line": 32
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-1ce566",
+      "rank": 3,
+      "summary": "functions in changedetectionio/llm/** declare their return type",
+      "role": {
+        "package": "",
+        "dir": "changedetectionio/llm",
+        "file": "*",
+        "entry": "-",
+        "kind": "function",
+        "members": 32
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 29,
+        "total": 32,
+        "lower_bound": 0.758,
+        "lift": 8.878,
+        "python_members": 32
+      },
+      "rule_kind": "control",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "changedetectionio/llm/bm25_trim.py",
+        "symbol": "trim_to_relevant",
+        "line": 14
+      },
+      "outliers": [
+        {
+          "path": "changedetectionio/llm/client.py",
+          "symbol": "completion_isolated",
+          "line": 281
+        },
+        {
+          "path": "changedetectionio/llm/evaluator.py",
+          "symbol": "tag_llm_decision",
+          "line": 310
+        },
+        {
+          "path": "changedetectionio/llm/model_list.py",
+          "symbol": "list_models",
+          "line": 101
+        }
+      ],
+      "outliers_total": 3,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    }
+  ],
+  "largest_role": null
+}

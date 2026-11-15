@@ -1,0 +1,128 @@
+[
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "netbox",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py/relabel/prompts/label/A/netbox.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/679c8e29-1af9-4bb7-b06f-f5fcb504e1b9/out.jsonl",
+    "expected": [
+      "netbox/D-cc1341",
+      "netbox/D-76eb6b",
+      "netbox/D-bc0c7d",
+      "netbox/D-e2c3e4",
+      "netbox/D-58913a",
+      "netbox/D-937c0c",
+      "netbox/D-310ec7"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:07:41.214Z",
+    "collected": {
+      "at": "2026-11-07T06:15:22.311Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py/relabel/labels/A/netbox.jsonl",
+      "records": 7,
+      "sha256": "76a78425f5d39bcf50528a9786385e5ddb184ece5b982fd63ba203ee81b423ee"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "fastapi",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py/relabel/prompts/label/A/fastapi.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/55ec4128-f797-4118-a23d-f12abd1dcebd/out.jsonl",
+    "expected": [
+      "fastapi/D-499c0e"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:07:41.215Z",
+    "collected": {
+      "at": "2026-11-07T06:13:15.229Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py/relabel/labels/A/fastapi.jsonl",
+      "records": 1,
+      "sha256": "3b61bbedb0d19aa4059bf4258491d44780a155c21caba3b63a551527ca836b5e"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "langchain",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py/relabel/prompts/label/A/langchain.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/f72e022e-b937-4d84-8595-c9a1db0400a4/out.jsonl",
+    "expected": [
+      "langchain/D-0e154c"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:07:41.216Z",
+    "collected": {
+      "at": "2026-11-07T06:13:15.231Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py/relabel/labels/A/langchain.jsonl",
+      "records": 1,
+      "sha256": "e666ce6623c368a5a53472d2287c371e4b9842279c0e2692b7b94ee8a07d27a0"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "fastapi",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py/relabel/prompts/label/B/fastapi.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/94298d19-8da8-4bc7-a9f6-510ae7b1d8ac/out.jsonl",
+    "expected": [
+      "fastapi/D-499c0e"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:13:31.076Z",
+    "collected": {
+      "at": "2026-11-07T06:14:31.227Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py/relabel/labels/B/fastapi.jsonl",
+      "records": 1,
+      "sha256": "259921f4d0dc43f862ac304a0302a54a28e650484d944685cdf00e70d2dc03e6"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "langchain",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py/relabel/prompts/label/B/langchain.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/6a1c4b95-e05b-43d6-8fd2-a61f1c58d0fa/out.jsonl",
+    "expected": [
+      "langchain/D-0e154c"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:13:31.119Z",
+    "collected": {
+      "at": "2026-11-07T06:14:31.229Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py/relabel/labels/B/langchain.jsonl",
+      "records": 1,
+      "sha256": "1d4aa83aa9b1857843762f422a070e34552403c2a5084df9350464a7d78b3032"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "netbox",
+    "prompt": "/home/user/drift-wt/relabel3/eval/study/runs/dev-v3-relabel3-2026-11-07/py/relabel/prompts/label/B/netbox.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-800b9e/outbox/dff47da6-97bf-4adb-84fb-51bfba05bcdf/out.jsonl",
+    "expected": [
+      "netbox/D-cc1341",
+      "netbox/D-76eb6b",
+      "netbox/D-bc0c7d",
+      "netbox/D-e2c3e4",
+      "netbox/D-58913a",
+      "netbox/D-937c0c",
+      "netbox/D-310ec7"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T06:15:22.353Z",
+    "collected": {
+      "at": "2026-11-07T06:17:45.699Z",
+      "dest": "eval/study/runs/dev-v3-relabel3-2026-11-07/py/relabel/labels/B/netbox.jsonl",
+      "records": 7,
+      "sha256": "2bc09a1b0a5e1acf0be781aa584a595f001e35d5780e0d7d32fe9b09548cdc75"
+    }
+  }
+]

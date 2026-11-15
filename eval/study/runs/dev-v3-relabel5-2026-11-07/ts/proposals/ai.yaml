@@ -1,0 +1,306 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - _create
+  - active-tools
+  - agent-step
+  - ai-sdk-coding
+  - ai-sdk-coding-agent
+  - app
+  - ask-user-questions
+  - attach
+  - bash-shell
+  - basic
+  - basic-agent
+  - basic-stepped-agent
+  - builtin-tool-approval
+  - builtin-tool-approval-with-host-tool
+  - changing-settings
+  - chat
+  - chat-input
+  - chatbot
+  - client
+  - compaction
+  - custom-fetch
+  - custom-tool-approval
+  - decide
+  - edit
+  - file-edit
+  - fullstream
+  - generate-audio
+  - generate-text
+  - host-tool-approval-with-host-tool
+  - i2v-frame-images
+  - image
+  - image-input
+  - image-to-video
+  - image-url
+  - inactive-tools
+  - layout
+  - lazy-schemas
+  - lifecycle-callbacks
+  - model-resolution
+  - multi-turn
+  - native-subscription
+  - next
+  - output-object
+  - page
+  - parallel-tool-approvals
+  - poll-options
+  - postcss
+  - provider-options
+  - provider-shorthand
+  - r2v-reference-images
+  - raw-chunks
+  - reasoning
+  - reasoning-effort
+  - restricted-telemetry-dispatcher
+  - resume
+  - route
+  - run-agent-step
+  - run-slice-step
+  - sandbox-template
+  - schema
+  - server
+  - service-tier
+  - steer
+  - stop-when
+  - stream-text
+  - string
+  - suspend-turn
+  - tailwind
+  - text
+  - thinking
+  - time-slice-step
+  - tool-call
+  - tool-choice
+  - tool-search
+  - tools
+  - tsdown
+  - typed-builtin-tools
+  - types
+  - url
+  - utils
+  - vercel-sandbox-resume
+  - version
+  - vitest
+  - voice
+  - wan2
+  - wan3
+  - weather
+  - weather-agent
+  - weather-approval
+  - weather-approval-agent
+  - weather-only-agent
+  - weather-tool
+  - web-search
+  - with-client-side-tool
+  - with-instructions
+  - with-mcp
+  - with-model
+  - with-outside-workdir-reads
+  - with-provided-sandbox
+  - with-reasoning
+  - with-restricted-sandbox
+  - with-skills
+  - with-structured-output
+  - with-to-model-output
+  - with-tool-input-error
+  - with-tools
+  - workflow
+  suffixes:
+  - component
+  - config
+  - input
+  - ng
+  - output
+  - svelte
+  - test
+  - test-d
+conventions:
+- id: D-fc5ef7
+  status: proposed
+  mode: advise
+  summary: "packages/codemod: functions in src/codemods/** are wrapped in createTransformer(), except 3 factories (returning functions wrapped in it) and 2 shared parts (used by several members, not a member)"
+  role:
+    package: packages/codemod
+    dir: src/codemods
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - packages/codemod/src/codemods/lib/create-transformer.ts#createTransformer
+  evidence:
+    holders: 109
+    total: 109
+    lower_bound: 0.966
+    lift: 18.746
+    role_members: 114
+  example: >-
+    packages/codemod/src/codemods/v4/remove-ai-stream-methods-from-stream-text-result.ts#default
+  selector_version: 3
+- id: D-5590d9
+  status: proposed
+  mode: advise
+  summary: "packages/harness: exported values in src/v1/** are named `harness*`"
+  role:
+    package: packages/harness
+    dir: src/v1
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: harness*
+  evidence:
+    holders: 49
+    total: 49
+    lower_bound: 0.927
+    lift: 17.783
+  example: >-
+    packages/harness/src/v1/harness-v1-bridge-protocol.ts#experimental_harnessV1BridgeUserMessageInboundSchema
+  selector_version: 3
+- id: D-8fbbad
+  status: proposed
+  mode: advise
+  summary: workspace packages use the typescript version most workspace packages use
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: dependency_version
+    name: typescript
+  evidence:
+    holders: 89
+    total: 91
+    lower_bound: 0.923
+    lift: 1.0
+    split:
+    - - "6.0.3"
+      - 89
+    - - "5.8.3"
+      - 2
+  example: apps/docs/package.json#ai-sdk-docs
+  selector_version: 3
+- id: D-b2e3c6
+  status: proposed
+  mode: advise
+  summary: "packages/harness: exported values in src/** are named `*Schema`, except 6 plain values (not a schema)"
+  role:
+    package: packages/harness
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Schema"
+  evidence:
+    holders: 46
+    total: 46
+    lower_bound: 0.923
+    lift: 4.856
+    role_members: 52
+  example: >-
+    packages/harness/src/utils/extract-harness-prompt-content.ts#harnessPromptContentSchema
+  selector_version: 3
+- id: D-224b9e
+  status: proposed
+  mode: advise
+  summary: workspace packages use the zod version most workspace packages use
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: dependency_version
+    name: zod
+  evidence:
+    holders: 76
+    total: 83
+    lower_bound: 0.836
+    lift: 1.0
+    split:
+    - - "3.25.76"
+      - 76
+    - - "4.4.3"
+      - 4
+    - - "4.5.4"
+      - 1
+    - - ^4.1.8
+      - 1
+    - - ^4.4.3
+      - 1
+  example: packages/ai/package.json#ai
+  selector_version: 3
+- id: D-4683f7
+  status: proposed
+  mode: advise
+  summary: "packages/openai: functions in src/tool/** call zodSchema() before z.object()"
+  role:
+    package: packages/openai
+    dir: src/tool
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: packages/provider-utils/src/schema.ts#zodSchema
+    then: pkg:zod/v4#z.object
+  evidence:
+    holders: 24
+    total: 25
+    lower_bound: 0.805
+    lift: 1.0
+  example: packages/openai/src/tool/apply-patch.ts#applyPatchArgsSchema
+  selector_version: 3
+- id: D-5baed4
+  status: proposed
+  mode: advise
+  summary: "packages/harness-acp/src/v1/bridge: files in ./** have a test file"
+  role:
+    package: packages/harness-acp/src/v1/bridge
+    dir: '.'
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 27
+    total: 29
+    lower_bound: 0.78
+    lift: 2.954
+  example: packages/harness-acp/src/v1/bridge/acp-diagnostics.ts#(file)
+  selector_version: 3
+- id: D-80697a
+  status: proposed
+  mode: advise
+  summary: "packages/harness-opencode/src/bridge: files in ./** have a test file"
+  role:
+    package: packages/harness-opencode/src/bridge
+    dir: '.'
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 3.006
+  example: packages/harness-opencode/src/bridge/create-emit-stream-event.ts#(file)
+  selector_version: 3

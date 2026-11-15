@@ -1,0 +1,44 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - +page
+  - __init__
+  - doctor
+  - errors
+  - harness
+  - load
+  - models
+  - page
+  - registry
+  - supervisor
+  suffixes:
+  - test
+conventions:
+- id: D-5a3a51
+  status: proposed
+  mode: advise
+  summary: enums in src/codex_autorunner/core/** extend str
+  role:
+    package: ""
+    dir: src/codex_autorunner/core
+    file: "*"
+    entry: '-'
+    kind: class
+    variety: enum
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - global#str
+  evidence:
+    holders: 58
+    total: 61
+    lower_bound: 0.865
+    lift: 21.172
+    python_members: 61
+  example: src/codex_autorunner/core/apps/hooks.py#AppHookPoint
+  selector_version: 2

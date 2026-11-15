@@ -1,0 +1,172 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - apps
+  - base
+  - conftest
+  - const
+  - dataloaders
+  - enums
+  - error_codes
+  - events
+  - exceptions
+  - filters
+  - interface
+  - lock_objects
+  - models
+  - notifications
+  - plugin
+  - resolvers
+  - saleor3_22
+  - saleor3_23
+  - schema
+  - search
+  - shared
+  - sorters
+  - tasks
+  - test_exclude_shipping
+  - test_order
+  - test_plugin
+  - test_tasks
+  - test_utils
+  - types
+  - utils
+  suffixes: []
+  layers:
+  - mutations/base
+  - mutations/utils
+  - tests/conftest
+  - tests/test_utils
+  - tests/test_validators
+  - tests/utils
+conventions:
+- id: D-71795b
+  status: proposed
+  mode: advise
+  summary: classes in saleor/** (dataloaders files) are named `*Loader`
+  role:
+    package: ""
+    dir: saleor
+    file: dataloaders
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Loader"
+  evidence:
+    holders: 126
+    total: 128
+    lower_bound: 0.945
+    lift: 11.011
+    python_members: 128
+  example: saleor/graphql/account/dataloaders.py#AccessibleChannelsByGroupIdLoader
+  selector_version: 2
+- id: D-ac08d9
+  status: proposed
+  mode: advise
+  summary: enums in saleor/** (error_codes files) are named `*Code`
+  role:
+    package: ""
+    dir: saleor
+    file: error_codes
+    entry: '-'
+    kind: class
+    variety: enum
+  rule:
+    type: named
+    pattern: "*Code"
+  evidence:
+    holders: 91
+    total: 92
+    lower_bound: 0.941
+    lift: 26.047
+    python_members: 92
+  example: saleor/account/error_codes.py#AccountErrorCode
+  selector_version: 2
+- id: D-e86c5d
+  status: proposed
+  mode: advise
+  summary: files in saleor/graphql/account/** have a test file
+  role:
+    package: ""
+    dir: saleor/graphql/account
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 50
+    total: 51
+    lower_bound: 0.897
+    lift: 1.646
+    python_members: 51
+  example: saleor/graphql/account/bulk_mutations/customer_bulk_delete.py#(file)
+  selector_version: 2
+- id: D-6af632
+  status: proposed
+  mode: advise
+  summary: files in saleor/graphql/order/** have a test file
+  role:
+    package: ""
+    dir: saleor/graphql/order
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 36
+    total: 38
+    lower_bound: 0.827
+    lift: 1.59
+    python_members: 38
+  example: saleor/graphql/order/bulk_mutations/draft_orders.py#(file)
+  selector_version: 2
+- id: D-0da0cf
+  status: proposed
+  mode: advise
+  summary: files in saleor/graphql/app/** have a test file
+  role:
+    package: ""
+    dir: saleor/graphql/app
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 1.599
+    python_members: 21
+  example: saleor/graphql/app/dataloaders/app.py#(file)
+  selector_version: 2
+- id: D-a6847e
+  status: proposed
+  mode: advise
+  summary: classes in saleor/graphql/attribute/dataloaders/** are named `*Loader`
+  role:
+    package: ""
+    dir: saleor/graphql/attribute/dataloaders
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Loader"
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 10.597
+    python_members: 19
+  example: >-
+    saleor/graphql/attribute/dataloaders/assigned_attributes.py#AttributeByPageIdAndAttributeSlugLoader
+  selector_version: 2

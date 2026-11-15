@@ -1,0 +1,100 @@
+11 conventions from 4996 units in 118 roles (0 default tier, 11 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-220569] backend: HTTP handlers in cases/** are wrapped in IsPortalContact() or permissions.IsAuthenticated()
+    evidence: 88/94 (lower bound 0.87, lift 4.7)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    split:    permissions.IsAuthenticated 81, IsPortalContact 7
+    example:  backend/cases/analytics_views.py#AnalyticsAgentsView.get
+    outlier:  backend/cases/csat_views.py:111 PublicCsatView.get
+    outlier:  backend/cases/csat_views.py:155 PublicCsatView.post
+    outlier:  backend/cases/help_center_views.py:178 PublicHelpCenterArticleView.get
+    ... 3 more outliers
+
+ 2. [D-4a6ea2] backend: HTTP handlers in leads/** are wrapped in HasOrgContext()
+    evidence: 39/41 (lower bound 0.84, lift 5.1)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  backend/leads/views/import_views.py#LeadImportCommitView.post
+    outlier:  backend/leads/views/intake_public_views.py:139 LeadIntakePostView.post
+    outlier:  backend/leads/views/lead_interactions.py:255 CreateLeadFromSite.post
+
+ 3. [D-f135a4] backend: HTTP handlers in cases/** are wrapped in HasOrgContext()
+    evidence: 81/94 (lower bound 0.78, lift 4.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  backend/cases/analytics_views.py#AnalyticsAgentsView.get
+    outlier:  backend/cases/csat_views.py:111 PublicCsatView.get
+    outlier:  backend/cases/csat_views.py:155 PublicCsatView.post
+    outlier:  backend/cases/help_center_views.py:178 PublicHelpCenterArticleView.get
+    ... 10 more outliers
+
+ 4. [D-4b232f] backend: HTTP handlers in common/** are wrapped in permissions.IsAuthenticated()
+    evidence: 88/98 (lower bound 0.82, lift 4.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  backend/common/search_views.py#GlobalSearchView.get
+    outlier:  backend/common/views/auth_views.py:300 GoogleIdTokenView.post
+    outlier:  backend/common/views/auth_views.py:130 GoogleOAuthCallbackView.post
+    outlier:  backend/common/views/auth_views.py:587 LogoutView.post
+    ... 7 more outliers
+
+ 5. [D-b6f0b8] frontend: exported values in src/** (*.server files) use `try`
+    evidence: 93/109 (lower bound 0.78, lift 9.7)
+    tier:     suggestion (rule kind control)
+    example:  frontend/src/routes/(app)/accounts/[id]/+page.server.ts#actions
+    outlier:  frontend/src/routes/(app)/accounts/+page.server.ts:45 actions
+    outlier:  frontend/src/routes/(app)/accounts/[id]/merge/+page.server.ts:9 actions
+    outlier:  frontend/src/routes/(app)/accounts/[id]/merge/+page.server.ts:7 load
+    ... 13 more outliers
+
+ 6. [D-e62e87] backend: HTTP handlers in common/** call response.Response()
+    evidence: 94/98 (lower bound 0.90, lift 4.7)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  backend/common/search_views.py#GlobalSearchView.get
+    outlier:  backend/common/views/attachment_views.py:63 AttachmentDownloadView.get
+    outlier:  backend/common/views/audit_log_views.py:156 SecurityAuditLogListView.get
+    outlier:  backend/common/views/organization_views.py:270 OrgUpdateView.patch
+    ... 1 more outliers
+
+ 7. [D-8ee062] frontend: files in src/lib/v2/** have a test file
+    evidence: 35/38 (lower bound 0.79, lift 3.1)
+    tier:     suggestion (rule kind has_test)
+    example:  frontend/src/lib/v2/audit-log.ts#(file)
+    outlier:  frontend/src/lib/v2/author.ts:1 (file)
+    outlier:  frontend/src/lib/v2/enums.ts:1 (file)
+    outlier:  frontend/src/lib/v2/lead-alerts.ts:1 (file)
+
+ 8. [D-0bd0ec] backend: HTTP handlers in cases/** call response.Response()
+    evidence: 88/94 (lower bound 0.87, lift 4.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  backend/cases/analytics_views.py#AnalyticsAgentsView.get
+    outlier:  backend/cases/kanban_views.py:63 CaseKanbanView.get
+    outlier:  backend/cases/solution_views.py:254 SolutionDetailView.patch
+    outlier:  backend/cases/solution_views.py:244 SolutionDetailView.put
+    ... 3 more outliers
+
+ 9. [D-1a9f79] frontend: exported values in src/** (*.server files) call fail()
+    evidence: 92/109 (lower bound 0.76, lift 9.7)
+    tier:     suggestion (rule kind calls)
+    example:  frontend/src/routes/(app)/accounts/[id]/+page.server.ts#actions
+    outlier:  frontend/src/routes/(app)/accounts/+page.server.ts:45 actions
+    outlier:  frontend/src/routes/(app)/accounts/[id]/merge/+page.server.ts:9 actions
+    outlier:  frontend/src/routes/(app)/accounts/[id]/merge/+page.server.ts:7 load
+    ... 14 more outliers
+
+10. [D-9c2214] backend: HTTP handlers in cases/** pass `tags` to utils.extend_schema()
+    evidence: 80/94 (lower bound 0.77, lift 4.4)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  backend/cases/analytics_views.py#AnalyticsAgentsView.get
+    outlier:  backend/cases/portal_views.py:292 PortalArticleDetailView.get
+    outlier:  backend/cases/portal_views.py:256 PortalArticleListView.get
+    outlier:  backend/cases/portal_views.py:334 PortalArticleSuggestView.get
+    ... 11 more outliers
+
+11. [D-f01192] backend: HTTP handlers in leads/** call response.Response()
+    evidence: 39/41 (lower bound 0.84, lift 4.7)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  backend/leads/views/import_views.py#LeadImportCommitView.post
+    outlier:  backend/leads/views/intake_public_views.py:139 LeadIntakePostView.post
+    outlier:  backend/leads/views/kanban_views.py:70 LeadKanbanView.get
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

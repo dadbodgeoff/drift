@@ -1,0 +1,742 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - accounting
+  - api-keys
+  - apps
+  - bank-accounts
+  - bank-connections
+  - client
+  - columns
+  - config
+  - config-base
+  - config-client
+  - customers
+  - data-table
+  - document-tags
+  - documents
+  - empty-states
+  - format
+  - header
+  - inbox
+  - insights
+  - install-url
+  - institutions
+  - invoice
+  - invoice-recurring
+  - invoices
+  - layout
+  - logo
+  - meta
+  - notification-settings
+  - notifications
+  - oauth-callback
+  - page
+  - postcss
+  - rates
+  - reports
+  - route
+  - schema
+  - search
+  - server
+  - skeleton
+  - summary
+  - table
+  - table-header
+  - tags
+  - teams
+  - tracker-entries
+  - tracker-projects
+  - transaction-attachments
+  - transaction-matching
+  - transactions
+  - transform
+  - types
+  - utils
+  suffixes:
+  - config
+  - test
+conventions:
+- id: D-50255f
+  status: proposed
+  mode: advise
+  summary: "apps/api: rpc entry points in src/** are wrapped in internalProcedure() or protectedProcedure()"
+  role:
+    package: apps/api
+    dir: src
+    file: "*"
+    entry: rpc
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - apps/api/src/trpc/init.ts#internalProcedure
+    - apps/api/src/trpc/init.ts#protectedProcedure
+  evidence:
+    holders: 97
+    total: 99
+    lower_bound: 0.929
+    lift: 7.625
+    split:
+    - - apps/api/src/trpc/init.ts#protectedProcedure
+      - 91
+    - - apps/api/src/trpc/init.ts#internalProcedure
+      - 6
+  example: apps/api/src/trpc/routers/banking.ts#MUTATION deleteConnection
+- id: D-b8cff6
+  status: proposed
+  mode: advise
+  summary: files in packages/db/** do not import from packages/notifications/**
+  role:
+    package: packages/db
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:packages/notifications
+  evidence:
+    holders: 68
+    total: 69
+    lower_bound: 0.922
+    lift: 3.0
+  example: packages/db/drizzle.config.ts#(file)
+- id: D-41656b
+  status: proposed
+  mode: advise
+  summary: files in packages/db/** do not import from packages/banking/**
+  role:
+    package: packages/db
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:packages/banking
+  evidence:
+    holders: 67
+    total: 69
+    lower_bound: 0.9
+    lift: 3.0
+  example: packages/db/drizzle.config.ts#(file)
+- id: D-b386b6
+  status: proposed
+  mode: advise
+  summary: "apps/dashboard: functions in src/hooks/** are named `use*`"
+  role:
+    package: apps/dashboard
+    dir: src/hooks
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: use*
+  evidence:
+    holders: 64
+    total: 66
+    lower_bound: 0.896
+    lift: 14.396
+  example: apps/dashboard/src/hooks/use-accounting-error.ts#useAccountingError
+- id: D-86f372
+  status: proposed
+  mode: advise
+  summary: "apps/worker: classes in src/** do not use `any`"
+  role:
+    package: apps/worker
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: avoids
+    signal: any
+  evidence:
+    holders: 43
+    total: 44
+    lower_bound: 0.882
+    lift: 5.923
+  example: apps/worker/src/errors/invoice-errors.ts#RecurringInvoiceError
+- id: D-80f1c3
+  status: proposed
+  mode: advise
+  summary: "apps/worker: classes in src/processors/** are named `*Processor`"
+  role:
+    package: apps/worker
+    dir: src/processors
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Processor"
+  evidence:
+    holders: 39
+    total: 40
+    lower_bound: 0.871
+    lift: 2.283
+  example: apps/worker/src/processors/customers/enrich-customer.ts#EnrichCustomerProcessor
+- id: D-7da2b9
+  status: proposed
+  mode: advise
+  summary: "packages/db: functions in src/** (schema files) pass `withTimezone` to timestamp()"
+  role:
+    package: packages/db
+    dir: src
+    file: schema
+    entry: '-'
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:drizzle-orm#timestamp
+    index: 1
+    key: withTimezone
+  evidence:
+    holders: 47
+    total: 49
+    lower_bound: 0.863
+    lift: 39.388
+  example: packages/db/src/schema.ts#accountingSyncRecords
+- id: D-798f44
+  status: proposed
+  mode: advise
+  summary: drizzle models have a `createdAt` field
+  role:
+    package: ""
+    dir: drizzle
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: createdAt
+  evidence:
+    holders: 47
+    total: 50
+    lower_bound: 0.838
+    lift: 0.993
+  example: packages/db/src/schema.ts#accounting_sync_records
+- id: D-b98efb
+  status: proposed
+  mode: advise
+  summary: "packages/db: functions in src/** (schema files) call uuid()"
+  role:
+    package: packages/db
+    dir: src
+    file: schema
+    entry: '-'
+    kind: function
+  rule:
+    type: calls
+    callee: pkg:drizzle-orm#uuid
+  evidence:
+    holders: 46
+    total: 49
+    lower_bound: 0.835
+    lift: 39.388
+  example: packages/db/src/schema.ts#accountingSyncRecords
+- id: D-f90103
+  status: proposed
+  mode: advise
+  summary: "packages/db: functions in src/** (schema files) pass `createdAt` to pgTable()"
+  role:
+    package: packages/db
+    dir: src
+    file: schema
+    entry: '-'
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:drizzle-orm#pgTable
+    index: 1
+    key: createdAt
+  evidence:
+    holders: 46
+    total: 49
+    lower_bound: 0.835
+    lift: 39.388
+  example: packages/db/src/schema.ts#accountingSyncRecords
+- id: D-b57953
+  status: proposed
+  mode: advise
+  summary: "apps/website: exported values in src/** (page files) pass `description` to createPageMetadata()"
+  role:
+    package: apps/website
+    dir: src
+    file: page
+    entry: '-'
+    kind: const
+  rule:
+    type: passes_key
+    callee: apps/website/src/lib/metadata.ts#createPageMetadata
+    index: 0
+    key: description
+  evidence:
+    holders: 45
+    total: 48
+    lower_bound: 0.832
+    lift: 27.0
+  example: apps/website/src/app/about/page.tsx#metadata
+- id: D-404dbb
+  status: proposed
+  mode: advise
+  summary: workspace packages enable `skipLibCheck` in tsconfig
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: flag:skipLibCheck
+  evidence:
+    holders: 36
+    total: 38
+    lower_bound: 0.827
+    lift: 1.0
+  example: apps/api/package.json#@midday/api
+- id: D-17340a
+  status: proposed
+  mode: advise
+  summary: drizzle models have a `id` field
+  role:
+    package: ""
+    dir: drizzle
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: id
+  evidence:
+    holders: 46
+    total: 50
+    lower_bound: 0.812
+    lift: 1.01
+  example: packages/db/src/schema.ts#accounting_sync_records
+- id: D-afc38b
+  status: proposed
+  mode: advise
+  summary: "packages/db: functions in src/** (schema files) pass `mode` to timestamp()"
+  role:
+    package: packages/db
+    dir: src
+    file: schema
+    entry: '-'
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:drizzle-orm#timestamp
+    index: 1
+    key: mode
+  evidence:
+    holders: 45
+    total: 49
+    lower_bound: 0.808
+    lift: 39.388
+  example: packages/db/src/schema.ts#accountingSyncRecords
+- id: D-b3dd60
+  status: proposed
+  mode: advise
+  summary: "packages/db: functions in src/** (schema files) pass `id` to pgTable()"
+  role:
+    package: packages/db
+    dir: src
+    file: schema
+    entry: '-'
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:drizzle-orm#pgTable
+    index: 1
+    key: id
+  evidence:
+    holders: 45
+    total: 49
+    lower_bound: 0.808
+    lift: 39.388
+  example: packages/db/src/schema.ts#accountingSyncRecords
+- id: D-61aade
+  status: proposed
+  mode: advise
+  summary: "apps/api: exported values in src/schemas/** (reports files) call z.object()"
+  role:
+    package: apps/api
+    dir: src/schemas
+    file: reports
+    entry: '-'
+    kind: const
+  rule:
+    type: calls
+    callee: pkg:@hono/zod-openapi#z.object
+  evidence:
+    holders: 24
+    total: 25
+    lower_bound: 0.805
+    lift: 4.86
+  example: apps/api/src/schemas/reports.ts#getAccountBalancesSchema
+- id: D-5880dd
+  status: proposed
+  mode: advise
+  summary: "apps/worker: classes in src/processors/** extend BaseProcessor"
+  role:
+    package: apps/worker
+    dir: src/processors
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - apps/worker/src/processors/base.ts#BaseProcessor
+  evidence:
+    holders: 37
+    total: 40
+    lower_bound: 0.801
+    lift: 2.4
+  example: apps/worker/src/processors/customers/enrich-customer.ts#EnrichCustomerProcessor
+- id: D-0ccf7a
+  status: proposed
+  mode: advise
+  summary: "apps/api: exported values in src/** (reports files) call z.object().openapi() before z.object()"
+  role:
+    package: apps/api
+    dir: src
+    file: reports
+    entry: '-'
+    kind: const
+  rule:
+    type: before
+    first: pkg:@hono/zod-openapi#z.object().openapi
+    then: pkg:@hono/zod-openapi#z.object
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 1.0
+  example: apps/api/src/schemas/reports.ts#createReportSchema
+- id: D-b08ce1
+  status: proposed
+  mode: advise
+  summary: "apps/api: exported values in src/schemas/** (inbox files) call z.object()"
+  role:
+    package: apps/api
+    dir: src/schemas
+    file: inbox
+    entry: '-'
+    kind: const
+  rule:
+    type: calls
+    callee: pkg:@hono/zod-openapi#z.object
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 4.852
+  example: apps/api/src/schemas/inbox.ts#confirmMatchSchema
+- id: D-667807
+  status: proposed
+  mode: advise
+  summary: workspace packages define a `lint` script
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: script:lint
+  evidence:
+    holders: 35
+    total: 38
+    lower_bound: 0.792
+    lift: 1.0
+  example: apps/api/package.json#@midday/api
+- id: D-7d5872
+  status: proposed
+  mode: advise
+  summary: workspace packages enable `strict` in tsconfig
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: flag:strict
+  evidence:
+    holders: 35
+    total: 38
+    lower_bound: 0.792
+    lift: 1.0
+  example: apps/api/package.json#@midday/api
+- id: D-231bc0
+  status: proposed
+  mode: advise
+  summary: "workspace packages depend on typescript@catalog:"
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: dependency_version
+    name: typescript
+    range: "catalog:"
+  evidence:
+    holders: 22
+    total: 23
+    lower_bound: 0.79
+    lift: 1.0
+    split:
+    - - "catalog:"
+      - 22
+    - - ^6.0.2
+      - 1
+  example: apps/dashboard/package.json#@midday/dashboard
+- id: D-ff6099
+  status: proposed
+  mode: advise
+  summary: "apps/api: rpc entry points in src/** (invoice files) are wrapped in protectedProcedure()"
+  role:
+    package: apps/api
+    dir: src
+    file: invoice
+    entry: rpc
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - apps/api/src/trpc/init.ts#protectedProcedure
+  evidence:
+    holders: 21
+    total: 22
+    lower_bound: 0.782
+    lift: 7.613
+  example: apps/api/src/trpc/routers/invoice.ts#MUTATION cancelSchedule
+- id: D-4a9cea
+  status: proposed
+  mode: advise
+  summary: "apps/api: exported values in src/** (inbox files) call z.object() before z.string()"
+  role:
+    package: apps/api
+    dir: src
+    file: inbox
+    entry: '-'
+    kind: const
+  rule:
+    type: before
+    first: pkg:@hono/zod-openapi#z.object
+    then: pkg:@hono/zod-openapi#z.string
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 1.0
+  example: apps/api/src/schemas/inbox.ts#confirmMatchSchema
+- id: D-c29ee0
+  status: proposed
+  mode: advise
+  summary: "apps/api: exported values in src/mcp/** call z.string().nullable().optional() before z.string().nullable()"
+  role:
+    package: apps/api
+    dir: src/mcp
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: before
+    first: pkg:zod#z.string().nullable().optional
+    then: pkg:zod#z.string().nullable
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 1.0
+  example: apps/api/src/mcp/schemas.ts#mcpBankAccountBalanceSchema
+- id: D-18612a
+  status: proposed
+  mode: advise
+  summary: "apps/api: exported values in src/** (invoice files) call z.object() before z.string()"
+  role:
+    package: apps/api
+    dir: src
+    file: invoice
+    entry: '-'
+    kind: const
+  rule:
+    type: before
+    first: pkg:@hono/zod-openapi#z.object
+    then: pkg:@hono/zod-openapi#z.string
+  evidence:
+    holders: 30
+    total: 33
+    lower_bound: 0.764
+    lift: 1.0
+  example: apps/api/src/schemas/invoice.ts#cancelScheduledInvoiceSchema
+- id: D-c48616
+  status: proposed
+  mode: advise
+  summary: "packages/db: functions in src/** (reports files) are named `get*`"
+  role:
+    package: packages/db
+    dir: src
+    file: reports
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: get*
+  evidence:
+    holders: 19
+    total: 20
+    lower_bound: 0.764
+    lift: 4.494
+  example: packages/db/src/queries/reports.ts#getBalanceSheet
+- id: D-675545
+  status: proposed
+  mode: advise
+  summary: workspace packages define a `typecheck` script
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: script:typecheck
+  evidence:
+    holders: 34
+    total: 38
+    lower_bound: 0.759
+    lift: 1.0
+  example: apps/api/package.json#@midday/api
+- id: D-8fd473
+  status: proposed
+  mode: advise
+  summary: "packages/invoice: functions in src/utils/** declare their return type"
+  role:
+    package: packages/invoice
+    dir: src/utils
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 24
+    total: 26
+    lower_bound: 0.759
+    lift: 2.417
+  example: packages/invoice/src/utils/content.ts#isValidJSON
+- id: D-0ce204
+  status: proposed
+  mode: advise
+  summary: "apps/api: exported values in src/** (transactions files) call z.object() before z.string()"
+  role:
+    package: apps/api
+    dir: src
+    file: transactions
+    entry: '-'
+    kind: const
+  rule:
+    type: before
+    first: pkg:@hono/zod-openapi#z.object
+    then: pkg:@hono/zod-openapi#z.string
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 1.0
+  example: apps/api/src/schemas/transactions.ts#createTransactionSchema
+- id: D-106ede
+  status: proposed
+  mode: advise
+  summary: "packages/jobs: exported values in src/** (schema files) call z.object()"
+  role:
+    package: packages/jobs
+    dir: src
+    file: schema
+    entry: '-'
+    kind: const
+  rule:
+    type: calls
+    callee: pkg:zod#z.object
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 6.637
+  example: packages/jobs/src/schema.ts#deleteConnectionSchema
+- id: D-86a3c1
+  status: proposed
+  mode: advise
+  summary: "packages/workbench: components in src/ui/components/** call cn()"
+  role:
+    package: packages/workbench
+    dir: src/ui/components
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: calls
+    callee: packages/workbench/src/ui/lib/utils.ts#cn
+  evidence:
+    holders: 86
+    total: 103
+    lower_bound: 0.751
+    lift: 10.526
+  example: packages/workbench/src/ui/components/app-sidebar.tsx#AppSidebar
+- id: D-540eba
+  status: proposed
+  mode: advise
+  summary: "apps/api: exported values in src/schemas/** (reports files) call z.string()"
+  role:
+    package: apps/api
+    dir: src/schemas
+    file: reports
+    entry: '-'
+    kind: const
+  rule:
+    type: calls
+    callee: pkg:@hono/zod-openapi#z.string
+  evidence:
+    holders: 23
+    total: 25
+    lower_bound: 0.75
+    lift: 5.031
+  example: apps/api/src/schemas/reports.ts#getAccountBalancesSchema
+- id: D-61d4d5
+  status: proposed
+  mode: advise
+  summary: "apps/api: exported values in src/schemas/** (reports files) are named `get*`"
+  role:
+    package: apps/api
+    dir: src/schemas
+    file: reports
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: get*
+  evidence:
+    holders: 23
+    total: 25
+    lower_bound: 0.75
+    lift: 14.365
+  example: apps/api/src/schemas/reports.ts#getAccountBalancesSchema

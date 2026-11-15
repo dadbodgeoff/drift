@@ -1,0 +1,59 @@
+6 conventions from 4413 units in 185 roles (0 default tier, 6 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-815f43] functions in backend/** do not use requests to computed URLs
+    evidence: 1202/1204 (lower bound 0.99, lift 109.0)
+    tier:     suggestion (rule kind avoids:other)
+    example:  backend/config/authConfig.js#isPasswordAuthEnabled
+    outlier:  backend/middleware/captcha.js:32 verifyToken
+    outlier:  backend/modules/calendar-feeds/fetcher.js:90 fetchFeed
+
+ 2. [D-6c856c] components in frontend/components/** do not use requests to computed URLs
+    evidence: 293/325 (lower bound 0.86, lift 6.1)
+    tier:     suggestion (rule kind avoids:other)
+    example:  frontend/components/AI/DailyAssistant.tsx#DailyAssistant
+    outlier:  frontend/components/About.tsx:12 About
+    outlier:  frontend/components/Admin/AdminDashboardPage.tsx:68 AdminDashboardPage
+    outlier:  frontend/components/Admin/AdminUserStatusTable.tsx:77 AdminUserStatusTable
+    ... 29 more outliers
+
+ 3. [D-9998f9] functions in frontend/** declare their return type
+    evidence: 571/615 (lower bound 0.91, lift 3.7)
+    tier:     suggestion (rule kind control)
+    example:  frontend/components/Admin/AdminTrends.tsx#percentOf
+    outlier:  frontend/components/Blog/BlogPostCard.tsx:6 formatPostDate
+    outlier:  frontend/components/Capture/useCaptureFiles.ts:77 useCaptureFiles
+    outlier:  frontend/components/Note/editor/highlightStyle.ts:25 neutralEditorTheme
+    ... 41 more outliers
+    exempt:   frontend/components/Admin/SortableTable.tsx:27 useSortedRows (shared part used by 5 members)
+    exempt:   frontend/components/Auth/useReverify.tsx:19 useReverify (shared part used by 2 members)
+    exempt:   frontend/components/DailyPlan/tips.ts:32 lateItems (shared part used by 2 members)
+    ... 12 more exempt
+
+ 4. [D-57d79e] functions in backend/** (validation files) are named `validate*`
+    evidence: 43/49 (lower bound 0.76, lift 33.9)
+    tier:     suggestion (rule kind named)
+    example:  backend/modules/admin/validation.js#validateCreateUser
+    outlier:  backend/modules/inbox/validation.js:44 buildTitleFromContent
+    outlier:  backend/modules/projects/validation.js:35 formatDate
+    outlier:  backend/modules/search/validation.js:20 parseSearchParams
+    ... 3 more outliers
+
+ 5. [D-744c2d] exported values in backend/** (controller files) use `try`
+    evidence: 33/35 (lower bound 0.81, lift 13.9)
+    tier:     suggestion (rule kind control)
+    example:  backend/modules/admin-ai-usage/controller.js#controller
+    outlier:  backend/modules/habits/controller.js:13 habitsController
+    outlier:  backend/modules/webhooks/controller.js:21 controller
+
+ 6. [D-f7d289] components in frontend/components/** call useTranslation() before useState()
+    evidence: 170/203 (lower bound 0.78, lift 1.0)
+    tier:     suggestion (rule kind before)
+    example:  frontend/components/AI/DailyAssistant.tsx#DailyAssistant
+    outlier:  frontend/components/Auth/AuthPageShell.tsx:11 AuthPageShell
+    outlier:  frontend/components/Blog/BlogApp.tsx:23 BlogApp
+    outlier:  frontend/components/Calendar/CalendarWeekView.tsx:35 CalendarWeekView
+    ... 30 more outliers
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

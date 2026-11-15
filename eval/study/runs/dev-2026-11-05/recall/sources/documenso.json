@@ -1,0 +1,113 @@
+{
+  "repo": "documenso",
+  "files": [
+    {
+      "path": ".agents/plans/bold-emerald-earth-pdf-placeholder-field-positioning.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/plans/bright-emerald-flower-bullmq-background-jobs.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/plans/calm-violet-tide-envelope-expiration.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/plans/clear-amber-light-validate-signer-fields-on-distribute.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/plans/dark-hazel-beam-swap-subscription-between-orgs.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/plans/fresh-gold-rock-cert-page-width-mismatch.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/plans/happy-teal-tree-platform-signing-page-branding.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/plans/pale-lemon-rock-pnpm-migration.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/plans/sharp-gold-mountain-custom-brand-logo-url.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/plans/smooth-coral-earth-database-rate-limiting.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/plans/smooth-ivory-sky-partial-signed-pdf-download.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/plans/swift-pink-sky-simplewebauthn-v13-upgrade.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/plans/warm-purple-flower-custom-email-domain-sync-and-recovery.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/plans/wild-indigo-wave-rejected-expired-recipient-filters.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/plans/wild-teal-wind-add-folder-support-to-v1-api.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/scratches/search-query-optimization.md",
+      "kind": "agent_rules"
+    },
+    {
+      "path": ".agents/skills/agent-browser/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/create-documentation/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/envelope-editor-v2-e2e/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".cursorrules",
+      "kind": "agent_rules"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "ARCHITECTURE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CODE_STYLE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/docs/content/docs/compliance/standards.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "apps/docs/content/docs/developers/contributing/contributing-translations.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "biome.json",
+      "kind": "lint"
+    }
+  ]
+}

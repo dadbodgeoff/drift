@@ -1,0 +1,619 @@
+[
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "Django-CRM",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/label/A/Django-CRM.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/b991e6fa-f61b-41b2-b299-7bc1c6b97603/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/584ceacc-e1f5-4960-8c00-7b7c9224cbae",
+    "checkout_status": [],
+    "expected": [
+      "Django-CRM/D-39c60a"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:23.305Z",
+    "collected": {
+      "at": "2026-11-07T23:40:44.881Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/A/Django-CRM.jsonl",
+      "records": 1,
+      "sha256": "9ff8b6f42b8dad985390885e8b1213c8894d8fea87ace5c44eeffe2fa22497ed"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "InvenTree",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/label/A/InvenTree.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/85f6e042-ce82-4b28-850a-c7d1c56c7a14/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/aef0eba5-8352-4962-a6e6-a6d5b895cdc3",
+    "checkout_status": [],
+    "expected": [
+      "InvenTree/D-7c0991",
+      "InvenTree/D-c2b101",
+      "InvenTree/D-90cbee",
+      "InvenTree/D-100344",
+      "InvenTree/D-455913",
+      "InvenTree/D-b5f2f2"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:23.773Z",
+    "collected": {
+      "at": "2026-11-07T23:42:43.526Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/A/InvenTree.jsonl",
+      "records": 6,
+      "sha256": "b1dd40c16299ee9ed64be926321555398ef1a019cfc25ed4383deeebd95dbf56"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "ralph",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/label/A/ralph.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/1414dd26-899b-4dff-b42d-3acd70702431/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/4e5674d0-9e42-4b25-a7a5-ec43113dd5f1",
+    "checkout_status": [],
+    "expected": [
+      "ralph/D-40c349",
+      "ralph/D-03c0d5",
+      "ralph/D-c2b101",
+      "ralph/D-a68e99"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:23.877Z",
+    "rejected": [
+      {
+        "at": "2026-11-07T23:42:44.338Z",
+        "problems": [
+          "out.jsonl:1: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: src/ralph/assets/api/serializers.py (cannot hold a member of the role: outside its package, directory or file kind), setup.cfg (a config file), mypy.ini (a config file), pyproject.toml (a config file)",
+          "out.jsonl:2: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: src/ralph/api/serializers.py (cannot hold a member of the role: outside its package, directory or file kind), src/ralph/api/viewsets.py (cannot hold a member of the role: outside its package, directory or file kind), src/ralph/assets/api/serializers.py (cannot hold a member of the role: outside its package, directory or file kind), setup.cfg (a config file), and 2 more"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-07T23:44:36.965Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/A/ralph.jsonl",
+      "records": 4,
+      "sha256": "155170c9bde388286404bf3f14a7011147a09c2e8860fbe4d6aa356cb0ac09f6"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "Misago",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/label/A/Misago.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/10bdc202-113f-45a1-9d51-676e3f637f09/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/280a0ee6-bf70-4818-818e-8facedb19315",
+    "checkout_status": [],
+    "expected": [
+      "Misago/D-d8703c",
+      "Misago/D-c9ae1e",
+      "Misago/D-e72fc8",
+      "Misago/D-562769"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:24.231Z",
+    "collected": {
+      "at": "2026-11-07T23:46:44.819Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/A/Misago.jsonl",
+      "records": 4,
+      "sha256": "d65f48fd19f8a134f4d1010670997ee1afaf5f5eb2417c8e08597431dffe428f"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "paperless-ngx",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/label/A/paperless-ngx.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/376eb853-9561-4c4b-817b-274b6afa2a96/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/6cc8a174-6c1e-467f-8eb9-7ba2d775970e",
+    "checkout_status": [],
+    "expected": [
+      "paperless-ngx/D-de2489",
+      "paperless-ngx/D-b958b1",
+      "paperless-ngx/D-0dfb1b"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:24.422Z",
+    "collected": {
+      "at": "2026-11-07T23:46:43.931Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/A/paperless-ngx.jsonl",
+      "records": 3,
+      "sha256": "79a35a8de253cab4142629de422b6991545a615151069eccd835933ccbebc16c"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "wger",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/label/A/wger.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/794eabed-50dc-4e21-9f01-b69b289f9b4c/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/595840bc-faf6-4ed4-bc52-ad372ec75b25",
+    "checkout_status": [],
+    "expected": [
+      "wger/D-f93026"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:24.481Z",
+    "collected": {
+      "at": "2026-11-07T23:45:15.584Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/A/wger.jsonl",
+      "records": 1,
+      "sha256": "bcd05f54a4392afb022797e30d456bf22d00e90080291964dc9c923ca9bac560"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "lotus",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/label/A/lotus.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/3c9d3c1f-db36-4795-a7f4-d90340afadc0/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/14ab03e7-125d-450c-a2be-61a0cb2783c9",
+    "checkout_status": [],
+    "expected": [
+      "lotus/D-7d8745"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:24.555Z",
+    "collected": {
+      "at": "2026-11-07T23:46:22.497Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/A/lotus.jsonl",
+      "records": 1,
+      "sha256": "c4b72222f6e1833cd71b6a175b4883f2e998f397eff619d899dac7e26c648c90"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "pontoon",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/label/A/pontoon.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/5abd0162-4210-437b-b980-77750a3c1a8b/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/20818399-2530-4717-83af-3927e5927690",
+    "checkout_status": [],
+    "expected": [
+      "pontoon/D-6957a9"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:24.583Z",
+    "collected": {
+      "at": "2026-11-07T23:46:38.374Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/A/pontoon.jsonl",
+      "records": 1,
+      "sha256": "f626300d97225b24049a26b1a9bc6c17d75af856796fb2a896108bd2fc4fcf31"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "tasking-manager",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/label/A/tasking-manager.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/dfcac237-0ca7-41b8-8ff4-a8b884528c11/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/ed946099-dc8e-4ea0-a17b-03d13f9d5df4",
+    "checkout_status": [],
+    "expected": [
+      "tasking-manager/D-ee4d58",
+      "tasking-manager/D-665f41"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:24.632Z",
+    "collected": {
+      "at": "2026-11-07T23:49:24.719Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/A/tasking-manager.jsonl",
+      "records": 2,
+      "sha256": "cbd22e2bc9f41f265d465d887dbf68bd814d31aa753775cd33cd4b9ebbd2aaff"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "changedetection.io",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/label/A/changedetection.io.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/2de251e2-6fb2-4e78-b1b4-276efd0dda0d/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/bdf85829-5645-4337-a540-d3f0b2aee8ff",
+    "checkout_status": [],
+    "expected": [
+      "changedetection.io/D-129993"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:25:24.683Z",
+    "collected": {
+      "at": "2026-11-07T23:48:54.731Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/A/changedetection.io.jsonl",
+      "records": 1,
+      "sha256": "d3f44db6fe61c91718294871c02259234827b71de9631c439a1b654c8a18f14c"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "Django-CRM",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/label/B/Django-CRM.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/1d30e816-cd8b-4ae9-af10-e117c4764887/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/41a65106-02bf-49b0-ad52-c85413e93b4e",
+    "checkout_status": [],
+    "expected": [
+      "Django-CRM/D-39c60a"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:40:52.436Z",
+    "rejected": [
+      {
+        "at": "2026-11-07T23:42:11.972Z",
+        "problems": [
+          "out.jsonl:1: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: backend/leads/views/lead_views.py (cannot hold a member of the role: outside its package, directory or file kind), backend/common/permissions.py (cannot hold a member of the role: outside its package, directory or file kind), backend/ruff.toml (a config file)"
+        ]
+      },
+      {
+        "at": "2026-11-07T23:44:37.180Z",
+        "problems": [
+          "out.jsonl:1: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: backend/common/permissions.py (cannot hold a member of the role: outside its package, directory or file kind), backend/ruff.toml (a config file)"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-07T23:52:00.143Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/B/Django-CRM.jsonl",
+      "records": 1,
+      "sha256": "c137d0d1a9bf29cfd46c9d3236373f1ac18618218f1a62ad09c215a14973fc71"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "InvenTree",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/label/B/InvenTree.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/fd205e7d-6dbf-47ac-9ffe-7ff71d11c618/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/00cbc429-0e9a-475f-978f-1c0626bede98",
+    "checkout_status": [],
+    "expected": [
+      "InvenTree/D-7c0991",
+      "InvenTree/D-c2b101",
+      "InvenTree/D-90cbee",
+      "InvenTree/D-100344",
+      "InvenTree/D-455913",
+      "InvenTree/D-b5f2f2"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:42:44.044Z",
+    "rejected": [
+      {
+        "at": "2026-11-07T23:44:15.795Z",
+        "problems": [
+          "out.jsonl:1: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:2: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: pyproject.toml (a config file)",
+          "out.jsonl:6: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'"
+        ]
+      },
+      {
+        "at": "2026-11-07T23:44:58.470Z",
+        "problems": [
+          "out.jsonl:1: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'",
+          "out.jsonl:2: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: pyproject.toml (a config file)",
+          "out.jsonl:6: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-07T23:53:49.941Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/B/InvenTree.jsonl",
+      "records": 6,
+      "sha256": "bf0c404640f3cd9ea336eeb9acc10ad2ac4a06285a46ee2eb3643071e97b39a2"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "wger",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/label/B/wger.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/afb82eea-3557-4d82-9387-58655991c3d6/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/7b4ab698-a9a3-40f4-aefb-bab84b28cb69",
+    "checkout_status": [],
+    "expected": [
+      "wger/D-f93026"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:45:15.736Z",
+    "collected": {
+      "at": "2026-11-07T23:45:51.878Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/B/wger.jsonl",
+      "records": 1,
+      "sha256": "4b758d1537ce76cb2c488f5a36e443dbd842728ed7baa85700ac4e92fa376e9c"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "lotus",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/label/B/lotus.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/4896defa-6502-4407-9acb-6161bc4252d5/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/283c5f09-95b9-4f9b-918b-b2711d91fe05",
+    "checkout_status": [],
+    "expected": [
+      "lotus/D-7d8745"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:46:22.612Z",
+    "collected": {
+      "at": "2026-11-07T23:47:54.679Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/B/lotus.jsonl",
+      "records": 1,
+      "sha256": "0692d1ee4dc2b8e59a64b0f7e5e24b124b645faa7fba65b18e6582b97f1aefd2"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "ralph",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/label/B/ralph.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/734aa0be-7947-4db2-8453-96ad61f20c51/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/9f7e630b-7327-4702-b136-8c04f3eae8e2",
+    "checkout_status": [],
+    "expected": [
+      "ralph/D-40c349",
+      "ralph/D-03c0d5",
+      "ralph/D-c2b101",
+      "ralph/D-a68e99"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:46:22.827Z",
+    "rejected": [
+      {
+        "at": "2026-11-07T23:48:01.454Z",
+        "problems": [
+          "out.jsonl:1: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: pyproject.toml (a config file)",
+          "out.jsonl:3: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: pyproject.toml (a config file)"
+        ]
+      },
+      {
+        "at": "2026-11-07T23:51:30.705Z",
+        "problems": [
+          "out.jsonl:3: checked does not include the example file src/ralph/access_cards/admin.py"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-07T23:53:31.668Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/B/ralph.jsonl",
+      "records": 4,
+      "sha256": "28e02786130721fc5ea28acde4e2c89b2040884f649d4e0a40901a6f82cdf568"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "pontoon",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/label/B/pontoon.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/7a3b434b-e7b1-45a9-87d9-af60e6f04d90/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/29f93201-f59d-4ccf-9617-11d819bcb679",
+    "checkout_status": [],
+    "expected": [
+      "pontoon/D-6957a9"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:46:38.454Z",
+    "collected": {
+      "at": "2026-11-07T23:47:48.171Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/B/pontoon.jsonl",
+      "records": 1,
+      "sha256": "97dec13d3ec9b2df869191ee2e59708c68a30ce9319386aa2e7b72feb08607cd"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "paperless-ngx",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/label/B/paperless-ngx.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/0015362e-e1ea-44b8-9c1d-cd595962acf9/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/727295fe-b293-453e-bf76-4a26044da107",
+    "checkout_status": [],
+    "expected": [
+      "paperless-ngx/D-de2489",
+      "paperless-ngx/D-b958b1",
+      "paperless-ngx/D-0dfb1b"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:46:44.196Z",
+    "rejected": [
+      {
+        "at": "2026-11-07T23:48:01.221Z",
+        "problems": [
+          "out.jsonl:1: checked lists 1 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: pyproject.toml (a config file)",
+          "out.jsonl:2: checked lists 0 files besides the example and outliers, needs 2 (other members); rubric v3 \"What to open\" 3: open at least two other members of the role, in files other than the example's and the outliers'; not counted: pyproject.toml (a config file)"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-07T23:51:54.788Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/B/paperless-ngx.jsonl",
+      "records": 3,
+      "sha256": "232a33e7c188c3059c666639a67f5be569942a207e67c923a954adc3b671f508"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "Misago",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/label/B/Misago.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/7625f9fa-803a-46b3-a904-d5987ae37fcb/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/f06ba161-4e4a-43c8-b385-34b7fb3ce6f7",
+    "checkout_status": [],
+    "expected": [
+      "Misago/D-d8703c",
+      "Misago/D-c9ae1e",
+      "Misago/D-e72fc8",
+      "Misago/D-562769"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:46:45.216Z",
+    "rejected": [
+      {
+        "at": "2026-11-07T23:48:27.085Z",
+        "problems": [
+          "out.jsonl:2: checked does not include the example file misago/posting/hooks/get_private_thread_edit_formset.py"
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-07T23:54:15.154Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/B/Misago.jsonl",
+      "records": 4,
+      "sha256": "19ba2559346dfb8efe859f934eb8cac94699071f8de571348ac8dde39c97eaf6"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "changedetection.io",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/label/B/changedetection.io.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/7f8f8d2d-2bbe-4cc9-9052-f22128bbe629/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/64b71520-d1f4-4b4e-92c2-53711a749502",
+    "checkout_status": [],
+    "expected": [
+      "changedetection.io/D-129993"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:48:54.854Z",
+    "collected": {
+      "at": "2026-11-07T23:49:41.178Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/B/changedetection.io.jsonl",
+      "records": 1,
+      "sha256": "2f313ff3e9b53e02c7e529e6ec962c437fac2d72b4ea35404b2ebc2528613c6a"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "tasking-manager",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/label/B/tasking-manager.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/f7188084-d90b-4e37-8650-eac605183b36/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/d40b2627-fba6-491b-9760-0ba11754de71",
+    "checkout_status": [],
+    "expected": [
+      "tasking-manager/D-ee4d58",
+      "tasking-manager/D-665f41"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T23:49:24.812Z",
+    "collected": {
+      "at": "2026-11-07T23:50:44.878Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/B/tasking-manager.jsonl",
+      "records": 2,
+      "sha256": "e7e59e99e91d87f8f135a8ce31c540d524bbf0af2246eca34860570bf1eda05d"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "InvenTree",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/adjudicate/C/InvenTree.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/ba95a37c-2748-4544-a704-c0a404da61d1/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/0f2f2064-a9f9-4001-b718-9c1a01a0f0af",
+    "checkout_status": [],
+    "expected": [
+      "InvenTree/D-90cbee"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T00:06:26.572Z",
+    "collected": {
+      "at": "2026-11-08T00:08:44.046Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/C/InvenTree.jsonl",
+      "records": 1,
+      "sha256": "a7f00d356b55881dfdc42901051358d3851713a7167e8f6a52659519c2ec0ac9"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "Misago",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/adjudicate/C/Misago.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/80dac23b-2aa4-48c3-a142-c94c9b27d1bc/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/ff0a49f5-0b7b-44ac-87fe-804cff3ccb19",
+    "checkout_status": [],
+    "expected": [
+      "Misago/D-d8703c",
+      "Misago/D-e72fc8",
+      "Misago/D-c9ae1e"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T00:06:27.027Z",
+    "rejected": [
+      {
+        "at": "2026-11-08T00:09:30.183Z",
+        "problems": [
+          "out.jsonl:1: sided_with must be \"1\", \"2\" or \"neither\"",
+          "out.jsonl:2: sided_with must be \"1\", \"2\" or \"neither\"",
+          "out.jsonl:3: sided_with must be \"1\", \"2\" or \"neither\""
+        ]
+      }
+    ],
+    "collected": {
+      "at": "2026-11-08T00:12:30.657Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/C/Misago.jsonl",
+      "records": 3,
+      "sha256": "308c103dec4206120e9bef98f02f768f3c6166e655ddbfcccccbef031eae29ba"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "paperless-ngx",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/adjudicate/C/paperless-ngx.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/eda2cdd3-2b5f-4bf2-be2e-64b146d1dd9a/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/1f8efe3f-1141-4bef-9126-1464dd66b8bc",
+    "checkout_status": [],
+    "expected": [
+      "paperless-ngx/D-0dfb1b"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T00:06:27.325Z",
+    "collected": {
+      "at": "2026-11-08T00:08:44.422Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/C/paperless-ngx.jsonl",
+      "records": 1,
+      "sha256": "44690f8d920ec331d1cf5009e93230ca926b7285f70556e0dbe01a1b98c51518"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "changedetection.io",
+    "prompt": "/home/user/drift-wt/relabel5/eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/prompts/adjudicate/C/changedetection.io.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/outbox/5f0393fd-4fb9-48cd-824d-99b43bf32ef4/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-4770a7/workdirs/02b41f25-76c8-4c53-a3b7-654f1bfdaa55",
+    "checkout_status": [],
+    "expected": [
+      "changedetection.io/D-129993"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-08T00:06:27.401Z",
+    "collected": {
+      "at": "2026-11-08T00:08:45.168Z",
+      "dest": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel/labels/C/changedetection.io.jsonl",
+      "records": 1,
+      "sha256": "33c024ec4241db1fd92ca61f6b51f621cd965dd890442c47c75b3f134bce729e"
+    }
+  }
+]

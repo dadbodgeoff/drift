@@ -1,0 +1,90 @@
+# Precision: eval/study/runs/dev-v3-relabel5-2026-11-07/py/views/d7
+
+> **Computed on INCOMPLETE A/B label sets** (`--allow-incomplete`: carried labels only, before the relabel is labelled: the cards to label count as WRONG). Not labelled: A netbox (eval/study/runs/dev-v3-relabel5-2026-11-07/py/relabel): 0 of 10 labelled (prompt rendered, output not collected); A saleor (eval/study/runs/dev-v3-relabel5-2026-11-07/py/relabel): 0 of 1 labelled (prompt rendered, output not collected); A fastapi (eval/study/runs/dev-v3-relabel5-2026-11-07/py/relabel): 0 of 1 labelled (prompt rendered, output not collected); B netbox (eval/study/runs/dev-v3-relabel5-2026-11-07/py/relabel): 0 of 10 labelled (no prompt rendered); B saleor (eval/study/runs/dev-v3-relabel5-2026-11-07/py/relabel): 0 of 1 labelled (no prompt rendered); B fastapi (eval/study/runs/dev-v3-relabel5-2026-11-07/py/relabel): 0 of 1 labelled (no prompt rendered).
+
+- drift: drift 0.1.0-dev commit de57356738f26849eba160b797d271e59652b5ec, binary sha256 0d4ec8f54c10
+- manifest: eval/repos-py.json, 6 repos ok
+- labels: eval/study/runs/dev-v3-relabel5-2026-11-07/py/carried.jsonl (5 records)
+- default tier: the proposal is TypeScript/JavaScript, rule kind in {wrapped_by:call, avoids:import}, the rule names no symbol from outside the repository (package, built-in, unresolved) and role has ≥ 15 members; every other shown proposal is suggestion tier (Python: advise only, every proposal suggestion tier) (NOT pre-registered (run.json params.tier_pre_registered: false))
+- rubric: v3 (labeller-facing text sha256 79316bdc08a6…); label records by rubric: v3 5
+- decisions: D1 (decided), D2 (decided), D3 (decided), D4 (decided), D5 (approved), D5a (decided), D6 (approved), D7 (approved), D7a (decided), D8 (pre-registered), D9 (decided); see README.md decision log
+
+## Overall
+
+|  | Shown | Labelled | ACCEPT | TRIVIAL | WRONG | Not-wrong rate | Accept rate | Yield (ACCEPT/repo) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| All proposals | 17 | 5 | 2 | 0 | 3 | 40.0% [11.8%–76.9%] (4 repos: bootstrap 0.0%–75.0%, cluster-t 0.0%–100.0%) | 40.0% [11.8%–76.9%] (4 repos: bootstrap 0.0%–75.0%, cluster-t 0.0%–100.0%) | 0.3 mean, 0 median, 2/3 repos with none (3 partly labelled repos excluded) |
+| Default tier (default rule kinds, ≥ 15 members, not pre-registered) | 0 | 0 | 0 | 0 | 0 | – | – | 0.0 mean, 0 median, 6/6 repos with none |
+| Suggestion tier (everything else) | 17 | 5 | 2 | 0 | 3 | 40.0% [11.8%–76.9%] (4 repos: bootstrap 0.0%–75.0%, cluster-t 0.0%–100.0%) | 40.0% [11.8%–76.9%] (4 repos: bootstrap 0.0%–75.0%, cluster-t 0.0%–100.0%) | 0.3 mean, 0 median, 2/3 repos with none (3 partly labelled repos excluded) |
+
+**12 shown proposals have no label** (excluded above). Over all 17 shown, with the unlabelled counted as WRONG (the target definition) / as ACCEPT:
+
+|  | Not-wrong | Accept |
+| --- | --- | --- |
+| All proposals, unlabelled = WRONG | 11.8% [3.3%–34.3%] (5 repos: bootstrap 0.0%–44.4%, cluster-t 0.0%–42.7%) | 11.8% [3.3%–34.3%] (5 repos: bootstrap 0.0%–44.4%, cluster-t 0.0%–42.7%) |
+| Default tier, unlabelled = WRONG | – | – |
+| Suggestion tier, unlabelled = WRONG | 11.8% [3.3%–34.3%] (5 repos: bootstrap 0.0%–44.4%, cluster-t 0.0%–42.7%) | 11.8% [3.3%–34.3%] (5 repos: bootstrap 0.0%–44.4%, cluster-t 0.0%–42.7%) |
+| All proposals, unlabelled = ACCEPT (upper bound) | 82.4% | 82.4% |
+
+Unlabelled: netbox/D-cc1341, netbox/D-281ae8, netbox/D-e2c3e4, netbox/D-bc0c7d, netbox/D-3ab42c, netbox/D-76eb6b, netbox/D-8a1131, netbox/D-b69a13, netbox/D-58913a, netbox/D-310ec7, saleor/D-7e57d6, fastapi/D-499c0e
+
+## Per language and tier
+
+Pre-registered targets (≥ 95%): **default-tier accept** and **not-wrong over all shown, both tiers**. Rates here are over all shown proposals, unlabelled counted as WRONG (the target definition): Wilson 95%, then repo-cluster 95% intervals (percentile bootstrap and cluster-t) with the number of repos; quote the wider cluster interval. The default-tier accept target is met when the point estimate, per language, is ≥ 95% (decision D1, 2026-11-05); the not-wrong target is met when the point estimate, per language, is ≥ 95% (decision D4, 2026-11-05); the intervals are published next to both. Pooled rows (all languages) are secondary and carry no verdict. Rows are by the convention's language (decision D7: Python when any member of its role is Python), not the repo's; only the set's own language carries a verdict. Incomplete label sets (--allow-incomplete): no verdicts.
+
+| Language | Tier | Repos | Shown | Labelled | ACCEPT | TRIVIAL | WRONG | Accept | Not-wrong |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| typescript/javascript | Default tier | 1 | 0 | 0 | 0 | 0 | 0 | **–**; target met when the point estimate, per language, is ≥ 95% (decision D1, 2026-11-05): **no verdict (no default-tier proposals, n = 0)** | – |
+| typescript/javascript | Suggestion tier | 1 | 1 | 1 | 0 | 0 | 1 | 0.0% [0.0%–79.3%] (1 repo: no cluster interval) | 0.0% [0.0%–79.3%] (1 repo: no cluster interval) |
+| typescript/javascript | All shown (both tiers) | 1 | 1 | 1 | 0 | 0 | 1 | 0.0% [0.0%–79.3%] (1 repo: no cluster interval) | **0.0% [0.0%–79.3%] (1 repo: no cluster interval)**; target met when the point estimate, per language, is ≥ 95% (decision D4, 2026-11-05): **no verdict (incomplete label sets, --allow-incomplete)** |
+| python | Default tier | 4 | 0 | 0 | 0 | 0 | 0 | **–**; target met when the point estimate, per language, is ≥ 95% (decision D1, 2026-11-05): **no verdict (no default-tier proposals, n = 0)** | – |
+| python | Suggestion tier | 4 | 16 | 4 | 2 | 0 | 2 | 12.5% [3.5%–36.0%] (4 repos: bootstrap 0.0%–50.0%, cluster-t 0.0%–52.5%) | 12.5% [3.5%–36.0%] (4 repos: bootstrap 0.0%–50.0%, cluster-t 0.0%–52.5%) |
+| python | All shown (both tiers) | 4 | 16 | 4 | 2 | 0 | 2 | 12.5% [3.5%–36.0%] (4 repos: bootstrap 0.0%–50.0%, cluster-t 0.0%–52.5%) | **12.5% [3.5%–36.0%] (4 repos: bootstrap 0.0%–50.0%, cluster-t 0.0%–52.5%)**; target met when the point estimate, per language, is ≥ 95% (decision D4, 2026-11-05): **no verdict (incomplete label sets, --allow-incomplete)** |
+| all languages (pooled, secondary) | Default tier | 6 | 0 | 0 | 0 | 0 | 0 | – | – |
+| all languages (pooled, secondary) | Suggestion tier | 6 | 17 | 5 | 2 | 0 | 3 | 11.8% [3.3%–34.3%] (5 repos: bootstrap 0.0%–44.4%, cluster-t 0.0%–42.7%) | 11.8% [3.3%–34.3%] (5 repos: bootstrap 0.0%–44.4%, cluster-t 0.0%–42.7%) |
+| all languages (pooled, secondary) | All shown (both tiers) | 6 | 17 | 5 | 2 | 0 | 3 | 11.8% [3.3%–34.3%] (5 repos: bootstrap 0.0%–44.4%, cluster-t 0.0%–42.7%) | 11.8% [3.3%–34.3%] (5 repos: bootstrap 0.0%–44.4%, cluster-t 0.0%–42.7%) |
+
+## Per language, tier and rule family
+
+Rates over all shown, unlabelled counted as WRONG, with Wilson 95% and both repo-cluster 95% intervals (clusters: the repos with a proposal of that family in that tier); quote the wider cluster interval. Secondary to the per-language rows above: no verdict.
+
+| Language | Family | Tier | Shown | ACCEPT | TRIVIAL | WRONG | Accept | Not-wrong |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| typescript/javascript | Package and repo facts | Suggestion tier | 1 | 0 | 0 | 1 | 0.0% [0.0%–79.3%] (1 repo: no cluster interval) | 0.0% [0.0%–79.3%] (1 repo: no cluster interval) |
+| python | Decorators | Suggestion tier | 3 | 0 | 0 | 0 | 0.0% [0.0%–56.1%] (1 repo: no cluster interval) | 0.0% [0.0%–56.1%] (1 repo: no cluster interval) |
+| python | Base classes | Suggestion tier | 1 | 0 | 0 | 0 | 0.0% [0.0%–79.3%] (1 repo: no cluster interval) | 0.0% [0.0%–79.3%] (1 repo: no cluster interval) |
+| python | Argument keys | Suggestion tier | 2 | 0 | 0 | 0 | 0.0% [0.0%–65.8%] (1 repo: no cluster interval) | 0.0% [0.0%–65.8%] (1 repo: no cluster interval) |
+| python | Calls | Suggestion tier | 3 | 0 | 0 | 0 | 0.0% [0.0%–56.1%] (1 repo: no cluster interval) | 0.0% [0.0%–56.1%] (1 repo: no cluster interval) |
+| python | Naming | Suggestion tier | 3 | 1 | 0 | 1 | 33.3% [6.1%–79.2%] (2 repos: bootstrap 0.0%–100.0%, cluster-t 0.0%–100.0%) | 33.3% [6.1%–79.2%] (2 repos: bootstrap 0.0%–100.0%, cluster-t 0.0%–100.0%) |
+| python | Control and typing | Suggestion tier | 1 | 0 | 0 | 0 | 0.0% [0.0%–79.3%] (1 repo: no cluster interval) | 0.0% [0.0%–79.3%] (1 repo: no cluster interval) |
+| python | Package and repo facts | Suggestion tier | 2 | 0 | 0 | 1 | 0.0% [0.0%–65.8%] (2 repos: bootstrap 0.0%–0.0%, cluster-t 0.0%–0.0%) | 0.0% [0.0%–65.8%] (2 repos: bootstrap 0.0%–0.0%, cluster-t 0.0%–0.0%) |
+| python | Import source | Suggestion tier | 1 | 1 | 0 | 0 | 100.0% [20.7%–100.0%] (1 repo: no cluster interval) | 100.0% [20.7%–100.0%] (1 repo: no cluster interval) |
+
+## Per repo
+
+| Repo | Shown | A | T | W | Not-wrong | Accept | Yield | Tier n | Tier accept |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| full-stack-fastapi-template | 1 | 0 | 0 | 1 | 0% [0%–79%] | 0% [0%–79%] | 0 | 0 | – |
+| netbox | 11 | 0 | 0 | 1 | 0% [0%–79%] | 0% [0%–79%] | 0 | 0 | – |
+| saleor | 2 | 1 | 0 | 0 | 100% [21%–100%] | 100% [21%–100%] | 1 | 0 | – |
+| flask | 0 | 0 | 0 | 0 | – | – | 0 | 0 | – |
+| fastapi | 1 | 0 | 0 | 0 | – | – | 0 | 0 | – |
+| langchain | 2 | 1 | 0 | 1 | 50% [9%–91%] | 50% [9%–91%] | 1 | 0 | – |
+
+## Per rule family
+
+| Family | n | A | T | W | Accept | Not-wrong | Tier n | Tier accept |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Decorators | 3 | 0 | 0 | 0 | – | – | 0 | – |
+| Base classes | 1 | 0 | 0 | 0 | – | – | 0 | – |
+| Argument keys | 2 | 0 | 0 | 0 | – | – | 0 | – |
+| Calls | 3 | 0 | 0 | 0 | – | – | 0 | – |
+| Naming | 3 | 1 | 0 | 1 | 50% [9%–91%] | 50% [9%–91%] | 0 | – |
+| Control and typing | 1 | 0 | 0 | 0 | – | – | 0 | – |
+| Package and repo facts | 3 | 0 | 0 | 2 | 0% [0%–66%] | 0% [0%–66%] | 0 | – |
+| Import source | 1 | 1 | 0 | 0 | 100% [21%–100%] | 100% [21%–100%] | 0 | – |
+
+## Why not accepted
+
+- TRIVIAL by: –
+- WRONG because: legit_outliers 3

@@ -1,0 +1,79 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - api
+  - data
+  suffixes: []
+conventions:
+- id: D-7a9fce
+  status: proposed
+  mode: advise
+  summary: exported values in statsmodels/** (__init__ files) call PytestTester()
+  role:
+    package: ""
+    dir: statsmodels
+    file: __init__
+    entry: '-'
+    kind: variable
+  rule:
+    type: calls
+    callee: statsmodels/tools/_test_runner.py#PytestTester
+  evidence:
+    holders: 34
+    total: 35
+    lower_bound: 0.855
+    lift: 79.371
+    python_members: 35
+  example: statsmodels/base/__init__.py#test
+  selector_version: 3
+- id: D-c38d19
+  status: proposed
+  mode: advise
+  summary: dataclasses in statsmodels/** are named `*Result`
+  role:
+    package: ""
+    dir: statsmodels
+    file: "*"
+    entry: '-'
+    kind: class
+    variety: dataclass
+  rule:
+    type: named
+    pattern: "*Result"
+  evidence:
+    holders: 33
+    total: 34
+    lower_bound: 0.851
+    lift: 8.312
+    python_members: 34
+  example: statsmodels/base/_parameter_inference.py#ScoreTestResult
+  selector_version: 3
+- id: D-2cf8e5
+  status: proposed
+  mode: advise
+  summary: dataclasses in statsmodels/** extend LimitedIterationMixin
+  role:
+    package: ""
+    dir: statsmodels
+    file: "*"
+    entry: '-'
+    kind: class
+    variety: dataclass
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - statsmodels/stats/base.py#LimitedIterationMixin
+  evidence:
+    holders: 31
+    total: 34
+    lower_bound: 0.77
+    lift: 22.937
+    python_members: 34
+  example: statsmodels/base/_parameter_inference.py#ScoreTestResult
+  selector_version: 3

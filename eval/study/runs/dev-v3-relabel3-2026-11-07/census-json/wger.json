@@ -1,0 +1,188 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "cgu29-7d63aa3-1794031224",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel3prep/restage-7d63aa3/cache/repos/wger",
+  "units": 1789,
+  "roles": 84,
+  "conventions": 3,
+  "shown": 3,
+  "tiers": {
+    "default": 0,
+    "suggestion": 3
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-82d21d",
+      "rank": 1,
+      "summary": "HTTP handlers in wger/** (api/views files) are decorated with utils.extend_schema()",
+      "role": {
+        "package": "",
+        "dir": "wger",
+        "file": "api/views",
+        "entry": "http",
+        "kind": "function",
+        "members": 26
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:drf_spectacular#utils.extend_schema"
+        ]
+      },
+      "evidence": {
+        "holders": 25,
+        "total": 26,
+        "lower_bound": 0.811,
+        "lift": 11.231,
+        "python_members": 26
+      },
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "wger/core/api/views.py",
+        "symbol": "ApplicationVersionView.get",
+        "line": 185
+      },
+      "outliers": [
+        {
+          "path": "wger/exercises/api/views.py",
+          "symbol": "ExerciseInfoViewset.list",
+          "line": 264
+        }
+      ],
+      "outliers_total": 1
+    },
+    {
+      "id": "D-db04dc",
+      "rank": 2,
+      "summary": "classes in wger/** (serializers files) are named `*Serializer`",
+      "role": {
+        "package": "",
+        "dir": "wger",
+        "file": "serializers",
+        "entry": "-",
+        "kind": "class",
+        "members": 79
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "evidence": {
+        "holders": 76,
+        "total": 79,
+        "lower_bound": 0.894,
+        "lift": 6.157,
+        "python_members": 79
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "wger/core/api/serializers.py",
+        "symbol": "LanguageCheckSerializer",
+        "line": 134
+      },
+      "outliers": [
+        {
+          "path": "wger/exercises/api/serializers.py",
+          "symbol": "AbsoluteUrlFileField",
+          "line": 217
+        },
+        {
+          "path": "wger/exercises/api/serializers.py",
+          "symbol": "AbsoluteUrlImageField",
+          "line": 202
+        },
+        {
+          "path": "wger/manager/api/serializers.py",
+          "symbol": "OwnerScopedSessionField",
+          "line": 555
+        }
+      ],
+      "outliers_total": 3
+    },
+    {
+      "id": "D-3755b1",
+      "rank": 3,
+      "summary": "exported values in wger/** (urls files) call urls.path()",
+      "role": {
+        "package": "",
+        "dir": "wger",
+        "file": "urls",
+        "entry": "-",
+        "kind": "variable",
+        "members": 46
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:django#urls.path"
+      },
+      "evidence": {
+        "holders": 44,
+        "total": 46,
+        "lower_bound": 0.855,
+        "lift": 3.63,
+        "python_members": 46
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "wger/config/urls.py",
+        "symbol": "patterns_gym_config",
+        "line": 27
+      },
+      "outliers": [
+        {
+          "path": "wger/urls.py",
+          "symbol": "router",
+          "line": 59
+        },
+        {
+          "path": "wger/urls.py",
+          "symbol": "sitemaps",
+          "line": 265
+        }
+      ],
+      "outliers_total": 2
+    }
+  ],
+  "largest_role": null
+}

@@ -1,0 +1,232 @@
+{
+ "study": "dev set, 2026-11-05, not held-out",
+ "date": "2026-11-05",
+ "provenance": "Final dev-set rates from PR #4 (eval/study v2), n=164: 57 proposals were double-labelled by two blind labellers and adjudicated (κ 0.84); the other 107 keep their single first-round label. Measured on the 16 dev repositories the fixes were derived from, so optimistic until a held-out run.",
+ "note": "Share of proposals a blind reviewer would ACCEPT (and that are not WRONG), by rule family. A hint for where to look hardest, not a verdict. Families are approximate: proposals were bucketed into families by keyword.",
+ "overall": {
+  "n": 164,
+  "rate": 0.72,
+  "notWrong": 0.823
+ },
+ "families": {
+  "Call wrappers": {
+   "n": 22,
+   "rate": 0.909,
+   "notWrong": 0.909
+  },
+  "Base classes": {
+   "n": 12,
+   "rate": 0.833,
+   "notWrong": 0.833
+  },
+  "Decorators": {
+   "n": 17,
+   "rate": 0.824,
+   "notWrong": 0.824
+  },
+  "Layering": {
+   "n": 13,
+   "rate": 0.769,
+   "notWrong": 0.769
+  },
+  "Rendered components": {
+   "n": 14,
+   "rate": 0.714,
+   "notWrong": 0.929
+  },
+  "Argument keys": {
+   "n": 17,
+   "rate": 0.706,
+   "notWrong": 0.882
+  },
+  "Naming": {
+   "n": 23,
+   "rate": 0.652,
+   "notWrong": 0.826
+  },
+  "Calls": {
+   "n": 21,
+   "rate": 0.381,
+   "notWrong": 0.524
+  }
+ },
+ "latest": {
+  "typescript": {
+   "study": "dev set, dev-v3-relabel4-2026-11-07/ts, rubric v3, not held-out",
+   "run": "eval/study/runs/dev-v3-relabel4-2026-11-07/ts",
+   "overall": {
+    "n": 147,
+    "rate": 0.626,
+    "notWrong": 0.646
+   },
+   "families": {
+    "Call wrappers": {
+     "n": 21,
+     "rate": 0.952,
+     "notWrong": 0.952
+    },
+    "Try bodies": {
+     "n": 21,
+     "rate": 0.952,
+     "notWrong": 0.952
+    },
+    "Guards": {
+     "n": 21,
+     "rate": 0.952,
+     "notWrong": 0.952
+    },
+    "Decorators": {
+     "n": 16,
+     "rate": 0.438,
+     "notWrong": 0.5
+    },
+    "Base classes": {
+     "n": 15,
+     "rate": 0.667,
+     "notWrong": 0.667
+    },
+    "Argument keys": {
+     "n": 12,
+     "rate": 0.5,
+     "notWrong": 0.667
+    },
+    "Layering": {
+     "n": 10,
+     "rate": 1,
+     "notWrong": 1
+    },
+    "Rendered components": {
+     "n": 10,
+     "rate": 0.4,
+     "notWrong": 0.4
+    },
+    "Layout wrappers": {
+     "n": 2,
+     "rate": 1,
+     "notWrong": 1
+    },
+    "Calls": {
+     "n": 2,
+     "rate": 0,
+     "notWrong": 0
+    },
+    "Naming": {
+     "n": 34,
+     "rate": 0.588,
+     "notWrong": 0.588
+    },
+    "Other avoidance": {
+     "n": 2,
+     "rate": 0.5,
+     "notWrong": 0.5
+    },
+    "Call order": {
+     "n": 5,
+     "rate": 0.2,
+     "notWrong": 0.2
+    },
+    "Control flow": {
+     "n": 5,
+     "rate": 0.8,
+     "notWrong": 0.8
+    },
+    "Tests": {
+     "n": 13,
+     "rate": 0.538,
+     "notWrong": 0.538
+    },
+    "Libraries": {
+     "n": 13,
+     "rate": 0.538,
+     "notWrong": 0.538
+    },
+    "Models": {
+     "n": 13,
+     "rate": 0.538,
+     "notWrong": 0.538
+    },
+    "Packages": {
+     "n": 13,
+     "rate": 0.538,
+     "notWrong": 0.538
+    },
+    "Dependency versions": {
+     "n": 13,
+     "rate": 0.538,
+     "notWrong": 0.538
+    }
+   }
+  },
+  "python": {
+   "study": "dev set, dev-v3-relabel4-2026-11-07/py, Python proposals only, rubric v3, not held-out",
+   "run": "eval/study/runs/dev-v3-relabel4-2026-11-07/py",
+   "overall": {
+    "n": 21,
+    "rate": 0.571,
+    "notWrong": 0.571
+   },
+   "families": {
+    "Decorators": {
+     "n": 3,
+     "rate": 0.667,
+     "notWrong": 0.667
+    },
+    "Base classes": {
+     "n": 1,
+     "rate": 1,
+     "notWrong": 1
+    },
+    "Argument keys": {
+     "n": 2,
+     "rate": 0.5,
+     "notWrong": 0.5
+    },
+    "Calls": {
+     "n": 3,
+     "rate": 0.667,
+     "notWrong": 0.667
+    },
+    "Naming": {
+     "n": 6,
+     "rate": 0.5,
+     "notWrong": 0.5
+    },
+    "Control flow": {
+     "n": 1,
+     "rate": 1,
+     "notWrong": 1
+    },
+    "Tests": {
+     "n": 4,
+     "rate": 0.25,
+     "notWrong": 0.25
+    },
+    "Libraries": {
+     "n": 4,
+     "rate": 0.25,
+     "notWrong": 0.25
+    },
+    "Models": {
+     "n": 4,
+     "rate": 0.25,
+     "notWrong": 0.25
+    },
+    "Packages": {
+     "n": 4,
+     "rate": 0.25,
+     "notWrong": 0.25
+    },
+    "Dependency versions": {
+     "n": 4,
+     "rate": 0.25,
+     "notWrong": 0.25
+    },
+    "Import sources": {
+     "n": 1,
+     "rate": 1,
+     "notWrong": 1
+    }
+   }
+  }
+ }
+}

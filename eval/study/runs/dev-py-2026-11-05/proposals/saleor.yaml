@@ -1,0 +1,458 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - apps
+  - base
+  - conftest
+  - const
+  - dataloaders
+  - enums
+  - error_codes
+  - events
+  - exceptions
+  - filters
+  - interface
+  - lock_objects
+  - models
+  - notifications
+  - plugin
+  - product
+  - resolvers
+  - saleor3_22
+  - saleor3_23
+  - schema
+  - search
+  - shared
+  - sorters
+  - tasks
+  - test_checkout
+  - test_exclude_shipping
+  - test_notifications
+  - test_order
+  - test_plugin
+  - test_product
+  - test_tasks
+  - test_utils
+  - test_validators
+  - types
+  - utils
+  - validators
+  suffixes: []
+conventions:
+- id: D-049c39
+  status: proposed
+  mode: advise
+  summary: files in saleor/** do not import from saleor/csv/**
+  role:
+    package: ""
+    dir: saleor
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:saleor/csv
+  evidence:
+    holders: 634
+    total: 635
+    lower_bound: 0.991
+    lift: 3.0
+  example: saleor/__main__.py#(file)
+- id: D-9cc87c
+  status: proposed
+  mode: advise
+  summary: files in saleor/** do not import from saleor/invoice/**
+  role:
+    package: ""
+    dir: saleor
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:saleor/invoice
+  evidence:
+    holders: 627
+    total: 635
+    lower_bound: 0.975
+    lift: 3.0
+  example: saleor/__main__.py#(file)
+- id: D-1ccbe3
+  status: proposed
+  mode: advise
+  summary: files in saleor/** (__init__ files) do not import from saleor/checkout/**
+  role:
+    package: ""
+    dir: saleor
+    file: __init__
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:saleor/checkout
+  evidence:
+    holders: 167
+    total: 168
+    lower_bound: 0.967
+    lift: 3.0
+  example: saleor/__init__.py#(file)
+- id: D-2613a4
+  status: proposed
+  mode: advise
+  summary: files in saleor/** (__init__ files) do not import from saleor/plugins/**
+  role:
+    package: ""
+    dir: saleor
+    file: __init__
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:saleor/plugins
+  evidence:
+    holders: 167
+    total: 168
+    lower_bound: 0.967
+    lift: 3.0
+  example: saleor/__init__.py#(file)
+- id: D-4ca461
+  status: proposed
+  mode: advise
+  summary: files in saleor/** (__init__ files) do not import from saleor/app/**
+  role:
+    package: ""
+    dir: saleor
+    file: __init__
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:saleor/app
+  evidence:
+    holders: 167
+    total: 168
+    lower_bound: 0.967
+    lift: 3.0
+  example: saleor/__init__.py#(file)
+- id: D-6488c7
+  status: proposed
+  mode: advise
+  summary: files in saleor/** do not import from saleor/site/**
+  role:
+    package: ""
+    dir: saleor
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:saleor/site
+  evidence:
+    holders: 623
+    total: 635
+    lower_bound: 0.967
+    lift: 3.0
+  example: saleor/__main__.py#(file)
+- id: D-d53bd3
+  status: proposed
+  mode: advise
+  summary: files in saleor/** (__init__ files) do not import from saleor/product/**
+  role:
+    package: ""
+    dir: saleor
+    file: __init__
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:saleor/product
+  evidence:
+    holders: 167
+    total: 168
+    lower_bound: 0.967
+    lift: 3.0
+  example: saleor/__init__.py#(file)
+- id: D-ebb356
+  status: proposed
+  mode: advise
+  summary: files in saleor/** (__init__ files) do not import from saleor/**
+  role:
+    package: ""
+    dir: saleor
+    file: __init__
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:saleor
+  evidence:
+    holders: 167
+    total: 168
+    lower_bound: 0.967
+    lift: 3.0
+  example: saleor/__init__.py#(file)
+- id: D-c71e1f
+  status: proposed
+  mode: advise
+  summary: files in saleor/** do not import from saleor/menu/**
+  role:
+    package: ""
+    dir: saleor
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:saleor/menu
+  evidence:
+    holders: 622
+    total: 635
+    lower_bound: 0.965
+    lift: 3.0
+  example: saleor/__main__.py#(file)
+- id: D-46356a
+  status: proposed
+  mode: advise
+  summary: files in saleor/** do not import from saleor/**
+  role:
+    package: ""
+    dir: saleor
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:saleor
+  evidence:
+    holders: 618
+    total: 635
+    lower_bound: 0.958
+    lift: 3.0
+  example: saleor/__main__.py#(file)
+- id: D-d756c3
+  status: proposed
+  mode: advise
+  summary: classes in saleor/** (error_codes files) are named `*Code`
+  role:
+    package: ""
+    dir: saleor
+    file: error_codes
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Code"
+  evidence:
+    holders: 91
+    total: 92
+    lower_bound: 0.941
+    lift: 26.047
+  example: saleor/account/error_codes.py#AccountErrorCode
+- id: D-71795b
+  status: proposed
+  mode: advise
+  summary: classes in saleor/** (dataloaders files) are named `*Loader`
+  role:
+    package: ""
+    dir: saleor
+    file: dataloaders
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Loader"
+  evidence:
+    holders: 131
+    total: 134
+    lower_bound: 0.936
+    lift: 10.935
+  example: saleor/graphql/account/dataloaders.py#AddressByIdLoader
+- id: D-e36ea5
+  status: proposed
+  mode: advise
+  summary: exported values in saleor/core/** do not read os.environ directly
+  role:
+    package: ""
+    dir: saleor/core
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: avoids
+    signal: os_environ
+  evidence:
+    holders: 74
+    total: 75
+    lower_bound: 0.928
+    lift: 11.493
+  example: saleor/core/auth.py#AUTH_HEADER_PREFIXES
+- id: D-5a6c4f
+  status: proposed
+  mode: advise
+  summary: classes in saleor/graphql/product/dataloaders/** are named `*Loader`
+  role:
+    package: ""
+    dir: saleor/graphql/product/dataloaders
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Loader"
+  evidence:
+    holders: 40
+    total: 42
+    lower_bound: 0.842
+    lift: 10.653
+  example: >-
+    saleor/graphql/product/dataloaders/attributes.py#BaseProductAttributesByProductTypeIdLoader
+- id: D-6acdcd
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in saleor/graphql/translations/** (types files) pass `description` to
+    GlobalID()
+  role:
+    package: ""
+    dir: saleor/graphql/translations
+    file: types
+    entry: '-'
+    kind: class
+  rule:
+    type: passes_key
+    callee: pkg:graphene#GlobalID
+    index: 99
+    key: description
+  evidence:
+    holders: 29
+    total: 30
+    lower_bound: 0.833
+    lift: 30.547
+  example: saleor/graphql/translations/types.py#AttributeTranslatableContent
+- id: D-1cef87
+  status: proposed
+  mode: advise
+  summary: classes in saleor/** (interface files) are decorated with dataclass()
+  role:
+    package: ""
+    dir: saleor
+    file: interface
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:python:dataclasses#dataclass
+  evidence:
+    holders: 44
+    total: 48
+    lower_bound: 0.804
+    lift: 19.638
+  example: saleor/core/pricing/interface.py#LineInfo
+- id: D-fb56f8
+  status: proposed
+  mode: advise
+  summary: >-
+    job entry points in saleor/plugins/** (tasks files) pass `compression` to
+    Celery.task()
+  role:
+    package: ""
+    dir: saleor/plugins
+    file: tasks
+    entry: job
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:celery#Celery.task
+    index: 99
+    key: compression
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 105.143
+  example: saleor/plugins/admin_email/tasks.py#send_email_with_link_to_download_file_task
+- id: D-f5882d
+  status: proposed
+  mode: advise
+  summary: classes in saleor/** (dataloaders files) extend DataLoader
+  role:
+    package: ""
+    dir: saleor
+    file: dataloaders
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - saleor/graphql/core/dataloaders.py#DataLoader
+  evidence:
+    holders: 113
+    total: 134
+    lower_bound: 0.772
+    lift: 10.713
+  example: saleor/graphql/account/dataloaders.py#AddressByIdLoader
+- id: D-e86c5d
+  status: proposed
+  mode: advise
+  summary: files in saleor/graphql/account/** have a test file
+  role:
+    package: ""
+    dir: saleor/graphql/account
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 45
+    total: 51
+    lower_bound: 0.766
+    lift: 1.569
+  example: saleor/graphql/account/bulk_mutations/customer_bulk_delete.py#(file)
+- id: D-6b1d3c
+  status: proposed
+  mode: advise
+  summary: classes in saleor/core/editorjs/** (models files) are named `*Model`
+  role:
+    package: ""
+    dir: saleor/core/editorjs
+    file: models
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Model"
+  evidence:
+    holders: 19
+    total: 20
+    lower_bound: 0.764
+    lift: 109.164
+  example: saleor/core/editorjs/models.py#EditorJSDocumentModel
+- id: D-a6847e
+  status: proposed
+  mode: advise
+  summary: classes in saleor/graphql/attribute/dataloaders/** are named `*Loader`
+  role:
+    package: ""
+    dir: saleor/graphql/attribute/dataloaders
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Loader"
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 10.597
+  example: >-
+    saleor/graphql/attribute/dataloaders/assigned_attributes.py#AttributeByPageIdAndAttributeSlugLoader

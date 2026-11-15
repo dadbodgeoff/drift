@@ -1,0 +1,13 @@
+# R6 LLM verifier (relabel4 dev; tune 17 repos / frozen test 17 repos). Files: ../r6/ (prompts/v3.txt sha 8298c26d..., frozen.json, results/)
+- Small (Haiku-class) model, short non-rubric prompt (~380 words, ~1.5k tok input incl. card + ~18-line excerpts: example, 2 holders, <=5 outliers), 3 samples, 2-of-3 majority; decision computed: intended && violations > exceptions (or no outliers counted).
+- TEST: 32/35 91% [78-97], kept 41%, ACCEPT lost 15/47 (base 55%). TS 27/30 90% [74-97] kept 48%; Py 5/5 kept 22%.
+- TUNE: 39/41 95% [84-99]. All: 71/76 93% [86-97], kept 38%, lost 29/100 ACCEPT.
+- DEFAULT TIER: hides 19/30 ACCEPT (security rules w/ public endpoints) -> [STRICT] never gate default tier.
+- Single sample: 79-92% -> majority matters.
+- Families: naming 21/21, base_class 13/13, control 11/11; decorator 5/7; wrapper(Py) loses 5/6 ACCEPT.
+- Agreement v~final 79-86% (k .58-.72) vs A~B 87-90%. 5 false passes all A&B-unanimous WRONG: 4 legit_outliers with reason outside excerpt (formbricks D-3bb3c1, cal.com D-ec4221, dub D-e25af3, netbox D-76eb6b), 1 misdescribes (twenty D-2df337). Mid model shares 3 of them -> correlated errors.
+- Mid-size control: test 81% [68-90] kept 56%, 10x cost; not clean comparison (small model emitted reasoning tokens).
+- Cost $0.0033/card (3 samples), median 11s, p90 17s. Spend $8.42.
+- vs R4 maintainer (25 cards, tune half, not independent): rule-right agree 20/25; outliers-real 14/20; passed 6 -> maintainer yes 5, edit 1.
+- Circularity: LLM grading LLM labels. Needs real-maintainer verdicts/Studio logs on >=100 passed cards over >=10 repos (LB ~86%), ~300 for LB 90%; fresh held-out pre-registered; repo-clustered CIs; online followed/overrode loop.
+- Recommend: optional suggestion-only agent-side gate behind W0, `drift_verify` payload, verdict cached in .drift/ by card id + content hash. Don't quote 90% externally.

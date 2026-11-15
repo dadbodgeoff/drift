@@ -1,0 +1,443 @@
+{
+ "//": "dev3 re-census at main (WS-A, PLAN-R11 §5): every census output of the 20 dev3 repos at main, against the F10 run record. Written by the WS-A agent; see README.md.",
+ "main": "bb1d45ed",
+ "binary": {
+  "build": "build-verified.sh CGU 74",
+  "census_commit_tag": "cgu74-bb1d45ed-1794166617",
+  "sha256": "834971cce338cbbb119c9df53ae343169f333565c6ae459fdd22d85f06dc27c6"
+ },
+ "f10": {
+  "commit": "5151e5cb40b9",
+  "binary_sha256": "bf33e175ede9283c26ba7cca1ac257820867e8874e5f76171bac63785db65b11"
+ },
+ "commands": {
+  "proposals/<key>.txt": "census --all-outliers --all --max 15",
+  "proposals/<key>.yaml": "init --max 200 (.drift/conventions.yaml)",
+  "pool/<key>.txt": "census --all --max 200",
+  "census-json/<key>.json": "census --json --max 15 (committed here; F10 kept no JSON)"
+ },
+ "repos": {
+  "T01": {
+   "run": "eval/study/runs/dev3-ts-2026-11-08",
+   "sha": "6119a2915b0913b269232d0926e85a509578a04f",
+   "files": {
+    "proposals/T01.txt": {
+     "f10": "34b2ebc54d7069c3d0c02d080be7df9b68663ea5c2b4ed92c0d07897ae3a1bd8",
+     "main": "34b2ebc54d7069c3d0c02d080be7df9b68663ea5c2b4ed92c0d07897ae3a1bd8",
+     "identical": true
+    },
+    "proposals/T01.yaml": {
+     "f10": "02d0d5c639497676ecd93140910617ef3f99bce226d8e66a9fef256ab40bb11f",
+     "main": "02d0d5c639497676ecd93140910617ef3f99bce226d8e66a9fef256ab40bb11f",
+     "identical": true
+    },
+    "pool/T01.txt": {
+     "f10": "34b2ebc54d7069c3d0c02d080be7df9b68663ea5c2b4ed92c0d07897ae3a1bd8",
+     "main": "34b2ebc54d7069c3d0c02d080be7df9b68663ea5c2b4ed92c0d07897ae3a1bd8",
+     "identical": true
+    }
+   }
+  },
+  "T02": {
+   "run": "eval/study/runs/dev3-ts-2026-11-08",
+   "sha": "22ee9fc552c673af1d0c366eff2eb6cda0bb7429",
+   "files": {
+    "proposals/T02.txt": {
+     "f10": "9387f551c480955bf1a91db81fe8a3dcb7a9a553bb36794c0855c76a3e91171f",
+     "main": "9387f551c480955bf1a91db81fe8a3dcb7a9a553bb36794c0855c76a3e91171f",
+     "identical": true
+    },
+    "proposals/T02.yaml": {
+     "f10": "a9b0b76162c403260ef8d9c1dffd89219650d943120b5d5e91475d45c41561ee",
+     "main": "a9b0b76162c403260ef8d9c1dffd89219650d943120b5d5e91475d45c41561ee",
+     "identical": true
+    },
+    "pool/T02.txt": {
+     "f10": "9387f551c480955bf1a91db81fe8a3dcb7a9a553bb36794c0855c76a3e91171f",
+     "main": "9387f551c480955bf1a91db81fe8a3dcb7a9a553bb36794c0855c76a3e91171f",
+     "identical": true
+    }
+   }
+  },
+  "T03": {
+   "run": "eval/study/runs/dev3-ts-2026-11-08",
+   "sha": "47bade063b0277e56a8352997a55e857424d482c",
+   "files": {
+    "proposals/T03.txt": {
+     "f10": "e586685fb1a36018547e3c5a8f3c975873dc6f019028b224b6e951bb7209618b",
+     "main": "e586685fb1a36018547e3c5a8f3c975873dc6f019028b224b6e951bb7209618b",
+     "identical": true
+    },
+    "proposals/T03.yaml": {
+     "f10": "8fa95e911e6e39748e41a51b746df79fa93ea11a0818f1f47f7bd4a3a5645e17",
+     "main": "8fa95e911e6e39748e41a51b746df79fa93ea11a0818f1f47f7bd4a3a5645e17",
+     "identical": true
+    },
+    "pool/T03.txt": {
+     "f10": "e586685fb1a36018547e3c5a8f3c975873dc6f019028b224b6e951bb7209618b",
+     "main": "e586685fb1a36018547e3c5a8f3c975873dc6f019028b224b6e951bb7209618b",
+     "identical": true
+    }
+   }
+  },
+  "T13": {
+   "run": "eval/study/runs/dev3-ts-2026-11-08",
+   "sha": "704824de5f5f2fa052d4c36ec269a1ab0dbfcc8a",
+   "files": {
+    "proposals/T13.txt": {
+     "f10": "a318e6281fa709c941629cfabe3106825d5ce3d2d4068ed3449dce32a6510b3f",
+     "main": "a318e6281fa709c941629cfabe3106825d5ce3d2d4068ed3449dce32a6510b3f",
+     "identical": true
+    },
+    "proposals/T13.yaml": {
+     "f10": "03da8bf9123bdc18eff85564ee2beb4e05c6506b6779ab71f425bcb096d0659f",
+     "main": "03da8bf9123bdc18eff85564ee2beb4e05c6506b6779ab71f425bcb096d0659f",
+     "identical": true
+    },
+    "pool/T13.txt": {
+     "f10": "a318e6281fa709c941629cfabe3106825d5ce3d2d4068ed3449dce32a6510b3f",
+     "main": "a318e6281fa709c941629cfabe3106825d5ce3d2d4068ed3449dce32a6510b3f",
+     "identical": true
+    }
+   }
+  },
+  "T14": {
+   "run": "eval/study/runs/dev3-ts-2026-11-08",
+   "sha": "30889c190c051d7a278027d5818e7d2dd6b70a6f",
+   "files": {
+    "proposals/T14.txt": {
+     "f10": "e619a1fc89e5e091efc8796d8d22e95dcf17e333fd857caa7230a4394d5edb5e",
+     "main": "e619a1fc89e5e091efc8796d8d22e95dcf17e333fd857caa7230a4394d5edb5e",
+     "identical": true
+    },
+    "proposals/T14.yaml": {
+     "f10": "4fa9f88846ab5f7b61b64c3feafaede1a48117889fa2db31fc969562de1d9868",
+     "main": "4fa9f88846ab5f7b61b64c3feafaede1a48117889fa2db31fc969562de1d9868",
+     "identical": true
+    },
+    "pool/T14.txt": {
+     "f10": "e619a1fc89e5e091efc8796d8d22e95dcf17e333fd857caa7230a4394d5edb5e",
+     "main": "e619a1fc89e5e091efc8796d8d22e95dcf17e333fd857caa7230a4394d5edb5e",
+     "identical": true
+    }
+   }
+  },
+  "T06": {
+   "run": "eval/study/runs/dev3-ts-2026-11-08",
+   "sha": "3461face58e160b9c999d23e252a7cb422374142",
+   "files": {
+    "proposals/T06.txt": {
+     "f10": "471687eac2c0e7c5c4cdd0674efc6b260a3de65fc794c569569891373d57106d",
+     "main": "471687eac2c0e7c5c4cdd0674efc6b260a3de65fc794c569569891373d57106d",
+     "identical": true
+    },
+    "proposals/T06.yaml": {
+     "f10": "0d286522bb7b5bb8335294dc5b33deb9cadf8fe64a9bf743f27e1c317dc43db3",
+     "main": "0d286522bb7b5bb8335294dc5b33deb9cadf8fe64a9bf743f27e1c317dc43db3",
+     "identical": true
+    },
+    "pool/T06.txt": {
+     "f10": "471687eac2c0e7c5c4cdd0674efc6b260a3de65fc794c569569891373d57106d",
+     "main": "471687eac2c0e7c5c4cdd0674efc6b260a3de65fc794c569569891373d57106d",
+     "identical": true
+    }
+   }
+  },
+  "T07": {
+   "run": "eval/study/runs/dev3-ts-2026-11-08",
+   "sha": "367d7e90b61b5181f9861b852bb8b9d7a7d2954a",
+   "files": {
+    "proposals/T07.txt": {
+     "f10": "25f9209c9b0e77992a522dc3a97e74200c8e620f7ecffdcde52cbaffb59a66bb",
+     "main": "25f9209c9b0e77992a522dc3a97e74200c8e620f7ecffdcde52cbaffb59a66bb",
+     "identical": true
+    },
+    "proposals/T07.yaml": {
+     "f10": "6839d55dbc5a9334f514b2bbdc06a60be47a2e5756608f39935e214fbdcf47e9",
+     "main": "6839d55dbc5a9334f514b2bbdc06a60be47a2e5756608f39935e214fbdcf47e9",
+     "identical": true
+    },
+    "pool/T07.txt": {
+     "f10": "25f9209c9b0e77992a522dc3a97e74200c8e620f7ecffdcde52cbaffb59a66bb",
+     "main": "25f9209c9b0e77992a522dc3a97e74200c8e620f7ecffdcde52cbaffb59a66bb",
+     "identical": true
+    }
+   }
+  },
+  "T08": {
+   "run": "eval/study/runs/dev3-ts-2026-11-08",
+   "sha": "9e07439a919ded1acbd03c03d3c47b054ee8f05f",
+   "files": {
+    "proposals/T08.txt": {
+     "f10": "ec3ee283ece54f9a04230f26836db39557d9c155751587781cbdde071bcd2883",
+     "main": "ec3ee283ece54f9a04230f26836db39557d9c155751587781cbdde071bcd2883",
+     "identical": true
+    },
+    "proposals/T08.yaml": {
+     "f10": "e4c9f6fabd6fd870ee3081326527fb78a05120d9756d658f2b8bd0ec624840a4",
+     "main": "e4c9f6fabd6fd870ee3081326527fb78a05120d9756d658f2b8bd0ec624840a4",
+     "identical": true
+    },
+    "pool/T08.txt": {
+     "f10": "ec3ee283ece54f9a04230f26836db39557d9c155751587781cbdde071bcd2883",
+     "main": "ec3ee283ece54f9a04230f26836db39557d9c155751587781cbdde071bcd2883",
+     "identical": true
+    }
+   }
+  },
+  "T15": {
+   "run": "eval/study/runs/dev3-ts-2026-11-08",
+   "sha": "0417caca9eee0154e65b74f62962edcf172cf118",
+   "files": {
+    "proposals/T15.txt": {
+     "f10": "e8050d8ceacb18e7f2dfcb98d87ddb59d595b8a57361611ccbae1646d5248631",
+     "main": "e8050d8ceacb18e7f2dfcb98d87ddb59d595b8a57361611ccbae1646d5248631",
+     "identical": true
+    },
+    "proposals/T15.yaml": {
+     "f10": "70d8ccd5b4578f0c486d250e03a2a5c2959615cb2cce66362a104b55475ad5ba",
+     "main": "70d8ccd5b4578f0c486d250e03a2a5c2959615cb2cce66362a104b55475ad5ba",
+     "identical": true
+    },
+    "pool/T15.txt": {
+     "f10": "e8050d8ceacb18e7f2dfcb98d87ddb59d595b8a57361611ccbae1646d5248631",
+     "main": "e8050d8ceacb18e7f2dfcb98d87ddb59d595b8a57361611ccbae1646d5248631",
+     "identical": true
+    }
+   }
+  },
+  "T16": {
+   "run": "eval/study/runs/dev3-ts-2026-11-08",
+   "sha": "80898a31b2ccc44e890b4456da86c03394831a29",
+   "files": {
+    "proposals/T16.txt": {
+     "f10": "3cdb235eb59ea3d28288d6752e0206c6c972ce7b87300f1625cceb5581b2075d",
+     "main": "3cdb235eb59ea3d28288d6752e0206c6c972ce7b87300f1625cceb5581b2075d",
+     "identical": true
+    },
+    "proposals/T16.yaml": {
+     "f10": "7e392b47e35611a2f369d8c73f6707eaf02fda4af0288458cc234950eaad7231",
+     "main": "7e392b47e35611a2f369d8c73f6707eaf02fda4af0288458cc234950eaad7231",
+     "identical": true
+    },
+    "pool/T16.txt": {
+     "f10": "3cdb235eb59ea3d28288d6752e0206c6c972ce7b87300f1625cceb5581b2075d",
+     "main": "3cdb235eb59ea3d28288d6752e0206c6c972ce7b87300f1625cceb5581b2075d",
+     "identical": true
+    }
+   }
+  },
+  "T17": {
+   "run": "eval/study/runs/dev3-ts-2026-11-08",
+   "sha": "326cdce3b188d627fc219cf75ce5d929fd18e8c1",
+   "files": {
+    "proposals/T17.txt": {
+     "f10": "f4ece0adb548dad7db806761e75c18d99765c9426485a74ef4b1322dc1a1a592",
+     "main": "f4ece0adb548dad7db806761e75c18d99765c9426485a74ef4b1322dc1a1a592",
+     "identical": true
+    },
+    "proposals/T17.yaml": {
+     "f10": "be224821b2755d37aa226b1d849d32bf5ea386afb759d0096499d14a04338f03",
+     "main": "be224821b2755d37aa226b1d849d32bf5ea386afb759d0096499d14a04338f03",
+     "identical": true
+    },
+    "pool/T17.txt": {
+     "f10": "f4ece0adb548dad7db806761e75c18d99765c9426485a74ef4b1322dc1a1a592",
+     "main": "f4ece0adb548dad7db806761e75c18d99765c9426485a74ef4b1322dc1a1a592",
+     "identical": true
+    }
+   }
+  },
+  "T18": {
+   "run": "eval/study/runs/dev3-ts-2026-11-08",
+   "sha": "bfde43a20c822afdd88e082e83a625f79025f10b",
+   "files": {
+    "proposals/T18.txt": {
+     "f10": "af098e3c0eea16294904b82ce06046550b7f4fb4a8cd719117633ac21c6e6e90",
+     "main": "af098e3c0eea16294904b82ce06046550b7f4fb4a8cd719117633ac21c6e6e90",
+     "identical": true
+    },
+    "proposals/T18.yaml": {
+     "f10": "2dbeef42a201a8822e95c720f089748c07fcf00c97d555b4f8f7e72bb7830960",
+     "main": "2dbeef42a201a8822e95c720f089748c07fcf00c97d555b4f8f7e72bb7830960",
+     "identical": true
+    },
+    "pool/T18.txt": {
+     "f10": "af098e3c0eea16294904b82ce06046550b7f4fb4a8cd719117633ac21c6e6e90",
+     "main": "af098e3c0eea16294904b82ce06046550b7f4fb4a8cd719117633ac21c6e6e90",
+     "identical": true
+    }
+   }
+  },
+  "P01": {
+   "run": "eval/study/runs/dev3-py-2026-11-08",
+   "sha": "32aa94e9c67e3559593eab4e9e4e9cb44268afe4",
+   "files": {
+    "proposals/P01.txt": {
+     "f10": "87d148dff5d270fb52891bfcd615230b69177450fd3fde18fbb12124957032b5",
+     "main": "87d148dff5d270fb52891bfcd615230b69177450fd3fde18fbb12124957032b5",
+     "identical": true
+    },
+    "proposals/P01.yaml": {
+     "f10": "d0aa88935859dd74e968e47df82521f4ac5f60249a2aa36af159329521bb3eff",
+     "main": "d0aa88935859dd74e968e47df82521f4ac5f60249a2aa36af159329521bb3eff",
+     "identical": true
+    },
+    "pool/P01.txt": {
+     "f10": "87d148dff5d270fb52891bfcd615230b69177450fd3fde18fbb12124957032b5",
+     "main": "87d148dff5d270fb52891bfcd615230b69177450fd3fde18fbb12124957032b5",
+     "identical": true
+    }
+   }
+  },
+  "P09": {
+   "run": "eval/study/runs/dev3-py-2026-11-08",
+   "sha": "5bc81d522a4363ae93294e7dcd3b0b66ac522456",
+   "files": {
+    "proposals/P09.txt": {
+     "f10": "9caf3a8c5d2de529be98ba6638939aeae5d13e8b6ab1ebc0c2be2d2a15317a57",
+     "main": "9caf3a8c5d2de529be98ba6638939aeae5d13e8b6ab1ebc0c2be2d2a15317a57",
+     "identical": true
+    },
+    "proposals/P09.yaml": {
+     "f10": "2e8eb88f50e5ed67278c4b8909c2d8301f9b09f914b2f8911e54f9aed90dec47",
+     "main": "2e8eb88f50e5ed67278c4b8909c2d8301f9b09f914b2f8911e54f9aed90dec47",
+     "identical": true
+    },
+    "pool/P09.txt": {
+     "f10": "9caf3a8c5d2de529be98ba6638939aeae5d13e8b6ab1ebc0c2be2d2a15317a57",
+     "main": "9caf3a8c5d2de529be98ba6638939aeae5d13e8b6ab1ebc0c2be2d2a15317a57",
+     "identical": true
+    }
+   }
+  },
+  "P03": {
+   "run": "eval/study/runs/dev3-py-2026-11-08",
+   "sha": "b1ecd31ae7c6abec38fc03078a4383551e54aa65",
+   "files": {
+    "proposals/P03.txt": {
+     "f10": "1bf060463ddeb0dd376f200baf0194c01fba8050fd8d82ed0151f3adb1f121c1",
+     "main": "1bf060463ddeb0dd376f200baf0194c01fba8050fd8d82ed0151f3adb1f121c1",
+     "identical": true
+    },
+    "proposals/P03.yaml": {
+     "f10": "767df152573c8d9563b42871bc14cb32721fe478cf714dc020216c316d82ac9f",
+     "main": "767df152573c8d9563b42871bc14cb32721fe478cf714dc020216c316d82ac9f",
+     "identical": true
+    },
+    "pool/P03.txt": {
+     "f10": "1bf060463ddeb0dd376f200baf0194c01fba8050fd8d82ed0151f3adb1f121c1",
+     "main": "1bf060463ddeb0dd376f200baf0194c01fba8050fd8d82ed0151f3adb1f121c1",
+     "identical": true
+    }
+   }
+  },
+  "P04": {
+   "run": "eval/study/runs/dev3-py-2026-11-08",
+   "sha": "ba14b1916eff02b4cd9dcd5ce8ba879d209c7df7",
+   "files": {
+    "proposals/P04.txt": {
+     "f10": "c21b3d51eff8cd290e5c432293b12b253fa48f07e42fd9695d347560c7201248",
+     "main": "c21b3d51eff8cd290e5c432293b12b253fa48f07e42fd9695d347560c7201248",
+     "identical": true
+    },
+    "proposals/P04.yaml": {
+     "f10": "bd9c1f5d30126acf56beabdf6ff2b76c606b3ddc58b6ea908aac8226e5f2770a",
+     "main": "bd9c1f5d30126acf56beabdf6ff2b76c606b3ddc58b6ea908aac8226e5f2770a",
+     "identical": true
+    },
+    "pool/P04.txt": {
+     "f10": "c21b3d51eff8cd290e5c432293b12b253fa48f07e42fd9695d347560c7201248",
+     "main": "c21b3d51eff8cd290e5c432293b12b253fa48f07e42fd9695d347560c7201248",
+     "identical": true
+    }
+   }
+  },
+  "P10": {
+   "run": "eval/study/runs/dev3-py-2026-11-08",
+   "sha": "8cdb82b84670466041aed02640bb747f81ddca96",
+   "files": {
+    "proposals/P10.txt": {
+     "f10": "acd1d125610b52bea882279ca2d2e114bf590d0906ff72e82182b0d94d0502c3",
+     "main": "acd1d125610b52bea882279ca2d2e114bf590d0906ff72e82182b0d94d0502c3",
+     "identical": true
+    },
+    "proposals/P10.yaml": {
+     "f10": "55dc2cb373f844281274a06edeb43730c22655400d54047359dc6ed8f8679f3a",
+     "main": "55dc2cb373f844281274a06edeb43730c22655400d54047359dc6ed8f8679f3a",
+     "identical": true
+    },
+    "pool/P10.txt": {
+     "f10": "acd1d125610b52bea882279ca2d2e114bf590d0906ff72e82182b0d94d0502c3",
+     "main": "acd1d125610b52bea882279ca2d2e114bf590d0906ff72e82182b0d94d0502c3",
+     "identical": true
+    }
+   }
+  },
+  "P06": {
+   "run": "eval/study/runs/dev3-py-2026-11-08",
+   "sha": "82270cf0e014c1c03a0a0acfe4fb9c851f3c69f5",
+   "files": {
+    "proposals/P06.txt": {
+     "f10": "94c802da117fd0fa8c6c936272fa75a476d7a4acb9303cbd2254bb8fb4ea7ac3",
+     "main": "94c802da117fd0fa8c6c936272fa75a476d7a4acb9303cbd2254bb8fb4ea7ac3",
+     "identical": true
+    },
+    "proposals/P06.yaml": {
+     "f10": "8c0741e7521cddcb4c1098a2fbd0a1b269e2f0e9ca5fe97da6bdfd26c25ade95",
+     "main": "8c0741e7521cddcb4c1098a2fbd0a1b269e2f0e9ca5fe97da6bdfd26c25ade95",
+     "identical": true
+    },
+    "pool/P06.txt": {
+     "f10": "94c802da117fd0fa8c6c936272fa75a476d7a4acb9303cbd2254bb8fb4ea7ac3",
+     "main": "94c802da117fd0fa8c6c936272fa75a476d7a4acb9303cbd2254bb8fb4ea7ac3",
+     "identical": true
+    }
+   }
+  },
+  "P07": {
+   "run": "eval/study/runs/dev3-py-2026-11-08",
+   "sha": "e337f3b177b4b53abff70b31d1695a7b66cc6d2e",
+   "files": {
+    "proposals/P07.txt": {
+     "f10": "3831ffde5a397ad999fc369e76b037c7e16c5942744176e346494eda8660c88d",
+     "main": "3831ffde5a397ad999fc369e76b037c7e16c5942744176e346494eda8660c88d",
+     "identical": true
+    },
+    "proposals/P07.yaml": {
+     "f10": "194345f349d1cb8c4df39212bb3749d039125e9d8c69e8738c686a1b4e39b836",
+     "main": "194345f349d1cb8c4df39212bb3749d039125e9d8c69e8738c686a1b4e39b836",
+     "identical": true
+    },
+    "pool/P07.txt": {
+     "f10": "3831ffde5a397ad999fc369e76b037c7e16c5942744176e346494eda8660c88d",
+     "main": "3831ffde5a397ad999fc369e76b037c7e16c5942744176e346494eda8660c88d",
+     "identical": true
+    }
+   }
+  },
+  "P12": {
+   "run": "eval/study/runs/dev3-py-2026-11-08",
+   "sha": "ef0dd820cc0ff9862d50fe56ed69b36fffe97d81",
+   "files": {
+    "proposals/P12.txt": {
+     "f10": "8b5b7c32f9b9a29c485af33d9724e5c34ec641fde622ee3522241bf7e9b241aa",
+     "main": "8b5b7c32f9b9a29c485af33d9724e5c34ec641fde622ee3522241bf7e9b241aa",
+     "identical": true
+    },
+    "proposals/P12.yaml": {
+     "f10": "91a5fb5c79dc4824f3f4cbf9b1ffb1043b593bc6162f3ea3c91d29d376e5e21e",
+     "main": "91a5fb5c79dc4824f3f4cbf9b1ffb1043b593bc6162f3ea3c91d29d376e5e21e",
+     "identical": true
+    },
+    "pool/P12.txt": {
+     "f10": "8b5b7c32f9b9a29c485af33d9724e5c34ec641fde622ee3522241bf7e9b241aa",
+     "main": "8b5b7c32f9b9a29c485af33d9724e5c34ec641fde622ee3522241bf7e9b241aa",
+     "identical": true
+    }
+   }
+  }
+ },
+ "identical": 60,
+ "differ": 0
+}

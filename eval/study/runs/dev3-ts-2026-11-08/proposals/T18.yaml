@@ -1,0 +1,124 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - agent
+  - assets
+  - base
+  - bash
+  - budget
+  - columns
+  - control
+  - docs
+  - eslint
+  - harness
+  - layout
+  - lint
+  - loading
+  - mechanics
+  - model
+  - page
+  - page-client
+  - probe
+  - queries
+  - query
+  - registry
+  - route
+  - route-helpers
+  - run
+  - run-lab
+  - schema
+  - sentry
+  - service
+  - shared_context
+  - static
+  - store
+  - types
+  - utils
+  - validate-coverage-ledger
+  - validate-findings
+  - verify
+  - verify-ratification
+  - verify-review
+  - verify-review-initial
+  - vitest
+  - web_fetch
+  - web_search
+  - write_file
+  suffixes:
+  - config
+  - eval
+  - spec
+  - test
+  - umd
+  layers:
+  - counterexample-probe/probe
+  - postgres-probe/run
+conventions:
+- id: D-41177a
+  status: proposed
+  mode: advise
+  summary: >-
+    files in scripts/** do not import from apps/admin/** (declared dependencies,
+    and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: scripts
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:apps/admin
+  evidence:
+    holders: 124
+    total: 126
+    lower_bound: 0.944
+    lift: 3.0
+  example: scripts/check-motion-patterns.mjs#(file)
+  selector_version: 3
+- id: D-62fb72
+  status: proposed
+  mode: advise
+  summary: "packages/api: functions in src/eve/** declare their return type"
+  role:
+    package: packages/api
+    dir: src/eve
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 73
+    total: 74
+    lower_bound: 0.927
+    lift: 2.664
+  example: packages/api/src/eve/admin-memory/exclusions.ts#classifyEveAdminMemoryExclusions
+  selector_version: 3
+- id: D-ea1da6
+  status: proposed
+  mode: advise
+  summary: "packages/api: functions in src/** (route files) are wrapped in withOperation()"
+  role:
+    package: packages/api
+    dir: src
+    file: route
+    entry: '-'
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - packages/api/src/shared/with-operation.ts#withOperation
+  evidence:
+    holders: 35
+    total: 37
+    lower_bound: 0.823
+    lift: 55.062
+  example: packages/api/src/admin/contribution-batches/route.ts#POST
+  selector_version: 3

@@ -1,0 +1,305 @@
+{
+  "run": "eval/study/runs/d8-prereg-2026-11-07/py",
+  "rubric": {
+    "version": "v3",
+    "sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+  },
+  "product": {
+    "commit": "5cfbbb48c350ebe459021a8f803261d9c44f40e6",
+    "binary_sha256": "38488a10a44939c2e4f348f1f21ff659b7d702ad234392c46269e5ae4368afbc"
+  },
+  "tier": {
+    "from": "eval/study/tier-d8-candidate.json",
+    "decision": "D8",
+    "view": "eval/study/runs/d8-prereg-2026-11-07/py/views/d8"
+  },
+  "candidate_json": {
+    "dir": "eval/study/runs/d8-prereg-2026-11-07/census-candidate",
+    "commits": [
+      "5cfbbb4-d8"
+    ],
+    "agrees": 23
+  },
+  "census_tier_mismatches": [],
+  "carry_from": null,
+  "carry_summary_only": null,
+  "relabel_scope": "default",
+  "default": {
+    "shown": 0,
+    "carried": 0,
+    "carried_summary_only": 0,
+    "to_label": 0,
+    "unlabelled": 0
+  },
+  "suggestion": {
+    "shown": 23,
+    "carried": 0,
+    "carried_summary_only": 0,
+    "to_label": 0,
+    "unlabelled": 23
+  },
+  "all": {
+    "shown": 23,
+    "carried": 0,
+    "carried_summary_only": 0,
+    "to_label": 0,
+    "unlabelled": 23
+  },
+  "relabel": [],
+  "unlabelled": [
+    "full-stack-fastapi-template/D-6e757d",
+    "netbox/D-281ae8",
+    "netbox/D-cc1341",
+    "netbox/D-76eb6b",
+    "netbox/D-cc8d72",
+    "netbox/D-bc0c7d",
+    "netbox/D-4c4e2d",
+    "netbox/D-e2c3e4",
+    "netbox/D-58913a",
+    "netbox/D-73d13c",
+    "netbox/D-afb64d",
+    "netbox/D-937c0c",
+    "netbox/D-310ec7",
+    "saleor/D-e36ea5",
+    "saleor/D-71795b",
+    "saleor/D-ac08d9",
+    "saleor/D-a6847e",
+    "saleor/D-e86c5d",
+    "saleor/D-6af632",
+    "saleor/D-0da0cf",
+    "fastapi/D-499c0e",
+    "langchain/D-468530",
+    "langchain/D-0e154c"
+  ],
+  "not_carried": [],
+  "repos": [
+    {
+      "repo": "full-stack-fastapi-template",
+      "shown": 1,
+      "carried": 0,
+      "to_label": 0,
+      "unlabelled": 1
+    },
+    {
+      "repo": "netbox",
+      "shown": 12,
+      "carried": 0,
+      "to_label": 0,
+      "unlabelled": 12
+    },
+    {
+      "repo": "saleor",
+      "shown": 7,
+      "carried": 0,
+      "to_label": 0,
+      "unlabelled": 7
+    },
+    {
+      "repo": "flask",
+      "shown": 0,
+      "carried": 0,
+      "to_label": 0,
+      "unlabelled": 0
+    },
+    {
+      "repo": "fastapi",
+      "shown": 1,
+      "carried": 0,
+      "to_label": 0,
+      "unlabelled": 1
+    },
+    {
+      "repo": "langchain",
+      "shown": 2,
+      "carried": 0,
+      "to_label": 0,
+      "unlabelled": 2
+    }
+  ],
+  "proposals": [
+    {
+      "uid": "full-stack-fastapi-template/D-6e757d",
+      "tier": "suggestion",
+      "kind": "prefers_library",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "netbox/D-281ae8",
+      "tier": "suggestion",
+      "kind": "wrapped_by:decorator",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "netbox/D-cc1341",
+      "tier": "suggestion",
+      "kind": "wrapped_by:decorator",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "netbox/D-76eb6b",
+      "tier": "suggestion",
+      "kind": "passes_key",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "netbox/D-cc8d72",
+      "tier": "suggestion",
+      "kind": "calls",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "netbox/D-bc0c7d",
+      "tier": "suggestion",
+      "kind": "wrapped_by:decorator",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "netbox/D-4c4e2d",
+      "tier": "suggestion",
+      "kind": "calls",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "netbox/D-e2c3e4",
+      "tier": "suggestion",
+      "kind": "wrapped_by:extends",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "netbox/D-58913a",
+      "tier": "suggestion",
+      "kind": "calls",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "netbox/D-73d13c",
+      "tier": "suggestion",
+      "kind": "named",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "netbox/D-afb64d",
+      "tier": "suggestion",
+      "kind": "named",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "netbox/D-937c0c",
+      "tier": "suggestion",
+      "kind": "named",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "netbox/D-310ec7",
+      "tier": "suggestion",
+      "kind": "passes_key",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "saleor/D-e36ea5",
+      "tier": "suggestion",
+      "kind": "avoids:other",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "saleor/D-71795b",
+      "tier": "suggestion",
+      "kind": "named",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "saleor/D-ac08d9",
+      "tier": "suggestion",
+      "kind": "named",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "saleor/D-a6847e",
+      "tier": "suggestion",
+      "kind": "named",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "saleor/D-e86c5d",
+      "tier": "suggestion",
+      "kind": "has_test",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "saleor/D-6af632",
+      "tier": "suggestion",
+      "kind": "has_test",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "saleor/D-0da0cf",
+      "tier": "suggestion",
+      "kind": "has_test",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "fastapi/D-499c0e",
+      "tier": "suggestion",
+      "kind": "control",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "langchain/D-468530",
+      "tier": "suggestion",
+      "kind": "dependency_version",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    },
+    {
+      "uid": "langchain/D-0e154c",
+      "tier": "suggestion",
+      "kind": "imports_from",
+      "reason": "rule_kind",
+      "guards": null,
+      "action": "unlabelled"
+    }
+  ]
+}

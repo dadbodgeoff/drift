@@ -1,0 +1,73 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - _compat
+  - _profiles
+  - _utils
+  - _version
+  - base
+  - bedrock
+  - chat_models
+  - check_imports
+  - check_version
+  - conftest
+  - embeddings
+  - fake
+  - in_memory
+  - json
+  - loading
+  - openai
+  - openai_functions
+  - output_parser
+  - prompt
+  - prompts
+  - pydantic
+  - python
+  - schema
+  - stdout
+  - test_azure
+  - test_base
+  - test_chat_models
+  - test_chat_models_standard
+  - test_compile
+  - test_embeddings
+  - test_eval_chain
+  - test_imports
+  - test_llms
+  - test_openai_functions
+  - test_public_api
+  - test_standard
+  - test_tools
+  - test_utils
+  - tool
+  - toolkit
+  - tools
+  - types
+  - utils
+  - xml
+  suffixes: []
+conventions:
+- id: D-077efe
+  status: proposed
+  mode: advise
+  summary: files in libs/core/** do not import from libs/text-splitters/**
+  role:
+    package: libs/core
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:libs/text-splitters
+  evidence:
+    holders: 184
+    total: 186
+    lower_bound: 0.962
+    lift: 3.0
+  example: libs/core/langchain_core/__init__.py#(file)

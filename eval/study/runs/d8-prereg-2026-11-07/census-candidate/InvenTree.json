@@ -1,0 +1,769 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "5cfbbb4-d8",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/cache/repos/InvenTree",
+  "units": 4524,
+  "roles": 237,
+  "conventions": 11,
+  "shown": 11,
+  "tiers": {
+    "default": 0,
+    "suggestion": 11
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    },
+    "candidate": {
+      "decision": "D8",
+      "status": "candidate (pre-registered, not adopted)",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts",
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15,
+      "py": {
+        "min_members": 50,
+        "call_wrappers": "guards"
+      }
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-47d790",
+      "rank": 1,
+      "summary": "classes in src/backend/InvenTree/plugin/samples/** extend InvenTreePlugin",
+      "role": {
+        "package": "",
+        "dir": "src/backend/InvenTree/plugin/samples",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "members": 23
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "src/backend/InvenTree/plugin/plugin.py#InvenTreePlugin"
+        ]
+      },
+      "evidence": {
+        "holders": 22,
+        "total": 22,
+        "lower_bound": 0.851,
+        "lift": 23.201,
+        "role_members": 23,
+        "python_members": 23
+      },
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "src/backend/InvenTree/plugin/samples/event/event_sample.py",
+        "symbol": "EventPluginSample",
+        "line": 13
+      },
+      "outliers": [],
+      "outliers_total": 0,
+      "exempt": [
+        {
+          "path": "src/backend/InvenTree/plugin/samples/machines/sample_printer.py",
+          "symbol": "SamplePrinterDriver",
+          "line": 19,
+          "code": "named_for_base",
+          "reason": "a driver, named for its base LabelPrinterBaseDriver"
+        }
+      ],
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-43f01e",
+      "rank": 2,
+      "summary": "classes in src/** (serializers files) are named `*Serializer`",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "serializers",
+        "entry": "-",
+        "kind": "class",
+        "members": 212
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "evidence": {
+        "holders": 205,
+        "total": 212,
+        "lower_bound": 0.933,
+        "lift": 4.671,
+        "python_members": 212
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "src/backend/InvenTree/InvenTree/serializers.py",
+        "symbol": "DuplicateOptionsSerializer",
+        "line": 1126
+      },
+      "outliers": [
+        {
+          "path": "src/backend/InvenTree/InvenTree/serializers.py",
+          "symbol": "ContentTypeField",
+          "line": 1033
+        },
+        {
+          "path": "src/backend/InvenTree/InvenTree/serializers.py",
+          "symbol": "DependentField",
+          "line": 641
+        },
+        {
+          "path": "src/backend/InvenTree/InvenTree/serializers.py",
+          "symbol": "InvenTreeAttachmentSerializerField",
+          "line": 922
+        },
+        {
+          "path": "src/backend/InvenTree/InvenTree/serializers.py",
+          "symbol": "InvenTreeDecimalField",
+          "line": 961
+        },
+        {
+          "path": "src/backend/InvenTree/InvenTree/serializers.py",
+          "symbol": "InvenTreeImageSerializerField",
+          "line": 947
+        },
+        {
+          "path": "src/backend/InvenTree/common/serializers.py",
+          "symbol": "SettingsValueField",
+          "line": 42
+        },
+        {
+          "path": "src/backend/InvenTree/part/serializers.py",
+          "symbol": "PartThumbSerializerUpdate",
+          "line": 259
+        }
+      ],
+      "outliers_total": 7,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-455913",
+      "rank": 3,
+      "summary": "src/frontend: components in src/tables/** are named `*Table`",
+      "role": {
+        "package": "src/frontend",
+        "dir": "src/tables",
+        "file": "*",
+        "entry": "-",
+        "kind": "component",
+        "members": 83
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Table"
+      },
+      "evidence": {
+        "holders": 76,
+        "total": 83,
+        "lower_bound": 0.836,
+        "lift": 5.003
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "src/frontend/src/tables/bom/BomTable.tsx",
+        "symbol": "BomTable",
+        "line": 110
+      },
+      "outliers": [
+        {
+          "path": "src/frontend/src/tables/general/ParametricDataTableFilters.tsx",
+          "symbol": "ParameterFilter",
+          "line": 200
+        },
+        {
+          "path": "src/frontend/src/tables/purchasing/SupplierPriceBreakTable.tsx",
+          "symbol": "SupplierPriceBreakColumns",
+          "line": 41
+        },
+        {
+          "path": "src/frontend/src/tables/settings/GroupTable.tsx",
+          "symbol": "GroupDrawer",
+          "line": 39
+        },
+        {
+          "path": "src/frontend/src/tables/settings/SelectionListDrawer.tsx",
+          "symbol": "SelectionListDrawer",
+          "line": 147
+        },
+        {
+          "path": "src/frontend/src/tables/settings/SnippetTable.tsx",
+          "symbol": "SnippetDrawer",
+          "line": 49
+        },
+        {
+          "path": "src/frontend/src/tables/settings/TemplateTable.tsx",
+          "symbol": "TemplateDrawer",
+          "line": 88
+        },
+        {
+          "path": "src/frontend/src/tables/settings/UserTable.tsx",
+          "symbol": "UserDrawer",
+          "line": 63
+        }
+      ],
+      "outliers_total": 7,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-6f225b",
+      "rank": 4,
+      "summary": "classes in src/** (admin files) are named `*Admin`",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "admin",
+        "entry": "-",
+        "kind": "class",
+        "members": 74
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Admin"
+      },
+      "evidence": {
+        "holders": 66,
+        "total": 74,
+        "lower_bound": 0.801,
+        "lift": 15.175,
+        "python_members": 74
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "src/backend/InvenTree/InvenTree/admin.py",
+        "symbol": "CustomRateAdmin",
+        "line": 16
+      },
+      "outliers": [
+        {
+          "path": "src/backend/InvenTree/company/admin.py",
+          "symbol": "SupplierPriceBreakInline",
+          "line": 28
+        },
+        {
+          "path": "src/backend/InvenTree/machine/admin.py",
+          "symbol": "MachineSettingInline",
+          "line": 9
+        },
+        {
+          "path": "src/backend/InvenTree/order/admin.py",
+          "symbol": "GeneralExtraLineMeta",
+          "line": 18
+        },
+        {
+          "path": "src/backend/InvenTree/plugin/admin.py",
+          "symbol": "PluginSettingInline",
+          "line": 38
+        },
+        {
+          "path": "src/backend/InvenTree/plugin/admin.py",
+          "symbol": "PluginUserSettingInline",
+          "line": 46
+        },
+        {
+          "path": "src/backend/InvenTree/stock/admin.py",
+          "symbol": "LocationInline",
+          "line": 9
+        },
+        {
+          "path": "src/backend/InvenTree/users/admin.py",
+          "symbol": "InvenTreeGroupAdminForm",
+          "line": 87
+        },
+        {
+          "path": "src/backend/InvenTree/users/admin.py",
+          "symbol": "RuleSetInline",
+          "line": 72
+        }
+      ],
+      "outliers_total": 8,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-16c1ac",
+      "rank": 5,
+      "summary": "src/frontend: components in src/components/render/** declare their return type",
+      "role": {
+        "package": "src/frontend",
+        "dir": "src/components/render",
+        "file": "*",
+        "entry": "-",
+        "kind": "component",
+        "members": 44
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 43,
+        "total": 44,
+        "lower_bound": 0.882,
+        "lift": 3.774
+      },
+      "rule_kind": "control",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "src/frontend/src/components/render/Build.tsx",
+        "symbol": "RenderBuildItem",
+        "line": 46
+      },
+      "outliers": [
+        {
+          "path": "src/frontend/src/components/render/ModelHoverCard.tsx",
+          "symbol": "ModelHoverCard",
+          "line": 23
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-095ebc",
+      "rank": 6,
+      "summary": "src/frontend: functions in src/components/tables/** declare their return type",
+      "role": {
+        "package": "src/frontend",
+        "dir": "src/components/tables",
+        "file": "*",
+        "entry": "-",
+        "kind": "function",
+        "members": 70
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 69,
+        "total": 70,
+        "lower_bound": 0.923,
+        "lift": 2.529
+      },
+      "rule_kind": "control",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "src/frontend/src/components/tables/AppRowActions.tsx",
+        "symbol": "AppRowViewAction",
+        "line": 13
+      },
+      "outliers": [
+        {
+          "path": "src/frontend/src/components/tables/Filter.tsx",
+          "symbol": "filterDisplayValue",
+          "line": 29
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-7e788c",
+      "rank": 7,
+      "summary": "src/frontend: components in src/tables/** call useMemo() before apiUrl()",
+      "role": {
+        "package": "src/frontend",
+        "dir": "src/tables",
+        "file": "*",
+        "entry": "-",
+        "kind": "component",
+        "members": 65
+      },
+      "rule": {
+        "type": "before",
+        "first": "pkg:react#useMemo",
+        "then": "src/frontend/lib/functions/Api.tsx#apiUrl"
+      },
+      "evidence": {
+        "holders": 61,
+        "total": 65,
+        "lower_bound": 0.852,
+        "lift": 1.0
+      },
+      "rule_kind": "before",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "src/frontend/src/tables/bom/UsedInTable.tsx",
+        "symbol": "UsedInTable",
+        "line": 33
+      },
+      "outliers": [
+        {
+          "path": "src/frontend/src/tables/general/AuditLogTable.tsx",
+          "symbol": "AuditLogTable",
+          "line": 459
+        },
+        {
+          "path": "src/frontend/src/tables/general/ParametricDataTable.tsx",
+          "symbol": "ParametricDataTable",
+          "line": 145
+        },
+        {
+          "path": "src/frontend/src/tables/part/PartThumbTable.tsx",
+          "symbol": "PartThumbTable",
+          "line": 133
+        },
+        {
+          "path": "src/frontend/src/tables/stock/InstalledItemsTable.tsx",
+          "symbol": "InstalledItemsTable",
+          "line": 27
+        }
+      ],
+      "outliers_total": 4,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-9838a4",
+      "rank": 8,
+      "summary": "src/frontend: components in src/tables/** call useTable() before apiUrl()",
+      "role": {
+        "package": "src/frontend",
+        "dir": "src/tables",
+        "file": "*",
+        "entry": "-",
+        "kind": "component",
+        "members": 65
+      },
+      "rule": {
+        "type": "before",
+        "first": "src/frontend/lib/hooks/UseTable.tsx#useTable",
+        "then": "src/frontend/lib/functions/Api.tsx#apiUrl"
+      },
+      "evidence": {
+        "holders": 60,
+        "total": 65,
+        "lower_bound": 0.832,
+        "lift": 1.0
+      },
+      "rule_kind": "before",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "src/frontend/src/tables/bom/UsedInTable.tsx",
+        "symbol": "UsedInTable",
+        "line": 33
+      },
+      "outliers": [
+        {
+          "path": "src/frontend/src/tables/notifications/NotificationTable.tsx",
+          "symbol": "NotificationTable",
+          "line": 11
+        },
+        {
+          "path": "src/frontend/src/tables/part/PartThumbTable.tsx",
+          "symbol": "PartThumbTable",
+          "line": 133
+        },
+        {
+          "path": "src/frontend/src/tables/settings/SnippetTable.tsx",
+          "symbol": "SnippetDrawer",
+          "line": 49
+        },
+        {
+          "path": "src/frontend/src/tables/settings/TemplateTable.tsx",
+          "symbol": "TemplateDrawer",
+          "line": 88
+        },
+        {
+          "path": "src/frontend/src/tables/settings/UserTable.tsx",
+          "symbol": "UserDrawer",
+          "line": 63
+        }
+      ],
+      "outliers_total": 5,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-f31910",
+      "rank": 9,
+      "summary": "classes in src/** (models files) call utils.translation.gettext_lazy()",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "models",
+        "entry": "-",
+        "kind": "class",
+        "members": 82
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:django#utils.translation.gettext_lazy"
+      },
+      "evidence": {
+        "holders": 76,
+        "total": 82,
+        "lower_bound": 0.849,
+        "lift": 3.122,
+        "python_members": 82
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "src/backend/InvenTree/audit/models.py",
+        "symbol": "AuditLogEntry",
+        "line": 322
+      },
+      "outliers": [
+        {
+          "path": "src/backend/InvenTree/audit/models.py",
+          "symbol": "AuditLogEntryManager",
+          "line": 165
+        },
+        {
+          "path": "src/backend/InvenTree/common/models.py",
+          "symbol": "NoDeleteManager",
+          "line": 3778
+        },
+        {
+          "path": "src/backend/InvenTree/common/models.py",
+          "symbol": "NoDeleteQuerySet",
+          "line": 3768
+        },
+        {
+          "path": "src/backend/InvenTree/common/models.py",
+          "symbol": "RenderMeta",
+          "line": 80
+        },
+        {
+          "path": "src/backend/InvenTree/common/models.py",
+          "symbol": "SettingsManager",
+          "line": 213
+        },
+        {
+          "path": "src/backend/InvenTree/users/models.py",
+          "symbol": "Owner",
+          "line": 502
+        }
+      ],
+      "outliers_total": 6,
+      "inherited": [
+        {
+          "path": "src/backend/InvenTree/common/models.py",
+          "symbol": "NotificationEntry",
+          "line": 1726
+        }
+      ],
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-b24fe0",
+      "rank": 10,
+      "summary": "src/frontend: components in src/tables/** call useTable() before useCallback()",
+      "role": {
+        "package": "src/frontend",
+        "dir": "src/tables",
+        "file": "*",
+        "entry": "-",
+        "kind": "component",
+        "members": 50
+      },
+      "rule": {
+        "type": "before",
+        "first": "src/frontend/lib/hooks/UseTable.tsx#useTable",
+        "then": "pkg:react#useCallback"
+      },
+      "evidence": {
+        "holders": 49,
+        "total": 50,
+        "lower_bound": 0.895,
+        "lift": 1.0
+      },
+      "rule_kind": "before",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "src/frontend/src/tables/bom/UsedInTable.tsx",
+        "symbol": "UsedInTable",
+        "line": 33
+      },
+      "outliers": [
+        {
+          "path": "src/frontend/src/tables/settings/UserTable.tsx",
+          "symbol": "UserDrawer",
+          "line": 63
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-71f3ec",
+      "rank": 11,
+      "summary": "src/frontend: components in src/tables/** call useTable() before useState()",
+      "role": {
+        "package": "src/frontend",
+        "dir": "src/tables",
+        "file": "*",
+        "entry": "-",
+        "kind": "component",
+        "members": 50
+      },
+      "rule": {
+        "type": "before",
+        "first": "src/frontend/lib/hooks/UseTable.tsx#useTable",
+        "then": "pkg:react#useState"
+      },
+      "evidence": {
+        "holders": 48,
+        "total": 50,
+        "lower_bound": 0.865,
+        "lift": 1.0
+      },
+      "rule_kind": "before",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "src/frontend/src/tables/bom/BomTable.tsx",
+        "symbol": "BomTable",
+        "line": 110
+      },
+      "outliers": [
+        {
+          "path": "src/frontend/src/tables/part/PartThumbTable.tsx",
+          "symbol": "PartThumbTable",
+          "line": 133
+        },
+        {
+          "path": "src/frontend/src/tables/settings/ApiTokenTable.tsx",
+          "symbol": "ApiTokenTable",
+          "line": 36
+        }
+      ],
+      "outliers_total": 2,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    }
+  ],
+  "largest_role": null
+}

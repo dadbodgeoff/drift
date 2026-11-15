@@ -1,0 +1,23 @@
+3 conventions from 1392 units in 90 roles (0 default tier, 3 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-fd9569] files in cosmos_transfer1/** do not import from scripts/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 228/229 (lower bound 0.98, lift 3.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  cosmos_transfer1/auxiliary/depth_anything/inference/depth_anything_pipeline.py#(file)
+    outlier:  cosmos_transfer1/distillation/scripts/save_negative_prompt.py:1 (file)
+
+ 2. [D-877f3b] classes in cosmos_transfer1/diffusion/training/modules/** extend nn.Module
+    evidence: 20/21 (lower bound 0.77, lift 2.2)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  cosmos_transfer1/diffusion/training/modules/attention.py#Attention
+    outlier:  cosmos_transfer1/diffusion/training/modules/edm_sde.py:22 EDMSDE
+
+ 3. [D-3c82bf] functions in cosmos_transfer1/auxiliary/tokenizer/inference/** declare their return type
+    evidence: 20/21 (lower bound 0.77, lift 1.8)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  cosmos_transfer1/auxiliary/tokenizer/inference/image_cli.py#main
+    outlier:  cosmos_transfer1/auxiliary/tokenizer/inference/utils.py:240 write_image
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

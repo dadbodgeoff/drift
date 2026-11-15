@@ -1,0 +1,400 @@
+{
+  "labels_sha256": {
+    "A": "8548b4b467f34d23c829248df6ef95f53d1adfec1609bd1aa7c0f60dbcad31b5",
+    "B": "335af941674afed6d24bbfe0b8dc20bbe3031b44ef01e13c7f9b896b2b04964c"
+  },
+  "cases": [
+    {
+      "uid": "netbox/D-bc0c7d",
+      "repo": "netbox",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "rubric": "v2",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "uid": "netbox/D-bc0c7d",
+          "label": "ACCEPT",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "netbox/circuits/search.py",
+            "netbox/extras/models/search.py",
+            "netbox/netbox/forms/search.py",
+            "netbox/dcim/search.py",
+            "netbox/ipam/search.py",
+            "netbox/netbox/search/__init__.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "CachedValue",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "SearchForm",
+              "verdict": "legit"
+            }
+          ],
+          "reason": "SearchIndex classes in each app's search.py must be @register_search'd or they silently drop out of global search (netbox/search/__init__.py only adds to the registry); the two outliers are a model and a form in other search.py files, not indexes. Hesitated with WRONG mixed_group.",
+          "labeller": "A"
+        },
+        "B": {
+          "uid": "netbox/D-bc0c7d",
+          "rubric": "v2",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "netbox/circuits/search.py",
+            "netbox/extras/models/search.py",
+            "netbox/netbox/forms/search.py",
+            "netbox/dcim/search.py",
+            "netbox/ipam/search.py"
+          ],
+          "reason": "SearchIndex classes in app search.py files are all @register_search (circuits, dcim, ipam), but the outliers come from unrelated files that share the name: CachedValue is a model (extras/models/search.py) and SearchForm a form (netbox/forms/search.py), so the group mixes in non-indexes. Hesitated with ACCEPT for real search indexes.",
+          "outliers": [
+            {
+              "symbol": "CachedValue",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "SearchForm",
+              "verdict": "legit"
+            }
+          ],
+          "labeller": "B"
+        }
+      }
+    },
+    {
+      "uid": "netbox/D-0eddf0",
+      "repo": "netbox",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "rubric": "v2",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "uid": "netbox/D-0eddf0",
+          "label": "ACCEPT",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "netbox/dcim/api/views.py",
+            "netbox/netbox/api/viewsets/__init__.py",
+            "netbox/circuits/api/views.py",
+            "netbox/dcim/api/urls.py",
+            "netbox/ipam/api/views.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "CableTerminationViewSet",
+              "verdict": "legit"
+            }
+          ],
+          "reason": "dcim API viewsets (SiteViewSet, DeviceViewSet, CableViewSet) extend NetBoxModelViewSet for permissions, bulk ops and changelog; the outlier is intentionally read-only (NetBoxReadOnlyModelViewSet), which is the kind of deviation a reviewer should confirm. Hesitated with WRONG legit_outliers. The role is a single file; ipam/api/views.py follows the same NetBoxModelViewSet pattern.",
+          "labeller": "A"
+        },
+        "B": {
+          "uid": "netbox/D-0eddf0",
+          "rubric": "v2",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "netbox/dcim/api/views.py",
+            "netbox/netbox/api/viewsets/__init__.py",
+            "netbox/core/api/views.py"
+          ],
+          "reason": "Writable dcim API viewsets extend NetBoxModelViewSet (RegionViewSet, SiteViewSet, CableViewSet); the sole outlier CableTerminationViewSet is deliberately NetBoxReadOnlyModelViewSet, and read-only endpoints are a recurring category (core/api/views.py has four NetBoxReadOnlyModelViewSet viewsets) that would be flagged. Hesitated with ACCEPT. All members live in dcim/api/views.py, so no other member file exists.",
+          "outliers": [
+            {
+              "symbol": "CableTerminationViewSet",
+              "verdict": "legit"
+            }
+          ],
+          "labeller": "B"
+        }
+      }
+    },
+    {
+      "uid": "netbox/D-7d7f0c",
+      "repo": "netbox",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "rubric": "v2",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "uid": "netbox/D-7d7f0c",
+          "label": "ACCEPT",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            ".claude/skills/draft-release-notes/audit_milestone.py",
+            "netbox/netbox/urls.py",
+            "netbox/account/views.py",
+            "netbox/dcim/views.py",
+            "pyproject.toml",
+            "netbox/tenancy/views.py",
+            "netbox/vpn/views.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "netbox/urls.py",
+              "verdict": "legit"
+            }
+          ],
+          "reason": "account is a leaf app of user-facing views (account/views.py); the only importer is the root urls.py, which must wire LoginView/LogoutView, and other code importing these views would be a layering smell worth a look. Hesitated with WRONG incidental, since nothing else has a reason to import it.",
+          "labeller": "A"
+        },
+        "B": {
+          "uid": "netbox/D-7d7f0c",
+          "rubric": "v2",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "incidental",
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            ".claude/skills/draft-release-notes/audit_milestone.py",
+            "netbox/netbox/urls.py",
+            "netbox/tenancy/views.py",
+            "netbox/circuits/choices.py",
+            "pyproject.toml"
+          ],
+          "reason": "account is a leaf UI app; the only importer, netbox/urls.py, must import LoginView/LogoutView/SocialAuthBeginView to route them. Nothing else imports it because nothing else needs it, so the rule is incidental.",
+          "outliers": [
+            {
+              "symbol": "netbox/urls.py",
+              "verdict": "legit"
+            }
+          ],
+          "labeller": "B"
+        }
+      }
+    },
+    {
+      "uid": "CTFd/D-49130f",
+      "repo": "CTFd",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "rubric": "v2",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "uid": "CTFd/D-49130f",
+          "label": "ACCEPT",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            ".eslintrc.js",
+            "CTFd/utils/initialization/__init__.py",
+            "CTFd/cli/__init__.py",
+            "CTFd/views.py",
+            "CTFd/auth.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "CTFd/utils/initialization/__init__.py",
+              "verdict": "legit"
+            }
+          ],
+          "reason": "The CLI blueprint is only imported by init_cli to register it (utils/initialization/__init__.py:55, a local import); importing CLI commands from application code would be a layering mistake worth a look. Hesitated with WRONG incidental.",
+          "labeller": "A"
+        },
+        "B": {
+          "uid": "CTFd/D-49130f",
+          "rubric": "v2",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "incidental",
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            ".eslintrc.js",
+            "CTFd/utils/initialization/__init__.py",
+            "CTFd/api/v1/audiences.py",
+            "CTFd/api/v1/awards.py",
+            "pyproject.toml"
+          ],
+          "reason": "CTFd.cli is imported only where init_cli registers the _cli blueprint (utils/initialization/__init__.py); nothing else has a reason to import it, so the rule restates that the CLI is a leaf. Incidental.",
+          "outliers": [
+            {
+              "symbol": "CTFd/utils/initialization/__init__.py",
+              "verdict": "legit"
+            }
+          ],
+          "labeller": "B"
+        }
+      }
+    },
+    {
+      "uid": "CTFd/D-bd2596",
+      "repo": "CTFd",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "rubric": "v2",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "uid": "CTFd/D-bd2596",
+          "label": "ACCEPT",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            ".eslintrc.js",
+            "CTFd/__init__.py",
+            "CTFd/admin/challenges.py",
+            "CTFd/views.py",
+            "CTFd/auth.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "CTFd/__init__.py",
+              "verdict": "legit"
+            }
+          ],
+          "reason": "The admin blueprint is imported only by the app factory to register it (CTFd/__init__.py:324, local import); other code importing admin views would couple to the admin UI and risk circular imports, worth a look. Hesitated with WRONG incidental.",
+          "labeller": "A"
+        },
+        "B": {
+          "uid": "CTFd/D-bd2596",
+          "rubric": "v2",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "incidental",
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            ".eslintrc.js",
+            "CTFd/__init__.py",
+            "CTFd/api/v1/audiences.py",
+            "CTFd/api/v1/awards.py",
+            "pyproject.toml"
+          ],
+          "reason": "The admin blueprint is imported only by the app factory in CTFd/__init__.py to register it, which is how Flask blueprints work; no other file needs it, and the group even includes .eslintrc.js. Incidental, not a chosen boundary.",
+          "outliers": [
+            {
+              "symbol": "CTFd/__init__.py",
+              "verdict": "legit"
+            }
+          ],
+          "labeller": "B"
+        }
+      }
+    },
+    {
+      "uid": "CTFd/D-ce2984",
+      "repo": "CTFd",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "rubric": "v2",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "uid": "CTFd/D-ce2984",
+          "label": "ACCEPT",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            ".eslintrc.js",
+            "CTFd/__init__.py",
+            "CTFd/cache/__init__.py",
+            "CTFd/views.py",
+            "CTFd/auth.py",
+            "pyproject.toml",
+            "setup.cfg"
+          ],
+          "outliers": [
+            {
+              "symbol": "CTFd/__init__.py",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "CTFd/cache/__init__.py",
+              "verdict": "look"
+            }
+          ],
+          "reason": "The API blueprint is a leaf: only the app factory imports it to register it (CTFd/__init__.py:325), and cache/__init__.py reaches in with a function-local import just to build cache keys for scoreboard endpoints; other modules (views.py, auth.py) never import it, and a new utility importing API resources is a layering/circular-import smell. Hesitated with WRONG incidental; no import-linter config exists in pyproject.toml.",
+          "labeller": "A"
+        },
+        "B": {
+          "uid": "CTFd/D-ce2984",
+          "rubric": "v2",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "incidental",
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            ".eslintrc.js",
+            "CTFd/__init__.py",
+            "CTFd/cache/__init__.py",
+            "CTFd/api/v1/audiences.py",
+            "CTFd/api/v1/awards.py",
+            "pyproject.toml"
+          ],
+          "reason": "The API blueprint is imported by the app factory to register it and by cache/__init__.py to clear cached scoreboard endpoints; API modules aren't libraries, so other files have no reason to import them. Incidental.",
+          "outliers": [
+            {
+              "symbol": "CTFd/__init__.py",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "CTFd/cache/__init__.py",
+              "verdict": "legit"
+            }
+          ],
+          "labeller": "B"
+        }
+      }
+    }
+  ]
+}

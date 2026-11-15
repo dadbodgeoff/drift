@@ -1,0 +1,36 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - actions
+  - layout
+  - loading
+  - page
+  - route
+  suffixes:
+  - config
+  - test
+conventions:
+- id: D-53127d
+  status: proposed
+  mode: advise
+  summary: server actions in app/** (actions files) are named `*Action`
+  role:
+    package: ""
+    dir: app
+    file: actions
+    entry: server_action
+    kind: function
+  rule:
+    type: named
+    pattern: "*Action"
+  evidence:
+    holders: 41
+    total: 42
+    lower_bound: 0.877
+    lift: 4.667
+  example: app/(app)/apps/email/actions.ts#addEmailServerAction
+  selector_version: 2

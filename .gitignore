@@ -1,26 +1,11 @@
-node_modules/
-dist/
-target/
-coverage/
-output/
-outputs/
+/target
 .drift/
-*.sqlite
-*.drift-backup.sqlite
-*.tgz
-packages/engine-*/bin/
-packages/engine-*/engine-manifest.json
-.DS_Store
-.env*
-!.env.example
-avatar-*.js
-avatar-overlay-page-*.js
-main-*.js
-
-# Engine binaries are build artifacts, produced per platform by CI.
-# scripts/build-engine-artifacts.mjs writes them; engine-manifest.json records the checksum
-# and is committed so the release job can verify what CI produced.
-packages/engine-*/bin/drift-engine
-
-# Written by the drift-check-self workflow (and by anyone simulating it locally).
-drift-check.json
+*.snap.new
+*.pending-snap
+node_modules/
+apps/studio/dist/
+apps/studio/dist-fixture/
+apps/studio/dist-electron/
+apps/studio/fixtures/local/
+apps/studio/.local-work/
+apps/studio/test-results/

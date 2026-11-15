@@ -1,0 +1,11 @@
+1 conventions from 763 units in 48 roles (0 default tier, 1 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-53127d] server actions in app/** (actions files) are named `*Action`
+    evidence: 41/42 (lower bound 0.88, lift 4.7)
+    tier:     suggestion (rule kind named)
+    example:  app/(app)/apps/email/actions.ts#addEmailServerAction
+    outlier:  app/(app)/apps/invoices/actions.ts:31 generateInvoicePDF
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

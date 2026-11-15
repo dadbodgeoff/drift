@@ -1,0 +1,7 @@
+1 conventions from 260 units in 13 roles
+
+ 1. [D-03e2be] exported values in src/flask/sansio/** pass `bound` to TypeVar()
+    evidence: 23/24 (lower bound 0.80, lift 3.2)
+    example:  src/flask/sansio/app.py#T_shell_context_processor
+    outlier:  src/flask/sansio/blueprints.py:17 DeferredSetupFunction
+

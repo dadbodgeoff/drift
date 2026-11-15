@@ -1,70 +1,159 @@
-# `verify:ci` covers build, typecheck, unit/e2e tests, engine fmt/clippy, boundary and
-# release-matrix validation, product claims, and the beta proof — everything a hosted runner can
-# execute. It does not run the external-repo evals (`verify:evals`): those need the seven pinned
-# evaluation repos cloned to $DRIFT_EVAL_REPOS plus a release engine binary, neither of which exist
-# on a hosted runner. Evals are a local gate — run `pnpm verify:full` before citing a "verified"
-# claim in docs/, and record the machine and commit it ran on.
 name: CI
 
 on:
-  pull_request:
   push:
-    branches:
-      - main
+    branches: [main]
+  pull_request:
+  schedule:
+    # Nightly cross-OS check (macOS runners are too scarce to gate pull requests).
+    - cron: "17 7 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.ref }}-${{ github.event_name }}
+  # Superseded PR runs are cancelled; main keeps every commit's run (macOS included).
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
 
 jobs:
-  verify:
-    name: Verify
+  lint:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
     steps:
-      # fetch-depth: 0 is required: `pnpm beta:proof` runs `drift start` against a fixture, and
-      # Drift refuses to derive repo identity from a shallow clone (its root commit is the fetch
-      # graft, not the repo's real first commit).
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
+          persist-credentials: false
+      - run: rustup show
+      - uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+      - run: cargo fmt --all --check
+      - run: cargo clippy --all-targets --locked -- -D warnings
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - run: rustup show
+      - uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+      - run: cargo test --all --locked
+        env:
+          INSTA_UPDATE: "no"
+
+  stack-bound:
+    # Worst-case nesting at exactly the size cap, on the parse stack of the release
+    # profile that ships (debug builds test an eighth of the cap; see drift_core::stack).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - run: rustup show
+      - uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+      - run: cargo test --release --locked -p drift-ts -p drift-py --test stack_bound
+
+  test-macos:
+    # The same snapshot tests on macOS are the cross-OS determinism check. They run on
+    # main, nightly and on demand, not on pull requests: macOS runners are scarce and
+    # queued jobs were cancelled before starting. A failure here is fixed on main.
+    if: github.event_name != 'pull_request'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - run: rustup show
+      - uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+      - run: cargo test --all --locked
+        env:
+          INSTA_UPDATE: "no"
+
+  deny:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: EmbarkStudios/cargo-deny-action@c3bbe7e4e3f7baeee1a3dd9aec0a3b2aded580fb # v2.1.1
+        with:
+          command: check advisories bans licenses sources
+
+  study:
+    # The study harness tests, one file at a time: the study's half of the shared tier cases
+    # (eval/study/tier-cases.json; `test` runs the product's half), the metrics tables, the pipeline on
+    # synthetic repos, and select-holdout.mjs verify (full history, so the recorded refs can be replayed;
+    # those cases skip when a recorded ref is no longer fetchable).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
           fetch-depth: 0
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.28.0
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 22
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
+      - run: for f in eval/study/*.test.mjs; do node --test "$f" || exit 1; done
 
-      # Pinned, and stated here because dtolnay/rust-toolchain needs it as an input. It MUST match
-      # rust-toolchain.toml, which is what developer machines read - two copies of a version is the
-      # same drift hazard as two copies of a predicate, so release-hygiene.test.ts fails if they
-      # disagree. `@stable` used to float here, and a new clippy lint reddened this gate with no
-      # change to the repository at all.
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@master
+  oracle:
+    # Parameter-type facts (`Symbol.arg_types`) against the TypeScript compiler on the
+    # synthetic fixtures of crates/drift-ts/tests/fixtures/param-types*: every key the
+    # compiler answers must match, and Drift may answer no key the compiler cannot.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
-          toolchain: "1.97.0"
-          components: rustfmt, clippy
+          persist-credentials: false
+      - run: rustup show
+      - uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+      - run: cargo build --locked -p drift-cli
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+      - run: npm install --prefix "$RUNNER_TEMP/ts" --no-save --no-audit --no-fund --ignore-scripts typescript@5.9.3
+      - run: node eval/oracle/fixtures.mjs --drift target/debug/drift
+        env:
+          TS_PATH: ${{ runner.temp }}/ts/node_modules/typescript
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+  packaging:
+    # The release path without building Drift (no musl build here): YAML and shape
+    # of action.yml and the workflows, release.yml's archive step and the npm
+    # packages on stub binaries, and the npm launcher (npm/ci-check.mjs).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+      - run: npm install --prefix "$RUNNER_TEMP/yaml" --no-save --no-audit --no-fund --ignore-scripts yaml@2.9.1
+      - run: node npm/ci-check.mjs "$RUNNER_TEMP/yaml"
 
-      # Several CLI tests point DRIFT_ENGINE_BIN at target/release/drift-engine; `pnpm test:engine`
-      # (cargo test) only produces a debug binary, so the release build must happen explicitly here
-      # first — otherwise a missing binary surfaces as a test failure instead of a build failure.
-      - name: Build the release engine
-        run: pnpm build:engine
-
-      - name: Verify
-        run: pnpm verify:ci
+  studio:
+    # Drift Studio (apps/studio) and its design system (packages/ui).
+    runs-on: ubuntu-latest
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck --workspaces
+      - run: npx eslint .
+      - run: npm test --workspaces
+      - run: npm run build -w drift-studio
+      - run: npm run build:fixture -w drift-studio
+      # The browser for end-to-end tests matches the pinned playwright version.
+      - run: npx playwright install --with-deps chromium
+      - run: node apps/studio/tests/e2e/run.mjs

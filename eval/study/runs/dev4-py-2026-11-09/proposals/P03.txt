@@ -1,0 +1,3 @@
+0 conventions from 985 units in 51 roles (0 default tier, 0 suggestions)
+
+No conventions found: roles need roughly 20+ similar symbols where one pattern clearly dominates and is rarer elsewhere; the largest role here has 154 members (frontend: components in src/**).

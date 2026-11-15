@@ -1,0 +1,700 @@
+{
+  "languages": {
+    "typescript/javascript": {
+      "run": "ts",
+      "repos": 12,
+      "overall": {
+        "shown": 12,
+        "labelled": 12,
+        "ACCEPT": 7,
+        "TRIVIAL": 1,
+        "WRONG": 4,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 8,
+          "n": 12,
+          "p": 0.6666666666666666,
+          "lo": 0.3906220869404939,
+          "hi": 0.86187990987514,
+          "boot": {
+            "lo": 0.45454545454545453,
+            "hi": 1,
+            "clusters": 5
+          },
+          "t": {
+            "lo": 0.24431171676823854,
+            "hi": 1,
+            "clusters": 5
+          }
+        },
+        "accept": {
+          "k": 7,
+          "n": 12,
+          "p": 0.5833333333333334,
+          "lo": 0.31951131084242423,
+          "hi": 0.8067396875653928,
+          "boot": {
+            "lo": 0.3333333333333333,
+            "hi": 0.8888888888888888,
+            "clusters": 5
+          },
+          "t": {
+            "lo": 0.15442985416296762,
+            "hi": 1,
+            "clusters": 5
+          }
+        },
+        "not_wrong_shown": {
+          "k": 8,
+          "n": 12,
+          "p": 0.6666666666666666,
+          "lo": 0.3906220869404939,
+          "hi": 0.86187990987514,
+          "boot": {
+            "lo": 0.45454545454545453,
+            "hi": 1,
+            "clusters": 5
+          },
+          "t": {
+            "lo": 0.24431171676823854,
+            "hi": 1,
+            "clusters": 5
+          }
+        },
+        "accept_shown": {
+          "k": 7,
+          "n": 12,
+          "p": 0.5833333333333334,
+          "lo": 0.31951131084242423,
+          "hi": 0.8067396875653928,
+          "boot": {
+            "lo": 0.3333333333333333,
+            "hi": 0.8888888888888888,
+            "clusters": 5
+          },
+          "t": {
+            "lo": 0.15442985416296762,
+            "hi": 1,
+            "clusters": 5
+          }
+        },
+        "yield": {
+          "repos": 12,
+          "total": 7,
+          "mean": 0.5833333333333334,
+          "median": 0,
+          "zero": 8
+        }
+      },
+      "default_tier": {
+        "shown": 5,
+        "labelled": 5,
+        "ACCEPT": 1,
+        "TRIVIAL": 1,
+        "WRONG": 3,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 2,
+          "n": 5,
+          "p": 0.4,
+          "lo": 0.11762077314099711,
+          "hi": 0.7692757205908813,
+          "boot": {
+            "lo": 0,
+            "hi": 1,
+            "clusters": 4
+          },
+          "t": {
+            "lo": 0,
+            "hi": 1,
+            "clusters": 4
+          }
+        },
+        "accept": {
+          "k": 1,
+          "n": 5,
+          "p": 0.2,
+          "lo": 0.03622410822563066,
+          "hi": 0.6244653729700049,
+          "boot": {
+            "lo": 0,
+            "hi": 0.75,
+            "clusters": 4
+          },
+          "t": {
+            "lo": 0,
+            "hi": 0.8893517387613767,
+            "clusters": 4
+          }
+        },
+        "not_wrong_shown": {
+          "k": 2,
+          "n": 5,
+          "p": 0.4,
+          "lo": 0.11762077314099711,
+          "hi": 0.7692757205908813,
+          "boot": {
+            "lo": 0,
+            "hi": 1,
+            "clusters": 4
+          },
+          "t": {
+            "lo": 0,
+            "hi": 1,
+            "clusters": 4
+          }
+        },
+        "accept_shown": {
+          "k": 1,
+          "n": 5,
+          "p": 0.2,
+          "lo": 0.03622410822563066,
+          "hi": 0.6244653729700049,
+          "boot": {
+            "lo": 0,
+            "hi": 0.75,
+            "clusters": 4
+          },
+          "t": {
+            "lo": 0,
+            "hi": 0.8893517387613767,
+            "clusters": 4
+          }
+        },
+        "yield": {
+          "repos": 12,
+          "total": 1,
+          "mean": 0.08333333333333333,
+          "median": 0,
+          "zero": 11
+        }
+      },
+      "suggestion_tier": {
+        "shown": 7,
+        "labelled": 7,
+        "ACCEPT": 6,
+        "TRIVIAL": 0,
+        "WRONG": 1,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 6,
+          "n": 7,
+          "p": 0.8571428571428571,
+          "lo": 0.486872167860775,
+          "hi": 0.9743203759421759,
+          "boot": {
+            "lo": 0.7,
+            "hi": 1,
+            "clusters": 4
+          },
+          "t": {
+            "lo": 0.5054327863462365,
+            "hi": 1,
+            "clusters": 4
+          }
+        },
+        "accept": {
+          "k": 6,
+          "n": 7,
+          "p": 0.8571428571428571,
+          "lo": 0.486872167860775,
+          "hi": 0.9743203759421759,
+          "boot": {
+            "lo": 0.7,
+            "hi": 1,
+            "clusters": 4
+          },
+          "t": {
+            "lo": 0.5054327863462365,
+            "hi": 1,
+            "clusters": 4
+          }
+        },
+        "not_wrong_shown": {
+          "k": 6,
+          "n": 7,
+          "p": 0.8571428571428571,
+          "lo": 0.486872167860775,
+          "hi": 0.9743203759421759,
+          "boot": {
+            "lo": 0.7,
+            "hi": 1,
+            "clusters": 4
+          },
+          "t": {
+            "lo": 0.5054327863462365,
+            "hi": 1,
+            "clusters": 4
+          }
+        },
+        "accept_shown": {
+          "k": 6,
+          "n": 7,
+          "p": 0.8571428571428571,
+          "lo": 0.486872167860775,
+          "hi": 0.9743203759421759,
+          "boot": {
+            "lo": 0.7,
+            "hi": 1,
+            "clusters": 4
+          },
+          "t": {
+            "lo": 0.5054327863462365,
+            "hi": 1,
+            "clusters": 4
+          }
+        },
+        "yield": {
+          "repos": 12,
+          "total": 6,
+          "mean": 0.5,
+          "median": 0,
+          "zero": 8
+        }
+      }
+    },
+    "python": {
+      "run": "py",
+      "repos": 8,
+      "overall": {
+        "shown": 2,
+        "labelled": 2,
+        "ACCEPT": 1,
+        "TRIVIAL": 0,
+        "WRONG": 1,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 1,
+          "n": 2,
+          "p": 0.5,
+          "lo": 0.09453120463920084,
+          "hi": 0.9054687953607992,
+          "boot": {
+            "lo": 0,
+            "hi": 1,
+            "clusters": 2
+          },
+          "t": {
+            "lo": 0,
+            "hi": 1,
+            "clusters": 2
+          }
+        },
+        "accept": {
+          "k": 1,
+          "n": 2,
+          "p": 0.5,
+          "lo": 0.09453120463920084,
+          "hi": 0.9054687953607992,
+          "boot": {
+            "lo": 0,
+            "hi": 1,
+            "clusters": 2
+          },
+          "t": {
+            "lo": 0,
+            "hi": 1,
+            "clusters": 2
+          }
+        },
+        "not_wrong_shown": {
+          "k": 1,
+          "n": 2,
+          "p": 0.5,
+          "lo": 0.09453120463920084,
+          "hi": 0.9054687953607992,
+          "boot": {
+            "lo": 0,
+            "hi": 1,
+            "clusters": 2
+          },
+          "t": {
+            "lo": 0,
+            "hi": 1,
+            "clusters": 2
+          }
+        },
+        "accept_shown": {
+          "k": 1,
+          "n": 2,
+          "p": 0.5,
+          "lo": 0.09453120463920084,
+          "hi": 0.9054687953607992,
+          "boot": {
+            "lo": 0,
+            "hi": 1,
+            "clusters": 2
+          },
+          "t": {
+            "lo": 0,
+            "hi": 1,
+            "clusters": 2
+          }
+        },
+        "yield": {
+          "repos": 8,
+          "total": 1,
+          "mean": 0.125,
+          "median": 0,
+          "zero": 7
+        }
+      },
+      "default_tier": {
+        "shown": 0,
+        "labelled": 0,
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 0,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null,
+          "boot": {
+            "lo": null,
+            "hi": null,
+            "clusters": 0
+          },
+          "t": {
+            "lo": null,
+            "hi": null,
+            "clusters": 0
+          }
+        },
+        "accept": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null,
+          "boot": {
+            "lo": null,
+            "hi": null,
+            "clusters": 0
+          },
+          "t": {
+            "lo": null,
+            "hi": null,
+            "clusters": 0
+          }
+        },
+        "not_wrong_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null,
+          "boot": {
+            "lo": null,
+            "hi": null,
+            "clusters": 0
+          },
+          "t": {
+            "lo": null,
+            "hi": null,
+            "clusters": 0
+          }
+        },
+        "accept_shown": {
+          "k": 0,
+          "n": 0,
+          "p": null,
+          "lo": null,
+          "hi": null,
+          "boot": {
+            "lo": null,
+            "hi": null,
+            "clusters": 0
+          },
+          "t": {
+            "lo": null,
+            "hi": null,
+            "clusters": 0
+          }
+        },
+        "yield": {
+          "repos": 8,
+          "total": 0,
+          "mean": 0,
+          "median": 0,
+          "zero": 8
+        }
+      },
+      "suggestion_tier": {
+        "shown": 2,
+        "labelled": 2,
+        "ACCEPT": 1,
+        "TRIVIAL": 0,
+        "WRONG": 1,
+        "unlabelled": 0,
+        "not_wrong": {
+          "k": 1,
+          "n": 2,
+          "p": 0.5,
+          "lo": 0.09453120463920084,
+          "hi": 0.9054687953607992,
+          "boot": {
+            "lo": 0,
+            "hi": 1,
+            "clusters": 2
+          },
+          "t": {
+            "lo": 0,
+            "hi": 1,
+            "clusters": 2
+          }
+        },
+        "accept": {
+          "k": 1,
+          "n": 2,
+          "p": 0.5,
+          "lo": 0.09453120463920084,
+          "hi": 0.9054687953607992,
+          "boot": {
+            "lo": 0,
+            "hi": 1,
+            "clusters": 2
+          },
+          "t": {
+            "lo": 0,
+            "hi": 1,
+            "clusters": 2
+          }
+        },
+        "not_wrong_shown": {
+          "k": 1,
+          "n": 2,
+          "p": 0.5,
+          "lo": 0.09453120463920084,
+          "hi": 0.9054687953607992,
+          "boot": {
+            "lo": 0,
+            "hi": 1,
+            "clusters": 2
+          },
+          "t": {
+            "lo": 0,
+            "hi": 1,
+            "clusters": 2
+          }
+        },
+        "accept_shown": {
+          "k": 1,
+          "n": 2,
+          "p": 0.5,
+          "lo": 0.09453120463920084,
+          "hi": 0.9054687953607992,
+          "boot": {
+            "lo": 0,
+            "hi": 1,
+            "clusters": 2
+          },
+          "t": {
+            "lo": 0,
+            "hi": 1,
+            "clusters": 2
+          }
+        },
+        "yield": {
+          "repos": 8,
+          "total": 1,
+          "mean": 0.125,
+          "median": 0,
+          "zero": 7
+        }
+      }
+    }
+  },
+  "conditions": {
+    "a": {
+      "rule": "TS default-tier accept >= 90% with >= 8 default-tier cards",
+      "n": 5,
+      "p": 0.2,
+      "met": false
+    },
+    "b": {
+      "rule": "not-wrong >= 70% per language",
+      "by_language": {
+        "typescript/javascript": {
+          "n": 12,
+          "p": 0.6666666666666666,
+          "met": false
+        },
+        "python": {
+          "n": 2,
+          "p": 0.5,
+          "met": false
+        }
+      },
+      "met": false
+    },
+    "c": {
+      "rule": "|dev3 per-card accept (all shown) - build-set in-sample| <= 10 points, per language",
+      "by_language": {
+        "typescript/javascript": {
+          "n": 12,
+          "p": 0.5833333333333334,
+          "in_sample": "93.5% (43/46)",
+          "diff_points": -35.14492753623188,
+          "met": false
+        },
+        "python": {
+          "n": 2,
+          "p": 0.5,
+          "in_sample": "100% (12/12)",
+          "diff_points": -50,
+          "met": false
+        }
+      },
+      "met": false
+    }
+  },
+  "flag_precision": {
+    "typescript/javascript suggestion": {
+      "real": 6,
+      "n": 11,
+      "repos": {
+        "T02": [
+          0,
+          5
+        ],
+        "T07": [
+          2,
+          2
+        ],
+        "T13": [
+          2,
+          2
+        ],
+        "T18": [
+          2,
+          2
+        ]
+      },
+      "wilson": {
+        "k": 6,
+        "n": 11,
+        "p": 0.5454545454545454,
+        "lo": 0.2800915357859759,
+        "hi": 0.7872872851236217
+      }
+    },
+    "typescript/javascript all": {
+      "real": 11,
+      "n": 27,
+      "repos": {
+        "T02": [
+          0,
+          7
+        ],
+        "T07": [
+          2,
+          2
+        ],
+        "T13": [
+          6,
+          6
+        ],
+        "T15": [
+          1,
+          2
+        ],
+        "T18": [
+          2,
+          10
+        ]
+      },
+      "wilson": {
+        "k": 11,
+        "n": 27,
+        "p": 0.4074074074074074,
+        "lo": 0.24514756969784102,
+        "hi": 0.592732991684024
+      }
+    },
+    "typescript/javascript default": {
+      "real": 5,
+      "n": 16,
+      "repos": {
+        "T02": [
+          0,
+          2
+        ],
+        "T13": [
+          4,
+          4
+        ],
+        "T15": [
+          1,
+          2
+        ],
+        "T18": [
+          0,
+          8
+        ]
+      },
+      "wilson": {
+        "k": 5,
+        "n": 16,
+        "p": 0.3125,
+        "lo": 0.14164643765150897,
+        "hi": 0.5559564434725178
+      }
+    },
+    "python suggestion": {
+      "real": 2,
+      "n": 4,
+      "repos": {
+        "P03": [
+          2,
+          2
+        ],
+        "P09": [
+          0,
+          2
+        ]
+      },
+      "wilson": {
+        "k": 2,
+        "n": 4,
+        "p": 0.5,
+        "lo": 0.15003898774401986,
+        "hi": 0.8499610122559802
+      }
+    },
+    "python all": {
+      "real": 2,
+      "n": 4,
+      "repos": {
+        "P03": [
+          2,
+          2
+        ],
+        "P09": [
+          0,
+          2
+        ]
+      },
+      "wilson": {
+        "k": 2,
+        "n": 4,
+        "p": 0.5,
+        "lo": 0.15003898774401986,
+        "hi": 0.8499610122559802
+      }
+    }
+  },
+  "wrong_causes": {
+    "typescript/javascript": {
+      "mixed_group": 3,
+      "legit_outliers": 1
+    },
+    "python": {
+      "mixed_group": 1
+    }
+  },
+  "unlabelled": 0,
+  "passes": false
+}

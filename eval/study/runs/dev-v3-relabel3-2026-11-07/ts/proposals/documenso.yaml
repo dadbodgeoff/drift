@@ -1,0 +1,503 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - _index
+  - _layout
+  - client
+  - delete-document
+  - document
+  - find-document-audit-logs
+  - o
+  - route
+  - router
+  - schema
+  - security
+  - settings
+  suffixes:
+  - $id
+  - $token
+  - _index
+  - _layout
+  - client
+  - config
+  - create
+  - handler
+  - server
+  - spec
+  - test
+  - types
+conventions:
+- id: D-041293
+  status: proposed
+  mode: advise
+  summary: >-
+    files in packages/lib/** do not import from packages/trpc/** (declared
+    dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: packages/lib
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:packages/trpc
+  evidence:
+    holders: 637
+    total: 641
+    lower_bound: 0.984
+    lift: 3.0
+  example: packages/lib/advanced-fields-validation/validate-dropdown.ts#(file)
+  selector_version: 2
+- id: D-7b5140
+  status: proposed
+  mode: advise
+  summary: >-
+    files in packages/lib/** do not import from packages/auth/** (declared
+    dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: packages/lib
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:packages/auth
+  evidence:
+    holders: 637
+    total: 641
+    lower_bound: 0.984
+    lift: 3.0
+  example: packages/lib/advanced-fields-validation/validate-dropdown.ts#(file)
+  selector_version: 2
+- id: D-2a51e9
+  status: proposed
+  mode: advise
+  summary: >-
+    files in packages/lib/** do not import from packages/ee/** (declared
+    dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: packages/lib
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:packages/ee
+  evidence:
+    holders: 633
+    total: 641
+    lower_bound: 0.976
+    lift: 3.0
+  example: packages/lib/advanced-fields-validation/validate-dropdown.ts#(file)
+  selector_version: 2
+- id: D-c3b713
+  status: proposed
+  mode: advise
+  summary: >-
+    files in packages/lib/** do not import from packages/ui/** (declared
+    dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: packages/lib
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:packages/ui
+  evidence:
+    holders: 633
+    total: 641
+    lower_bound: 0.976
+    lift: 3.0
+  example: packages/lib/advanced-fields-validation/validate-dropdown.ts#(file)
+  selector_version: 2
+- id: D-4785b8
+  status: proposed
+  mode: advise
+  summary: "apps/remix: components in app/components/dialogs/** are named `*Dialog`"
+  role:
+    package: apps/remix
+    dir: app/components/dialogs
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: named
+    pattern: "*Dialog"
+  evidence:
+    holders: 93
+    total: 93
+    lower_bound: 0.96
+    lift: 7.67
+    role_members: 94
+  example: apps/remix/app/components/dialogs/account-delete-dialog.tsx#AccountDeleteDialog
+  selector_version: 2
+- id: D-694c8a
+  status: proposed
+  mode: advise
+  summary: >-
+    files in apps/remix/** use lucide-react for icons, not
+    react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react
+  role:
+    package: apps/remix
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: prefers_library
+    group: icons
+    preferred: lucide-react
+  evidence:
+    holders: 213
+    total: 216
+    lower_bound: 0.96
+    lift: 1.0
+    split:
+    - - lucide-react
+      - 215
+    - - react-icons
+      - 3
+  example: apps/remix/app/components/dialogs/ai-field-detection-dialog.tsx#(file)
+  selector_version: 2
+- id: D-d7fae5
+  status: proposed
+  mode: advise
+  summary: "packages/trpc: exported values in server/** (schema files) are named `*Schema`"
+  role:
+    package: packages/trpc
+    dir: server
+    file: schema
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Schema"
+  evidence:
+    holders: 120
+    total: 121
+    lower_bound: 0.955
+    lift: 1.652
+    role_members: 124
+  example: packages/trpc/server/auth-router/schema.ts#ZCurrentPasswordSchema
+  selector_version: 2
+- id: D-a10f62
+  status: proposed
+  mode: advise
+  summary: "packages/trpc: exported values in server/admin-router/** (*.types files) are named `*Schema`"
+  role:
+    package: packages/trpc
+    dir: server/admin-router
+    file: "*.types"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Schema"
+  evidence:
+    holders: 97
+    total: 98
+    lower_bound: 0.944
+    lift: 1.673
+    role_members: 99
+  example: >-
+    packages/trpc/server/admin-router/admin-search.types.ts#ZAdminSearchRequestSchema
+  selector_version: 2
+- id: D-adb7ca
+  status: proposed
+  mode: advise
+  summary: "packages/trpc: exported values in server/team-router/** (*.types files) are named `*Schema`"
+  role:
+    package: packages/trpc
+    dir: server/team-router
+    file: "*.types"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Schema"
+  evidence:
+    holders: 49
+    total: 49
+    lower_bound: 0.927
+    lift: 1.64
+    role_members: 51
+  example: >-
+    packages/trpc/server/team-router/complete-team-email-verification.types.ts#ZCompleteTeamEmailVerificationRequestSchema
+  selector_version: 2
+- id: D-545ea0
+  status: proposed
+  mode: advise
+  summary: "apps/remix: components in app/components/dialogs/** render <Button>"
+  role:
+    package: apps/remix
+    dir: app/components/dialogs
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: packages/ui/primitives/button.tsx#Button
+  evidence:
+    holders: 92
+    total: 94
+    lower_bound: 0.926
+    lift: 2.852
+  example: apps/remix/app/components/dialogs/account-delete-dialog.tsx#AccountDeleteDialog
+  selector_version: 2
+- id: D-388bc9
+  status: proposed
+  mode: advise
+  summary: >-
+    files in packages/ui/** use lucide-react for icons, not
+    react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react
+  role:
+    package: packages/ui
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: prefers_library
+    group: icons
+    preferred: lucide-react
+  evidence:
+    holders: 57
+    total: 58
+    lower_bound: 0.909
+    lift: 1.0
+    split:
+    - - lucide-react
+      - 58
+    - - react-icons
+      - 1
+  example: packages/ui/components/common/copy-text-button.tsx#(file)
+  selector_version: 2
+- id: D-3959b6
+  status: proposed
+  mode: advise
+  summary: "packages/trpc: exported values in server/enterprise-router/** (*.types files) are named `*Schema`"
+  role:
+    package: packages/trpc
+    dir: server/enterprise-router
+    file: "*.types"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Schema"
+  evidence:
+    holders: 35
+    total: 36
+    lower_bound: 0.858
+    lift: 1.66
+  example: >-
+    packages/trpc/server/enterprise-router/create-organisation-email-domain.types.ts#ZCreateOrganisationEmailDomainRequestSchema
+  selector_version: 2
+- id: D-32c861
+  status: proposed
+  mode: advise
+  summary: "packages/trpc: rpc entry points in server/** are wrapped in adminProcedure() or authenticatedProcedure()"
+  role:
+    package: packages/trpc
+    dir: server
+    file: "*"
+    entry: rpc
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - packages/trpc/server/trpc.ts#adminProcedure
+    - packages/trpc/server/trpc.ts#authenticatedProcedure
+  evidence:
+    holders: 191
+    total: 215
+    lower_bound: 0.839
+    lift: 5.722
+    split:
+    - - packages/trpc/server/trpc.ts#authenticatedProcedure
+      - 146
+    - - packages/trpc/server/trpc.ts#adminProcedure
+      - 45
+  example: packages/trpc/server/admin-router/admin-search.ts#adminSearchRoute
+  selector_version: 2
+- id: D-a0eee5
+  status: proposed
+  mode: advise
+  summary: "packages/trpc: rpc entry points in server/** (router files) are wrapped in authenticatedProcedure()"
+  role:
+    package: packages/trpc
+    dir: server
+    file: router
+    entry: rpc
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - packages/trpc/server/trpc.ts#authenticatedProcedure
+  evidence:
+    holders: 59
+    total: 64
+    lower_bound: 0.83
+    lift: 7.286
+  example: packages/trpc/server/field-router/router.ts#MUTATION createDocumentField
+  selector_version: 2
+- id: D-cc64dd
+  status: proposed
+  mode: advise
+  summary: prisma models have a `id` field
+  role:
+    package: ""
+    dir: prisma
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: id
+  evidence:
+    holders: 51
+    total: 55
+    lower_bound: 0.827
+    lift: 1.021
+  example: packages/prisma/schema.prisma#Account
+  selector_version: 2
+- id: D-399322
+  status: proposed
+  mode: advise
+  summary: sql models have a `id` field
+  role:
+    package: ""
+    dir: sql
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: id
+  evidence:
+    holders: 58
+    total: 65
+    lower_bound: 0.794
+    lift: 0.982
+  example: >-
+    packages/prisma/migrations/20230404095503_initial_migration/migration.sql#Account
+  selector_version: 2
+- id: D-d51d70
+  status: proposed
+  mode: advise
+  summary: "packages/trpc: rpc entry points in server/organisation-router/** are wrapped in authenticatedProcedure()"
+  role:
+    package: packages/trpc
+    dir: server/organisation-router
+    file: "*"
+    entry: rpc
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - packages/trpc/server/trpc.ts#authenticatedProcedure
+  evidence:
+    holders: 28
+    total: 30
+    lower_bound: 0.787
+    lift: 7.376
+  example: >-
+    packages/trpc/server/organisation-router/create-organisation-group.ts#createOrganisationGroupRoute
+  selector_version: 2
+- id: D-9b91c3
+  status: proposed
+  mode: advise
+  summary: "packages/trpc: rpc entry points in server/team-router/** are wrapped in authenticatedProcedure()"
+  role:
+    package: packages/trpc
+    dir: server/team-router
+    file: "*"
+    entry: rpc
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - packages/trpc/server/trpc.ts#authenticatedProcedure
+  evidence:
+    holders: 21
+    total: 22
+    lower_bound: 0.782
+    lift: 7.544
+  example: packages/trpc/server/team-router/create-team-groups.ts#createTeamGroupsRoute
+  selector_version: 2
+- id: D-55ae12
+  status: proposed
+  mode: advise
+  summary: "packages/trpc: rpc entry points in server/envelope-router/** are wrapped in authenticatedProcedure()"
+  role:
+    package: packages/trpc
+    dir: server/envelope-router
+    file: "*"
+    entry: rpc
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - packages/trpc/server/trpc.ts#authenticatedProcedure
+  evidence:
+    holders: 42
+    total: 47
+    lower_bound: 0.774
+    lift: 7.063
+  example: >-
+    packages/trpc/server/envelope-router/attachment/create-attachment.ts#createAttachmentRoute
+  selector_version: 2
+- id: D-fc0990
+  status: proposed
+  mode: advise
+  summary: "apps/remix: components in app/components/dialogs/** call useToast()"
+  role:
+    package: apps/remix
+    dir: app/components/dialogs
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: calls
+    callee: packages/ui/primitives/use-toast.ts#useToast
+  evidence:
+    holders: 79
+    total: 94
+    lower_bound: 0.753
+    lift: 3.68
+  example: apps/remix/app/components/dialogs/account-delete-dialog.tsx#AccountDeleteDialog
+  selector_version: 2
+- id: D-aafe01
+  status: proposed
+  mode: advise
+  summary: "packages/email: components in templates/** are named `*Template`"
+  role:
+    package: packages/email
+    dir: templates
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: named
+    pattern: "*Template"
+  evidence:
+    holders: 28
+    total: 31
+    lower_bound: 0.751
+    lift: 27.258
+  example: packages/email/templates/access-auth-2fa.tsx#AccessAuth2FAEmailTemplate
+  selector_version: 2

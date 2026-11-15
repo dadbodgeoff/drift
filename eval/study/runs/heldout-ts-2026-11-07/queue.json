@@ -1,0 +1,2213 @@
+{
+  "run": "eval/study/runs/heldout-ts-2026-11-07",
+  "items": [
+    {
+      "uid": "fedify/D-a44f2b",
+      "repo": "fedify",
+      "id": "D-a44f2b",
+      "rank": 1,
+      "summary": "workspace packages define a `build:self` script",
+      "role": {
+        "package": "",
+        "dir": ".",
+        "file": "package.json",
+        "entry": "-",
+        "kind": "package"
+      },
+      "rule": {
+        "type": "package_has",
+        "item": "script:build:self"
+      },
+      "evidence": {
+        "holders": 37,
+        "total": 38,
+        "lower_bound": 0.86,
+        "lift": 1
+      },
+      "members": 38,
+      "example": "packages/adonisjs/package.json#@fedify/adonisjs",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "docs/package.json"
+      ],
+      "block": " 1. [D-a44f2b] workspace packages define a `build:self` script\n    evidence: 37/38 (lower bound 0.86, lift 1.0)\n    example:  packages/adonisjs/package.json#@fedify/adonisjs\n    outlier:  docs/package.json:1 ",
+      "family": "repo",
+      "rule_kind": "package_has",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "hedgedoc/D-12d3c2",
+      "repo": "hedgedoc",
+      "id": "D-12d3c2",
+      "rank": 1,
+      "summary": "frontend: classes in src/extensions/external-lib-app-extensions/** are named `*Extension`",
+      "role": {
+        "package": "frontend",
+        "dir": "src/extensions/external-lib-app-extensions",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Extension"
+      },
+      "evidence": {
+        "holders": 24,
+        "total": 26,
+        "lower_bound": 0.76,
+        "lift": 3.9
+      },
+      "members": 26,
+      "example": "frontend/src/extensions/external-lib-app-extensions/abcjs/abcjs-app-extension.ts#AbcjsAppExtension",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "frontend/src/extensions/external-lib-app-extensions/katex/katex-replacer.tsx",
+        "frontend/src/extensions/external-lib-app-extensions/plantuml/plantuml-not-configured-component-replacer.tsx"
+      ],
+      "block": " 1. [D-12d3c2] frontend: classes in src/extensions/external-lib-app-extensions/** are named `*Extension`\n    evidence: 24/26 (lower bound 0.76, lift 3.9)\n    example:  frontend/src/extensions/external-lib-app-extensions/abcjs/abcjs-app-extension.ts#AbcjsAppExtension\n    outlier:  frontend/src/extensions/external-lib-app-extensions/katex/katex-replacer.tsx:22 KatexReplacer\n    outlier:  frontend/src/extensions/external-lib-app-extensions/plantuml/plantuml-not-configured-component-replacer.tsx:17 PlantumlNotConfiguredComponentReplacer",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "mercur/D-c598ed",
+      "repo": "mercur",
+      "id": "D-c598ed",
+      "rank": 1,
+      "summary": "packages/admin: exported values in src/hooks/** are wrapped in queryKeysFactory()",
+      "role": {
+        "package": "packages/admin",
+        "dir": "src/hooks",
+        "file": "*",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "packages/admin/src/lib/query-key-factory.ts#queryKeysFactory"
+        ]
+      },
+      "evidence": {
+        "holders": 49,
+        "total": 56,
+        "lower_bound": 0.76,
+        "lift": 30.9
+      },
+      "members": 56,
+      "example": "packages/admin/src/hooks/api/api-keys.tsx#apiKeysQueryKeys",
+      "python_members": null,
+      "outliers": 7,
+      "outlier_files": [
+        "packages/admin/src/hooks/api/customers.tsx",
+        "packages/admin/src/hooks/api/offer-conditions.tsx",
+        "packages/admin/src/hooks/api/orders.tsx",
+        "packages/admin/src/hooks/api/promotions.tsx",
+        "packages/admin/src/hooks/api/requests.tsx",
+        "packages/admin/src/hooks/api/return-requests.tsx",
+        "packages/admin/src/hooks/api/sellers.tsx"
+      ],
+      "block": " 1. [D-c598ed] packages/admin: exported values in src/hooks/** are wrapped in queryKeysFactory()\n    evidence: 49/56 (lower bound 0.76, lift 30.9)\n    example:  packages/admin/src/hooks/api/api-keys.tsx#apiKeysQueryKeys\n    outlier:  packages/admin/src/hooks/api/customers.tsx:20 customerAddressesQueryKeys\n    outlier:  packages/admin/src/hooks/api/offer-conditions.tsx:19 offerConditionsQueryKeys\n    outlier:  packages/admin/src/hooks/api/orders.tsx:47 ordersQueryKeys\n    outlier:  packages/admin/src/hooks/api/promotions.tsx:16 promotionsQueryKeys\n    outlier:  packages/admin/src/hooks/api/requests.tsx:13 requestsQueryKeys\n    outlier:  packages/admin/src/hooks/api/return-requests.tsx:17 returnRequestsQueryKeys\n    outlier:  packages/admin/src/hooks/api/sellers.tsx:257 SELLER_STATUS_LABELS",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "mercur/D-b363c0",
+      "repo": "mercur",
+      "id": "D-b363c0",
+      "rank": 2,
+      "summary": "packages/admin: functions in src/hooks/table/query/** validate their input with a schema",
+      "role": {
+        "package": "packages/admin",
+        "dir": "src/hooks/table/query",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "validates"
+      },
+      "evidence": {
+        "holders": 25,
+        "total": 27,
+        "lower_bound": 0.77,
+        "lift": 27
+      },
+      "members": 27,
+      "example": "packages/admin/src/hooks/table/query/use-attribute-table-query.tsx#useAttributeTableQuery",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "packages/admin/src/hooks/table/query/use-fulfillment-providers-table-query.tsx",
+        "packages/admin/src/hooks/table/query/use-offer-condition-table-query.tsx"
+      ],
+      "block": " 2. [D-b363c0] packages/admin: functions in src/hooks/table/query/** validate their input with a schema\n    evidence: 25/27 (lower bound 0.77, lift 27.0)\n    example:  packages/admin/src/hooks/table/query/use-attribute-table-query.tsx#useAttributeTableQuery\n    outlier:  packages/admin/src/hooks/table/query/use-fulfillment-providers-table-query.tsx:9 useFulfillmentProvidersTableQuery\n    outlier:  packages/admin/src/hooks/table/query/use-offer-condition-table-query.tsx:11 useOfferConditionTableQuery",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "mercur/D-a8afe2",
+      "repo": "mercur",
+      "id": "D-a8afe2",
+      "rank": 3,
+      "summary": "packages/admin: exported values in src/hooks/** are named `*Keys`",
+      "role": {
+        "package": "packages/admin",
+        "dir": "src/hooks",
+        "file": "*",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Keys"
+      },
+      "evidence": {
+        "holders": 55,
+        "total": 55,
+        "lower_bound": 0.94,
+        "lift": 24.6
+      },
+      "members": 56,
+      "example": "packages/admin/src/hooks/api/api-keys.tsx#apiKeysQueryKeys",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 3. [D-a8afe2] packages/admin: exported values in src/hooks/** are named `*Keys`\n    evidence: 55/55 (lower bound 0.94, lift 24.6)\n    example:  packages/admin/src/hooks/api/api-keys.tsx#apiKeysQueryKeys\n    exempt:   packages/admin/src/hooks/api/sellers.tsx:257 SELLER_STATUS_LABELS (a constant beside sellerInvitesQueryKeys, which follows the scheme)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "mercur/D-032618",
+      "repo": "mercur",
+      "id": "D-032618",
+      "rank": 4,
+      "summary": "packages/core: exported values in src/** (middlewares files) are named `*Middlewares`",
+      "role": {
+        "package": "packages/core",
+        "dir": "src",
+        "file": "middlewares",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Middlewares"
+      },
+      "evidence": {
+        "holders": 37,
+        "total": 38,
+        "lower_bound": 0.86,
+        "lift": 34.4
+      },
+      "members": 38,
+      "example": "packages/core/src/api/admin/campaigns/middlewares.ts#adminCampaignsMiddlewares",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/core/src/api/middlewares.ts"
+      ],
+      "block": " 4. [D-032618] packages/core: exported values in src/** (middlewares files) are named `*Middlewares`\n    evidence: 37/38 (lower bound 0.86, lift 34.4)\n    example:  packages/core/src/api/admin/campaigns/middlewares.ts#adminCampaignsMiddlewares\n    outlier:  packages/core/src/api/middlewares.ts:29 default",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "mercur/D-aa499e",
+      "repo": "mercur",
+      "id": "D-aa499e",
+      "rank": 5,
+      "summary": "packages/admin: components in src/** (breadcrumb files) are named `*Breadcrumb`",
+      "role": {
+        "package": "packages/admin",
+        "dir": "src",
+        "file": "breadcrumb",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Breadcrumb"
+      },
+      "evidence": {
+        "holders": 29,
+        "total": 31,
+        "lower_bound": 0.79,
+        "lift": 41.3
+      },
+      "members": 31,
+      "example": "packages/admin/src/pages/api-key-management/api-key-management-detail/breadcrumb.tsx#ApiKeyManagementDetailBreadcrumb",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "packages/admin/src/pages/offers/[id]/breadcrumb.tsx",
+        "packages/admin/src/pages/offers/[id]/variants/[offer_id]/breadcrumb.tsx"
+      ],
+      "block": " 5. [D-aa499e] packages/admin: components in src/** (breadcrumb files) are named `*Breadcrumb`\n    evidence: 29/31 (lower bound 0.79, lift 41.3)\n    example:  packages/admin/src/pages/api-key-management/api-key-management-detail/breadcrumb.tsx#ApiKeyManagementDetailBreadcrumb\n    outlier:  packages/admin/src/pages/offers/[id]/breadcrumb.tsx:6 Breadcrumb\n    outlier:  packages/admin/src/pages/offers/[id]/variants/[offer_id]/breadcrumb.tsx:6 Breadcrumb",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "mercur/D-2a2839",
+      "repo": "mercur",
+      "id": "D-2a2839",
+      "rank": 6,
+      "summary": "packages/admin: functions in src/** (loader files) are named `*Loader`",
+      "role": {
+        "package": "packages/admin",
+        "dir": "src",
+        "file": "loader",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Loader"
+      },
+      "evidence": {
+        "holders": 37,
+        "total": 41,
+        "lower_bound": 0.78,
+        "lift": 42.6
+      },
+      "members": 41,
+      "example": "packages/admin/src/pages/api-key-management/api-key-management-detail/loader.ts#apiKeyLoader",
+      "python_members": null,
+      "outliers": 4,
+      "outlier_files": [
+        "packages/admin/src/pages/offers/[id]/loader.ts",
+        "packages/admin/src/pages/offers/[id]/variants/[offer_id]/loader.ts",
+        "packages/admin/src/pages/products/product-detail/loader.ts"
+      ],
+      "block": " 6. [D-2a2839] packages/admin: functions in src/** (loader files) are named `*Loader`\n    evidence: 37/41 (lower bound 0.78, lift 42.6)\n    example:  packages/admin/src/pages/api-key-management/api-key-management-detail/loader.ts#apiKeyLoader\n    outlier:  packages/admin/src/pages/offers/[id]/loader.ts:26 loader\n    outlier:  packages/admin/src/pages/offers/[id]/loader.ts:10 offerProductDetailQuery\n    outlier:  packages/admin/src/pages/offers/[id]/variants/[offer_id]/loader.ts:24 loader\n    outlier:  packages/admin/src/pages/products/product-detail/loader.ts:10 productDetailQueryWithLinks",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "mercur/D-7af930",
+      "repo": "mercur",
+      "id": "D-7af930",
+      "rank": 7,
+      "summary": "packages/core: functions in src/workflows/seller/steps/** are wrapped in createStep()",
+      "role": {
+        "package": "packages/core",
+        "dir": "src/workflows/seller/steps",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "pkg:@medusajs/framework#createStep"
+        ]
+      },
+      "evidence": {
+        "holders": 25,
+        "total": 25,
+        "lower_bound": 0.87,
+        "lift": 26.6
+      },
+      "members": 25,
+      "example": "packages/core/src/workflows/seller/steps/check-seller-has-owner.ts#checkSellerHasOwnerStep",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 7. [D-7af930] packages/core: functions in src/workflows/seller/steps/** are wrapped in createStep()\n    evidence: 25/25 (lower bound 0.87, lift 26.6)\n    example:  packages/core/src/workflows/seller/steps/check-seller-has-owner.ts#checkSellerHasOwnerStep",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "mercur/D-db72ed",
+      "repo": "mercur",
+      "id": "D-db72ed",
+      "rank": 8,
+      "summary": "packages/admin: functions in src/hooks/table/columns/** are named `*Columns`",
+      "role": {
+        "package": "packages/admin",
+        "dir": "src/hooks/table/columns",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Columns"
+      },
+      "evidence": {
+        "holders": 23,
+        "total": 24,
+        "lower_bound": 0.8,
+        "lift": 35.2
+      },
+      "members": 24,
+      "example": "packages/admin/src/hooks/table/columns/use-attribute-table-columns.tsx#useAttributeTableColumns",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/admin/src/hooks/table/columns/use-column-state.ts"
+      ],
+      "block": " 8. [D-db72ed] packages/admin: functions in src/hooks/table/columns/** are named `*Columns`\n    evidence: 23/24 (lower bound 0.80, lift 35.2)\n    example:  packages/admin/src/hooks/table/columns/use-attribute-table-columns.tsx#useAttributeTableColumns\n    outlier:  packages/admin/src/hooks/table/columns/use-column-state.ts:30 useColumnState",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "mercur/D-abfb09",
+      "repo": "mercur",
+      "id": "D-abfb09",
+      "rank": 9,
+      "summary": "packages/admin: functions in src/hooks/api/** call useMutation() before queryClient.invalidateQueries()",
+      "role": {
+        "package": "packages/admin",
+        "dir": "src/hooks/api",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "before",
+        "first": "pkg:@tanstack/react-query#useMutation",
+        "then": "packages/admin/src/lib/query-client.ts#queryClient.invalidateQueries"
+      },
+      "evidence": {
+        "holders": 241,
+        "total": 242,
+        "lower_bound": 0.98,
+        "lift": 1
+      },
+      "members": 242,
+      "example": "packages/admin/src/hooks/api/api-keys.tsx#useBatchAddSalesChannelsToApiKey",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/admin/src/hooks/api/sellers.tsx"
+      ],
+      "block": " 9. [D-abfb09] packages/admin: functions in src/hooks/api/** call useMutation() before queryClient.invalidateQueries()\n    evidence: 241/242 (lower bound 0.98, lift 1.0)\n    example:  packages/admin/src/hooks/api/api-keys.tsx#useBatchAddSalesChannelsToApiKey\n    outlier:  packages/admin/src/hooks/api/sellers.tsx:295 transitionSellerStatus",
+      "family": "ordering",
+      "rule_kind": "before",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "genkit/D-5156e2",
+      "repo": "genkit",
+      "id": "D-5156e2",
+      "rank": 1,
+      "summary": "js/testapps/agents: functions in src/** are wrapped in ai.defineFlow() or ai.defineTool()",
+      "role": {
+        "package": "js/testapps/agents",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "js/testapps/agents/src/genkit.ts#ai.defineFlow",
+          "js/testapps/agents/src/genkit.ts#ai.defineTool"
+        ]
+      },
+      "evidence": {
+        "holders": 25,
+        "total": 26,
+        "lower_bound": 0.81,
+        "lift": 72.8
+      },
+      "members": 26,
+      "example": "js/testapps/agents/src/auth-context-agent.ts#listMyOrders",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "js/testapps/agents/src/research-agent.ts"
+      ],
+      "block": " 1. [D-5156e2] js/testapps/agents: functions in src/** are wrapped in ai.defineFlow() or ai.defineTool()\n    evidence: 25/26 (lower bound 0.81, lift 72.8)\n    split:    ai.defineFlow 20, ai.defineTool 5\n    example:  js/testapps/agents/src/auth-context-agent.ts#listMyOrders\n    outlier:  js/testapps/agents/src/research-agent.ts:61 researchAgent",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "genkit/D-a6fa5c",
+      "repo": "genkit",
+      "id": "D-a6fa5c",
+      "rank": 2,
+      "summary": "genkit-tools/common: exported values in src/types/** are named `*Schema`",
+      "role": {
+        "package": "genkit-tools/common",
+        "dir": "src/types",
+        "file": "*",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Schema"
+      },
+      "evidence": {
+        "holders": 163,
+        "total": 166,
+        "lower_bound": 0.95,
+        "lift": 3.1
+      },
+      "members": 167,
+      "example": "genkit-tools/common/src/types/action.ts#ActionMetadataSchema",
+      "python_members": null,
+      "outliers": 3,
+      "outlier_files": [
+        "genkit-tools/common/src/types/eval.ts",
+        "genkit-tools/common/src/types/model.ts",
+        "genkit-tools/common/src/types/status.ts"
+      ],
+      "block": " 2. [D-a6fa5c] genkit-tools/common: exported values in src/types/** are named `*Schema`\n    evidence: 163/166 (lower bound 0.95, lift 3.1)\n    example:  genkit-tools/common/src/types/action.ts#ActionMetadataSchema\n    outlier:  genkit-tools/common/src/types/eval.ts:147 EvalStatusEnum\n    outlier:  genkit-tools/common/src/types/model.ts:204 GenerationCommonConfigDescriptions\n    outlier:  genkit-tools/common/src/types/status.ts:19 StatusCodes\n    exempt:   genkit-tools/common/src/types/model.ts:448 GenerateActionOutputConfig (a helper of GenerateActionOptionsSchema, which uses it in its file)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "genkit/D-7d5872",
+      "repo": "genkit",
+      "id": "D-7d5872",
+      "rank": 3,
+      "summary": "workspace packages enable `strict` in tsconfig",
+      "role": {
+        "package": "",
+        "dir": ".",
+        "file": "package.json",
+        "entry": "-",
+        "kind": "package"
+      },
+      "rule": {
+        "type": "package_has",
+        "item": "flag:strict"
+      },
+      "evidence": {
+        "holders": 70,
+        "total": 72,
+        "lower_bound": 0.9,
+        "lift": 1.2
+      },
+      "members": 72,
+      "example": "js/ai/package.json#@genkit-ai/ai",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "genkit-tools/package.json",
+        "js/testapps/firebase-functions-sample1/package.json"
+      ],
+      "block": " 3. [D-7d5872] workspace packages enable `strict` in tsconfig\n    evidence: 70/72 (lower bound 0.90, lift 1.2)\n    example:  js/ai/package.json#@genkit-ai/ai\n    outlier:  genkit-tools/package.json:1 \n    outlier:  js/testapps/firebase-functions-sample1/package.json:1 ",
+      "family": "repo",
+      "rule_kind": "package_has",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "genkit/D-f04b97",
+      "repo": "genkit",
+      "id": "D-f04b97",
+      "rank": 4,
+      "summary": "workspace packages use the genkit version most workspace packages use",
+      "role": {
+        "package": "",
+        "dir": ".",
+        "file": "package.json",
+        "entry": "-",
+        "kind": "package"
+      },
+      "rule": {
+        "type": "dependency_version",
+        "name": "genkit"
+      },
+      "evidence": {
+        "holders": 47,
+        "total": 48,
+        "lower_bound": 0.89,
+        "lift": 1
+      },
+      "members": 48,
+      "example": "js/doc-snippets/package.json#doc-snippets",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "js/testapps/firebase-functions-sample1/functions/package.json"
+      ],
+      "block": " 4. [D-f04b97] workspace packages use the genkit version most workspace packages use\n    evidence: 47/48 (lower bound 0.89, lift 1.0)\n    split:    workspace:* 47, ^1.43.0 1\n    example:  js/doc-snippets/package.json#doc-snippets\n    outlier:  js/testapps/firebase-functions-sample1/functions/package.json:1 functions",
+      "family": "repo",
+      "rule_kind": "dependency_version",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "genkit/D-2307d1",
+      "repo": "genkit",
+      "id": "D-2307d1",
+      "rank": 5,
+      "summary": "workspace packages use the rimraf version most workspace packages use",
+      "role": {
+        "package": "",
+        "dir": ".",
+        "file": "package.json",
+        "entry": "-",
+        "kind": "package"
+      },
+      "rule": {
+        "type": "dependency_version",
+        "name": "rimraf"
+      },
+      "evidence": {
+        "holders": 49,
+        "total": 51,
+        "lower_bound": 0.87,
+        "lift": 1
+      },
+      "members": 51,
+      "example": "js/ai/package.json#@genkit-ai/ai",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "genkit-tools/common/package.json",
+        "genkit-tools/telemetry-server/package.json"
+      ],
+      "block": " 5. [D-2307d1] workspace packages use the rimraf version most workspace packages use\n    evidence: 49/51 (lower bound 0.87, lift 1.0)\n    split:    ^6.0.1 49, ^6.1.3 2\n    example:  js/ai/package.json#@genkit-ai/ai\n    outlier:  genkit-tools/common/package.json:1 @genkit-ai/tools-common\n    outlier:  genkit-tools/telemetry-server/package.json:1 @genkit-ai/telemetry-server",
+      "family": "repo",
+      "rule_kind": "dependency_version",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "genkit/D-12213b",
+      "repo": "genkit",
+      "id": "D-12213b",
+      "rank": 6,
+      "summary": "workspace packages enable `sourceMap` in tsconfig",
+      "role": {
+        "package": "",
+        "dir": ".",
+        "file": "package.json",
+        "entry": "-",
+        "kind": "package"
+      },
+      "rule": {
+        "type": "package_has",
+        "item": "flag:sourceMap"
+      },
+      "evidence": {
+        "holders": 64,
+        "total": 72,
+        "lower_bound": 0.8,
+        "lift": 1.2
+      },
+      "members": 72,
+      "example": "js/ai/package.json#@genkit-ai/ai",
+      "python_members": null,
+      "outliers": 8,
+      "outlier_files": [
+        "genkit-tools/package.json",
+        "js/testapps/a2ui/package.json",
+        "js/testapps/a2ui/web/package.json",
+        "js/testapps/agents/package.json",
+        "js/testapps/agents/web/package.json",
+        "js/testapps/angular/package.json",
+        "js/testapps/firebase-functions-sample1/package.json",
+        "js/testapps/vercel-ai-elements/package.json"
+      ],
+      "block": " 6. [D-12213b] workspace packages enable `sourceMap` in tsconfig\n    evidence: 64/72 (lower bound 0.80, lift 1.2)\n    example:  js/ai/package.json#@genkit-ai/ai\n    outlier:  genkit-tools/package.json:1 \n    outlier:  js/testapps/a2ui/package.json:1 a2ui-testapp\n    outlier:  js/testapps/a2ui/web/package.json:1 a2ui-testapp-web\n    outlier:  js/testapps/agents/package.json:1 agents-testapp\n    outlier:  js/testapps/agents/web/package.json:1 agents-web-ui\n    outlier:  js/testapps/angular/package.json:1 angular-ssr-sample\n    outlier:  js/testapps/firebase-functions-sample1/package.json:1 \n    outlier:  js/testapps/vercel-ai-elements/package.json:1 vercel-ai-elements",
+      "family": "repo",
+      "rule_kind": "package_has",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "genkit/D-c0155e",
+      "repo": "genkit",
+      "id": "D-c0155e",
+      "rank": 7,
+      "summary": "workspace packages enable `noImplicitReturns` in tsconfig",
+      "role": {
+        "package": "",
+        "dir": ".",
+        "file": "package.json",
+        "entry": "-",
+        "kind": "package"
+      },
+      "rule": {
+        "type": "package_has",
+        "item": "flag:noImplicitReturns"
+      },
+      "evidence": {
+        "holders": 62,
+        "total": 72,
+        "lower_bound": 0.76,
+        "lift": 1.2
+      },
+      "members": 72,
+      "example": "js/ai/package.json#@genkit-ai/ai",
+      "python_members": null,
+      "outliers": 10,
+      "outlier_files": [
+        "genkit-tools/cli/package.json",
+        "genkit-tools/common/package.json",
+        "genkit-tools/package.json",
+        "genkit-tools/telemetry-server/package.json",
+        "js/testapps/a2ui/package.json",
+        "js/testapps/a2ui/web/package.json",
+        "js/testapps/agents/package.json",
+        "js/testapps/agents/web/package.json",
+        "js/testapps/firebase-functions-sample1/package.json",
+        "js/testapps/vercel-ai-elements/package.json"
+      ],
+      "block": " 7. [D-c0155e] workspace packages enable `noImplicitReturns` in tsconfig\n    evidence: 62/72 (lower bound 0.76, lift 1.2)\n    example:  js/ai/package.json#@genkit-ai/ai\n    outlier:  genkit-tools/cli/package.json:1 genkit-cli\n    outlier:  genkit-tools/common/package.json:1 @genkit-ai/tools-common\n    outlier:  genkit-tools/package.json:1 \n    outlier:  genkit-tools/telemetry-server/package.json:1 @genkit-ai/telemetry-server\n    outlier:  js/testapps/a2ui/package.json:1 a2ui-testapp\n    outlier:  js/testapps/a2ui/web/package.json:1 a2ui-testapp-web\n    outlier:  js/testapps/agents/package.json:1 agents-testapp\n    outlier:  js/testapps/agents/web/package.json:1 agents-web-ui\n    outlier:  js/testapps/firebase-functions-sample1/package.json:1 \n    outlier:  js/testapps/vercel-ai-elements/package.json:1 vercel-ai-elements",
+      "family": "repo",
+      "rule_kind": "package_has",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "taxhacker/D-53127d",
+      "repo": "taxhacker",
+      "id": "D-53127d",
+      "rank": 1,
+      "summary": "server actions in app/** (actions files) are named `*Action`",
+      "role": {
+        "package": "",
+        "dir": "app",
+        "file": "actions",
+        "entry": "server_action",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Action"
+      },
+      "evidence": {
+        "holders": 41,
+        "total": 42,
+        "lower_bound": 0.88,
+        "lift": 4.7
+      },
+      "members": 42,
+      "example": "app/(app)/apps/email/actions.ts#addEmailServerAction",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "app/(app)/apps/invoices/actions.ts"
+      ],
+      "block": " 1. [D-53127d] server actions in app/** (actions files) are named `*Action`\n    evidence: 41/42 (lower bound 0.88, lift 4.7)\n    example:  app/(app)/apps/email/actions.ts#addEmailServerAction\n    outlier:  app/(app)/apps/invoices/actions.ts:31 generateInvoicePDF",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "computer-science-fundamentals/D-6e4ada",
+      "repo": "computer-science-fundamentals",
+      "id": "D-6e4ada",
+      "rank": 1,
+      "summary": "workspace packages define a `test` script",
+      "role": {
+        "package": "",
+        "dir": ".",
+        "file": "package.json",
+        "entry": "-",
+        "kind": "package"
+      },
+      "rule": {
+        "type": "package_has",
+        "item": "script:test"
+      },
+      "evidence": {
+        "holders": 60,
+        "total": 63,
+        "lower_bound": 0.87,
+        "lift": 1
+      },
+      "members": 63,
+      "example": "benchmarks/package.json#benchmarks",
+      "python_members": null,
+      "outliers": 3,
+      "outlier_files": [
+        "projects/observability/three-signals/screenshot/package.json",
+        "projects/testing/mini-xunit/ts/package.json",
+        "projects/testing/test-pyramid/ts/package.json"
+      ],
+      "block": " 1. [D-6e4ada] workspace packages define a `test` script\n    evidence: 60/63 (lower bound 0.87, lift 1.0)\n    example:  benchmarks/package.json#benchmarks\n    outlier:  projects/observability/three-signals/screenshot/package.json:1 three-signals-screenshot\n    outlier:  projects/testing/mini-xunit/ts/package.json:1 mini-xunit\n    outlier:  projects/testing/test-pyramid/ts/package.json:1 test-pyramid",
+      "family": "repo",
+      "rule_kind": "package_has",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "computer-science-fundamentals/D-a0d1d2",
+      "repo": "computer-science-fundamentals",
+      "id": "D-a0d1d2",
+      "rank": 2,
+      "summary": "workspace packages enable `noEmit` in tsconfig",
+      "role": {
+        "package": "",
+        "dir": ".",
+        "file": "package.json",
+        "entry": "-",
+        "kind": "package"
+      },
+      "rule": {
+        "type": "package_has",
+        "item": "flag:noEmit"
+      },
+      "evidence": {
+        "holders": 58,
+        "total": 63,
+        "lower_bound": 0.83,
+        "lift": 1
+      },
+      "members": 63,
+      "example": "benchmarks/package.json#benchmarks",
+      "python_members": null,
+      "outliers": 5,
+      "outlier_files": [
+        "projects/algorithms/dynamic-programming/ts/package.json",
+        "projects/algorithms/sorting-race/ts/package.json",
+        "projects/algorithms/travelling-salesman/ts/package.json",
+        "projects/concurrency/counter-race/ts/package.json",
+        "projects/concurrency/ten-thousand-connections/ts/package.json"
+      ],
+      "block": " 2. [D-a0d1d2] workspace packages enable `noEmit` in tsconfig\n    evidence: 58/63 (lower bound 0.83, lift 1.0)\n    example:  benchmarks/package.json#benchmarks\n    outlier:  projects/algorithms/dynamic-programming/ts/package.json:1 dynamic-programming\n    outlier:  projects/algorithms/sorting-race/ts/package.json:1 sorting-race\n    outlier:  projects/algorithms/travelling-salesman/ts/package.json:1 travelling-salesman\n    outlier:  projects/concurrency/counter-race/ts/package.json:1 counter-race\n    outlier:  projects/concurrency/ten-thousand-connections/ts/package.json:1 ten-thousand-connections",
+      "family": "repo",
+      "rule_kind": "package_has",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "memcode/D-3a63a0",
+      "repo": "memcode",
+      "id": "D-3a63a0",
+      "rank": 1,
+      "summary": "files in backend/** do not import from meresei/backend/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "backend",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:meresei/backend"
+      },
+      "evidence": {
+        "holders": 108,
+        "total": 109,
+        "lower_bound": 0.95,
+        "lift": 3
+      },
+      "members": 109,
+      "example": "backend/afterMiddleware.js#(file)",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "backend/index.js"
+      ],
+      "block": " 1. [D-3a63a0] files in backend/** do not import from meresei/backend/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 108/109 (lower bound 0.95, lift 3.0)\n    example:  backend/afterMiddleware.js#(file)\n    outlier:  backend/index.js:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "zyfun/D-a4cd95",
+      "repo": "zyfun",
+      "id": "D-a4cd95",
+      "rank": 1,
+      "summary": "exported values in src/main/services/FastifyService/schemas/** are named `*Schema`",
+      "role": {
+        "package": "",
+        "dir": "src/main/services/FastifyService/schemas",
+        "file": "*",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Schema"
+      },
+      "evidence": {
+        "holders": 115,
+        "total": 121,
+        "lower_bound": 0.9,
+        "lift": 3.9
+      },
+      "members": 121,
+      "example": "src/main/services/FastifyService/schemas/base.ts#ResponseErrorSchema",
+      "python_members": null,
+      "outliers": 6,
+      "outlier_files": [
+        "src/main/services/FastifyService/schemas/base.ts",
+        "src/main/services/FastifyService/schemas/v1/flim/cms.ts",
+        "src/main/services/FastifyService/schemas/v1/flim/site.ts",
+        "src/main/services/FastifyService/schemas/v1/live/iptv.ts",
+        "src/main/services/FastifyService/schemas/v1/parse/analyze.ts"
+      ],
+      "block": " 1. [D-a4cd95] exported values in src/main/services/FastifyService/schemas/** are named `*Schema`\n    evidence: 115/121 (lower bound 0.90, lift 3.9)\n    example:  src/main/services/FastifyService/schemas/base.ts#ResponseErrorSchema\n    outlier:  src/main/services/FastifyService/schemas/base.ts:35 PageQuery\n    outlier:  src/main/services/FastifyService/schemas/base.ts:19 ResponseCode\n    outlier:  src/main/services/FastifyService/schemas/v1/flim/cms.ts:121 getInitchema\n    outlier:  src/main/services/FastifyService/schemas/v1/flim/site.ts:25 SiteResponse\n    outlier:  src/main/services/FastifyService/schemas/v1/live/iptv.ts:23 IptvResponse\n    outlier:  src/main/services/FastifyService/schemas/v1/parse/analyze.ts:23 AnalyzeResponse",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "zyfun/D-784831",
+      "repo": "zyfun",
+      "id": "D-784831",
+      "rank": 2,
+      "summary": "functions in src/renderer/src/api/** pass `method` to apiRequest.request()",
+      "role": {
+        "package": "",
+        "dir": "src/renderer/src/api",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "unresolved:src/renderer/src/api/@/utils/request#apiRequest.request",
+        "index": 0,
+        "key": "method"
+      },
+      "evidence": {
+        "holders": 94,
+        "total": 94,
+        "lower_bound": 0.96,
+        "lift": 6.4
+      },
+      "members": 95,
+      "example": "src/renderer/src/api/data.ts#dataCloudBackup",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 2. [D-784831] functions in src/renderer/src/api/** pass `method` to apiRequest.request()\n    evidence: 94/94 (lower bound 0.96, lift 6.4)\n    example:  src/renderer/src/api/data.ts#dataCloudBackup\n    exempt:   src/renderer/src/api/system.ts:35 fetchLoggerStream (does not call apiRequest.request())",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "zyfun/D-238824",
+      "repo": "zyfun",
+      "id": "D-238824",
+      "rank": 3,
+      "summary": "functions in src/shared/modules/** declare their return type",
+      "role": {
+        "package": "",
+        "dir": "src/shared/modules",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 104,
+        "total": 112,
+        "lower_bound": 0.86,
+        "lift": 1.7
+      },
+      "members": 112,
+      "example": "src/shared/modules/camelcase.ts#camelCase",
+      "python_members": null,
+      "outliers": 8,
+      "outlier_files": [
+        "src/shared/modules/function.ts",
+        "src/shared/modules/headers.ts",
+        "src/shared/modules/request/axios/AxiosCancel.ts",
+        "src/shared/modules/request/sse/SseCancel.ts",
+        "src/shared/modules/request/ws/WsCancel.ts",
+        "src/shared/modules/validate.ts"
+      ],
+      "block": " 3. [D-238824] functions in src/shared/modules/** declare their return type\n    evidence: 104/112 (lower bound 0.86, lift 1.7)\n    example:  src/shared/modules/camelcase.ts#camelCase\n    outlier:  src/shared/modules/function.ts:3 runFunction\n    outlier:  src/shared/modules/headers.ts:34 UNSAFE_HEADERS_LOWER\n    outlier:  src/shared/modules/headers.ts:35 UNSAFE_HEADERS_UPPER\n    outlier:  src/shared/modules/request/axios/AxiosCancel.ts:12 getPendingUrl\n    outlier:  src/shared/modules/request/sse/SseCancel.ts:10 getPendingUrl\n    outlier:  src/shared/modules/request/ws/WsCancel.ts:10 getPendingUrl\n    outlier:  src/shared/modules/validate.ts:350 isContainsAlphaNumeric\n    outlier:  src/shared/modules/validate.ts:343 isContainsSpecialChar",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "tududi/D-815f43",
+      "repo": "tududi",
+      "id": "D-815f43",
+      "rank": 1,
+      "summary": "functions in backend/** do not use requests to computed URLs",
+      "role": {
+        "package": "",
+        "dir": "backend",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "sink:dynamic_fetch"
+      },
+      "evidence": {
+        "holders": 1202,
+        "total": 1204,
+        "lower_bound": 0.99,
+        "lift": 109
+      },
+      "members": 1204,
+      "example": "backend/config/authConfig.js#isPasswordAuthEnabled",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "backend/middleware/captcha.js",
+        "backend/modules/calendar-feeds/fetcher.js"
+      ],
+      "block": " 1. [D-815f43] functions in backend/** do not use requests to computed URLs\n    evidence: 1202/1204 (lower bound 0.99, lift 109.0)\n    example:  backend/config/authConfig.js#isPasswordAuthEnabled\n    outlier:  backend/middleware/captcha.js:32 verifyToken\n    outlier:  backend/modules/calendar-feeds/fetcher.js:90 fetchFeed",
+      "family": "avoids_other",
+      "rule_kind": "avoids:other",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "tududi/D-6c856c",
+      "repo": "tududi",
+      "id": "D-6c856c",
+      "rank": 2,
+      "summary": "components in frontend/components/** do not use requests to computed URLs",
+      "role": {
+        "package": "",
+        "dir": "frontend/components",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "sink:dynamic_fetch"
+      },
+      "evidence": {
+        "holders": 293,
+        "total": 325,
+        "lower_bound": 0.86,
+        "lift": 6.1
+      },
+      "members": 325,
+      "example": "frontend/components/AI/DailyAssistant.tsx#DailyAssistant",
+      "python_members": null,
+      "outliers": 32,
+      "outlier_files": [
+        "frontend/components/About.tsx",
+        "frontend/components/Admin/AdminDashboardPage.tsx",
+        "frontend/components/Admin/AdminUserStatusTable.tsx",
+        "frontend/components/Auth/ForgotPassword.tsx",
+        "frontend/components/Auth/MfaCodeForm.tsx",
+        "frontend/components/Auth/ResetPassword.tsx",
+        "frontend/components/Billing/SubscriptionRequired.tsx",
+        "frontend/components/Calendar.tsx",
+        "frontend/components/DemoEntry.tsx",
+        "frontend/components/Eisenhower/EisenhowerMatrix.tsx",
+        "frontend/components/Insights/BurndownChart.tsx",
+        "frontend/components/Insights/ReportsOverview.tsx",
+        "frontend/components/Insights/ReportsPage.tsx",
+        "frontend/components/Kanban/KanbanBoard.tsx",
+        "frontend/components/Login.tsx",
+        "frontend/components/Navbar.tsx",
+        "frontend/components/Note/NoteSidePanel.tsx",
+        "frontend/components/Notifications/NotificationsDropdown.tsx",
+        "frontend/components/Profile/ProfileSettings.tsx",
+        "frontend/components/Profile/tabs/McpTab.tsx",
+        "frontend/components/Project/BannerEditModal.tsx",
+        "frontend/components/Project/ProjectDetails.tsx",
+        "frontend/components/PublicNote/PublicNotePage.tsx",
+        "frontend/components/Register.tsx",
+        "frontend/components/Shared/AttachmentPreview.tsx",
+        "frontend/components/Sidebar/SidebarFooter.tsx",
+        "frontend/components/Sidebar/SidebarViews.tsx",
+        "frontend/components/Tag/TagDetails.tsx",
+        "frontend/components/Tasks.tsx",
+        "frontend/components/UniversalSearch/SearchMenu.tsx",
+        "frontend/components/ViewDetail.tsx",
+        "frontend/components/Views.tsx"
+      ],
+      "block": " 2. [D-6c856c] components in frontend/components/** do not use requests to computed URLs\n    evidence: 293/325 (lower bound 0.86, lift 6.1)\n    example:  frontend/components/AI/DailyAssistant.tsx#DailyAssistant\n    outlier:  frontend/components/About.tsx:12 About\n    outlier:  frontend/components/Admin/AdminDashboardPage.tsx:68 AdminDashboardPage\n    outlier:  frontend/components/Admin/AdminUserStatusTable.tsx:77 AdminUserStatusTable\n    outlier:  frontend/components/Auth/ForgotPassword.tsx:10 ForgotPassword\n    outlier:  frontend/components/Auth/MfaCodeForm.tsx:12 MfaCodeForm\n    outlier:  frontend/components/Auth/ResetPassword.tsx:9 ResetPassword\n    outlier:  frontend/components/Billing/SubscriptionRequired.tsx:26 SubscriptionRequired\n    outlier:  frontend/components/Calendar.tsx:91 Calendar\n    outlier:  frontend/components/DemoEntry.tsx:8 DemoEntry\n    outlier:  frontend/components/Eisenhower/EisenhowerMatrix.tsx:32 EisenhowerMatrix\n    outlier:  frontend/components/Insights/BurndownChart.tsx:21 BurndownChart\n    outlier:  frontend/components/Insights/ReportsOverview.tsx:141 ReportsOverview\n    outlier:  frontend/components/Insights/ReportsPage.tsx:277 ReportsPage\n    outlier:  frontend/components/Kanban/KanbanBoard.tsx:130 KanbanBoard\n    outlier:  frontend/components/Login.tsx:12 Login\n    outlier:  frontend/components/Navbar.tsx:51 Navbar\n    outlier:  frontend/components/Note/NoteSidePanel.tsx:39 NoteSidePanel\n    outlier:  frontend/components/Notifications/NotificationsDropdown.tsx:54 NotificationsDropdown\n    outlier:  frontend/components/Profile/ProfileSettings.tsx:97 ProfileSettings\n    outlier:  frontend/components/Profile/tabs/McpTab.tsx:29 McpTab\n    outlier:  frontend/components/Project/BannerEditModal.tsx:19 BannerEditModal\n    outlier:  frontend/components/Project/ProjectDetails.tsx:71 ProjectDetails\n    outlier:  frontend/components/PublicNote/PublicNotePage.tsx:20 PublicNotePage\n    outlier:  frontend/components/Register.tsx:10 Register\n    outlier:  frontend/components/Shared/AttachmentPreview.tsx:11 AttachmentPreview\n    outlier:  frontend/components/Sidebar/SidebarFooter.tsx:54 SidebarFooter\n    outlier:  frontend/components/Sidebar/SidebarViews.tsx:103 SidebarViews\n    outlier:  frontend/components/Tag/TagDetails.tsx:35 TagDetails\n    outlier:  frontend/components/Tasks.tsx:49 Tasks\n    outlier:  frontend/components/UniversalSearch/SearchMenu.tsx:107 SearchMenu\n    outlier:  frontend/components/ViewDetail.tsx:51 ViewDetail\n    outlier:  frontend/components/Views.tsx:12 Views",
+      "family": "avoids_other",
+      "rule_kind": "avoids:other",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "tududi/D-9998f9",
+      "repo": "tududi",
+      "id": "D-9998f9",
+      "rank": 3,
+      "summary": "functions in frontend/** declare their return type",
+      "role": {
+        "package": "",
+        "dir": "frontend",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 571,
+        "total": 615,
+        "lower_bound": 0.91,
+        "lift": 3.7
+      },
+      "members": 630,
+      "example": "frontend/components/Admin/AdminTrends.tsx#percentOf",
+      "python_members": null,
+      "outliers": 44,
+      "outlier_files": [
+        "frontend/components/Blog/BlogPostCard.tsx",
+        "frontend/components/Capture/useCaptureFiles.ts",
+        "frontend/components/Note/editor/highlightStyle.ts",
+        "frontend/components/Note/editor/linkClicks.ts",
+        "frontend/components/Note/editor/textCommands.ts",
+        "frontend/components/Project/useCompleteProject.tsx",
+        "frontend/components/Project/useProjectCardActions.tsx",
+        "frontend/components/Project/useProjectMetrics.ts",
+        "frontend/components/Shared/ToastContext.tsx",
+        "frontend/components/Task/getTitleAndIcon.ts",
+        "frontend/components/Task/statusStyles.ts",
+        "frontend/contexts/SidebarContext.tsx",
+        "frontend/contexts/TelegramStatusContext.tsx",
+        "frontend/hooks/useKeyboardShortcuts.ts",
+        "frontend/hooks/useNotesTreeExpansion.ts",
+        "frontend/hooks/usePersistedModal.ts",
+        "frontend/store/useStore.ts",
+        "frontend/utils/billingPlans.ts",
+        "frontend/utils/captcha.ts",
+        "frontend/utils/featureFlags.ts",
+        "frontend/utils/habitsService.ts",
+        "frontend/utils/keyboardShortcutsService.ts",
+        "frontend/utils/membersService.ts",
+        "frontend/utils/mfaService.ts",
+        "frontend/utils/sidebarWidth.ts",
+        "frontend/utils/spreadsheetService.ts",
+        "frontend/utils/webhooksService.ts"
+      ],
+      "block": " 3. [D-9998f9] functions in frontend/** declare their return type\n    evidence: 571/615 (lower bound 0.91, lift 3.7)\n    example:  frontend/components/Admin/AdminTrends.tsx#percentOf\n    outlier:  frontend/components/Blog/BlogPostCard.tsx:6 formatPostDate\n    outlier:  frontend/components/Capture/useCaptureFiles.ts:77 useCaptureFiles\n    outlier:  frontend/components/Note/editor/highlightStyle.ts:25 neutralEditorTheme\n    outlier:  frontend/components/Note/editor/linkClicks.ts:12 linkClickHandlers\n    outlier:  frontend/components/Note/editor/textCommands.ts:62 insertLink\n    outlier:  frontend/components/Note/editor/textCommands.ts:41 setHeading\n    outlier:  frontend/components/Note/editor/textCommands.ts:3 wrapSelection\n    outlier:  frontend/components/Project/useCompleteProject.tsx:22 useCompleteProject\n    outlier:  frontend/components/Project/useProjectCardActions.tsx:15 useProjectCardActions\n    outlier:  frontend/components/Project/useProjectMetrics.ts:18 useProjectMetrics\n    outlier:  frontend/components/Shared/ToastContext.tsx:80 useToast\n    outlier:  frontend/components/Task/getTitleAndIcon.ts:13 getTitleAndIcon\n    outlier:  frontend/components/Task/statusStyles.ts:65 getStatusBorderColorClasses\n    outlier:  frontend/contexts/SidebarContext.tsx:11 useSidebar\n    outlier:  frontend/contexts/TelegramStatusContext.tsx:136 dispatchTelegramStatusChange\n    outlier:  frontend/contexts/TelegramStatusContext.tsx:125 useTelegramStatus\n    outlier:  frontend/hooks/useKeyboardShortcuts.ts:29 useKeyboardShortcuts\n    outlier:  frontend/hooks/useNotesTreeExpansion.ts:34 useNotesTreeExpansion\n    outlier:  frontend/hooks/usePersistedModal.ts:12 usePersistedModal\n    outlier:  frontend/store/useStore.ts:210 useStore\n    outlier:  frontend/utils/billingPlans.ts:47 formatMoney\n    outlier:  frontend/utils/captcha.ts:27 resetCaptchaConfigCache\n    outlier:  frontend/utils/featureFlags.ts:51 clearFeatureFlagsCache\n    outlier:  frontend/utils/habitsService.ts:114 fetchHabitStats\n    outlier:  frontend/utils/keyboardShortcutsService.ts:77 parseKeyboardEvent\n    outlier:  frontend/utils/membersService.ts:225 redeemSignInLink\n    outlier:  frontend/utils/mfaService.ts:70 disableMfa\n    outlier:  frontend/utils/mfaService.ts:67 enableMfa\n    outlier:  frontend/utils/mfaService.ts:75 regenerateRecoveryCodes\n    outlier:  frontend/utils/mfaService.ts:78 reverify\n    outlier:  frontend/utils/mfaService.ts:65 startMfaSetup\n    outlier:  frontend/utils/sidebarWidth.ts:19 sidebarPxToPercent\n    outlier:  frontend/utils/spreadsheetService.ts:328 commitImport\n    outlier:  frontend/utils/spreadsheetService.ts:343 discardImport\n    outlier:  frontend/utils/spreadsheetService.ts:346 listImports\n    outlier:  frontend/utils/spreadsheetService.ts:308 loadImportColumns\n    outlier:  frontend/utils/spreadsheetService.ts:320 previewImport\n    outlier:  frontend/utils/webhooksService.ts:105 createWebhook\n    outlier:  frontend/utils/webhooksService.ts:116 deleteWebhook\n    outlier:  frontend/utils/webhooksService.ts:137 listWebhookDeliveries\n    outlier:  frontend/utils/webhooksService.ts:102 listWebhooks\n    outlier:  frontend/utils/webhooksService.ts:123 rotateWebhookSecret\n    outlier:  frontend/utils/webhooksService.ts:130 testWebhook\n    outlier:  frontend/utils/webhooksService.ts:108 updateWebhook\n    exempt:   frontend/components/Admin/SortableTable.tsx:27 useSortedRows (shared part used by 5 members)\n    exempt:   frontend/components/Auth/useReverify.tsx:19 useReverify (shared part used by 2 members)\n    exempt:   frontend/components/DailyPlan/tips.ts:32 lateItems (shared part used by 2 members)\n    exempt:   frontend/components/Shared/sortableList.ts:44 resetSortableCursor (shared part used by 6 members)\n    exempt:   frontend/components/Shared/sortableList.ts:25 swallowNextClick (shared part used by 6 members)\n    exempt:   frontend/components/Shared/sortableList.ts:12 useSortableSensors (shared part used by 7 members)\n    exempt:   frontend/components/Task/statusStyles.ts:58 getStatusButtonColorClasses (shared part used by 2 members)\n    exempt:   frontend/store/dailyPlanStore.ts:9 useDailyPlanProgress (shared part used by 3 members)\n    exempt:   frontend/store/taskPanelStore.ts:18 openTaskPanel (shared part used by 14 members)\n    exempt:   frontend/store/taskPanelStore.ts:12 useTaskPanel (shared part used by 2 members)\n    exempt:   frontend/utils/avatarTint.ts:11 avatarTint (shared part used by 3 members)\n    exempt:   frontend/utils/habitUtils.ts:19 habitAccentStyle (shared part used by 2 members)\n    exempt:   frontend/utils/spreadsheetService.ts:283 downloadImportTemplate (shared part used by 2 members)\n    exempt:   frontend/utils/spreadsheetService.ts:266 exportTasks (shared part used by 2 members)\n    exempt:   frontend/utils/spreadsheetService.ts:336 undoImport (shared part used by 2 members)",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "tududi/D-57d79e",
+      "repo": "tududi",
+      "id": "D-57d79e",
+      "rank": 4,
+      "summary": "functions in backend/** (validation files) are named `validate*`",
+      "role": {
+        "package": "",
+        "dir": "backend",
+        "file": "validation",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "validate*"
+      },
+      "evidence": {
+        "holders": 43,
+        "total": 49,
+        "lower_bound": 0.76,
+        "lift": 33.9
+      },
+      "members": 49,
+      "example": "backend/modules/admin/validation.js#validateCreateUser",
+      "python_members": null,
+      "outliers": 6,
+      "outlier_files": [
+        "backend/modules/inbox/validation.js",
+        "backend/modules/projects/validation.js",
+        "backend/modules/search/validation.js",
+        "backend/modules/tasks/utils/validation.js"
+      ],
+      "block": " 4. [D-57d79e] functions in backend/** (validation files) are named `validate*`\n    evidence: 43/49 (lower bound 0.76, lift 33.9)\n    example:  backend/modules/admin/validation.js#validateCreateUser\n    outlier:  backend/modules/inbox/validation.js:44 buildTitleFromContent\n    outlier:  backend/modules/projects/validation.js:35 formatDate\n    outlier:  backend/modules/search/validation.js:20 parseSearchParams\n    outlier:  backend/modules/search/validation.js:93 priorityToInt\n    outlier:  backend/modules/tasks/utils/validation.js:256 getRecurringParentEndDate\n    outlier:  backend/modules/tasks/utils/validation.js:16 isValidTaskUid",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "tududi/D-744c2d",
+      "repo": "tududi",
+      "id": "D-744c2d",
+      "rank": 5,
+      "summary": "exported values in backend/** (controller files) use `try`",
+      "role": {
+        "package": "",
+        "dir": "backend",
+        "file": "controller",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "control",
+        "value": "try"
+      },
+      "evidence": {
+        "holders": 33,
+        "total": 35,
+        "lower_bound": 0.81,
+        "lift": 13.9
+      },
+      "members": 35,
+      "example": "backend/modules/admin-ai-usage/controller.js#controller",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "backend/modules/habits/controller.js",
+        "backend/modules/webhooks/controller.js"
+      ],
+      "block": " 5. [D-744c2d] exported values in backend/** (controller files) use `try`\n    evidence: 33/35 (lower bound 0.81, lift 13.9)\n    example:  backend/modules/admin-ai-usage/controller.js#controller\n    outlier:  backend/modules/habits/controller.js:13 habitsController\n    outlier:  backend/modules/webhooks/controller.js:21 controller",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "tududi/D-f7d289",
+      "repo": "tududi",
+      "id": "D-f7d289",
+      "rank": 6,
+      "summary": "components in frontend/components/** call useTranslation() before useState()",
+      "role": {
+        "package": "",
+        "dir": "frontend/components",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "before",
+        "first": "pkg:react-i18next#useTranslation",
+        "then": "pkg:react#useState"
+      },
+      "evidence": {
+        "holders": 170,
+        "total": 203,
+        "lower_bound": 0.78,
+        "lift": 1
+      },
+      "members": 203,
+      "example": "frontend/components/AI/DailyAssistant.tsx#DailyAssistant",
+      "python_members": null,
+      "outliers": 33,
+      "outlier_files": [
+        "frontend/components/Auth/AuthPageShell.tsx",
+        "frontend/components/Blog/BlogApp.tsx",
+        "frontend/components/Calendar/CalendarWeekView.tsx",
+        "frontend/components/Goal/GoalHero.tsx",
+        "frontend/components/Insights/AreaDonut.tsx",
+        "frontend/components/Insights/BurndownChart.tsx",
+        "frontend/components/Insights/LifeBalance.tsx",
+        "frontend/components/Login.tsx",
+        "frontend/components/Note/SlashCommandMenu.tsx",
+        "frontend/components/People/PeopleList.tsx",
+        "frontend/components/People/PersonModal.tsx",
+        "frontend/components/Project/ProjectAttachmentsWidget.tsx",
+        "frontend/components/Project/ProjectBanner.tsx",
+        "frontend/components/Project/ProjectHero.tsx",
+        "frontend/components/Project/ProjectOverviewRail.tsx",
+        "frontend/components/Project/Timeline/ProjectTimeline.tsx",
+        "frontend/components/Register.tsx",
+        "frontend/components/Shared/AttachmentPreview.tsx",
+        "frontend/components/Shared/GoalDropdown.tsx",
+        "frontend/components/Shared/IconSortDropdown.tsx",
+        "frontend/components/Shared/MermaidDiagram.tsx",
+        "frontend/components/Shared/NumberSelectDropdown.tsx",
+        "frontend/components/Shared/PersonDropdown.tsx",
+        "frontend/components/Shared/RecurrenceSelectDropdown.tsx",
+        "frontend/components/Shared/SelectMenu.tsx",
+        "frontend/components/Shared/SortFilterButton.tsx",
+        "frontend/components/Shared/ToastContext.tsx",
+        "frontend/components/Shared/Tooltip.tsx",
+        "frontend/components/Sidebar.tsx",
+        "frontend/components/Task/NewTask.tsx",
+        "frontend/components/Task/TaskDetails/TaskAssignedToCard.tsx",
+        "frontend/components/Task/TaskDetails/TaskSubtasksCard.tsx",
+        "frontend/components/Task/TaskRow/TaskRowExpansionContext.tsx"
+      ],
+      "block": " 6. [D-f7d289] components in frontend/components/** call useTranslation() before useState()\n    evidence: 170/203 (lower bound 0.78, lift 1.0)\n    example:  frontend/components/AI/DailyAssistant.tsx#DailyAssistant\n    outlier:  frontend/components/Auth/AuthPageShell.tsx:11 AuthPageShell\n    outlier:  frontend/components/Blog/BlogApp.tsx:23 BlogApp\n    outlier:  frontend/components/Calendar/CalendarWeekView.tsx:35 CalendarWeekView\n    outlier:  frontend/components/Goal/GoalHero.tsx:38 GoalHero\n    outlier:  frontend/components/Insights/AreaDonut.tsx:42 AreaDonut\n    outlier:  frontend/components/Insights/BurndownChart.tsx:21 BurndownChart\n    outlier:  frontend/components/Insights/LifeBalance.tsx:67 LifeBalance\n    outlier:  frontend/components/Login.tsx:12 Login\n    outlier:  frontend/components/Note/SlashCommandMenu.tsx:247 SlashCommandMenu\n    outlier:  frontend/components/People/PeopleList.tsx:23 PeopleList\n    outlier:  frontend/components/People/PersonModal.tsx:44 PersonModal\n    outlier:  frontend/components/Project/ProjectAttachmentsWidget.tsx:21 ProjectAttachmentsWidget\n    outlier:  frontend/components/Project/ProjectBanner.tsx:33 ProjectBanner\n    outlier:  frontend/components/Project/ProjectHero.tsx:52 ProjectHero\n    outlier:  frontend/components/Project/ProjectOverviewRail.tsx:141 ProjectOverviewRail\n    outlier:  frontend/components/Project/Timeline/ProjectTimeline.tsx:65 ProjectTimeline\n    outlier:  frontend/components/Register.tsx:10 Register\n    outlier:  frontend/components/Shared/AttachmentPreview.tsx:11 AttachmentPreview\n    outlier:  frontend/components/Shared/GoalDropdown.tsx:13 GoalDropdown\n    outlier:  frontend/components/Shared/IconSortDropdown.tsx:32 IconSortDropdown\n    outlier:  frontend/components/Shared/MermaidDiagram.tsx:72 MermaidDiagram\n    outlier:  frontend/components/Shared/NumberSelectDropdown.tsx:15 NumberSelectDropdown\n    outlier:  frontend/components/Shared/PersonDropdown.tsx:38 PersonDropdown\n    outlier:  frontend/components/Shared/RecurrenceSelectDropdown.tsx:19 RecurrenceSelectDropdown\n    outlier:  frontend/components/Shared/SelectMenu.tsx:24 SelectMenu\n    outlier:  frontend/components/Shared/SortFilterButton.tsx:17 SortFilterButton\n    outlier:  frontend/components/Shared/ToastContext.tsx:22 ToastProvider\n    outlier:  frontend/components/Shared/Tooltip.tsx:10 Tooltip\n    outlier:  frontend/components/Sidebar.tsx:60 Sidebar\n    outlier:  frontend/components/Task/NewTask.tsx:10 NewTask\n    outlier:  frontend/components/Task/TaskDetails/TaskAssignedToCard.tsx:13 TaskAssignedToCard\n    outlier:  frontend/components/Task/TaskDetails/TaskSubtasksCard.tsx:17 TaskSubtasksCard\n    outlier:  frontend/components/Task/TaskRow/TaskRowExpansionContext.tsx:19 TaskRowExpansionProvider",
+      "family": "ordering",
+      "rule_kind": "before",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "cursorless/D-373f39",
+      "repo": "cursorless",
+      "id": "D-373f39",
+      "rank": 1,
+      "summary": "packages/lib-common: exported values in src/scopeSupportFacets/** are named `*Support`",
+      "role": {
+        "package": "packages/lib-common",
+        "dir": "src/scopeSupportFacets",
+        "file": "*",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Support"
+      },
+      "evidence": {
+        "holders": 39,
+        "total": 41,
+        "lower_bound": 0.84,
+        "lift": 4.9
+      },
+      "members": 41,
+      "example": "packages/lib-common/src/scopeSupportFacets/c.ts#cCoreScopeSupport",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "packages/lib-common/src/scopeSupportFacets/PlaintextScopeSupportFacetInfos.ts",
+        "packages/lib-common/src/scopeSupportFacets/scopeSupportFacetInfos.ts"
+      ],
+      "block": " 1. [D-373f39] packages/lib-common: exported values in src/scopeSupportFacets/** are named `*Support`\n    evidence: 39/41 (lower bound 0.84, lift 4.9)\n    example:  packages/lib-common/src/scopeSupportFacets/c.ts#cCoreScopeSupport\n    outlier:  packages/lib-common/src/scopeSupportFacets/PlaintextScopeSupportFacetInfos.ts:6 plaintextScopeSupportFacetInfos\n    outlier:  packages/lib-common/src/scopeSupportFacets/scopeSupportFacetInfos.ts:7 scopeSupportFacetInfos",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "cursorless/D-cd8fd8",
+      "repo": "cursorless",
+      "id": "D-cd8fd8",
+      "rank": 2,
+      "summary": "workspace packages enable `forceConsistentCasingInFileNames` in tsconfig",
+      "role": {
+        "package": "",
+        "dir": ".",
+        "file": "package.json",
+        "entry": "-",
+        "kind": "package"
+      },
+      "rule": {
+        "type": "package_has",
+        "item": "flag:forceConsistentCasingInFileNames"
+      },
+      "evidence": {
+        "holders": 23,
+        "total": 24,
+        "lower_bound": 0.8,
+        "lift": 1
+      },
+      "members": 24,
+      "example": "packages/app-neovim/package.json#@cursorless/app-neovim",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/app-neovim/cursorless.nvim/node/command-server/package.json"
+      ],
+      "block": " 2. [D-cd8fd8] workspace packages enable `forceConsistentCasingInFileNames` in tsconfig\n    evidence: 23/24 (lower bound 0.80, lift 1.0)\n    example:  packages/app-neovim/package.json#@cursorless/app-neovim\n    outlier:  packages/app-neovim/cursorless.nvim/node/command-server/package.json:1 command-server",
+      "family": "repo",
+      "rule_kind": "package_has",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "kan/D-cc5ca5",
+      "repo": "kan",
+      "id": "D-cc5ca5",
+      "rank": 1,
+      "summary": "packages/api: rpc entry points in src/** are wrapped in protectedProcedure()",
+      "role": {
+        "package": "packages/api",
+        "dir": "src",
+        "file": "*",
+        "entry": "rpc",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "packages/api/src/trpc.ts#protectedProcedure"
+        ]
+      },
+      "evidence": {
+        "holders": 78,
+        "total": 88,
+        "lower_bound": 0.8,
+        "lift": 5.1
+      },
+      "members": 88,
+      "example": "packages/api/src/routers/attachment.ts#MUTATION confirm",
+      "python_members": null,
+      "outliers": 10,
+      "outlier_files": [
+        "packages/api/src/routers/board.ts",
+        "packages/api/src/routers/card.ts",
+        "packages/api/src/routers/health.ts",
+        "packages/api/src/routers/member.ts",
+        "packages/api/src/routers/workspace.ts"
+      ],
+      "block": " 1. [D-cc5ca5] packages/api: rpc entry points in src/** are wrapped in protectedProcedure()\n    evidence: 78/88 (lower bound 0.80, lift 5.1)\n    example:  packages/api/src/routers/attachment.ts#MUTATION confirm\n    outlier:  packages/api/src/routers/board.ts:247 QUERY bySlug\n    outlier:  packages/api/src/routers/board.ts:805 QUERY checkSlugAvailability\n    outlier:  packages/api/src/routers/card.ts:746 QUERY byId\n    outlier:  packages/api/src/routers/card.ts:856 QUERY getActivities\n    outlier:  packages/api/src/routers/health.ts:65 QUERY health\n    outlier:  packages/api/src/routers/health.ts:110 QUERY stats\n    outlier:  packages/api/src/routers/member.ts:604 MUTATION acceptInviteLink\n    outlier:  packages/api/src/routers/member.ts:559 QUERY getInviteByCode\n    outlier:  packages/api/src/routers/workspace.ts:226 QUERY bySlug\n    outlier:  packages/api/src/routers/workspace.ts:51 QUERY checkSlugAvailability",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "kan/D-eda068",
+      "repo": "kan",
+      "id": "D-eda068",
+      "rank": 2,
+      "summary": "packages/api: rpc entry points in src/** throw TRPCError",
+      "role": {
+        "package": "packages/api",
+        "dir": "src",
+        "file": "*",
+        "entry": "rpc",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "throws",
+        "class": "pkg:@trpc/server#TRPCError"
+      },
+      "evidence": {
+        "holders": 87,
+        "total": 88,
+        "lower_bound": 0.94,
+        "lift": 4.6
+      },
+      "members": 88,
+      "example": "packages/api/src/routers/attachment.ts#MUTATION confirm",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/api/src/routers/health.ts"
+      ],
+      "block": " 2. [D-eda068] packages/api: rpc entry points in src/** throw TRPCError\n    evidence: 87/88 (lower bound 0.94, lift 4.6)\n    example:  packages/api/src/routers/attachment.ts#MUTATION confirm\n    outlier:  packages/api/src/routers/health.ts:65 QUERY health",
+      "family": "other",
+      "rule_kind": "throws",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "kan/D-f314d1",
+      "repo": "kan",
+      "id": "D-f314d1",
+      "rank": 3,
+      "summary": "packages/api: exported values in src/schemas/** pass `publicId` to z.object()",
+      "role": {
+        "package": "packages/api",
+        "dir": "src/schemas",
+        "file": "*",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:zod#z.object",
+        "index": 0,
+        "key": "publicId"
+      },
+      "evidence": {
+        "holders": 28,
+        "total": 30,
+        "lower_bound": 0.79,
+        "lift": 5.7
+      },
+      "members": 31,
+      "example": "packages/api/src/schemas/attachment.ts#attachmentConfirmResponseSchema",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "packages/api/src/schemas/common.ts",
+        "packages/api/src/schemas/workspace.ts"
+      ],
+      "block": " 3. [D-f314d1] packages/api: exported values in src/schemas/** pass `publicId` to z.object()\n    evidence: 28/30 (lower bound 0.79, lift 5.7)\n    example:  packages/api/src/schemas/attachment.ts#attachmentConfirmResponseSchema\n    outlier:  packages/api/src/schemas/common.ts:27 userSchema\n    outlier:  packages/api/src/schemas/workspace.ts:94 workspaceDeleteResponseSchema\n    exempt:   packages/api/src/schemas/boardMember.ts:5 boardMemberRoleSchema (does not call z.object())",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "kan/D-11877a",
+      "repo": "kan",
+      "id": "D-11877a",
+      "rank": 4,
+      "summary": "sql models have a `createdAt` field",
+      "role": {
+        "package": "",
+        "dir": "sql",
+        "file": "(model)",
+        "entry": "-",
+        "kind": "model"
+      },
+      "rule": {
+        "type": "model_has",
+        "field": "createdAt"
+      },
+      "evidence": {
+        "holders": 29,
+        "total": 32,
+        "lower_bound": 0.76,
+        "lift": 1
+      },
+      "members": 32,
+      "example": "packages/db/migrations/20250508083758_SetupTables.sql#account",
+      "python_members": null,
+      "outliers": 3,
+      "outlier_files": [
+        "packages/db/migrations/20250508083758_SetupTables.sql"
+      ],
+      "block": " 4. [D-11877a] sql models have a `createdAt` field\n    evidence: 29/32 (lower bound 0.76, lift 1.0)\n    example:  packages/db/migrations/20250508083758_SetupTables.sql#account\n    outlier:  packages/db/migrations/20250508083758_SetupTables.sql:142 _card_labels\n    outlier:  packages/db/migrations/20250508083758_SetupTables.sql:118 _card_workspace_members\n    outlier:  packages/db/migrations/20250508083758_SetupTables.sql:228 workspace_slugs",
+      "family": "repo",
+      "rule_kind": "model_has",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "kan/D-798f44",
+      "repo": "kan",
+      "id": "D-798f44",
+      "rank": 5,
+      "summary": "drizzle models have a `createdAt` field",
+      "role": {
+        "package": "",
+        "dir": "drizzle",
+        "file": "(model)",
+        "entry": "-",
+        "kind": "model"
+      },
+      "rule": {
+        "type": "model_has",
+        "field": "createdAt"
+      },
+      "evidence": {
+        "holders": 29,
+        "total": 32,
+        "lower_bound": 0.76,
+        "lift": 1
+      },
+      "members": 32,
+      "example": "packages/db/src/schema/auth.ts#account",
+      "python_members": null,
+      "outliers": 3,
+      "outlier_files": [
+        "packages/db/src/schema/cards.ts",
+        "packages/db/src/schema/workspaces.ts"
+      ],
+      "block": " 5. [D-798f44] drizzle models have a `createdAt` field\n    evidence: 29/32 (lower bound 0.76, lift 1.0)\n    example:  packages/db/src/schema/auth.ts#account\n    outlier:  packages/db/src/schema/cards.ts:219 _card_labels\n    outlier:  packages/db/src/schema/cards.ts:245 _card_workspace_members\n    outlier:  packages/db/src/schema/workspaces.ts:145 workspace_slugs",
+      "family": "repo",
+      "rule_kind": "model_has",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "ipfs-webui/D-a8984b",
+      "repo": "ipfs-webui",
+      "id": "D-a8984b",
+      "rank": 1,
+      "summary": "files in src/components/** do not import from src/files/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "src/components",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:src/files"
+      },
+      "evidence": {
+        "holders": 55,
+        "total": 56,
+        "lower_bound": 0.91,
+        "lift": 3
+      },
+      "members": 56,
+      "example": "src/components/about-ipfs/AboutIpfs.js#(file)",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "src/components/loading-animation/LoadingAnimation.js"
+      ],
+      "block": " 1. [D-a8984b] files in src/components/** do not import from src/files/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 55/56 (lower bound 0.91, lift 3.0)\n    example:  src/components/about-ipfs/AboutIpfs.js#(file)\n    outlier:  src/components/loading-animation/LoadingAnimation.js:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "ipfs-webui/D-f05190",
+      "repo": "ipfs-webui",
+      "id": "D-f05190",
+      "rank": 2,
+      "summary": "files in src/components/** do not import from src/settings/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "src/components",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:src/settings"
+      },
+      "evidence": {
+        "holders": 55,
+        "total": 56,
+        "lower_bound": 0.91,
+        "lift": 3
+      },
+      "members": 56,
+      "example": "src/components/about-ipfs/AboutIpfs.js#(file)",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "src/components/experiments/ExperimentsPanel.js"
+      ],
+      "block": " 2. [D-f05190] files in src/components/** do not import from src/settings/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 55/56 (lower bound 0.91, lift 3.0)\n    example:  src/components/about-ipfs/AboutIpfs.js#(file)\n    outlier:  src/components/experiments/ExperimentsPanel.js:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "ipfs-webui/D-ca6863",
+      "repo": "ipfs-webui",
+      "id": "D-ca6863",
+      "rank": 3,
+      "summary": "functions in src/lib/** do not call console.*",
+      "role": {
+        "package": "",
+        "dir": "src/lib",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "console"
+      },
+      "evidence": {
+        "holders": 42,
+        "total": 44,
+        "lower_bound": 0.85,
+        "lift": 3.2
+      },
+      "members": 44,
+      "example": "src/lib/count-dirs.js#countDirs",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "src/lib/compare-version-strings.ts",
+        "src/lib/files.js"
+      ],
+      "block": " 3. [D-ca6863] functions in src/lib/** do not call console.*\n    evidence: 42/44 (lower bound 0.85, lift 3.2)\n    example:  src/lib/count-dirs.js#countDirs\n    outlier:  src/lib/compare-version-strings.ts:15 cmpVersionStrings\n    outlier:  src/lib/files.js:134 debouncedProvide",
+      "family": "avoids_other",
+      "rule_kind": "avoids:other",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "e2e/D-d07023",
+      "repo": "e2e",
+      "id": "D-d07023",
+      "rank": 1,
+      "summary": "packages/mobile: functions in src/** do not throw a bare Error",
+      "role": {
+        "package": "packages/mobile",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "throw_error"
+      },
+      "evidence": {
+        "holders": 51,
+        "total": 52,
+        "lower_bound": 0.9,
+        "lift": 7.3
+      },
+      "members": 52,
+      "example": "packages/mobile/src/actions.ts#pointerInteraction",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/mobile/src/lease/index.ts"
+      ],
+      "block": " 1. [D-d07023] packages/mobile: functions in src/** do not throw a bare Error\n    evidence: 51/52 (lower bound 0.90, lift 7.3)\n    example:  packages/mobile/src/actions.ts#pointerInteraction\n    outlier:  packages/mobile/src/lease/index.ts:65 agentDeviceLeases",
+      "family": "avoids_other",
+      "rule_kind": "avoids:other",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "e2e/D-6c629b",
+      "repo": "e2e",
+      "id": "D-6c629b",
+      "rank": 2,
+      "summary": "apps/mobile-benchmark: components in src/Examples/** render <View>",
+      "role": {
+        "package": "apps/mobile-benchmark",
+        "dir": "src/Examples",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "renders",
+        "component": "pkg:react-native#View"
+      },
+      "evidence": {
+        "holders": 23,
+        "total": 25,
+        "lower_bound": 0.75,
+        "lift": 3
+      },
+      "members": 25,
+      "example": "apps/mobile-benchmark/src/Examples/ApplePay.tsx#ApplePay",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "apps/mobile-benchmark/src/Examples/BottomTabs.tsx",
+        "apps/mobile-benchmark/src/Examples/TextInputs.tsx"
+      ],
+      "block": " 2. [D-6c629b] apps/mobile-benchmark: components in src/Examples/** render <View>\n    evidence: 23/25 (lower bound 0.75, lift 3.0)\n    example:  apps/mobile-benchmark/src/Examples/ApplePay.tsx#ApplePay\n    outlier:  apps/mobile-benchmark/src/Examples/BottomTabs.tsx:49 BottomTabs\n    outlier:  apps/mobile-benchmark/src/Examples/TextInputs.tsx:14 TextInputs",
+      "family": "renders",
+      "rule_kind": "renders",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "e2e/D-ebee38",
+      "repo": "e2e",
+      "id": "D-ebee38",
+      "rank": 3,
+      "summary": "apps/mobile-benchmark: components in src/** render <Text>",
+      "role": {
+        "package": "apps/mobile-benchmark",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "renders",
+        "component": "pkg:react-native#Text"
+      },
+      "evidence": {
+        "holders": 24,
+        "total": 26,
+        "lower_bound": 0.76,
+        "lift": 2.9
+      },
+      "members": 26,
+      "example": "apps/mobile-benchmark/src/Examples/ApplePay.tsx#ApplePay",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "apps/mobile-benchmark/src/App.tsx",
+        "apps/mobile-benchmark/src/Examples/BottomTabs.tsx"
+      ],
+      "block": " 3. [D-ebee38] apps/mobile-benchmark: components in src/** render <Text>\n    evidence: 24/26 (lower bound 0.76, lift 2.9)\n    example:  apps/mobile-benchmark/src/Examples/ApplePay.tsx#ApplePay\n    outlier:  apps/mobile-benchmark/src/App.tsx:45 App\n    outlier:  apps/mobile-benchmark/src/Examples/BottomTabs.tsx:49 BottomTabs",
+      "family": "renders",
+      "rule_kind": "renders",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "glyph/D-63bbfd",
+      "repo": "glyph",
+      "id": "D-63bbfd",
+      "rank": 1,
+      "summary": "files in packages/glyph/** do not import from benches/scripts/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "packages/glyph",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:benches/scripts"
+      },
+      "evidence": {
+        "holders": 277,
+        "total": 278,
+        "lower_bound": 0.98,
+        "lift": 3
+      },
+      "members": 278,
+      "example": "packages/glyph/bin/glyph.js#(file)",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/glyph/scripts/support/react-browser-check.mts"
+      ],
+      "block": " 1. [D-63bbfd] files in packages/glyph/** do not import from benches/scripts/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 277/278 (lower bound 0.98, lift 3.0)\n    example:  packages/glyph/bin/glyph.js#(file)\n    outlier:  packages/glyph/scripts/support/react-browser-check.mts:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "glyph/D-4cec41",
+      "repo": "glyph",
+      "id": "D-4cec41",
+      "rank": 2,
+      "summary": "packages/glyph: functions in src/** do not throw a bare Error",
+      "role": {
+        "package": "packages/glyph",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "throw_error"
+      },
+      "evidence": {
+        "holders": 478,
+        "total": 497,
+        "lower_bound": 0.94,
+        "lift": 5.2
+      },
+      "members": 497,
+      "example": "packages/glyph/src/bake.ts#defineRasterBaker",
+      "python_members": null,
+      "outliers": 19,
+      "outlier_files": [
+        "packages/glyph/src/font-face.ts",
+        "packages/glyph/src/internal/node-file-publication.ts",
+        "packages/glyph/src/internal/raster-codec-registry.ts",
+        "packages/glyph/src/internal/raster-ktx.ts",
+        "packages/glyph/src/internal/text-shaper-module.ts",
+        "packages/glyph/src/loaded-font.ts",
+        "packages/glyph/src/react.ts",
+        "packages/glyph/src/three/decorations.ts",
+        "packages/glyph/src/three/glyph-measurement.ts",
+        "packages/glyph/src/three/glyphs.ts",
+        "packages/glyph/src/three/internal/draw-realizer.ts",
+        "packages/glyph/src/three/internal/geometry.ts",
+        "packages/glyph/src/three/internal/raster-program-registry.ts",
+        "packages/glyph/src/typegpu/config.ts",
+        "packages/glyph/src/typegpu/internal/resources.ts",
+        "packages/glyph/src/typegpu/text.ts"
+      ],
+      "block": " 2. [D-4cec41] packages/glyph: functions in src/** do not throw a bare Error\n    evidence: 478/497 (lower bound 0.94, lift 5.2)\n    example:  packages/glyph/src/bake.ts#defineRasterBaker\n    outlier:  packages/glyph/src/font-face.ts:185 createFontFace\n    outlier:  packages/glyph/src/internal/node-file-publication.ts:47 publishFilesWithRollback\n    outlier:  packages/glyph/src/internal/raster-codec-registry.ts:28 installRasterCodecFontCompiler\n    outlier:  packages/glyph/src/internal/raster-codec-registry.ts:35 registerRasterCodecInternal\n    outlier:  packages/glyph/src/internal/raster-ktx.ts:47 validateNativeKtx2\n    outlier:  packages/glyph/src/internal/text-shaper-module.ts:96 compileDefaultWasm\n    outlier:  packages/glyph/src/loaded-font.ts:224 releaseImmutableFontVariant\n    outlier:  packages/glyph/src/react.ts:251 GlyphProvider\n    outlier:  packages/glyph/src/three/decorations.ts:31 createDecorations\n    outlier:  packages/glyph/src/three/decorations.ts:42 decorationDraws\n    outlier:  packages/glyph/src/three/glyph-measurement.ts:64 createSuppliedGlyphGeometrySource\n    outlier:  packages/glyph/src/three/glyphs.ts:56 createGlyphs\n    outlier:  packages/glyph/src/three/glyphs.ts:64 setGlyphDrawOrder\n    outlier:  packages/glyph/src/three/internal/draw-realizer.ts:53 prepareDrawReplacement\n    outlier:  packages/glyph/src/three/internal/geometry.ts:20 resolveDrawGeometry\n    outlier:  packages/glyph/src/three/internal/raster-program-registry.ts:46 commitThreeRasterProgram\n    outlier:  packages/glyph/src/typegpu/config.ts:76 defineTypeGpuConfig\n    outlier:  packages/glyph/src/typegpu/internal/resources.ts:161 createResource\n    outlier:  packages/glyph/src/typegpu/text.ts:78 createText",
+      "family": "avoids_other",
+      "rule_kind": "avoids:other",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dyrectorio/D-e995bd",
+      "repo": "dyrectorio",
+      "id": "D-e995bd",
+      "rank": 1,
+      "summary": "web/crux-ui: components in src/** do not use requests to computed URLs",
+      "role": {
+        "package": "web/crux-ui",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "sink:dynamic_fetch"
+      },
+      "evidence": {
+        "holders": 189,
+        "total": 195,
+        "lower_bound": 0.94,
+        "lift": 9.8
+      },
+      "members": 195,
+      "example": "web/crux-ui/src/components/composer/compose-environment.tsx#ComposeEnvironment",
+      "python_members": null,
+      "outliers": 6,
+      "outlier_files": [
+        "web/crux-ui/src/components/deployments/edit-deployment-card.tsx",
+        "web/crux-ui/src/components/nodes/dyo-node-setup.tsx",
+        "web/crux-ui/src/components/nodes/edit-node-section.tsx",
+        "web/crux-ui/src/components/nodes/node-audit-list.tsx",
+        "web/crux-ui/src/components/pipelines/pipeline-run-list.tsx",
+        "web/crux-ui/src/components/projects/versions/version-deployments-section.tsx"
+      ],
+      "block": " 1. [D-e995bd] web/crux-ui: components in src/** do not use requests to computed URLs\n    evidence: 189/195 (lower bound 0.94, lift 9.8)\n    example:  web/crux-ui/src/components/composer/compose-environment.tsx#ComposeEnvironment\n    outlier:  web/crux-ui/src/components/deployments/edit-deployment-card.tsx:33 EditDeploymentCard\n    outlier:  web/crux-ui/src/components/nodes/dyo-node-setup.tsx:40 DyoNodeSetup\n    outlier:  web/crux-ui/src/components/nodes/edit-node-section.tsx:36 EditNodeSection\n    outlier:  web/crux-ui/src/components/nodes/node-audit-list.tsx:38 NodeAuditList\n    outlier:  web/crux-ui/src/components/pipelines/pipeline-run-list.tsx:22 PipelineRunList\n    outlier:  web/crux-ui/src/components/projects/versions/version-deployments-section.tsx:71 VersionDeploymentsSection",
+      "family": "avoids_other",
+      "rule_kind": "avoids:other",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dyrectorio/D-a7301b",
+      "repo": "dyrectorio",
+      "id": "D-a7301b",
+      "rank": 2,
+      "summary": "web/crux: HTTP handlers in src/** (*.controller files) are decorated with ApiForbiddenResponse()",
+      "role": {
+        "package": "web/crux",
+        "dir": "src",
+        "file": "*.controller",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:@nestjs/swagger#ApiForbiddenResponse"
+        ]
+      },
+      "evidence": {
+        "holders": 122,
+        "total": 123,
+        "lower_bound": 0.95,
+        "lift": 5.1
+      },
+      "members": 123,
+      "example": "web/crux/src/app/config.bundle/config.bundle.http.controller.ts#DELETE /",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "web/crux/src/app/health/health.http.controller.ts"
+      ],
+      "block": " 2. [D-a7301b] web/crux: HTTP handlers in src/** (*.controller files) are decorated with ApiForbiddenResponse()\n    evidence: 122/123 (lower bound 0.95, lift 5.1)\n    example:  web/crux/src/app/config.bundle/config.bundle.http.controller.ts#DELETE /\n    outlier:  web/crux/src/app/health/health.http.controller.ts:16 GET /",
+      "family": "decorator",
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dyrectorio/D-00b847",
+      "repo": "dyrectorio",
+      "id": "D-00b847",
+      "rank": 3,
+      "summary": "web/crux: HTTP handlers in src/** (*.controller files) are decorated with HttpCode()",
+      "role": {
+        "package": "web/crux",
+        "dir": "src",
+        "file": "*.controller",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:@nestjs/common#HttpCode"
+        ]
+      },
+      "evidence": {
+        "holders": 120,
+        "total": 123,
+        "lower_bound": 0.93,
+        "lift": 5.1
+      },
+      "members": 123,
+      "example": "web/crux/src/app/config.bundle/config.bundle.http.controller.ts#DELETE /",
+      "python_members": null,
+      "outliers": 3,
+      "outlier_files": [
+        "web/crux/src/app/health/health.http.controller.ts",
+        "web/crux/src/app/node/node.http.controller.ts",
+        "web/crux/src/app/version/version.http.controller.ts"
+      ],
+      "block": " 3. [D-00b847] web/crux: HTTP handlers in src/** (*.controller files) are decorated with HttpCode()\n    evidence: 120/123 (lower bound 0.93, lift 5.1)\n    example:  web/crux/src/app/config.bundle/config.bundle.http.controller.ts#DELETE /\n    outlier:  web/crux/src/app/health/health.http.controller.ts:16 GET /\n    outlier:  web/crux/src/app/node/node.http.controller.ts:211 GET / #3\n    outlier:  web/crux/src/app/version/version.http.controller.ts:88 GET / #2",
+      "family": "decorator",
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dyrectorio/D-883d32",
+      "repo": "dyrectorio",
+      "id": "D-883d32",
+      "rank": 4,
+      "summary": "web/crux: HTTP handlers in src/** (*.controller files) are decorated with UseGuards()",
+      "role": {
+        "package": "web/crux",
+        "dir": "src",
+        "file": "*.controller",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:@nestjs/common#UseGuards"
+        ]
+      },
+      "evidence": {
+        "holders": 112,
+        "total": 123,
+        "lower_bound": 0.85,
+        "lift": 5.1
+      },
+      "members": 123,
+      "example": "web/crux/src/app/config.bundle/config.bundle.http.controller.ts#DELETE /",
+      "python_members": null,
+      "outliers": 11,
+      "outlier_files": [
+        "web/crux/src/app/audit/audit.http.controller.ts",
+        "web/crux/src/app/dashboard/dashboard.http.controller.ts",
+        "web/crux/src/app/health/health.http.controller.ts",
+        "web/crux/src/app/quality.assurance/quality-assurance.http.controller.ts",
+        "web/crux/src/app/team/user.http.controller.ts",
+        "web/crux/src/app/template/template.http.controller.ts"
+      ],
+      "block": " 4. [D-883d32] web/crux: HTTP handlers in src/** (*.controller files) are decorated with UseGuards()\n    evidence: 112/123 (lower bound 0.85, lift 5.1)\n    example:  web/crux/src/app/config.bundle/config.bundle.http.controller.ts#DELETE /\n    outlier:  web/crux/src/app/audit/audit.http.controller.ts:15 GET /\n    outlier:  web/crux/src/app/dashboard/dashboard.http.controller.ts:15 GET /\n    outlier:  web/crux/src/app/health/health.http.controller.ts:16 GET /\n    outlier:  web/crux/src/app/quality.assurance/quality-assurance.http.controller.ts:13 GET /\n    outlier:  web/crux/src/app/team/user.http.controller.ts:63 DELETE /\n    outlier:  web/crux/src/app/team/user.http.controller.ts:91 DELETE / #2\n    outlier:  web/crux/src/app/team/user.http.controller.ts:34 POST /\n    outlier:  web/crux/src/app/team/user.http.controller.ts:48 POST / #2\n    outlier:  web/crux/src/app/team/user.http.controller.ts:78 PUT /\n    outlier:  web/crux/src/app/template/template.http.controller.ts:57 GET /\n    outlier:  web/crux/src/app/template/template.http.controller.ts:96 GET / #2",
+      "family": "decorator",
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dyrectorio/D-d30c46",
+      "repo": "dyrectorio",
+      "id": "D-d30c46",
+      "rank": 5,
+      "summary": "web/crux: classes in src/** (*.service files) are named `*Service`",
+      "role": {
+        "package": "web/crux",
+        "dir": "src",
+        "file": "*.service",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Service"
+      },
+      "evidence": {
+        "holders": 32,
+        "total": 33,
+        "lower_bound": 0.85,
+        "lift": 13.5
+      },
+      "members": 33,
+      "example": "web/crux/src/app/agent/agent.service.ts#AgentService",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "web/crux/src/app/container/container-config.http.service.ts"
+      ],
+      "block": " 5. [D-d30c46] web/crux: classes in src/** (*.service files) are named `*Service`\n    evidence: 32/33 (lower bound 0.85, lift 13.5)\n    example:  web/crux/src/app/agent/agent.service.ts#AgentService\n    outlier:  web/crux/src/app/container/container-config.http.service.ts:30 ContainerConfigHttpController",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dyrectorio/D-7333aa",
+      "repo": "dyrectorio",
+      "id": "D-7333aa",
+      "rank": 6,
+      "summary": "web/crux: classes in src/** (*.controller files) are decorated with ApiTags()",
+      "role": {
+        "package": "web/crux",
+        "dir": "src",
+        "file": "*.controller",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:@nestjs/swagger#ApiTags"
+        ]
+      },
+      "evidence": {
+        "holders": 21,
+        "total": 22,
+        "lower_bound": 0.78,
+        "lift": 19.4
+      },
+      "members": 22,
+      "example": "web/crux/src/app/audit/audit.http.controller.ts#AuditController",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "web/crux/src/app/agent/agent.grpc.controller.ts"
+      ],
+      "block": " 6. [D-7333aa] web/crux: classes in src/** (*.controller files) are decorated with ApiTags()\n    evidence: 21/22 (lower bound 0.78, lift 19.4)\n    example:  web/crux/src/app/audit/audit.http.controller.ts#AuditController\n    outlier:  web/crux/src/app/agent/agent.grpc.controller.ts:33 AgentController",
+      "family": "decorator",
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dyrectorio/D-e10325",
+      "repo": "dyrectorio",
+      "id": "D-e10325",
+      "rank": 7,
+      "summary": "web/crux-ui: pages in src/** are named `*Page`",
+      "role": {
+        "package": "web/crux-ui",
+        "dir": "src",
+        "file": "*",
+        "entry": "page",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Page"
+      },
+      "evidence": {
+        "holders": 35,
+        "total": 38,
+        "lower_bound": 0.79,
+        "lift": 4.6
+      },
+      "members": 38,
+      "example": "web/crux-ui/src/pages/[teamSlug]/audit-log.tsx#AuditLogPage",
+      "python_members": null,
+      "outliers": 3,
+      "outlier_files": [
+        "web/crux-ui/src/pages/404.tsx",
+        "web/crux-ui/src/pages/500.tsx",
+        "web/crux-ui/src/pages/[teamSlug]/config-bundles.tsx"
+      ],
+      "block": " 7. [D-e10325] web/crux-ui: pages in src/** are named `*Page`\n    evidence: 35/38 (lower bound 0.79, lift 4.6)\n    example:  web/crux-ui/src/pages/[teamSlug]/audit-log.tsx#AuditLogPage\n    outlier:  web/crux-ui/src/pages/404.tsx:9 Page404\n    outlier:  web/crux-ui/src/pages/500.tsx:8 Page500\n    outlier:  web/crux-ui/src/pages/[teamSlug]/config-bundles.tsx:27 ConfigBundles",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dyrectorio/D-69c688",
+      "repo": "dyrectorio",
+      "id": "D-69c688",
+      "rank": 8,
+      "summary": "web/crux: HTTP handlers in src/** (*.controller files) pass `summary` to ApiOperation()",
+      "role": {
+        "package": "web/crux",
+        "dir": "src",
+        "file": "*.controller",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:@nestjs/swagger#ApiOperation",
+        "index": 0,
+        "key": "summary"
+      },
+      "evidence": {
+        "holders": 122,
+        "total": 123,
+        "lower_bound": 0.95,
+        "lift": 5.1
+      },
+      "members": 123,
+      "example": "web/crux/src/app/config.bundle/config.bundle.http.controller.ts#DELETE /",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "web/crux/src/app/quality.assurance/quality-assurance.http.controller.ts"
+      ],
+      "block": " 8. [D-69c688] web/crux: HTTP handlers in src/** (*.controller files) pass `summary` to ApiOperation()\n    evidence: 122/123 (lower bound 0.95, lift 5.1)\n    example:  web/crux/src/app/config.bundle/config.bundle.http.controller.ts#DELETE /\n    outlier:  web/crux/src/app/quality.assurance/quality-assurance.http.controller.ts:13 GET /",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dyrectorio/D-d1c643",
+      "repo": "dyrectorio",
+      "id": "D-d1c643",
+      "rank": 9,
+      "summary": "web/crux: classes in src/** (*.interceptor files) are named `*Interceptor`",
+      "role": {
+        "package": "web/crux",
+        "dir": "src",
+        "file": "*.interceptor",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Interceptor"
+      },
+      "evidence": {
+        "holders": 25,
+        "total": 27,
+        "lower_bound": 0.77,
+        "lift": 15.9
+      },
+      "members": 27,
+      "example": "web/crux/src/app/audit.logger/audit.logger.interceptor.ts#AuditLoggerInterceptor",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "web/crux/src/app/version/interceptors/version.increase.interceptor.ts",
+        "web/crux/src/interceptors/helper.interceptor.ts"
+      ],
+      "block": " 9. [D-d1c643] web/crux: classes in src/** (*.interceptor files) are named `*Interceptor`\n    evidence: 25/27 (lower bound 0.77, lift 15.9)\n    example:  web/crux/src/app/audit.logger/audit.logger.interceptor.ts#AuditLoggerInterceptor\n    outlier:  web/crux/src/app/version/interceptors/version.increase.interceptor.ts:8 VersionIncreaseValidationPipe\n    outlier:  web/crux/src/interceptors/helper.interceptor.ts:15 InterceptorGrpcHelperProvider",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dyrectorio/D-8e0acd",
+      "repo": "dyrectorio",
+      "id": "D-8e0acd",
+      "rank": 10,
+      "summary": "web/crux: classes in src/** (*.dto files) are named `*Dto`",
+      "role": {
+        "package": "web/crux",
+        "dir": "src",
+        "file": "*.dto",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Dto"
+      },
+      "evidence": {
+        "holders": 192,
+        "total": 198,
+        "lower_bound": 0.94,
+        "lift": 2.3
+      },
+      "members": 198,
+      "example": "web/crux/src/app/audit/audit.dto.ts#AuditDto",
+      "python_members": null,
+      "outliers": 6,
+      "outlier_files": [
+        "web/crux/src/app/deploy/deploy.dto.ts",
+        "web/crux/src/app/image/image.dto.ts",
+        "web/crux/src/app/node/node.dto.ts",
+        "web/crux/src/app/version/version.dto.ts"
+      ],
+      "block": "10. [D-8e0acd] web/crux: classes in src/** (*.dto files) are named `*Dto`\n    evidence: 192/198 (lower bound 0.94, lift 2.3)\n    example:  web/crux/src/app/audit/audit.dto.ts#AuditDto\n    outlier:  web/crux/src/app/deploy/deploy.dto.ts:334 DeploymentLogPaginationQuery\n    outlier:  web/crux/src/app/image/image.dto.ts:33 ImageValidation\n    outlier:  web/crux/src/app/node/node.dto.ts:53 BasicNodeWithStatus\n    outlier:  web/crux/src/app/node/node.dto.ts:197 ContainerPort\n    outlier:  web/crux/src/app/node/node.dto.ts:275 NodeContainerLogQuery\n    outlier:  web/crux/src/app/version/version.dto.ts:97 VersionListQuery",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dyrectorio/D-6e19cf",
+      "repo": "dyrectorio",
+      "id": "D-6e19cf",
+      "rank": 11,
+      "summary": "web/crux-ui: functions in src/components/** declare their return type",
+      "role": {
+        "package": "web/crux-ui",
+        "dir": "src/components",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 43,
+        "total": 49,
+        "lower_bound": 0.76,
+        "lift": 1.9
+      },
+      "members": 49,
+      "example": "web/crux-ui/src/components/composer/use-composer-state.ts#activateBottomSection",
+      "python_members": null,
+      "outliers": 6,
+      "outlier_files": [
+        "web/crux-ui/src/components/composer/use-composer-state.ts",
+        "web/crux-ui/src/components/editor/use-multi-input-state.ts",
+        "web/crux-ui/src/components/projects/versions/use-version-hint.ts",
+        "web/crux-ui/src/components/projects/versions/version-sections.tsx"
+      ],
+      "block": "11. [D-6e19cf] web/crux-ui: functions in src/components/** declare their return type\n    evidence: 43/49 (lower bound 0.76, lift 1.9)\n    example:  web/crux-ui/src/components/composer/use-composer-state.ts#activateBottomSection\n    outlier:  web/crux-ui/src/components/composer/use-composer-state.ts:374 selectDefaultEnvironment\n    outlier:  web/crux-ui/src/components/composer/use-composer-state.ts:377 selectShowDefaultEnvironment\n    outlier:  web/crux-ui/src/components/composer/use-composer-state.ts:381 useComposerState\n    outlier:  web/crux-ui/src/components/editor/use-multi-input-state.ts:17 DEFAULT_EDITOR_COMPARATOR\n    outlier:  web/crux-ui/src/components/projects/versions/use-version-hint.ts:5 useVersionHint\n    outlier:  web/crux-ui/src/components/projects/versions/version-sections.tsx:16 parseVersionSectionState",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    }
+  ]
+}

@@ -1,0 +1,768 @@
+---
+source: crates/drift-py/tests/conformance.rs
+expression: "serde_json::to_string_pretty(&r).unwrap()"
+---
+{
+  "schema_version": 11,
+  "files": [
+    {
+      "path": "sinks.py",
+      "hash": "81a77b9148da7aa2e68d3734e65b2a492617b39bf03d00fb44a6d533d869c8c0",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:django.shortcuts",
+          "names": [
+            "redirect"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:django.urls",
+          "names": [
+            "reverse"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:django.utils.safestring",
+          "names": [
+            "mark_safe"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:jwt",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:python:hashlib",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:python:os",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:python:pickle",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:python:subprocess",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:requests",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:shop.models",
+          "names": [
+            "Order"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:yaml",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "API",
+          "origin": "sinks.py#API",
+          "kind": "local"
+        },
+        {
+          "name": "cookies",
+          "origin": "sinks.py#cookies",
+          "kind": "local"
+        },
+        {
+          "name": "cookies_ok",
+          "origin": "sinks.py#cookies_ok",
+          "kind": "local"
+        },
+        {
+          "name": "decode",
+          "origin": "sinks.py#decode",
+          "kind": "local"
+        },
+        {
+          "name": "deserialize",
+          "origin": "sinks.py#deserialize",
+          "kind": "local"
+        },
+        {
+          "name": "fetch",
+          "origin": "sinks.py#fetch",
+          "kind": "local"
+        },
+        {
+          "name": "fixed_fetch",
+          "origin": "sinks.py#fixed_fetch",
+          "kind": "local"
+        },
+        {
+          "name": "hash_ok",
+          "origin": "sinks.py#hash_ok",
+          "kind": "local"
+        },
+        {
+          "name": "hashes",
+          "origin": "sinks.py#hashes",
+          "kind": "local"
+        },
+        {
+          "name": "html",
+          "origin": "sinks.py#html",
+          "kind": "local"
+        },
+        {
+          "name": "no_shell",
+          "origin": "sinks.py#no_shell",
+          "kind": "local"
+        },
+        {
+          "name": "raw_sql",
+          "origin": "sinks.py#raw_sql",
+          "kind": "local"
+        },
+        {
+          "name": "redirects",
+          "origin": "sinks.py#redirects",
+          "kind": "local"
+        },
+        {
+          "name": "redirects_ok",
+          "origin": "sinks.py#redirects_ok",
+          "kind": "local"
+        },
+        {
+          "name": "run_eval",
+          "origin": "sinks.py#run_eval",
+          "kind": "local"
+        },
+        {
+          "name": "run_literal_eval",
+          "origin": "sinks.py#run_literal_eval",
+          "kind": "local"
+        },
+        {
+          "name": "safe_deserialize",
+          "origin": "sinks.py#safe_deserialize",
+          "kind": "local"
+        },
+        {
+          "name": "safe_sql",
+          "origin": "sinks.py#safe_sql",
+          "kind": "local"
+        },
+        {
+          "name": "shell",
+          "origin": "sinks.py#shell",
+          "kind": "local"
+        },
+        {
+          "name": "sql",
+          "origin": "sinks.py#sql",
+          "kind": "local"
+        },
+        {
+          "name": "suppressed",
+          "origin": "sinks.py#suppressed",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "API",
+          "kind": "const",
+          "exported_as": [
+            "API"
+          ],
+          "line": 13,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 1
+        },
+        {
+          "name": "cookies",
+          "kind": "function",
+          "exported_as": [
+            "cookies"
+          ],
+          "line": 82,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "param_flows",
+            "unread_call"
+          ],
+          "string_literals": 1,
+          "sinks": [
+            "cookie_without_httponly"
+          ],
+          "receiver_calls": [
+            "param:response.set_cookie"
+          ]
+        },
+        {
+          "name": "cookies_ok",
+          "kind": "function",
+          "exported_as": [
+            "cookies_ok"
+          ],
+          "line": 86,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "param_flows",
+            "unread_call"
+          ],
+          "string_literals": 1,
+          "receiver_calls": [
+            "param:response.set_cookie"
+          ]
+        },
+        {
+          "name": "decode",
+          "kind": "function",
+          "exported_as": [
+            "decode"
+          ],
+          "line": 78,
+          "wraps": [],
+          "calls": [
+            "pkg:jwt#decode"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:jwt#decode@99:options"
+          ],
+          "controls": [
+            "param_flows",
+            "shape:pkg:jwt#decode(?,options={verify_signature:False})"
+          ],
+          "string_literals": 1,
+          "sinks": [
+            "jwt_decode_without_verify"
+          ],
+          "order": [
+            "pkg:jwt#decode"
+          ],
+          "traits": [
+            "forwards"
+          ],
+          "returns_calls": [
+            "pkg:jwt#decode"
+          ]
+        },
+        {
+          "name": "deserialize",
+          "kind": "function",
+          "exported_as": [
+            "deserialize"
+          ],
+          "line": 48,
+          "wraps": [],
+          "calls": [
+            "pkg:python:pickle#loads",
+            "pkg:yaml#load"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "drops_result_of:pkg:yaml#load",
+            "param_flows"
+          ],
+          "string_literals": 0,
+          "sinks": [
+            "unsafe_deserialize"
+          ],
+          "order": [
+            "pkg:python:pickle#loads",
+            "pkg:yaml#load"
+          ]
+        },
+        {
+          "name": "fetch",
+          "kind": "function",
+          "exported_as": [
+            "fetch"
+          ],
+          "line": 58,
+          "wraps": [],
+          "calls": [
+            "pkg:requests#get",
+            "pkg:requests#post"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "drops_result_of:pkg:requests#get",
+            "drops_result_of:pkg:requests#post",
+            "param_flows"
+          ],
+          "string_literals": 1,
+          "sinks": [
+            "dynamic_fetch"
+          ],
+          "order": [
+            "pkg:requests#get",
+            "pkg:requests#post"
+          ]
+        },
+        {
+          "name": "fixed_fetch",
+          "kind": "function",
+          "exported_as": [
+            "fixed_fetch"
+          ],
+          "line": 63,
+          "wraps": [],
+          "calls": [
+            "pkg:requests#get"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "drops_result_of:pkg:requests#get"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:requests#get"
+          ]
+        },
+        {
+          "name": "hash_ok",
+          "kind": "function",
+          "exported_as": [
+            "hash_ok"
+          ],
+          "line": 73,
+          "wraps": [],
+          "calls": [
+            "pkg:python:hashlib#md5",
+            "pkg:python:hashlib#sha256"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:python:hashlib#md5@99:usedforsecurity"
+          ],
+          "controls": [
+            "param_flows"
+          ],
+          "string_literals": 0,
+          "order": [
+            "pkg:python:hashlib#md5",
+            "pkg:python:hashlib#sha256"
+          ]
+        },
+        {
+          "name": "hashes",
+          "kind": "function",
+          "exported_as": [
+            "hashes"
+          ],
+          "line": 68,
+          "wraps": [],
+          "calls": [
+            "pkg:python:hashlib#md5",
+            "pkg:python:hashlib#new"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "param_flows"
+          ],
+          "string_literals": 1,
+          "sinks": [
+            "weak_hash"
+          ],
+          "order": [
+            "pkg:python:hashlib#md5",
+            "pkg:python:hashlib#new"
+          ]
+        },
+        {
+          "name": "html",
+          "kind": "function",
+          "exported_as": [
+            "html"
+          ],
+          "line": 90,
+          "wraps": [],
+          "calls": [
+            "pkg:django#utils.safestring.mark_safe"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "param_flows"
+          ],
+          "string_literals": 0,
+          "sinks": [
+            "raw_html"
+          ],
+          "order": [
+            "pkg:django#utils.safestring.mark_safe"
+          ],
+          "returns_calls": [
+            "pkg:django#utils.safestring.mark_safe"
+          ]
+        },
+        {
+          "name": "no_shell",
+          "kind": "function",
+          "exported_as": [
+            "no_shell"
+          ],
+          "line": 29,
+          "wraps": [],
+          "calls": [
+            "pkg:python:subprocess#run"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:python:subprocess#run@99:check"
+          ],
+          "controls": [
+            "param_flows"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:python:subprocess#run"
+          ]
+        },
+        {
+          "name": "raw_sql",
+          "kind": "function",
+          "exported_as": [
+            "raw_sql"
+          ],
+          "line": 42,
+          "wraps": [],
+          "calls": [
+            "pkg:shop#models.Order.objects.raw"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "param_flows",
+            "returns_unread"
+          ],
+          "string_literals": 0,
+          "sinks": [
+            "raw_sql"
+          ],
+          "order": [
+            "pkg:shop#models.Order.objects.raw"
+          ],
+          "returns_calls": [
+            "pkg:shop#models.Order.objects.raw"
+          ]
+        },
+        {
+          "name": "redirects",
+          "kind": "function",
+          "exported_as": [
+            "redirects"
+          ],
+          "line": 94,
+          "wraps": [],
+          "calls": [
+            "pkg:django#shortcuts.redirect"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "param_flows"
+          ],
+          "string_literals": 1,
+          "sinks": [
+            "dynamic_redirect"
+          ],
+          "order": [
+            "pkg:django#shortcuts.redirect"
+          ],
+          "responses": [
+            {
+              "status": 0,
+              "via": "redirect",
+              "builder": "pkg:django#shortcuts.redirect",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ],
+          "returns_calls": [
+            "pkg:django#shortcuts.redirect"
+          ]
+        },
+        {
+          "name": "redirects_ok",
+          "kind": "function",
+          "exported_as": [
+            "redirects_ok"
+          ],
+          "line": 98,
+          "wraps": [],
+          "calls": [
+            "pkg:django#shortcuts.redirect",
+            "pkg:django#urls.reverse"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 1,
+          "order": [
+            "pkg:django#shortcuts.redirect",
+            "pkg:django#urls.reverse"
+          ],
+          "responses": [
+            {
+              "status": 0,
+              "via": "redirect",
+              "builder": "pkg:django#shortcuts.redirect",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ],
+          "returns_calls": [
+            "pkg:django#shortcuts.redirect"
+          ]
+        },
+        {
+          "name": "run_eval",
+          "kind": "function",
+          "exported_as": [
+            "run_eval"
+          ],
+          "line": 16,
+          "wraps": [],
+          "calls": [
+            "global#eval"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "param_flows"
+          ],
+          "string_literals": 0,
+          "sinks": [
+            "eval"
+          ],
+          "order": [
+            "global#eval"
+          ]
+        },
+        {
+          "name": "run_literal_eval",
+          "kind": "function",
+          "exported_as": [
+            "run_literal_eval"
+          ],
+          "line": 20,
+          "wraps": [],
+          "calls": [
+            "global#eval"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 1,
+          "order": [
+            "global#eval"
+          ]
+        },
+        {
+          "name": "safe_deserialize",
+          "kind": "function",
+          "exported_as": [
+            "safe_deserialize"
+          ],
+          "line": 53,
+          "wraps": [],
+          "calls": [
+            "pkg:yaml#load",
+            "pkg:yaml#safe_load"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:yaml#load@99:Loader"
+          ],
+          "controls": [
+            "drops_result_of:pkg:yaml#load",
+            "param_flows"
+          ],
+          "string_literals": 0,
+          "order": [
+            "pkg:yaml#load",
+            "pkg:yaml#safe_load"
+          ],
+          "returns_calls": [
+            "pkg:yaml#safe_load"
+          ]
+        },
+        {
+          "name": "safe_sql",
+          "kind": "function",
+          "exported_as": [
+            "safe_sql"
+          ],
+          "line": 38,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "param_flows",
+            "unread_call"
+          ],
+          "string_literals": 1,
+          "receiver_calls": [
+            "param:cursor.execute"
+          ]
+        },
+        {
+          "name": "shell",
+          "kind": "function",
+          "exported_as": [
+            "shell"
+          ],
+          "line": 24,
+          "wraps": [],
+          "calls": [
+            "pkg:python:os#system",
+            "pkg:python:subprocess#run"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:python:subprocess#run@99:shell"
+          ],
+          "controls": [
+            "param_flows"
+          ],
+          "string_literals": 0,
+          "sinks": [
+            "shell_exec"
+          ],
+          "order": [
+            "pkg:python:os#system",
+            "pkg:python:subprocess#run"
+          ]
+        },
+        {
+          "name": "sql",
+          "kind": "function",
+          "exported_as": [
+            "sql"
+          ],
+          "line": 33,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "unread_call"
+          ],
+          "string_literals": 2,
+          "sinks": [
+            "sql_string_interpolation"
+          ],
+          "receiver_calls": [
+            "param:cursor.execute"
+          ]
+        },
+        {
+          "name": "suppressed",
+          "kind": "function",
+          "exported_as": [
+            "suppressed"
+          ],
+          "line": 106,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "suppressions": [
+            "D-abc123"
+          ]
+        }
+      ],
+      "entry_points": [],
+      "registries": [
+        {
+          "slot": "calls:pkg:requests#*",
+          "line": 59,
+          "items": [
+            {
+              "target": "sinks.py#API",
+              "line": 65
+            }
+          ]
+        }
+      ],
+      "outgoing": [
+        {
+          "line": 64,
+          "within": "fixed_fetch",
+          "url": "https://api.example.com/items/{}"
+        },
+        {
+          "line": 65,
+          "within": "fixed_fetch",
+          "url": "https://api.example.com"
+        },
+        {
+          "unread": "`url` is built from the request being served",
+          "line": 59,
+          "within": "fetch",
+          "url": "{}"
+        },
+        {
+          "unread": "`url` is built from the request being served",
+          "line": 60,
+          "within": "fetch",
+          "url": "{}/items"
+        }
+      ]
+    }
+  ],
+  "skipped": []
+}

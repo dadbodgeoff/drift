@@ -1,0 +1,781 @@
+---
+source: crates/drift-py/tests/practice_facts.rs
+expression: "serde_json::to_string_pretty(&sorted(serde_json::Value::Object(out))).unwrap()"
+---
+{
+  "(packages)": [
+    {
+      "dev_only": [
+        "pytest",
+        "respx"
+      ],
+      "path": ""
+    }
+  ],
+  "app/deps.py": {
+    "symbols": {
+      "get_current_user": {
+        "body_checks": [
+          {
+            "after": [
+              "pkg:fastapi#HTTPException",
+              "app/deps.py#decode_token"
+            ],
+            "compares": "",
+            "outcome": "unauthenticated",
+            "reads": "",
+            "source": "app/deps.py#decode_token"
+          }
+        ],
+        "catches": [],
+        "handles_errors": [],
+        "headers": [],
+        "inputs": [],
+        "log_calls": [],
+        "responses": [
+          {
+            "builder": "pkg:fastapi#HTTPException",
+            "in_catch": false,
+            "keys": [],
+            "model": "",
+            "status": 401,
+            "via": "throw"
+          }
+        ],
+        "scoped_queries": []
+      },
+      "map_errors": {
+        "body_checks": [],
+        "catches": [
+          {
+            "catches": [
+              "global#KeyError"
+            ],
+            "does": [
+              "respond:404",
+              "throw:pkg:fastapi#HTTPException"
+            ]
+          }
+        ],
+        "handles_errors": [],
+        "headers": [],
+        "inputs": [],
+        "log_calls": [],
+        "responses": [
+          {
+            "builder": "pkg:fastapi#HTTPException",
+            "in_catch": true,
+            "keys": [],
+            "model": "",
+            "status": 404,
+            "via": "throw"
+          }
+        ],
+        "scoped_queries": []
+      },
+      "not_a_guard": {
+        "body_checks": [],
+        "catches": [],
+        "handles_errors": [],
+        "headers": [],
+        "inputs": [],
+        "log_calls": [],
+        "responses": [
+          {
+            "builder": "pkg:fastapi#HTTPException",
+            "in_catch": false,
+            "keys": [],
+            "model": "",
+            "status": 404,
+            "via": "throw"
+          }
+        ],
+        "scoped_queries": []
+      },
+      "require_org": {
+        "body_checks": [
+          {
+            "compares": "header:x-org-id",
+            "op": "ne",
+            "outcome": "forbidden",
+            "reads": ".org_id",
+            "source": "app/deps.py#get_current_user"
+          }
+        ],
+        "catches": [],
+        "handles_errors": [],
+        "headers": [
+          "x-org-id"
+        ],
+        "inputs": [],
+        "log_calls": [],
+        "responses": [
+          {
+            "builder": "pkg:fastapi#HTTPException",
+            "in_catch": false,
+            "keys": [],
+            "model": "",
+            "status": 403,
+            "via": "throw"
+          }
+        ],
+        "scoped_queries": []
+      }
+    }
+  },
+  "app/errors.py": {
+    "symbols": {
+      "drf_handler": {
+        "body_checks": [],
+        "catches": [],
+        "handles_errors": [
+          "*"
+        ],
+        "headers": [],
+        "inputs": [],
+        "log_calls": [],
+        "responses": [],
+        "scoped_queries": []
+      },
+      "handle_app_error": {
+        "body_checks": [],
+        "catches": [],
+        "handles_errors": [
+          "app/errors.py#AppError"
+        ],
+        "headers": [],
+        "inputs": [],
+        "log_calls": [],
+        "responses": [
+          {
+            "builder": "pkg:fastapi#responses.JSONResponse",
+            "in_catch": false,
+            "keys": [
+              "detail"
+            ],
+            "model": "",
+            "status": 400,
+            "via": "return"
+          }
+        ],
+        "scoped_queries": []
+      }
+    }
+  },
+  "app/hooks.py": {
+    "symbols": {
+      "hook": {
+        "body_checks": [
+          {
+            "after": [
+              "pkg:fastapi#Request.body",
+              "pkg:python:hmac#new().hexdigest",
+              "pkg:python:hmac#new",
+              "app/settings.py#WEBHOOK_SECRET.encode"
+            ],
+            "compares": "env",
+            "op": "ne",
+            "outcome": "unauthenticated",
+            "reads": "",
+            "source": "header:x-signature"
+          }
+        ],
+        "catches": [],
+        "handles_errors": [],
+        "headers": [
+          "x-signature"
+        ],
+        "inputs": [],
+        "log_calls": [],
+        "responses": [
+          {
+            "builder": "pkg:fastapi#HTTPException",
+            "in_catch": false,
+            "keys": [],
+            "model": "",
+            "status": 401,
+            "via": "throw"
+          }
+        ],
+        "scoped_queries": []
+      },
+      "keyed": {
+        "body_checks": [
+          {
+            "compares": "env",
+            "op": "ne",
+            "outcome": "unauthenticated",
+            "reads": "",
+            "source": "header:x-api-key"
+          }
+        ],
+        "catches": [],
+        "handles_errors": [],
+        "headers": [
+          "x-api-key"
+        ],
+        "inputs": [],
+        "log_calls": [],
+        "responses": [
+          {
+            "builder": "pkg:fastapi#HTTPException",
+            "in_catch": false,
+            "keys": [],
+            "model": "",
+            "status": 401,
+            "via": "throw"
+          }
+        ],
+        "scoped_queries": []
+      }
+    }
+  },
+  "app/main.py": {
+    "symbols": {
+      "key_error": {
+        "body_checks": [],
+        "catches": [],
+        "handles_errors": [
+          "global#KeyError"
+        ],
+        "headers": [],
+        "inputs": [],
+        "log_calls": [],
+        "responses": [
+          {
+            "builder": "pkg:fastapi#responses.JSONResponse",
+            "in_catch": false,
+            "keys": [
+              "detail"
+            ],
+            "model": "",
+            "status": 404,
+            "via": "return"
+          }
+        ],
+        "scoped_queries": []
+      }
+    }
+  },
+  "app/routes.py": {
+    "symbols": {
+      "create_item": {
+        "body_checks": [],
+        "catches": [
+          {
+            "catches": [
+              "global#Exception"
+            ],
+            "does": [
+              "swallow"
+            ]
+          },
+          {
+            "catches": [
+              "global#ValueError"
+            ],
+            "does": [
+              "log",
+              "respond:422",
+              "throw:pkg:fastapi#HTTPException"
+            ]
+          }
+        ],
+        "handles_errors": [],
+        "headers": [],
+        "inputs": [
+          "app/schemas.py#ItemIn"
+        ],
+        "log_calls": [
+          {
+            "callee": "app/routes.py#logger.exception",
+            "in_catch": true,
+            "level": "exception",
+            "passes_error": false,
+            "structured": true
+          },
+          {
+            "callee": "app/routes.py#logger.info",
+            "in_catch": false,
+            "level": "info",
+            "passes_error": true,
+            "structured": false
+          }
+        ],
+        "responses": [
+          {
+            "builder": "",
+            "in_catch": false,
+            "keys": [],
+            "model": "app/schemas.py#ItemOut",
+            "status": 201,
+            "via": "declared"
+          },
+          {
+            "builder": "pkg:fastapi#HTTPException",
+            "in_catch": true,
+            "keys": [],
+            "model": "",
+            "status": 422,
+            "via": "throw"
+          }
+        ],
+        "scoped_queries": []
+      },
+      "health": {
+        "body_checks": [
+          {
+            "after": [
+              "pkg:fastapi#Request.headers.get",
+              "pkg:fastapi#HTTPException"
+            ],
+            "compares": "param:request",
+            "op": "ne",
+            "outcome": "forbidden",
+            "reads": "",
+            "source": "header:x-org-id"
+          },
+          {
+            "after": [
+              "pkg:fastapi#Request.headers.get"
+            ],
+            "compares": "",
+            "outcome": "unauthenticated",
+            "reads": ".state.user",
+            "source": "param:request"
+          }
+        ],
+        "catches": [],
+        "handles_errors": [],
+        "headers": [
+          "x-org-id"
+        ],
+        "inputs": [
+          "app/schemas.py#Filter"
+        ],
+        "log_calls": [
+          {
+            "callee": "global#print",
+            "in_catch": false,
+            "level": "print",
+            "passes_error": false,
+            "structured": false
+          }
+        ],
+        "responses": [
+          {
+            "builder": "pkg:fastapi#HTTPException",
+            "in_catch": false,
+            "keys": [],
+            "model": "",
+            "status": 401,
+            "via": "throw"
+          },
+          {
+            "builder": "pkg:fastapi#responses.JSONResponse",
+            "in_catch": false,
+            "keys": [
+              "code",
+              "error"
+            ],
+            "model": "",
+            "status": 403,
+            "via": "return"
+          }
+        ],
+        "scoped_queries": []
+      },
+      "helper": {
+        "body_checks": [],
+        "catches": [],
+        "handles_errors": [],
+        "headers": [],
+        "inputs": [],
+        "log_calls": [
+          {
+            "callee": "app/routes.py#logger.warning",
+            "in_catch": false,
+            "level": "warn",
+            "passes_error": false,
+            "structured": false
+          }
+        ],
+        "responses": [],
+        "scoped_queries": []
+      }
+    }
+  },
+  "proj/middleware.py": {
+    "symbols": {
+      "TenantMiddleware": {
+        "body_checks": [
+          {
+            "compares": "",
+            "outcome": "unauthenticated",
+            "reads": "",
+            "source": "header:x-tenant-id"
+          }
+        ],
+        "catches": [],
+        "handles_errors": [],
+        "headers": [
+          "x-tenant-id"
+        ],
+        "inputs": [],
+        "log_calls": [],
+        "responses": [
+          {
+            "builder": "pkg:django#http.JsonResponse",
+            "in_catch": false,
+            "keys": [
+              "error"
+            ],
+            "model": "",
+            "status": 401,
+            "via": "return"
+          }
+        ],
+        "scoped_queries": []
+      }
+    }
+  },
+  "shop/views.py": {
+    "symbols": {
+      "AdminItemView": {
+        "body_checks": [],
+        "catches": [],
+        "handles_errors": [],
+        "headers": [],
+        "inputs": [],
+        "log_calls": [],
+        "responses": [
+          {
+            "builder": "pkg:rest_framework#response.Response",
+            "in_catch": false,
+            "keys": [
+              "id"
+            ],
+            "model": "",
+            "status": 0,
+            "via": "return"
+          }
+        ],
+        "scoped_queries": []
+      },
+      "AdminItemView.get": {
+        "body_checks": [],
+        "catches": [],
+        "handles_errors": [],
+        "headers": [],
+        "inputs": [],
+        "log_calls": [],
+        "responses": [
+          {
+            "builder": "pkg:rest_framework#response.Response",
+            "in_catch": false,
+            "keys": [
+              "id"
+            ],
+            "model": "",
+            "status": 0,
+            "via": "return"
+          }
+        ],
+        "scoped_queries": []
+      },
+      "ItemView": {
+        "body_checks": [],
+        "catches": [],
+        "handles_errors": [],
+        "headers": [],
+        "inputs": [
+          "shop/serializers.py#ItemSerializer"
+        ],
+        "log_calls": [],
+        "responses": [
+          {
+            "builder": "pkg:rest_framework#response.Response",
+            "in_catch": false,
+            "keys": [
+              "id"
+            ],
+            "model": "",
+            "status": 201,
+            "via": "return"
+          },
+          {
+            "builder": "pkg:rest_framework#response.Response",
+            "in_catch": false,
+            "keys": [],
+            "model": "",
+            "status": 400,
+            "via": "return"
+          }
+        ],
+        "scoped_queries": []
+      },
+      "ItemView.post": {
+        "body_checks": [],
+        "catches": [],
+        "handles_errors": [],
+        "headers": [],
+        "inputs": [
+          "shop/serializers.py#ItemSerializer"
+        ],
+        "log_calls": [],
+        "responses": [
+          {
+            "builder": "pkg:rest_framework#response.Response",
+            "in_catch": false,
+            "keys": [
+              "id"
+            ],
+            "model": "",
+            "status": 201,
+            "via": "return"
+          },
+          {
+            "builder": "pkg:rest_framework#response.Response",
+            "in_catch": false,
+            "keys": [],
+            "model": "",
+            "status": 400,
+            "via": "return"
+          }
+        ],
+        "scoped_queries": []
+      },
+      "profile": {
+        "body_checks": [
+          {
+            "compares": "",
+            "outcome": "sign_in_redirect",
+            "reads": ".user.is_authenticated",
+            "source": "param:request"
+          },
+          {
+            "after": [
+              "pkg:django#shortcuts.redirect"
+            ],
+            "compares": "",
+            "outcome": "forbidden",
+            "reads": ".user.is_staff",
+            "source": "param:request"
+          }
+        ],
+        "catches": [],
+        "handles_errors": [],
+        "headers": [],
+        "inputs": [],
+        "log_calls": [],
+        "responses": [
+          {
+            "builder": "pkg:django#shortcuts.redirect",
+            "in_catch": false,
+            "keys": [],
+            "model": "",
+            "status": 0,
+            "via": "redirect"
+          },
+          {
+            "builder": "pkg:django#http.JsonResponse",
+            "in_catch": false,
+            "keys": [
+              "ok"
+            ],
+            "model": "",
+            "status": 200,
+            "via": "return"
+          },
+          {
+            "builder": "pkg:django#core.exceptions.PermissionDenied",
+            "in_catch": false,
+            "keys": [],
+            "model": "",
+            "status": 403,
+            "via": "throw"
+          }
+        ],
+        "scoped_queries": []
+      }
+    }
+  },
+  "tests/test_api.py": {
+    "mocks": [
+      "app/deps.py",
+      "app/routes.py",
+      "pkg:httpx",
+      "pkg:requests"
+    ],
+    "test_requests": [
+      {
+        "dynamic": true,
+        "method": "GET",
+        "route": "/items/[*]",
+        "statuses": [
+          201,
+          401,
+          404
+        ],
+        "target": ""
+      },
+      {
+        "method": "GET",
+        "route": "/profile",
+        "statuses": [
+          302
+        ],
+        "target": ""
+      },
+      {
+        "dynamic": true,
+        "method": "GET",
+        "route": "/svc/health",
+        "statuses": [
+          200
+        ],
+        "target": ""
+      },
+      {
+        "method": "POST",
+        "route": "/items",
+        "statuses": [
+          201,
+          401,
+          404
+        ],
+        "target": ""
+      }
+    ]
+  },
+  "web/app.py": {
+    "symbols": {
+      "check_key": {
+        "body_checks": [
+          {
+            "compares": "env",
+            "op": "ne",
+            "outcome": "unauthenticated",
+            "reads": "",
+            "source": "header:x-api-key"
+          }
+        ],
+        "catches": [],
+        "handles_errors": [],
+        "headers": [
+          "x-api-key"
+        ],
+        "inputs": [],
+        "log_calls": [],
+        "responses": [
+          {
+            "builder": "pkg:flask#abort",
+            "in_catch": false,
+            "keys": [],
+            "model": "",
+            "status": 401,
+            "via": "abort"
+          }
+        ],
+        "scoped_queries": []
+      },
+      "data": {
+        "body_checks": [],
+        "catches": [],
+        "handles_errors": [],
+        "headers": [],
+        "inputs": [],
+        "log_calls": [],
+        "responses": [
+          {
+            "builder": "pkg:flask#jsonify",
+            "in_catch": false,
+            "keys": [
+              "ok"
+            ],
+            "model": "",
+            "status": 0,
+            "via": "return"
+          }
+        ],
+        "scoped_queries": []
+      },
+      "me": {
+        "body_checks": [
+          {
+            "compares": "",
+            "outcome": "unauthenticated",
+            "reads": ".is_authenticated",
+            "source": "pkg:flask_login#current_user"
+          }
+        ],
+        "catches": [],
+        "handles_errors": [],
+        "headers": [],
+        "inputs": [
+          "web/schemas.py#UserSchema"
+        ],
+        "log_calls": [
+          {
+            "callee": "pkg:loguru#logger.warning",
+            "in_catch": false,
+            "level": "warn",
+            "passes_error": false,
+            "structured": false
+          },
+          {
+            "callee": "web/app.py#log.info",
+            "in_catch": false,
+            "level": "info",
+            "passes_error": false,
+            "structured": true
+          }
+        ],
+        "responses": [
+          {
+            "builder": "pkg:flask#jsonify",
+            "in_catch": false,
+            "keys": [
+              "error"
+            ],
+            "model": "",
+            "status": 400,
+            "via": "return"
+          },
+          {
+            "builder": "pkg:flask#abort",
+            "in_catch": false,
+            "keys": [],
+            "model": "",
+            "status": 401,
+            "via": "abort"
+          }
+        ],
+        "scoped_queries": []
+      },
+      "not_found": {
+        "body_checks": [],
+        "catches": [],
+        "handles_errors": [
+          "status:404"
+        ],
+        "headers": [],
+        "inputs": [],
+        "log_calls": [],
+        "responses": [
+          {
+            "builder": "pkg:flask#jsonify",
+            "in_catch": false,
+            "keys": [
+              "error"
+            ],
+            "model": "",
+            "status": 404,
+            "via": "return"
+          }
+        ],
+        "scoped_queries": []
+      }
+    }
+  }
+}

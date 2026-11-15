@@ -1,0 +1,52 @@
+5 conventions from 1383 units in 83 roles (1 default tier, 4 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-cc5ca5] packages/api: rpc entry points in src/** are wrapped in protectedProcedure()
+    evidence: 78/88 (lower bound 0.80, lift 5.1)
+    tier:     default
+    example:  packages/api/src/routers/attachment.ts#MUTATION confirm
+    outlier:  packages/api/src/routers/board.ts:247 QUERY bySlug
+    outlier:  packages/api/src/routers/board.ts:805 QUERY checkSlugAvailability
+    outlier:  packages/api/src/routers/card.ts:746 QUERY byId
+    outlier:  packages/api/src/routers/card.ts:856 QUERY getActivities
+    outlier:  packages/api/src/routers/health.ts:65 QUERY health
+    outlier:  packages/api/src/routers/health.ts:110 QUERY stats
+    outlier:  packages/api/src/routers/member.ts:604 MUTATION acceptInviteLink
+    outlier:  packages/api/src/routers/member.ts:559 QUERY getInviteByCode
+    outlier:  packages/api/src/routers/workspace.ts:226 QUERY bySlug
+    outlier:  packages/api/src/routers/workspace.ts:51 QUERY checkSlugAvailability
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 2. [D-eda068] packages/api: rpc entry points in src/** throw TRPCError
+    evidence: 87/88 (lower bound 0.94, lift 4.6)
+    tier:     suggestion (rule kind throws)
+    example:  packages/api/src/routers/attachment.ts#MUTATION confirm
+    outlier:  packages/api/src/routers/health.ts:65 QUERY health
+
+ 3. [D-f314d1] packages/api: exported values in src/schemas/** pass `publicId` to z.object()
+    evidence: 28/30 (lower bound 0.79, lift 5.7)
+    tier:     suggestion (rule kind passes_key)
+    example:  packages/api/src/schemas/attachment.ts#attachmentConfirmResponseSchema
+    outlier:  packages/api/src/schemas/common.ts:27 userSchema
+    outlier:  packages/api/src/schemas/workspace.ts:94 workspaceDeleteResponseSchema
+    exempt:   packages/api/src/schemas/boardMember.ts:5 boardMemberRoleSchema (does not call z.object())
+
+ 4. [D-11877a] sql models have a `createdAt` field
+    evidence: 29/32 (lower bound 0.76, lift 1.0)
+    tier:     suggestion (rule kind model_has)
+    example:  packages/db/migrations/20250508083758_SetupTables.sql#account
+    outlier:  packages/db/migrations/20250508083758_SetupTables.sql:142 _card_labels
+    outlier:  packages/db/migrations/20250508083758_SetupTables.sql:118 _card_workspace_members
+    outlier:  packages/db/migrations/20250508083758_SetupTables.sql:228 workspace_slugs
+
+ 5. [D-798f44] drizzle models have a `createdAt` field
+    evidence: 29/32 (lower bound 0.76, lift 1.0)
+    tier:     suggestion (rule kind model_has)
+    example:  packages/db/src/schema/auth.ts#account
+    outlier:  packages/db/src/schema/cards.ts:219 _card_labels
+    outlier:  packages/db/src/schema/cards.ts:245 _card_workspace_members
+    outlier:  packages/db/src/schema/workspaces.ts:145 workspace_slugs
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

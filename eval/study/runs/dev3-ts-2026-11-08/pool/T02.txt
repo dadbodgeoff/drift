@@ -1,0 +1,37 @@
+4 conventions from 8954 units in 500 roles (1 default tier, 3 suggestions)
+
+3 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-c983c0] files in apps/buddy/** do not import from packaging/buddy/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 1720/1721 (lower bound 1.00, lift 3.0)
+    tier:     default
+    example:  apps/buddy/electron.vite.config.ts#(file)
+    outlier:  apps/buddy/electron-builder.config.cjs:1 (file)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 2. [D-f9ec7b] legacy/web-stack/apps/api: classes in src/** (*.service files) are named `*Service`, except 2 companions (a helper or constant beside the members that follow it)
+    evidence: 61/61 (lower bound 0.94, lift 4.0)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  legacy/web-stack/apps/api/src/database/prisma.service.ts#PrismaService
+    exempt:   legacy/web-stack/apps/api/src/modules/agent/agent-events.service.ts:34 AgentGenerationEventsConsumerError (another kind of class (extends Error) beside AgentGenerationEventsService, which follows the scheme)
+    exempt:   legacy/web-stack/apps/api/src/modules/auth/registration-invite-grants.service.ts:15 RegistrationInviteRequiredException (another kind of class (extends BadRequestException) beside RegistrationInviteGrantsService, which follows the scheme)
+
+ 3. [D-3a6225] apps/buddy: functions in electron/preload/** are named `*Api`, except a shared part (used by several members, not a member)
+    evidence: 24/24 (lower bound 0.86, lift 101.8)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/buddy/electron/preload/browser.ts#createBrowserApi
+    exempt:   apps/buddy/electron/preload/subscribe.ts:3 subscribe (shared part used by 17 members)
+
+ 4. [D-b25c1d] apps/buddy: classes in platform/extensions/** throw on failure
+    evidence: 20/21 (lower bound 0.77, lift 1.7)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  apps/buddy/platform/extensions/ExtensionCatalogService.ts#ExtensionCatalogService
+    outlier:  apps/buddy/platform/extensions/ExtensionConditionEvaluator.ts:33 ExtensionConditionInvalidatedError
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

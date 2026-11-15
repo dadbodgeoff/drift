@@ -1,0 +1,94 @@
+{
+  "a": "eval/study/runs/dev-v3-relabel4-2026-11-07/ts/relabel/labels/A",
+  "b": "eval/study/runs/dev-v3-relabel4-2026-11-07/ts/relabel/labels/B",
+  "labels_sha256": {
+    "A": "5b4e18bae0ae4b7332aa40d20e22499eeb09ce5086aa68f2e54eca1735352df0",
+    "B": "c53336d691208b3ea764baf59fc1393abd351844132e085fb6a393e88cea9dbf"
+  },
+  "computed_at": "2026-11-07T12:03:35.184Z",
+  "rubric_sha256s": [
+    "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+  ],
+  "n": 25,
+  "scope": 25,
+  "exact": 0.8,
+  "kappa": 0.6537396121883657,
+  "kappa_boot": {
+    "lo": 0.33333333333333326,
+    "hi": 0.883720930232558,
+    "clusters": 9
+  },
+  "accept_vs_not": {
+    "n": 25,
+    "po": 0.8,
+    "pe": 0.5088,
+    "kappa": 0.5928338762214984
+  },
+  "wrong_vs_not": {
+    "n": 25,
+    "po": 0.8,
+    "pe": 0.4832,
+    "kappa": 0.6130030959752323
+  },
+  "confusion": {
+    "ACCEPT": {
+      "ACCEPT": 7,
+      "TRIVIAL": 0,
+      "WRONG": 5
+    },
+    "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 2,
+      "WRONG": 0
+    },
+    "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 11
+    }
+  },
+  "mix": {
+    "A": {
+      "ACCEPT": 12,
+      "TRIVIAL": 2,
+      "WRONG": 11
+    },
+    "B": {
+      "ACCEPT": 7,
+      "TRIVIAL": 2,
+      "WRONG": 16
+    }
+  },
+  "disagreements": [
+    {
+      "uid": "cal.com/D-8d7d13",
+      "repo": "cal.com",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "ai/D-4683f7",
+      "repo": "ai",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "supabase/D-922bc7",
+      "repo": "supabase",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "midday/D-8fbbad",
+      "repo": "midday",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "midday/D-798f44",
+      "repo": "midday",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+5 conventions from 1566 units in 119 roles
+
+ 1. [D-c4f6cb] HTTP handlers in CTFd/api/** are decorated with admins_only()
+    evidence: 61/70 (lower bound 0.77, lift 3.9)
+    example:  CTFd/api/v1/audiences.py#Audience.delete
+    outlier:  CTFd/api/v1/brackets.py:16 BracketList.get
+    outlier:  CTFd/api/v1/hints.py:110 Hint.get
+    outlier:  CTFd/api/v1/shares.py:14 Share.post
+    outlier:  CTFd/api/v1/solutions.py:150 Solution.get
+    outlier:  CTFd/api/v1/tokens.py:139 TokenDetail.delete
+    outlier:  CTFd/api/v1/tokens.py:110 TokenDetail.get
+    outlier:  CTFd/api/v1/tokens.py:49 TokenList.get
+    outlier:  CTFd/api/v1/tokens.py:73 TokenList.post
+    outlier:  CTFd/api/v1/unlocks.py:101 UnlockList.post
+
+ 2. [D-49130f] files in the repo do not import from CTFd/cli/**
+    evidence: 228/229 (lower bound 0.98, lift 3.0)
+    example:  .eslintrc.js#(file)
+    outlier:  CTFd/utils/initialization/__init__.py:1 (file)
+
+ 3. [D-bd2596] files in the repo do not import from CTFd/admin/**
+    evidence: 228/229 (lower bound 0.98, lift 3.0)
+    example:  .eslintrc.js#(file)
+    outlier:  CTFd/__init__.py:1 (file)
+
+ 4. [D-ce2984] files in the repo do not import from CTFd/api/**
+    evidence: 227/229 (lower bound 0.97, lift 3.0)
+    example:  .eslintrc.js#(file)
+    outlier:  CTFd/__init__.py:1 (file)
+    outlier:  CTFd/cache/__init__.py:1 (file)
+
+ 5. [D-bf0172] files in the repo do not import from CTFd/plugins/**
+    evidence: 221/229 (lower bound 0.93, lift 3.0)
+    example:  .eslintrc.js#(file)
+    outlier:  CTFd/__init__.py:1 (file)
+    outlier:  CTFd/admin/challenges.py:1 (file)
+    outlier:  CTFd/api/v1/challenges.py:1 (file)
+    outlier:  CTFd/api/v1/flags.py:1 (file)
+    outlier:  CTFd/constants/plugins.py:1 (file)
+    outlier:  CTFd/models/__init__.py:1 (file)
+    outlier:  CTFd/utils/csv/__init__.py:1 (file)
+    outlier:  CTFd/utils/exports/__init__.py:1 (file)
+

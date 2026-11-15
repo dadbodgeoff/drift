@@ -1,0 +1,206 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - +page
+  - +server
+  - __init__
+  - conftest
+  - coverage
+  - data_247
+  - events
+  - fields
+  - oauth
+  - sleep
+  - strategy
+  - totals
+  - types
+  - webhook_handler
+  - webhook_service
+  - workouts
+  suffixes:
+  - config
+  - e2e
+  - server
+  - spec
+  - svelte
+conventions:
+- id: D-dadcea
+  status: proposed
+  mode: advise
+  summary: "backend: HTTP handlers in app/** are wrapped in _get_db_dependency()"
+  role:
+    package: backend
+    dir: app
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - backend/app/database.py#_get_db_dependency
+  evidence:
+    holders: 106
+    total: 117
+    lower_bound: 0.839
+    lift: 8.236
+    python_members: 117
+  example: backend/app/api/routes/v1/api_keys.py#create_api_key
+  selector_version: 2
+- id: D-262064
+  status: proposed
+  mode: advise
+  summary: "backend: enums in app/schemas/** extend StrEnum"
+  role:
+    package: backend
+    dir: app/schemas
+    file: "*"
+    entry: '-'
+    kind: class
+    variety: enum
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - pkg:python:enum#StrEnum
+  evidence:
+    holders: 53
+    total: 57
+    lower_bound: 0.833
+    lift: 9.484
+    python_members: 57
+  example: backend/app/schemas/auth/authentication_method.py#AuthenticationMethod
+  selector_version: 2
+- id: D-8ffd6f
+  status: proposed
+  mode: advise
+  summary: "backend: classes in app/repositories/** are named `*Repository`"
+  role:
+    package: backend
+    dir: app/repositories
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Repository"
+  evidence:
+    holders: 28
+    total: 29
+    lower_bound: 0.828
+    lift: 23.772
+    python_members: 29
+  example: >-
+    backend/app/repositories/aggregate_backfill_repository.py#AggregateBackfillRepository
+  selector_version: 2
+- id: D-b21ebc
+  status: proposed
+  mode: advise
+  summary: "backend: exported values in app/integrations/** call get_logger()"
+  role:
+    package: backend
+    dir: app/integrations
+    file: "*"
+    entry: '-'
+    kind: variable
+  rule:
+    type: calls
+    callee: backend/app/utils/structured_logging.py#get_logger
+  evidence:
+    holders: 31
+    total: 33
+    lower_bound: 0.804
+    lift: 2.613
+    python_members: 33
+  example: backend/app/integrations/celery/core.py#logger
+  selector_version: 2
+- id: D-ff3192
+  status: proposed
+  mode: advise
+  summary: "backend: functions in app/services/providers/garmin/backfill_state/** call get_redis_client()"
+  role:
+    package: backend
+    dir: app/services/providers/garmin/backfill_state
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: calls
+    callee: backend/app/integrations/redis_client.py#get_redis_client
+  evidence:
+    holders: 31
+    total: 33
+    lower_bound: 0.804
+    lift: 14.155
+    python_members: 33
+  example: >-
+    backend/app/services/providers/garmin/backfill_state/core.py#acquire_backfill_lock
+  selector_version: 2
+- id: D-4c541f
+  status: proposed
+  mode: advise
+  summary: "frontend: functions in src/routes/(app)/** (*.server files) call requireToken()"
+  role:
+    package: frontend
+    dir: src/routes/(app)
+    file: "*.server"
+    entry: '-'
+    kind: function
+  rule:
+    type: calls
+    callee: pkg:$lib#requireToken
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 30.119
+  example: frontend/src/routes/(app)/dashboard/+page.server.ts#load
+  selector_version: 2
+- id: D-baa886
+  status: proposed
+  mode: advise
+  summary: "backend: functions in app/services/providers/garmin/** call str()"
+  role:
+    package: backend
+    dir: app/services/providers/garmin
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: calls
+    callee: global#str
+  evidence:
+    holders: 35
+    total: 38
+    lower_bound: 0.792
+    lift: 7.237
+    python_members: 38
+  example: >-
+    backend/app/services/providers/garmin/backfill_state/core.py#acquire_backfill_lock
+  selector_version: 2
+- id: D-6606a8
+  status: proposed
+  mode: advise
+  summary: "backend: functions in app/services/providers/garmin/backfill_state/** call _get_key()"
+  role:
+    package: backend
+    dir: app/services/providers/garmin/backfill_state
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: calls
+    callee: backend/app/services/providers/garmin/backfill_state/core.py#_get_key
+  evidence:
+    holders: 30
+    total: 33
+    lower_bound: 0.764
+    lift: 29.412
+    python_members: 33
+  example: >-
+    backend/app/services/providers/garmin/backfill_state/core.py#acquire_backfill_lock
+  selector_version: 2

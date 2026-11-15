@@ -1,0 +1,1672 @@
+{
+ "all": {
+  "cards": 237,
+  "decided": 236,
+  "undecided": [
+   "supabase/D-e97861"
+  ],
+  "members": {
+   "matched_verdicts": 941,
+   "s2_five_way": {
+    "n": 933,
+    "exact": 0.5391211146838156,
+    "kappa": 0.37276624485239623
+   },
+   "s2_real_vs_not": {
+    "n": 933,
+    "exact": 0.7995712754555199,
+    "kappa": 0.5947670975159391
+   },
+   "set_apart_vs_not_real": {
+    "n": 941,
+    "exact": 0.7438894792773645,
+    "kappa": 0.4759453070298074
+   },
+   "s1_other_given_labeller": {
+    "mistake": {
+     "other": 4,
+     "n": 103
+    },
+    "look": {
+     "other": 10,
+     "n": 389
+    },
+    "legit": {
+     "other": 105,
+     "n": 407
+    },
+    "not_violation": {
+     "other": 0,
+     "n": 30
+    },
+    "one_off": {
+     "other": 8,
+     "n": 12
+    }
+   },
+   "a_vs_b_five_way": {
+    "n": 425,
+    "exact": 0.8164705882352942,
+    "kappa": 0.7106319832402236
+   },
+   "a_vs_b_real_vs_not": {
+    "n": 425,
+    "exact": 0.9223529411764706,
+    "kappa": 0.8446757849271831
+   },
+   "confusion": {
+    "mistake": {
+     "mistake": 94,
+     "look": 222,
+     "legit": 105,
+     "not_violation": 9,
+     "one_off": 0
+    },
+    "look": {
+     "mistake": 2,
+     "look": 125,
+     "legit": 28,
+     "not_violation": 2,
+     "one_off": 0
+    },
+    "legit": {
+     "mistake": 6,
+     "look": 28,
+     "legit": 265,
+     "not_violation": 7,
+     "one_off": 4
+    },
+    "not_violation": {
+     "mistake": 1,
+     "look": 8,
+     "legit": 4,
+     "not_violation": 12,
+     "one_off": 1
+    },
+    "one_off": {
+     "mistake": 0,
+     "look": 0,
+     "legit": 3,
+     "not_violation": 0,
+     "one_off": 7
+    }
+   }
+  },
+  "flags": {
+   "per_fold": {
+    "1": {
+     "cards": 42,
+     "helped": 17,
+     "losses": 1,
+     "before": {
+      "real": 90,
+      "n": 275
+     },
+     "after": {
+      "real": 86,
+      "n": 171
+     }
+    },
+    "2": {
+     "cards": 30,
+     "helped": 5,
+     "losses": 2,
+     "before": {
+      "real": 99,
+      "n": 167
+     },
+     "after": {
+      "real": 93,
+      "n": 124
+     }
+    },
+    "3": {
+     "cards": 23,
+     "helped": 5,
+     "losses": 0,
+     "before": {
+      "real": 106,
+      "n": 166
+     },
+     "after": {
+      "real": 105,
+      "n": 132
+     }
+    },
+    "4": {
+     "cards": 44,
+     "helped": 13,
+     "losses": 0,
+     "before": {
+      "real": 189,
+      "n": 317
+     },
+     "after": {
+      "real": 185,
+      "n": 268
+     }
+    },
+    "5": {
+     "cards": 7,
+     "helped": 3,
+     "losses": 0,
+     "before": {
+      "real": 8,
+      "n": 16
+     },
+     "after": {
+      "real": 8,
+      "n": 8
+     }
+    }
+   },
+   "admission": {
+    "conditions": {
+     "helps": {
+      "repos": [
+       "InvenTree",
+       "P09",
+       "T02",
+       "T18",
+       "ai",
+       "cal.com",
+       "documenso",
+       "dub",
+       "formbricks",
+       "immich",
+       "infisical",
+       "lotus",
+       "midday",
+       "netbox",
+       "novu",
+       "open-wearables",
+       "paperless-ngx",
+       "supabase",
+       "tasking-manager",
+       "twenty",
+       "wger"
+      ],
+      "folds": [
+       1,
+       2,
+       3,
+       4,
+       5
+      ],
+      "pass": true
+     },
+     "no_real_flag_set_apart_outside_design": {
+      "losses": [
+       "novu/D-808edd libs/application-generic/src/commands/project.command.ts#EnvironmentWithSubscriber",
+       "novu/D-6ded6b packages/framework/src/errors/resource.errors.ts#ResourceExecutionFailed",
+       "paperless-ngx/D-b958b1 src/documents/views.py#EmailDocumentDetailSchema"
+      ],
+      "pass": false
+     },
+     "other_fold_flag_precision_rises": {
+      "before": {
+       "real": 295,
+       "n": 608
+      },
+      "after": {
+       "real": 284,
+       "n": 427
+      },
+      "pass": true
+     },
+     "fold5_not_negative": {
+      "losses": [],
+      "before": {
+       "real": 8,
+       "n": 16
+      },
+      "after": {
+       "real": 8,
+       "n": 8
+      },
+      "pass": true
+     }
+    },
+    "admitted": false
+   },
+   "by_tier_lang": {
+    "default/ts": {
+     "cards": 12,
+     "losses": 0,
+     "before": {
+      "real": 83,
+      "n": 90
+     },
+     "after": {
+      "real": 83,
+      "n": 86
+     }
+    },
+    "suggestion/ts": {
+     "cards": 75,
+     "losses": 2,
+     "before": {
+      "real": 228,
+      "n": 523
+     },
+     "after": {
+      "real": 217,
+      "n": 360
+     }
+    },
+    "suggestion/py": {
+     "cards": 59,
+     "losses": 1,
+     "before": {
+      "real": 181,
+      "n": 328
+     },
+     "after": {
+      "real": 177,
+      "n": 257
+     }
+    }
+   }
+  },
+  "a": {
+   "per_fold": {
+    "1": {
+     "pass": "100.0% (4/4)",
+     "fail": "n/a"
+    },
+    "2": {
+     "pass": "100.0% (8/8)",
+     "fail": "100.0% (2/2)"
+    },
+    "3": {
+     "pass": "100.0% (2/2)",
+     "fail": "100.0% (1/1)"
+    },
+    "4": {
+     "pass": "100.0% (9/9)",
+     "fail": "100.0% (4/4)"
+    },
+    "5": {
+     "pass": "0.0% (0/1)",
+     "fail": "25.0% (1/4)"
+    }
+   },
+   "all": {
+    "pass": "95.8% (23/24)",
+    "fail": "72.7% (8/11)"
+   },
+   "would_be_gate": {
+    "conditions": {
+     "helps": {
+      "repos": [
+       "T02",
+       "T15",
+       "T18"
+      ],
+      "folds": [
+       5
+      ],
+      "pass": false
+     },
+     "no_accept_lost_outside_design": {
+      "lost": [
+       "documenso/D-7b5140",
+       "documenso/D-32c861",
+       "formbricks/D-b8f1ee"
+      ],
+      "pass": false
+     },
+     "other_fold_effect_positive": {
+      "before": {
+       "accept": 17,
+       "shown": 17
+      },
+      "after": {
+       "accept": 14,
+       "shown": 14
+      },
+      "pass": false
+     },
+     "fold5_not_negative": {
+      "covered": true,
+      "before": {
+       "accept": 1,
+       "shown": 5
+      },
+      "after": {
+       "accept": 0,
+       "shown": 1
+      },
+      "pass": false
+     }
+    },
+    "admitted": false
+   },
+   "gate": "not a gate (lead constraint 2): not admitted by construction"
+  },
+  "c": {
+   "cards": 192,
+   "per_fold": {
+    "1": {
+     "verifier": "100.0% (16/16)",
+     "both": "100.0% (15/15)"
+    },
+    "2": {
+     "verifier": "93.5% (29/31)",
+     "both": "92.9% (26/28)"
+    },
+    "3": {
+     "verifier": "83.3% (20/24)",
+     "both": "81.8% (18/22)"
+    },
+    "4": {
+     "verifier": "79.2% (19/24)",
+     "both": "79.2% (19/24)"
+    }
+   },
+   "reading": {
+    "conditions": {
+     "helps": {
+      "repos": [],
+      "folds": [],
+      "pass": false
+     },
+     "no_accept_lost_outside_design": {
+      "lost": [
+       "Misago/D-90a5d9",
+       "ai/D-5baed4",
+       "fastapi/D-499c0e",
+       "novu/D-6ded6b",
+       "paperless-ngx/D-0dfb1b",
+       "supabase/D-100c39"
+      ],
+      "pass": false
+     },
+     "other_fold_effect_positive": {
+      "before": {
+       "accept": 65,
+       "shown": 71
+      },
+      "after": {
+       "accept": 59,
+       "shown": 65
+      },
+      "pass": false
+     },
+     "fold5_not_negative": {
+      "covered": false,
+      "before": {
+       "accept": 0,
+       "shown": 0
+      },
+      "after": {
+       "accept": 0,
+       "shown": 0
+      },
+      "pass": false
+     }
+    },
+    "admitted": false
+   },
+   "wired": "not wired (lead constraint 2)"
+  },
+  "yield": [
+   {
+    "repo": "immich",
+    "fold": 1,
+    "cards": 10,
+    "judged": 66,
+    "set_apart": 2,
+    "calls": 30,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "infisical",
+    "fold": 1,
+    "cards": 14,
+    "judged": 84,
+    "set_apart": 41,
+    "calls": 42,
+    "candidates": 4,
+    "candidates_pass": 4,
+    "candidates_pass_accept": 4
+   },
+   {
+    "repo": "InvenTree",
+    "fold": 1,
+    "cards": 12,
+    "judged": 29,
+    "set_apart": 20,
+    "calls": 36,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "nest",
+    "fold": 1,
+    "cards": 1,
+    "judged": 0,
+    "set_apart": 0,
+    "calls": 3,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "paperless-ngx",
+    "fold": 1,
+    "cards": 5,
+    "judged": 4,
+    "set_apart": 3,
+    "calls": 15,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "pontoon",
+    "fold": 1,
+    "cards": 1,
+    "judged": 2,
+    "set_apart": 0,
+    "calls": 3,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "ralph",
+    "fold": 1,
+    "cards": 5,
+    "judged": 12,
+    "set_apart": 0,
+    "calls": 15,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "wger",
+    "fold": 1,
+    "cards": 3,
+    "judged": 3,
+    "set_apart": 2,
+    "calls": 9,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "ai",
+    "fold": 2,
+    "cards": 8,
+    "judged": 13,
+    "set_apart": 8,
+    "calls": 24,
+    "candidates": 1,
+    "candidates_pass": 1,
+    "candidates_pass_accept": 1
+   },
+   {
+    "repo": "documenso",
+    "fold": 2,
+    "cards": 14,
+    "judged": 57,
+    "set_apart": 5,
+    "calls": 42,
+    "candidates": 9,
+    "candidates_pass": 7,
+    "candidates_pass_accept": 7
+   },
+   {
+    "repo": "langchain",
+    "fold": 2,
+    "cards": 2,
+    "judged": 2,
+    "set_apart": 0,
+    "calls": 6,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "lotus",
+    "fold": 2,
+    "cards": 3,
+    "judged": 12,
+    "set_apart": 2,
+    "calls": 9,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "Misago",
+    "fold": 2,
+    "cards": 7,
+    "judged": 16,
+    "set_apart": 12,
+    "calls": 21,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "netbox",
+    "fold": 2,
+    "cards": 11,
+    "judged": 25,
+    "set_apart": 4,
+    "calls": 33,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "novu",
+    "fold": 2,
+    "cards": 14,
+    "judged": 28,
+    "set_apart": 9,
+    "calls": 42,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "simplelogin",
+    "fold": 2,
+    "cards": 2,
+    "judged": 3,
+    "set_apart": 2,
+    "calls": 6,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "excalidraw",
+    "fold": 3,
+    "cards": 2,
+    "judged": 11,
+    "set_apart": 1,
+    "calls": 6,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "fastapi",
+    "fold": 3,
+    "cards": 1,
+    "judged": 8,
+    "set_apart": 0,
+    "calls": 3,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "formbricks",
+    "fold": 3,
+    "cards": 11,
+    "judged": 47,
+    "set_apart": 15,
+    "calls": 33,
+    "candidates": 2,
+    "candidates_pass": 1,
+    "candidates_pass_accept": 1
+   },
+   {
+    "repo": "full-stack-fastapi-template",
+    "fold": 3,
+    "cards": 1,
+    "judged": 1,
+    "set_apart": 0,
+    "calls": 3,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "saleor",
+    "fold": 3,
+    "cards": 2,
+    "judged": 5,
+    "set_apart": 4,
+    "calls": 6,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "supabase",
+    "fold": 3,
+    "cards": 14,
+    "judged": 51,
+    "set_apart": 4,
+    "calls": 42,
+    "candidates": 1,
+    "candidates_pass": 1,
+    "candidates_pass_accept": 1
+   },
+   {
+    "repo": "twenty",
+    "fold": 3,
+    "cards": 13,
+    "judged": 69,
+    "set_apart": 13,
+    "calls": 39,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "cal.com",
+    "fold": 4,
+    "cards": 15,
+    "judged": 76,
+    "set_apart": 4,
+    "calls": 45,
+    "candidates": 6,
+    "candidates_pass": 5,
+    "candidates_pass_accept": 5
+   },
+   {
+    "repo": "changedetection.io",
+    "fold": 4,
+    "cards": 3,
+    "judged": 5,
+    "set_apart": 1,
+    "calls": 9,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "Django-CRM",
+    "fold": 4,
+    "cards": 6,
+    "judged": 55,
+    "set_apart": 13,
+    "calls": 18,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "dub",
+    "fold": 4,
+    "cards": 15,
+    "judged": 76,
+    "set_apart": 11,
+    "calls": 45,
+    "candidates": 5,
+    "candidates_pass": 3,
+    "candidates_pass_accept": 3
+   },
+   {
+    "repo": "midday",
+    "fold": 4,
+    "cards": 14,
+    "judged": 25,
+    "set_apart": 6,
+    "calls": 42,
+    "candidates": 2,
+    "candidates_pass": 1,
+    "candidates_pass_accept": 1
+   },
+   {
+    "repo": "open-wearables",
+    "fold": 4,
+    "cards": 5,
+    "judged": 19,
+    "set_apart": 3,
+    "calls": 15,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "tasking-manager",
+    "fold": 4,
+    "cards": 8,
+    "judged": 19,
+    "set_apart": 4,
+    "calls": 24,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "P03",
+    "fold": 5,
+    "cards": 1,
+    "judged": 1,
+    "set_apart": 0,
+    "calls": 3,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "P09",
+    "fold": 5,
+    "cards": 1,
+    "judged": 1,
+    "set_apart": 1,
+    "calls": 3,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "T02",
+    "fold": 5,
+    "cards": 4,
+    "judged": 2,
+    "set_apart": 2,
+    "calls": 12,
+    "candidates": 1,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "T07",
+    "fold": 5,
+    "cards": 1,
+    "judged": 1,
+    "set_apart": 0,
+    "calls": 3,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "T13",
+    "fold": 5,
+    "cards": 3,
+    "judged": 3,
+    "set_apart": 0,
+    "calls": 9,
+    "candidates": 1,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "T15",
+    "fold": 5,
+    "cards": 1,
+    "judged": 1,
+    "set_apart": 1,
+    "calls": 3,
+    "candidates": 1,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "T18",
+    "fold": 5,
+    "cards": 3,
+    "judged": 5,
+    "set_apart": 2,
+    "calls": 9,
+    "candidates": 2,
+    "candidates_pass": 1,
+    "candidates_pass_accept": 0
+   }
+  ],
+  "flips": {
+   "members": [
+    186,
+    1529
+   ],
+   "flags": [
+    175,
+    837
+   ],
+   "flags_without_majority": [
+    5,
+    837
+   ]
+  }
+ },
+ "without_named_ids": {
+  "cards": 233,
+  "decided": 232,
+  "undecided": [
+   "supabase/D-e97861"
+  ],
+  "members": {
+   "matched_verdicts": 941,
+   "s2_five_way": {
+    "n": 933,
+    "exact": 0.5391211146838156,
+    "kappa": 0.37276624485239623
+   },
+   "s2_real_vs_not": {
+    "n": 933,
+    "exact": 0.7995712754555199,
+    "kappa": 0.5947670975159391
+   },
+   "set_apart_vs_not_real": {
+    "n": 941,
+    "exact": 0.7438894792773645,
+    "kappa": 0.4759453070298074
+   },
+   "s1_other_given_labeller": {
+    "mistake": {
+     "other": 4,
+     "n": 103
+    },
+    "look": {
+     "other": 10,
+     "n": 389
+    },
+    "legit": {
+     "other": 105,
+     "n": 407
+    },
+    "not_violation": {
+     "other": 0,
+     "n": 30
+    },
+    "one_off": {
+     "other": 8,
+     "n": 12
+    }
+   },
+   "a_vs_b_five_way": {
+    "n": 425,
+    "exact": 0.8164705882352942,
+    "kappa": 0.7106319832402236
+   },
+   "a_vs_b_real_vs_not": {
+    "n": 425,
+    "exact": 0.9223529411764706,
+    "kappa": 0.8446757849271831
+   },
+   "confusion": {
+    "mistake": {
+     "mistake": 94,
+     "look": 222,
+     "legit": 105,
+     "not_violation": 9,
+     "one_off": 0
+    },
+    "look": {
+     "mistake": 2,
+     "look": 125,
+     "legit": 28,
+     "not_violation": 2,
+     "one_off": 0
+    },
+    "legit": {
+     "mistake": 6,
+     "look": 28,
+     "legit": 265,
+     "not_violation": 7,
+     "one_off": 4
+    },
+    "not_violation": {
+     "mistake": 1,
+     "look": 8,
+     "legit": 4,
+     "not_violation": 12,
+     "one_off": 1
+    },
+    "one_off": {
+     "mistake": 0,
+     "look": 0,
+     "legit": 3,
+     "not_violation": 0,
+     "one_off": 7
+    }
+   }
+  },
+  "flags": {
+   "per_fold": {
+    "1": {
+     "cards": 42,
+     "helped": 17,
+     "losses": 1,
+     "before": {
+      "real": 90,
+      "n": 275
+     },
+     "after": {
+      "real": 86,
+      "n": 171
+     }
+    },
+    "2": {
+     "cards": 30,
+     "helped": 5,
+     "losses": 2,
+     "before": {
+      "real": 99,
+      "n": 167
+     },
+     "after": {
+      "real": 93,
+      "n": 124
+     }
+    },
+    "3": {
+     "cards": 23,
+     "helped": 5,
+     "losses": 0,
+     "before": {
+      "real": 106,
+      "n": 166
+     },
+     "after": {
+      "real": 105,
+      "n": 132
+     }
+    },
+    "4": {
+     "cards": 44,
+     "helped": 13,
+     "losses": 0,
+     "before": {
+      "real": 189,
+      "n": 317
+     },
+     "after": {
+      "real": 185,
+      "n": 268
+     }
+    },
+    "5": {
+     "cards": 7,
+     "helped": 3,
+     "losses": 0,
+     "before": {
+      "real": 8,
+      "n": 16
+     },
+     "after": {
+      "real": 8,
+      "n": 8
+     }
+    }
+   },
+   "admission": {
+    "conditions": {
+     "helps": {
+      "repos": [
+       "InvenTree",
+       "P09",
+       "T02",
+       "T18",
+       "ai",
+       "cal.com",
+       "documenso",
+       "dub",
+       "formbricks",
+       "immich",
+       "infisical",
+       "lotus",
+       "midday",
+       "netbox",
+       "novu",
+       "open-wearables",
+       "paperless-ngx",
+       "supabase",
+       "tasking-manager",
+       "twenty",
+       "wger"
+      ],
+      "folds": [
+       1,
+       2,
+       3,
+       4,
+       5
+      ],
+      "pass": true
+     },
+     "no_real_flag_set_apart_outside_design": {
+      "losses": [
+       "novu/D-808edd libs/application-generic/src/commands/project.command.ts#EnvironmentWithSubscriber",
+       "novu/D-6ded6b packages/framework/src/errors/resource.errors.ts#ResourceExecutionFailed",
+       "paperless-ngx/D-b958b1 src/documents/views.py#EmailDocumentDetailSchema"
+      ],
+      "pass": false
+     },
+     "other_fold_flag_precision_rises": {
+      "before": {
+       "real": 295,
+       "n": 608
+      },
+      "after": {
+       "real": 284,
+       "n": 427
+      },
+      "pass": true
+     },
+     "fold5_not_negative": {
+      "losses": [],
+      "before": {
+       "real": 8,
+       "n": 16
+      },
+      "after": {
+       "real": 8,
+       "n": 8
+      },
+      "pass": true
+     }
+    },
+    "admitted": false
+   },
+   "by_tier_lang": {
+    "default/ts": {
+     "cards": 12,
+     "losses": 0,
+     "before": {
+      "real": 83,
+      "n": 90
+     },
+     "after": {
+      "real": 83,
+      "n": 86
+     }
+    },
+    "suggestion/ts": {
+     "cards": 75,
+     "losses": 2,
+     "before": {
+      "real": 228,
+      "n": 523
+     },
+     "after": {
+      "real": 217,
+      "n": 360
+     }
+    },
+    "suggestion/py": {
+     "cards": 59,
+     "losses": 1,
+     "before": {
+      "real": 181,
+      "n": 328
+     },
+     "after": {
+      "real": 177,
+      "n": 257
+     }
+    }
+   }
+  },
+  "a": {
+   "per_fold": {
+    "1": {
+     "pass": "100.0% (4/4)",
+     "fail": "n/a"
+    },
+    "2": {
+     "pass": "100.0% (7/7)",
+     "fail": "100.0% (2/2)"
+    },
+    "3": {
+     "pass": "100.0% (1/1)",
+     "fail": "100.0% (1/1)"
+    },
+    "4": {
+     "pass": "100.0% (9/9)",
+     "fail": "100.0% (4/4)"
+    },
+    "5": {
+     "pass": "0.0% (0/1)",
+     "fail": "25.0% (1/4)"
+    }
+   },
+   "all": {
+    "pass": "95.5% (21/22)",
+    "fail": "72.7% (8/11)"
+   },
+   "would_be_gate": {
+    "conditions": {
+     "helps": {
+      "repos": [
+       "T02",
+       "T15",
+       "T18"
+      ],
+      "folds": [
+       5
+      ],
+      "pass": false
+     },
+     "no_accept_lost_outside_design": {
+      "lost": [
+       "documenso/D-7b5140",
+       "documenso/D-32c861",
+       "formbricks/D-b8f1ee"
+      ],
+      "pass": false
+     },
+     "other_fold_effect_positive": {
+      "before": {
+       "accept": 15,
+       "shown": 15
+      },
+      "after": {
+       "accept": 12,
+       "shown": 12
+      },
+      "pass": false
+     },
+     "fold5_not_negative": {
+      "covered": true,
+      "before": {
+       "accept": 1,
+       "shown": 5
+      },
+      "after": {
+       "accept": 0,
+       "shown": 1
+      },
+      "pass": false
+     }
+    },
+    "admitted": false
+   },
+   "gate": "not a gate (lead constraint 2): not admitted by construction"
+  },
+  "c": {
+   "cards": 190,
+   "per_fold": {
+    "1": {
+     "verifier": "100.0% (16/16)",
+     "both": "100.0% (15/15)"
+    },
+    "2": {
+     "verifier": "93.5% (29/31)",
+     "both": "92.9% (26/28)"
+    },
+    "3": {
+     "verifier": "90.9% (20/22)",
+     "both": "90.0% (18/20)"
+    },
+    "4": {
+     "verifier": "79.2% (19/24)",
+     "both": "79.2% (19/24)"
+    }
+   },
+   "reading": {
+    "conditions": {
+     "helps": {
+      "repos": [],
+      "folds": [],
+      "pass": false
+     },
+     "no_accept_lost_outside_design": {
+      "lost": [
+       "Misago/D-90a5d9",
+       "ai/D-5baed4",
+       "fastapi/D-499c0e",
+       "novu/D-6ded6b",
+       "paperless-ngx/D-0dfb1b",
+       "supabase/D-100c39"
+      ],
+      "pass": false
+     },
+     "other_fold_effect_positive": {
+      "before": {
+       "accept": 65,
+       "shown": 69
+      },
+      "after": {
+       "accept": 59,
+       "shown": 63
+      },
+      "pass": false
+     },
+     "fold5_not_negative": {
+      "covered": false,
+      "before": {
+       "accept": 0,
+       "shown": 0
+      },
+      "after": {
+       "accept": 0,
+       "shown": 0
+      },
+      "pass": false
+     }
+    },
+    "admitted": false
+   },
+   "wired": "not wired (lead constraint 2)"
+  },
+  "yield": [
+   {
+    "repo": "immich",
+    "fold": 1,
+    "cards": 10,
+    "judged": 66,
+    "set_apart": 2,
+    "calls": 30,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "infisical",
+    "fold": 1,
+    "cards": 14,
+    "judged": 84,
+    "set_apart": 41,
+    "calls": 42,
+    "candidates": 4,
+    "candidates_pass": 4,
+    "candidates_pass_accept": 4
+   },
+   {
+    "repo": "InvenTree",
+    "fold": 1,
+    "cards": 12,
+    "judged": 29,
+    "set_apart": 20,
+    "calls": 36,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "nest",
+    "fold": 1,
+    "cards": 1,
+    "judged": 0,
+    "set_apart": 0,
+    "calls": 3,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "paperless-ngx",
+    "fold": 1,
+    "cards": 5,
+    "judged": 4,
+    "set_apart": 3,
+    "calls": 15,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "pontoon",
+    "fold": 1,
+    "cards": 1,
+    "judged": 2,
+    "set_apart": 0,
+    "calls": 3,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "ralph",
+    "fold": 1,
+    "cards": 5,
+    "judged": 12,
+    "set_apart": 0,
+    "calls": 15,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "wger",
+    "fold": 1,
+    "cards": 3,
+    "judged": 3,
+    "set_apart": 2,
+    "calls": 9,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "ai",
+    "fold": 2,
+    "cards": 7,
+    "judged": 13,
+    "set_apart": 8,
+    "calls": 21,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "documenso",
+    "fold": 2,
+    "cards": 14,
+    "judged": 57,
+    "set_apart": 5,
+    "calls": 42,
+    "candidates": 9,
+    "candidates_pass": 7,
+    "candidates_pass_accept": 7
+   },
+   {
+    "repo": "langchain",
+    "fold": 2,
+    "cards": 2,
+    "judged": 2,
+    "set_apart": 0,
+    "calls": 6,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "lotus",
+    "fold": 2,
+    "cards": 3,
+    "judged": 12,
+    "set_apart": 2,
+    "calls": 9,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "Misago",
+    "fold": 2,
+    "cards": 7,
+    "judged": 16,
+    "set_apart": 12,
+    "calls": 21,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "netbox",
+    "fold": 2,
+    "cards": 11,
+    "judged": 25,
+    "set_apart": 4,
+    "calls": 33,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "novu",
+    "fold": 2,
+    "cards": 14,
+    "judged": 28,
+    "set_apart": 9,
+    "calls": 42,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "simplelogin",
+    "fold": 2,
+    "cards": 2,
+    "judged": 3,
+    "set_apart": 2,
+    "calls": 6,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "excalidraw",
+    "fold": 3,
+    "cards": 2,
+    "judged": 11,
+    "set_apart": 1,
+    "calls": 6,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "fastapi",
+    "fold": 3,
+    "cards": 1,
+    "judged": 8,
+    "set_apart": 0,
+    "calls": 3,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "formbricks",
+    "fold": 3,
+    "cards": 10,
+    "judged": 36,
+    "set_apart": 15,
+    "calls": 30,
+    "candidates": 2,
+    "candidates_pass": 1,
+    "candidates_pass_accept": 1
+   },
+   {
+    "repo": "full-stack-fastapi-template",
+    "fold": 3,
+    "cards": 1,
+    "judged": 1,
+    "set_apart": 0,
+    "calls": 3,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "saleor",
+    "fold": 3,
+    "cards": 2,
+    "judged": 5,
+    "set_apart": 4,
+    "calls": 6,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "supabase",
+    "fold": 3,
+    "cards": 13,
+    "judged": 50,
+    "set_apart": 4,
+    "calls": 39,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "twenty",
+    "fold": 3,
+    "cards": 12,
+    "judged": 69,
+    "set_apart": 13,
+    "calls": 36,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "cal.com",
+    "fold": 4,
+    "cards": 15,
+    "judged": 76,
+    "set_apart": 4,
+    "calls": 45,
+    "candidates": 6,
+    "candidates_pass": 5,
+    "candidates_pass_accept": 5
+   },
+   {
+    "repo": "changedetection.io",
+    "fold": 4,
+    "cards": 3,
+    "judged": 5,
+    "set_apart": 1,
+    "calls": 9,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "Django-CRM",
+    "fold": 4,
+    "cards": 6,
+    "judged": 55,
+    "set_apart": 13,
+    "calls": 18,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "dub",
+    "fold": 4,
+    "cards": 15,
+    "judged": 76,
+    "set_apart": 11,
+    "calls": 45,
+    "candidates": 5,
+    "candidates_pass": 3,
+    "candidates_pass_accept": 3
+   },
+   {
+    "repo": "midday",
+    "fold": 4,
+    "cards": 14,
+    "judged": 25,
+    "set_apart": 6,
+    "calls": 42,
+    "candidates": 2,
+    "candidates_pass": 1,
+    "candidates_pass_accept": 1
+   },
+   {
+    "repo": "open-wearables",
+    "fold": 4,
+    "cards": 5,
+    "judged": 19,
+    "set_apart": 3,
+    "calls": 15,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "tasking-manager",
+    "fold": 4,
+    "cards": 8,
+    "judged": 19,
+    "set_apart": 4,
+    "calls": 24,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "P03",
+    "fold": 5,
+    "cards": 1,
+    "judged": 1,
+    "set_apart": 0,
+    "calls": 3,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "P09",
+    "fold": 5,
+    "cards": 1,
+    "judged": 1,
+    "set_apart": 1,
+    "calls": 3,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "T02",
+    "fold": 5,
+    "cards": 4,
+    "judged": 2,
+    "set_apart": 2,
+    "calls": 12,
+    "candidates": 1,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "T07",
+    "fold": 5,
+    "cards": 1,
+    "judged": 1,
+    "set_apart": 0,
+    "calls": 3,
+    "candidates": 0,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "T13",
+    "fold": 5,
+    "cards": 3,
+    "judged": 3,
+    "set_apart": 0,
+    "calls": 9,
+    "candidates": 1,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "T15",
+    "fold": 5,
+    "cards": 1,
+    "judged": 1,
+    "set_apart": 1,
+    "calls": 3,
+    "candidates": 1,
+    "candidates_pass": 0,
+    "candidates_pass_accept": 0
+   },
+   {
+    "repo": "T18",
+    "fold": 5,
+    "cards": 3,
+    "judged": 5,
+    "set_apart": 2,
+    "calls": 9,
+    "candidates": 2,
+    "candidates_pass": 1,
+    "candidates_pass_accept": 0
+   }
+  ],
+  "flips": {
+   "members": [
+    185,
+    1505
+   ],
+   "flags": [
+    174,
+    825
+   ],
+   "flags_without_majority": [
+    5,
+    825
+   ]
+  }
+ }
+}

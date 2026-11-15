@@ -1,0 +1,480 @@
+{
+  "manifest": "eval/holdout-2-2026-11-07.json",
+  "set_id": "ts-heldout2-2026-11-07",
+  "drift_sha256": "41edaa85c656d5161430dc88c0549da4e908aca7c110a54dc3f0a612d7fec015",
+  "min_parseable": 200,
+  "results": [
+    {
+      "name": "ever-demand",
+      "sha": "32da41c40e1bc0e77e388a6bd08b74cf46654659",
+      "clone": true,
+      "scan": true,
+      "files": 1486,
+      "parse_errors": 0,
+      "parseable": 1486,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "ngx-bootstrap",
+      "sha": "fdeaccefb6344cb544971d6d2953f8534e7a2235",
+      "clone": true,
+      "scan": true,
+      "files": 1204,
+      "parse_errors": 1,
+      "parseable": 1203,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "island.is",
+      "sha": "9933e49319bc82333f575611ca6a2dacef8926ec",
+      "clone": true,
+      "scan": true,
+      "files": 22532,
+      "parse_errors": 0,
+      "parseable": 22532,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "wind-comic",
+      "sha": "bce797bf3c7dede319df9b6afd53963b6dc0ff6e",
+      "clone": true,
+      "scan": true,
+      "files": 1640,
+      "parse_errors": 0,
+      "parseable": 1640,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "better-chatbot",
+      "sha": "6f4183566bc48616303cb84055f11f79578c82fe",
+      "clone": true,
+      "scan": true,
+      "files": 1510,
+      "parse_errors": 0,
+      "parseable": 1510,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "kubespec.dev",
+      "sha": "9f20488dce699abe55704fc2685fb07a3e8a9952",
+      "clone": true,
+      "scan": true,
+      "files": 53,
+      "parse_errors": 0,
+      "parseable": 53,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (53)"
+    },
+    {
+      "name": "mitosis",
+      "sha": "2de76e9064d9e7916c5309c0a31206383403ae9d",
+      "clone": true,
+      "scan": true,
+      "files": 749,
+      "parse_errors": 0,
+      "parseable": 749,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "epubbuilder",
+      "sha": "cfe554be1d7bb465f4b17b9d0f84f6e52bbdcf6c",
+      "clone": true,
+      "scan": true,
+      "files": 111,
+      "parse_errors": 0,
+      "parseable": 111,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (111)"
+    },
+    {
+      "name": "squirrelscan",
+      "sha": "19daf925c11dd723fac5b2536dc656efd3737018",
+      "clone": true,
+      "scan": true,
+      "files": 2260,
+      "parse_errors": 0,
+      "parseable": 2260,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "webstudio",
+      "sha": "ee277769ffe557e20211b3d98bdedc0d792d4ae2",
+      "clone": true,
+      "scan": true,
+      "files": 3336,
+      "parse_errors": 0,
+      "parseable": 3336,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "agentscope-studio",
+      "sha": "20e7638273d3726732eb317b440bfa34e6694e17",
+      "clone": true,
+      "scan": true,
+      "files": 171,
+      "parse_errors": 0,
+      "parseable": 171,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (171)"
+    },
+    {
+      "name": "agentrove",
+      "sha": "d5828dc44abe33ae2c31a3050747347a8cfc455a",
+      "clone": true,
+      "scan": true,
+      "files": 813,
+      "parse_errors": 0,
+      "parseable": 813,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "formity",
+      "sha": "3d4dab433b8c3040f9727ae3e4bba0044e146ce9",
+      "clone": true,
+      "scan": true,
+      "files": 106,
+      "parse_errors": 0,
+      "parseable": 106,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (106)"
+    },
+    {
+      "name": "responsible-ai-toolbox",
+      "sha": "12c307e4a3f37e4277ef9a5481156081da302500",
+      "clone": true,
+      "scan": true,
+      "files": 1479,
+      "parse_errors": 0,
+      "parseable": 1479,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "justified-gallery",
+      "sha": "541415c269262658e80c30d550642f8cf999a38a",
+      "clone": true,
+      "scan": true,
+      "files": 57,
+      "parse_errors": 0,
+      "parseable": 57,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (57)"
+    },
+    {
+      "name": "regl",
+      "sha": "581f8071182a8127d37a0cd1d3b035d7e5fef074",
+      "clone": true,
+      "scan": true,
+      "files": 197,
+      "parse_errors": 0,
+      "parseable": 197,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (197)"
+    },
+    {
+      "name": "lumen",
+      "sha": "4d965a9dd99f3c331ccd52b31fb492c2334ef5eb",
+      "clone": true,
+      "scan": true,
+      "files": 49,
+      "parse_errors": 0,
+      "parseable": 49,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (49)"
+    },
+    {
+      "name": "vue-types",
+      "sha": "f94ecedf5950267e4b31b3c43484dc9872dcea18",
+      "clone": true,
+      "scan": true,
+      "files": 43,
+      "parse_errors": 0,
+      "parseable": 43,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (43)"
+    }
+  ],
+  "reserves": [
+    {
+      "name": "ui",
+      "sha": "3686270c94c9d856ee1669bd06cfe3f7939d6796",
+      "clone": true,
+      "scan": true,
+      "files": 1733,
+      "parse_errors": 0,
+      "parseable": 1733,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "aframe-inspector",
+      "sha": "8d87d3e73dce37e805339cd40c96eaedc4bb7ecf",
+      "clone": true,
+      "scan": true,
+      "files": 51,
+      "parse_errors": 0,
+      "parseable": 51,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (51)"
+    },
+    {
+      "name": "openwhyd",
+      "sha": "26d9cbb548c2b06e09c9b5c505bd07f53274fa05",
+      "clone": true,
+      "scan": true,
+      "files": 267,
+      "parse_errors": 0,
+      "parseable": 267,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "reiverr",
+      "sha": "c8f15792b96ec1467f805fc03c9a6241ece70e74",
+      "clone": true,
+      "scan": true,
+      "files": 251,
+      "parse_errors": 0,
+      "parseable": 251,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "uxuescript",
+      "sha": "2fe69c03d8349d687fb6998462c38a71de05e6ac",
+      "clone": true,
+      "scan": true,
+      "files": 95,
+      "parse_errors": 0,
+      "parseable": 95,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (95)"
+    },
+    {
+      "name": "clickhouse-etl",
+      "sha": "cb1fcb669fcdeabd66d85be2bbc46e8801696483",
+      "clone": true,
+      "scan": true,
+      "files": 687,
+      "parse_errors": 0,
+      "parseable": 687,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "rao-pics",
+      "sha": "c86d164c408d9594dda480835ec2ca15087f2d0e",
+      "clone": true,
+      "scan": true,
+      "files": 110,
+      "parse_errors": 0,
+      "parseable": 110,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (110)"
+    },
+    {
+      "name": "capsize",
+      "sha": "1fcf40ae804b918b9b2289cc046f12cedf9f34ae",
+      "clone": true,
+      "scan": true,
+      "files": 77,
+      "parse_errors": 0,
+      "parseable": 77,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (77)"
+    },
+    {
+      "name": "ownpilot",
+      "sha": "eb4c27f29d4d12778621a83e49cd673cd8b62239",
+      "clone": true,
+      "scan": true,
+      "files": 2226,
+      "parse_errors": 0,
+      "parseable": 2226,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "workflow",
+      "sha": "4beb5bcccdfbe9686ef56df6bbfa745caf993c86",
+      "clone": true,
+      "scan": true,
+      "files": 2002,
+      "parse_errors": 0,
+      "parseable": 2002,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "planarally",
+      "sha": "dd5a03d1cb2003d4f7089698c60b83fbc98c6866",
+      "clone": true,
+      "scan": true,
+      "files": 547,
+      "parse_errors": 0,
+      "parseable": 547,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "onecli",
+      "sha": "afb4a19cc37803f40f748d7d5cc1374530b9c2a0",
+      "clone": true,
+      "scan": true,
+      "files": 2994,
+      "parse_errors": 0,
+      "parseable": 2994,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "evolu",
+      "sha": "771dc6119aa6cba8325bcde2dddbdd74bc8a2074",
+      "clone": true,
+      "scan": true,
+      "files": 1037,
+      "parse_errors": 0,
+      "parseable": 1037,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "evergreen",
+      "sha": "9b774aee2d794f6cf2f73a054bd33066ca5898a9",
+      "clone": true,
+      "scan": true,
+      "files": 515,
+      "parse_errors": 0,
+      "parseable": 515,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "idurar-erp-crm",
+      "sha": "e935dec13cf8b6082a7e7fc4736669e5151a80a3",
+      "clone": true,
+      "scan": true,
+      "files": 331,
+      "parse_errors": 0,
+      "parseable": 331,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "platformatic",
+      "sha": "ad82443be4a5acb211e7697a83a228ef4b2a4ae1",
+      "clone": true,
+      "scan": true,
+      "files": 1988,
+      "parse_errors": 0,
+      "parseable": 1988,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "fleetbase",
+      "sha": "67b2db64c7490599aaa6c799b26d5e4de897c25c",
+      "clone": true,
+      "scan": true,
+      "files": 556,
+      "parse_errors": 0,
+      "parseable": 556,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "athas",
+      "sha": "20719fa3a6ac26e5ea4babf3be02f3fdb5d11ad7",
+      "clone": true,
+      "scan": true,
+      "files": 2890,
+      "parse_errors": 0,
+      "parseable": 2890,
+      "pass": true,
+      "reason": null
+    }
+  ],
+  "replaced": [
+    {
+      "date": "2026-11-08",
+      "repo": "kubespec.dev",
+      "reserve": "ui",
+      "reason": "technical check: fewer than 200 parseable files (53)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "epubbuilder",
+      "reserve": "aframe-inspector",
+      "reason": "technical check: fewer than 200 parseable files (111)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "aframe-inspector",
+      "reserve": "openwhyd",
+      "reason": "technical check: fewer than 200 parseable files (51)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "agentscope-studio",
+      "reserve": "reiverr",
+      "reason": "technical check: fewer than 200 parseable files (171)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "formity",
+      "reserve": "uxuescript",
+      "reason": "technical check: fewer than 200 parseable files (106)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "uxuescript",
+      "reserve": "clickhouse-etl",
+      "reason": "technical check: fewer than 200 parseable files (95)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "justified-gallery",
+      "reserve": "rao-pics",
+      "reason": "technical check: fewer than 200 parseable files (57)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "rao-pics",
+      "reserve": "capsize",
+      "reason": "technical check: fewer than 200 parseable files (110)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "capsize",
+      "reserve": "ownpilot",
+      "reason": "technical check: fewer than 200 parseable files (77)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "regl",
+      "reserve": "workflow",
+      "reason": "technical check: fewer than 200 parseable files (197)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "lumen",
+      "reserve": "planarally",
+      "reason": "technical check: fewer than 200 parseable files (49)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "vue-types",
+      "reserve": "onecli",
+      "reason": "technical check: fewer than 200 parseable files (43)"
+    }
+  ]
+}

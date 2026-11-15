@@ -1,0 +1,713 @@
+diff --git a/apps/studio/src/entities/convention/exemptions.ts b/apps/studio/src/entities/convention/exemptions.ts
+index 74e1bbde..47818f2f 100644
+--- a/apps/studio/src/entities/convention/exemptions.ts
++++ b/apps/studio/src/entities/convention/exemptions.ts
+@@ -38,6 +38,7 @@ export const EXEMPTION_CODE: Record<ExemptionCode, ExemptionKind> = {
+   plain_value: { label: "not a schema", why: "Under a naming rule whose followers are values a schema library builds (*Schema): a plain value, built from literals or built-ins only (a literal response, a registry object, Object.keys of one), is not a schema to rename. Only when none of the followers is a plain value (TypeScript)." },
+   type_only: { label: "types only", why: "Under \"has a test file\": a module that declares types only (type aliases, interfaces, ambient declarations) has no code that runs, so nothing to test (TypeScript)." },
+   no_counterpart: { label: "nothing to pass", why: "Under \"pass key to f()\": every member passes the class named for what it registers (CircuitFilter for Circuit), and no such class exists for this member's subject anywhere in the repo (Python)." },
++  not_consumed: { label: "not used like the others", why: "No file that imports the members that follow the rule imports it, and nothing outside the code loads it (an entry point, a default export, a package entry): another kind of member than the followers, set apart from the evidence. Only when the facts know every importer, never under a guard rule (consumer sets, round 11)." },
+ };
+ 
+ /** The kind of an exemption code; an unknown or missing code has none (show Drift's reason alone). */
+diff --git a/apps/studio/src/shared/contract/drift.ts b/apps/studio/src/shared/contract/drift.ts
+index 65e76e4d..d5891a3c 100644
+--- a/apps/studio/src/shared/contract/drift.ts
++++ b/apps/studio/src/shared/contract/drift.ts
+@@ -280,6 +280,7 @@ export type ExemptionCode =
+   | "plain_value"
+   | "type_only"
+   | "no_counterpart"
++  | "not_consumed"
+   /** A reviewer marked the outlier fine (`exceptions` in conventions.yaml): drift-mine check.rs `REVIEWED`. */
+   | "reviewed";
+ 
+diff --git a/crates/drift-mine/src/context.rs b/crates/drift-mine/src/context.rs
+index 68a282a5..a560924a 100644
+--- a/crates/drift-mine/src/context.rs
++++ b/crates/drift-mine/src/context.rs
+@@ -101,6 +101,14 @@ pub struct RepoContext<'a> {
+     reached_only: BTreeSet<String>,
+     /// The facts hold at most one file ([`RepoContext::holds_one_file`]).
+     one_file: bool,
++    /// Some file was not parsed this time ([`drift_core::RepoFacts::stack_unavailable`]),
++    /// or not parsed to the end (`parse_ok` false): who imports what is not fully known
++    /// ([`RepoContext::imports_complete`]).
++    imports_unknown: bool,
++    /// Where relative imports that did not resolve point (`apps/web/lib/gen/x`, without
++    /// an extension): a file there may have importers the facts do not see
++    /// ([`RepoContext::may_be_imported_unseen`]).
++    unseen_targets: Vec<String>,
+     /// Bindings built from another by additive builder steps, or bound to one
+     /// ([`drift_core::Symbol::derives_from`]): `path#name` and `path#<exported name>` ->
+     /// what it derives from (package-normalised), context files included.
+@@ -597,6 +605,9 @@ impl<'a> RepoContext<'a> {
+             entry_classes,
+             reached_only,
+             one_file: repo.files.len() <= 1,
++            imports_unknown: !repo.stack_unavailable().is_empty()
++                || repo.files.iter().any(|f| !f.parse_ok),
++            unseen_targets: unseen_targets(repo),
+             symbols,
+             ref_entries,
+             entry_checks,
+@@ -1012,6 +1023,43 @@ impl<'a> RepoContext<'a> {
+         self.parts.users_within(role, path, symbol)
+     }
+ 
++    /// Who value-imports `symbol` of the file at `path` ([`Parts::consumers`]).
++    pub fn consumers(
++        &self,
++        path: &str,
++        symbol: &drift_core::Symbol,
++    ) -> Option<crate::parts::Consumers<'_>> {
++        self.parts.consumers(path, symbol)
++    }
++
++    /// The interned id of a role some production file's unit has ([`Parts::role_id`]).
++    pub fn role_id(&self, role: &RoleSelector) -> Option<u32> {
++        self.parts.role_id(role)
++    }
++
++    /// The roles of the units of production file `file` ([`Parts::file_roles`]).
++    pub fn file_roles(&self, file: usize) -> impl Iterator<Item = u32> + '_ {
++        self.parts.file_roles(file)
++    }
++
++    /// The facts say who imports what in the whole repo: more than one file, and every
++    /// file parsed ([`drift_core::RepoFacts::stack_unavailable`] is empty, no parse
++    /// stopped early).
++    pub fn imports_complete(&self) -> bool {
++        !self.one_file && !self.imports_unknown
++    }
++
++    /// A relative import that did not resolve may point at the file at `path`: its
++    /// importers are not all known.
++    pub fn may_be_imported_unseen(&self, path: &str) -> bool {
++        self.unseen_targets.iter().any(|t| {
++            t.is_empty()
++                || path.strip_prefix(t.as_str()).is_some_and(|rest| {
++                    rest.starts_with('.') || rest.starts_with('/') || rest.is_empty()
++                })
++        })
++    }
++
+     /// The package at `package` (its directory, "" for the root) declares a
+     /// dependency on `name`.
+     pub fn package_depends_on(&self, package: &str, name: &str) -> bool {
+@@ -2073,3 +2121,52 @@ fn registrations(repo: &RepoFacts) -> BTreeMap<String, Registrations> {
+     }
+     out
+ }
++
++/// Where each relative import that did not resolve points, from the importing file's
++/// directory: `../gen/x` from `apps/web/lib/a.ts` is `apps/web/gen/x`, Python's `..models`
++/// from `app/api/views.py` is `app/models`. An empty target is the repo root (a path
++/// that climbs out of the repo): every file may be its target.
++fn unseen_targets(repo: &RepoFacts) -> Vec<String> {
++    let mut out = BTreeSet::new();
++    for f in &repo.files {
++        let dir: Vec<&str> = match f.path.rsplit_once('/') {
++            Some((d, _)) => d.split('/').collect(),
++            None => vec![],
++        };
++        for i in &f.imports {
++            let Some(spec) = i.module.strip_prefix("unresolved:") else {
++                continue;
++            };
++            let mut at = dir.clone();
++            let rest: Vec<&str> = if spec.starts_with("./") || spec.starts_with("../") {
++                let mut rest = Vec::new();
++                for seg in spec.split('/') {
++                    match seg {
++                        "." | "" => {}
++                        ".." => {
++                            if at.pop().is_none() {
++                                at.clear();
++                            }
++                        }
++                        s => rest.push(s),
++                    }
++                }
++                rest
++            } else if f.lang == "py" && spec.starts_with('.') {
++                let up = spec.len() - spec.trim_start_matches('.').len();
++                for _ in 1..up {
++                    at.pop();
++                }
++                spec.trim_start_matches('.')
++                    .split('.')
++                    .filter(|s| !s.is_empty())
++                    .collect()
++            } else {
++                continue;
++            };
++            at.extend(rest);
++            out.insert(at.join("/"));
++        }
++    }
++    out.into_iter().collect()
++}
+diff --git a/crates/drift-mine/src/mine.rs b/crates/drift-mine/src/mine.rs
+index e7739749..27b11a06 100644
+--- a/crates/drift-mine/src/mine.rs
++++ b/crates/drift-mine/src/mine.rs
+@@ -3355,6 +3355,11 @@ fn exemption_words(code: &str) -> Option<(&'static str, &'static str, &'static s
+             "with no code to test",
+         ),
+         "no_counterpart" => ("a class", "classes", "with nothing of the kind to pass"),
++        "not_consumed" => (
++            "a member",
++            "members",
++            "not imported where the members that follow it are",
++        ),
+         _ => return None,
+     })
+ }
+@@ -4186,6 +4191,21 @@ fn narrow(d: &mut Draft, units: &[Unit], ctx: &RepoContext) -> bool {
+             }
+         }
+     }
++    // Members no consumer of the holders imports are set apart: not outliers, not
++    // counted ([`consumer_set_apart`]).
++    let before = {
++        let inside: BTreeSet<usize> = population.iter().copied().collect();
++        wilson_lower_bound(
++            d.holders.iter().filter(|h| inside.contains(h)).count(),
++            population.len(),
++        )
++    };
++    let apart = consumer_set_apart(&d.rule, &population, &d.holders, units, ctx);
++    if !apart.is_empty() {
++        let out: BTreeSet<usize> = apart.iter().map(|(m, _)| *m).collect();
++        population.retain(|m| !out.contains(m));
++        d.exempt.extend(apart);
++    }
+     let applies: BTreeSet<usize> = population.iter().copied().collect();
+     d.holders.retain(|h| applies.contains(h));
+     d.derived.retain(|(m, ..)| applies.contains(m));
+@@ -4195,6 +4215,11 @@ fn narrow(d: &mut Draft, units: &[Unit], ctx: &RepoContext) -> bool {
+     if d.n != role_n {
+         d.role_n = Some(role_n);
+     }
++    // Support is counted over the comparable members: a rule that holders set apart
++    // take below the bar is no convention of them.
++    if d.lb < before && d.lb < MIN_LOWER_BOUND {
++        return false;
++    }
+     // Only calls rules gain inherited holders. A rule whose last outlier was exempt (a
+     // framework root file) or whose only outliers were shared parts is no less a rule of
+     // the members it is about: it stays proposed, with nothing to count (that the parts
+@@ -4205,6 +4230,105 @@ fn narrow(d: &mut Draft, units: &[Unit], ctx: &RepoContext) -> bool {
+     !d.holders.is_empty() && !universal
+ }
+ 
++/// Consumer-set comparability: the members of a rule's role that are not comparable
++/// to its holders, with why. The holders' *consumers* are the roles whose production
++/// files value-import at least [`MIN_LOWER_BOUND`] of the holders (through re-exports;
++/// tests and type-only imports are no consumers), and, as one more consumer, what
++/// loads code from outside the facts, when it loads that share of them: an adapter's
++/// entry point, a file's default export (what a loader or runner picks up), a symbol a
++/// package entry exposes. A member is comparable when a file of a consumer role imports
++/// it, or when it is loaded from outside itself; otherwise it is another kind of
++/// member than the holders (a helper the route files export for their tests, a
++/// constant only its own file uses), and is set apart: listed, not an outlier, not
++/// counted. No name list and no new threshold: the share is the miner's own bound.
++///
++/// Fails closed: nothing is set apart when the facts do not say who imports what
++/// ([`RepoContext::imports_complete`]: a single-file scan, a file not parsed), when a
++/// member or holder is not a symbol the import graph has, when a relative import that
++/// did not resolve may point at a member's file ([`RepoContext::may_be_imported_unseen`]),
++/// or when the holders have no consumer. Never an entry point or a member under a guard rule (the gate every
++/// exemption keeps, [`Rule::exemption_allowed`]), and never a member loaded from outside.
++fn consumer_set_apart(
++    rule: &Rule,
++    population: &[usize],
++    holders: &BTreeSet<usize>,
++    units: &[Unit],
++    ctx: &RepoContext,
++) -> Vec<(usize, Exempted)> {
++    if !ctx.imports_complete() || holders.is_empty() || population.len() == holders.len() {
++        return vec![];
++    }
++    // Loaded by something outside the facts: an entry point, a default export, a
++    // symbol a package entry exposes.
++    let outside = |f: &FileFacts, s: &Symbol, public: bool| {
++        public || ctx.is_entry_unit(f, s) || s.exported_as.iter().any(|e| e == "default")
++    };
++    let mut views = Vec::with_capacity(population.len());
++    for &m in population {
++        let View::Symbol(f, s) = units[m].view else {
++            return vec![];
++        };
++        let Some(c) = ctx.consumers(&f.path, s) else {
++            return vec![];
++        };
++        if ctx.may_be_imported_unseen(&f.path) {
++            return vec![];
++        }
++        views.push((m, f, s, c));
++    }
++    // How many holders each role's files import, and how many are loaded from outside.
++    let mut by_role: BTreeMap<u32, usize> = BTreeMap::new();
++    let mut loaded = 0usize;
++    let mut held = 0usize;
++    for (m, f, s, c) in &views {
++        if !holders.contains(m) {
++            continue;
++        }
++        held += 1;
++        if outside(f, s, c.public) {
++            loaded += 1;
++        }
++        let roles: BTreeSet<u32> = c.files.iter().flat_map(|&fi| ctx.file_roles(fi)).collect();
++        for r in roles {
++            *by_role.entry(r).or_default() += 1;
++        }
++    }
++    if held != holders.len() {
++        return vec![];
++    }
++    let bar = MIN_LOWER_BOUND * held as f64;
++    let consumers: BTreeSet<u32> = by_role
++        .into_iter()
++        .filter(|&(_, k)| k as f64 >= bar)
++        .map(|(r, _)| r)
++        .collect();
++    if consumers.is_empty() && (loaded as f64) < bar {
++        return vec![];
++    }
++    let mut out = Vec::new();
++    for (m, f, s, c) in views {
++        if outside(f, s, c.public)
++            || c.files
++                .iter()
++                .any(|&fi| ctx.file_roles(fi).any(|r| consumers.contains(&r)))
++        {
++            continue;
++        }
++        let view = &units[m].view;
++        if !rule.exemption_allowed(view, ctx) {
++            continue;
++        }
++        let why = if c.files.is_empty() {
++            "imported by no production file, unlike the members that follow the rule".to_string()
++        } else {
++            "imported only outside the code that imports the members that follow the rule"
++                .to_string()
++        };
++        out.push((m, Exempted::new("not_consumed", why)));
++    }
++    out
++}
++
+ /// Exemption codes that say what a member is within its role, whatever the rule: of
+ /// another kind than the role's members (`another_kind`, `enum`, `named_for_base`,
+ /// `sibling_base`), documented as not one of them (`documented_exception`), part of what
+diff --git a/crates/drift-mine/src/parts.rs b/crates/drift-mine/src/parts.rs
+index 578a80c8..3fa8aded 100644
+--- a/crates/drift-mine/src/parts.rs
++++ b/crates/drift-mine/src/parts.rs
+@@ -63,6 +63,8 @@ struct PartUnit {
+     users: BTreeSet<usize>,
+     /// Other production files that import it.
+     importers: BTreeSet<usize>,
++    /// A package entry (`main`, `exports`) exposes it: its users there are out of sight.
++    public: bool,
+ }
+ 
+ /// Who uses each exported symbol of the repo, and where those users sit.
+@@ -75,6 +77,20 @@ pub struct Parts {
+     /// Per production file (index into the repo's files): the scopes its units sit in,
+     /// sorted; `None` for a file that holds an entry point (it is outside every scope).
+     file_scopes: BTreeMap<usize, Option<Vec<u32>>>,
++    /// Roles (interned in `roles`) of the units of each production file, for the
++    /// consumers of a role ([`crate::mine`]'s consumer sets).
++    file_roles: BTreeMap<usize, BTreeSet<u32>>,
++    roles: BTreeMap<RoleSelector, u32>,
++}
++
++/// Who value-imports a symbol ([`Parts::consumers`]).
++#[derive(Debug, Clone, Copy)]
++pub struct Consumers<'p> {
++    /// Other production files that import it (by value), through re-exports: indices
++    /// into the repo's files.
++    pub files: &'p BTreeSet<usize>,
++    /// A package entry exposes it, so it may have users the facts do not hold.
++    pub public: bool,
+ }
+ 
+ /// The symbol a canonical reference names, as `path#name`: member paths
+@@ -194,6 +210,9 @@ impl Parts {
+             for r in &u.roles {
+                 let next = parts.scopes.len() as u32;
+                 scopes.insert(*parts.scopes.entry(scope_of(r)).or_insert(next));
++                let next = parts.roles.len() as u32;
++                let id = *parts.roles.entry(r.clone()).or_insert(next);
++                parts.file_roles.entry(fi).or_default().insert(id);
+             }
+             file_scopes.entry(fi).or_default().extend(&scopes);
+             let View::Symbol(_, s) = u.view else {
+@@ -209,6 +228,7 @@ impl Parts {
+                 scopes: scopes.into_iter().collect(),
+                 users: BTreeSet::new(),
+                 importers: BTreeSet::new(),
++                public: false,
+             });
+             parts
+                 .by_name
+@@ -319,6 +339,7 @@ impl Parts {
+                 for k in keys {
+                     if let Some(&t) = slot.get(&k) {
+                         exposed.insert(t);
++                        parts.units[t].public = true;
+                     }
+                 }
+             }
+@@ -355,6 +376,28 @@ impl Parts {
+         });
+         (units_inside && files_inside).then_some(unit.users.len())
+     }
++
++    /// Who value-imports `symbol` of the file at `path`: the production files, and
++    /// whether a package entry exposes it. `None` for symbols these facts do not have.
++    pub fn consumers(&self, path: &str, symbol: &Symbol) -> Option<Consumers<'_>> {
++        let &idx = self.by_name.get(&format!("{path}#{}", symbol.name))?;
++        let unit = &self.units[idx];
++        Some(Consumers {
++            files: &unit.importers,
++            public: unit.public,
++        })
++    }
++
++    /// The interned id of `role`, when some unit of a production file has it.
++    pub fn role_id(&self, role: &RoleSelector) -> Option<u32> {
++        self.roles.get(role).copied()
++    }
++
++    /// The roles (interned, [`Parts::role_id`]) of the units of production file `file`
++    /// (an index into the repo's files); empty for a file with no units.
++    pub fn file_roles(&self, file: usize) -> impl Iterator<Item = u32> + '_ {
++        self.file_roles.get(&file).into_iter().flatten().copied()
++    }
+ }
+ 
+ /// Everything a symbol uses by name: its callees, the components it renders, and its
+diff --git a/crates/drift-mine/tests/consumers.rs b/crates/drift-mine/tests/consumers.rs
+new file mode 100644
+index 00000000..744e7e52
+--- /dev/null
++++ b/crates/drift-mine/tests/consumers.rs
+@@ -0,0 +1,312 @@
++//! Consumer-set comparability ([`drift_mine::mine`]'s `consumer_set_apart`, code
++//! `not_consumed`): a member of a rule's role that no file of the holders' consumers
++//! imports is another kind of member than the holders. It is set apart: listed as
++//! exempt, not an outlier, not counted in the evidence. The holders' consumers are the
++//! roles whose production files value-import at least the miner's bound (75%) of them,
++//! and what loads code from outside the facts (an entry point, a default export, a
++//! package entry). It fails closed: nothing is set apart with a file not parsed, when the
++//! holders have no consumer, under a guard rule, or for a member loaded from outside.
++//!
++//! The fixtures are generic services and controllers, not any dev repository's code.
++
++use drift_core::{
++    FileFacts, Import, ImportLoad, PackageFacts, RepoFacts, SkipReason, Skipped, Symbol,
++    SymbolKind, Wrap, WrapKind,
++};
++use drift_mine::mine::{Candidate, MineOptions, Rule, mine_unshown as mine};
++
++const PKG: &str = "web";
++const TRACED: &str = "web/src/lib/trace.ts#traced";
++const GUARD: &str = "web/src/lib/auth.ts#withAuth";
++
++fn sym(name: &str, exported: &str, wrapper: Option<&str>) -> Symbol {
++    Symbol {
++        name: name.into(),
++        kind: SymbolKind::Function,
++        exported_as: vec![exported.into()],
++        line: 1,
++        wraps: wrapper
++            .map(|w| {
++                vec![Wrap {
++                    wrapper: w.into(),
++                    kind: WrapKind::Call,
++                }]
++            })
++            .unwrap_or_default(),
++        ..Default::default()
++    }
++}
++
++fn file(path: &str, symbols: Vec<Symbol>, imports: Vec<Import>) -> FileFacts {
++    FileFacts {
++        path: path.into(),
++        package: PKG.into(),
++        lang: "ts".into(),
++        parse_ok: true,
++        symbols,
++        imports,
++        ..Default::default()
++    }
++}
++
++fn import(module: &str, name: &str) -> Import {
++    Import {
++        module: module.into(),
++        names: vec![name.into()],
++        type_only: false,
++        load: ImportLoad::Static,
++    }
++}
++
++/// How the fixture differs from the plain one.
++#[derive(Default, Clone, Copy)]
++struct Shape {
++    /// The wrapper is a guard (`withAuth`), not `traced`.
++    guard: bool,
++    /// No controller imports the holders: they have no consumer.
++    no_consumers: bool,
++    /// The lone helper is its file's default export.
++    default_export: bool,
++    /// A package entry exposes the lone helper.
++    public: bool,
++    /// One file was not parsed for lack of stack.
++    unparsed: bool,
++    /// Services the controllers do not import (the last ones), and outliers beside
++    /// `lazy` that a controller imports.
++    unimported: usize,
++    more_lazy: usize,
++    /// A controller imports `../services/helper`, which did not resolve.
++    unresolved: bool,
++    /// A controller's parse stopped early (`parse_ok` false).
++    parse_failed: bool,
++}
++
++/// 40 services in `web/src/services/`, `svcN = wrapper(...)`, each imported by its
++/// controller in `web/src/controllers/`; `lazy` (no wrapper, imported by a
++/// controller: a real outlier); `helper` (no wrapper, imported only by its own test file);
++/// plus 60 plain functions of another package, so the rule has lift.
++fn repo(shape: Shape) -> RepoFacts {
++    let wrapper = if shape.guard { GUARD } else { TRACED };
++    let svc = |n: &str| format!("web/src/services/{n}.ts");
++    let mut files = Vec::new();
++    let services = 40;
++    for i in 0..services {
++        let name = format!("svc{i}");
++        files.push(file(
++            &svc(&name),
++            vec![sym(&name, &name, Some(wrapper))],
++            vec![],
++        ));
++    }
++    let lazies: Vec<String> = std::iter::once("lazy".to_string())
++        .chain((0..shape.more_lazy).map(|i| format!("lazy{i}")))
++        .collect();
++    for l in &lazies {
++        files.push(file(&svc(l), vec![sym(l, l, None)], vec![]));
++    }
++    let exported = if shape.default_export {
++        "default"
++    } else {
++        "helper"
++    };
++    files.push(file(
++        &svc("helper"),
++        vec![sym("helper", exported, None)],
++        vec![],
++    ));
++    files.push(file(
++        "web/src/services/helper.test.ts",
++        vec![],
++        vec![import(&svc("helper"), exported)],
++    ));
++    for i in 0..40 {
++        let mut imports = Vec::new();
++        if !shape.no_consumers && i + shape.unimported < services {
++            imports.push(import(&svc(&format!("svc{i}")), &format!("svc{i}")));
++        }
++        if let Some(l) = lazies.get(i) {
++            imports.push(import(&svc(l), l));
++        }
++        if i == 1 && shape.unresolved {
++            imports.push(import("unresolved:../services/helper", "helper"));
++        }
++        let mut f = file(
++            &format!("web/src/controllers/c{i}.ts"),
++            vec![sym(&format!("ctrl{i}"), &format!("ctrl{i}"), None)],
++            imports,
++        );
++        f.parse_ok = !(i == 2 && shape.parse_failed);
++        files.push(f);
++    }
++    files.push(file(
++        "web/src/lib/trace.ts",
++        vec![sym("traced", "traced", None)],
++        vec![],
++    ));
++    files.push(file(
++        "web/src/lib/auth.ts",
++        vec![sym("withAuth", "withAuth", None)],
++        vec![],
++    ));
++    for i in 0..60 {
++        let mut f = file(
++            &format!("api/src/util/u{i}.ts"),
++            vec![sym(&format!("util{i}"), &format!("util{i}"), None)],
++            vec![],
++        );
++        f.package = "api".into();
++        files.push(f);
++    }
++    let mut r = RepoFacts {
++        files,
++        ..Default::default()
++    };
++    if shape.public {
++        r.packages.push(PackageFacts {
++            path: PKG.into(),
++            name: "web".into(),
++            entries: vec![svc("helper")],
++            ..Default::default()
++        });
++    }
++    if shape.unparsed {
++        r.skipped.push(Skipped {
++            path: "web/src/controllers/big.ts".into(),
++            reason: SkipReason::StackUnavailable,
++        });
++    }
++    r.normalize();
++    r
++}
++
++fn card(r: &RepoFacts, wrapper: &str) -> Candidate {
++    let rule = Rule::WrappedBy {
++        kind: WrapKind::Call,
++        any_of: vec![wrapper.into()],
++    };
++    let cs = mine(r, &MineOptions { max_per_repo: 200 }).candidates;
++    cs.iter()
++        .find(|c| c.rule == rule && c.role.package == PKG && c.role.dir.contains("services"))
++        .cloned()
++        .unwrap_or_else(|| {
++            panic!(
++                "{:?}",
++                cs.iter()
++                    .map(|c| (c.role.describe(), c.rule.describe()))
++                    .collect::<Vec<_>>()
++            )
++        })
++}
++
++fn outliers(c: &Candidate) -> Vec<&str> {
++    let mut v: Vec<&str> = c.outliers.iter().map(|o| o.symbol.as_str()).collect();
++    v.sort();
++    v
++}
++
++fn apart(c: &Candidate) -> Vec<&str> {
++    c.exempt
++        .iter()
++        .filter(|e| e.code == "not_consumed")
++        .map(|e| e.symbol.as_str())
++        .collect()
++}
++
++#[test]
++fn a_member_no_consumer_imports_is_set_apart() {
++    let c = card(&repo(Shape::default()), TRACED);
++    // `lazy` is imported where the services are: a real outlier.
++    assert_eq!(outliers(&c), vec!["lazy"]);
++    // `helper` is imported only by its test: another kind of member.
++    assert_eq!(apart(&c), vec!["helper"]);
++    assert_eq!((c.evidence.holders, c.evidence.total), (40, 41));
++    assert_eq!(c.evidence.role_members, Some(42));
++}
++
++#[test]
++fn holders_with_no_consumer_leave_the_role_untouched() {
++    let c = card(
++        &repo(Shape {
++            no_consumers: true,
++            ..Shape::default()
++        }),
++        TRACED,
++    );
++    assert_eq!(outliers(&c), vec!["helper", "lazy"]);
++    assert!(apart(&c).is_empty());
++}
++
++#[test]
++fn a_member_loaded_from_outside_is_comparable() {
++    for shape in [
++        Shape {
++            default_export: true,
++            ..Shape::default()
++        },
++        Shape {
++            public: true,
++            ..Shape::default()
++        },
++    ] {
++        let c = card(&repo(shape), TRACED);
++        assert_eq!(outliers(&c), vec!["helper", "lazy"]);
++        assert!(apart(&c).is_empty());
++    }
++}
++
++#[test]
++fn nothing_is_set_apart_under_a_guard_rule() {
++    let c = card(
++        &repo(Shape {
++            guard: true,
++            ..Shape::default()
++        }),
++        GUARD,
++    );
++    assert_eq!(outliers(&c), vec!["helper", "lazy"]);
++    assert!(apart(&c).is_empty());
++}
++
++#[test]
++fn an_import_graph_not_known_leaves_the_role_untouched() {
++    for shape in [
++        Shape {
++            unparsed: true,
++            ..Shape::default()
++        },
++        Shape {
++            parse_failed: true,
++            ..Shape::default()
++        },
++        Shape {
++            unresolved: true,
++            ..Shape::default()
++        },
++    ] {
++        let c = card(&repo(shape), TRACED);
++        assert_eq!(outliers(&c), vec!["helper", "lazy"]);
++        assert!(apart(&c).is_empty());
++    }
++}
++
++#[test]
++fn holders_set_apart_below_the_bound_drop_the_rule() {
++    // 40 services, 30 of them imported (75%), 4 imported outliers and the helper: 40/45
++    // passes the bound over the role; 30/34 over the comparable members does not.
++    let r = repo(Shape {
++        unimported: 10,
++        more_lazy: 3,
++        ..Shape::default()
++    });
++    let rule = Rule::WrappedBy {
++        kind: WrapKind::Call,
++        any_of: vec![TRACED.into()],
++    };
++    let cs = mine(&r, &MineOptions { max_per_repo: 200 }).candidates;
++    assert!(
++        !cs.iter()
++            .any(|c| c.rule == rule && c.role.dir.contains("services")),
++        "{:?}",
++        cs.iter().map(|c| c.role.describe()).collect::<Vec<_>>()
++    );
++}

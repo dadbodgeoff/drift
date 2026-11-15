@@ -1,0 +1,329 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - about
+  - app
+  - argumentInterfaces
+  - auth
+  - basic-info-form
+  - carriers
+  - components
+  - configure
+  - connection-lost
+  - dashboard
+  - delivery
+  - device
+  - env
+  - geo-location
+  - google-map
+  - info
+  - invite
+  - invites
+  - invites-requests
+  - language
+  - location
+  - location-form
+  - login
+  - main
+  - maintenance-info
+  - menu
+  - merchants
+  - model
+  - mutations
+  - order
+  - order-info
+  - orders
+  - orders-history
+  - pages
+  - pm2bootstrap
+  - polyfills
+  - product
+  - products
+  - queries
+  - server-down
+  - settings
+  - status
+  - terms-of-use
+  - test
+  - theme
+  - types
+  - warehouse
+  - warehouse-logo
+  suffixes:
+  - component
+  - config
+  - controller
+  - guard
+  - layout
+  - model
+  - module
+  - page
+  - pipe
+  - resolver
+  - routes
+  - screen
+  - service
+  - spec
+  - stories
+  - strategy
+conventions:
+- id: D-410f0a
+  status: proposed
+  mode: advise
+  summary: "packages/admin-web-angular: classes in src/** (*.component files) are named `*Component`"
+  role:
+    package: packages/admin-web-angular
+    dir: src
+    file: "*.component"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Component"
+  evidence:
+    holders: 266
+    total: 267
+    lower_bound: 0.979
+    lift: 2.506
+  example: >-
+    packages/admin-web-angular/src/app/@shared/carrier/carrier-mutation/carrier-mutation.component.ts#CarrierMutationComponent
+  selector_version: 3
+- id: D-728139
+  status: proposed
+  mode: advise
+  summary: "packages/merchant-tablet-ionic: classes in src/** are decorated with Component()"
+  role:
+    package: packages/merchant-tablet-ionic
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@angular/core#Component
+  evidence:
+    holders: 51
+    total: 52
+    lower_bound: 0.899
+    lift: 2.121
+  example: >-
+    packages/merchant-tablet-ionic/src/components/carrier-deliveries-table/customer.ts#CustomerComponent
+  selector_version: 3
+- id: D-49be71
+  status: proposed
+  mode: advise
+  summary: "packages/shop-mobile-ionic: classes in src/** (*.module files) are named `*Module`"
+  role:
+    package: packages/shop-mobile-ionic
+    dir: src
+    file: "*.module"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Module"
+  evidence:
+    holders: 41
+    total: 42
+    lower_bound: 0.877
+    lift: 3.521
+  example: >-
+    packages/shop-mobile-ionic/src/app/+server-down/server-down.module.ts#ServerDownPageModule
+  selector_version: 3
+- id: D-75c6f7
+  status: proposed
+  mode: advise
+  summary: "packages/core: classes in src/services/** are decorated with injectable(), except a class (of another kind)"
+  role:
+    package: packages/core
+    dir: src/services
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:inversify#injectable
+  evidence:
+    holders: 32
+    total: 33
+    lower_bound: 0.847
+    lift: 27.817
+    role_members: 34
+  example: packages/core/src/services/admins/AdminsService.ts#AdminsService
+  selector_version: 3
+- id: D-96dc9f
+  status: proposed
+  mode: advise
+  summary: "packages/merchant-tablet-ionic: classes in src/** (*.component files) are named `*Component`"
+  role:
+    package: packages/merchant-tablet-ionic
+    dir: src
+    file: "*.component"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Component"
+  evidence:
+    holders: 32
+    total: 33
+    lower_bound: 0.847
+    lift: 2.439
+  example: >-
+    packages/merchant-tablet-ionic/src/@shared/google-map/google-map.component.ts#GoogleMapComponent
+  selector_version: 3
+- id: D-07cce0
+  status: proposed
+  mode: advise
+  summary: "packages/shop-web-angular: classes in src/** (*.component files) are named `*Component`"
+  role:
+    package: packages/shop-web-angular
+    dir: src
+    file: "*.component"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Component"
+  evidence:
+    holders: 29
+    total: 30
+    lower_bound: 0.833
+    lift: 2.432
+  example: >-
+    packages/shop-web-angular/src/app/+login/byLocation/byLocation.component.ts#LoginByLocationComponent
+  selector_version: 3
+- id: D-d08791
+  status: proposed
+  mode: advise
+  summary: "packages/shop-mobile-expo: components in src/components/** do not use `any`"
+  role:
+    package: packages/shop-mobile-expo
+    dir: src/components
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: avoids
+    signal: any
+  evidence:
+    holders: 27
+    total: 28
+    lower_bound: 0.823
+    lift: 7.2
+  example: packages/shop-mobile-expo/src/components/BuyProductBtn.tsx#BuyProductBtn
+  selector_version: 3
+- id: D-024ccb
+  status: proposed
+  mode: advise
+  summary: "packages/merchant-tablet-ionic: classes in src/components/** are named `*Component`"
+  role:
+    package: packages/merchant-tablet-ionic
+    dir: src/components
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Component"
+  evidence:
+    holders: 31
+    total: 33
+    lower_bound: 0.804
+    lift: 2.363
+  example: >-
+    packages/merchant-tablet-ionic/src/components/carrier-deliveries-table/customer.ts#CustomerComponent
+  selector_version: 3
+- id: D-0d5819
+  status: proposed
+  mode: advise
+  summary: "packages/core: classes in src/services/** are named `*Service`, except a companion (a helper or constant beside the members that follow it)"
+  role:
+    package: packages/core
+    dir: src/services
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Service"
+  evidence:
+    holders: 31
+    total: 33
+    lower_bound: 0.804
+    lift: 9.605
+    role_members: 34
+  example: packages/core/src/services/admins/AdminsService.ts#AdminsService
+  selector_version: 3
+- id: D-5bf6fb
+  status: proposed
+  mode: advise
+  summary: "packages/common-angular: classes in src/routers/** (*.service files) are named `*Router`"
+  role:
+    package: packages/common-angular
+    dir: src/routers
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Router"
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 50.667
+  example: >-
+    packages/common-angular/src/routers/carrier-orders-router.service.ts#CarrierOrdersRouter
+  selector_version: 3
+- id: D-413b34
+  status: proposed
+  mode: advise
+  summary: "packages/admin-web-angular: classes in src/** (*.service files) are decorated with Injectable()"
+  role:
+    package: packages/admin-web-angular
+    dir: src
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@angular/core#Injectable
+  evidence:
+    holders: 29
+    total: 32
+    lower_bound: 0.758
+    lift: 6.604
+  example: >-
+    packages/admin-web-angular/src/app/@core/auth/admin-auth-strategy.service.ts#AdminAuthStrategy
+  selector_version: 3
+- id: D-5b38bb
+  status: proposed
+  mode: advise
+  summary: "packages/admin-web-angular: classes in src/app/@core/data/** (*.service files) are named `*Service`"
+  role:
+    package: packages/admin-web-angular
+    dir: src/app/@core/data
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Service"
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 9.98
+  example: packages/admin-web-angular/src/app/@core/data/admins.service.ts#AdminsService
+  selector_version: 3

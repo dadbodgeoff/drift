@@ -1,0 +1,353 @@
+{
+  "languages": {
+    "prereg": {
+      "typescript/javascript": {
+        "repos": 36,
+        "cards": 16,
+        "passed": 10,
+        "dropped": [
+          {
+            "tier": "default",
+            "label": "ACCEPT"
+          },
+          {
+            "tier": "default",
+            "label": "WRONG"
+          },
+          {
+            "tier": "default",
+            "label": "WRONG"
+          },
+          {
+            "tier": "default",
+            "label": "WRONG"
+          },
+          {
+            "tier": "default",
+            "label": "ACCEPT"
+          },
+          {
+            "tier": "suggestion",
+            "label": "WRONG"
+          }
+        ],
+        "cand": {
+          "shipped": [
+            6,
+            10
+          ],
+          "arm": [
+            4,
+            5
+          ]
+        },
+        "notwrong": {
+          "shipped": [
+            11,
+            16
+          ],
+          "arm": [
+            9,
+            10
+          ]
+        },
+        "accepted": {
+          "shipped": 11,
+          "arm": 9
+        },
+        "flags": {
+          "suggestion": {
+            "shipped": [
+              8,
+              10
+            ],
+            "kept": [
+              8,
+              8
+            ],
+            "dropped": [
+              0,
+              2
+            ]
+          },
+          "all": {
+            "shipped": [
+              21,
+              48
+            ],
+            "kept": [
+              18,
+              37
+            ],
+            "dropped": [
+              3,
+              11
+            ]
+          },
+          "default": {
+            "shipped": [
+              13,
+              38
+            ],
+            "kept": [
+              10,
+              29
+            ],
+            "dropped": [
+              3,
+              9
+            ]
+          }
+        },
+        "unmatched": {
+          "file": 23,
+          "symbol": 0
+        }
+      },
+      "python": {
+        "repos": 24,
+        "cards": 3,
+        "passed": 2,
+        "dropped": [
+          {
+            "tier": "suggestion",
+            "label": "WRONG"
+          }
+        ],
+        "cand": {
+          "shipped": [
+            0,
+            0
+          ],
+          "arm": [
+            0,
+            0
+          ]
+        },
+        "notwrong": {
+          "shipped": [
+            2,
+            3
+          ],
+          "arm": [
+            2,
+            2
+          ]
+        },
+        "accepted": {
+          "shipped": 2,
+          "arm": 2
+        },
+        "flags": {
+          "suggestion": {
+            "shipped": [
+              2,
+              4
+            ],
+            "kept": [
+              2,
+              2
+            ],
+            "dropped": [
+              0,
+              2
+            ]
+          },
+          "all": {
+            "shipped": [
+              2,
+              4
+            ],
+            "kept": [
+              2,
+              2
+            ],
+            "dropped": [
+              0,
+              2
+            ]
+          }
+        },
+        "unmatched": {
+          "file": 0,
+          "symbol": 0
+        }
+      }
+    },
+    "suffix": {
+      "typescript/javascript": {
+        "repos": 36,
+        "cards": 16,
+        "passed": 10,
+        "dropped": [
+          {
+            "tier": "default",
+            "label": "ACCEPT"
+          },
+          {
+            "tier": "default",
+            "label": "WRONG"
+          },
+          {
+            "tier": "default",
+            "label": "WRONG"
+          },
+          {
+            "tier": "default",
+            "label": "WRONG"
+          },
+          {
+            "tier": "default",
+            "label": "ACCEPT"
+          },
+          {
+            "tier": "suggestion",
+            "label": "WRONG"
+          }
+        ],
+        "cand": {
+          "shipped": [
+            6,
+            10
+          ],
+          "arm": [
+            4,
+            5
+          ]
+        },
+        "notwrong": {
+          "shipped": [
+            11,
+            16
+          ],
+          "arm": [
+            9,
+            10
+          ]
+        },
+        "accepted": {
+          "shipped": 11,
+          "arm": 9
+        },
+        "flags": {
+          "suggestion": {
+            "shipped": [
+              8,
+              10
+            ],
+            "kept": [
+              8,
+              8
+            ],
+            "dropped": [
+              0,
+              2
+            ]
+          },
+          "all": {
+            "shipped": [
+              34,
+              48
+            ],
+            "kept": [
+              28,
+              37
+            ],
+            "dropped": [
+              6,
+              11
+            ]
+          },
+          "default": {
+            "shipped": [
+              26,
+              38
+            ],
+            "kept": [
+              20,
+              29
+            ],
+            "dropped": [
+              6,
+              9
+            ]
+          }
+        },
+        "unmatched": {
+          "file": 1,
+          "symbol": 0
+        }
+      },
+      "python": {
+        "repos": 24,
+        "cards": 3,
+        "passed": 2,
+        "dropped": [
+          {
+            "tier": "suggestion",
+            "label": "WRONG"
+          }
+        ],
+        "cand": {
+          "shipped": [
+            0,
+            0
+          ],
+          "arm": [
+            0,
+            0
+          ]
+        },
+        "notwrong": {
+          "shipped": [
+            2,
+            3
+          ],
+          "arm": [
+            2,
+            2
+          ]
+        },
+        "accepted": {
+          "shipped": 2,
+          "arm": 2
+        },
+        "flags": {
+          "suggestion": {
+            "shipped": [
+              2,
+              4
+            ],
+            "kept": [
+              2,
+              2
+            ],
+            "dropped": [
+              0,
+              2
+            ]
+          },
+          "all": {
+            "shipped": [
+              2,
+              4
+            ],
+            "kept": [
+              2,
+              2
+            ],
+            "dropped": [
+              0,
+              2
+            ]
+          }
+        },
+        "unmatched": {
+          "file": 0,
+          "symbol": 0
+        }
+      }
+    }
+  },
+  "errors": 0
+}

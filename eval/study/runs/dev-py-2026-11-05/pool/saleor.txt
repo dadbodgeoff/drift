@@ -1,0 +1,131 @@
+21 conventions from 7260 units in 408 roles
+
+ 1. [D-f5882d] classes in saleor/** (dataloaders files) extend DataLoader
+    evidence: 113/134 (lower bound 0.77, lift 10.7)
+    example:  saleor/graphql/account/dataloaders.py#AddressByIdLoader
+    outlier:  saleor/graphql/account/dataloaders.py:223 AccessibleChannelsByGroupIdLoader
+    outlier:  saleor/graphql/account/dataloaders.py:231 AccessibleChannelsByUserIdLoader
+    outlier:  saleor/graphql/account/dataloaders.py:100 CustomerAttributesAllByCustomerTypeIdLoader
+    ... 18 more outliers
+
+ 2. [D-e36ea5] exported values in saleor/core/** do not read os.environ directly
+    evidence: 74/75 (lower bound 0.93, lift 11.5)
+    example:  saleor/core/auth.py#AUTH_HEADER_PREFIXES
+    outlier:  saleor/core/development/random_data.py:139 DEFAULT_CURRENCY
+
+ 3. [D-049c39] files in saleor/** do not import from saleor/csv/**
+    evidence: 634/635 (lower bound 0.99, lift 3.0)
+    example:  saleor/__main__.py#(file)
+    outlier:  saleor/graphql/csv/mutations/export_products.py:1 (file)
+
+ 4. [D-9cc87c] files in saleor/** do not import from saleor/invoice/**
+    evidence: 627/635 (lower bound 0.97, lift 3.0)
+    example:  saleor/__main__.py#(file)
+    outlier:  saleor/core/management/commands/clearorders.py:1 (file)
+    outlier:  saleor/graphql/invoice/mutations/invoice_create.py:1 (file)
+    outlier:  saleor/graphql/invoice/mutations/invoice_delete.py:1 (file)
+    ... 5 more outliers
+
+ 5. [D-6488c7] files in saleor/** do not import from saleor/site/**
+    evidence: 623/635 (lower bound 0.97, lift 3.0)
+    example:  saleor/__main__.py#(file)
+    outlier:  saleor/core/auth_backend.py:1 (file)
+    outlier:  saleor/core/development/random_data.py:1 (file)
+    outlier:  saleor/graphql/account/mutations/account/confirm_account.py:1 (file)
+    ... 9 more outliers
+
+ 6. [D-c71e1f] files in saleor/** do not import from saleor/menu/**
+    evidence: 622/635 (lower bound 0.96, lift 3.0)
+    example:  saleor/__main__.py#(file)
+    outlier:  saleor/core/development/random_data.py:1 (file)
+    outlier:  saleor/core/management/commands/check_mptt_trees.py:1 (file)
+    outlier:  saleor/graphql/menu/bulk_mutations/menu_bulk_delete.py:1 (file)
+    ... 10 more outliers
+
+ 7. [D-46356a] files in saleor/** do not import from saleor/**
+    evidence: 618/635 (lower bound 0.96, lift 3.0)
+    example:  saleor/__main__.py#(file)
+    outlier:  saleor/app/installation_utils.py:1 (file)
+    outlier:  saleor/app/management/commands/create_app.py:1 (file)
+    outlier:  saleor/app/manifest_validations.py:1 (file)
+    ... 14 more outliers
+
+ 8. [D-71795b] classes in saleor/** (dataloaders files) are named `*Loader`
+    evidence: 131/134 (lower bound 0.94, lift 10.9)
+    example:  saleor/graphql/account/dataloaders.py#AddressByIdLoader
+    outlier:  saleor/graphql/account/dataloaders.py:181 BaseAccessibleChannels
+    outlier:  saleor/graphql/plugins/dataloaders.py:31 PluginManagerByRequestorDataloader
+    outlier:  saleor/graphql/tax/dataloaders.py:37 TaxConfigurationByChannelId
+
+ 9. [D-d756c3] classes in saleor/** (error_codes files) are named `*Code`
+    evidence: 91/92 (lower bound 0.94, lift 26.0)
+    example:  saleor/account/error_codes.py#AccountErrorCode
+    outlier:  saleor/graphql/notifications/error_codes.py:4 ExternalNotificationErrorCodes
+
+10. [D-1ccbe3] files in saleor/** (__init__ files) do not import from saleor/checkout/**
+    evidence: 167/168 (lower bound 0.97, lift 3.0)
+    example:  saleor/__init__.py#(file)
+    outlier:  saleor/plugins/avatax/__init__.py:1 (file)
+
+11. [D-2613a4] files in saleor/** (__init__ files) do not import from saleor/plugins/**
+    evidence: 167/168 (lower bound 0.97, lift 3.0)
+    example:  saleor/__init__.py#(file)
+    outlier:  saleor/graphql/core/utils/__init__.py:1 (file)
+
+12. [D-4ca461] files in saleor/** (__init__ files) do not import from saleor/app/**
+    evidence: 167/168 (lower bound 0.97, lift 3.0)
+    example:  saleor/__init__.py#(file)
+    outlier:  saleor/graphql/utils/__init__.py:1 (file)
+
+13. [D-d53bd3] files in saleor/** (__init__ files) do not import from saleor/product/**
+    evidence: 167/168 (lower bound 0.97, lift 3.0)
+    example:  saleor/__init__.py#(file)
+    outlier:  saleor/graphql/core/validators/__init__.py:1 (file)
+
+14. [D-ebb356] files in saleor/** (__init__ files) do not import from saleor/**
+    evidence: 167/168 (lower bound 0.97, lift 3.0)
+    example:  saleor/__init__.py#(file)
+    outlier:  saleor/core/telemetry/__init__.py:1 (file)
+
+15. [D-1cef87] classes in saleor/** (interface files) are decorated with dataclass()
+    evidence: 44/48 (lower bound 0.80, lift 19.6)
+    example:  saleor/core/pricing/interface.py#LineInfo
+    outlier:  saleor/discount/interface.py:71 VariantPromotionRuleInfo
+    outlier:  saleor/payment/interface.py:221 PaymentGatewayInitializeTokenizationResult
+    outlier:  saleor/payment/interface.py:263 PaymentMethodTokenizationResult
+    ... 1 more outliers
+
+16. [D-5a6c4f] classes in saleor/graphql/product/dataloaders/** are named `*Loader`
+    evidence: 40/42 (lower bound 0.84, lift 10.7)
+    example:  saleor/graphql/product/dataloaders/attributes.py#BaseProductAttributesByProductTypeIdLoader
+    outlier:  saleor/graphql/product/dataloaders/products.py:259 AvailableProductVariantsByProductIdAndChannel
+    outlier:  saleor/graphql/product/dataloaders/products.py:212 ProductVariantsByProductIdAndChannel
+
+17. [D-6b1d3c] classes in saleor/core/editorjs/** (models files) are named `*Model`
+    evidence: 19/20 (lower bound 0.76, lift 109.2)
+    example:  saleor/core/editorjs/models.py#EditorJSDocumentModel
+    outlier:  saleor/core/editorjs/models.py:62 EditorJSBlock
+
+18. [D-a6847e] classes in saleor/graphql/attribute/dataloaders/** are named `*Loader`
+    evidence: 18/19 (lower bound 0.75, lift 10.6)
+    example:  saleor/graphql/attribute/dataloaders/assigned_attributes.py#AttributeByPageIdAndAttributeSlugLoader
+    outlier:  saleor/graphql/attribute/dataloaders/attributes.py:22 AttributesByAttributeId
+
+19. [D-6acdcd] classes in saleor/graphql/translations/** (types files) pass `description` to GlobalID()
+    evidence: 29/30 (lower bound 0.83, lift 30.5)
+    example:  saleor/graphql/translations/types.py#AttributeTranslatableContent
+    outlier:  saleor/graphql/translations/types.py:84 BaseTranslationType
+
+20. [D-fb56f8] job entry points in saleor/plugins/** (tasks files) pass `compression` to Celery.task()
+    evidence: 20/21 (lower bound 0.77, lift 105.1)
+    example:  saleor/plugins/admin_email/tasks.py#send_email_with_link_to_download_file_task
+    outlier:  saleor/plugins/avatax/tasks.py:15 api_post_request_task
+
+21. [D-e86c5d] files in saleor/graphql/account/** have a test file
+    evidence: 45/51 (lower bound 0.77, lift 1.6)
+    example:  saleor/graphql/account/bulk_mutations/customer_bulk_delete.py#(file)
+    outlier:  saleor/graphql/account/mixins.py:1 (file)
+    outlier:  saleor/graphql/account/mutations/authentication/create_token.py:1 (file)
+    outlier:  saleor/graphql/account/mutations/authentication/deactivate_all_user_tokens.py:1 (file)
+    ... 3 more outliers
+

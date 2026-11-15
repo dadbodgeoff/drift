@@ -1,0 +1,175 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - __main__
+  - _base
+  - _constants
+  - _model
+  - _schemas
+  - _service
+  - _state
+  - _utils
+  - file
+  - model
+  - youtube
+  suffixes:
+  - config
+conventions:
+- id: D-27a639
+  status: proposed
+  mode: advise
+  summary: classes in platypush/message/** are named `*Event`
+  role:
+    package: ""
+    dir: platypush/message
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Event"
+  evidence:
+    holders: 320
+    total: 321
+    lower_bound: 0.983
+    lift: 3.211
+    python_members: 321
+  example: platypush/message/event/adafruit.py#AdafruitConnectedEvent
+  selector_version: 2
+- id: D-08f310
+  status: proposed
+  mode: advise
+  summary: classes in platypush/schemas/** are named `*Schema`
+  role:
+    package: ""
+    dir: platypush/schemas
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Schema"
+  evidence:
+    holders: 138
+    total: 139
+    lower_bound: 0.96
+    lift: 7.759
+    role_members: 141
+    python_members: 141
+  example: platypush/schemas/camera/android/ipcam.py#CameraStatusSchema
+  selector_version: 2
+- id: D-bdd270
+  status: proposed
+  mode: advise
+  summary: classes in platypush/entities/** pass `primary_key` to Column()
+  role:
+    package: ""
+    dir: platypush/entities
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: passes_key
+    callee: pkg:sqlalchemy#Column
+    index: 99
+    key: primary_key
+  evidence:
+    holders: 52
+    total: 52
+    lower_bound: 0.931
+    lift: 18.482
+    role_members: 55
+    python_members: 55
+  example: platypush/entities/acceleration.py#Accelerometer
+  selector_version: 2
+- id: D-84701e
+  status: proposed
+  mode: advise
+  summary: classes in platypush/plugins/** (__init__ files) are named `*Plugin`
+  role:
+    package: ""
+    dir: platypush/plugins
+    file: __init__
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Plugin"
+  evidence:
+    holders: 153
+    total: 163
+    lower_bound: 0.891
+    lift: 7.514
+    role_members: 167
+    python_members: 167
+  example: platypush/plugins/adafruit/io/__init__.py#AdafruitIoPlugin
+  selector_version: 2
+- id: D-2fc4df
+  status: proposed
+  mode: advise
+  summary: classes in platypush/message/** (__init__ files) are named `*Event`
+  role:
+    package: ""
+    dir: platypush/message
+    file: __init__
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Event"
+  evidence:
+    holders: 58
+    total: 60
+    lower_bound: 0.886
+    lift: 3.114
+    python_members: 60
+  example: platypush/message/event/assistant/__init__.py#AlarmEndEvent
+  selector_version: 2
+- id: D-1200d2
+  status: proposed
+  mode: advise
+  summary: classes in platypush/** (_schemas files) are named `*Schema`
+  role:
+    package: ""
+    dir: platypush
+    file: _schemas
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Schema"
+  evidence:
+    holders: 22
+    total: 22
+    lower_bound: 0.851
+    lift: 7.583
+    role_members: 23
+    python_members: 23
+  example: platypush/schemas/linode/_schemas.py#LinodeInstanceAlertsSchema
+  selector_version: 2
+- id: D-646cc1
+  status: proposed
+  mode: advise
+  summary: sqlalchemy models have a `id` field
+  role:
+    package: ""
+    dir: sqlalchemy
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: id
+  evidence:
+    holders: 66
+    total: 74
+    lower_bound: 0.801
+    lift: 1.0
+    python_members: 74
+  example: platypush/entities/_base.py#Entity
+  selector_version: 2

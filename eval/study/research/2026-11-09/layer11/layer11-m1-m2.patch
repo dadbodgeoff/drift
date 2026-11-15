@@ -1,0 +1,1308 @@
+diff --git a/apps/studio/src/entities/convention/rules.ts b/apps/studio/src/entities/convention/rules.ts
+index 8787e46f..ff2c80cd 100644
+--- a/apps/studio/src/entities/convention/rules.ts
++++ b/apps/studio/src/entities/convention/rules.ts
+@@ -186,7 +186,7 @@ export function ruleTargets(rule: Rule): string[] {
+     case "before":
+       return [shortRef(rule.first), shortRef(rule.then)];
+     case "avoids":
+-      return [rule.signal];
++      return [rule.signal, ...(rule.except ?? []).map((m) => `except ${m}`)];
+     case "named":
+       return [rule.pattern];
+     case "directive":
+diff --git a/apps/studio/src/features/check/CheckView.tsx b/apps/studio/src/features/check/CheckView.tsx
+index cafab142..484c8afc 100644
+--- a/apps/studio/src/features/check/CheckView.tsx
++++ b/apps/studio/src/features/check/CheckView.tsx
+@@ -467,6 +467,15 @@ function ViolationDetail({ v, hold, conv, onOpen, onRegistry }: { v: Violation;
+           </span>
+         </p>
+       )}
++      {v.import && (
++        <p className="ck-note is-info">
++          <Icon name="info" size={13} />
++          <span>
++            Breaks the rule by importing <span className="dui-mono">{v.import.specifier || v.import.module}</span>
++            {v.import.line ? ` (line ${v.import.line})` : ""}.
++          </span>
++        </p>
++      )}
+       {status === "held" && (
+         <p className="ck-note is-info">
+           <Icon name="info" size={13} />
+diff --git a/apps/studio/src/shared/contract/drift.ts b/apps/studio/src/shared/contract/drift.ts
+index 2e5cec61..85297623 100644
+--- a/apps/studio/src/shared/contract/drift.ts
++++ b/apps/studio/src/shared/contract/drift.ts
+@@ -166,7 +166,8 @@ export type Rule =
+   | { type: "throws"; class: string }
+   | { type: "named"; pattern: string }
+   | { type: "before"; first: string; then: string }
+-  | { type: "avoids"; signal: string }
++    /** `except` (layering, round 11 layer11): target modules an import of which does not break the rule; absent when none. */
++  | { type: "avoids"; signal: string; except?: string[] }
+   | { type: "has_test" }
+   | { type: "prefers_library"; group: string; preferred: string }
+   | { type: "model_has"; field: string }
+@@ -592,6 +593,18 @@ export interface Violation {
+   unsure?: boolean;
+   /** Held back by the neighbour gate (round 11, WS-J): the member is nearer the members its convention sets apart than its holders. Listed in `suppressed_neighbour`; never new, never blocks (newer drift; absent when false). */
+   suppressed_neighbour?: boolean;
++  /** Layering violations (round 11 layer11): the import that breaks the rule; `specifier` and `line` once found in the file (newer drift; absent otherwise). */
++  import?: ImportHit;
++}
++
++/** The import a layering violation is about (crates/drift-mine/src/check.rs `ImportHit`). */
++export interface ImportHit {
++  /** Canonical module id (`app/board/board-context.ts`). */
++  module: string;
++  /** The specifier as written; absent when not found. */
++  specifier?: string;
++  /** 1-based line; 0 when not found. */
++  line?: number;
+ }
+ 
+ /** A warning the neighbour gate held back (`check --format json` `suppressed_neighbour`, crates/drift-mine/src/check.rs `NeighbourHold`). */
+diff --git a/apps/studio/tests/unit/conventions.test.ts b/apps/studio/tests/unit/conventions.test.ts
+index 985ee140..b866fdfe 100644
+--- a/apps/studio/tests/unit/conventions.test.ts
++++ b/apps/studio/tests/unit/conventions.test.ts
+@@ -222,6 +222,12 @@ describe("what a rule is about, and inherited declarations (#27)", () => {
+     expect(isUnknownBase("app/base.py#(base)")).toBe(false);
+   });
+ 
++  it("names a layering rule's target-module exception in its chips (layer11)", () => {
++    expect(ruleTargets({ type: "avoids", signal: "import:screens" })).toEqual(["import:screens"]);
++    expect(ruleTargets({ type: "avoids", signal: "import:screens", except: ["screens/board/board-context.ts"] })).toEqual(["import:screens", "except screens/board/board-context.ts"]);
++    expect(ruleFamily({ type: "avoids", signal: "import:screens", except: ["screens/board/board-context.ts"] })).toBe("Layering");
++  });
++
+   it("reads exempt members with Drift's reason, inherited holders and the role size from census", () => {
+     const c = census();
+     const p = {
+diff --git a/crates/drift-cli/src/main.rs b/crates/drift-cli/src/main.rs
+index 805b36d6..c1bea8b2 100644
+--- a/crates/drift-cli/src/main.rs
++++ b/crates/drift-cli/src/main.rs
+@@ -2198,7 +2198,8 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
+             if let Some(only) = &only {
+                 warn_unchecked_paths(root, &facts, only);
+             }
+-            let full = check(&facts, &policy, &lock, Scope::Accepted, only.as_ref());
++            let mut full = check(&facts, &policy, &lock, Scope::Accepted, only.as_ref());
++            drift_mine::check::locate_imports(&mut full, root);
+             // Experimental: suggestions the host agent verified are shown to agents too.
+             let verify = drift_mine::verify::statuses(root, &policy, || Some(&facts));
+             // New violations the diff did not introduce are not reported, but they are counted.
+@@ -2519,8 +2520,13 @@ fn print_report(r: &CheckReport) {
+         );
+         for v in new {
+             println!("[{}] {} ({})", v.id, v.summary, v.evidence);
+-            println!("  at   {}:{} {}", v.path, v.line, v.symbol);
+-            println!("  like {}", v.example);
++            match &v.import {
++                Some(hit) => println!("  at   {}:{} {}", v.path, v.line, hit.describe()),
++                None => {
++                    println!("  at   {}:{} {}", v.path, v.line, v.symbol);
++                    println!("  like {}", v.example);
++                }
++            }
+             if let Some(w) = &v.wire {
+                 println!("  fix  {}", w.describe(&v.symbol));
+             }
+diff --git a/crates/drift-cli/src/mcp.rs b/crates/drift-cli/src/mcp.rs
+index 2e4701a3..c93fd870 100644
+--- a/crates/drift-cli/src/mcp.rs
++++ b/crates/drift-cli/src/mcp.rs
+@@ -254,14 +254,14 @@ fn call(project: &Project, no_cache: bool, name: &str, args: &Value) -> anyhow::
+             for (when, c) in &new {
+                 let prefix = when.as_ref().map(|w| format!("{w}: ")).unwrap_or_default();
+                 out.push_str(&format!(
+-                    "{prefix}[{}] {} ({}/{} follow it, {}, {}); copy {}\n",
++                    "{prefix}[{}] {} ({}/{} follow it, {}, {}){}\n",
+                     c.id,
+-                    sanitize(&c.summary, 240),
++                    sanitize(&drift_mine::mine::agent_summary(&c.summary), 240),
+                     c.evidence.holders,
+                     c.evidence.total,
+                     c.tier(),
+                     if blocks(c) { "blocks" } else { "advises" },
+-                    sanitize(&c.example, 160)
++                    crate::project::copy_hint(c)
+                 ));
+             }
+             if !old.is_empty() {
+diff --git a/crates/drift-cli/src/pr.rs b/crates/drift-cli/src/pr.rs
+index 49cbb0ff..bcf1568d 100644
+--- a/crates/drift-cli/src/pr.rs
++++ b/crates/drift-cli/src/pr.rs
+@@ -813,6 +813,7 @@ rename to y.ts\n";
+             suppressed_neighbour: false,
+             extent,
+             wire: None,
++            import: None,
+         }
+     }
+ 
+diff --git a/crates/drift-cli/src/project.rs b/crates/drift-cli/src/project.rs
+index 4848711d..f3df54d3 100644
+--- a/crates/drift-cli/src/project.rs
++++ b/crates/drift-cli/src/project.rs
+@@ -69,7 +69,7 @@ pub fn blocks(c: &Convention) -> bool {
+ /// is the rule's reason; its known exceptions are in its statement (", except ...").
+ pub fn rule_line(c: &Convention) -> String {
+     format!(
+-        "[{}] {}{} ({}/{} follow it); copy {}",
++        "[{}] {}{} ({}/{} follow it){}",
+         sanitize(&c.id, 16),
+         if is_suggestion(c) {
+             "(suggestion) "
+@@ -78,13 +78,23 @@ pub fn rule_line(c: &Convention) -> String {
+         } else {
+             ""
+         },
+-        sanitize(&c.summary, 240),
++        sanitize(&drift_mine::mine::agent_summary(&c.summary), 240),
+         c.evidence.holders,
+         c.evidence.total,
+-        sanitize(&c.example, 160)
++        copy_hint(c)
+     )
+ }
+ 
++/// `; copy <example>`, or nothing for a layering rule: a file that avoids an import is
++/// no model to copy for one that has it.
++pub fn copy_hint(c: &Convention) -> String {
++    if drift_mine::tier::rule_kind(&c.rule) == "avoids:import" {
++        String::new()
++    } else {
++        format!("; copy {}", sanitize(&c.example, 160))
++    }
++}
++
+ pub struct Project {
+     pub root: PathBuf,
+     pub policy: ConventionsFile,
+@@ -335,7 +345,9 @@ impl Project {
+     }
+ 
+     pub fn check(&self, facts: &RepoFacts, only: Option<&BTreeSet<String>>) -> CheckReport {
+-        check(facts, &self.policy, &self.lock, Scope::Accepted, only)
++        let mut report = check(facts, &self.policy, &self.lock, Scope::Accepted, only);
++        drift_mine::check::locate_imports(&mut report, &self.root);
++        report
+     }
+ 
+     pub fn accepted(&self) -> impl Iterator<Item = &Convention> {
+diff --git a/crates/drift-cli/tests/lazy_imports.rs b/crates/drift-cli/tests/lazy_imports.rs
+index 592e0fba..e95358d7 100644
+--- a/crates/drift-cli/tests/lazy_imports.rs
++++ b/crates/drift-cli/tests/lazy_imports.rs
+@@ -121,7 +121,7 @@ fn repo() -> tempfile::TempDir {
+ fn avoid<'c>(cs: &'c [Candidate], area: &str) -> &'c Candidate {
+     let signal = format!("import:{area}");
+     cs.iter()
+-        .find(|c| matches!(&c.rule, Rule::Avoids { signal: s } if *s == signal))
++        .find(|c| matches!(&c.rule, Rule::Avoids { signal: s, .. } if *s == signal))
+         .unwrap_or_else(|| panic!("no rule avoiding {area}"))
+ }
+ 
+diff --git a/crates/drift-cli/tests/reexport_layering.rs b/crates/drift-cli/tests/reexport_layering.rs
+index ac5e02c4..77e38391 100644
+--- a/crates/drift-cli/tests/reexport_layering.rs
++++ b/crates/drift-cli/tests/reexport_layering.rs
+@@ -124,7 +124,7 @@ fn repo() -> tempfile::TempDir {
+ fn avoid<'c>(cs: &'c [Candidate], area: &str) -> &'c Candidate {
+     let signal = format!("import:{area}");
+     cs.iter()
+-        .find(|c| matches!(&c.rule, Rule::Avoids { signal: s } if *s == signal))
++        .find(|c| matches!(&c.rule, Rule::Avoids { signal: s, .. } if *s == signal))
+         .unwrap_or_else(|| panic!("no rule avoiding {area}"))
+ }
+ 
+diff --git a/crates/drift-mine/src/check.rs b/crates/drift-mine/src/check.rs
+index c4941c78..504b30cb 100644
+--- a/crates/drift-mine/src/check.rs
++++ b/crates/drift-mine/src/check.rs
+@@ -49,6 +49,114 @@ pub struct Violation {
+     /// sibling already there. Not serialised when absent.
+     #[serde(default, skip_serializing_if = "Option::is_none")]
+     pub wire: Option<WireHint>,
++    /// Layering rules only: the import that breaks the rule. Not serialised when absent.
++    #[serde(default, skip_serializing_if = "Option::is_none")]
++    pub import: Option<ImportHit>,
++}
++
++/// The import a layering violation is about ([`Violation::import`]): its module, and
++/// once [`locate_imports`] read the file, the specifier as written and its line.
++#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, serde::Deserialize)]
++pub struct ImportHit {
++    /// Canonical module id (`app/board/board-context.ts`).
++    pub module: String,
++    /// The specifier as written (`@/app/board/board-context`); empty when not found.
++    #[serde(default, skip_serializing_if = "String::is_empty")]
++    pub specifier: String,
++    /// 1-based line of the import; 0 when not found.
++    #[serde(default)]
++    pub line: u32,
++}
++
++impl ImportHit {
++    /// `` imports `@/app/board/board-context` `` (or the module when the specifier was
++    /// not found).
++    pub fn describe(&self) -> String {
++        if self.specifier.is_empty() {
++            format!("imports {}", self.module)
++        } else {
++            format!("imports `{}`", self.specifier)
++        }
++    }
++}
++
++/// Fill each layering violation's specifier and line from its file under `root`, and
++/// point the violation at that line. Best effort: a file that cannot be read, or an
++/// import not found in it, keeps the module only.
++pub fn locate_imports(report: &mut CheckReport, root: &std::path::Path) {
++    let mut texts: BTreeMap<String, Option<String>> = BTreeMap::new();
++    for v in &mut report.violations {
++        let Some(hit) = v.import.as_mut() else {
++            continue;
++        };
++        let text = texts
++            .entry(v.path.clone())
++            .or_insert_with(|| std::fs::read_to_string(root.join(&v.path)).ok());
++        if let Some((line, spec)) = text
++            .as_deref()
++            .and_then(|t| find_import(t, &v.path, &hit.module))
++        {
++            hit.line = line;
++            hit.specifier = spec;
++            v.line = line;
++        }
++    }
++}
++
++/// The first line of `text` (a file at `from`) with a quoted import specifier that
++/// names `module`: a relative one resolved against `from`'s folder, or an aliased or
++/// bare one (`@/x/y`, `~/x/y`, `src/x/y`) whose path is the end of the module's
++/// (extension and `/index` ignored).
++pub fn find_import(text: &str, from: &str, module: &str) -> Option<(u32, String)> {
++    let strip = |m: &str| -> String {
++        let m = m
++            .rsplit_once('.')
++            .filter(|(_, e)| !e.contains('/'))
++            .map_or(m, |(s, _)| s);
++        m.strip_suffix("/index").unwrap_or(m).to_string()
++    };
++    let target = strip(module);
++    let dir = from.rsplit_once('/').map_or("", |(d, _)| d);
++    let names = |spec: &str| -> bool {
++        if spec.starts_with("./") || spec.starts_with("../") {
++            let mut parts: Vec<&str> = dir.split('/').filter(|p| !p.is_empty()).collect();
++            for seg in spec.split('/') {
++                match seg {
++                    "." | "" => {}
++                    ".." => {
++                        parts.pop();
++                    }
++                    s => parts.push(s),
++                }
++            }
++            return strip(&parts.join("/")) == target;
++        }
++        let bare = spec
++            .strip_prefix("@/")
++            .or_else(|| spec.strip_prefix("~/"))
++            .or_else(|| spec.strip_prefix('#'))
++            .unwrap_or(spec);
++        let bare = strip(bare.trim_end_matches('/'));
++        !bare.is_empty() && (target == bare || target.ends_with(&format!("/{bare}")))
++    };
++    for (n, line) in text.lines().enumerate() {
++        if !(line.contains("import") || line.contains("from") || line.contains("require")) {
++            continue;
++        }
++        for quote in ['"', '\''] {
++            let mut rest = line;
++            while let Some((_, after)) = rest.split_once(quote) {
++                let Some((spec, tail)) = after.split_once(quote) else {
++                    break;
++                };
++                if names(spec) {
++                    return Some((n as u32 + 1, spec.to_string()));
++                }
++                rest = tail;
++            }
++        }
++    }
++    None
+ }
+ 
+ impl Violation {
+@@ -411,6 +519,12 @@ pub fn check_gated(
+                         suppressed_neighbour: false,
+                         extent,
+                         wire: None,
++                        import: crate::mine::offending_import(&c.rule, &u.view, contexts.of(c))
++                            .map(|module| ImportHit {
++                                module,
++                                specifier: String::new(),
++                                line: 0,
++                            }),
+                     });
+                     continue;
+                 }
+@@ -903,6 +1017,7 @@ fn wiring_violations(
+             // either is a file not parsed, or depends on one).
+             unsure: unchecked.uncertain(&m.file.path) || unchecked.uncertain(path),
+             suppressed_neighbour: false,
++            import: None,
+             wire: Some(WireHint {
+                 entry: Some(WireEntry {
+                     symbol: m.symbol.name.clone(),
+@@ -982,6 +1097,7 @@ fn wiring_violations(
+                 },
+                 unsure: unchecked.uncertain(from) || unchecked.uncertain(to),
+                 suppressed_neighbour: false,
++                import: None,
+                 wire: Some(WireHint {
+                     action: "mirror".into(),
+                     path: to.clone(),
+diff --git a/crates/drift-mine/src/mine.rs b/crates/drift-mine/src/mine.rs
+index b94422f2..a641bf21 100644
+--- a/crates/drift-mine/src/mine.rs
++++ b/crates/drift-mine/src/mine.rs
+@@ -78,7 +78,15 @@ pub enum Rule {
+     /// When the symbol calls `then`, it calls `first` before it.
+     Before { first: String, then: String },
+     /// The unit never has this signal (`sink:raw_sql`, `env`, `import:pkg:@prisma/client`).
+-    Avoids { signal: String },
++    Avoids {
++        signal: String,
++        /// Layering only: target modules an import of which does not count
++        /// (`app/board/board-context.ts`), the one module of the avoided area that the
++        /// role's outliers share ([`target_exception`]). Empty (not serialised) for every
++        /// other rule, so their ids do not change.
++        #[serde(default, rename = "except", skip_serializing_if = "Vec::is_empty")]
++        except: Vec<String>,
++    },
+     /// The file has a matching test file.
+     HasTest,
+     /// Files use `preferred` and none of the other libraries of `group`.
+@@ -455,23 +463,78 @@ pub fn signals(view: &View, ctx: &RepoContext) -> BTreeSet<String> {
+             }
+             // Avoiding a *package* was accepted for 2 of 11 proposals in the labelled
+             // evaluation (it mostly restates what a layer is), so only internal areas count.
+-            let own = area(&f.path);
+-            for i in f.imports.iter().filter(|i| !i.type_only) {
+-                if let Some(target) = import_area(&i.module)
+-                    && target != own
+-                    && !same_package(&f.package, &i.module)
+-                    && !ctx.declares_module(&f.package, &i.module)
+-                    && !(!i.load.is_static() && ctx.declares_optional_module(&f.package, &i.module))
+-                {
+-                    out.insert(format!("import:{target}"));
+-                }
+-            }
++            out.extend(layer_signals(f, ctx).map(|(g, _)| g));
+         }
+         View::Model(_) | View::Package(_) => {}
+     }
+     out
+ }
+ 
++/// A file's layering signals, each with the import's module (`import:app/board`,
++/// `app/board/board-context.ts`). Avoiding a *package* was accepted for 2 of 11
++/// proposals in the labelled evaluation (it mostly restates what a layer is), so only
++/// internal areas count.
++///
++/// A TypeScript/JavaScript import of a module in a two-segment area `p/x` also carries
++/// `import:p`, "imports from `p/**`", unless the file is itself in `p/**`: so a
++/// layering rule can be stated at the shallowest area where it holds
++/// ([`widen_layering`]), and `import:p` means the whole subtree its summary names.
++/// Python keeps `import:p` for the modules directly in `p`.
++fn layer_signals<'a>(
++    f: &'a FileFacts,
++    ctx: &'a RepoContext,
++) -> impl Iterator<Item = (String, &'a str)> + 'a {
++    let own = area(&f.path);
++    let subtree = f.lang != "py" && layer11_on("m1");
++    f.imports
++        .iter()
++        .filter(|i| !i.type_only)
++        .filter_map({
++            let own = own.clone();
++            move |i| {
++                let target = import_area(&i.module)?;
++                (target != own
++                    && !same_package(&f.package, &i.module)
++                    && !ctx.declares_module(&f.package, &i.module)
++                    && !(!i.load.is_static()
++                        && ctx.declares_optional_module(&f.package, &i.module)))
++                .then_some((target, i.module.as_str()))
++            }
++        })
++        .flat_map(move |(target, module)| {
++            let parent = subtree
++                .then(|| target.split_once('/').map(|(p, _)| p.to_string()))
++                .flatten()
++                .filter(|p| own != *p && !own.starts_with(&format!("{p}/")));
++            std::iter::once((format!("import:{target}"), module))
++                .chain(parent.map(|p| (format!("import:{p}"), module)))
++        })
++}
++
++/// The first module a file imports that breaks a layering rule (`avoids:import`), for
++/// the advice that names the import to change; `None` for any other rule or unit.
++pub fn offending_import(rule: &Rule, view: &View, ctx: &RepoContext) -> Option<String> {
++    let (Rule::Avoids { signal, except }, View::File(f)) = (rule, view) else {
++        return None;
++    };
++    if !signal.starts_with("import:") || signal.starts_with("import:pkg:") {
++        return None;
++    }
++    layer_signals(f, ctx)
++        .find(|(g, m)| g == signal && !except.iter().any(|e| e == m))
++        .map(|(_, m)| m.to_string())
++}
++
++/// The layering clause every `avoids:import` summary ends with: kept in the summary
++/// and in `drift_explain`, left out of the one-line rules agents read.
++pub const LAYERING_CLAUSE: &str =
++    " (declared dependencies, and lazy loads of peer or optional dependencies, excepted)";
++
++/// A summary as an agent's one-line rule: without [`LAYERING_CLAUSE`].
++pub fn agent_summary(summary: &str) -> String {
++    summary.replace(LAYERING_CLAUSE, "")
++}
++
+ /// Units a signal can apply to: only client files can leak server code to the client.
+ fn signal_applies(signal: &str, view: &View) -> bool {
+     match (signal, view) {
+@@ -525,9 +588,7 @@ fn signal_label(signal: &str) -> String {
+         return format!("do not import {t}");
+     }
+     if let Some(t) = signal.strip_prefix("import:") {
+-        return format!(
+-            "do not import from {t}/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)"
+-        );
++        return format!("do not import from {t}/**{LAYERING_CLAUSE}");
+     }
+     match signal {
+         "env" => "do not read process.env directly".into(),
+@@ -2708,7 +2769,10 @@ impl Rule {
+     /// [`Rule::holds`], for a unit the rule applies to.
+     fn satisfied(&self, view: &View, ctx: &RepoContext) -> bool {
+         match (self, view) {
+-            (Rule::Avoids { signal }, v) => {
++            (Rule::Avoids { signal, except }, View::File(f)) if !except.is_empty() => {
++                !layer_signals(f, ctx).any(|(g, m)| g == *signal && !except.iter().any(|e| e == m))
++            }
++            (Rule::Avoids { signal, .. }, v) => {
+                 let sigs = signals(v, ctx);
+                 // Conventions accepted before `typing.Any` had its own signal say
+                 // "avoids any" for Python code too: they keep meaning `typing.Any`.
+@@ -2846,7 +2910,15 @@ impl Rule {
+             Rule::Before { first, then } => {
+                 format!("call {}() before {}()", short(first), short(then))
+             }
+-            Rule::Avoids { signal } => signal_label(signal),
++            Rule::Avoids { signal, except } if !except.is_empty() => {
++                let label = signal_label(signal);
++                let allowed = except.join(", ");
++                match label.split_once("/** ") {
++                    Some((head, tail)) => format!("{head}/** except from {allowed} {tail}"),
++                    None => format!("{label}, except from {allowed}"),
++                }
++            }
++            Rule::Avoids { signal, .. } => signal_label(signal),
+             Rule::HasTest => "have a test file".to_string(),
+             Rule::PrefersLibrary { group, preferred } => {
+                 let others: Vec<&str> = group_members(group)
+@@ -2983,7 +3055,9 @@ impl Rule {
+                     0.6
+                 };
+             }
+-            Rule::Avoids { signal } if signal.starts_with("sink:") || signal == "client_leak" => {
++            Rule::Avoids { signal, .. }
++                if signal.starts_with("sink:") || signal == "client_leak" =>
++            {
+                 return 1.0;
+             }
+             Rule::Avoids { .. } => return 0.7,
+@@ -4950,6 +5024,8 @@ fn avoid_drafts(
+     // upward edge against a declared layer).
+     // Avoiding a shared foundation (`packages/shared`, a logger) was always wrong.
+     let mut area_deps: BTreeMap<(String, String), usize> = BTreeMap::new();
++    let mut from_tree: BTreeMap<(String, String), usize> = BTreeMap::new();
++    let mut into_tree: BTreeMap<(String, String), usize> = BTreeMap::new();
+     for u in units {
+         if let View::File(f) = u.view {
+             let own = area(&f.path);
+@@ -4960,11 +5036,35 @@ fn avoid_drafts(
+                 .filter_map(|i| import_area(&i.module))
+                 .filter(|t| *t != own)
+                 .collect();
++            // The same edges at the subtree level (TypeScript/JavaScript, [`layer_signals`]):
++            // files in `p/**` importing an area, and an area's files importing `p/**`.
++            if f.lang != "py" && layer11_on("m1") {
++                for t in &targets {
++                    if let Some((p, _)) = own.split_once('/') {
++                        *from_tree.entry((p.to_string(), t.clone())).or_default() += 1;
++                    } else {
++                        *from_tree.entry((own.clone(), t.clone())).or_default() += 1;
++                    }
++                }
++                let parents: BTreeSet<String> = targets
++                    .iter()
++                    .map(|t| t.split_once('/').map_or(t.as_str(), |(p, _)| p).to_string())
++                    .filter(|p| own != *p && !own.starts_with(&format!("{p}/")))
++                    .collect();
++                for p in parents {
++                    *into_tree.entry((own.clone(), p)).or_default() += 1;
++                }
++            }
+             for t in targets {
+                 *area_deps.entry((own.clone(), t)).or_default() += 1;
+             }
+         }
+     }
++    let tree = |m: &BTreeMap<(String, String), usize>, from: &str, to: &str| {
++        m.get(&(from.to_string(), to.to_string()))
++            .copied()
++            .unwrap_or(0)
++    };
+     let deps = |from: &str, to: &str| {
+         area_deps
+             .get(&(from.to_string(), to.to_string()))
+@@ -4976,6 +5076,7 @@ fn avoid_drafts(
+         if members.len() < MIN_ROLE_SIZE {
+             continue;
+         }
++        let mut role_drafts = Vec::new();
+         let role_areas: BTreeSet<String> =
+             members.iter().map(|&m| area(&units[m].path())).collect();
+         let mut inside: BTreeMap<&str, usize> = BTreeMap::new();
+@@ -5013,9 +5114,24 @@ fn avoid_drafts(
+                 {
+                     continue;
+                 }
++                // A one-segment target of a TypeScript/JavaScript role is the subtree
++                // `target/**` ([`layer_signals`]): its edges are counted at that level.
++                let subtree =
++                    !target.contains('/') && !python_units(members, units) && layer11_on("m1");
++                if subtree
++                    && role_areas
++                        .iter()
++                        .any(|a| a.starts_with(&format!("{target}/")))
++                {
++                    continue;
++                }
+                 let upward = role_areas.iter().any(|a| {
+-                    ctx.declares_area(target, a)
+-                        || (deps(target, a) > 0 && deps(target, a) > deps(a, target))
++                    let (down, up) = if subtree {
++                        (tree(&from_tree, target, a), tree(&into_tree, a, target))
++                    } else {
++                        (deps(target, a), deps(a, target))
++                    };
++                    ctx.declares_area(target, a) || (down > 0 && down > up)
+                 });
+                 if !upward || wilson_lower_bound(n - h, n) < AVOID_IMPORT_MIN_LOWER_BOUND {
+                     continue;
+@@ -5043,21 +5159,148 @@ fn avoid_drafts(
+             };
+             let rule = Rule::Avoids {
+                 signal: signal.to_string(),
++                except: vec![],
+             };
+-            out.extend(draft_over(
+-                role,
+-                rule,
+-                population,
+-                units,
+-                ctx,
+-                contrast,
+-                vec![],
+-            ));
++            let draft = draft_over(role, rule, population, units, ctx, contrast, vec![]);
++            let draft = match draft {
++                Some(d) if signal.starts_with("import:") && !python_units(members, units) => {
++                    Some(target_exception(d, units, ctx))
++                }
++                d => d,
++            };
++            role_drafts.extend(draft);
+         }
++        out.extend(widen_layering(role_drafts));
+     }
+     out
+ }
+ 
++/// Whether the round-11 layering mechanisms are on: both by default; the study
++/// switch `DRIFT_STUDY_LAYER11` (`m1`, `m2` or `none`) measures one at a time.
++fn layer11_on(which: &str) -> bool {
++    static SWITCH: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
++    SWITCH
++        .get_or_init(|| std::env::var("DRIFT_STUDY_LAYER11").ok())
++        .as_deref()
++        .is_none_or(|v| {
++            v.split(',')
++                .any(|w| w.trim() == which || w.trim() == "both")
++        })
++}
++
++/// A layering rule stated at the shallowest area where it holds (TypeScript and
++/// JavaScript): when a role's draft avoiding `p/**` passed every test of
++/// [`avoid_drafts`] (role scope, upward edge, the Wilson bound), its drafts avoiding
++/// `p/<x>` say less and are dropped. "`lib/**` does not import from `components/**`"
++/// is one rule, not one card per folder of `components`, and it also covers the
++/// folders no single narrow card could show.
++fn widen_layering(drafts: Vec<Draft>) -> Vec<Draft> {
++    if !layer11_on("m1") {
++        return drafts;
++    }
++    let wide: BTreeSet<String> = drafts
++        .iter()
++        .filter_map(|d| match &d.rule {
++            Rule::Avoids { signal, .. } => signal
++                .strip_prefix("import:")
++                .filter(|t| !t.contains('/') && !t.starts_with("pkg:"))
++                .map(str::to_string),
++            _ => None,
++        })
++        .collect();
++    drafts
++        .into_iter()
++        .filter(|d| match &d.rule {
++            Rule::Avoids { signal, .. } => !signal
++                .strip_prefix("import:")
++                .and_then(|t| t.split_once('/'))
++                .is_some_and(|(p, _)| !p.starts_with("pkg:") && wide.contains(p)),
++            _ => true,
++        })
++        .collect()
++}
++
++/// Outliers needed before the module they share is an exception of the rule (as
++/// [`REFINEMENT_MIN_OUTLIERS`]).
++const EXCEPTION_MIN_OUTLIERS: usize = 3;
++
++/// A layering rule whose outliers mostly import one module of the avoided area (a
++/// shared context provider, a facade) excepts that module: "`components/**` do not
++/// import from `app/board/**` except from `app/board/board-context.ts`". The module is
++/// a sanctioned way in, not one violation per importer, and a new importer of it is
++/// not flagged either (`check` applies the exception, [`Rule::holds`]).
++///
++/// The module must be imported by at least [`EXCEPTION_MIN_OUTLIERS`] outliers and by
++/// at least [`MIN_LOWER_BOUND`] of them, with no tie. [STRICT] The draft passed the
++/// bound without it (no rescue), and when the module is the only file of the area,
++/// nothing is excepted (the rule would be empty).
++fn target_exception(d: Draft, units: &[Unit], ctx: &RepoContext) -> Draft {
++    if !layer11_on("m2") {
++        return d;
++    }
++    let Rule::Avoids { signal, .. } = &d.rule else {
++        return d;
++    };
++    let signal = signal.clone();
++    let target = signal
++        .strip_prefix("import:")
++        .unwrap_or_default()
++        .to_string();
++    let mut by_module: BTreeMap<&str, usize> = BTreeMap::new();
++    let mut outliers = 0;
++    for &m in &d.members {
++        let View::File(f) = units[m].view else {
++            continue;
++        };
++        let modules: BTreeSet<&str> = layer_signals(f, ctx)
++            .filter(|(g, _)| *g == signal)
++            .map(|(_, module)| module)
++            .collect();
++        if !d.holders.contains(&m) {
++            outliers += 1;
++            for module in modules {
++                *by_module.entry(module).or_default() += 1;
++            }
++        }
++    }
++    let mut ranked: Vec<(&str, usize)> = by_module.into_iter().collect();
++    ranked.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(b.0)));
++    let Some(&(module, count)) = ranked.first() else {
++        return d;
++    };
++    let tie = ranked.get(1).is_some_and(|&(_, c)| c == count);
++    if tie || count < EXCEPTION_MIN_OUTLIERS || (count as f64) < MIN_LOWER_BOUND * outliers as f64 {
++        return d;
++    }
++    // Another file in the avoided area, or the exception is the whole rule.
++    let in_target = |p: &str| p.starts_with(&format!("{target}/"));
++    if !units
++        .iter()
++        .any(|u| matches!(u.view, View::File(f) if in_target(&f.path) && f.path != module))
++    {
++        return d;
++    }
++    let rule = Rule::Avoids {
++        signal,
++        except: vec![module.to_string()],
++    };
++    let holders: BTreeSet<usize> = d
++        .members
++        .iter()
++        .copied()
++        .filter(|&m| rule.holds_in(Some(&d.role), &units[m].view, ctx))
++        .collect();
++    let lb = wilson_lower_bound(holders.len(), d.n);
++    let score = d.score / d.lb.max(f64::EPSILON) * lb;
++    Draft {
++        rule,
++        holders,
++        lb,
++        score,
++        ..d
++    }
++}
++
+ /// Every unit is in a Python file. The Python-only rules below were measured on the
+ /// Python dev set; TypeScript keeps its own.
+ fn python_units(members: &[usize], units: &[Unit]) -> bool {
+@@ -5481,7 +5724,7 @@ fn role_scope(role: &RoleSelector) -> String {
+ /// `use*` naming is a framework mandate instead.)
+ fn lint_equivalent(rule: &Rule) -> Option<&'static str> {
+     match rule {
+-        Rule::Avoids { signal } => match signal.as_str() {
++        Rule::Avoids { signal, .. } => match signal.as_str() {
+             // `typing_any` has none until Python lint configs (ruff `ANN401`, mypy
+             // `disallow_any_explicit`) are read: ESLint's `no-explicit-any` is about
+             // TypeScript and says nothing about Python code next to it.
+@@ -5497,7 +5740,7 @@ fn lint_equivalent(rule: &Rule) -> Option<&'static str> {
+ 
+ fn lint_verdict(rule: &Rule, role: &RoleSelector, ctx: &RepoContext) -> LintVerdict {
+     let scope = role_scope(role);
+-    if let Rule::Avoids { signal } = rule
++    if let Rule::Avoids { signal, .. } = rule
+         && let Some(area) = signal.strip_prefix("import:")
+     {
+         return ctx.import_restriction(&scope, area);
+@@ -5555,7 +5798,7 @@ fn is_config_import(i: &drift_core::Import, ctx: &RepoContext) -> bool {
+ /// a team alternative (a logger, an error class, an env/config module). Without it
+ /// the absence is incidental (most code has no reason to log or throw).
+ fn corroborated(d: &Draft, units: &[Unit], verdict: LintVerdict, ctx: &RepoContext) -> bool {
+-    let Rule::Avoids { signal } = &d.rule else {
++    let Rule::Avoids { signal, .. } = &d.rule else {
+         return true;
+     };
+     let count = |f: &dyn Fn(&FileFacts, &Symbol) -> bool| {
+@@ -5610,7 +5853,7 @@ fn corroborated(d: &Draft, units: &[Unit], verdict: LintVerdict, ctx: &RepoConte
+ fn hidden_python_family(role: &RoleSelector, rule: &Rule) -> bool {
+     match rule {
+         Rule::Before { .. } => true,
+-        Rule::Avoids { signal } => signal == "os_environ",
++        Rule::Avoids { signal, .. } => signal == "os_environ",
+         Rule::Calls { .. } => role.entry == "http" && role.kind == SymbolKind::Function,
+         _ => false,
+     }
+@@ -5746,7 +5989,7 @@ fn sibling_callee(other: &str, callee: &str) -> bool {
+ /// role importing the target is the intended direction, and "the role does not import
+ /// the target" says the opposite.
+ fn against_lint_layering(d: &Draft, ctx: &RepoContext) -> bool {
+-    let Rule::Avoids { signal } = &d.rule else {
++    let Rule::Avoids { signal, .. } = &d.rule else {
+         return false;
+     };
+     let Some(target) = signal.strip_prefix("import:") else {
+diff --git a/crates/drift-mine/src/neighbour.rs b/crates/drift-mine/src/neighbour.rs
+index b28f0652..204c04f9 100644
+--- a/crates/drift-mine/src/neighbour.rs
++++ b/crates/drift-mine/src/neighbour.rs
+@@ -105,7 +105,7 @@ pub fn rule_modules(rule: &Rule) -> Vec<String> {
+         Rule::Renders { component } => refs.push(component),
+         Rule::Throws { class } => refs.push(class),
+         Rule::Before { first, then } => refs.extend([first.as_str(), then.as_str()]),
+-        Rule::Avoids { signal } => {
++        Rule::Avoids { signal, .. } => {
+             if let Some(m) = signal.strip_prefix("import:") {
+                 refs.push(m);
+             }
+diff --git a/crates/drift-mine/src/report.rs b/crates/drift-mine/src/report.rs
+index 17a45e5a..055df593 100644
+--- a/crates/drift-mine/src/report.rs
++++ b/crates/drift-mine/src/report.rs
+@@ -213,8 +213,17 @@ fn agent_items(out: &mut String, violations: &[&Violation], mark_blocks: bool, o
+         } else {
+             String::new()
+         };
++        // A layering violation names the import that breaks the rule; "like <holder>"
++        // says nothing about what to change for an avoid rule, so it is left out.
++        let (what, like) = match &v.import {
++            Some(hit) => (hit.describe(), String::new()),
++            None => (
++                v.symbol.clone(),
++                format!("  like {}\n", sanitize(&v.example, MAX_PATH)),
++            ),
++        };
+         out.push_str(&format!(
+-            "[{}] {}{}\n  at   {}:{} {}\n  like {}\n  why  {}\n{fix}{ignore}",
++            "[{}] {}{}\n  at   {}:{} {}\n{like}  why  {}\n{fix}{ignore}",
+             sanitize(&v.id, 16),
+             if is_suggestion(v) {
+                 "(suggestion) "
+@@ -223,11 +232,10 @@ fn agent_items(out: &mut String, violations: &[&Violation], mark_blocks: bool, o
+             } else {
+                 ""
+             },
+-            sanitize_summary(&v.summary),
++            sanitize_summary(&crate::mine::agent_summary(&v.summary)),
+             sanitize(&v.path, MAX_PATH),
+             v.line,
+-            sanitize(&v.symbol, MAX_IDENT),
+-            sanitize(&v.example, MAX_PATH),
++            sanitize(&what, MAX_PATH),
+             why_line(&sanitize(&v.evidence, 16)),
+         ));
+     }
+@@ -787,6 +795,7 @@ mod tests {
+             suppressed_neighbour: false,
+             extent: crate::check::Extent::Symbol { start: 4, end: 9 },
+             wire: None,
++            import: None,
+         }
+     }
+ 
+diff --git a/crates/drift-mine/src/tier.rs b/crates/drift-mine/src/tier.rs
+index 0c21c559..95c4b738 100644
+--- a/crates/drift-mine/src/tier.rs
++++ b/crates/drift-mine/src/tier.rs
+@@ -175,7 +175,7 @@ pub fn rule_kind(rule: &Rule) -> &'static str {
+         Rule::Throws { .. } => "throws",
+         Rule::Named { .. } => "named",
+         Rule::Before { .. } => "before",
+-        Rule::Avoids { signal } if signal.starts_with("import:") => "avoids:import",
++        Rule::Avoids { signal, .. } if signal.starts_with("import:") => "avoids:import",
+         Rule::Avoids { .. } => "avoids:other",
+         Rule::HasTest => "has_test",
+         Rule::PrefersLibrary { .. } => "prefers_library",
+@@ -211,7 +211,7 @@ pub fn names_package(rule: &Rule) -> bool {
+         Rule::Renders { component } => pkg(component),
+         Rule::Throws { class } => pkg(class),
+         Rule::Before { first, then } => pkg(first) || pkg(then),
+-        Rule::Avoids { signal } => signal.strip_prefix("import:").is_some_and(outside_repo),
++        Rule::Avoids { signal, .. } => signal.strip_prefix("import:").is_some_and(outside_repo),
+         Rule::ImportsFrom {
+             source, instead_of, ..
+         } => pkg(source) || instead_of.iter().any(|s| pkg(s)),
+@@ -718,8 +718,12 @@ mod tests {
+             },
+             Rule::Avoids {
+                 signal: "import:x".into(),
++                except: vec![],
++            },
++            Rule::Avoids {
++                signal: s(),
++                except: vec![],
+             },
+-            Rule::Avoids { signal: s() },
+             Rule::HasTest,
+             Rule::PrefersLibrary {
+                 group: s(),
+diff --git a/crates/drift-mine/tests/layer11.rs b/crates/drift-mine/tests/layer11.rs
+new file mode 100644
+index 00000000..70e0a37c
+--- /dev/null
++++ b/crates/drift-mine/tests/layer11.rs
+@@ -0,0 +1,301 @@
++//! Layering at the shallowest area that holds, and a shared target module as the
++//! rule's one exception (round 11, eval/study/research/2026-11-09/layer11.md). Every
++//! name is invented.
++
++use drift_core::{FileFacts, Import, RepoFacts};
++use drift_mine::check::{Scope, check, find_import};
++use drift_mine::mine::{Candidate, MineOptions, Rule, mine_unshown as mine};
++use drift_mine::policy::{ConventionsFile, Lock, Status};
++
++fn file(path: &str, imports: &[&str]) -> FileFacts {
++    FileFacts {
++        path: path.into(),
++        lang: "ts".into(),
++        parse_ok: true,
++        imports: imports
++            .iter()
++            .map(|m| Import {
++                module: (*m).into(),
++                names: vec!["x".into()],
++                type_only: false,
++                load: Default::default(),
++            })
++            .collect(),
++        ..Default::default()
++    }
++}
++
++fn repo(files: Vec<FileFacts>) -> RepoFacts {
++    let mut r = RepoFacts {
++        files,
++        ..Default::default()
++    };
++    r.normalize();
++    r
++}
++
++fn mined(r: &RepoFacts) -> Vec<Candidate> {
++    mine(r, &MineOptions { max_per_repo: 200 }).candidates
++}
++
++/// `(role dir, signal, except)` of every layering candidate.
++fn layering(cs: &[Candidate]) -> Vec<(String, String, Vec<String>)> {
++    cs.iter()
++        .filter_map(|c| match &c.rule {
++            Rule::Avoids { signal, except } if signal.starts_with("import:") => {
++                Some((c.role.dir.clone(), signal.clone(), except.clone()))
++            }
++            _ => None,
++        })
++        .collect()
++}
++
++fn accept_all(cs: &[Candidate]) -> ConventionsFile {
++    let mut p = ConventionsFile::merge(None, "test", Default::default(), cs);
++    for c in &mut p.conventions {
++        c.status = Status::Accepted;
++    }
++    p
++}
++
++/// `kit/` (60 files) sits below `views/`: `views/charts` and `views/forms` import kit
++/// from every file, and one kit file imports `views/forms`.
++fn layered(extra: Vec<FileFacts>) -> RepoFacts {
++    let mut files = Vec::new();
++    for i in 0..60 {
++        let imports: &[&str] = if i == 0 { &["views/forms/f3.tsx"] } else { &[] };
++        files.push(file(&format!("kit/k{i}.ts"), imports));
++    }
++    for i in 0..12 {
++        files.push(file(&format!("views/charts/c{i}.tsx"), &["kit/k1.ts"]));
++        files.push(file(&format!("views/forms/f{i}.tsx"), &["kit/k2.ts"]));
++    }
++    files.extend(extra);
++    repo(files)
++}
++
++#[test]
++fn a_layering_rule_is_stated_at_the_shallowest_area_that_holds() {
++    let cs = mined(&layered(vec![]));
++    let rules = layering(&cs);
++    let kit: Vec<&str> = rules
++        .iter()
++        .filter(|(dir, _, _)| dir == "kit")
++        .map(|(_, s, _)| s.as_str())
++        .collect();
++    assert_eq!(kit, ["import:views"], "{rules:?}");
++}
++
++#[test]
++fn the_wide_rule_flags_a_sibling_no_narrow_card_named() {
++    let p = accept_all(&mined(&layered(vec![])));
++    let after = layered(vec![file("kit/k60.ts", &["views/charts/c2.tsx"])]);
++    let report = check(&after, &p, &Lock::default(), Scope::Accepted, None);
++    let flagged: Vec<(&str, Option<&str>)> = report
++        .violations
++        .iter()
++        .filter(|v| !v.baselined)
++        .map(|v| {
++            (
++                v.path.as_str(),
++                v.import.as_ref().map(|h| h.module.as_str()),
++            )
++        })
++        .collect();
++    assert_eq!(
++        flagged,
++        [
++            ("kit/k0.ts", Some("views/forms/f3.tsx")),
++            ("kit/k60.ts", Some("views/charts/c2.tsx"))
++        ]
++    );
++}
++
++#[test]
++fn a_subtree_that_depends_less_on_the_role_than_the_role_on_it_is_not_widened() {
++    // 600 kit files, 30 of them importing `views/forms`: kit imports `views/**` from more
++    // files (30) than `views/**` imports kit (24), so `views/**` is no layer above kit,
++    // although the bound (570/600) holds.
++    let mut files = Vec::new();
++    for i in 0..600 {
++        let imports: &[&str] = if i < 30 { &["views/forms/f3.tsx"] } else { &[] };
++        files.push(file(&format!("kit/k{i}.ts"), imports));
++    }
++    for i in 0..12 {
++        files.push(file(&format!("views/charts/c{i}.tsx"), &["kit/k1.ts"]));
++        files.push(file(&format!("views/forms/f{i}.tsx"), &["kit/k2.ts"]));
++    }
++    let rules = layering(&mined(&repo(files)));
++    assert!(
++        !rules
++            .iter()
++            .any(|(d, s, _)| d == "kit" && s == "import:views"),
++        "{rules:?}"
++    );
++}
++
++#[test]
++fn every_narrow_rule_under_a_wide_one_is_dropped() {
++    // Two kit files import two folders of views: the narrow rules (119/120 each) and the
++    // wide one (118/120) all hold; only the wide one is proposed.
++    let mut files = Vec::new();
++    for i in 0..120 {
++        let imports: &[&str] = match i {
++            0 => &["views/forms/f3.tsx"],
++            1 => &["views/charts/c3.tsx"],
++            _ => &[],
++        };
++        files.push(file(&format!("kit/k{i}.ts"), imports));
++    }
++    for i in 0..12 {
++        files.push(file(&format!("views/charts/c{i}.tsx"), &["kit/k5.ts"]));
++        files.push(file(&format!("views/forms/f{i}.tsx"), &["kit/k6.ts"]));
++    }
++    let rules = layering(&mined(&repo(files)));
++    let kit: Vec<&str> = rules
++        .iter()
++        .filter(|(dir, _, _)| dir == "kit")
++        .map(|(_, s, _)| s.as_str())
++        .collect();
++    assert_eq!(kit, ["import:views"], "{rules:?}");
++}
++
++/// `parts/` (200 files) sits below `screens/`: every screen file imports a part. Each
++/// of `hook_users` parts imports `screens/board/board-context.ts`, and `others` import
++/// another screen module each.
++fn facade(hook_users: usize, others: &[&str], extra: Vec<FileFacts>) -> RepoFacts {
++    let mut files = Vec::new();
++    for i in 0..200 {
++        files.push(file(&format!("parts/p{i}.tsx"), &[]));
++    }
++    for i in 0..hook_users {
++        files.push(file(
++            &format!("parts/h{i}.tsx"),
++            &["screens/board/board-context.ts"],
++        ));
++    }
++    for (i, m) in others.iter().enumerate() {
++        files.push(file(&format!("parts/o{i}.tsx"), &[m]));
++    }
++    files.push(file("screens/board/board-context.ts", &[]));
++    for i in 0..20 {
++        files.push(file(
++            &format!("screens/board/panel{i}.tsx"),
++            &[&format!("parts/p{i}.tsx")],
++        ));
++    }
++    files.extend(extra);
++    repo(files)
++}
++
++fn parts_rule(cs: &[Candidate]) -> Option<&Candidate> {
++    cs.iter().find(|c| {
++        c.role.dir == "parts"
++            && matches!(&c.rule, Rule::Avoids { signal, .. } if signal.starts_with("import:"))
++    })
++}
++
++#[test]
++fn outliers_sharing_one_target_module_make_it_the_exception() {
++    let cs = mined(&facade(6, &[], vec![]));
++    let c = parts_rule(&cs).expect("parts avoid screens");
++    let Rule::Avoids { signal, except } = &c.rule else {
++        unreachable!()
++    };
++    assert_eq!(signal, "import:screens");
++    assert_eq!(except, &["screens/board/board-context.ts".to_string()]);
++    assert_eq!((c.evidence.holders, c.evidence.total), (206, 206));
++    assert!(
++        c.rule
++            .describe()
++            .contains("except from screens/board/board-context.ts"),
++        "{}",
++        c.rule.describe()
++    );
++}
++
++#[test]
++fn check_allows_the_exception_and_flags_any_other_target_module() {
++    let p = accept_all(&mined(&facade(6, &[], vec![])));
++    let after = facade(
++        6,
++        &[],
++        vec![
++            file("parts/new1.tsx", &["screens/board/board-context.ts"]),
++            file("parts/new2.tsx", &["screens/board/panel3.tsx"]),
++        ],
++    );
++    let report = check(&after, &p, &Lock::default(), Scope::Accepted, None);
++    let flagged: Vec<&str> = report
++        .violations
++        .iter()
++        .filter(|v| !v.baselined)
++        .map(|v| v.path.as_str())
++        .collect();
++    assert_eq!(flagged, ["parts/new2.tsx"]);
++}
++
++#[test]
++fn the_exception_needs_three_outliers_and_three_quarters_of_them() {
++    // 2 hook users: too few.
++    let cs = mined(&facade(2, &[], vec![]));
++    let c = parts_rule(&cs).expect("parts avoid screens");
++    assert!(matches!(&c.rule, Rule::Avoids { except, .. } if except.is_empty()));
++    // 3 of 5 outliers (60%): under 75%.
++    let cs = mined(&facade(
++        3,
++        &["screens/board/panel1.tsx", "screens/board/panel2.tsx"],
++        vec![],
++    ));
++    let c = parts_rule(&cs).expect("parts avoid screens");
++    assert!(matches!(&c.rule, Rule::Avoids { except, .. } if except.is_empty()));
++    // 4 of 5 (80%): excepted, and the fifth outlier stays one.
++    let cs = mined(&facade(4, &["screens/board/panel1.tsx"], vec![]));
++    let c = parts_rule(&cs).expect("parts avoid screens");
++    assert!(matches!(&c.rule, Rule::Avoids { except, .. } if except.len() == 1));
++    assert_eq!(c.evidence.total - c.evidence.holders, 1);
++}
++
++#[test]
++fn a_tie_between_target_modules_excepts_neither() {
++    // Three outliers each import two screen modules: both are shared by every outlier.
++    let both = |i: usize| {
++        file(
++            &format!("parts/t{i}.tsx"),
++            &["screens/board/board-context.ts", "screens/board/panel1.tsx"],
++        )
++    };
++    let cs = mined(&facade(0, &[], (0..3).map(both).collect()));
++    let c = parts_rule(&cs).expect("parts avoid screens");
++    assert!(matches!(&c.rule, Rule::Avoids { except, .. } if except.is_empty()));
++}
++
++#[test]
++fn the_exception_rescues_no_rule() {
++    // 30 hook users of 230: the bound fails without the exception, so no rule.
++    let cs = mined(&facade(30, &[], vec![]));
++    assert!(parts_rule(&cs).is_none());
++}
++
++#[test]
++fn imports_are_found_by_relative_and_aliased_specifiers() {
++    let text =
++        "import { a } from \"react\";\nimport { useBoard } from '@/screens/board/board-context';\n";
++    assert_eq!(
++        find_import(text, "parts/h1.tsx", "screens/board/board-context.ts"),
++        Some((2, "@/screens/board/board-context".to_string()))
++    );
++    let text = "const x = require(\"../screens/board\");\n";
++    assert_eq!(
++        find_import(text, "parts/h1.tsx", "screens/board/index.ts"),
++        Some((1, "../screens/board".to_string()))
++    );
++    assert_eq!(
++        find_import(
++            "import x from './other';\n",
++            "parts/h1.tsx",
++            "screens/board/index.ts"
++        ),
++        None
++    );
++}
+diff --git a/crates/drift-mine/tests/precision.rs b/crates/drift-mine/tests/precision.rs
+index 00f1dbd6..99d74017 100644
+--- a/crates/drift-mine/tests/precision.rs
++++ b/crates/drift-mine/tests/precision.rs
+@@ -82,7 +82,7 @@ fn has(cs: &[Candidate], f: impl Fn(&Candidate) -> bool) -> bool {
+ 
+ fn avoids(cs: &[Candidate], signal: &str) -> Vec<String> {
+     cs.iter()
+-        .filter(|c| matches!(&c.rule, Rule::Avoids { signal: s } if s == signal))
++        .filter(|c| matches!(&c.rule, Rule::Avoids { signal: s, .. } if s == signal))
+         .map(|c| c.role.dir.clone())
+         .collect()
+ }
+@@ -636,6 +636,7 @@ fn only_undeclared_imports_break_layering() {
+             c.rule
+                 == Rule::Avoids {
+                     signal: "import:packages/platform".into(),
++                    except: vec![],
+                 }
+         })
+         .expect("features avoid undeclared platform imports");
+@@ -1345,7 +1346,8 @@ fn avoiding_typing_any_needs_a_lint_rule() {
+     }
+     assert_eq!(
+         Rule::Avoids {
+-            signal: "typing_any".into()
++            signal: "typing_any".into(),
++            except: vec![],
+         }
+         .describe(),
+         "do not use `Any` (typing)"
+@@ -1380,6 +1382,7 @@ fn accepted_python_any_rules_mean_typing_any() {
+     };
+     let rule = Rule::Avoids {
+         signal: "any".into(),
++        except: vec![],
+     };
+     let c = Candidate {
+         id: drift_mine::mine::convention_id(&role, &rule),
+diff --git a/crates/drift-mine/tests/py_kinds.rs b/crates/drift-mine/tests/py_kinds.rs
+index 41ac5908..17d94a34 100644
+--- a/crates/drift-mine/tests/py_kinds.rs
++++ b/crates/drift-mine/tests/py_kinds.rs
+@@ -800,7 +800,7 @@ fn python_os_environ_avoidance_is_not_proposed() {
+     assert!(
+         !cs.iter().any(|c| matches!(
+             &c.rule,
+-            Rule::Avoids { signal } if signal == "os_environ"
++            Rule::Avoids { signal, .. } if signal == "os_environ"
+         )),
+         "{:?}",
+         cs.iter()
+diff --git a/crates/drift-mine/tests/rules.rs b/crates/drift-mine/tests/rules.rs
+index cfa10400..6905897c 100644
+--- a/crates/drift-mine/tests/rules.rs
++++ b/crates/drift-mine/tests/rules.rs
+@@ -132,7 +132,7 @@ fn avoidance_needs_contrast_with_the_rest_of_the_code() {
+     let cs = mined(&r);
+     let c = find(
+         &cs,
+-        |r| matches!(r, Rule::Avoids { signal } if signal == "env"),
++        |r| matches!(r, Rule::Avoids { signal, .. } if signal == "env"),
+     )
+     .expect("ui avoids env reads");
+     assert_eq!(c.role.dir, "ui");
+@@ -140,7 +140,7 @@ fn avoidance_needs_contrast_with_the_rest_of_the_code() {
+     assert!(
+         find(
+             &cs,
+-            |r| matches!(r, Rule::Avoids { signal } if signal.starts_with("sink:"))
++            |r| matches!(r, Rule::Avoids { signal, .. } if signal.starts_with("sink:"))
+         )
+         .is_none()
+     );
+@@ -314,6 +314,7 @@ fn every_rule_kind_round_trips_through_conventions_yaml() {
+         },
+         Rule::Avoids {
+             signal: "sink:raw_sql".into(),
++            except: vec![],
+         },
+         Rule::HasTest,
+         Rule::PrefersLibrary {
+@@ -432,7 +433,7 @@ fn import_avoidance_is_only_proposed_against_upward_layers() {
+     let avoided: Vec<&str> = cs
+         .iter()
+         .filter_map(|c| match &c.rule {
+-            Rule::Avoids { signal } => Some(signal.as_str()),
++            Rule::Avoids { signal, .. } => Some(signal.as_str()),
+             _ => None,
+         })
+         .collect();

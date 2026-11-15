@@ -1,0 +1,538 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - +layout
+  - +page
+  - activity
+  - album
+  - api-key
+  - app
+  - asset
+  - asset-file
+  - asset-media
+  - auth
+  - cli
+  - cluster-group
+  - config
+  - database
+  - database-backup
+  - download
+  - duplicate
+  - integrity
+  - job
+  - library
+  - maintenance
+  - map
+  - media
+  - memory
+  - metadata
+  - notification
+  - ocr
+  - partner
+  - passkey
+  - person
+  - plugin
+  - queue
+  - search
+  - server
+  - session
+  - shared-link
+  - stack
+  - storage
+  - sync
+  - system-config
+  - system-metadata
+  - tag
+  - timeline
+  - trash
+  - types
+  - user
+  - user-admin
+  - utils
+  - version
+  - view
+  - workflow
+  suffixes:
+  - command
+  - config
+  - controller
+  - dto
+  - e2e-spec
+  - email
+  - factory
+  - interceptor
+  - mock
+  - query
+  - repository
+  - service
+  - spec
+  - store
+  - stub
+  - svelte
+  - table
+conventions:
+- id: D-379261
+  status: proposed
+  mode: advise
+  summary: "server: HTTP handlers in src/** (*.controller files) do not use `any`"
+  role:
+    package: server
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: avoids
+    signal: any
+  evidence:
+    holders: 314
+    total: 315
+    lower_bound: 0.982
+    lift: 50.945
+  example: server/src/controllers/activity.controller.ts#DELETE /activities/:id
+- id: D-ac672e
+  status: proposed
+  mode: advise
+  summary: "server: functions in src/schema/** declare their return type"
+  role:
+    package: server
+    dir: src/schema
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 207
+    total: 208
+    lower_bound: 0.973
+    lift: 3.901
+  example: server/src/schema/migrations/1744910873969-InitialMigration.ts#down
+- id: D-d3f2f9
+  status: proposed
+  mode: advise
+  summary: "server: classes in src/** (*.dto files) extend createZodDto()"
+  role:
+    package: server
+    dir: src
+    file: "*.dto"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - pkg:nestjs-zod#createZodDto()
+  evidence:
+    holders: 257
+    total: 259
+    lower_bound: 0.972
+    lift: 2.258
+  example: server/src/dtos/activity.dto.ts#ActivityCreateDto
+- id: D-f0120c
+  status: proposed
+  mode: advise
+  summary: "server: classes in src/** (*.dto files) are named `*Dto`"
+  role:
+    package: server
+    dir: src
+    file: "*.dto"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Dto"
+  evidence:
+    holders: 251
+    total: 259
+    lower_bound: 0.94
+    lift: 2.257
+  example: server/src/dtos/activity.dto.ts#ActivityCreateDto
+- id: D-876763
+  status: proposed
+  mode: advise
+  summary: "server: HTTP handlers in src/** (*.controller files) are decorated with Authenticated()"
+  role:
+    package: server
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - server/src/middleware/auth.guard.ts#Authenticated
+  evidence:
+    holders: 304
+    total: 315
+    lower_bound: 0.939
+    lift: 4.965
+  example: server/src/controllers/activity.controller.ts#DELETE /activities/:id
+- id: D-4fc758
+  status: proposed
+  mode: advise
+  summary: "server: HTTP handlers in src/** (*.controller files) are decorated with ApiTags()"
+  role:
+    package: server
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/swagger#ApiTags
+  evidence:
+    holders: 301
+    total: 315
+    lower_bound: 0.927
+    lift: 4.965
+  example: server/src/controllers/activity.controller.ts#DELETE /activities/:id
+- id: D-7625fd
+  status: proposed
+  mode: advise
+  summary: "packages/sdk: functions in src/** call oazapfts.ok()"
+  role:
+    package: packages/sdk
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: calls
+    callee: packages/sdk/src/fetch-client.ts#oazapfts.ok
+  evidence:
+    holders: 287
+    total: 302
+    lower_bound: 0.92
+    lift: 5.179
+  example: packages/sdk/src/fetch-client.ts#acceptClusterGroupRequest
+- id: D-0a8742
+  status: proposed
+  mode: advise
+  summary: "web: functions in src/** (+page files) do not use `any`"
+  role:
+    package: web
+    dir: src
+    file: +page
+    entry: '-'
+    kind: function
+  rule:
+    type: avoids
+    signal: any
+  evidence:
+    holders: 62
+    total: 63
+    lower_bound: 0.915
+    lift: 8.478
+  example: web/src/routes/(user)/albums/+page.ts#load
+- id: D-26380c
+  status: proposed
+  mode: advise
+  summary: "server: classes in src/** (*.repository files) are named `*Repository`"
+  role:
+    package: server
+    dir: src
+    file: "*.repository"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Repository"
+  evidence:
+    holders: 61
+    total: 63
+    lower_bound: 0.891
+    lift: 9.276
+  example: >-
+    server/src/maintenance/maintenance-health.repository.ts#MaintenanceHealthRepository
+- id: D-8ab952
+  status: proposed
+  mode: advise
+  summary: "server: classes in src/** (*.controller files) call Authenticated()"
+  role:
+    package: server
+    dir: src
+    file: "*.controller"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: server/src/middleware/auth.guard.ts#Authenticated
+  evidence:
+    holders: 47
+    total: 48
+    lower_bound: 0.891
+    lift: 12.375
+  example: server/src/controllers/activity.controller.ts#ActivityController
+- id: D-0fb8e0
+  status: proposed
+  mode: advise
+  summary: "server: classes in src/** (*.service files) are decorated with Injectable()"
+  role:
+    package: server
+    dir: src
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#Injectable
+  evidence:
+    holders: 55
+    total: 57
+    lower_bound: 0.881
+    lift: 4.816
+  example: server/src/services/activity.service.ts#ActivityService
+- id: D-c10e8e
+  status: proposed
+  mode: advise
+  summary: "server: HTTP handlers in src/** (*.controller files) are decorated with Endpoint()"
+  role:
+    package: server
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - server/src/decorators.ts#Endpoint
+  evidence:
+    holders: 287
+    total: 315
+    lower_bound: 0.875
+    lift: 4.965
+  example: server/src/controllers/activity.controller.ts#DELETE /activities/:id
+- id: D-ed6dc0
+  status: proposed
+  mode: advise
+  summary: "server: classes in src/** (*.controller files) are decorated with ApiTags()"
+  role:
+    package: server
+    dir: src
+    file: "*.controller"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/swagger#ApiTags
+  evidence:
+    holders: 46
+    total: 48
+    lower_bound: 0.86
+    lift: 12.375
+  example: server/src/controllers/activity.controller.ts#ActivityController
+- id: D-c8db80
+  status: proposed
+  mode: advise
+  summary: "web: functions in src/** (+page files) call authenticate() before getFormatter()"
+  role:
+    package: web
+    dir: src
+    file: +page
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: web/src/lib/utils/auth.ts#authenticate
+    then: web/src/lib/utils/i18n.ts#getFormatter
+  evidence:
+    holders: 48
+    total: 51
+    lower_bound: 0.841
+    lift: 1.0
+  example: web/src/routes/(user)/albums/+page.ts#load
+- id: D-63d2cd
+  status: proposed
+  mode: advise
+  summary: "server: HTTP handlers in src/** (*.controller files) pass `permission` to Authenticated()"
+  role:
+    package: server
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: passes_key
+    callee: server/src/middleware/auth.guard.ts#Authenticated
+    index: 0
+    key: permission
+  evidence:
+    holders: 273
+    total: 315
+    lower_bound: 0.825
+    lift: 4.965
+  example: server/src/controllers/activity.controller.ts#DELETE /activities/:id
+- id: D-3b4f47
+  status: proposed
+  mode: advise
+  summary: "server: classes in src/** (*.service files) extend BaseService"
+  role:
+    package: server
+    dir: src
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - server/src/services/base.service.ts#BaseService
+  evidence:
+    holders: 52
+    total: 57
+    lower_bound: 0.811
+    lift: 10.421
+  example: server/src/services/activity.service.ts#ActivityService
+- id: D-62dfac
+  status: proposed
+  mode: advise
+  summary: "server: classes in src/** (*.repository files) are decorated with Injectable()"
+  role:
+    package: server
+    dir: src
+    file: "*.repository"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#Injectable
+  evidence:
+    holders: 57
+    total: 63
+    lower_bound: 0.807
+    lift: 4.516
+  example: >-
+    server/src/maintenance/maintenance-health.repository.ts#MaintenanceHealthRepository
+- id: D-3275e7
+  status: proposed
+  mode: advise
+  summary: "server: classes in src/** (*.controller files) call Get()"
+  role:
+    package: server
+    dir: src
+    file: "*.controller"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: pkg:@nestjs/common#Get
+  evidence:
+    holders: 44
+    total: 48
+    lower_bound: 0.804
+    lift: 12.375
+  example: server/src/controllers/activity.controller.ts#ActivityController
+- id: D-4f7501
+  status: proposed
+  mode: advise
+  summary: "server: classes in src/** (*.controller files) call HistoryBuilder(new)()"
+  role:
+    package: server
+    dir: src
+    file: "*.controller"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: server/src/decorators.ts#HistoryBuilder(new)
+  evidence:
+    holders: 44
+    total: 48
+    lower_bound: 0.804
+    lift: 12.1
+  example: server/src/controllers/activity.controller.ts#ActivityController
+- id: D-7167a0
+  status: proposed
+  mode: advise
+  summary: "server: classes in src/** (*.controller files) pass `permission` to Authenticated()"
+  role:
+    package: server
+    dir: src
+    file: "*.controller"
+    entry: '-'
+    kind: class
+  rule:
+    type: passes_key
+    callee: server/src/middleware/auth.guard.ts#Authenticated
+    index: 0
+    key: permission
+  evidence:
+    holders: 44
+    total: 48
+    lower_bound: 0.804
+    lift: 12.375
+  example: server/src/controllers/activity.controller.ts#ActivityController
+- id: D-9b5b59
+  status: proposed
+  mode: advise
+  summary: "server: classes in src/** (*.repository files) call Injectable() before InjectKysely()"
+  role:
+    package: server
+    dir: src
+    file: "*.repository"
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: pkg:@nestjs/common#Injectable
+    then: pkg:nestjs-kysely#InjectKysely
+  evidence:
+    holders: 37
+    total: 40
+    lower_bound: 0.801
+    lift: 1.0
+  example: server/src/repositories/access.repository.ts#AccessRepository
+- id: D-908f41
+  status: proposed
+  mode: advise
+  summary: "server: classes in src/** (*.table files) call Column()"
+  role:
+    package: server
+    dir: src
+    file: "*.table"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: pkg:@immich/sql-tools#Column
+  evidence:
+    holders: 63
+    total: 71
+    lower_bound: 0.793
+    lift: 8.366
+  example: server/src/schema/tables/activity.table.ts#ActivityTable
+- id: D-57ead0
+  status: proposed
+  mode: advise
+  summary: "server: functions in src/** (*.dto files) declare their return type"
+  role:
+    package: server
+    dir: src
+    file: "*.dto"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 36
+    total: 40
+    lower_bound: 0.769
+    lift: 3.528
+  example: server/src/dtos/activity.dto.ts#mapActivity

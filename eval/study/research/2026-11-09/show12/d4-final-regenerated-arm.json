@@ -1,0 +1,174 @@
+{
+ "census": "<scratch>/show12/census/regen",
+ "failed": [],
+ "d4": {
+  "ts": {
+   "all_listed": {
+    "view": "default",
+    "shown": 103,
+    "default_tier": 47,
+    "labelled": 103,
+    "accept": 81,
+    "trivial": 1,
+    "wrong": 21,
+    "not_wrong": 82,
+    "d4": 0.7961,
+    "wilson95": [
+     0.7083,
+     0.8626
+    ],
+    "unlabelled": 0,
+    "unlabelled_changed": 0,
+    "repos_with_cards": 30,
+    "by_pool": {
+     "apps": {
+      "shown": 4,
+      "labelled": 4,
+      "not_wrong": 2,
+      "default_tier": 1
+     },
+     "dev3": {
+      "shown": 12,
+      "labelled": 12,
+      "not_wrong": 8,
+      "default_tier": 5
+     },
+     "dev4": {
+      "shown": 17,
+      "labelled": 17,
+      "not_wrong": 12,
+      "default_tier": 11
+     },
+     "dev": {
+      "shown": 70,
+      "labelled": 70,
+      "not_wrong": 60,
+      "default_tier": 30
+     }
+    }
+   },
+   "listed_by_default": {
+    "view": "default",
+    "shown": 93,
+    "default_tier": 47,
+    "labelled": 93,
+    "accept": 76,
+    "trivial": 1,
+    "wrong": 16,
+    "not_wrong": 77,
+    "d4": 0.828,
+    "wilson95": [
+     0.7387,
+     0.8912
+    ],
+    "unlabelled": 0,
+    "unlabelled_changed": 0,
+    "repos_with_cards": 30,
+    "by_pool": {
+     "apps": {
+      "shown": 4,
+      "labelled": 4,
+      "not_wrong": 2,
+      "default_tier": 1
+     },
+     "dev3": {
+      "shown": 12,
+      "labelled": 12,
+      "not_wrong": 8,
+      "default_tier": 5
+     },
+     "dev4": {
+      "shown": 17,
+      "labelled": 17,
+      "not_wrong": 12,
+      "default_tier": 11
+     },
+     "dev": {
+      "shown": 60,
+      "labelled": 60,
+      "not_wrong": 55,
+      "default_tier": 30
+     }
+    }
+   }
+  },
+  "py": {
+   "all_listed": {
+    "view": "optin",
+    "shown": 14,
+    "default_tier": 0,
+    "labelled": 14,
+    "accept": 12,
+    "trivial": 0,
+    "wrong": 2,
+    "not_wrong": 12,
+    "d4": 0.8571,
+    "wilson95": [
+     0.6006,
+     0.9599
+    ],
+    "unlabelled": 0,
+    "unlabelled_changed": 0,
+    "repos_with_cards": 13,
+    "by_pool": {
+     "dev3": {
+      "shown": 2,
+      "labelled": 2,
+      "not_wrong": 1,
+      "default_tier": 0
+     },
+     "dev4": {
+      "shown": 3,
+      "labelled": 3,
+      "not_wrong": 2,
+      "default_tier": 0
+     },
+     "dev": {
+      "shown": 9,
+      "labelled": 9,
+      "not_wrong": 9,
+      "default_tier": 0
+     }
+    }
+   },
+   "listed_by_default": {
+    "view": "optin",
+    "shown": 14,
+    "default_tier": 0,
+    "labelled": 14,
+    "accept": 12,
+    "trivial": 0,
+    "wrong": 2,
+    "not_wrong": 12,
+    "d4": 0.8571,
+    "wilson95": [
+     0.6006,
+     0.9599
+    ],
+    "unlabelled": 0,
+    "unlabelled_changed": 0,
+    "repos_with_cards": 13,
+    "by_pool": {
+     "dev3": {
+      "shown": 2,
+      "labelled": 2,
+      "not_wrong": 1,
+      "default_tier": 0
+     },
+     "dev4": {
+      "shown": 3,
+      "labelled": 3,
+      "not_wrong": 2,
+      "default_tier": 0
+     },
+     "dev": {
+      "shown": 9,
+      "labelled": 9,
+      "not_wrong": 9,
+      "default_tier": 0
+     }
+    }
+   }
+  }
+ }
+}

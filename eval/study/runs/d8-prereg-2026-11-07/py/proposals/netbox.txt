@@ -1,0 +1,122 @@
+12 conventions from 6486 units in 155 roles (0 default tier, 12 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-281ae8] classes in netbox/** (types files) are decorated with register_type()
+    evidence: 133/134 (lower bound 0.96, lift 29.9)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  netbox/circuits/graphql/types.py#CircuitGroupAssignmentType
+    outlier:  netbox/netbox/graphql/types.py:153 NestedGroupObjectType
+
+ 2. [D-cc1341] classes in netbox/** (filtersets files) are decorated with register_filterset()
+    evidence: 138/138 (lower bound 0.97, lift 28.5)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  netbox/circuits/filtersets.py#CircuitFilterSet
+    exempt:   netbox/dcim/filtersets.py:3478 ConsoleConnectionFilterSet (its model ConsolePort is already registered with register_filterset() by ConsolePortFilterSet)
+    exempt:   netbox/dcim/filtersets.py:3492 InterfaceConnectionFilterSet (its model Interface is already registered with register_filterset() by InterfaceFilterSet)
+    exempt:   netbox/dcim/filtersets.py:3485 PowerConnectionFilterSet (its model PowerPort is already registered with register_filterset() by PowerPortFilterSet)
+
+ 3. [D-76eb6b] classes in netbox/** (types files) pass `filters` to register_type()
+    evidence: 131/133 (lower bound 0.95, lift 29.9)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  netbox/circuits/graphql/types.py#CircuitGroupAssignmentType
+    outlier:  netbox/core/graphql/types.py:49 ContentType
+    outlier:  netbox/netbox/graphql/types.py:204 ContentTypeType
+    exempt:   netbox/netbox/graphql/types.py:153 NestedGroupObjectType (does not call register_type())
+
+ 4. [D-cc8d72] classes in netbox/** (forms/filtersets files) call FieldSet()
+    evidence: 132/136 (lower bound 0.93, lift 10.7)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  netbox/circuits/forms/filtersets.py#CircuitFilterForm
+    outlier:  netbox/dcim/forms/filtersets.py:2495 ConsoleConnectionFilterForm
+    outlier:  netbox/dcim/forms/filtersets.py:2543 InterfaceConnectionFilterForm
+    outlier:  netbox/dcim/forms/filtersets.py:2519 PowerConnectionFilterForm
+    outlier:  netbox/extras/forms/filtersets.py:640 NotificationGroupFilterForm
+
+ 5. [D-bc0c7d] classes in netbox/** (search files) are decorated with register_search()
+    evidence: 98/98 (lower bound 0.96, lift 40.1)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  netbox/circuits/search.py#CircuitGroupIndex
+    exempt:   netbox/extras/models/search.py:16 CachedValue (another kind of class (extends db.models.Model))
+    exempt:   netbox/netbox/forms/search.py:18 SearchForm (another kind of class (extends forms.Form))
+
+ 6. [D-4c4e2d] classes in netbox/** (model_forms files) call FieldSet()
+    evidence: 129/146 (lower bound 0.82, lift 9.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  netbox/circuits/forms/model_forms.py#CircuitForm
+    outlier:  netbox/dcim/forms/model_forms.py:1044 CableForm
+    outlier:  netbox/dcim/forms/model_forms.py:770 DeviceForm
+    outlier:  netbox/dcim/forms/model_forms.py:1260 DeviceVCMembershipForm
+    outlier:  netbox/dcim/forms/model_forms.py:2281 PopulateDeviceBayForm
+    outlier:  netbox/dcim/forms/model_forms.py:1301 VCMemberSelectForm
+    outlier:  netbox/dcim/forms/model_forms.py:1240 VirtualChassisForm
+    outlier:  netbox/extras/forms/model_forms.py:525 BookmarkForm
+    outlier:  netbox/extras/forms/model_forms.py:920 JournalEntryForm
+    outlier:  netbox/extras/forms/model_forms.py:536 NotificationGroupForm
+    outlier:  netbox/extras/forms/model_forms.py:562 SubscriptionForm
+    outlier:  netbox/extras/forms/model_forms.py:446 TableConfigForm
+    outlier:  netbox/ipam/forms/model_forms.py:551 IPAddressAssignForm
+    outlier:  netbox/ipam/forms/model_forms.py:703 VLANForm
+    outlier:  netbox/users/forms/model_forms.py:172 TokenForm
+    outlier:  netbox/users/forms/model_forms.py:128 UserTokenForm
+    outlier:  netbox/virtualization/forms/model_forms.py:106 ClusterAddDevicesForm
+    outlier:  netbox/virtualization/forms/model_forms.py:185 ClusterRemoveDevicesForm
+
+ 7. [D-e2c3e4] classes in netbox/** (choices files) extend ChoiceSet
+    evidence: 114/114 (lower bound 0.97, lift 33.7)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  netbox/circuits/choices.py#CircuitCommitRateChoices
+    exempt:   netbox/extras/choices.py:305 EventRuleActionChoices (documented exception: "Not a ChoiceSet")
+    exempt:   netbox/utilities/choices.py:19 Choice (in the module that defines ChoiceSet)
+    exempt:   netbox/utilities/forms/fields/choices.py:76 ChoiceField (a field, named for its base forms.ChoiceField)
+    exempt:   netbox/utilities/forms/fields/choices.py:96 MultipleChoiceField (a field, named for its base forms.MultipleChoiceField)
+    exempt:   netbox/utilities/forms/fields/choices.py:83 TypedChoiceField (a field, named for its base forms.TypedChoiceField)
+
+ 8. [D-58913a] classes in netbox/** (choices files) call Choice()
+    evidence: 106/118 (lower bound 0.83, lift 33.7)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  netbox/circuits/choices.py#CircuitCommitRateChoices
+    outlier:  netbox/dcim/choices.py:2267 CoolingConnectorTypeChoices
+    outlier:  netbox/dcim/choices.py:2225 CoolingFeedStatusChoices
+    outlier:  netbox/dcim/choices.py:2177 CoolingMethodChoices
+    outlier:  netbox/dcim/choices.py:2209 CoolingSourceStatusChoices
+    outlier:  netbox/dcim/choices.py:2191 CoolingSourceTypeChoices
+    outlier:  netbox/dcim/choices.py:2241 FluidTypeChoices
+    outlier:  netbox/dcim/choices.py:2255 RackCoolingCapabilityChoices
+    outlier:  netbox/extras/choices.py:50 CustomFieldStatusChoices
+    outlier:  netbox/extras/choices.py:305 EventRuleActionChoices
+    outlier:  netbox/utilities/forms/fields/choices.py:76 ChoiceField
+    outlier:  netbox/utilities/forms/fields/choices.py:96 MultipleChoiceField
+    outlier:  netbox/utilities/forms/fields/choices.py:83 TypedChoiceField
+    exempt:   netbox/utilities/choices.py:19 Choice (the rule's own target)
+
+ 9. [D-73d13c] HTTP handlers in netbox/** (api/views files) are named `*Set`
+    evidence: 134/137 (lower bound 0.94, lift 12.1)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  netbox/circuits/api/views.py#CircuitGroupAssignmentViewSet
+    outlier:  netbox/extras/api/views.py:465 DashboardView
+    outlier:  netbox/ipam/api/views.py:460 IPRangeAvailableIPAddressesView
+    outlier:  netbox/ipam/api/views.py:454 PrefixAvailableIPAddressesView
+
+10. [D-afb64d] classes in netbox/** (choices files) are named `*Choices`
+    evidence: 115/119 (lower bound 0.92, lift 33.7)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  netbox/circuits/choices.py#CircuitCommitRateChoices
+    outlier:  netbox/utilities/choices.py:19 Choice
+    outlier:  netbox/utilities/forms/fields/choices.py:76 ChoiceField
+    outlier:  netbox/utilities/forms/fields/choices.py:96 MultipleChoiceField
+    outlier:  netbox/utilities/forms/fields/choices.py:83 TypedChoiceField
+
+11. [D-937c0c] classes in netbox/ipam/api/** are named `*Serializer`
+    evidence: 27/28 (lower bound 0.82, lift 18.2)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  netbox/ipam/api/serializers_/asns.py#ASNRangeSerializer
+    outlier:  netbox/ipam/api/field_serializers.py:11 IPAddressField
+    exempt:   netbox/ipam/api/field_serializers.py:31 IPNetworkField (shared part used by 2 members)
+
+12. [D-310ec7] classes in netbox/ipam/tables/** pass `verbose_name` to Column()
+    evidence: 22/22 (lower bound 0.85, lift 26.1)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  netbox/ipam/tables/asn.py#ASNRangeTable
+    exempt:   netbox/ipam/tables/ip.py:373 AnnotatedIPAddressTable (does not call Column())
+

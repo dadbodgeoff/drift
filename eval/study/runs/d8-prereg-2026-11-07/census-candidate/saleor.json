@@ -1,0 +1,410 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "5cfbbb4-d8",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/cache/repos/saleor",
+  "units": 7261,
+  "roles": 278,
+  "conventions": 7,
+  "shown": 7,
+  "tiers": {
+    "default": 0,
+    "suggestion": 7
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    },
+    "candidate": {
+      "decision": "D8",
+      "status": "candidate (pre-registered, not adopted)",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts",
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15,
+      "py": {
+        "min_members": 50,
+        "call_wrappers": "guards"
+      }
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-e36ea5",
+      "rank": 1,
+      "summary": "exported values in saleor/core/** do not read os.environ directly",
+      "role": {
+        "package": "",
+        "dir": "saleor/core",
+        "file": "*",
+        "entry": "-",
+        "kind": "const",
+        "members": 77
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "os_environ"
+      },
+      "evidence": {
+        "holders": 76,
+        "total": 77,
+        "lower_bound": 0.93,
+        "lift": 11.83,
+        "python_members": 77
+      },
+      "rule_kind": "avoids:other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "saleor/core/auth.py",
+        "symbol": "AUTH_HEADER_PREFIXES",
+        "line": 5
+      },
+      "outliers": [
+        {
+          "path": "saleor/core/development/random_data.py",
+          "symbol": "DEFAULT_CURRENCY",
+          "line": 139
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-71795b",
+      "rank": 2,
+      "summary": "classes in saleor/** (dataloaders files) are named `*Loader`",
+      "role": {
+        "package": "",
+        "dir": "saleor",
+        "file": "dataloaders",
+        "entry": "-",
+        "kind": "class",
+        "members": 128
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Loader"
+      },
+      "evidence": {
+        "holders": 126,
+        "total": 128,
+        "lower_bound": 0.945,
+        "lift": 11.011,
+        "python_members": 128
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "saleor/graphql/account/dataloaders.py",
+        "symbol": "AccessibleChannelsByGroupIdLoader",
+        "line": 223
+      },
+      "outliers": [
+        {
+          "path": "saleor/graphql/plugins/dataloaders.py",
+          "symbol": "PluginManagerByRequestorDataloader",
+          "line": 31
+        },
+        {
+          "path": "saleor/graphql/tax/dataloaders.py",
+          "symbol": "TaxConfigurationByChannelId",
+          "line": 37
+        }
+      ],
+      "outliers_total": 2,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-ac08d9",
+      "rank": 3,
+      "summary": "enums in saleor/** (error_codes files) are named `*Code`",
+      "role": {
+        "package": "",
+        "dir": "saleor",
+        "file": "error_codes",
+        "entry": "-",
+        "kind": "class",
+        "variety": "enum",
+        "members": 92
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Code"
+      },
+      "evidence": {
+        "holders": 91,
+        "total": 92,
+        "lower_bound": 0.941,
+        "lift": 26.047,
+        "python_members": 92
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "saleor/account/error_codes.py",
+        "symbol": "AccountErrorCode",
+        "line": 4
+      },
+      "outliers": [
+        {
+          "path": "saleor/graphql/notifications/error_codes.py",
+          "symbol": "ExternalNotificationErrorCodes",
+          "line": 4
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-a6847e",
+      "rank": 4,
+      "summary": "classes in saleor/graphql/attribute/dataloaders/** are named `*Loader`",
+      "role": {
+        "package": "",
+        "dir": "saleor/graphql/attribute/dataloaders",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "members": 19
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Loader"
+      },
+      "evidence": {
+        "holders": 18,
+        "total": 19,
+        "lower_bound": 0.754,
+        "lift": 10.597,
+        "python_members": 19
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "saleor/graphql/attribute/dataloaders/assigned_attributes.py",
+        "symbol": "AttributeByPageIdAndAttributeSlugLoader",
+        "line": 465
+      },
+      "outliers": [
+        {
+          "path": "saleor/graphql/attribute/dataloaders/attributes.py",
+          "symbol": "AttributesByAttributeId",
+          "line": 22
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-e86c5d",
+      "rank": 5,
+      "summary": "files in saleor/graphql/account/** have a test file",
+      "role": {
+        "package": "",
+        "dir": "saleor/graphql/account",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 51
+      },
+      "rule": {
+        "type": "has_test"
+      },
+      "evidence": {
+        "holders": 50,
+        "total": 51,
+        "lower_bound": 0.897,
+        "lift": 1.646,
+        "python_members": 51
+      },
+      "rule_kind": "has_test",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "saleor/graphql/account/bulk_mutations/customer_bulk_delete.py",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "saleor/graphql/account/mixins.py",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-6af632",
+      "rank": 6,
+      "summary": "files in saleor/graphql/order/** have a test file",
+      "role": {
+        "package": "",
+        "dir": "saleor/graphql/order",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 38
+      },
+      "rule": {
+        "type": "has_test"
+      },
+      "evidence": {
+        "holders": 36,
+        "total": 38,
+        "lower_bound": 0.827,
+        "lift": 1.59,
+        "python_members": 38
+      },
+      "rule_kind": "has_test",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "saleor/graphql/order/bulk_mutations/draft_orders.py",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "saleor/graphql/order/mutations/draft_order_cleaner.py",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "saleor/graphql/order/mutations/order_note_common.py",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 2,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-0da0cf",
+      "rank": 7,
+      "summary": "files in saleor/graphql/app/** have a test file",
+      "role": {
+        "package": "",
+        "dir": "saleor/graphql/app",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 21
+      },
+      "rule": {
+        "type": "has_test"
+      },
+      "evidence": {
+        "holders": 20,
+        "total": 21,
+        "lower_bound": 0.773,
+        "lift": 1.599,
+        "python_members": 21
+      },
+      "rule_kind": "has_test",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "saleor/graphql/app/dataloaders/app.py",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "saleor/graphql/app/dataloaders/thumbnail.py",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    }
+  ],
+  "largest_role": null
+}

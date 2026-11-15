@@ -1,0 +1,32 @@
+[package]
+name = "drift-cli"
+description = "Drift: the convention lockfile for AI agents"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "drift"
+path = "src/main.rs"
+
+[dependencies]
+drift-core.workspace = true
+drift-ts.workspace = true
+drift-py.workspace = true
+drift-mine.workspace = true
+anyhow.workspace = true
+blake3.workspace = true
+getrandom.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tempfile.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+libc.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

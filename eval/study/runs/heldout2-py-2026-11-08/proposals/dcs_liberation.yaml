@@ -1,0 +1,156 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - models
+  - routes
+  suffixes:
+  - test
+conventions:
+- id: D-841abc
+  status: proposed
+  mode: advise
+  summary: >-
+    files in game/** do not import from qt_ui/** (declared dependencies, and lazy
+    loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: game
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:qt_ui
+  evidence:
+    holders: 314
+    total: 315
+    lower_bound: 0.982
+    lift: 3.0
+    python_members: 315
+  example: game/aircraftparkinglocation.py#(file)
+  selector_version: 3
+- id: D-9fa25f
+  status: proposed
+  mode: advise
+  summary: >-
+    files in game/** do not import from pydcs_extensions/highdigitsams/** (declared
+    dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: game
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:pydcs_extensions/highdigitsams
+  evidence:
+    holders: 314
+    total: 315
+    lower_bound: 0.982
+    lift: 3.0
+    python_members: 315
+  example: game/aircraftparkinglocation.py#(file)
+  selector_version: 3
+- id: D-424840
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in qt_ui/** call super().__init__(), except 2 classes (with no
+    override) and a shared part (used by several members, not a member)
+  role:
+    package: ""
+    dir: qt_ui
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: global#super().__init__
+  evidence:
+    holders: 181
+    total: 181
+    lower_bound: 0.979
+    lift: 3.713
+    role_members: 184
+    python_members: 184
+  example: qt_ui/logging_handler.py#HookableInMemoryHandler
+  selector_version: 3
+- id: D-aad2db
+  status: proposed
+  mode: advise
+  summary: HTTP handlers in game/** (routes files) are wrapped in GameContext.require()
+  role:
+    package: ""
+    dir: game
+    file: routes
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - game/server/dependencies.py#GameContext.require
+  evidence:
+    holders: 29
+    total: 30
+    lower_bound: 0.833
+    lift: 6.7
+    python_members: 30
+  example: game/server/controlpoints/routes.py#cancel_travel
+  selector_version: 3
+- id: D-8bb671
+  status: proposed
+  mode: advise
+  summary: classes in game/** (models files) extend BaseModel
+  role:
+    package: ""
+    dir: game
+    file: models
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - pkg:pydantic#BaseModel
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 43.991
+    python_members: 21
+  example: game/server/combat/models.py#FrozenCombatJs
+  selector_version: 3
+- id: D-0de628
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in game/missiongenerator/aircraft/waypoints/** extend
+    PydcsWaypointBuilder
+  role:
+    package: ""
+    dir: game/missiongenerator/aircraft/waypoints
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - >-
+      game/missiongenerator/aircraft/waypoints/pydcswaypointbuilder.py#PydcsWaypointBuilder
+  evidence:
+    holders: 19
+    total: 20
+    lower_bound: 0.764
+    lift: 48.5
+    python_members: 20
+  example: >-
+    game/missiongenerator/aircraft/waypoints/antishipingress.py#AntiShipIngressBuilder
+  selector_version: 3

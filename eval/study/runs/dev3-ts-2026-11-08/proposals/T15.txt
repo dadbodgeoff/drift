@@ -1,0 +1,11 @@
+1 conventions from 7139 units in 472 roles (1 default tier, 0 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-ec6190] files in packages/vats/** do not import from packages/deploy-script-support/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 76/77 (lower bound 0.93, lift 3.0)
+    tier:     default
+    example:  packages/vats/ava.config.js#(file)
+    outlier:  packages/vats/src/proposals/terminate-governed-instance.js:1 (file)
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

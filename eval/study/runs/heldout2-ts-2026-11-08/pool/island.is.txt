@@ -1,0 +1,638 @@
+74 conventions from 57077 units in 4484 roles (5 default tier, 69 suggestions)
+
+69 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-a3fa2c] pages in apps/** are wrapped in withApollo()
+    evidence: 142/174 (lower bound 0.75, lift 84.4)
+    tier:     default
+    example:  apps/web/pages/[slug]/[subSlug]/index.ts#Screen
+    outlier:  apps/consultation-portal/pages/askriftir/index.tsx:81 default
+    outlier:  apps/consultation-portal/pages/index.tsx:47 default
+    outlier:  apps/consultation-portal/pages/minaraskriftir/index.tsx:91 default
+    ... 29 more outliers
+
+ 2. [D-8f4115] pages in apps/** ([*] files) are wrapped in withApollo() or withLocale()() or withApollo()
+    evidence: 18/19 (lower bound 0.75, lift 79.1)
+    tier:     default
+    split:    withApollo 12, withLocale() 4, withApollo 2
+    example:  apps/skilavottord/web/pages/deregister-vehicle/[id].tsx#default
+    outlier:  apps/consultation-portal/pages/mal/[slug].tsx:31 default
+
+ 3. [D-079ad8] files in libs/** do not import from infra/src/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 6190/6191 (lower bound 1.00, lift 3.0)
+    tier:     default
+    example:  libs/air-discount-scheme/consts/src/index.ts#(file)
+    outlier:  libs/island-ui/storybook/infra/storybook.ts:1 (file)
+
+ 4. [D-d6bde0] files in libs/island-ui/core/** do not import from libs/shared/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 444/452 (lower bound 0.96, lift 3.0)
+    tier:     default
+    example:  libs/island-ui/core/eslint.config.mjs#(file)
+    outlier:  libs/island-ui/core/src/lib/ButtonDeprecated/Button.tsx:1 (file)
+    outlier:  libs/island-ui/core/src/lib/DatePicker/DatePicker.tsx:1 (file)
+    outlier:  libs/island-ui/core/src/lib/DatePicker/types.ts:1 (file)
+    ... 5 more outliers
+
+ 5. [D-76a60f] files in libs/shared/** do not import from libs/api/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 98/99 (lower bound 0.94, lift 3.0)
+    tier:     default
+    example:  libs/shared/babel/src/exportFinder/exportFinder.ts#(file)
+    outlier:  libs/shared/connected/src/lib/SignatureLists/SignatureLists.tsx:1 (file)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 6. [D-eb0fe9] classes in libs/** (*.input files) are decorated with InputType(), except 2 members (opting out with the wrapped package's own decorator)
+    evidence: 675/676 (lower bound 0.99, lift 6.2)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  libs/api/domains/air-discount-scheme/src/lib/discount-admin/dto/createExplicitDiscountCode.input.ts#CreateExplicitDiscountCodeInput
+    outlier:  libs/api/domains/auth/src/lib/dto/delegationByOtherUser.input.ts:1 DelegationByOtherUserInput
+    exempt:   libs/api/domains/health-directorate/src/lib/dto/appointments.input.ts:19 HealthDirectorateAppointmentInput (opts out with ArgsType() (@nestjs/graphql, InputType's own package))
+    exempt:   libs/api/domains/health-directorate/src/lib/dto/appointments.input.ts:6 HealthDirectorateAppointmentsInput (opts out with ArgsType() (@nestjs/graphql, InputType's own package))
+
+ 7. [D-350b8e] files in the repo use react-hook-form for forms, not formik/@tanstack/react-form
+    evidence: 413/414 (lower bound 0.99, lift 1.0)
+    tier:     suggestion (rule kind prefers_library)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    split:    react-hook-form 413, formik 1
+    example:  apps/auth-admin-web/components/Admin/form/ApiScopeUserCreateForm.tsx#(file)
+    outlier:  apps/web/screens/AboutPage/RenderForm.tsx:1 (file)
+
+ 8. [D-3b538f] exported values in libs/** (dataSchema files) are named `*Schema`
+    evidence: 172/173 (lower bound 0.97, lift 68.7)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  libs/application/templates/activation-allowance/src/lib/dataSchema.ts#ActivationAllowanceAnswersSchema
+    outlier:  libs/application/templates/data-protection-complaint/src/lib/dataSchema.ts:7 OnBehalf
+
+ 9. [D-519283] apps/services/auth/admin-api: HTTP handlers in src/** (*.controller files) are decorated with UseGuards()
+    evidence: 156/158 (lower bound 0.95, lift 5.9)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/services/auth/admin-api/src/app/modules/access/access.controller.ts#DELETE /api-access/:nationalId
+    outlier:  apps/services/auth/admin-api/src/app/v2/scopes/public-scopes.controller.ts:19 GET /public/tenants/:tenantId/scopes
+    outlier:  apps/services/auth/admin-api/src/app/v2/tenants/public-tenants.controller.ts:17 GET /public/tenants
+
+10. [D-b3ebaf] classes in libs/api/domains/form-system/** and libs/api/domains/signature-collection/** (*.input files) are named `*Input`
+    evidence: 137/139 (lower bound 0.95, lift 6.6)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  libs/api/domains/form-system/src/dto/applicant.input.ts#CreateApplicantDtoInput
+    outlier:  libs/api/domains/form-system/src/dto/listItem.input.ts:26 UpdateListItemDto
+    outlier:  libs/api/domains/signature-collection/src/lib/dto/bulkUpload.input.ts:5 BulkUploadUser
+
+11. [D-1d0011] functions in libs/cms/src/lib/models/** (*.model files) are named `map*`
+    evidence: 134/137 (lower bound 0.94, lift 21.2)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  libs/cms/src/lib/models/accordionSlice.model.ts#mapAccordionSlice
+    outlier:  libs/cms/src/lib/models/grant.model.ts:96 getAutomaticGrantStatus
+    outlier:  libs/cms/src/lib/models/html.model.ts:81 isHtml
+    outlier:  libs/cms/src/lib/models/linkGroup.model.ts:83 generateOrganizationSubpageLink
+
+12. [D-601427] functions in libs/cms/** (*.model files) declare their return type
+    evidence: 134/137 (lower bound 0.94, lift 3.2)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  libs/cms/src/lib/models/accordionSlice.model.ts#mapAccordionSlice
+    outlier:  libs/cms/src/lib/models/featuredEvents.model.ts:28 mapFeaturedEvents
+    outlier:  libs/cms/src/lib/models/featuredSupportQNAs.model.ts:30 mapFeaturedSupportQNAs
+    outlier:  libs/cms/src/lib/models/linkGroup.model.ts:83 generateOrganizationSubpageLink
+
+13. [D-0b7856] classes in libs/api/domains/auth/**, libs/api/domains/documents/**, libs/api/domains/education/**, libs/api/domains/health-directorate/**, libs/api/domains/social-insurance/** and libs/api/domains/vmst-applications/** (*.model files) call ObjectType()
+    evidence: 241/249 (lower bound 0.94, lift 3.4)
+    tier:     suggestion (rule kind calls)
+    agents:   not shown to agents (family below admission bar: 33% of 3)
+    example:  libs/api/domains/health-directorate/src/lib/models/activePregnancy.model.ts#ActivePregnancy
+    outlier:  libs/api/domains/auth/src/lib/models/delegation.model.ts:47 Delegation
+    outlier:  libs/api/domains/documents/src/lib/models/v2/base.model.ts:4 Base
+    outlier:  libs/api/domains/documents/src/lib/models/v2/pdfRenderer.model.ts:5 DocumentPdfRendererInput
+    ... 5 more outliers
+
+14. [D-b3af94] apps/services/auth/admin-api: HTTP handlers in src/** (*.controller files) are decorated with Audit()
+    evidence: 154/158 (lower bound 0.94, lift 14.3)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/services/auth/admin-api/src/app/modules/access/access.controller.ts#DELETE /api-access/:nationalId
+    outlier:  apps/services/auth/admin-api/src/app/v2/identity-confirmation/identity-confirmation.controller.ts:27 POST /identity-confirmation
+    outlier:  apps/services/auth/admin-api/src/app/v2/providers/providers.controller.ts:32 GET /providers
+    outlier:  apps/services/auth/admin-api/src/app/v2/scopes/public-scopes.controller.ts:19 GET /public/tenants/:tenantId/scopes
+    ... 1 more outliers
+
+15. [D-d6cf4a] classes in libs/api/** (*.service files) are named `*Service`
+    evidence: 140/144 (lower bound 0.93, lift 7.5)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  libs/api/domains/air-discount-scheme/src/lib/discount-admin/discount-admin.service.ts#DiscountAdminService
+    outlier:  libs/api/domains/icelandic-names-registry/src/lib/services/backend.service.ts:12 BackendAPI
+    outlier:  libs/api/domains/secondary-school/src/lib/secondarySchool.service.ts:15 SecondarySchoolApi
+    outlier:  libs/api/domains/transport-authority/src/lib/transportAuthority.service.ts:43 TransportAuthorityApi
+    ... 1 more outliers
+
+16. [D-b30b5f] apps/services/auth/admin-api: HTTP handlers in src/** (*.controller files) are decorated with Scopes()
+    evidence: 153/158 (lower bound 0.93, lift 10.3)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/services/auth/admin-api/src/app/modules/access/access.controller.ts#DELETE /api-access/:nationalId
+    outlier:  apps/services/auth/admin-api/src/app/v2/delegations/delegation-admin.controller.ts:127 POST /delegation-admin/revert-zendesk
+    outlier:  apps/services/auth/admin-api/src/app/v2/delegations/delegation-admin.controller.ts:98 POST /delegation-admin/zendesk
+    outlier:  apps/services/auth/admin-api/src/app/v2/identity-confirmation/identity-confirmation.controller.ts:27 POST /identity-confirmation
+    ... 2 more outliers
+
+17. [D-94ae9e] apps/services/form-system: classes in src/** (*.dto files) are named `*Dto`
+    evidence: 72/73 (lower bound 0.93, lift 15.9)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/services/form-system/src/app/modules/applications/models/dto/admin/applicationAdmin.dto.ts#ApplicationAdminDto
+    outlier:  apps/services/form-system/src/app/modules/services/models/valueServe.dto.ts:1 ValueServe
+
+18. [D-85c0db] classes in apps/** (*.input files) are named `*Input`
+    evidence: 125/129 (lower bound 0.92, lift 6.5)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/financial-aid/api/src/app/modules/aid/dto/aid.input.ts#AidInput
+    outlier:  apps/financial-aid/api/src/app/modules/application/dto/updateApplicationTable.input.ts:13 UpdateApplicationInputTable
+    outlier:  apps/judicial-system/api/src/app/modules/file/dto/updateFiles.input.ts:16 UpdateFile
+    outlier:  apps/judicial-system/api/src/app/modules/file/dto/updatePoliceDigitalCaseFiles.input.ts:7 UpdatePoliceDigitalCaseFile
+    ... 1 more outliers
+
+19. [D-7c747f] functions in libs/application/api/core/** (*.util files) declare their return type, except a shared part (used by several members, not a member)
+    evidence: 45/45 (lower bound 0.92, lift 3.2)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  libs/application/api/core/src/lib/translation/dummy-data.util.ts#generateDummyData
+    exempt:   libs/application/api/core/src/lib/translation/utils/message-descriptor.util.ts:219 addDescriptorIfNew (shared part used by 2 members)
+
+20. [D-10325d] classes in libs/** (*.model files) are decorated with ObjectType()
+    evidence: 1218/1308 (lower bound 0.92, lift 3.3)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  libs/api/domains/administration-of-occupational-safety-and-health/src/lib/models/course.model.ts#Course
+    outlier:  libs/api/domains/auth/src/lib/models/delegation.model.ts:47 Delegation
+    outlier:  libs/api/domains/documents/src/lib/models/v2/base.model.ts:4 Base
+    outlier:  libs/api/domains/documents/src/lib/models/v2/pdfRenderer.model.ts:5 DocumentPdfRendererInput
+    ... 87 more outliers
+
+21. [D-ccd467] exported values in libs/** (externalData files) pass `checkboxLabel` to defineMessages(), except a member (not calling the callee)
+    evidence: 37/37 (lower bound 0.91, lift 278.8)
+    tier:     suggestion (rule kind passes_key)
+    agents:   not shown to agents (family below admission bar: 50% of 12)
+    example:  libs/application/templates/activation-allowance/src/lib/messages/externalData.ts#externalData
+    exempt:   libs/application/templates/hms/rental-agreement/src/forms/prerequisitesForm/externalData.ts:12 externalData (does not call defineMessages())
+
+22. [D-db01af] graphql entry points in libs/api/domains/auth/**, libs/api/domains/auth-admin/** and libs/api/domains/documents/** (*.resolver files) are decorated with UseGuards()
+    evidence: 150/158 (lower bound 0.90, lift 5.7)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  libs/api/domains/auth-admin/src/lib/api-scope-user/api-scope-user.resolver.ts#MUTATION ApiScopeUserResolver.createApiScopeUser
+    outlier:  libs/api/domains/auth-admin/src/lib/public/public-auth.resolver.ts:15 QUERY PublicAuthResolver.getScopes
+    outlier:  libs/api/domains/auth-admin/src/lib/public/public-auth.resolver.ts:10 QUERY PublicAuthResolver.getTenants
+    outlier:  libs/api/domains/auth/src/lib/resolvers/delegationRequest.resolver.ts:146 FIELD DelegationRequestScopeResolver.resolveOrganisationLogoUrl
+    ... 5 more outliers
+
+23. [D-afac63] apps/services/auth/admin-api: HTTP handlers in src/app/v2/** (*.controller files) are decorated with ApiTags()
+    evidence: 52/53 (lower bound 0.90, lift 16.6)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/services/auth/admin-api/src/app/v2/api-scope-users/me-api-scope-users.controller.ts#DELETE /me/api-scope-users
+    outlier:  apps/services/auth/admin-api/src/app/v2/identity-confirmation/identity-confirmation.controller.ts:27 POST /identity-confirmation
+
+24. [D-ca1680] graphql entry points in libs/api/domains/health-directorate/**, libs/api/domains/signature-collection/**, libs/api/domains/social-insurance/** and libs/api/domains/vehicles/** (*.resolver files) are decorated with Scopes()
+    evidence: 141/149 (lower bound 0.90, lift 10.1)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  libs/api/domains/health-directorate/src/lib/resolvers/basicInformation.resolver.ts#MUTATION BasicInformationResolver.cancelAppointment
+    outlier:  libs/api/domains/health-directorate/src/lib/resolvers/basicInformation.resolver.ts:73 FIELD BasicInformationResolver.resolveOrganList
+    outlier:  libs/api/domains/health-directorate/src/lib/resolvers/healthConversations.resolver.ts:220 FIELD HealthConversationOrganizationResolver.resolveLogoUrl
+    outlier:  libs/api/domains/signature-collection/src/lib/signatureCollection.resolver.ts:73 QUERY SignatureCollectionResolver.signatureCollectionAllOpenLists
+    ... 5 more outliers
+
+25. [D-5e3ccc] graphql entry points in libs/api/domains/health-directorate/** (*.resolver files) are decorated with Audit()
+    evidence: 49/50 (lower bound 0.90, lift 14.4)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  libs/api/domains/health-directorate/src/lib/resolvers/basicInformation.resolver.ts#MUTATION BasicInformationResolver.cancelAppointment
+    outlier:  libs/api/domains/health-directorate/src/lib/resolvers/healthConversations.resolver.ts:220 FIELD HealthConversationOrganizationResolver.resolveLogoUrl
+
+26. [D-7cba6c] functions in libs/api/domains/health-directorate/** declare their return type
+    evidence: 48/49 (lower bound 0.89, lift 3.2)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  libs/api/domains/health-directorate/src/lib/mappers/basicInformationMapper.ts#getAppointmentLinkActivationWindow
+    outlier:  libs/api/domains/health-directorate/src/lib/mappers/medicineMapper.ts:97 formatStrength
+
+27. [D-e579d2] components in libs/application/templates/directorate-of-equality/** render <Box>, except a shared part (used by several members, not a member)
+    evidence: 31/31 (lower bound 0.89, lift 1.6)
+    tier:     suggestion (rule kind renders)
+    agents:   not shown to agents (family below admission bar: 40% of 10)
+    example:  libs/application/templates/directorate-of-equality/equality-report/src/components/html-editor/HTMLEditor.tsx#HTMLEditor
+    exempt:   libs/application/templates/directorate-of-equality/salary-report/src/fields/TablePagination.tsx:18 TablePagination (shared part used by 4 members)
+
+28. [D-d3a160] apps/judicial-system/backend: functions in src/app/modules/case-table/** declare their return type
+    evidence: 45/46 (lower bound 0.89, lift 3.2)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  apps/judicial-system/backend/src/app/modules/case-table/whereOptions/courtOfAppeals.ts#courtOfAppealsCasesCompletedWhereOptions
+    outlier:  apps/judicial-system/backend/src/app/modules/case-table/whereOptions/districtCourt.ts:61 districtCourtRequestCasesCompletedWhereOptions
+
+29. [D-da0d39] classes in libs/application/template-api-modules/src/lib/modules/** (*.service files) extend BaseTemplateApiService, except a member (of the module that defines a rule's target)
+    evidence: 115/122 (lower bound 0.89, lift 44.9)
+    tier:     suggestion (rule kind wrapped_by:extends; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 61% of 18)
+    example:  libs/application/template-api-modules/src/lib/modules/shared/api/application/application.service.ts#ApplicationService
+    outlier:  libs/application/template-api-modules/src/lib/modules/shared/services/attachment-s3.service.ts:24 AttachmentS3Service
+    outlier:  libs/application/template-api-modules/src/lib/modules/shared/shared.service.ts:28 SharedTemplateApiService
+    outlier:  libs/application/template-api-modules/src/lib/modules/template-api.service.ts:25 TemplateAPIService
+    ... 4 more outliers
+    exempt:   libs/application/template-api-modules/src/lib/modules/base-template-api.service.ts:5 BaseTemplateApiService (in the module that defines BaseTemplateApiService)
+
+30. [D-3ce8d6] classes in libs/cms/src/lib/search/** (*.service files) pass `error` to logger.warn(), except a member (not calling the callee)
+    evidence: 29/29 (lower bound 0.88, lift 169.5)
+    tier:     suggestion (rule kind passes_key)
+    agents:   not shown to agents (family below admission bar: 50% of 12)
+    example:  libs/cms/src/lib/search/cmsSync.service.ts#CmsSyncService
+    exempt:   libs/cms/src/lib/search/mapping.service.ts:33 MappingService (does not call logger.warn())
+
+31. [D-c0f729] exported values in libs/** (paths files) are named `*Paths`, except 3 companions (a helper or constant beside the members that follow it)
+    evidence: 42/43 (lower bound 0.88, lift 311.5)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  libs/portals/admin/air-discount-scheme/src/lib/paths.ts#AirDiscountSchemePaths
+    outlier:  libs/portals/my-pages/restrictions/src/lib/paths.ts:1 Paths
+    exempt:   libs/portals/admin/application-system/src/lib/paths.ts:16 APPLICATION_SYSTEM_TAB_QUERY_PARAM (a constant beside ApplicationSystemPaths, which follows the scheme)
+    exempt:   libs/portals/admin/application-system/src/lib/paths.ts:17 APPLICATION_SYSTEM_TRANSLATIONS_TAB_ID (a constant beside ApplicationSystemPaths, which follows the scheme)
+    exempt:   libs/portals/admin/delegation-admin/src/lib/paths.ts:7 NOT_FOUND_PARAM (a constant beside DelegationAdminPaths, which follows the scheme)
+
+32. [D-a1c4c1] functions in libs/** (overviewItems files) are named `*Items`
+    evidence: 82/87 (lower bound 0.87, lift 47.1)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  libs/application/templates/iceland-health/accident-notification/src/utils/overviewItems.ts#aboutApplicantItems
+    outlier:  libs/application/templates/new-primary-school/src/utils/overviewItems.ts:240 relativesTable
+    outlier:  libs/application/templates/new-primary-school/src/utils/overviewItems.ts:478 siblingsTable
+    outlier:  libs/application/templates/social-insurance-administration/medical-and-rehabilitation-payments/src/utils/overviewItems.ts:190 benefitsFromAnotherCountryTable
+    ... 2 more outliers
+
+33. [D-82e745] exported values in libs/** (externalData files) pass `pageTitle` to defineMessages(), except a member (not calling the callee)
+    evidence: 36/37 (lower bound 0.86, lift 73.7)
+    tier:     suggestion (rule kind passes_key)
+    agents:   not shown to agents (family below admission bar: 50% of 12)
+    example:  libs/application/templates/activation-allowance/src/lib/messages/externalData.ts#externalData
+    outlier:  libs/application/templates/unemployment-benefits/src/lib/messages/externalData.ts:3 externalData
+    exempt:   libs/application/templates/hms/rental-agreement/src/forms/prerequisitesForm/externalData.ts:12 externalData (does not call defineMessages())
+
+34. [D-4a6377] classes in apps/** (*.service files) are named `*Service`
+    evidence: 36/37 (lower bound 0.86, lift 7.5)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/financial-aid/api/src/app/modules/municipalityNationalRegistryModule/municipalityNationalRegistry.service.ts#MunicipalityNationalRegistryService
+    outlier:  apps/services/xroad-collector/src/app/restservicecollector.service.ts:10 RestServiceCollector
+
+35. [D-652608] functions in libs/** (*.loader files) are named `*Loader`
+    evidence: 35/36 (lower bound 0.86, lift 282.8)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  libs/portals/admin/air-discount-scheme/src/screens/Overview/Overview.loader.ts#overviewLoader
+    outlier:  libs/portals/admin/air-discount-scheme/src/screens/Overview/Overview.loader.ts:22 transformDate
+
+36. [D-789652] graphql entry points in libs/cms/** (*.resolver files) are decorated with CacheControl()
+    evidence: 90/97 (lower bound 0.86, lift 74.8)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  libs/cms/src/lib/cms.resolver.ts#FIELD ArticleResolver.relatedArticles
+    outlier:  libs/cms/src/lib/cms.resolver.ts:1206 FIELD FeaturedGenericListItemsResolver.items
+    outlier:  libs/cms/src/lib/cms.resolver.ts:1190 FIELD GenericListResolver.filterTags
+    outlier:  libs/cms/src/lib/cms.resolver.ts:1179 FIELD IntroLinkImageResolver.id
+    ... 4 more outliers
+
+37. [D-376c3e] apps/judicial-system/backend: classes in src/app/modules/repository/** (*.service files) throw on failure
+    evidence: 34/35 (lower bound 0.85, lift 8.1)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  apps/judicial-system/backend/src/app/modules/repository/services/appealCaseJudgeRepository.service.ts#AppealCaseJudgeRepositoryService
+    outlier:  apps/judicial-system/backend/src/app/modules/repository/services/institutionContactRepository.service.ts:14 InstitutionContactRepositoryService
+
+38. [D-404dbb] workspace packages enable `skipLibCheck` in tsconfig
+    evidence: 34/35 (lower bound 0.85, lift 1.0)
+    tier:     suggestion (rule kind package_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  apps/air-discount-scheme/backend/package.json#
+    outlier:  apps/native/app/modules/biometric-integrity/package.json:1 biometric-integrity
+
+39. [D-1d9d5b] apps/services/form-system: HTTP handlers in src/** (*.controller files) are decorated with UseGuards()
+    evidence: 61/65 (lower bound 0.85, lift 5.6)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/services/form-system/src/app/modules/applications/admin.controller.ts#GET /admin/institution-admin/application-types
+    outlier:  apps/services/form-system/src/app/modules/applications/applications.xroad.controller.ts:80 GET /api/application/:id
+    outlier:  apps/services/form-system/src/app/modules/applications/applications.xroad.controller.ts:31 GET /api/application/:id/pdf
+    outlier:  apps/services/form-system/src/app/modules/applications/applications.xroad.controller.ts:100 GET /api/file
+    ... 1 more outliers
+
+40. [D-3a15a2] exported values in libs/application/templates/signature-collection/** pass `action` to defineTemplateApi(), except a member (not calling the callee)
+    evidence: 22/22 (lower bound 0.85, lift 38.6)
+    tier:     suggestion (rule kind passes_key)
+    agents:   not shown to agents (family below admission bar: 50% of 12)
+    example:  libs/application/templates/signature-collection/municipal-list-creation/src/dataProviders/index.ts#CandidateApi
+    exempt:   libs/application/templates/signature-collection/parliamentary-list-creation/src/forms/sections/constituency.ts:10 constituency (does not call defineTemplateApi())
+
+41. [D-dc7481] functions in apps/judicial-system/web/** (*.logic files) declare their return type
+    evidence: 105/115 (lower bound 0.85, lift 3.0)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  apps/judicial-system/web/src/components/AppealAppointmentLetter/AppealAppointmentLetter.logic.ts#canViewAppealAppointmentLetter
+    outlier:  apps/judicial-system/web/src/components/IndictmentCaseFilesList/IndictmentCaseFilesList.logic.ts:32 getVisibleSubpoenas
+    outlier:  apps/judicial-system/web/src/components/InfoCard/DefendantInfo/DefendantInfo.logic.ts:37 getAppealExpirationInfo
+    outlier:  apps/judicial-system/web/src/components/RequestCaseDefenderInfo/RequestCaseDefenderInfo.logic.ts:104 anyDefendantHasDefender
+    ... 7 more outliers
+
+42. [D-12ab59] components in libs/portals/admin/document-provider/** render <Box>
+    evidence: 48/51 (lower bound 0.84, lift 1.6)
+    tier:     suggestion (rule kind renders)
+    agents:   not shown to agents (family below admission bar: 40% of 10)
+    example:  libs/portals/admin/document-provider/src/components/AddTypeCategory/index.tsx#AddTypeCategory
+    outlier:  libs/portals/admin/document-provider/src/components/SettingsFormsLoader/SettingsFormsLoader.tsx:3 SettingsFormsLoader
+    outlier:  libs/portals/admin/document-provider/src/screens/CategoriesAndTypes/Categories.tsx:9 DocumentCategories
+    outlier:  libs/portals/admin/document-provider/src/screens/CategoriesAndTypes/Types.tsx:9 DocumentTypes
+
+43. [D-c3f607] functions in libs/application/core/** declare their return type
+    evidence: 79/86 (lower bound 0.84, lift 3.0)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  libs/application/core/src/lib/conditionUtils.ts#shouldShowFormItem
+    outlier:  libs/application/core/src/lib/configurationUtils.ts:17 getSlugFromType
+    outlier:  libs/application/core/src/lib/configurationUtils.ts:7 getTypeFromSlug
+    outlier:  libs/application/core/src/lib/errorReasonUtils.ts:33 getErrorReasonIfPresent
+    ... 4 more outliers
+
+44. [D-3c505e] pages in apps/contentful-apps/pages/fields/** are named `*Field`
+    evidence: 38/40 (lower bound 0.83, lift 27.1)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/contentful-apps/pages/fields/404-redirect-urls-list-field.tsx#UrlsListField
+    outlier:  apps/contentful-apps/pages/fields/admin-only-short-text-dropdown-field.tsx:6 AdminOnlyShortTextDropdown
+    outlier:  apps/contentful-apps/pages/fields/sitemap-tree-field.tsx:7 App
+
+45. [D-25f855] apps/financial-aid/backend: HTTP handlers in src/** (*.controller files) are decorated with Scopes()
+    evidence: 38/40 (lower bound 0.83, lift 10.1)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/financial-aid/backend/src/app/modules/application/application.controller.ts#GET /filters
+    outlier:  apps/financial-aid/backend/src/app/modules/openApiApplications/openApiApplication.controller.ts:31 GET /getAll
+    outlier:  apps/financial-aid/backend/src/app/modules/openApiApplications/openApiApplication.controller.ts:56 GET /id/:id
+
+46. [D-e314b0] apps/services/auth/delegation-api: HTTP handlers in src/** (*.controller files) are decorated with Scopes()
+    evidence: 29/30 (lower bound 0.83, lift 10.3)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/services/auth/delegation-api/src/app/clients/clients.controller.ts#GET /clients
+    outlier:  apps/services/auth/delegation-api/src/app/scopes/scopes.controller.ts:49 GET /scopes/delegation-settings
+
+47. [D-83fdab] apps/judicial-system/backend: classes in src/** (*.guard files) throw on failure
+    evidence: 52/56 (lower bound 0.83, lift 7.7)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  apps/judicial-system/backend/src/app/modules/appeal-case/guards/appealCaseExists.guard.ts#AppealCaseExistsGuard
+    outlier:  apps/judicial-system/backend/src/app/modules/case/guards/caseExists.guard.ts:9 CaseExistsGuard
+    outlier:  apps/judicial-system/backend/src/app/modules/case/guards/caseExistsForUpdate.guard.ts:41 CaseExistsForUpdateGuard
+    outlier:  apps/judicial-system/backend/src/app/modules/case/guards/minimalCaseExists.guard.ts:8 MinimalCaseExistsGuard
+    ... 1 more outliers
+
+48. [D-7888d8] exported values in libs/** (Prerequisites files) pass `renderLastScreenButton` to buildForm()
+    evidence: 28/29 (lower bound 0.83, lift 72.3)
+    tier:     suggestion (rule kind passes_key)
+    agents:   not shown to agents (family below admission bar: 50% of 12)
+    example:  libs/application/templates/aosh/change-machine-supervisor/src/forms/Prerequisites.ts#PrerequisitesForm
+    outlier:  libs/application/templates/parental-leave/src/forms/Prerequisites.ts:51 PrerequisitesForm
+
+49. [D-a1886b] apps/judicial-system/backend: classes in src/app/modules/repository/** (*.service files) use `try`
+    evidence: 33/35 (lower bound 0.81, lift 12.8)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  apps/judicial-system/backend/src/app/modules/repository/services/appealCaseJudgeRepository.service.ts#AppealCaseJudgeRepositoryService
+    outlier:  apps/judicial-system/backend/src/app/modules/repository/services/messageSuspensionRepository.service.ts:21 MessageSuspensionRepositoryService
+    outlier:  apps/judicial-system/backend/src/app/modules/repository/services/serviceInterruptionBannerRepository.service.ts:24 ServiceInterruptionBannerRepositoryService
+
+50. [D-24d3f9] workspace packages enable `allowSyntheticDefaultImports` in tsconfig
+    evidence: 33/35 (lower bound 0.81, lift 1.0)
+    tier:     suggestion (rule kind package_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  apps/air-discount-scheme/backend/package.json#
+    outlier:  apps/native/app/modules/biometric-integrity/package.json:1 biometric-integrity
+    outlier:  infra/package.json:1 infra
+
+51. [D-f834fe] workspace packages enable `esModuleInterop` in tsconfig
+    evidence: 33/35 (lower bound 0.81, lift 1.0)
+    tier:     suggestion (rule kind package_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  apps/air-discount-scheme/backend/package.json#
+    outlier:  .github/actions/package.json:1 actions-tests
+    outlier:  apps/native/app/modules/biometric-integrity/package.json:1 biometric-integrity
+
+52. [D-042ed3] components in libs/application/ui-fields/** render <Box>
+    evidence: 46/50 (lower bound 0.81, lift 1.5)
+    tier:     suggestion (rule kind renders)
+    agents:   not shown to agents (family below admission bar: 40% of 10)
+    example:  libs/application/ui-fields/src/lib/AccordionFormField/AccordionFormField.tsx#AccordionFormField
+    outlier:  libs/application/ui-fields/src/lib/FieldsRepeaterFormField/FieldsRepeaterItem.tsx:69 Item
+    outlier:  libs/application/ui-fields/src/lib/HiddenInputFormField/HiddenInputFormField.tsx:17 HiddenInputFormField
+    outlier:  libs/application/ui-fields/src/lib/PaymentPendingFormField/PaymentPentingFormField.tsx:9 PaymentPendingFormField
+    ... 1 more outliers
+
+53. [D-05f8bd] apps/services/auth/admin-api: classes in src/** (*.controller files) are decorated with UseGuards()
+    evidence: 31/33 (lower bound 0.80, lift 13.8)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/services/auth/admin-api/src/app/modules/access/access.controller.ts#AccessController
+    outlier:  apps/services/auth/admin-api/src/app/v2/scopes/public-scopes.controller.ts:16 PublicScopesController
+    outlier:  apps/services/auth/admin-api/src/app/v2/tenants/public-tenants.controller.ts:14 PublicTenantsController
+
+54. [D-b708db] apps/judicial-system/backend: functions in src/** (*.helpers files) declare their return type
+    evidence: 23/24 (lower bound 0.80, lift 3.1)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  apps/judicial-system/backend/src/app/modules/appeal-case/appealCase.helpers.ts#appellantRepresentativeNationalIds
+    outlier:  apps/judicial-system/backend/src/app/modules/verdict/verdict.helpers.ts:19 validateVerdictAppealUpdate
+
+55. [D-f63cc4] apps/judicial-system/backend: classes in src/** (*.controller files) are decorated with UseGuards()
+    evidence: 35/38 (lower bound 0.79, lift 13.5)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/judicial-system/backend/src/app/modules/appeal-case/appealCase.controller.ts#AppealCaseController
+    outlier:  apps/judicial-system/backend/src/app/modules/case/limitedAccessCase.controller.ts:73 LimitedAccessCaseController
+    outlier:  apps/judicial-system/backend/src/app/modules/service-interruption-banner/serviceInterruptionBanner.controller.ts:23 ServiceInterruptionBannerController
+    outlier:  apps/judicial-system/backend/src/app/modules/user/user.controller.ts:51 UserController
+
+56. [D-1f7184] functions in apps/web/components/connected/** are wrapped in next(), except 2 shared parts (used by several members, not a member)
+    evidence: 52/58 (lower bound 0.79, lift 121.2)
+    tier:     suggestion (rule names a symbol from outside the repo)
+    agents:   not shown to agents (family below admission bar: 0% of 1)
+    example:  apps/web/components/connected/AdministrationOfOccupationalSafetyAndHealthCourses/index.ts#AdministrationOfOccupationalSafetyAndHealthCourses
+    outlier:  apps/web/components/connected/CustomsGeneral/currencyFlags.ts:53 currencyFlagIndex
+    outlier:  apps/web/components/connected/CustomsGeneral/currencyFlags.ts:60 hasCurrencyFlag
+    outlier:  apps/web/components/connected/CustomsGeneral/customsGeneralUtils.ts:19 formatNumber
+    ... 3 more outliers
+    exempt:   apps/web/components/connected/CustomsGeneral/CustomsGeneralDateTable.tsx:34 toApiDate (shared part used by 22 members)
+    exempt:   apps/web/components/connected/CustomsGeneral/useDetailViewBack.ts:3 useDetailViewBack (shared part used by 5 members)
+
+57. [D-3af77c] apps/services/user-profile: classes in src/** (*.dto files) are named `*Dto`
+    evidence: 22/23 (lower bound 0.79, lift 15.4)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/services/user-profile/src/app/user-profile/dto/actor-profile-email.dto.ts#ActorProfileEmailDto
+    outlier:  apps/services/user-profile/src/app/user-profile/dto/actor-profile.dto.ts:127 ActorLocale
+
+58. [D-310ca4] components in apps/web/components/connected/CustomsGeneral/** call useState() before useQuery()
+    evidence: 22/23 (lower bound 0.79, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  apps/web/components/connected/CustomsGeneral/CustomsGeneralAdvisories.tsx#CustomsGeneralAdvisories
+    outlier:  apps/web/components/connected/CustomsGeneral/CustomsGeneralAssessmentLocations.tsx:15 CustomsGeneralAssessmentLocations
+
+59. [D-473a63] exported values in libs/** (externalData files) pass `title` to defineMessages(), except a member (not calling the callee)
+    evidence: 34/37 (lower bound 0.79, lift 49.8)
+    tier:     suggestion (rule kind passes_key)
+    agents:   not shown to agents (family below admission bar: 50% of 12)
+    example:  libs/application/templates/activation-allowance/src/lib/messages/externalData.ts#externalData
+    outlier:  libs/application/templates/data-protection-complaint/src/lib/messages/externalData.ts:3 externalData
+    outlier:  libs/application/templates/mortgage-certificate/src/lib/messages/externalData.ts:3 externalData
+    outlier:  libs/application/templates/public-debt-payment-plan/src/lib/messages/externalData.ts:4 externalData
+    exempt:   libs/application/templates/hms/rental-agreement/src/forms/prerequisitesForm/externalData.ts:12 externalData (does not call defineMessages())
+
+60. [D-c24a94] graphql entry points in libs/api/domains/health-directorate/** (*.resolver files) are decorated with FeatureFlag()
+    evidence: 45/50 (lower bound 0.79, lift 44.4)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  libs/api/domains/health-directorate/src/lib/resolvers/basicInformation.resolver.ts#MUTATION BasicInformationResolver.cancelAppointment
+    outlier:  libs/api/domains/health-directorate/src/lib/resolvers/basicInformation.resolver.ts:73 FIELD BasicInformationResolver.resolveOrganList
+    outlier:  libs/api/domains/health-directorate/src/lib/resolvers/basicInformation.resolver.ts:83 MUTATION BasicInformationResolver.updateDonorStatus
+    outlier:  libs/api/domains/health-directorate/src/lib/resolvers/basicInformation.resolver.ts:59 QUERY BasicInformationResolver.getDonorStatus
+    ... 2 more outliers
+
+61. [D-f0fd2e] exported values in libs/** (Prerequisites files) pass `logo` to buildForm()
+    evidence: 27/29 (lower bound 0.78, lift 51.5)
+    tier:     suggestion (rule kind passes_key)
+    agents:   not shown to agents (family below admission bar: 50% of 12)
+    example:  libs/application/templates/aosh/change-machine-supervisor/src/forms/Prerequisites.ts#PrerequisitesForm
+    outlier:  libs/application/templates/home-support/src/forms/Prerequisites.ts:19 Prerequisites
+    outlier:  libs/application/templates/social-insurance-administration/medical-and-rehabilitation-payments/src/forms/Prerequisites.ts:36 Prerequisites
+
+62. [D-779a85] classes in libs/api/** (*.resolver files) are decorated with UseGuards()
+    evidence: 179/215 (lower bound 0.78, lift 12.2)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  libs/api/domains/air-discount-scheme/src/lib/discount-admin/discount-admin.resolver.ts#DiscountAdminResolver
+    outlier:  libs/api/domains/administration-of-occupational-safety-and-health/src/lib/administration-of-occupational-safety-and-health.resolver.ts:9 AdministrationOfOccupationalSafetyAndHealthResolver
+    outlier:  libs/api/domains/aircraft-registry/src/lib/aircraftRegistry.resolver.ts:11 AircraftRegistryResolver
+    outlier:  libs/api/domains/api-catalogue/src/lib/catalogue.resolver.ts:10 ApiCatalogueResolver
+    ... 33 more outliers
+
+63. [D-d063e1] apps/skilavottord/ws: graphql entry points in src/** (*.resolver files) are decorated with Authorize()
+    evidence: 32/35 (lower bound 0.78, lift 315.8)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/skilavottord/ws/src/app/modules/accessControl/accessControl.resolver.ts#MUTATION AccessControlResolver.createSkilavottordAccessControl
+    outlier:  apps/skilavottord/ws/src/app/modules/recyclingRequest/recyclingRequestAppSys.resolver.ts:17 MUTATION RecyclingRequestAppSysResolver.createSkilavottordRecyclingRequestAppSys
+    outlier:  apps/skilavottord/ws/src/app/modules/vehicle/vehicleAppSys.resolver.ts:18 MUTATION VehicleAppSysResolver.createSkilavottordVehicleAppSys
+    outlier:  apps/skilavottord/ws/src/app/modules/vehicleOwner/vehicleOwnerAppSys.resolver.ts:14 MUTATION VehicleOwnerAppSysResolver.createSkilavottordVehicleOwnerAppSys
+
+64. [D-b1cbdc] classes in apps/** (*.resolver files) are decorated with UseGuards()
+    evidence: 32/35 (lower bound 0.78, lift 13.4)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/financial-aid/api/src/app/modules/apiKeys/apiKey.resolver.ts#ApiKeysResolver
+    outlier:  apps/judicial-system/api/src/app/modules/message-suspension/messageSuspension.resolver.ts:22 MessageSuspensionResolver
+    outlier:  apps/judicial-system/api/src/app/modules/service-interruption-banner/serviceInterruptionBanner.resolver.ts:22 ServiceInterruptionBannerResolver
+    outlier:  apps/judicial-system/api/src/app/modules/user/user.resolver.ts:28 UserResolver
+
+65. [D-a0c902] apps/services/auth/admin-api: HTTP handlers in src/app/v2/** (*.controller files) pass `description` to Documentation()
+    evidence: 47/53 (lower bound 0.77, lift 66.2)
+    tier:     suggestion (rule kind passes_key)
+    agents:   not shown to agents (family below admission bar: 50% of 12)
+    example:  apps/services/auth/admin-api/src/app/v2/api-scope-users/me-api-scope-users.controller.ts#DELETE /me/api-scope-users
+    outlier:  apps/services/auth/admin-api/src/app/v2/delegations/delegation-admin.controller.ts:150 DELETE /delegation-admin/:delegationId
+    outlier:  apps/services/auth/admin-api/src/app/v2/delegations/delegation-admin.controller.ts:51 GET /delegation-admin
+    outlier:  apps/services/auth/admin-api/src/app/v2/delegations/delegation-admin.controller.ts:76 POST /delegation-admin
+    ... 3 more outliers
+
+66. [D-16cf8e] classes in apps/financial-aid/** (*.model files) are named `*Model`
+    evidence: 31/34 (lower bound 0.77, lift 43.4)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/financial-aid/api/src/app/modules/aid/models/aid.model.ts#AidModel
+    outlier:  apps/financial-aid/api/src/app/modules/municipalityNationalRegistryModule/models/person.model.ts:7 Person
+    outlier:  apps/financial-aid/api/src/app/modules/municipalityNationalRegistryModule/models/userResidence.model.ts:5 UserResidence
+    outlier:  apps/financial-aid/api/src/app/modules/municipalityNationalRegistryModule/models/userSpouse.model.ts:3 UserSpouse
+
+67. [D-4e7dc9] classes in libs/application/** (*.service files) throw on failure
+    evidence: 111/132 (lower bound 0.77, lift 7.0)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  libs/application/api/core/src/lib/application/application.service.ts#ApplicationService
+    outlier:  libs/application/api/files/src/lib/file.service.ts:22 FileService
+    outlier:  libs/application/api/history/src/lib/history.service.ts:7 HistoryService
+    outlier:  libs/application/template-api-modules/src/lib/modules/base-template-api.service.ts:5 BaseTemplateApiService
+    ... 18 more outliers
+
+68. [D-b7d936] components in libs/application/templates/transport-authority/transfer-of-vehicle-ownership/** render <Box>
+    evidence: 25/27 (lower bound 0.77, lift 1.6)
+    tier:     suggestion (rule kind renders)
+    agents:   not shown to agents (family below admission bar: 40% of 10)
+    example:  libs/application/templates/transport-authority/transfer-of-vehicle-ownership/src/fields/ApplicationStatus/StatusStep/index.tsx#StatusStep
+    outlier:  libs/application/templates/transport-authority/transfer-of-vehicle-ownership/src/fields/Overview/sections/BuyerSection.tsx:14 BuyerSection
+    outlier:  libs/application/templates/transport-authority/transfer-of-vehicle-ownership/src/fields/Overview/sections/VehicleSection.tsx:18 VehicleSection
+
+69. [D-c57392] apps/services/documents: HTTP handlers in src/** (*.controller files) are decorated with Scopes()
+    evidence: 19/20 (lower bound 0.76, lift 10.1)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/services/documents/src/app/modules/document-provider/controllers/changelog.controller.ts#GET /changelogs/organisations/:organisationId
+    outlier:  apps/services/documents/src/app/modules/document-provider/controllers/documentsInfra.controller.ts:19 GET /readiness
+
+70. [D-15c291] apps/native/app: components in src/app/(auth)/(tabs)/** call useIntl() before useCallback()
+    evidence: 19/20 (lower bound 0.76, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  apps/native/app/src/app/(auth)/(tabs)/health/appointments/index.tsx#AppointmentsScreen
+    outlier:  apps/native/app/src/app/(auth)/(tabs)/health/medicine/index.tsx:20 MedicineScreen
+
+71. [D-de5d76] apps/services/user-profile: HTTP handlers in src/** (*.controller files) are decorated with Documentation()
+    evidence: 30/33 (lower bound 0.76, lift 50.7)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/services/user-profile/src/app/user-profile/actor-user-profile.controller.ts#GET /actor/actor-profile
+    outlier:  apps/services/user-profile/src/app/user-profile/actor-user-profile.controller.ts:60 GET /actor/locale
+    outlier:  apps/services/user-profile/src/app/user-profile/me-user-profile.controller.ts:388 DELETE /me/device-tokens/:deviceToken
+    outlier:  apps/services/user-profile/src/app/user-profile/me-user-profile.controller.ts:367 PUT /me/device-tokens
+
+72. [D-c37eb2] classes in libs/cms/** (*.service files) use `try`
+    evidence: 30/33 (lower bound 0.76, lift 12.4)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  libs/cms/src/lib/cms.contentful.service.ts#CmsContentfulService
+    outlier:  libs/cms/src/lib/powerbi.service.ts:16 PowerBiService
+    outlier:  libs/cms/src/lib/search/cmsSync.service.ts:38 CmsSyncService
+    outlier:  libs/cms/src/lib/search/mapping.service.ts:33 MappingService
+
+73. [D-4c4d25] components in libs/application/ui-fields/** are named `*Field`
+    evidence: 44/50 (lower bound 0.76, lift 25.1)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  libs/application/ui-fields/src/lib/AccordionFormField/AccordionFormField.tsx#AccordionFormField
+    outlier:  libs/application/ui-fields/src/lib/FieldsRepeaterFormField/FieldsRepeaterItem.tsx:69 Item
+    outlier:  libs/application/ui-fields/src/lib/InteractiveTableField/InteractiveTableFormFieldExpandedRow.tsx:50 InteractiveTableFormFieldExpandedRow
+    outlier:  libs/application/ui-fields/src/lib/OverviewFormField/FileItem.tsx:9 FileItem
+    ... 3 more outliers
+
+74. [D-8575b6] pages in apps/contentful-apps/** call useSDK() before useState()
+    evidence: 28/31 (lower bound 0.75, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  apps/contentful-apps/pages/fields/active-translations-field.tsx#ActiveTranslationsField
+    outlier:  apps/contentful-apps/pages/fields/404-redirect-urls-list-field.tsx:6 UrlsListField
+    outlier:  apps/contentful-apps/pages/fields/generic-tag-group-items-field.tsx:9 GenericTagGroupItemsField
+    outlier:  apps/contentful-apps/pages/screens/content-import-screen.tsx:14 Screen
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

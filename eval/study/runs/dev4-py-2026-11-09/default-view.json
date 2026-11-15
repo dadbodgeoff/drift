@@ -1,0 +1,102 @@
+{
+  "//": "PREREG-F11 measure 9: shown cards of the default Python census at F11 (`census --json --max 15`, mined Python proposals off), per repo, recorded while each checkout existed.",
+  "repos": [
+    {
+      "repo": "P01",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P02",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P03",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P04",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P05",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P06",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P07",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P08",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P09",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P10",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P11",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P12",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P13",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P14",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P15",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P16",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P17",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P18",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P19",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P20",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P21",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P22",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P23",
+      "shown_default_view": 0
+    },
+    {
+      "repo": "P24",
+      "shown_default_view": 0
+    }
+  ],
+  "total": 0
+}

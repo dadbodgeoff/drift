@@ -1,0 +1,267 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - "[*]"
+  - agent
+  - common
+  - config
+  - deploy
+  - image
+  - notification
+  - project
+  - storage
+  suffixes:
+  - config
+  - const
+  - controller
+  - decorator
+  - dto
+  - exception-filter
+  - gateway
+  - guard
+  - interceptor
+  - listener
+  - mapper
+  - message
+  - metrics
+  - module
+  - pipe
+  - provider
+  - service
+  - spec
+  - strategy
+conventions:
+- id: D-69c688
+  status: proposed
+  mode: advise
+  summary: "web/crux: HTTP handlers in src/** (*.controller files) pass `summary` to ApiOperation()"
+  role:
+    package: web/crux
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:@nestjs/swagger#ApiOperation
+    index: 0
+    key: summary
+  evidence:
+    holders: 122
+    total: 123
+    lower_bound: 0.955
+    lift: 5.086
+  example: web/crux/src/app/config.bundle/config.bundle.http.controller.ts#DELETE /
+  selector_version: 2
+- id: D-a7301b
+  status: proposed
+  mode: advise
+  summary: "web/crux: HTTP handlers in src/** (*.controller files) are decorated with ApiForbiddenResponse()"
+  role:
+    package: web/crux
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/swagger#ApiForbiddenResponse
+  evidence:
+    holders: 122
+    total: 123
+    lower_bound: 0.955
+    lift: 5.086
+  example: web/crux/src/app/config.bundle/config.bundle.http.controller.ts#DELETE /
+  selector_version: 2
+- id: D-8e0acd
+  status: proposed
+  mode: advise
+  summary: "web/crux: classes in src/** (*.dto files) are named `*Dto`"
+  role:
+    package: web/crux
+    dir: src
+    file: "*.dto"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Dto"
+  evidence:
+    holders: 192
+    total: 198
+    lower_bound: 0.935
+    lift: 2.258
+  example: web/crux/src/app/audit/audit.dto.ts#AuditDto
+  selector_version: 2
+- id: D-e995bd
+  status: proposed
+  mode: advise
+  summary: "web/crux-ui: components in src/** do not use requests to computed URLs"
+  role:
+    package: web/crux-ui
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: avoids
+    signal: sink:dynamic_fetch
+  evidence:
+    holders: 189
+    total: 195
+    lower_bound: 0.935
+    lift: 9.811
+  example: web/crux-ui/src/components/composer/compose-environment.tsx#ComposeEnvironment
+  selector_version: 2
+- id: D-00b847
+  status: proposed
+  mode: advise
+  summary: "web/crux: HTTP handlers in src/** (*.controller files) are decorated with HttpCode()"
+  role:
+    package: web/crux
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#HttpCode
+  evidence:
+    holders: 120
+    total: 123
+    lower_bound: 0.931
+    lift: 5.084
+  example: web/crux/src/app/config.bundle/config.bundle.http.controller.ts#DELETE /
+  selector_version: 2
+- id: D-883d32
+  status: proposed
+  mode: advise
+  summary: "web/crux: HTTP handlers in src/** (*.controller files) are decorated with UseGuards()"
+  role:
+    package: web/crux
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#UseGuards
+  evidence:
+    holders: 112
+    total: 123
+    lower_bound: 0.847
+    lift: 5.075
+  example: web/crux/src/app/config.bundle/config.bundle.http.controller.ts#DELETE /
+  selector_version: 2
+- id: D-d30c46
+  status: proposed
+  mode: advise
+  summary: "web/crux: classes in src/** (*.service files) are named `*Service`"
+  role:
+    package: web/crux
+    dir: src
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Service"
+  evidence:
+    holders: 32
+    total: 33
+    lower_bound: 0.847
+    lift: 13.545
+  example: web/crux/src/app/agent/agent.service.ts#AgentService
+  selector_version: 2
+- id: D-e10325
+  status: proposed
+  mode: advise
+  summary: "web/crux-ui: pages in src/** are named `*Page`"
+  role:
+    package: web/crux-ui
+    dir: src
+    file: "*"
+    entry: page
+    kind: component
+  rule:
+    type: named
+    pattern: "*Page"
+  evidence:
+    holders: 35
+    total: 38
+    lower_bound: 0.792
+    lift: 4.568
+  example: web/crux-ui/src/pages/[teamSlug]/audit-log.tsx#AuditLogPage
+  selector_version: 2
+- id: D-7333aa
+  status: proposed
+  mode: advise
+  summary: "web/crux: classes in src/** (*.controller files) are decorated with ApiTags()"
+  role:
+    package: web/crux
+    dir: src
+    file: "*.controller"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/swagger#ApiTags
+  evidence:
+    holders: 21
+    total: 22
+    lower_bound: 0.782
+    lift: 19.395
+  example: web/crux/src/app/audit/audit.http.controller.ts#AuditController
+  selector_version: 2
+- id: D-d1c643
+  status: proposed
+  mode: advise
+  summary: "web/crux: classes in src/** (*.interceptor files) are named `*Interceptor`"
+  role:
+    package: web/crux
+    dir: src
+    file: "*.interceptor"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Interceptor"
+  evidence:
+    holders: 25
+    total: 27
+    lower_bound: 0.766
+    lift: 15.919
+  example: web/crux/src/app/audit.logger/audit.logger.interceptor.ts#AuditLoggerInterceptor
+  selector_version: 2
+- id: D-6e19cf
+  status: proposed
+  mode: advise
+  summary: "web/crux-ui: functions in src/components/** declare their return type"
+  role:
+    package: web/crux-ui
+    dir: src/components
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 43
+    total: 49
+    lower_bound: 0.758
+    lift: 1.875
+  example: web/crux-ui/src/components/composer/use-composer-state.ts#activateBottomSection
+  selector_version: 2

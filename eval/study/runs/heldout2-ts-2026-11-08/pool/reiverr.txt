@@ -1,0 +1,41 @@
+4 conventions from 866 units in 64 roles (0 default tier, 4 suggestions)
+
+4 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-e1c436] backend: classes in src/** (*.dto files) are named `*Dto`, except 3 companions (a helper or constant beside the members that follow it)
+    evidence: 65/65 (lower bound 0.94, lift 2.8)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  backend/src/catalog/catalog.dto.ts#CatalogDownloadDto
+    exempt:   backend/src/metadata/tmdb/tmdb.dto.ts:60 TmdbMovieFull (another kind of class (extends MovieDetailsDto) beside TmdbItemDto, which follows the scheme)
+    exempt:   backend/src/metadata/tmdb/tmdb.dto.ts:86 TmdbSeasonFull (another kind of class (extends TvSeasonDetailsDto) beside TmdbItemDto, which follows the scheme)
+    exempt:   backend/src/metadata/tmdb/tmdb.dto.ts:91 TmdbSeriesFull (another kind of class (extends TvSeriesDetailsDto) beside TmdbItemDto, which follows the scheme)
+
+ 2. [D-791f60] backend: HTTP handlers in src/** (*.controller files) are decorated with ApiTags()
+    evidence: 71/72 (lower bound 0.93, lift 4.2)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  backend/src/catalog/catalog.controller.ts#GET /catalog/downloads
+    outlier:  backend/src/metadata/tmdb/tmdb.controller.ts:32 ALL /tmdb/v3/proxy/*path
+
+ 3. [D-581e59] backend: HTTP handlers in src/** (*.controller files) are decorated with UseGuards()
+    evidence: 70/72 (lower bound 0.90, lift 4.2)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  backend/src/catalog/catalog.controller.ts#GET /catalog/downloads
+    outlier:  backend/src/auth/auth.controller.ts:28 POST /auth
+    outlier:  backend/src/users/users.controller.ts:95 POST /users
+
+ 4. [D-ce6e0a] backend: HTTP handlers in src/** (*.controller files) are decorated with ApiOkResponse()
+    evidence: 62/72 (lower bound 0.76, lift 4.2)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  backend/src/catalog/catalog.controller.ts#GET /catalog/downloads
+    outlier:  backend/src/catalog/catalog.controller.ts:44 GET /catalog/my-list
+    outlier:  backend/src/catalog/catalog.controller.ts:149 GET /catalog/on-disk
+    outlier:  backend/src/metadata/metadata.controller.ts:45 POST /metadata/clear-cache
+    ... 7 more outliers
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

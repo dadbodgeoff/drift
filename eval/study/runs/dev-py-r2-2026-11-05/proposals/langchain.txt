@@ -1,0 +1,19 @@
+2 conventions from 3709 units in 175 roles (1 default tier, 1 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-ede63a] libs/langchain_v1: TypedDicts in langchain/agents/** extend TypedDict
+    evidence: 18/19 (lower bound 0.75, lift 11.0)
+    tier:     default
+    example:  libs/langchain_v1/langchain/agents/middleware/_redaction.py#PIIMatch
+    outlier:  libs/langchain_v1/langchain/agents/middleware/summarization.py:217 TriggerClause
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 2. [D-468530] Python packages use the pytest version most workspace packages use
+    evidence: 21/22 (lower bound 0.78, lift 1.0)
+    tier:     suggestion (rule kind dependency_version)
+    split:    >=9.0.3,<10.0.0 21, >=9.0.3 1
+    example:  libs/core/pyproject.toml#langchain-core
+    outlier:  libs/standard-tests/pyproject.toml:1 langchain-tests
+

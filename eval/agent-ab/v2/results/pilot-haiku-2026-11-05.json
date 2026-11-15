@@ -1,0 +1,661 @@
+{
+  "models": {
+    "claude-haiku-5-5": {
+      "runs": 8,
+      "diffs": {
+        "final": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "introduced": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "regression": [
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    }
+  },
+  "rows": [
+    {
+      "run": "dub-d-domains-count-quick__control__haiku__r1",
+      "task": "dub-d-domains-count-quick",
+      "repo": "dub",
+      "category": "d",
+      "arm": "control",
+      "model": "claude-haiku-5-5",
+      "rep": 1,
+      "exercises": [
+        "D-015190",
+        "D-d24d21",
+        "D-742eb6"
+      ],
+      "files_changed": 1,
+      "final_violations": 0,
+      "final_ids": [],
+      "suppressions_added": 0,
+      "suppressed_new": 0,
+      "lines_added": 19,
+      "edits": 1,
+      "introduced": 0,
+      "fixed_later": 0,
+      "traj_final": 0,
+      "regressions": 0,
+      "regressions_final": 0,
+      "introduced_keys": [],
+      "regression_keys": [],
+      "replay_issues": {
+        "failed_in_session": 0,
+        "replay_miss": 0,
+        "fallback_snapshot": 0,
+        "fidelity_mismatch": 0,
+        "outside_worktree": 0,
+        "bash_changes": 0,
+        "bash_denied_or_failed": 2,
+        "bash_unrecorded": 0
+      },
+      "replay_consistent": true,
+      "replay_final_mismatch": [],
+      "ci_exit": 0,
+      "ci_exit_strict": 0,
+      "ci_results": 0,
+      "turns": 8,
+      "cost_usd": 0.0074456900000000005,
+      "seconds": 17,
+      "is_error": false,
+      "terminal": [
+        "completed"
+      ],
+      "models_used": [
+        "claude-haiku-5-5"
+      ]
+    },
+    {
+      "run": "dub-d-domains-count-quick__drift__haiku__r1",
+      "task": "dub-d-domains-count-quick",
+      "repo": "dub",
+      "category": "d",
+      "arm": "drift",
+      "model": "claude-haiku-5-5",
+      "rep": 1,
+      "exercises": [
+        "D-015190",
+        "D-d24d21",
+        "D-742eb6"
+      ],
+      "files_changed": 1,
+      "final_violations": 0,
+      "final_ids": [],
+      "suppressions_added": 0,
+      "suppressed_new": 0,
+      "lines_added": 19,
+      "edits": 1,
+      "introduced": 0,
+      "fixed_later": 0,
+      "traj_final": 0,
+      "regressions": 0,
+      "regressions_final": 0,
+      "introduced_keys": [],
+      "regression_keys": [],
+      "replay_issues": {
+        "failed_in_session": 0,
+        "replay_miss": 0,
+        "fallback_snapshot": 0,
+        "fidelity_mismatch": 0,
+        "outside_worktree": 0,
+        "bash_changes": 0,
+        "bash_denied_or_failed": 1,
+        "bash_unrecorded": 0
+      },
+      "replay_consistent": true,
+      "replay_final_mismatch": [],
+      "ci_exit": 0,
+      "ci_exit_strict": 0,
+      "ci_results": 0,
+      "turns": 9,
+      "cost_usd": 0.00839481,
+      "seconds": 24,
+      "is_error": false,
+      "terminal": [
+        "completed"
+      ],
+      "models_used": [
+        "claude-haiku-5-5"
+      ],
+      "hooks": {
+        "sessions": 1,
+        "advised": [],
+        "primed": [
+          "D-015190",
+          "D-742eb6",
+          "D-d24d21"
+        ],
+        "blocks": 0,
+        "baseline_size": [
+          0
+        ],
+        "latency_ms": {
+          "SessionStart": {
+            "n": 1,
+            "p50": 984,
+            "max": 984
+          },
+          "cli:example": {
+            "n": 1,
+            "p50": 612,
+            "max": 612
+          },
+          "PreToolUse": {
+            "n": 1,
+            "p50": 5,
+            "max": 5
+          },
+          "PostToolUse": {
+            "n": 1,
+            "p50": 1082,
+            "max": 1082
+          },
+          "Stop": {
+            "n": 1,
+            "p50": 877,
+            "max": 877
+          }
+        },
+        "context_shown": {
+          "pre": 1,
+          "post": 0,
+          "start": 1
+        },
+        "stop_feedback": 0,
+        "hook_errors": 0,
+        "introduced_advised": 0,
+        "agent_drift_cli": [],
+        "policy_tampering": 0
+      }
+    },
+    {
+      "run": "immich-a-memory-duplicate__control__haiku__r1",
+      "task": "immich-a-memory-duplicate",
+      "repo": "immich",
+      "category": "a",
+      "arm": "control",
+      "model": "claude-haiku-5-5",
+      "rep": 1,
+      "exercises": [
+        "D-876763",
+        "D-c10e8e",
+        "D-63d2cd",
+        "D-379261",
+        "D-3b4f47"
+      ],
+      "files_changed": 2,
+      "final_violations": 0,
+      "final_ids": [],
+      "suppressions_added": 0,
+      "suppressed_new": 0,
+      "lines_added": 35,
+      "edits": 2,
+      "introduced": 0,
+      "fixed_later": 0,
+      "traj_final": 0,
+      "regressions": 0,
+      "regressions_final": 0,
+      "introduced_keys": [],
+      "regression_keys": [],
+      "replay_issues": {
+        "failed_in_session": 0,
+        "replay_miss": 0,
+        "fallback_snapshot": 0,
+        "fidelity_mismatch": 0,
+        "outside_worktree": 0,
+        "bash_changes": 0,
+        "bash_denied_or_failed": 0,
+        "bash_unrecorded": 0
+      },
+      "replay_consistent": true,
+      "replay_final_mismatch": [],
+      "ci_exit": 0,
+      "ci_exit_strict": 0,
+      "ci_results": 0,
+      "turns": 13,
+      "cost_usd": 0.015075540000000002,
+      "seconds": 39,
+      "is_error": false,
+      "terminal": [
+        "completed"
+      ],
+      "models_used": [
+        "claude-haiku-5-5"
+      ]
+    },
+    {
+      "run": "immich-a-memory-duplicate__drift__haiku__r1",
+      "task": "immich-a-memory-duplicate",
+      "repo": "immich",
+      "category": "a",
+      "arm": "drift",
+      "model": "claude-haiku-5-5",
+      "rep": 1,
+      "exercises": [
+        "D-876763",
+        "D-c10e8e",
+        "D-63d2cd",
+        "D-379261",
+        "D-3b4f47"
+      ],
+      "files_changed": 2,
+      "final_violations": 0,
+      "final_ids": [],
+      "suppressions_added": 0,
+      "suppressed_new": 0,
+      "lines_added": 36,
+      "edits": 3,
+      "introduced": 0,
+      "fixed_later": 0,
+      "traj_final": 0,
+      "regressions": 0,
+      "regressions_final": 0,
+      "introduced_keys": [],
+      "regression_keys": [],
+      "replay_issues": {
+        "failed_in_session": 0,
+        "replay_miss": 0,
+        "fallback_snapshot": 0,
+        "fidelity_mismatch": 0,
+        "outside_worktree": 0,
+        "bash_changes": 0,
+        "bash_denied_or_failed": 1,
+        "bash_unrecorded": 0
+      },
+      "replay_consistent": true,
+      "replay_final_mismatch": [],
+      "ci_exit": 0,
+      "ci_exit_strict": 0,
+      "ci_results": 0,
+      "turns": 12,
+      "cost_usd": 0.01388708,
+      "seconds": 33,
+      "is_error": false,
+      "terminal": [
+        "completed"
+      ],
+      "models_used": [
+        "claude-haiku-5-5"
+      ],
+      "hooks": {
+        "sessions": 1,
+        "advised": [],
+        "primed": [],
+        "blocks": 0,
+        "baseline_size": [
+          0
+        ],
+        "latency_ms": {
+          "SessionStart": {
+            "n": 1,
+            "p50": 251,
+            "max": 251
+          },
+          "PreToolUse": {
+            "n": 3,
+            "p50": 8,
+            "max": 20
+          },
+          "PostToolUse": {
+            "n": 3,
+            "p50": 256,
+            "max": 283
+          },
+          "Stop": {
+            "n": 1,
+            "p50": 256,
+            "max": 256
+          }
+        },
+        "context_shown": {
+          "pre": 0,
+          "post": 0,
+          "start": 1
+        },
+        "stop_feedback": 0,
+        "hook_errors": 0,
+        "introduced_advised": 0,
+        "agent_drift_cli": [],
+        "policy_tampering": 0
+      }
+    },
+    {
+      "run": "infisical-e-split-user-mfa__control__haiku__r1",
+      "task": "infisical-e-split-user-mfa",
+      "repo": "infisical",
+      "category": "e",
+      "arm": "control",
+      "model": "claude-haiku-5-5",
+      "rep": 1,
+      "exercises": [
+        "D-259bd1",
+        "D-1e9bb3"
+      ],
+      "files_changed": 3,
+      "final_violations": 0,
+      "final_ids": [],
+      "suppressions_added": 0,
+      "suppressed_new": 0,
+      "lines_added": 243,
+      "edits": 6,
+      "introduced": 0,
+      "fixed_later": 0,
+      "traj_final": 0,
+      "regressions": 0,
+      "regressions_final": 0,
+      "introduced_keys": [],
+      "regression_keys": [],
+      "replay_issues": {
+        "failed_in_session": 0,
+        "replay_miss": 0,
+        "fallback_snapshot": 0,
+        "fidelity_mismatch": 0,
+        "outside_worktree": 0,
+        "bash_changes": 0,
+        "bash_denied_or_failed": 5,
+        "bash_unrecorded": 0
+      },
+      "replay_consistent": true,
+      "replay_final_mismatch": [],
+      "ci_exit": 0,
+      "ci_exit_strict": 0,
+      "ci_results": 0,
+      "turns": 20,
+      "cost_usd": 0.02891789,
+      "seconds": 74,
+      "is_error": false,
+      "terminal": [
+        "completed"
+      ],
+      "models_used": [
+        "claude-haiku-5-5"
+      ]
+    },
+    {
+      "run": "infisical-e-split-user-mfa__drift__haiku__r1",
+      "task": "infisical-e-split-user-mfa",
+      "repo": "infisical",
+      "category": "e",
+      "arm": "drift",
+      "model": "claude-haiku-5-5",
+      "rep": 1,
+      "exercises": [
+        "D-259bd1",
+        "D-1e9bb3"
+      ],
+      "files_changed": 3,
+      "final_violations": 0,
+      "final_ids": [],
+      "suppressions_added": 0,
+      "suppressed_new": 0,
+      "lines_added": 243,
+      "edits": 6,
+      "introduced": 0,
+      "fixed_later": 0,
+      "traj_final": 0,
+      "regressions": 0,
+      "regressions_final": 0,
+      "introduced_keys": [],
+      "regression_keys": [],
+      "replay_issues": {
+        "failed_in_session": 0,
+        "replay_miss": 0,
+        "fallback_snapshot": 0,
+        "fidelity_mismatch": 0,
+        "outside_worktree": 1,
+        "bash_changes": 0,
+        "bash_denied_or_failed": 4,
+        "bash_unrecorded": 0
+      },
+      "replay_consistent": true,
+      "replay_final_mismatch": [],
+      "ci_exit": 0,
+      "ci_exit_strict": 0,
+      "ci_results": 0,
+      "turns": 19,
+      "cost_usd": 0.03290717,
+      "seconds": 105,
+      "is_error": false,
+      "terminal": [
+        "completed"
+      ],
+      "models_used": [
+        "claude-haiku-5-5"
+      ],
+      "hooks": {
+        "sessions": 1,
+        "advised": [],
+        "primed": [
+          "D-1e9bb3",
+          "D-259bd1",
+          "D-34f463"
+        ],
+        "blocks": 0,
+        "baseline_size": [
+          0
+        ],
+        "latency_ms": {
+          "SessionStart": {
+            "n": 1,
+            "p50": 1237,
+            "max": 1237
+          },
+          "cli:example": {
+            "n": 1,
+            "p50": 1205,
+            "max": 1205
+          },
+          "PreToolUse": {
+            "n": 6,
+            "p50": 7,
+            "max": 12
+          },
+          "PostToolUse": {
+            "n": 6,
+            "p50": 1567,
+            "max": 2268
+          },
+          "Stop": {
+            "n": 1,
+            "p50": 2141,
+            "max": 2141
+          }
+        },
+        "context_shown": {
+          "pre": 1,
+          "post": 0,
+          "start": 1
+        },
+        "stop_feedback": 0,
+        "hook_errors": 0,
+        "introduced_advised": 0,
+        "agent_drift_cli": [],
+        "policy_tampering": 0
+      }
+    },
+    {
+      "run": "midday-f-budgets-session__control__haiku__r1",
+      "task": "midday-f-budgets-session",
+      "repo": "midday",
+      "category": "f",
+      "arm": "control",
+      "model": "claude-haiku-5-5",
+      "rep": 1,
+      "exercises": [
+        "D-7da2b9",
+        "D-f90103",
+        "D-afc38b",
+        "D-b8cff6",
+        "D-50255f",
+        "D-5880dd",
+        "D-86f372"
+      ],
+      "files_changed": 15,
+      "final_violations": 0,
+      "final_ids": [],
+      "suppressions_added": 0,
+      "suppressed_new": 0,
+      "lines_added": 521,
+      "edits": 29,
+      "introduced": 0,
+      "fixed_later": 0,
+      "traj_final": 0,
+      "regressions": 0,
+      "regressions_final": 0,
+      "introduced_keys": [],
+      "regression_keys": [],
+      "replay_issues": {
+        "failed_in_session": 0,
+        "replay_miss": 0,
+        "fallback_snapshot": 0,
+        "fidelity_mismatch": 0,
+        "outside_worktree": 0,
+        "bash_changes": 0,
+        "bash_denied_or_failed": 6,
+        "bash_unrecorded": 0
+      },
+      "replay_consistent": true,
+      "replay_final_mismatch": [],
+      "ci_exit": 0,
+      "ci_exit_strict": 0,
+      "ci_results": 0,
+      "turns": 62,
+      "cost_usd": 0.17582367000000002,
+      "seconds": 211,
+      "is_error": false,
+      "terminal": [
+        "completed",
+        "completed",
+        "completed"
+      ],
+      "models_used": [
+        "claude-haiku-5-5"
+      ]
+    },
+    {
+      "run": "midday-f-budgets-session__drift__haiku__r1",
+      "task": "midday-f-budgets-session",
+      "repo": "midday",
+      "category": "f",
+      "arm": "drift",
+      "model": "claude-haiku-5-5",
+      "rep": 1,
+      "exercises": [
+        "D-7da2b9",
+        "D-f90103",
+        "D-afc38b",
+        "D-b8cff6",
+        "D-50255f",
+        "D-5880dd",
+        "D-86f372"
+      ],
+      "files_changed": 20,
+      "final_violations": 0,
+      "final_ids": [],
+      "suppressions_added": 0,
+      "suppressed_new": 0,
+      "lines_added": 617,
+      "edits": 37,
+      "introduced": 0,
+      "fixed_later": 0,
+      "traj_final": 0,
+      "regressions": 0,
+      "regressions_final": 0,
+      "introduced_keys": [],
+      "regression_keys": [],
+      "replay_issues": {
+        "failed_in_session": 0,
+        "replay_miss": 0,
+        "fallback_snapshot": 0,
+        "fidelity_mismatch": 0,
+        "outside_worktree": 0,
+        "bash_changes": 0,
+        "bash_denied_or_failed": 15,
+        "bash_unrecorded": 0
+      },
+      "replay_consistent": true,
+      "replay_final_mismatch": [],
+      "ci_exit": 0,
+      "ci_exit_strict": 0,
+      "ci_results": 0,
+      "turns": 105,
+      "cost_usd": 0.33677234,
+      "seconds": 290,
+      "is_error": false,
+      "terminal": [
+        "completed",
+        "completed",
+        "completed"
+      ],
+      "models_used": [
+        "claude-haiku-5-5"
+      ],
+      "hooks": {
+        "sessions": 1,
+        "advised": [],
+        "primed": [
+          "D-5880dd",
+          "D-86f372"
+        ],
+        "blocks": 0,
+        "baseline_size": [
+          0
+        ],
+        "latency_ms": {
+          "SessionStart": {
+            "n": 3,
+            "p50": 281,
+            "max": 348
+          },
+          "cli:example": {
+            "n": 3,
+            "p50": 283,
+            "max": 414
+          },
+          "PreToolUse": {
+            "n": 37,
+            "p50": 10,
+            "max": 60
+          },
+          "PostToolUse": {
+            "n": 37,
+            "p50": 438,
+            "max": 768
+          },
+          "Stop": {
+            "n": 3,
+            "p50": 260,
+            "max": 389
+          }
+        },
+        "context_shown": {
+          "pre": 4,
+          "post": 0,
+          "start": 1
+        },
+        "stop_feedback": 0,
+        "hook_errors": 0,
+        "introduced_advised": 0,
+        "agent_drift_cli": [
+          "drift example packages/db/src/queries/category-budgets.ts 2>&1 | head -40; grep -n \"numericCasted\" packages/db/src/schema.ts | head -3; grep -n \"export const numericCasted\" -A12 packages/db/src/schema",
+          "drift example apps/api/src/trpc/routers/budgets.ts",
+          "drift example apps/worker/src/processors/budget-alerts.ts"
+        ],
+        "policy_tampering": 0
+      }
+    }
+  ]
+}

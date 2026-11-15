@@ -1,0 +1,325 @@
+diff --git a/crates/drift-mine/src/lib.rs b/crates/drift-mine/src/lib.rs
+index a48ba55c..54e1df13 100644
+--- a/crates/drift-mine/src/lib.rs
++++ b/crates/drift-mine/src/lib.rs
+@@ -13,6 +13,7 @@ pub mod policy;
+ pub mod rank;
+ pub mod report;
+ pub mod roles;
++pub mod scope;
+ pub mod security;
+ pub mod show;
+ pub mod tier;
+diff --git a/crates/drift-mine/src/mine.rs b/crates/drift-mine/src/mine.rs
+index 9466a014..03fa9e69 100644
+--- a/crates/drift-mine/src/mine.rs
++++ b/crates/drift-mine/src/mine.rs
+@@ -2050,6 +2050,15 @@ impl Rule {
+         view: &View,
+         ctx: &RepoContext,
+     ) -> Option<Exempted> {
++        // A config or tooling file under a layering rule (K2, a study switch: crate::scope).
++        if let View::Symbol(f, _) | View::File(f) = view
++            && crate::scope::k2_exempts(crate::scope::on(), self, &f.path, &f.lang)
++        {
++            return Some(Exempted::new(
++                crate::scope::TOOLING_FILE,
++                "a config or tooling file, not one of the role's modules".into(),
++            ));
++        }
+         let View::Symbol(f, s) = view else {
+             // A framework root file's module (F9, #50), through the gate like every exemption.
+             if !self.exemption_allowed(view, ctx) {
+@@ -3355,6 +3364,11 @@ fn exemption_words(code: &str) -> Option<(&'static str, &'static str, &'static s
+             "with no code to test",
+         ),
+         "no_counterpart" => ("a class", "classes", "with nothing of the kind to pass"),
++        "tooling_file" => (
++            "a config or tooling file",
++            "config or tooling files",
++            "not one of the role's modules",
++        ),
+         _ => return None,
+     })
+ }
+@@ -4131,7 +4145,7 @@ fn join_siblings(d: &mut Draft, units: &[Unit], ctx: &RepoContext) -> bool {
+ /// declarations count: then it is universal in the role, documentation rather than a
+ /// check.
+ fn narrow(d: &mut Draft, units: &[Unit], ctx: &RepoContext) -> bool {
+-    let role_n = d.members.len();
++    let mut role_n = d.members.len();
+     let mut population = Vec::with_capacity(role_n);
+     for &m in &d.members {
+         let view = &units[m].view;
+@@ -4140,6 +4154,11 @@ fn narrow(d: &mut Draft, units: &[Unit], ctx: &RepoContext) -> bool {
+                 .part_exemption(&d.role, view, ctx)
+                 .map(|why| Exempted::new("shared_part", why))
+         }) {
++            // K2 (crate::scope): a tooling file is not counted in the role's size either.
++            Some(why) if why.code == crate::scope::TOOLING_FILE => {
++                role_n -= 1;
++                d.exempt.push((m, why));
++            }
+             Some(why) => d.exempt.push((m, why)),
+             None => population.push(m),
+         }
+@@ -4560,7 +4579,12 @@ fn subtree(
+     }
+     d.exempt.retain(|&(m, _)| under(m));
+     d.n = members.len();
+-    d.role_n = (!d.exempt.is_empty()).then_some(d.n + d.exempt.len());
++    let counted = d
++        .exempt
++        .iter()
++        .filter(|(_, e)| e.code != crate::scope::TOOLING_FILE)
++        .count();
++    d.role_n = (counted > 0).then_some(d.n + counted);
+     d.lb = wilson_lower_bound(holders.len(), d.n);
+     d.holders = holders;
+     d.inherited = inherited;
+diff --git a/crates/drift-mine/src/scope.rs b/crates/drift-mine/src/scope.rs
+new file mode 100644
+index 00000000..f019a8bd
+--- /dev/null
++++ b/crates/drift-mine/src/scope.rs
+@@ -0,0 +1,204 @@
++//! Candidate scope (eval/study/PLAN-R11.md §1.4, §5 WS-C): two hypotheses about the D7
++//! default tier (the block candidates), built as general mechanisms so the study can
++//! measure them under the five-fold rule. **Study switch, off unless set.**
++//!
++//! - **K1:** a call-wrapper candidate needs an entry role. A `wrapped_by:call` rule that
++//!   would be in the default tier stays there only when its role, and every sibling role
++//!   it also covers, is keyed by an adapter's entry-point kind (`http`, `rpc`,
++//!   `server_action`, `page`, ...): not `-` (no entry point) and not a wiring role's `*`.
++//!   Otherwise it moves to the suggestion tier, tier reason `not_entry_role`.
++//! - **K2:** a layering candidate does not count config or tooling files as members. Under
++//!   an `avoids` `import:` rule, a TypeScript/JavaScript file named `*.config.*` or inside
++//!   a `scripts/` directory is not one of the role's modules: it is exempt (code
++//!   `tooling_file`), so it is neither a holder nor an outlier, and it is not counted in
++//!   the role's size, which the tier reads. A role left with fewer than 15 counted members
++//!   moves to the suggestion tier (`small_role`); one left with none proposes nothing.
++//!
++//! The switch is the environment variable [`SWITCH_ENV`] (`k1`, `k2` or `k1,k2`), read
++//! once per process. Unset, nothing here changes any convention.
++
++use std::sync::OnceLock;
++
++use crate::mine::Rule;
++use crate::roles::RoleSelector;
++
++/// The study switch: a comma-separated list of the mechanisms on (`k1`, `k2`).
++pub const SWITCH_ENV: &str = "DRIFT_STUDY_SCOPE";
++
++/// The tier reason of a call-wrapper candidate whose role is not an entry role (K1).
++pub const NOT_ENTRY_ROLE: &str = "not_entry_role";
++
++/// The exemption code of a config or tooling file under a layering rule (K2).
++pub const TOOLING_FILE: &str = "tooling_file";
++
++/// The mechanisms switched on.
++#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
++pub struct Mechanisms {
++    pub k1: bool,
++    pub k2: bool,
++}
++
++impl Mechanisms {
++    /// Parse the switch's value; an unknown name is ignored.
++    pub fn parse(s: &str) -> Self {
++        let mut m = Self::default();
++        for x in s.split(',').map(str::trim) {
++            match x {
++                "k1" => m.k1 = true,
++                "k2" => m.k2 = true,
++                _ => {}
++            }
++        }
++        m
++    }
++}
++
++/// The mechanisms on in this process ([`SWITCH_ENV`]).
++pub fn on() -> Mechanisms {
++    static ON: OnceLock<Mechanisms> = OnceLock::new();
++    *ON.get_or_init(|| {
++        std::env::var(SWITCH_ENV)
++            .map(|v| Mechanisms::parse(&v))
++            .unwrap_or_default()
++    })
++}
++
++/// Whether a role (and every sibling it also covers) is keyed by an entry-point kind.
++pub fn entry_role(role: &RoleSelector) -> bool {
++    role.parts()
++        .iter()
++        .all(|p| p.entry != "-" && p.entry != crate::wiring::ANY_ENTRY && !p.entry.is_empty())
++}
++
++/// K1's tier reason for a convention the D7 tier would place in the default tier.
++pub fn k1_reason(m: Mechanisms, role: &RoleSelector, rule: &Rule) -> Option<&'static str> {
++    (m.k1 && crate::tier::rule_kind(rule) == "wrapped_by:call" && !entry_role(role))
++        .then_some(NOT_ENTRY_ROLE)
++}
++
++/// Whether a repository path is a config or tooling file (K2): its file name has a
++/// `.config.` part (`vite.config.ts`, `electron-builder.config.cjs`), or a directory on
++/// its path is `scripts`.
++pub fn is_tooling_path(path: &str) -> bool {
++    let path = path.split('#').next().unwrap_or(path);
++    let mut segs: Vec<&str> = path.split('/').collect();
++    let name = segs.pop().unwrap_or_default();
++    name.contains(".config.") || segs.contains(&"scripts")
++}
++
++/// Whether K2 sets this file apart under this rule: a TypeScript/JavaScript config or
++/// tooling file under an `avoids` `import:` rule.
++pub fn k2_exempts(m: Mechanisms, rule: &Rule, path: &str, lang: &str) -> bool {
++    m.k2 && lang != "py"
++        && matches!(rule, Rule::Avoids { signal } if signal.starts_with("import:"))
++        && is_tooling_path(path)
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use drift_core::SymbolKind;
++
++    fn role(entry: &str) -> RoleSelector {
++        RoleSelector {
++            package: String::new(),
++            dir: "src".into(),
++            file: "route".into(),
++            entry: entry.into(),
++            kind: SymbolKind::Function,
++            variety: None,
++            export_name: None,
++            member_kind: None,
++            also: vec![],
++        }
++    }
++
++    fn wrapper() -> Rule {
++        Rule::WrappedBy {
++            kind: drift_core::WrapKind::Call,
++            any_of: vec!["src/lib/op.ts#withOperation".into()],
++        }
++    }
++
++    #[test]
++    fn parse_names() {
++        assert_eq!(Mechanisms::parse(""), Mechanisms::default());
++        assert_eq!(
++            Mechanisms::parse("k1"),
++            Mechanisms {
++                k1: true,
++                k2: false
++            }
++        );
++        assert_eq!(
++            Mechanisms::parse("k2, k1"),
++            Mechanisms { k1: true, k2: true }
++        );
++        assert_eq!(Mechanisms::parse("none"), Mechanisms::default());
++    }
++
++    #[test]
++    fn k1_needs_an_entry_role() {
++        let on = Mechanisms {
++            k1: true,
++            k2: false,
++        };
++        assert_eq!(k1_reason(on, &role("-"), &wrapper()), Some(NOT_ENTRY_ROLE));
++        assert_eq!(k1_reason(on, &role("*"), &wrapper()), Some(NOT_ENTRY_ROLE));
++        assert_eq!(k1_reason(on, &role("http"), &wrapper()), None);
++        assert_eq!(k1_reason(on, &role("server_action"), &wrapper()), None);
++        // A sibling without an entry kind fails the card.
++        let mut r = role("http");
++        r.also = vec![role("-")];
++        assert_eq!(k1_reason(on, &r, &wrapper()), Some(NOT_ENTRY_ROLE));
++        // Off, or another rule kind: no reason.
++        assert_eq!(
++            k1_reason(Mechanisms::default(), &role("-"), &wrapper()),
++            None
++        );
++        let layering = Rule::Avoids {
++            signal: "import:src/admin".into(),
++        };
++        assert_eq!(k1_reason(on, &role("-"), &layering), None);
++    }
++
++    #[test]
++    fn k2_tooling_paths() {
++        for p in [
++            "apps/buddy/electron-builder.config.cjs",
++            "vite.config.ts",
++            "scripts/seed.ts",
++            "packages/api/scripts/migrate.mjs#default",
++        ] {
++            assert!(is_tooling_path(p), "{p}");
++        }
++        for p in [
++            "src/config.ts",
++            "src/config/index.ts",
++            "src/lib/scripts.ts",
++            "apps/web/app/page.tsx",
++            "src/configure.ts",
++        ] {
++            assert!(!is_tooling_path(p), "{p}");
++        }
++        let on = Mechanisms {
++            k1: false,
++            k2: true,
++        };
++        let layering = Rule::Avoids {
++            signal: "import:src/admin".into(),
++        };
++        assert!(k2_exempts(on, &layering, "scripts/a.ts", "ts"));
++        assert!(!k2_exempts(on, &layering, "scripts/a.py", "py"));
++        assert!(!k2_exempts(
++            Mechanisms::default(),
++            &layering,
++            "scripts/a.ts",
++            "ts"
++        ));
++        let other = Rule::Avoids {
++            signal: "raw_sql".into(),
++        };
++        assert!(!k2_exempts(on, &other, "scripts/a.ts", "ts"));
++    }
++}
+diff --git a/crates/drift-mine/src/tier.rs b/crates/drift-mine/src/tier.rs
+index 0c21c559..588ac20f 100644
+--- a/crates/drift-mine/src/tier.rs
++++ b/crates/drift-mine/src/tier.rs
+@@ -347,17 +347,28 @@ macro_rules! tiered {
+             }
+ 
+             pub fn tier(&self) -> Tier {
+-                tier_of(&self.rule, self.evidence.role_size(), self.language())
++                match self.tier_reason() {
++                    None => Tier::Default,
++                    Some(_) => Tier::Suggestion,
++                }
+             }
+ 
+-            /// [`tier_reason`] for this convention.
++            /// [`tier_reason`] for this convention, then the candidate-scope study
++            /// mechanisms when switched on ([`crate::scope`]; off unless set).
+             pub fn tier_reason(&self) -> Option<&'static str> {
+                 tier_reason(&self.rule, self.evidence.role_size(), self.language())
++                    .or_else(|| crate::scope::k1_reason(crate::scope::on(), &self.role, &self.rule))
+             }
+ 
+             /// [`describe`] for this convention.
+             pub fn describe_tier(&self) -> String {
+-                describe(&self.rule, self.evidence.role_size(), self.language())
++                match self.tier_reason() {
++                    Some(crate::scope::NOT_ENTRY_ROLE) => {
++                        "suggestion (a call wrapper on a role that is not an entry point)"
++                            .to_string()
++                    }
++                    _ => describe(&self.rule, self.evidence.role_size(), self.language()),
++                }
+             }
+         }
+     };

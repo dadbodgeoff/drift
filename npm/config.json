@@ -1,0 +1,12 @@
+{
+  "//": "npm package name: a founder decision. The bare name `drift` is likely taken; change it here only.",
+  "name": "@dadbodgeoff/drift",
+  "repository": "https://github.com/dadbodgeoff/drift",
+  "targets": {
+    "x86_64-unknown-linux-musl": { "suffix": "linux-x64", "os": "linux", "cpu": "x64", "exe": "drift" },
+    "aarch64-unknown-linux-musl": { "suffix": "linux-arm64", "os": "linux", "cpu": "arm64", "exe": "drift" },
+    "x86_64-apple-darwin": { "suffix": "darwin-x64", "os": "darwin", "cpu": "x64", "exe": "drift" },
+    "aarch64-apple-darwin": { "suffix": "darwin-arm64", "os": "darwin", "cpu": "arm64", "exe": "drift" },
+    "x86_64-pc-windows-msvc": { "suffix": "win32-x64", "os": "win32", "cpu": "x64", "exe": "drift.exe" }
+  }
+}

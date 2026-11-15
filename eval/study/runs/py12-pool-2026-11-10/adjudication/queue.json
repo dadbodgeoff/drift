@@ -1,0 +1,1203 @@
+{
+  "labels_sha256": {
+    "A": "11c5755395db6ebb8b7c5eb700d24f6c4eca8927042371848364f1a9ed5fcb63",
+    "B": "29f6992e05836edfc0f2d22c6e1ab61c6d3488780c766fdea2aeede4f510e305"
+  },
+  "cases": [
+    {
+      "uid": "L02/D-2d3433",
+      "repo": "L02",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "L02/D-2d3433",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "high",
+          "checked": [
+            "backend/aci/server/routes/agent.py",
+            "backend/aci/server/routes/health.py",
+            "backend/aci/server/routes/webhooks.py",
+            "backend/aci/server/routes/billing.py",
+            "backend/aci/server/routes/apps.py",
+            "backend/aci/server/routes/organizations.py",
+            "backend/aci/server/routes/analytics.py",
+            "backend/aci/server/routes/docs.py",
+            "backend/aci/server/dependencies.py",
+            "backend/aci/server/main.py",
+            "backend/pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "health",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R9"
+          ],
+          "reason": "Handlers take Depends(deps.get_request_context) (agent.py, apps.py, analytics.py) or Depends(auth.require_user) (billing.py, organizations.py); the only outlier is the public health probe in health.py, a reachable endpoint with no auth dependency that a reviewer would want to confirm (R3). Wording is loose: these are FastAPI dependencies, not wrappers, auth.require_user is listed three times, and yield_db_session (the only dependency of the signature-verified webhooks in webhooks.py and billing.py) is a DB session, not auth (R9); nothing in ruff/mypy config or FastAPI catches a handler with no dependency.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "L02/D-2d3433",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "backend/aci/server/routes/agent.py",
+            "backend/aci/server/routes/health.py",
+            "backend/aci/server/routes/billing.py",
+            "backend/aci/server/routes/webhooks.py",
+            "backend/aci/server/routes/docs.py",
+            "backend/aci/server/dependencies.py",
+            "backend/pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "health",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R9"
+          ],
+          "reason": "The only outlier, health.py, is a public liveness probe with no input, DB access or data, so nothing is at stake (R3) and a new probe would be flagged for nothing; the rule's OR list also mixes a DB-session dependency (yield_db_session, used alone by webhooks.py) with auth wrappers, so it is loose. Hesitated with ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "L05/D-f6962f",
+      "repo": "L05",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "L05/D-f6962f",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "jesse/controllers/ai_model_controller.py",
+            "jesse/app.py",
+            "jesse/controllers/auth_controller.py",
+            "jesse/controllers/backtest_controller.py",
+            "jesse/controllers/candles_controller.py",
+            "jesse/controllers/mcp_controller.py",
+            "jesse/controllers/significance_test_controller.py",
+            "jesse/controllers/tabs_controller.py",
+            "jesse/controllers/period_templates_controller.py",
+            "jesse/controllers/file_controller.py",
+            "jesse/services/auth.py",
+            "jesse/mcp/auth.py",
+            ".github/workflows/python-package.yml"
+          ],
+          "outliers": [
+            {
+              "symbol": "index",
+              "verdict": "look"
+            },
+            {
+              "symbol": "auth",
+              "verdict": "look"
+            },
+            {
+              "symbol": "login",
+              "verdict": "look"
+            },
+            {
+              "symbol": "download_backtest_report",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "get_charts_image",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "export_candles",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "mcp_endpoint",
+              "verdict": "look"
+            },
+            {
+              "symbol": "mcp_endpoint_trailing_slash",
+              "verdict": "look"
+            },
+            {
+              "symbol": "get_chart",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R9"
+          ],
+          "reason": "Routers and routes carry Depends(require_auth) or Depends(require_auth_token) (ai_model_controller.py:10, tabs_controller.py, file_controller.py:11); the public homepage and login routes (app.py:40, auth_controller.py:15/31) and the MCP relay with hand-rolled is_authorized() (mcp_controller.py:226) are exceptions a reviewer would confirm (R3; 5 of 9 look), while the backtest and significance-test report/chart routes use the sibling require_auth_any and export_candles the router-level require_auth_form from jesse/services/auth.py, which the rule's list omits. Nothing in the repo lints or type-checks this. Hesitated with WRONG legit_outliers because the handlers on require_auth_any/require_auth_form are authenticated and would be falsely warned.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "L05/D-f6962f",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "false_outliers",
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "jesse/controllers/ai_model_controller.py",
+            "jesse/controllers/order_controller.py",
+            "jesse/controllers/closed_trade_controller.py",
+            "jesse/app.py",
+            "jesse/controllers/auth_controller.py",
+            "jesse/controllers/backtest_controller.py",
+            "jesse/controllers/candles_controller.py",
+            "jesse/controllers/mcp_controller.py",
+            "jesse/controllers/significance_test_controller.py",
+            "jesse/services/auth.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "index",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "auth",
+              "verdict": "look"
+            },
+            {
+              "symbol": "login",
+              "verdict": "look"
+            },
+            {
+              "symbol": "download_backtest_report",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "get_charts_image",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "export_candles",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "mcp_endpoint",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "mcp_endpoint_trailing_slash",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "get_chart",
+              "verdict": "not_violation"
+            }
+          ],
+          "rules": [
+            "R6",
+            "R9"
+          ],
+          "reason": "6 of 9 outliers are authenticated through repo helpers the rule text omits: require_auth_any (backtest_controller.py, significance_test_controller.py), require_auth_form via export_router (candles_controller.py), and is_authorized inside _relay_to_worker (mcp_controller.py); only index/login/auth are truly unauthenticated. Hesitated with ACCEPT since the remaining outliers are public routes.",
+          "rubric": "v3",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "L08/D-c55373",
+      "repo": "L08",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "L08/D-c55373",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "src/sparkrun/cli/_setup/_commands.py",
+            "src/sparkrun/cli/_setup/_ssh_rotate.py",
+            "src/sparkrun/cli/_setup/_tailscale.py",
+            "src/sparkrun/cli/_common.py",
+            "src/sparkrun/cli/_plugins.py",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "setup_prune_job_metadata_cache",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Every other setup command takes ctx via @click.pass_context (_commands.py setup_clear_cache, _ssh_rotate.py, _tailscale.py), including ones that never use it, so it is a house choice rather than a need; setup_prune_job_metadata_cache at _commands.py:1685 omits it and builds SparkrunConfig() directly, bypassing the root config_path that _get_context(ctx)/management_config(ctx) honour, which is worth a second look. Hesitated with WRONG incidental since many members leave ctx unused.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "L08/D-c55373",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "incidental",
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "src/sparkrun/cli/_setup/_commands.py",
+            "src/sparkrun/cli/_setup/_check.py",
+            "src/sparkrun/cli/_setup/_wizard.py",
+            "src/sparkrun/cli/_setup/_uninstall.py",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "setup_prune_job_metadata_cache",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Commands such as setup_clear_cache and setup_ssh take ctx via @click.pass_context; the sole outlier setup_prune_job_metadata_cache takes no ctx and builds SparkrunConfig itself, so it lacks the need and new ctx-free commands would be flagged for nothing.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "L09/D-8a3bd9",
+      "repo": "L09",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "L09/D-8a3bd9",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "misdescribes",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "src/ostorlab/assets/android_aab.py",
+            "src/ostorlab/assets/ipv6.py",
+            "src/ostorlab/assets/ipv4.py",
+            "src/ostorlab/assets/risk.py",
+            "src/ostorlab/assets/message.py",
+            "src/ostorlab/assets/asset.py",
+            "tests/cli/scan/run/assets/android_aab_test.py",
+            "tests/assets/ipv4_test.py",
+            "tests/cli/scan/run/assets/risk_test.py",
+            "src/ostorlab/cli/scan/run/assets/android_aab.py",
+            "setup.cfg",
+            "AGENTS.md",
+            "CONTRIBUTING.md"
+          ],
+          "outliers": [
+            {
+              "symbol": "ipv6.py",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R9"
+          ],
+          "reason": "The example has no tests/assets/android_aab_test.py; the only same-named test, tests/cli/scan/run/assets/android_aab_test.py, tests the CLI command src/ostorlab/cli/scan/run/assets/android_aab.py and never imports the asset, and the same basename coincidence accounts for about 16 of the 28 members (only 12 files exist in tests/assets/), so the rule is false for the example under the repo's mirror-the-source layout. Hesitated with ACCEPT, since as a pure basename check it holds and ipv6.py really is untested while ipv4.py has tests/assets/ipv4_test.py.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "L09/D-8a3bd9",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "src/ostorlab/assets/android_aab.py",
+            "src/ostorlab/assets/ipv6.py",
+            "src/ostorlab/assets/ip.py",
+            "src/ostorlab/assets/ticket.py",
+            "ruff.toml",
+            "tox.ini"
+          ],
+          "outliers": [
+            {
+              "symbol": "ipv6",
+              "verdict": "mistake"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "Every asset module has a test (tests/assets/ip_test.py, ticket_test.py, tests/cli/scan/run/assets/android_aab_test.py) except ipv6.py, a normal asset like ipv4 with no test anywhere; no tool enforces tests, so a new asset without one is worth flagging. Hesitated with WRONG since some matches are only CLI-level tests.",
+          "defects": [
+            "src/ostorlab/assets/ipv6.py:1 no test file for IPv6 asset"
+          ],
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "L12/D-514683",
+      "repo": "L12",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "L12/D-514683",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "high",
+          "checked": [
+            "app/api/endpoints/agent.py",
+            "app/adapters/web/health.py",
+            "app/api/endpoints/anthropic.py",
+            "app/api/endpoints/auth.py",
+            "app/api/endpoints/github.py",
+            "app/api/endpoints/llm.py",
+            "app/api/endpoints/login.py",
+            "app/api/endpoints/openai.py",
+            "app/api/endpoints/plugin.py",
+            "app/api/endpoints/search.py",
+            "app/api/endpoints/subscribe.py",
+            "app/api/endpoints/system.py",
+            "app/adapters/web/security/access.py",
+            "app/api/endpoints/history.py",
+            "app/api/endpoints/dashboard.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "liveness",
+              "verdict": "look"
+            },
+            {
+              "symbol": "readiness",
+              "verdict": "look"
+            },
+            {
+              "symbol": "download_web_agent_file",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "messages",
+              "verdict": "look"
+            },
+            {
+              "symbol": "auth_exchange",
+              "verdict": "look"
+            },
+            {
+              "symbol": "auth_providers",
+              "verdict": "look"
+            },
+            {
+              "symbol": "get_initialization_auth_status",
+              "verdict": "look"
+            },
+            {
+              "symbol": "start_initialization_auth",
+              "verdict": "look"
+            },
+            {
+              "symbol": "poll_initialization_auth",
+              "verdict": "look"
+            },
+            {
+              "symbol": "save_initialization_manual_token",
+              "verdict": "look"
+            },
+            {
+              "symbol": "clear_initialization_token",
+              "verdict": "look"
+            },
+            {
+              "symbol": "llm_provider_auth_callback",
+              "verdict": "look"
+            },
+            {
+              "symbol": "get_initialization_status",
+              "verdict": "look"
+            },
+            {
+              "symbol": "wallpaper",
+              "verdict": "look"
+            },
+            {
+              "symbol": "wallpapers",
+              "verdict": "look"
+            },
+            {
+              "symbol": "list_models",
+              "verdict": "look"
+            },
+            {
+              "symbol": "plugin_static_file",
+              "verdict": "look"
+            },
+            {
+              "symbol": "remotes",
+              "verdict": "look"
+            },
+            {
+              "symbol": "search_by_id_stream",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "seerr_subscribe",
+              "verdict": "look"
+            },
+            {
+              "symbol": "get_global_setting",
+              "verdict": "look"
+            },
+            {
+              "symbol": "proxy_img",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R9"
+          ],
+          "reason": "Handlers take one of the listed auth dependencies through Depends() (history.py, dashboard.py); most outliers are reachable endpoints that are public or use an ad hoc check (health probes, login and initialization routes, OAuth callback, token == 'moviepilot' in plugin.py remotes and system.py get_global_setting), which a reviewer would want to confirm (R3), while a minority use the unlisted cookie dependency verify_resource_token (access.py). 'Wrapped in' means Depends(), and the list omits verify_resource_token, hence clear false.",
+          "defects": [
+            "app/api/endpoints/plugin.py:605 remotes is guarded only by the hardcoded query token 'moviepilot'",
+            "app/api/endpoints/system.py:444 get_global_setting is guarded only by the hardcoded query token 'moviepilot'"
+          ],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "L12/D-514683",
+          "rubric": "v3",
+          "label": "WRONG",
+          "wrong_because": "legit_outliers",
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "app/api/endpoints/agent.py",
+            "app/adapters/web/health.py",
+            "app/api/endpoints/anthropic.py",
+            "app/api/endpoints/auth.py",
+            "app/api/endpoints/github.py",
+            "app/api/endpoints/system.py",
+            "app/api/endpoints/search.py",
+            "app/api/endpoints/subexecution.py",
+            "app/api/endpoints/plugin.py",
+            "app/api/endpoints/subscribe.py",
+            "app/api/servcookie.py",
+            "app/api/endpoints/rule.py",
+            "app/api/endpoints/dashboard.py",
+            "app/adapters/web/security/access.py",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "liveness",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "download_web_agent_file",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "messages",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "auth_providers",
+              "verdict": "look"
+            },
+            {
+              "symbol": "auth_exchange",
+              "verdict": "look"
+            },
+            {
+              "symbol": "start_initialization_auth",
+              "verdict": "look"
+            },
+            {
+              "symbol": "get_initialization_auth_status",
+              "verdict": "look"
+            },
+            {
+              "symbol": "proxy_img",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "cache_img",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "get_progress",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "search_by_id_stream",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "get_subscription_logs",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "get_global_setting",
+              "verdict": "look"
+            },
+            {
+              "symbol": "remotes",
+              "verdict": "look"
+            },
+            {
+              "symbol": "seerr_subscribe",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "get_root",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3"
+          ],
+          "reason": "Most listed handlers are not unauthenticated: a large recurring family (agent.py download, system.py proxy_img/cache_img/get_progress, search.py streams, subexecution.py logs) uses verify_resource_token cookie auth that is not in the wrapper list, plus API-key style (anthropic.py, seerr, servcookie). Only the bootstrap/login routes and token=='moviepilot' routes are real look cases, so under half of the counted outliers are look; a new cookie-authenticated SSE endpoint would get a false alarm. Hesitated with ACCEPT since the rule is security-relevant.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "L13/D-db73ae",
+      "repo": "L13",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "L13/D-db73ae",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "api/v1/views/account_life.py",
+            "api/v1/views/platform_config.py",
+            "api/v1/views/webhook.py",
+            "api/v1/views/app_group.py",
+            "api/v1/views/log.py",
+            "api/v1/views/arkstore.py",
+            "arkid/common/arkstore.py",
+            "arkid/common/bind_saas.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "get_version",
+              "verdict": "look"
+            },
+            {
+              "symbol": "retry_webhook_history",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R8"
+          ],
+          "reason": "Outbound HTTP normally lives in arkid/common/arkstore.py and bind_saas.py, which the views call; platform_config.py:135 builds a SaaS URL and calls requests.get inline under a bare except, and webhook.py:203 posts stored headers and body to a tenant-supplied webhook URL from a request handler, both worth a second look (layering, SSRF surface). Hesitated between ACCEPT and WRONG incidental, since most endpoints simply never need outbound HTTP; arkstore.py:466 get_arkstore_category_http also does it and was counted as a member.",
+          "defects": [
+            "api/v1/views/platform_config.py:141 bare except hides any failure of the SaaS version check",
+            "api/v1/views/webhook.py:203 retry posts to the tenant-configured webhook URL with stored headers, with no destination check"
+          ],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "L13/D-db73ae",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "incidental",
+          "clear": false,
+          "confidence": "high",
+          "checked": [
+            "api/v1/views/account_life.py",
+            "api/v1/views/platform_config.py",
+            "api/v1/views/webhook.py",
+            "api/v1/views/user.py",
+            "api/v1/views/auth.py",
+            "api/v1/views/arkstore.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "get_version",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "retry_webhook_history",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Most handlers do not make outbound HTTP calls (user.py, auth.py); the outliers get_version (fetches the SaaS version) and retry_webhook_history (re-POSTs a webhook) need requests by their job, so a new handler with that need is flagged for nothing. Wording 'computed URLs' is vague.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "L13/D-e0fe86",
+      "repo": "L13",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "L13/D-e0fe86",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "arkid/api.py",
+            "arkid/common/arkstore.py",
+            "arkid/common/bind_saas.py",
+            "arkid/core/perm/permission_data.py",
+            "oauth2_provider/views/base.py",
+            "oauth2_provider/views/oidc.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "arkid/common/arkstore.py (get_saas_token)",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "oauth2_provider/views/base.py and oidc.py import arkid.core.models and arkid.config, so arkid importing those views is a reverse dependency; members such as arkid/common/bind_saas.py and arkid/core/perm/permission_data.py only import oauth2_provider.models. The single outlier, arkstore.py:80, lazy-imports AuthorizationView inside get_saas_token and drives it with a RequestFactory request, a hack worth a second look. Hesitated between ACCEPT (layering boundary) and WRONG incidental (core code simply rarely needs views).",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "L13/D-e0fe86",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "incidental",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "arkid/api.py",
+            "arkid/common/arkstore.py",
+            "arkid/common/bind_saas.py",
+            "arkid/core/perm/permission_data.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "(file)",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "No import-linter or lint config exists; arkid files import oauth2_provider.models freely (bind_saas.py, permission_data.py) and nothing marks views as forbidden. The single outlier lazily imports AuthorizationView at arkstore.py:80 to mint a token programmatically, a real need, so the absence elsewhere is incidental. Hesitated with ACCEPT (layering boundary).",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "L13/D-9229df",
+      "repo": "L13",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "L13/D-9229df",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "docs/en/docs/Other Plug -In/com_longgui_account_active/schema.py",
+            "docs/en/docs/Other Plug -In/com_longgui_auth_factor_scan/schema.py",
+            "docs/en/docs/Other Plug -In/com_longgui_auth_factor_webauthn/schema.py",
+            "docs/en/docs/Other Plug -In/com_longgui_custom_field/schema.py",
+            "docs/en/docs/System Plug -In/com_longgui_auto_form_fill/schema.py",
+            "docs/en/docs/System Plug -In/com_longgui_auth_factor_mobile/schema.py",
+            "docs/en/docs/Other Plug -In/com_longgui_auth_factor_otp/schema.py",
+            "arkid/core/schema.py",
+            "docs/create_new_translation.py",
+            "extension_root/com_longgui_auth_factor_mobile/models.py",
+            "requirements.txt"
+          ],
+          "outliers": [
+            {
+              "symbol": "QRCodeCreateOut",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "QRCodeIn",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "QRCodeStatusOut",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "AuthenticationOptionsRequestSchema",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "AuthenticationResponseSchema",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "CredentialItemSchema",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "RegistrationOptionsRequestSchema",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "RegistrationResponseSchema",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "WebAuthnCredential",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "CustomFieldItemOut",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "AutoFormFillUserDetailItemMineOut",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "AutoFormFillUserDetailItemOut",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "AutoFormFillUserItemOut",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "AutoFormFillUserMineItemOut",
+              "verdict": "not_violation"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2",
+            "R6"
+          ],
+          "reason": "The whole scope is a generated mirror, not authored code: docs/create_new_translation.py copies plugin .py files verbatim into docs/en/docs (zh links the same folders to extension_root and arkid_extensions), so a warning on a new docs/** schema.py lands on a copy where nothing can be fixed. Five outliers are ninja ModelSchema classes (custom_field, auto_form_fill), which do extend Schema; nine in auth_factor_scan and auth_factor_webauthn use pydantic BaseModel, which in the plugins' real source would be drift worth a look, hence the hesitation between WRONG mixed_group and ACCEPT.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "L13/D-9229df",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "docs/en/docs/Other Plug -In/com_longgui_account_active/schema.py",
+            "docs/en/docs/Other Plug -In/com_longgui_auth_factor_scan/schema.py",
+            "docs/en/docs/Other Plug -In/com_longgui_auth_factor_webauthn/schema.py",
+            "docs/en/docs/Other Plug -In/com_longgui_custom_field/schema.py",
+            "docs/en/docs/System Plug -In/com_longgui_auto_form_fill/schema.py",
+            "docs/en/docs/Other Plug -In/com_longgui_auth_factor_email/schema.py",
+            "docs/en/docs/System Plug -In/com_longgui_auth_factor_password/schema.py",
+            "docs/en/docs/Other Plug -In/com_longgui_auth_factor_otp/schema.py",
+            "docs/en/docs/System Plug -In/com_longgui_auth_factor_mobile/schema.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "QRCodeIn",
+              "verdict": "look"
+            },
+            {
+              "symbol": "QRCodeCreateOut",
+              "verdict": "look"
+            },
+            {
+              "symbol": "QRCodeStatusOut",
+              "verdict": "look"
+            },
+            {
+              "symbol": "RegistrationOptionsRequestSchema",
+              "verdict": "look"
+            },
+            {
+              "symbol": "AuthenticationResponseSchema",
+              "verdict": "look"
+            },
+            {
+              "symbol": "WebAuthnCredential",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "CredentialItemSchema",
+              "verdict": "look"
+            },
+            {
+              "symbol": "CustomFieldItemOut",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "AutoFormFillUserItemOut",
+              "verdict": "not_violation"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R6"
+          ],
+          "reason": "Five outliers are ninja ModelSchema (a Schema subclass: not_violation) but the scan and webauthn schemas use plain pydantic BaseModel instead of ninja Schema as the other plugins (email, account_active) do, so most counted outliers are real drift; WebAuthnCredential is a Redis storage model (legit). Hesitated with WRONG mixed_group because docs/** holds copies of plugin code; wording 'Schema' hides that ModelSchema counts.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "L13/D-faf7b3",
+      "repo": "L13",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "L13/D-faf7b3",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "arkid/config/models.py",
+            "arkid/core/models.py",
+            "arkid/extension/models.py",
+            "arkid/common/model.py",
+            "arkid/core/extension/__init__.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "EmptyModel",
+              "verdict": "look"
+            },
+            {
+              "symbol": "ExpiringToken",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "BaseModel (arkid/common/model.py) supplies the UUID id, is_del/is_active soft delete and the valid_objects/active_objects managers that views rely on; Extension, TenantExtensionConfig, Platform, Tenant and the rest all extend it. The two outliers in arkid/core/models.py sit on bare models.Model: EmptyModel is a field-less table used only as a create_schema placeholder, and ExpiringToken keys on the user with hard delete; neither is a recurring category and a new model skipping BaseModel deserves a second look. Hesitated between ACCEPT and WRONG legit_outliers, as both exceptions look deliberate.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "L13/D-faf7b3",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "arkid/config/models.py",
+            "arkid/core/models.py",
+            "arkid/extension/models.py",
+            "arkid/common/model.py",
+            "arkid/core/extension/__init__.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "EmptyModel",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "ExpiringToken",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "Members (config/models.py, extension/models.py) extend BaseModel for uuid id and soft-delete; EmptyModel is a fieldless placeholder used only for schema generation (core/extension/__init__.py:88) and ExpiringToken uses the user as primary key, so BaseModel's id would not fit: 0 of 2 mistakes (tie at best). Hesitated with ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "L14/D-7bdafb",
+      "repo": "L14",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "L14/D-7bdafb",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "lfs/manage/actions/views.py",
+            "lfs/core/views.py",
+            "lfs/manage/information/views.py",
+            "lfs/manage/tools/views.py",
+            "lfs/core/urls.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "TextTemplateView",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3"
+          ],
+          "reason": "Every class-based view sampled (actions/views.py, information/views.py, tools/views.py) extends PermissionRequiredMixin with permission_required = \"core.manage_shop\"; the one outlier, TextTemplateView in lfs/core/views.py, is a reachable public endpoint (robots.txt in lfs/core/urls.py) that skips it, a public-by-design exception worth confirming (R3). No lint or type config exists in the repo, so nothing catches it. Hesitated with WRONG mixed_group, because the lfs/** scope also covers the public storefront, where a new class-based view would be flagged.",
+          "defects": [],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "L14/D-7bdafb",
+          "rubric": "v3",
+          "label": "WRONG",
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "lfs/manage/actions/views.py",
+            "lfs/core/views.py",
+            "lfs/core/urls.py",
+            "lfs/manage/shop/views.py",
+            "lfs/manage/dashboard/views.py",
+            "lfs/catalog/views.py",
+            "lfs/cart/views.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "TextTemplateView",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2",
+            "R3"
+          ],
+          "reason": "Class-based manage views (actions, shop) extend PermissionRequiredMixin, but the only outlier, TextTemplateView, serves public robots.txt (core/urls.py) with nothing to protect; storefront views are function-based, so a new public class view under lfs/** would get a false alarm. Hesitated with ACCEPT since a manage view without the mixin would be a real mistake.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "L16/D-20b2f2",
+      "repo": "L16",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "L16/D-20b2f2",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "false_outliers",
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "skylos/benchmarks/_jev_dead_code_dataset.py",
+            "skylos/benchmarks/_analysis_validation.py",
+            "skylos/benchmarks/cloud.py",
+            "skylos/benchmarks/framework_corpus_schema.py",
+            "skylos/benchmarks/verify_benchmark_runner.py",
+            "test/test_cloud_benchmark.py",
+            "test/test_tls_security_corpus.py",
+            "test/test_jev_dataset_safety.py",
+            "test/test_verify_benchmark.py",
+            "scripts/cloud_benchmark.py",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "skylos/benchmarks/_analysis_validation.py",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "skylos/benchmarks/cloud.py",
+              "verdict": "not_violation"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R6"
+          ],
+          "reason": "Both outliers are tested: test/test_cloud_benchmark.py imports evaluate_case/load_manifest/run_manifest from skylos.benchmarks.cloud, and test/test_tls_security_corpus.py (and test_secret_logging_security_corpus.py) import analysis_issues from _analysis_validation, the same way the example is covered by test_jev_dataset_safety.py. Meanwhile counted members such as framework_corpus_schema.py and verify_benchmark_runner.py are referenced by no test at all, so the tool's test matching is unreliable in both directions.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "L16/D-20b2f2",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "skylos/benchmarks/_jev_dead_code_dataset.py",
+            "skylos/benchmarks/_analysis_validation.py",
+            "skylos/benchmarks/cloud.py",
+            "skylos/benchmarks/security.py",
+            "skylos/benchmarks/secrets.py",
+            "test/test_cloud_benchmark.py",
+            "test/test_jev_dataset_safety.py",
+            "test/test_quality_benchmark_completeness.py"
+          ],
+          "reason": "Most benchmark modules have tests, often under different names; cloud.py is directly tested by test_cloud_benchmark.py (not_violation), _analysis_validation.py only indirectly via other benchmarks' tests (look). Hesitated with WRONG false_outliers; one of two outliers is genuinely untested directly.",
+          "outliers": [
+            {
+              "symbol": "cloud.py",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "_analysis_validation.py",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R6"
+          ],
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    }
+  ]
+}

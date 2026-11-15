@@ -1,0 +1,1941 @@
+{
+  "run": "eval/study/runs/dev-py-2026-11-05",
+  "items": [
+    {
+      "uid": "full-stack-fastapi-template/D-6e757d",
+      "repo": "full-stack-fastapi-template",
+      "id": "D-6e757d",
+      "rank": 1,
+      "summary": "files in frontend/** use lucide-react for icons, not react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react",
+      "role": {
+        "package": "frontend",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "prefers_library",
+        "group": "icons",
+        "preferred": "lucide-react"
+      },
+      "evidence": {
+        "holders": 24,
+        "total": 25,
+        "lower_bound": 0.81,
+        "lift": 1
+      },
+      "members": 25,
+      "example": "frontend/src/components/Admin/AddUser.tsx#(file)",
+      "outliers": 1,
+      "outlier_files": [
+        "frontend/src/components/Common/Footer.tsx"
+      ],
+      "block": " 1. [D-6e757d] files in frontend/** use lucide-react for icons, not react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react\n    evidence: 24/25 (lower bound 0.81, lift 1.0)\n    split:    lucide-react 24, react-icons 1\n    example:  frontend/src/components/Admin/AddUser.tsx#(file)\n    outlier:  frontend/src/components/Common/Footer.tsx:1 (file)",
+      "family": "repo"
+    },
+    {
+      "uid": "polar/D-31bf00",
+      "repo": "polar",
+      "id": "D-31bf00",
+      "rank": 1,
+      "summary": "server: HTTP handlers in polar/** (endpoints files) are wrapped in get_authentication_session() or Authenticator() or _web_user_or_anonymous() or get_login_organization() or AccountPolicyGuard() or OrgPolicyGuard() or PayoutAccountPolicyGuard() or WebUserAuthorizer() or WebUserAuthorizerFresh() or _get_client_dependency() or get_authentication_session() or _get_safe_return_url_dependency() or get_pagination_params() or OrderPolicyGuard() or get_db_read_session() or get_db_session()",
+      "role": {
+        "package": "server",
+        "dir": "polar",
+        "file": "endpoints",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "server/polar/auth/authentication_session.py#get_authentication_session",
+          "server/polar/auth/dependencies.py#Authenticator",
+          "server/polar/auth/dependencies.py#_web_user_or_anonymous",
+          "server/polar/auth/sso/endpoints.py#get_login_organization",
+          "server/polar/authz/dependencies.py#AccountPolicyGuard",
+          "server/polar/authz/dependencies.py#OrgPolicyGuard",
+          "server/polar/authz/dependencies.py#PayoutAccountPolicyGuard",
+          "server/polar/authz/dependencies.py#WebUserAuthorizer",
+          "server/polar/authz/dependencies.py#WebUserAuthorizerFresh",
+          "server/polar/checkout/ip_geolocation.py#_get_client_dependency",
+          "server/polar/customer_portal/auth/authentication_session.py#get_authentication_session",
+          "server/polar/kit/http.py#_get_safe_return_url_dependency",
+          "server/polar/kit/pagination.py#get_pagination_params",
+          "server/polar/order/auth.py#OrderPolicyGuard",
+          "server/polar/postgres.py#get_db_read_session",
+          "server/polar/postgres.py#get_db_session"
+        ]
+      },
+      "evidence": {
+        "holders": 364,
+        "total": 370,
+        "lower_bound": 0.96,
+        "lift": 7.5
+      },
+      "members": 370,
+      "example": "server/polar/account/endpoints.py#get",
+      "outliers": 6,
+      "outlier_files": [
+        "server/polar/agent/endpoints.py",
+        "server/polar/auth/endpoints.py",
+        "server/polar/auth/sso/endpoints.py",
+        "server/polar/customer_portal/auth/endpoints.py",
+        "server/polar/event/endpoints.py",
+        "server/polar/integrations/plain/endpoints.py"
+      ],
+      "block": " 1. [D-31bf00] server: HTTP handlers in polar/** (endpoints files) are wrapped in get_authentication_session() or Authenticator() or _web_user_or_anonymous() or get_login_organization() or AccountPolicyGuard() or OrgPolicyGuard() or PayoutAccountPolicyGuard() or WebUserAuthorizer() or WebUserAuthorizerFresh() or _get_client_dependency() or get_authentication_session() or _get_safe_return_url_dependency() or get_pagination_params() or OrderPolicyGuard() or get_db_read_session() or get_db_session()\n    evidence: 364/370 (lower bound 0.96, lift 7.5)\n    split:    Authenticator 228, OrgPolicyGuard 49, WebUserAuthorizer 22, get_db_session 19, WebUserAuthorizerFresh 9, get_authentication_session 5, PayoutAccountPolicyGuard 5, get_pagination_params 5, _get_safe_return_url_dependency 4, get_login_organization 3, AccountPolicyGuard 3, _get_client_dependency 3, get_db_read_session 3, _web_user_or_anonymous 2, get_authentication_session 2, OrderPolicyGuard 2\n    example:  server/polar/account/endpoints.py#get\n    outlier:  server/polar/agent/endpoints.py:150 auth_md\n    outlier:  server/polar/auth/endpoints.py:103 start\n    outlier:  server/polar/auth/sso/endpoints.py:149 authorize\n    outlier:  server/polar/customer_portal/auth/endpoints.py:44 start\n    outlier:  server/polar/event/endpoints.py:441 ingest_v2027_01\n    outlier:  server/polar/integrations/plain/endpoints.py:17 get_cards",
+      "family": "wrapper"
+    },
+    {
+      "uid": "polar/D-39ba94",
+      "repo": "polar",
+      "id": "D-39ba94",
+      "rank": 2,
+      "summary": "server: functions in polar/** (tasks files) are decorated with actor()",
+      "role": {
+        "package": "server",
+        "dir": "polar",
+        "file": "tasks",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "server/polar/worker/__init__.py#actor"
+        ]
+      },
+      "evidence": {
+        "holders": 177,
+        "total": 179,
+        "lower_bound": 0.96,
+        "lift": 18.4
+      },
+      "members": 179,
+      "example": "server/polar/auth/tasks.py#auth_delete_expired",
+      "outliers": 2,
+      "outlier_files": [
+        "server/polar/integrations/stripe/tasks.py",
+        "server/polar/webhook/tasks.py"
+      ],
+      "block": " 2. [D-39ba94] server: functions in polar/** (tasks files) are decorated with actor()\n    evidence: 177/179 (lower bound 0.96, lift 18.4)\n    example:  server/polar/auth/tasks.py#auth_delete_expired\n    outlier:  server/polar/integrations/stripe/tasks.py:41 stripe_api_connection_error_retry\n    outlier:  server/polar/webhook/tasks.py:40 sign_webhook",
+      "family": "decorator"
+    },
+    {
+      "uid": "polar/D-999ecc",
+      "repo": "polar",
+      "id": "D-999ecc",
+      "rank": 3,
+      "summary": "server: functions in polar/** (tasks files) pass `priority` to actor()",
+      "role": {
+        "package": "server",
+        "dir": "polar",
+        "file": "tasks",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "server/polar/worker/__init__.py#actor",
+        "index": 99,
+        "key": "priority"
+      },
+      "evidence": {
+        "holders": 174,
+        "total": 179,
+        "lower_bound": 0.94,
+        "lift": 18.3
+      },
+      "members": 179,
+      "example": "server/polar/auth/tasks.py#auth_delete_expired",
+      "outliers": 5,
+      "outlier_files": [
+        "server/polar/integrations/stripe/tasks.py",
+        "server/polar/integrations/tinybird/tasks.py",
+        "server/polar/support_case/tasks.py",
+        "server/polar/webhook/tasks.py"
+      ],
+      "block": " 3. [D-999ecc] server: functions in polar/** (tasks files) pass `priority` to actor()\n    evidence: 174/179 (lower bound 0.94, lift 18.3)\n    example:  server/polar/auth/tasks.py#auth_delete_expired\n    outlier:  server/polar/integrations/stripe/tasks.py:41 stripe_api_connection_error_retry\n    outlier:  server/polar/integrations/tinybird/tasks.py:35 ingest\n    outlier:  server/polar/support_case/tasks.py:69 notify_organization_of_new_message\n    outlier:  server/polar/webhook/tasks.py:40 sign_webhook\n    outlier:  server/polar/webhook/tasks.py:66 webhook_event_send",
+      "family": "argument_key"
+    },
+    {
+      "uid": "polar/D-093712",
+      "repo": "polar",
+      "id": "D-093712",
+      "rank": 4,
+      "summary": "server: HTTP handlers in polar/** are wrapped in Authenticator() or _web_user_or_anonymous() or WebUserAuthorizer() or _RoleCheck() or _UnionBillingRoleCheck() or get_authorization_server() or get_token() or get_db_session()",
+      "role": {
+        "package": "server",
+        "dir": "polar",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "server/polar/auth/dependencies.py#Authenticator",
+          "server/polar/auth/dependencies.py#_web_user_or_anonymous",
+          "server/polar/authz/dependencies.py#WebUserAuthorizer",
+          "server/polar/customer_portal/auth/__init__.py#_RoleCheck",
+          "server/polar/customer_portal/auth/__init__.py#_UnionBillingRoleCheck",
+          "server/polar/oauth2/dependencies.py#get_authorization_server",
+          "server/polar/oauth2/dependencies.py#get_token",
+          "server/polar/postgres.py#get_db_session"
+        ]
+      },
+      "evidence": {
+        "holders": 38,
+        "total": 42,
+        "lower_bound": 0.78,
+        "lift": 7.4
+      },
+      "members": 42,
+      "example": "server/polar/customer_portal/endpoints/benefit_grant.py#get",
+      "outliers": 4,
+      "outlier_files": [
+        "server/polar/customer_portal/endpoints/customer_email_update.py",
+        "server/polar/customer_portal/endpoints/oauth_accounts.py",
+        "server/polar/oauth2/endpoints/well_known.py"
+      ],
+      "block": " 4. [D-093712] server: HTTP handlers in polar/** are wrapped in Authenticator() or _web_user_or_anonymous() or WebUserAuthorizer() or _RoleCheck() or _UnionBillingRoleCheck() or get_authorization_server() or get_token() or get_db_session()\n    evidence: 38/42 (lower bound 0.78, lift 7.4)\n    split:    Authenticator 12, _web_user_or_anonymous 5, get_db_session 5, _RoleCheck 4, _UnionBillingRoleCheck 4, get_authorization_server 4, WebUserAuthorizer 2, get_token 2\n    example:  server/polar/customer_portal/endpoints/benefit_grant.py#get\n    outlier:  server/polar/customer_portal/endpoints/customer_email_update.py:76 check_email_update\n    outlier:  server/polar/customer_portal/endpoints/oauth_accounts.py:81 authorize\n    outlier:  server/polar/oauth2/endpoints/well_known.py:16 well_known_jwks\n    outlier:  server/polar/oauth2/endpoints/well_known.py:36 well_known_oauth_protected_resource",
+      "family": "wrapper"
+    },
+    {
+      "uid": "polar/D-9c6828",
+      "repo": "polar",
+      "id": "D-9c6828",
+      "rank": 5,
+      "summary": "server: functions in polar/** (tasks files) call AsyncSessionMaker()",
+      "role": {
+        "package": "server",
+        "dir": "polar",
+        "file": "tasks",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "server/polar/worker/_sqlalchemy.py#AsyncSessionMaker"
+      },
+      "evidence": {
+        "holders": 161,
+        "total": 179,
+        "lower_bound": 0.85,
+        "lift": 18.3
+      },
+      "members": 179,
+      "example": "server/polar/auth/tasks.py#auth_delete_expired",
+      "outliers": 18,
+      "outlier_files": [
+        "server/polar/benefit/tasks.py",
+        "server/polar/eventstream/tasks.py",
+        "server/polar/integrations/polar/tasks.py",
+        "server/polar/integrations/stripe/tasks.py",
+        "server/polar/integrations/tinybird/tasks.py",
+        "server/polar/observability/invariants/tasks.py",
+        "server/polar/observability/slo_report/tasks.py",
+        "server/polar/order/tasks.py",
+        "server/polar/receipt/tasks.py",
+        "server/polar/reducer/tasks.py",
+        "server/polar/webhook/tasks.py"
+      ],
+      "block": " 5. [D-9c6828] server: functions in polar/** (tasks files) call AsyncSessionMaker()\n    evidence: 161/179 (lower bound 0.85, lift 18.3)\n    example:  server/polar/auth/tasks.py#auth_delete_expired\n    outlier:  server/polar/benefit/tasks.py:106 benefit_enqueue_grants\n    outlier:  server/polar/eventstream/tasks.py:6 eventstream_publish\n    outlier:  server/polar/integrations/polar/tasks.py:78 add_member\n    outlier:  server/polar/integrations/polar/tasks.py:42 create_customer\n    outlier:  server/polar/integrations/polar/tasks.py:181 delete_customer\n    outlier:  server/polar/integrations/polar/tasks.py:161 remove_member\n    outlier:  server/polar/integrations/polar/tasks.py:214 track_organization_review_usage\n    outlier:  server/polar/integrations/polar/tasks.py:145 update_customer_slug\n    outlier:  server/polar/integrations/polar/tasks.py:114 update_member\n    outlier:  server/polar/integrations/stripe/tasks.py:41 stripe_api_connection_error_retry\n    outlier:  server/polar/integrations/tinybird/tasks.py:35 ingest\n    outlier:  server/polar/observability/invariants/tasks.py:42 check_invariant\n    outlier:  server/polar/observability/invariants/tasks.py:28 enqueue_invariants\n    outlier:  server/polar/observability/slo_report/tasks.py:22 slo_report_send_weekly\n    outlier:  server/polar/order/tasks.py:464 order_invoice\n    outlier:  server/polar/receipt/tasks.py:59 receipt_render\n    outlier:  server/polar/reducer/tasks.py:27 invalidate_cache\n    outlier:  server/polar/webhook/tasks.py:40 sign_webhook",
+      "family": "calls"
+    },
+    {
+      "uid": "polar/D-dfae92",
+      "repo": "polar",
+      "id": "D-dfae92",
+      "rank": 6,
+      "summary": "clients/packages/ui: components in src/components/ui/** call cn()",
+      "role": {
+        "package": "clients/packages/ui",
+        "dir": "src/components/ui",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "clients/packages/ui/src/lib/utils.ts#cn"
+      },
+      "evidence": {
+        "holders": 72,
+        "total": 77,
+        "lower_bound": 0.86,
+        "lift": 19.8
+      },
+      "members": 77,
+      "example": "clients/packages/ui/src/components/ui/accordion.tsx#AccordionContent",
+      "outliers": 5,
+      "outlier_files": [
+        "clients/packages/ui/src/components/ui/chart.tsx",
+        "clients/packages/ui/src/components/ui/command.tsx",
+        "clients/packages/ui/src/components/ui/form.tsx",
+        "clients/packages/ui/src/components/ui/sidebar.tsx"
+      ],
+      "block": " 6. [D-dfae92] clients/packages/ui: components in src/components/ui/** call cn()\n    evidence: 72/77 (lower bound 0.86, lift 19.8)\n    example:  clients/packages/ui/src/components/ui/accordion.tsx#AccordionContent\n    outlier:  clients/packages/ui/src/components/ui/chart.tsx:78 ChartStyle\n    outlier:  clients/packages/ui/src/components/ui/command.tsx:65 CommandEmpty\n    outlier:  clients/packages/ui/src/components/ui/form.tsx:110 FormControl\n    outlier:  clients/packages/ui/src/components/ui/form.tsx:32 FormField\n    outlier:  clients/packages/ui/src/components/ui/sidebar.tsx:679 SidebarMenuSubItem",
+      "family": "calls"
+    },
+    {
+      "uid": "polar/D-f80e7c",
+      "repo": "polar",
+      "id": "D-f80e7c",
+      "rank": 7,
+      "summary": "server: classes in polar/** (repository files) extend RepositoryBase",
+      "role": {
+        "package": "server",
+        "dir": "polar",
+        "file": "repository",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "server/polar/kit/repository/base.py#RepositoryBase"
+        ]
+      },
+      "evidence": {
+        "holders": 83,
+        "total": 93,
+        "lower_bound": 0.81,
+        "lift": 28.9
+      },
+      "members": 93,
+      "example": "server/polar/account/repository.py#AccountRepository",
+      "outliers": 10,
+      "outlier_files": [
+        "server/polar/authz/repository.py",
+        "server/polar/customer/repository.py",
+        "server/polar/subscription/repository.py",
+        "server/polar/transaction/repository.py",
+        "server/polar/user_organization/repository.py"
+      ],
+      "block": " 7. [D-f80e7c] server: classes in polar/** (repository files) extend RepositoryBase\n    evidence: 83/93 (lower bound 0.81, lift 28.9)\n    example:  server/polar/account/repository.py#AccountRepository\n    outlier:  server/polar/authz/repository.py:114 AuthzRepository\n    outlier:  server/polar/customer/repository.py:50 CustomerStripeIdentity\n    outlier:  server/polar/subscription/repository.py:67 CustomerSubscriptionProductPrice\n    outlier:  server/polar/transaction/repository.py:136 BalanceTransactionRepository\n    outlier:  server/polar/transaction/repository.py:170 DisputeTransactionRepository\n    outlier:  server/polar/transaction/repository.py:114 PaymentTransactionRepository\n    outlier:  server/polar/transaction/repository.py:202 PayoutReversalTransactionRepository\n    outlier:  server/polar/transaction/repository.py:187 PayoutTransactionRepository\n    outlier:  server/polar/transaction/repository.py:155 RefundTransactionRepository\n    outlier:  server/polar/user_organization/repository.py:13 UserOrganizationRepository",
+      "family": "base_class"
+    },
+    {
+      "uid": "polar/D-9c16e6",
+      "repo": "polar",
+      "id": "D-9c16e6",
+      "rank": 8,
+      "summary": "server/emails: components in src/emails/** render <Text>",
+      "role": {
+        "package": "server/emails",
+        "dir": "src/emails",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "renders",
+        "component": "server/emails/src/components/foundation/Text.tsx#Text"
+      },
+      "evidence": {
+        "holders": 44,
+        "total": 45,
+        "lower_bound": 0.88,
+        "lift": 28.8
+      },
+      "members": 45,
+      "example": "server/emails/src/emails/chargeback_prevention_refund.tsx#ChargebackPreventionRefund",
+      "outliers": 1,
+      "outlier_files": [
+        "server/emails/src/emails/subscription_updated.tsx"
+      ],
+      "block": " 8. [D-9c16e6] server/emails: components in src/emails/** render <Text>\n    evidence: 44/45 (lower bound 0.88, lift 28.8)\n    example:  server/emails/src/emails/chargeback_prevention_refund.tsx#ChargebackPreventionRefund\n    outlier:  server/emails/src/emails/subscription_updated.tsx:14 SubscriptionUpdated",
+      "family": "renders"
+    },
+    {
+      "uid": "polar/D-fba5aa",
+      "repo": "polar",
+      "id": "D-fba5aa",
+      "rank": 9,
+      "summary": "server: classes in polar/** (schemas files) do not use `any`",
+      "role": {
+        "package": "server",
+        "dir": "polar",
+        "file": "schemas",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "any"
+      },
+      "evidence": {
+        "holders": 898,
+        "total": 924,
+        "lower_bound": 0.96,
+        "lift": 3.9
+      },
+      "members": 924,
+      "example": "server/polar/account/schemas.py#Account",
+      "outliers": 26,
+      "outlier_files": [
+        "server/polar/auth/schemas.py",
+        "server/polar/benefit/strategies/downloadables/schemas.py",
+        "server/polar/checkout/schemas.py",
+        "server/polar/cli/schemas.py",
+        "server/polar/customer_seat/schemas.py",
+        "server/polar/declarative_config/schemas.py",
+        "server/polar/feedback/schemas.py",
+        "server/polar/file/schemas.py",
+        "server/polar/integrations/aws/s3/schemas.py",
+        "server/polar/integrations/discord/schemas.py",
+        "server/polar/integrations/plain/schemas.py",
+        "server/polar/kit/schemas.py",
+        "server/polar/merchant_migration/schemas.py",
+        "server/polar/organization/schemas.py",
+        "server/polar/organization_review/schemas.py",
+        "server/polar/payment/schemas.py",
+        "server/polar/tax/schemas.py"
+      ],
+      "block": " 9. [D-fba5aa] server: classes in polar/** (schemas files) do not use `any`\n    evidence: 898/924 (lower bound 0.96, lift 3.9)\n    example:  server/polar/account/schemas.py#Account\n    outlier:  server/polar/auth/schemas.py:62 AuthenticationSession\n    outlier:  server/polar/benefit/strategies/downloadables/schemas.py:46 BenefitDownloadablesSubscriberProperties\n    outlier:  server/polar/checkout/schemas.py:406 CheckoutProductsExternalCreate\n    outlier:  server/polar/cli/schemas.py:17 TriggerRequest\n    outlier:  server/polar/cli/schemas.py:36 TriggerResponse\n    outlier:  server/polar/customer_seat/schemas.py:124 CustomerSeat\n    outlier:  server/polar/customer_seat/schemas.py:14 SeatAssign\n    outlier:  server/polar/declarative_config/schemas.py:581 ConfigFieldChange\n    outlier:  server/polar/declarative_config/schemas.py:489 ConfigIssue\n    outlier:  server/polar/feedback/schemas.py:17 Feedback\n    outlier:  server/polar/feedback/schemas.py:10 FeedbackCreate\n    outlier:  server/polar/file/schemas.py:168 FileDownload\n    outlier:  server/polar/integrations/aws/s3/schemas.py:46 S3File\n    outlier:  server/polar/integrations/aws/s3/schemas.py:13 S3FileCreatePart\n    outlier:  server/polar/integrations/aws/s3/schemas.py:134 S3FileUploadCompleted\n    outlier:  server/polar/integrations/discord/schemas.py:9 DiscordGuildRole\n    outlier:  server/polar/integrations/plain/schemas.py:32 CustomerCard\n    outlier:  server/polar/kit/schemas.py:205 MultipleQueryFilter\n    outlier:  server/polar/kit/schemas.py:37 Schema\n    outlier:  server/polar/kit/schemas.py:190 SetSchemaReference\n    outlier:  server/polar/merchant_migration/schemas.py:464 MerchantMigration\n    outlier:  server/polar/organization/schemas.py:404 OrganizationSocialLink\n    outlier:  server/polar/organization/schemas.py:623 OrganizationWithRole\n    outlier:  server/polar/organization_review/schemas.py:252 ProductData\n    outlier:  server/polar/payment/schemas.py:25 PaymentBase\n    outlier:  server/polar/tax/schemas.py:12 TaxJurisdiction",
+      "family": "avoids_other"
+    },
+    {
+      "uid": "polar/D-fb4011",
+      "repo": "polar",
+      "id": "D-fb4011",
+      "rank": 10,
+      "summary": "clients/apps/app: functions in hooks/polar/** call usePolarClient()",
+      "role": {
+        "package": "clients/apps/app",
+        "dir": "hooks/polar",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "clients/apps/app/providers/PolarClientProvider.tsx#usePolarClient"
+      },
+      "evidence": {
+        "holders": 30,
+        "total": 32,
+        "lower_bound": 0.8,
+        "lift": 91.6
+      },
+      "members": 32,
+      "example": "clients/apps/app/hooks/polar/checkout_links.ts#useCheckoutLink",
+      "outliers": 2,
+      "outlier_files": [
+        "clients/apps/app/hooks/polar/finance.ts",
+        "clients/apps/app/hooks/polar/users.ts"
+      ],
+      "block": "10. [D-fb4011] clients/apps/app: functions in hooks/polar/** call usePolarClient()\n    evidence: 30/32 (lower bound 0.80, lift 91.6)\n    example:  clients/apps/app/hooks/polar/checkout_links.ts#useCheckoutLink\n    outlier:  clients/apps/app/hooks/polar/finance.ts:171 usePayout\n    outlier:  clients/apps/app/hooks/polar/users.ts:6 useDeleteUser",
+      "family": "calls"
+    },
+    {
+      "uid": "polar/D-27ad3b",
+      "repo": "polar",
+      "id": "D-27ad3b",
+      "rank": 11,
+      "summary": "clients/apps/web: pages in src/app/(main)/dashboard/[*]/** (page files) call getServerSideAPI()",
+      "role": {
+        "package": "clients/apps/web",
+        "dir": "src/app/(main)/dashboard/[*]",
+        "file": "page",
+        "entry": "page",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "clients/apps/web/src/utils/client/serverside.ts#getServerSideAPI"
+      },
+      "evidence": {
+        "holders": 49,
+        "total": 55,
+        "lower_bound": 0.78,
+        "lift": 18.9
+      },
+      "members": 55,
+      "example": "clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/(home)/page.tsx#Page",
+      "outliers": 6,
+      "outlier_files": [
+        "clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/customers/[customerId]/events/page.tsx",
+        "clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/customers/[customerId]/members/page.tsx",
+        "clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/customers/[customerId]/page.tsx",
+        "clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/customers/[customerId]/usage/page.tsx",
+        "clients/apps/web/src/app/(main)/dashboard/[organization]/cli/token/page.tsx",
+        "clients/apps/web/src/app/(main)/dashboard/[organization]/onboarding/integrate/page.tsx"
+      ],
+      "block": "11. [D-27ad3b] clients/apps/web: pages in src/app/(main)/dashboard/[*]/** (page files) call getServerSideAPI()\n    evidence: 49/55 (lower bound 0.78, lift 18.9)\n    example:  clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/(home)/page.tsx#Page\n    outlier:  clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/customers/[customerId]/events/page.tsx:16 Page\n    outlier:  clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/customers/[customerId]/members/page.tsx:17 Page\n    outlier:  clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/customers/[customerId]/page.tsx:16 Page\n    outlier:  clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/customers/[customerId]/usage/page.tsx:16 Page\n    outlier:  clients/apps/web/src/app/(main)/dashboard/[organization]/cli/token/page.tsx:8 Page\n    outlier:  clients/apps/web/src/app/(main)/dashboard/[organization]/onboarding/integrate/page.tsx:3 Page",
+      "family": "calls"
+    },
+    {
+      "uid": "polar/D-26e577",
+      "repo": "polar",
+      "id": "D-26e577",
+      "rank": 12,
+      "summary": "clients/apps/orbit: pages in src/** (page files) render <PageHeader>",
+      "role": {
+        "package": "clients/apps/orbit",
+        "dir": "src",
+        "file": "page",
+        "entry": "page",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "renders",
+        "component": "clients/apps/orbit/src/components/docs/PageHeader.tsx#PageHeader"
+      },
+      "evidence": {
+        "holders": 29,
+        "total": 30,
+        "lower_bound": 0.83,
+        "lift": 53.1
+      },
+      "members": 30,
+      "example": "clients/apps/orbit/src/app/components/alert/page.tsx#AlertPage",
+      "outliers": 1,
+      "outlier_files": [
+        "clients/apps/orbit/src/app/page.tsx"
+      ],
+      "block": "12. [D-26e577] clients/apps/orbit: pages in src/** (page files) render <PageHeader>\n    evidence: 29/30 (lower bound 0.83, lift 53.1)\n    example:  clients/apps/orbit/src/app/components/alert/page.tsx#AlertPage\n    outlier:  clients/apps/orbit/src/app/page.tsx:113 HomePage",
+      "family": "renders"
+    },
+    {
+      "uid": "polar/D-b63162",
+      "repo": "polar",
+      "id": "D-b63162",
+      "rank": 13,
+      "summary": "clients/apps/web: functions in src/hooks/** are named `use*`",
+      "role": {
+        "package": "clients/apps/web",
+        "dir": "src/hooks",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "use*"
+      },
+      "evidence": {
+        "holders": 231,
+        "total": 236,
+        "lower_bound": 0.95,
+        "lift": 7.3
+      },
+      "members": 236,
+      "example": "clients/apps/web/src/hooks/clipboard.tsx#useSafeCopy",
+      "outliers": 5,
+      "outlier_files": [
+        "clients/apps/web/src/hooks/identityVerification.ts",
+        "clients/apps/web/src/hooks/queries/merchantMigrations.ts",
+        "clients/apps/web/src/hooks/sse/organizations.ts",
+        "clients/apps/web/src/hooks/useFlaggedProductName.ts"
+      ],
+      "block": "13. [D-b63162] clients/apps/web: functions in src/hooks/** are named `use*`\n    evidence: 231/236 (lower bound 0.95, lift 7.3)\n    example:  clients/apps/web/src/hooks/clipboard.tsx#useSafeCopy\n    outlier:  clients/apps/web/src/hooks/identityVerification.ts:11 isTerminalStatus\n    outlier:  clients/apps/web/src/hooks/queries/merchantMigrations.ts:66 invalidateMigrationRecords\n    outlier:  clients/apps/web/src/hooks/queries/merchantMigrations.ts:10 isActiveMigrationOperation\n    outlier:  clients/apps/web/src/hooks/sse/organizations.ts:4 onOrganizationUpdated\n    outlier:  clients/apps/web/src/hooks/useFlaggedProductName.ts:16 getFlaggedNamesToReport",
+      "family": "naming"
+    },
+    {
+      "uid": "polar/D-b33f83",
+      "repo": "polar",
+      "id": "D-b33f83",
+      "rank": 14,
+      "summary": "server: classes in polar/** (repository files) are named `*Repository`",
+      "role": {
+        "package": "server",
+        "dir": "polar",
+        "file": "repository",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Repository"
+      },
+      "evidence": {
+        "holders": 91,
+        "total": 93,
+        "lower_bound": 0.93,
+        "lift": 28
+      },
+      "members": 93,
+      "example": "server/polar/account/repository.py#AccountRepository",
+      "outliers": 2,
+      "outlier_files": [
+        "server/polar/customer/repository.py",
+        "server/polar/subscription/repository.py"
+      ],
+      "block": "14. [D-b33f83] server: classes in polar/** (repository files) are named `*Repository`\n    evidence: 91/93 (lower bound 0.93, lift 28.0)\n    example:  server/polar/account/repository.py#AccountRepository\n    outlier:  server/polar/customer/repository.py:50 CustomerStripeIdentity\n    outlier:  server/polar/subscription/repository.py:67 CustomerSubscriptionProductPrice",
+      "family": "naming"
+    },
+    {
+      "uid": "polar/D-5e2fc5",
+      "repo": "polar",
+      "id": "D-5e2fc5",
+      "rank": 15,
+      "summary": "clients/apps/web: functions in src/** (customerPortal files) are named `use*`",
+      "role": {
+        "package": "clients/apps/web",
+        "dir": "src",
+        "file": "customerPortal",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "use*"
+      },
+      "evidence": {
+        "holders": 38,
+        "total": 39,
+        "lower_bound": 0.87,
+        "lift": 7.2
+      },
+      "members": 39,
+      "example": "clients/apps/web/src/hooks/queries/customerPortal.ts#useAddCustomerPortalMember",
+      "outliers": 1,
+      "outlier_files": [
+        "clients/apps/web/src/utils/customerPortal.ts"
+      ],
+      "block": "15. [D-5e2fc5] clients/apps/web: functions in src/** (customerPortal files) are named `use*`\n    evidence: 38/39 (lower bound 0.87, lift 7.2)\n    example:  clients/apps/web/src/hooks/queries/customerPortal.ts#useAddCustomerPortalMember\n    outlier:  clients/apps/web/src/utils/customerPortal.ts:16 hasBillingPermission",
+      "family": "naming"
+    },
+    {
+      "uid": "netbox/D-281ae8",
+      "repo": "netbox",
+      "id": "D-281ae8",
+      "rank": 1,
+      "summary": "classes in netbox/** (types files) are decorated with register_type()",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "types",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "netbox/netbox/graphql/types.py#register_type"
+        ]
+      },
+      "evidence": {
+        "holders": 133,
+        "total": 143,
+        "lower_bound": 0.88,
+        "lift": 28.2
+      },
+      "members": 143,
+      "example": "netbox/circuits/graphql/types.py#CircuitGroupAssignmentType",
+      "outliers": 10,
+      "outlier_files": [
+        "netbox/dcim/graphql/types.py",
+        "netbox/netbox/graphql/types.py"
+      ],
+      "block": " 1. [D-281ae8] classes in netbox/** (types files) are decorated with register_type()\n    evidence: 133/143 (lower bound 0.88, lift 28.2)\n    example:  netbox/circuits/graphql/types.py#CircuitGroupAssignmentType\n    outlier:  netbox/dcim/graphql/types.py:163 ComponentType\n    outlier:  netbox/dcim/graphql/types.py:171 ModularComponentType\n    outlier:  netbox/netbox/graphql/types.py:66 BaseObjectType\n    outlier:  netbox/netbox/graphql/types.py:126 LtreeNodeMixin\n    outlier:  netbox/netbox/graphql/types.py:153 NestedGroupObjectType\n    outlier:  netbox/netbox/graphql/types.py:169 NestedLtreeGroupObjectType\n    outlier:  netbox/netbox/graphql/types.py:185 NetBoxObjectType\n    outlier:  netbox/netbox/graphql/types.py:88 ObjectType\n    outlier:  netbox/netbox/graphql/types.py:112 OrganizationalObjectType\n    outlier:  netbox/netbox/graphql/types.py:98 PrimaryObjectType",
+      "family": "decorator"
+    },
+    {
+      "uid": "netbox/D-76eb6b",
+      "repo": "netbox",
+      "id": "D-76eb6b",
+      "rank": 2,
+      "summary": "classes in netbox/** (types files) pass `filters` to register_type()",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "types",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "netbox/netbox/graphql/types.py#register_type",
+        "index": 99,
+        "key": "filters"
+      },
+      "evidence": {
+        "holders": 131,
+        "total": 143,
+        "lower_bound": 0.86,
+        "lift": 28.2
+      },
+      "members": 143,
+      "example": "netbox/circuits/graphql/types.py#CircuitGroupAssignmentType",
+      "outliers": 12,
+      "outlier_files": [
+        "netbox/core/graphql/types.py",
+        "netbox/dcim/graphql/types.py",
+        "netbox/netbox/graphql/types.py"
+      ],
+      "block": " 2. [D-76eb6b] classes in netbox/** (types files) pass `filters` to register_type()\n    evidence: 131/143 (lower bound 0.86, lift 28.2)\n    example:  netbox/circuits/graphql/types.py#CircuitGroupAssignmentType\n    outlier:  netbox/core/graphql/types.py:49 ContentType\n    outlier:  netbox/dcim/graphql/types.py:163 ComponentType\n    outlier:  netbox/dcim/graphql/types.py:171 ModularComponentType\n    outlier:  netbox/netbox/graphql/types.py:66 BaseObjectType\n    outlier:  netbox/netbox/graphql/types.py:204 ContentTypeType\n    outlier:  netbox/netbox/graphql/types.py:126 LtreeNodeMixin\n    outlier:  netbox/netbox/graphql/types.py:153 NestedGroupObjectType\n    outlier:  netbox/netbox/graphql/types.py:169 NestedLtreeGroupObjectType\n    outlier:  netbox/netbox/graphql/types.py:185 NetBoxObjectType\n    outlier:  netbox/netbox/graphql/types.py:88 ObjectType\n    outlier:  netbox/netbox/graphql/types.py:112 OrganizationalObjectType\n    outlier:  netbox/netbox/graphql/types.py:98 PrimaryObjectType",
+      "family": "argument_key"
+    },
+    {
+      "uid": "netbox/D-436c3c",
+      "repo": "netbox",
+      "id": "D-436c3c",
+      "rank": 3,
+      "summary": "classes in netbox/** (views files) are decorated with register_model_view()",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "views",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "netbox/utilities/views.py#register_model_view"
+        ]
+      },
+      "evidence": {
+        "holders": 1100,
+        "total": 1189,
+        "lower_bound": 0.91,
+        "lift": 3.4
+      },
+      "members": 1189,
+      "example": "netbox/account/views.py#UserTokenDeleteView",
+      "outliers": 89,
+      "outlier_files": [
+        "netbox/account/views.py",
+        "netbox/circuits/api/views.py",
+        "netbox/core/api/views.py",
+        "netbox/core/views.py",
+        "netbox/dcim/api/views.py",
+        "netbox/dcim/views.py",
+        "netbox/extras/api/views.py",
+        "netbox/extras/views.py",
+        "netbox/ipam/api/views.py",
+        "netbox/ipam/views.py",
+        "netbox/netbox/api/views.py",
+        "netbox/netbox/plugins/views.py",
+        "netbox/tenancy/api/views.py",
+        "netbox/users/api/views.py",
+        "netbox/utilities/testing/views.py",
+        "netbox/utilities/views.py",
+        "netbox/virtualization/api/views.py",
+        "netbox/vpn/api/views.py",
+        "netbox/wireless/api/views.py"
+      ],
+      "block": " 3. [D-436c3c] classes in netbox/** (views files) are decorated with register_model_view()\n    evidence: 1100/1189 (lower bound 0.91, lift 3.4)\n    example:  netbox/account/views.py#UserTokenDeleteView\n    outlier:  netbox/account/views.py:300 ChangePasswordView\n    outlier:  netbox/account/views.py:47 LoginView\n    outlier:  netbox/account/views.py:172 LogoutView\n    outlier:  netbox/account/views.py:242 ProfileView\n    outlier:  netbox/account/views.py:194 SocialAuthBeginView\n    outlier:  netbox/account/views.py:259 UserConfigView\n    outlier:  netbox/account/views.py:381 UserTokenListView\n    outlier:  netbox/circuits/api/views.py:11 CircuitsRootView\n    outlier:  netbox/core/api/views.py:164 BackgroundQueueViewSet\n    outlier:  netbox/core/api/views.py:228 BackgroundTaskViewSet\n    outlier:  netbox/core/api/views.py:197 BackgroundWorkerViewSet\n    outlier:  netbox/core/api/views.py:119 BaseRQViewSet\n    outlier:  netbox/core/api/views.py:30 CoreRootView\n    outlier:  netbox/core/api/views.py:38 DataSourceViewSet\n    outlier:  netbox/core/views.py:531 BackgroundQueueListView\n    outlier:  netbox/core/views.py:599 BackgroundTaskDeleteView\n    outlier:  netbox/core/views.py:634 BackgroundTaskEnqueueView\n    outlier:  netbox/core/views.py:543 BackgroundTaskListView\n    outlier:  netbox/core/views.py:626 BackgroundTaskRequeueView\n    outlier:  netbox/core/views.py:643 BackgroundTaskStopView\n    outlier:  netbox/core/views.py:572 BackgroundTaskView\n    outlier:  netbox/core/views.py:850 BasePluginView\n    outlier:  netbox/core/views.py:525 BaseRQView\n    outlier:  netbox/core/views.py:869 PluginListView\n    outlier:  netbox/core/views.py:894 PluginView\n    outlier:  netbox/core/views.py:791 SystemDBSchemaView\n    outlier:  netbox/core/views.py:709 SystemView\n    outlier:  netbox/core/views.py:655 WorkerListView\n    outlier:  netbox/core/views.py:688 WorkerView\n    outlier:  netbox/dcim/api/views.py:670 ConnectedDeviceViewSet\n    outlier:  netbox/dcim/api/views.py:29 DCIMRootView\n    outlier:  netbox/dcim/api/views.py:81 PassThroughPortMixin\n    outlier:  netbox/dcim/api/views.py:39 PathEndpointMixin\n    outlier:  netbox/dcim/api/views.py:194 RackViewSet\n    outlier:  netbox/dcim/views.py:112 BulkDisconnectView\n    outlier:  netbox/dcim/views.py:77 DeviceComponentsView\n    outlier:  netbox/dcim/views.py:84 DeviceTypeComponentsView\n    outlier:  netbox/dcim/views.py:98 ModuleTypeComponentsView\n    outlier:  netbox/dcim/views.py:173 PathTraceView\n    outlier:  netbox/dcim/views.py:1072 RackElevationListView\n    outlier:  netbox/dcim/views.py:5337 VirtualChassisRemoveMemberView\n    outlier:  netbox/extras/api/views.py:241 ConfigTemplateViewSet\n    outlier:  netbox/extras/api/views.py:76 CustomFieldChoiceSetViewSet\n    outlier:  netbox/extras/api/views.py:35 ExtrasRootView\n    outlier:  netbox/extras/api/views.py:312 ScriptViewSet\n    outlier:  netbox/extras/views.py:1697 BaseScriptView\n    outlier:  netbox/extras/views.py:1494 DashboardResetView\n    outlier:  netbox/extras/views.py:1521 DashboardWidgetAddView\n    outlier:  netbox/extras/views.py:1571 DashboardWidgetConfigView\n    outlier:  netbox/extras/views.py:1612 DashboardWidgetDeleteView\n    outlier:  netbox/extras/views.py:631 NotificationsView\n    outlier:  netbox/extras/views.py:1165 ObjectConfigContextView\n    outlier:  netbox/extras/views.py:1272 ObjectRenderConfigView\n    outlier:  netbox/extras/views.py:1950 RenderMarkdownView\n    outlier:  netbox/extras/views.py:1810 ScriptJobsView\n    outlier:  netbox/extras/views.py:1663 ScriptListView\n    outlier:  netbox/extras/views.py:1828 ScriptResultView\n    outlier:  netbox/extras/views.py:1795 ScriptSourceView\n    outlier:  netbox/extras/views.py:1716 ScriptView\n    outlier:  netbox/ipam/api/views.py:316 AvailableASNsView\n    outlier:  netbox/ipam/api/views.py:409 AvailableIPAddressesView\n    outlier:  netbox/ipam/api/views.py:203 AvailableObjectsView\n    outlier:  netbox/ipam/api/views.py:356 AvailablePrefixesView\n    outlier:  netbox/ipam/api/views.py:466 AvailableVLANsView\n    outlier:  netbox/ipam/api/views.py:31 IPAMRootView\n    outlier:  netbox/ipam/api/views.py:106 IPAddressViewSet\n    outlier:  netbox/ipam/views.py:565 ChildAvailabilityMixin\n    outlier:  netbox/ipam/views.py:1922 ServicePortMappingsBulkEditMixin\n    outlier:  netbox/netbox/api/views.py:19 APIRootView\n    outlier:  netbox/netbox/api/views.py:68 AuthenticationCheckView\n    outlier:  netbox/netbox/api/views.py:48 StatusView\n    outlier:  netbox/netbox/plugins/views.py:14 InstalledPluginsAPIView\n    outlier:  netbox/netbox/plugins/views.py:45 PluginsAPIRootView\n    outlier:  netbox/tenancy/api/views.py:10 TenancyRootView\n    outlier:  netbox/users/api/views.py:58 TokenProvisionView\n    outlier:  netbox/users/api/views.py:114 UserConfigViewSet\n    outlier:  netbox/users/api/views.py:22 UsersRootView\n    outlier:  netbox/utilities/testing/views.py:31 ModelViewTestCase\n    outlier:  netbox/utilities/testing/views.py:58 ViewTestCases\n    outlier:  netbox/utilities/views.py:45 ConditionalLoginRequiredMixin\n    outlier:  netbox/utilities/views.py:70 ContentTypePermissionRequiredMixin\n    outlier:  netbox/utilities/views.py:189 GetRelatedModelsMixin\n    outlier:  netbox/utilities/views.py:156 GetReturnURLMixin\n    outlier:  netbox/utilities/views.py:106 ObjectPermissionRequiredMixin\n    outlier:  netbox/utilities/views.py:55 TokenConditionalLoginRequiredMixin\n    outlier:  netbox/utilities/views.py:246 ViewTab\n    outlier:  netbox/virtualization/api/views.py:14 VirtualizationRootView\n    outlier:  netbox/vpn/api/views.py:24 VPNRootView\n    outlier:  netbox/wireless/api/views.py:10 WirelessRootView",
+      "family": "decorator"
+    },
+    {
+      "uid": "netbox/D-bc0c7d",
+      "repo": "netbox",
+      "id": "D-bc0c7d",
+      "rank": 4,
+      "summary": "classes in netbox/** (search files) are decorated with register_search()",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "search",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "netbox/netbox/search/__init__.py#register_search"
+        ]
+      },
+      "evidence": {
+        "holders": 98,
+        "total": 100,
+        "lower_bound": 0.93,
+        "lift": 40.3
+      },
+      "members": 100,
+      "example": "netbox/circuits/search.py#CircuitGroupIndex",
+      "outliers": 2,
+      "outlier_files": [
+        "netbox/extras/models/search.py",
+        "netbox/netbox/forms/search.py"
+      ],
+      "block": " 4. [D-bc0c7d] classes in netbox/** (search files) are decorated with register_search()\n    evidence: 98/100 (lower bound 0.93, lift 40.3)\n    example:  netbox/circuits/search.py#CircuitGroupIndex\n    outlier:  netbox/extras/models/search.py:16 CachedValue\n    outlier:  netbox/netbox/forms/search.py:18 SearchForm",
+      "family": "decorator"
+    },
+    {
+      "uid": "netbox/D-4c4e2d",
+      "repo": "netbox",
+      "id": "D-4c4e2d",
+      "rank": 5,
+      "summary": "classes in netbox/** (model_forms files) call FieldSet()",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "model_forms",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "netbox/utilities/forms/rendering.py#FieldSet"
+      },
+      "evidence": {
+        "holders": 127,
+        "total": 150,
+        "lower_bound": 0.78,
+        "lift": 9.4
+      },
+      "members": 150,
+      "example": "netbox/circuits/forms/model_forms.py#CircuitForm",
+      "outliers": 23,
+      "outlier_files": [
+        "netbox/dcim/forms/model_forms.py",
+        "netbox/extras/forms/model_forms.py",
+        "netbox/ipam/forms/model_forms.py",
+        "netbox/netbox/forms/model_forms.py",
+        "netbox/users/forms/model_forms.py",
+        "netbox/virtualization/forms/model_forms.py"
+      ],
+      "block": " 5. [D-4c4e2d] classes in netbox/** (model_forms files) call FieldSet()\n    evidence: 127/150 (lower bound 0.78, lift 9.4)\n    example:  netbox/circuits/forms/model_forms.py#CircuitForm\n    outlier:  netbox/dcim/forms/model_forms.py:1044 CableForm\n    outlier:  netbox/dcim/forms/model_forms.py:1386 ConsolePortTemplateForm\n    outlier:  netbox/dcim/forms/model_forms.py:1400 ConsoleServerPortTemplateForm\n    outlier:  netbox/dcim/forms/model_forms.py:770 DeviceForm\n    outlier:  netbox/dcim/forms/model_forms.py:1260 DeviceVCMembershipForm\n    outlier:  netbox/dcim/forms/model_forms.py:2281 PopulateDeviceBayForm\n    outlier:  netbox/dcim/forms/model_forms.py:1301 VCMemberSelectForm\n    outlier:  netbox/dcim/forms/model_forms.py:1240 VirtualChassisForm\n    outlier:  netbox/extras/forms/model_forms.py:525 BookmarkForm\n    outlier:  netbox/extras/forms/model_forms.py:920 JournalEntryForm\n    outlier:  netbox/extras/forms/model_forms.py:536 NotificationGroupForm\n    outlier:  netbox/extras/forms/model_forms.py:562 SubscriptionForm\n    outlier:  netbox/extras/forms/model_forms.py:446 TableConfigForm\n    outlier:  netbox/ipam/forms/model_forms.py:551 IPAddressAssignForm\n    outlier:  netbox/ipam/forms/model_forms.py:703 VLANForm\n    outlier:  netbox/netbox/forms/model_forms.py:134 NestedGroupModelForm\n    outlier:  netbox/netbox/forms/model_forms.py:21 NetBoxModelForm\n    outlier:  netbox/netbox/forms/model_forms.py:126 OrganizationalModelForm\n    outlier:  netbox/netbox/forms/model_forms.py:119 PrimaryModelForm\n    outlier:  netbox/users/forms/model_forms.py:172 TokenForm\n    outlier:  netbox/users/forms/model_forms.py:128 UserTokenForm\n    outlier:  netbox/virtualization/forms/model_forms.py:106 ClusterAddDevicesForm\n    outlier:  netbox/virtualization/forms/model_forms.py:185 ClusterRemoveDevicesForm",
+      "family": "calls"
+    },
+    {
+      "uid": "netbox/D-e2c3e4",
+      "repo": "netbox",
+      "id": "D-e2c3e4",
+      "rank": 6,
+      "summary": "classes in netbox/** (choices files) extend ChoiceSet",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "choices",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "netbox/utilities/choices.py#ChoiceSet"
+        ]
+      },
+      "evidence": {
+        "holders": 113,
+        "total": 120,
+        "lower_bound": 0.88,
+        "lift": 33.6
+      },
+      "members": 120,
+      "example": "netbox/circuits/choices.py#CircuitCommitRateChoices",
+      "outliers": 7,
+      "outlier_files": [
+        "netbox/extras/choices.py",
+        "netbox/utilities/choices.py",
+        "netbox/utilities/forms/fields/choices.py"
+      ],
+      "block": " 6. [D-e2c3e4] classes in netbox/** (choices files) extend ChoiceSet\n    evidence: 113/120 (lower bound 0.88, lift 33.6)\n    example:  netbox/circuits/choices.py#CircuitCommitRateChoices\n    outlier:  netbox/extras/choices.py:165 CustomLinkButtonClassChoices\n    outlier:  netbox/extras/choices.py:305 EventRuleActionChoices\n    outlier:  netbox/utilities/choices.py:19 Choice\n    outlier:  netbox/utilities/choices.py:111 ChoiceSet\n    outlier:  netbox/utilities/forms/fields/choices.py:76 ChoiceField\n    outlier:  netbox/utilities/forms/fields/choices.py:96 MultipleChoiceField\n    outlier:  netbox/utilities/forms/fields/choices.py:83 TypedChoiceField",
+      "family": "base_class"
+    },
+    {
+      "uid": "netbox/D-4fabef",
+      "repo": "netbox",
+      "id": "D-4fabef",
+      "rank": 7,
+      "summary": "classes in netbox/** (filters files) are decorated with register_filter()",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "filters",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "netbox/netbox/graphql/filters.py#register_filter"
+        ]
+      },
+      "evidence": {
+        "holders": 135,
+        "total": 162,
+        "lower_bound": 0.77,
+        "lift": 24.9
+      },
+      "members": 162,
+      "example": "netbox/circuits/graphql/filters.py#CircuitFilter",
+      "outliers": 27,
+      "outlier_files": [
+        "netbox/extras/filters.py",
+        "netbox/netbox/api/filters.py",
+        "netbox/netbox/graphql/filters.py",
+        "netbox/utilities/filters.py"
+      ],
+      "block": " 7. [D-4fabef] classes in netbox/** (filters files) are decorated with register_filter()\n    evidence: 135/162 (lower bound 0.77, lift 24.9)\n    example:  netbox/circuits/graphql/filters.py#CircuitFilter\n    outlier:  netbox/extras/filters.py:16 MissingKeyAwareFilterMixin\n    outlier:  netbox/extras/filters.py:108 TagFilter\n    outlier:  netbox/extras/filters.py:123 TagIDFilter\n    outlier:  netbox/netbox/api/filters.py:11 OrderingFilter\n    outlier:  netbox/netbox/graphql/filters.py:36 BaseModelFilter\n    outlier:  netbox/netbox/graphql/filters.py:41 ChangeLoggedModelFilter\n    outlier:  netbox/netbox/graphql/filters.py:59 NestedGroupModelFilter\n    outlier:  netbox/netbox/graphql/filters.py:45 NetBoxModelFilter\n    outlier:  netbox/netbox/graphql/filters.py:67 OrganizationalModelFilter\n    outlier:  netbox/netbox/graphql/filters.py:75 PrimaryModelFilter\n    outlier:  netbox/utilities/filters.py:218 ContentTypeFilter\n    outlier:  netbox/utilities/filters.py:102 MultiValueArrayFilter\n    outlier:  netbox/utilities/filters.py:87 MultiValueBigNumberFilter\n    outlier:  netbox/utilities/filters.py:67 MultiValueCharFilter\n    outlier:  netbox/utilities/filters.py:238 MultiValueContentTypeFilter\n    outlier:  netbox/utilities/filters.py:72 MultiValueDateFilter\n    outlier:  netbox/utilities/filters.py:77 MultiValueDateTimeFilter\n    outlier:  netbox/utilities/filters.py:92 MultiValueDecimalFilter\n    outlier:  netbox/utilities/filters.py:151 MultiValueMACAddressFilter\n    outlier:  netbox/utilities/filters.py:82 MultiValueNumberFilter\n    outlier:  netbox/utilities/filters.py:97 MultiValueTimeFilter\n    outlier:  netbox/utilities/filters.py:156 MultiValueTimeZoneFilter\n    outlier:  netbox/utilities/filters.py:161 MultiValueWWNFilter\n    outlier:  netbox/utilities/filters.py:181 NonUniqueModelMultipleChoiceFilter\n    outlier:  netbox/utilities/filters.py:195 NullableCharFieldFilter\n    outlier:  netbox/utilities/filters.py:206 NumericArrayFilter\n    outlier:  netbox/utilities/filters.py:166 TreeNodeMultipleChoiceFilter",
+      "family": "decorator"
+    },
+    {
+      "uid": "netbox/D-58913a",
+      "repo": "netbox",
+      "id": "D-58913a",
+      "rank": 8,
+      "summary": "classes in netbox/** (choices files) call Choice()",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "choices",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "netbox/utilities/choices.py#Choice"
+      },
+      "evidence": {
+        "holders": 106,
+        "total": 120,
+        "lower_bound": 0.81,
+        "lift": 33.6
+      },
+      "members": 120,
+      "example": "netbox/circuits/choices.py#CircuitCommitRateChoices",
+      "outliers": 14,
+      "outlier_files": [
+        "netbox/dcim/choices.py",
+        "netbox/extras/choices.py",
+        "netbox/utilities/choices.py",
+        "netbox/utilities/forms/fields/choices.py"
+      ],
+      "block": " 8. [D-58913a] classes in netbox/** (choices files) call Choice()\n    evidence: 106/120 (lower bound 0.81, lift 33.6)\n    example:  netbox/circuits/choices.py#CircuitCommitRateChoices\n    outlier:  netbox/dcim/choices.py:2267 CoolingConnectorTypeChoices\n    outlier:  netbox/dcim/choices.py:2225 CoolingFeedStatusChoices\n    outlier:  netbox/dcim/choices.py:2177 CoolingMethodChoices\n    outlier:  netbox/dcim/choices.py:2209 CoolingSourceStatusChoices\n    outlier:  netbox/dcim/choices.py:2191 CoolingSourceTypeChoices\n    outlier:  netbox/dcim/choices.py:2241 FluidTypeChoices\n    outlier:  netbox/dcim/choices.py:2255 RackCoolingCapabilityChoices\n    outlier:  netbox/extras/choices.py:50 CustomFieldStatusChoices\n    outlier:  netbox/extras/choices.py:305 EventRuleActionChoices\n    outlier:  netbox/utilities/choices.py:19 Choice\n    outlier:  netbox/utilities/choices.py:111 ChoiceSet\n    outlier:  netbox/utilities/forms/fields/choices.py:76 ChoiceField\n    outlier:  netbox/utilities/forms/fields/choices.py:96 MultipleChoiceField\n    outlier:  netbox/utilities/forms/fields/choices.py:83 TypedChoiceField",
+      "family": "calls"
+    },
+    {
+      "uid": "netbox/D-0eddf0",
+      "repo": "netbox",
+      "id": "D-0eddf0",
+      "rank": 9,
+      "summary": "HTTP handlers in netbox/dcim/api/** (views files) extend NetBoxModelViewSet",
+      "role": {
+        "package": "",
+        "dir": "netbox/dcim/api",
+        "file": "views",
+        "entry": "http",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "netbox/netbox/api/viewsets/__init__.py#NetBoxModelViewSet"
+        ]
+      },
+      "evidence": {
+        "holders": 51,
+        "total": 52,
+        "lower_bound": 0.9,
+        "lift": 29.9
+      },
+      "members": 52,
+      "example": "netbox/dcim/api/views.py#CableBundleViewSet",
+      "outliers": 1,
+      "outlier_files": [
+        "netbox/dcim/api/views.py"
+      ],
+      "block": " 9. [D-0eddf0] HTTP handlers in netbox/dcim/api/** (views files) extend NetBoxModelViewSet\n    evidence: 51/52 (lower bound 0.90, lift 29.9)\n    example:  netbox/dcim/api/views.py#CableBundleViewSet\n    outlier:  netbox/dcim/api/views.py:596 CableTerminationViewSet",
+      "family": "base_class"
+    },
+    {
+      "uid": "netbox/D-4cf3e5",
+      "repo": "netbox",
+      "id": "D-4cf3e5",
+      "rank": 10,
+      "summary": "classes in netbox/dcim/forms/** (filtersets files) pass `name` to FieldSet()",
+      "role": {
+        "package": "",
+        "dir": "netbox/dcim/forms",
+        "file": "filtersets",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "netbox/utilities/forms/rendering.py#FieldSet",
+        "index": 99,
+        "key": "name"
+      },
+      "evidence": {
+        "holders": 53,
+        "total": 56,
+        "lower_bound": 0.85,
+        "lift": 14.1
+      },
+      "members": 56,
+      "example": "netbox/dcim/forms/filtersets.py#CableBundleFilterForm",
+      "outliers": 3,
+      "outlier_files": [
+        "netbox/dcim/forms/filtersets.py"
+      ],
+      "block": "10. [D-4cf3e5] classes in netbox/dcim/forms/** (filtersets files) pass `name` to FieldSet()\n    evidence: 53/56 (lower bound 0.85, lift 14.1)\n    example:  netbox/dcim/forms/filtersets.py#CableBundleFilterForm\n    outlier:  netbox/dcim/forms/filtersets.py:2495 ConsoleConnectionFilterForm\n    outlier:  netbox/dcim/forms/filtersets.py:2543 InterfaceConnectionFilterForm\n    outlier:  netbox/dcim/forms/filtersets.py:2519 PowerConnectionFilterForm",
+      "family": "argument_key"
+    },
+    {
+      "uid": "netbox/D-7d7f0c",
+      "repo": "netbox",
+      "id": "D-7d7f0c",
+      "rank": 11,
+      "summary": "files in the repo do not import from netbox/account/**",
+      "role": {
+        "package": "",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:netbox/account"
+      },
+      "evidence": {
+        "holders": 785,
+        "total": 786,
+        "lower_bound": 0.99,
+        "lift": 3
+      },
+      "members": 786,
+      "example": ".claude/skills/draft-release-notes/audit_milestone.py#(file)",
+      "outliers": 1,
+      "outlier_files": [
+        "netbox/netbox/urls.py"
+      ],
+      "block": "11. [D-7d7f0c] files in the repo do not import from netbox/account/**\n    evidence: 785/786 (lower bound 0.99, lift 3.0)\n    example:  .claude/skills/draft-release-notes/audit_milestone.py#(file)\n    outlier:  netbox/netbox/urls.py:1 (file)",
+      "family": "layering"
+    },
+    {
+      "uid": "netbox/D-7f5847",
+      "repo": "netbox",
+      "id": "D-7f5847",
+      "rank": 12,
+      "summary": "files in the repo do not import from netbox/vpn/**",
+      "role": {
+        "package": "",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:netbox/vpn"
+      },
+      "evidence": {
+        "holders": 777,
+        "total": 786,
+        "lower_bound": 0.98,
+        "lift": 3
+      },
+      "members": 786,
+      "example": ".claude/skills/draft-release-notes/audit_milestone.py#(file)",
+      "outliers": 9,
+      "outlier_files": [
+        "netbox/dcim/api/serializers_/device_components.py",
+        "netbox/dcim/filtersets.py",
+        "netbox/dcim/forms/filtersets.py",
+        "netbox/ipam/api/serializers_/vlans.py",
+        "netbox/ipam/filtersets.py",
+        "netbox/ipam/forms/filtersets.py",
+        "netbox/netbox/graphql/schema.py",
+        "netbox/virtualization/api/serializers_/virtualmachines.py",
+        "netbox/virtualization/forms/filtersets.py"
+      ],
+      "block": "12. [D-7f5847] files in the repo do not import from netbox/vpn/**\n    evidence: 777/786 (lower bound 0.98, lift 3.0)\n    example:  .claude/skills/draft-release-notes/audit_milestone.py#(file)\n    outlier:  netbox/dcim/api/serializers_/device_components.py:1 (file)\n    outlier:  netbox/dcim/filtersets.py:1 (file)\n    outlier:  netbox/dcim/forms/filtersets.py:1 (file)\n    outlier:  netbox/ipam/api/serializers_/vlans.py:1 (file)\n    outlier:  netbox/ipam/filtersets.py:1 (file)\n    outlier:  netbox/ipam/forms/filtersets.py:1 (file)\n    outlier:  netbox/netbox/graphql/schema.py:1 (file)\n    outlier:  netbox/virtualization/api/serializers_/virtualmachines.py:1 (file)\n    outlier:  netbox/virtualization/forms/filtersets.py:1 (file)",
+      "family": "layering"
+    },
+    {
+      "uid": "netbox/D-593fc9",
+      "repo": "netbox",
+      "id": "D-593fc9",
+      "rank": 13,
+      "summary": "files in the repo do not import from netbox/circuits/**",
+      "role": {
+        "package": "",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:netbox/circuits"
+      },
+      "evidence": {
+        "holders": 776,
+        "total": 786,
+        "lower_bound": 0.98,
+        "lift": 3
+      },
+      "members": 786,
+      "example": ".claude/skills/draft-release-notes/audit_milestone.py#(file)",
+      "outliers": 10,
+      "outlier_files": [
+        "netbox/dcim/filtersets.py",
+        "netbox/dcim/forms/connections.py",
+        "netbox/dcim/graphql/gfk_mixins.py",
+        "netbox/dcim/graphql/types.py",
+        "netbox/dcim/models/cables.py",
+        "netbox/dcim/views.py",
+        "netbox/ipam/filtersets.py",
+        "netbox/ipam/graphql/types.py",
+        "netbox/ipam/views.py",
+        "netbox/netbox/graphql/schema.py"
+      ],
+      "block": "13. [D-593fc9] files in the repo do not import from netbox/circuits/**\n    evidence: 776/786 (lower bound 0.98, lift 3.0)\n    example:  .claude/skills/draft-release-notes/audit_milestone.py#(file)\n    outlier:  netbox/dcim/filtersets.py:1 (file)\n    outlier:  netbox/dcim/forms/connections.py:1 (file)\n    outlier:  netbox/dcim/graphql/gfk_mixins.py:1 (file)\n    outlier:  netbox/dcim/graphql/types.py:1 (file)\n    outlier:  netbox/dcim/models/cables.py:1 (file)\n    outlier:  netbox/dcim/views.py:1 (file)\n    outlier:  netbox/ipam/filtersets.py:1 (file)\n    outlier:  netbox/ipam/graphql/types.py:1 (file)\n    outlier:  netbox/ipam/views.py:1 (file)\n    outlier:  netbox/netbox/graphql/schema.py:1 (file)",
+      "family": "layering"
+    },
+    {
+      "uid": "netbox/D-dd6307",
+      "repo": "netbox",
+      "id": "D-dd6307",
+      "rank": 14,
+      "summary": "files in the repo do not import from netbox/wireless/**",
+      "role": {
+        "package": "",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:netbox/wireless"
+      },
+      "evidence": {
+        "holders": 771,
+        "total": 786,
+        "lower_bound": 0.97,
+        "lift": 3
+      },
+      "members": 786,
+      "example": ".claude/skills/draft-release-notes/audit_milestone.py#(file)",
+      "outliers": 15,
+      "outlier_files": [
+        "netbox/dcim/api/serializers_/device_components.py",
+        "netbox/dcim/api/serializers_/devicetype_components.py",
+        "netbox/dcim/filtersets.py",
+        "netbox/dcim/forms/bulk_edit.py",
+        "netbox/dcim/forms/bulk_import.py",
+        "netbox/dcim/forms/filtersets.py",
+        "netbox/dcim/forms/model_forms.py",
+        "netbox/dcim/forms/object_import.py",
+        "netbox/dcim/management/commands/buildschema.py",
+        "netbox/dcim/models/cables.py",
+        "netbox/dcim/models/device_component_templates.py",
+        "netbox/dcim/models/device_components.py",
+        "netbox/dcim/svg/cables.py",
+        "netbox/dcim/views.py",
+        "netbox/netbox/graphql/schema.py"
+      ],
+      "block": "14. [D-dd6307] files in the repo do not import from netbox/wireless/**\n    evidence: 771/786 (lower bound 0.97, lift 3.0)\n    example:  .claude/skills/draft-release-notes/audit_milestone.py#(file)\n    outlier:  netbox/dcim/api/serializers_/device_components.py:1 (file)\n    outlier:  netbox/dcim/api/serializers_/devicetype_components.py:1 (file)\n    outlier:  netbox/dcim/filtersets.py:1 (file)\n    outlier:  netbox/dcim/forms/bulk_edit.py:1 (file)\n    outlier:  netbox/dcim/forms/bulk_import.py:1 (file)\n    outlier:  netbox/dcim/forms/filtersets.py:1 (file)\n    outlier:  netbox/dcim/forms/model_forms.py:1 (file)\n    outlier:  netbox/dcim/forms/object_import.py:1 (file)\n    outlier:  netbox/dcim/management/commands/buildschema.py:1 (file)\n    outlier:  netbox/dcim/models/cables.py:1 (file)\n    outlier:  netbox/dcim/models/device_component_templates.py:1 (file)\n    outlier:  netbox/dcim/models/device_components.py:1 (file)\n    outlier:  netbox/dcim/svg/cables.py:1 (file)\n    outlier:  netbox/dcim/views.py:1 (file)\n    outlier:  netbox/netbox/graphql/schema.py:1 (file)",
+      "family": "layering"
+    },
+    {
+      "uid": "netbox/D-41d415",
+      "repo": "netbox",
+      "id": "D-41d415",
+      "rank": 15,
+      "summary": "classes in netbox/** (nested files) extend WritableNestedSerializer",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "nested",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "netbox/netbox/api/serializers/nested.py#WritableNestedSerializer"
+        ]
+      },
+      "evidence": {
+        "holders": 23,
+        "total": 24,
+        "lower_bound": 0.8,
+        "lift": 167.8
+      },
+      "members": 24,
+      "example": "netbox/circuits/api/serializers_/nested.py#NestedProviderAccountSerializer",
+      "outliers": 1,
+      "outlier_files": [
+        "netbox/netbox/api/serializers/nested.py"
+      ],
+      "block": "15. [D-41d415] classes in netbox/** (nested files) extend WritableNestedSerializer\n    evidence: 23/24 (lower bound 0.80, lift 167.8)\n    example:  netbox/circuits/api/serializers_/nested.py#NestedProviderAccountSerializer\n    outlier:  netbox/netbox/api/serializers/nested.py:11 WritableNestedSerializer",
+      "family": "base_class"
+    },
+    {
+      "uid": "saleor/D-f5882d",
+      "repo": "saleor",
+      "id": "D-f5882d",
+      "rank": 1,
+      "summary": "classes in saleor/** (dataloaders files) extend DataLoader",
+      "role": {
+        "package": "",
+        "dir": "saleor",
+        "file": "dataloaders",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "saleor/graphql/core/dataloaders.py#DataLoader"
+        ]
+      },
+      "evidence": {
+        "holders": 113,
+        "total": 134,
+        "lower_bound": 0.77,
+        "lift": 10.7
+      },
+      "members": 134,
+      "example": "saleor/graphql/account/dataloaders.py#AddressByIdLoader",
+      "outliers": 21,
+      "outlier_files": [
+        "saleor/graphql/account/dataloaders.py",
+        "saleor/graphql/core/dataloaders.py",
+        "saleor/graphql/page/dataloaders.py",
+        "saleor/graphql/translations/dataloaders.py"
+      ],
+      "block": " 1. [D-f5882d] classes in saleor/** (dataloaders files) extend DataLoader\n    evidence: 113/134 (lower bound 0.77, lift 10.7)\n    example:  saleor/graphql/account/dataloaders.py#AddressByIdLoader\n    outlier:  saleor/graphql/account/dataloaders.py:223 AccessibleChannelsByGroupIdLoader\n    outlier:  saleor/graphql/account/dataloaders.py:231 AccessibleChannelsByUserIdLoader\n    outlier:  saleor/graphql/account/dataloaders.py:100 CustomerAttributesAllByCustomerTypeIdLoader\n    outlier:  saleor/graphql/account/dataloaders.py:108 CustomerAttributesVisibleInStorefrontByCustomerTypeIdLoader\n    outlier:  saleor/graphql/core/dataloaders.py:20 DataLoader\n    outlier:  saleor/graphql/page/dataloaders.py:87 PageAttributesAllByPageTypeIdLoader\n    outlier:  saleor/graphql/page/dataloaders.py:93 PageAttributesVisibleInStorefrontByPageTypeIdLoader\n    outlier:  saleor/graphql/translations/dataloaders.py:47 AttributeTranslationByIdAndLanguageCodeLoader\n    outlier:  saleor/graphql/translations/dataloaders.py:55 AttributeValueTranslationByIdAndLanguageCodeLoader\n    outlier:  saleor/graphql/translations/dataloaders.py:63 CategoryTranslationByIdAndLanguageCodeLoader\n    outlier:  saleor/graphql/translations/dataloaders.py:71 CollectionTranslationByIdAndLanguageCodeLoader\n    outlier:  saleor/graphql/translations/dataloaders.py:79 MenuItemTranslationByIdAndLanguageCodeLoader\n    outlier:  saleor/graphql/translations/dataloaders.py:87 PageTranslationByIdAndLanguageCodeLoader\n    outlier:  saleor/graphql/translations/dataloaders.py:103 ProductMediaTranslationByIdAndLanguageCodeLoader\n    outlier:  saleor/graphql/translations/dataloaders.py:95 ProductTranslationByIdAndLanguageCodeLoader\n    outlier:  saleor/graphql/translations/dataloaders.py:111 ProductVariantTranslationByIdAndLanguageCodeLoader\n    outlier:  saleor/graphql/translations/dataloaders.py:151 PromotionRuleTranslationByIdAndLanguageCodeLoader\n    outlier:  saleor/graphql/translations/dataloaders.py:143 PromotionTranslationByIdAndLanguageCodeLoader\n    outlier:  saleor/graphql/translations/dataloaders.py:119 ShippingMethodTranslationByIdAndLanguageCodeLoader\n    outlier:  saleor/graphql/translations/dataloaders.py:127 SiteSettingsTranslationByIdAndLanguageCodeLoader\n    outlier:  saleor/graphql/translations/dataloaders.py:135 VoucherTranslationByIdAndLanguageCodeLoader",
+      "family": "base_class"
+    },
+    {
+      "uid": "saleor/D-e36ea5",
+      "repo": "saleor",
+      "id": "D-e36ea5",
+      "rank": 2,
+      "summary": "exported values in saleor/core/** do not read os.environ directly",
+      "role": {
+        "package": "",
+        "dir": "saleor/core",
+        "file": "*",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "os_environ"
+      },
+      "evidence": {
+        "holders": 74,
+        "total": 75,
+        "lower_bound": 0.93,
+        "lift": 11.5
+      },
+      "members": 75,
+      "example": "saleor/core/auth.py#AUTH_HEADER_PREFIXES",
+      "outliers": 1,
+      "outlier_files": [
+        "saleor/core/development/random_data.py"
+      ],
+      "block": " 2. [D-e36ea5] exported values in saleor/core/** do not read os.environ directly\n    evidence: 74/75 (lower bound 0.93, lift 11.5)\n    example:  saleor/core/auth.py#AUTH_HEADER_PREFIXES\n    outlier:  saleor/core/development/random_data.py:139 DEFAULT_CURRENCY",
+      "family": "avoids_other"
+    },
+    {
+      "uid": "saleor/D-049c39",
+      "repo": "saleor",
+      "id": "D-049c39",
+      "rank": 3,
+      "summary": "files in saleor/** do not import from saleor/csv/**",
+      "role": {
+        "package": "",
+        "dir": "saleor",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:saleor/csv"
+      },
+      "evidence": {
+        "holders": 634,
+        "total": 635,
+        "lower_bound": 0.99,
+        "lift": 3
+      },
+      "members": 635,
+      "example": "saleor/__main__.py#(file)",
+      "outliers": 1,
+      "outlier_files": [
+        "saleor/graphql/csv/mutations/export_products.py"
+      ],
+      "block": " 3. [D-049c39] files in saleor/** do not import from saleor/csv/**\n    evidence: 634/635 (lower bound 0.99, lift 3.0)\n    example:  saleor/__main__.py#(file)\n    outlier:  saleor/graphql/csv/mutations/export_products.py:1 (file)",
+      "family": "layering"
+    },
+    {
+      "uid": "saleor/D-9cc87c",
+      "repo": "saleor",
+      "id": "D-9cc87c",
+      "rank": 4,
+      "summary": "files in saleor/** do not import from saleor/invoice/**",
+      "role": {
+        "package": "",
+        "dir": "saleor",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:saleor/invoice"
+      },
+      "evidence": {
+        "holders": 627,
+        "total": 635,
+        "lower_bound": 0.97,
+        "lift": 3
+      },
+      "members": 635,
+      "example": "saleor/__main__.py#(file)",
+      "outliers": 8,
+      "outlier_files": [
+        "saleor/core/management/commands/clearorders.py",
+        "saleor/graphql/invoice/mutations/invoice_create.py",
+        "saleor/graphql/invoice/mutations/invoice_delete.py",
+        "saleor/graphql/invoice/mutations/invoice_request.py",
+        "saleor/graphql/invoice/mutations/invoice_request_delete.py",
+        "saleor/graphql/invoice/mutations/invoice_send_notification.py",
+        "saleor/graphql/invoice/mutations/invoice_update.py",
+        "saleor/graphql/order/bulk_mutations/order_bulk_create.py"
+      ],
+      "block": " 4. [D-9cc87c] files in saleor/** do not import from saleor/invoice/**\n    evidence: 627/635 (lower bound 0.97, lift 3.0)\n    example:  saleor/__main__.py#(file)\n    outlier:  saleor/core/management/commands/clearorders.py:1 (file)\n    outlier:  saleor/graphql/invoice/mutations/invoice_create.py:1 (file)\n    outlier:  saleor/graphql/invoice/mutations/invoice_delete.py:1 (file)\n    outlier:  saleor/graphql/invoice/mutations/invoice_request.py:1 (file)\n    outlier:  saleor/graphql/invoice/mutations/invoice_request_delete.py:1 (file)\n    outlier:  saleor/graphql/invoice/mutations/invoice_send_notification.py:1 (file)\n    outlier:  saleor/graphql/invoice/mutations/invoice_update.py:1 (file)\n    outlier:  saleor/graphql/order/bulk_mutations/order_bulk_create.py:1 (file)",
+      "family": "layering"
+    },
+    {
+      "uid": "saleor/D-6488c7",
+      "repo": "saleor",
+      "id": "D-6488c7",
+      "rank": 5,
+      "summary": "files in saleor/** do not import from saleor/site/**",
+      "role": {
+        "package": "",
+        "dir": "saleor",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:saleor/site"
+      },
+      "evidence": {
+        "holders": 623,
+        "total": 635,
+        "lower_bound": 0.97,
+        "lift": 3
+      },
+      "members": 635,
+      "example": "saleor/__main__.py#(file)",
+      "outliers": 12,
+      "outlier_files": [
+        "saleor/core/auth_backend.py",
+        "saleor/core/development/random_data.py",
+        "saleor/graphql/account/mutations/account/confirm_account.py",
+        "saleor/graphql/meta/permissions.py",
+        "saleor/graphql/order/mutations/fulfillment_refund_and_return_product_base.py",
+        "saleor/graphql/order/mutations/order_lines_create.py",
+        "saleor/graphql/shop/mutations/gift_card_settings_update.py",
+        "saleor/graphql/shop/mutations/refund_settings_update.py",
+        "saleor/graphql/shop/mutations/return_settings_update.py",
+        "saleor/graphql/shop/mutations/shop_settings_update.py",
+        "saleor/graphql/storefront_traffic.py",
+        "saleor/graphql/translations/mutations/shop_settings_translate.py"
+      ],
+      "block": " 5. [D-6488c7] files in saleor/** do not import from saleor/site/**\n    evidence: 623/635 (lower bound 0.97, lift 3.0)\n    example:  saleor/__main__.py#(file)\n    outlier:  saleor/core/auth_backend.py:1 (file)\n    outlier:  saleor/core/development/random_data.py:1 (file)\n    outlier:  saleor/graphql/account/mutations/account/confirm_account.py:1 (file)\n    outlier:  saleor/graphql/meta/permissions.py:1 (file)\n    outlier:  saleor/graphql/order/mutations/fulfillment_refund_and_return_product_base.py:1 (file)\n    outlier:  saleor/graphql/order/mutations/order_lines_create.py:1 (file)\n    outlier:  saleor/graphql/shop/mutations/gift_card_settings_update.py:1 (file)\n    outlier:  saleor/graphql/shop/mutations/refund_settings_update.py:1 (file)\n    outlier:  saleor/graphql/shop/mutations/return_settings_update.py:1 (file)\n    outlier:  saleor/graphql/shop/mutations/shop_settings_update.py:1 (file)\n    outlier:  saleor/graphql/storefront_traffic.py:1 (file)\n    outlier:  saleor/graphql/translations/mutations/shop_settings_translate.py:1 (file)",
+      "family": "layering"
+    },
+    {
+      "uid": "saleor/D-71795b",
+      "repo": "saleor",
+      "id": "D-71795b",
+      "rank": 6,
+      "summary": "classes in saleor/** (dataloaders files) are named `*Loader`",
+      "role": {
+        "package": "",
+        "dir": "saleor",
+        "file": "dataloaders",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Loader"
+      },
+      "evidence": {
+        "holders": 131,
+        "total": 134,
+        "lower_bound": 0.94,
+        "lift": 10.9
+      },
+      "members": 134,
+      "example": "saleor/graphql/account/dataloaders.py#AddressByIdLoader",
+      "outliers": 3,
+      "outlier_files": [
+        "saleor/graphql/account/dataloaders.py",
+        "saleor/graphql/plugins/dataloaders.py",
+        "saleor/graphql/tax/dataloaders.py"
+      ],
+      "block": " 6. [D-71795b] classes in saleor/** (dataloaders files) are named `*Loader`\n    evidence: 131/134 (lower bound 0.94, lift 10.9)\n    example:  saleor/graphql/account/dataloaders.py#AddressByIdLoader\n    outlier:  saleor/graphql/account/dataloaders.py:181 BaseAccessibleChannels\n    outlier:  saleor/graphql/plugins/dataloaders.py:31 PluginManagerByRequestorDataloader\n    outlier:  saleor/graphql/tax/dataloaders.py:37 TaxConfigurationByChannelId",
+      "family": "naming"
+    },
+    {
+      "uid": "saleor/D-d756c3",
+      "repo": "saleor",
+      "id": "D-d756c3",
+      "rank": 7,
+      "summary": "classes in saleor/** (error_codes files) are named `*Code`",
+      "role": {
+        "package": "",
+        "dir": "saleor",
+        "file": "error_codes",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Code"
+      },
+      "evidence": {
+        "holders": 91,
+        "total": 92,
+        "lower_bound": 0.94,
+        "lift": 26
+      },
+      "members": 92,
+      "example": "saleor/account/error_codes.py#AccountErrorCode",
+      "outliers": 1,
+      "outlier_files": [
+        "saleor/graphql/notifications/error_codes.py"
+      ],
+      "block": " 7. [D-d756c3] classes in saleor/** (error_codes files) are named `*Code`\n    evidence: 91/92 (lower bound 0.94, lift 26.0)\n    example:  saleor/account/error_codes.py#AccountErrorCode\n    outlier:  saleor/graphql/notifications/error_codes.py:4 ExternalNotificationErrorCodes",
+      "family": "naming"
+    },
+    {
+      "uid": "saleor/D-1cef87",
+      "repo": "saleor",
+      "id": "D-1cef87",
+      "rank": 8,
+      "summary": "classes in saleor/** (interface files) are decorated with dataclass()",
+      "role": {
+        "package": "",
+        "dir": "saleor",
+        "file": "interface",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:python:dataclasses#dataclass"
+        ]
+      },
+      "evidence": {
+        "holders": 44,
+        "total": 48,
+        "lower_bound": 0.8,
+        "lift": 19.6
+      },
+      "members": 48,
+      "example": "saleor/core/pricing/interface.py#LineInfo",
+      "outliers": 4,
+      "outlier_files": [
+        "saleor/discount/interface.py",
+        "saleor/payment/interface.py"
+      ],
+      "block": " 8. [D-1cef87] classes in saleor/** (interface files) are decorated with dataclass()\n    evidence: 44/48 (lower bound 0.80, lift 19.6)\n    example:  saleor/core/pricing/interface.py#LineInfo\n    outlier:  saleor/discount/interface.py:71 VariantPromotionRuleInfo\n    outlier:  saleor/payment/interface.py:221 PaymentGatewayInitializeTokenizationResult\n    outlier:  saleor/payment/interface.py:263 PaymentMethodTokenizationResult\n    outlier:  saleor/payment/interface.py:346 StorePaymentMethodEnum",
+      "family": "decorator"
+    },
+    {
+      "uid": "saleor/D-5a6c4f",
+      "repo": "saleor",
+      "id": "D-5a6c4f",
+      "rank": 9,
+      "summary": "classes in saleor/graphql/product/dataloaders/** are named `*Loader`",
+      "role": {
+        "package": "",
+        "dir": "saleor/graphql/product/dataloaders",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Loader"
+      },
+      "evidence": {
+        "holders": 40,
+        "total": 42,
+        "lower_bound": 0.84,
+        "lift": 10.7
+      },
+      "members": 42,
+      "example": "saleor/graphql/product/dataloaders/attributes.py#BaseProductAttributesByProductTypeIdLoader",
+      "outliers": 2,
+      "outlier_files": [
+        "saleor/graphql/product/dataloaders/products.py"
+      ],
+      "block": " 9. [D-5a6c4f] classes in saleor/graphql/product/dataloaders/** are named `*Loader`\n    evidence: 40/42 (lower bound 0.84, lift 10.7)\n    example:  saleor/graphql/product/dataloaders/attributes.py#BaseProductAttributesByProductTypeIdLoader\n    outlier:  saleor/graphql/product/dataloaders/products.py:259 AvailableProductVariantsByProductIdAndChannel\n    outlier:  saleor/graphql/product/dataloaders/products.py:212 ProductVariantsByProductIdAndChannel",
+      "family": "naming"
+    },
+    {
+      "uid": "saleor/D-6b1d3c",
+      "repo": "saleor",
+      "id": "D-6b1d3c",
+      "rank": 10,
+      "summary": "classes in saleor/core/editorjs/** (models files) are named `*Model`",
+      "role": {
+        "package": "",
+        "dir": "saleor/core/editorjs",
+        "file": "models",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Model"
+      },
+      "evidence": {
+        "holders": 19,
+        "total": 20,
+        "lower_bound": 0.76,
+        "lift": 109.2
+      },
+      "members": 20,
+      "example": "saleor/core/editorjs/models.py#EditorJSDocumentModel",
+      "outliers": 1,
+      "outlier_files": [
+        "saleor/core/editorjs/models.py"
+      ],
+      "block": "10. [D-6b1d3c] classes in saleor/core/editorjs/** (models files) are named `*Model`\n    evidence: 19/20 (lower bound 0.76, lift 109.2)\n    example:  saleor/core/editorjs/models.py#EditorJSDocumentModel\n    outlier:  saleor/core/editorjs/models.py:62 EditorJSBlock",
+      "family": "naming"
+    },
+    {
+      "uid": "saleor/D-a6847e",
+      "repo": "saleor",
+      "id": "D-a6847e",
+      "rank": 11,
+      "summary": "classes in saleor/graphql/attribute/dataloaders/** are named `*Loader`",
+      "role": {
+        "package": "",
+        "dir": "saleor/graphql/attribute/dataloaders",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Loader"
+      },
+      "evidence": {
+        "holders": 18,
+        "total": 19,
+        "lower_bound": 0.75,
+        "lift": 10.6
+      },
+      "members": 19,
+      "example": "saleor/graphql/attribute/dataloaders/assigned_attributes.py#AttributeByPageIdAndAttributeSlugLoader",
+      "outliers": 1,
+      "outlier_files": [
+        "saleor/graphql/attribute/dataloaders/attributes.py"
+      ],
+      "block": "11. [D-a6847e] classes in saleor/graphql/attribute/dataloaders/** are named `*Loader`\n    evidence: 18/19 (lower bound 0.75, lift 10.6)\n    example:  saleor/graphql/attribute/dataloaders/assigned_attributes.py#AttributeByPageIdAndAttributeSlugLoader\n    outlier:  saleor/graphql/attribute/dataloaders/attributes.py:22 AttributesByAttributeId",
+      "family": "naming"
+    },
+    {
+      "uid": "saleor/D-6acdcd",
+      "repo": "saleor",
+      "id": "D-6acdcd",
+      "rank": 12,
+      "summary": "classes in saleor/graphql/translations/** (types files) pass `description` to GlobalID()",
+      "role": {
+        "package": "",
+        "dir": "saleor/graphql/translations",
+        "file": "types",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:graphene#GlobalID",
+        "index": 99,
+        "key": "description"
+      },
+      "evidence": {
+        "holders": 29,
+        "total": 30,
+        "lower_bound": 0.83,
+        "lift": 30.5
+      },
+      "members": 30,
+      "example": "saleor/graphql/translations/types.py#AttributeTranslatableContent",
+      "outliers": 1,
+      "outlier_files": [
+        "saleor/graphql/translations/types.py"
+      ],
+      "block": "12. [D-6acdcd] classes in saleor/graphql/translations/** (types files) pass `description` to GlobalID()\n    evidence: 29/30 (lower bound 0.83, lift 30.5)\n    example:  saleor/graphql/translations/types.py#AttributeTranslatableContent\n    outlier:  saleor/graphql/translations/types.py:84 BaseTranslationType",
+      "family": "argument_key"
+    },
+    {
+      "uid": "saleor/D-fb56f8",
+      "repo": "saleor",
+      "id": "D-fb56f8",
+      "rank": 13,
+      "summary": "job entry points in saleor/plugins/** (tasks files) pass `compression` to Celery.task()",
+      "role": {
+        "package": "",
+        "dir": "saleor/plugins",
+        "file": "tasks",
+        "entry": "job",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:celery#Celery.task",
+        "index": 99,
+        "key": "compression"
+      },
+      "evidence": {
+        "holders": 20,
+        "total": 21,
+        "lower_bound": 0.77,
+        "lift": 105.1
+      },
+      "members": 21,
+      "example": "saleor/plugins/admin_email/tasks.py#send_email_with_link_to_download_file_task",
+      "outliers": 1,
+      "outlier_files": [
+        "saleor/plugins/avatax/tasks.py"
+      ],
+      "block": "13. [D-fb56f8] job entry points in saleor/plugins/** (tasks files) pass `compression` to Celery.task()\n    evidence: 20/21 (lower bound 0.77, lift 105.1)\n    example:  saleor/plugins/admin_email/tasks.py#send_email_with_link_to_download_file_task\n    outlier:  saleor/plugins/avatax/tasks.py:15 api_post_request_task",
+      "family": "argument_key"
+    },
+    {
+      "uid": "saleor/D-e86c5d",
+      "repo": "saleor",
+      "id": "D-e86c5d",
+      "rank": 14,
+      "summary": "files in saleor/graphql/account/** have a test file",
+      "role": {
+        "package": "",
+        "dir": "saleor/graphql/account",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "has_test"
+      },
+      "evidence": {
+        "holders": 45,
+        "total": 51,
+        "lower_bound": 0.77,
+        "lift": 1.6
+      },
+      "members": 51,
+      "example": "saleor/graphql/account/bulk_mutations/customer_bulk_delete.py#(file)",
+      "outliers": 6,
+      "outlier_files": [
+        "saleor/graphql/account/mixins.py",
+        "saleor/graphql/account/mutations/authentication/create_token.py",
+        "saleor/graphql/account/mutations/authentication/deactivate_all_user_tokens.py",
+        "saleor/graphql/account/mutations/authentication/external_authentication_url.py",
+        "saleor/graphql/account/mutations/authentication/refresh_token.py",
+        "saleor/graphql/account/mutations/authentication/verify_token.py"
+      ],
+      "block": "14. [D-e86c5d] files in saleor/graphql/account/** have a test file\n    evidence: 45/51 (lower bound 0.77, lift 1.6)\n    example:  saleor/graphql/account/bulk_mutations/customer_bulk_delete.py#(file)\n    outlier:  saleor/graphql/account/mixins.py:1 (file)\n    outlier:  saleor/graphql/account/mutations/authentication/create_token.py:1 (file)\n    outlier:  saleor/graphql/account/mutations/authentication/deactivate_all_user_tokens.py:1 (file)\n    outlier:  saleor/graphql/account/mutations/authentication/external_authentication_url.py:1 (file)\n    outlier:  saleor/graphql/account/mutations/authentication/refresh_token.py:1 (file)\n    outlier:  saleor/graphql/account/mutations/authentication/verify_token.py:1 (file)",
+      "family": "repo"
+    },
+    {
+      "uid": "CTFd/D-c4f6cb",
+      "repo": "CTFd",
+      "id": "D-c4f6cb",
+      "rank": 1,
+      "summary": "HTTP handlers in CTFd/api/** are decorated with admins_only()",
+      "role": {
+        "package": "",
+        "dir": "CTFd/api",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "CTFd/utils/decorators/__init__.py#admins_only"
+        ]
+      },
+      "evidence": {
+        "holders": 61,
+        "total": 70,
+        "lower_bound": 0.77,
+        "lift": 3.9
+      },
+      "members": 70,
+      "example": "CTFd/api/v1/audiences.py#Audience.delete",
+      "outliers": 9,
+      "outlier_files": [
+        "CTFd/api/v1/brackets.py",
+        "CTFd/api/v1/hints.py",
+        "CTFd/api/v1/shares.py",
+        "CTFd/api/v1/solutions.py",
+        "CTFd/api/v1/tokens.py",
+        "CTFd/api/v1/unlocks.py"
+      ],
+      "block": " 1. [D-c4f6cb] HTTP handlers in CTFd/api/** are decorated with admins_only()\n    evidence: 61/70 (lower bound 0.77, lift 3.9)\n    example:  CTFd/api/v1/audiences.py#Audience.delete\n    outlier:  CTFd/api/v1/brackets.py:16 BracketList.get\n    outlier:  CTFd/api/v1/hints.py:110 Hint.get\n    outlier:  CTFd/api/v1/shares.py:14 Share.post\n    outlier:  CTFd/api/v1/solutions.py:150 Solution.get\n    outlier:  CTFd/api/v1/tokens.py:139 TokenDetail.delete\n    outlier:  CTFd/api/v1/tokens.py:110 TokenDetail.get\n    outlier:  CTFd/api/v1/tokens.py:49 TokenList.get\n    outlier:  CTFd/api/v1/tokens.py:73 TokenList.post\n    outlier:  CTFd/api/v1/unlocks.py:101 UnlockList.post",
+      "family": "decorator"
+    },
+    {
+      "uid": "CTFd/D-49130f",
+      "repo": "CTFd",
+      "id": "D-49130f",
+      "rank": 2,
+      "summary": "files in the repo do not import from CTFd/cli/**",
+      "role": {
+        "package": "",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:CTFd/cli"
+      },
+      "evidence": {
+        "holders": 228,
+        "total": 229,
+        "lower_bound": 0.98,
+        "lift": 3
+      },
+      "members": 229,
+      "example": ".eslintrc.js#(file)",
+      "outliers": 1,
+      "outlier_files": [
+        "CTFd/utils/initialization/__init__.py"
+      ],
+      "block": " 2. [D-49130f] files in the repo do not import from CTFd/cli/**\n    evidence: 228/229 (lower bound 0.98, lift 3.0)\n    example:  .eslintrc.js#(file)\n    outlier:  CTFd/utils/initialization/__init__.py:1 (file)",
+      "family": "layering"
+    },
+    {
+      "uid": "CTFd/D-bd2596",
+      "repo": "CTFd",
+      "id": "D-bd2596",
+      "rank": 3,
+      "summary": "files in the repo do not import from CTFd/admin/**",
+      "role": {
+        "package": "",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:CTFd/admin"
+      },
+      "evidence": {
+        "holders": 228,
+        "total": 229,
+        "lower_bound": 0.98,
+        "lift": 3
+      },
+      "members": 229,
+      "example": ".eslintrc.js#(file)",
+      "outliers": 1,
+      "outlier_files": [
+        "CTFd/__init__.py"
+      ],
+      "block": " 3. [D-bd2596] files in the repo do not import from CTFd/admin/**\n    evidence: 228/229 (lower bound 0.98, lift 3.0)\n    example:  .eslintrc.js#(file)\n    outlier:  CTFd/__init__.py:1 (file)",
+      "family": "layering"
+    },
+    {
+      "uid": "CTFd/D-ce2984",
+      "repo": "CTFd",
+      "id": "D-ce2984",
+      "rank": 4,
+      "summary": "files in the repo do not import from CTFd/api/**",
+      "role": {
+        "package": "",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:CTFd/api"
+      },
+      "evidence": {
+        "holders": 227,
+        "total": 229,
+        "lower_bound": 0.97,
+        "lift": 3
+      },
+      "members": 229,
+      "example": ".eslintrc.js#(file)",
+      "outliers": 2,
+      "outlier_files": [
+        "CTFd/__init__.py",
+        "CTFd/cache/__init__.py"
+      ],
+      "block": " 4. [D-ce2984] files in the repo do not import from CTFd/api/**\n    evidence: 227/229 (lower bound 0.97, lift 3.0)\n    example:  .eslintrc.js#(file)\n    outlier:  CTFd/__init__.py:1 (file)\n    outlier:  CTFd/cache/__init__.py:1 (file)",
+      "family": "layering"
+    },
+    {
+      "uid": "CTFd/D-bf0172",
+      "repo": "CTFd",
+      "id": "D-bf0172",
+      "rank": 5,
+      "summary": "files in the repo do not import from CTFd/plugins/**",
+      "role": {
+        "package": "",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:CTFd/plugins"
+      },
+      "evidence": {
+        "holders": 221,
+        "total": 229,
+        "lower_bound": 0.93,
+        "lift": 3
+      },
+      "members": 229,
+      "example": ".eslintrc.js#(file)",
+      "outliers": 8,
+      "outlier_files": [
+        "CTFd/__init__.py",
+        "CTFd/admin/challenges.py",
+        "CTFd/api/v1/challenges.py",
+        "CTFd/api/v1/flags.py",
+        "CTFd/constants/plugins.py",
+        "CTFd/models/__init__.py",
+        "CTFd/utils/csv/__init__.py",
+        "CTFd/utils/exports/__init__.py"
+      ],
+      "block": " 5. [D-bf0172] files in the repo do not import from CTFd/plugins/**\n    evidence: 221/229 (lower bound 0.93, lift 3.0)\n    example:  .eslintrc.js#(file)\n    outlier:  CTFd/__init__.py:1 (file)\n    outlier:  CTFd/admin/challenges.py:1 (file)\n    outlier:  CTFd/api/v1/challenges.py:1 (file)\n    outlier:  CTFd/api/v1/flags.py:1 (file)\n    outlier:  CTFd/constants/plugins.py:1 (file)\n    outlier:  CTFd/models/__init__.py:1 (file)\n    outlier:  CTFd/utils/csv/__init__.py:1 (file)\n    outlier:  CTFd/utils/exports/__init__.py:1 (file)",
+      "family": "layering"
+    },
+    {
+      "uid": "flask/D-03e2be",
+      "repo": "flask",
+      "id": "D-03e2be",
+      "rank": 1,
+      "summary": "exported values in src/flask/sansio/** pass `bound` to TypeVar()",
+      "role": {
+        "package": "",
+        "dir": "src/flask/sansio",
+        "file": "*",
+        "entry": "-",
+        "kind": "variable"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:python:typing#TypeVar",
+        "index": 99,
+        "key": "bound"
+      },
+      "evidence": {
+        "holders": 23,
+        "total": 24,
+        "lower_bound": 0.8,
+        "lift": 3.2
+      },
+      "members": 24,
+      "example": "src/flask/sansio/app.py#T_shell_context_processor",
+      "outliers": 1,
+      "outlier_files": [
+        "src/flask/sansio/blueprints.py"
+      ],
+      "block": " 1. [D-03e2be] exported values in src/flask/sansio/** pass `bound` to TypeVar()\n    evidence: 23/24 (lower bound 0.80, lift 3.2)\n    example:  src/flask/sansio/app.py#T_shell_context_processor\n    outlier:  src/flask/sansio/blueprints.py:17 DeferredSetupFunction",
+      "family": "argument_key"
+    },
+    {
+      "uid": "fastapi/D-499c0e",
+      "repo": "fastapi",
+      "id": "D-499c0e",
+      "rank": 1,
+      "summary": "functions in scripts/** declare their return type",
+      "role": {
+        "package": "",
+        "dir": "scripts",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 94,
+        "total": 103,
+        "lower_bound": 0.84,
+        "lift": 3.1
+      },
+      "members": 103,
+      "example": "scripts/add_latest_release_date.py#main",
+      "outliers": 9,
+      "outlier_files": [
+        "scripts/docs.py",
+        "scripts/translation_fixer.py"
+      ],
+      "block": " 1. [D-499c0e] functions in scripts/** declare their return type\n    evidence: 94/103 (lower bound 0.84, lift 3.1)\n    example:  scripts/add_latest_release_date.py#main\n    outlier:  scripts/docs.py:836 add_permalinks_page\n    outlier:  scripts/docs.py:119 complete_existing_lang\n    outlier:  scripts/docs.py:590 langs_json\n    outlier:  scripts/docs.py:132 new_lang\n    outlier:  scripts/docs.py:336 remove_header_permalinks\n    outlier:  scripts/translation_fixer.py:26 callback\n    outlier:  scripts/translation_fixer.py:102 fix_all\n    outlier:  scripts/translation_fixer.py:116 fix_pages\n    outlier:  scripts/translation_fixer.py:56 get_all_paths",
+      "family": "control"
+    },
+    {
+      "uid": "langchain/D-077efe",
+      "repo": "langchain",
+      "id": "D-077efe",
+      "rank": 1,
+      "summary": "files in libs/core/** do not import from libs/text-splitters/**",
+      "role": {
+        "package": "libs/core",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:libs/text-splitters"
+      },
+      "evidence": {
+        "holders": 184,
+        "total": 186,
+        "lower_bound": 0.96,
+        "lift": 3
+      },
+      "members": 186,
+      "example": "libs/core/langchain_core/__init__.py#(file)",
+      "outliers": 2,
+      "outlier_files": [
+        "libs/core/langchain_core/document_loaders/base.py",
+        "libs/core/langchain_core/messages/utils.py"
+      ],
+      "block": " 1. [D-077efe] files in libs/core/** do not import from libs/text-splitters/**\n    evidence: 184/186 (lower bound 0.96, lift 3.0)\n    example:  libs/core/langchain_core/__init__.py#(file)\n    outlier:  libs/core/langchain_core/document_loaders/base.py:1 (file)\n    outlier:  libs/core/langchain_core/messages/utils.py:1 (file)",
+      "family": "layering"
+    }
+  ]
+}

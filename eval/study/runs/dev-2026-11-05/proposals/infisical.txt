@@ -1,0 +1,268 @@
+15 conventions from 26094 units in 1175 roles
+
+ 1. [D-259bd1] backend: HTTP handlers in src/** are wrapped in verifyAuth() or passport.authenticate() or withOAuthTokenErrorAsBadRequest()
+    evidence: 1582/1702 (lower bound 0.92, lift 5.6)
+    split:    verifyAuth 1576, passport.authenticate 3, withOAuthTokenErrorAsBadRequest 3
+    example:  backend/src/ee/routes/scep/pki-scep-router.ts#POST /:profileId/challenge
+    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:246 GET /:identifier/cacerts
+    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:336 GET /applications/:applicationId/profiles/:profileId/cacerts
+    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:170 POST /:identifier/simpleenroll
+    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:208 POST /:identifier/simplereenroll
+    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:284 POST /applications/:applicationId/profiles/:profileId/simpleenroll
+    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:310 POST /applications/:applicationId/profiles/:profileId/simplereenroll
+    outlier:  backend/src/ee/routes/scep/pki-scep-router.ts:33 GET /:profileId/pkiclient.exe
+    outlier:  backend/src/ee/routes/scep/pki-scep-router.ts:208 GET /applications/:applicationId/profiles/:profileId/pkiclient.exe
+    outlier:  backend/src/ee/routes/scep/pki-scep-router.ts:88 POST /:profileId/pkiclient.exe
+    outlier:  backend/src/ee/routes/scep/pki-scep-router.ts:258 POST /applications/:applicationId/profiles/:profileId/pkiclient.exe
+    outlier:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-session-skill-router.ts:50 GET /skills
+    outlier:  backend/src/ee/routes/v1/certificate-authority-crl-router.ts:8 GET /:crlId
+    outlier:  backend/src/ee/routes/v1/certificate-authority-crl-router.ts:32 GET /:crlId/der
+    outlier:  backend/src/ee/routes/v1/certificate-authority-ocsp-router.ts:112 GET /:caId/*
+    outlier:  backend/src/ee/routes/v1/certificate-authority-ocsp-router.ts:94 POST /:caId
+    outlier:  backend/src/ee/routes/v1/honey-token-routers/honey-token-endpoints.ts:152 POST /trigger
+    outlier:  backend/src/ee/routes/v1/kmip-server-router.ts:424 POST /login
+    outlier:  backend/src/ee/routes/v1/ldap-router.ts:115 POST /login
+    outlier:  backend/src/ee/routes/v1/oidc-router.ts:129 GET /callback
+    outlier:  backend/src/ee/routes/v1/oidc-router.ts:76 GET /login
+    outlier:  backend/src/ee/routes/v1/oidc-router.ts:197 GET /login/error
+    outlier:  backend/src/ee/routes/v1/pam-routers/pam-session-router.ts:487 GET /:accountId/web-access
+    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:488 GET /applications/:applicationId/profiles/:profileId/directory
+    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:78 GET /profiles/:profileId/directory
+    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:126 GET /profiles/:profileId/new-nonce
+    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:100 HEAD /profiles/:profileId/new-nonce
+    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:502 POST /applications/:applicationId/profiles/:profileId/new-account
+    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:191 POST /profiles/:profileId/accounts/:accountId
+    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:338 POST /profiles/:profileId/accounts/:accountId/orders
+    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:412 POST /profiles/:profileId/authorizations/:authzId
+    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:446 POST /profiles/:profileId/authorizations/:authzId/challenges/:challengeId
+    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:153 POST /profiles/:profileId/new-account
+    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:228 POST /profiles/:profileId/new-order
+    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:264 POST /profiles/:profileId/orders/:orderId
+    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:374 POST /profiles/:profileId/orders/:orderId/certificate
+    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:300 POST /profiles/:profileId/orders/:orderId/finalize
+    outlier:  backend/src/ee/routes/v1/relay-router.ts:173 POST /heartbeat-instance-relay
+    outlier:  backend/src/ee/routes/v1/relay-router.ts:16 POST /register-instance-relay
+    outlier:  backend/src/ee/routes/v1/removed-product-tombstone-router.ts:18 DELETE ?
+    outlier:  backend/src/ee/routes/v1/removed-product-tombstone-router.ts:18 GET ?
+    outlier:  backend/src/ee/routes/v1/removed-product-tombstone-router.ts:18 PATCH ?
+    outlier:  backend/src/ee/routes/v1/removed-product-tombstone-router.ts:18 POST ?
+    outlier:  backend/src/ee/routes/v1/removed-product-tombstone-router.ts:18 PUT ?
+    outlier:  backend/src/ee/routes/v1/saml-router.ts:332 GET /redirect/saml2/:samlConfigId
+    outlier:  backend/src/ee/routes/v1/saml-router.ts:300 GET /redirect/saml2/organizations/:orgSlug
+    outlier:  backend/src/ee/routes/v1/saml-router.ts:268 GET /redirect/saml2/organizations/domain/:domain
+    outlier:  backend/src/ee/routes/v1/saml-router.ts:364 POST /saml2/:samlConfigId
+    outlier:  backend/src/ee/routes/v2/relay-router.ts:342 POST /login
+    outlier:  backend/src/ee/routes/v3/gateway-router.ts:501 POST /login
+    outlier:  backend/src/ee/routes/v3/gateway-router.ts:829 POST /token-auth/enroll
+    outlier:  backend/src/server/plugins/secret-scanner-v2.ts:87 POST /bitbucket
+    outlier:  backend/src/server/plugins/secret-scanner-v2.ts:61 POST /github
+    outlier:  backend/src/server/plugins/secret-scanner-v2.ts:135 POST /gitlab
+    outlier:  backend/src/server/plugins/secret-scanner.ts:51 POST /
+    outlier:  backend/src/server/plugins/serve-ui.ts:158 GET /*
+    outlier:  backend/src/server/plugins/serve-ui.ts:43 GET /runtime-ui-env.js
+    outlier:  backend/src/server/routes/index.ts:5275 GET /api/status
+    outlier:  backend/src/server/routes/v1/account-recovery-router.ts:78 POST /enable-email-auth
+    outlier:  backend/src/server/routes/v1/account-recovery-router.ts:10 POST /send-email
+    outlier:  backend/src/server/routes/v1/account-recovery-router.ts:46 POST /verify-email
+    outlier:  backend/src/server/routes/v1/admin-router.ts:78 GET /config
+    outlier:  backend/src/server/routes/v1/admin-router.ts:1000 POST /bootstrap
+    outlier:  backend/src/server/routes/v1/admin-router.ts:832 POST /signup
+    outlier:  backend/src/server/routes/v1/announcement-router.ts:90 GET /assets/:filename
+    outlier:  backend/src/server/routes/v1/auth-router.ts:11 POST /logout
+    outlier:  backend/src/server/routes/v1/auth-router.ts:83 POST /token
+    outlier:  backend/src/server/routes/v1/certificate-authority-router.ts:176 GET /:caId/certificates/:caCertId/der
+    outlier:  backend/src/server/routes/v1/certificate-authority-routers/internal-certificate-authority-router.ts:300 GET /:caId/ca-certificates
+    outlier:  backend/src/server/routes/v1/certificate-authority-routers/internal-certificate-authority-router.ts:335 GET /:caId/certificate
+    outlier:  backend/src/server/routes/v1/certificate-authority-routers/internal-certificate-authority-router.ts:373 GET /:caId/certificate/:certId
+    outlier:  backend/src/server/routes/v1/certificate-authority-routers/internal-certificate-authority-router.ts:749 GET /:caId/certificates/:caCertId/der
+    outlier:  backend/src/server/routes/v1/delegated-approval-callback-router.ts:13 POST /callback
+    outlier:  backend/src/server/routes/v1/github-app-router.ts:58 GET /manifest/callback
+    outlier:  backend/src/server/routes/v1/identity-access-token-router.ts:8 POST /token/renew
+    outlier:  backend/src/server/routes/v1/identity-access-token-router.ts:45 POST /token/revoke
+    outlier:  backend/src/server/routes/v1/identity-alicloud-auth-router.ts:20 POST /alicloud-auth/login
+    outlier:  backend/src/server/routes/v1/identity-aws-iam-auth-router.ts:24 POST /aws-auth/login
+    outlier:  backend/src/server/routes/v1/identity-azure-auth-router.ts:19 POST /azure-auth/login
+    outlier:  backend/src/server/routes/v1/identity-gcp-auth-router.ts:19 POST /gcp-auth/login
+    outlier:  backend/src/server/routes/v1/identity-jwt-auth-router.ts:95 POST /jwt-auth/login
+    outlier:  backend/src/server/routes/v1/identity-kubernetes-auth-router.ts:51 POST /kubernetes-auth/login
+    outlier:  backend/src/server/routes/v1/identity-ldap-auth-router.ts:143 POST /ldap-auth/login
+    outlier:  backend/src/server/routes/v1/identity-oci-auth-router.ts:19 POST /oci-auth/login
+    outlier:  backend/src/server/routes/v1/identity-oidc-auth-router.ts:46 POST /oidc-auth/login
+    outlier:  backend/src/server/routes/v1/identity-spiffe-auth-router.ts:107 POST /spiffe-auth/login
+    outlier:  backend/src/server/routes/v1/identity-tls-cert-auth-router.ts:82 POST /login
+    outlier:  backend/src/server/routes/v1/identity-universal-auth-router.ts:32 POST /universal-auth/login
+    outlier:  backend/src/server/routes/v1/invite-org-router.ts:332 POST /verify
+    outlier:  backend/src/server/routes/v1/microsoft-teams-router.ts:376 POST /message-endpoint
+    outlier:  backend/src/server/routes/v1/oauth-router.ts:318 GET /authorize
+    outlier:  backend/src/server/routes/v1/oauth-router.ts:356 GET /authorize/info
+    outlier:  backend/src/server/routes/v1/oauth-router.ts:450 POST /token
+    outlier:  backend/src/server/routes/v1/oidc-issuer-router.ts:44 GET /organizations/:organizationId/.well-known/jwks.json
+    outlier:  backend/src/server/routes/v1/oidc-issuer-router.ts:16 GET /organizations/:organizationId/.well-known/openid-configuration
+    outlier:  backend/src/server/routes/v1/secret-requests-router.ts:16 GET /:id
+    outlier:  backend/src/server/routes/v1/secret-requests-router.ts:84 GET /:id/branding/:assetType
+    outlier:  backend/src/server/routes/v1/secret-requests-router.ts:119 POST /:id/set-value
+    outlier:  backend/src/server/routes/v1/secret-sharing-router.ts:84 GET /:id
+    outlier:  backend/src/server/routes/v1/secret-sharing-router.ts:577 GET /branding
+    outlier:  backend/src/server/routes/v1/secret-sharing-router.ts:446 GET /public/:id/branding/:assetType
+    outlier:  backend/src/server/routes/v1/secret-sharing-router.ts:123 POST /:id/access
+    outlier:  backend/src/server/routes/v1/secret-sharing-router.ts:192 POST /public
+    outlier:  backend/src/server/routes/v1/slack-router.ts:328 GET /oauth_redirect
+    outlier:  backend/src/server/routes/v1/sso-router.ts:663 GET /redirect/organizations/:orgSlug
+    outlier:  backend/src/server/routes/v1/sso-router.ts:816 POST /token-exchange
+    outlier:  backend/src/server/routes/v1/user-router.ts:99 GET /:userId/unlock
+    outlier:  backend/src/server/routes/v2/deprecated-project-router.ts:29 GET /:workspaceId/encrypted-key
+    outlier:  backend/src/server/routes/v2/mfa-router.ts:105 GET /mfa/check/totp
+    outlier:  backend/src/server/routes/v2/mfa-router.ts:202 GET /mfa/check/webauthn
+    outlier:  backend/src/server/routes/v2/mfa-router.ts:85 POST /mfa/send
+    outlier:  backend/src/server/routes/v2/mfa-router.ts:138 POST /mfa/verify
+    outlier:  backend/src/server/routes/v2/mfa-router.ts:169 POST /mfa/verify/recovery-code
+    outlier:  backend/src/server/routes/v2/password-router.ts:12 POST /password-reset
+    outlier:  backend/src/server/routes/v2/user-router.ts:20 POST /me/emails/code
+    outlier:  backend/src/server/routes/v3/login-router.ts:221 POST /login
+    outlier:  backend/src/server/routes/v3/login-router.ts:14 POST /login1
+    outlier:  backend/src/server/routes/v3/login-router.ts:136 POST /login2
+    outlier:  backend/src/server/routes/v3/signup-router.ts:110 POST /complete-account
+    outlier:  backend/src/server/routes/v3/signup-router.ts:21 POST /email/signup
+    outlier:  backend/src/server/routes/v3/signup-router.ts:72 POST /email/verify
+
+ 2. [D-1e9bb3] backend: HTTP handlers in src/server/routes/v2/** are wrapped in verifyAuth()
+    evidence: 88/96 (lower bound 0.84, lift 5.5)
+    example:  backend/src/server/routes/v2/certificate-authority-router.ts#GET /
+    outlier:  backend/src/server/routes/v2/deprecated-project-router.ts:29 GET /:workspaceId/encrypted-key
+    outlier:  backend/src/server/routes/v2/mfa-router.ts:105 GET /mfa/check/totp
+    outlier:  backend/src/server/routes/v2/mfa-router.ts:202 GET /mfa/check/webauthn
+    outlier:  backend/src/server/routes/v2/mfa-router.ts:85 POST /mfa/send
+    outlier:  backend/src/server/routes/v2/mfa-router.ts:138 POST /mfa/verify
+    outlier:  backend/src/server/routes/v2/mfa-router.ts:169 POST /mfa/verify/recovery-code
+    outlier:  backend/src/server/routes/v2/password-router.ts:12 POST /password-reset
+    outlier:  backend/src/server/routes/v2/user-router.ts:20 POST /me/emails/code
+
+ 3. [D-7731c9] backend: HTTP handlers in src/server/routes/v3/** are wrapped in verifyAuth()
+    evidence: 44/50 (lower bound 0.76, lift 5.3)
+    example:  backend/src/server/routes/v3/deprecated-certificates-router.ts#PATCH /:certificateId/config
+    outlier:  backend/src/server/routes/v3/login-router.ts:221 POST /login
+    outlier:  backend/src/server/routes/v3/login-router.ts:14 POST /login1
+    outlier:  backend/src/server/routes/v3/login-router.ts:136 POST /login2
+    outlier:  backend/src/server/routes/v3/signup-router.ts:110 POST /complete-account
+    outlier:  backend/src/server/routes/v3/signup-router.ts:21 POST /email/signup
+    outlier:  backend/src/server/routes/v3/signup-router.ts:72 POST /email/verify
+
+ 4. [D-272621] backend: functions in src/server/routes/v1/app-connection-routers/** pass `app` to registerAppConnectionEndpoints()
+    evidence: 92/103 (lower bound 0.82, lift 89.6)
+    example:  backend/src/server/routes/v1/app-connection-routers/1password-connection-router.ts#registerOnePassConnectionRouter
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:49 buildAppConnectionRouteContext
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:319 buildCreateAppConnectionRoute
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:502 buildDeleteAppConnectionRoute
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:254 buildGetAppConnectionByNameRoute
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:201 buildGetAppConnectionRoute
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:86 buildListAppConnectionsRoute
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:137 buildListAvailableAppConnectionsRoute
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:568 buildRotateAppConnectionCredentialsRoute
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:411 buildUpdateAppConnectionRoute
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:628 registerAppConnectionEndpoints
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-router.ts:497 registerAppConnectionRouter
+
+ 5. [D-16b725] backend: HTTP handlers in src/ee/routes/v1/agent-vault-routers/** call actorContext()
+    evidence: 64/72 (lower bound 0.80, lift 114.5)
+    example:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-access-bundle-router.ts#DELETE /:accessBundleId
+    outlier:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-project-router.ts:9 GET /
+    outlier:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-proxy-agent-router.ts:84 POST /bootstrap
+    outlier:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-proxy-agent-router.ts:125 POST /heartbeat
+    outlier:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-proxy-agent-router.ts:140 POST /resolve
+    outlier:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-proxy-agent-router.ts:211 POST /services/:serviceId/credential-refresh
+    outlier:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-proxy-agent-router.ts:246 POST /services/:serviceId/missing-scopes
+    outlier:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-proxy-agent-router.ts:293 POST /sessions/:sessionId/logs/chunks
+    outlier:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-session-skill-router.ts:50 GET /skills
+
+ 6. [D-d9b44e] backend: functions in src/server/routes/v1/secret-sync-routers/** pass `createSchema` to registerSyncSecretsEndpoints()
+    evidence: 50/52 (lower bound 0.87, lift 176.2)
+    example:  backend/src/server/routes/v1/secret-sync-routers/1password-sync-router.ts#registerOnePassSyncRouter
+    outlier:  backend/src/server/routes/v1/secret-sync-routers/secret-sync-endpoints.ts:17 registerSyncSecretsEndpoints
+    outlier:  backend/src/server/routes/v1/secret-sync-routers/secret-sync-router.ts:201 registerSecretSyncRouter
+
+ 7. [D-34f463] backend: components in src/** render <BaseEmailWrapper>
+    evidence: 54/57 (lower bound 0.86, lift 44.2)
+    example:  backend/src/services/smtp/emails/AccessApprovalRequestTemplate.tsx#AccessApprovalRequestTemplate
+    outlier:  backend/src/services/smtp/emails/BaseButton.tsx:9 BaseButton
+    outlier:  backend/src/services/smtp/emails/BaseEmailWrapper.tsx:11 BaseEmailWrapper
+    outlier:  backend/src/services/smtp/emails/BaseLink.tsx:9 BaseLink
+
+ 8. [D-055c32] backend: components in src/** render inside <BaseEmailWrapper>
+    evidence: 53/57 (lower bound 0.83, lift 44.2)
+    example:  backend/src/services/smtp/emails/AccessApprovalRequestTemplate.tsx#AccessApprovalRequestTemplate
+    outlier:  backend/src/services/smtp/emails/BaseButton.tsx:9 BaseButton
+    outlier:  backend/src/services/smtp/emails/BaseEmailWrapper.tsx:11 BaseEmailWrapper
+    outlier:  backend/src/services/smtp/emails/BaseLink.tsx:9 BaseLink
+    outlier:  backend/src/services/smtp/emails/LegacyPkiDeprecationTemplate.tsx:13 LegacyPkiDeprecationTemplate
+
+ 9. [D-1b2542] backend: functions in src/ee/routes/v2/secret-rotation-v2-routers/** pass `createSchema` to registerSecretRotationEndpoints()
+    evidence: 30/32 (lower bound 0.80, lift 297.8)
+    example:  backend/src/ee/routes/v2/secret-rotation-v2-routers/auth0-client-secret-rotation-router.ts#registerAuth0ClientSecretRotationRouter
+    outlier:  backend/src/ee/routes/v2/secret-rotation-v2-routers/secret-rotation-v2-endpoints.ts:21 registerSecretRotationEndpoints
+    outlier:  backend/src/ee/routes/v2/secret-rotation-v2-routers/secret-rotation-v2-router.ts:73 registerSecretRotationV2Router
+
+10. [D-dfa77a] frontend: functions in src/hooks/api/identities/** (mutations files) call identitiesKeys.getIdentityById()
+    evidence: 41/46 (lower bound 0.77, lift 202.3)
+    example:  frontend/src/hooks/api/identities/mutations.tsx#useAddIdentityAliCloudAuth
+    outlier:  frontend/src/hooks/api/identities/mutations.tsx:215 useCreateIdentityUniversalAuthClientSecret
+    outlier:  frontend/src/hooks/api/identities/mutations.tsx:1793 useCreateTokenIdentityTokenAuth
+    outlier:  frontend/src/hooks/api/identities/mutations.tsx:1837 useRevokeIdentityTokenAuthToken
+    outlier:  frontend/src/hooks/api/identities/mutations.tsx:241 useRevokeIdentityUniversalAuthClientSecret
+    outlier:  frontend/src/hooks/api/identities/mutations.tsx:1814 useUpdateIdentityTokenAuthToken
+
+11. [D-97ed1e] frontend: functions in src/** (mutations files) are named `use*`
+    evidence: 480/481 (lower bound 0.99, lift 7.0)
+    example:  frontend/src/hooks/api/agentVault/mutations.tsx#useAddAgentVaultAccessBundleMembers
+    outlier:  frontend/src/hooks/api/secrets/mutations.tsx:518 createSecret
+
+12. [D-156a6f] backend: functions in src/server/routes/** are named `register*`
+    evidence: 327/349 (lower bound 0.91, lift 18.8)
+    example:  backend/src/server/routes/bdd/bdd-nock-router.dev.ts#registerBddNockRouter
+    outlier:  backend/src/server/routes/mfa-step-up-fns.ts:117 ensureFactorEnrollmentStepUpMfa
+    outlier:  backend/src/server/routes/mfa-step-up-fns.ts:37 ensureStepUpMfa
+    outlier:  backend/src/server/routes/mfa-step-up-fns.ts:14 getStepUpSessionId
+    outlier:  backend/src/server/routes/sanitizedSchema/permission.ts:15 unpackPermissions
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:49 buildAppConnectionRouteContext
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:319 buildCreateAppConnectionRoute
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:502 buildDeleteAppConnectionRoute
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:254 buildGetAppConnectionByNameRoute
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:201 buildGetAppConnectionRoute
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:86 buildListAppConnectionsRoute
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:137 buildListAvailableAppConnectionsRoute
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:568 buildRotateAppConnectionCredentialsRoute
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:411 buildUpdateAppConnectionRoute
+    outlier:  backend/src/server/routes/v1/dashboard-secret-search-fns.ts:42 isInSecretSearchScope
+    outlier:  backend/src/server/routes/v1/dashboard-secret-search-fns.ts:40 isSecretPathMatch
+    outlier:  backend/src/server/routes/v1/dashboard-secret-search-fns.ts:10 parseSecretPathSearch
+    outlier:  backend/src/server/routes/v1/dashboard-secret-search-fns.ts:54 resolveSecretDeepSearch
+    outlier:  backend/src/server/routes/v1/hsm-connector-router-schemas.ts:54 UpdateHsmConnectorBodySchema
+    outlier:  backend/src/server/routes/v1/hsm-connector-router-schemas.ts:13 gatewayPickRefiner
+    outlier:  backend/src/server/routes/v1/hsm-connector-router.ts:26 createHsmConnectorRouter
+    outlier:  backend/src/server/routes/v1/sso-router.ts:423 initializeOauthConfigSync
+    outlier:  backend/src/server/routes/v1/sso-router.ts:413 refreshOauthConfig
+
+13. [D-fd3f1a] frontend: components in src/components/secret-rotations-v2/forms/SecretRotationV2ReviewFields/** render <SecretRotationReviewSection>
+    evidence: 27/29 (lower bound 0.78, lift 87.0)
+    example:  frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ReviewFields/Auth0ClientSecretRotationReviewFields.tsx#Auth0ClientSecretRotationReviewFields
+    outlier:  frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ReviewFields/SecretRotationReviewFields.tsx:71 SecretRotationV2ReviewFields
+    outlier:  frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ReviewFields/shared/SecretRotationReviewSection.tsx:10 SecretRotationReviewSection
+
+14. [D-d7b5b7] frontend: components in src/pages/secret-manager/SecretSyncDetailsByIDPage/** render <Detail>
+    evidence: 64/68 (lower bound 0.86, lift 12.3)
+    example:  frontend/src/pages/secret-manager/SecretSyncDetailsByIDPage/components/AzureEntraIdScimSyncSourceSection.tsx#AzureEntraIdScimSyncSourceSection
+    outlier:  frontend/src/pages/secret-manager/SecretSyncDetailsByIDPage/SecretSyncDetailsByIDPage.tsx:148 SecretSyncDetailsByIDPage
+    outlier:  frontend/src/pages/secret-manager/SecretSyncDetailsByIDPage/components/SecretSyncActionTriggers.tsx:53 SecretSyncActionTriggers
+    outlier:  frontend/src/pages/secret-manager/SecretSyncDetailsByIDPage/components/SecretSyncAuditLogsSection.tsx:38 SecretSyncAuditLogsSection
+    outlier:  frontend/src/pages/secret-manager/SecretSyncDetailsByIDPage/components/SecretSyncSourceSection.tsx:59 SecretSyncSourceSection
+
+15. [D-536c03] frontend: components in src/components/secret-syncs/forms/** are named `*Fields`
+    evidence: 128/135 (lower bound 0.90, lift 7.9)
+    example:  frontend/src/components/secret-syncs/forms/AzureEntraIdScimSyncSourceFields.tsx#AzureEntraIdScimSyncSourceFields
+    outlier:  frontend/src/components/secret-syncs/forms/CreateSecretSyncForm.tsx:151 CreateSecretSyncForm
+    outlier:  frontend/src/components/secret-syncs/forms/DuplicateDestinationConfirmationModal.tsx:24 DuplicateDestinationConfirmationModal
+    outlier:  frontend/src/components/secret-syncs/forms/EditSecretSyncForm.tsx:130 EditSecretSyncForm
+    outlier:  frontend/src/components/secret-syncs/forms/SecretSyncConnectionField.tsx:34 SecretSyncConnectionField
+    outlier:  frontend/src/components/secret-syncs/forms/SecretSyncDestinationFields/shared/AwsRegionSelect.tsx:23 AwsRegionSelect
+    outlier:  frontend/src/components/secret-syncs/forms/SecretSyncInitialSyncBehaviorFields.tsx:286 InitialSyncAlerts
+    outlier:  frontend/src/components/secret-syncs/forms/SecretSyncOptionsFields/SecretSyncKeySchemaField.tsx:62 SecretSyncKeySchemaField
+

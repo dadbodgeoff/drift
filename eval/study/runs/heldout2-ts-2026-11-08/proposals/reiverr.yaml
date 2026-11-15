@@ -1,0 +1,110 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - auth
+  - jobs
+  suffixes:
+  - config
+  - controller
+  - dto
+  - e2e-spec
+  - entity
+  - module
+  - openapi
+  - queries
+  - service
+  - spec
+  - store
+  - utils
+conventions:
+- id: D-e1c436
+  status: proposed
+  mode: advise
+  summary: "backend: classes in src/** (*.dto files) are named `*Dto`, except 3 companions (a helper or constant beside the members that follow it)"
+  role:
+    package: backend
+    dir: src
+    file: "*.dto"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Dto"
+  evidence:
+    holders: 65
+    total: 65
+    lower_bound: 0.944
+    lift: 2.782
+    role_members: 68
+  example: backend/src/catalog/catalog.dto.ts#CatalogDownloadDto
+  selector_version: 3
+- id: D-791f60
+  status: proposed
+  mode: advise
+  summary: "backend: HTTP handlers in src/** (*.controller files) are decorated with ApiTags()"
+  role:
+    package: backend
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/swagger#ApiTags
+  evidence:
+    holders: 71
+    total: 72
+    lower_bound: 0.925
+    lift: 4.208
+  example: backend/src/catalog/catalog.controller.ts#GET /catalog/downloads
+  selector_version: 3
+- id: D-581e59
+  status: proposed
+  mode: advise
+  summary: "backend: HTTP handlers in src/** (*.controller files) are decorated with UseGuards()"
+  role:
+    package: backend
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#UseGuards
+  evidence:
+    holders: 70
+    total: 72
+    lower_bound: 0.904
+    lift: 4.208
+  example: backend/src/catalog/catalog.controller.ts#GET /catalog/downloads
+  selector_version: 3
+- id: D-ce6e0a
+  status: proposed
+  mode: advise
+  summary: "backend: HTTP handlers in src/** (*.controller files) are decorated with ApiOkResponse()"
+  role:
+    package: backend
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/swagger#ApiOkResponse
+  evidence:
+    holders: 62
+    total: 72
+    lower_bound: 0.763
+    lift: 4.208
+  example: backend/src/catalog/catalog.controller.ts#GET /catalog/downloads
+  selector_version: 3

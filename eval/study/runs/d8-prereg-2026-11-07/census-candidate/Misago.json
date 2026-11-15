@@ -1,0 +1,656 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "5cfbbb4-d8",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/cache/repos/Misago",
+  "units": 6296,
+  "roles": 297,
+  "conventions": 8,
+  "shown": 8,
+  "tiers": {
+    "default": 0,
+    "suggestion": 8
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    },
+    "candidate": {
+      "decision": "D8",
+      "status": "candidate (pre-registered, not adopted)",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts",
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15,
+      "py": {
+        "min_members": 50,
+        "call_wrappers": "guards"
+      }
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-c9ae1e",
+      "rank": 1,
+      "summary": "classes in misago/permissions/hooks/** extend FilterHook",
+      "role": {
+        "package": "",
+        "dir": "misago/permissions/hooks",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "members": 68
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "misago/plugins/hooks.py#FilterHook"
+        ]
+      },
+      "evidence": {
+        "holders": 67,
+        "total": 68,
+        "lower_bound": 0.921,
+        "lift": 8.241,
+        "python_members": 68
+      },
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "misago/permissions/hooks/build_user_category_permissions.py",
+        "symbol": "BuildUserCategoryPermissionsHook",
+        "line": 90
+      },
+      "outliers": [
+        {
+          "path": "misago/permissions/hooks/get_admin_category_permissions.py",
+          "symbol": "GetAdminCategoryPermissionsHook",
+          "line": 27
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-90a5d9",
+      "rank": 2,
+      "summary": "HTTP handlers in misago/** (urls files) call extensions.get()",
+      "role": {
+        "package": "",
+        "dir": "misago",
+        "file": "urls",
+        "entry": "http",
+        "kind": "variable",
+        "members": 50
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "misago/plugins/extensions.py#extensions.get"
+      },
+      "evidence": {
+        "holders": 49,
+        "total": 50,
+        "lower_bound": 0.895,
+        "lift": 9.6,
+        "python_members": 50
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "misago/likes/urls.py",
+        "symbol": "private_thread_post_like_view",
+        "line": 18
+      },
+      "outliers": [
+        {
+          "path": "misago/core/testproject/urls.py",
+          "symbol": "urlpatterns",
+          "line": 16
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-e72fc8",
+      "rank": 3,
+      "summary": "classes in misago/posting/hooks/** extend FilterHook",
+      "role": {
+        "package": "",
+        "dir": "misago/posting/hooks",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "members": 30
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "misago/plugins/hooks.py#FilterHook"
+        ]
+      },
+      "evidence": {
+        "holders": 29,
+        "total": 30,
+        "lower_bound": 0.833,
+        "lift": 8.085,
+        "python_members": 30
+      },
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "misago/posting/hooks/get_private_thread_edit_formset.py",
+        "symbol": "GetPrivateThreadEditFormsetHook",
+        "line": 73
+      },
+      "outliers": [
+        {
+          "path": "misago/posting/hooks/validate_posting.py",
+          "symbol": "ValidatePostingHook",
+          "line": 33
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-5862f4",
+      "rank": 4,
+      "summary": "frontend: classes in src/components/** extend react.Component",
+      "role": {
+        "package": "frontend",
+        "dir": "src/components",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "members": 159
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:react#default.Component"
+        ]
+      },
+      "evidence": {
+        "holders": 133,
+        "total": 159,
+        "lower_bound": 0.771,
+        "lift": 10.222
+      },
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "frontend/src/components/Api/ApiFetch.jsx",
+        "symbol": "ApiFetch",
+        "line": 3
+      },
+      "outliers": [
+        {
+          "path": "frontend/src/components/edit-details/form.js",
+          "symbol": "default",
+          "line": 8
+        },
+        {
+          "path": "frontend/src/components/modal-message.js",
+          "symbol": "default",
+          "line": 4
+        },
+        {
+          "path": "frontend/src/components/poll/form/index.js",
+          "symbol": "default",
+          "line": 12
+        },
+        {
+          "path": "frontend/src/components/poll/voting/index.js",
+          "symbol": "default",
+          "line": 14
+        },
+        {
+          "path": "frontend/src/components/posting/edit.js",
+          "symbol": "default",
+          "line": 15
+        },
+        {
+          "path": "frontend/src/components/posting/reply.js",
+          "symbol": "default",
+          "line": 15
+        },
+        {
+          "path": "frontend/src/components/posting/start-private.js",
+          "symbol": "default",
+          "line": 15
+        },
+        {
+          "path": "frontend/src/components/posting/start.js",
+          "symbol": "default",
+          "line": 17
+        },
+        {
+          "path": "frontend/src/components/posts-list/post/controls/move.js",
+          "symbol": "default",
+          "line": 10
+        },
+        {
+          "path": "frontend/src/components/posts-list/post/controls/split.js",
+          "symbol": "ModerationForm",
+          "line": 70
+        },
+        {
+          "path": "frontend/src/components/profile/follows.js",
+          "symbol": "default",
+          "line": 4
+        },
+        {
+          "path": "frontend/src/components/profile/moderation/avatar-controls.js",
+          "symbol": "default",
+          "line": 13
+        },
+        {
+          "path": "frontend/src/components/profile/moderation/change-username.js",
+          "symbol": "default",
+          "line": 14
+        },
+        {
+          "path": "frontend/src/components/profile/moderation/delete-account.js",
+          "symbol": "default",
+          "line": 12
+        },
+        {
+          "path": "frontend/src/components/register.js",
+          "symbol": "RegisterForm",
+          "line": 17
+        },
+        {
+          "path": "frontend/src/components/request-activation-link.js",
+          "symbol": "RequestLinkForm",
+          "line": 10
+        },
+        {
+          "path": "frontend/src/components/request-password-reset.js",
+          "symbol": "RequestResetForm",
+          "line": 11
+        },
+        {
+          "path": "frontend/src/components/reset-password-form.js",
+          "symbol": "ResetPasswordForm",
+          "line": 13
+        },
+        {
+          "path": "frontend/src/components/search-route/form.js",
+          "symbol": "default",
+          "line": 18
+        },
+        {
+          "path": "frontend/src/components/sign-in.js",
+          "symbol": "default",
+          "line": 11
+        },
+        {
+          "path": "frontend/src/components/social-auth/register.js",
+          "symbol": "Register",
+          "line": 13
+        },
+        {
+          "path": "frontend/src/components/thread/moderation/posts/move.js",
+          "symbol": "default",
+          "line": 11
+        },
+        {
+          "path": "frontend/src/components/thread/moderation/posts/split.js",
+          "symbol": "ModerationForm",
+          "line": 71
+        },
+        {
+          "path": "frontend/src/components/thread/moderation/thread/ThreadChangeTitleModal.jsx",
+          "symbol": "default",
+          "line": 11
+        },
+        {
+          "path": "frontend/src/components/thread/moderation/thread/merge.js",
+          "symbol": "default",
+          "line": 11
+        },
+        {
+          "path": "frontend/src/components/thread/moderation/thread/move.js",
+          "symbol": "default",
+          "line": 14
+        }
+      ],
+      "outliers_total": 26,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind_d7",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-b4e5ff",
+      "rank": 5,
+      "summary": "classes in misago/** (forms files) are named `*Form`",
+      "role": {
+        "package": "",
+        "dir": "misago",
+        "file": "forms",
+        "entry": "-",
+        "kind": "class",
+        "members": 31
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Form"
+      },
+      "evidence": {
+        "holders": 28,
+        "total": 29,
+        "lower_bound": 0.828,
+        "lift": 16.734,
+        "role_members": 31,
+        "python_members": 31
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "misago/account/forms.py",
+        "symbol": "AccountDeleteForm",
+        "line": 371
+      },
+      "outliers": [
+        {
+          "path": "misago/admin/categories/forms.py",
+          "symbol": "AdminCategoryMultipleChoiceField",
+          "line": 51
+        }
+      ],
+      "outliers_total": 1,
+      "exempt": [
+        {
+          "path": "misago/account/forms.py",
+          "symbol": "AccountNotifications",
+          "line": 68,
+          "code": "shared_part",
+          "reason": "shared part used by 2 members"
+        },
+        {
+          "path": "misago/admin/categories/forms.py",
+          "symbol": "AdminCategoryChoiceField",
+          "line": 47,
+          "code": "shared_part",
+          "reason": "shared part used by 2 members"
+        }
+      ],
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-d8703c",
+      "rank": 6,
+      "summary": "classes in misago/permissions/** call super().__call__()",
+      "role": {
+        "package": "",
+        "dir": "misago/permissions",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "members": 74
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "global#super().__call__"
+      },
+      "evidence": {
+        "holders": 68,
+        "total": 74,
+        "lower_bound": 0.834,
+        "lift": 7.612,
+        "python_members": 74
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "misago/permissions/hooks/build_user_category_permissions.py",
+        "symbol": "BuildUserCategoryPermissionsHook",
+        "line": 90
+      },
+      "outliers": [
+        {
+          "path": "misago/permissions/checkutils.py",
+          "symbol": "PermissionCheckResult",
+          "line": 7
+        },
+        {
+          "path": "misago/permissions/panels.py",
+          "symbol": "MisagoUserPermissionsPanel",
+          "line": 5
+        },
+        {
+          "path": "misago/permissions/proxy.py",
+          "symbol": "UserPermissionsProxy",
+          "line": 16
+        },
+        {
+          "path": "misago/permissions/threads/querysets.py",
+          "symbol": "CategoryQueries",
+          "line": 30
+        },
+        {
+          "path": "misago/permissions/threads/querysets.py",
+          "symbol": "CategoryThreadsQuerysetFilter",
+          "line": 119
+        },
+        {
+          "path": "misago/permissions/threads/querysets.py",
+          "symbol": "ThreadsQuerysetFilter",
+          "line": 59
+        }
+      ],
+      "outliers_total": 6,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-d01155",
+      "rank": 7,
+      "summary": "classes in misago/permissions/** call super()",
+      "role": {
+        "package": "",
+        "dir": "misago/permissions",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "members": 74
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "global#super"
+      },
+      "evidence": {
+        "holders": 69,
+        "total": 74,
+        "lower_bound": 0.851,
+        "lift": 4.319,
+        "python_members": 74
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "misago/permissions/hooks/build_user_category_permissions.py",
+        "symbol": "BuildUserCategoryPermissionsHook",
+        "line": 90
+      },
+      "outliers": [
+        {
+          "path": "misago/permissions/checkutils.py",
+          "symbol": "PermissionCheckResult",
+          "line": 7
+        },
+        {
+          "path": "misago/permissions/panels.py",
+          "symbol": "MisagoUserPermissionsPanel",
+          "line": 5
+        },
+        {
+          "path": "misago/permissions/proxy.py",
+          "symbol": "UserPermissionsProxy",
+          "line": 16
+        },
+        {
+          "path": "misago/permissions/threads/querysets.py",
+          "symbol": "CategoryQueries",
+          "line": 30
+        },
+        {
+          "path": "misago/permissions/threads/querysets.py",
+          "symbol": "ThreadsQuerysetFilter",
+          "line": 59
+        }
+      ],
+      "outliers_total": 5,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-d93d41",
+      "rank": 8,
+      "summary": "functions in misago/posting/** declare their return type",
+      "role": {
+        "package": "",
+        "dir": "misago/posting",
+        "file": "*",
+        "entry": "-",
+        "kind": "function",
+        "members": 31
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 28,
+        "total": 31,
+        "lower_bound": 0.751,
+        "lift": 3.156,
+        "python_members": 31
+      },
+      "rule_kind": "control",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "misago/posting/approval.py",
+        "symbol": "require_private_thread_approval",
+        "line": 36
+      },
+      "outliers": [
+        {
+          "path": "misago/posting/processcontent.py",
+          "symbol": "highlight_post_code_blocks",
+          "line": 37
+        },
+        {
+          "path": "misago/posting/processcontent.py",
+          "symbol": "process_post_content",
+          "line": 24
+        },
+        {
+          "path": "misago/posting/shortcuts.py",
+          "symbol": "save_edited_post",
+          "line": 6
+        }
+      ],
+      "outliers_total": 3,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    }
+  ],
+  "largest_role": null
+}

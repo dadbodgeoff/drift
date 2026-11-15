@@ -1,0 +1,1 @@
+export const Logo = () => null;

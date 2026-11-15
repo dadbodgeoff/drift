@@ -1,0 +1,658 @@
+---
+source: crates/drift-py/tests/conformance.rs
+expression: "serde_json::to_string_pretty(&r).unwrap()"
+---
+{
+  "schema_version": 11,
+  "files": [
+    {
+      "path": "scripts/tool.py",
+      "hash": "d443984b76a709271532d82097bf61a6ba6d1bf9f5eb627f433b0375940716eb",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:python:os.path",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:requests",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/mylib/__init__.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/mylib/__init__.py",
+          "names": [
+            "Engine",
+            "run_engine"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/mylib/contrib/extra.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/mylib/plugins/__init__.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/mylib/utils/text.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "unresolved:mylib.missing",
+          "names": [
+            "nothing"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "main",
+          "origin": "scripts/tool.py#main",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "main",
+          "kind": "function",
+          "exported_as": [
+            "main"
+          ],
+          "line": 10,
+          "wraps": [],
+          "calls": [
+            "pkg:python:os#path.join",
+            "pkg:requests#get",
+            "src/mylib/contrib/extra.py#make",
+            "src/mylib/core.py#Engine",
+            "src/mylib/core.py#run",
+            "src/mylib/plugins/__init__.py#Plugin",
+            "src/mylib/utils/text.py#slugify"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "arg_value:src/mylib/contrib/extra.py#make",
+            "arg_value:src/mylib/core.py#Engine\t#0\tgives src/mylib/plugins/__init__.py#Plugin",
+            "arg_value:src/mylib/core.py#run\t#0\tgives src/mylib/plugins/__init__.py#Plugin",
+            "arg_value:src/mylib/core.py#run\t#0\tliteral",
+            "arg_value:src/mylib/plugins/__init__.py#Plugin",
+            "arg_value:src/mylib/utils/text.py#slugify\t#0\tcall pkg:python:os#path",
+            "drops_result_of:pkg:requests#get",
+            "typed_return"
+          ],
+          "string_literals": 3,
+          "order": [
+            "src/mylib/utils/text.py#slugify",
+            "pkg:python:os#path.join",
+            "src/mylib/core.py#run",
+            "src/mylib/core.py#Engine",
+            "src/mylib/plugins/__init__.py#Plugin",
+            "src/mylib/contrib/extra.py#make",
+            "pkg:requests#get",
+            "src/mylib/core.py#run"
+          ]
+        }
+      ],
+      "entry_points": [],
+      "outgoing": [
+        {
+          "line": 14,
+          "within": "main",
+          "url": "https://example.com/api"
+        }
+      ]
+    },
+    {
+      "path": "src/mylib/__init__.py",
+      "hash": "2e0dc7e949275f1ba6850f2b14407b358f24508dc1bc97afbc4ec22544e63b67",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "src/mylib/core.py",
+          "names": [
+            "Engine",
+            "run"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/mylib/plugins/__init__.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/mylib/utils/__init__.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "*",
+          "origin": "src/mylib/utils/__init__.py#*",
+          "kind": "re_export_all"
+        },
+        {
+          "name": "Engine",
+          "origin": "src/mylib/core.py#Engine",
+          "kind": "re_export"
+        },
+        {
+          "name": "VERSION",
+          "origin": "src/mylib/__init__.py#VERSION",
+          "kind": "local"
+        },
+        {
+          "name": "helper",
+          "origin": "src/mylib/utils/text.py#helper",
+          "kind": "re_export"
+        },
+        {
+          "name": "plugins",
+          "origin": "src/mylib/plugins/__init__.py#*",
+          "kind": "re_export"
+        },
+        {
+          "name": "run_engine",
+          "origin": "src/mylib/core.py#run",
+          "kind": "re_export"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "VERSION",
+          "kind": "const",
+          "exported_as": [
+            "VERSION"
+          ],
+          "line": 10,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 1
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "src/mylib/base.py",
+      "hash": "5ea766ab7c0f083c0439f72d036342794aa2f3c64cb827268e710ca2c63ca2b7",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "Base",
+          "origin": "src/mylib/base.py#Base",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "Base",
+          "kind": "class",
+          "exported_as": [
+            "Base"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "start="
+          ],
+          "controls": [],
+          "string_literals": 0,
+          "traits": [
+            "base",
+            "subclassed"
+          ],
+          "members": [
+            {
+              "name": "start"
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "src/mylib/contrib/extra.py",
+      "hash": "a0ccdbcd6979afe5d043bb01a3f80b288803e7b40968591f71fbb2a711853891",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "src/mylib/core.py",
+          "names": [
+            "Engine"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "make",
+          "origin": "src/mylib/contrib/extra.py#make",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "make",
+          "kind": "function",
+          "exported_as": [
+            "make"
+          ],
+          "line": 4,
+          "wraps": [],
+          "calls": [
+            "src/mylib/core.py#Engine"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "arg_value:src/mylib/core.py#Engine\t#0\tliteral",
+            "typed_return"
+          ],
+          "string_literals": 0,
+          "order": [
+            "src/mylib/core.py#Engine"
+          ],
+          "returns_instance": "src/mylib/core.py#Engine",
+          "returns_type": "src/mylib/core.py#Engine",
+          "returns_calls": [
+            "src/mylib/core.py#Engine"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "src/mylib/core.py",
+      "hash": "d26f95518e3719a5cb527433b920909e2eac493f516e71a644f344bd17b8c03d",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:python:typing",
+          "names": [
+            "TYPE_CHECKING"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/mylib/base.py",
+          "names": [
+            "Base"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/mylib/plugins/__init__.py",
+          "names": [
+            "Plugin"
+          ],
+          "type_only": true
+        },
+        {
+          "module": "src/mylib/utils/__init__.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "src/mylib/utils/text.py",
+          "names": [
+            "slugify"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "*",
+          "origin": "src/mylib/utils/__init__.py#*",
+          "kind": "re_export_all"
+        },
+        {
+          "name": "Engine",
+          "origin": "src/mylib/core.py#Engine",
+          "kind": "local"
+        },
+        {
+          "name": "helper",
+          "origin": "src/mylib/utils/text.py#helper",
+          "kind": "re_export_all"
+        },
+        {
+          "name": "run",
+          "origin": "src/mylib/core.py#run",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "Engine",
+          "kind": "class",
+          "exported_as": [
+            "Engine"
+          ],
+          "line": 11,
+          "wraps": [
+            {
+              "wrapper": "src/mylib/base.py#Base",
+              "kind": "extends"
+            }
+          ],
+          "calls": [
+            "src/mylib/utils/text.py#helper",
+            "src/mylib/utils/text.py#slugify"
+          ],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "__init__=",
+            "name="
+          ],
+          "controls": [
+            "arg_value:src/mylib/utils/text.py#helper\t#0\tliteral",
+            "arg_value:src/mylib/utils/text.py#slugify\t#0\tcall src/mylib/utils/text.py#helper",
+            "attr_param:plugin\tplugin\t0"
+          ],
+          "string_literals": 1,
+          "order": [
+            "src/mylib/utils/text.py#slugify",
+            "src/mylib/utils/text.py#helper"
+          ],
+          "members": [
+            {
+              "name": "__init__"
+            },
+            {
+              "name": "name",
+              "calls": [
+                "src/mylib/utils/text.py#helper",
+                "src/mylib/utils/text.py#slugify"
+              ],
+              "order": [
+                "src/mylib/utils/text.py#slugify",
+                "src/mylib/utils/text.py#helper"
+              ],
+              "unread": [
+                "arg_value:src/mylib/utils/text.py#helper\t#0\tliteral",
+                "arg_value:src/mylib/utils/text.py#slugify\t#0\tcall src/mylib/utils/text.py#helper"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "run",
+          "kind": "function",
+          "exported_as": [
+            "run"
+          ],
+          "line": 19,
+          "wraps": [],
+          "calls": [
+            "global#RuntimeError",
+            "src/mylib/core.py#Engine.start"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "arg_value:src/mylib/core.py#Engine.start",
+            "throw",
+            "typed_return"
+          ],
+          "string_literals": 2,
+          "throws": [
+            "global#RuntimeError"
+          ],
+          "order": [
+            "src/mylib/core.py#Engine.start",
+            "global#RuntimeError"
+          ],
+          "conditional_calls": [
+            "not_awaited:src/mylib/core.py#Engine.start"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "src/mylib/plugins/__init__.py",
+      "hash": "e124e86f90249ed8fec5e6b0159cce01fb863f69a4337310c1b458d77663b2aa",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "Plugin",
+          "origin": "src/mylib/plugins/__init__.py#Plugin",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "Plugin",
+          "kind": "class",
+          "exported_as": [
+            "Plugin"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "src/mylib/utils/__init__.py",
+      "hash": "907d7dd7c1202daf583d6b906152c6fcd3f0b822ff9a2b4e6c33c629a8fb494c",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "src/mylib/utils/text.py",
+          "names": [
+            "helper",
+            "slugify"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "helper",
+          "origin": "src/mylib/utils/text.py#helper",
+          "kind": "re_export"
+        }
+      ],
+      "symbols": [],
+      "entry_points": []
+    },
+    {
+      "path": "src/mylib/utils/setup.py",
+      "hash": "f63fd40e62de4698a2eedf5d27ade37ef6e21a31d0f50200226dccdf6f9a6949",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "configure",
+          "origin": "src/mylib/utils/setup.py#configure",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "configure",
+          "kind": "function",
+          "exported_as": [
+            "configure"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "src/mylib/utils/text.py",
+      "hash": "5fb565bd451accdff4b2f401fa64c965a62b64dd1aabb14bdd747c7fe9a32e63",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "helper",
+          "origin": "src/mylib/utils/text.py#helper",
+          "kind": "local"
+        },
+        {
+          "name": "slugify",
+          "origin": "src/mylib/utils/text.py#slugify",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "_private",
+          "kind": "function",
+          "exported_as": [],
+          "line": 9,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "returns_request",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "helper",
+          "kind": "function",
+          "exported_as": [
+            "helper"
+          ],
+          "line": 5,
+          "wraps": [],
+          "calls": [
+            "src/mylib/utils/text.py#_private"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "arg_value:src/mylib/utils/text.py#_private\t#0\tparam s #0",
+            "param_flows",
+            "typed_return"
+          ],
+          "string_literals": 0,
+          "order": [
+            "src/mylib/utils/text.py#_private"
+          ],
+          "returns_calls": [
+            "src/mylib/utils/text.py#_private"
+          ]
+        },
+        {
+          "name": "slugify",
+          "kind": "function",
+          "exported_as": [
+            "slugify"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "returns_request",
+            "returns_unread",
+            "typed_return"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    }
+  ],
+  "skipped": [],
+  "packages": [
+    {
+      "path": "",
+      "name": "mylib",
+      "scripts": [],
+      "dependencies": [],
+      "compiler_flags": [],
+      "manifest": "pyproject.toml"
+    }
+  ]
+}

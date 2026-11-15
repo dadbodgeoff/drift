@@ -1,0 +1,53 @@
+{
+  "repo": "fedify",
+  "files": [
+    {
+      "path": ".agents/skills/add-to-fedify-init/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/add-vocab/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/commit/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/create-example-app-with-integration/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/create-integration-package/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/get-reviews/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/sacho/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/contribute.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/init/src/json/oxlint.json",
+      "kind": "lint"
+    }
+  ]
+}

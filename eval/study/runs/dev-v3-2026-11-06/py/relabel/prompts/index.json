@@ -1,0 +1,235 @@
+[
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "polar",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/label/A/polar.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/0c815cac-70b5-482d-97b5-7ce94f5d981f/out.jsonl",
+    "expected": [
+      "polar/D-f80e7c",
+      "polar/D-27ad3b",
+      "polar/D-e5f85b",
+      "polar/D-2ef961",
+      "polar/D-232dfa",
+      "polar/D-da3cac"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T03:55:57.485Z",
+    "collected": {
+      "at": "2026-11-06T04:06:19.518Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py/relabel/labels/A/polar.jsonl",
+      "records": 6,
+      "sha256": "2db5f112e083effa5c2bc02d7036554b446ba3a4dd605c13e4f3dbbdfc0c6335"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "netbox",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/label/A/netbox.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/8e097526-8544-4769-8234-9d8f31620028/out.jsonl",
+    "expected": [
+      "netbox/D-281ae8",
+      "netbox/D-e2c3e4",
+      "netbox/D-76eb6b",
+      "netbox/D-cc8d72",
+      "netbox/D-4c4e2d",
+      "netbox/D-afb64d",
+      "netbox/D-310ec7"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T03:55:57.486Z",
+    "collected": {
+      "at": "2026-11-06T04:07:03.149Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py/relabel/labels/A/netbox.jsonl",
+      "records": 7,
+      "sha256": "7c57e5dd81e9a2733079effcf0aa5af856c2151619a7102222da4c19dc50d4fb"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "saleor",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/label/A/saleor.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/b79814c3-8885-4ff0-9f21-cee48b73a84a/out.jsonl",
+    "expected": [
+      "saleor/D-71795b",
+      "saleor/D-a6847e",
+      "saleor/D-e86c5d",
+      "saleor/D-0da0cf"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T03:55:57.487Z",
+    "collected": {
+      "at": "2026-11-06T04:06:19.528Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py/relabel/labels/A/saleor.jsonl",
+      "records": 4,
+      "sha256": "710bdd1e7de36e436b19c6ecb07eae7dd10e7d5399fbb7e169ca42d61d18c991"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "CTFd",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/label/A/CTFd.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/f1aaad2a-b08a-4311-b515-5a60bdf3e889/out.jsonl",
+    "expected": [
+      "CTFd/D-560792",
+      "CTFd/D-f6c1fb"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T03:55:57.487Z"
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "fastapi",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/label/A/fastapi.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/edec2371-6095-4c05-a2f6-153c0a37ab17/out.jsonl",
+    "expected": [
+      "fastapi/D-499c0e"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T03:55:57.487Z",
+    "collected": {
+      "at": "2026-11-06T04:06:19.534Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py/relabel/labels/A/fastapi.jsonl",
+      "records": 1,
+      "sha256": "f794639b4a71591fd52ca2d900138528c878ce87490947258020b7fabd52d6db"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "polar",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/label/B/polar.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/bb0b9890-1510-453c-b9c0-6d03aacb4bab/out.jsonl",
+    "expected": [
+      "polar/D-f80e7c",
+      "polar/D-27ad3b",
+      "polar/D-e5f85b",
+      "polar/D-2ef961",
+      "polar/D-232dfa",
+      "polar/D-da3cac"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:07:03.437Z",
+    "collected": {
+      "at": "2026-11-06T04:14:02.593Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py/relabel/labels/B/polar.jsonl",
+      "records": 6,
+      "sha256": "2ed99f3076be4db7340bb97153e07417d1ff6900a551a292360e9ddff03008b8"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "saleor",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/label/B/saleor.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/eda5703a-7b21-4c0e-9dd2-8dc4ddfed82a/out.jsonl",
+    "expected": [
+      "saleor/D-71795b",
+      "saleor/D-a6847e",
+      "saleor/D-e86c5d",
+      "saleor/D-0da0cf"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:07:03.444Z",
+    "collected": {
+      "at": "2026-11-06T04:13:07.602Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py/relabel/labels/B/saleor.jsonl",
+      "records": 4,
+      "sha256": "2b3064af41004bd91c29cce6a64bd29b1b56d05ac9ef68e5e286ad2b3059f7f4"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "fastapi",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/label/B/fastapi.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/f2ef4ae5-9b66-481d-b139-279c393c8d61/out.jsonl",
+    "expected": [
+      "fastapi/D-499c0e"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:07:03.451Z",
+    "collected": {
+      "at": "2026-11-06T04:13:07.605Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py/relabel/labels/B/fastapi.jsonl",
+      "records": 1,
+      "sha256": "43fff1f0dfce245312726daddc80d262c14903189ae2ca811c21584918cef28c"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "netbox",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/label/B/netbox.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/e942f014-a5de-4c2f-a427-bed2980cbc7e/out.jsonl",
+    "expected": [
+      "netbox/D-281ae8",
+      "netbox/D-e2c3e4",
+      "netbox/D-76eb6b",
+      "netbox/D-cc8d72",
+      "netbox/D-4c4e2d",
+      "netbox/D-afb64d",
+      "netbox/D-310ec7"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:07:03.439Z",
+    "collected": {
+      "at": "2026-11-06T04:14:02.598Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py/relabel/labels/B/netbox.jsonl",
+      "records": 7,
+      "sha256": "9f38e1322261e69bf0c34c1dc4f0a8a1fdd89306be9d6047b93a70767edf4095"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "netbox",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/adjudicate/C/netbox.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/10a2d8ec-c239-465a-8715-21e9f244322a/out.jsonl",
+    "expected": [
+      "netbox/D-cc8d72"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:26:04.356Z",
+    "collected": {
+      "at": "2026-11-06T04:30:29.557Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py/relabel/labels/C/netbox.jsonl",
+      "records": 1,
+      "sha256": "d9f76f9d41327ab691fc5e835d5fbe3fbe141126765c0f09500940216a1af220"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "saleor",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/adjudicate/C/saleor.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/ca4e0171-1768-4969-b978-81f21e4705fb/out.jsonl",
+    "expected": [
+      "saleor/D-e86c5d",
+      "saleor/D-0da0cf"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:26:04.357Z",
+    "collected": {
+      "at": "2026-11-06T04:30:29.563Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py/relabel/labels/C/saleor.jsonl",
+      "records": 2,
+      "sha256": "bff00da59c687565b037181bdf1922b74770db30781c62457e7b0141994418b2"
+    }
+  }
+]

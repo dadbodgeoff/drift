@@ -1,0 +1,103 @@
+{
+  "//": "apps11 BLIND half (18 repos), committed only as hashes (lib.mjs poolHash): slug_sha256 = poolHash('slug', owner/repo), name_sha256 = poolHash('name', repo), pin_sha256 = poolHash('pin', owner/repo@sha). Only the apps11 operator reads the repos (scratchpad/apps-blind*). select-holdout.mjs excludes these hashes from every later selection. core_sha256 is sha256 of the blind manifest's repos array as the operator holds it.",
+  "set_id": "apps11-blind-2026-11-09",
+  "role": "apps-blind",
+  "holdout": false,
+  "n": 18,
+  "core_sha256": "576b91cca231c134d29570365065144cedd5a3e42fd4f7e184e8ccd61ee8c3c5",
+  "record_sha256": "422e935c4c4a0f15405ae4d390920e24c14937c04610b8e2320912373a67a262",
+  "secret_sha256": "f4d99128a31653c9d7c5688df8db397bdb39dc3b246d0afb4caeeb5aa7875114",
+  "repos_sha256": [
+    {
+      "slug_sha256": "0f3d76ef86c1b934925fd75cb990e43094593de81f5496d8fb5a001552f56f60",
+      "name_sha256": "ab08f072024f226e9f9bea380c4b74b060dd6da98eda94e183d47dff36331eef",
+      "pin_sha256": "90b77874208b399ae86024e7fcc7b3a1538600da8a327db3446260f2a948acd8"
+    },
+    {
+      "slug_sha256": "1312da699201db3438a6b5c23fdaae4bc00a83fbdfa92f007df3392981a4f4d6",
+      "name_sha256": "c6b847d82d4973004a25a466c44cb50b4ab8f175c718a99388ed5aa85871dffe",
+      "pin_sha256": "ce7f11e0c2cde6cee8e726c8b0508324108e86725f0fa8171d12d315af994440"
+    },
+    {
+      "slug_sha256": "1de019aa66148605ec6364456263b84c67db54f6ea144b84c496d5cce3b487d9",
+      "name_sha256": "0059e091b9dd18fe7c857981b1d60bf1ce4aa88605e7d9fe84be271054dff4c7",
+      "pin_sha256": "8172fe3d321aff2e122e80fc4b24c97f50f6223909b1a0872bbc42c25de6b0a3"
+    },
+    {
+      "slug_sha256": "2f80715470f361f852e47a0e40edf96e5b67d8a3ce3489e70231b8d2ae3f74ea",
+      "name_sha256": "8a08f40cdadc031067a946e95ae4139772c1d3fbb2296c22d4f0939f6260f329",
+      "pin_sha256": "ab0b89850faddd6fb1484f3e6cd21f1ab308c369653fc404bf2166cd61d03777"
+    },
+    {
+      "slug_sha256": "3308c21f065ce803ad360838fe8ae1ec5c586dfdc5bff8992917716e7880f4a9",
+      "name_sha256": "ee1b3382d99938556c678bf2702e7bfd18138eb326c8de4ea2a4b2f4b62cb32c",
+      "pin_sha256": "6307b85b56c3819caaaf881b3a9071de30e68d7c547876e761a0ff5fc025078b"
+    },
+    {
+      "slug_sha256": "34c46f01ca3e0296f30e2282697dc2f5dd9fbd33e7256f1f69916a82c00cf08c",
+      "name_sha256": "2445015ba9243f5fedf11a4dc92af27555017fda04184737b6343059f0aa7d17",
+      "pin_sha256": "8d75d224c1d7af6a1258130661ea71ec400dbfde971e64e84c8d26ed06be63e8"
+    },
+    {
+      "slug_sha256": "3beb536f44a0a80a9c079047b19400bc1595d00b3aeeffaaebd6a4ad19c69809",
+      "name_sha256": "6819d984a0ac1a35444608eaec9da36e498cf9259885b7f9b106154dfb68dfed",
+      "pin_sha256": "a1dcee2efd547b8e2b29bf4ba8fa9b69ae692e4a8606b5bf5439bad5784b7b23"
+    },
+    {
+      "slug_sha256": "3e72a5a435d38428f82f96b95764319a88ed72892fd4786a6de1cc3747c51c18",
+      "name_sha256": "ac98cd33e774fb5cb44c702b3afccd97ce9cc9a7d91f95307fe665051c049d7b",
+      "pin_sha256": "283bea3d27414c5dda5de65260a5577df66604753de7d1e85a4ec05666eeb03f"
+    },
+    {
+      "slug_sha256": "44c69d04e5a8dfea80d8f75bfa04580ab5c762cc10502c232cc288f52f889b2d",
+      "name_sha256": "b55702b491d07cf61e37cd2599c6b6e205af70bd3a74d793746ec3e26086c128",
+      "pin_sha256": "1e901b32c6ab0237ed497511c91d2d216523cf33eae5acac851839a16ba73f25"
+    },
+    {
+      "slug_sha256": "52c3f3a88e6d5ae0f5bc4309de704abea2c1a1b57d80b62a0b87fb474ec6c4c1",
+      "name_sha256": "eb6584a2329e419b485eb26913b524dc32a650246ee5153abf64b8e41964c038",
+      "pin_sha256": "c73e65acc397c0e473cddab835d39572423b6ccf3629f8179909acc9e0fc2842"
+    },
+    {
+      "slug_sha256": "5baec39eb9e85a0754d1ae75b564fb8e0da252d4defb6dd52ef334d317b275e4",
+      "name_sha256": "de8465b54ccfc71b5f3f9bc7875f9cc8a73695828d4daf923aefb1abeed628ee",
+      "pin_sha256": "c5e6dced1e3d83f166f0d1f108fa283f4a1e13421bc5e84fa8d8a63676f1e9e6"
+    },
+    {
+      "slug_sha256": "69baa305cfbb75ba2d114cefc937a0b0a0714345c352c101e6f0885902792cf3",
+      "name_sha256": "f8a227f4d8bcce7c147a8079ff91d9585ca803c6def4d9244fc0160655481978",
+      "pin_sha256": "8ef9488c5b94fc30d73c1c309d572dce31343479b87735208fd2f170c411857b"
+    },
+    {
+      "slug_sha256": "b98b0fa564bf35fd3de1bde031449f54dff9e0338f2756e01c59272767840390",
+      "name_sha256": "f67956f9cbe5e251db516661c0e782a6e9338f2876d3764301d0fd0a895ee501",
+      "pin_sha256": "72e16a04877f902550ff8f7e8bd4360d7ab612d6532770ead33fbe5d182a6cf1"
+    },
+    {
+      "slug_sha256": "ba9f1788776bad6697e0b38ba0ef488d429eaa558a406884ae364023f5e9a7b7",
+      "name_sha256": "d18d8818eaa57ceb7f86c4e06231e5f72256ad2323bf6efe0f2d44be7ec191a2",
+      "pin_sha256": "4f0e64fec063f0ef822fa868688fe67d461a8e55db84b256ae728a3911d7dd31"
+    },
+    {
+      "slug_sha256": "be9acfcbafc6cb01415991e01374deafd4150464fc5090f80f0439462cf45933",
+      "name_sha256": "8ed2109b6133a2f0e222cec19621ba042d4e54cac538fa5402b1679f3a724fa8",
+      "pin_sha256": "4a573eb6114630a00b59e8f76d37a45d38fae18472ced21968a5c3f8fa02aefe"
+    },
+    {
+      "slug_sha256": "e3513bd25fafe1945a9c37765132521e048b4ed958b1bd8dc7b12711ac311971",
+      "name_sha256": "71489a31c4760b2d2bd949f70594277f0c4c0d9b4def47791001433b157ab472",
+      "pin_sha256": "8dd744ad51b031213499bfd955ca2d78ad841a89b64416acd9fbfac0ce33353f"
+    },
+    {
+      "slug_sha256": "e82741d5fcb11f48f1ab7a31967f2de8fd0f8b843afa77a658363c2c472a8676",
+      "name_sha256": "37c0c9860e85d744cdad56c8d56dd8bce81ba9a8ded6f6a8fe2e7e9bbb4ad2ef",
+      "pin_sha256": "a22abe0f84a7696d8ab1cf0b6109a226ce03501300f527d9ee3d4cf0f5eef648"
+    },
+    {
+      "slug_sha256": "ed5c2bbb8ad9791dc7a89cd34cf8a5cff50394ec2d6cb4384b67a87e13c893cd",
+      "name_sha256": "f886ec52384dcc29c3cb36f458082c2aea01987bf9761932261f63c201819f68",
+      "pin_sha256": "3aff46e4179070a0b85a7d02c8451e28c4deedbee82d4b3dff2ec133a19e00fd"
+    }
+  ],
+  "frozen_at": "2026-11-09T03:46:35Z"
+}

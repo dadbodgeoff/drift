@@ -1,0 +1,253 @@
+{
+  "labels_sha256": {
+    "A": "5f8a22206ea4432916cc0671886728a1dd64c8a8ee231b76ca783b842888a376",
+    "B": "7dbe5e75db7b6311a7e6de8bfc54ad0962cd30df2fad5a9cf838c9b58e29d853"
+  },
+  "cases": [
+    {
+      "uid": "dcs_liberation/D-0de628",
+      "repo": "dcs_liberation",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "dcs_liberation/D-0de628",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "game/missiongenerator/aircraft/waypoints/antishipingress.py",
+            "game/missiongenerator/aircraft/waypoints/waypointgenerator.py",
+            "game/missiongenerator/aircraft/waypoints/refuel.py",
+            "game/missiongenerator/aircraft/waypoints/cargostop.py",
+            "game/missiongenerator/aircraft/waypoints/pydcswaypointbuilder.py",
+            "mypy.ini",
+            ".github/workflows/lint.yml",
+            ".pre-commit-config.yaml"
+          ],
+          "outliers": [
+            {
+              "symbol": "WaypointGenerator",
+              "verdict": "one_off"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Every builder (antishipingress.py, refuel.py, cargostop.py) subclasses PydcsWaypointBuilder; the only outlier WaypointGenerator is the one aggregator that maps waypoint types to builders in builder_for_waypoint, so nothing is left to count and a new builder not extending the base is worth flagging. Hesitated with TRIVIAL types, since builder_for_waypoint is annotated to return PydcsWaypointBuilder and mypy runs in CI, but only for builders registered in that dict.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "dcs_liberation/D-0de628",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "game/missiongenerator/aircraft/waypoints/antishipingress.py",
+            "game/missiongenerator/aircraft/waypoints/waypointgenerator.py",
+            "game/missiongenerator/aircraft/waypoints/refuel.py",
+            "game/missiongenerator/aircraft/waypoints/target.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "WaypointGenerator",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "WaypointGenerator is an orchestrator that instantiates the builders, not a builder; a new helper/orchestrator class in the directory would be told to extend PydcsWaypointBuilder. Builders (refuel.py, target.py) all extend it.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "vmlx/D-5e79e4",
+      "repo": "vmlx",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "vmlx/D-5e79e4",
+          "rubric": "v3",
+          "label": "TRIVIAL",
+          "trivial_by": "framework",
+          "trivial_evidence": "vmlx_engine/tool_parsers/abstract_tool_parser.py ToolParserManager.get_tool_parser raises KeyError(\"Tool parser '<name>' not found. Available parsers: ...\") for a parser class never registered via register_module, so an undecorated parser is never registered and fails on first use",
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "vmlx_engine/tool_parsers/atem_tool_parser.py",
+            "vmlx_engine/tool_parsers/abstract_tool_parser.py",
+            "vmlx_engine/tool_parsers/granite_tool_parser.py",
+            "vmlx_engine/tool_parsers/hermes_tool_parser.py",
+            "vmlx_engine/tool_parsers/dsml_v41_tool_parser.py",
+            "vmlx_engine/tool_parsers/xml_function_tool_parser.py",
+            "vmlx_engine/tool_parsers/__init__.py",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "ToolParserManager",
+              "verdict": "one_off"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Every parser (AtemToolParser, GraniteToolParser, HermesToolParser, DSMLV41ToolParser) is decorated with @ToolParserManager.register_module; the only exempt class is ToolParserManager, the decorator's definition. With nothing counted, the simplest violation (an undecorated parser) is never registered and get_tool_parser raises KeyError on first use. Hesitated with ACCEPT, since nothing fails at startup and a required registration decorator is a typical ACCEPT.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "vmlx/D-5e79e4",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "vmlx_engine/tool_parsers/atem_tool_parser.py",
+            "vmlx_engine/tool_parsers/abstract_tool_parser.py",
+            "vmlx_engine/tool_parsers/hermes_tool_parser.py",
+            "vmlx_engine/tool_parsers/granite_tool_parser.py",
+            "vmlx_engine/tool_parsers/dsml_v41_tool_parser.py",
+            "vmlx_engine/tool_parsers/xlam_tool_parser.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "ToolParserManager",
+              "verdict": "one_off"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "Every concrete parser (atem, hermes, granite, xlam, dsml_v41) is registered with @ToolParserManager.register_module; a new parser without it is not in the registry, and no lint, type check or framework catches that. Hesitated with WRONG mixed_group since the abstract ToolParser and a private _LiteralXMLFunctionToolParser subclass are undecorated, but none is listed as an outlier.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "future-agi/D-12246d",
+      "repo": "future-agi",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "future-agi/D-12246d",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "futureagi/accounts/views/keys.py",
+            "futureagi/accounts/views/config.py",
+            "futureagi/accounts/views/organization_selection.py",
+            "futureagi/accounts/views/two_factor_views.py",
+            "futureagi/accounts/views/workspace.py",
+            "futureagi/tfc/utils/api_contracts.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "public_config",
+              "verdict": "look"
+            },
+            {
+              "symbol": "SecretKeyAPIViewSet.get_secret_keys",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "get_current_organization",
+              "verdict": "not_violation"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R6",
+            "R9"
+          ],
+          "reason": "Members use validated_request even on input-free GETs (TwoFactorStatusView.get, workspace.py get with responses only), and api_contracts.py says new endpoints should prefer it over doc-only swagger_auto_schema; get_secret_keys parses raw query params with only swagger_auto_schema (mistake), public_config is doc-only (look), and get_current_organization uses the FBV counterpart validated_api_request (not_violation). Wording does not mention the FBV variant (clear: false); hesitated with WRONG legit_outliers if public_config is read as having nothing to validate.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "future-agi/D-12246d",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "futureagi/accounts/views/keys.py",
+            "futureagi/accounts/views/config.py",
+            "futureagi/accounts/views/organization_selection.py",
+            "futureagi/accounts/views/user.py",
+            "futureagi/accounts/views/appsmith.py",
+            "futureagi/tfc/utils/api_contracts.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "public_config",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "SecretKeyAPIViewSet.get_secret_keys",
+              "verdict": "look"
+            },
+            {
+              "symbol": "get_current_organization",
+              "verdict": "not_violation"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R6"
+          ],
+          "reason": "Members use validated_request (keys.py delete, user.py, appsmith.py). get_current_organization uses validated_api_request, the function-view twin in api_contracts.py (not_violation); public_config is a public no-input endpoint (legit, nothing to validate); only get_secret_keys parses query params unvalidated (look). 1 of 2 counted is a tie, so not ACCEPT; hesitated with ACCEPT.",
+          "defects": [
+            "futureagi/accounts/views/keys.py:118 get_secret_keys parses query params by hand with no query serializer"
+          ],
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    }
+  ]
+}

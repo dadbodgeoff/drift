@@ -1,0 +1,75 @@
+8 conventions from 6452 units in 380 roles (1 default tier, 7 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-fc5ef7] packages/codemod: functions in src/codemods/** are wrapped in createTransformer()
+    evidence: 109/109 (lower bound 0.97, lift 18.8)
+    tier:     default
+    example:  packages/codemod/src/codemods/v4/remove-ai-stream-methods-from-stream-text-result.ts#default
+    exempt:   packages/codemod/src/codemods/lib/add-await-fn.ts:3 addAwaitFn (a factory: returns a function wrapped in createTransformer())
+    exempt:   packages/codemod/src/codemods/lib/add-comment.ts:26 insertCommentOnce (shared part used by 3 members)
+    exempt:   packages/codemod/src/codemods/lib/create-transformer.ts:32 createTransformer (shared part used by 112 members)
+    exempt:   packages/codemod/src/codemods/lib/remove-await-fn.ts:3 removeAwaitFn (a factory: returns a function wrapped in createTransformer())
+    exempt:   packages/codemod/src/codemods/lib/remove-facade.ts:9 removeFacade (a factory: returns a function wrapped in createTransformer())
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 2. [D-cdee41] packages/harness: exported values in src/v1/** are named `*Schema`
+    evidence: 45/49 (lower bound 0.81, lift 5.0)
+    tier:     suggestion (rule kind named)
+    example:  packages/harness/src/v1/harness-v1-bridge-protocol.ts#harnessV1BridgeAbortInboundSchema
+    outlier:  packages/harness/src/v1/harness-v1-bridge-protocol.ts:351 harnessV1BridgeInboundCommandSchemas
+    outlier:  packages/harness/src/v1/harness-v1-builtin-tool.ts:14 HARNESS_V1_BUILTIN_TOOLS
+    outlier:  packages/harness/src/v1/harness-v1-builtin-tool.ts:59 HARNESS_V1_BUILTIN_TOOL_NAMES
+    outlier:  packages/harness/src/v1/harness-v1-questions-tool.ts:63 harnessV1QuestionsTool
+
+ 3. [D-5590d9] packages/harness: exported values in src/v1/** are named `harness*`
+    evidence: 45/49 (lower bound 0.81, lift 15.6)
+    tier:     suggestion (rule kind named)
+    example:  packages/harness/src/v1/harness-v1-bridge-protocol.ts#harnessV1BridgeAbortInboundSchema
+    outlier:  packages/harness/src/v1/harness-v1-bridge-protocol.ts:316 experimental_harnessV1BridgeUserMessageInboundSchema
+    outlier:  packages/harness/src/v1/harness-v1-bridge-protocol.ts:148 experimental_harnessV1BridgeUserMessageResponseSchema
+    outlier:  packages/harness/src/v1/harness-v1-builtin-tool.ts:14 HARNESS_V1_BUILTIN_TOOLS
+    outlier:  packages/harness/src/v1/harness-v1-builtin-tool.ts:59 HARNESS_V1_BUILTIN_TOOL_NAMES
+
+ 4. [D-5baed4] packages/harness-acp/src/v1/bridge: files in ./** have a test file
+    evidence: 27/29 (lower bound 0.78, lift 3.0)
+    tier:     suggestion (rule kind has_test)
+    example:  packages/harness-acp/src/v1/bridge/acp-diagnostics.ts#(file)
+    outlier:  packages/harness-acp/src/v1/bridge/index.ts:1 (file)
+    outlier:  packages/harness-acp/src/v1/bridge/permission-locations.ts:1 (file)
+
+ 5. [D-80697a] packages/harness-opencode/src/bridge: files in ./** have a test file
+    evidence: 18/19 (lower bound 0.75, lift 3.0)
+    tier:     suggestion (rule kind has_test)
+    example:  packages/harness-opencode/src/bridge/create-emit-stream-event.ts#(file)
+    outlier:  packages/harness-opencode/src/bridge/opencode-types.ts:1 (file)
+
+ 6. [D-8fbbad] workspace packages use the typescript version most workspace packages use
+    evidence: 89/91 (lower bound 0.92, lift 1.0)
+    tier:     suggestion (rule kind dependency_version)
+    split:    6.0.3 89, 5.8.3 2
+    example:  apps/docs/package.json#ai-sdk-docs
+    outlier:  packages/heygen/package.json:1 @ai-sdk/heygen
+    outlier:  packages/topaz/package.json:1 @ai-sdk/topaz
+
+ 7. [D-224b9e] workspace packages use the zod version most workspace packages use
+    evidence: 76/83 (lower bound 0.84, lift 1.0)
+    tier:     suggestion (rule kind dependency_version)
+    split:    3.25.76 76, 4.4.3 4, 4.5.4 1, ^4.1.8 1, ^4.4.3 1
+    example:  packages/ai/package.json#ai
+    outlier:  packages/harness-acp/src/v1/bridge/package.json:1 harness-acp-bridge
+    outlier:  packages/harness-claude-code/src/bridge/package.json:1 harness-claude-code-bridge
+    outlier:  packages/harness-deepagents/src/bridge/package.json:1 harness-deepagents-bridge
+    outlier:  packages/harness-github-copilot/src/bridge/package.json:1 harness-github-copilot-bridge
+    outlier:  packages/harness-grok-build/src/bridge/package.json:1 harness-grok-build-bridge
+    outlier:  packages/workflow/package.json:1 @ai-sdk/workflow
+    outlier:  tools/konsistent-provider/package.json:1 konsistent-provider
+
+ 8. [D-4683f7] packages/openai: functions in src/tool/** call zodSchema() before z.object()
+    evidence: 24/25 (lower bound 0.81, lift 1.0)
+    tier:     suggestion (rule kind before)
+    example:  packages/openai/src/tool/apply-patch.ts#applyPatchArgsSchema
+    outlier:  packages/openai/src/tool/file-search.ts:65 fileSearch
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

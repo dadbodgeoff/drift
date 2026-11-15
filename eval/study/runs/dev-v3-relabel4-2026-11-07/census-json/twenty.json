@@ -1,0 +1,1261 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "cgu47-2c81ba4-1794051240",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel4/restage-2c81ba4/cache/repos/twenty",
+  "units": 55587,
+  "roles": 3599,
+  "conventions": 13,
+  "shown": 13,
+  "tiers": {
+    "default": 0,
+    "suggestion": 13
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-6429a5",
+      "rank": 1,
+      "summary": "packages/twenty-server: graphql entry points in src/engine/metadata-modules/** (*.resolver files) are decorated with MetadataResolver()",
+      "role": {
+        "package": "packages/twenty-server",
+        "dir": "src/engine/metadata-modules",
+        "file": "*.resolver",
+        "entry": "graphql",
+        "kind": "function",
+        "members": 292
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "packages/twenty-server/src/engine/api/graphql/graphql-config/decorators/metadata-resolver.decorator.ts#MetadataResolver"
+        ]
+      },
+      "evidence": {
+        "holders": 286,
+        "total": 292,
+        "lower_bound": 0.956,
+        "lift": 20.899
+      },
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-run.resolver.ts",
+        "symbol": "MUTATION AgentRunResolver.generate",
+        "line": 85
+      },
+      "outliers": [
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts",
+          "symbol": "FIELD AgentMessagePartResolver.createdAt",
+          "line": 15
+        },
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts",
+          "symbol": "FIELD AgentMessagePartResolver.fileMediaType",
+          "line": 36
+        },
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts",
+          "symbol": "FIELD AgentMessagePartResolver.fileUrl",
+          "line": 20
+        },
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message.resolver.ts",
+          "symbol": "FIELD AgentMessageResolver.createdAt",
+          "line": 8
+        },
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message.resolver.ts",
+          "symbol": "FIELD AgentMessageResolver.processedAt",
+          "line": 13
+        },
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/ai/ai-tool-call-answer/resolvers/tool-call-answer.resolver.ts",
+          "symbol": "MUTATION ToolCallAnswerResolver.answerToolCall",
+          "line": 60
+        }
+      ],
+      "outliers_total": 6
+    },
+    {
+      "id": "D-0cd62c",
+      "rank": 2,
+      "summary": "packages/twenty-server: graphql entry points in src/engine/core-modules/application/** (*.resolver files) are decorated with MetadataResolver()",
+      "role": {
+        "package": "packages/twenty-server",
+        "dir": "src/engine/core-modules/application",
+        "file": "*.resolver",
+        "entry": "graphql",
+        "kind": "function",
+        "members": 88
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "packages/twenty-server/src/engine/api/graphql/graphql-config/decorators/metadata-resolver.decorator.ts#MetadataResolver"
+        ]
+      },
+      "evidence": {
+        "holders": 87,
+        "total": 88,
+        "lower_bound": 0.938,
+        "lift": 21.095
+      },
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/twenty-server/src/engine/core-modules/application/application-authorization/application-authorization.resolver.ts",
+        "symbol": "MUTATION ApplicationAuthorizationResolver.revokeApplicationAuthorization",
+        "line": 56
+      },
+      "outliers": [
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/application/application-monitoring/admin-application-monitoring.resolver.ts",
+          "symbol": "QUERY AdminApplicationMonitoringResolver.findAdminApplicationRegistrationMonitoring",
+          "line": 42
+        }
+      ],
+      "outliers_total": 1
+    },
+    {
+      "id": "D-2df337",
+      "rank": 3,
+      "summary": "packages/twenty-server: classes in src/database/commands/** are decorated with RegisteredInstanceCommand()",
+      "role": {
+        "package": "packages/twenty-server",
+        "dir": "src/database/commands",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "members": 289
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "packages/twenty-server/src/engine/core-modules/upgrade/decorators/registered-instance-command.decorator.ts#RegisteredInstanceCommand"
+        ]
+      },
+      "evidence": {
+        "holders": 288,
+        "total": 288,
+        "lower_bound": 0.987,
+        "lift": 15.398,
+        "role_members": 289
+      },
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/twenty-server/src/database/commands/upgrade-version-command/1-21/1-21-instance-command-fast-1775129420309-add-view-field-group-id-index-on-view-field.ts",
+        "symbol": "AddViewFieldGroupIdIndexOnViewFieldFastInstanceCommand",
+        "line": 7
+      },
+      "outliers": [],
+      "outliers_total": 0,
+      "exempt": [
+        {
+          "path": "packages/twenty-server/src/database/commands/questions/confirmation.question.ts",
+          "symbol": "ConfirmationQuestion",
+          "line": 6,
+          "code": "another_kind",
+          "reason": "another kind of class (decorated with QuestionSet())"
+        }
+      ]
+    },
+    {
+      "id": "D-70d216",
+      "rank": 4,
+      "summary": "packages/twenty-server: graphql entry points in src/** (*.resolver files) are decorated with UseFilters()",
+      "role": {
+        "package": "packages/twenty-server",
+        "dir": "src",
+        "file": "*.resolver",
+        "entry": "graphql",
+        "kind": "function",
+        "members": 712
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:@nestjs/common#UseFilters"
+        ]
+      },
+      "evidence": {
+        "holders": 686,
+        "total": 712,
+        "lower_bound": 0.947,
+        "lift": 14.386
+      },
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-ai-provider.resolver.ts",
+        "symbol": "MUTATION AdminPanelAiProviderResolver.addAiProvider",
+        "line": 64
+      },
+      "outliers": [
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts",
+          "symbol": "FIELD AdminPanelApplicationRegistrationResolver.author",
+          "line": 67
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts",
+          "symbol": "FIELD AdminPanelApplicationRegistrationResolver.configurationIssues",
+          "line": 37
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts",
+          "symbol": "FIELD AdminPanelApplicationRegistrationResolver.galleryImagesUrls",
+          "line": 81
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts",
+          "symbol": "FIELD AdminPanelApplicationRegistrationResolver.installCount",
+          "line": 50
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts",
+          "symbol": "FIELD AdminPanelApplicationRegistrationResolver.isConfigured",
+          "line": 17
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts",
+          "symbol": "FIELD AdminPanelApplicationRegistrationResolver.logoUrl",
+          "line": 72
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/application/application-registration/application-registration-summary.resolver.ts",
+          "symbol": "FIELD ApplicationRegistrationSummaryResolver.logoUrl",
+          "line": 14
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/geo-map/resolver/geo-map.resolver.ts",
+          "symbol": "QUERY GeoMapResolver.getAddressDetails",
+          "line": 45
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/geo-map/resolver/geo-map.resolver.ts",
+          "symbol": "QUERY GeoMapResolver.getAutoCompleteAddress",
+          "line": 30
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/tool-provider/resolvers/tool-index.resolver.ts",
+          "symbol": "QUERY ToolIndexResolver.getToolIndex",
+          "line": 70
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/tool-provider/resolvers/tool-index.resolver.ts",
+          "symbol": "QUERY ToolIndexResolver.getToolInputSchema",
+          "line": 89
+        },
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts",
+          "symbol": "FIELD AgentMessagePartResolver.createdAt",
+          "line": 15
+        },
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts",
+          "symbol": "FIELD AgentMessagePartResolver.fileMediaType",
+          "line": 36
+        },
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts",
+          "symbol": "FIELD AgentMessagePartResolver.fileUrl",
+          "line": 20
+        },
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message.resolver.ts",
+          "symbol": "FIELD AgentMessageResolver.createdAt",
+          "line": 8
+        },
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message.resolver.ts",
+          "symbol": "FIELD AgentMessageResolver.processedAt",
+          "line": 13
+        },
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/resolvers/agent-chat-subscription.resolver.ts",
+          "symbol": "SUBSCRIPTION AgentChatSubscriptionResolver.onAgentChatEvent",
+          "line": 67
+        },
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/ai/ai-workspace-stats/resolvers/ai-workspace-stats.resolver.ts",
+          "symbol": "QUERY AiWorkspaceStatsResolver.findWorkspaceAiStats",
+          "line": 36
+        },
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/metadata-translation/metadata-translation.resolver.ts",
+          "symbol": "QUERY MetadataTranslationResolver.metadataTranslations",
+          "line": 36
+        },
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/minimal-metadata/minimal-metadata.resolver.ts",
+          "symbol": "QUERY MinimalMetadataResolver.minimalMetadata",
+          "line": 36
+        },
+        {
+          "path": "packages/twenty-server/src/engine/permissions/record-permissions/record-permissions.resolver.ts",
+          "symbol": "QUERY RecordPermissionsResolver.recordPermissions",
+          "line": 48
+        },
+        {
+          "path": "packages/twenty-server/src/engine/permissions/record-share/resolvers/record-sharing.resolver.ts",
+          "symbol": "MUTATION RecordSharingResolver.removeRecordShare",
+          "line": 81
+        },
+        {
+          "path": "packages/twenty-server/src/engine/permissions/record-share/resolvers/record-sharing.resolver.ts",
+          "symbol": "MUTATION RecordSharingResolver.setRecordPrivate",
+          "line": 50
+        },
+        {
+          "path": "packages/twenty-server/src/engine/permissions/record-share/resolvers/record-sharing.resolver.ts",
+          "symbol": "MUTATION RecordSharingResolver.setRecordShare",
+          "line": 64
+        },
+        {
+          "path": "packages/twenty-server/src/engine/permissions/record-share/resolvers/record-sharing.resolver.ts",
+          "symbol": "QUERY RecordSharingResolver.recordSharing",
+          "line": 42
+        },
+        {
+          "path": "packages/twenty-server/src/modules/call-recording/resolvers/call-recording.resolver.ts",
+          "symbol": "QUERY CallRecordingResolver.callRecordingIdForCalendarEvent",
+          "line": 31
+        }
+      ],
+      "outliers_total": 26
+    },
+    {
+      "id": "D-2456fc",
+      "rank": 5,
+      "summary": "packages/twenty-server: classes in src/database/** (*.command files) extend ProvisionedWorkspaceCommandRunner",
+      "role": {
+        "package": "packages/twenty-server",
+        "dir": "src/database",
+        "file": "*.command",
+        "entry": "-",
+        "kind": "class",
+        "members": 305
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "packages/twenty-server/src/database/commands/command-runners/provisioned-workspace.command-runner.ts#ProvisionedWorkspaceCommandRunner"
+        ]
+      },
+      "evidence": {
+        "holders": 295,
+        "total": 305,
+        "lower_bound": 0.941,
+        "lift": 14.395
+      },
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/twenty-server/src/database/commands/install-pre-installed-apps.command.ts",
+        "symbol": "InstallPreInstalledAppsCommand",
+        "line": 15
+      },
+      "outliers": [
+        {
+          "path": "packages/twenty-server/src/database/commands/cron-register-all.command.ts",
+          "symbol": "CronRegisterAllCommand",
+          "line": 47
+        },
+        {
+          "path": "packages/twenty-server/src/database/commands/data-seed-dev-workspace.command.ts",
+          "symbol": "DataSeedWorkspaceCommand",
+          "line": 21
+        },
+        {
+          "path": "packages/twenty-server/src/database/commands/generate-instance-command.command.ts",
+          "symbol": "GenerateInstanceCommandCommand",
+          "line": 32
+        },
+        {
+          "path": "packages/twenty-server/src/database/commands/list-and-delete-orphaned-workspace-entities.command.ts",
+          "symbol": "ListOrphanedWorkspaceEntitiesCommand",
+          "line": 117
+        },
+        {
+          "path": "packages/twenty-server/src/database/commands/rebuild-application-default-deps.command.ts",
+          "symbol": "RebuildApplicationDefaultDepsCommand",
+          "line": 20
+        },
+        {
+          "path": "packages/twenty-server/src/database/commands/run-instance-commands.command.ts",
+          "symbol": "RunInstanceCommandsCommand",
+          "line": 27
+        },
+        {
+          "path": "packages/twenty-server/src/database/commands/secret-encryption-rotation/rotate-secret-encryption.command.ts",
+          "symbol": "RotateSecretEncryptionCommand",
+          "line": 20
+        },
+        {
+          "path": "packages/twenty-server/src/database/commands/update-feature-flag.command.ts",
+          "symbol": "UpdateFeatureFlagCommand",
+          "line": 28
+        },
+        {
+          "path": "packages/twenty-server/src/database/commands/upgrade-version-command/upgrade.command.ts",
+          "symbol": "UpgradeCommand",
+          "line": 31
+        },
+        {
+          "path": "packages/twenty-server/src/database/commands/workspace-export/workspace-export.command.ts",
+          "symbol": "WorkspaceExportCommand",
+          "line": 17
+        }
+      ],
+      "outliers_total": 10
+    },
+    {
+      "id": "D-3c8584",
+      "rank": 6,
+      "summary": "packages/twenty-server: classes in src/engine/workspace-manager/workspace-migration/workspace-migration-runner/** (*.service files) extend WorkspaceMigrationRunnerActionHandler()",
+      "role": {
+        "package": "packages/twenty-server",
+        "dir": "src/engine/workspace-manager/workspace-migration/workspace-migration-runner",
+        "file": "*.service",
+        "entry": "-",
+        "kind": "class",
+        "members": 136
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/interfaces/workspace-migration-runner-action-handler-service.interface.ts#WorkspaceMigrationRunnerActionHandler()"
+        ]
+      },
+      "evidence": {
+        "holders": 126,
+        "total": 136,
+        "lower_bound": 0.87,
+        "lift": 32.721
+      },
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/action-handlers/agent-chat-channel-role/services/create-agent-chat-channel-role-action-handler.service.ts",
+        "symbol": "CreateAgentChatChannelRoleActionHandlerService",
+        "line": 19
+      },
+      "outliers": [
+        {
+          "path": "packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/deferred-action-handlers/services/build-index-deferred-action-handler.service.ts",
+          "symbol": "BuildIndexDeferredActionHandlerService",
+          "line": 17
+        },
+        {
+          "path": "packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/deferred-action-handlers/services/delete-logic-function-resources-deferred-action-handler.service.ts",
+          "symbol": "DeleteLogicFunctionResourcesDeferredActionHandlerService",
+          "line": 24
+        },
+        {
+          "path": "packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/deferred-action-handlers/services/validate-foreign-key-deferred-action-handler.service.ts",
+          "symbol": "ValidateForeignKeyDeferredActionHandlerService",
+          "line": 17
+        },
+        {
+          "path": "packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/registry/deferred-workspace-migration-action-handler-registry.service.ts",
+          "symbol": "DeferredWorkspaceMigrationActionHandlerRegistryService",
+          "line": 16
+        },
+        {
+          "path": "packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/registry/workspace-migration-runner-action-handler-registry.service.ts",
+          "symbol": "WorkspaceMigrationRunnerActionHandlerRegistryService",
+          "line": 20
+        },
+        {
+          "path": "packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/services/deferred-workspace-migration-action-gauge.service.ts",
+          "symbol": "DeferredWorkspaceMigrationActionGaugeService",
+          "line": 17
+        },
+        {
+          "path": "packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/services/deferred-workspace-migration-action-recovery.service.ts",
+          "symbol": "DeferredWorkspaceMigrationActionRecoveryService",
+          "line": 15
+        },
+        {
+          "path": "packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/services/deferred-workspace-migration-action-runner.service.ts",
+          "symbol": "DeferredWorkspaceMigrationActionRunnerService",
+          "line": 37
+        },
+        {
+          "path": "packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/services/in-flight-deferred-workspace-migration-actions.service.ts",
+          "symbol": "InFlightDeferredWorkspaceMigrationActionsService",
+          "line": 15
+        },
+        {
+          "path": "packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/services/workspace-migration-runner.service.ts",
+          "symbol": "WorkspaceMigrationRunnerService",
+          "line": 41
+        }
+      ],
+      "outliers_total": 10
+    },
+    {
+      "id": "D-c39eb9",
+      "rank": 7,
+      "summary": "packages/twenty-server: classes in src/** (*.exception files) extend CustomException",
+      "role": {
+        "package": "packages/twenty-server",
+        "dir": "src",
+        "file": "*.exception",
+        "entry": "-",
+        "kind": "class",
+        "members": 136
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "packages/twenty-server/src/utils/custom-exception.ts#CustomException"
+        ]
+      },
+      "evidence": {
+        "holders": 126,
+        "total": 136,
+        "lower_bound": 0.87,
+        "lift": 31.96
+      },
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/twenty-server/src/database/clickhouse/clickhouse.exception.ts",
+        "symbol": "ClickHouseException",
+        "line": 9
+      },
+      "outliers": [
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/usage-limit/exceptions/usage-limit-http.exception.ts",
+          "symbol": "UsageLimitHttpException",
+          "line": 6
+        },
+        {
+          "path": "packages/twenty-server/src/engine/guards/exceptions/auth-principal-refused.exception.ts",
+          "symbol": "AuthPrincipalRefusedException",
+          "line": 9
+        },
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/ai/ai-front-component/exceptions/front-component-build.exception.ts",
+          "symbol": "FrontComponentBuildException",
+          "line": 10
+        },
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/page-layout-widget/exceptions/page-layout-widget-field-validation.exception.ts",
+          "symbol": "PageLayoutWidgetFieldValidationException",
+          "line": 1
+        },
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/validation-rule/exceptions/record-validation-rule-http.exception.ts",
+          "symbol": "RecordValidationRuleHttpException",
+          "line": 20
+        },
+        {
+          "path": "packages/twenty-server/src/engine/twenty-orm/upgrade-aware/exceptions/upgrade-unavailable-entity-write.exception.ts",
+          "symbol": "UpgradeUnavailableEntityWriteException",
+          "line": 1
+        },
+        {
+          "path": "packages/twenty-server/src/engine/workspace-datasource/exceptions/workspace-datasource.exception.ts",
+          "symbol": "WorkspaceDataSourceException",
+          "line": 20
+        },
+        {
+          "path": "packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/exceptions/workspace-migration-action-execution.exception.ts",
+          "symbol": "WorkspaceMigrationActionExecutionException",
+          "line": 44
+        },
+        {
+          "path": "packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/exceptions/workspace-migration-runner.exception.ts",
+          "symbol": "WorkspaceMigrationRunnerException",
+          "line": 83
+        },
+        {
+          "path": "packages/twenty-server/src/modules/messaging/message-import-manager/drivers/exceptions/message-import-driver.exception.ts",
+          "symbol": "MessageImportDriverException",
+          "line": 3
+        }
+      ],
+      "outliers_total": 10
+    },
+    {
+      "id": "D-cfebe6",
+      "rank": 8,
+      "summary": "packages/twenty-server: graphql entry points in src/engine/core-modules/** (*.resolver files) are decorated with UseGuards()",
+      "role": {
+        "package": "packages/twenty-server",
+        "dir": "src/engine/core-modules",
+        "file": "*.resolver",
+        "entry": "graphql",
+        "kind": "function",
+        "members": 390
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:@nestjs/common#UseGuards"
+        ]
+      },
+      "evidence": {
+        "holders": 342,
+        "total": 390,
+        "lower_bound": 0.841,
+        "lift": 14.382
+      },
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-ai-provider.resolver.ts",
+        "symbol": "MUTATION AdminPanelAiProviderResolver.addAiProvider",
+        "line": 64
+      },
+      "outliers": [
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts",
+          "symbol": "FIELD AdminPanelApplicationRegistrationResolver.author",
+          "line": 67
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts",
+          "symbol": "FIELD AdminPanelApplicationRegistrationResolver.configurationIssues",
+          "line": 37
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts",
+          "symbol": "FIELD AdminPanelApplicationRegistrationResolver.galleryImagesUrls",
+          "line": 81
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts",
+          "symbol": "FIELD AdminPanelApplicationRegistrationResolver.installCount",
+          "line": 50
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts",
+          "symbol": "FIELD AdminPanelApplicationRegistrationResolver.isConfigured",
+          "line": 17
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts",
+          "symbol": "FIELD AdminPanelApplicationRegistrationResolver.logoUrl",
+          "line": 72
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/api-key/api-key.resolver.ts",
+          "symbol": "FIELD ApiKeyResolver.role",
+          "line": 148
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/application/application-registration/application-registration-summary.resolver.ts",
+          "symbol": "FIELD ApplicationRegistrationSummaryResolver.logoUrl",
+          "line": 14
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/application/application-registration/application-registration.resolver.ts",
+          "symbol": "FIELD ApplicationRegistrationResolver.galleryImagesUrls",
+          "line": 587
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/application/application-registration/application-registration.resolver.ts",
+          "symbol": "FIELD ApplicationRegistrationResolver.isConfigured",
+          "line": 565
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/application/application-registration/application-registration.resolver.ts",
+          "symbol": "FIELD ApplicationRegistrationResolver.logoUrl",
+          "line": 578
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/billing/billing-subscription-item.resolver.ts",
+          "symbol": "FIELD BillingSubscriptionItemResolver.creditAmount",
+          "line": 43
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/billing/billing-subscription-item.resolver.ts",
+          "symbol": "FIELD BillingSubscriptionItemResolver.unitAmount",
+          "line": 28
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/usage-limit/billing-subscription-item-cap.resolver.ts",
+          "symbol": "FIELD BillingSubscriptionItemCapResolver.hasReachedCurrentPeriodCap",
+          "line": 28
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/usage-limit/billing-subscription-user-credits.resolver.ts",
+          "symbol": "FIELD BillingSubscriptionUserCreditsResolver.hasUserCredits",
+          "line": 24
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/user/user.resolver.ts",
+          "symbol": "FIELD UserResolver.availableWorkspaces",
+          "line": 722
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/user/user.resolver.ts",
+          "symbol": "FIELD UserResolver.currentWorkspace",
+          "line": 676
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/user/user.resolver.ts",
+          "symbol": "FIELD UserResolver.deletedWorkspaceMembers",
+          "line": 357
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/user/user.resolver.ts",
+          "symbol": "FIELD UserResolver.hasPassword",
+          "line": 376
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/user/user.resolver.ts",
+          "symbol": "FIELD UserResolver.isWorkspaceCreator",
+          "line": 660
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/user/user.resolver.ts",
+          "symbol": "FIELD UserResolver.onboardingStatus",
+          "line": 628
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/user/user.resolver.ts",
+          "symbol": "FIELD UserResolver.previousOnboardingStatus",
+          "line": 644
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/user/user.resolver.ts",
+          "symbol": "FIELD UserResolver.supportUserHash",
+          "line": 383
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/user/user.resolver.ts",
+          "symbol": "FIELD UserResolver.userVars",
+          "line": 215
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/user/user.resolver.ts",
+          "symbol": "FIELD UserResolver.userWorkspacesField",
+          "line": 707
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/user/user.resolver.ts",
+          "symbol": "FIELD UserResolver.workspaceMember",
+          "line": 243
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/user/user.resolver.ts",
+          "symbol": "FIELD UserResolver.workspaceMembers",
+          "line": 288
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/user/user.resolver.ts",
+          "symbol": "FIELD UserResolver.workspaces",
+          "line": 692
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/workspace/workspace.resolver.ts",
+          "symbol": "FIELD WorkspaceResolver.billingCustomer",
+          "line": 412
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/workspace/workspace.resolver.ts",
+          "symbol": "FIELD WorkspaceResolver.billingEntitlements",
+          "line": 443
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/workspace/workspace.resolver.ts",
+          "symbol": "FIELD WorkspaceResolver.billingSubscriptions",
+          "line": 306
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/workspace/workspace.resolver.ts",
+          "symbol": "FIELD WorkspaceResolver.currentBillingSubscription",
+          "line": 380
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/workspace/workspace.resolver.ts",
+          "symbol": "FIELD WorkspaceResolver.defaultRole",
+          "line": 336
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/workspace/workspace.resolver.ts",
+          "symbol": "FIELD WorkspaceResolver.featureFlags",
+          "line": 270
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/workspace/workspace.resolver.ts",
+          "symbol": "FIELD WorkspaceResolver.hasValidEnterpriseValidityToken",
+          "line": 455
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/workspace/workspace.resolver.ts",
+          "symbol": "FIELD WorkspaceResolver.hasValidSignedEnterpriseKey",
+          "line": 450
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/workspace/workspace.resolver.ts",
+          "symbol": "FIELD WorkspaceResolver.installedApplications",
+          "line": 368
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/workspace/workspace.resolver.ts",
+          "symbol": "FIELD WorkspaceResolver.inviteHash",
+          "line": 323
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/workspace/workspace.resolver.ts",
+          "symbol": "FIELD WorkspaceResolver.isGoogleAuthEnabled",
+          "line": 465
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/workspace/workspace.resolver.ts",
+          "symbol": "FIELD WorkspaceResolver.isMicrosoftAuthEnabled",
+          "line": 478
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/workspace/workspace.resolver.ts",
+          "symbol": "FIELD WorkspaceResolver.isPasswordAuthEnabled",
+          "line": 486
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/workspace/workspace.resolver.ts",
+          "symbol": "FIELD WorkspaceResolver.isTrialAvailable",
+          "line": 393
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/workspace/workspace.resolver.ts",
+          "symbol": "FIELD WorkspaceResolver.logo",
+          "line": 430
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/workspace/workspace.resolver.ts",
+          "symbol": "FIELD WorkspaceResolver.views",
+          "line": 494
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/workspace/workspace.resolver.ts",
+          "symbol": "FIELD WorkspaceResolver.workspaceCustomApplication",
+          "line": 347
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/workspace/workspace.resolver.ts",
+          "symbol": "FIELD WorkspaceResolver.workspaceCustomApplicationId",
+          "line": 473
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/workspace/workspace.resolver.ts",
+          "symbol": "FIELD WorkspaceResolver.workspaceMembersCount",
+          "line": 423
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/workspace/workspace.resolver.ts",
+          "symbol": "FIELD WorkspaceResolver.workspaceUrls",
+          "line": 460
+        }
+      ],
+      "outliers_total": 48
+    },
+    {
+      "id": "D-2a3e38",
+      "rank": 9,
+      "summary": "packages/twenty-server: HTTP handlers in src/** (*.controller files) are decorated with UseFilters()",
+      "role": {
+        "package": "packages/twenty-server",
+        "dir": "src",
+        "file": "*.controller",
+        "entry": "http",
+        "kind": "function",
+        "members": 154
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:@nestjs/common#UseFilters"
+        ]
+      },
+      "evidence": {
+        "holders": 140,
+        "total": 154,
+        "lower_bound": 0.853,
+        "lift": 13.574
+      },
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "packages/twenty-server/src/engine/api/mcp/controllers/mcp-core.controller.ts",
+        "symbol": "POST /",
+        "line": 66
+      },
+      "outliers": [
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/application/application-oauth/controllers/oauth-discovery.controller.ts",
+          "symbol": "GET /oauth-authorization-server",
+          "line": 23
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/application/application-oauth/controllers/oauth-discovery.controller.ts",
+          "symbol": "GET /oauth-protected-resource",
+          "line": 66
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/application/application-oauth/controllers/oauth-discovery.controller.ts",
+          "symbol": "GET /oauth-protected-resource/mcp",
+          "line": 74
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/application/application-registration/application-registration-claim.controller.ts",
+          "symbol": "GET /github/callback",
+          "line": 32
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/application/connection-provider/connection-provider-custom.controller.ts",
+          "symbol": "GET /callback",
+          "line": 42
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/application/connection-provider/connection-provider-oauth.controller.ts",
+          "symbol": "GET /authorize",
+          "line": 43
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/application/connection-provider/connection-provider-oauth.controller.ts",
+          "symbol": "GET /callback",
+          "line": 150
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/billing/app-billing/app-billing.controller.ts",
+          "symbol": "GET /credits",
+          "line": 71
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/billing/app-billing/app-billing.controller.ts",
+          "symbol": "POST /charge",
+          "line": 112
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/client-config/client-config.controller.ts",
+          "symbol": "GET /",
+          "line": 14
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/health/controllers/health.controller.ts",
+          "symbol": "GET /",
+          "line": 12
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/well-known/controllers/well-known.controller.ts",
+          "symbol": "GET /api-catalog",
+          "line": 37
+        },
+        {
+          "path": "packages/twenty-server/src/engine/core-modules/well-known/controllers/well-known.controller.ts",
+          "symbol": "GET /mcp/server-card.json",
+          "line": 21
+        },
+        {
+          "path": "packages/twenty-server/src/modules/emailing/controllers/campaign-tracking.controller.ts",
+          "symbol": "GET /o/:token",
+          "line": 86
+        }
+      ],
+      "outliers_total": 14
+    },
+    {
+      "id": "D-865fba",
+      "rank": 10,
+      "summary": "packages/twenty-server: classes in src/engine/metadata-modules/** (*.resolver files) are decorated with CoreResolver() or MetadataResolver()",
+      "role": {
+        "package": "packages/twenty-server",
+        "dir": "src/engine/metadata-modules",
+        "file": "*.resolver",
+        "entry": "-",
+        "kind": "class",
+        "members": 53
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "packages/twenty-server/src/engine/api/graphql/graphql-config/decorators/core-resolver.decorator.ts#CoreResolver",
+          "packages/twenty-server/src/engine/api/graphql/graphql-config/decorators/metadata-resolver.decorator.ts#MetadataResolver"
+        ]
+      },
+      "evidence": {
+        "holders": 51,
+        "total": 53,
+        "lower_bound": 0.872,
+        "lift": 34.411,
+        "split": [
+          [
+            "packages/twenty-server/src/engine/api/graphql/graphql-config/decorators/metadata-resolver.decorator.ts#MetadataResolver",
+            50
+          ],
+          [
+            "packages/twenty-server/src/engine/api/graphql/graphql-config/decorators/core-resolver.decorator.ts#CoreResolver",
+            1
+          ]
+        ]
+      },
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-run.resolver.ts",
+        "symbol": "AgentRunResolver",
+        "line": 57
+      },
+      "outliers": [
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts",
+          "symbol": "AgentMessagePartResolver",
+          "line": 12
+        },
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message.resolver.ts",
+          "symbol": "AgentMessageResolver",
+          "line": 7
+        }
+      ],
+      "outliers_total": 2
+    },
+    {
+      "id": "D-bc65cf",
+      "rank": 11,
+      "summary": "packages/twenty-ui: exported values in design-tokens/color/** pass `dark` to token()",
+      "role": {
+        "package": "packages/twenty-ui",
+        "dir": "design-tokens/color",
+        "file": "*",
+        "entry": "-",
+        "kind": "const",
+        "members": 32
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "packages/twenty-ui/design-tokens/token.ts#token",
+        "index": 0,
+        "key": "dark"
+      },
+      "evidence": {
+        "holders": 31,
+        "total": 32,
+        "lower_bound": 0.843,
+        "lift": 210.542
+      },
+      "rule_kind": "passes_key",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/twenty-ui/design-tokens/color/amber.ts",
+        "symbol": "AMBER_COLOR_TOKENS",
+        "line": 3
+      },
+      "outliers": [
+        {
+          "path": "packages/twenty-ui/design-tokens/color/index.ts",
+          "symbol": "COLOR_TOKENS",
+          "line": 33
+        }
+      ],
+      "outliers_total": 1,
+      "key_type": "unknown"
+    },
+    {
+      "id": "D-81a1f5",
+      "rank": 12,
+      "summary": "packages/twenty-server: classes in src/engine/metadata-modules/metadata-side-effect/** (*.service files) extend MetadataSideEffectHandler()",
+      "role": {
+        "package": "packages/twenty-server",
+        "dir": "src/engine/metadata-modules/metadata-side-effect",
+        "file": "*.service",
+        "entry": "-",
+        "kind": "class",
+        "members": 39
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/interfaces/base-metadata-side-effect-handler.service.ts#MetadataSideEffectHandler()"
+        ]
+      },
+      "evidence": {
+        "holders": 36,
+        "total": 39,
+        "lower_bound": 0.797,
+        "lift": 114.103
+      },
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/handlers/field-metadata/services/field-index-view-field-on-create-side-effect-handler.service.ts",
+        "symbol": "FieldIndexViewFieldOnCreateSideEffectHandlerService",
+        "line": 29
+      },
+      "outliers": [
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/interfaces/base-metadata-side-effect-handler.service.ts",
+          "symbol": "BaseMetadataSideEffectHandlerService",
+          "line": 20
+        },
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/registry/metadata-side-effect-handler-registry.service.ts",
+          "symbol": "MetadataSideEffectHandlerRegistryService",
+          "line": 26
+        },
+        {
+          "path": "packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/services/metadata-side-effect-engine.service.ts",
+          "symbol": "MetadataSideEffectEngineService",
+          "line": 57
+        }
+      ],
+      "outliers_total": 3
+    },
+    {
+      "id": "D-532878",
+      "rank": 13,
+      "summary": "packages/twenty-server: classes in src/** (*.workspace-entity files) extend BaseWorkspaceEntity",
+      "role": {
+        "package": "packages/twenty-server",
+        "dir": "src",
+        "file": "*.workspace-entity",
+        "entry": "-",
+        "kind": "class",
+        "members": 42
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "packages/twenty-server/src/engine/twenty-orm/base.workspace-entity.ts#BaseWorkspaceEntity"
+        ]
+      },
+      "evidence": {
+        "holders": 38,
+        "total": 41,
+        "lower_bound": 0.806,
+        "lift": 105.952,
+        "role_members": 42
+      },
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/twenty-server/src/engine/metadata-modules/ai/ai-history/standard-objects/agent-chat-thread-participant.workspace-entity.ts",
+        "symbol": "AgentChatThreadParticipantWorkspaceEntity",
+        "line": 6
+      },
+      "outliers": [
+        {
+          "path": "packages/twenty-server/src/modules/company/standard-objects/company.workspace-entity.ts",
+          "symbol": "CompanyWorkspaceEntity",
+          "line": 20
+        },
+        {
+          "path": "packages/twenty-server/src/modules/emailing/standard-objects/campaign-delivery.workspace-entity.ts",
+          "symbol": "CampaignDeliveryWorkspaceEntity",
+          "line": 5
+        },
+        {
+          "path": "packages/twenty-server/src/modules/emailing/standard-objects/message-suppression.workspace-entity.ts",
+          "symbol": "MessageSuppressionWorkspaceEntity",
+          "line": 4
+        }
+      ],
+      "outliers_total": 3,
+      "exempt": [
+        {
+          "path": "packages/twenty-server/src/engine/twenty-orm/base.workspace-entity.ts",
+          "symbol": "BaseWorkspaceEntity",
+          "line": 1,
+          "code": "defining_module",
+          "reason": "in the module that defines BaseWorkspaceEntity"
+        }
+      ]
+    }
+  ],
+  "largest_role": null
+}

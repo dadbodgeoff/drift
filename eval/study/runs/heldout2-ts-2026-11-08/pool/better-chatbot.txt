@@ -1,0 +1,145 @@
+16 conventions from 4123 units in 205 roles (0 default tier, 16 suggestions)
+
+16 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-ed17cb] apps/web: functions in src/** (*.pg files) call timestamp() before index()
+    evidence: 69/70 (lower bound 0.92, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  apps/web/src/lib/db/pg/schema.pg.ts#AgentTable
+    outlier:  apps/web/src/lib/db/pg/schema.pg.ts:1316 TabularReviewDocumentTable
+
+ 2. [D-5b91e5] apps/web: functions in src/** (*.pg files) call uuid() before text().notNull()
+    evidence: 65/66 (lower bound 0.92, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  apps/web/src/lib/db/pg/schema.pg.ts#AgentTable
+    outlier:  apps/web/src/lib/db/pg/schema.pg.ts:335 MemberTable
+
+ 3. [D-7c60e2] apps/web: functions in src/** (*.pg files) call timestamp().notNull() before index()
+    evidence: 68/70 (lower bound 0.90, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  apps/web/src/lib/db/pg/schema.pg.ts#AgentTable
+    outlier:  apps/web/src/lib/db/pg/schema.pg.ts:162 ScheduledTaskTable
+    outlier:  apps/web/src/lib/db/pg/schema.pg.ts:1316 TabularReviewDocumentTable
+
+ 4. [D-3af9f8] apps/web: functions in src/** (*.pg files) call uuid().primaryKey() before uuid()
+    evidence: 70/73 (lower bound 0.89, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  apps/web/src/lib/db/pg/schema.pg.ts#AgentTable
+    outlier:  apps/web/src/lib/db/pg/schema.pg.ts:61 ChatMessageTable
+    outlier:  apps/web/src/lib/db/pg/schema.pg.ts:335 MemberTable
+    outlier:  apps/web/src/lib/db/pg/schema.pg.ts:741 SandboxSessionTable
+
+ 5. [D-17340a] drizzle models have a `id` field
+    evidence: 82/86 (lower bound 0.89, lift 1.0)
+    tier:     suggestion (rule kind model_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  apps/web/src/lib/db/pg/schema.pg.ts#account
+    outlier:  apps/web/src/lib/db/pg/schema.pg.ts:1050 member_ai_policy
+    outlier:  apps/web/src/lib/db/pg/schema.pg.ts:802 models
+    outlier:  apps/web/src/lib/db/pg/schema.pg.ts:908 organization_ai_policy
+    ... 1 more outliers
+
+ 6. [D-399322] sql models have a `id` field
+    evidence: 85/90 (lower bound 0.88, lift 1.0)
+    tier:     suggestion (rule kind model_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  apps/web/src/lib/db/migrations/pg/0000_past_nebula.sql#chat_message
+    outlier:  apps/web/src/lib/db/migrations/pg/0001_slimy_tarot.sql:1 mcp_server_binding
+    outlier:  apps/web/src/lib/db/migrations/pg/0015_create_models_table.sql:2 models
+    outlier:  apps/web/src/lib/db/migrations/pg/0034_model_router.sql:164 member_ai_policy
+    ... 2 more outliers
+
+ 7. [D-1bc181] apps/web: functions in src/** (*.pg files) call text() before timestamp()
+    evidence: 68/72 (lower bound 0.87, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  apps/web/src/lib/db/pg/schema.pg.ts#AgentTable
+    outlier:  apps/web/src/lib/db/pg/schema.pg.ts:233 BookmarkTable
+    outlier:  apps/web/src/lib/db/pg/schema.pg.ts:2541 ProjectAgentTable
+    outlier:  apps/web/src/lib/db/pg/schema.pg.ts:2515 ProjectMemberTable
+    ... 1 more outliers
+
+ 8. [D-215de3] apps/web: HTTP handlers in src/app/api/projects/[*]/** (route files) pass `projectId` to requireProjectAccess()
+    evidence: 37/38 (lower bound 0.86, lift 38.4)
+    tier:     suggestion (rule kind passes_key)
+    agents:   not shown to agents (family below admission bar: 50% of 12)
+    example:  apps/web/src/app/api/projects/[id]/agents/route.ts#DELETE
+    outlier:  apps/web/src/app/api/projects/[id]/members/route.ts:45 POST
+
+ 9. [D-1ae526] apps/web: functions in src/lib/auth/**, src/lib/cockpit/**, src/lib/e2b/** and src/lib/kernel/** declare their return type
+    evidence: 141/156 (lower bound 0.85, lift 1.6)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  apps/web/src/lib/cockpit/alerts.ts#collectAlerts
+    outlier:  apps/web/src/lib/auth/auth-instance.ts:625 getFullOrganization
+    outlier:  apps/web/src/lib/auth/auth-instance.ts:635 getIsFirstUser
+    outlier:  apps/web/src/lib/auth/auth-instance.ts:602 getSession
+    ... 12 more outliers
+
+10. [D-798f44] drizzle models have a `createdAt` field
+    evidence: 79/86 (lower bound 0.84, lift 1.0)
+    tier:     suggestion (rule kind model_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  apps/web/src/lib/db/pg/schema.pg.ts#account
+    outlier:  apps/web/src/lib/db/pg/schema.pg.ts:660 chat_export
+    outlier:  apps/web/src/lib/db/pg/schema.pg.ts:1503 navigator_workflow_runs
+    outlier:  apps/web/src/lib/db/pg/schema.pg.ts:2301 project_brain_page_version
+    ... 4 more outliers
+
+11. [D-c6ea9c] apps/web: HTTP handlers in src/app/api/projects/** (route files) use `try`
+    evidence: 38/40 (lower bound 0.83, lift 4.3)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  apps/web/src/app/api/projects/[id]/agents/route.ts#DELETE
+    outlier:  apps/web/src/app/api/projects/[id]/status-snapshot/route.ts:6 GET
+    outlier:  apps/web/src/app/api/projects/[id]/tools/[toolId]/route.ts:14 DELETE
+
+12. [D-4e1215] apps/web: HTTP handlers in src/app/api/projects/** (route files) call NextResponse.json() before toProjectErrorResponse()
+    evidence: 36/38 (lower bound 0.83, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  apps/web/src/app/api/projects/[id]/agents/route.ts#DELETE
+    outlier:  apps/web/src/app/api/projects/[id]/route.ts:66 DELETE
+    outlier:  apps/web/src/app/api/projects/[id]/threads/[threadId]/route.ts:73 DELETE
+
+13. [D-608b7b] sql models have a `created_at` field
+    evidence: 81/90 (lower bound 0.82, lift 1.0)
+    tier:     suggestion (rule kind model_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  apps/web/src/lib/db/migrations/pg/0000_past_nebula.sql#chat_message
+    outlier:  apps/web/src/lib/db/migrations/pg/0008_deep_miracleman.sql:21 archive_item
+    outlier:  apps/web/src/lib/db/migrations/pg/0014_faulty_gateway.sql:11 chat_export
+    outlier:  apps/web/src/lib/db/migrations/pg/0027_project_gbrain_workspace.sql:15 project_brain_page_version
+    ... 6 more outliers
+
+14. [D-bdd2a0] apps/web: HTTP handlers in src/app/api/projects/[*]/** (route files) call requireProjectAccess() before NextResponse.json()
+    evidence: 34/36 (lower bound 0.82, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  apps/web/src/app/api/projects/[id]/agents/route.ts#DELETE
+    outlier:  apps/web/src/app/api/projects/[id]/members/route.ts:45 POST
+    outlier:  apps/web/src/app/api/projects/[id]/search/route.ts:9 POST
+
+15. [D-7f4083] apps/web: server actions in src/** (actions files) are named `*Action`
+    evidence: 26/27 (lower bound 0.82, lift 42.5)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/web/src/app/api/auth/actions.ts#existsByEmailAction
+    outlier:  apps/web/src/app/api/chat/actions.ts:49 getUserId
+
+16. [D-5a6787] apps/web: HTTP handlers in src/app/api/projects/** (route files) wrap their body in try/catch
+    evidence: 37/40 (lower bound 0.80, lift 9.7)
+    tier:     suggestion (rule kind wrapped_by:try)
+    agents:   not shown to agents (family below admission bar: 0% of 1)
+    example:  apps/web/src/app/api/projects/[id]/agents/route.ts#DELETE
+    outlier:  apps/web/src/app/api/projects/[id]/documents/[documentId]/route.ts:12 DELETE
+    outlier:  apps/web/src/app/api/projects/[id]/status-snapshot/route.ts:6 GET
+    outlier:  apps/web/src/app/api/projects/[id]/tools/[toolId]/route.ts:14 DELETE
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

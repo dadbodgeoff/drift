@@ -1,0 +1,47 @@
+{
+ "//": "The default-tier definition of decision D7 (approved by the founder 2026-11-06, before any held-out census). crates/drift-mine/src/tier.rs (tier_of) implements it; every held-out manifest holds this tier block verbatim (the primaries eval/holdout-primary.json and eval/holdout-primary-py.json by decision D7, the secondary sets eval/holdout.json and eval/holdout-py.json by D7a), registered as tier-only amendments in holdout-manifests.json (cargo test, tier.test.mjs, select-holdout.mjs verify and prepare.mjs check it); eval/study/tier.test.mjs runs lib.mjs tierOf under it on tier-cases.json.",
+ "tier": {
+  "//": "Decision D7 (eval/study/README.md decision log), approved by the founder 2026-11-06 and recorded before any held-out census. D5 (tier-d5.json) narrowed by rule kind and language. TypeScript/JavaScript: the default tier admits only call wrappers (wrapped_by:call) and layering (avoids:import); wrapped_by:decorator, wrapped_by:extends and wrapped_by:jsx move to the suggestion tier. Python: no rule kind is in the default tier; Python advises only and every Python proposal is suggestion tier. D5's conditions still apply on top of the rule kind: every symbol the rule names is defined in the repository (default.target \"in_repo\": no pkg:, global# or unresolved: target; lib.mjs namesPackage, drift_mine::tier::names_package) and the role has >= default.min_members members. The language of a proposal is read conservatively (lib.mjs proposalLanguage, drift_mine::tier::convention_language): py when any member of its role is Python (conventions.yaml evidence.python_members) or its example path is (.py/.pyi files and Python package manifests), ts otherwise. Role members are counted as the role's size (evidence.role_members when set, else total; exempt members count). DEFAULT tier = language in default.languages AND structured rule kind (lib.mjs ruleKind) in default.rule_kinds AND the rule names no symbol from outside the repository AND its role has >= default.min_members members. SUGGESTION tier = every other shown proposal. The not-wrong rate is reported over all shown proposals, both tiers. Release gate unchanged: a language's default tier ships as advise until it measures >= 95% default-tier accept under rubric v3, judged per D1, on a primary held-out run.",
+  "kind": "rule_kind",
+  "decision": "D7",
+  "default": {
+   "//": "TypeScript/JavaScript call wrappers and layering (import avoidance), each only when every symbol it names is defined in the repository, in roles of 15 or more members",
+   "rule_kinds": [
+    "wrapped_by:call",
+    "avoids:import"
+   ],
+   "languages": [
+    "ts"
+   ],
+   "min_members": 15,
+   "target": "in_repo"
+  },
+  "suggestion": {
+   "//": "D5's suggestion kinds, plus decorators, base classes and JSX layout wrappers (D7); every Python proposal (languages); and default-tier kinds whose rule names a package, built-in or unresolved symbol, or whose role is small",
+   "rule_kinds": [
+    "calls",
+    "named",
+    "avoids:other",
+    "prefers_library",
+    "before",
+    "has_test",
+    "model_has",
+    "package_has",
+    "dependency_version",
+    "wrapped_by:try",
+    "control",
+    "directive",
+    "throws",
+    "passes_key",
+    "renders",
+    "wrapped_by:decorator",
+    "wrapped_by:extends",
+    "wrapped_by:jsx"
+   ],
+   "languages": [
+    "py"
+   ]
+  },
+  "not_wrong_over": "all_shown"
+ }
+}

@@ -1,0 +1,1708 @@
+{
+  "run": "eval/study/runs/heldout-py-2026-11-07",
+  "items": [
+    {
+      "uid": "codex-autorunner/D-5a3a51",
+      "repo": "codex-autorunner",
+      "id": "D-5a3a51",
+      "rank": 1,
+      "summary": "enums in src/codex_autorunner/core/** extend str",
+      "role": {
+        "package": "",
+        "dir": "src/codex_autorunner/core",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "variety": "enum"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "global#str"
+        ]
+      },
+      "evidence": {
+        "holders": 58,
+        "total": 61,
+        "lower_bound": 0.86,
+        "lift": 21.2
+      },
+      "members": 61,
+      "example": "src/codex_autorunner/core/apps/hooks.py#AppHookPoint",
+      "python_members": 61,
+      "outliers": 3,
+      "outlier_files": [
+        "src/codex_autorunner/core/diagnostics/process_snapshot.py",
+        "src/codex_autorunner/core/pma_lifecycle.py"
+      ],
+      "block": " 1. [D-5a3a51] enums in src/codex_autorunner/core/** extend str\n    evidence: 58/61 (lower bound 0.86, lift 21.2)\n    example:  src/codex_autorunner/core/apps/hooks.py#AppHookPoint\n    outlier:  src/codex_autorunner/core/diagnostics/process_snapshot.py:15 ProcessCategory\n    outlier:  src/codex_autorunner/core/diagnostics/process_snapshot.py:22 ProcessOwnership\n    outlier:  src/codex_autorunner/core/pma_lifecycle.py:48 LifecycleCommand",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dbt-charts/D-e3cf08",
+      "repo": "dbt-charts",
+      "id": "D-e3cf08",
+      "rank": 1,
+      "summary": "functions in src/dbt_charts/core/render/warnings/** pass `fix` to Diagnostic.from_code()",
+      "role": {
+        "package": "",
+        "dir": "src/dbt_charts/core/render/warnings",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "src/dbt_charts/core/diagnostics/diagnostic.py#Diagnostic.from_code",
+        "index": 99,
+        "key": "fix"
+      },
+      "evidence": {
+        "holders": 63,
+        "total": 63,
+        "lower_bound": 0.94,
+        "lift": 23.8
+      },
+      "members": 73,
+      "example": "src/dbt_charts/core/render/warnings/annotation_note_moved.py#detect",
+      "python_members": 73,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 1. [D-e3cf08] functions in src/dbt_charts/core/render/warnings/** pass `fix` to Diagnostic.from_code()\n    evidence: 63/63 (lower bound 0.94, lift 23.8)\n    example:  src/dbt_charts/core/render/warnings/annotation_note_moved.py#detect\n    exempt:   src/dbt_charts/core/render/warnings/base.py:221 chart_series (does not call Diagnostic.from_code())\n    exempt:   src/dbt_charts/core/render/warnings/base.py:253 engine_warnings (does not call Diagnostic.from_code())\n    exempt:   src/dbt_charts/core/render/warnings/base.py:200 listed_phrase (does not call Diagnostic.from_code())\n    exempt:   src/dbt_charts/core/render/warnings/layer_data_outside_domain.py:51 layers_have_own_y_scale (does not call Diagnostic.from_code())\n    exempt:   src/dbt_charts/core/render/warnings/layer_data_outside_domain.py:21 painted_float (does not call Diagnostic.from_code())\n    exempt:   src/dbt_charts/core/render/warnings/layer_data_outside_domain.py:39 paints_outside_domain (does not call Diagnostic.from_code())\n    exempt:   src/dbt_charts/core/render/warnings/registry.py:181 run_all (does not call Diagnostic.from_code())\n    exempt:   src/dbt_charts/core/render/warnings/value_labels_crowd_width.py:25 painted_labels (does not call Diagnostic.from_code())\n    exempt:   src/dbt_charts/core/render/warnings/x_axis.py:46 emitted_x_axis (does not call Diagnostic.from_code())\n    exempt:   src/dbt_charts/core/render/warnings/x_axis.py:106 x_scale_type (does not call Diagnostic.from_code())",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dbt-charts/D-0f5597",
+      "repo": "dbt-charts",
+      "id": "D-0f5597",
+      "rank": 2,
+      "summary": "exported values in src/dbt_charts/core/diagnostics/** call REGISTRY.register()",
+      "role": {
+        "package": "",
+        "dir": "src/dbt_charts/core/diagnostics",
+        "file": "*",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "src/dbt_charts/core/diagnostics/registry.py#REGISTRY.register"
+      },
+      "evidence": {
+        "holders": 409,
+        "total": 416,
+        "lower_bound": 0.97,
+        "lift": 2.3
+      },
+      "members": 419,
+      "example": "src/dbt_charts/core/diagnostics/codes_compile.py#ERR_ANNOTATION_INVALID",
+      "python_members": 419,
+      "outliers": 7,
+      "outlier_files": [
+        "src/dbt_charts/core/diagnostics/codes_execute.py",
+        "src/dbt_charts/core/diagnostics/codes_retired.py",
+        "src/dbt_charts/core/diagnostics/hints.py"
+      ],
+      "block": " 2. [D-0f5597] exported values in src/dbt_charts/core/diagnostics/** call REGISTRY.register()\n    evidence: 409/416 (lower bound 0.97, lift 2.3)\n    example:  src/dbt_charts/core/diagnostics/codes_compile.py#ERR_ANNOTATION_INVALID\n    outlier:  src/dbt_charts/core/diagnostics/codes_execute.py:693 UNKNOWN_RELATION_DIALECT_NOTES\n    outlier:  src/dbt_charts/core/diagnostics/codes_retired.py:10 RETIRED_WARNING_CODES\n    outlier:  src/dbt_charts/core/diagnostics/hints.py:42 CHART_RENDERING_SUCCESSORS\n    outlier:  src/dbt_charts/core/diagnostics/hints.py:31 RETIRED_FORMAT_SUCCESSORS\n    outlier:  src/dbt_charts/core/diagnostics/hints.py:158 RETIRED_VARIANT_FAMILIES\n    outlier:  src/dbt_charts/core/diagnostics/hints.py:159 RETIRED_VARIANT_ROLE_PREFIX\n    outlier:  src/dbt_charts/core/diagnostics/hints.py:147 RETIRED_VARIANT_SUFFIX_SUCCESSORS\n    exempt:   src/dbt_charts/core/diagnostics/registry.py:21 CODED_VALIDATION_ERROR (in the module that defines REGISTRY.register)\n    exempt:   src/dbt_charts/core/diagnostics/registry.py:16 ERROR_GUIDE_PATH (in the module that defines REGISTRY.register)\n    exempt:   src/dbt_charts/core/diagnostics/registry.py:179 REGISTRY (in the module that defines REGISTRY.register)",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dbt-charts/D-f5c512",
+      "repo": "dbt-charts",
+      "id": "D-f5c512",
+      "rank": 3,
+      "summary": "classes in src/dbt_charts/core/compile/** extend BaseModel",
+      "role": {
+        "package": "",
+        "dir": "src/dbt_charts/core/compile",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:pydantic#BaseModel"
+        ]
+      },
+      "evidence": {
+        "holders": 434,
+        "total": 447,
+        "lower_bound": 0.95,
+        "lift": 1.5
+      },
+      "members": 472,
+      "example": "src/dbt_charts/core/compile/models/board/authored.py#AuthoredBoard",
+      "python_members": 472,
+      "outliers": 13,
+      "outlier_files": [
+        "src/dbt_charts/core/compile/config.py",
+        "src/dbt_charts/core/compile/migrations/migrations.py",
+        "src/dbt_charts/core/compile/models/style/resolved/geoshape.py",
+        "src/dbt_charts/core/compile/models/style/theme/geoshape.py",
+        "src/dbt_charts/core/compile/models/style/theme/heatmap.py",
+        "src/dbt_charts/core/compile/models/style/theme/kpi.py",
+        "src/dbt_charts/core/compile/models/style/theme/pie.py",
+        "src/dbt_charts/core/compile/models/style/theme/point_map.py",
+        "src/dbt_charts/core/compile/models/style/theme/table.py",
+        "src/dbt_charts/core/compile/template/query_result.py"
+      ],
+      "block": " 3. [D-f5c512] classes in src/dbt_charts/core/compile/** extend BaseModel\n    evidence: 434/447 (lower bound 0.95, lift 1.5)\n    example:  src/dbt_charts/core/compile/models/board/authored.py#AuthoredBoard\n    outlier:  src/dbt_charts/core/compile/config.py:1236 ProjectSourcesConfig\n    outlier:  src/dbt_charts/core/compile/migrations/migrations.py:126 Dropped\n    outlier:  src/dbt_charts/core/compile/migrations/migrations.py:282 MigrationRegistry\n    outlier:  src/dbt_charts/core/compile/models/style/resolved/geoshape.py:35 ResolvedGeoshapeChartStyle\n    outlier:  src/dbt_charts/core/compile/models/style/theme/geoshape.py:32 GeoshapeChartStyle\n    outlier:  src/dbt_charts/core/compile/models/style/theme/heatmap.py:40 HeatmapChartStyle\n    outlier:  src/dbt_charts/core/compile/models/style/theme/kpi.py:219 KpiChartStyle\n    outlier:  src/dbt_charts/core/compile/models/style/theme/pie.py:40 PieChartStyle\n    outlier:  src/dbt_charts/core/compile/models/style/theme/point_map.py:32 PointMapChartStyle\n    outlier:  src/dbt_charts/core/compile/models/style/theme/table.py:390 TableChartStyle\n    outlier:  src/dbt_charts/core/compile/template/query_result.py:102 QueryResult\n    outlier:  src/dbt_charts/core/compile/template/query_result.py:164 QueryResults\n    outlier:  src/dbt_charts/core/compile/template/query_result.py:22 QueryRow\n    exempt:   src/dbt_charts/core/compile/board_artifact.py:78 DanglingStyleRefError (another kind of class (extends ValueError))\n    exempt:   src/dbt_charts/core/compile/errors.py:271 FileValidationError (another kind of class (extends Exception))\n    exempt:   src/dbt_charts/core/compile/errors.py:217 JinjaError (another kind of class (extends Exception))\n    exempt:   src/dbt_charts/core/compile/errors.py:83 ParseError (another kind of class (extends Exception))\n    exempt:   src/dbt_charts/core/compile/errors.py:171 ReferenceError (another kind of class (extends Exception))\n    exempt:   src/dbt_charts/core/compile/errors.py:247 TemplateOutputTooLargeError (another kind of class (extends Exception))\n    exempt:   src/dbt_charts/core/compile/errors.py:119 ValidationError (another kind of class (extends Exception))\n    exempt:   src/dbt_charts/core/compile/migrations/migrations.py:62 IncompleteMigrationError (another kind of class (extends ValueError))\n    exempt:   src/dbt_charts/core/compile/migrations/migrations.py:54 MigrationConflictError (another kind of class (extends ValueError))\n    exempt:   src/dbt_charts/core/compile/migrations/migrations.py:76 SchemaMigrationWarning (another kind of class (extends UserWarning))\n    exempt:   src/dbt_charts/core/compile/migrations/migrations.py:72 SchemaVersionTooOldError (another kind of class (extends ValueError))\n    exempt:   src/dbt_charts/core/compile/migrations/migrations.py:58 UnsupportedSchemaError (another kind of class (extends ValueError))\n    exempt:   src/dbt_charts/core/compile/normalize/variables.py:107 VariableReferenceErrors (another kind of class (extends Exception))\n    exempt:   src/dbt_charts/core/compile/resolve/chart/_annotation_stats.py:22 FitError (another kind of class (extends ValueError))\n    exempt:   src/dbt_charts/core/compile/resolve/chart/_annotation_stats.py:26 TooFewRows (another kind of class (extends ValueError))\n    exempt:   src/dbt_charts/core/compile/resolve/style/palette.py:110 CategoricalOverrequestError (another kind of class (extends ValueError))\n    exempt:   src/dbt_charts/core/compile/resolve/style/palette.py:123 PatternAsPaletteError (another kind of class (extends ValueError))\n    exempt:   src/dbt_charts/core/compile/resolve/style/palette.py:114 SurfaceUnsupportedError (another kind of class (extends ValueError))\n    exempt:   src/dbt_charts/core/compile/resolve/style/palette.py:118 ToneAsPaletteError (another kind of class (extends ValueError))\n    exempt:   src/dbt_charts/core/compile/resolve/style/palette.py:106 UnknownColorError (another kind of class (extends ValueError))\n    exempt:   src/dbt_charts/core/compile/resolve/style/palette.py:102 UnknownPaletteError (another kind of class (extends ValueError))\n    exempt:   src/dbt_charts/core/compile/template/annotation_text.py:20 AnnotationTextError (another kind of class (extends ValueError))\n    exempt:   src/dbt_charts/core/compile/template/custom_template.py:54 CustomTemplateError (another kind of class (extends Exception))\n    exempt:   src/dbt_charts/core/compile/template/output_budget.py:65 TemplateOutputBudgetExceeded (another kind of class (extends Exception))\n    exempt:   src/dbt_charts/core/compile/template/query_result.py:70 QueryItems (another kind of class (extends list))",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dbt-charts/D-e818b0",
+      "repo": "dbt-charts",
+      "id": "D-e818b0",
+      "rank": 4,
+      "summary": "files in src/dbt_charts/agent_api/** have a test file",
+      "role": {
+        "package": "",
+        "dir": "src/dbt_charts/agent_api",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "has_test"
+      },
+      "evidence": {
+        "holders": 47,
+        "total": 49,
+        "lower_bound": 0.86,
+        "lift": 2
+      },
+      "members": 49,
+      "example": "src/dbt_charts/agent_api/_link_scan.py#(file)",
+      "python_members": 49,
+      "outliers": 2,
+      "outlier_files": [
+        "src/dbt_charts/agent_api/hex_project.py",
+        "src/dbt_charts/agent_api/inspect.py"
+      ],
+      "block": " 4. [D-e818b0] files in src/dbt_charts/agent_api/** have a test file\n    evidence: 47/49 (lower bound 0.86, lift 2.0)\n    example:  src/dbt_charts/agent_api/_link_scan.py#(file)\n    outlier:  src/dbt_charts/agent_api/hex_project.py:1 (file)\n    outlier:  src/dbt_charts/agent_api/inspect.py:1 (file)",
+      "family": "repo",
+      "rule_kind": "has_test",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dbt-charts/D-9f88d3",
+      "repo": "dbt-charts",
+      "id": "D-9f88d3",
+      "rank": 5,
+      "summary": "classes in src/dbt_charts/agent_api/** extend BaseModel",
+      "role": {
+        "package": "",
+        "dir": "src/dbt_charts/agent_api",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:pydantic#BaseModel"
+        ]
+      },
+      "evidence": {
+        "holders": 108,
+        "total": 109,
+        "lower_bound": 0.95,
+        "lift": 1.5
+      },
+      "members": 117,
+      "example": "src/dbt_charts/agent_api/_link_scan.py#LinkHit",
+      "python_members": 117,
+      "outliers": 1,
+      "outlier_files": [
+        "src/dbt_charts/agent_api/source_bundle.py"
+      ],
+      "block": " 5. [D-9f88d3] classes in src/dbt_charts/agent_api/** extend BaseModel\n    evidence: 108/109 (lower bound 0.95, lift 1.5)\n    example:  src/dbt_charts/agent_api/_link_scan.py#LinkHit\n    outlier:  src/dbt_charts/agent_api/source_bundle.py:104 SourceBundle\n    exempt:   src/dbt_charts/agent_api/_paths.py:384 PathOutsideProjectError (another kind of class (extends Exception))\n    exempt:   src/dbt_charts/agent_api/examples.py:80 ExampleNotFound (another kind of class (extends Exception))\n    exempt:   src/dbt_charts/agent_api/exposures.py:39 ExposuresError (another kind of class (extends ValueError))\n    exempt:   src/dbt_charts/agent_api/mcp_install.py:93 McpConfigReadError (another kind of class (extends Exception))\n    exempt:   src/dbt_charts/agent_api/serve.py:183 DetachedServeError (another kind of class (extends RuntimeError))\n    exempt:   src/dbt_charts/agent_api/skill_install.py:68 SkillInstallError (another kind of class (extends Exception))\n    exempt:   src/dbt_charts/agent_api/skill_render.py:77 MissingSurfaceAlias (another kind of class (extends KeyError))\n    exempt:   src/dbt_charts/agent_api/skills.py:186 SkillNotFound (another kind of class (extends Exception))",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "aws-parallelcluster/D-79ad45",
+      "repo": "aws-parallelcluster",
+      "id": "D-79ad45",
+      "rank": 1,
+      "summary": "cli: classes in src/pcluster/schemas/** extend BaseSchema",
+      "role": {
+        "package": "cli",
+        "dir": "src/pcluster/schemas",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "cli/src/pcluster/schemas/common_schema.py#BaseSchema"
+        ]
+      },
+      "evidence": {
+        "holders": 94,
+        "total": 95,
+        "lower_bound": 0.94,
+        "lift": 6.5
+      },
+      "members": 95,
+      "example": "cli/src/pcluster/schemas/cluster_schema.py#AdditionalPackagesSchema",
+      "python_members": 95,
+      "outliers": 1,
+      "outlier_files": [
+        "cli/src/pcluster/schemas/cluster_schema.py"
+      ],
+      "block": " 1. [D-79ad45] cli: classes in src/pcluster/schemas/** extend BaseSchema\n    evidence: 94/95 (lower bound 0.94, lift 6.5)\n    example:  cli/src/pcluster/schemas/cluster_schema.py#AdditionalPackagesSchema\n    outlier:  cli/src/pcluster/schemas/cluster_schema.py:1252 OneOrManyCustomActionField",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "aws-parallelcluster/D-70f439",
+      "repo": "aws-parallelcluster",
+      "id": "D-70f439",
+      "rank": 2,
+      "summary": "cli: classes in src/pcluster/api/** extend Model",
+      "role": {
+        "package": "cli",
+        "dir": "src/pcluster/api",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "cli/src/pcluster/api/models/base_model_.py#Model"
+        ]
+      },
+      "evidence": {
+        "holders": 67,
+        "total": 68,
+        "lower_bound": 0.92,
+        "lift": 8.4
+      },
+      "members": 78,
+      "example": "cli/src/pcluster/api/models/ami_info.py#AmiInfo",
+      "python_members": 78,
+      "outliers": 1,
+      "outlier_files": [
+        "cli/src/pcluster/api/flask_app.py"
+      ],
+      "block": " 2. [D-70f439] cli: classes in src/pcluster/api/** extend Model\n    evidence: 67/68 (lower bound 0.92, lift 8.4)\n    example:  cli/src/pcluster/api/models/ami_info.py#AmiInfo\n    outlier:  cli/src/pcluster/api/flask_app.py:70 ParallelClusterFlaskApp\n    exempt:   cli/src/pcluster/api/errors.py:99 BadRequestException (a exception, named for its base ParallelClusterApiException)\n    exempt:   cli/src/pcluster/api/errors.py:81 BuildImageBadRequestException (a exception, named for its base ParallelClusterApiException)\n    exempt:   cli/src/pcluster/api/errors.py:153 ConflictException (a exception, named for its base ParallelClusterApiException)\n    exempt:   cli/src/pcluster/api/errors.py:72 CreateClusterBadRequestException (a exception, named for its base ParallelClusterApiException)\n    exempt:   cli/src/pcluster/api/errors.py:135 DryrunOperationException (a exception, named for its base ParallelClusterApiException)\n    exempt:   cli/src/pcluster/api/errors.py:108 InternalServiceException (a exception, named for its base ParallelClusterApiException)\n    exempt:   cli/src/pcluster/api/errors.py:117 LimitExceededException (a exception, named for its base ParallelClusterApiException)\n    exempt:   cli/src/pcluster/api/errors.py:126 NotFoundException (a exception, named for its base ParallelClusterApiException)\n    exempt:   cli/src/pcluster/api/errors.py:90 UpdateClusterBadRequestException (a exception, named for its base ParallelClusterApiException)\n    exempt:   cli/src/pcluster/api/flask_app.py:32 CustomParameterValidator (a validator, named for its base decorators.validation.ParameterValidator)",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "aws-parallelcluster/D-8241b1",
+      "repo": "aws-parallelcluster",
+      "id": "D-8241b1",
+      "rank": 3,
+      "summary": "cli: functions in src/pcluster/api/controllers/** are decorated with convert_errors()",
+      "role": {
+        "package": "cli",
+        "dir": "src/pcluster/api/controllers",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "cli/src/pcluster/api/controllers/common.py#convert_errors"
+        ]
+      },
+      "evidence": {
+        "holders": 20,
+        "total": 21,
+        "lower_bound": 0.77,
+        "lift": 18.3
+      },
+      "members": 21,
+      "example": "cli/src/pcluster/api/controllers/cluster_compute_fleet_controller.py#describe_compute_fleet",
+      "python_members": 21,
+      "outliers": 1,
+      "outlier_files": [
+        "cli/src/pcluster/api/controllers/cluster_logs_controller.py"
+      ],
+      "block": " 3. [D-8241b1] cli: functions in src/pcluster/api/controllers/** are decorated with convert_errors()\n    evidence: 20/21 (lower bound 0.77, lift 18.3)\n    example:  cli/src/pcluster/api/controllers/cluster_compute_fleet_controller.py#describe_compute_fleet\n    outlier:  cli/src/pcluster/api/controllers/cluster_logs_controller.py:27 validate_filters",
+      "family": "decorator",
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "aws-parallelcluster/D-6f69b2",
+      "repo": "aws-parallelcluster",
+      "id": "D-6f69b2",
+      "rank": 4,
+      "summary": "cli: classes in src/pcluster/validators/** are named `*Validator`",
+      "role": {
+        "package": "cli",
+        "dir": "src/pcluster/validators",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Validator"
+      },
+      "evidence": {
+        "holders": 125,
+        "total": 129,
+        "lower_bound": 0.92,
+        "lift": 5
+      },
+      "members": 129,
+      "example": "cli/src/pcluster/validators/cluster_validators.py#ArchitectureOsValidator",
+      "python_members": 129,
+      "outliers": 4,
+      "outlier_files": [
+        "cli/src/pcluster/validators/cluster_validators.py",
+        "cli/src/pcluster/validators/slurm_settings_validator.py"
+      ],
+      "block": " 4. [D-6f69b2] cli: classes in src/pcluster/validators/** are named `*Validator`\n    evidence: 125/129 (lower bound 0.92, lift 5.0)\n    example:  cli/src/pcluster/validators/cluster_validators.py#ArchitectureOsValidator\n    outlier:  cli/src/pcluster/validators/cluster_validators.py:1507 DictLaunchTemplateBuilder\n    outlier:  cli/src/pcluster/validators/slurm_settings_validator.py:202 ExternalSlurmdbdRequiresCustomMungeKey\n    outlier:  cli/src/pcluster/validators/slurm_settings_validator.py:213 ExternalSlurmdbdTrafficNotEncrypted\n    outlier:  cli/src/pcluster/validators/slurm_settings_validator.py:186 ExternalSlurmdbdVsDatabaseIncompatibility",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "aws-parallelcluster/D-51bdb8",
+      "repo": "aws-parallelcluster",
+      "id": "D-51bdb8",
+      "rank": 5,
+      "summary": "cli: classes in src/pcluster/schemas/** are named `*Schema`",
+      "role": {
+        "package": "cli",
+        "dir": "src/pcluster/schemas",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Schema"
+      },
+      "evidence": {
+        "holders": 93,
+        "total": 94,
+        "lower_bound": 0.94,
+        "lift": 6.4
+      },
+      "members": 95,
+      "example": "cli/src/pcluster/schemas/cluster_schema.py#AdditionalPackagesSchema",
+      "python_members": 95,
+      "outliers": 1,
+      "outlier_files": [
+        "cli/src/pcluster/schemas/cluster_schema.py"
+      ],
+      "block": " 5. [D-51bdb8] cli: classes in src/pcluster/schemas/** are named `*Schema`\n    evidence: 93/94 (lower bound 0.94, lift 6.4)\n    example:  cli/src/pcluster/schemas/cluster_schema.py#AdditionalPackagesSchema\n    outlier:  cli/src/pcluster/schemas/cluster_schema.py:1308 CustomActionScriptSchemaBase\n    exempt:   cli/src/pcluster/schemas/cluster_schema.py:1252 OneOrManyCustomActionField (shared part used by 3 members)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "aws-parallelcluster/D-1ef14c",
+      "repo": "aws-parallelcluster",
+      "id": "D-1ef14c",
+      "rank": 6,
+      "summary": "api/client/src: files in pcluster_client/** have a test file",
+      "role": {
+        "package": "api/client/src",
+        "dir": "pcluster_client",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "has_test"
+      },
+      "evidence": {
+        "holders": 73,
+        "total": 79,
+        "lower_bound": 0.84,
+        "lift": 1.8
+      },
+      "members": 79,
+      "example": "api/client/src/pcluster_client/api/cluster_compute_fleet_api.py#(file)",
+      "python_members": 79,
+      "outliers": 6,
+      "outlier_files": [
+        "api/client/src/pcluster_client/api_client.py",
+        "api/client/src/pcluster_client/configuration.py",
+        "api/client/src/pcluster_client/exceptions.py",
+        "api/client/src/pcluster_client/model_utils.py",
+        "api/client/src/pcluster_client/rest.py",
+        "api/client/src/pcluster_client/sigv4_auth.py"
+      ],
+      "block": " 6. [D-1ef14c] api/client/src: files in pcluster_client/** have a test file\n    evidence: 73/79 (lower bound 0.84, lift 1.8)\n    example:  api/client/src/pcluster_client/api/cluster_compute_fleet_api.py#(file)\n    outlier:  api/client/src/pcluster_client/api_client.py:1 (file)\n    outlier:  api/client/src/pcluster_client/configuration.py:1 (file)\n    outlier:  api/client/src/pcluster_client/exceptions.py:1 (file)\n    outlier:  api/client/src/pcluster_client/model_utils.py:1 (file)\n    outlier:  api/client/src/pcluster_client/rest.py:1 (file)\n    outlier:  api/client/src/pcluster_client/sigv4_auth.py:1 (file)",
+      "family": "repo",
+      "rule_kind": "has_test",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "aws-parallelcluster/D-c15280",
+      "repo": "aws-parallelcluster",
+      "id": "D-c15280",
+      "rank": 7,
+      "summary": "cli: files in src/pcluster/validators/** have a test file",
+      "role": {
+        "package": "cli",
+        "dir": "src/pcluster/validators",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "has_test"
+      },
+      "evidence": {
+        "holders": 18,
+        "total": 19,
+        "lower_bound": 0.75,
+        "lift": 1.9
+      },
+      "members": 19,
+      "example": "cli/src/pcluster/validators/cluster_validators.py#(file)",
+      "python_members": 19,
+      "outliers": 1,
+      "outlier_files": [
+        "cli/src/pcluster/validators/slurm_settings_validator.py"
+      ],
+      "block": " 7. [D-c15280] cli: files in src/pcluster/validators/** have a test file\n    evidence: 18/19 (lower bound 0.75, lift 1.9)\n    example:  cli/src/pcluster/validators/cluster_validators.py#(file)\n    outlier:  cli/src/pcluster/validators/slurm_settings_validator.py:1 (file)",
+      "family": "repo",
+      "rule_kind": "has_test",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "taos/D-9441cc",
+      "repo": "taos",
+      "id": "D-9441cc",
+      "rank": 1,
+      "summary": "classes in tinyagentos/routes/** extend BaseModel",
+      "role": {
+        "package": "",
+        "dir": "tinyagentos/routes",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:pydantic#BaseModel"
+        ]
+      },
+      "evidence": {
+        "holders": 257,
+        "total": 272,
+        "lower_bound": 0.91,
+        "lift": 2.5
+      },
+      "members": 272,
+      "example": "tinyagentos/routes/a2a_bus.py#BusSendBody",
+      "python_members": 272,
+      "outliers": 15,
+      "outlier_files": [
+        "tinyagentos/routes/agent_versions.py",
+        "tinyagentos/routes/agents.py",
+        "tinyagentos/routes/desktop_browser/agent_pin.py",
+        "tinyagentos/routes/desktop_browser/cookie_store.py",
+        "tinyagentos/routes/desktop_browser/copilot_ws.py",
+        "tinyagentos/routes/desktop_browser/profile.py",
+        "tinyagentos/routes/desktop_browser/ssrf.py",
+        "tinyagentos/routes/images_edit.py",
+        "tinyagentos/routes/lora_studio.py"
+      ],
+      "block": " 1. [D-9441cc] classes in tinyagentos/routes/** extend BaseModel\n    evidence: 257/272 (lower bound 0.91, lift 2.5)\n    example:  tinyagentos/routes/a2a_bus.py#BusSendBody\n    outlier:  tinyagentos/routes/agent_versions.py:66 InvalidContainerTargetError\n    outlier:  tinyagentos/routes/agents.py:54 IdempotencyCache\n    outlier:  tinyagentos/routes/desktop_browser/agent_pin.py:16 AgentNotFoundError\n    outlier:  tinyagentos/routes/desktop_browser/agent_pin.py:12 TooManyPinsError\n    outlier:  tinyagentos/routes/desktop_browser/cookie_store.py:7 BrowserCookieStore\n    outlier:  tinyagentos/routes/desktop_browser/copilot_ws.py:144 CopilotHub\n    outlier:  tinyagentos/routes/desktop_browser/copilot_ws.py:37 CopilotTicketStore\n    outlier:  tinyagentos/routes/desktop_browser/profile.py:187 LastProfileError\n    outlier:  tinyagentos/routes/desktop_browser/profile.py:33 ProfileNotFoundError\n    outlier:  tinyagentos/routes/desktop_browser/ssrf.py:59 SsrfBlockedError\n    outlier:  tinyagentos/routes/desktop_browser/ssrf.py:266 SsrfGuardedAsyncTransport\n    outlier:  tinyagentos/routes/images_edit.py:277 FluxFillClient\n    outlier:  tinyagentos/routes/images_edit.py:181 IOPaintClient\n    outlier:  tinyagentos/routes/lora_studio.py:166 CivitaiIngestError\n    outlier:  tinyagentos/routes/lora_studio.py:73 CivitaiUrlError",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "taos/D-ccce4a",
+      "repo": "taos",
+      "id": "D-ccce4a",
+      "rank": 2,
+      "summary": "functions in tinyagentos/** declare their return type",
+      "role": {
+        "package": "",
+        "dir": "tinyagentos",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 749,
+        "total": 778,
+        "lower_bound": 0.95,
+        "lift": 1.8
+      },
+      "members": 787,
+      "example": "tinyagentos/__main__.py#main",
+      "python_members": 787,
+      "outliers": 29,
+      "outlier_files": [
+        "tinyagentos/agent_controller_listener.py",
+        "tinyagentos/agent_image.py",
+        "tinyagentos/agent_tools/coding_model.py",
+        "tinyagentos/app.py",
+        "tinyagentos/auto_update.py",
+        "tinyagentos/clients/retry.py",
+        "tinyagentos/cluster/ble/proto.py",
+        "tinyagentos/llm_gateway/listener.py",
+        "tinyagentos/projects/tx.py",
+        "tinyagentos/routes/agent_archive.py",
+        "tinyagentos/routes/agent_deploy.py",
+        "tinyagentos/services/sdcpp_server.py",
+        "tinyagentos/taos_agent_runtime.py",
+        "tinyagentos/userspace/broker.py",
+        "tinyagentos/worker/__main__.py",
+        "tinyagentos/worker/tray.py"
+      ],
+      "block": " 2. [D-ccce4a] functions in tinyagentos/** declare their return type\n    evidence: 749/778 (lower bound 0.95, lift 1.8)\n    example:  tinyagentos/__main__.py#main\n    outlier:  tinyagentos/agent_controller_listener.py:26 create_agent_controller_app\n    outlier:  tinyagentos/agent_image.py:85 register_prefetch_endpoint\n    outlier:  tinyagentos/agent_tools/coding_model.py:137 make_litellm_model_step\n    outlier:  tinyagentos/app.py:1999 gui\n    outlier:  tinyagentos/app.py:1971 main\n    outlier:  tinyagentos/auto_update.py:145 poll_frameworks\n    outlier:  tinyagentos/clients/retry.py:134 with_retry\n    outlier:  tinyagentos/cluster/ble/proto.py:80 advert_mfr_data\n    outlier:  tinyagentos/cluster/ble/proto.py:150 fragment\n    outlier:  tinyagentos/cluster/ble/proto.py:389 info_frame\n    outlier:  tinyagentos/cluster/ble/proto.py:135 key_from_raw\n    outlier:  tinyagentos/cluster/ble/proto.py:84 parse_advert_mfr\n    outlier:  tinyagentos/cluster/ble/proto.py:144 random_board_id\n    outlier:  tinyagentos/cluster/ble/proto.py:140 raw_from_key\n    outlier:  tinyagentos/cluster/ble/proto.py:281 seal\n    outlier:  tinyagentos/cluster/ble/proto.py:330 validate_provision\n    outlier:  tinyagentos/llm_gateway/listener.py:120 create_agent_listener_app\n    outlier:  tinyagentos/projects/tx.py:205 read\n    outlier:  tinyagentos/projects/tx.py:135 tx\n    outlier:  tinyagentos/routes/agent_archive.py:501 purge_archived\n    outlier:  tinyagentos/routes/agent_archive.py:319 restore_archived\n    outlier:  tinyagentos/routes/agent_deploy.py:208 configure_remote_deploy\n    outlier:  tinyagentos/services/sdcpp_server.py:162 main\n    outlier:  tinyagentos/taos_agent_runtime.py:620 ensure_taos_picoclaw_harness\n    outlier:  tinyagentos/taos_agent_runtime.py:614 provision_picoclaw\n    outlier:  tinyagentos/userspace/broker.py:22 handle_capability\n    outlier:  tinyagentos/worker/__main__.py:33 main\n    outlier:  tinyagentos/worker/tray.py:11 create_icon_image\n    outlier:  tinyagentos/worker/tray.py:21 run_tray\n    exempt:   tinyagentos/cluster/ble/proto.py:105 b64 (shared part used by 3 members)\n    exempt:   tinyagentos/cluster/ble/proto.py:234 commitment (shared part used by 2 members)\n    exempt:   tinyagentos/cluster/ble/proto.py:246 derive_code (shared part used by 2 members)\n    exempt:   tinyagentos/cluster/ble/proto.py:272 derive_session_key (shared part used by 2 members)\n    exempt:   tinyagentos/cluster/ble/proto.py:131 pub_bytes (shared part used by 2 members)\n    exempt:   tinyagentos/cluster/ble/proto.py:225 transcript (shared part used by 2 members)\n    exempt:   tinyagentos/cluster/ble/proto.py:110 unb64 (shared part used by 2 members)\n    exempt:   tinyagentos/cluster/ble/proto.py:285 unseal (shared part used by 2 members)\n    exempt:   tinyagentos/cluster/ble/proto.py:126 x25519_keypair (shared part used by 2 members)",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "taos/D-fdff1c",
+      "repo": "taos",
+      "id": "D-fdff1c",
+      "rank": 3,
+      "summary": "desktop: functions in src/lib/** declare their return type",
+      "role": {
+        "package": "desktop",
+        "dir": "src/lib",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 241,
+        "total": 245,
+        "lower_bound": 0.96,
+        "lift": 1.8
+      },
+      "members": 245,
+      "example": "desktop/src/lib/a2a-receipts-api.ts#getReceipts",
+      "python_members": null,
+      "outliers": 4,
+      "outlier_files": [
+        "desktop/src/lib/account-client.ts",
+        "desktop/src/lib/use-thread-panel.ts",
+        "desktop/src/lib/utils.ts"
+      ],
+      "block": " 3. [D-fdff1c] desktop: functions in src/lib/** declare their return type\n    evidence: 241/245 (lower bound 0.96, lift 1.8)\n    example:  desktop/src/lib/a2a-receipts-api.ts#getReceipts\n    outlier:  desktop/src/lib/account-client.ts:169 login\n    outlier:  desktop/src/lib/account-client.ts:172 register\n    outlier:  desktop/src/lib/use-thread-panel.ts:3 useThreadPanel\n    outlier:  desktop/src/lib/utils.ts:4 cn",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "taos/D-499c0e",
+      "repo": "taos",
+      "id": "D-499c0e",
+      "rank": 4,
+      "summary": "functions in scripts/** declare their return type",
+      "role": {
+        "package": "",
+        "dir": "scripts",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 126,
+        "total": 129,
+        "lower_bound": 0.93,
+        "lift": 1.8
+      },
+      "members": 129,
+      "example": "scripts/_gitutil.py#diff_name_status_z",
+      "python_members": 129,
+      "outliers": 3,
+      "outlier_files": [
+        "scripts/check_non_discriminating.py",
+        "scripts/mobile-screenshots.py"
+      ],
+      "block": " 4. [D-499c0e] functions in scripts/** declare their return type\n    evidence: 126/129 (lower bound 0.93, lift 1.8)\n    example:  scripts/_gitutil.py#diff_name_status_z\n    outlier:  scripts/check_non_discriminating.py:305 pytest_configure\n    outlier:  scripts/check_non_discriminating.py:451 pytest_runtest_protocol\n    outlier:  scripts/mobile-screenshots.py:12 main",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "taos/D-6d209c",
+      "repo": "taos",
+      "id": "D-6d209c",
+      "rank": 5,
+      "summary": "desktop: functions in src/apps/** declare their return type",
+      "role": {
+        "package": "desktop",
+        "dir": "src/apps",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 183,
+        "total": 193,
+        "lower_bound": 0.91,
+        "lift": 1.7
+      },
+      "members": 193,
+      "example": "desktop/src/apps/BrowserApp/agent-ws-bridge.ts#openParentWs",
+      "python_members": null,
+      "outliers": 10,
+      "outlier_files": [
+        "desktop/src/apps/BrowserApp/keyboard.ts",
+        "desktop/src/apps/MessagesApp/index.tsx",
+        "desktop/src/apps/ProjectsApp/board/useBoardData.ts",
+        "desktop/src/apps/ProjectsApp/board/useBoardLive.ts",
+        "desktop/src/apps/ProjectsApp/canvas/canvas-store.ts",
+        "desktop/src/apps/chat/A2aBusPanel.tsx",
+        "desktop/src/apps/chat/useChatNotifications.ts",
+        "desktop/src/apps/designstudio/useElementHistory.ts",
+        "desktop/src/apps/musicstudio/use-studio-engine.ts"
+      ],
+      "block": " 5. [D-6d209c] desktop: functions in src/apps/** declare their return type\n    evidence: 183/193 (lower bound 0.91, lift 1.7)\n    example:  desktop/src/apps/BrowserApp/agent-ws-bridge.ts#openParentWs\n    outlier:  desktop/src/apps/BrowserApp/keyboard.ts:48 useBrowserKeyboardShortcuts\n    outlier:  desktop/src/apps/MessagesApp/index.tsx:322 renderContent\n    outlier:  desktop/src/apps/MessagesApp/index.tsx:348 renderInline\n    outlier:  desktop/src/apps/ProjectsApp/board/useBoardData.ts:7 useBoardData\n    outlier:  desktop/src/apps/ProjectsApp/board/useBoardLive.ts:6 useBoardLive\n    outlier:  desktop/src/apps/ProjectsApp/canvas/canvas-store.ts:12 createCanvasStore\n    outlier:  desktop/src/apps/chat/A2aBusPanel.tsx:60 useBusChannels\n    outlier:  desktop/src/apps/chat/useChatNotifications.ts:8 useChatNotifications\n    outlier:  desktop/src/apps/designstudio/useElementHistory.ts:25 useElementHistory\n    outlier:  desktop/src/apps/musicstudio/use-studio-engine.ts:20 useStudioEngine",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "taos/D-c74a2e",
+      "repo": "taos",
+      "id": "D-c74a2e",
+      "rank": 6,
+      "summary": "desktop: components in src/apps/** call useState() before useEffect()",
+      "role": {
+        "package": "desktop",
+        "dir": "src/apps",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "before",
+        "first": "pkg:react#useState",
+        "then": "pkg:react#useEffect"
+      },
+      "evidence": {
+        "holders": 133,
+        "total": 146,
+        "lower_bound": 0.85,
+        "lift": 1
+      },
+      "members": 146,
+      "example": "desktop/src/apps/AgentBrowsersApp.tsx#AgentBrowsersApp",
+      "python_members": null,
+      "outliers": 13,
+      "outlier_files": [
+        "desktop/src/apps/BrowserApp/AddressSuggest.tsx",
+        "desktop/src/apps/BrowserApp/MoveTabMenu.tsx",
+        "desktop/src/apps/BrowserApp/TabRenderer.tsx",
+        "desktop/src/apps/BrowserApp/WindowChooser.tsx",
+        "desktop/src/apps/ProjectsApp/canvas/CanvasBoard.tsx",
+        "desktop/src/apps/ProjectsApp/mobile/MobileTaskModal.tsx",
+        "desktop/src/apps/ProvidersApp.tsx",
+        "desktop/src/apps/SandboxedAppWindow.tsx",
+        "desktop/src/apps/TerminalApp.tsx",
+        "desktop/src/apps/agents/DeployWizard.tsx",
+        "desktop/src/apps/chat/AgentContextMenu.tsx",
+        "desktop/src/apps/chat/MessageOverflowMenu.tsx",
+        "desktop/src/apps/videostudio/CreateView.tsx"
+      ],
+      "block": " 6. [D-c74a2e] desktop: components in src/apps/** call useState() before useEffect()\n    evidence: 133/146 (lower bound 0.85, lift 1.0)\n    example:  desktop/src/apps/AgentBrowsersApp.tsx#AgentBrowsersApp\n    outlier:  desktop/src/apps/BrowserApp/AddressSuggest.tsx:22 AddressSuggest\n    outlier:  desktop/src/apps/BrowserApp/MoveTabMenu.tsx:24 MoveTabMenu\n    outlier:  desktop/src/apps/BrowserApp/TabRenderer.tsx:57 TabRenderer\n    outlier:  desktop/src/apps/BrowserApp/WindowChooser.tsx:24 WindowChooser\n    outlier:  desktop/src/apps/ProjectsApp/canvas/CanvasBoard.tsx:37 CanvasBoard\n    outlier:  desktop/src/apps/ProjectsApp/mobile/MobileTaskModal.tsx:55 MobileTaskModal\n    outlier:  desktop/src/apps/ProvidersApp.tsx:1140 ProvidersApp\n    outlier:  desktop/src/apps/SandboxedAppWindow.tsx:124 SandboxedAppWindow\n    outlier:  desktop/src/apps/TerminalApp.tsx:94 TerminalApp\n    outlier:  desktop/src/apps/agents/DeployWizard.tsx:78 MemoryWizardStep\n    outlier:  desktop/src/apps/chat/AgentContextMenu.tsx:17 AgentContextMenu\n    outlier:  desktop/src/apps/chat/MessageOverflowMenu.tsx:16 MessageOverflowMenu\n    outlier:  desktop/src/apps/videostudio/CreateView.tsx:56 CreateView",
+      "family": "ordering",
+      "rule_kind": "before",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "taos/D-7acce3",
+      "repo": "taos",
+      "id": "D-7acce3",
+      "rank": 7,
+      "summary": "functions in tinyagentos/** (__init__ files) declare their return type",
+      "role": {
+        "package": "",
+        "dir": "tinyagentos",
+        "file": "__init__",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 31,
+        "total": 32,
+        "lower_bound": 0.84,
+        "lift": 1.8
+      },
+      "members": 32,
+      "example": "tinyagentos/adapters/__init__.py#list_frameworks",
+      "python_members": 32,
+      "outliers": 1,
+      "outlier_files": [
+        "tinyagentos/routes/__init__.py"
+      ],
+      "block": " 7. [D-7acce3] functions in tinyagentos/** (__init__ files) declare their return type\n    evidence: 31/32 (lower bound 0.84, lift 1.8)\n    example:  tinyagentos/adapters/__init__.py#list_frameworks\n    outlier:  tinyagentos/routes/__init__.py:1 register_all_routers",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "taos/D-e4696a",
+      "repo": "taos",
+      "id": "D-e4696a",
+      "rank": 8,
+      "summary": "desktop: files in src/hooks/** have a test file",
+      "role": {
+        "package": "desktop",
+        "dir": "src/hooks",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "has_test"
+      },
+      "evidence": {
+        "holders": 26,
+        "total": 28,
+        "lower_bound": 0.77,
+        "lift": 1.5
+      },
+      "members": 28,
+      "example": "desktop/src/hooks/use-agent-shortcuts.ts#(file)",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "desktop/src/hooks/use-is-square-viewport.ts",
+        "desktop/src/hooks/use-update-available.ts"
+      ],
+      "block": " 8. [D-e4696a] desktop: files in src/hooks/** have a test file\n    evidence: 26/28 (lower bound 0.77, lift 1.5)\n    example:  desktop/src/hooks/use-agent-shortcuts.ts#(file)\n    outlier:  desktop/src/hooks/use-is-square-viewport.ts:1 (file)\n    outlier:  desktop/src/hooks/use-update-available.ts:1 (file)",
+      "family": "repo",
+      "rule_kind": "has_test",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "veritasgraph/D-b12755",
+      "repo": "veritasgraph",
+      "id": "D-b12755",
+      "rank": 1,
+      "summary": "veritas-reason: classes in veritasreason/explorer/** extend BaseModel",
+      "role": {
+        "package": "veritas-reason",
+        "dir": "veritasreason/explorer",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:pydantic#BaseModel"
+        ]
+      },
+      "evidence": {
+        "holders": 81,
+        "total": 84,
+        "lower_bound": 0.9,
+        "lift": 8.1
+      },
+      "members": 84,
+      "example": "veritas-reason/veritasreason/explorer/routes/ontology.py#AlignmentRequest",
+      "python_members": 84,
+      "outliers": 3,
+      "outlier_files": [
+        "veritas-reason/veritasreason/explorer/search_index.py",
+        "veritas-reason/veritasreason/explorer/session.py",
+        "veritas-reason/veritasreason/explorer/ws.py"
+      ],
+      "block": " 1. [D-b12755] veritas-reason: classes in veritasreason/explorer/** extend BaseModel\n    evidence: 81/84 (lower bound 0.90, lift 8.1)\n    example:  veritas-reason/veritasreason/explorer/routes/ontology.py#AlignmentRequest\n    outlier:  veritas-reason/veritasreason/explorer/search_index.py:93 GraphSearchIndex\n    outlier:  veritas-reason/veritasreason/explorer/session.py:37 GraphSession\n    outlier:  veritas-reason/veritasreason/explorer/ws.py:17 ConnectionManager",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "veritasgraph/D-a849e1",
+      "repo": "veritasgraph",
+      "id": "D-a849e1",
+      "rank": 2,
+      "summary": "veritas-reason: classes in veritasreason/normalize/** call get_logger()",
+      "role": {
+        "package": "veritas-reason",
+        "dir": "veritasreason/normalize",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "veritas-reason/veritasreason/utils/logging.py#get_logger"
+      },
+      "evidence": {
+        "holders": 23,
+        "total": 24,
+        "lower_bound": 0.8,
+        "lift": 2.4
+      },
+      "members": 24,
+      "example": "veritas-reason/veritasreason/normalize/data_cleaner.py#DataCleaner",
+      "python_members": 24,
+      "outliers": 1,
+      "outlier_files": [
+        "veritas-reason/veritasreason/normalize/normalize_provenance.py"
+      ],
+      "block": " 2. [D-a849e1] veritas-reason: classes in veritasreason/normalize/** call get_logger()\n    evidence: 23/24 (lower bound 0.80, lift 2.4)\n    example:  veritas-reason/veritasreason/normalize/data_cleaner.py#DataCleaner\n    outlier:  veritas-reason/veritasreason/normalize/normalize_provenance.py:18 NormalizerWithProvenance",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "veritasgraph/D-1d585e",
+      "repo": "veritasgraph",
+      "id": "D-1d585e",
+      "rank": 3,
+      "summary": "veritas-reason: dataclasses in veritasreason/** pass `default_factory` to field()",
+      "role": {
+        "package": "veritas-reason",
+        "dir": "veritasreason",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "variety": "dataclass"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:python:dataclasses#field",
+        "index": 99,
+        "key": "default_factory"
+      },
+      "evidence": {
+        "holders": 141,
+        "total": 141,
+        "lower_bound": 0.97,
+        "lift": 4.5
+      },
+      "members": 163,
+      "example": "veritas-reason/veritasreason/change_management/change_log.py#ChangeLogEntry",
+      "python_members": 163,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 3. [D-1d585e] veritas-reason: dataclasses in veritasreason/** pass `default_factory` to field()\n    evidence: 141/141 (lower bound 0.97, lift 4.5)\n    example:  veritas-reason/veritasreason/change_management/change_log.py#ChangeLogEntry\n    exempt:   veritas-reason/veritasreason/change_management/change_log.py:114 MutationRecord (does not call field())\n    exempt:   veritas-reason/veritasreason/deduplication/entity_merger.py:55 MergeOperation (does not call field())\n    exempt:   veritas-reason/veritasreason/deduplication/merge_strategy.py:64 PropertyMergeRule (does not call field())\n    exempt:   veritas-reason/veritasreason/deduplication/similarity_calculator.py:61 SimilarityResult (does not call field())\n    exempt:   veritas-reason/veritasreason/explorer/search_index.py:80 IndexedNodeDocument (does not call field())\n    exempt:   veritas-reason/veritasreason/kg/temporal_query.py:28 TemporalConsistencyIssue (does not call field())\n    exempt:   veritas-reason/veritasreason/kg/temporal_query.py:35 TemporalConsistencyReport (does not call field())\n    exempt:   veritas-reason/veritasreason/kg/temporal_query_rewriter.py:56 TemporalQueryResult (does not call field())\n    exempt:   veritas-reason/veritasreason/kg/temporal_reasoning.py:20 TemporalInterval (does not call field())\n    exempt:   veritas-reason/veritasreason/normalize/data_cleaner.py:41 DuplicateGroup (does not call field())\n    exempt:   veritas-reason/veritasreason/ontology/ontology_generator.py:720 PropertyShape (does not call field())\n    exempt:   veritas-reason/veritasreason/ontology/ontology_validator.py:25 SHACLViolation (does not call field())\n    exempt:   veritas-reason/veritasreason/parse/code_parser.py:58 CodeComment (does not call field())\n    exempt:   veritas-reason/veritasreason/parse/docling_parser.py:64 DoclingMetadata (does not call field())\n    exempt:   veritas-reason/veritasreason/parse/docx_parser.py:58 DocxMetadata (does not call field())\n    exempt:   veritas-reason/veritasreason/parse/html_parser.py:43 HTMLMetadata (does not call field())\n    exempt:   veritas-reason/veritasreason/parse/json_parser.py:40 JSONData (does not call field())\n    exempt:   veritas-reason/veritasreason/parse/pdf_parser.py:53 PDFMetadata (does not call field())\n    exempt:   veritas-reason/veritasreason/pipeline/parallelism_manager.py:56 ParallelExecutionResult (does not call field())\n    exempt:   veritas-reason/veritasreason/reasoning/datalog_reasoner.py:18 DatalogFact (does not call field())\n    exempt:   veritas-reason/veritasreason/reasoning/datalog_reasoner.py:29 DatalogRule (does not call field())\n    exempt:   veritas-reason/veritasreason/semantic_extract/llm_extraction.py:74 LLMResponse (does not call field())",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "veritasgraph/D-3e5d8c",
+      "repo": "veritasgraph",
+      "id": "D-3e5d8c",
+      "rank": 4,
+      "summary": "veritas-reason: classes in veritasreason/parse/** call get_logger()",
+      "role": {
+        "package": "veritas-reason",
+        "dir": "veritasreason/parse",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "veritas-reason/veritasreason/utils/logging.py#get_logger"
+      },
+      "evidence": {
+        "holders": 23,
+        "total": 25,
+        "lower_bound": 0.75,
+        "lift": 2.3
+      },
+      "members": 25,
+      "example": "veritas-reason/veritasreason/parse/code_parser.py#CodeParser",
+      "python_members": 25,
+      "outliers": 2,
+      "outlier_files": [
+        "veritas-reason/veritasreason/parse/parse_provenance.py",
+        "veritas-reason/veritasreason/parse/web_parser.py"
+      ],
+      "block": " 4. [D-3e5d8c] veritas-reason: classes in veritasreason/parse/** call get_logger()\n    evidence: 23/25 (lower bound 0.75, lift 2.3)\n    example:  veritas-reason/veritasreason/parse/code_parser.py#CodeParser\n    outlier:  veritas-reason/veritasreason/parse/parse_provenance.py:20 ParserWithProvenance\n    outlier:  veritas-reason/veritasreason/parse/web_parser.py:155 HTMLContentParser",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "veritasgraph/D-e381dd",
+      "repo": "veritasgraph",
+      "id": "D-e381dd",
+      "rank": 5,
+      "summary": "veritas-reason: HTTP handlers in veritasreason/explorer/** pass `response_model` to APIRouter.api_route()",
+      "role": {
+        "package": "veritas-reason",
+        "dir": "veritasreason/explorer",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:fastapi#APIRouter.api_route",
+        "index": 99,
+        "key": "response_model"
+      },
+      "evidence": {
+        "holders": 60,
+        "total": 69,
+        "lower_bound": 0.77,
+        "lift": 10.3
+      },
+      "members": 69,
+      "example": "veritas-reason/veritasreason/explorer/routes/analytics.py#get_analytics",
+      "python_members": 69,
+      "outliers": 9,
+      "outlier_files": [
+        "veritas-reason/veritasreason/explorer/routes/annotations.py",
+        "veritas-reason/veritasreason/explorer/routes/export_import.py",
+        "veritas-reason/veritasreason/explorer/routes/ontology.py",
+        "veritas-reason/veritasreason/explorer/routes/provenance.py"
+      ],
+      "block": " 5. [D-e381dd] veritas-reason: HTTP handlers in veritasreason/explorer/** pass `response_model` to APIRouter.api_route()\n    evidence: 60/69 (lower bound 0.77, lift 10.3)\n    example:  veritas-reason/veritasreason/explorer/routes/analytics.py#get_analytics\n    outlier:  veritas-reason/veritasreason/explorer/routes/annotations.py:56 delete_annotation\n    outlier:  veritas-reason/veritasreason/explorer/routes/export_import.py:244 export_distance_enriched\n    outlier:  veritas-reason/veritasreason/explorer/routes/export_import.py:197 export_graph\n    outlier:  veritas-reason/veritasreason/explorer/routes/ontology.py:1905 add_comment\n    outlier:  veritas-reason/veritasreason/explorer/routes/ontology.py:1763 approve_proposal\n    outlier:  veritas-reason/veritasreason/explorer/routes/ontology.py:1793 publish_proposal\n    outlier:  veritas-reason/veritasreason/explorer/routes/ontology.py:1778 reject_proposal\n    outlier:  veritas-reason/veritasreason/explorer/routes/ontology.py:1485 remove_ontology\n    outlier:  veritas-reason/veritasreason/explorer/routes/provenance.py:158 export_provenance_report",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "ods/D-4c758e",
+      "repo": "ods",
+      "id": "D-4c758e",
+      "rank": 1,
+      "summary": "HTTP handlers in ods/** are wrapped in verify_api_key() or verify_api_key() or verify_api_key()",
+      "role": {
+        "package": "",
+        "dir": "ods",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "ods/extensions/library/services/open-interpreter/server.py#verify_api_key",
+          "ods/extensions/services/dashboard-api/security.py#verify_api_key",
+          "ods/extensions/services/privacy-shield/proxy.py#verify_api_key"
+        ]
+      },
+      "evidence": {
+        "holders": 178,
+        "total": 199,
+        "lower_bound": 0.84,
+        "lift": 12.9
+      },
+      "members": 199,
+      "example": "ods/extensions/services/dashboard-api/routers/agents.py#get_agent_metrics",
+      "python_members": 199,
+      "outliers": 21,
+      "outlier_files": [
+        "ods/extensions/library/services/bark/server.py",
+        "ods/extensions/library/services/open-interpreter/server.py",
+        "ods/extensions/services/dashboard-api/routers/auth.py",
+        "ods/extensions/services/dashboard-api/routers/dashboard_session.py",
+        "ods/extensions/services/dashboard-api/routers/magic_link.py",
+        "ods/extensions/services/dashboard-api/routers/oauth_passthrough.py",
+        "ods/extensions/services/dashboard-api/routers/talk.py",
+        "ods/extensions/services/privacy-shield/proxy.py"
+      ],
+      "block": " 1. [D-4c758e] HTTP handlers in ods/** are wrapped in verify_api_key() or verify_api_key() or verify_api_key()\n    evidence: 178/199 (lower bound 0.84, lift 12.9)\n    split:    verify_api_key 174, verify_api_key 2, verify_api_key 2\n    example:  ods/extensions/services/dashboard-api/routers/agents.py#get_agent_metrics\n    outlier:  ods/extensions/library/services/bark/server.py:142 health\n    outlier:  ods/extensions/library/services/bark/server.py:220 list_voices\n    outlier:  ods/extensions/library/services/bark/server.py:147 text_to_speech\n    outlier:  ods/extensions/library/services/bark/server.py:181 text_to_speech_stream\n    outlier:  ods/extensions/library/services/open-interpreter/server.py:111 health\n    outlier:  ods/extensions/services/dashboard-api/routers/auth.py:103 hermes_session\n    outlier:  ods/extensions/services/dashboard-api/routers/auth.py:170 verify_session\n    outlier:  ods/extensions/services/dashboard-api/routers/dashboard_session.py:142 dashboard_login\n    outlier:  ods/extensions/services/dashboard-api/routers/dashboard_session.py:205 dashboard_logout\n    outlier:  ods/extensions/services/dashboard-api/routers/dashboard_session.py:123 verify_dashboard_session\n    outlier:  ods/extensions/services/dashboard-api/routers/magic_link.py:730 redeem_magic_link\n    outlier:  ods/extensions/services/dashboard-api/routers/oauth_passthrough.py:400 oauth_callback\n    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:946 talk_approval\n    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:999 talk_attachment\n    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:1073 talk_audio_message\n    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:898 talk_message\n    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:914 talk_message_stream\n    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:874 talk_session\n    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:1090 talk_speak\n    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:841 talk_status\n    outlier:  ods/extensions/services/privacy-shield/proxy.py:226 health",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "ods/D-6e9535",
+      "repo": "ods",
+      "id": "D-6e9535",
+      "rank": 2,
+      "summary": "HTTP handlers in ods/** are wrapped in security_scheme()",
+      "role": {
+        "package": "",
+        "dir": "ods",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "ods/extensions/services/dashboard-api/security.py#security_scheme"
+        ]
+      },
+      "evidence": {
+        "holders": 174,
+        "total": 199,
+        "lower_bound": 0.82,
+        "lift": 12.8
+      },
+      "members": 199,
+      "example": "ods/extensions/services/dashboard-api/routers/agents.py#get_agent_metrics",
+      "python_members": 199,
+      "outliers": 25,
+      "outlier_files": [
+        "ods/extensions/library/services/bark/server.py",
+        "ods/extensions/library/services/open-interpreter/server.py",
+        "ods/extensions/services/dashboard-api/routers/auth.py",
+        "ods/extensions/services/dashboard-api/routers/dashboard_session.py",
+        "ods/extensions/services/dashboard-api/routers/magic_link.py",
+        "ods/extensions/services/dashboard-api/routers/oauth_passthrough.py",
+        "ods/extensions/services/dashboard-api/routers/talk.py",
+        "ods/extensions/services/privacy-shield/proxy.py"
+      ],
+      "block": " 2. [D-6e9535] HTTP handlers in ods/** are wrapped in security_scheme()\n    evidence: 174/199 (lower bound 0.82, lift 12.8)\n    example:  ods/extensions/services/dashboard-api/routers/agents.py#get_agent_metrics\n    outlier:  ods/extensions/library/services/bark/server.py:142 health\n    outlier:  ods/extensions/library/services/bark/server.py:220 list_voices\n    outlier:  ods/extensions/library/services/bark/server.py:147 text_to_speech\n    outlier:  ods/extensions/library/services/bark/server.py:181 text_to_speech_stream\n    outlier:  ods/extensions/library/services/open-interpreter/server.py:116 chat\n    outlier:  ods/extensions/library/services/open-interpreter/server.py:154 chat_stream\n    outlier:  ods/extensions/library/services/open-interpreter/server.py:111 health\n    outlier:  ods/extensions/services/dashboard-api/routers/auth.py:103 hermes_session\n    outlier:  ods/extensions/services/dashboard-api/routers/auth.py:170 verify_session\n    outlier:  ods/extensions/services/dashboard-api/routers/dashboard_session.py:142 dashboard_login\n    outlier:  ods/extensions/services/dashboard-api/routers/dashboard_session.py:205 dashboard_logout\n    outlier:  ods/extensions/services/dashboard-api/routers/dashboard_session.py:123 verify_dashboard_session\n    outlier:  ods/extensions/services/dashboard-api/routers/magic_link.py:730 redeem_magic_link\n    outlier:  ods/extensions/services/dashboard-api/routers/oauth_passthrough.py:400 oauth_callback\n    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:946 talk_approval\n    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:999 talk_attachment\n    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:1073 talk_audio_message\n    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:898 talk_message\n    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:914 talk_message_stream\n    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:874 talk_session\n    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:1090 talk_speak\n    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:841 talk_status\n    outlier:  ods/extensions/services/privacy-shield/proxy.py:226 health\n    outlier:  ods/extensions/services/privacy-shield/proxy.py:272 proxy\n    outlier:  ods/extensions/services/privacy-shield/proxy.py:241 stats",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "ods/D-80b356",
+      "repo": "ods",
+      "id": "D-80b356",
+      "rank": 3,
+      "summary": "functions in ods/** do not throw a bare Error",
+      "role": {
+        "package": "",
+        "dir": "ods",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "throw_error"
+      },
+      "evidence": {
+        "holders": 1892,
+        "total": 1911,
+        "lower_bound": 0.98,
+        "lift": 11
+      },
+      "members": 1911,
+      "example": "ods/bin/extension_assets.py#check_space",
+      "python_members": 1849,
+      "outliers": 19,
+      "outlier_files": [
+        "ods/extensions/library/services/umami/ods-config.mjs",
+        "ods/extensions/services/n8n/n8n-prepare.mjs",
+        "ods/extensions/services/perplexica/patch-client-citations.js",
+        "ods/extensions/services/pixel-agent/host/access_mode_http.mjs",
+        "ods/extensions/services/pixel-agent/host/access_mode_relay.mjs",
+        "ods/extensions/services/pixel-agent/host/native_ingress_config.mjs",
+        "ods/extensions/services/pixel-agent/host/pixel_ingress.mjs"
+      ],
+      "block": " 3. [D-80b356] functions in ods/** do not throw a bare Error\n    evidence: 1892/1911 (lower bound 0.98, lift 11.0)\n    example:  ods/bin/extension_assets.py#check_space\n    outlier:  ods/extensions/library/services/umami/ods-config.mjs:1 environment\n    outlier:  ods/extensions/services/n8n/n8n-prepare.mjs:143 ensureOwnerHash\n    outlier:  ods/extensions/services/perplexica/patch-client-citations.js:31 patchClientChunk\n    outlier:  ods/extensions/services/pixel-agent/host/access_mode_http.mjs:6 accessPort\n    outlier:  ods/extensions/services/pixel-agent/host/access_mode_http.mjs:12 createAccessServer\n    outlier:  ods/extensions/services/pixel-agent/host/access_mode_http.mjs:45 startNativeAccessServer\n    outlier:  ods/extensions/services/pixel-agent/host/access_mode_relay.mjs:59 publicModelControl\n    outlier:  ods/extensions/services/pixel-agent/host/access_mode_relay.mjs:102 requestAccessController\n    outlier:  ods/extensions/services/pixel-agent/host/native_ingress_config.mjs:13 stageConfiguration\n    outlier:  ods/extensions/services/pixel-agent/host/pixel_ingress.mjs:2037 atomicWriteJson\n    outlier:  ods/extensions/services/pixel-agent/host/pixel_ingress.mjs:285 createLoopbackGatewayFetch\n    outlier:  ods/extensions/services/pixel-agent/host/pixel_ingress.mjs:580 prepareSocketPath\n    outlier:  ods/extensions/services/pixel-agent/host/pixel_ingress.mjs:1610 projectExamplePreview\n    outlier:  ods/extensions/services/pixel-agent/host/pixel_ingress.mjs:1601 projectExampleProjects\n    outlier:  ods/extensions/services/pixel-agent/host/pixel_ingress.mjs:1728 projectRestoreOptions\n    outlier:  ods/extensions/services/pixel-agent/host/pixel_ingress.mjs:1709 projectRestoreReceipt\n    outlier:  ods/extensions/services/pixel-agent/host/pixel_ingress.mjs:1563 projectRuntimeIdentity\n    outlier:  ods/extensions/services/pixel-agent/host/pixel_ingress.mjs:488 readGatewayConfiguration\n    outlier:  ods/extensions/services/pixel-agent/host/pixel_ingress.mjs:365 validateConfig",
+      "family": "avoids_other",
+      "rule_kind": "avoids:other",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "ods/D-2264ef",
+      "repo": "ods",
+      "id": "D-2264ef",
+      "rank": 4,
+      "summary": "functions in ods/scripts/** declare their return type",
+      "role": {
+        "package": "",
+        "dir": "ods/scripts",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 292,
+        "total": 351,
+        "lower_bound": 0.79,
+        "lift": 2.7
+      },
+      "members": 366,
+      "example": "ods/scripts/assign_gpus.py#assign_services",
+      "python_members": 366,
+      "outliers": 59,
+      "outlier_files": [
+        "ods/scripts/assign_gpus.py",
+        "ods/scripts/backup-native-preflight.py",
+        "ods/scripts/cleanup-wsl-pixel-mounts.py",
+        "ods/scripts/compose-cache-policy.py",
+        "ods/scripts/generate-setup-card.py",
+        "ods/scripts/healthcheck.py",
+        "ods/scripts/macos-bootstrap-promote.py",
+        "ods/scripts/model-store-compose-flags.py",
+        "ods/scripts/prepare-containerd-console.py",
+        "ods/scripts/recover-macos-local-model.py",
+        "ods/scripts/refresh-hermes-mounts.py",
+        "ods/scripts/register-model-store.py",
+        "ods/scripts/source-update-preflight.py",
+        "ods/scripts/stop-owned-containers.py",
+        "ods/scripts/verify-pixel-bundle.py",
+        "ods/scripts/windows-retained-extensions.py",
+        "ods/scripts/wsl-bind-recovery.py"
+      ],
+      "block": " 4. [D-2264ef] functions in ods/scripts/** declare their return type\n    evidence: 292/351 (lower bound 0.79, lift 2.7)\n    example:  ods/scripts/assign_gpus.py#assign_services\n    outlier:  ods/scripts/assign_gpus.py:467 main\n    outlier:  ods/scripts/backup-native-preflight.py:20 main\n    outlier:  ods/scripts/backup-native-preflight.py:10 native_state\n    outlier:  ods/scripts/cleanup-wsl-pixel-mounts.py:225 cleanup\n    outlier:  ods/scripts/cleanup-wsl-pixel-mounts.py:71 directory\n    outlier:  ods/scripts/cleanup-wsl-pixel-mounts.py:38 docker\n    outlier:  ods/scripts/cleanup-wsl-pixel-mounts.py:145 ensure_unused\n    outlier:  ods/scripts/cleanup-wsl-pixel-mounts.py:80 plan\n    outlier:  ods/scripts/cleanup-wsl-pixel-mounts.py:54 read_mounts\n    outlier:  ods/scripts/cleanup-wsl-pixel-mounts.py:50 unescape\n    outlier:  ods/scripts/compose-cache-policy.py:146 main\n    outlier:  ods/scripts/compose-cache-policy.py:37 validate_flags\n    outlier:  ods/scripts/generate-setup-card.py:115 render_card\n    outlier:  ods/scripts/generate-setup-card.py:83 render_qr\n    outlier:  ods/scripts/healthcheck.py:272 with_retries\n    outlier:  ods/scripts/macos-bootstrap-promote.py:399 main\n    outlier:  ods/scripts/macos-bootstrap-promote.py:347 run\n    outlier:  ods/scripts/model-store-compose-flags.py:55 main\n    outlier:  ods/scripts/model-store-compose-flags.py:14 resolve_flags\n    outlier:  ods/scripts/prepare-containerd-console.py:205 do_apply\n    outlier:  ods/scripts/prepare-containerd-console.py:198 do_check\n    outlier:  ods/scripts/prepare-containerd-console.py:254 main\n    outlier:  ods/scripts/recover-macos-local-model.py:26 installed_env\n    outlier:  ods/scripts/recover-macos-local-model.py:106 main\n    outlier:  ods/scripts/recover-macos-local-model.py:39 request\n    outlier:  ods/scripts/recover-macos-local-model.py:76 run\n    outlier:  ods/scripts/refresh-hermes-mounts.py:80 desktop_data_source_matches\n    outlier:  ods/scripts/refresh-hermes-mounts.py:84 desktop_file_source_matches\n    outlier:  ods/scripts/refresh-hermes-mounts.py:51 execute\n    outlier:  ods/scripts/refresh-hermes-mounts.py:88 host_digests\n    outlier:  ods/scripts/refresh-hermes-mounts.py:220 main\n    outlier:  ods/scripts/refresh-hermes-mounts.py:108 refresh\n    outlier:  ods/scripts/register-model-store.py:110 main\n    outlier:  ods/scripts/source-update-preflight.py:163 check_compose\n    outlier:  ods/scripts/source-update-preflight.py:134 check_native\n    outlier:  ods/scripts/source-update-preflight.py:149 check_rollback\n    outlier:  ods/scripts/source-update-preflight.py:176 main\n    outlier:  ods/scripts/source-update-preflight.py:55 root_managed_pixel_identity\n    outlier:  ods/scripts/stop-owned-containers.py:93 main\n    outlier:  ods/scripts/stop-owned-containers.py:31 stop_owned_containers\n    outlier:  ods/scripts/verify-pixel-bundle.py:61 bundle_tree_modes\n    outlier:  ods/scripts/verify-pixel-bundle.py:19 command\n    outlier:  ods/scripts/verify-pixel-bundle.py:31 files\n    outlier:  ods/scripts/verify-pixel-bundle.py:78 main\n    outlier:  ods/scripts/verify-pixel-bundle.py:43 source_index_modes\n    outlier:  ods/scripts/windows-retained-extensions.py:72 main\n    outlier:  ods/scripts/windows-retained-extensions.py:19 resolve\n    outlier:  ods/scripts/wsl-bind-recovery.py:144 active_profiles\n    outlier:  ods/scripts/wsl-bind-recovery.py:398 backup_phantom\n    outlier:  ods/scripts/wsl-bind-recovery.py:298 classify_running\n    outlier:  ods/scripts/wsl-bind-recovery.py:309 classify_stopped\n    outlier:  ods/scripts/wsl-bind-recovery.py:84 compose_config_json\n    outlier:  ods/scripts/wsl-bind-recovery.py:39 fail\n    outlier:  ods/scripts/wsl-bind-recovery.py:69 is_wsl_docker_desktop\n    outlier:  ods/scripts/wsl-bind-recovery.py:506 main\n    outlier:  ods/scripts/wsl-bind-recovery.py:465 recreate\n    outlier:  ods/scripts/wsl-bind-recovery.py:186 resolve_bind_targets\n    outlier:  ods/scripts/wsl-bind-recovery.py:177 service_enabled\n    outlier:  ods/scripts/wsl-bind-recovery.py:473 verify\n    exempt:   ods/scripts/cleanup-wsl-pixel-mounts.py:31 run (shared part used by 2 members)\n    exempt:   ods/scripts/prepare-containerd-console.py:102 classify (shared part used by 2 members)\n    exempt:   ods/scripts/refresh-hermes-mounts.py:60 desktop_source_matches (shared part used by 2 members)\n    exempt:   ods/scripts/source-update-preflight.py:15 load_helper (shared part used by 2 members)\n    exempt:   ods/scripts/source-update-preflight.py:24 locally_selected_native (shared part used by 2 members)\n    exempt:   ods/scripts/source-update-preflight.py:103 managed_pixel_identity (shared part used by 2 members)\n    exempt:   ods/scripts/verify-pixel-bundle.py:23 digest (shared part used by 2 members)\n    exempt:   ods/scripts/wsl-bind-recovery.py:266 bind_view_matches (shared part used by 2 members)\n    exempt:   ods/scripts/wsl-bind-recovery.py:99 compose_ps (shared part used by 2 members)\n    exempt:   ods/scripts/wsl-bind-recovery.py:226 exec_stat (shared part used by 4 members)\n    exempt:   ods/scripts/wsl-bind-recovery.py:208 host_stat (shared part used by 5 members)\n    exempt:   ods/scripts/wsl-bind-recovery.py:132 inspect_container (shared part used by 3 members)\n    exempt:   ods/scripts/wsl-bind-recovery.py:35 log (shared part used by 2 members)\n    exempt:   ods/scripts/wsl-bind-recovery.py:257 prevalidate_binds (shared part used by 4 members)\n    exempt:   ods/scripts/wsl-bind-recovery.py:44 run (shared part used by 7 members)",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "ods/D-c72ce2",
+      "repo": "ods",
+      "id": "D-c72ce2",
+      "rank": 5,
+      "summary": "files in ods/extensions/services/dashboard-api/** have a test file",
+      "role": {
+        "package": "",
+        "dir": "ods/extensions/services/dashboard-api",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "has_test"
+      },
+      "evidence": {
+        "holders": 94,
+        "total": 104,
+        "lower_bound": 0.83,
+        "lift": 2.1
+      },
+      "members": 104,
+      "example": "ods/extensions/services/dashboard-api/agent_monitor.py#(file)",
+      "python_members": 104,
+      "outliers": 10,
+      "outlier_files": [
+        "ods/extensions/services/dashboard-api/builtin_source_recipes.py",
+        "ods/extensions/services/dashboard-api/context_policy.py",
+        "ods/extensions/services/dashboard-api/dashboard_password.py",
+        "ods/extensions/services/dashboard-api/hermes_bridge.py",
+        "ods/extensions/services/dashboard-api/model_selection.py",
+        "ods/extensions/services/dashboard-api/pixel_connection_public.py",
+        "ods/extensions/services/dashboard-api/pixel_runtime_state.py",
+        "ods/extensions/services/dashboard-api/routers/auth.py",
+        "ods/extensions/services/dashboard-api/runtime_projection.py",
+        "ods/extensions/services/dashboard-api/settings.py"
+      ],
+      "block": " 5. [D-c72ce2] files in ods/extensions/services/dashboard-api/** have a test file\n    evidence: 94/104 (lower bound 0.83, lift 2.1)\n    example:  ods/extensions/services/dashboard-api/agent_monitor.py#(file)\n    outlier:  ods/extensions/services/dashboard-api/builtin_source_recipes.py:1 (file)\n    outlier:  ods/extensions/services/dashboard-api/context_policy.py:1 (file)\n    outlier:  ods/extensions/services/dashboard-api/dashboard_password.py:1 (file)\n    outlier:  ods/extensions/services/dashboard-api/hermes_bridge.py:1 (file)\n    outlier:  ods/extensions/services/dashboard-api/model_selection.py:1 (file)\n    outlier:  ods/extensions/services/dashboard-api/pixel_connection_public.py:1 (file)\n    outlier:  ods/extensions/services/dashboard-api/pixel_runtime_state.py:1 (file)\n    outlier:  ods/extensions/services/dashboard-api/routers/auth.py:1 (file)\n    outlier:  ods/extensions/services/dashboard-api/runtime_projection.py:1 (file)\n    outlier:  ods/extensions/services/dashboard-api/settings.py:1 (file)",
+      "family": "repo",
+      "rule_kind": "has_test",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "ods/D-f40096",
+      "repo": "ods",
+      "id": "D-f40096",
+      "rank": 6,
+      "summary": "functions in ods/bin/remote_provider/** declare their return type",
+      "role": {
+        "package": "",
+        "dir": "ods/bin/remote_provider",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 30,
+        "total": 31,
+        "lower_bound": 0.84,
+        "lift": 3.3
+      },
+      "members": 31,
+      "example": "ods/bin/remote_provider/egress.py#connection_header_names",
+      "python_members": 31,
+      "outliers": 1,
+      "outlier_files": [
+        "ods/bin/remote_provider/telemetry.py"
+      ],
+      "block": " 6. [D-f40096] functions in ods/bin/remote_provider/** declare their return type\n    evidence: 30/31 (lower bound 0.84, lift 3.3)\n    example:  ods/bin/remote_provider/egress.py#connection_header_names\n    outlier:  ods/bin/remote_provider/telemetry.py:7 route_fingerprint",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "ods/D-637b72",
+      "repo": "ods",
+      "id": "D-637b72",
+      "rank": 7,
+      "summary": "functions in ods/bin/model_switchboard/** declare their return type",
+      "role": {
+        "package": "",
+        "dir": "ods/bin/model_switchboard",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 25,
+        "total": 26,
+        "lower_bound": 0.81,
+        "lift": 3.3
+      },
+      "members": 26,
+      "example": "ods/bin/model_switchboard/adapters.py#result",
+      "python_members": 26,
+      "outliers": 1,
+      "outlier_files": [
+        "ods/bin/model_switchboard/wsl_runtime.py"
+      ],
+      "block": " 7. [D-637b72] functions in ods/bin/model_switchboard/** declare their return type\n    evidence: 25/26 (lower bound 0.81, lift 3.3)\n    example:  ods/bin/model_switchboard/adapters.py#result\n    outlier:  ods/bin/model_switchboard/wsl_runtime.py:56 env_value",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "platypush/D-08f310",
+      "repo": "platypush",
+      "id": "D-08f310",
+      "rank": 1,
+      "summary": "classes in platypush/schemas/** are named `*Schema`",
+      "role": {
+        "package": "",
+        "dir": "platypush/schemas",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Schema"
+      },
+      "evidence": {
+        "holders": 138,
+        "total": 139,
+        "lower_bound": 0.96,
+        "lift": 7.8
+      },
+      "members": 141,
+      "example": "platypush/schemas/camera/android/ipcam.py#CameraStatusSchema",
+      "python_members": 141,
+      "outliers": 1,
+      "outlier_files": [
+        "platypush/schemas/mastodon.py"
+      ],
+      "block": " 1. [D-08f310] classes in platypush/schemas/** are named `*Schema`\n    evidence: 138/139 (lower bound 0.96, lift 7.8)\n    example:  platypush/schemas/camera/android/ipcam.py#CameraStatusSchema\n    outlier:  platypush/schemas/mastodon.py:204 MastodonSubscriptionNotificationTypes\n    exempt:   platypush/schemas/matrix.py:7 MillisecondsTimestamp (shared part used by 2 members)\n    exempt:   platypush/schemas/switchbot.py:51 ColorField (another kind of class (extends fields.Field))",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "platypush/D-84701e",
+      "repo": "platypush",
+      "id": "D-84701e",
+      "rank": 2,
+      "summary": "classes in platypush/plugins/** (__init__ files) are named `*Plugin`",
+      "role": {
+        "package": "",
+        "dir": "platypush/plugins",
+        "file": "__init__",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Plugin"
+      },
+      "evidence": {
+        "holders": 153,
+        "total": 163,
+        "lower_bound": 0.89,
+        "lift": 7.5
+      },
+      "members": 167,
+      "example": "platypush/plugins/adafruit/io/__init__.py#AdafruitIoPlugin",
+      "python_members": 167,
+      "outliers": 10,
+      "outlier_files": [
+        "platypush/plugins/__init__.py",
+        "platypush/plugins/camera/android/ipcam/__init__.py",
+        "platypush/plugins/camera/model/writer/preview/__init__.py",
+        "platypush/plugins/camera/model/writer/preview/wx/__init__.py",
+        "platypush/plugins/dbus/__init__.py",
+        "platypush/plugins/github/__init__.py",
+        "platypush/plugins/leap/__init__.py",
+        "platypush/plugins/media/_search/local/__init__.py",
+        "platypush/plugins/ml/cv/__init__.py",
+        "platypush/plugins/tts/picovoice/__init__.py"
+      ],
+      "block": " 2. [D-84701e] classes in platypush/plugins/** (__init__ files) are named `*Plugin`\n    evidence: 153/163 (lower bound 0.89, lift 7.5)\n    example:  platypush/plugins/adafruit/io/__init__.py#AdafruitIoPlugin\n    outlier:  platypush/plugins/__init__.py:371 PluginRegistry\n    outlier:  platypush/plugins/camera/android/ipcam/__init__.py:12 AndroidIpcam\n    outlier:  platypush/plugins/camera/model/writer/preview/__init__.py:16 PreviewWriterFactory\n    outlier:  platypush/plugins/camera/model/writer/preview/wx/__init__.py:7 WxPreviewWriter\n    outlier:  platypush/plugins/dbus/__init__.py:30 DBusService\n    outlier:  platypush/plugins/github/__init__.py:38 GithubResource\n    outlier:  platypush/plugins/leap/__init__.py:126 LeapListener\n    outlier:  platypush/plugins/media/_search/local/__init__.py:27 LocalMediaSearcher\n    outlier:  platypush/plugins/ml/cv/__init__.py:6 MlModel\n    outlier:  platypush/plugins/tts/picovoice/__init__.py:17 TextConversionUtils\n    exempt:   platypush/plugins/gpio/zeroborg/lib/__init__.py:229 ZeroBorg (shared part used by 3 members)\n    exempt:   platypush/plugins/leap/__init__.py:113 LeapFuture (another kind of class (extends Timer))\n    exempt:   platypush/plugins/log/http/__init__.py:21 LogEventHandler (another kind of class (extends events.FileSystemEventHandler))\n    exempt:   platypush/plugins/zeroconf/__init__.py:23 ZeroconfListener (another kind of class (extends ServiceListener))",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "platypush/D-27a639",
+      "repo": "platypush",
+      "id": "D-27a639",
+      "rank": 3,
+      "summary": "classes in platypush/message/** are named `*Event`",
+      "role": {
+        "package": "",
+        "dir": "platypush/message",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Event"
+      },
+      "evidence": {
+        "holders": 320,
+        "total": 321,
+        "lower_bound": 0.98,
+        "lift": 3.2
+      },
+      "members": 321,
+      "example": "platypush/message/event/adafruit.py#AdafruitConnectedEvent",
+      "python_members": 321,
+      "outliers": 1,
+      "outlier_files": [
+        "platypush/message/event/linode.py"
+      ],
+      "block": " 3. [D-27a639] classes in platypush/message/** are named `*Event`\n    evidence: 320/321 (lower bound 0.98, lift 3.2)\n    example:  platypush/message/event/adafruit.py#AdafruitConnectedEvent\n    outlier:  platypush/message/event/linode.py:12 LinodeInstanceStatusChanged",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "platypush/D-1200d2",
+      "repo": "platypush",
+      "id": "D-1200d2",
+      "rank": 4,
+      "summary": "classes in platypush/** (_schemas files) are named `*Schema`",
+      "role": {
+        "package": "",
+        "dir": "platypush",
+        "file": "_schemas",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Schema"
+      },
+      "evidence": {
+        "holders": 22,
+        "total": 22,
+        "lower_bound": 0.85,
+        "lift": 7.6
+      },
+      "members": 23,
+      "example": "platypush/schemas/linode/_schemas.py#LinodeInstanceAlertsSchema",
+      "python_members": 23,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 4. [D-1200d2] classes in platypush/** (_schemas files) are named `*Schema`\n    evidence: 22/22 (lower bound 0.85, lift 7.6)\n    example:  platypush/schemas/linode/_schemas.py#LinodeInstanceAlertsSchema\n    exempt:   platypush/schemas/linode/_schemas.py:15 FieldWithId (another kind of class (extends fields.Function))",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "platypush/D-2fc4df",
+      "repo": "platypush",
+      "id": "D-2fc4df",
+      "rank": 5,
+      "summary": "classes in platypush/message/** (__init__ files) are named `*Event`",
+      "role": {
+        "package": "",
+        "dir": "platypush/message",
+        "file": "__init__",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Event"
+      },
+      "evidence": {
+        "holders": 58,
+        "total": 60,
+        "lower_bound": 0.89,
+        "lift": 3.1
+      },
+      "members": 60,
+      "example": "platypush/message/event/assistant/__init__.py#AlarmEndEvent",
+      "python_members": 60,
+      "outliers": 2,
+      "outlier_files": [
+        "platypush/message/request/__init__.py",
+        "platypush/message/response/__init__.py"
+      ],
+      "block": " 5. [D-2fc4df] classes in platypush/message/** (__init__ files) are named `*Event`\n    evidence: 58/60 (lower bound 0.89, lift 3.1)\n    example:  platypush/message/event/assistant/__init__.py#AlarmEndEvent\n    outlier:  platypush/message/request/__init__.py:25 Request\n    outlier:  platypush/message/response/__init__.py:9 Response",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "platypush/D-bdd270",
+      "repo": "platypush",
+      "id": "D-bdd270",
+      "rank": 6,
+      "summary": "classes in platypush/entities/** pass `primary_key` to Column()",
+      "role": {
+        "package": "",
+        "dir": "platypush/entities",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:sqlalchemy#Column",
+        "index": 99,
+        "key": "primary_key"
+      },
+      "evidence": {
+        "holders": 52,
+        "total": 52,
+        "lower_bound": 0.93,
+        "lift": 18.5
+      },
+      "members": 55,
+      "example": "platypush/entities/acceleration.py#Accelerometer",
+      "python_members": 55,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 6. [D-bdd270] classes in platypush/entities/** pass `primary_key` to Column()\n    evidence: 52/52 (lower bound 0.93, lift 18.5)\n    example:  platypush/entities/acceleration.py#Accelerometer\n    exempt:   platypush/entities/_engine/queue.py:9 EntitiesQueue (does not call Column())\n    exempt:   platypush/entities/_engine/repo/db.py:24 EntitiesDb (does not call Column())\n    exempt:   platypush/entities/_engine/repo/merger.py:15 EntitiesMerger (does not call Column())",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "platypush/D-646cc1",
+      "repo": "platypush",
+      "id": "D-646cc1",
+      "rank": 7,
+      "summary": "sqlalchemy models have a `id` field",
+      "role": {
+        "package": "",
+        "dir": "sqlalchemy",
+        "file": "(model)",
+        "entry": "-",
+        "kind": "model"
+      },
+      "rule": {
+        "type": "model_has",
+        "field": "id"
+      },
+      "evidence": {
+        "holders": 66,
+        "total": 74,
+        "lower_bound": 0.8,
+        "lift": 1
+      },
+      "members": 74,
+      "example": "platypush/entities/_base.py#Entity",
+      "python_members": 74,
+      "outliers": 8,
+      "outlier_files": [
+        "platypush/plugins/github/__init__.py",
+        "platypush/plugins/media/_search/local/db.py",
+        "platypush/plugins/notes/db/_model.py",
+        "platypush/user/_model.py"
+      ],
+      "block": " 7. [D-646cc1] sqlalchemy models have a `id` field\n    evidence: 66/74 (lower bound 0.80, lift 1.0)\n    example:  platypush/entities/_base.py#Entity\n    outlier:  platypush/plugins/github/__init__.py:38 GithubResource\n    outlier:  platypush/plugins/media/_search/local/db.py:88 MediaFileToken\n    outlier:  platypush/plugins/notes/db/_model.py:174 NoteContentIndex\n    outlier:  platypush/plugins/notes/db/_model.py:150 NoteNoteResource\n    outlier:  platypush/plugins/notes/db/_model.py:104 NoteTag\n    outlier:  platypush/user/_model.py:39 User\n    outlier:  platypush/user/_model.py:65 UserOtp\n    outlier:  platypush/user/_model.py:52 UserSession",
+      "family": "repo",
+      "rule_kind": "model_has",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "freesound/D-4e8196",
+      "repo": "freesound",
+      "id": "D-4e8196",
+      "rank": 1,
+      "summary": "functions in utils/** do not use redirects to computed URLs",
+      "role": {
+        "package": "",
+        "dir": "utils",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "sink:dynamic_redirect"
+      },
+      "evidence": {
+        "holders": 149,
+        "total": 150,
+        "lower_bound": 0.96,
+        "lift": 15.3
+      },
+      "members": 150,
+      "example": "utils/audioprocessing/color_schemes.py#color_from_value",
+      "python_members": 150,
+      "outliers": 1,
+      "outlier_files": [
+        "utils/url.py"
+      ],
+      "block": " 1. [D-4e8196] functions in utils/** do not use redirects to computed URLs\n    evidence: 149/150 (lower bound 0.96, lift 15.3)\n    example:  utils/audioprocessing/color_schemes.py#color_from_value\n    outlier:  utils/url.py:28 redirect_inline",
+      "family": "avoids_other",
+      "rule_kind": "avoids:other",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "cosmos-transfer1/D-fd9569",
+      "repo": "cosmos-transfer1",
+      "id": "D-fd9569",
+      "rank": 1,
+      "summary": "files in cosmos_transfer1/** do not import from scripts/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "cosmos_transfer1",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:scripts"
+      },
+      "evidence": {
+        "holders": 228,
+        "total": 229,
+        "lower_bound": 0.98,
+        "lift": 3
+      },
+      "members": 229,
+      "example": "cosmos_transfer1/auxiliary/depth_anything/inference/depth_anything_pipeline.py#(file)",
+      "python_members": 229,
+      "outliers": 1,
+      "outlier_files": [
+        "cosmos_transfer1/distillation/scripts/save_negative_prompt.py"
+      ],
+      "block": " 1. [D-fd9569] files in cosmos_transfer1/** do not import from scripts/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 228/229 (lower bound 0.98, lift 3.0)\n    example:  cosmos_transfer1/auxiliary/depth_anything/inference/depth_anything_pipeline.py#(file)\n    outlier:  cosmos_transfer1/distillation/scripts/save_negative_prompt.py:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "cosmos-transfer1/D-877f3b",
+      "repo": "cosmos-transfer1",
+      "id": "D-877f3b",
+      "rank": 2,
+      "summary": "classes in cosmos_transfer1/diffusion/training/modules/** extend nn.Module",
+      "role": {
+        "package": "",
+        "dir": "cosmos_transfer1/diffusion/training/modules",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:torch#nn.Module"
+        ]
+      },
+      "evidence": {
+        "holders": 20,
+        "total": 21,
+        "lower_bound": 0.77,
+        "lift": 2.2
+      },
+      "members": 21,
+      "example": "cosmos_transfer1/diffusion/training/modules/attention.py#Attention",
+      "python_members": 21,
+      "outliers": 1,
+      "outlier_files": [
+        "cosmos_transfer1/diffusion/training/modules/edm_sde.py"
+      ],
+      "block": " 2. [D-877f3b] classes in cosmos_transfer1/diffusion/training/modules/** extend nn.Module\n    evidence: 20/21 (lower bound 0.77, lift 2.2)\n    example:  cosmos_transfer1/diffusion/training/modules/attention.py#Attention\n    outlier:  cosmos_transfer1/diffusion/training/modules/edm_sde.py:22 EDMSDE",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "cosmos-transfer1/D-3c82bf",
+      "repo": "cosmos-transfer1",
+      "id": "D-3c82bf",
+      "rank": 3,
+      "summary": "functions in cosmos_transfer1/auxiliary/tokenizer/inference/** declare their return type",
+      "role": {
+        "package": "",
+        "dir": "cosmos_transfer1/auxiliary/tokenizer/inference",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 20,
+        "total": 21,
+        "lower_bound": 0.77,
+        "lift": 1.8
+      },
+      "members": 21,
+      "example": "cosmos_transfer1/auxiliary/tokenizer/inference/image_cli.py#main",
+      "python_members": 21,
+      "outliers": 1,
+      "outlier_files": [
+        "cosmos_transfer1/auxiliary/tokenizer/inference/utils.py"
+      ],
+      "block": " 3. [D-3c82bf] functions in cosmos_transfer1/auxiliary/tokenizer/inference/** declare their return type\n    evidence: 20/21 (lower bound 0.77, lift 1.8)\n    example:  cosmos_transfer1/auxiliary/tokenizer/inference/image_cli.py#main\n    outlier:  cosmos_transfer1/auxiliary/tokenizer/inference/utils.py:240 write_image",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    }
+  ]
+}

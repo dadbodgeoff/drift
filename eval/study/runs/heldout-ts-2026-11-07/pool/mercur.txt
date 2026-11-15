@@ -1,0 +1,68 @@
+9 conventions from 9348 units in 701 roles (1 default tier, 8 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-c598ed] packages/admin: exported values in src/hooks/** are wrapped in queryKeysFactory()
+    evidence: 49/56 (lower bound 0.76, lift 30.9)
+    tier:     default
+    example:  packages/admin/src/hooks/api/api-keys.tsx#apiKeysQueryKeys
+    outlier:  packages/admin/src/hooks/api/customers.tsx:20 customerAddressesQueryKeys
+    outlier:  packages/admin/src/hooks/api/offer-conditions.tsx:19 offerConditionsQueryKeys
+    outlier:  packages/admin/src/hooks/api/orders.tsx:47 ordersQueryKeys
+    ... 4 more outliers
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 2. [D-b363c0] packages/admin: functions in src/hooks/table/query/** validate their input with a schema
+    evidence: 25/27 (lower bound 0.77, lift 27.0)
+    tier:     suggestion (rule kind control)
+    example:  packages/admin/src/hooks/table/query/use-attribute-table-query.tsx#useAttributeTableQuery
+    outlier:  packages/admin/src/hooks/table/query/use-fulfillment-providers-table-query.tsx:9 useFulfillmentProvidersTableQuery
+    outlier:  packages/admin/src/hooks/table/query/use-offer-condition-table-query.tsx:11 useOfferConditionTableQuery
+
+ 3. [D-a8afe2] packages/admin: exported values in src/hooks/** are named `*Keys`
+    evidence: 55/55 (lower bound 0.94, lift 24.6)
+    tier:     suggestion (rule kind named)
+    example:  packages/admin/src/hooks/api/api-keys.tsx#apiKeysQueryKeys
+    exempt:   packages/admin/src/hooks/api/sellers.tsx:257 SELLER_STATUS_LABELS (a constant beside sellerInvitesQueryKeys, which follows the scheme)
+
+ 4. [D-032618] packages/core: exported values in src/** (middlewares files) are named `*Middlewares`
+    evidence: 37/38 (lower bound 0.86, lift 34.4)
+    tier:     suggestion (rule kind named)
+    example:  packages/core/src/api/admin/campaigns/middlewares.ts#adminCampaignsMiddlewares
+    outlier:  packages/core/src/api/middlewares.ts:29 default
+
+ 5. [D-aa499e] packages/admin: components in src/** (breadcrumb files) are named `*Breadcrumb`
+    evidence: 29/31 (lower bound 0.79, lift 41.3)
+    tier:     suggestion (rule kind named)
+    example:  packages/admin/src/pages/api-key-management/api-key-management-detail/breadcrumb.tsx#ApiKeyManagementDetailBreadcrumb
+    outlier:  packages/admin/src/pages/offers/[id]/breadcrumb.tsx:6 Breadcrumb
+    outlier:  packages/admin/src/pages/offers/[id]/variants/[offer_id]/breadcrumb.tsx:6 Breadcrumb
+
+ 6. [D-2a2839] packages/admin: functions in src/** (loader files) are named `*Loader`
+    evidence: 37/41 (lower bound 0.78, lift 42.6)
+    tier:     suggestion (rule kind named)
+    example:  packages/admin/src/pages/api-key-management/api-key-management-detail/loader.ts#apiKeyLoader
+    outlier:  packages/admin/src/pages/offers/[id]/loader.ts:26 loader
+    outlier:  packages/admin/src/pages/offers/[id]/loader.ts:10 offerProductDetailQuery
+    outlier:  packages/admin/src/pages/offers/[id]/variants/[offer_id]/loader.ts:24 loader
+    ... 1 more outliers
+
+ 7. [D-7af930] packages/core: functions in src/workflows/seller/steps/** are wrapped in createStep()
+    evidence: 25/25 (lower bound 0.87, lift 26.6)
+    tier:     suggestion (rule names a symbol from outside the repo)
+    example:  packages/core/src/workflows/seller/steps/check-seller-has-owner.ts#checkSellerHasOwnerStep
+
+ 8. [D-db72ed] packages/admin: functions in src/hooks/table/columns/** are named `*Columns`
+    evidence: 23/24 (lower bound 0.80, lift 35.2)
+    tier:     suggestion (rule kind named)
+    example:  packages/admin/src/hooks/table/columns/use-attribute-table-columns.tsx#useAttributeTableColumns
+    outlier:  packages/admin/src/hooks/table/columns/use-column-state.ts:30 useColumnState
+
+ 9. [D-abfb09] packages/admin: functions in src/hooks/api/** call useMutation() before queryClient.invalidateQueries()
+    evidence: 241/242 (lower bound 0.98, lift 1.0)
+    tier:     suggestion (rule kind before)
+    example:  packages/admin/src/hooks/api/api-keys.tsx#useBatchAddSalesChannelsToApiKey
+    outlier:  packages/admin/src/hooks/api/sellers.tsx:295 transitionSellerStatus
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

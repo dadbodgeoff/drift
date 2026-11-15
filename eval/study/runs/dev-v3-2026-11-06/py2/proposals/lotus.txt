@@ -1,0 +1,58 @@
+4 conventions from 1542 units in 47 roles (0 default tier, 4 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-e5b6fe] backend: HTTP handlers in metering_billing/** are decorated with utils.extend_schema()
+    evidence: 69/70 (lower bound 0.92, lift 2.6)
+    tier:     suggestion (rule names a symbol from outside the repo)
+    example:  backend/metering_billing/views/auth_views.py#DemoLoginView.post
+    outlier:  backend/metering_billing/views/webhook_views.py:55 stripe_webhook_endpoint
+
+ 2. [D-26d6a0] backend: classes in api/** are named `*Serializer`
+    evidence: 85/92 (lower bound 0.85, lift 2.0)
+    tier:     suggestion (rule kind named)
+    example:  backend/api/serializers/model_serializers.py#AddOnSerializer
+    outlier:  backend/api/apps.py:4 ApiConfig
+    outlier:  backend/api/serializers/model_serializers.py:134 LightweightCustomerSerializerForInvoice
+    outlier:  backend/api/serializers/model_serializers.py:2171 ListSubscriptionRecordFilter
+    outlier:  backend/api/serializers/model_serializers.py:1630 SubscriptionRecordCreateSerializerOld
+    outlier:  backend/api/serializers/model_serializers.py:2141 SubscriptionRecordFilterSerializerDelete
+    outlier:  backend/api/serializers/model_serializers.py:1876 SubscriptionRecordUpdateSerializerOld
+    outlier:  backend/api/serializers/webhook_serializers.py:48 UsageAlertPayload
+
+ 3. [D-1cbdac] backend: classes in metering_billing/serializers/** are named `*Serializer`
+    evidence: 140/163 (lower bound 0.80, lift 1.9)
+    tier:     suggestion (rule kind named)
+    example:  backend/metering_billing/serializers/auth_serializers.py#DemoRegistrationDetailSerializer
+    outlier:  backend/metering_billing/serializers/model_serializers.py:2398 ActivityGenericRelatedField
+    outlier:  backend/metering_billing/serializers/model_serializers.py:1687 ListSubscriptionRecordFilter
+    outlier:  backend/metering_billing/serializers/model_serializers.py:1675 SubscriptionRecordFilterSerializerDelete
+    outlier:  backend/metering_billing/serializers/serializer_utils.py:296 AddOnSubscriptionUUIDField
+    outlier:  backend/metering_billing/serializers/serializer_utils.py:326 AddOnUUIDField
+    outlier:  backend/metering_billing/serializers/serializer_utils.py:284 AddOnVersionUUIDField
+    outlier:  backend/metering_billing/serializers/serializer_utils.py:248 AnalysisUUIDField
+    outlier:  backend/metering_billing/serializers/serializer_utils.py:242 BacktestUUIDField
+    outlier:  backend/metering_billing/serializers/serializer_utils.py:254 BalanceAdjustmentUUIDField
+    outlier:  backend/metering_billing/serializers/serializer_utils.py:93 DjangoJSONEncoder
+    outlier:  backend/metering_billing/serializers/serializer_utils.py:290 FeatureUUIDField
+    outlier:  backend/metering_billing/serializers/serializer_utils.py:272 InvoiceUUIDField
+    outlier:  backend/metering_billing/serializers/serializer_utils.py:260 MetricUUIDField
+    outlier:  backend/metering_billing/serializers/serializer_utils.py:236 OrganizationUUIDField
+    outlier:  backend/metering_billing/serializers/serializer_utils.py:266 PlanUUIDField
+    outlier:  backend/metering_billing/serializers/serializer_utils.py:278 PlanVersionUUIDField
+    outlier:  backend/metering_billing/serializers/serializer_utils.py:103 SlugRelatedFieldWithOrganization
+    outlier:  backend/metering_billing/serializers/serializer_utils.py:190 SlugRelatedFieldWithOrganizationPK
+    outlier:  backend/metering_billing/serializers/serializer_utils.py:302 SubscriptionUUIDField
+    outlier:  backend/metering_billing/serializers/serializer_utils.py:14 TimeZoneSerializerField
+    outlier:  backend/metering_billing/serializers/serializer_utils.py:308 UsageAlertUUIDField
+    outlier:  backend/metering_billing/serializers/serializer_utils.py:314 WebhookEndpointUUIDField
+    outlier:  backend/metering_billing/serializers/serializer_utils.py:320 WebhookSecretUUIDField
+
+ 4. [D-2ab768] django models have a `organization` field
+    evidence: 46/49 (lower bound 0.83, lift 1.0)
+    tier:     suggestion (rule kind model_has)
+    example:  backend/metering_billing/models.py#APIToken
+    outlier:  backend/metering_billing/models.py:202 Organization
+    outlier:  backend/metering_billing/models.py:90 Team
+    outlier:  backend/metering_billing/models.py:2073 TeamInviteToken
+

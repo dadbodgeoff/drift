@@ -1,0 +1,11 @@
+1 conventions from 2026 units in 88 roles (0 default tier, 1 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-a44f2b] workspace packages define a `build:self` script
+    evidence: 37/38 (lower bound 0.86, lift 1.0)
+    tier:     suggestion (rule kind package_has)
+    example:  packages/adonisjs/package.json#@fedify/adonisjs
+    outlier:  docs/package.json:1 
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

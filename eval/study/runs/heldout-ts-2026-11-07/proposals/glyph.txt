@@ -1,0 +1,37 @@
+2 conventions from 2126 units in 130 roles (1 default tier, 1 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-63bbfd] files in packages/glyph/** do not import from benches/scripts/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 277/278 (lower bound 0.98, lift 3.0)
+    tier:     default
+    example:  packages/glyph/bin/glyph.js#(file)
+    outlier:  packages/glyph/scripts/support/react-browser-check.mts:1 (file)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 2. [D-4cec41] packages/glyph: functions in src/** do not throw a bare Error
+    evidence: 478/497 (lower bound 0.94, lift 5.2)
+    tier:     suggestion (rule kind avoids:other)
+    example:  packages/glyph/src/bake.ts#defineRasterBaker
+    outlier:  packages/glyph/src/font-face.ts:185 createFontFace
+    outlier:  packages/glyph/src/internal/node-file-publication.ts:47 publishFilesWithRollback
+    outlier:  packages/glyph/src/internal/raster-codec-registry.ts:28 installRasterCodecFontCompiler
+    outlier:  packages/glyph/src/internal/raster-codec-registry.ts:35 registerRasterCodecInternal
+    outlier:  packages/glyph/src/internal/raster-ktx.ts:47 validateNativeKtx2
+    outlier:  packages/glyph/src/internal/text-shaper-module.ts:96 compileDefaultWasm
+    outlier:  packages/glyph/src/loaded-font.ts:224 releaseImmutableFontVariant
+    outlier:  packages/glyph/src/react.ts:251 GlyphProvider
+    outlier:  packages/glyph/src/three/decorations.ts:31 createDecorations
+    outlier:  packages/glyph/src/three/decorations.ts:42 decorationDraws
+    outlier:  packages/glyph/src/three/glyph-measurement.ts:64 createSuppliedGlyphGeometrySource
+    outlier:  packages/glyph/src/three/glyphs.ts:56 createGlyphs
+    outlier:  packages/glyph/src/three/glyphs.ts:64 setGlyphDrawOrder
+    outlier:  packages/glyph/src/three/internal/draw-realizer.ts:53 prepareDrawReplacement
+    outlier:  packages/glyph/src/three/internal/geometry.ts:20 resolveDrawGeometry
+    outlier:  packages/glyph/src/three/internal/raster-program-registry.ts:46 commitThreeRasterProgram
+    outlier:  packages/glyph/src/typegpu/config.ts:76 defineTypeGpuConfig
+    outlier:  packages/glyph/src/typegpu/internal/resources.ts:161 createResource
+    outlier:  packages/glyph/src/typegpu/text.ts:78 createText
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

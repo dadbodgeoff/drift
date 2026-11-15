@@ -1,0 +1,92 @@
+{
+  "a": "eval/study/runs/dev-py-2026-11-05/labels/A",
+  "b": "eval/study/runs/dev-py-2026-11-05/labels/B",
+  "n": 53,
+  "scope": 53,
+  "exact": 0.8867924528301887,
+  "kappa": 0.7698986975397974,
+  "kappa_boot": {
+    "lo": 0.4489795918367347,
+    "hi": 1,
+    "clusters": 8
+  },
+  "accept_vs_not": {
+    "n": 53,
+    "po": 0.8867924528301887,
+    "pe": 0.5080099679601282,
+    "kappa": 0.7698986975397974
+  },
+  "wrong_vs_not": {
+    "n": 53,
+    "po": 0.8867924528301887,
+    "pe": 0.5080099679601282,
+    "kappa": 0.7698986975397974
+  },
+  "confusion": {
+    "ACCEPT": {
+      "ACCEPT": 19,
+      "TRIVIAL": 0,
+      "WRONG": 6
+    },
+    "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+    },
+    "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 28
+    }
+  },
+  "mix": {
+    "A": {
+      "ACCEPT": 25,
+      "TRIVIAL": 0,
+      "WRONG": 28
+    },
+    "B": {
+      "ACCEPT": 19,
+      "TRIVIAL": 0,
+      "WRONG": 34
+    }
+  },
+  "disagreements": [
+    {
+      "uid": "netbox/D-bc0c7d",
+      "repo": "netbox",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "netbox/D-0eddf0",
+      "repo": "netbox",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "netbox/D-7d7f0c",
+      "repo": "netbox",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "CTFd/D-49130f",
+      "repo": "CTFd",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "CTFd/D-bd2596",
+      "repo": "CTFd",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "CTFd/D-ce2984",
+      "repo": "CTFd",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    }
+  ]
+}

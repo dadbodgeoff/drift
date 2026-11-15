@@ -1,0 +1,76 @@
+{
+  "a": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/A",
+  "b": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/B",
+  "labels_sha256": {
+    "A": "2619759a0a7bb5a15187a3b41ae2f47f3baf0cc11410fade2ab56e33e0956cef",
+    "B": "93e76ef0af6cbf9f20e36885157bdd2b2b8ce95e9e0a71f67333feab836b4e64"
+  },
+  "computed_at": "2026-11-07T06:15:59.593Z",
+  "rubric_sha256s": [
+    "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+  ],
+  "n": 12,
+  "scope": 12,
+  "exact": 0.8333333333333334,
+  "kappa": 0.6000000000000001,
+  "kappa_boot": {
+    "lo": 0,
+    "hi": 1,
+    "clusters": 8
+  },
+  "accept_vs_not": {
+    "n": 12,
+    "po": 0.8333333333333334,
+    "pe": 0.7083333333333334,
+    "kappa": 0.4285714285714286
+  },
+  "wrong_vs_not": {
+    "n": 12,
+    "po": 0.8333333333333334,
+    "pe": 0.6111111111111112,
+    "kappa": 0.5714285714285715
+  },
+  "confusion": {
+    "ACCEPT": {
+      "ACCEPT": 1,
+      "TRIVIAL": 0,
+      "WRONG": 2
+    },
+    "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 1,
+      "WRONG": 0
+    },
+    "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 8
+    }
+  },
+  "mix": {
+    "A": {
+      "ACCEPT": 3,
+      "TRIVIAL": 1,
+      "WRONG": 8
+    },
+    "B": {
+      "ACCEPT": 1,
+      "TRIVIAL": 1,
+      "WRONG": 10
+    }
+  },
+  "disagreements": [
+    {
+      "uid": "paperless-ngx/D-de2489",
+      "repo": "paperless-ngx",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "simplelogin/D-2a4960",
+      "repo": "simplelogin",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    }
+  ]
+}

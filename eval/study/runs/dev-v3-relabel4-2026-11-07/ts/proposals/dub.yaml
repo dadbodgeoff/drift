@@ -1,0 +1,541 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - api
+  - auth
+  - client
+  - constants
+  - domains
+  - form
+  - layout
+  - loading
+  - oauth
+  - page
+  - page-client
+  - route
+  - schema
+  - schemas
+  - settings
+  - tsup
+  - types
+  - utils
+  suffixes:
+  - config
+  - spec
+  - test
+conventions:
+- id: D-3fad9a
+  status: proposed
+  mode: advise
+  summary: "packages/email: components in src/** render <Text>"
+  role:
+    package: packages/email
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: pkg:@react-email/components#Text
+  evidence:
+    holders: 107
+    total: 107
+    lower_bound: 0.965
+    lift: 16.537
+    role_members: 108
+  example: >-
+    packages/email/src/templates/advanced-plan-downgrade-notice.tsx#AdvancedPlanDowngradeNotice
+  selector_version: 2
+- id: D-a23ff8
+  status: proposed
+  mode: advise
+  summary: "packages/email: components in src/** render <Preview>"
+  role:
+    package: packages/email
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: pkg:@react-email/components#Preview
+  evidence:
+    holders: 106
+    total: 106
+    lower_bound: 0.965
+    lift: 16.537
+    role_members: 108
+  example: >-
+    packages/email/src/templates/advanced-plan-downgrade-notice.tsx#AdvancedPlanDowngradeNotice
+  selector_version: 2
+- id: D-742eb6
+  status: proposed
+  mode: advise
+  summary: "apps/web: HTTP handlers in app/** (route files) do not throw a bare Error"
+  role:
+    package: apps/web
+    dir: app
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: avoids
+    signal: throw_error
+  evidence:
+    holders: 522
+    total: 536
+    lower_bound: 0.957
+    lift: 4.049
+  example: apps/web/app/(ee)/api/admin/analytics/route.ts#GET
+  selector_version: 2
+- id: D-309ba0
+  status: proposed
+  mode: advise
+  summary: "apps/web: functions in ui/modals/** call useState() before useCallback()"
+  role:
+    package: apps/web
+    dir: ui/modals
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: pkg:react#useState
+    then: pkg:react#useCallback
+  evidence:
+    holders: 104
+    total: 105
+    lower_bound: 0.948
+    lift: 1.0
+  example: apps/web/ui/modals/add-customer-modal.tsx#useAddCustomerModal
+  selector_version: 2
+- id: D-29ef24
+  status: proposed
+  mode: advise
+  summary: "apps/web: functions in ui/modals/** call useCallback() before useMemo()"
+  role:
+    package: apps/web
+    dir: ui/modals
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: pkg:react#useCallback
+    then: pkg:react#useMemo
+  evidence:
+    holders: 103
+    total: 105
+    lower_bound: 0.933
+    lift: 1.0
+  example: apps/web/ui/modals/add-customer-modal.tsx#useAddCustomerModal
+  selector_version: 2
+- id: D-024a81
+  status: proposed
+  mode: advise
+  summary: "packages/email: components in src/** render <Tailwind>"
+  role:
+    package: packages/email
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: pkg:@react-email/components#Tailwind
+  evidence:
+    holders: 104
+    total: 107
+    lower_bound: 0.921
+    lift: 16.537
+    role_members: 108
+  example: >-
+    packages/email/src/templates/advanced-plan-downgrade-notice.tsx#AdvancedPlanDowngradeNotice
+  selector_version: 2
+- id: D-418256
+  status: proposed
+  mode: advise
+  summary: "packages/email: components in src/** render <Container>"
+  role:
+    package: packages/email
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: pkg:@react-email/components#Container
+  evidence:
+    holders: 103
+    total: 106
+    lower_bound: 0.92
+    lift: 16.537
+    role_members: 108
+  example: >-
+    packages/email/src/templates/advanced-plan-downgrade-notice.tsx#AdvancedPlanDowngradeNotice
+  selector_version: 2
+- id: D-83351e
+  status: proposed
+  mode: advise
+  summary: "apps/web: HTTP handlers in app/(ee)/api/partner-profile/** (route files) are wrapped in withPartnerProfile()"
+  role:
+    package: apps/web
+    dir: app/(ee)/api/partner-profile
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - apps/web/lib/auth/partner.ts#withPartnerProfile
+  evidence:
+    holders: 53
+    total: 54
+    lower_bound: 0.902
+    lift: 36.565
+  example: apps/web/app/(ee)/api/partner-profile/invites/route.ts#DELETE
+  selector_version: 2
+- id: D-e25af3
+  status: proposed
+  mode: advise
+  summary: "packages/email: components in src/** render <Footer>"
+  role:
+    package: packages/email
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: packages/email/src/components/footer.tsx#Footer
+  evidence:
+    holders: 101
+    total: 106
+    lower_bound: 0.894
+    lift: 16.537
+    role_members: 108
+  example: >-
+    packages/email/src/templates/advanced-plan-downgrade-notice.tsx#AdvancedPlanDowngradeNotice
+  selector_version: 2
+- id: D-258285
+  status: proposed
+  mode: advise
+  summary: "apps/web: functions in ui/modals/** are named `*Modal`"
+  role:
+    package: apps/web
+    dir: ui/modals
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: "*Modal"
+  evidence:
+    holders: 113
+    total: 121
+    lower_bound: 0.875
+    lift: 12.823
+    role_members: 122
+  example: apps/web/ui/modals/add-customer-modal.tsx#useAddCustomerModal
+  selector_version: 2
+- id: D-2ea85b
+  status: proposed
+  mode: advise
+  summary: "apps/web: server actions in lib/actions/partners/** are named `*Action`"
+  role:
+    package: apps/web
+    dir: lib/actions/partners
+    file: "*"
+    entry: server_action
+    kind: function
+  rule:
+    type: named
+    pattern: "*Action"
+  evidence:
+    holders: 80
+    total: 86
+    lower_bound: 0.856
+    lift: 19.253
+  example: apps/web/lib/actions/partners/accept-program-invite.ts#acceptProgramInviteAction
+  selector_version: 2
+- id: D-015190
+  status: proposed
+  mode: advise
+  summary: "apps/web: HTTP handlers in app/api/workspaces/[*]/** (route files) are wrapped in withWorkspace()"
+  role:
+    package: apps/web
+    dir: app/api/workspaces/[*]
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - apps/web/lib/auth/workspace.ts#withWorkspace
+  evidence:
+    holders: 40
+    total: 42
+    lower_bound: 0.842
+    lift: 8.234
+  example: apps/web/app/api/workspaces/[idOrSlug]/billing/activate-paid-plan/route.ts#POST
+  selector_version: 2
+- id: D-345913
+  status: proposed
+  mode: advise
+  summary: "apps/web: server actions in lib/** are wrapped in authActionClient.inputSchema().action() or authPartnerActionClient.action() or authPartnerActionClient.inputSchema().action() or authUserActionClient.inputSchema().action()"
+  role:
+    package: apps/web
+    dir: lib
+    file: "*"
+    entry: server_action
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action
+    - apps/web/lib/actions/safe-action.ts#authPartnerActionClient.action
+    - apps/web/lib/actions/safe-action.ts#authPartnerActionClient.inputSchema().action
+    - apps/web/lib/actions/safe-action.ts#authUserActionClient.inputSchema().action
+  evidence:
+    holders: 109
+    total: 123
+    lower_bound: 0.818
+    lift: 16.524
+    split:
+    - - apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action
+      - 83
+    - - apps/web/lib/actions/safe-action.ts#authPartnerActionClient.inputSchema().action
+      - 17
+    - - apps/web/lib/actions/safe-action.ts#authPartnerActionClient.action
+      - 7
+    - - apps/web/lib/actions/safe-action.ts#authUserActionClient.inputSchema().action
+      - 2
+    role_members: 124
+  example: apps/web/lib/actions/add-edit-integration.ts#addEditIntegration
+  selector_version: 2
+- id: D-ebbc30
+  status: proposed
+  mode: advise
+  summary: "apps/web: HTTP handlers in app/(ee)/api/partners/** (route files) are wrapped in withWorkspace()"
+  role:
+    package: apps/web
+    dir: app/(ee)/api/partners
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - apps/web/lib/auth/workspace.ts#withWorkspace
+  evidence:
+    holders: 25
+    total: 26
+    lower_bound: 0.811
+    lift: 8.313
+  example: apps/web/app/(ee)/api/partners/[partnerId]/application-risks/route.ts#GET
+  selector_version: 2
+- id: D-942e25
+  status: proposed
+  mode: advise
+  summary: "apps/web: HTTP handlers in app/(ee)/api/partners/** (route files) call getDefaultProgramIdOrThrow() before NextResponse.json()"
+  role:
+    package: apps/web
+    dir: app/(ee)/api/partners
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: before
+    first: >-
+      apps/web/lib/api/programs/get-default-program-id-or-throw.ts#getDefaultProgramIdOrThrow
+    then: pkg:next/server#NextResponse.json
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 1.0
+  example: apps/web/app/(ee)/api/partners/[partnerId]/application-risks/route.ts#GET
+  selector_version: 2
+- id: D-ec6127
+  status: proposed
+  mode: advise
+  summary: "apps/web: components in app/** (page-client files) are named `*Client`"
+  role:
+    package: apps/web
+    dir: app
+    file: page-client
+    entry: '-'
+    kind: component
+  rule:
+    type: named
+    pattern: "*Client"
+  evidence:
+    holders: 62
+    total: 71
+    lower_bound: 0.776
+    lift: 24.369
+  example: >-
+    apps/web/app/(ee)/app.dub.co/(new-program)/[slug]/program/new/overview/page-client.tsx#PageClient
+  selector_version: 2
+- id: D-cc64dd
+  status: proposed
+  mode: advise
+  summary: prisma models have a `id` field
+  role:
+    package: ""
+    dir: prisma
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: id
+  evidence:
+    holders: 69
+    total: 80
+    lower_bound: 0.77
+    lift: 1.0
+  example: packages/prisma/schema/activity.prisma#ActivityLog
+  selector_version: 2
+- id: D-3c672e
+  status: proposed
+  mode: advise
+  summary: "apps/web: HTTP handlers in app/(ee)/api/partner-profile/programs/** (route files) validate their input with a schema"
+  role:
+    package: apps/web
+    dir: app/(ee)/api/partner-profile/programs
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: control
+    value: validates
+  evidence:
+    holders: 25
+    total: 27
+    lower_bound: 0.766
+    lift: 3.969
+  example: >-
+    apps/web/app/(ee)/api/partner-profile/programs/[programId]/activity-logs/route.ts#GET
+  selector_version: 2
+- id: D-8f69af
+  status: proposed
+  mode: advise
+  summary: "apps/web: layouts in app/** (layout files) are named `*Layout`"
+  role:
+    package: apps/web
+    dir: app
+    file: layout
+    entry: layout
+    kind: component
+  rule:
+    type: named
+    pattern: "*Layout"
+  evidence:
+    holders: 40
+    total: 45
+    lower_bound: 0.765
+    lift: 37.799
+  example: apps/web/app/(ee)/admin.dub.co/(auth)/layout.tsx#AdminAuthLayout
+  selector_version: 2
+- id: D-40f44c
+  status: proposed
+  mode: advise
+  summary: "apps/web: HTTP handlers in app/(ee)/api/cron/** (route files) call verifyQstashSignature() before handleAndReturnErrorResponse()"
+  role:
+    package: apps/web
+    dir: app/(ee)/api/cron
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: before
+    first: apps/web/lib/cron/verify-qstash.ts#verifyQstashSignature
+    then: apps/web/lib/api/errors.ts#handleAndReturnErrorResponse
+  evidence:
+    holders: 62
+    total: 72
+    lower_bound: 0.763
+    lift: 1.0
+  example: apps/web/app/(ee)/api/cron/aggregate-clicks/route.ts#handler
+  selector_version: 2
+- id: D-79cc0a
+  status: proposed
+  mode: advise
+  summary: "apps/web: HTTP handlers in app/(ee)/api/partners/** (route files) call getDefaultProgramIdOrThrow()"
+  role:
+    package: apps/web
+    dir: app/(ee)/api/partners
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: calls
+    callee: >-
+      apps/web/lib/api/programs/get-default-program-id-or-throw.ts#getDefaultProgramIdOrThrow
+  evidence:
+    holders: 24
+    total: 26
+    lower_bound: 0.759
+    lift: 11.533
+  example: apps/web/app/(ee)/api/partners/[partnerId]/application-risks/route.ts#GET
+  selector_version: 2
+- id: D-093949
+  status: proposed
+  mode: advise
+  summary: "apps/web: server actions in lib/actions/partners/** call throwIfNoPermission() before getDefaultProgramIdOrThrow()"
+  role:
+    package: apps/web
+    dir: lib/actions/partners
+    file: "*"
+    entry: server_action
+    kind: function
+  rule:
+    type: before
+    first: apps/web/lib/actions/throw-if-no-permission.ts#throwIfNoPermission
+    then: >-
+      apps/web/lib/api/programs/get-default-program-id-or-throw.ts#getDefaultProgramIdOrThrow
+  evidence:
+    holders: 47
+    total: 54
+    lower_bound: 0.756
+    lift: 1.0
+  example: >-
+    apps/web/lib/actions/partners/approve-bounty-submission.ts#approveBountySubmissionAction
+  selector_version: 2
+- id: D-d24d21
+  status: proposed
+  mode: advise
+  summary: "apps/web: HTTP handlers in app/api/** (route files) are wrapped in withSession() or withWorkspace()"
+  role:
+    package: apps/web
+    dir: app/api
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - apps/web/lib/auth/session.ts#withSession
+    - apps/web/lib/auth/workspace.ts#withWorkspace
+  evidence:
+    holders: 138
+    total: 169
+    lower_bound: 0.751
+    lift: 6.485
+    split:
+    - - apps/web/lib/auth/workspace.ts#withWorkspace
+      - 119
+    - - apps/web/lib/auth/session.ts#withSession
+      - 19
+  example: apps/web/app/api/activity-logs/route.ts#GET
+  selector_version: 2

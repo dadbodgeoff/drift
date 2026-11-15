@@ -1,0 +1,310 @@
+{
+  "//": "BLIND DEV pool dev3 (PLAN-R10 section 3.1), role DEV: not a held-out set (no D1/D4 verdict); it predicts the next held-out draw. Drawn with the held-out procedure and exclusions. FROZEN since `frozen_at`: the core (set_id, role, frozen_at, repos, reserves, tier, max, pool) never changes (registered in `selection.registry`); only the append-only lists `replaced`, `burned` and `exposed` may grow. Nobody building product opens these repos, cards or labels before the round-10 freeze; only the dev3 operator runs its census and blind labelling, once, at the freeze. After its report it joins the build set.",
+  "set_id": "py-dev3-2026-11-08",
+  "role": "dev",
+  "decision": "PLAN-R10 section 3.1 (adopted with D12, 2026-11-08): a rolling blind dev pool, dev3: select-holdout.mjs --selection dev3 with the held-out procedure and exclusions, 12 TS/JS and 8 Python repos, role dev, reserves fixed before the draw; census and blind labelling (rubric v3) once, at the round-10 freeze, on the frozen binary.",
+  "holdout": false,
+  "status": "frozen",
+  "frozen_on": "2026-11-08",
+  "frozen_at": "2026-11-08T14:40:25Z",
+  "language": "python",
+  "tier": {
+    "//": "Decision D7 (eval/study/README.md decision log), approved by the founder 2026-11-06 and recorded before any held-out census. D5 (tier-d5.json) narrowed by rule kind and language. TypeScript/JavaScript: the default tier admits only call wrappers (wrapped_by:call) and layering (avoids:import); wrapped_by:decorator, wrapped_by:extends and wrapped_by:jsx move to the suggestion tier. Python: no rule kind is in the default tier; Python advises only and every Python proposal is suggestion tier. D5's conditions still apply on top of the rule kind: every symbol the rule names is defined in the repository (default.target \"in_repo\": no pkg:, global# or unresolved: target; lib.mjs namesPackage, drift_mine::tier::names_package) and the role has >= default.min_members members. The language of a proposal is read conservatively (lib.mjs proposalLanguage, drift_mine::tier::convention_language): py when any member of its role is Python (conventions.yaml evidence.python_members) or its example path is (.py/.pyi files and Python package manifests), ts otherwise. Role members are counted as the role's size (evidence.role_members when set, else total; exempt members count). DEFAULT tier = language in default.languages AND structured rule kind (lib.mjs ruleKind) in default.rule_kinds AND the rule names no symbol from outside the repository AND its role has >= default.min_members members. SUGGESTION tier = every other shown proposal. The not-wrong rate is reported over all shown proposals, both tiers. Release gate unchanged: a language's default tier ships as advise until it measures >= 95% default-tier accept under rubric v3, judged per D1, on a primary held-out run.",
+    "kind": "rule_kind",
+    "decision": "D7",
+    "default": {
+      "//": "TypeScript/JavaScript call wrappers and layering (import avoidance), each only when every symbol it names is defined in the repository, in roles of 15 or more members",
+      "rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "languages": [
+        "ts"
+      ],
+      "min_members": 15,
+      "target": "in_repo"
+    },
+    "suggestion": {
+      "//": "D5's suggestion kinds, plus decorators, base classes and JSX layout wrappers (D7); every Python proposal (languages); and default-tier kinds whose rule names a package, built-in or unresolved symbol, or whose role is small",
+      "rule_kinds": [
+        "calls",
+        "named",
+        "avoids:other",
+        "prefers_library",
+        "before",
+        "has_test",
+        "model_has",
+        "package_has",
+        "dependency_version",
+        "wrapped_by:try",
+        "control",
+        "directive",
+        "throws",
+        "passes_key",
+        "renders",
+        "wrapped_by:decorator",
+        "wrapped_by:extends",
+        "wrapped_by:jsx"
+      ],
+      "languages": [
+        "py"
+      ]
+    },
+    "not_wrong_over": "all_shown"
+  },
+  "max": 15,
+  "//max_pool": "Same as the secondary sets: max 15 (census --max, proposals shown) and pool 200 (recall pool).",
+  "pool": 200,
+  "provenance": "Metadata only. Candidates: GitHub repository search (queries in `selection.record`), filtered by OSI licence, not archived, not a fork or template, and excluding every repo the Drift repository mentions (dev sets, polar and CTFd, every held-out set (primary, secondary and both later draws) with its reserves, replaced, burned and exposed entries, any github.com URL on any branch, commit messages, PR and issue text) and obvious non-applications by name or topic. framework_bucket from the repo's dependency manifests only (package.json; pyproject.toml, requirements*.txt, setup.cfg, Pipfile), queried through GitHub code search restricted to those file names on the default branch; nothing else. sha = default-branch HEAD from git ls-remote. size_kb, stars, pushed_at from search metadata at retrieval. No notes about the code exist: nobody read it.",
+  "selection": {
+    "script": "eval/study/select-holdout.mjs",
+    "selection": "dev3",
+    "record": "eval/dev3-2026-11-08-selection.json",
+    "record_sha256": "da4ba78bb20249c946373d60926cb9b4175c80e2c2805d8bf6fcb9a9cad5f7c8",
+    "registry": "eval/dev3-2026-11-08-registry.json",
+    "seed": "drift-dev3-2026-11-08:459e52857b0d6de8fb7a414e5841d3ad6a66a74d:1ec283eb0ee09446d7ea887006f5cebd",
+    "retrieved_at": "2026-11-08T13:35:15Z",
+    "buckets": {
+      "django": 2,
+      "fastapi": 2,
+      "flask": 2,
+      "other_python": 2
+    }
+  },
+  "//lists": "Append-only lists outside the frozen core. replaced: [{date, repo, reserve, reason}], the i-th swap uses the i-th reserve, only for a failed technical check (clone fails, `drift scan` errors, fewer than 200 parseable files) or (Python) overlap with the dev set. burned: [{date, name, reason}]. exposed: [{name, where}], repos whose conventions were named where product engineers can read.",
+  "replaced": [
+    {
+      "date": "2026-11-08",
+      "repo": "babybuddy",
+      "reserve": "care",
+      "reason": "technical check: fewer than 200 parseable files (165)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "mio-kitchen-source",
+      "reserve": "eidolon-sc",
+      "reason": "technical check: fewer than 200 parseable files (116)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "codevideomodel",
+      "reserve": "leafmap",
+      "reason": "technical check: fewer than 200 parseable files (37)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "leafmap",
+      "reserve": "stone-soup",
+      "reason": "technical check: fewer than 200 parseable files (43)"
+    }
+  ],
+  "burned": [],
+  "exposed": [],
+  "repos": [
+    {
+      "name": "skylos",
+      "url": "https://github.com/duriantaco/skylos",
+      "sha": "32aa94e9c67e3559593eab4e9e4e9cb44268afe4",
+      "language": "Python",
+      "framework_bucket": "django",
+      "size_kb": 97867,
+      "stars": 887,
+      "pushed_at": "2026-11-08T09:34:55Z"
+    },
+    {
+      "name": "babybuddy",
+      "url": "https://github.com/babybuddy/babybuddy",
+      "sha": "376bb9456c96c37dd1813ad5b9fe86f4cc582dd7",
+      "language": "Python",
+      "framework_bucket": "django",
+      "size_kb": 81526,
+      "stars": 2943,
+      "pushed_at": "2026-11-07T21:33:05Z"
+    },
+    {
+      "name": "scale-agentex",
+      "url": "https://github.com/scaleapi/scale-agentex",
+      "sha": "b1ecd31ae7c6abec38fc03078a4383551e54aa65",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "size_kb": 35274,
+      "stars": 502,
+      "pushed_at": "2026-11-05T14:06:34Z"
+    },
+    {
+      "name": "aci",
+      "url": "https://github.com/aipotheosis-labs/aci",
+      "sha": "ba14b1916eff02b4cd9dcd5ce8ba879d209c7df7",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "size_kb": 22890,
+      "stars": 4934,
+      "pushed_at": "2026-11-01T18:50:12Z"
+    },
+    {
+      "name": "mio-kitchen-source",
+      "url": "https://github.com/ColdWindScholar/MIO-KITCHEN-SOURCE",
+      "sha": "1c358da192c2ee71a4034f9a3525333cf1e4989b",
+      "language": "Python",
+      "framework_bucket": "flask",
+      "size_kb": 213308,
+      "stars": 530,
+      "pushed_at": "2026-11-01T16:42:38Z"
+    },
+    {
+      "name": "oxo",
+      "url": "https://github.com/Ostorlab/oxo",
+      "sha": "82270cf0e014c1c03a0a0acfe4fb9c851f3c69f5",
+      "language": "Python",
+      "framework_bucket": "flask",
+      "size_kb": 237629,
+      "stars": 585,
+      "pushed_at": "2026-11-05T20:57:12Z"
+    },
+    {
+      "name": "toddlerbot",
+      "url": "https://github.com/hshi74/toddlerbot",
+      "sha": "e337f3b177b4b53abff70b31d1695a7b66cc6d2e",
+      "language": "Python",
+      "framework_bucket": "other_python",
+      "size_kb": 400304,
+      "stars": 803,
+      "pushed_at": "2026-07-31T07:04:15Z"
+    },
+    {
+      "name": "codevideomodel",
+      "url": "https://github.com/code-video-model/CodeVideoModel",
+      "sha": "404e03d67c2977b441622ce94411470bb84984a8",
+      "language": "Python",
+      "framework_bucket": "other_python",
+      "size_kb": 24339,
+      "stars": 748,
+      "pushed_at": "2026-10-13T01:45:05Z"
+    }
+  ],
+  "reserves": {
+    "//": "Pre-registered replacements, used in this order only (rule 1). Reserve i comes from bucket spec.sets.<set>.reserve_order[i] of the selection record.",
+    "repos": [
+      {
+        "name": "care",
+        "url": "https://github.com/ohcnetwork/care",
+        "sha": "5bc81d522a4363ae93294e7dcd3b0b66ac522456",
+        "language": "Python",
+        "framework_bucket": "django",
+        "size_kb": 36819,
+        "stars": 421,
+        "pushed_at": "2026-11-06T07:34:52Z"
+      },
+      {
+        "name": "eidolon-sc",
+        "url": "https://github.com/Sallyn0225/eidolon-sc",
+        "sha": "8cdb82b84670466041aed02640bb747f81ddca96",
+        "language": "Python",
+        "framework_bucket": "fastapi",
+        "size_kb": 74710,
+        "stars": 407,
+        "pushed_at": "2026-11-08T12:25:34Z"
+      },
+      {
+        "name": "leafmap",
+        "url": "https://github.com/opengeos/leafmap",
+        "sha": "6af9e80129b8600e7a71bb372bbefd23b24267ee",
+        "language": "Python",
+        "framework_bucket": "flask",
+        "size_kb": 28004,
+        "stars": 3797,
+        "pushed_at": "2026-11-06T00:00:25Z"
+      },
+      {
+        "name": "stone-soup",
+        "url": "https://github.com/dstl/Stone-Soup",
+        "sha": "ef0dd820cc0ff9862d50fe56ed69b36fffe97d81",
+        "language": "Python",
+        "framework_bucket": "other_python",
+        "size_kb": 51648,
+        "stars": 678,
+        "pushed_at": "2026-11-06T13:32:08Z"
+      },
+      {
+        "name": "greaterwms",
+        "url": "https://github.com/GreaterWMS/GreaterWMS",
+        "sha": "8344f3872155d75acce5c5d5d7d95b5b8e18dfc1",
+        "language": "Python",
+        "framework_bucket": "django",
+        "size_kb": 194282,
+        "stars": 4443,
+        "pushed_at": "2026-10-26T06:51:48Z"
+      },
+      {
+        "name": "comfyui_llm_party",
+        "url": "https://github.com/heshengtao/comfyui_LLM_party",
+        "sha": "3790b26a438bb8e77c1ad24d93870f710cc8ae41",
+        "language": "Python",
+        "framework_bucket": "fastapi",
+        "size_kb": 142610,
+        "stars": 2389,
+        "pushed_at": "2026-07-29T18:05:53Z"
+      },
+      {
+        "name": "anymodelbot",
+        "url": "https://github.com/modelflare-ai/AnyModelBot",
+        "sha": "2bcfb3a5e6e8e44e2b7f083efe654b9e9f16d738",
+        "language": "Python",
+        "framework_bucket": "flask",
+        "size_kb": 116085,
+        "stars": 2741,
+        "pushed_at": "2026-11-08T13:39:03Z"
+      },
+      {
+        "name": "adcheck",
+        "url": "https://github.com/CobblePot59/ADcheck",
+        "sha": "f03fcb8d56f7328cf29f32b70f65d1ce3f59ee5d",
+        "language": "Python",
+        "framework_bucket": "other_python",
+        "size_kb": 47583,
+        "stars": 390,
+        "pushed_at": "2026-09-13T13:52:49Z"
+      },
+      {
+        "name": "otterbot",
+        "url": "https://github.com/Bluefissure/OtterBot",
+        "sha": "0e935fe5e55bb30342a72fa8933ebe2fcab3af30",
+        "language": "Python",
+        "framework_bucket": "django",
+        "size_kb": 51771,
+        "stars": 513,
+        "pushed_at": "2026-09-22T15:57:39Z"
+      },
+      {
+        "name": "telemem",
+        "url": "https://github.com/TeleAI-UAGI/telemem",
+        "sha": "8b6dcda18822c144ff4b7533158a15b61e5d311a",
+        "language": "Python",
+        "framework_bucket": "fastapi",
+        "size_kb": 110088,
+        "stars": 493,
+        "pushed_at": "2026-11-02T16:22:45Z"
+      },
+      {
+        "name": "aperisolve",
+        "url": "https://github.com/Zeecka/AperiSolve",
+        "sha": "974f3be2af696e029b59f03ff41ce389fdc3a89c",
+        "language": "Python",
+        "framework_bucket": "flask",
+        "size_kb": 100871,
+        "stars": 863,
+        "pushed_at": "2026-11-03T20:26:10Z"
+      },
+      {
+        "name": "connectonion",
+        "url": "https://github.com/openonion/connectonion",
+        "sha": "971c7991ed4db97d336ecfe58cdde3073f7fc785",
+        "language": "Python",
+        "framework_bucket": "other_python",
+        "size_kb": 76850,
+        "stars": 1507,
+        "pushed_at": "2026-11-08T14:19:43Z"
+      }
+    ]
+  }
+}

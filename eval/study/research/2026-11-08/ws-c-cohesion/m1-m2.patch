@@ -1,0 +1,586 @@
+diff --git a/crates/drift-mine/src/mine.rs b/crates/drift-mine/src/mine.rs
+index ffe7983..1bcfdf0 100644
+--- a/crates/drift-mine/src/mine.rs
++++ b/crates/drift-mine/src/mine.rs
+@@ -3664,6 +3664,8 @@ fn mine_units<'a>(
+     // A role is a pattern across files: members of one or two files share facts
+     // because they sit together (saleor's 20 email tasks in two `tasks.py` files).
+     roles.retain(|_, members| spans_files(members, &units));
++    // A role that mixes kinds of member proposes nothing (M2).
++    roles.retain(|role, members| cohesive(role, members, &units, &ctx));
+     // The unsplit roles of the places where member kinds split a role (W1): every
+     // member at the place, of any kind ([`carried_universal`]).
+     let mut unsplit: BTreeMap<RoleSelector, Vec<usize>> = BTreeMap::new();
+@@ -5162,6 +5164,13 @@ fn naming_drafts(
+     {
+         return vec![];
+     }
++    // M1 (round 10): the TypeScript counterpart of W3. A naming rule over plain
++    // functions, with no kind marker that the members share, is not proposed: a folder
++    // of functions mixes the kinds they are (registrations, routers, helpers, senders)
++    // and Drift cannot tell them apart ([`has_kind_marker`]).
++    if !python_units(&population, units) && !has_kind_marker(role, &population, units) {
++        return vec![];
++    }
+     let kept: BTreeSet<&Rule> = population
+         .iter()
+         .flat_map(|&m| feats[m].iter().filter(|r| matches!(r, Rule::Named { .. })))
+@@ -5241,6 +5250,127 @@ fn naming_drafts(
+     out
+ }
+ 
++/// Share of a role's members that must carry a kind marker for the members to share it
++/// ([`has_kind_marker`]), and that a structural signature must cover for the role to be
++/// cohesive ([`cohesive`]).
++const KIND_MARKER_SHARE: f64 = 0.9;
++
++/// `useSession`, `use2FA`: the React hook naming the framework reserves (`use` and then
++/// an upper case letter or a digit).
++fn is_hook_name(name: &str) -> bool {
++    name.strip_prefix("use")
++        .and_then(|rest| rest.chars().next())
++        .is_some_and(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
++}
++
++/// Whether the members of a TypeScript or JavaScript role share a structural kind
++/// marker, so a naming rule over them is about one kind of thing (M1, round 10). The
++/// markers are the role's own keys: a file kind (`*.handler`, `route`), an entry kind,
++/// a class variety, a member kind or a reserved export name. A role of components has
++/// one by its symbol kind (component versus hook), and a role of functions has one when
++/// [`KIND_MARKER_SHARE`] of them are hooks. Classes and exported values are not asked:
++/// the dev evidence is on functions only (round-10 plan, M1), and the same test on
++/// values would drop conventions labelled sound.
++fn has_kind_marker(role: &RoleSelector, population: &[usize], units: &[Unit]) -> bool {
++    if role.file != "*"
++        || role.entry != "-"
++        || role.variety.is_some()
++        || role.member_kind.is_some()
++        || role.export_name.is_some()
++        || role.kind != SymbolKind::Function
++    {
++        return true;
++    }
++    let hooks = population
++        .iter()
++        .filter(|&&m| matches!(units[m].view, View::Symbol(_, s) if is_hook_name(&s.name)))
++        .count();
++    !population.is_empty() && hooks as f64 >= KIND_MARKER_SHARE * population.len() as f64
++}
++
++/// Whether `name` is named after the file at `path`: its words end with the words of
++/// the file's stem (`registerUserRouter` in `user-router.ts`, `WorkspacePageClient` in
++/// `page-client.tsx`), or of its folder for an `index` file.
++fn named_after_file(path: &str, name: &str) -> bool {
++    let mut segs = path.rsplit('/');
++    let base = segs.next().unwrap_or(path);
++    let mut stem = base.split('.').next().unwrap_or(base);
++    if stem == "index" {
++        stem = segs.next().unwrap_or(stem);
++    }
++    let want = words(stem);
++    let have = words(name);
++    !want.is_empty() && have.ends_with(&want)
++}
++
++/// The primary export of its file: the default export, or an export named after the
++/// file ([`named_after_file`]).
++fn primary_export(f: &FileFacts, s: &Symbol) -> bool {
++    s.exported_as.iter().any(|e| e == "default") || named_after_file(&f.path, &s.name)
++}
++
++/// A secondary export of its file: not the primary export, in a file whose primary
++/// export ([`primary_export`]) is another symbol of the same kind (the helpers and
++/// part components beside a page client, a router or a provider). A member of a file
++/// with no primary export of its kind (a module of peer helpers) is no secondary one.
++fn secondary_export(f: &FileFacts, s: &Symbol) -> bool {
++    !primary_export(f, s)
++        && f.symbols.iter().any(|x| {
++            x.kind == s.kind
++                && x.name != s.name
++                && !x.exported_as.is_empty()
++                && primary_export(f, x)
++        })
++}
++
++/// Whether a TypeScript or JavaScript role is cohesive (M2, round 10): one structural
++/// signature covers [`KIND_MARKER_SHARE`] of its members. The signature is what a
++/// member is beyond the role's own keys (package, folder, file kind, entry kind,
++/// symbol kind and member kind, the same for every member): whether it is a secondary
++/// export of its file ([`secondary_export`]), and for a class, a base of its lineage or
++/// a class decorator (or none). A role whose members are not one kind of thing by that
++/// test proposes nothing, in any family: what most of a mix does is no convention of
++/// either part [STRICT: not mined, rather than mined per signature].
++///
++/// Python roles are split by framework lineage already (W1), an entry point's role is
++/// keyed by its entry kind, and file, model and package roles have no members to
++/// compare: they are cohesive.
++fn cohesive(role: &RoleSelector, members: &[usize], units: &[Unit], ctx: &RepoContext) -> bool {
++    if role.entry != "-"
++        || !matches!(
++            role.kind,
++            SymbolKind::Function | SymbolKind::Component | SymbolKind::Class | SymbolKind::Const
++        )
++        || python_units(members, units)
++        || members.is_empty()
++    {
++        return true;
++    }
++    // Members per signature part: (secondary export, lineage marker), where a class
++    // counts once under each base or decorator of its lineage, and a class with none
++    // (or a non-class) under `None`.
++    let mut by: BTreeMap<(bool, Option<String>), usize> = BTreeMap::new();
++    for &m in members {
++        let View::Symbol(f, s) = units[m].view else {
++            return true;
++        };
++        let secondary = secondary_export(f, s);
++        let mut marks: BTreeSet<String> = BTreeSet::new();
++        if role.kind == SymbolKind::Class && s.kind == SymbolKind::Class {
++            marks.extend(ctx.lineage(s));
++            marks.extend(class_decorators(s));
++        }
++        if marks.is_empty() {
++            *by.entry((secondary, None)).or_default() += 1;
++        }
++        for mark in marks {
++            *by.entry((secondary, Some(mark))).or_default() += 1;
++        }
++    }
++    let top = by.values().copied().max().unwrap_or(0);
++    top as f64 >= KIND_MARKER_SHARE * members.len() as f64
++}
++
+ /// What mining proposed, by role and rule ([`carried_universal`]).
+ type Proposed = BTreeSet<(RoleSelector, Rule)>;
+ 
+diff --git a/crates/drift-mine/tests/cohesion.rs b/crates/drift-mine/tests/cohesion.rs
+new file mode 100644
+index 0000000..974c885
+--- /dev/null
++++ b/crates/drift-mine/tests/cohesion.rs
+@@ -0,0 +1,425 @@
++//! Round 10, workstream C: role cohesion for TypeScript.
++//!
++//! - M1: a naming rule is proposed only on a role whose members share a kind marker (a
++//!   file kind, an entry kind, a class variety or member kind, components, or functions
++//!   that are hooks). A folder of plain functions mixes kinds Drift cannot tell apart.
++//! - M2: a role is mined only when one structural signature (secondary export of its
++//!   file or not; for classes, a base of the lineage or a class decorator) covers 90% of
++//!   its members. A mixed role proposes nothing, in any family.
++//!
++//! Every fixture role has one member that breaks its rules, so the rules are not
++//! universal (a rule every member holds is no candidate). The fixtures are generic
++//! routers, hooks, pages and providers, not any dev repository's code.
++
++use drift_core::{EntryPoint, FileFacts, RepoFacts, Symbol, SymbolKind, Wrap, WrapKind};
++use drift_mine::mine::{Candidate, MineOptions, Rule, mine};
++
++const PKG: &str = "web";
++const GUARD: &str = "web/src/lib/auth.ts#withAuth";
++const SHELL: &str = "web/src/ui/shell.tsx#Shell";
++
++fn sym(name: &str, kind: SymbolKind, exported: &[&str], edit: impl FnOnce(&mut Symbol)) -> Symbol {
++    let mut s = Symbol {
++        name: name.into(),
++        kind,
++        exported_as: exported.iter().map(|e| e.to_string()).collect(),
++        line: 1,
++        ..Default::default()
++    };
++    edit(&mut s);
++    s
++}
++
++fn exported(name: &str, kind: SymbolKind, edit: impl FnOnce(&mut Symbol)) -> Symbol {
++    sym(name, kind, &[name], edit)
++}
++
++fn file(path: &str, symbols: Vec<Symbol>) -> FileFacts {
++    FileFacts {
++        path: path.into(),
++        package: PKG.into(),
++        lang: "ts".into(),
++        parse_ok: true,
++        symbols,
++        ..Default::default()
++    }
++}
++
++fn wrap(wrapper: &str, kind: WrapKind) -> Wrap {
++    Wrap {
++        wrapper: wrapper.into(),
++        kind,
++    }
++}
++
++/// Plain functions, classes, values and components elsewhere, so rules have lift.
++fn background(files: &mut Vec<FileFacts>) {
++    for i in 0..60 {
++        let mut f = file(
++            &format!("api/src/util/u{i}.ts"),
++            vec![
++                exported(&format!("util{i}"), SymbolKind::Function, |_| {}),
++                exported(&format!("Thing{i}"), SymbolKind::Class, |_| {}),
++                exported(&format!("value{i}"), SymbolKind::Const, |_| {}),
++                exported(&format!("Widget{i}"), SymbolKind::Component, |_| {}),
++            ],
++        );
++        f.package = "api".into();
++        files.push(f);
++    }
++}
++
++fn repo(mut files: Vec<FileFacts>) -> RepoFacts {
++    background(&mut files);
++    let mut r = RepoFacts {
++        files,
++        ..Default::default()
++    };
++    r.normalize();
++    r
++}
++
++fn mined(r: &RepoFacts) -> Vec<Candidate> {
++    mine(r, &MineOptions { max_per_repo: 500 }).candidates
++}
++
++fn named(pattern: &str) -> Rule {
++    Rule::Named {
++        pattern: pattern.into(),
++    }
++}
++
++/// Candidates on roles of `PKG` at `dir` (or at `src/`, where mining keeps a role that
++/// holds the same members as its subfolder).
++fn in_dir<'a>(cs: &'a [Candidate], dir: &str) -> Vec<&'a Candidate> {
++    cs.iter()
++        .filter(|c| c.role.package == PKG && (c.role.dir == "src" || c.role.dir.starts_with(dir)))
++        .collect()
++}
++
++fn has(cs: &[Candidate], dir: &str, rule: &Rule) -> bool {
++    in_dir(cs, dir).iter().any(|c| &c.rule == rule)
++}
++
++fn describe(cs: &[Candidate]) -> Vec<(String, String)> {
++    cs.iter()
++        .map(|c| (c.role.describe(), c.rule.describe()))
++        .collect()
++}
++
++/// 30 route files `src/routes/r{i}{suffix}`, each exporting `registerR{i}Thing`
++/// wrapped by the team's `withAuth`, but `r0` is `mountR0Thing` and `r1` is unwrapped.
++fn routers(suffix: &str) -> Vec<FileFacts> {
++    (0..30)
++        .map(|i| {
++            let name = if i == 0 {
++                "mountR0Thing".to_string()
++            } else {
++                format!("registerR{i}Thing")
++            };
++            file(
++                &format!("web/src/routes/r{i}{suffix}"),
++                vec![exported(&name, SymbolKind::Function, |s| {
++                    if i != 1 {
++                        s.wraps.push(wrap(GUARD, WrapKind::Call));
++                    }
++                })],
++            )
++        })
++        .collect()
++}
++
++fn wrapped_by_guard(c: &Candidate) -> bool {
++    matches!(&c.rule, Rule::WrappedBy { kind: WrapKind::Call, any_of } if any_of.iter().any(|a| a == GUARD))
++}
++
++#[test]
++fn m1_no_naming_rule_on_plain_functions() {
++    let cs = mined(&repo(routers(".ts")));
++    assert!(
++        !has(&cs, "src/routes", &named("register*")),
++        "{:?}",
++        describe(&cs)
++    );
++    // Other families of the role are still mined.
++    assert!(
++        in_dir(&cs, "src/routes")
++            .iter()
++            .any(|c| wrapped_by_guard(c)),
++        "{:?}",
++        describe(&cs)
++    );
++}
++
++#[test]
++fn m1_naming_rule_kept_with_a_file_kind() {
++    let cs = mined(&repo(routers(".router.ts")));
++    assert!(
++        has(&cs, "src/routes", &named("register*")),
++        "{:?}",
++        describe(&cs)
++    );
++}
++
++#[test]
++fn m1_naming_rule_kept_with_an_entry_kind() {
++    let mut files = routers(".ts");
++    for f in &mut files {
++        let name = f.symbols[0].name.clone();
++        f.entry_points.push(EntryPoint {
++            symbol: name,
++            kind: "rpc".into(),
++            method: None,
++            route: None,
++            adapter: "test".into(),
++        });
++    }
++    let cs = mined(&repo(files));
++    assert!(
++        has(&cs, "src/routes", &named("register*")),
++        "{:?}",
++        describe(&cs)
++    );
++}
++
++/// 30 hooks `useThing{i}Query` in `src/hooks/` (`useThing0` is no query): functions
++/// that are hooks share a kind marker.
++#[test]
++fn m1_naming_rule_kept_on_hooks() {
++    let files = (0..30)
++        .map(|i| {
++            let name = if i == 0 {
++                "useThing0".to_string()
++            } else {
++                format!("useThing{i}Query")
++            };
++            file(
++                &format!("web/src/hooks/h{i}.ts"),
++                vec![exported(&name, SymbolKind::Function, |_| {})],
++            )
++        })
++        .collect();
++    let cs = mined(&repo(files));
++    assert!(
++        has(&cs, "src/hooks", &named("*Query")),
++        "{:?}",
++        describe(&cs)
++    );
++}
++
++/// Components and values keep naming rules in a plain folder (M1 asks functions only).
++#[test]
++fn m1_components_and_values_keep_naming_rules() {
++    let mut files = Vec::new();
++    for i in 0..30 {
++        let (dialog, schema) = if i == 0 {
++            ("EditForm0".to_string(), "thingRules0".to_string())
++        } else {
++            (format!("Edit{i}Dialog"), format!("thing{i}Schema"))
++        };
++        files.push(file(
++            &format!("web/src/dialogs/d{i}.tsx"),
++            vec![exported(&dialog, SymbolKind::Component, |_| {})],
++        ));
++        files.push(file(
++            &format!("web/src/schemas/s{i}.ts"),
++            vec![exported(&schema, SymbolKind::Const, |_| {})],
++        ));
++    }
++    let cs = mined(&repo(files));
++    assert!(
++        has(&cs, "src/dialogs", &named("*Dialog")),
++        "{:?}",
++        describe(&cs)
++    );
++    assert!(
++        has(&cs, "src/schemas", &named("*Schema")),
++        "{:?}",
++        describe(&cs)
++    );
++}
++
++/// 30 page files `src/{dir}/p{i}-page.tsx`, each with `P{i}Page` (named after the
++/// file) rendering `<Shell>` (`P0Page` does not); the first `parts` files also export
++/// a part component `P{i}Row` beside it, which renders `<Shell>` too.
++fn pages(dir: &str, parts: usize) -> Vec<FileFacts> {
++    (0..30)
++        .map(|i| {
++            let mut syms = vec![exported(&format!("P{i}Page"), SymbolKind::Component, |s| {
++                if i != 0 {
++                    s.renders.push(SHELL.into());
++                }
++            })];
++            if i < parts {
++                syms.push(exported(&format!("P{i}Row"), SymbolKind::Component, |s| {
++                    s.renders.push(SHELL.into());
++                }));
++            }
++            file(&format!("web/src/{dir}/p{i}-page.tsx"), syms)
++        })
++        .collect()
++}
++
++fn renders_shell(c: &Candidate) -> bool {
++    matches!(&c.rule, Rule::Renders { component } if component == SHELL)
++}
++
++#[test]
++fn m2_role_mixing_secondary_exports_proposes_nothing() {
++    // 10 of 40 members are secondary exports: no signature covers 90%.
++    let cs = mined(&repo(pages("pages", 10)));
++    assert!(in_dir(&cs, "src/pages").is_empty(), "{:?}", describe(&cs));
++}
++
++#[test]
++fn m2_cohesive_role_is_mined() {
++    // 2 of 32 are secondary: the primary exports cover 93.75%.
++    let cs = mined(&repo(pages("pages", 2)));
++    assert!(
++        in_dir(&cs, "src/pages").iter().any(|c| renders_shell(c)),
++        "{:?}",
++        describe(&cs)
++    );
++}
++
++/// A file's default export is its primary export, whatever its name; in a file with no
++/// primary export no member is secondary.
++#[test]
++fn m2_a_default_export_is_primary() {
++    let mut files = pages("pages", 10);
++    for f in &mut files {
++        f.path = f.path.replace("-page.tsx", ".tsx");
++        let n = f.symbols[0].name.clone();
++        f.symbols[0].exported_as = vec!["default".into(), n];
++    }
++    let cs = mined(&repo(files.clone()));
++    assert!(in_dir(&cs, "src/pages").is_empty(), "{:?}", describe(&cs));
++    for f in &mut files {
++        f.symbols[0].exported_as.retain(|e| e != "default");
++    }
++    let cs = mined(&repo(files));
++    assert!(
++        in_dir(&cs, "src/pages").iter().any(|c| renders_shell(c)),
++        "{:?}",
++        describe(&cs)
++    );
++}
++
++/// 30 provider classes in `src/providers/p{i}.provider.ts`, of which the first `other`
++/// extend `BaseClient` instead of `BaseProvider`; each is named `*Provider` but the
++/// last (`P29Service`).
++fn providers(other: usize) -> Vec<FileFacts> {
++    let mut files = vec![file(
++        "web/src/base/base.ts",
++        vec![
++            exported("BaseProvider", SymbolKind::Class, |_| {}),
++            exported("BaseClient", SymbolKind::Class, |_| {}),
++        ],
++    )];
++    for i in 0..30 {
++        let base = if i < other {
++            "web/src/base/base.ts#BaseClient"
++        } else {
++            "web/src/base/base.ts#BaseProvider"
++        };
++        let name = if i == 29 {
++            "P29Service".to_string()
++        } else {
++            format!("P{i}Provider")
++        };
++        files.push(file(
++            &format!("web/src/providers/p{i}.provider.ts"),
++            vec![exported(&name, SymbolKind::Class, |s| {
++                s.wraps.push(wrap(base, WrapKind::Extends));
++            })],
++        ));
++    }
++    files
++}
++
++#[test]
++fn m2_classes_of_two_lineages_propose_nothing() {
++    let cs = mined(&repo(providers(10)));
++    assert!(
++        in_dir(&cs, "src/providers").is_empty(),
++        "{:?}",
++        describe(&cs)
++    );
++}
++
++#[test]
++fn m2_classes_of_one_lineage_are_mined() {
++    let cs = mined(&repo(providers(0)));
++    assert!(
++        has(&cs, "src/providers", &named("*Provider")),
++        "{:?}",
++        describe(&cs)
++    );
++}
++
++/// An entry point's role is keyed by its entry kind: M2 does not ask it.
++#[test]
++fn m2_entry_roles_are_not_asked() {
++    let mut files = pages("pages", 10);
++    for f in &mut files {
++        let names: Vec<String> = f.symbols.iter().map(|s| s.name.clone()).collect();
++        for n in names {
++            f.entry_points.push(EntryPoint {
++                symbol: n,
++                kind: "page".into(),
++                method: None,
++                route: None,
++                adapter: "test".into(),
++            });
++        }
++    }
++    let cs = mined(&repo(files));
++    assert!(
++        in_dir(&cs, "src/pages").iter().any(|c| renders_shell(c)),
++        "{:?}",
++        describe(&cs)
++    );
++}
++
++fn summary(cs: &[Candidate]) -> Vec<(String, String, String, usize, usize)> {
++    let mut v: Vec<_> = cs
++        .iter()
++        .map(|c| {
++            (
++                c.id.clone(),
++                c.role.describe(),
++                c.rule.describe(),
++                c.evidence.holders,
++                c.outliers.len(),
++            )
++        })
++        .collect();
++    v.sort();
++    v
++}
++
++fn mixed() -> Vec<FileFacts> {
++    let mut files = routers(".ts");
++    files.extend(routers(".router.ts").into_iter().map(|mut f| {
++        f.path = f.path.replace("src/routes", "src/api");
++        f
++    }));
++    files.extend(pages("pages", 10));
++    files.extend(pages("views", 2));
++    files.extend(providers(10));
++    files
++}
++
++/// The same facts mine the same candidates, run after run and in another file and
++/// symbol order (M1 and M2 decide by counts, never by the order members come in).
++#[test]
++fn determinism_file_and_symbol_order() {
++    let a = mined(&repo(mixed()));
++    assert!(!a.is_empty());
++    assert_eq!(summary(&a), summary(&mined(&repo(mixed()))));
++    let mut rev: Vec<FileFacts> = mixed().into_iter().rev().collect();
++    for f in &mut rev {
++        f.symbols.reverse();
++    }
++    assert_eq!(summary(&a), summary(&mined(&repo(rev))));
++}

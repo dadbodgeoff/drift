@@ -1,0 +1,539 @@
+diff --git a/crates/drift-cli/src/agent.rs b/crates/drift-cli/src/agent.rs
+index baf4b21c..93ea1827 100644
+--- a/crates/drift-cli/src/agent.rs
++++ b/crates/drift-cli/src/agent.rs
+@@ -185,9 +185,13 @@ fn session_path(root: &Path, session_id: &str) -> PathBuf {
+ 
+ /// `None` when the state is missing or unreadable: callers fail open.
+ fn load_state(path: &Path) -> Option<SessionState> {
+-    std::fs::read(path)
++    let t = drift_core::trace::now();
++    drift_core::trace::count("state_loads");
++    let s = std::fs::read(path)
+         .ok()
+-        .and_then(|b| serde_json::from_slice(&b).ok())
++        .and_then(|b| serde_json::from_slice(&b).ok());
++    drift_core::trace::add("state", t);
++    s
+ }
+ 
+ /// Best effort, atomic (temp file + rename): hooks for parallel tool calls can
+@@ -214,7 +218,10 @@ fn write_json<T: Serialize>(path: &Path, value: &T) {
+ }
+ 
+ fn save_state(path: &Path, s: &SessionState) {
++    let t = drift_core::trace::now();
++    drift_core::trace::count("state_saves");
+     write_json(path, s);
++    drift_core::trace::add("state", t);
+ }
+ 
+ fn now_secs() -> u64 {
+@@ -267,6 +274,7 @@ fn prune_sessions(dir: &Path) {
+ 
+ /// Entry point. Returns the JSON to print (or `None` for no output).
+ pub fn handle(event: &str) -> Option<Value> {
++    let t = drift_core::trace::now();
+     let mut buf = Vec::new();
+     if std::io::stdin()
+         .take(MAX_INPUT_BYTES)
+@@ -276,12 +284,40 @@ pub fn handle(event: &str) -> Option<Value> {
+         return None;
+     }
+     let input: Value = serde_json::from_slice(&buf).unwrap_or(Value::Null);
++    drift_core::trace::add("stdin", t);
++    if drift_core::trace::on() {
++        drift_core::trace::set(
++            "tool",
++            input.get("tool_name").cloned().unwrap_or(Value::Null),
++        );
++        drift_core::trace::set("rel", tool_path(&input).map_or(Value::Null, Value::String));
++    }
+     match handle_event(event, &input) {
+         Ok(v) => v,
+         // Fail open: tell the person, never block the agent because Drift broke.
+-        Err(e) => Some(
+-            json!({ "systemMessage": format!("drift: hook error, skipped ({})", sanitize(&format!("{e:#}"), 200)) }),
+-        ),
++        Err(e) => {
++            drift_core::trace::reason("hook_error");
++            Some(
++                json!({ "systemMessage": format!("drift: hook error, skipped ({})", sanitize(&format!("{e:#}"), 200)) }),
++            )
++        }
++    }
++}
++
++/// The trace's `out` for a hook's output (r13h research trace).
++pub fn trace_out(out: Option<&Value>) -> &'static str {
++    let Some(v) = out else { return "none" };
++    let s = v.to_string();
++    if v.get("decision").and_then(Value::as_str) == Some("block") {
++        "block"
++    } else if s.contains("\"permissionDecision\":\"deny\"") {
++        "deny"
++    } else if s.contains("\"permissionDecision\":\"allow\"") {
++        "allow"
++    } else if s.contains("additionalContext") {
++        "context"
++    } else {
++        "message"
+     }
+ }
+ 
+@@ -297,8 +333,12 @@ fn handle_event(event: &str, input: &Value) -> anyhow::Result<Option<Value>> {
+     // The policy nearest the edited file, else the one above the session's directory:
+     // an agent started at a monorepo's root that edits `frontend/x.ts` is held to the
+     // conventions that cover that file, wherever its `.drift/` is.
+-    let Some(root) = policy_root(input, &cwd) else {
++    let t = drift_core::trace::now();
++    let root = policy_root(input, &cwd);
++    drift_core::trace::add("policy_root", t);
++    let Some(root) = root else {
+         // No conventions in this project: Drift stays silent.
++        drift_core::trace::reason("no_policy");
+         return Ok(None);
+     };
+     drift_mine::workspace::configure(&root);
+@@ -307,7 +347,9 @@ fn handle_event(event: &str, input: &Value) -> anyhow::Result<Option<Value>> {
+     if event == "PreToolUse" && input.get("tool_name").and_then(Value::as_str) == Some("Bash") {
+         return Ok(bash_pre_tool_use(input, &root, &cwd));
+     }
++    let t = drift_core::trace::now();
+     let project = Project::open_for_agents(&root)?;
++    drift_core::trace::add("policy", t);
+     let session = input
+         .get("session_id")
+         .and_then(Value::as_str)
+@@ -749,6 +791,7 @@ fn post_tool_use(p: &Project, input: &Value, state_path: &Path) -> anyhow::Resul
+         return Ok(None);
+     };
+     if p.accepted().next().is_none() {
++        drift_core::trace::reason("no_accepted");
+         return Ok(None);
+     }
+     // Wiring rules are judged at Stop, on the files edited this turn.
+@@ -888,12 +931,15 @@ fn stop(p: &Project, input: &Value, state_path: &Path) -> anyhow::Result<Option<
+     let had_edits = !edited.is_empty();
+     edited.retain(|f| wiring.iter().any(|c| wiring_relevant(c, f)));
+     if !has_block && edited.is_empty() {
++        drift_core::trace::set("scanned", json!(false));
+         if had_edits && let Some(mut state) = load_state(state_path) {
+             state.edited.clear();
+             save_state(state_path, &state);
+         }
+         return Ok(None);
+     }
++    drift_core::trace::set("scanned", json!(true));
++    drift_core::trace::path("full");
+     let facts = p.scan(false)?;
+     // Without blocking rules only the edited files matter.
+     let only = (!has_block).then(|| edited.clone());
+diff --git a/crates/drift-cli/src/main.rs b/crates/drift-cli/src/main.rs
+index 4f49f7ca..7cd4575d 100644
+--- a/crates/drift-cli/src/main.rs
++++ b/crates/drift-cli/src/main.rs
+@@ -2573,9 +2573,13 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
+             agent: Agent::Claude,
+             event,
+         } => {
+-            if let Some(out) = agent::handle(event) {
++            let out = agent::handle(event);
++            let t = drift_core::trace::now();
++            if let Some(out) = &out {
+                 println!("{out}");
+             }
++            drift_core::trace::add("output", t);
++            drift_core::trace::flush(event, None, None, agent::trace_out(out.as_ref()));
+         }
+         Command::Mcp => mcp::serve(root, cli.no_cache)?,
+         Command::Export {
+@@ -3967,6 +3971,7 @@ fn nearest_policy(cli: &mut Cli) {
+ }
+ 
+ fn main() -> ExitCode {
++    drift_core::trace::start();
+     // `println!` panics when stdout is a closed pipe: exit quietly with the pipe code.
+     let default_hook = std::panic::take_hook();
+     std::panic::set_hook(Box::new(move |info| {
+diff --git a/crates/drift-cli/src/project.rs b/crates/drift-cli/src/project.rs
+index 8af049f0..91ee54ff 100644
+--- a/crates/drift-cli/src/project.rs
++++ b/crates/drift-cli/src/project.rs
+@@ -113,6 +113,13 @@ pub struct Project {
+ /// - git tracks anything under it: facts are keyed by content hash only, so a
+ ///   committed entry could carry forged facts that hide a violation from
+ ///   `drift check`. (Without git this check is skipped.)
++struct TraceOnDrop(&'static str, std::time::Instant);
++impl Drop for TraceOnDrop {
++    fn drop(&mut self) {
++        drift_core::trace::add(self.0, self.1);
++    }
++}
++
+ pub fn cache_dir(root: &Path, disabled: bool) -> Option<PathBuf> {
+     if disabled {
+         return None;
+@@ -124,6 +131,7 @@ pub fn cache_dir(root: &Path, disabled: bool) -> Option<PathBuf> {
+     // Decided once per process: the hooks ask several times.
+     static REFUSED: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
+     let refused = REFUSED.get_or_init(|| {
++        let _t = TraceOnDrop("cache_dir", drift_core::trace::now());
+         if let Some(link) = link_under_drift(&dir).or_else(|| link_inside(&dir, CACHE_LINK_DEPTH)) {
+             return Some(format!("{} is a symbolic link", link.display()));
+         }
+@@ -361,8 +369,10 @@ impl Project {
+             cache_dir: cache_dir(&self.root, no_cache),
+             threads: 0,
+         };
++        let t = drift_core::trace::now();
+         let mut facts = scan(&self.root, &opts)?.0;
+         crate::history::attach_key_files(&self.root, &self.policy, &mut facts);
++        drift_core::trace::add("full_scan", t);
+         Ok(facts)
+     }
+ 
+@@ -373,17 +383,38 @@ impl Project {
+             cache_dir: cache_dir(&self.root, false),
+             threads: 0,
+         };
++        if opts.cache_dir.is_none() {
++            drift_core::trace::reason("cache_refused");
++        }
+         match scan_file(&self.root, &opts, rel) {
+-            Ok(Some(facts)) if !drift_mine::check::needs_full_scan(&facts, &self.policy) => {
+-                Ok(facts)
++            Ok(Some(facts)) => {
++                let t = drift_core::trace::now();
++                let full = drift_mine::check::needs_full_scan(&facts, &self.policy);
++                drift_core::trace::add("needs_full_scan", t);
++                if full {
++                    drift_core::trace::reason("needs_full_scan");
++                    drift_core::trace::path("fallback");
++                    self.scan(false)
++                } else {
++                    drift_core::trace::path("fast");
++                    Ok(facts)
++                }
++            }
++            r => {
++                if r.is_err() {
++                    drift_core::trace::reason("scan_file_error");
++                }
++                drift_core::trace::path("fallback");
++                self.scan(false)
+             }
+-            _ => self.scan(false),
+         }
+     }
+ 
+     pub fn check(&self, facts: &RepoFacts, only: Option<&BTreeSet<String>>) -> CheckReport {
++        let t = drift_core::trace::now();
+         let mut report = check(facts, &self.policy, &self.lock, Scope::Accepted, only);
+         drift_mine::check::locate_imports(&mut report, &self.root);
++        drift_core::trace::add("check", t);
+         report
+     }
+ 
+diff --git a/crates/drift-cli/src/scan.rs b/crates/drift-cli/src/scan.rs
+index 8e5e6898..42791a70 100644
+--- a/crates/drift-cli/src/scan.rs
++++ b/crates/drift-cli/src/scan.rs
+@@ -32,14 +32,21 @@ pub fn scan(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, ScanS
+ /// be done exactly).
+ pub fn scan_file(root: &Path, opts: &ScanOptions, rel: &str) -> anyhow::Result<Option<RepoFacts>> {
+     if drift_py::packages::is_manifest(rel) || opts.cache_dir.is_none() {
++        drift_core::trace::reason(if opts.cache_dir.is_none() {
++            "cache_refused"
++        } else {
++            "manifest"
++        });
+         return Ok(None);
+     }
+     let root = root.canonicalize()?;
+     // Whether an `integration/` directory is a test suite only decides anything about
+     // a file below one: only then are the other language's files there looked up.
+     let suite_matters = drift_core::in_integration_dir(rel);
++    let t = drift_core::trace::now();
+     let mut walked =
+         drift_core::ingest::walk(&root, opts.threads, &drift_ts::repo::is_config_path)?;
++    drift_core::trace::add("walk", t);
+     let py = std::mem::take(&mut walked.python);
+     let python = std::path::Path::new(rel)
+         .extension()
+@@ -50,12 +57,17 @@ pub fn scan_file(root: &Path, opts: &ScanOptions, rel: &str) -> anyhow::Result<O
+             cache_dir: opts.cache_dir.clone(),
+             threads: opts.threads,
+         };
+-        let Some(mut facts) = drift_py::scan_file_walked(&root, &py_opts, rel, py)? else {
++        let t = drift_core::trace::now();
++        let r = drift_py::scan_file_walked(&root, &py_opts, rel, py)?;
++        drift_core::trace::add("py_scan", t);
++        let Some(mut facts) = r else {
++            drift_core::trace::reason("py_declined");
+             return Ok(None);
+         };
+         if !facts.files.is_empty() {
+             // A linter config no stack could be had for: a full scan records it.
+             let Some((packages, lint)) = drift_ts::config_facts(&root, &walked.config) else {
++                drift_core::trace::reason("py_lint_config");
+                 return Ok(None);
+             };
+             facts.packages.extend(packages);
+@@ -94,6 +106,7 @@ pub fn scan_file(root: &Path, opts: &ScanOptions, rel: &str) -> anyhow::Result<O
+ /// `packages:` in `.drift/config.yaml` ([`drift_mine::workspace::apply`]); without it,
+ /// or with a config that cannot be read, the facts are as scanned.
+ fn apply_packages(root: &Path, facts: &mut RepoFacts) {
++    drift_core::trace::count("config_loads");
+     if let Ok(cfg) = drift_mine::policy::DriftConfig::load(root) {
+         drift_mine::workspace::apply(&cfg.packages, facts);
+     }
+diff --git a/crates/drift-core/src/lib.rs b/crates/drift-core/src/lib.rs
+index e263b6d7..5eddec25 100644
+--- a/crates/drift-core/src/lib.rs
++++ b/crates/drift-core/src/lib.rs
+@@ -9,5 +9,6 @@ pub mod nesting;
+ pub mod practice;
+ pub mod speculation;
+ pub mod stack;
++pub mod trace;
+ 
+ pub use facts::*;
+diff --git a/crates/drift-core/src/trace.rs b/crates/drift-core/src/trace.rs
+new file mode 100644
+index 00000000..cebc623c
+--- /dev/null
++++ b/crates/drift-core/src/trace.rs
+@@ -0,0 +1,131 @@
++//! Opt-in hook trace for latency research (r13h). Off unless `DRIFT_HOOK_TRACE=<file>`
++//! is set; then `drift hook claude <Event>` appends one JSON line to that file at exit.
++//! Never fails a hook: write errors are ignored.
++
++use std::collections::BTreeMap;
++use std::sync::{Mutex, OnceLock};
++use std::time::Instant;
++
++#[derive(Default)]
++struct Data {
++    ms: BTreeMap<String, f64>,
++    counts: BTreeMap<String, u64>,
++    path: Option<String>,
++    reason: Option<String>,
++    extra: BTreeMap<String, serde_json::Value>,
++}
++
++static T0: OnceLock<Instant> = OnceLock::new();
++static DATA: Mutex<Option<Data>> = Mutex::new(None);
++
++fn file() -> Option<String> {
++    static F: OnceLock<Option<String>> = OnceLock::new();
++    F.get_or_init(|| {
++        std::env::var("DRIFT_HOOK_TRACE")
++            .ok()
++            .filter(|s| !s.is_empty())
++    })
++    .clone()
++}
++
++pub fn on() -> bool {
++    file().is_some()
++}
++
++/// Call first thing in `main`.
++pub fn start() {
++    T0.get_or_init(Instant::now);
++}
++
++pub fn now() -> Instant {
++    Instant::now()
++}
++
++fn with(f: impl FnOnce(&mut Data)) {
++    if !on() {
++        return;
++    }
++    if let Ok(mut g) = DATA.lock() {
++        f(g.get_or_insert_with(Data::default));
++    }
++}
++
++/// Add the time since `t` to phase `name` (phases that run several times accumulate).
++pub fn add(name: &str, t: Instant) {
++    let ms = t.elapsed().as_secs_f64() * 1000.0;
++    with(|d| *d.ms.entry(name.to_string()).or_default() += ms);
++}
++
++pub fn count(name: &str) {
++    with(|d| *d.counts.entry(name.to_string()).or_default() += 1);
++}
++
++/// "fast", "fallback", "full" or "none".
++pub fn path(p: &str) {
++    with(|d| d.path = Some(p.to_string()));
++}
++
++/// Why the fast path was not taken; the first reason recorded wins (the innermost).
++pub fn reason(r: &str) {
++    with(|d| {
++        d.reason.get_or_insert_with(|| r.to_string());
++    });
++}
++
++pub fn set(key: &str, v: serde_json::Value) {
++    with(|d| {
++        d.extra.insert(key.to_string(), v);
++    });
++}
++
++/// Append the line. `total` is from `start()` to now.
++pub fn flush(event: &str, tool: Option<&str>, rel: Option<&str>, out: &str) {
++    let Some(f) = file() else { return };
++    let d = DATA
++        .lock()
++        .ok()
++        .and_then(|mut g| g.take())
++        .unwrap_or_default();
++    let mut ms = serde_json::Map::new();
++    for (k, v) in &d.ms {
++        ms.insert(k.clone(), serde_json::json!((v * 1000.0).round() / 1000.0));
++    }
++    if let Some(t0) = T0.get() {
++        ms.insert(
++            "total".into(),
++            serde_json::json!((t0.elapsed().as_secs_f64() * 1e6).round() / 1000.0),
++        );
++    }
++    // PLAN-R14 WS-D1 naming of the same fact.
++    let path = d.path.clone().unwrap_or_else(|| "none".into());
++    let r14 = match (path.as_str(), d.reason.as_deref()) {
++        ("fast", _) => "single_file".to_string(),
++        ("fallback" | "full", Some(r)) => format!("full_scan:{r}"),
++        ("fallback" | "full", None) => "full_scan".to_string(),
++        (_, Some(r)) => format!("skipped:{r}"),
++        _ => "skipped".to_string(),
++    };
++    let mut line = serde_json::json!({
++        "path_r14": r14,
++        "v": 1,
++        "event": event,
++        "tool": tool,
++        "rel": rel,
++        "path": path,
++        "reason": d.reason,
++        "out": out,
++        "ms": ms,
++        "counts": d.counts,
++    });
++    for (k, v) in d.extra {
++        line[k] = v;
++    }
++    use std::io::Write;
++    if let Ok(mut fh) = std::fs::OpenOptions::new()
++        .create(true)
++        .append(true)
++        .open(f)
++    {
++        let _ = writeln!(fh, "{line}");
++    }
++}
+diff --git a/crates/drift-mine/src/policy.rs b/crates/drift-mine/src/policy.rs
+index b96ce7ab..8260ea7d 100644
+--- a/crates/drift-mine/src/policy.rs
++++ b/crates/drift-mine/src/policy.rs
+@@ -126,6 +126,7 @@ impl DriftConfig {
+     /// features are warnings ([`Self::warnings`]); YAML Drift cannot parse at all,
+     /// or an `experimental` that is not a list of names, is an error.
+     pub fn load(root: &Path) -> anyhow::Result<Self> {
++        drift_core::trace::count("drift_config_loads");
+         let p = root.join(CONFIG_FILE);
+         let Some(text) = read_policy_file(&p)? else {
+             return Ok(Self::default());
+diff --git a/crates/drift-ts/src/index.rs b/crates/drift-ts/src/index.rs
+index d47d786d..5b756001 100644
+--- a/crates/drift-ts/src/index.rs
++++ b/crates/drift-ts/src/index.rs
+@@ -353,22 +353,35 @@ fn scan_file_with(
+         .and_then(|e| e.to_str())
+         .is_some_and(|e| ingest::PYTHON_EXTENSIONS.contains(&e));
+     if python || is_config_path(rel) {
++        drift_core::trace::reason(if python {
++            "ts_python_path"
++        } else {
++            "config_path"
++        });
+         return Ok(None);
+     }
+     if !is_source_path(rel) {
++        drift_core::trace::reason("not_source");
+         return Ok(Some(empty_facts()));
+     }
+     let Some(cache_dir) = &opts.cache_dir else {
++        drift_core::trace::reason("cache_refused");
+         return Ok(None);
+     };
+     let root = root.canonicalize()?;
+-    let Some(index) = Index::load(cache_dir, &root) else {
++    let t = drift_core::trace::now();
++    let index = Index::load(cache_dir, &root);
++    drift_core::trace::add("index_read", t);
++    let Some(index) = index else {
++        drift_core::trace::reason("no_index");
+         return Ok(None);
+     };
+     let cache = FactCache::new(cache_dir, &parser_tag());
+     // Every file is parsed, lowered and dropped on these workers' stacks.
+-    drift_core::stack::pool(opts.threads)?
+-        .install(|| scan_file_inner(&root, opts, cache_dir, &index, &cache, rel, walked))
++    let t = drift_core::trace::now();
++    let pool = drift_core::stack::pool(opts.threads)?;
++    drift_core::trace::add("pool", t);
++    pool.install(|| scan_file_inner(&root, opts, cache_dir, &index, &cache, rel, walked))
+ }
+ 
+ fn scan_file_inner(
+@@ -385,8 +398,13 @@ fn scan_file_inner(
+         Some(w) => w,
+         None => ingest::walk(root, opts.threads, &repo::is_config_path)?,
+     };
++    let t = drift_core::trace::now();
+     let known = classify(walked.sources, Some(index), Some(cache), started);
++    drift_core::trace::add("classify", t);
++    let t = drift_core::trace::now();
+     update(cache_dir, root, Some(index), &known);
++    drift_core::trace::add("index_write", t);
++    let t_link = drift_core::trace::now();
+     let kept: BTreeMap<&str, &Known> = known
+         .iter()
+         .filter(|k| k.skip.is_none())
+@@ -440,6 +458,7 @@ fn scan_file_inner(
+             let mut next = BTreeSet::new();
+             for item in level {
+                 let Some((f, targets)) = item else {
++                    drift_core::trace::reason("ts_unlowered");
+                     return Ok(None);
+                 };
+                 next.extend(targets);
+@@ -518,6 +537,7 @@ fn scan_file_inner(
+         // A chain this long is not cut short: a full scan decides, so a hook always
+         // checks what `drift check` checks.
+         if full.len() + bases.len() > MAX_BASE_FILES {
++            drift_core::trace::reason("max_base_files");
+             return Ok(None);
+         }
+         full.extend(bases);
+@@ -527,6 +547,7 @@ fn scan_file_inner(
+     // a name resolved through an `export *` barrel may stop at the barrel when the
+     // module behind it was not parsed, which only the barrel's facts show: a full
+     // scan decides then.
++    drift_core::trace::add("link", t_link);
+     if !no_stack.is_empty()
+         && files.iter().any(|f| {
+             f.rel_path != rel
+@@ -536,6 +557,7 @@ fn scan_file_inner(
+                     .any(|e| matches!(e.target, crate::lower::RawExportTarget::All { .. }))
+         })
+     {
++        drift_core::trace::reason("no_stack_barrel");
+         return Ok(None);
+     }
+     let target = files

@@ -1,0 +1,63 @@
+{
+ "snapshots": [
+  {
+   "at": 1793727600000,
+   "commit": "9c1e07b",
+   "files": 365,
+   "pending": [
+    "D-50ba36",
+    "D-b5f755",
+    "D-be239c"
+   ],
+   "newViolations": [],
+   "unguarded": [
+    "apps/api/src/releases/releases.controller.ts#GET /releases/:id",
+    "apps/api/src/releases/releases.controller.ts#POST /releases",
+    "apps/web/app/(dashboard)/[slug]/alerts/page.tsx#default",
+    "apps/web/app/(dashboard)/[slug]/analytics/page.tsx#default",
+    "apps/web/app/(dashboard)/[slug]/billing/page.tsx#default",
+    "apps/web/app/(dashboard)/[slug]/campaigns/page.tsx#default",
+    "apps/web/app/(dashboard)/[slug]/customers/page.tsx#default",
+    "apps/web/app/(dashboard)/[slug]/domains/page.tsx#default",
+    "apps/web/app/(dashboard)/[slug]/events/page.tsx#default",
+    "apps/web/app/(dashboard)/[slug]/exports/page.tsx#default",
+    "apps/web/app/(dashboard)/[slug]/folders/page.tsx#default",
+    "apps/web/app/(dashboard)/[slug]/integrations/page.tsx#default",
+    "apps/web/app/(dashboard)/[slug]/links/page.tsx#default",
+    "apps/web/app/(dashboard)/[slug]/members/page.tsx#default",
+    "apps/web/app/(dashboard)/[slug]/onboarding/page.tsx#default",
+    "apps/web/app/(dashboard)/[slug]/overview/page.tsx#default",
+    "apps/web/app/(dashboard)/[slug]/reports/page.tsx#default",
+    "apps/web/app/(dashboard)/[slug]/segments/page.tsx#default",
+    "apps/web/app/(dashboard)/[slug]/settings/page.tsx#default",
+    "apps/web/app/(dashboard)/[slug]/tags/page.tsx#default",
+    "apps/web/app/(dashboard)/[slug]/tokens/page.tsx#default",
+    "apps/web/app/(dashboard)/[slug]/usage/page.tsx#default",
+    "apps/web/app/(dashboard)/[slug]/webhooks/page.tsx#default",
+    "apps/web/app/api/admin/health/route.ts#GET",
+    "apps/web/app/api/oauth/callback/route.ts#GET",
+    "apps/web/app/api/public/preview/route.ts#GET",
+    "apps/web/app/api/public/status/route.ts#GET",
+    "apps/web/app/api/workspaces/[id]/invites/route.ts#GET",
+    "apps/web/app/api/workspaces/[id]/regions/route.ts#GET",
+    "apps/web/lib/actions/ban-customer.ts#banCustomer"
+   ],
+   "reaching": [
+    "apps/web/app/api/admin/metrics/route.ts#GET",
+    "apps/web/app/api/oauth/callback/route.ts#GET",
+    "apps/web/app/api/public/preview/route.ts#GET"
+   ],
+   "sinks": [
+    "dynamic_fetch apps/web/app/api/public/preview/route.ts#GET",
+    "dynamic_redirect apps/web/app/api/oauth/callback/route.ts#GET",
+    "raw_sql apps/web/lib/analytics.ts#eventsFor",
+    "weak_hash packages/utils/src/hash.ts#fingerprint"
+   ],
+   "leaks": [
+    "env:STRIPE_SECRET_KEY",
+    "packages/db/src/client.ts"
+   ]
+  }
+ ],
+ "audit": []
+}

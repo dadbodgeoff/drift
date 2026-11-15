@@ -1,0 +1,378 @@
+{
+  "name": "doska",
+  "repo": "romenkova/doska",
+  "sha": "49bffe6d4617e50c2678294ca747ae7da5a87efe",
+  "loc": 49824,
+  "shape": {
+    "mix": "multi-ts",
+    "shape": "frontend+backend",
+    "js_dirs": 20,
+    "py_dirs": 0,
+    "workspace_files": [
+      "pnpm-workspace.yaml",
+      "turbo.json"
+    ],
+    "frontend_dirs": [
+      "apps/client",
+      "apps/landing",
+      "packages/editor",
+      "packages/ui-kit"
+    ],
+    "backend_dirs": [
+      "apps/server"
+    ]
+  },
+  "packages": [
+    {
+      "dir": "apps/client",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 644,
+        "roles": 47,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "apps/desktop",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 1,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "apps/landing",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 60,
+        "roles": 4,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "apps/server",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 157,
+        "roles": 9,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "packages/client-db",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 6,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "packages/configs",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 7,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "packages/contract",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 30,
+        "roles": 1,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "packages/core",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 404,
+        "roles": 17,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "packages/editor",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 64,
+        "roles": 7,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "packages/file-storage",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 26,
+        "roles": 4,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "packages/markdown",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 63,
+        "roles": 6,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "packages/mcp",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 39,
+        "roles": 4,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "packages/merge",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 14,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "packages/ports",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 8,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "packages/sync",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 14,
+        "roles": 1,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "packages/tokens",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 32,
+        "roles": 2,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "packages/ui-kit",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 158,
+        "roles": 6,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "packages/utils",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 15,
+        "roles": 1,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "packages/vault",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 45,
+        "roles": 3,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    }
+  ],
+  "root": {
+    "default": {
+      "shown": 0,
+      "conventions": 0,
+      "units": 1788,
+      "roles": 113,
+      "tiers": {
+        "default": 0,
+        "suggestion": 0
+      },
+      "python_withheld": 0,
+      "secs": 1,
+      "cards": []
+    },
+    "python_opt_in": {
+      "shown": 0,
+      "conventions": 0,
+      "units": 1788,
+      "roles": 113,
+      "tiers": {
+        "default": 0,
+        "suggestion": 0
+      },
+      "python_withheld": null,
+      "secs": 0,
+      "cards": []
+    }
+  }
+}

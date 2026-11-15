@@ -1,0 +1,101 @@
+11 conventions from 6486 units in 163 roles (0 default tier, 11 suggestions)
+
+11 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-cc1341] classes in netbox/** (filtersets files) are decorated with register_filterset(), except 3 classes (whose model is already registered)
+    evidence: 138/138 (lower bound 0.97, lift 28.5)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 50% of 6)
+    example:  netbox/circuits/filtersets.py#CircuitFilterSet
+    exempt:   netbox/dcim/filtersets.py:3478 ConsoleConnectionFilterSet (its model ConsolePort is already registered with register_filterset() by ConsolePortFilterSet)
+    exempt:   netbox/dcim/filtersets.py:3492 InterfaceConnectionFilterSet (its model Interface is already registered with register_filterset() by InterfaceFilterSet)
+    exempt:   netbox/dcim/filtersets.py:3485 PowerConnectionFilterSet (its model PowerPort is already registered with register_filterset() by PowerPortFilterSet)
+
+ 2. [D-281ae8] classes in netbox/** (types files) are decorated with register_type(), except a member (of the module that defines a rule's target)
+    evidence: 133/133 (lower bound 0.97, lift 29.9)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 50% of 6)
+    example:  netbox/circuits/graphql/types.py#CircuitGroupAssignmentType
+    exempt:   netbox/netbox/graphql/types.py:153 NestedGroupObjectType (in the module that defines register_type (as for the role's rule "pass `filters` to register_type()"))
+
+ 3. [D-e2c3e4] classes in netbox/** (choices files) extend ChoiceSet, except 3 classes (named for a base of another kind), a member (of the module that defines a rule's target) and a member (documented as an exception)
+    evidence: 114/114 (lower bound 0.97, lift 33.7)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 33% of 9)
+    example:  netbox/circuits/choices.py#CircuitCommitRateChoices
+    exempt:   netbox/extras/choices.py:305 EventRuleActionChoices (documented exception: "Not a ChoiceSet")
+    exempt:   netbox/utilities/choices.py:19 Choice (in the module that defines ChoiceSet)
+    exempt:   netbox/utilities/forms/fields/choices.py:76 ChoiceField (a field, named for its base forms.ChoiceField)
+    ... 2 more exempt
+
+ 4. [D-bc0c7d] classes in netbox/** (search files) are decorated with register_search()
+    evidence: 98/98 (lower bound 0.96, lift 40.9)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 50% of 6)
+    example:  netbox/circuits/search.py#CircuitGroupIndex
+
+ 5. [D-3ab42c] model classes in netbox/** call utils.translation.gettext_lazy()
+    evidence: 141/142 (lower bound 0.96, lift 3.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 44% of 9)
+    example:  netbox/account/models.py#UserToken
+    outlier:  netbox/core/models/jobs.py:35 Job
+
+ 6. [D-76eb6b] classes in netbox/** (types files) pass `filters` to register_type(), except 2 members (of the module that defines a rule's target)
+    evidence: 131/132 (lower bound 0.96, lift 29.9)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 50% of 4)
+    example:  netbox/circuits/graphql/types.py#CircuitGroupAssignmentType
+    outlier:  netbox/core/graphql/types.py:49 ContentType
+    exempt:   netbox/netbox/graphql/types.py:204 ContentTypeType (in the module that defines register_type)
+    exempt:   netbox/netbox/graphql/types.py:153 NestedGroupObjectType (in the module that defines register_type)
+
+ 7. [D-73d13c] HTTP handlers in netbox/** (api/views files) are named `*Set`
+    evidence: 134/137 (lower bound 0.94, lift 12.1)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 40% of 15)
+    example:  netbox/circuits/api/views.py#CircuitGroupAssignmentViewSet
+    outlier:  netbox/extras/api/views.py:465 DashboardView
+    outlier:  netbox/ipam/api/views.py:460 IPRangeAvailableIPAddressesView
+    outlier:  netbox/ipam/api/views.py:454 PrefixAvailableIPAddressesView
+
+ 8. [D-8a1131] forms in netbox/** (forms/filtersets and model_forms files) call FieldSet()
+    evidence: 261/282 (lower bound 0.89, lift 10.2)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 44% of 9)
+    example:  netbox/circuits/forms/filtersets.py#CircuitFilterForm
+    outlier:  netbox/dcim/forms/filtersets.py:2495 ConsoleConnectionFilterForm
+    outlier:  netbox/dcim/forms/filtersets.py:2543 InterfaceConnectionFilterForm
+    outlier:  netbox/dcim/forms/filtersets.py:2519 PowerConnectionFilterForm
+    ... 18 more outliers
+
+ 9. [D-b69a13] serializers in netbox/ipam/api/** are named `*Serializer`
+    evidence: 27/27 (lower bound 0.88, lift 19.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 40% of 15)
+    example:  netbox/ipam/api/serializers_/asns.py#ASNRangeSerializer
+
+10. [D-58913a] classes in netbox/** (choices files) call Choice(), except 3 classes (of another kind), a member (of the module that defines a rule's target) and a member (documented as an exception)
+    evidence: 106/114 (lower bound 0.87, lift 33.7)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 44% of 9)
+    example:  netbox/circuits/choices.py#CircuitCommitRateChoices
+    outlier:  netbox/dcim/choices.py:2267 CoolingConnectorTypeChoices
+    outlier:  netbox/dcim/choices.py:2225 CoolingFeedStatusChoices
+    outlier:  netbox/dcim/choices.py:2177 CoolingMethodChoices
+    ... 5 more outliers
+    exempt:   netbox/extras/choices.py:305 EventRuleActionChoices (documented exception: "Not a ChoiceSet" (as for the role's rule "extend ChoiceSet"))
+    exempt:   netbox/utilities/choices.py:19 Choice (in the module that defines ChoiceSet)
+    exempt:   netbox/utilities/forms/fields/choices.py:76 ChoiceField (another kind of class (extends forms.ChoiceField))
+    ... 2 more exempt
+
+11. [D-310ec7] classes in netbox/ipam/tables/** pass `verbose_name` to Column(), except a member (not calling the callee)
+    evidence: 22/22 (lower bound 0.85, lift 26.1)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 50% of 4)
+    example:  netbox/ipam/tables/asn.py#ASNRangeTable
+    exempt:   netbox/ipam/tables/ip.py:373 AnnotatedIPAddressTable (does not call Column())
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

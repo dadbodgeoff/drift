@@ -1,0 +1,20 @@
+[
+  { "repo": "dub", "id": "dub-link-count",
+    "prompt": "Add an API endpoint `GET /api/workspaces/[idOrSlug]/link-count` to the web app that returns `{ count }`: the number of non-archived links in the workspace. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies." },
+  { "repo": "dub", "id": "dub-rename-folder-action",
+    "prompt": "Add a server action that renames a folder in a workspace (input: workspaceId, folderId, name). Put it where the app's other server actions live. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies." },
+  { "repo": "dub", "id": "dub-partner-payout-summary",
+    "prompt": "Add an API endpoint `GET /api/partner-profile/payouts/summary` for the partner dashboard that returns the signed-in partner's total pending payout amount. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies." },
+  { "repo": "immich", "id": "immich-album-stats",
+    "prompt": "In the server, add an endpoint `GET /albums/:id/stats` that returns the number of photos and videos in an album. Keep the change minimal (you may skip regenerating the OpenAPI spec and SDK) and finish when the code is written; there is no need to run tests or install dependencies." },
+  { "repo": "immich", "id": "immich-tag-merge",
+    "prompt": "In the server, add an endpoint `POST /tags/:id/merge` with body `{ targetId }` that moves all assets from one tag to another and deletes the source tag. Keep the change minimal (you may skip regenerating the OpenAPI spec and SDK) and finish when the code is written; there is no need to run tests or install dependencies." },
+  { "repo": "immich", "id": "immich-download-history",
+    "prompt": "In the server, add a new service `DownloadHistoryService` with a method that records a download (userId, assetId) and a method that lists a user's recent downloads, plus the database access class it needs. Do not add a migration or controller. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies." },
+  { "repo": "infisical", "id": "infisical-secret-count",
+    "prompt": "In the backend, add an endpoint `GET /api/v1/projects/:projectId/secret-count` that returns the number of secrets in a project environment (query param `environment`). Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies." },
+  { "repo": "infisical", "id": "infisical-email-template",
+    "prompt": "In the backend, add an email template that tells an organization admin that a machine identity's credentials will expire in N days (props: identityName, daysLeft, url). Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies." },
+  { "repo": "infisical", "id": "infisical-mutation-hook",
+    "prompt": "In the frontend, add a mutation hook for renaming a project environment (calls `PATCH /api/v1/projects/:projectId/environments/:id` with `{ name }`) and invalidates the project's environment queries. Keep the change minimal and finish when the code is written; there is no need to run tests or install dependencies." }
+]

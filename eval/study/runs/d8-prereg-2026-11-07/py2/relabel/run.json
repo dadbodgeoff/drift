@@ -1,0 +1,123 @@
+{
+  "run": "eval/study/runs/d8-prereg-2026-11-07/py2/relabel",
+  "prepared_at": "2026-11-07T04:45:41.428Z",
+  "amendments": [],
+  "manifest": {
+    "path": "eval/repos-py-2.json",
+    "sha256": "a48d5d98716f9608e354b95e3e473c943fcaedab4d25fd5aa16f85499613dd2d",
+    "core_sha256": "d4226addd1d4d96acc5d47ab98847dc95fa3ff7decc7cc327e273dbfdd5d1b05",
+    "holdout": false,
+    "holdout_because": [],
+    "set_id": null,
+    "role": "dev",
+    "language": null
+  },
+  "drift": {
+    "binary": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/bin/drift-d8",
+    "binary_sha256": "38488a10a44939c2e4f348f1f21ff659b7d702ad234392c46269e5ae4368afbc",
+    "version": "drift 0.1.0-dev",
+    "commit": "5cfbbb48c350ebe459021a8f803261d9c44f40e6",
+    "dirty": false,
+    "build": null
+  },
+  "params": {
+    "max": 15,
+    "pool": 200,
+    "tier": {
+      "//": "Rule 5's rule-kind tier, the same definition as the primary held-out sets, pre-registered here before any labelling of these repos.",
+      "kind": "rule_kind",
+      "default": {
+        "rule_kinds": [
+          "wrapped_by:call",
+          "wrapped_by:decorator",
+          "wrapped_by:extends",
+          "passes_key",
+          "avoids:import",
+          "renders",
+          "wrapped_by:jsx"
+        ],
+        "min_members": 15
+      },
+      "suggestion": {
+        "rule_kinds": [
+          "calls",
+          "named",
+          "avoids:other",
+          "prefers_library",
+          "before",
+          "has_test",
+          "model_has",
+          "package_has",
+          "dependency_version",
+          "wrapped_by:try",
+          "control",
+          "directive",
+          "throws"
+        ]
+      },
+      "not_wrong_over": "all_shown"
+    },
+    "tier_pre_registered": true,
+    "exposed": [],
+    "repos": [
+      "Django-CRM@f63fe8cf22bd818cea45427b48ef59da24206ff1",
+      "InvenTree@c5c878d6afe67cf612f436d04c6479dc18a3c2dd",
+      "ralph@39d1d45f8cd3d987b9adbdfdf22dfe15da921fad",
+      "Misago@4a37d19d3d9f74064c75cdda6856350b2daea5df",
+      "paperless-ngx@cb3513c6f3cee9b4f769afe7fd58616c6ad21ca6",
+      "wger@fa01090126bfeee32d9d829234c12bf941757319",
+      "lotus@9c4fe5daa746b0136a1ea0aed54930e37289ab78",
+      "pontoon@2690c3315d04b7e0d8637c36583bb16056e0e9bd",
+      "open-wearables@76a504f54f43b269f972547f7ef92c9ea0e38a21",
+      "tasking-manager@cbf2ec89c38bf876bbc4de048f782978247ecfd9",
+      "simplelogin@b3cf76443994c95db4cbe8e3878cdf29f2372013",
+      "changedetection.io@43c697c32e1be1fceb8a2d265cfbcb8ecf15f6d5"
+    ],
+    "cache": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/stagecache",
+    "checkouts": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/cache/repos"
+  },
+  "repos": [
+    {
+      "name": "Django-CRM",
+      "url": "https://github.com/Django-CRM/Django-CRM",
+      "sha": "f63fe8cf22bd818cea45427b48ef59da24206ff1",
+      "shape": "Django + DRF + Celery CRM (BottleCRM), Flutter/Svelte clients in the same repo",
+      "language": "Python",
+      "framework_bucket": "django",
+      "binary_sha256": "38488a10a44939c2e4f348f1f21ff659b7d702ad234392c46269e5ae4368afbc",
+      "prepared_at": "2026-11-07T04:45:05.428Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/cache/repos/Django-CRM",
+      "status": "ok",
+      "units": 4996,
+      "roles": 117,
+      "proposals": 9,
+      "pool": 9,
+      "census_ms": 1199
+    },
+    {
+      "name": "simplelogin",
+      "url": "https://github.com/simple-login/app",
+      "sha": "b3cf76443994c95db4cbe8e3878cdf29f2372013",
+      "shape": "Flask web app + email handler and cron jobs",
+      "language": "Python",
+      "framework_bucket": "flask",
+      "binary_sha256": "38488a10a44939c2e4f348f1f21ff659b7d702ad234392c46269e5ae4368afbc",
+      "prepared_at": "2026-11-07T04:45:38.129Z",
+      "checkout": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/cache/repos/simplelogin",
+      "status": "ok",
+      "units": 1953,
+      "roles": 49,
+      "proposals": 10,
+      "pool": 10,
+      "census_ms": 540
+    }
+  ],
+  "relabel_of": {
+    "run": "eval/study/runs/d8-prereg-2026-11-07/py2",
+    "uids": [
+      "Django-CRM/D-f135a4",
+      "simplelogin/D-2a4960"
+    ],
+    "purpose": "D8 dev pool: the D8 candidate default tier, staged for fresh v3 labels; NOT labelled (decision D8, stopping rule 3: the pool is below 40 cards / 10 repos)"
+  }
+}

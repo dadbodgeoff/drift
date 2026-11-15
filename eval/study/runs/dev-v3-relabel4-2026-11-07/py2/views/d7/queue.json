@@ -1,0 +1,2294 @@
+{
+  "run": "eval/study/runs/dev-v3-relabel4-2026-11-07/py2/views/d7",
+  "items": [
+    {
+      "uid": "Django-CRM/D-220569",
+      "repo": "Django-CRM",
+      "id": "D-220569",
+      "rank": 1,
+      "summary": "backend: HTTP handlers in cases/** are wrapped in IsPortalContact() or permissions.IsAuthenticated()",
+      "role": {
+        "package": "backend",
+        "dir": "cases",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "backend/common/portal_auth.py#IsPortalContact",
+          "pkg:rest_framework#permissions.IsAuthenticated"
+        ]
+      },
+      "evidence": {
+        "holders": 88,
+        "total": 94,
+        "lower_bound": 0.87,
+        "lift": 4.7
+      },
+      "members": 94,
+      "example": "backend/cases/analytics_views.py#AnalyticsAgentsView.get",
+      "python_members": 94,
+      "outliers": 6,
+      "outlier_files": [
+        "backend/cases/csat_views.py",
+        "backend/cases/help_center_views.py",
+        "backend/cases/inbound_views.py"
+      ],
+      "block": " 1. [D-220569] backend: HTTP handlers in cases/** are wrapped in IsPortalContact() or permissions.IsAuthenticated()\n    evidence: 88/94 (lower bound 0.87, lift 4.7)\n    split:    permissions.IsAuthenticated 81, IsPortalContact 7\n    example:  backend/cases/analytics_views.py#AnalyticsAgentsView.get\n    outlier:  backend/cases/csat_views.py:111 PublicCsatView.get\n    outlier:  backend/cases/csat_views.py:155 PublicCsatView.post\n    outlier:  backend/cases/help_center_views.py:178 PublicHelpCenterArticleView.get\n    outlier:  backend/cases/help_center_views.py:138 PublicHelpCenterListView.get\n    outlier:  backend/cases/inbound_views.py:625 InboundCatchAllView.post\n    outlier:  backend/cases/inbound_views.py:379 InboundMailboxWebhookView.post",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "Django-CRM/D-4a6ea2",
+      "repo": "Django-CRM",
+      "id": "D-4a6ea2",
+      "rank": 2,
+      "summary": "backend: HTTP handlers in leads/** are wrapped in HasOrgContext()",
+      "role": {
+        "package": "backend",
+        "dir": "leads",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "backend/common/permissions.py#HasOrgContext"
+        ]
+      },
+      "evidence": {
+        "holders": 39,
+        "total": 41,
+        "lower_bound": 0.84,
+        "lift": 5.1
+      },
+      "members": 41,
+      "example": "backend/leads/views/import_views.py#LeadImportCommitView.post",
+      "python_members": 41,
+      "outliers": 2,
+      "outlier_files": [
+        "backend/leads/views/intake_public_views.py",
+        "backend/leads/views/lead_interactions.py"
+      ],
+      "block": " 2. [D-4a6ea2] backend: HTTP handlers in leads/** are wrapped in HasOrgContext()\n    evidence: 39/41 (lower bound 0.84, lift 5.1)\n    example:  backend/leads/views/import_views.py#LeadImportCommitView.post\n    outlier:  backend/leads/views/intake_public_views.py:139 LeadIntakePostView.post\n    outlier:  backend/leads/views/lead_interactions.py:255 CreateLeadFromSite.post",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "Django-CRM/D-f135a4",
+      "repo": "Django-CRM",
+      "id": "D-f135a4",
+      "rank": 3,
+      "summary": "backend: HTTP handlers in cases/** are wrapped in HasOrgContext()",
+      "role": {
+        "package": "backend",
+        "dir": "cases",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "backend/common/permissions.py#HasOrgContext"
+        ]
+      },
+      "evidence": {
+        "holders": 81,
+        "total": 94,
+        "lower_bound": 0.78,
+        "lift": 4.6
+      },
+      "members": 94,
+      "example": "backend/cases/analytics_views.py#AnalyticsAgentsView.get",
+      "python_members": 94,
+      "outliers": 13,
+      "outlier_files": [
+        "backend/cases/csat_views.py",
+        "backend/cases/help_center_views.py",
+        "backend/cases/inbound_views.py",
+        "backend/cases/portal_views.py"
+      ],
+      "block": " 3. [D-f135a4] backend: HTTP handlers in cases/** are wrapped in HasOrgContext()\n    evidence: 81/94 (lower bound 0.78, lift 4.6)\n    example:  backend/cases/analytics_views.py#AnalyticsAgentsView.get\n    outlier:  backend/cases/csat_views.py:111 PublicCsatView.get\n    outlier:  backend/cases/csat_views.py:155 PublicCsatView.post\n    outlier:  backend/cases/help_center_views.py:178 PublicHelpCenterArticleView.get\n    outlier:  backend/cases/help_center_views.py:138 PublicHelpCenterListView.get\n    outlier:  backend/cases/inbound_views.py:625 InboundCatchAllView.post\n    outlier:  backend/cases/inbound_views.py:379 InboundMailboxWebhookView.post\n    outlier:  backend/cases/portal_views.py:292 PortalArticleDetailView.get\n    outlier:  backend/cases/portal_views.py:256 PortalArticleListView.get\n    outlier:  backend/cases/portal_views.py:334 PortalArticleSuggestView.get\n    outlier:  backend/cases/portal_views.py:374 PortalCaseCommentView.post\n    outlier:  backend/cases/portal_views.py:203 PortalCaseDetailView.get\n    outlier:  backend/cases/portal_views.py:134 PortalCaseListView.get\n    outlier:  backend/cases/portal_views.py:167 PortalCaseListView.post",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "Django-CRM/D-4b232f",
+      "repo": "Django-CRM",
+      "id": "D-4b232f",
+      "rank": 4,
+      "summary": "backend: HTTP handlers in common/** are wrapped in permissions.IsAuthenticated()",
+      "role": {
+        "package": "backend",
+        "dir": "common",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "pkg:rest_framework#permissions.IsAuthenticated"
+        ]
+      },
+      "evidence": {
+        "holders": 88,
+        "total": 98,
+        "lower_bound": 0.82,
+        "lift": 4.6
+      },
+      "members": 98,
+      "example": "backend/common/search_views.py#GlobalSearchView.get",
+      "python_members": 98,
+      "outliers": 10,
+      "outlier_files": [
+        "backend/common/views/auth_views.py",
+        "backend/common/views/calendar_feed_views.py",
+        "backend/common/views/portal_auth_views.py"
+      ],
+      "block": " 4. [D-4b232f] backend: HTTP handlers in common/** are wrapped in permissions.IsAuthenticated()\n    evidence: 88/98 (lower bound 0.82, lift 4.6)\n    example:  backend/common/search_views.py#GlobalSearchView.get\n    outlier:  backend/common/views/auth_views.py:300 GoogleIdTokenView.post\n    outlier:  backend/common/views/auth_views.py:130 GoogleOAuthCallbackView.post\n    outlier:  backend/common/views/auth_views.py:587 LogoutView.post\n    outlier:  backend/common/views/auth_views.py:790 MagicLinkRequestView.post\n    outlier:  backend/common/views/auth_views.py:986 MagicLinkVerifyCodeView.post\n    outlier:  backend/common/views/auth_views.py:864 MagicLinkVerifyView.post\n    outlier:  backend/common/views/auth_views.py:457 OrgAwareTokenRefreshView.post\n    outlier:  backend/common/views/calendar_feed_views.py:232 PublicCalendarFeedView.get\n    outlier:  backend/common/views/portal_auth_views.py:71 PortalLoginRequestView.post\n    outlier:  backend/common/views/portal_auth_views.py:188 PortalLoginVerifyView.post",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "Django-CRM/D-b6f0b8",
+      "repo": "Django-CRM",
+      "id": "D-b6f0b8",
+      "rank": 5,
+      "summary": "frontend: exported values in src/** (*.server files) use `try`",
+      "role": {
+        "package": "frontend",
+        "dir": "src",
+        "file": "*.server",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "control",
+        "value": "try"
+      },
+      "evidence": {
+        "holders": 93,
+        "total": 109,
+        "lower_bound": 0.78,
+        "lift": 9.6
+      },
+      "members": 109,
+      "example": "frontend/src/routes/(app)/accounts/[id]/+page.server.ts#actions",
+      "python_members": null,
+      "outliers": 16,
+      "outlier_files": [
+        "frontend/src/routes/(app)/accounts/+page.server.ts",
+        "frontend/src/routes/(app)/accounts/[id]/merge/+page.server.ts",
+        "frontend/src/routes/(app)/contacts/+page.server.ts",
+        "frontend/src/routes/(app)/contacts/[id]/merge/+page.server.ts",
+        "frontend/src/routes/(app)/leads/+page.server.ts",
+        "frontend/src/routes/(app)/leads/[id]/merge/+page.server.ts",
+        "frontend/src/routes/(app)/objects/[key]/+page.server.ts",
+        "frontend/src/routes/(app)/objects/[key]/board/+page.server.ts",
+        "frontend/src/routes/(app)/settings/billing/+page.server.ts",
+        "frontend/src/routes/(app)/settings/deal-pipelines/+page.server.ts",
+        "frontend/src/routes/(app)/settings/lead-pipelines/+page.server.ts",
+        "frontend/src/routes/(app)/settings/objects/[key]/+page.server.ts",
+        "frontend/src/routes/(no-layout)/csat/[token]/+page.server.ts"
+      ],
+      "block": " 5. [D-b6f0b8] frontend: exported values in src/** (*.server files) use `try`\n    evidence: 93/109 (lower bound 0.78, lift 9.6)\n    example:  frontend/src/routes/(app)/accounts/[id]/+page.server.ts#actions\n    outlier:  frontend/src/routes/(app)/accounts/+page.server.ts:45 actions\n    outlier:  frontend/src/routes/(app)/accounts/[id]/merge/+page.server.ts:9 actions\n    outlier:  frontend/src/routes/(app)/accounts/[id]/merge/+page.server.ts:7 load\n    outlier:  frontend/src/routes/(app)/contacts/+page.server.ts:49 actions\n    outlier:  frontend/src/routes/(app)/contacts/[id]/merge/+page.server.ts:9 actions\n    outlier:  frontend/src/routes/(app)/contacts/[id]/merge/+page.server.ts:7 load\n    outlier:  frontend/src/routes/(app)/leads/+page.server.ts:51 actions\n    outlier:  frontend/src/routes/(app)/leads/[id]/merge/+page.server.ts:9 actions\n    outlier:  frontend/src/routes/(app)/leads/[id]/merge/+page.server.ts:7 load\n    outlier:  frontend/src/routes/(app)/objects/[key]/+page.server.ts:68 actions\n    outlier:  frontend/src/routes/(app)/objects/[key]/board/+page.server.ts:70 actions\n    outlier:  frontend/src/routes/(app)/settings/billing/+page.server.ts:77 actions\n    outlier:  frontend/src/routes/(app)/settings/deal-pipelines/+page.server.ts:65 actions\n    outlier:  frontend/src/routes/(app)/settings/lead-pipelines/+page.server.ts:48 actions\n    outlier:  frontend/src/routes/(app)/settings/objects/[key]/+page.server.ts:59 actions\n    outlier:  frontend/src/routes/(no-layout)/csat/[token]/+page.server.ts:51 actions",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "Django-CRM/D-8ee062",
+      "repo": "Django-CRM",
+      "id": "D-8ee062",
+      "rank": 6,
+      "summary": "frontend: files in src/lib/v2/** have a test file",
+      "role": {
+        "package": "frontend",
+        "dir": "src/lib/v2",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "has_test"
+      },
+      "evidence": {
+        "holders": 35,
+        "total": 38,
+        "lower_bound": 0.79,
+        "lift": 3.1
+      },
+      "members": 38,
+      "example": "frontend/src/lib/v2/audit-log.ts#(file)",
+      "python_members": null,
+      "outliers": 3,
+      "outlier_files": [
+        "frontend/src/lib/v2/author.ts",
+        "frontend/src/lib/v2/enums.ts",
+        "frontend/src/lib/v2/lead-alerts.ts"
+      ],
+      "block": " 6. [D-8ee062] frontend: files in src/lib/v2/** have a test file\n    evidence: 35/38 (lower bound 0.79, lift 3.1)\n    example:  frontend/src/lib/v2/audit-log.ts#(file)\n    outlier:  frontend/src/lib/v2/author.ts:1 (file)\n    outlier:  frontend/src/lib/v2/enums.ts:1 (file)\n    outlier:  frontend/src/lib/v2/lead-alerts.ts:1 (file)",
+      "family": "repo",
+      "rule_kind": "has_test",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "Django-CRM/D-9c2214",
+      "repo": "Django-CRM",
+      "id": "D-9c2214",
+      "rank": 7,
+      "summary": "backend: HTTP handlers in cases/** pass `tags` to utils.extend_schema()",
+      "role": {
+        "package": "backend",
+        "dir": "cases",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:drf_spectacular#utils.extend_schema",
+        "index": 99,
+        "key": "tags"
+      },
+      "evidence": {
+        "holders": 80,
+        "total": 94,
+        "lower_bound": 0.77,
+        "lift": 4.4
+      },
+      "members": 94,
+      "example": "backend/cases/analytics_views.py#AnalyticsAgentsView.get",
+      "python_members": 94,
+      "outliers": 14,
+      "outlier_files": [
+        "backend/cases/portal_views.py",
+        "backend/cases/time_views.py"
+      ],
+      "block": " 7. [D-9c2214] backend: HTTP handlers in cases/** pass `tags` to utils.extend_schema()\n    evidence: 80/94 (lower bound 0.77, lift 4.4)\n    example:  backend/cases/analytics_views.py#AnalyticsAgentsView.get\n    outlier:  backend/cases/portal_views.py:292 PortalArticleDetailView.get\n    outlier:  backend/cases/portal_views.py:256 PortalArticleListView.get\n    outlier:  backend/cases/portal_views.py:334 PortalArticleSuggestView.get\n    outlier:  backend/cases/portal_views.py:374 PortalCaseCommentView.post\n    outlier:  backend/cases/portal_views.py:203 PortalCaseDetailView.get\n    outlier:  backend/cases/portal_views.py:134 PortalCaseListView.get\n    outlier:  backend/cases/portal_views.py:167 PortalCaseListView.post\n    outlier:  backend/cases/time_views.py:506 TimeEntryDetailView.delete\n    outlier:  backend/cases/time_views.py:459 TimeEntryDetailView.put\n    outlier:  backend/cases/time_views.py:531 TimeEntryStopView.post\n    outlier:  backend/cases/time_views.py:771 TimeReportExportView.get\n    outlier:  backend/cases/time_views.py:736 TimeReportView.get\n    outlier:  backend/cases/time_views.py:589 TimesheetView.get\n    outlier:  backend/cases/time_views.py:566 UnbilledEntriesView.get",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "InvenTree/D-47d790",
+      "repo": "InvenTree",
+      "id": "D-47d790",
+      "rank": 1,
+      "summary": "classes in src/backend/InvenTree/plugin/samples/** extend InvenTreePlugin",
+      "role": {
+        "package": "",
+        "dir": "src/backend/InvenTree/plugin/samples",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "src/backend/InvenTree/plugin/plugin.py#InvenTreePlugin"
+        ]
+      },
+      "evidence": {
+        "holders": 22,
+        "total": 22,
+        "lower_bound": 0.85,
+        "lift": 23.2
+      },
+      "members": 23,
+      "example": "src/backend/InvenTree/plugin/samples/event/event_sample.py#EventPluginSample",
+      "python_members": 23,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 1. [D-47d790] classes in src/backend/InvenTree/plugin/samples/** extend InvenTreePlugin\n    evidence: 22/22 (lower bound 0.85, lift 23.2)\n    example:  src/backend/InvenTree/plugin/samples/event/event_sample.py#EventPluginSample\n    exempt:   src/backend/InvenTree/plugin/samples/machines/sample_printer.py:19 SamplePrinterDriver (a driver, named for its base LabelPrinterBaseDriver)",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "InvenTree/D-43f01e",
+      "repo": "InvenTree",
+      "id": "D-43f01e",
+      "rank": 2,
+      "summary": "classes in src/** (serializers files) are named `*Serializer`",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "serializers",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "evidence": {
+        "holders": 205,
+        "total": 212,
+        "lower_bound": 0.93,
+        "lift": 4.7
+      },
+      "members": 212,
+      "example": "src/backend/InvenTree/InvenTree/serializers.py#DuplicateOptionsSerializer",
+      "python_members": 212,
+      "outliers": 7,
+      "outlier_files": [
+        "src/backend/InvenTree/InvenTree/serializers.py",
+        "src/backend/InvenTree/common/serializers.py",
+        "src/backend/InvenTree/part/serializers.py"
+      ],
+      "block": " 2. [D-43f01e] classes in src/** (serializers files) are named `*Serializer`\n    evidence: 205/212 (lower bound 0.93, lift 4.7)\n    example:  src/backend/InvenTree/InvenTree/serializers.py#DuplicateOptionsSerializer\n    outlier:  src/backend/InvenTree/InvenTree/serializers.py:1033 ContentTypeField\n    outlier:  src/backend/InvenTree/InvenTree/serializers.py:641 DependentField\n    outlier:  src/backend/InvenTree/InvenTree/serializers.py:922 InvenTreeAttachmentSerializerField\n    outlier:  src/backend/InvenTree/InvenTree/serializers.py:961 InvenTreeDecimalField\n    outlier:  src/backend/InvenTree/InvenTree/serializers.py:947 InvenTreeImageSerializerField\n    outlier:  src/backend/InvenTree/common/serializers.py:42 SettingsValueField\n    outlier:  src/backend/InvenTree/part/serializers.py:259 PartThumbSerializerUpdate",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "InvenTree/D-455913",
+      "repo": "InvenTree",
+      "id": "D-455913",
+      "rank": 3,
+      "summary": "src/frontend: components in src/tables/** are named `*Table`",
+      "role": {
+        "package": "src/frontend",
+        "dir": "src/tables",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Table"
+      },
+      "evidence": {
+        "holders": 76,
+        "total": 82,
+        "lower_bound": 0.85,
+        "lift": 5
+      },
+      "members": 83,
+      "example": "src/frontend/src/tables/bom/BomTable.tsx#BomTable",
+      "python_members": null,
+      "outliers": 6,
+      "outlier_files": [
+        "src/frontend/src/tables/general/ParametricDataTableFilters.tsx",
+        "src/frontend/src/tables/settings/GroupTable.tsx",
+        "src/frontend/src/tables/settings/SelectionListDrawer.tsx",
+        "src/frontend/src/tables/settings/SnippetTable.tsx",
+        "src/frontend/src/tables/settings/TemplateTable.tsx",
+        "src/frontend/src/tables/settings/UserTable.tsx"
+      ],
+      "block": " 3. [D-455913] src/frontend: components in src/tables/** are named `*Table`\n    evidence: 76/82 (lower bound 0.85, lift 5.0)\n    example:  src/frontend/src/tables/bom/BomTable.tsx#BomTable\n    outlier:  src/frontend/src/tables/general/ParametricDataTableFilters.tsx:200 ParameterFilter\n    outlier:  src/frontend/src/tables/settings/GroupTable.tsx:39 GroupDrawer\n    outlier:  src/frontend/src/tables/settings/SelectionListDrawer.tsx:147 SelectionListDrawer\n    outlier:  src/frontend/src/tables/settings/SnippetTable.tsx:49 SnippetDrawer\n    outlier:  src/frontend/src/tables/settings/TemplateTable.tsx:88 TemplateDrawer\n    outlier:  src/frontend/src/tables/settings/UserTable.tsx:63 UserDrawer\n    exempt:   src/frontend/src/tables/purchasing/SupplierPriceBreakTable.tsx:41 SupplierPriceBreakColumns (a helper of SupplierPriceBreakTable, which uses it in its file)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "InvenTree/D-6f225b",
+      "repo": "InvenTree",
+      "id": "D-6f225b",
+      "rank": 4,
+      "summary": "classes in src/** (admin files) are named `*Admin`",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "admin",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Admin"
+      },
+      "evidence": {
+        "holders": 66,
+        "total": 73,
+        "lower_bound": 0.81,
+        "lift": 15.2
+      },
+      "members": 74,
+      "example": "src/backend/InvenTree/InvenTree/admin.py#CustomRateAdmin",
+      "python_members": 74,
+      "outliers": 7,
+      "outlier_files": [
+        "src/backend/InvenTree/company/admin.py",
+        "src/backend/InvenTree/machine/admin.py",
+        "src/backend/InvenTree/order/admin.py",
+        "src/backend/InvenTree/plugin/admin.py",
+        "src/backend/InvenTree/stock/admin.py",
+        "src/backend/InvenTree/users/admin.py"
+      ],
+      "block": " 4. [D-6f225b] classes in src/** (admin files) are named `*Admin`\n    evidence: 66/73 (lower bound 0.81, lift 15.2)\n    example:  src/backend/InvenTree/InvenTree/admin.py#CustomRateAdmin\n    outlier:  src/backend/InvenTree/company/admin.py:28 SupplierPriceBreakInline\n    outlier:  src/backend/InvenTree/machine/admin.py:9 MachineSettingInline\n    outlier:  src/backend/InvenTree/order/admin.py:18 GeneralExtraLineMeta\n    outlier:  src/backend/InvenTree/plugin/admin.py:38 PluginSettingInline\n    outlier:  src/backend/InvenTree/plugin/admin.py:46 PluginUserSettingInline\n    outlier:  src/backend/InvenTree/stock/admin.py:9 LocationInline\n    outlier:  src/backend/InvenTree/users/admin.py:72 RuleSetInline\n    exempt:   src/backend/InvenTree/users/admin.py:87 InvenTreeGroupAdminForm (another kind of class (extends forms.ModelForm))",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "InvenTree/D-16c1ac",
+      "repo": "InvenTree",
+      "id": "D-16c1ac",
+      "rank": 5,
+      "summary": "src/frontend: components in src/components/render/** declare their return type",
+      "role": {
+        "package": "src/frontend",
+        "dir": "src/components/render",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 43,
+        "total": 44,
+        "lower_bound": 0.88,
+        "lift": 3.8
+      },
+      "members": 44,
+      "example": "src/frontend/src/components/render/Build.tsx#RenderBuildItem",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "src/frontend/src/components/render/ModelHoverCard.tsx"
+      ],
+      "block": " 5. [D-16c1ac] src/frontend: components in src/components/render/** declare their return type\n    evidence: 43/44 (lower bound 0.88, lift 3.8)\n    example:  src/frontend/src/components/render/Build.tsx#RenderBuildItem\n    outlier:  src/frontend/src/components/render/ModelHoverCard.tsx:23 ModelHoverCard",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "InvenTree/D-095ebc",
+      "repo": "InvenTree",
+      "id": "D-095ebc",
+      "rank": 6,
+      "summary": "src/frontend: functions in src/components/tables/** declare their return type",
+      "role": {
+        "package": "src/frontend",
+        "dir": "src/components/tables",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 69,
+        "total": 70,
+        "lower_bound": 0.92,
+        "lift": 2.5
+      },
+      "members": 70,
+      "example": "src/frontend/src/components/tables/AppRowActions.tsx#AppRowViewAction",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "src/frontend/src/components/tables/Filter.tsx"
+      ],
+      "block": " 6. [D-095ebc] src/frontend: functions in src/components/tables/** declare their return type\n    evidence: 69/70 (lower bound 0.92, lift 2.5)\n    example:  src/frontend/src/components/tables/AppRowActions.tsx#AppRowViewAction\n    outlier:  src/frontend/src/components/tables/Filter.tsx:29 filterDisplayValue",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "InvenTree/D-7e788c",
+      "repo": "InvenTree",
+      "id": "D-7e788c",
+      "rank": 7,
+      "summary": "src/frontend: components in src/tables/** call useMemo() before apiUrl()",
+      "role": {
+        "package": "src/frontend",
+        "dir": "src/tables",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "before",
+        "first": "pkg:react#useMemo",
+        "then": "src/frontend/lib/functions/Api.tsx#apiUrl"
+      },
+      "evidence": {
+        "holders": 61,
+        "total": 65,
+        "lower_bound": 0.85,
+        "lift": 1
+      },
+      "members": 65,
+      "example": "src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable",
+      "python_members": null,
+      "outliers": 4,
+      "outlier_files": [
+        "src/frontend/src/tables/general/AuditLogTable.tsx",
+        "src/frontend/src/tables/general/ParametricDataTable.tsx",
+        "src/frontend/src/tables/part/PartThumbTable.tsx",
+        "src/frontend/src/tables/stock/InstalledItemsTable.tsx"
+      ],
+      "block": " 7. [D-7e788c] src/frontend: components in src/tables/** call useMemo() before apiUrl()\n    evidence: 61/65 (lower bound 0.85, lift 1.0)\n    example:  src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable\n    outlier:  src/frontend/src/tables/general/AuditLogTable.tsx:459 AuditLogTable\n    outlier:  src/frontend/src/tables/general/ParametricDataTable.tsx:145 ParametricDataTable\n    outlier:  src/frontend/src/tables/part/PartThumbTable.tsx:133 PartThumbTable\n    outlier:  src/frontend/src/tables/stock/InstalledItemsTable.tsx:27 InstalledItemsTable",
+      "family": "ordering",
+      "rule_kind": "before",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "InvenTree/D-9838a4",
+      "repo": "InvenTree",
+      "id": "D-9838a4",
+      "rank": 8,
+      "summary": "src/frontend: components in src/tables/** call useTable() before apiUrl()",
+      "role": {
+        "package": "src/frontend",
+        "dir": "src/tables",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "before",
+        "first": "src/frontend/lib/hooks/UseTable.tsx#useTable",
+        "then": "src/frontend/lib/functions/Api.tsx#apiUrl"
+      },
+      "evidence": {
+        "holders": 60,
+        "total": 65,
+        "lower_bound": 0.83,
+        "lift": 1
+      },
+      "members": 65,
+      "example": "src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable",
+      "python_members": null,
+      "outliers": 5,
+      "outlier_files": [
+        "src/frontend/src/tables/notifications/NotificationTable.tsx",
+        "src/frontend/src/tables/part/PartThumbTable.tsx",
+        "src/frontend/src/tables/settings/SnippetTable.tsx",
+        "src/frontend/src/tables/settings/TemplateTable.tsx",
+        "src/frontend/src/tables/settings/UserTable.tsx"
+      ],
+      "block": " 8. [D-9838a4] src/frontend: components in src/tables/** call useTable() before apiUrl()\n    evidence: 60/65 (lower bound 0.83, lift 1.0)\n    example:  src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable\n    outlier:  src/frontend/src/tables/notifications/NotificationTable.tsx:11 NotificationTable\n    outlier:  src/frontend/src/tables/part/PartThumbTable.tsx:133 PartThumbTable\n    outlier:  src/frontend/src/tables/settings/SnippetTable.tsx:49 SnippetDrawer\n    outlier:  src/frontend/src/tables/settings/TemplateTable.tsx:88 TemplateDrawer\n    outlier:  src/frontend/src/tables/settings/UserTable.tsx:63 UserDrawer",
+      "family": "ordering",
+      "rule_kind": "before",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "InvenTree/D-f31910",
+      "repo": "InvenTree",
+      "id": "D-f31910",
+      "rank": 9,
+      "summary": "classes in src/** (models files) call utils.translation.gettext_lazy()",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "models",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:django#utils.translation.gettext_lazy"
+      },
+      "evidence": {
+        "holders": 76,
+        "total": 78,
+        "lower_bound": 0.91,
+        "lift": 3.1
+      },
+      "members": 82,
+      "example": "src/backend/InvenTree/audit/models.py#AuditLogEntry",
+      "python_members": 82,
+      "outliers": 2,
+      "outlier_files": [
+        "src/backend/InvenTree/common/models.py",
+        "src/backend/InvenTree/users/models.py"
+      ],
+      "block": " 9. [D-f31910] classes in src/** (models files) call utils.translation.gettext_lazy()\n    evidence: 76/78 (lower bound 0.91, lift 3.1)\n    example:  src/backend/InvenTree/audit/models.py#AuditLogEntry\n    outlier:  src/backend/InvenTree/common/models.py:80 RenderMeta\n    outlier:  src/backend/InvenTree/users/models.py:502 Owner\n    exempt:   src/backend/InvenTree/audit/models.py:165 AuditLogEntryManager (another kind of class (extends models.LogEntryManager))\n    exempt:   src/backend/InvenTree/common/models.py:3778 NoDeleteManager (another kind of class (extends db.models.Manager))\n    exempt:   src/backend/InvenTree/common/models.py:3768 NoDeleteQuerySet (another kind of class (extends db.models.query.QuerySet))\n    exempt:   src/backend/InvenTree/common/models.py:213 SettingsManager (another kind of class (extends db.models.Manager))",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "InvenTree/D-b24fe0",
+      "repo": "InvenTree",
+      "id": "D-b24fe0",
+      "rank": 10,
+      "summary": "src/frontend: components in src/tables/** call useTable() before useCallback()",
+      "role": {
+        "package": "src/frontend",
+        "dir": "src/tables",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "before",
+        "first": "src/frontend/lib/hooks/UseTable.tsx#useTable",
+        "then": "pkg:react#useCallback"
+      },
+      "evidence": {
+        "holders": 49,
+        "total": 50,
+        "lower_bound": 0.9,
+        "lift": 1
+      },
+      "members": 50,
+      "example": "src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "src/frontend/src/tables/settings/UserTable.tsx"
+      ],
+      "block": "10. [D-b24fe0] src/frontend: components in src/tables/** call useTable() before useCallback()\n    evidence: 49/50 (lower bound 0.90, lift 1.0)\n    example:  src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable\n    outlier:  src/frontend/src/tables/settings/UserTable.tsx:63 UserDrawer",
+      "family": "ordering",
+      "rule_kind": "before",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "InvenTree/D-71f3ec",
+      "repo": "InvenTree",
+      "id": "D-71f3ec",
+      "rank": 11,
+      "summary": "src/frontend: components in src/tables/** call useTable() before useState()",
+      "role": {
+        "package": "src/frontend",
+        "dir": "src/tables",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "before",
+        "first": "src/frontend/lib/hooks/UseTable.tsx#useTable",
+        "then": "pkg:react#useState"
+      },
+      "evidence": {
+        "holders": 48,
+        "total": 50,
+        "lower_bound": 0.86,
+        "lift": 1
+      },
+      "members": 50,
+      "example": "src/frontend/src/tables/bom/BomTable.tsx#BomTable",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "src/frontend/src/tables/part/PartThumbTable.tsx",
+        "src/frontend/src/tables/settings/ApiTokenTable.tsx"
+      ],
+      "block": "11. [D-71f3ec] src/frontend: components in src/tables/** call useTable() before useState()\n    evidence: 48/50 (lower bound 0.86, lift 1.0)\n    example:  src/frontend/src/tables/bom/BomTable.tsx#BomTable\n    outlier:  src/frontend/src/tables/part/PartThumbTable.tsx:133 PartThumbTable\n    outlier:  src/frontend/src/tables/settings/ApiTokenTable.tsx:36 ApiTokenTable",
+      "family": "ordering",
+      "rule_kind": "before",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "ralph/D-4529f9",
+      "repo": "ralph",
+      "id": "D-4529f9",
+      "rank": 1,
+      "summary": "classes in src/** (api files) extend RalphAPISerializer",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "api",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "src/ralph/api/serializers.py#RalphAPISerializer"
+        ]
+      },
+      "evidence": {
+        "holders": 54,
+        "total": 55,
+        "lower_bound": 0.9,
+        "lift": 7.3
+      },
+      "members": 63,
+      "example": "src/ralph/access_cards/api.py#AccessCardSerializer",
+      "python_members": 63,
+      "outliers": 1,
+      "outlier_files": [
+        "src/ralph/lib/permissions/api.py"
+      ],
+      "block": " 1. [D-4529f9] classes in src/** (api files) extend RalphAPISerializer\n    evidence: 54/55 (lower bound 0.90, lift 7.3)\n    example:  src/ralph/access_cards/api.py#AccessCardSerializer\n    outlier:  src/ralph/lib/permissions/api.py:162 RalphPermission\n    exempt:   src/ralph/lib/mixins/api.py:8 ChoiceFieldWithOtherOptionField (another kind of class (extends serializers.ChoiceField))\n    exempt:   src/ralph/lib/permissions/api.py:152 IsAuthenticated (another kind of class (extends permissions.IsAuthenticated))\n    exempt:   src/ralph/lib/permissions/api.py:24 PermissionsForObjectFilter (another kind of class (extends filters.BaseFilterBackend))\n    exempt:   src/ralph/networks/api.py:64 IPAddressSaveSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)\n    exempt:   src/ralph/virtual/api.py:62 SaveCloudFlavorSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)\n    exempt:   src/ralph/virtual/api.py:84 SaveCloudHostSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)\n    exempt:   src/ralph/virtual/api.py:314 VirtualServerFilterSet (another kind of class (extends FilterSet))\n    exempt:   src/ralph/virtual/api.py:182 VirtualServerSaveSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "ralph/D-5b6f70",
+      "repo": "ralph",
+      "id": "D-5b6f70",
+      "rank": 2,
+      "summary": "classes in src/** (serializers files) extend RalphAPISerializer",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "serializers",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "src/ralph/api/serializers.py#RalphAPISerializer"
+        ]
+      },
+      "evidence": {
+        "holders": 49,
+        "total": 49,
+        "lower_bound": 0.93,
+        "lift": 7.6
+      },
+      "members": 55,
+      "example": "src/ralph/assets/api/serializers.py#AssetHolderSerializer",
+      "python_members": 55,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 2. [D-5b6f70] classes in src/** (serializers files) extend RalphAPISerializer\n    evidence: 49/49 (lower bound 0.93, lift 7.6)\n    example:  src/ralph/assets/api/serializers.py#AssetHolderSerializer\n    exempt:   src/ralph/api/serializers.py:31 AdditionalLookupRelatedField (in the module that defines RalphAPISerializer)\n    exempt:   src/ralph/api/serializers.py:56 DeclaredFieldsMetaclass (in the module that defines RalphAPISerializer)\n    exempt:   src/ralph/api/serializers.py:297 RalphAPISerializerMetaclass (in the module that defines RalphAPISerializer)\n    exempt:   src/ralph/assets/api/serializers.py:255 AssetModelSaveSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)\n    exempt:   src/ralph/data_center/api/serializers.py:183 DataCenterAssetSaveSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)\n    exempt:   src/ralph/lib/custom_fields/api/serializers.py:64 CustomFieldValueSaveSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "ralph/D-b1df5c",
+      "repo": "ralph",
+      "id": "D-b1df5c",
+      "rank": 3,
+      "summary": "classes in src/** (api files) are named `*Serializer`",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "api",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "evidence": {
+        "holders": 58,
+        "total": 59,
+        "lower_bound": 0.91,
+        "lift": 7.1
+      },
+      "members": 63,
+      "example": "src/ralph/access_cards/api.py#AccessCardSerializer",
+      "python_members": 63,
+      "outliers": 1,
+      "outlier_files": [
+        "src/ralph/lib/permissions/api.py"
+      ],
+      "block": " 3. [D-b1df5c] classes in src/** (api files) are named `*Serializer`\n    evidence: 58/59 (lower bound 0.91, lift 7.1)\n    example:  src/ralph/access_cards/api.py#AccessCardSerializer\n    outlier:  src/ralph/lib/permissions/api.py:162 RalphPermission\n    exempt:   src/ralph/lib/mixins/api.py:8 ChoiceFieldWithOtherOptionField (another kind of class (extends serializers.ChoiceField))\n    exempt:   src/ralph/lib/permissions/api.py:152 IsAuthenticated (in the module that defines PermissionsPerFieldSerializerMixin)\n    exempt:   src/ralph/lib/permissions/api.py:24 PermissionsForObjectFilter (in the module that defines PermissionsPerFieldSerializerMixin)\n    exempt:   src/ralph/virtual/api.py:314 VirtualServerFilterSet (another kind of class (extends FilterSet))",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "ralph/D-43f01e",
+      "repo": "ralph",
+      "id": "D-43f01e",
+      "rank": 4,
+      "summary": "classes in src/** (serializers files) are named `*Serializer`",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "serializers",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "evidence": {
+        "holders": 51,
+        "total": 52,
+        "lower_bound": 0.9,
+        "lift": 7.1
+      },
+      "members": 55,
+      "example": "src/ralph/assets/api/serializers.py#AssetHolderSerializer",
+      "python_members": 55,
+      "outliers": 1,
+      "outlier_files": [
+        "src/ralph/dashboards/api/serializers.py"
+      ],
+      "block": " 4. [D-43f01e] classes in src/** (serializers files) are named `*Serializer`\n    evidence: 51/52 (lower bound 0.90, lift 7.1)\n    example:  src/ralph/assets/api/serializers.py#AssetHolderSerializer\n    outlier:  src/ralph/dashboards/api/serializers.py:11 GraphSerializerDetail\n    exempt:   src/ralph/api/serializers.py:31 AdditionalLookupRelatedField (shared part used by 2 members)\n    exempt:   src/ralph/api/serializers.py:56 DeclaredFieldsMetaclass (in the module that defines RalphAPISerializer)\n    exempt:   src/ralph/api/serializers.py:297 RalphAPISerializerMetaclass (in the module that defines RalphAPISerializer)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "ralph/D-cfd5da",
+      "repo": "ralph",
+      "id": "D-cfd5da",
+      "rank": 5,
+      "summary": "functions in src/ralph/switchports/** declare their return type",
+      "role": {
+        "package": "",
+        "dir": "src/ralph/switchports",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 31,
+        "total": 34,
+        "lower_bound": 0.77,
+        "lift": 5.6
+      },
+      "members": 34,
+      "example": "src/ralph/switchports/connections/planning.py#switch_port_owner",
+      "python_members": 34,
+      "outliers": 3,
+      "outlier_files": [
+        "src/ralph/switchports/presentation.py",
+        "src/ralph/switchports/sync/tasks.py"
+      ],
+      "block": " 5. [D-cfd5da] functions in src/ralph/switchports/** declare their return type\n    evidence: 31/34 (lower bound 0.77, lift 5.6)\n    example:  src/ralph/switchports/connections/planning.py#switch_port_owner\n    outlier:  src/ralph/switchports/presentation.py:14 format_speed\n    outlier:  src/ralph/switchports/presentation.py:26 status_symbol\n    outlier:  src/ralph/switchports/sync/tasks.py:97 run_rack_refresh",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "Misago/D-c9ae1e",
+      "repo": "Misago",
+      "id": "D-c9ae1e",
+      "rank": 1,
+      "summary": "classes in misago/permissions/hooks/** extend FilterHook",
+      "role": {
+        "package": "",
+        "dir": "misago/permissions/hooks",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "misago/plugins/hooks.py#FilterHook"
+        ]
+      },
+      "evidence": {
+        "holders": 67,
+        "total": 67,
+        "lower_bound": 0.95,
+        "lift": 8.2
+      },
+      "members": 68,
+      "example": "misago/permissions/hooks/build_user_category_permissions.py#BuildUserCategoryPermissionsHook",
+      "python_members": 68,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 1. [D-c9ae1e] classes in misago/permissions/hooks/** extend FilterHook\n    evidence: 67/67 (lower bound 0.95, lift 8.2)\n    example:  misago/permissions/hooks/build_user_category_permissions.py#BuildUserCategoryPermissionsHook\n    exempt:   misago/permissions/hooks/get_admin_category_permissions.py:27 GetAdminCategoryPermissionsHook (extends ActionHook, which the module of FilterHook defines beside it)",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "Misago/D-90a5d9",
+      "repo": "Misago",
+      "id": "D-90a5d9",
+      "rank": 2,
+      "summary": "HTTP handlers in misago/** (urls files) call extensions.get()",
+      "role": {
+        "package": "",
+        "dir": "misago",
+        "file": "urls",
+        "entry": "http",
+        "kind": "variable"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "misago/plugins/extensions.py#extensions.get"
+      },
+      "evidence": {
+        "holders": 49,
+        "total": 50,
+        "lower_bound": 0.9,
+        "lift": 9.6
+      },
+      "members": 50,
+      "example": "misago/likes/urls.py#private_thread_post_like_view",
+      "python_members": 50,
+      "outliers": 1,
+      "outlier_files": [
+        "misago/core/testproject/urls.py"
+      ],
+      "block": " 2. [D-90a5d9] HTTP handlers in misago/** (urls files) call extensions.get()\n    evidence: 49/50 (lower bound 0.90, lift 9.6)\n    example:  misago/likes/urls.py#private_thread_post_like_view\n    outlier:  misago/core/testproject/urls.py:16 urlpatterns",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "Misago/D-e72fc8",
+      "repo": "Misago",
+      "id": "D-e72fc8",
+      "rank": 3,
+      "summary": "classes in misago/posting/hooks/** extend FilterHook",
+      "role": {
+        "package": "",
+        "dir": "misago/posting/hooks",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "misago/plugins/hooks.py#FilterHook"
+        ]
+      },
+      "evidence": {
+        "holders": 29,
+        "total": 29,
+        "lower_bound": 0.88,
+        "lift": 8.1
+      },
+      "members": 30,
+      "example": "misago/posting/hooks/get_private_thread_edit_formset.py#GetPrivateThreadEditFormsetHook",
+      "python_members": 30,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 3. [D-e72fc8] classes in misago/posting/hooks/** extend FilterHook\n    evidence: 29/29 (lower bound 0.88, lift 8.1)\n    example:  misago/posting/hooks/get_private_thread_edit_formset.py#GetPrivateThreadEditFormsetHook\n    exempt:   misago/posting/hooks/validate_posting.py:33 ValidatePostingHook (extends ActionHook, which the module of FilterHook defines beside it)",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "Misago/D-5862f4",
+      "repo": "Misago",
+      "id": "D-5862f4",
+      "rank": 4,
+      "summary": "frontend: classes in src/components/** extend react.Component",
+      "role": {
+        "package": "frontend",
+        "dir": "src/components",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:react#default.Component"
+        ]
+      },
+      "evidence": {
+        "holders": 133,
+        "total": 159,
+        "lower_bound": 0.77,
+        "lift": 10.2
+      },
+      "members": 159,
+      "example": "frontend/src/components/Api/ApiFetch.jsx#ApiFetch",
+      "python_members": null,
+      "outliers": 26,
+      "outlier_files": [
+        "frontend/src/components/edit-details/form.js",
+        "frontend/src/components/modal-message.js",
+        "frontend/src/components/poll/form/index.js",
+        "frontend/src/components/poll/voting/index.js",
+        "frontend/src/components/posting/edit.js",
+        "frontend/src/components/posting/reply.js",
+        "frontend/src/components/posting/start-private.js",
+        "frontend/src/components/posting/start.js",
+        "frontend/src/components/posts-list/post/controls/move.js",
+        "frontend/src/components/posts-list/post/controls/split.js",
+        "frontend/src/components/profile/follows.js",
+        "frontend/src/components/profile/moderation/avatar-controls.js",
+        "frontend/src/components/profile/moderation/change-username.js",
+        "frontend/src/components/profile/moderation/delete-account.js",
+        "frontend/src/components/register.js",
+        "frontend/src/components/request-activation-link.js",
+        "frontend/src/components/request-password-reset.js",
+        "frontend/src/components/reset-password-form.js",
+        "frontend/src/components/search-route/form.js",
+        "frontend/src/components/sign-in.js",
+        "frontend/src/components/social-auth/register.js",
+        "frontend/src/components/thread/moderation/posts/move.js",
+        "frontend/src/components/thread/moderation/posts/split.js",
+        "frontend/src/components/thread/moderation/thread/ThreadChangeTitleModal.jsx",
+        "frontend/src/components/thread/moderation/thread/merge.js",
+        "frontend/src/components/thread/moderation/thread/move.js"
+      ],
+      "block": " 4. [D-5862f4] frontend: classes in src/components/** extend react.Component\n    evidence: 133/159 (lower bound 0.77, lift 10.2)\n    example:  frontend/src/components/Api/ApiFetch.jsx#ApiFetch\n    outlier:  frontend/src/components/edit-details/form.js:8 default\n    outlier:  frontend/src/components/modal-message.js:4 default\n    outlier:  frontend/src/components/poll/form/index.js:12 default\n    outlier:  frontend/src/components/poll/voting/index.js:14 default\n    outlier:  frontend/src/components/posting/edit.js:15 default\n    outlier:  frontend/src/components/posting/reply.js:15 default\n    outlier:  frontend/src/components/posting/start-private.js:15 default\n    outlier:  frontend/src/components/posting/start.js:17 default\n    outlier:  frontend/src/components/posts-list/post/controls/move.js:10 default\n    outlier:  frontend/src/components/posts-list/post/controls/split.js:70 ModerationForm\n    outlier:  frontend/src/components/profile/follows.js:4 default\n    outlier:  frontend/src/components/profile/moderation/avatar-controls.js:13 default\n    outlier:  frontend/src/components/profile/moderation/change-username.js:14 default\n    outlier:  frontend/src/components/profile/moderation/delete-account.js:12 default\n    outlier:  frontend/src/components/register.js:17 RegisterForm\n    outlier:  frontend/src/components/request-activation-link.js:10 RequestLinkForm\n    outlier:  frontend/src/components/request-password-reset.js:11 RequestResetForm\n    outlier:  frontend/src/components/reset-password-form.js:13 ResetPasswordForm\n    outlier:  frontend/src/components/search-route/form.js:18 default\n    outlier:  frontend/src/components/sign-in.js:11 default\n    outlier:  frontend/src/components/social-auth/register.js:13 Register\n    outlier:  frontend/src/components/thread/moderation/posts/move.js:11 default\n    outlier:  frontend/src/components/thread/moderation/posts/split.js:71 ModerationForm\n    outlier:  frontend/src/components/thread/moderation/thread/ThreadChangeTitleModal.jsx:11 default\n    outlier:  frontend/src/components/thread/moderation/thread/merge.js:11 default\n    outlier:  frontend/src/components/thread/moderation/thread/move.js:14 default",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "Misago/D-b4e5ff",
+      "repo": "Misago",
+      "id": "D-b4e5ff",
+      "rank": 5,
+      "summary": "classes in misago/** (forms files) are named `*Form`",
+      "role": {
+        "package": "",
+        "dir": "misago",
+        "file": "forms",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Form"
+      },
+      "evidence": {
+        "holders": 28,
+        "total": 28,
+        "lower_bound": 0.88,
+        "lift": 16.7
+      },
+      "members": 31,
+      "example": "misago/account/forms.py#AccountDeleteForm",
+      "python_members": 31,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 5. [D-b4e5ff] classes in misago/** (forms files) are named `*Form`\n    evidence: 28/28 (lower bound 0.88, lift 16.7)\n    example:  misago/account/forms.py#AccountDeleteForm\n    exempt:   misago/account/forms.py:68 AccountNotifications (shared part used by 2 members)\n    exempt:   misago/admin/categories/forms.py:47 AdminCategoryChoiceField (shared part used by 2 members)\n    exempt:   misago/admin/categories/forms.py:51 AdminCategoryMultipleChoiceField (another kind of class (extends forms.TreeNodeMultipleChoiceField))",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "Misago/D-d8703c",
+      "repo": "Misago",
+      "id": "D-d8703c",
+      "rank": 6,
+      "summary": "classes in misago/permissions/** call super().__call__()",
+      "role": {
+        "package": "",
+        "dir": "misago/permissions",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "global#super().__call__"
+      },
+      "evidence": {
+        "holders": 68,
+        "total": 68,
+        "lower_bound": 0.95,
+        "lift": 7.6
+      },
+      "members": 74,
+      "example": "misago/permissions/hooks/build_user_category_permissions.py#BuildUserCategoryPermissionsHook",
+      "python_members": 74,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 6. [D-d8703c] classes in misago/permissions/** call super().__call__()\n    evidence: 68/68 (lower bound 0.95, lift 7.6)\n    example:  misago/permissions/hooks/build_user_category_permissions.py#BuildUserCategoryPermissionsHook\n    exempt:   misago/permissions/checkutils.py:7 PermissionCheckResult (defines no __call__() of its own, so has no override that calls super().__call__())\n    exempt:   misago/permissions/panels.py:5 MisagoUserPermissionsPanel (defines no __call__() of its own, so has no override that calls super().__call__())\n    exempt:   misago/permissions/proxy.py:16 UserPermissionsProxy (defines no __call__() of its own, so has no override that calls super().__call__())\n    exempt:   misago/permissions/threads/querysets.py:30 CategoryQueries (defines no __call__() of its own, so has no override that calls super().__call__())\n    exempt:   misago/permissions/threads/querysets.py:119 CategoryThreadsQuerysetFilter (defines no __call__() of its own, so has no override that calls super().__call__())\n    exempt:   misago/permissions/threads/querysets.py:59 ThreadsQuerysetFilter (defines no __call__() of its own, so has no override that calls super().__call__())",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "Misago/D-d93d41",
+      "repo": "Misago",
+      "id": "D-d93d41",
+      "rank": 7,
+      "summary": "functions in misago/posting/** declare their return type",
+      "role": {
+        "package": "",
+        "dir": "misago/posting",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 28,
+        "total": 31,
+        "lower_bound": 0.75,
+        "lift": 3.2
+      },
+      "members": 31,
+      "example": "misago/posting/approval.py#require_private_thread_approval",
+      "python_members": 31,
+      "outliers": 3,
+      "outlier_files": [
+        "misago/posting/processcontent.py",
+        "misago/posting/shortcuts.py"
+      ],
+      "block": " 7. [D-d93d41] functions in misago/posting/** declare their return type\n    evidence: 28/31 (lower bound 0.75, lift 3.2)\n    example:  misago/posting/approval.py#require_private_thread_approval\n    outlier:  misago/posting/processcontent.py:37 highlight_post_code_blocks\n    outlier:  misago/posting/processcontent.py:24 process_post_content\n    outlier:  misago/posting/shortcuts.py:6 save_edited_post",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "paperless-ngx/D-c3460b",
+      "repo": "paperless-ngx",
+      "id": "D-c3460b",
+      "rank": 1,
+      "summary": "src-ui: classes in src/app/components/common/input/** (*.component files) extend AbstractInputComponent",
+      "role": {
+        "package": "src-ui",
+        "dir": "src/app/components/common/input",
+        "file": "*.component",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "src-ui/src/app/components/common/input/abstract-input.ts#AbstractInputComponent"
+        ]
+      },
+      "evidence": {
+        "holders": 19,
+        "total": 20,
+        "lower_bound": 0.76,
+        "lift": 31.1
+      },
+      "members": 20,
+      "example": "src-ui/src/app/components/common/input/check/check.component.ts#CheckComponent",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "src-ui/src/app/components/common/input/tags/tags.component.ts"
+      ],
+      "block": " 1. [D-c3460b] src-ui: classes in src/app/components/common/input/** (*.component files) extend AbstractInputComponent\n    evidence: 19/20 (lower bound 0.76, lift 31.1)\n    example:  src-ui/src/app/components/common/input/check/check.component.ts#CheckComponent\n    outlier:  src-ui/src/app/components/common/input/tags/tags.component.ts:50 TagsComponent",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "paperless-ngx/D-de2489",
+      "repo": "paperless-ngx",
+      "id": "D-de2489",
+      "rank": 2,
+      "summary": "src-ui: classes in src/** (*.component files) are named `*Component`",
+      "role": {
+        "package": "src-ui",
+        "dir": "src",
+        "file": "*.component",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Component"
+      },
+      "evidence": {
+        "holders": 114,
+        "total": 114,
+        "lower_bound": 0.97,
+        "lift": 5.2
+      },
+      "members": 119,
+      "example": "src-ui/src/app/app.component.ts#AppComponent",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 2. [D-de2489] src-ui: classes in src/** (*.component files) are named `*Component`\n    evidence: 114/114 (lower bound 0.97, lift 5.2)\n    example:  src-ui/src/app/app.component.ts#AppComponent\n    exempt:   src-ui/src/app/components/common/custom-fields-query-dropdown/custom-fields-query-dropdown.component.ts:72 CustomFieldQueriesModel (shared part used by 3 members)\n    exempt:   src-ui/src/app/components/common/filterable-dropdown/filterable-dropdown.component.ts:62 FilterableDropdownSelectionModel (shared part used by 2 members)\n    exempt:   src-ui/src/app/components/common/permissions-filter-dropdown/permissions-filter-dropdown.component.ts:28 PermissionsSelectionModel (shared part used by 2 members)\n    exempt:   src-ui/src/app/components/loading-component/loading.component.ts:6 LoadingComponentWithPermissions (shared part used by 22 members)\n    exempt:   src-ui/src/app/components/with-permissions/with-permissions.component.ts:6 ComponentWithPermissions (shared part used by 16 members)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "paperless-ngx/D-1d6a6a",
+      "repo": "paperless-ngx",
+      "id": "D-1d6a6a",
+      "rank": 3,
+      "summary": "src-ui: classes in src/** (*.service files) are decorated with Injectable()",
+      "role": {
+        "package": "src-ui",
+        "dir": "src",
+        "file": "*.service",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:@angular/core#Injectable"
+        ]
+      },
+      "evidence": {
+        "holders": 35,
+        "total": 36,
+        "lower_bound": 0.86,
+        "lift": 13.8
+      },
+      "members": 36,
+      "example": "src-ui/src/app/services/chat.service.ts#ChatService",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "src-ui/src/app/services/websocket-status.service.ts"
+      ],
+      "block": " 3. [D-1d6a6a] src-ui: classes in src/** (*.service files) are decorated with Injectable()\n    evidence: 35/36 (lower bound 0.86, lift 13.8)\n    example:  src-ui/src/app/services/chat.service.ts#ChatService\n    outlier:  src-ui/src/app/services/websocket-status.service.ts:45 FileStatus",
+      "family": "decorator",
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "wger/D-82d21d",
+      "repo": "wger",
+      "id": "D-82d21d",
+      "rank": 1,
+      "summary": "HTTP handlers in wger/** (api/views files) are decorated with utils.extend_schema()",
+      "role": {
+        "package": "",
+        "dir": "wger",
+        "file": "api/views",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:drf_spectacular#utils.extend_schema"
+        ]
+      },
+      "evidence": {
+        "holders": 25,
+        "total": 26,
+        "lower_bound": 0.81,
+        "lift": 11.2
+      },
+      "members": 26,
+      "example": "wger/core/api/views.py#ApplicationVersionView.get",
+      "python_members": 26,
+      "outliers": 1,
+      "outlier_files": [
+        "wger/exercises/api/views.py"
+      ],
+      "block": " 1. [D-82d21d] HTTP handlers in wger/** (api/views files) are decorated with utils.extend_schema()\n    evidence: 25/26 (lower bound 0.81, lift 11.2)\n    example:  wger/core/api/views.py#ApplicationVersionView.get\n    outlier:  wger/exercises/api/views.py:264 ExerciseInfoViewset.list",
+      "family": "decorator",
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "wger/D-db04dc",
+      "repo": "wger",
+      "id": "D-db04dc",
+      "rank": 2,
+      "summary": "classes in wger/** (serializers files) are named `*Serializer`",
+      "role": {
+        "package": "",
+        "dir": "wger",
+        "file": "serializers",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "evidence": {
+        "holders": 76,
+        "total": 76,
+        "lower_bound": 0.95,
+        "lift": 6.2
+      },
+      "members": 79,
+      "example": "wger/core/api/serializers.py#LanguageCheckSerializer",
+      "python_members": 79,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 2. [D-db04dc] classes in wger/** (serializers files) are named `*Serializer`\n    evidence: 76/76 (lower bound 0.95, lift 6.2)\n    example:  wger/core/api/serializers.py#LanguageCheckSerializer\n    exempt:   wger/exercises/api/serializers.py:217 AbsoluteUrlFileField (another kind of class (extends serializers.FileField))\n    exempt:   wger/exercises/api/serializers.py:202 AbsoluteUrlImageField (another kind of class (extends serializers.ImageField))\n    exempt:   wger/manager/api/serializers.py:555 OwnerScopedSessionField (another kind of class (extends serializers.PrimaryKeyRelatedField))",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "wger/D-3755b1",
+      "repo": "wger",
+      "id": "D-3755b1",
+      "rank": 3,
+      "summary": "exported values in wger/** (urls files) call urls.path()",
+      "role": {
+        "package": "",
+        "dir": "wger",
+        "file": "urls",
+        "entry": "-",
+        "kind": "variable"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:django#urls.path"
+      },
+      "evidence": {
+        "holders": 44,
+        "total": 46,
+        "lower_bound": 0.85,
+        "lift": 3.6
+      },
+      "members": 46,
+      "example": "wger/config/urls.py#patterns_gym_config",
+      "python_members": 46,
+      "outliers": 2,
+      "outlier_files": [
+        "wger/urls.py"
+      ],
+      "block": " 3. [D-3755b1] exported values in wger/** (urls files) call urls.path()\n    evidence: 44/46 (lower bound 0.85, lift 3.6)\n    example:  wger/config/urls.py#patterns_gym_config\n    outlier:  wger/urls.py:59 router\n    outlier:  wger/urls.py:265 sitemaps",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "lotus/D-e5b6fe",
+      "repo": "lotus",
+      "id": "D-e5b6fe",
+      "rank": 1,
+      "summary": "backend: HTTP handlers in metering_billing/** are decorated with utils.extend_schema()",
+      "role": {
+        "package": "backend",
+        "dir": "metering_billing",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:drf_spectacular#utils.extend_schema"
+        ]
+      },
+      "evidence": {
+        "holders": 69,
+        "total": 70,
+        "lower_bound": 0.92,
+        "lift": 2.6
+      },
+      "members": 70,
+      "example": "backend/metering_billing/views/auth_views.py#DemoLoginView.post",
+      "python_members": 70,
+      "outliers": 1,
+      "outlier_files": [
+        "backend/metering_billing/views/webhook_views.py"
+      ],
+      "block": " 1. [D-e5b6fe] backend: HTTP handlers in metering_billing/** are decorated with utils.extend_schema()\n    evidence: 69/70 (lower bound 0.92, lift 2.6)\n    example:  backend/metering_billing/views/auth_views.py#DemoLoginView.post\n    outlier:  backend/metering_billing/views/webhook_views.py:55 stripe_webhook_endpoint",
+      "family": "decorator",
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "lotus/D-26d6a0",
+      "repo": "lotus",
+      "id": "D-26d6a0",
+      "rank": 2,
+      "summary": "backend: classes in api/** are named `*Serializer`",
+      "role": {
+        "package": "backend",
+        "dir": "api",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "evidence": {
+        "holders": 85,
+        "total": 91,
+        "lower_bound": 0.86,
+        "lift": 2
+      },
+      "members": 92,
+      "example": "backend/api/serializers/model_serializers.py#AddOnSerializer",
+      "python_members": 92,
+      "outliers": 6,
+      "outlier_files": [
+        "backend/api/serializers/model_serializers.py",
+        "backend/api/serializers/webhook_serializers.py"
+      ],
+      "block": " 2. [D-26d6a0] backend: classes in api/** are named `*Serializer`\n    evidence: 85/91 (lower bound 0.86, lift 2.0)\n    example:  backend/api/serializers/model_serializers.py#AddOnSerializer\n    outlier:  backend/api/serializers/model_serializers.py:134 LightweightCustomerSerializerForInvoice\n    outlier:  backend/api/serializers/model_serializers.py:2171 ListSubscriptionRecordFilter\n    outlier:  backend/api/serializers/model_serializers.py:1630 SubscriptionRecordCreateSerializerOld\n    outlier:  backend/api/serializers/model_serializers.py:2141 SubscriptionRecordFilterSerializerDelete\n    outlier:  backend/api/serializers/model_serializers.py:1876 SubscriptionRecordUpdateSerializerOld\n    outlier:  backend/api/serializers/webhook_serializers.py:48 UsageAlertPayload\n    exempt:   backend/api/apps.py:4 ApiConfig (another kind of class (extends apps.AppConfig))",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "lotus/D-1cbdac",
+      "repo": "lotus",
+      "id": "D-1cbdac",
+      "rank": 3,
+      "summary": "backend: classes in metering_billing/serializers/** are named `*Serializer`",
+      "role": {
+        "package": "backend",
+        "dir": "metering_billing/serializers",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "evidence": {
+        "holders": 140,
+        "total": 156,
+        "lower_bound": 0.84,
+        "lift": 1.9
+      },
+      "members": 163,
+      "example": "backend/metering_billing/serializers/auth_serializers.py#DemoRegistrationDetailSerializer",
+      "python_members": 163,
+      "outliers": 16,
+      "outlier_files": [
+        "backend/metering_billing/serializers/model_serializers.py",
+        "backend/metering_billing/serializers/serializer_utils.py"
+      ],
+      "block": " 3. [D-1cbdac] backend: classes in metering_billing/serializers/** are named `*Serializer`\n    evidence: 140/156 (lower bound 0.84, lift 1.9)\n    example:  backend/metering_billing/serializers/auth_serializers.py#DemoRegistrationDetailSerializer\n    outlier:  backend/metering_billing/serializers/model_serializers.py:1687 ListSubscriptionRecordFilter\n    outlier:  backend/metering_billing/serializers/model_serializers.py:1675 SubscriptionRecordFilterSerializerDelete\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:326 AddOnUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:284 AddOnVersionUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:248 AnalysisUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:242 BacktestUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:254 BalanceAdjustmentUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:272 InvoiceUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:260 MetricUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:236 OrganizationUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:266 PlanUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:278 PlanVersionUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:103 SlugRelatedFieldWithOrganization\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:190 SlugRelatedFieldWithOrganizationPK\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:302 SubscriptionUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:308 UsageAlertUUIDField\n    exempt:   backend/metering_billing/serializers/model_serializers.py:2398 ActivityGenericRelatedField (another kind of class (extends serializers.Field))\n    exempt:   backend/metering_billing/serializers/serializer_utils.py:296 AddOnSubscriptionUUIDField (in the module that defines TimezoneFieldMixin)\n    exempt:   backend/metering_billing/serializers/serializer_utils.py:93 DjangoJSONEncoder (in the module that defines TimezoneFieldMixin)\n    exempt:   backend/metering_billing/serializers/serializer_utils.py:290 FeatureUUIDField (in the module that defines TimezoneFieldMixin)\n    exempt:   backend/metering_billing/serializers/serializer_utils.py:14 TimeZoneSerializerField (in the module that defines TimezoneFieldMixin)\n    exempt:   backend/metering_billing/serializers/serializer_utils.py:314 WebhookEndpointUUIDField (in the module that defines TimezoneFieldMixin)\n    exempt:   backend/metering_billing/serializers/serializer_utils.py:320 WebhookSecretUUIDField (in the module that defines TimezoneFieldMixin)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "lotus/D-2ab768",
+      "repo": "lotus",
+      "id": "D-2ab768",
+      "rank": 4,
+      "summary": "django models have a `organization` field",
+      "role": {
+        "package": "",
+        "dir": "django",
+        "file": "(model)",
+        "entry": "-",
+        "kind": "model"
+      },
+      "rule": {
+        "type": "model_has",
+        "field": "organization"
+      },
+      "evidence": {
+        "holders": 46,
+        "total": 49,
+        "lower_bound": 0.83,
+        "lift": 1
+      },
+      "members": 49,
+      "example": "backend/metering_billing/models.py#APIToken",
+      "python_members": 49,
+      "outliers": 3,
+      "outlier_files": [
+        "backend/metering_billing/models.py"
+      ],
+      "block": " 4. [D-2ab768] django models have a `organization` field\n    evidence: 46/49 (lower bound 0.83, lift 1.0)\n    example:  backend/metering_billing/models.py#APIToken\n    outlier:  backend/metering_billing/models.py:202 Organization\n    outlier:  backend/metering_billing/models.py:90 Team\n    outlier:  backend/metering_billing/models.py:2073 TeamInviteToken",
+      "family": "repo",
+      "rule_kind": "model_has",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "pontoon/D-94fc85",
+      "repo": "pontoon",
+      "id": "D-94fc85",
+      "rank": 1,
+      "summary": "translate: functions in src/api/** declare their return type",
+      "role": {
+        "package": "translate",
+        "dir": "src/api",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 45,
+        "total": 46,
+        "lower_bound": 0.89,
+        "lift": 2.2
+      },
+      "members": 46,
+      "example": "translate/src/api/comment.ts#addComment",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "translate/src/api/machinery.ts"
+      ],
+      "block": " 1. [D-94fc85] translate: functions in src/api/** declare their return type\n    evidence: 45/46 (lower bound 0.89, lift 2.2)\n    example:  translate/src/api/comment.ts#addComment\n    outlier:  translate/src/api/machinery.ts:57 abortMachineryRequests",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "pontoon/D-ddba4b",
+      "repo": "pontoon",
+      "id": "D-ddba4b",
+      "rank": 2,
+      "summary": "translate: functions in src/utils/** declare their return type",
+      "role": {
+        "package": "translate",
+        "dir": "src/utils",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 29,
+        "total": 30,
+        "lower_bound": 0.83,
+        "lift": 2.2
+      },
+      "members": 30,
+      "example": "translate/src/utils/asLocaleString.ts#asLocaleString",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "translate/src/utils/hooks/useOnDiscard.ts"
+      ],
+      "block": " 2. [D-ddba4b] translate: functions in src/utils/** declare their return type\n    evidence: 29/30 (lower bound 0.83, lift 2.2)\n    example:  translate/src/utils/asLocaleString.ts#asLocaleString\n    outlier:  translate/src/utils/hooks/useOnDiscard.ts:9 useOnDiscard",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "open-wearables/D-dadcea",
+      "repo": "open-wearables",
+      "id": "D-dadcea",
+      "rank": 1,
+      "summary": "backend: HTTP handlers in app/** are wrapped in _get_db_dependency()",
+      "role": {
+        "package": "backend",
+        "dir": "app",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "backend/app/database.py#_get_db_dependency"
+        ]
+      },
+      "evidence": {
+        "holders": 106,
+        "total": 117,
+        "lower_bound": 0.84,
+        "lift": 8.2
+      },
+      "members": 117,
+      "example": "backend/app/api/routes/v1/api_keys.py#create_api_key",
+      "python_members": 117,
+      "outliers": 11,
+      "outlier_files": [
+        "backend/app/api/routes/v1/import_xml.py",
+        "backend/app/api/routes/v1/meta.py",
+        "backend/app/api/routes/v1/oura_webhooks.py",
+        "backend/app/api/routes/v1/outgoing_webhooks.py",
+        "backend/app/api/routes/v1/sync_status.py",
+        "backend/app/api/routes/v1/webhooks.py",
+        "backend/app/main.py"
+      ],
+      "block": " 1. [D-dadcea] backend: HTTP handlers in app/** are wrapped in _get_db_dependency()\n    evidence: 106/117 (lower bound 0.84, lift 8.2)\n    example:  backend/app/api/routes/v1/api_keys.py#create_api_key\n    outlier:  backend/app/api/routes/v1/import_xml.py:217 receive_sns_notification\n    outlier:  backend/app/api/routes/v1/meta.py:149 get_coverage\n    outlier:  backend/app/api/routes/v1/oura_webhooks.py:51 oura_webhook_health\n    outlier:  backend/app/api/routes/v1/oura_webhooks.py:42 oura_webhook_verification\n    outlier:  backend/app/api/routes/v1/outgoing_webhooks.py:109 list_event_types\n    outlier:  backend/app/api/routes/v1/sync_status.py:68 stream_user_sync_status\n    outlier:  backend/app/api/routes/v1/webhooks.py:139 probe_provider_webhook\n    outlier:  backend/app/api/routes/v1/webhooks.py:301 probe_provider_webhook_with_token\n    outlier:  backend/app/api/routes/v1/webhooks.py:119 verify_provider_webhook\n    outlier:  backend/app/api/routes/v1/webhooks.py:295 verify_provider_webhook_with_token\n    outlier:  backend/app/main.py:130 root",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "open-wearables/D-6606a8",
+      "repo": "open-wearables",
+      "id": "D-6606a8",
+      "rank": 2,
+      "summary": "backend: functions in app/services/providers/garmin/backfill_state/** call _get_key()",
+      "role": {
+        "package": "backend",
+        "dir": "app/services/providers/garmin/backfill_state",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "backend/app/services/providers/garmin/backfill_state/core.py#_get_key"
+      },
+      "evidence": {
+        "holders": 32,
+        "total": 33,
+        "lower_bound": 0.85,
+        "lift": 29.4
+      },
+      "members": 33,
+      "example": "backend/app/services/providers/garmin/backfill_state/core.py#acquire_backfill_lock",
+      "python_members": 33,
+      "outliers": 1,
+      "outlier_files": [
+        "backend/app/services/providers/garmin/backfill_state/window_state.py"
+      ],
+      "block": " 2. [D-6606a8] backend: functions in app/services/providers/garmin/backfill_state/** call _get_key()\n    evidence: 32/33 (lower bound 0.85, lift 29.4)\n    example:  backend/app/services/providers/garmin/backfill_state/core.py#acquire_backfill_lock\n    outlier:  backend/app/services/providers/garmin/backfill_state/window_state.py:91 update_window_cell",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "open-wearables/D-262064",
+      "repo": "open-wearables",
+      "id": "D-262064",
+      "rank": 3,
+      "summary": "backend: enums in app/schemas/** extend StrEnum",
+      "role": {
+        "package": "backend",
+        "dir": "app/schemas",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "variety": "enum"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:python:enum#StrEnum"
+        ]
+      },
+      "evidence": {
+        "holders": 53,
+        "total": 57,
+        "lower_bound": 0.83,
+        "lift": 9.5
+      },
+      "members": 57,
+      "example": "backend/app/schemas/auth/authentication_method.py#AuthenticationMethod",
+      "python_members": 57,
+      "outliers": 4,
+      "outlier_files": [
+        "backend/app/schemas/enums/aggregation_method.py",
+        "backend/app/schemas/enums/provider.py",
+        "backend/app/schemas/enums/series_types.py",
+        "backend/app/schemas/providers/google/health_api.py"
+      ],
+      "block": " 3. [D-262064] backend: enums in app/schemas/** extend StrEnum\n    evidence: 53/57 (lower bound 0.83, lift 9.5)\n    example:  backend/app/schemas/auth/authentication_method.py#AuthenticationMethod\n    outlier:  backend/app/schemas/enums/aggregation_method.py:6 AggregationMethod\n    outlier:  backend/app/schemas/enums/provider.py:4 ProviderName\n    outlier:  backend/app/schemas/enums/series_types.py:23 SeriesType\n    outlier:  backend/app/schemas/providers/google/health_api.py:33 TimeShape",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "open-wearables/D-b21ebc",
+      "repo": "open-wearables",
+      "id": "D-b21ebc",
+      "rank": 4,
+      "summary": "backend: exported values in app/integrations/** call get_logger()",
+      "role": {
+        "package": "backend",
+        "dir": "app/integrations",
+        "file": "*",
+        "entry": "-",
+        "kind": "variable"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "backend/app/utils/structured_logging.py#get_logger"
+      },
+      "evidence": {
+        "holders": 31,
+        "total": 33,
+        "lower_bound": 0.8,
+        "lift": 2.6
+      },
+      "members": 33,
+      "example": "backend/app/integrations/celery/core.py#logger",
+      "python_members": 33,
+      "outliers": 2,
+      "outlier_files": [
+        "backend/app/integrations/celery/tasks/garmin/backfill_task.py"
+      ],
+      "block": " 4. [D-b21ebc] backend: exported values in app/integrations/** call get_logger()\n    evidence: 31/33 (lower bound 0.80, lift 2.6)\n    example:  backend/app/integrations/celery/core.py#logger\n    outlier:  backend/app/integrations/celery/tasks/garmin/backfill_task.py:511 continue_garmin_backfill\n    outlier:  backend/app/integrations/celery/tasks/garmin/backfill_task.py:510 trigger_next_backfill",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "open-wearables/D-8ffd6f",
+      "repo": "open-wearables",
+      "id": "D-8ffd6f",
+      "rank": 5,
+      "summary": "backend: classes in app/repositories/** are named `*Repository`",
+      "role": {
+        "package": "backend",
+        "dir": "app/repositories",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Repository"
+      },
+      "evidence": {
+        "holders": 28,
+        "total": 29,
+        "lower_bound": 0.83,
+        "lift": 23.8
+      },
+      "members": 29,
+      "example": "backend/app/repositories/aggregate_backfill_repository.py#AggregateBackfillRepository",
+      "python_members": 29,
+      "outliers": 1,
+      "outlier_files": [
+        "backend/app/repositories/data_point_series_repository.py"
+      ],
+      "block": " 5. [D-8ffd6f] backend: classes in app/repositories/** are named `*Repository`\n    evidence: 28/29 (lower bound 0.83, lift 23.8)\n    example:  backend/app/repositories/aggregate_backfill_repository.py#AggregateBackfillRepository\n    outlier:  backend/app/repositories/data_point_series_repository.py:144 WriteCounts",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "open-wearables/D-4c541f",
+      "repo": "open-wearables",
+      "id": "D-4c541f",
+      "rank": 6,
+      "summary": "frontend: functions in src/routes/(app)/** (*.server files) call requireToken()",
+      "role": {
+        "package": "frontend",
+        "dir": "src/routes/(app)",
+        "file": "*.server",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:$lib#requireToken"
+      },
+      "evidence": {
+        "holders": 23,
+        "total": 24,
+        "lower_bound": 0.8,
+        "lift": 30.1
+      },
+      "members": 24,
+      "example": "frontend/src/routes/(app)/dashboard/+page.server.ts#load",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "frontend/src/routes/(app)/+layout.server.ts"
+      ],
+      "block": " 6. [D-4c541f] frontend: functions in src/routes/(app)/** (*.server files) call requireToken()\n    evidence: 23/24 (lower bound 0.80, lift 30.1)\n    example:  frontend/src/routes/(app)/dashboard/+page.server.ts#load\n    outlier:  frontend/src/routes/(app)/+layout.server.ts:7 load",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "tasking-manager/D-c7acd1",
+      "repo": "tasking-manager",
+      "id": "D-c7acd1",
+      "rank": 1,
+      "summary": "HTTP handlers in backend/** (actions files) are wrapped in admin_only() or login_required()",
+      "role": {
+        "package": "",
+        "dir": "backend",
+        "file": "actions",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "backend/services/users/authentication_service.py#admin_only",
+          "backend/services/users/authentication_service.py#login_required"
+        ]
+      },
+      "evidence": {
+        "holders": 42,
+        "total": 43,
+        "lower_bound": 0.88,
+        "lift": 4.3
+      },
+      "members": 43,
+      "example": "backend/api/licenses/actions.py#accept_license",
+      "python_members": 43,
+      "outliers": 1,
+      "outlier_files": [
+        "backend/api/users/actions.py"
+      ],
+      "block": " 1. [D-c7acd1] HTTP handlers in backend/** (actions files) are wrapped in admin_only() or login_required()\n    evidence: 42/43 (lower bound 0.88, lift 4.3)\n    split:    login_required 37, admin_only 5\n    example:  backend/api/licenses/actions.py#accept_license\n    outlier:  backend/api/users/actions.py:363 register_user_with_email",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "tasking-manager/D-cfe608",
+      "repo": "tasking-manager",
+      "id": "D-cfe608",
+      "rank": 2,
+      "summary": "HTTP handlers in backend/** (resources files) are wrapped in get_db()",
+      "role": {
+        "package": "",
+        "dir": "backend",
+        "file": "resources",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "backend/db.py#get_db"
+        ]
+      },
+      "evidence": {
+        "holders": 94,
+        "total": 98,
+        "lower_bound": 0.9,
+        "lift": 2.9
+      },
+      "members": 98,
+      "example": "backend/api/annotations/resources.py#get_annotations",
+      "python_members": 98,
+      "outliers": 4,
+      "outlier_files": [
+        "backend/api/comments/resources.py",
+        "backend/api/tasks/resources.py"
+      ],
+      "block": " 2. [D-cfe608] HTTP handlers in backend/** (resources files) are wrapped in get_db()\n    evidence: 94/98 (lower bound 0.90, lift 2.9)\n    example:  backend/api/annotations/resources.py#get_annotations\n    outlier:  backend/api/comments/resources.py:298 get_task_comments\n    outlier:  backend/api/tasks/resources.py:164 delete\n    outlier:  backend/api/tasks/resources.py:445 get_invalidated_tasks\n    outlier:  backend/api/tasks/resources.py:344 tasks_aoi",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "tasking-manager/D-3e220e",
+      "repo": "tasking-manager",
+      "id": "D-3e220e",
+      "rank": 3,
+      "summary": "HTTP handlers in backend/** (actions files) are wrapped in get_db()",
+      "role": {
+        "package": "",
+        "dir": "backend",
+        "file": "actions",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "backend/db.py#get_db"
+        ]
+      },
+      "evidence": {
+        "holders": 42,
+        "total": 43,
+        "lower_bound": 0.88,
+        "lift": 3
+      },
+      "members": 43,
+      "example": "backend/api/licenses/actions.py#accept_license",
+      "python_members": 43,
+      "outliers": 1,
+      "outlier_files": [
+        "backend/api/projects/actions.py"
+      ],
+      "block": " 3. [D-3e220e] HTTP handlers in backend/** (actions files) are wrapped in get_db()\n    evidence: 42/43 (lower bound 0.88, lift 3.0)\n    example:  backend/api/licenses/actions.py#accept_license\n    outlier:  backend/api/projects/actions.py:381 intersecting_tiles",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "tasking-manager/D-6ec938",
+      "repo": "tasking-manager",
+      "id": "D-6ec938",
+      "rank": 4,
+      "summary": "frontend: classes in src/** extend PureComponent",
+      "role": {
+        "package": "frontend",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:react#PureComponent"
+        ]
+      },
+      "evidence": {
+        "holders": 101,
+        "total": 103,
+        "lower_bound": 0.93,
+        "lift": 3.8
+      },
+      "members": 103,
+      "example": "frontend/src/components/svgIcons/alert.js#AlertIcon",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "frontend/src/components/portal.js",
+        "frontend/src/components/svgIcons/download.js"
+      ],
+      "block": " 4. [D-6ec938] frontend: classes in src/** extend PureComponent\n    evidence: 101/103 (lower bound 0.93, lift 3.8)\n    example:  frontend/src/components/svgIcons/alert.js#AlertIcon\n    outlier:  frontend/src/components/portal.js:11 Portal\n    outlier:  frontend/src/components/svgIcons/download.js:3 DownloadIcon",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "tasking-manager/D-2dfb9d",
+      "repo": "tasking-manager",
+      "id": "D-2dfb9d",
+      "rank": 5,
+      "summary": "classes in backend/models/dtos/** extend BaseModel",
+      "role": {
+        "package": "",
+        "dir": "backend/models/dtos",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:pydantic#BaseModel"
+        ]
+      },
+      "evidence": {
+        "holders": 147,
+        "total": 148,
+        "lower_bound": 0.96,
+        "lift": 2.7
+      },
+      "members": 148,
+      "example": "backend/models/dtos/application_dto.py#ApplicationDTO",
+      "python_members": 148,
+      "outliers": 1,
+      "outlier_files": [
+        "backend/models/dtos/validator_dto.py"
+      ],
+      "block": " 5. [D-2dfb9d] classes in backend/models/dtos/** extend BaseModel\n    evidence: 147/148 (lower bound 0.96, lift 2.7)\n    example:  backend/models/dtos/application_dto.py#ApplicationDTO\n    outlier:  backend/models/dtos/validator_dto.py:10 ExtendedStringType",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "tasking-manager/D-68243e",
+      "repo": "tasking-manager",
+      "id": "D-68243e",
+      "rank": 6,
+      "summary": "frontend: classes in src/** are named `*Icon`",
+      "role": {
+        "package": "frontend",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Icon"
+      },
+      "evidence": {
+        "holders": 98,
+        "total": 103,
+        "lower_bound": 0.89,
+        "lift": 3.8
+      },
+      "members": 103,
+      "example": "frontend/src/components/svgIcons/alert.js#AlertIcon",
+      "python_members": null,
+      "outliers": 5,
+      "outlier_files": [
+        "frontend/src/components/portal.js",
+        "frontend/src/components/svgIcons/selectProject.js",
+        "frontend/src/components/svgIcons/selectTask.js",
+        "frontend/src/components/svgIcons/star.js"
+      ],
+      "block": " 6. [D-68243e] frontend: classes in src/** are named `*Icon`\n    evidence: 98/103 (lower bound 0.89, lift 3.8)\n    example:  frontend/src/components/svgIcons/alert.js#AlertIcon\n    outlier:  frontend/src/components/portal.js:11 Portal\n    outlier:  frontend/src/components/svgIcons/selectProject.js:3 SelectProject\n    outlier:  frontend/src/components/svgIcons/selectTask.js:3 SelectTask\n    outlier:  frontend/src/components/svgIcons/star.js:56 FullStarIconBlue\n    outlier:  frontend/src/components/svgIcons/star.js:44 FullStarIconYellow",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "tasking-manager/D-4ede9c",
+      "repo": "tasking-manager",
+      "id": "D-4ede9c",
+      "rank": 7,
+      "summary": "HTTP handlers in backend/** (actions files) pass `content` to responses.JSONResponse()",
+      "role": {
+        "package": "",
+        "dir": "backend",
+        "file": "actions",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:fastapi#responses.JSONResponse",
+        "index": 99,
+        "key": "content"
+      },
+      "evidence": {
+        "holders": 40,
+        "total": 43,
+        "lower_bound": 0.81,
+        "lift": 4.1
+      },
+      "members": 43,
+      "example": "backend/api/licenses/actions.py#accept_license",
+      "python_members": 43,
+      "outliers": 3,
+      "outlier_files": [
+        "backend/api/teams/actions.py"
+      ],
+      "block": " 7. [D-4ede9c] HTTP handlers in backend/** (actions files) pass `content` to responses.JSONResponse()\n    evidence: 40/43 (lower bound 0.81, lift 4.1)\n    example:  backend/api/licenses/actions.py#accept_license\n    outlier:  backend/api/teams/actions.py:468 remove_team_from_all_projects\n    outlier:  backend/api/teams/actions.py:428 remove_team_from_project\n    outlier:  backend/api/teams/actions.py:550 remove_teams_from_projects",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "tasking-manager/D-0dbb9f",
+      "repo": "tasking-manager",
+      "id": "D-0dbb9f",
+      "rank": 8,
+      "summary": "frontend: functions in src/api/** call api() before useQuery()",
+      "role": {
+        "package": "frontend",
+        "dir": "src/api",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "before",
+        "first": "frontend/src/api/apiClient.js#api",
+        "then": "pkg:@tanstack/react-query#useQuery"
+      },
+      "evidence": {
+        "holders": 26,
+        "total": 27,
+        "lower_bound": 0.82,
+        "lift": 1
+      },
+      "members": 27,
+      "example": "frontend/src/api/badges.js#useBadgesQuery",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "frontend/src/api/stats.js"
+      ],
+      "block": " 8. [D-0dbb9f] frontend: functions in src/api/** call api() before useQuery()\n    evidence: 26/27 (lower bound 0.82, lift 1.0)\n    example:  frontend/src/api/badges.js#useBadgesQuery\n    outlier:  frontend/src/api/stats.js:89 useUserOsmStatsQuery",
+      "family": "ordering",
+      "rule_kind": "before",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "simplelogin/D-7fa3b5",
+      "repo": "simplelogin",
+      "id": "D-7fa3b5",
+      "rank": 1,
+      "summary": "functions in app/** do not use redirects to computed URLs",
+      "role": {
+        "package": "",
+        "dir": "app",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "sink:dynamic_redirect"
+      },
+      "evidence": {
+        "holders": 360,
+        "total": 361,
+        "lower_bound": 0.98,
+        "lift": 40.3
+      },
+      "members": 361,
+      "example": "app/abuser.py#mark_user_as_abuser",
+      "python_members": 361,
+      "outliers": 1,
+      "outlier_files": [
+        "app/auth/views/login_utils.py"
+      ],
+      "block": " 1. [D-7fa3b5] functions in app/** do not use redirects to computed URLs\n    evidence: 360/361 (lower bound 0.98, lift 40.3)\n    example:  app/abuser.py#mark_user_as_abuser\n    outlier:  app/auth/views/login_utils.py:13 after_login",
+      "family": "avoids_other",
+      "rule_kind": "avoids:other",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "simplelogin/D-2a4960",
+      "repo": "simplelogin",
+      "id": "D-2a4960",
+      "rank": 2,
+      "summary": "files in app/** do not import from events/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "app",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:events"
+      },
+      "evidence": {
+        "holders": 193,
+        "total": 195,
+        "lower_bound": 0.96,
+        "lift": 3
+      },
+      "members": 195,
+      "example": "app/abuser.py#(file)",
+      "python_members": 195,
+      "outliers": 2,
+      "outlier_files": [
+        "app/jobs/send_event_job.py",
+        "app/jobs/sync_subscription_job.py"
+      ],
+      "block": " 2. [D-2a4960] files in app/** do not import from events/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 193/195 (lower bound 0.96, lift 3.0)\n    example:  app/abuser.py#(file)\n    outlier:  app/jobs/send_event_job.py:1 (file)\n    outlier:  app/jobs/sync_subscription_job.py:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "simplelogin/D-e29828",
+      "repo": "simplelogin",
+      "id": "D-e29828",
+      "rank": 3,
+      "summary": "classes in app/dashboard/** extend FlaskForm",
+      "role": {
+        "package": "",
+        "dir": "app/dashboard",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:flask_wtf#FlaskForm"
+        ]
+      },
+      "evidence": {
+        "holders": 25,
+        "total": 26,
+        "lower_bound": 0.81,
+        "lift": 7.6
+      },
+      "members": 26,
+      "example": "app/dashboard/views/alias_contact_manager.py#NewContactForm",
+      "python_members": 26,
+      "outliers": 1,
+      "outlier_files": [
+        "app/dashboard/views/alias_log.py"
+      ],
+      "block": " 3. [D-e29828] classes in app/dashboard/** extend FlaskForm\n    evidence: 25/26 (lower bound 0.81, lift 7.6)\n    example:  app/dashboard/views/alias_contact_manager.py#NewContactForm\n    outlier:  app/dashboard/views/alias_log.py:11 AliasLog",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "changedetection.io/D-2619c7",
+      "repo": "changedetection.io",
+      "id": "D-2619c7",
+      "rank": 1,
+      "summary": "HTTP handlers in changedetectionio/** are decorated with validate_openapi_request()",
+      "role": {
+        "package": "",
+        "dir": "changedetectionio",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "changedetectionio/api/__init__.py#validate_openapi_request"
+        ]
+      },
+      "evidence": {
+        "holders": 23,
+        "total": 24,
+        "lower_bound": 0.8,
+        "lift": 24.1
+      },
+      "members": 24,
+      "example": "changedetectionio/api/Changes.py#Changes.get",
+      "python_members": 24,
+      "outliers": 1,
+      "outlier_files": [
+        "changedetectionio/api/Spec.py"
+      ],
+      "block": " 1. [D-2619c7] HTTP handlers in changedetectionio/** are decorated with validate_openapi_request()\n    evidence: 23/24 (lower bound 0.80, lift 24.1)\n    example:  changedetectionio/api/Changes.py#Changes.get\n    outlier:  changedetectionio/api/Spec.py:15 Spec.get",
+      "family": "decorator",
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "changedetection.io/D-1ce566",
+      "repo": "changedetection.io",
+      "id": "D-1ce566",
+      "rank": 2,
+      "summary": "functions in changedetectionio/llm/** declare their return type",
+      "role": {
+        "package": "",
+        "dir": "changedetectionio/llm",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 29,
+        "total": 32,
+        "lower_bound": 0.76,
+        "lift": 8.9
+      },
+      "members": 32,
+      "example": "changedetectionio/llm/bm25_trim.py#trim_to_relevant",
+      "python_members": 32,
+      "outliers": 3,
+      "outlier_files": [
+        "changedetectionio/llm/client.py",
+        "changedetectionio/llm/evaluator.py",
+        "changedetectionio/llm/model_list.py"
+      ],
+      "block": " 2. [D-1ce566] functions in changedetectionio/llm/** declare their return type\n    evidence: 29/32 (lower bound 0.76, lift 8.9)\n    example:  changedetectionio/llm/bm25_trim.py#trim_to_relevant\n    outlier:  changedetectionio/llm/client.py:281 completion_isolated\n    outlier:  changedetectionio/llm/evaluator.py:310 tag_llm_decision\n    outlier:  changedetectionio/llm/model_list.py:101 list_models",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    }
+  ]
+}

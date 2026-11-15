@@ -1,0 +1,14 @@
+1 conventions from 2405 units in 175 roles (0 default tier, 1 suggestions)
+
+1 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-673949] apps/api: classes in src/** (*.service files) are named `*Service`
+    evidence: 36/37 (lower bound 0.86, lift 6.4)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/api/src/auth/service/auth.service.ts#AuthService
+    outlier:  apps/api/src/common/slug-generator.service.ts:15 SlugGenerator
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

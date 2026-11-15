@@ -1,0 +1,70 @@
+6 conventions from 2489 units in 118 roles (0 default tier, 6 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-4529f9] classes in src/** (api files) extend RalphAPISerializer
+    evidence: 54/59 (lower bound 0.82, lift 7.3)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/ralph/access_cards/api.py#AccessCardSerializer
+    outlier:  src/ralph/lib/permissions/api.py:162 RalphPermission
+    outlier:  src/ralph/networks/api.py:64 IPAddressSaveSerializer
+    outlier:  src/ralph/virtual/api.py:62 SaveCloudFlavorSerializer
+    outlier:  src/ralph/virtual/api.py:84 SaveCloudHostSerializer
+    outlier:  src/ralph/virtual/api.py:182 VirtualServerSaveSerializer
+    exempt:   src/ralph/lib/mixins/api.py:8 ChoiceFieldWithOtherOptionField (another kind of class (extends serializers.ChoiceField))
+    exempt:   src/ralph/lib/permissions/api.py:152 IsAuthenticated (another kind of class (extends permissions.IsAuthenticated))
+    exempt:   src/ralph/lib/permissions/api.py:24 PermissionsForObjectFilter (another kind of class (extends filters.BaseFilterBackend))
+    exempt:   src/ralph/virtual/api.py:314 VirtualServerFilterSet (another kind of class (extends FilterSet))
+
+ 2. [D-5b6f70] classes in src/** (serializers files) extend RalphAPISerializer
+    evidence: 49/52 (lower bound 0.84, lift 7.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/ralph/assets/api/serializers.py#AssetHolderSerializer
+    outlier:  src/ralph/assets/api/serializers.py:255 AssetModelSaveSerializer
+    outlier:  src/ralph/data_center/api/serializers.py:183 DataCenterAssetSaveSerializer
+    outlier:  src/ralph/lib/custom_fields/api/serializers.py:64 CustomFieldValueSaveSerializer
+    exempt:   src/ralph/api/serializers.py:31 AdditionalLookupRelatedField (in the module that defines RalphAPISerializer)
+    exempt:   src/ralph/api/serializers.py:56 DeclaredFieldsMetaclass (in the module that defines RalphAPISerializer)
+    exempt:   src/ralph/api/serializers.py:297 RalphAPISerializerMetaclass (in the module that defines RalphAPISerializer)
+
+ 3. [D-5bf491] exported values in src/** do not read os.environ directly
+    evidence: 106/114 (lower bound 0.87, lift 4.1)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/ralph/accounts/management/commands/_base.py#ANSI_ESCAPE_RE
+    outlier:  src/ralph/settings/prod.py:27 CACHES
+    outlier:  src/ralph/settings/prod.py:66 STATSD_GRAPHS_PREFIX
+    outlier:  src/ralph/settings/prod.py:58 STATSD_HOST
+    outlier:  src/ralph/settings/prod.py:61 STATSD_MAXUDPSIZE
+    outlier:  src/ralph/settings/prod.py:59 STATSD_PORT
+    outlier:  src/ralph/settings/prod.py:60 STATSD_PREFIX
+    outlier:  src/ralph/settings/test.py:75 SKIP_MIGRATIONS
+    outlier:  src/ralph/settings/test.py:14 TEST_DB_ENGINE
+
+ 4. [D-b1df5c] classes in src/** (api files) are named `*Serializer`
+    evidence: 58/63 (lower bound 0.83, lift 7.1)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/ralph/access_cards/api.py#AccessCardSerializer
+    outlier:  src/ralph/lib/mixins/api.py:8 ChoiceFieldWithOtherOptionField
+    outlier:  src/ralph/lib/permissions/api.py:152 IsAuthenticated
+    outlier:  src/ralph/lib/permissions/api.py:24 PermissionsForObjectFilter
+    outlier:  src/ralph/lib/permissions/api.py:162 RalphPermission
+    outlier:  src/ralph/virtual/api.py:314 VirtualServerFilterSet
+
+ 5. [D-43f01e] classes in src/** (serializers files) are named `*Serializer`
+    evidence: 51/54 (lower bound 0.85, lift 7.1)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/ralph/assets/api/serializers.py#AssetHolderSerializer
+    outlier:  src/ralph/api/serializers.py:56 DeclaredFieldsMetaclass
+    outlier:  src/ralph/api/serializers.py:297 RalphAPISerializerMetaclass
+    outlier:  src/ralph/dashboards/api/serializers.py:11 GraphSerializerDetail
+    exempt:   src/ralph/api/serializers.py:31 AdditionalLookupRelatedField (shared part used by 2 members)
+
+ 6. [D-cfd5da] functions in src/ralph/switchports/** declare their return type
+    evidence: 31/34 (lower bound 0.77, lift 5.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/ralph/switchports/connections/planning.py#switch_port_owner
+    outlier:  src/ralph/switchports/presentation.py:14 format_speed
+    outlier:  src/ralph/switchports/presentation.py:26 status_symbol
+    outlier:  src/ralph/switchports/sync/tasks.py:97 run_rack_refresh
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

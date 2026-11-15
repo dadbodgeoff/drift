@@ -1,0 +1,13 @@
+{
+  "repo": "nest",
+  "files": [
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": ".oxlintrc.json",
+      "kind": "lint"
+    }
+  ]
+}

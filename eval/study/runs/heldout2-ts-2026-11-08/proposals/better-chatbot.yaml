@@ -1,0 +1,368 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - actions
+  - client
+  - loading
+  - page
+  - route
+  - server
+  - types
+  suffixes:
+  - config
+  - interface
+  - pg
+  - spec
+  - test
+conventions:
+- id: D-ed17cb
+  status: proposed
+  mode: advise
+  summary: "apps/web: functions in src/** (*.pg files) call timestamp() before index()"
+  role:
+    package: apps/web
+    dir: src
+    file: "*.pg"
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: pkg:drizzle-orm/pg-core#timestamp
+    then: pkg:drizzle-orm/pg-core#index
+  evidence:
+    holders: 69
+    total: 70
+    lower_bound: 0.923
+    lift: 1.0
+  example: apps/web/src/lib/db/pg/schema.pg.ts#AgentTable
+  selector_version: 3
+- id: D-5b91e5
+  status: proposed
+  mode: advise
+  summary: "apps/web: functions in src/** (*.pg files) call uuid() before text().notNull()"
+  role:
+    package: apps/web
+    dir: src
+    file: "*.pg"
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: pkg:drizzle-orm/pg-core#uuid
+    then: pkg:drizzle-orm/pg-core#text().notNull
+  evidence:
+    holders: 65
+    total: 66
+    lower_bound: 0.919
+    lift: 1.0
+  example: apps/web/src/lib/db/pg/schema.pg.ts#AgentTable
+  selector_version: 3
+- id: D-7c60e2
+  status: proposed
+  mode: advise
+  summary: "apps/web: functions in src/** (*.pg files) call timestamp().notNull() before index()"
+  role:
+    package: apps/web
+    dir: src
+    file: "*.pg"
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: pkg:drizzle-orm/pg-core#timestamp().notNull
+    then: pkg:drizzle-orm/pg-core#index
+  evidence:
+    holders: 68
+    total: 70
+    lower_bound: 0.902
+    lift: 1.0
+  example: apps/web/src/lib/db/pg/schema.pg.ts#AgentTable
+  selector_version: 3
+- id: D-17340a
+  status: proposed
+  mode: advise
+  summary: drizzle models have a `id` field
+  role:
+    package: ""
+    dir: drizzle
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: id
+  evidence:
+    holders: 82
+    total: 86
+    lower_bound: 0.886
+    lift: 1.005
+  example: apps/web/src/lib/db/pg/schema.pg.ts#account
+  selector_version: 3
+- id: D-3af9f8
+  status: proposed
+  mode: advise
+  summary: "apps/web: functions in src/** (*.pg files) call uuid().primaryKey() before uuid()"
+  role:
+    package: apps/web
+    dir: src
+    file: "*.pg"
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: pkg:drizzle-orm/pg-core#uuid().primaryKey
+    then: pkg:drizzle-orm/pg-core#uuid
+  evidence:
+    holders: 70
+    total: 73
+    lower_bound: 0.886
+    lift: 1.0
+  example: apps/web/src/lib/db/pg/schema.pg.ts#AgentTable
+  selector_version: 3
+- id: D-399322
+  status: proposed
+  mode: advise
+  summary: sql models have a `id` field
+  role:
+    package: ""
+    dir: sql
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: id
+  evidence:
+    holders: 85
+    total: 90
+    lower_bound: 0.876
+    lift: 0.995
+  example: apps/web/src/lib/db/migrations/pg/0000_past_nebula.sql#chat_message
+  selector_version: 3
+- id: D-1bc181
+  status: proposed
+  mode: advise
+  summary: "apps/web: functions in src/** (*.pg files) call text() before timestamp()"
+  role:
+    package: apps/web
+    dir: src
+    file: "*.pg"
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: pkg:drizzle-orm/pg-core#text
+    then: pkg:drizzle-orm/pg-core#timestamp
+  evidence:
+    holders: 68
+    total: 72
+    lower_bound: 0.866
+    lift: 1.0
+  example: apps/web/src/lib/db/pg/schema.pg.ts#AgentTable
+  selector_version: 3
+- id: D-215de3
+  status: proposed
+  mode: advise
+  summary: "apps/web: HTTP handlers in src/app/api/projects/[*]/** (route files) pass `projectId` to requireProjectAccess()"
+  role:
+    package: apps/web
+    dir: src/app/api/projects/[*]
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: passes_key
+    callee: apps/web/src/lib/projects/access.ts#requireProjectAccess
+    index: 0
+    key: projectId
+  evidence:
+    holders: 37
+    total: 38
+    lower_bound: 0.865
+    lift: 38.435
+  example: apps/web/src/app/api/projects/[id]/agents/route.ts#DELETE
+  selector_version: 3
+- id: D-1ae526
+  status: proposed
+  mode: advise
+  summary: "apps/web: functions in src/lib/auth/**, src/lib/cockpit/**, src/lib/e2b/** and src/lib/kernel/** declare their return type"
+  role:
+    package: apps/web
+    dir: src/lib/auth
+    file: "*"
+    entry: '-'
+    kind: function
+    also:
+    - package: apps/web
+      dir: src/lib/cockpit
+      file: "*"
+      entry: '-'
+      kind: function
+    - package: apps/web
+      dir: src/lib/e2b
+      file: "*"
+      entry: '-'
+      kind: function
+    - package: apps/web
+      dir: src/lib/kernel
+      file: "*"
+      entry: '-'
+      kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 141
+    total: 156
+    lower_bound: 0.847
+    lift: 1.586
+  example: apps/web/src/lib/cockpit/alerts.ts#collectAlerts
+  selector_version: 3
+- id: D-798f44
+  status: proposed
+  mode: advise
+  summary: drizzle models have a `createdAt` field
+  role:
+    package: ""
+    dir: drizzle
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: createdAt
+  evidence:
+    holders: 79
+    total: 86
+    lower_bound: 0.841
+    lift: 1.01
+  example: apps/web/src/lib/db/pg/schema.pg.ts#account
+  selector_version: 3
+- id: D-c6ea9c
+  status: proposed
+  mode: advise
+  summary: "apps/web: HTTP handlers in src/app/api/projects/** (route files) use `try`"
+  role:
+    package: apps/web
+    dir: src/app/api/projects
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: control
+    value: try
+  evidence:
+    holders: 38
+    total: 40
+    lower_bound: 0.835
+    lift: 4.305
+  example: apps/web/src/app/api/projects/[id]/agents/route.ts#DELETE
+  selector_version: 3
+- id: D-4e1215
+  status: proposed
+  mode: advise
+  summary: "apps/web: HTTP handlers in src/app/api/projects/** (route files) call NextResponse.json() before toProjectErrorResponse()"
+  role:
+    package: apps/web
+    dir: src/app/api/projects
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: before
+    first: pkg:next/server#NextResponse.json
+    then: apps/web/src/lib/projects/access.ts#toProjectErrorResponse
+  evidence:
+    holders: 36
+    total: 38
+    lower_bound: 0.827
+    lift: 1.0
+  example: apps/web/src/app/api/projects/[id]/agents/route.ts#DELETE
+  selector_version: 3
+- id: D-608b7b
+  status: proposed
+  mode: advise
+  summary: sql models have a `created_at` field
+  role:
+    package: ""
+    dir: sql
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: created_at
+  evidence:
+    holders: 81
+    total: 90
+    lower_bound: 0.821
+    lift: 0.99
+  example: apps/web/src/lib/db/migrations/pg/0000_past_nebula.sql#chat_message
+  selector_version: 3
+- id: D-bdd2a0
+  status: proposed
+  mode: advise
+  summary: "apps/web: HTTP handlers in src/app/api/projects/[*]/** (route files) call requireProjectAccess() before NextResponse.json()"
+  role:
+    package: apps/web
+    dir: src/app/api/projects/[*]
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: before
+    first: apps/web/src/lib/projects/access.ts#requireProjectAccess
+    then: pkg:next/server#NextResponse.json
+  evidence:
+    holders: 34
+    total: 36
+    lower_bound: 0.819
+    lift: 1.0
+  example: apps/web/src/app/api/projects/[id]/agents/route.ts#DELETE
+  selector_version: 3
+- id: D-7f4083
+  status: proposed
+  mode: advise
+  summary: "apps/web: server actions in src/** (actions files) are named `*Action`"
+  role:
+    package: apps/web
+    dir: src
+    file: actions
+    entry: server_action
+    kind: function
+  rule:
+    type: named
+    pattern: "*Action"
+  evidence:
+    holders: 26
+    total: 27
+    lower_bound: 0.817
+    lift: 42.484
+  example: apps/web/src/app/api/auth/actions.ts#existsByEmailAction
+  selector_version: 3
+- id: D-5a6787
+  status: proposed
+  mode: advise
+  summary: "apps/web: HTTP handlers in src/app/api/projects/** (route files) wrap their body in try/catch"
+  role:
+    package: apps/web
+    dir: src/app/api/projects
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: try
+    any_of:
+    - try
+  evidence:
+    holders: 37
+    total: 40
+    lower_bound: 0.801
+    lift: 9.703
+  example: apps/web/src/app/api/projects/[id]/agents/route.ts#DELETE
+  selector_version: 3

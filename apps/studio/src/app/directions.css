@@ -1,0 +1,443 @@
+/*
+ * Drift Studio views in each visual direction (see packages/ui/src/styles/directions.css
+ * for components). Colours come only from tokens.
+ */
+
+/* =====================================================================
+ * Chart
+ * ===================================================================== */
+[data-direction="chart"] .st-sidebar {
+  border-right: 1px solid var(--color-border-strong);
+}
+[data-direction="chart"] .st-topbar {
+  border-bottom-color: var(--color-border-strong);
+}
+[data-direction="chart"] .st-topbar__title h1 {
+  font-family: var(--font-display);
+  font-size: var(--type-h2-size);
+  line-height: var(--type-h2-line);
+  font-weight: 600;
+}
+[data-direction="chart"] .st-brand__name {
+  font-family: var(--font-display);
+  font-size: var(--type-h3-size);
+  line-height: var(--type-h3-line);
+  font-weight: 600;
+}
+[data-direction="chart"] .st-repo {
+  background: transparent;
+  border-color: var(--color-border-strong);
+  border-radius: 0;
+}
+[data-direction="chart"] .st-nav__item {
+  border-radius: 0;
+}
+[data-direction="chart"] .st-nav__item.is-active {
+  background: transparent;
+  color: var(--color-accent-text);
+  box-shadow: inset 2px 0 0 var(--color-accent);
+}
+[data-direction="chart"] .st-nav__count {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+  border-radius: 0;
+}
+[data-direction="chart"] .st-palette-btn {
+  background: transparent;
+  border-color: var(--color-border-strong);
+  border-radius: 0;
+}
+[data-direction="chart"] .st-status {
+  border-top-color: var(--color-border-strong);
+}
+[data-direction="chart"] .st-pagehead .t-h1 {
+  font-size: var(--type-display-size);
+  line-height: var(--type-display-line);
+}
+[data-direction="chart"] .st-pagehead p {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--type-h3-size);
+  line-height: var(--type-h3-line);
+}
+/* Attention: ruled sections; the count is a sounding. */
+[data-direction="chart"] .st-attn {
+  gap: 8px 40px;
+}
+[data-direction="chart"] .st-attn__card {
+  padding: 12px 0 8px;
+  border-top: 1px solid var(--color-border-strong);
+  background-image: repeating-linear-gradient(90deg, var(--color-border-strong) 0 1px, transparent 1px 12px);
+  background-size: 100% 4px;
+  background-repeat: no-repeat;
+}
+[data-direction="chart"] .st-attn__card::before {
+  top: -1px;
+  left: 0;
+  right: auto;
+  bottom: auto;
+  width: 64px;
+  height: 3px;
+  border-radius: 0;
+}
+[data-direction="chart"] .st-attn__head {
+  font-family: var(--font-label);
+  font-size: var(--type-overline-size);
+  letter-spacing: var(--shape-label-tracking);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+[data-direction="chart"] .st-attn__value .t-display {
+  font-size: var(--type-readout-lg-size);
+  line-height: var(--type-readout-lg-line);
+  font-weight: var(--type-readout-lg-weight);
+  letter-spacing: var(--type-readout-lg-tracking);
+}
+[data-direction="chart"] .st-attn__slot.is-lead .st-attn__value .t-display {
+  font-size: var(--type-readout-xl-size);
+  line-height: var(--type-readout-xl-line);
+}
+[data-direction="chart"] .st-attn__summary {
+  font-family: var(--font-display);
+  font-size: var(--type-h3-size);
+  line-height: var(--type-h3-line);
+}
+[data-direction="chart"] .st-attn__rows,
+[data-direction="chart"] .st-attn__list {
+  border-top-style: dotted;
+  border-top-color: var(--color-border-strong);
+}
+/* Review queue and detail. */
+[data-direction="chart"] .st-queue {
+  background: var(--color-bg);
+}
+[data-direction="chart"] .st-qitem {
+  border-radius: 0;
+  border-width: 0 0 1px;
+  border-color: var(--color-border);
+}
+[data-direction="chart"] .st-qitem.is-selected {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  box-shadow: inset 2px 0 0 var(--color-accent);
+}
+[data-direction="chart"] .st-qitem__summary {
+  font-family: var(--font-display);
+  font-size: var(--type-h3-size);
+  line-height: var(--type-h3-line);
+}
+[data-direction="chart"] .cv-head .st-detail__title {
+  font-size: var(--type-h1-size);
+  line-height: var(--type-h1-line);
+  font-weight: var(--type-h1-weight);
+}
+[data-direction="chart"] .cv-evidence {
+  border-top: 1px solid var(--color-border-strong);
+  border-bottom: 1px solid var(--color-border-strong);
+}
+[data-direction="chart"] .cv-track__num {
+  font-weight: 500;
+}
+[data-direction="chart"] .cv-track__bar {
+  border-radius: 0;
+  height: 5px;
+}
+[data-direction="chart"] .cv-track__bar > span {
+  background: var(--data-seq-5);
+}
+[data-direction="chart"] .cv-actions {
+  border-top-color: var(--color-border-strong);
+}
+/* Map: a survey sheet. Graticule instead of dots; areas are depth-tinted
+ * soundings with contour rings that grow with magnitude; area names are set
+ * in italic like water names. */
+[data-direction="chart"] .mp-canvas .dui-graph__bg {
+  display: none;
+}
+[data-direction="chart"] .mp-canvas .react-flow {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--color-border) 80%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-border) 80%, transparent) 1px, transparent 1px);
+  background-size: 96px 96px;
+}
+[data-direction="chart"] .mp-legend,
+[data-direction="chart"] .mp-toolbar {
+  border-bottom-color: var(--color-border-strong);
+}
+[data-direction="chart"] .mp-side {
+  background: var(--color-bg);
+  border-left-color: var(--color-border-strong);
+}
+[data-direction="chart"] .mp-node {
+  border-radius: 2px;
+  border-color: color-mix(in srgb, var(--node-depth) 70%, var(--color-text-primary));
+  background: color-mix(in srgb, var(--node-depth) 30%, var(--color-raised));
+  box-shadow: inset 0 3px 0 var(--node-color);
+}
+[data-direction="chart"] .mp-node[data-depth="3"],
+[data-direction="chart"] .mp-node[data-depth="4"] {
+  background: color-mix(in srgb, var(--node-depth) 38%, var(--color-raised));
+}
+[data-direction="chart"] .mp-node[data-depth="5"],
+[data-direction="chart"] .mp-node[data-depth="6"] {
+  background: color-mix(in srgb, var(--node-depth) 46%, var(--color-raised));
+}
+[data-direction="chart"] .mp-node[data-depth="5"] .mp-node__meta,
+[data-direction="chart"] .mp-node[data-depth="6"] .mp-node__meta,
+[data-direction="chart"] .mp-node[data-depth="5"] .mp-entry,
+[data-direction="chart"] .mp-node[data-depth="6"] .mp-entry {
+  color: var(--color-text-primary);
+}
+[data-direction="chart"][data-theme^="dark"] .mp-node[data-depth] {
+  background: color-mix(in srgb, var(--node-depth) 26%, var(--color-raised));
+}
+[data-direction="chart"][data-theme^="dark"] .mp-node[data-depth="5"],
+[data-direction="chart"][data-theme^="dark"] .mp-node[data-depth="6"] {
+  background: color-mix(in srgb, var(--node-depth) 34%, var(--color-raised));
+}
+[data-direction="chart"] .mp-node.is-group[data-depth] {
+  background: color-mix(in srgb, var(--node-depth) 8%, transparent);
+}
+[data-direction="chart"] .mp-node[data-depth="4"] {
+  box-shadow: inset 0 3px 0 var(--node-color), 0 0 0 4px var(--color-surface), 0 0 0 5px var(--data-seq-4);
+}
+[data-direction="chart"] .mp-node[data-depth="5"],
+[data-direction="chart"] .mp-node[data-depth="6"] {
+  box-shadow: inset 0 3px 0 var(--node-color), 0 0 0 4px var(--color-surface), 0 0 0 5px var(--data-seq-5), 0 0 0 9px var(--color-surface), 0 0 0 10px var(--data-seq-3);
+}
+[data-direction="chart"] .mp-node.has-violations {
+  border-color: var(--color-danger);
+  border-width: 1.5px;
+}
+[data-direction="chart"] .mp-node.is-dim {
+  opacity: 0.78;
+}
+[data-direction="chart"] .mp-node.is-selected {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 3px 0 var(--node-color), 0 0 0 2px var(--color-accent);
+}
+[data-direction="chart"] .mp-node.is-group {
+  background: color-mix(in srgb, var(--node-depth) 10%, transparent);
+  border-style: dashed;
+  box-shadow: none;
+}
+[data-direction="chart"] .mp-node--area .mp-node__label,
+[data-direction="chart"] .mp-node--dir .mp-node__label {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--type-h3-size);
+  line-height: var(--type-h3-line);
+  font-weight: 600;
+}
+[data-direction="chart"] .mp-node__meta {
+  color: var(--color-text-secondary);
+}
+[data-direction="chart"] .mp-node__head > .dui-icon {
+  display: none;
+}
+[data-direction="chart"] .mp-entry {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px currentColor;
+  border-radius: 0;
+}
+[data-direction="chart"] .mp-edge {
+  stroke: color-mix(in srgb, var(--color-text-primary) 55%, transparent);
+}
+[data-direction="chart"] .mp-edgelabel {
+  border-radius: 0;
+  font-family: var(--font-mono);
+}
+
+/* =====================================================================
+ * Cyanotype
+ * ===================================================================== */
+[data-direction="cyanotype"] .st-content,
+[data-direction="cyanotype"] .mp-canvas .react-flow {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--color-border) 55%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-border) 55%, transparent) 1px, transparent 1px),
+    linear-gradient(to right, color-mix(in srgb, var(--color-border) 25%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-border) 25%, transparent) 1px, transparent 1px);
+  background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+}
+[data-direction="cyanotype"] .mp-canvas .dui-graph__bg {
+  display: none;
+}
+[data-direction="cyanotype"] .dui-graph,
+[data-direction="cyanotype"] .dui-graph .react-flow {
+  --xy-background-color: transparent;
+  background-color: var(--color-surface);
+}
+[data-direction="cyanotype"] .st-sidebar {
+  border-right: 1px solid var(--color-border-strong);
+}
+[data-direction="cyanotype"] .st-brand__name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 12px;
+  white-space: nowrap;
+}
+[data-direction="cyanotype"] .st-topbar__title h1 {
+  font-family: var(--font-display);
+  font-stretch: 112%;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 13px;
+}
+[data-direction="cyanotype"] .st-repo,
+[data-direction="cyanotype"] .st-palette-btn {
+  border-radius: 0;
+  border-color: var(--color-border-strong);
+  background: transparent;
+}
+[data-direction="cyanotype"] .st-nav__item {
+  border-radius: 0;
+}
+[data-direction="cyanotype"] .st-nav__item.is-active {
+  background: var(--color-selected);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+[data-direction="cyanotype"] .st-nav__count {
+  border-radius: 0;
+}
+[data-direction="cyanotype"] .st-pagehead .t-h1 {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 28px;
+  line-height: 34px;
+}
+/* Attention: title blocks. */
+[data-direction="cyanotype"] .st-attn__card {
+  position: relative;
+  border-color: var(--color-border-strong);
+}
+[data-direction="cyanotype"] .st-attn__card::before {
+  top: -1px;
+  left: -1px;
+  bottom: -1px;
+  width: 4px;
+  border-radius: 0;
+}
+[data-direction="cyanotype"] .st-attn__head {
+  font-family: var(--font-label);
+  font-stretch: var(--shape-label-stretch);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: var(--shape-label-tracking);
+  text-transform: uppercase;
+}
+[data-direction="cyanotype"] .st-attn__value .t-display {
+  font-stretch: 112%;
+  font-size: 44px;
+  line-height: 48px;
+  font-weight: 700;
+}
+[data-direction="cyanotype"] .st-attn__rows,
+[data-direction="cyanotype"] .st-attn__list {
+  border-top-style: dashed;
+}
+/* Review. */
+[data-direction="cyanotype"] .st-queue {
+  background: color-mix(in srgb, var(--color-bg) 85%, transparent);
+}
+[data-direction="cyanotype"] .st-qitem {
+  border-radius: 0;
+}
+[data-direction="cyanotype"] .st-qitem.is-selected {
+  background: var(--color-selected);
+  border-color: var(--color-border-strong);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+[data-direction="cyanotype"] .cv-head .st-detail__title {
+  font-size: 22px;
+  line-height: 28px;
+  text-transform: none;
+}
+[data-direction="cyanotype"] .cv-evidence {
+  position: relative;
+  padding: 20px;
+  border: 1px solid var(--color-border-strong);
+  background: color-mix(in srgb, var(--color-raised) 55%, transparent);
+}
+[data-direction="cyanotype"] .cv-track {
+  border-left-style: dashed;
+  border-left-color: var(--color-border-strong);
+}
+[data-direction="cyanotype"] .cv-track__bar {
+  border-radius: 0;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--color-border-strong);
+  height: 8px;
+}
+[data-direction="cyanotype"] .cv-track__bar > span {
+  background: repeating-linear-gradient(135deg, var(--color-text-primary) 0 1px, transparent 1px 3px);
+}
+[data-direction="cyanotype"] .cv-actions {
+  border-top: 1px solid var(--color-border-strong);
+  background: color-mix(in srgb, var(--color-bg) 92%, transparent);
+}
+[data-direction="cyanotype"] .st-cmd {
+  border-radius: 0;
+  border-color: var(--color-border-strong);
+  background: transparent;
+}
+/* Map: outlined boxes over a drafting grid. */
+[data-direction="cyanotype"] .mp-toolbar,
+[data-direction="cyanotype"] .mp-legend {
+  border-bottom-color: var(--color-border-strong);
+  background: var(--color-bg);
+}
+[data-direction="cyanotype"] .mp-side {
+  background: var(--color-bg);
+  border-left-color: var(--color-border-strong);
+}
+[data-direction="cyanotype"] .mp-node {
+  border-radius: 0;
+  border: 1.25px solid var(--color-text-primary);
+  background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+  box-shadow: none;
+}
+[data-direction="cyanotype"] .mp-node__swatch {
+  display: block;
+  width: 8px;
+  height: 8px;
+  flex: none;
+  background: var(--node-color);
+}
+[data-direction="cyanotype"] .mp-node__head > .dui-icon:first-of-type {
+  display: none;
+}
+[data-direction="cyanotype"] .mp-node--area .mp-node__label {
+  font-family: var(--font-display);
+  font-stretch: 112%;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 12px;
+}
+[data-direction="cyanotype"] .mp-node.is-selected {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+[data-direction="cyanotype"] .mp-node.has-violations {
+  border-color: var(--color-danger);
+}
+[data-direction="cyanotype"] .mp-node.is-group {
+  background: transparent;
+  border: 1px dashed var(--color-border-strong);
+}
+[data-direction="cyanotype"] .mp-entry {
+  background: transparent;
+  color: var(--color-info);
+  box-shadow: inset 0 0 0 1px currentColor;
+  border-radius: 0;
+}
+[data-direction="cyanotype"] .mp-edge {
+  stroke: color-mix(in srgb, var(--color-text-primary) 60%, transparent);
+}
+[data-direction="cyanotype"] .mp-edgelabel {
+  border-radius: 0;
+}

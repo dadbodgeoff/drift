@@ -1,0 +1,129 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - config
+  - conftest
+  - methods
+  - registry
+  suffixes:
+  - config
+  - spec
+conventions:
+- id: D-1d585e
+  status: proposed
+  mode: advise
+  summary: "veritas-reason: dataclasses in veritasreason/** pass `default_factory` to field()"
+  role:
+    package: veritas-reason
+    dir: veritasreason
+    file: "*"
+    entry: '-'
+    kind: class
+    variety: dataclass
+  rule:
+    type: passes_key
+    callee: pkg:python:dataclasses#field
+    index: 99
+    key: default_factory
+  evidence:
+    holders: 141
+    total: 141
+    lower_bound: 0.973
+    lift: 4.497
+    role_members: 163
+    python_members: 163
+  example: veritas-reason/veritasreason/change_management/change_log.py#ChangeLogEntry
+  selector_version: 2
+- id: D-b12755
+  status: proposed
+  mode: advise
+  summary: "veritas-reason: classes in veritasreason/explorer/** extend BaseModel"
+  role:
+    package: veritas-reason
+    dir: veritasreason/explorer
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - pkg:pydantic#BaseModel
+  evidence:
+    holders: 81
+    total: 84
+    lower_bound: 0.9
+    lift: 8.132
+    python_members: 84
+  example: veritas-reason/veritasreason/explorer/routes/ontology.py#AlignmentRequest
+  selector_version: 2
+- id: D-a849e1
+  status: proposed
+  mode: advise
+  summary: "veritas-reason: classes in veritasreason/normalize/** call get_logger()"
+  role:
+    package: veritas-reason
+    dir: veritasreason/normalize
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: veritas-reason/veritasreason/utils/logging.py#get_logger
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 2.393
+    python_members: 24
+  example: veritas-reason/veritasreason/normalize/data_cleaner.py#DataCleaner
+  selector_version: 2
+- id: D-e381dd
+  status: proposed
+  mode: advise
+  summary: "veritas-reason: HTTP handlers in veritasreason/explorer/** pass `response_model` to APIRouter.api_route()"
+  role:
+    package: veritas-reason
+    dir: veritasreason/explorer
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: passes_key
+    callee: pkg:fastapi#APIRouter.api_route
+    index: 99
+    key: response_model
+  evidence:
+    holders: 60
+    total: 69
+    lower_bound: 0.77
+    lift: 10.261
+    python_members: 69
+  example: veritas-reason/veritasreason/explorer/routes/analytics.py#get_analytics
+  selector_version: 2
+- id: D-3e5d8c
+  status: proposed
+  mode: advise
+  summary: "veritas-reason: classes in veritasreason/parse/** call get_logger()"
+  role:
+    package: veritas-reason
+    dir: veritasreason/parse
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: veritas-reason/veritasreason/utils/logging.py#get_logger
+  evidence:
+    holders: 23
+    total: 25
+    lower_bound: 0.75
+    lift: 2.297
+    python_members: 25
+  example: veritas-reason/veritasreason/parse/code_parser.py#CodeParser
+  selector_version: 2

@@ -1,0 +1,29 @@
+{
+  "repo": "dbt-charts",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "libs/markdown-svg/pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "ruff.toml",
+      "kind": "lint"
+    },
+    {
+      "path": "src/dbt_charts/core/ruff.toml",
+      "kind": "lint"
+    }
+  ]
+}

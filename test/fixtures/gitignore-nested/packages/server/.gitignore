@@ -1,3 +1,0 @@
-# T102: a bare pattern that MUST stay scoped to this package. Attempt 1 applied it
-# repo-wide and swallowed another package API routes.
-app

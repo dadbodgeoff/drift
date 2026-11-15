@@ -1,0 +1,1358 @@
+{
+ "//": "flags10 (round 10, WS-D) census diffs and readings; see flags10.md. Dev data only.",
+ "implementation_commit": "bd66659",
+ "base": "cgu171-459e528 (product of 1ea62fd/459e528)",
+ "after": "cgu71-459e528 with census --mechanisms f1 | f2",
+ "census": {
+  "f1": [
+   {
+    "uid": "Django-CRM/D-b6f0b8",
+    "change": "outliers+summary",
+    "tier_before": "suggestion",
+    "tier_after": "suggestion",
+    "outliers_before": 16,
+    "outliers_after": 10,
+    "label": "WRONG false_outliers"
+   },
+   {
+    "uid": "InvenTree/D-16c1ac",
+    "change": "gone",
+    "tier_before": "suggestion",
+    "tier_after": "-",
+    "outliers_before": 1,
+    "outliers_after": "-",
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "InvenTree/D-455913",
+    "change": "gone",
+    "tier_before": "suggestion",
+    "tier_after": "-",
+    "outliers_before": 6,
+    "outliers_after": "-",
+    "label": "WRONG mixed_group"
+   },
+   {
+    "uid": "InvenTree/D-9838a4",
+    "change": "gone",
+    "tier_before": "suggestion",
+    "tier_after": "-",
+    "outliers_before": 5,
+    "outliers_after": "-",
+    "label": "WRONG incidental"
+   },
+   {
+    "uid": "InvenTree/D-b24fe0",
+    "change": "gone",
+    "tier_before": "suggestion",
+    "tier_after": "-",
+    "outliers_before": 1,
+    "outliers_after": "-",
+    "label": "WRONG incidental"
+   },
+   {
+    "uid": "Misago/D-5862f4",
+    "change": "gone",
+    "tier_before": "suggestion",
+    "tier_after": "-",
+    "outliers_before": 26,
+    "outliers_after": "-",
+    "label": "WRONG false_outliers"
+   },
+   {
+    "uid": "ai/D-4683f7",
+    "change": "gone",
+    "tier_before": "suggestion",
+    "tier_after": "-",
+    "outliers_before": 1,
+    "outliers_after": "-",
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "cal.com/D-d690c0",
+    "change": "outliers+summary",
+    "tier_before": "suggestion",
+    "tier_after": "suggestion",
+    "outliers_before": 5,
+    "outliers_after": 4,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "cal.com/D-fafac1",
+    "change": "outliers+summary",
+    "tier_before": "suggestion",
+    "tier_after": "suggestion",
+    "outliers_before": 17,
+    "outliers_after": 12,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "changedetection.io/D-1ce566",
+    "change": "outliers+summary",
+    "tier_before": "suggestion",
+    "tier_after": "suggestion",
+    "outliers_before": 3,
+    "outliers_after": 2,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "dub/D-258285",
+    "change": "gone",
+    "tier_before": "suggestion",
+    "tier_after": "-",
+    "outliers_before": 8,
+    "outliers_after": "-",
+    "label": "WRONG mixed_group"
+   },
+   {
+    "uid": "dub/D-ec6127",
+    "change": "gone",
+    "tier_before": "suggestion",
+    "tier_after": "-",
+    "outliers_before": 9,
+    "outliers_after": "-",
+    "label": "WRONG mixed_group"
+   },
+   {
+    "uid": "excalidraw/D-553404",
+    "change": "outliers+summary",
+    "tier_before": "suggestion",
+    "tier_after": "suggestion",
+    "outliers_before": 7,
+    "outliers_after": 5,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "immich/D-26380c",
+    "change": "gone",
+    "tier_before": "suggestion",
+    "tier_after": "-",
+    "outliers_before": 1,
+    "outliers_after": "-",
+    "label": "WRONG mixed_group"
+   },
+   {
+    "uid": "langchain/D-0e154c",
+    "change": "gone",
+    "tier_before": "suggestion",
+    "tier_after": "-",
+    "outliers_before": 1,
+    "outliers_after": "-",
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "midday/D-98e729",
+    "change": "gone",
+    "tier_before": "suggestion",
+    "tier_after": "-",
+    "outliers_before": 2,
+    "outliers_after": "-",
+    "label": "WRONG mixed_group"
+   },
+   {
+    "uid": "netbox/D-3ab42c",
+    "change": "gone",
+    "tier_before": "suggestion",
+    "tier_after": "-",
+    "outliers_before": 1,
+    "outliers_after": "-",
+    "label": "WRONG misdescribes"
+   },
+   {
+    "uid": "novu/D-dbba9a",
+    "change": "outliers+summary",
+    "tier_before": "suggestion",
+    "tier_after": "suggestion",
+    "outliers_before": 4,
+    "outliers_after": 3,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "open-wearables/D-262064",
+    "change": "gone",
+    "tier_before": "suggestion",
+    "tier_after": "-",
+    "outliers_before": 4,
+    "outliers_after": "-",
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "open-wearables/D-b21ebc",
+    "change": "gone",
+    "tier_before": "suggestion",
+    "tier_after": "-",
+    "outliers_before": 2,
+    "outliers_after": "-",
+    "label": "WRONG mixed_group"
+   },
+   {
+    "uid": "paperless-ngx/D-1d6a6a",
+    "change": "gone",
+    "tier_before": "suggestion",
+    "tier_after": "-",
+    "outliers_before": 1,
+    "outliers_after": "-",
+    "label": "WRONG mixed_group"
+   },
+   {
+    "uid": "ralph/D-cfd5da",
+    "change": "outliers+summary",
+    "tier_before": "suggestion",
+    "tier_after": "suggestion",
+    "outliers_before": 3,
+    "outliers_after": 2,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "saleor/D-ac08d9",
+    "change": "gone",
+    "tier_before": "suggestion",
+    "tier_after": "-",
+    "outliers_before": 1,
+    "outliers_after": "-",
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "supabase/D-e93eb6",
+    "change": "gone",
+    "tier_before": "default",
+    "tier_after": "-",
+    "outliers_before": 1,
+    "outliers_after": "-",
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "tasking-manager/D-68243e",
+    "change": "outliers+summary",
+    "tier_before": "suggestion",
+    "tier_after": "suggestion",
+    "outliers_before": 5,
+    "outliers_after": 4,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "tasking-manager/D-6ec938",
+    "change": "gone",
+    "tier_before": "suggestion",
+    "tier_after": "-",
+    "outliers_before": 2,
+    "outliers_after": "-",
+    "label": "WRONG mixed_group"
+   }
+  ],
+  "f2": [
+   {
+    "uid": "cal.com/D-594d38",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 15,
+    "outliers_after": 15,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "cal.com/D-85e09a",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 4,
+    "outliers_after": 4,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "documenso/D-041293",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 4,
+    "outliers_after": 4,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "documenso/D-2a51e9",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 8,
+    "outliers_after": 8,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "documenso/D-32c861",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 24,
+    "outliers_after": 24,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "documenso/D-55ae12",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 5,
+    "outliers_after": 5,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "documenso/D-7b5140",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 4,
+    "outliers_after": 4,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "documenso/D-9b91c3",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 1,
+    "outliers_after": 1,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "documenso/D-a0eee5",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 5,
+    "outliers_after": 5,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "documenso/D-c3b713",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 8,
+    "outliers_after": 8,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "documenso/D-d51d70",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 2,
+    "outliers_after": 2,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "dub/D-015190",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 2,
+    "outliers_after": 2,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "dub/D-345913",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 14,
+    "outliers_after": 14,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "dub/D-83351e",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 1,
+    "outliers_after": 1,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "dub/D-d24d21",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 31,
+    "outliers_after": 31,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "dub/D-ebbc30",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 1,
+    "outliers_after": 1,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "formbricks/D-73b648",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 2,
+    "outliers_after": 2,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "formbricks/D-b8f1ee",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 1,
+    "outliers_after": 1,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "infisical/D-1e9bb3",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 8,
+    "outliers_after": 8,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "infisical/D-7731c9",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 6,
+    "outliers_after": 6,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "infisical/D-c4efb8",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 123,
+    "outliers_after": 123,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "infisical/D-f674a5",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 50,
+    "outliers_after": 50,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "midday/D-50255f",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 7,
+    "outliers_after": 7,
+    "label": "ACCEPT"
+   },
+   {
+    "uid": "supabase/D-e93eb6",
+    "change": "tier",
+    "tier_before": "default",
+    "tier_after": "suggestion",
+    "outliers_before": 1,
+    "outliers_after": 1,
+    "label": "ACCEPT"
+   }
+  ]
+ },
+ "flag_precision": {
+  "f1": {
+   "Py suggestion all": {
+    "real_before": 154,
+    "n_before": 319,
+    "real_after": 141,
+    "n_after": 273
+   },
+   "Py suggestion argument_key": {
+    "real_before": 20,
+    "n_before": 31,
+    "real_after": 20,
+    "n_after": 31
+   },
+   "Py suggestion avoids_other": {
+    "real_before": 1,
+    "n_before": 2,
+    "real_after": 1,
+    "n_after": 2
+   },
+   "Py suggestion base_class": {
+    "real_before": 7,
+    "n_before": 40,
+    "real_after": 0,
+    "n_after": 8
+   },
+   "Py suggestion calls": {
+    "real_before": 24,
+    "n_before": 74,
+    "real_after": 22,
+    "n_after": 68
+   },
+   "Py suggestion control": {
+    "real_before": 13,
+    "n_before": 31,
+    "real_after": 11,
+    "n_after": 27
+   },
+   "Py suggestion decorator": {
+    "real_before": 1,
+    "n_before": 8,
+    "real_after": 1,
+    "n_after": 8
+   },
+   "Py suggestion import_source": {
+    "real_before": 2,
+    "n_before": 2,
+    "real_after": 0,
+    "n_after": 0
+   },
+   "Py suggestion layering": {
+    "real_before": 2,
+    "n_before": 4,
+    "real_after": 2,
+    "n_after": 4
+   },
+   "Py suggestion naming": {
+    "real_before": 24,
+    "n_before": 32,
+    "real_after": 24,
+    "n_after": 30
+   },
+   "Py suggestion ordering": {
+    "real_before": 0,
+    "n_before": 2,
+    "real_after": 0,
+    "n_after": 2
+   },
+   "Py suggestion repo": {
+    "real_before": 3,
+    "n_before": 14,
+    "real_after": 3,
+    "n_after": 14
+   },
+   "Py suggestion wrapper": {
+    "real_before": 57,
+    "n_before": 79,
+    "real_after": 57,
+    "n_after": 79
+   },
+   "TS default all": {
+    "real_before": 189,
+    "n_before": 212,
+    "real_after": 189,
+    "n_after": 212
+   },
+   "TS default layering": {
+    "real_before": 59,
+    "n_before": 66,
+    "real_after": 59,
+    "n_after": 66
+   },
+   "TS default wrapper": {
+    "real_before": 130,
+    "n_before": 146,
+    "real_after": 130,
+    "n_after": 146
+   },
+   "TS suggestion all": {
+    "real_before": 146,
+    "n_before": 337,
+    "real_after": 132,
+    "n_after": 289
+   },
+   "TS suggestion argument_key": {
+    "real_before": 7,
+    "n_before": 16,
+    "real_after": 7,
+    "n_after": 16
+   },
+   "TS suggestion avoids_other": {
+    "real_before": 2,
+    "n_before": 17,
+    "real_after": 2,
+    "n_after": 17
+   },
+   "TS suggestion base_class": {
+    "real_before": 2,
+    "n_before": 14,
+    "real_after": 2,
+    "n_after": 14
+   },
+   "TS suggestion calls": {
+    "real_before": 0,
+    "n_before": 4,
+    "real_after": 0,
+    "n_after": 4
+   },
+   "TS suggestion control": {
+    "real_before": 4,
+    "n_before": 27,
+    "real_after": 4,
+    "n_after": 27
+   },
+   "TS suggestion decorator": {
+    "real_before": 25,
+    "n_before": 38,
+    "real_after": 25,
+    "n_after": 38
+   },
+   "TS suggestion naming": {
+    "real_before": 94,
+    "n_before": 151,
+    "real_after": 81,
+    "n_after": 105
+   },
+   "TS suggestion ordering": {
+    "real_before": 1,
+    "n_before": 6,
+    "real_after": 0,
+    "n_after": 4
+   },
+   "TS suggestion renders": {
+    "real_before": 0,
+    "n_before": 26,
+    "real_after": 0,
+    "n_after": 26
+   },
+   "TS suggestion repo": {
+    "real_before": 11,
+    "n_before": 38,
+    "real_after": 11,
+    "n_after": 38
+   }
+  },
+  "f2": {
+   "Py suggestion all": {
+    "real_before": 200,
+    "n_before": 442,
+    "real_after": 200,
+    "n_after": 442
+   },
+   "Py suggestion argument_key": {
+    "real_before": 20,
+    "n_before": 31,
+    "real_after": 20,
+    "n_after": 31
+   },
+   "Py suggestion avoids_other": {
+    "real_before": 1,
+    "n_before": 2,
+    "real_after": 1,
+    "n_after": 2
+   },
+   "Py suggestion base_class": {
+    "real_before": 9,
+    "n_before": 57,
+    "real_after": 9,
+    "n_after": 57
+   },
+   "Py suggestion calls": {
+    "real_before": 26,
+    "n_before": 82,
+    "real_after": 26,
+    "n_after": 82
+   },
+   "Py suggestion control": {
+    "real_before": 39,
+    "n_before": 57,
+    "real_after": 39,
+    "n_after": 57
+   },
+   "Py suggestion decorator": {
+    "real_before": 1,
+    "n_before": 18,
+    "real_after": 1,
+    "n_after": 18
+   },
+   "Py suggestion import_source": {
+    "real_before": 2,
+    "n_before": 2,
+    "real_after": 2,
+    "n_after": 2
+   },
+   "Py suggestion layering": {
+    "real_before": 2,
+    "n_before": 4,
+    "real_after": 2,
+    "n_after": 4
+   },
+   "Py suggestion naming": {
+    "real_before": 40,
+    "n_before": 60,
+    "real_after": 40,
+    "n_after": 60
+   },
+   "Py suggestion ordering": {
+    "real_before": 0,
+    "n_before": 26,
+    "real_after": 0,
+    "n_after": 26
+   },
+   "Py suggestion repo": {
+    "real_before": 3,
+    "n_before": 24,
+    "real_after": 3,
+    "n_after": 24
+   },
+   "Py suggestion wrapper": {
+    "real_before": 57,
+    "n_before": 79,
+    "real_after": 57,
+    "n_after": 79
+   },
+   "TS default all": {
+    "real_before": 261,
+    "n_before": 294,
+    "real_after": 18,
+    "n_after": 21
+   },
+   "TS default layering": {
+    "real_before": 61,
+    "n_before": 68,
+    "real_after": 18,
+    "n_after": 18
+   },
+   "TS default wrapper": {
+    "real_before": 200,
+    "n_before": 226,
+    "real_after": 0,
+    "n_after": 3
+   },
+   "TS suggestion all": {
+    "real_before": 326,
+    "n_before": 848,
+    "real_after": 569,
+    "n_after": 1121
+   },
+   "TS suggestion argument_key": {
+    "real_before": 15,
+    "n_before": 90,
+    "real_after": 15,
+    "n_after": 90
+   },
+   "TS suggestion avoids_other": {
+    "real_before": 14,
+    "n_before": 31,
+    "real_after": 14,
+    "n_after": 31
+   },
+   "TS suggestion base_class": {
+    "real_before": 24,
+    "n_before": 73,
+    "real_after": 24,
+    "n_after": 73
+   },
+   "TS suggestion calls": {
+    "real_before": 4,
+    "n_before": 26,
+    "real_after": 4,
+    "n_after": 26
+   },
+   "TS suggestion control": {
+    "real_before": 40,
+    "n_before": 63,
+    "real_after": 40,
+    "n_after": 63
+   },
+   "TS suggestion decorator": {
+    "real_before": 50,
+    "n_before": 150,
+    "real_after": 50,
+    "n_after": 150
+   },
+   "TS suggestion jsx_wrapper": {
+    "real_before": 0,
+    "n_before": 2,
+    "real_after": 0,
+    "n_after": 2
+   },
+   "TS suggestion layering": {
+    "real_before": 0,
+    "n_before": 0,
+    "real_after": 43,
+    "n_after": 50
+   },
+   "TS suggestion naming": {
+    "real_before": 118,
+    "n_before": 240,
+    "real_after": 118,
+    "n_after": 240
+   },
+   "TS suggestion ordering": {
+    "real_before": 1,
+    "n_before": 16,
+    "real_after": 1,
+    "n_after": 16
+   },
+   "TS suggestion renders": {
+    "real_before": 2,
+    "n_before": 52,
+    "real_after": 2,
+    "n_after": 52
+   },
+   "TS suggestion repo": {
+    "real_before": 58,
+    "n_before": 101,
+    "real_after": 58,
+    "n_after": 101
+   },
+   "TS suggestion wrapper": {
+    "real_before": 0,
+    "n_before": 4,
+    "real_after": 200,
+    "n_after": 227
+   }
+  }
+ },
+ "f2_dev_v3_reading": [
+  {
+   "uid": "ai/D-fc5ef7",
+   "label": "WRONG",
+   "wrong_because": "mixed_group",
+   "demoted": true,
+   "outliers": 5,
+   "lacking": 5,
+   "why": {
+    "not_entry+no_input": 5
+   }
+  },
+  {
+   "uid": "cal.com/D-0b36fb",
+   "label": "WRONG",
+   "wrong_because": "false_outliers",
+   "demoted": true,
+   "outliers": 1,
+   "lacking": 1,
+   "why": {
+    "guarded": 1
+   }
+  },
+  {
+   "uid": "cal.com/D-2f232d",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": false,
+   "outliers": 1,
+   "lacking": 0,
+   "why": {}
+  },
+  {
+   "uid": "cal.com/D-441d0e",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": false,
+   "outliers": 2,
+   "lacking": 0,
+   "why": {}
+  },
+  {
+   "uid": "cal.com/D-31be39",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": false,
+   "outliers": 2,
+   "lacking": 0,
+   "why": {}
+  },
+  {
+   "uid": "cal.com/D-f26528",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": false,
+   "outliers": 3,
+   "lacking": 0,
+   "why": {}
+  },
+  {
+   "uid": "documenso/D-efe3da",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": true,
+   "outliers": 1,
+   "lacking": 1,
+   "why": {
+    "guarded": 1
+   }
+  },
+  {
+   "uid": "documenso/D-55ae12",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": true,
+   "outliers": 5,
+   "lacking": 3,
+   "why": {
+    "guarded": 3
+   }
+  },
+  {
+   "uid": "documenso/D-d51d70",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": true,
+   "outliers": 2,
+   "lacking": 1,
+   "why": {
+    "guarded": 1
+   }
+  },
+  {
+   "uid": "documenso/D-9b91c3",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": true,
+   "outliers": 1,
+   "lacking": 1,
+   "why": {
+    "guarded": 1
+   }
+  },
+  {
+   "uid": "documenso/D-041293",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": true,
+   "outliers": 4,
+   "lacking": 3,
+   "why": {
+    "not_reachable": 3
+   }
+  },
+  {
+   "uid": "documenso/D-7b5140",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": true,
+   "outliers": 4,
+   "lacking": 3,
+   "why": {
+    "not_reachable": 3
+   }
+  },
+  {
+   "uid": "documenso/D-2a51e9",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": true,
+   "outliers": 8,
+   "lacking": 2,
+   "why": {
+    "not_reachable": 2
+   }
+  },
+  {
+   "uid": "documenso/D-c3b713",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": true,
+   "outliers": 8,
+   "lacking": 2,
+   "why": {
+    "not_reachable": 2
+   }
+  },
+  {
+   "uid": "dub/D-50df58",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": true,
+   "outliers": 3,
+   "lacking": 3,
+   "why": {
+    "no_input+guarded": 1,
+    "guarded": 2
+   }
+  },
+  {
+   "uid": "dub/D-d24d21",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": true,
+   "outliers": 31,
+   "lacking": 28,
+   "why": {
+    "guarded": 19,
+    "no_input+guarded": 3,
+    "no_input": 6
+   }
+  },
+  {
+   "uid": "dub/D-83351e",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": true,
+   "outliers": 1,
+   "lacking": 1,
+   "why": {
+    "no_input+guarded": 1
+   }
+  },
+  {
+   "uid": "dub/D-015190",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": true,
+   "outliers": 2,
+   "lacking": 2,
+   "why": {
+    "guarded": 2
+   }
+  },
+  {
+   "uid": "dub/D-ebbc30",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": true,
+   "outliers": 1,
+   "lacking": 1,
+   "why": {
+    "guarded": 1
+   }
+  },
+  {
+   "uid": "formbricks/D-60208a",
+   "label": "WRONG",
+   "wrong_because": "legit_outliers",
+   "demoted": true,
+   "outliers": 2,
+   "lacking": 2,
+   "why": {
+    "no_input+guarded": 1,
+    "guarded": 1
+   }
+  },
+  {
+   "uid": "formbricks/D-73b648",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": true,
+   "outliers": 2,
+   "lacking": 2,
+   "why": {
+    "no_input": 1,
+    "guarded": 1
+   }
+  },
+  {
+   "uid": "formbricks/D-5303d3",
+   "label": "WRONG",
+   "wrong_because": "legit_outliers",
+   "demoted": true,
+   "outliers": 1,
+   "lacking": 1,
+   "why": {
+    "no_input+guarded": 1
+   }
+  },
+  {
+   "uid": "formbricks/D-b8f1ee",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": true,
+   "outliers": 1,
+   "lacking": 1,
+   "why": {
+    "not_reachable": 1
+   }
+  },
+  {
+   "uid": "infisical/D-259bd1",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": true,
+   "outliers": 120,
+   "lacking": 43,
+   "why": {
+    "no_input+guarded": 3,
+    "guarded": 18,
+    "no_input": 22
+   }
+  },
+  {
+   "uid": "infisical/D-1e9bb3",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": true,
+   "outliers": 8,
+   "lacking": 6,
+   "why": {
+    "no_input": 3,
+    "guarded": 3
+   }
+  },
+  {
+   "uid": "infisical/D-7731c9",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": true,
+   "outliers": 6,
+   "lacking": 5,
+   "why": {
+    "guarded": 5
+   }
+  },
+  {
+   "uid": "midday/D-ef5012",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": false,
+   "outliers": 1,
+   "lacking": 0,
+   "why": {}
+  },
+  {
+   "uid": "midday/D-b8cff6",
+   "label": "ACCEPT",
+   "wrong_because": null,
+   "demoted": false,
+   "outliers": 1,
+   "lacking": 0,
+   "why": {}
+  },
+  {
+   "uid": "nest/D-44a46d",
+   "label": "WRONG",
+   "wrong_because": "false_outliers",
+   "demoted": false,
+   "outliers": 1,
+   "lacking": 0,
+   "why": {}
+  },
+  {
+   "uid": "nest/D-48b32a",
+   "label": "WRONG",
+   "wrong_because": "false_outliers",
+   "demoted": false,
+   "outliers": 1,
+   "lacking": 0,
+   "why": {}
+  },
+  {
+   "uid": "nest/D-f68b2a",
+   "label": "WRONG",
+   "wrong_because": "legit_outliers",
+   "demoted": false,
+   "outliers": 2,
+   "lacking": 0,
+   "why": {}
+  },
+  {
+   "uid": "supabase/D-c2e88c",
+   "label": "WRONG",
+   "wrong_because": "mixed_group",
+   "demoted": true,
+   "outliers": 1,
+   "lacking": 1,
+   "why": {
+    "not_entry+no_input": 1
+   }
+  }
+ ],
+ "f2_relabel5_why": [
+  {
+   "uid": "cal.com/D-594d38",
+   "outliers": 15,
+   "lacking": 7,
+   "why": {
+    "no_input": 7
+   }
+  },
+  {
+   "uid": "cal.com/D-85e09a",
+   "outliers": 4,
+   "lacking": 2,
+   "why": {
+    "no_input": 1,
+    "guarded": 1
+   }
+  },
+  {
+   "uid": "documenso/D-041293",
+   "outliers": 4,
+   "lacking": 3,
+   "why": {
+    "not_reachable": 3
+   }
+  },
+  {
+   "uid": "documenso/D-7b5140",
+   "outliers": 4,
+   "lacking": 3,
+   "why": {
+    "not_reachable": 3
+   }
+  },
+  {
+   "uid": "documenso/D-2a51e9",
+   "outliers": 8,
+   "lacking": 2,
+   "why": {
+    "not_reachable": 2
+   }
+  },
+  {
+   "uid": "documenso/D-c3b713",
+   "outliers": 8,
+   "lacking": 2,
+   "why": {
+    "not_reachable": 2
+   }
+  },
+  {
+   "uid": "documenso/D-32c861",
+   "outliers": 24,
+   "lacking": 21,
+   "why": {
+    "no_input": 1,
+    "guarded": 20
+   }
+  },
+  {
+   "uid": "documenso/D-a0eee5",
+   "outliers": 5,
+   "lacking": 5,
+   "why": {
+    "guarded": 5
+   }
+  },
+  {
+   "uid": "documenso/D-d51d70",
+   "outliers": 2,
+   "lacking": 1,
+   "why": {
+    "guarded": 1
+   }
+  },
+  {
+   "uid": "documenso/D-9b91c3",
+   "outliers": 1,
+   "lacking": 1,
+   "why": {
+    "guarded": 1
+   }
+  },
+  {
+   "uid": "documenso/D-55ae12",
+   "outliers": 5,
+   "lacking": 3,
+   "why": {
+    "guarded": 3
+   }
+  },
+  {
+   "uid": "dub/D-83351e",
+   "outliers": 1,
+   "lacking": 1,
+   "why": {
+    "no_input+guarded": 1
+   }
+  },
+  {
+   "uid": "dub/D-015190",
+   "outliers": 2,
+   "lacking": 2,
+   "why": {
+    "guarded": 2
+   }
+  },
+  {
+   "uid": "dub/D-345913",
+   "outliers": 14,
+   "lacking": 12,
+   "why": {
+    "guarded": 12
+   }
+  },
+  {
+   "uid": "dub/D-ebbc30",
+   "outliers": 1,
+   "lacking": 1,
+   "why": {
+    "guarded": 1
+   }
+  },
+  {
+   "uid": "dub/D-d24d21",
+   "outliers": 31,
+   "lacking": 28,
+   "why": {
+    "guarded": 19,
+    "no_input+guarded": 3,
+    "no_input": 6
+   }
+  },
+  {
+   "uid": "formbricks/D-b8f1ee",
+   "outliers": 1,
+   "lacking": 1,
+   "why": {
+    "not_reachable": 1
+   }
+  },
+  {
+   "uid": "formbricks/D-73b648",
+   "outliers": 2,
+   "lacking": 2,
+   "why": {
+    "no_input": 1,
+    "guarded": 1
+   }
+  },
+  {
+   "uid": "infisical/D-c4efb8",
+   "outliers": 123,
+   "lacking": 46,
+   "why": {
+    "no_input+guarded": 4,
+    "guarded": 18,
+    "no_input": 24
+   }
+  },
+  {
+   "uid": "infisical/D-f674a5",
+   "outliers": 50,
+   "lacking": 17,
+   "why": {
+    "no_input+guarded": 1,
+    "guarded": 3,
+    "no_input": 13
+   }
+  },
+  {
+   "uid": "infisical/D-1e9bb3",
+   "outliers": 8,
+   "lacking": 6,
+   "why": {
+    "no_input": 3,
+    "guarded": 3
+   }
+  },
+  {
+   "uid": "infisical/D-7731c9",
+   "outliers": 6,
+   "lacking": 5,
+   "why": {
+    "guarded": 5
+   }
+  },
+  {
+   "uid": "midday/D-50255f",
+   "outliers": 7,
+   "lacking": 1,
+   "why": {
+    "guarded": 1
+   }
+  },
+  {
+   "uid": "supabase/D-e93eb6",
+   "outliers": 1,
+   "lacking": 1,
+   "why": {
+    "not_entry+no_input": 1
+   }
+  }
+ ]
+}

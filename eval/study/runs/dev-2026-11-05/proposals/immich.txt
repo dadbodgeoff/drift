@@ -1,0 +1,200 @@
+15 conventions from 3454 units in 116 roles
+
+ 1. [D-876763] server: HTTP handlers in src/** (*.controller files) are decorated with Authenticated()
+    evidence: 304/315 (lower bound 0.94, lift 5.0)
+    example:  server/src/controllers/activity.controller.ts#DELETE /activities/:id
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:81 DELETE /admin/database-backups
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:63 GET /admin/database-backups
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:70 GET /admin/database-backups/:filename
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:103 GET /admin/maintenance/detect-install
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:98 GET /admin/maintenance/status
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:47 GET /server/config
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:52 GET /server/ping
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:57 GET /server/version
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:88 POST /admin/database-backups/upload
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:123 POST /admin/maintenance
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:108 POST /admin/maintenance/login
+
+ 2. [D-c10e8e] server: HTTP handlers in src/** (*.controller files) are decorated with Endpoint()
+    evidence: 287/315 (lower bound 0.88, lift 5.0)
+    example:  server/src/controllers/activity.controller.ts#DELETE /activities/:id
+    outlier:  server/src/controllers/api-key.controller.ts:75 PATCH /api-keys/:id
+    outlier:  server/src/controllers/app.controller.ts:14 GET /.well-known/immich
+    outlier:  server/src/controllers/app.controller.ts:25 GET /.well-known/webauthn
+    outlier:  server/src/controllers/app.controller.ts:32 GET /custom.css
+    outlier:  server/src/controllers/asset.controller.ts:68 PATCH /
+    outlier:  server/src/controllers/asset.controller.ts:152 PATCH /:id
+    outlier:  server/src/controllers/library.controller.ts:66 PATCH /libraries/:id
+    outlier:  server/src/controllers/memory.controller.ts:84 PATCH /memories/:id
+    outlier:  server/src/controllers/person.controller.ts:126 PATCH /people/:id
+    outlier:  server/src/controllers/session.controller.ts:70 PATCH /sessions/:id
+    outlier:  server/src/controllers/stack.controller.ts:78 PATCH /stacks/:id
+    outlier:  server/src/controllers/tag.controller.ts:90 PATCH /tags/:id
+    outlier:  server/src/controllers/user-admin.controller.ts:74 PATCH /admin/users/:id
+    outlier:  server/src/controllers/user-admin.controller.ts:167 PATCH /admin/users/:id/preferences
+    outlier:  server/src/controllers/user.controller.ts:88 PATCH /me
+    outlier:  server/src/controllers/user.controller.ts:120 PATCH /me/preferences
+    outlier:  server/src/controllers/workflow.controller.ts:96 PATCH /workflows/:id
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:81 DELETE /admin/database-backups
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:63 GET /admin/database-backups
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:70 GET /admin/database-backups/:filename
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:103 GET /admin/maintenance/detect-install
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:98 GET /admin/maintenance/status
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:47 GET /server/config
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:52 GET /server/ping
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:57 GET /server/version
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:88 POST /admin/database-backups/upload
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:123 POST /admin/maintenance
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:108 POST /admin/maintenance/login
+
+ 3. [D-7625fd] packages/sdk: functions in src/** call oazapfts.ok()
+    evidence: 287/302 (lower bound 0.92, lift 5.2)
+    example:  packages/sdk/src/fetch-client.ts#acceptClusterGroupRequest
+    outlier:  packages/sdk/src/fetch-errors.ts:20 isHttpError
+    outlier:  packages/sdk/src/fetch-errors.ts:39 isMalformedResponseError
+    outlier:  packages/sdk/src/index.ts:83 getAssetOriginalPath
+    outlier:  packages/sdk/src/index.ts:87 getAssetPlaybackPath
+    outlier:  packages/sdk/src/index.ts:85 getAssetThumbnailPath
+    outlier:  packages/sdk/src/index.ts:21 getBaseUrl
+    outlier:  packages/sdk/src/index.ts:93 getPeopleThumbnailPath
+    outlier:  packages/sdk/src/index.ts:90 getUserProfileImagePath
+    outlier:  packages/sdk/src/index.ts:13 init
+    outlier:  packages/sdk/src/index.ts:52 jsonOnly
+    outlier:  packages/sdk/src/index.ts:27 setApiKey
+    outlier:  packages/sdk/src/index.ts:23 setBaseUrl
+    outlier:  packages/sdk/src/index.ts:77 setFetch
+    outlier:  packages/sdk/src/index.ts:32 setHeader
+    outlier:  packages/sdk/src/index.ts:38 setHeaders
+
+ 4. [D-4fc758] server: HTTP handlers in src/** (*.controller files) are decorated with ApiTags()
+    evidence: 301/315 (lower bound 0.93, lift 5.0)
+    example:  server/src/controllers/activity.controller.ts#DELETE /activities/:id
+    outlier:  server/src/controllers/app.controller.ts:14 GET /.well-known/immich
+    outlier:  server/src/controllers/app.controller.ts:25 GET /.well-known/webauthn
+    outlier:  server/src/controllers/app.controller.ts:32 GET /custom.css
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:81 DELETE /admin/database-backups
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:63 GET /admin/database-backups
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:70 GET /admin/database-backups/:filename
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:103 GET /admin/maintenance/detect-install
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:98 GET /admin/maintenance/status
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:47 GET /server/config
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:52 GET /server/ping
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:57 GET /server/version
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:88 POST /admin/database-backups/upload
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:123 POST /admin/maintenance
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:108 POST /admin/maintenance/login
+
+ 5. [D-63d2cd] server: HTTP handlers in src/** (*.controller files) pass `permission` to Authenticated()
+    evidence: 273/315 (lower bound 0.82, lift 5.0)
+    example:  server/src/controllers/activity.controller.ts#DELETE /activities/:id
+    outlier:  server/src/controllers/app.controller.ts:14 GET /.well-known/immich
+    outlier:  server/src/controllers/app.controller.ts:25 GET /.well-known/webauthn
+    outlier:  server/src/controllers/app.controller.ts:32 GET /custom.css
+    outlier:  server/src/controllers/auth.controller.ts:111 GET /auth/status
+    outlier:  server/src/controllers/auth.controller.ts:53 POST /auth/admin-sign-up
+    outlier:  server/src/controllers/auth.controller.ts:30 POST /auth/login
+    outlier:  server/src/controllers/auth.controller.ts:88 POST /auth/logout
+    outlier:  server/src/controllers/auth.controller.ts:171 POST /auth/session/lock
+    outlier:  server/src/controllers/auth.controller.ts:159 POST /auth/session/unlock
+    outlier:  server/src/controllers/config-public.controller.ts:14 GET /public/config
+    outlier:  server/src/controllers/config-public.controller.ts:25 GET /public/config/defaults
+    outlier:  server/src/controllers/database-backup.controller.ts:68 POST /admin/database-backups/start-restore
+    outlier:  server/src/controllers/library.controller.ts:85 POST /libraries/:id/validate
+    outlier:  server/src/controllers/maintenance.controller.ts:24 GET /admin/maintenance/status
+    outlier:  server/src/controllers/maintenance.controller.ts:46 POST /admin/maintenance/login
+    outlier:  server/src/controllers/oauth.controller.ts:24 GET /oauth/mobile-redirect
+    outlier:  server/src/controllers/oauth.controller.ts:40 POST /oauth/authorize
+    outlier:  server/src/controllers/oauth.controller.ts:120 POST /oauth/backchannel-logout
+    outlier:  server/src/controllers/oauth.controller.ts:66 POST /oauth/callback
+    outlier:  server/src/controllers/oauth.controller.ts:92 POST /oauth/link
+    outlier:  server/src/controllers/oauth.controller.ts:108 POST /oauth/unlink
+    outlier:  server/src/controllers/passkey.controller.ts:80 POST /passkeys/authentication/finish
+    outlier:  server/src/controllers/passkey.controller.ts:68 POST /passkeys/authentication/start
+    outlier:  server/src/controllers/server.controller.ts:114 GET /server/config
+    outlier:  server/src/controllers/server.controller.ts:99 GET /server/features
+    outlier:  server/src/controllers/server.controller.ts:140 GET /server/media-types
+    outlier:  server/src/controllers/server.controller.ts:66 GET /server/ping
+    outlier:  server/src/controllers/server.controller.ts:77 GET /server/version
+    outlier:  server/src/controllers/server.controller.ts:88 GET /server/version-history
+    outlier:  server/src/controllers/shared-link.controller.ts:91 GET /shared-links/me
+    outlier:  server/src/controllers/shared-link.controller.ts:69 POST /shared-links/login
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:81 DELETE /admin/database-backups
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:63 GET /admin/database-backups
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:70 GET /admin/database-backups/:filename
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:103 GET /admin/maintenance/detect-install
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:98 GET /admin/maintenance/status
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:47 GET /server/config
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:52 GET /server/ping
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:57 GET /server/version
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:88 POST /admin/database-backups/upload
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:123 POST /admin/maintenance
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:108 POST /admin/maintenance/login
+
+ 6. [D-379261] server: HTTP handlers in src/** (*.controller files) do not use `any`
+    evidence: 314/315 (lower bound 0.98, lift 50.9)
+    example:  server/src/controllers/activity.controller.ts#DELETE /activities/:id
+    outlier:  server/src/controllers/sync.controller.ts:20 POST /sync/stream
+
+ 7. [D-8ab952] server: classes in src/** (*.controller files) call Authenticated()
+    evidence: 47/48 (lower bound 0.89, lift 12.4)
+    example:  server/src/controllers/activity.controller.ts#ActivityController
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:39 MaintenanceWorkerController
+
+ 8. [D-3b4f47] server: classes in src/** (*.service files) extend BaseService
+    evidence: 52/57 (lower bound 0.81, lift 10.4)
+    example:  server/src/services/activity.service.ts#ActivityService
+    outlier:  server/src/maintenance/maintenance-worker.service.ts:42 MaintenanceWorkerService
+    outlier:  server/src/services/api.service.ts:29 ApiService
+    outlier:  server/src/services/base.service.ts:144 BaseService
+    outlier:  server/src/services/database-backup.service.ts:36 DatabaseBackupService
+    outlier:  server/src/services/futo-backups.service.ts:16 FutoBackupsService
+
+ 9. [D-4f7501] server: classes in src/** (*.controller files) call HistoryBuilder(new)()
+    evidence: 44/48 (lower bound 0.80, lift 12.1)
+    example:  server/src/controllers/activity.controller.ts#ActivityController
+    outlier:  server/src/controllers/app.controller.ts:8 AppController
+    outlier:  server/src/controllers/passkey.controller.ts:37 PasskeyController
+    outlier:  server/src/controllers/plugin.controller.ts:18 PluginController
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:39 MaintenanceWorkerController
+
+10. [D-7167a0] server: classes in src/** (*.controller files) pass `permission` to Authenticated()
+    evidence: 44/48 (lower bound 0.80, lift 12.4)
+    example:  server/src/controllers/activity.controller.ts#ActivityController
+    outlier:  server/src/controllers/app.controller.ts:8 AppController
+    outlier:  server/src/controllers/config-public.controller.ts:11 ConfigPublicController
+    outlier:  server/src/controllers/oauth.controller.ts:21 OAuthController
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:39 MaintenanceWorkerController
+
+11. [D-0a8742] web: functions in src/** (+page files) do not use `any`
+    evidence: 62/63 (lower bound 0.92, lift 8.5)
+    example:  web/src/routes/(user)/albums/+page.ts#load
+    outlier:  web/src/routes/+page.ts:13 load
+
+12. [D-26380c] server: classes in src/** (*.repository files) are named `*Repository`
+    evidence: 61/63 (lower bound 0.89, lift 9.3)
+    example:  server/src/maintenance/maintenance-health.repository.ts#MaintenanceHealthRepository
+    outlier:  server/src/repositories/logging.repository.ts:25 MyConsoleLogger
+    outlier:  server/src/repositories/sync.repository.ts:101 BaseSync
+
+13. [D-ed6dc0] server: classes in src/** (*.controller files) are decorated with ApiTags()
+    evidence: 46/48 (lower bound 0.86, lift 12.4)
+    example:  server/src/controllers/activity.controller.ts#ActivityController
+    outlier:  server/src/controllers/app.controller.ts:8 AppController
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:39 MaintenanceWorkerController
+
+14. [D-62dfac] server: classes in src/** (*.repository files) are decorated with Injectable()
+    evidence: 57/63 (lower bound 0.81, lift 4.5)
+    example:  server/src/maintenance/maintenance-health.repository.ts#MaintenanceHealthRepository
+    outlier:  server/src/repositories/logging.repository.ts:25 MyConsoleLogger
+    outlier:  server/src/repositories/notification.repository.ts:10 NotificationRepository
+    outlier:  server/src/repositories/shared-link-asset.repository.ts:6 SharedLinkAssetRepository
+    outlier:  server/src/repositories/sync.repository.ts:101 BaseSync
+    outlier:  server/src/repositories/telemetry.repository.ts:24 MetricGroupRepository
+    outlier:  server/src/repositories/trash.repository.ts:7 TrashRepository
+
+15. [D-0fb8e0] server: classes in src/** (*.service files) are decorated with Injectable()
+    evidence: 55/57 (lower bound 0.88, lift 4.8)
+    example:  server/src/services/activity.service.ts#ActivityService
+    outlier:  server/src/services/telemetry.service.ts:7 TelemetryService
+    outlier:  server/src/services/workflow-execution.service.ts:53 WorkflowExecutionService
+

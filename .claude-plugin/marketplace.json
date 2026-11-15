@@ -1,0 +1,12 @@
+{
+  "name": "drift",
+  "owner": { "name": "Drift" },
+  "description": "Drift: the convention lockfile for AI agents.",
+  "plugins": [
+    {
+      "name": "drift",
+      "source": "./integrations/claude-code",
+      "description": "Learned conventions for Claude Code: rules before writing, advice after editing, and a block at the end of the turn for conventions you set to block."
+    }
+  ]
+}

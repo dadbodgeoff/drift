@@ -1,0 +1,335 @@
+{
+  "//": "HELD-OUT set (second draw, decision D11), role PRIMARY: the D1/D4 re-measure and the D10.3 verifier check come from this set. FROZEN since `frozen_at`: the core (set_id, role, frozen_at, repos, reserves, tier, max, pool) never changes; only the append-only lists `replaced`, `burned` and `exposed` may grow. Rules: eval/study/README.md#held-out-rules. Selected code-blind by eval/study/select-holdout.mjs --selection heldout2 (see `selection`); nobody working on the product has read these repos.",
+  "set_id": "py-heldout2-2026-11-07",
+  "role": "primary",
+  "decision": "Decision D11 (lead, 2026-11-07, before any data of this set existed): second held-out draw, selection only; census at the round-9 freeze; used for the D1/D4 re-measure and the D10.3 verifier check. Drawn code-blind with the primary draw's buckets, quotas, filters and classifier, a new seed committed before the draw, and every repo of the dev sets and of the earlier held-out sets (repos, reserves, replaced, exposed) excluded.",
+  "holdout": true,
+  "status": "frozen",
+  "frozen_on": "2026-11-07",
+  "frozen_at": "2026-11-07T23:26:23Z",
+  "language": "python",
+  "tier": {
+    "//": "Decision D7 (eval/study/README.md decision log), approved by the founder 2026-11-06 and recorded before any held-out census. D5 (tier-d5.json) narrowed by rule kind and language. TypeScript/JavaScript: the default tier admits only call wrappers (wrapped_by:call) and layering (avoids:import); wrapped_by:decorator, wrapped_by:extends and wrapped_by:jsx move to the suggestion tier. Python: no rule kind is in the default tier; Python advises only and every Python proposal is suggestion tier. D5's conditions still apply on top of the rule kind: every symbol the rule names is defined in the repository (default.target \"in_repo\": no pkg:, global# or unresolved: target; lib.mjs namesPackage, drift_mine::tier::names_package) and the role has >= default.min_members members. The language of a proposal is read conservatively (lib.mjs proposalLanguage, drift_mine::tier::convention_language): py when any member of its role is Python (conventions.yaml evidence.python_members) or its example path is (.py/.pyi files and Python package manifests), ts otherwise. Role members are counted as the role's size (evidence.role_members when set, else total; exempt members count). DEFAULT tier = language in default.languages AND structured rule kind (lib.mjs ruleKind) in default.rule_kinds AND the rule names no symbol from outside the repository AND its role has >= default.min_members members. SUGGESTION tier = every other shown proposal. The not-wrong rate is reported over all shown proposals, both tiers. Release gate unchanged: a language's default tier ships as advise until it measures >= 95% default-tier accept under rubric v3, judged per D1, on a primary held-out run.",
+    "kind": "rule_kind",
+    "decision": "D7",
+    "default": {
+      "//": "TypeScript/JavaScript call wrappers and layering (import avoidance), each only when every symbol it names is defined in the repository, in roles of 15 or more members",
+      "rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "languages": [
+        "ts"
+      ],
+      "min_members": 15,
+      "target": "in_repo"
+    },
+    "suggestion": {
+      "//": "D5's suggestion kinds, plus decorators, base classes and JSX layout wrappers (D7); every Python proposal (languages); and default-tier kinds whose rule names a package, built-in or unresolved symbol, or whose role is small",
+      "rule_kinds": [
+        "calls",
+        "named",
+        "avoids:other",
+        "prefers_library",
+        "before",
+        "has_test",
+        "model_has",
+        "package_has",
+        "dependency_version",
+        "wrapped_by:try",
+        "control",
+        "directive",
+        "throws",
+        "passes_key",
+        "renders",
+        "wrapped_by:decorator",
+        "wrapped_by:extends",
+        "wrapped_by:jsx"
+      ],
+      "languages": [
+        "py"
+      ]
+    },
+    "not_wrong_over": "all_shown"
+  },
+  "max": 15,
+  "//max_pool": "Same as the secondary sets: max 15 (census --max, proposals shown) and pool 200 (recall pool).",
+  "pool": 200,
+  "provenance": "Metadata only. Candidates: GitHub repository search (queries in `selection.record`), filtered by OSI licence, not archived, not a fork or template, and excluding every repo the Drift repository mentions (dev sets, the primary and secondary held-out sets with their reserves, replaced and exposed entries, any github.com URL on any branch, commit messages, PR and issue text) and obvious non-applications by name or topic. framework_bucket from the repo's dependency manifests only (package.json; pyproject.toml, requirements*.txt, setup.cfg, Pipfile), queried through GitHub code search restricted to those file names on the default branch; nothing else. sha = default-branch HEAD from git ls-remote. size_kb, stars, pushed_at from search metadata at retrieval. No notes about the code exist: nobody read it.",
+  "selection": {
+    "script": "eval/study/select-holdout.mjs",
+    "selection": "heldout2",
+    "record": "eval/study/selection/heldout2-2026-11-07.json",
+    "record_sha256": "0f77100d8d2b5e49d24787b5f7ce3e2db5961fd07b5941126c313ed5da6d764e",
+    "seed": "drift-heldout2-2026-11-07:6be4e9b992729c31fbd50b70d9c55c5d72085eaa:96981b12fc4ecd258ffa1003af1a1917",
+    "retrieved_at": "2026-11-07T22:32:04Z",
+    "buckets": {
+      "django": 3,
+      "fastapi": 3,
+      "flask": 2,
+      "other_python": 2
+    }
+  },
+  "//lists": "Append-only lists outside the frozen core. replaced: [{date, repo, reserve, reason}], the i-th swap uses the i-th reserve, only for a failed technical check (clone fails, `drift scan` errors, fewer than 200 parseable files) or (Python) overlap with the dev set. burned: [{date, name, reason}]. exposed: [{name, where}], repos whose conventions were named where product engineers can read.",
+  "replaced": [
+    {
+      "date": "2026-11-08",
+      "repo": "alphamaster",
+      "reserve": "django-oscar",
+      "reason": "technical check: fewer than 200 parseable files (181)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "shhh",
+      "reserve": "vmlx",
+      "reason": "technical check: fewer than 200 parseable files (31)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "ghidramcp-ai-rename",
+      "reserve": "octis",
+      "reason": "technical check: fewer than 200 parseable files (7)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "octis",
+      "reserve": "lingbot-vla",
+      "reason": "technical check: fewer than 200 parseable files (89)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "lingbot-vla",
+      "reserve": "future-agi",
+      "reason": "technical check: fewer than 200 parseable files (111)"
+    }
+  ],
+  "burned": [],
+  "exposed": [],
+  "repos": [
+    {
+      "name": "statsmodels",
+      "url": "https://github.com/statsmodels/statsmodels",
+      "sha": "772cb34aff9e95f5c3eb10f1fe1ff6cd393daa69",
+      "language": "Python",
+      "framework_bucket": "django",
+      "size_kb": 69058,
+      "stars": 11747,
+      "pushed_at": "2026-11-06T16:42:19Z"
+    },
+    {
+      "name": "flagsmith",
+      "url": "https://github.com/Flagsmith/flagsmith",
+      "sha": "4449ad4231392545807649e3b52a595999e0512d",
+      "language": "Python",
+      "framework_bucket": "django",
+      "size_kb": 381723,
+      "stars": 6780,
+      "pushed_at": "2026-11-07T08:16:21Z"
+    },
+    {
+      "name": "kunlun-m",
+      "url": "https://github.com/LoRexxar/Kunlun-M",
+      "sha": "04635cce43d7551b369b471ff3160c626ce5980a",
+      "language": "Python",
+      "framework_bucket": "django",
+      "size_kb": 26707,
+      "stars": 2421,
+      "pushed_at": "2026-11-07T19:09:13Z"
+    },
+    {
+      "name": "alphamaster",
+      "url": "https://github.com/rosemarycox5334-debug/AlphaMaster",
+      "sha": "3727daf2d2cb5d7361bdbdb0867dba830a06cdf2",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "size_kb": 81536,
+      "stars": 710,
+      "pushed_at": "2026-11-07T07:46:10Z"
+    },
+    {
+      "name": "dcs_liberation",
+      "url": "https://github.com/dcs-liberation/dcs_liberation",
+      "sha": "2506d42674a36a1a581aeef6b5dd3476ff90c522",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "size_kb": 234612,
+      "stars": 801,
+      "pushed_at": "2026-11-01T00:57:36Z"
+    },
+    {
+      "name": "supoclip",
+      "url": "https://github.com/FujiwaraChoki/supoclip",
+      "sha": "c62f3a5afd2744344b238d6f06bcfc70c6eac85e",
+      "language": "Python",
+      "framework_bucket": "fastapi",
+      "size_kb": 53186,
+      "stars": 2651,
+      "pushed_at": "2026-11-07T14:28:38Z"
+    },
+    {
+      "name": "shhh",
+      "url": "https://github.com/smallwat3r/shhh",
+      "sha": "448acf4bed058d27a28a939b1ff5fba1601e2273",
+      "language": "Python",
+      "framework_bucket": "flask",
+      "size_kb": 26218,
+      "stars": 420,
+      "pushed_at": "2026-10-09T16:25:30Z"
+    },
+    {
+      "name": "nlweb",
+      "url": "https://github.com/nlweb-ai/NLWeb",
+      "sha": "b423f15d9aeaa023ce75993ac9deed2354597043",
+      "language": "Python",
+      "framework_bucket": "flask",
+      "size_kb": 84141,
+      "stars": 6259,
+      "pushed_at": "2026-08-11T20:35:58Z"
+    },
+    {
+      "name": "fenic",
+      "url": "https://github.com/typedef-ai/fenic",
+      "sha": "486e535508c16825069f5c33768cab25b031e143",
+      "language": "Python",
+      "framework_bucket": "other_python",
+      "size_kb": 31249,
+      "stars": 679,
+      "pushed_at": "2026-11-05T22:30:13Z"
+    },
+    {
+      "name": "ghidramcp-ai-rename",
+      "url": "https://github.com/guanyue91141/GhidraMCP-AI-rename",
+      "sha": "bf591b526e44b5de2594c8c739bb2c17917ad86b",
+      "language": "Python",
+      "framework_bucket": "other_python",
+      "size_kb": 62118,
+      "stars": 490,
+      "pushed_at": "2026-10-21T16:03:57Z"
+    }
+  ],
+  "reserves": {
+    "//": "Pre-registered replacements, used in this order only (rule 1). Reserve i comes from bucket spec.sets.<set>.reserve_order[i] of the selection record.",
+    "repos": [
+      {
+        "name": "django-oscar",
+        "url": "https://github.com/django-oscar/django-oscar",
+        "sha": "a5ed3c9c17d4cf6ee18aa9795b493172416ab68b",
+        "language": "Python",
+        "framework_bucket": "django",
+        "size_kb": 127521,
+        "stars": 6631,
+        "pushed_at": "2026-10-28T13:07:52Z"
+      },
+      {
+        "name": "vmlx",
+        "url": "https://github.com/jjang-ai/vmlx",
+        "sha": "350bea16eb40dfb7faddcb8b5508274963829f92",
+        "language": "Python",
+        "framework_bucket": "fastapi",
+        "size_kb": 142049,
+        "stars": 911,
+        "pushed_at": "2026-11-07T09:31:32Z"
+      },
+      {
+        "name": "octis",
+        "url": "https://github.com/MIND-Lab/OCTIS",
+        "sha": "8f9a0ac5a12e3b72ecd77dcba4f181c77e4595f1",
+        "language": "Python",
+        "framework_bucket": "flask",
+        "size_kb": 176039,
+        "stars": 806,
+        "pushed_at": "2026-06-21T17:02:38Z"
+      },
+      {
+        "name": "lingbot-vla",
+        "url": "https://github.com/Robbyant/lingbot-vla",
+        "sha": "4eb34b7693a0565c67433f8fac9c59a2e67eb60b",
+        "language": "Python",
+        "framework_bucket": "other_python",
+        "size_kb": 33626,
+        "stars": 1882,
+        "pushed_at": "2026-06-11T16:51:17Z"
+      },
+      {
+        "name": "future-agi",
+        "url": "https://github.com/future-agi/future-agi",
+        "sha": "28e729aab169d75a2ca856fb4ed67fd1dda5901a",
+        "language": "Python",
+        "framework_bucket": "django",
+        "size_kb": 263688,
+        "stars": 2254,
+        "pushed_at": "2026-11-07T21:20:45Z"
+      },
+      {
+        "name": "agenticx",
+        "url": "https://github.com/DemonDamon/AgenticX",
+        "sha": "4383e6692116f309d781a9c295a257198da44c71",
+        "language": "Python",
+        "framework_bucket": "fastapi",
+        "size_kb": 248291,
+        "stars": 1008,
+        "pushed_at": "2026-11-07T15:40:28Z"
+      },
+      {
+        "name": "sleepy",
+        "url": "https://github.com/sleepy-project/sleepy",
+        "sha": "c0795250eb8508991c782b399c088af46b960a08",
+        "language": "Python",
+        "framework_bucket": "flask",
+        "size_kb": 65171,
+        "stars": 435,
+        "pushed_at": "2026-09-13T16:16:35Z"
+      },
+      {
+        "name": "sqlalchemy",
+        "url": "https://github.com/sqlalchemy/sqlalchemy",
+        "sha": "4b13b4a246f3c53b8ed717648194f8893e70ff30",
+        "language": "Python",
+        "framework_bucket": "other_python",
+        "size_kb": 103900,
+        "stars": 12274,
+        "pushed_at": "2026-11-07T16:56:32Z"
+      },
+      {
+        "name": "pykeen",
+        "url": "https://github.com/pykeen/pykeen",
+        "sha": "5beaada8623a7bc368db9f29a7a43ddd237888a6",
+        "language": "Python",
+        "framework_bucket": "django",
+        "size_kb": 29233,
+        "stars": 2046,
+        "pushed_at": "2026-10-23T20:46:46Z"
+      },
+      {
+        "name": "augmentoolkit",
+        "url": "https://github.com/e-p-armstrong/augmentoolkit",
+        "sha": "ec18b905f8a2fc1d64d345c04856cf2f036d9fc6",
+        "language": "Python",
+        "framework_bucket": "fastapi",
+        "size_kb": 56198,
+        "stars": 1876,
+        "pushed_at": "2026-06-27T06:36:32Z"
+      },
+      {
+        "name": "toil",
+        "url": "https://github.com/DataBiosphere/toil",
+        "sha": "5f8e625323a46523cb1746742de7fbf56a5f2634",
+        "language": "Python",
+        "framework_bucket": "flask",
+        "size_kb": 36888,
+        "stars": 936,
+        "pushed_at": "2026-11-06T19:12:40Z"
+      },
+      {
+        "name": "mobilerun",
+        "url": "https://github.com/droidrun/mobilerun",
+        "sha": "e34004270a9d7b68824b94a3a5ba6698cefea69d",
+        "language": "Python",
+        "framework_bucket": "other_python",
+        "size_kb": 108365,
+        "stars": 9995,
+        "pushed_at": "2026-11-07T20:43:27Z"
+      }
+    ]
+  }
+}

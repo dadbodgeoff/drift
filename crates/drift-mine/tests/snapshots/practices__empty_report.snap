@@ -1,0 +1,271 @@
+---
+source: crates/drift-mine/tests/practices.rs
+expression: report
+---
+{
+  "version": 1,
+  "commit": null,
+  "facts_schema": 11,
+  "scope": {
+    "concern": null,
+    "package": null,
+    "path": null
+  },
+  "summary": {
+    "population": 0,
+    "known": 0,
+    "declared": 0,
+    "none": 0,
+    "unknown": 0,
+    "coverage": 0.0,
+    "concerns_at_target": 0,
+    "target": 0.9
+  },
+  "concerns": [
+    {
+      "id": "authn",
+      "title": "Authentication",
+      "unit": "entry_point",
+      "population": {
+        "total": 0,
+        "known": 0,
+        "declared": 0,
+        "none": 0,
+        "unknown": 0,
+        "coverage": 0.0,
+        "left_out": {
+          "tests": 0,
+          "non_production": 0
+        }
+      },
+      "variants": [],
+      "unknown": {
+        "members": 0,
+        "reasons": [],
+        "instruments": [],
+        "examples": []
+      },
+      "by_package": [],
+      "divergence": []
+    },
+    {
+      "id": "authz",
+      "title": "Authorization and tenant scoping",
+      "unit": "entry_point",
+      "population": {
+        "total": 0,
+        "known": 0,
+        "declared": 0,
+        "none": 0,
+        "unknown": 0,
+        "coverage": 0.0,
+        "left_out": {
+          "tests": 0,
+          "non_production": 0
+        }
+      },
+      "variants": [],
+      "unknown": {
+        "members": 0,
+        "reasons": [],
+        "instruments": [],
+        "examples": []
+      },
+      "by_package": [],
+      "divergence": []
+    },
+    {
+      "id": "errors",
+      "title": "Error handling",
+      "unit": "entry_point",
+      "population": {
+        "total": 0,
+        "known": 0,
+        "declared": 0,
+        "none": 0,
+        "unknown": 0,
+        "coverage": 0.0,
+        "left_out": {
+          "tests": 0,
+          "non_production": 0
+        }
+      },
+      "variants": [],
+      "unknown": {
+        "members": 0,
+        "reasons": [],
+        "instruments": [],
+        "examples": []
+      },
+      "by_package": [],
+      "divergence": []
+    },
+    {
+      "id": "logging",
+      "title": "Logging and observability",
+      "unit": "symbol",
+      "population": {
+        "total": 0,
+        "known": 0,
+        "declared": 0,
+        "none": 0,
+        "unknown": 0,
+        "coverage": 0.0,
+        "left_out": {
+          "tests": 0,
+          "non_production": 0
+        }
+      },
+      "variants": [],
+      "unknown": {
+        "members": 0,
+        "reasons": [],
+        "instruments": [],
+        "examples": []
+      },
+      "by_package": [],
+      "divergence": []
+    },
+    {
+      "id": "api",
+      "title": "API design and responses",
+      "unit": "entry_point",
+      "population": {
+        "total": 0,
+        "known": 0,
+        "declared": 0,
+        "none": 0,
+        "unknown": 0,
+        "coverage": 0.0,
+        "left_out": {
+          "tests": 0,
+          "non_production": 0
+        }
+      },
+      "variants": [],
+      "unknown": {
+        "members": 0,
+        "reasons": [],
+        "instruments": [],
+        "examples": []
+      },
+      "by_package": [],
+      "divergence": []
+    },
+    {
+      "id": "validation",
+      "title": "Input validation",
+      "unit": "entry_point",
+      "population": {
+        "total": 0,
+        "known": 0,
+        "declared": 0,
+        "none": 0,
+        "unknown": 0,
+        "coverage": 0.0,
+        "left_out": {
+          "tests": 0,
+          "non_production": 0
+        }
+      },
+      "variants": [],
+      "unknown": {
+        "members": 0,
+        "reasons": [],
+        "instruments": [],
+        "examples": []
+      },
+      "by_package": [],
+      "divergence": []
+    },
+    {
+      "id": "config",
+      "title": "Config, secrets, feature flags",
+      "unit": "symbol",
+      "population": {
+        "total": 0,
+        "known": 0,
+        "declared": 0,
+        "none": 0,
+        "unknown": 0,
+        "coverage": 0.0,
+        "left_out": {
+          "tests": 0,
+          "non_production": 0
+        }
+      },
+      "variants": [],
+      "unknown": {
+        "members": 0,
+        "reasons": [],
+        "instruments": [],
+        "examples": []
+      },
+      "by_package": [],
+      "divergence": []
+    },
+    {
+      "id": "data_access",
+      "title": "Data access",
+      "unit": "symbol",
+      "population": {
+        "total": 0,
+        "known": 0,
+        "declared": 0,
+        "none": 0,
+        "unknown": 0,
+        "coverage": 0.0,
+        "left_out": {
+          "tests": 0,
+          "non_production": 0
+        }
+      },
+      "variants": [],
+      "unknown": {
+        "members": 0,
+        "reasons": [],
+        "instruments": [],
+        "examples": []
+      },
+      "by_package": [],
+      "divergence": []
+    },
+    {
+      "id": "testing",
+      "title": "Testing practice",
+      "unit": "entry_point",
+      "population": {
+        "total": 0,
+        "known": 0,
+        "declared": 0,
+        "none": 0,
+        "unknown": 0,
+        "coverage": 0.0,
+        "left_out": {
+          "tests": 0,
+          "non_production": 0
+        }
+      },
+      "variants": [],
+      "unknown": {
+        "members": 0,
+        "reasons": [],
+        "instruments": [],
+        "examples": []
+      },
+      "by_package": [],
+      "divergence": []
+    }
+  ],
+  "not_covered": [
+    "outbound calls (HTTP clients, timeouts, retries)",
+    "background jobs and queues",
+    "frontend data fetching",
+    "state and design system",
+    "hygiene (duplicate libraries, escape hatches)",
+    "declared vs actual (AGENTS.md, lint configs)",
+    "change over time (which variant new code adopts)"
+  ],
+  "recipes": [],
+  "findings": []
+}

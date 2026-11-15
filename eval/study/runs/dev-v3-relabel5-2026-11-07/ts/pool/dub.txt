@@ -1,0 +1,226 @@
+24 conventions from 9139 units in 456 roles (5 default tier, 19 suggestions)
+
+19 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-d24d21] apps/web: HTTP handlers in app/api/** (route files) are wrapped in withSession() or withWorkspace()
+    evidence: 138/169 (lower bound 0.75, lift 6.4)
+    tier:     default
+    split:    withWorkspace 119, withSession 19
+    example:  apps/web/app/api/activity-logs/route.ts#GET
+    outlier:  apps/web/app/api/ai/sync-embeddings/route.ts:32 POST
+    outlier:  apps/web/app/api/analytics/dashboard/route.ts:17 GET
+    outlier:  apps/web/app/api/auth/reset-password/route.ts:12 POST
+    ... 28 more outliers
+
+ 2. [D-345913] apps/web: server actions in lib/** are wrapped in authActionClient.inputSchema().action() or authPartnerActionClient.action() or authPartnerActionClient.inputSchema().action() or authUserActionClient.inputSchema().action(), except a handler (reading no input)
+    evidence: 109/123 (lower bound 0.82, lift 16.3)
+    tier:     default
+    split:    authActionClient.inputSchema().action 83, authPartnerActionClient.inputSchema().action 17, authPartnerActionClient.action 7, authUserActionClient.inputSchema().action 2
+    example:  apps/web/lib/actions/add-edit-integration.ts#addEditIntegration
+    outlier:  apps/web/lib/actions/check-account-exists.ts:18 checkAccountExistsAction
+    outlier:  apps/web/lib/actions/create-user-account.ts:23 createUserAccountAction
+    outlier:  apps/web/lib/actions/partners/ban-partner.ts:50 banPartner
+    ... 11 more outliers
+    exempt:   apps/web/lib/actions/generate-unsubscribe-url.ts:7 generateUnsubscribeTokenAction (reads no input, so needs no .inputSchema() (authUserActionClient.action() without it))
+
+ 3. [D-83351e] apps/web: HTTP handlers in app/(ee)/api/partner-profile/** (route files) are wrapped in withPartnerProfile()
+    evidence: 53/54 (lower bound 0.90, lift 36.0)
+    tier:     default
+    example:  apps/web/app/(ee)/api/partner-profile/invites/route.ts#DELETE
+    outlier:  apps/web/app/(ee)/api/partner-profile/invites/accept/route.ts:7 POST
+
+ 4. [D-015190] apps/web: HTTP handlers in app/api/workspaces/[*]/** (route files) are wrapped in withWorkspace()
+    evidence: 40/42 (lower bound 0.84, lift 8.1)
+    tier:     default
+    example:  apps/web/app/api/workspaces/[idOrSlug]/billing/activate-paid-plan/route.ts#POST
+    outlier:  apps/web/app/api/workspaces/[idOrSlug]/invites/accept/route.ts:11 POST
+    outlier:  apps/web/app/api/workspaces/[idOrSlug]/invites/decline/route.ts:7 POST
+
+ 5. [D-ebbc30] apps/web: HTTP handlers in app/(ee)/api/partners/** (route files) are wrapped in withWorkspace()
+    evidence: 25/26 (lower bound 0.81, lift 8.2)
+    tier:     default
+    example:  apps/web/app/(ee)/api/partners/[partnerId]/application-risks/route.ts#GET
+    outlier:  apps/web/app/(ee)/api/partners/platforms/callback/route.ts:28 GET
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 6. [D-3fad9a] packages/email: components in src/** render <Text>, except a shared part (used by several members, not a member)
+    evidence: 107/107 (lower bound 0.96, lift 16.5)
+    tier:     suggestion (rule kind renders)
+    agents:   not shown to agents (family below admission bar: 40% of 10)
+    example:  packages/email/src/templates/advanced-plan-downgrade-notice.tsx#AdvancedPlanDowngradeNotice
+    exempt:   packages/email/src/components/bounty-thumbnail.tsx:3 BountyThumbnailImage (shared part used by 4 members)
+
+ 7. [D-a23ff8] packages/email: components in src/** render <Preview>, except 2 shared parts (used by several members, not a member)
+    evidence: 106/106 (lower bound 0.96, lift 16.5)
+    tier:     suggestion (rule kind renders)
+    agents:   not shown to agents (family below admission bar: 40% of 10)
+    example:  packages/email/src/templates/advanced-plan-downgrade-notice.tsx#AdvancedPlanDowngradeNotice
+    exempt:   packages/email/src/components/bounty-thumbnail.tsx:3 BountyThumbnailImage (shared part used by 4 members)
+    exempt:   packages/email/src/components/footer.tsx:3 Footer (shared part used by 101 members)
+
+ 8. [D-742eb6] apps/web: HTTP handlers in app/** (route files) do not throw a bare Error
+    evidence: 522/536 (lower bound 0.96, lift 4.1)
+    tier:     suggestion (rule kind avoids:other)
+    agents:   not shown to agents (family below admission bar: 50% of 2)
+    example:  apps/web/app/(ee)/api/admin/analytics/route.ts#GET
+    outlier:  apps/web/app/(ee)/api/cron/disposable-emails/route.ts:11 POST
+    outlier:  apps/web/app/(ee)/api/cron/email-domains/update/route.ts:15 POST
+    outlier:  apps/web/app/(ee)/api/cron/import/firstpromoter/route.ts:13 POST
+    ... 11 more outliers
+
+ 9. [D-309ba0] apps/web: functions in ui/modals/** call useState() before useCallback()
+    evidence: 104/105 (lower bound 0.95, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  apps/web/ui/modals/add-customer-modal.tsx#useAddCustomerModal
+    outlier:  apps/web/ui/modals/link-builder/use-link-drafts.ts:12 useLinkDrafts
+
+10. [D-29ef24] apps/web: functions in ui/modals/** call useCallback() before useMemo()
+    evidence: 103/105 (lower bound 0.93, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  apps/web/ui/modals/add-customer-modal.tsx#useAddCustomerModal
+    outlier:  apps/web/ui/modals/approve-partner-application-modal.tsx:143 useApprovePartnerApplicationModal
+    outlier:  apps/web/ui/modals/reject-partner-application-modal.tsx:374 useRejectPartnerApplicationModal
+
+11. [D-024a81] packages/email: components in src/** render <Tailwind>, except a shared part (used by several members, not a member)
+    evidence: 104/107 (lower bound 0.92, lift 16.5)
+    tier:     suggestion (rule kind renders)
+    agents:   not shown to agents (family below admission bar: 40% of 10)
+    example:  packages/email/src/templates/advanced-plan-downgrade-notice.tsx#AdvancedPlanDowngradeNotice
+    outlier:  packages/email/src/templates/trial/trial-3-days-remaining.tsx:12 Trial3DaysRemainingEmail
+    outlier:  packages/email/src/templates/trial/trial-7-days-remaining.tsx:12 Trial7DaysRemainingEmail
+    outlier:  packages/email/src/templates/upgrade-email.tsx:11 UpgradeEmail
+    exempt:   packages/email/src/components/bounty-thumbnail.tsx:3 BountyThumbnailImage (shared part used by 4 members)
+
+12. [D-418256] packages/email: components in src/** render <Container>, except 2 shared parts (used by several members, not a member)
+    evidence: 103/106 (lower bound 0.92, lift 16.5)
+    tier:     suggestion (rule kind renders)
+    agents:   not shown to agents (family below admission bar: 40% of 10)
+    example:  packages/email/src/templates/advanced-plan-downgrade-notice.tsx#AdvancedPlanDowngradeNotice
+    outlier:  packages/email/src/templates/trial/trial-3-days-remaining.tsx:12 Trial3DaysRemainingEmail
+    outlier:  packages/email/src/templates/trial/trial-7-days-remaining.tsx:12 Trial7DaysRemainingEmail
+    outlier:  packages/email/src/templates/upgrade-email.tsx:11 UpgradeEmail
+    exempt:   packages/email/src/components/bounty-thumbnail.tsx:3 BountyThumbnailImage (shared part used by 4 members)
+    exempt:   packages/email/src/components/footer.tsx:3 Footer (shared part used by 101 members)
+
+13. [D-e25af3] packages/email: components in src/** render <Footer>, except 2 shared parts (used by several members, not a member)
+    evidence: 101/106 (lower bound 0.89, lift 16.5)
+    tier:     suggestion (rule kind renders)
+    agents:   not shown to agents (family below admission bar: 40% of 10)
+    example:  packages/email/src/templates/advanced-plan-downgrade-notice.tsx#AdvancedPlanDowngradeNotice
+    outlier:  packages/email/src/templates/campaign-email.tsx:16 CampaignEmail
+    outlier:  packages/email/src/templates/feedback-email.tsx:15 FeedbackEmail
+    outlier:  packages/email/src/templates/trial/trial-3-days-remaining.tsx:12 Trial3DaysRemainingEmail
+    ... 2 more outliers
+    exempt:   packages/email/src/components/bounty-thumbnail.tsx:3 BountyThumbnailImage (shared part used by 4 members)
+    exempt:   packages/email/src/components/footer.tsx:3 Footer (shared part used by 101 members)
+
+14. [D-258285] apps/web: functions in ui/modals/** are named `*Modal`, except a shared part (used by several members, not a member)
+    evidence: 113/121 (lower bound 0.88, lift 12.6)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/web/ui/modals/add-customer-modal.tsx#useAddCustomerModal
+    outlier:  apps/web/ui/modals/disable-fraud-rules-modal.tsx:173 getRulesBeingDisabled
+    outlier:  apps/web/ui/modals/link-builder/ab-testing-modal.tsx:493 getABTestingLabel
+    outlier:  apps/web/ui/modals/link-builder/ab-testing/ab-testing-modal.tsx:592 getABTestingLabel
+    ... 5 more outliers
+    exempt:   apps/web/ui/modals/import-csv-modal/index.tsx:78 useCsvContext (shared part used by 2 members)
+
+15. [D-2ea85b] apps/web: server actions in lib/actions/partners/** are named `*Action`
+    evidence: 80/86 (lower bound 0.86, lift 19.0)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/web/lib/actions/partners/accept-program-invite.ts#acceptProgramInviteAction
+    outlier:  apps/web/lib/actions/partners/ban-partner.ts:50 banPartner
+    outlier:  apps/web/lib/actions/partners/force-withdrawal.ts:36 forceWithdrawal
+    outlier:  apps/web/lib/actions/partners/generate-paypal-oauth-url.ts:10 generatePaypalOAuthUrl
+    ... 3 more outliers
+
+16. [D-07a1e6] apps/web: exported values in lib/** (schema files) are named `*Schema`, except 3 companions (a helper or constant beside the members that follow it)
+    evidence: 34/35 (lower bound 0.85, lift 2.5)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/web/lib/api/scrape-creators/schema.ts#socialContentSchema
+    outlier:  apps/web/lib/veriff/schema.ts:89 veriffRiskLabels
+    exempt:   apps/web/lib/application-events/schema.ts:10 APPLICATION_EVENT_STAGES (a constant beside applicationEventAnalyticsQuerySchema, which follows the scheme)
+    exempt:   apps/web/lib/application-events/schema.ts:8 APPLICATION_ID_COOKIE_MAX_AGE (a constant beside applicationEventAnalyticsQuerySchema, which follows the scheme)
+    exempt:   apps/web/lib/application-events/schema.ts:6 APPLICATION_ID_COOKIE_PREFIX (a constant beside applicationEventAnalyticsQuerySchema, which follows the scheme)
+
+17. [D-942e25] apps/web: HTTP handlers in app/(ee)/api/partners/** (route files) call getDefaultProgramIdOrThrow() before NextResponse.json()
+    evidence: 23/24 (lower bound 0.80, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  apps/web/app/(ee)/api/partners/[partnerId]/application-risks/route.ts#GET
+    outlier:  apps/web/app/(ee)/api/partners/applications/reject/route.ts:8 POST
+
+18. [D-ec6127] apps/web: components in app/** (page-client files) are named `*Client`
+    evidence: 62/71 (lower bound 0.78, lift 24.4)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/web/app/(ee)/app.dub.co/(new-program)/[slug]/program/new/overview/page-client.tsx#PageClient
+    outlier:  apps/web/app/(ee)/partners.dub.co/(dashboard)/programs/[programSlug]/(enrolled)/bounties/[bountyId]/page-client.tsx:115 PartnerBountyPageHeader
+    outlier:  apps/web/app/app.dub.co/(dashboard)/[slug]/(ee)/settings/domains/default/page-client.tsx:44 DefaultDomains
+    outlier:  apps/web/app/app.dub.co/(dashboard)/[slug]/(ee)/settings/domains/email/page-client.tsx:15 EmailDomains
+    ... 6 more outliers
+
+19. [D-cc64dd] prisma models have a `id` field
+    evidence: 69/80 (lower bound 0.77, lift 1.0)
+    tier:     suggestion (rule kind model_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  packages/prisma/schema/activity.prisma#ActivityLog
+    outlier:  packages/prisma/schema/jackson.prisma:9 jackson_store
+    outlier:  packages/prisma/schema/jackson.prisma:21 jackson_ttl
+    outlier:  packages/prisma/schema/network.prisma:16 ProgramCategory
+    ... 8 more outliers
+
+20. [D-3c672e] apps/web: HTTP handlers in app/(ee)/api/partner-profile/programs/** (route files) validate their input with a schema
+    evidence: 25/27 (lower bound 0.77, lift 3.9)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  apps/web/app/(ee)/api/partner-profile/programs/[programId]/activity-logs/route.ts#GET
+    outlier:  apps/web/app/(ee)/api/partner-profile/programs/[programId]/bounties/route.ts:7 GET
+    outlier:  apps/web/app/(ee)/api/partner-profile/programs/[programId]/links/[linkId]/route.ts:159 DELETE
+
+21. [D-8f69af] apps/web: layouts in app/** (layout files) are named `*Layout`
+    evidence: 40/45 (lower bound 0.77, lift 37.8)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/web/app/(ee)/admin.dub.co/(auth)/layout.tsx#AdminAuthLayout
+    outlier:  apps/web/app/(ee)/app.dub.co/(new-program)/layout.tsx:8 Layout
+    outlier:  apps/web/app/(ee)/partners.dub.co/(dashboard)/programs/[programSlug]/(enrolled)/layout.tsx:3 Layout
+    outlier:  apps/web/app/app.dub.co/(dashboard)/layout.tsx:14 Layout
+    ... 2 more outliers
+
+22. [D-40f44c] apps/web: HTTP handlers in app/(ee)/api/cron/** (route files) call verifyQstashSignature() before handleAndReturnErrorResponse()
+    evidence: 62/72 (lower bound 0.76, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  apps/web/app/(ee)/api/cron/aggregate-clicks/route.ts#handler
+    outlier:  apps/web/app/(ee)/api/cron/domains/renewal-payments/route.ts:26 GET
+    outlier:  apps/web/app/(ee)/api/cron/domains/renewal-reminders/route.ts:30 GET
+    outlier:  apps/web/app/(ee)/api/cron/domains/verify/route.ts:21 GET
+    ... 7 more outliers
+
+23. [D-79cc0a] apps/web: HTTP handlers in app/(ee)/api/partners/** (route files) call getDefaultProgramIdOrThrow()
+    evidence: 24/26 (lower bound 0.76, lift 11.4)
+    tier:     suggestion (rule kind calls)
+    agents:   not shown to agents (family below admission bar: 33% of 3)
+    example:  apps/web/app/(ee)/api/partners/[partnerId]/application-risks/route.ts#GET
+    outlier:  apps/web/app/(ee)/api/partners/applications/reject/route.ts:8 POST
+    outlier:  apps/web/app/(ee)/api/partners/platforms/callback/route.ts:28 GET
+
+24. [D-093949] apps/web: server actions in lib/actions/partners/** call throwIfNoPermission() before getDefaultProgramIdOrThrow()
+    evidence: 47/54 (lower bound 0.76, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  apps/web/lib/actions/partners/approve-bounty-submission.ts#approveBountySubmissionAction
+    outlier:  apps/web/lib/actions/partners/ban-partner.ts:50 banPartner
+    outlier:  apps/web/lib/actions/partners/confirm-payouts.ts:50 confirmPayoutsAction
+    outlier:  apps/web/lib/actions/partners/create-clawback.ts:10 createClawbackAction
+    ... 4 more outliers
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

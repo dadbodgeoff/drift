@@ -1,0 +1,66 @@
+{
+  "name": "chunky",
+  "repo": "giovannipasq/chunky",
+  "sha": "b70af834a630820c75e90e41837850182e3d241b",
+  "loc": 23122,
+  "shape": {
+    "mix": "ts+py",
+    "shape": "frontend+backend",
+    "js_dirs": 1,
+    "py_dirs": 1,
+    "workspace_files": [],
+    "frontend_dirs": [
+      "frontend"
+    ],
+    "backend_dirs": [
+      ""
+    ]
+  },
+  "packages": [
+    {
+      "dir": "frontend",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 228,
+        "roles": 16,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    }
+  ],
+  "root": {
+    "default": {
+      "shown": 0,
+      "conventions": 0,
+      "units": 474,
+      "roles": 33,
+      "tiers": {
+        "default": 0,
+        "suggestion": 0
+      },
+      "python_withheld": 0,
+      "secs": 1,
+      "cards": []
+    },
+    "python_opt_in": {
+      "shown": 0,
+      "conventions": 0,
+      "units": 474,
+      "roles": 33,
+      "tiers": {
+        "default": 0,
+        "suggestion": 0
+      },
+      "python_withheld": null,
+      "secs": 0,
+      "cards": []
+    }
+  }
+}

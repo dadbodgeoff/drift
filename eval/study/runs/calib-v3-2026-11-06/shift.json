@@ -1,0 +1,188 @@
+{
+  "a": "eval/study/runs/calib-v3-2026-11-06/prior.jsonl",
+  "b": "eval/study/runs/calib-v3-2026-11-06/v3-final.jsonl",
+  "n": 61,
+  "scope": 61,
+  "exact": 0.639344262295082,
+  "kappa": 0.383838383838384,
+  "kappa_boot": {
+    "lo": 0.16578249336870024,
+    "hi": 0.5827530798071773,
+    "clusters": 16
+  },
+  "accept_vs_not": {
+    "n": 61,
+    "po": 0.7049180327868853,
+    "pe": 0.45982262832571885,
+    "kappa": 0.45373134328358217
+  },
+  "wrong_vs_not": {
+    "n": 61,
+    "po": 0.639344262295082,
+    "pe": 0.43509809191077664,
+    "kappa": 0.3615604186489059
+  },
+  "confusion": {
+    "ACCEPT": {
+      "ACCEPT": 19,
+      "TRIVIAL": 0,
+      "WRONG": 18
+    },
+    "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 4
+    },
+    "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 20
+    }
+  },
+  "mix": {
+    "A": {
+      "ACCEPT": 37,
+      "TRIVIAL": 4,
+      "WRONG": 20
+    },
+    "B": {
+      "ACCEPT": 19,
+      "TRIVIAL": 0,
+      "WRONG": 42
+    }
+  },
+  "disagreements": [
+    {
+      "uid": "dub/D-e25af3",
+      "repo": "dub",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "dub/D-3fad9a",
+      "repo": "dub",
+      "a": "TRIVIAL",
+      "b": "WRONG"
+    },
+    {
+      "uid": "dub/D-a23ff8",
+      "repo": "dub",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "dub/D-024a81",
+      "repo": "dub",
+      "a": "TRIVIAL",
+      "b": "WRONG"
+    },
+    {
+      "uid": "dub/D-742eb6",
+      "repo": "dub",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "dub/D-79cc0a",
+      "repo": "dub",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "twenty/D-47b768",
+      "repo": "twenty",
+      "a": "TRIVIAL",
+      "b": "WRONG"
+    },
+    {
+      "uid": "twenty/D-006db2",
+      "repo": "twenty",
+      "a": "TRIVIAL",
+      "b": "WRONG"
+    },
+    {
+      "uid": "ai/D-fc5ef7",
+      "repo": "ai",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "nest/D-f68b2a",
+      "repo": "nest",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "supabase/D-c59437",
+      "repo": "supabase",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "immich/D-c10e8e",
+      "repo": "immich",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "immich/D-26380c",
+      "repo": "immich",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "midday/D-7da2b9",
+      "repo": "midday",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "infisical/D-d9b44e",
+      "repo": "infisical",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "infisical/D-1b2542",
+      "repo": "infisical",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "full-stack-fastapi-template/D-6e757d",
+      "repo": "full-stack-fastapi-template",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "polar/D-fb4011",
+      "repo": "polar",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "netbox/D-cc1341",
+      "repo": "netbox",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "netbox/D-bc0c7d",
+      "repo": "netbox",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "saleor/D-6af632",
+      "repo": "saleor",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    },
+    {
+      "uid": "langchain/D-468530",
+      "repo": "langchain",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    }
+  ]
+}

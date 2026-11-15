@@ -1,0 +1,285 @@
+{
+  "name": "designsystemet",
+  "repo": "digdir/designsystemet",
+  "sha": "8c2d9ccbe668a1318f3b0ba11d6db5a7fba087c3",
+  "loc": 75583,
+  "shape": {
+    "mix": "multi-ts",
+    "shape": "frontend+backend",
+    "js_dirs": 12,
+    "py_dirs": 0,
+    "workspace_files": [
+      "pnpm-workspace.yaml"
+    ],
+    "frontend_dirs": [
+      "apps/themebuilder",
+      "apps/www",
+      "figma/plugin",
+      "internal/components"
+    ],
+    "backend_dirs": [
+      "apps/themebuilder",
+      "apps/www"
+    ]
+  },
+  "packages": [
+    {
+      "dir": "apps/themebuilder",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 152,
+        "roles": 10,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "apps/www",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 375,
+        "roles": 40,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "figma/plugin",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 108,
+        "roles": 10,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "figma/ui-kit",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 1,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "internal/components",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 95,
+        "roles": 8,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "internal/digdir",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 1,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "packages/cli",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 260,
+        "roles": 24,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "packages/css",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 3,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "packages/react",
+      "kind": "ts",
+      "default": {
+        "shown": 1,
+        "conventions": 1,
+        "units": 409,
+        "roles": 22,
+        "tiers": {
+          "default": 1,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": [
+          {
+            "id": "D-0d139c",
+            "tier": "default",
+            "language": "ts",
+            "rule_kind": "wrapped_by:call",
+            "role_package": "",
+            "package": "packages/react"
+          }
+        ]
+      }
+    },
+    {
+      "dir": "packages/types",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 2,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "packages/web",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 67,
+        "roles": 5,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    }
+  ],
+  "root": {
+    "default": {
+      "shown": 2,
+      "conventions": 2,
+      "units": 1516,
+      "roles": 117,
+      "tiers": {
+        "default": 1,
+        "suggestion": 1
+      },
+      "python_withheld": 0,
+      "secs": 1,
+      "cards": [
+        {
+          "id": "D-066640",
+          "tier": "default",
+          "language": "ts",
+          "rule_kind": "wrapped_by:call",
+          "role_package": "packages/react",
+          "package": "packages/react"
+        },
+        {
+          "id": "D-0c6643",
+          "tier": "suggestion",
+          "language": "ts",
+          "rule_kind": "control",
+          "role_package": "figma/plugin",
+          "package": "figma/plugin"
+        }
+      ]
+    },
+    "python_opt_in": {
+      "shown": 2,
+      "conventions": 2,
+      "units": 1516,
+      "roles": 117,
+      "tiers": {
+        "default": 1,
+        "suggestion": 1
+      },
+      "python_withheld": null,
+      "secs": 0,
+      "cards": [
+        {
+          "id": "D-066640",
+          "tier": "default",
+          "language": "ts",
+          "rule_kind": "wrapped_by:call",
+          "role_package": "packages/react",
+          "package": "packages/react"
+        },
+        {
+          "id": "D-0c6643",
+          "tier": "suggestion",
+          "language": "ts",
+          "rule_kind": "control",
+          "role_package": "figma/plugin",
+          "package": "figma/plugin"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+ "schema": "drift-review-questions",
+ "schema_version": 1,
+ "question": "Are these the same kind of thing?",
+ "answers": {
+  "same": "Yes: accept the card (`drift review --answer ID=same`)",
+  "different": "No, these are different: pick the files whose flagged members are a different kind; they are exempt by path and the card is accepted (`--answer ID=different --set-apart PATH,...`; an entry point marked needs_confirmation also needs `--confirm-entry PATH#SYMBOL`)",
+  "not-a-convention": "Not a convention: reject the card (`--answer ID=not-a-convention`)"
+ },
+ "unanswered": "A candidate nobody answers stays a candidate and never reaches agents.",
+ "candidates": []
+}

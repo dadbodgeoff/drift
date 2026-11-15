@@ -1,0 +1,99 @@
+5 conventions from 5341 units in 144 roles (0 default tier, 5 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-e3cf08] functions in src/dbt_charts/core/render/warnings/** pass `fix` to Diagnostic.from_code()
+    evidence: 63/63 (lower bound 0.94, lift 23.8)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/dbt_charts/core/render/warnings/annotation_note_moved.py#detect
+    exempt:   src/dbt_charts/core/render/warnings/base.py:221 chart_series (does not call Diagnostic.from_code())
+    exempt:   src/dbt_charts/core/render/warnings/base.py:253 engine_warnings (does not call Diagnostic.from_code())
+    exempt:   src/dbt_charts/core/render/warnings/base.py:200 listed_phrase (does not call Diagnostic.from_code())
+    exempt:   src/dbt_charts/core/render/warnings/layer_data_outside_domain.py:51 layers_have_own_y_scale (does not call Diagnostic.from_code())
+    exempt:   src/dbt_charts/core/render/warnings/layer_data_outside_domain.py:21 painted_float (does not call Diagnostic.from_code())
+    exempt:   src/dbt_charts/core/render/warnings/layer_data_outside_domain.py:39 paints_outside_domain (does not call Diagnostic.from_code())
+    exempt:   src/dbt_charts/core/render/warnings/registry.py:181 run_all (does not call Diagnostic.from_code())
+    exempt:   src/dbt_charts/core/render/warnings/value_labels_crowd_width.py:25 painted_labels (does not call Diagnostic.from_code())
+    exempt:   src/dbt_charts/core/render/warnings/x_axis.py:46 emitted_x_axis (does not call Diagnostic.from_code())
+    exempt:   src/dbt_charts/core/render/warnings/x_axis.py:106 x_scale_type (does not call Diagnostic.from_code())
+
+ 2. [D-0f5597] exported values in src/dbt_charts/core/diagnostics/** call REGISTRY.register()
+    evidence: 409/416 (lower bound 0.97, lift 2.3)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/dbt_charts/core/diagnostics/codes_compile.py#ERR_ANNOTATION_INVALID
+    outlier:  src/dbt_charts/core/diagnostics/codes_execute.py:693 UNKNOWN_RELATION_DIALECT_NOTES
+    outlier:  src/dbt_charts/core/diagnostics/codes_retired.py:10 RETIRED_WARNING_CODES
+    outlier:  src/dbt_charts/core/diagnostics/hints.py:42 CHART_RENDERING_SUCCESSORS
+    outlier:  src/dbt_charts/core/diagnostics/hints.py:31 RETIRED_FORMAT_SUCCESSORS
+    outlier:  src/dbt_charts/core/diagnostics/hints.py:158 RETIRED_VARIANT_FAMILIES
+    outlier:  src/dbt_charts/core/diagnostics/hints.py:159 RETIRED_VARIANT_ROLE_PREFIX
+    outlier:  src/dbt_charts/core/diagnostics/hints.py:147 RETIRED_VARIANT_SUFFIX_SUCCESSORS
+    exempt:   src/dbt_charts/core/diagnostics/registry.py:21 CODED_VALIDATION_ERROR (in the module that defines REGISTRY.register)
+    exempt:   src/dbt_charts/core/diagnostics/registry.py:16 ERROR_GUIDE_PATH (in the module that defines REGISTRY.register)
+    exempt:   src/dbt_charts/core/diagnostics/registry.py:179 REGISTRY (in the module that defines REGISTRY.register)
+
+ 3. [D-f5c512] classes in src/dbt_charts/core/compile/** extend BaseModel
+    evidence: 434/447 (lower bound 0.95, lift 1.5)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/dbt_charts/core/compile/models/board/authored.py#AuthoredBoard
+    outlier:  src/dbt_charts/core/compile/config.py:1236 ProjectSourcesConfig
+    outlier:  src/dbt_charts/core/compile/migrations/migrations.py:126 Dropped
+    outlier:  src/dbt_charts/core/compile/migrations/migrations.py:282 MigrationRegistry
+    outlier:  src/dbt_charts/core/compile/models/style/resolved/geoshape.py:35 ResolvedGeoshapeChartStyle
+    outlier:  src/dbt_charts/core/compile/models/style/theme/geoshape.py:32 GeoshapeChartStyle
+    outlier:  src/dbt_charts/core/compile/models/style/theme/heatmap.py:40 HeatmapChartStyle
+    outlier:  src/dbt_charts/core/compile/models/style/theme/kpi.py:219 KpiChartStyle
+    outlier:  src/dbt_charts/core/compile/models/style/theme/pie.py:40 PieChartStyle
+    outlier:  src/dbt_charts/core/compile/models/style/theme/point_map.py:32 PointMapChartStyle
+    outlier:  src/dbt_charts/core/compile/models/style/theme/table.py:390 TableChartStyle
+    outlier:  src/dbt_charts/core/compile/template/query_result.py:102 QueryResult
+    outlier:  src/dbt_charts/core/compile/template/query_result.py:164 QueryResults
+    outlier:  src/dbt_charts/core/compile/template/query_result.py:22 QueryRow
+    exempt:   src/dbt_charts/core/compile/board_artifact.py:78 DanglingStyleRefError (another kind of class (extends ValueError))
+    exempt:   src/dbt_charts/core/compile/errors.py:271 FileValidationError (another kind of class (extends Exception))
+    exempt:   src/dbt_charts/core/compile/errors.py:217 JinjaError (another kind of class (extends Exception))
+    exempt:   src/dbt_charts/core/compile/errors.py:83 ParseError (another kind of class (extends Exception))
+    exempt:   src/dbt_charts/core/compile/errors.py:171 ReferenceError (another kind of class (extends Exception))
+    exempt:   src/dbt_charts/core/compile/errors.py:247 TemplateOutputTooLargeError (another kind of class (extends Exception))
+    exempt:   src/dbt_charts/core/compile/errors.py:119 ValidationError (another kind of class (extends Exception))
+    exempt:   src/dbt_charts/core/compile/migrations/migrations.py:62 IncompleteMigrationError (another kind of class (extends ValueError))
+    exempt:   src/dbt_charts/core/compile/migrations/migrations.py:54 MigrationConflictError (another kind of class (extends ValueError))
+    exempt:   src/dbt_charts/core/compile/migrations/migrations.py:76 SchemaMigrationWarning (another kind of class (extends UserWarning))
+    exempt:   src/dbt_charts/core/compile/migrations/migrations.py:72 SchemaVersionTooOldError (another kind of class (extends ValueError))
+    exempt:   src/dbt_charts/core/compile/migrations/migrations.py:58 UnsupportedSchemaError (another kind of class (extends ValueError))
+    exempt:   src/dbt_charts/core/compile/normalize/variables.py:107 VariableReferenceErrors (another kind of class (extends Exception))
+    exempt:   src/dbt_charts/core/compile/resolve/chart/_annotation_stats.py:22 FitError (another kind of class (extends ValueError))
+    exempt:   src/dbt_charts/core/compile/resolve/chart/_annotation_stats.py:26 TooFewRows (another kind of class (extends ValueError))
+    exempt:   src/dbt_charts/core/compile/resolve/style/palette.py:110 CategoricalOverrequestError (another kind of class (extends ValueError))
+    exempt:   src/dbt_charts/core/compile/resolve/style/palette.py:123 PatternAsPaletteError (another kind of class (extends ValueError))
+    exempt:   src/dbt_charts/core/compile/resolve/style/palette.py:114 SurfaceUnsupportedError (another kind of class (extends ValueError))
+    exempt:   src/dbt_charts/core/compile/resolve/style/palette.py:118 ToneAsPaletteError (another kind of class (extends ValueError))
+    exempt:   src/dbt_charts/core/compile/resolve/style/palette.py:106 UnknownColorError (another kind of class (extends ValueError))
+    exempt:   src/dbt_charts/core/compile/resolve/style/palette.py:102 UnknownPaletteError (another kind of class (extends ValueError))
+    exempt:   src/dbt_charts/core/compile/template/annotation_text.py:20 AnnotationTextError (another kind of class (extends ValueError))
+    exempt:   src/dbt_charts/core/compile/template/custom_template.py:54 CustomTemplateError (another kind of class (extends Exception))
+    exempt:   src/dbt_charts/core/compile/template/output_budget.py:65 TemplateOutputBudgetExceeded (another kind of class (extends Exception))
+    exempt:   src/dbt_charts/core/compile/template/query_result.py:70 QueryItems (another kind of class (extends list))
+
+ 4. [D-e818b0] files in src/dbt_charts/agent_api/** have a test file
+    evidence: 47/49 (lower bound 0.86, lift 2.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/dbt_charts/agent_api/_link_scan.py#(file)
+    outlier:  src/dbt_charts/agent_api/hex_project.py:1 (file)
+    outlier:  src/dbt_charts/agent_api/inspect.py:1 (file)
+
+ 5. [D-9f88d3] classes in src/dbt_charts/agent_api/** extend BaseModel
+    evidence: 108/109 (lower bound 0.95, lift 1.5)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  src/dbt_charts/agent_api/_link_scan.py#LinkHit
+    outlier:  src/dbt_charts/agent_api/source_bundle.py:104 SourceBundle
+    exempt:   src/dbt_charts/agent_api/_paths.py:384 PathOutsideProjectError (another kind of class (extends Exception))
+    exempt:   src/dbt_charts/agent_api/examples.py:80 ExampleNotFound (another kind of class (extends Exception))
+    exempt:   src/dbt_charts/agent_api/exposures.py:39 ExposuresError (another kind of class (extends ValueError))
+    exempt:   src/dbt_charts/agent_api/mcp_install.py:93 McpConfigReadError (another kind of class (extends Exception))
+    exempt:   src/dbt_charts/agent_api/serve.py:183 DetachedServeError (another kind of class (extends RuntimeError))
+    exempt:   src/dbt_charts/agent_api/skill_install.py:68 SkillInstallError (another kind of class (extends Exception))
+    exempt:   src/dbt_charts/agent_api/skill_render.py:77 MissingSurfaceAlias (another kind of class (extends KeyError))
+    exempt:   src/dbt_charts/agent_api/skills.py:186 SkillNotFound (another kind of class (extends Exception))
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

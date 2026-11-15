@@ -1,0 +1,471 @@
+{
+  "run": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel",
+  "items": [
+    {
+      "uid": "dub/D-345913",
+      "repo": "dub",
+      "id": "D-345913",
+      "rank": 2,
+      "summary": "apps/web: server actions in lib/** are wrapped in authActionClient.inputSchema().action() or authPartnerActionClient.action() or authPartnerActionClient.inputSchema().action() or authUserActionClient.inputSchema().action()",
+      "role": {
+        "package": "apps/web",
+        "dir": "lib",
+        "file": "*",
+        "entry": "server_action",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action",
+          "apps/web/lib/actions/safe-action.ts#authPartnerActionClient.action",
+          "apps/web/lib/actions/safe-action.ts#authPartnerActionClient.inputSchema().action",
+          "apps/web/lib/actions/safe-action.ts#authUserActionClient.inputSchema().action"
+        ]
+      },
+      "evidence": {
+        "holders": 109,
+        "total": 123,
+        "lower_bound": 0.82,
+        "lift": 16.5
+      },
+      "members": 124,
+      "example": "apps/web/lib/actions/add-edit-integration.ts#addEditIntegration",
+      "python_members": null,
+      "outliers": 14,
+      "outlier_files": [
+        "apps/web/lib/actions/check-account-exists.ts",
+        "apps/web/lib/actions/create-user-account.ts",
+        "apps/web/lib/actions/partners/ban-partner.ts",
+        "apps/web/lib/actions/partners/create-program-application.ts",
+        "apps/web/lib/actions/partners/force-withdrawal.ts",
+        "apps/web/lib/actions/partners/upload-program-application-image.ts",
+        "apps/web/lib/actions/request-password-reset.ts",
+        "apps/web/lib/actions/send-otp.ts",
+        "apps/web/lib/ai/generate-csv-mapping.ts",
+        "apps/web/lib/ai/generate-filters.ts",
+        "apps/web/lib/api/oauth/actions.ts",
+        "apps/web/lib/api/partners/create-and-enroll-partner.ts",
+        "apps/web/lib/submitted-leads/mark-submitted-lead-closed-won.ts",
+        "apps/web/lib/submitted-leads/mark-submitted-lead-qualified.ts"
+      ],
+      "block": " 2. [D-345913] apps/web: server actions in lib/** are wrapped in authActionClient.inputSchema().action() or authPartnerActionClient.action() or authPartnerActionClient.inputSchema().action() or authUserActionClient.inputSchema().action()\n    evidence: 109/123 (lower bound 0.82, lift 16.5)\n    split:    authActionClient.inputSchema().action 83, authPartnerActionClient.inputSchema().action 17, authPartnerActionClient.action 7, authUserActionClient.inputSchema().action 2\n    example:  apps/web/lib/actions/add-edit-integration.ts#addEditIntegration\n    outlier:  apps/web/lib/actions/check-account-exists.ts:18 checkAccountExistsAction\n    outlier:  apps/web/lib/actions/create-user-account.ts:23 createUserAccountAction\n    outlier:  apps/web/lib/actions/partners/ban-partner.ts:50 banPartner\n    outlier:  apps/web/lib/actions/partners/create-program-application.ts:117 createProgramApplicationAction\n    outlier:  apps/web/lib/actions/partners/force-withdrawal.ts:36 forceWithdrawal\n    outlier:  apps/web/lib/actions/partners/upload-program-application-image.ts:18 uploadProgramApplicationImageAction\n    outlier:  apps/web/lib/actions/request-password-reset.ts:15 requestPasswordResetAction\n    outlier:  apps/web/lib/actions/send-otp.ts:24 sendOtpAction\n    outlier:  apps/web/lib/ai/generate-csv-mapping.ts:8 generateCsvMapping\n    outlier:  apps/web/lib/ai/generate-filters.ts:40 generateFilters\n    outlier:  apps/web/lib/api/oauth/actions.ts:7 validateAuthorizeRequest\n    outlier:  apps/web/lib/api/partners/create-and-enroll-partner.ts:30 createAndEnrollPartner\n    outlier:  apps/web/lib/submitted-leads/mark-submitted-lead-closed-won.ts:17 markSubmittedLeadClosedWon\n    outlier:  apps/web/lib/submitted-leads/mark-submitted-lead-qualified.ts:16 markSubmittedLeadQualified\n    exempt:   apps/web/lib/actions/generate-unsubscribe-url.ts:7 generateUnsubscribeTokenAction (reads no input, so needs no .inputSchema() (authUserActionClient.action() without it))",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "cal.com/D-c54406",
+      "repo": "cal.com",
+      "id": "D-c54406",
+      "rank": 1,
+      "summary": "packages/trpc: rpc entry points in server/** (_router files) are wrapped in authedAdminProcedure() or authedProcedure() or authedAdminProcedureWithRequestedUser()",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server",
+        "file": "_router",
+        "entry": "rpc",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "packages/trpc/server/procedures/authedProcedure.ts#authedAdminProcedure",
+          "packages/trpc/server/procedures/authedProcedure.ts#authedProcedure",
+          "packages/trpc/server/routers/viewer/users/_router.ts#authedAdminProcedureWithRequestedUser"
+        ]
+      },
+      "evidence": {
+        "holders": 116,
+        "total": 129,
+        "lower_bound": 0.83,
+        "lift": 19.5
+      },
+      "members": 129,
+      "example": "packages/trpc/server/routers/loggedInViewer/_router.tsx#MUTATION addNotificationsSubscription",
+      "python_members": null,
+      "outliers": 13,
+      "outlier_files": [
+        "packages/trpc/server/routers/features/_router.ts",
+        "packages/trpc/server/routers/publicViewer/_router.tsx",
+        "packages/trpc/server/routers/publicViewer/timezones/_router.tsx",
+        "packages/trpc/server/routers/viewer/auth/_router.tsx",
+        "packages/trpc/server/routers/viewer/bookings/_router.tsx",
+        "packages/trpc/server/routers/viewer/i18n/_router.tsx",
+        "packages/trpc/server/routers/viewer/slots/_router.tsx"
+      ],
+      "block": " 1. [D-c54406] packages/trpc: rpc entry points in server/** (_router files) are wrapped in authedAdminProcedure() or authedProcedure() or authedAdminProcedureWithRequestedUser()\n    evidence: 116/129 (lower bound 0.83, lift 19.5)\n    split:    authedProcedure 83, authedAdminProcedure 30, authedAdminProcedureWithRequestedUser 3\n    derived:  bookingsProcedure 1 (built on authedProcedure)\n    example:  packages/trpc/server/routers/loggedInViewer/_router.tsx#MUTATION addNotificationsSubscription\n    outlier:  packages/trpc/server/routers/features/_router.ts:13 QUERY checkTeamFeature\n    outlier:  packages/trpc/server/routers/publicViewer/_router.tsx:18 MUTATION markHostAsNoShow\n    outlier:  packages/trpc/server/routers/publicViewer/_router.tsx:14 MUTATION submitRating\n    outlier:  packages/trpc/server/routers/publicViewer/_router.tsx:24 QUERY checkIfUserEmailVerificationRequired\n    outlier:  packages/trpc/server/routers/publicViewer/timezones/_router.tsx:11 QUERY cityTimezones\n    outlier:  packages/trpc/server/routers/viewer/auth/_router.tsx:48 MUTATION sendVerifyEmailCode\n    outlier:  packages/trpc/server/routers/viewer/auth/_router.tsx:40 MUTATION verifyCodeUnAuthenticated\n    outlier:  packages/trpc/server/routers/viewer/bookings/_router.tsx:91 QUERY find\n    outlier:  packages/trpc/server/routers/viewer/i18n/_router.tsx:6 QUERY get\n    outlier:  packages/trpc/server/routers/viewer/slots/_router.tsx:46 MUTATION removeSelectedSlotMark\n    outlier:  packages/trpc/server/routers/viewer/slots/_router.tsx:26 MUTATION reserveSlot\n    outlier:  packages/trpc/server/routers/viewer/slots/_router.tsx:18 QUERY getSchedule\n    outlier:  packages/trpc/server/routers/viewer/slots/_router.tsx:34 QUERY isAvailable",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "documenso/D-32c861",
+      "repo": "documenso",
+      "id": "D-32c861",
+      "rank": 1,
+      "summary": "packages/trpc: rpc entry points in server/** are wrapped in adminProcedure() or authenticatedProcedure()",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server",
+        "file": "*",
+        "entry": "rpc",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "packages/trpc/server/trpc.ts#adminProcedure",
+          "packages/trpc/server/trpc.ts#authenticatedProcedure"
+        ]
+      },
+      "evidence": {
+        "holders": 191,
+        "total": 215,
+        "lower_bound": 0.84,
+        "lift": 5.7
+      },
+      "members": 215,
+      "example": "packages/trpc/server/admin-router/admin-search.ts#adminSearchRoute",
+      "python_members": null,
+      "outliers": 24,
+      "outlier_files": [
+        "packages/trpc/server/auth-router/create-passkey-signin-options.ts",
+        "packages/trpc/server/document-router/access-auth-request-2fa-email.ts",
+        "packages/trpc/server/document-router/share-document.ts",
+        "packages/trpc/server/embedding-router/create-embedding-document.ts",
+        "packages/trpc/server/embedding-router/create-embedding-envelope.ts",
+        "packages/trpc/server/embedding-router/create-embedding-presign-token.ts",
+        "packages/trpc/server/embedding-router/create-embedding-template.ts",
+        "packages/trpc/server/embedding-router/get-multi-sign-document.ts",
+        "packages/trpc/server/embedding-router/persist-embed-signature.ts",
+        "packages/trpc/server/embedding-router/update-embedding-document.ts",
+        "packages/trpc/server/embedding-router/update-embedding-envelope.ts",
+        "packages/trpc/server/embedding-router/update-embedding-template.ts",
+        "packages/trpc/server/embedding-router/verify-embedding-presign-token.ts",
+        "packages/trpc/server/enterprise-router/csc-sign-envelope.ts",
+        "packages/trpc/server/enterprise-router/decline-link-organisation-account.ts",
+        "packages/trpc/server/enterprise-router/link-organisation-account.ts",
+        "packages/trpc/server/envelope-router/attachment/find-attachments.ts",
+        "packages/trpc/server/envelope-router/envelope-recipients/report-recipient.ts",
+        "packages/trpc/server/envelope-router/get-envelope-items-by-token.ts",
+        "packages/trpc/server/envelope-router/sign-envelope-field.ts",
+        "packages/trpc/server/envelope-router/signing-status-envelope.ts",
+        "packages/trpc/server/organisation-router/accept-organisation-member-invite.ts",
+        "packages/trpc/server/organisation-router/decline-organisation-member-invite.ts",
+        "packages/trpc/server/team-router/complete-team-email-verification.ts"
+      ],
+      "block": " 1. [D-32c861] packages/trpc: rpc entry points in server/** are wrapped in adminProcedure() or authenticatedProcedure()\n    evidence: 191/215 (lower bound 0.84, lift 5.7)\n    split:    authenticatedProcedure 146, adminProcedure 45\n    example:  packages/trpc/server/admin-router/admin-search.ts#adminSearchRoute\n    outlier:  packages/trpc/server/auth-router/create-passkey-signin-options.ts:10 createPasskeySigninOptionsRoute\n    outlier:  packages/trpc/server/document-router/access-auth-request-2fa-email.ts:18 accessAuthRequest2FAEmailRoute\n    outlier:  packages/trpc/server/document-router/share-document.ts:7 shareDocumentRoute\n    outlier:  packages/trpc/server/embedding-router/create-embedding-document.ts:14 createEmbeddingDocumentRoute\n    outlier:  packages/trpc/server/embedding-router/create-embedding-envelope.ts:11 createEmbeddingEnvelopeRoute\n    outlier:  packages/trpc/server/embedding-router/create-embedding-presign-token.ts:17 createEmbeddingPresignTokenRoute\n    outlier:  packages/trpc/server/embedding-router/create-embedding-template.ts:15 createEmbeddingTemplateRoute\n    outlier:  packages/trpc/server/embedding-router/get-multi-sign-document.ts:14 getMultiSignDocumentRoute\n    outlier:  packages/trpc/server/embedding-router/persist-embed-signature.ts:16 persistEmbedSignatureRoute\n    outlier:  packages/trpc/server/embedding-router/update-embedding-document.ts:14 updateEmbeddingDocumentRoute\n    outlier:  packages/trpc/server/embedding-router/update-embedding-envelope.ts:35 updateEmbeddingEnvelopeRoute\n    outlier:  packages/trpc/server/embedding-router/update-embedding-template.ts:13 updateEmbeddingTemplateRoute\n    outlier:  packages/trpc/server/embedding-router/verify-embedding-presign-token.ts:14 verifyEmbeddingPresignTokenRoute\n    outlier:  packages/trpc/server/enterprise-router/csc-sign-envelope.ts:19 cscSignEnvelopeRoute\n    outlier:  packages/trpc/server/enterprise-router/decline-link-organisation-account.ts:13 declineLinkOrganisationAccountRoute\n    outlier:  packages/trpc/server/enterprise-router/link-organisation-account.ts:14 linkOrganisationAccountRoute\n    outlier:  packages/trpc/server/envelope-router/attachment/find-attachments.ts:12 findAttachmentsRoute\n    outlier:  packages/trpc/server/envelope-router/envelope-recipients/report-recipient.ts:15 reportRecipientRoute\n    outlier:  packages/trpc/server/envelope-router/get-envelope-items-by-token.ts:15 getEnvelopeItemsByTokenRoute\n    outlier:  packages/trpc/server/envelope-router/sign-envelope-field.ts:18 signEnvelopeFieldRoute\n    outlier:  packages/trpc/server/envelope-router/signing-status-envelope.ts:12 signingStatusEnvelopeRoute\n    outlier:  packages/trpc/server/organisation-router/accept-organisation-member-invite.ts:9 acceptOrganisationMemberInviteRoute\n    outlier:  packages/trpc/server/organisation-router/decline-organisation-member-invite.ts:11 declineOrganisationMemberInviteRoute\n    outlier:  packages/trpc/server/team-router/complete-team-email-verification.ts:13 completeTeamEmailVerificationRoute",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "documenso/D-a0eee5",
+      "repo": "documenso",
+      "id": "D-a0eee5",
+      "rank": 2,
+      "summary": "packages/trpc: rpc entry points in server/** (router files) are wrapped in authenticatedProcedure()",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server",
+        "file": "router",
+        "entry": "rpc",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "packages/trpc/server/trpc.ts#authenticatedProcedure"
+        ]
+      },
+      "evidence": {
+        "holders": 59,
+        "total": 64,
+        "lower_bound": 0.83,
+        "lift": 7.3
+      },
+      "members": 64,
+      "example": "packages/trpc/server/field-router/router.ts#MUTATION createDocumentField",
+      "python_members": null,
+      "outliers": 5,
+      "outlier_files": [
+        "packages/trpc/server/field-router/router.ts",
+        "packages/trpc/server/recipient-router/router.ts",
+        "packages/trpc/server/template-router/router.ts"
+      ],
+      "block": " 2. [D-a0eee5] packages/trpc: rpc entry points in server/** (router files) are wrapped in authenticatedProcedure()\n    evidence: 59/64 (lower bound 0.83, lift 7.3)\n    example:  packages/trpc/server/field-router/router.ts#MUTATION createDocumentField\n    outlier:  packages/trpc/server/field-router/router.ts:653 MUTATION removeSignedFieldWithToken\n    outlier:  packages/trpc/server/field-router/router.ts:616 MUTATION signFieldWithToken\n    outlier:  packages/trpc/server/recipient-router/router.ts:590 MUTATION completeDocumentWithToken\n    outlier:  packages/trpc/server/recipient-router/router.ts:679 MUTATION rejectDocumentWithToken\n    outlier:  packages/trpc/server/template-router/router.ts:613 MUTATION createDocumentFromDirectTemplate",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "ai/D-fc5ef7",
+      "repo": "ai",
+      "id": "D-fc5ef7",
+      "rank": 1,
+      "summary": "packages/codemod: functions in src/codemods/** are wrapped in createTransformer()",
+      "role": {
+        "package": "packages/codemod",
+        "dir": "src/codemods",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "packages/codemod/src/codemods/lib/create-transformer.ts#createTransformer"
+        ]
+      },
+      "evidence": {
+        "holders": 109,
+        "total": 110,
+        "lower_bound": 0.95,
+        "lift": 18
+      },
+      "members": 114,
+      "example": "packages/codemod/src/codemods/v4/remove-ai-stream-methods-from-stream-text-result.ts#default",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/codemod/src/codemods/lib/add-await-fn.ts"
+      ],
+      "block": " 1. [D-fc5ef7] packages/codemod: functions in src/codemods/** are wrapped in createTransformer()\n    evidence: 109/110 (lower bound 0.95, lift 18.0)\n    example:  packages/codemod/src/codemods/v4/remove-ai-stream-methods-from-stream-text-result.ts#default\n    outlier:  packages/codemod/src/codemods/lib/add-await-fn.ts:3 addAwaitFn\n    exempt:   packages/codemod/src/codemods/lib/add-comment.ts:26 insertCommentOnce (shared part used by 3 members)\n    exempt:   packages/codemod/src/codemods/lib/create-transformer.ts:32 createTransformer (shared part used by 112 members)\n    exempt:   packages/codemod/src/codemods/lib/remove-await-fn.ts:3 removeAwaitFn (shared part used by 2 members)\n    exempt:   packages/codemod/src/codemods/lib/remove-facade.ts:9 removeFacade (shared part used by 4 members)",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "supabase/D-c2e88c",
+      "repo": "supabase",
+      "id": "D-c2e88c",
+      "rank": 1,
+      "summary": "apps/docs: functions in app/** (page files) are wrapped in genGuideMeta()",
+      "role": {
+        "package": "apps/docs",
+        "dir": "app",
+        "file": "page",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "apps/docs/features/docs/GuidesMdx.utils.tsx#genGuideMeta"
+        ]
+      },
+      "evidence": {
+        "holders": 29,
+        "total": 29,
+        "lower_bound": 0.88,
+        "lift": 176.1
+      },
+      "members": 30,
+      "example": "apps/docs/app/guides/ai-tools/[[...slug]]/page.tsx#generateMetadata",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 1. [D-c2e88c] apps/docs: functions in app/** (page files) are wrapped in genGuideMeta()\n    evidence: 29/29 (lower bound 0.88, lift 176.1)\n    example:  apps/docs/app/guides/ai-tools/[[...slug]]/page.tsx#generateMetadata\n    exempt:   apps/docs/app/page.tsx:22 generateMetadata (the app's root page (app/page.tsx), a framework root file)",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "midday/D-50255f",
+      "repo": "midday",
+      "id": "D-50255f",
+      "rank": 1,
+      "summary": "apps/api: rpc entry points in src/** are wrapped in internalProcedure() or protectedProcedure()",
+      "role": {
+        "package": "apps/api",
+        "dir": "src",
+        "file": "*",
+        "entry": "rpc",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "apps/api/src/trpc/init.ts#internalProcedure",
+          "apps/api/src/trpc/init.ts#protectedProcedure"
+        ]
+      },
+      "evidence": {
+        "holders": 248,
+        "total": 255,
+        "lower_bound": 0.94,
+        "lift": 7.6
+      },
+      "members": 255,
+      "example": "apps/api/src/trpc/routers/accounting.ts#MUTATION disconnect",
+      "python_members": null,
+      "outliers": 7,
+      "outlier_files": [
+        "apps/api/src/trpc/routers/banking.ts",
+        "apps/api/src/trpc/routers/customers.ts",
+        "apps/api/src/trpc/routers/invoice.ts",
+        "apps/api/src/trpc/routers/reports.ts",
+        "apps/api/src/trpc/routers/short-links.ts"
+      ],
+      "block": " 1. [D-50255f] apps/api: rpc entry points in src/** are wrapped in internalProcedure() or protectedProcedure()\n    evidence: 248/255 (lower bound 0.94, lift 7.6)\n    split:    protectedProcedure 242, internalProcedure 6\n    example:  apps/api/src/trpc/routers/accounting.ts#MUTATION disconnect\n    outlier:  apps/api/src/trpc/routers/banking.ts:291 QUERY getProviderAccounts\n    outlier:  apps/api/src/trpc/routers/customers.ts:221 QUERY getByPortalId\n    outlier:  apps/api/src/trpc/routers/customers.ts:244 QUERY getPortalInvoices\n    outlier:  apps/api/src/trpc/routers/invoice.ts:81 QUERY getInvoiceByToken\n    outlier:  apps/api/src/trpc/routers/reports.ts:168 QUERY getByLinkId\n    outlier:  apps/api/src/trpc/routers/reports.ts:174 QUERY getChartDataByLinkId\n    outlier:  apps/api/src/trpc/routers/short-links.ts:93 QUERY get",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "infisical/D-c4efb8",
+      "repo": "infisical",
+      "id": "D-c4efb8",
+      "rank": 1,
+      "summary": "backend: HTTP handlers in src/** are wrapped in verifyAuth() or passport.authenticate()",
+      "role": {
+        "package": "backend",
+        "dir": "src",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "backend/src/server/plugins/auth/verify-auth.ts#verifyAuth",
+          "backend/src/server/routes/v1/sso-router.ts#passport.authenticate"
+        ]
+      },
+      "evidence": {
+        "holders": 1579,
+        "total": 1702,
+        "lower_bound": 0.91,
+        "lift": 5.6
+      },
+      "members": 1702,
+      "example": "backend/src/ee/routes/scep/pki-scep-router.ts#POST /:profileId/challenge",
+      "python_members": null,
+      "outliers": 123,
+      "outlier_files": [
+        "backend/src/ee/routes/est/certificate-est-router.ts",
+        "backend/src/ee/routes/scep/pki-scep-router.ts",
+        "backend/src/ee/routes/v1/agent-vault-routers/agent-vault-session-skill-router.ts",
+        "backend/src/ee/routes/v1/certificate-authority-crl-router.ts",
+        "backend/src/ee/routes/v1/certificate-authority-ocsp-router.ts",
+        "backend/src/ee/routes/v1/honey-token-routers/honey-token-endpoints.ts",
+        "backend/src/ee/routes/v1/kmip-server-router.ts",
+        "backend/src/ee/routes/v1/ldap-router.ts",
+        "backend/src/ee/routes/v1/oidc-router.ts",
+        "backend/src/ee/routes/v1/pam-routers/pam-session-router.ts",
+        "backend/src/ee/routes/v1/pki-acme-router.ts",
+        "backend/src/ee/routes/v1/relay-router.ts",
+        "backend/src/ee/routes/v1/removed-product-tombstone-router.ts",
+        "backend/src/ee/routes/v1/saml-router.ts",
+        "backend/src/ee/routes/v2/relay-router.ts",
+        "backend/src/ee/routes/v3/gateway-router.ts",
+        "backend/src/server/plugins/secret-scanner-v2.ts",
+        "backend/src/server/plugins/secret-scanner.ts",
+        "backend/src/server/plugins/serve-ui.ts",
+        "backend/src/server/routes/index.ts",
+        "backend/src/server/routes/v1/account-recovery-router.ts",
+        "backend/src/server/routes/v1/admin-router.ts",
+        "backend/src/server/routes/v1/announcement-router.ts",
+        "backend/src/server/routes/v1/auth-router.ts",
+        "backend/src/server/routes/v1/certificate-authority-router.ts",
+        "backend/src/server/routes/v1/certificate-authority-routers/internal-certificate-authority-router.ts",
+        "backend/src/server/routes/v1/delegated-approval-callback-router.ts",
+        "backend/src/server/routes/v1/github-app-router.ts",
+        "backend/src/server/routes/v1/identity-access-token-router.ts",
+        "backend/src/server/routes/v1/identity-alicloud-auth-router.ts",
+        "backend/src/server/routes/v1/identity-aws-iam-auth-router.ts",
+        "backend/src/server/routes/v1/identity-azure-auth-router.ts",
+        "backend/src/server/routes/v1/identity-gcp-auth-router.ts",
+        "backend/src/server/routes/v1/identity-jwt-auth-router.ts",
+        "backend/src/server/routes/v1/identity-kubernetes-auth-router.ts",
+        "backend/src/server/routes/v1/identity-ldap-auth-router.ts",
+        "backend/src/server/routes/v1/identity-oci-auth-router.ts",
+        "backend/src/server/routes/v1/identity-oidc-auth-router.ts",
+        "backend/src/server/routes/v1/identity-spiffe-auth-router.ts",
+        "backend/src/server/routes/v1/identity-tls-cert-auth-router.ts",
+        "backend/src/server/routes/v1/identity-universal-auth-router.ts",
+        "backend/src/server/routes/v1/invite-org-router.ts",
+        "backend/src/server/routes/v1/microsoft-teams-router.ts",
+        "backend/src/server/routes/v1/oauth-router.ts",
+        "backend/src/server/routes/v1/oidc-issuer-router.ts",
+        "backend/src/server/routes/v1/secret-requests-router.ts",
+        "backend/src/server/routes/v1/secret-sharing-router.ts",
+        "backend/src/server/routes/v1/slack-router.ts",
+        "backend/src/server/routes/v1/sso-router.ts",
+        "backend/src/server/routes/v1/user-router.ts",
+        "backend/src/server/routes/v2/deprecated-project-router.ts",
+        "backend/src/server/routes/v2/mfa-router.ts",
+        "backend/src/server/routes/v2/password-router.ts",
+        "backend/src/server/routes/v2/user-router.ts",
+        "backend/src/server/routes/v3/login-router.ts",
+        "backend/src/server/routes/v3/signup-router.ts"
+      ],
+      "block": " 1. [D-c4efb8] backend: HTTP handlers in src/** are wrapped in verifyAuth() or passport.authenticate()\n    evidence: 1579/1702 (lower bound 0.91, lift 5.6)\n    split:    verifyAuth 1576, passport.authenticate 3\n    example:  backend/src/ee/routes/scep/pki-scep-router.ts#POST /:profileId/challenge\n    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:246 GET /:identifier/cacerts\n    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:336 GET /applications/:applicationId/profiles/:profileId/cacerts\n    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:170 POST /:identifier/simpleenroll\n    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:208 POST /:identifier/simplereenroll\n    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:284 POST /applications/:applicationId/profiles/:profileId/simpleenroll\n    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:310 POST /applications/:applicationId/profiles/:profileId/simplereenroll\n    outlier:  backend/src/ee/routes/scep/pki-scep-router.ts:33 GET /:profileId/pkiclient.exe\n    outlier:  backend/src/ee/routes/scep/pki-scep-router.ts:208 GET /applications/:applicationId/profiles/:profileId/pkiclient.exe\n    outlier:  backend/src/ee/routes/scep/pki-scep-router.ts:88 POST /:profileId/pkiclient.exe\n    outlier:  backend/src/ee/routes/scep/pki-scep-router.ts:258 POST /applications/:applicationId/profiles/:profileId/pkiclient.exe\n    outlier:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-session-skill-router.ts:50 GET /skills\n    outlier:  backend/src/ee/routes/v1/certificate-authority-crl-router.ts:8 GET /:crlId\n    outlier:  backend/src/ee/routes/v1/certificate-authority-crl-router.ts:32 GET /:crlId/der\n    outlier:  backend/src/ee/routes/v1/certificate-authority-ocsp-router.ts:112 GET /:caId/*\n    outlier:  backend/src/ee/routes/v1/certificate-authority-ocsp-router.ts:94 POST /:caId\n    outlier:  backend/src/ee/routes/v1/honey-token-routers/honey-token-endpoints.ts:152 POST /trigger\n    outlier:  backend/src/ee/routes/v1/kmip-server-router.ts:424 POST /login\n    outlier:  backend/src/ee/routes/v1/ldap-router.ts:115 POST /login\n    outlier:  backend/src/ee/routes/v1/oidc-router.ts:129 GET /callback\n    outlier:  backend/src/ee/routes/v1/oidc-router.ts:76 GET /login\n    outlier:  backend/src/ee/routes/v1/oidc-router.ts:197 GET /login/error\n    outlier:  backend/src/ee/routes/v1/pam-routers/pam-session-router.ts:487 GET /:accountId/web-access\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:488 GET /applications/:applicationId/profiles/:profileId/directory\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:78 GET /profiles/:profileId/directory\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:126 GET /profiles/:profileId/new-nonce\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:100 HEAD /profiles/:profileId/new-nonce\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:502 POST /applications/:applicationId/profiles/:profileId/new-account\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:191 POST /profiles/:profileId/accounts/:accountId\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:338 POST /profiles/:profileId/accounts/:accountId/orders\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:412 POST /profiles/:profileId/authorizations/:authzId\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:446 POST /profiles/:profileId/authorizations/:authzId/challenges/:challengeId\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:153 POST /profiles/:profileId/new-account\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:228 POST /profiles/:profileId/new-order\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:264 POST /profiles/:profileId/orders/:orderId\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:374 POST /profiles/:profileId/orders/:orderId/certificate\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:300 POST /profiles/:profileId/orders/:orderId/finalize\n    outlier:  backend/src/ee/routes/v1/relay-router.ts:173 POST /heartbeat-instance-relay\n    outlier:  backend/src/ee/routes/v1/relay-router.ts:16 POST /register-instance-relay\n    outlier:  backend/src/ee/routes/v1/removed-product-tombstone-router.ts:18 DELETE ?\n    outlier:  backend/src/ee/routes/v1/removed-product-tombstone-router.ts:18 GET ?\n    outlier:  backend/src/ee/routes/v1/removed-product-tombstone-router.ts:18 PATCH ?\n    outlier:  backend/src/ee/routes/v1/removed-product-tombstone-router.ts:18 POST ?\n    outlier:  backend/src/ee/routes/v1/removed-product-tombstone-router.ts:18 PUT ?\n    outlier:  backend/src/ee/routes/v1/saml-router.ts:332 GET /redirect/saml2/:samlConfigId\n    outlier:  backend/src/ee/routes/v1/saml-router.ts:300 GET /redirect/saml2/organizations/:orgSlug\n    outlier:  backend/src/ee/routes/v1/saml-router.ts:268 GET /redirect/saml2/organizations/domain/:domain\n    outlier:  backend/src/ee/routes/v1/saml-router.ts:364 POST /saml2/:samlConfigId\n    outlier:  backend/src/ee/routes/v2/relay-router.ts:342 POST /login\n    outlier:  backend/src/ee/routes/v3/gateway-router.ts:501 POST /login\n    outlier:  backend/src/ee/routes/v3/gateway-router.ts:829 POST /token-auth/enroll\n    outlier:  backend/src/server/plugins/secret-scanner-v2.ts:87 POST /bitbucket\n    outlier:  backend/src/server/plugins/secret-scanner-v2.ts:61 POST /github\n    outlier:  backend/src/server/plugins/secret-scanner-v2.ts:135 POST /gitlab\n    outlier:  backend/src/server/plugins/secret-scanner.ts:51 POST /\n    outlier:  backend/src/server/plugins/serve-ui.ts:158 GET /*\n    outlier:  backend/src/server/plugins/serve-ui.ts:43 GET /runtime-ui-env.js\n    outlier:  backend/src/server/routes/index.ts:5275 GET /api/status\n    outlier:  backend/src/server/routes/v1/account-recovery-router.ts:78 POST /enable-email-auth\n    outlier:  backend/src/server/routes/v1/account-recovery-router.ts:10 POST /send-email\n    outlier:  backend/src/server/routes/v1/account-recovery-router.ts:46 POST /verify-email\n    outlier:  backend/src/server/routes/v1/admin-router.ts:78 GET /config\n    outlier:  backend/src/server/routes/v1/admin-router.ts:1000 POST /bootstrap\n    outlier:  backend/src/server/routes/v1/admin-router.ts:832 POST /signup\n    outlier:  backend/src/server/routes/v1/announcement-router.ts:90 GET /assets/:filename\n    outlier:  backend/src/server/routes/v1/auth-router.ts:11 POST /logout\n    outlier:  backend/src/server/routes/v1/auth-router.ts:83 POST /token\n    outlier:  backend/src/server/routes/v1/certificate-authority-router.ts:176 GET /:caId/certificates/:caCertId/der\n    outlier:  backend/src/server/routes/v1/certificate-authority-routers/internal-certificate-authority-router.ts:300 GET /:caId/ca-certificates\n    outlier:  backend/src/server/routes/v1/certificate-authority-routers/internal-certificate-authority-router.ts:335 GET /:caId/certificate\n    outlier:  backend/src/server/routes/v1/certificate-authority-routers/internal-certificate-authority-router.ts:373 GET /:caId/certificate/:certId\n    outlier:  backend/src/server/routes/v1/certificate-authority-routers/internal-certificate-authority-router.ts:749 GET /:caId/certificates/:caCertId/der\n    outlier:  backend/src/server/routes/v1/delegated-approval-callback-router.ts:13 POST /callback\n    outlier:  backend/src/server/routes/v1/github-app-router.ts:58 GET /manifest/callback\n    outlier:  backend/src/server/routes/v1/identity-access-token-router.ts:8 POST /token/renew\n    outlier:  backend/src/server/routes/v1/identity-access-token-router.ts:45 POST /token/revoke\n    outlier:  backend/src/server/routes/v1/identity-alicloud-auth-router.ts:20 POST /alicloud-auth/login\n    outlier:  backend/src/server/routes/v1/identity-aws-iam-auth-router.ts:24 POST /aws-auth/login\n    outlier:  backend/src/server/routes/v1/identity-azure-auth-router.ts:19 POST /azure-auth/login\n    outlier:  backend/src/server/routes/v1/identity-gcp-auth-router.ts:19 POST /gcp-auth/login\n    outlier:  backend/src/server/routes/v1/identity-jwt-auth-router.ts:95 POST /jwt-auth/login\n    outlier:  backend/src/server/routes/v1/identity-kubernetes-auth-router.ts:51 POST /kubernetes-auth/login\n    outlier:  backend/src/server/routes/v1/identity-ldap-auth-router.ts:143 POST /ldap-auth/login\n    outlier:  backend/src/server/routes/v1/identity-oci-auth-router.ts:19 POST /oci-auth/login\n    outlier:  backend/src/server/routes/v1/identity-oidc-auth-router.ts:46 POST /oidc-auth/login\n    outlier:  backend/src/server/routes/v1/identity-spiffe-auth-router.ts:107 POST /spiffe-auth/login\n    outlier:  backend/src/server/routes/v1/identity-tls-cert-auth-router.ts:82 POST /login\n    outlier:  backend/src/server/routes/v1/identity-universal-auth-router.ts:32 POST /universal-auth/login\n    outlier:  backend/src/server/routes/v1/invite-org-router.ts:332 POST /verify\n    outlier:  backend/src/server/routes/v1/microsoft-teams-router.ts:376 POST /message-endpoint\n    outlier:  backend/src/server/routes/v1/oauth-router.ts:318 GET /authorize\n    outlier:  backend/src/server/routes/v1/oauth-router.ts:356 GET /authorize/info\n    outlier:  backend/src/server/routes/v1/oauth-router.ts:450 POST /token\n    outlier:  backend/src/server/routes/v1/oidc-issuer-router.ts:44 GET /organizations/:organizationId/.well-known/jwks.json\n    outlier:  backend/src/server/routes/v1/oidc-issuer-router.ts:16 GET /organizations/:organizationId/.well-known/openid-configuration\n    outlier:  backend/src/server/routes/v1/secret-requests-router.ts:16 GET /:id\n    outlier:  backend/src/server/routes/v1/secret-requests-router.ts:84 GET /:id/branding/:assetType\n    outlier:  backend/src/server/routes/v1/secret-requests-router.ts:119 POST /:id/set-value\n    outlier:  backend/src/server/routes/v1/secret-sharing-router.ts:84 GET /:id\n    outlier:  backend/src/server/routes/v1/secret-sharing-router.ts:577 GET /branding\n    outlier:  backend/src/server/routes/v1/secret-sharing-router.ts:446 GET /public/:id/branding/:assetType\n    outlier:  backend/src/server/routes/v1/secret-sharing-router.ts:123 POST /:id/access\n    outlier:  backend/src/server/routes/v1/secret-sharing-router.ts:192 POST /public\n    outlier:  backend/src/server/routes/v1/slack-router.ts:328 GET /oauth_redirect\n    outlier:  backend/src/server/routes/v1/sso-router.ts:702 GET /github\n    outlier:  backend/src/server/routes/v1/sso-router.ts:785 GET /gitlab\n    outlier:  backend/src/server/routes/v1/sso-router.ts:592 GET /google\n    outlier:  backend/src/server/routes/v1/sso-router.ts:663 GET /redirect/organizations/:orgSlug\n    outlier:  backend/src/server/routes/v1/sso-router.ts:816 POST /token-exchange\n    outlier:  backend/src/server/routes/v1/user-router.ts:99 GET /:userId/unlock\n    outlier:  backend/src/server/routes/v2/deprecated-project-router.ts:29 GET /:workspaceId/encrypted-key\n    outlier:  backend/src/server/routes/v2/mfa-router.ts:105 GET /mfa/check/totp\n    outlier:  backend/src/server/routes/v2/mfa-router.ts:202 GET /mfa/check/webauthn\n    outlier:  backend/src/server/routes/v2/mfa-router.ts:85 POST /mfa/send\n    outlier:  backend/src/server/routes/v2/mfa-router.ts:138 POST /mfa/verify\n    outlier:  backend/src/server/routes/v2/mfa-router.ts:169 POST /mfa/verify/recovery-code\n    outlier:  backend/src/server/routes/v2/password-router.ts:12 POST /password-reset\n    outlier:  backend/src/server/routes/v2/user-router.ts:20 POST /me/emails/code\n    outlier:  backend/src/server/routes/v3/login-router.ts:221 POST /login\n    outlier:  backend/src/server/routes/v3/login-router.ts:14 POST /login1\n    outlier:  backend/src/server/routes/v3/login-router.ts:136 POST /login2\n    outlier:  backend/src/server/routes/v3/signup-router.ts:110 POST /complete-account\n    outlier:  backend/src/server/routes/v3/signup-router.ts:21 POST /email/signup\n    outlier:  backend/src/server/routes/v3/signup-router.ts:72 POST /email/verify",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "infisical/D-f674a5",
+      "repo": "infisical",
+      "id": "D-f674a5",
+      "rank": 2,
+      "summary": "backend: HTTP handlers in src/ee/** are wrapped in verifyAuth()",
+      "role": {
+        "package": "backend",
+        "dir": "src/ee",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "backend/src/server/plugins/auth/verify-auth.ts#verifyAuth"
+        ]
+      },
+      "evidence": {
+        "holders": 561,
+        "total": 611,
+        "lower_bound": 0.89,
+        "lift": 5.6
+      },
+      "members": 611,
+      "example": "backend/src/ee/routes/scep/pki-scep-router.ts#POST /:profileId/challenge",
+      "python_members": null,
+      "outliers": 50,
+      "outlier_files": [
+        "backend/src/ee/routes/est/certificate-est-router.ts",
+        "backend/src/ee/routes/scep/pki-scep-router.ts",
+        "backend/src/ee/routes/v1/agent-vault-routers/agent-vault-session-skill-router.ts",
+        "backend/src/ee/routes/v1/certificate-authority-crl-router.ts",
+        "backend/src/ee/routes/v1/certificate-authority-ocsp-router.ts",
+        "backend/src/ee/routes/v1/honey-token-routers/honey-token-endpoints.ts",
+        "backend/src/ee/routes/v1/kmip-server-router.ts",
+        "backend/src/ee/routes/v1/ldap-router.ts",
+        "backend/src/ee/routes/v1/oidc-router.ts",
+        "backend/src/ee/routes/v1/pam-routers/pam-session-router.ts",
+        "backend/src/ee/routes/v1/pki-acme-router.ts",
+        "backend/src/ee/routes/v1/relay-router.ts",
+        "backend/src/ee/routes/v1/removed-product-tombstone-router.ts",
+        "backend/src/ee/routes/v1/saml-router.ts",
+        "backend/src/ee/routes/v2/relay-router.ts",
+        "backend/src/ee/routes/v3/gateway-router.ts"
+      ],
+      "block": " 2. [D-f674a5] backend: HTTP handlers in src/ee/** are wrapped in verifyAuth()\n    evidence: 561/611 (lower bound 0.89, lift 5.6)\n    example:  backend/src/ee/routes/scep/pki-scep-router.ts#POST /:profileId/challenge\n    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:246 GET /:identifier/cacerts\n    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:336 GET /applications/:applicationId/profiles/:profileId/cacerts\n    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:170 POST /:identifier/simpleenroll\n    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:208 POST /:identifier/simplereenroll\n    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:284 POST /applications/:applicationId/profiles/:profileId/simpleenroll\n    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:310 POST /applications/:applicationId/profiles/:profileId/simplereenroll\n    outlier:  backend/src/ee/routes/scep/pki-scep-router.ts:33 GET /:profileId/pkiclient.exe\n    outlier:  backend/src/ee/routes/scep/pki-scep-router.ts:208 GET /applications/:applicationId/profiles/:profileId/pkiclient.exe\n    outlier:  backend/src/ee/routes/scep/pki-scep-router.ts:88 POST /:profileId/pkiclient.exe\n    outlier:  backend/src/ee/routes/scep/pki-scep-router.ts:258 POST /applications/:applicationId/profiles/:profileId/pkiclient.exe\n    outlier:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-session-skill-router.ts:50 GET /skills\n    outlier:  backend/src/ee/routes/v1/certificate-authority-crl-router.ts:8 GET /:crlId\n    outlier:  backend/src/ee/routes/v1/certificate-authority-crl-router.ts:32 GET /:crlId/der\n    outlier:  backend/src/ee/routes/v1/certificate-authority-ocsp-router.ts:112 GET /:caId/*\n    outlier:  backend/src/ee/routes/v1/certificate-authority-ocsp-router.ts:94 POST /:caId\n    outlier:  backend/src/ee/routes/v1/honey-token-routers/honey-token-endpoints.ts:152 POST /trigger\n    outlier:  backend/src/ee/routes/v1/kmip-server-router.ts:424 POST /login\n    outlier:  backend/src/ee/routes/v1/ldap-router.ts:115 POST /login\n    outlier:  backend/src/ee/routes/v1/oidc-router.ts:129 GET /callback\n    outlier:  backend/src/ee/routes/v1/oidc-router.ts:76 GET /login\n    outlier:  backend/src/ee/routes/v1/oidc-router.ts:197 GET /login/error\n    outlier:  backend/src/ee/routes/v1/pam-routers/pam-session-router.ts:487 GET /:accountId/web-access\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:488 GET /applications/:applicationId/profiles/:profileId/directory\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:78 GET /profiles/:profileId/directory\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:126 GET /profiles/:profileId/new-nonce\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:100 HEAD /profiles/:profileId/new-nonce\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:502 POST /applications/:applicationId/profiles/:profileId/new-account\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:191 POST /profiles/:profileId/accounts/:accountId\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:338 POST /profiles/:profileId/accounts/:accountId/orders\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:412 POST /profiles/:profileId/authorizations/:authzId\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:446 POST /profiles/:profileId/authorizations/:authzId/challenges/:challengeId\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:153 POST /profiles/:profileId/new-account\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:228 POST /profiles/:profileId/new-order\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:264 POST /profiles/:profileId/orders/:orderId\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:374 POST /profiles/:profileId/orders/:orderId/certificate\n    outlier:  backend/src/ee/routes/v1/pki-acme-router.ts:300 POST /profiles/:profileId/orders/:orderId/finalize\n    outlier:  backend/src/ee/routes/v1/relay-router.ts:173 POST /heartbeat-instance-relay\n    outlier:  backend/src/ee/routes/v1/relay-router.ts:16 POST /register-instance-relay\n    outlier:  backend/src/ee/routes/v1/removed-product-tombstone-router.ts:18 DELETE ?\n    outlier:  backend/src/ee/routes/v1/removed-product-tombstone-router.ts:18 GET ?\n    outlier:  backend/src/ee/routes/v1/removed-product-tombstone-router.ts:18 PATCH ?\n    outlier:  backend/src/ee/routes/v1/removed-product-tombstone-router.ts:18 POST ?\n    outlier:  backend/src/ee/routes/v1/removed-product-tombstone-router.ts:18 PUT ?\n    outlier:  backend/src/ee/routes/v1/saml-router.ts:332 GET /redirect/saml2/:samlConfigId\n    outlier:  backend/src/ee/routes/v1/saml-router.ts:300 GET /redirect/saml2/organizations/:orgSlug\n    outlier:  backend/src/ee/routes/v1/saml-router.ts:268 GET /redirect/saml2/organizations/domain/:domain\n    outlier:  backend/src/ee/routes/v1/saml-router.ts:364 POST /saml2/:samlConfigId\n    outlier:  backend/src/ee/routes/v2/relay-router.ts:342 POST /login\n    outlier:  backend/src/ee/routes/v3/gateway-router.ts:501 POST /login\n    outlier:  backend/src/ee/routes/v3/gateway-router.ts:829 POST /token-auth/enroll",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    }
+  ]
+}

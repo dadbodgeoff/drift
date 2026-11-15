@@ -1,0 +1,46 @@
+{
+ "guard_gaps": [
+  {
+   "guard": "withSession",
+   "kind": "http",
+   "package": "apps/portal",
+   "dir": "",
+   "members": 34,
+   "with_guard": 31,
+   "entry": {
+    "path": "apps/portal/app/api/refunds/route.ts",
+    "symbol": "GET",
+    "line": 1,
+    "kind": "http",
+    "method": "GET",
+    "route": "/api/refunds",
+    "guards": []
+   },
+   "example": {
+    "path": "apps/portal/app/api/accounts/route.ts",
+    "symbol": "GET",
+    "line": 3,
+    "kind": "http",
+    "method": "GET",
+    "route": "/api/accounts",
+    "guards": [
+     "withSession"
+    ]
+   },
+   "convention": {
+    "id": "D-8394d6",
+    "status": "accepted",
+    "mode": "advise"
+   }
+  }
+ ],
+ "unguarded_reaching": [],
+ "sinks": [],
+ "leaks": [],
+ "now_public": [],
+ "diff": {
+  "base": "main",
+  "merge_base": "572b60f45bbdfb87481ba3914692098834532637",
+  "files": 3
+ }
+}

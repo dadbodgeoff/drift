@@ -1,0 +1,45 @@
+{
+  "repo": "hedgedoc",
+  "files": [
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "frontend/CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": ".oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "backend/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "commons/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "database/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "frontend/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "html-to-react/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "markdown-it-plugins/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "frontend/oxlint-rules/",
+      "kind": "lint_custom (custom rule implementations)"
+    }
+  ]
+}

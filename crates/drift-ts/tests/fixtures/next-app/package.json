@@ -1,0 +1,1 @@
+{"name": "fixture-next-app", "private": true, "scripts": {"build": "next build", "typecheck": "tsc"}, "dependencies": {"next": "15.0.0", "zod": "^3"}}

@@ -1,0 +1,14 @@
+{
+ "check": {
+  "exit": 2,
+  "message": "parsing /work/broken/.drift/conventions.yaml: error: line 4 column 10: expected string scalar"
+ },
+ "questions": {
+  "exit": 2,
+  "message": "parsing /work/broken/.drift/conventions.yaml: error: line 4 column 10: expected string scalar"
+ },
+ "security": {
+  "exit": 2,
+  "message": "parsing /work/broken/.drift/conventions.yaml: error: line 4 column 10: expected string scalar"
+ }
+}

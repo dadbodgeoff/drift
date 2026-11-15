@@ -1,8 +1,56 @@
 [workspace]
-members = ["crates/drift-engine"]
 resolver = "3"
+members = [
+    "crates/drift-core",
+    "crates/drift-ts",
+    "crates/drift-py",
+    "crates/drift-mine",
+    "crates/drift-cli",
+]
 
 [workspace.package]
+version = "0.1.0-dev"
 edition = "2024"
-license = "MIT"
-version = "0.1.0"
+license = "Apache-2.0"
+authors = ["Geoffrey Fernald"]
+repository = "https://github.com/dadbodgeoff/drift"
+rust-version = "1.97"
+
+[workspace.dependencies]
+globset = { version = "0.4.21", default-features = false }
+drift-core = { path = "crates/drift-core", version = "0.1.0-dev" }
+drift-ts = { path = "crates/drift-ts", version = "0.1.0-dev" }
+drift-py = { path = "crates/drift-py", version = "0.1.0-dev" }
+drift-mine = { path = "crates/drift-mine", version = "0.1.0-dev" }
+anyhow = "1"
+thiserror = "2"
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = "1"
+serde-saphyr = "2"
+blake3 = "1"
+getrandom = "0.4"
+ignore = "0.4"
+rayon = "1"
+clap = { version = "4", features = ["derive"] }
+unicode-normalization = "0.1"
+libc = "0.2"
+oxc_allocator = { version = "0.157", features = ["from_raw_parts"] }
+oxc_ast = "0.157"
+oxc_ast_visit = "0.157"
+oxc_parser = "0.157"
+oxc_semantic = "0.157"
+oxc_span = "0.157"
+oxc_resolver = "11"
+# Astral's ruff parser, published to crates.io as internal component crates.
+# 0.0.x: pinned exactly, since every release may break the API.
+ruff_python_parser = "=0.0.20"
+ruff_python_ast = "=0.0.20"
+ruff_text_size = "=0.0.20"
+ruff_source_file = "=0.0.20"
+toml = "1"
+insta = { version = "1", features = ["json", "glob"] }
+tempfile = "3"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

@@ -1,0 +1,116 @@
+{
+  "name": "deepv-ki",
+  "repo": "orionstarai/deepv-ki",
+  "sha": "7db1f643e6811bbf90dbe2633a2e8c290df5bd84",
+  "loc": 35829,
+  "shape": {
+    "mix": "ts+py",
+    "shape": "frontend+backend",
+    "js_dirs": 3,
+    "py_dirs": 2,
+    "workspace_files": [
+      "pnpm-workspace.yaml"
+    ],
+    "frontend_dirs": [
+      "frontend"
+    ],
+    "backend_dirs": [
+      "",
+      "api"
+    ]
+  },
+  "packages": [
+    {
+      "dir": "api",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 463,
+        "roles": 10,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 463,
+        "roles": 10,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "frontend",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 301,
+        "roles": 22,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "frontend/packages/ui-kit",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 3,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    }
+  ],
+  "root": {
+    "default": {
+      "shown": 0,
+      "conventions": 0,
+      "units": 779,
+      "roles": 32,
+      "tiers": {
+        "default": 0,
+        "suggestion": 0
+      },
+      "python_withheld": 0,
+      "secs": 1,
+      "cards": []
+    },
+    "python_opt_in": {
+      "shown": 0,
+      "conventions": 0,
+      "units": 779,
+      "roles": 32,
+      "tiers": {
+        "default": 0,
+        "suggestion": 0
+      },
+      "python_withheld": null,
+      "secs": 0,
+      "cards": []
+    }
+  }
+}

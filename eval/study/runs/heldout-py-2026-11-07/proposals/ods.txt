@@ -1,0 +1,192 @@
+7 conventions from 6150 units in 150 roles (0 default tier, 7 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-4c758e] HTTP handlers in ods/** are wrapped in verify_api_key() or verify_api_key() or verify_api_key()
+    evidence: 178/199 (lower bound 0.84, lift 12.9)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    split:    verify_api_key 174, verify_api_key 2, verify_api_key 2
+    example:  ods/extensions/services/dashboard-api/routers/agents.py#get_agent_metrics
+    outlier:  ods/extensions/library/services/bark/server.py:142 health
+    outlier:  ods/extensions/library/services/bark/server.py:220 list_voices
+    outlier:  ods/extensions/library/services/bark/server.py:147 text_to_speech
+    outlier:  ods/extensions/library/services/bark/server.py:181 text_to_speech_stream
+    outlier:  ods/extensions/library/services/open-interpreter/server.py:111 health
+    outlier:  ods/extensions/services/dashboard-api/routers/auth.py:103 hermes_session
+    outlier:  ods/extensions/services/dashboard-api/routers/auth.py:170 verify_session
+    outlier:  ods/extensions/services/dashboard-api/routers/dashboard_session.py:142 dashboard_login
+    outlier:  ods/extensions/services/dashboard-api/routers/dashboard_session.py:205 dashboard_logout
+    outlier:  ods/extensions/services/dashboard-api/routers/dashboard_session.py:123 verify_dashboard_session
+    outlier:  ods/extensions/services/dashboard-api/routers/magic_link.py:730 redeem_magic_link
+    outlier:  ods/extensions/services/dashboard-api/routers/oauth_passthrough.py:400 oauth_callback
+    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:946 talk_approval
+    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:999 talk_attachment
+    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:1073 talk_audio_message
+    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:898 talk_message
+    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:914 talk_message_stream
+    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:874 talk_session
+    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:1090 talk_speak
+    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:841 talk_status
+    outlier:  ods/extensions/services/privacy-shield/proxy.py:226 health
+
+ 2. [D-6e9535] HTTP handlers in ods/** are wrapped in security_scheme()
+    evidence: 174/199 (lower bound 0.82, lift 12.8)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  ods/extensions/services/dashboard-api/routers/agents.py#get_agent_metrics
+    outlier:  ods/extensions/library/services/bark/server.py:142 health
+    outlier:  ods/extensions/library/services/bark/server.py:220 list_voices
+    outlier:  ods/extensions/library/services/bark/server.py:147 text_to_speech
+    outlier:  ods/extensions/library/services/bark/server.py:181 text_to_speech_stream
+    outlier:  ods/extensions/library/services/open-interpreter/server.py:116 chat
+    outlier:  ods/extensions/library/services/open-interpreter/server.py:154 chat_stream
+    outlier:  ods/extensions/library/services/open-interpreter/server.py:111 health
+    outlier:  ods/extensions/services/dashboard-api/routers/auth.py:103 hermes_session
+    outlier:  ods/extensions/services/dashboard-api/routers/auth.py:170 verify_session
+    outlier:  ods/extensions/services/dashboard-api/routers/dashboard_session.py:142 dashboard_login
+    outlier:  ods/extensions/services/dashboard-api/routers/dashboard_session.py:205 dashboard_logout
+    outlier:  ods/extensions/services/dashboard-api/routers/dashboard_session.py:123 verify_dashboard_session
+    outlier:  ods/extensions/services/dashboard-api/routers/magic_link.py:730 redeem_magic_link
+    outlier:  ods/extensions/services/dashboard-api/routers/oauth_passthrough.py:400 oauth_callback
+    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:946 talk_approval
+    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:999 talk_attachment
+    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:1073 talk_audio_message
+    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:898 talk_message
+    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:914 talk_message_stream
+    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:874 talk_session
+    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:1090 talk_speak
+    outlier:  ods/extensions/services/dashboard-api/routers/talk.py:841 talk_status
+    outlier:  ods/extensions/services/privacy-shield/proxy.py:226 health
+    outlier:  ods/extensions/services/privacy-shield/proxy.py:272 proxy
+    outlier:  ods/extensions/services/privacy-shield/proxy.py:241 stats
+
+ 3. [D-80b356] functions in ods/** do not throw a bare Error
+    evidence: 1892/1911 (lower bound 0.98, lift 11.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  ods/bin/extension_assets.py#check_space
+    outlier:  ods/extensions/library/services/umami/ods-config.mjs:1 environment
+    outlier:  ods/extensions/services/n8n/n8n-prepare.mjs:143 ensureOwnerHash
+    outlier:  ods/extensions/services/perplexica/patch-client-citations.js:31 patchClientChunk
+    outlier:  ods/extensions/services/pixel-agent/host/access_mode_http.mjs:6 accessPort
+    outlier:  ods/extensions/services/pixel-agent/host/access_mode_http.mjs:12 createAccessServer
+    outlier:  ods/extensions/services/pixel-agent/host/access_mode_http.mjs:45 startNativeAccessServer
+    outlier:  ods/extensions/services/pixel-agent/host/access_mode_relay.mjs:59 publicModelControl
+    outlier:  ods/extensions/services/pixel-agent/host/access_mode_relay.mjs:102 requestAccessController
+    outlier:  ods/extensions/services/pixel-agent/host/native_ingress_config.mjs:13 stageConfiguration
+    outlier:  ods/extensions/services/pixel-agent/host/pixel_ingress.mjs:2037 atomicWriteJson
+    outlier:  ods/extensions/services/pixel-agent/host/pixel_ingress.mjs:285 createLoopbackGatewayFetch
+    outlier:  ods/extensions/services/pixel-agent/host/pixel_ingress.mjs:580 prepareSocketPath
+    outlier:  ods/extensions/services/pixel-agent/host/pixel_ingress.mjs:1610 projectExamplePreview
+    outlier:  ods/extensions/services/pixel-agent/host/pixel_ingress.mjs:1601 projectExampleProjects
+    outlier:  ods/extensions/services/pixel-agent/host/pixel_ingress.mjs:1728 projectRestoreOptions
+    outlier:  ods/extensions/services/pixel-agent/host/pixel_ingress.mjs:1709 projectRestoreReceipt
+    outlier:  ods/extensions/services/pixel-agent/host/pixel_ingress.mjs:1563 projectRuntimeIdentity
+    outlier:  ods/extensions/services/pixel-agent/host/pixel_ingress.mjs:488 readGatewayConfiguration
+    outlier:  ods/extensions/services/pixel-agent/host/pixel_ingress.mjs:365 validateConfig
+
+ 4. [D-2264ef] functions in ods/scripts/** declare their return type
+    evidence: 292/351 (lower bound 0.79, lift 2.7)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  ods/scripts/assign_gpus.py#assign_services
+    outlier:  ods/scripts/assign_gpus.py:467 main
+    outlier:  ods/scripts/backup-native-preflight.py:20 main
+    outlier:  ods/scripts/backup-native-preflight.py:10 native_state
+    outlier:  ods/scripts/cleanup-wsl-pixel-mounts.py:225 cleanup
+    outlier:  ods/scripts/cleanup-wsl-pixel-mounts.py:71 directory
+    outlier:  ods/scripts/cleanup-wsl-pixel-mounts.py:38 docker
+    outlier:  ods/scripts/cleanup-wsl-pixel-mounts.py:145 ensure_unused
+    outlier:  ods/scripts/cleanup-wsl-pixel-mounts.py:80 plan
+    outlier:  ods/scripts/cleanup-wsl-pixel-mounts.py:54 read_mounts
+    outlier:  ods/scripts/cleanup-wsl-pixel-mounts.py:50 unescape
+    outlier:  ods/scripts/compose-cache-policy.py:146 main
+    outlier:  ods/scripts/compose-cache-policy.py:37 validate_flags
+    outlier:  ods/scripts/generate-setup-card.py:115 render_card
+    outlier:  ods/scripts/generate-setup-card.py:83 render_qr
+    outlier:  ods/scripts/healthcheck.py:272 with_retries
+    outlier:  ods/scripts/macos-bootstrap-promote.py:399 main
+    outlier:  ods/scripts/macos-bootstrap-promote.py:347 run
+    outlier:  ods/scripts/model-store-compose-flags.py:55 main
+    outlier:  ods/scripts/model-store-compose-flags.py:14 resolve_flags
+    outlier:  ods/scripts/prepare-containerd-console.py:205 do_apply
+    outlier:  ods/scripts/prepare-containerd-console.py:198 do_check
+    outlier:  ods/scripts/prepare-containerd-console.py:254 main
+    outlier:  ods/scripts/recover-macos-local-model.py:26 installed_env
+    outlier:  ods/scripts/recover-macos-local-model.py:106 main
+    outlier:  ods/scripts/recover-macos-local-model.py:39 request
+    outlier:  ods/scripts/recover-macos-local-model.py:76 run
+    outlier:  ods/scripts/refresh-hermes-mounts.py:80 desktop_data_source_matches
+    outlier:  ods/scripts/refresh-hermes-mounts.py:84 desktop_file_source_matches
+    outlier:  ods/scripts/refresh-hermes-mounts.py:51 execute
+    outlier:  ods/scripts/refresh-hermes-mounts.py:88 host_digests
+    outlier:  ods/scripts/refresh-hermes-mounts.py:220 main
+    outlier:  ods/scripts/refresh-hermes-mounts.py:108 refresh
+    outlier:  ods/scripts/register-model-store.py:110 main
+    outlier:  ods/scripts/source-update-preflight.py:163 check_compose
+    outlier:  ods/scripts/source-update-preflight.py:134 check_native
+    outlier:  ods/scripts/source-update-preflight.py:149 check_rollback
+    outlier:  ods/scripts/source-update-preflight.py:176 main
+    outlier:  ods/scripts/source-update-preflight.py:55 root_managed_pixel_identity
+    outlier:  ods/scripts/stop-owned-containers.py:93 main
+    outlier:  ods/scripts/stop-owned-containers.py:31 stop_owned_containers
+    outlier:  ods/scripts/verify-pixel-bundle.py:61 bundle_tree_modes
+    outlier:  ods/scripts/verify-pixel-bundle.py:19 command
+    outlier:  ods/scripts/verify-pixel-bundle.py:31 files
+    outlier:  ods/scripts/verify-pixel-bundle.py:78 main
+    outlier:  ods/scripts/verify-pixel-bundle.py:43 source_index_modes
+    outlier:  ods/scripts/windows-retained-extensions.py:72 main
+    outlier:  ods/scripts/windows-retained-extensions.py:19 resolve
+    outlier:  ods/scripts/wsl-bind-recovery.py:144 active_profiles
+    outlier:  ods/scripts/wsl-bind-recovery.py:398 backup_phantom
+    outlier:  ods/scripts/wsl-bind-recovery.py:298 classify_running
+    outlier:  ods/scripts/wsl-bind-recovery.py:309 classify_stopped
+    outlier:  ods/scripts/wsl-bind-recovery.py:84 compose_config_json
+    outlier:  ods/scripts/wsl-bind-recovery.py:39 fail
+    outlier:  ods/scripts/wsl-bind-recovery.py:69 is_wsl_docker_desktop
+    outlier:  ods/scripts/wsl-bind-recovery.py:506 main
+    outlier:  ods/scripts/wsl-bind-recovery.py:465 recreate
+    outlier:  ods/scripts/wsl-bind-recovery.py:186 resolve_bind_targets
+    outlier:  ods/scripts/wsl-bind-recovery.py:177 service_enabled
+    outlier:  ods/scripts/wsl-bind-recovery.py:473 verify
+    exempt:   ods/scripts/cleanup-wsl-pixel-mounts.py:31 run (shared part used by 2 members)
+    exempt:   ods/scripts/prepare-containerd-console.py:102 classify (shared part used by 2 members)
+    exempt:   ods/scripts/refresh-hermes-mounts.py:60 desktop_source_matches (shared part used by 2 members)
+    exempt:   ods/scripts/source-update-preflight.py:15 load_helper (shared part used by 2 members)
+    exempt:   ods/scripts/source-update-preflight.py:24 locally_selected_native (shared part used by 2 members)
+    exempt:   ods/scripts/source-update-preflight.py:103 managed_pixel_identity (shared part used by 2 members)
+    exempt:   ods/scripts/verify-pixel-bundle.py:23 digest (shared part used by 2 members)
+    exempt:   ods/scripts/wsl-bind-recovery.py:266 bind_view_matches (shared part used by 2 members)
+    exempt:   ods/scripts/wsl-bind-recovery.py:99 compose_ps (shared part used by 2 members)
+    exempt:   ods/scripts/wsl-bind-recovery.py:226 exec_stat (shared part used by 4 members)
+    exempt:   ods/scripts/wsl-bind-recovery.py:208 host_stat (shared part used by 5 members)
+    exempt:   ods/scripts/wsl-bind-recovery.py:132 inspect_container (shared part used by 3 members)
+    exempt:   ods/scripts/wsl-bind-recovery.py:35 log (shared part used by 2 members)
+    exempt:   ods/scripts/wsl-bind-recovery.py:257 prevalidate_binds (shared part used by 4 members)
+    exempt:   ods/scripts/wsl-bind-recovery.py:44 run (shared part used by 7 members)
+
+ 5. [D-c72ce2] files in ods/extensions/services/dashboard-api/** have a test file
+    evidence: 94/104 (lower bound 0.83, lift 2.1)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  ods/extensions/services/dashboard-api/agent_monitor.py#(file)
+    outlier:  ods/extensions/services/dashboard-api/builtin_source_recipes.py:1 (file)
+    outlier:  ods/extensions/services/dashboard-api/context_policy.py:1 (file)
+    outlier:  ods/extensions/services/dashboard-api/dashboard_password.py:1 (file)
+    outlier:  ods/extensions/services/dashboard-api/hermes_bridge.py:1 (file)
+    outlier:  ods/extensions/services/dashboard-api/model_selection.py:1 (file)
+    outlier:  ods/extensions/services/dashboard-api/pixel_connection_public.py:1 (file)
+    outlier:  ods/extensions/services/dashboard-api/pixel_runtime_state.py:1 (file)
+    outlier:  ods/extensions/services/dashboard-api/routers/auth.py:1 (file)
+    outlier:  ods/extensions/services/dashboard-api/runtime_projection.py:1 (file)
+    outlier:  ods/extensions/services/dashboard-api/settings.py:1 (file)
+
+ 6. [D-f40096] functions in ods/bin/remote_provider/** declare their return type
+    evidence: 30/31 (lower bound 0.84, lift 3.3)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  ods/bin/remote_provider/egress.py#connection_header_names
+    outlier:  ods/bin/remote_provider/telemetry.py:7 route_fingerprint
+
+ 7. [D-637b72] functions in ods/bin/model_switchboard/** declare their return type
+    evidence: 25/26 (lower bound 0.81, lift 3.3)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  ods/bin/model_switchboard/adapters.py#result
+    outlier:  ods/bin/model_switchboard/wsl_runtime.py:56 env_value
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

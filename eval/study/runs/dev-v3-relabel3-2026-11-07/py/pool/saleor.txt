@@ -1,0 +1,49 @@
+7 conventions from 7261 units in 278 roles (0 default tier, 7 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-e36ea5] exported values in saleor/core/** do not read os.environ directly
+    evidence: 76/77 (lower bound 0.93, lift 11.8)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  saleor/core/auth.py#AUTH_HEADER_PREFIXES
+    outlier:  saleor/core/development/random_data.py:139 DEFAULT_CURRENCY
+
+ 2. [D-71795b] classes in saleor/** (dataloaders files) are named `*Loader`
+    evidence: 126/128 (lower bound 0.94, lift 11.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  saleor/graphql/account/dataloaders.py#AccessibleChannelsByGroupIdLoader
+    outlier:  saleor/graphql/plugins/dataloaders.py:31 PluginManagerByRequestorDataloader
+    outlier:  saleor/graphql/tax/dataloaders.py:37 TaxConfigurationByChannelId
+
+ 3. [D-ac08d9] enums in saleor/** (error_codes files) are named `*Code`
+    evidence: 91/92 (lower bound 0.94, lift 26.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  saleor/account/error_codes.py#AccountErrorCode
+    outlier:  saleor/graphql/notifications/error_codes.py:4 ExternalNotificationErrorCodes
+
+ 4. [D-a6847e] classes in saleor/graphql/attribute/dataloaders/** are named `*Loader`
+    evidence: 18/19 (lower bound 0.75, lift 10.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  saleor/graphql/attribute/dataloaders/assigned_attributes.py#AttributeByPageIdAndAttributeSlugLoader
+    outlier:  saleor/graphql/attribute/dataloaders/attributes.py:22 AttributesByAttributeId
+
+ 5. [D-e86c5d] files in saleor/graphql/account/** have a test file
+    evidence: 50/51 (lower bound 0.90, lift 1.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  saleor/graphql/account/bulk_mutations/customer_bulk_delete.py#(file)
+    outlier:  saleor/graphql/account/mixins.py:1 (file)
+
+ 6. [D-6af632] files in saleor/graphql/order/** have a test file
+    evidence: 36/38 (lower bound 0.83, lift 1.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  saleor/graphql/order/bulk_mutations/draft_orders.py#(file)
+    outlier:  saleor/graphql/order/mutations/draft_order_cleaner.py:1 (file)
+    outlier:  saleor/graphql/order/mutations/order_note_common.py:1 (file)
+
+ 7. [D-0da0cf] files in saleor/graphql/app/** have a test file
+    evidence: 20/21 (lower bound 0.77, lift 1.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  saleor/graphql/app/dataloaders/app.py#(file)
+    outlier:  saleor/graphql/app/dataloaders/thumbnail.py:1 (file)
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

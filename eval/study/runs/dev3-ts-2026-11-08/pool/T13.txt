@@ -1,0 +1,31 @@
+3 conventions from 4085 units in 157 roles (1 default tier, 2 suggestions)
+
+2 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-005b17] files in app/lib/** do not import from app/policies/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 230/232 (lower bound 0.97, lift 3.0)
+    tier:     default
+    example:  app/lib/AgentFilterContext.tsx#(file)
+    outlier:  app/lib/policy-modes/contract.ts:1 (file)
+    outlier:  app/lib/policy-modes/summary.ts:1 (file)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 2. [D-546fe2] functions in app/** (demoMiddleware files) are named `demo*`, except 2 shared parts (used by several members, not a member)
+    evidence: 38/38 (lower bound 0.91, lift 48.2)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  app/lib/demo/demoMiddleware.actions.ts#demoActionArtifacts
+    exempt:   app/lib/demo/demoMiddleware.sessions.ts:68 buildDemoSessionActions (shared part used by 3 members)
+    exempt:   app/lib/demo/demoMiddleware.sessions.ts:21 buildDemoSessionList (shared part used by 5 members)
+
+ 3. [D-304043] pages in app/** (page files) are named `*Page`
+    evidence: 51/52 (lower bound 0.90, lift 3.9)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  app/agents/page.tsx#AgentsPage
+    outlier:  app/decisions/page.tsx:1024 DecisionsLedger
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

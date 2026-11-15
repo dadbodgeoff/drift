@@ -1,0 +1,355 @@
+{
+  "labels_sha256": {
+    "A": "4c0abd492c7a2ebf8051d33d3b92dcba5abcbcdd58bffe23d08e59b4a258aeb6",
+    "B": "7b4fd54ce1a68c5eccbaebc5616f77214b6d6489807f4da7a0c1266c055eb7b6"
+  },
+  "cases": [
+    {
+      "uid": "twenty/D-70d216",
+      "repo": "twenty",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "rubric": "v3",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "uid": "twenty/D-70d216",
+          "label": "ACCEPT",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-ai-provider.resolver.ts",
+            "packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts",
+            "packages/twenty-server/src/engine/core-modules/application/application-registration/application-registration-summary.resolver.ts",
+            "packages/twenty-server/src/engine/core-modules/geo-map/resolver/geo-map.resolver.ts",
+            "packages/twenty-server/src/engine/core-modules/tool-provider/resolvers/tool-index.resolver.ts",
+            "packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts",
+            "packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message.resolver.ts",
+            "packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/resolvers/agent-chat-subscription.resolver.ts",
+            "packages/twenty-server/src/engine/metadata-modules/ai/ai-workspace-stats/resolvers/ai-workspace-stats.resolver.ts",
+            "packages/twenty-server/src/engine/metadata-modules/metadata-translation/metadata-translation.resolver.ts",
+            "packages/twenty-server/src/engine/metadata-modules/minimal-metadata/minimal-metadata.resolver.ts",
+            "packages/twenty-server/src/engine/permissions/record-permissions/record-permissions.resolver.ts",
+            "packages/twenty-server/src/engine/permissions/record-share/resolvers/record-sharing.resolver.ts",
+            "packages/twenty-server/src/modules/call-recording/resolvers/call-recording.resolver.ts",
+            "packages/twenty-server/src/engine/core-modules/billing/billing-subscription-item.resolver.ts",
+            "packages/twenty-server/src/engine/metadata-modules/ai/ai-tool-call-answer/resolvers/tool-call-answer.resolver.ts",
+            "packages/twenty-server/src/engine/metadata-modules/webhook/webhook.resolver.ts",
+            "packages/twenty-server/src/engine/core-modules/graphql/filters/prevent-nest-to-auto-log-graphql-errors.filter.ts",
+            "packages/twenty-server/src/app.module.ts",
+            "packages/twenty-server/src/engine/core-modules/core-engine.module.ts",
+            "packages/twenty-server/src/engine/metadata-modules/metadata-engine.module.ts",
+            "packages/twenty-server/.oxlintrc.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "AdminPanelApplicationRegistrationResolver.* (6 fields)",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "ApplicationRegistrationSummaryResolver.logoUrl",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "AgentMessagePartResolver.* (3 fields)",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "AgentMessageResolver.* (2 fields)",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "GeoMapResolver.getAutoCompleteAddress",
+              "verdict": "look"
+            },
+            {
+              "symbol": "GeoMapResolver.getAddressDetails",
+              "verdict": "look"
+            },
+            {
+              "symbol": "ToolIndexResolver.getToolIndex",
+              "verdict": "look"
+            },
+            {
+              "symbol": "ToolIndexResolver.getToolInputSchema",
+              "verdict": "look"
+            },
+            {
+              "symbol": "RecordPermissionsResolver.recordPermissions",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "RecordSharingResolver.* (4)",
+              "verdict": "look"
+            },
+            {
+              "symbol": "MinimalMetadataResolver.minimalMetadata",
+              "verdict": "look"
+            },
+            {
+              "symbol": "MetadataTranslationResolver.metadataTranslations",
+              "verdict": "look"
+            },
+            {
+              "symbol": "AiWorkspaceStatsResolver.findWorkspaceAiStats",
+              "verdict": "look"
+            },
+            {
+              "symbol": "CallRecordingResolver.callRecordingIdForCalendarEvent",
+              "verdict": "look"
+            },
+            {
+              "symbol": "AgentChatSubscriptionResolver.onAgentChatEvent",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R4"
+          ],
+          "reason": "Root resolvers almost all carry class-level @UseFilters (ai-provider, webhook, tool-call-answer); 14 of the 26 outliers are queries/mutations without any filter (record-permissions throws AuthenticationError/UserInputError unfiltered, record-sharing, geo-map) worth a look, while 12 are @ResolveField methods on DTO field-resolver classes where filters do not apply (legit). 14/26 is just over half; hesitated with WRONG mixed_group because of the field resolvers.",
+          "defects": [
+            "packages/twenty-server/src/engine/permissions/record-permissions/record-permissions.resolver.ts:55 throws GraphQL errors with no PreventNestToAutoLogGraphqlErrorsFilter on the class"
+          ],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "twenty/D-70d216",
+          "label": "WRONG",
+          "wrong_because": "incidental",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-ai-provider.resolver.ts",
+            "packages/twenty-server/src/engine/metadata-modules/webhook/webhook.resolver.ts",
+            "packages/twenty-server/src/engine/core-modules/user/user.resolver.ts",
+            "packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-application-registration.resolver.ts",
+            "packages/twenty-server/src/engine/core-modules/geo-map/resolver/geo-map.resolver.ts",
+            "packages/twenty-server/src/engine/core-modules/tool-provider/resolvers/tool-index.resolver.ts",
+            "packages/twenty-server/src/engine/permissions/record-share/resolvers/record-sharing.resolver.ts",
+            "packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-message-part.resolver.ts",
+            "packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/resolvers/agent-chat-subscription.resolver.ts",
+            "packages/twenty-server/src/engine/permissions/record-permissions/record-permissions.resolver.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "AdminPanelApplicationRegistrationResolver fields",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "AgentMessagePartResolver fields",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "GeoMapResolver",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "ToolIndexResolver",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "RecordSharingResolver",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "AgentChatSubscriptionResolver",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "RecordPermissionsResolver",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "UseFilters maps domain exceptions to GraphQL errors. Outliers are pure field resolvers, thin pass-through queries (geo-map, tool-index) or handle errors another way (record-sharing helper, AiGraphqlApiExceptionInterceptor), so they lack the need. Hesitated with ACCEPT since a few could throw domain errors.",
+          "rubric": "v3",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "documenso/D-4785b8",
+      "repo": "documenso",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "documenso/D-4785b8",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "apps/remix/app/components/dialogs/account-delete-dialog.tsx",
+            "apps/remix/app/components/dialogs/organisation-email-domain-records-dialog.tsx",
+            "apps/remix/app/components/dialogs/organisation-email-domain-create-dialog.tsx",
+            "apps/remix/app/components/dialogs/folder-delete-dialog.tsx",
+            "biome.json"
+          ],
+          "outliers": [],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "All 93 files in dialogs/ are *-dialog.tsx and export a *Dialog component (AccountDeleteDialog, FolderDeleteDialog, OrganisationEmailDomainCreateDialog); the only exception, OrganisationEmailDomainRecordContent, is a shared part the tool already exempts, and no biome rule enforces component naming, so a new off-scheme component is a naming-scheme drift worth flagging.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "documenso/D-4785b8",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/remix/app/components/dialogs/account-delete-dialog.tsx",
+            "apps/remix/app/components/dialogs/organisation-email-domain-records-dialog.tsx",
+            "apps/remix/app/components/dialogs/organisation-email-domain-create-dialog.tsx",
+            "apps/remix/app/components/dialogs/team-delete-dialog.tsx",
+            "apps/remix/app/components/dialogs/folder-create-dialog.tsx",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "OrganisationEmailDomainRecordContent",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Dialog files export *Dialog components (team-delete-dialog.tsx, folder-create-dialog.tsx), and biome.json has no naming rule. The one exported exception, OrganisationEmailDomainRecordContent in organisation-email-domain-records-dialog.tsx, is a shared DialogContent body reused by organisation-email-domain-create-dialog.tsx; it is a different kind of thing and not a definition or aggregator, so under R1 it counts as legit: 0 of 1 is a mistake. Hesitated with ACCEPT, since the tool marks it exempt and 93/93 follow the scheme.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "novu/D-dbba9a",
+      "repo": "novu",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "novu/D-dbba9a",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/dashboard/src/pages/access-denied-page.tsx",
+            "apps/dashboard/src/pages/activity-feed.tsx",
+            "apps/dashboard/src/pages/new-layout-drawer.tsx",
+            "apps/dashboard/src/pages/test-workflow-route-handler.tsx",
+            "apps/dashboard/src/pages/workflows.tsx",
+            "apps/dashboard/src/pages/new-workflow-drawer.tsx",
+            "apps/dashboard/src/pages/analytics.tsx",
+            "apps/dashboard/src/pages/contexts.tsx",
+            "apps/dashboard/src/pages/create-layout.tsx",
+            "apps/dashboard/src/pages/duplicate-layout-page.tsx",
+            "apps/dashboard/src/pages/index.ts",
+            "apps/dashboard/src/main.tsx",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "ActivityFeed",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "NewLayoutDrawer",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "TestWorkflowRouteHandler",
+              "verdict": "look"
+            },
+            {
+              "symbol": "TemplateModal",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Exported route components in pages/ are named *Page (AnalyticsPage, ContextsPage); ActivityFeed, TestWorkflowRouteHandler and TemplateModal are all used directly as route elements in main.tsx yet lack the suffix (3 of 4 mistake/look), while NewLayoutDrawer is a shared drawer rendered by CreateLayoutPage/DuplicateLayoutPage (legit). Hesitated with WRONG mixed_group since route-level modals/handlers and shared drawers also live here.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "novu/D-dbba9a",
+          "label": "WRONG",
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "apps/dashboard/src/pages/access-denied-page.tsx",
+            "apps/dashboard/src/pages/activity-feed.tsx",
+            "apps/dashboard/src/pages/new-layout-drawer.tsx",
+            "apps/dashboard/src/pages/test-workflow-route-handler.tsx",
+            "apps/dashboard/src/pages/workflows.tsx",
+            "apps/dashboard/src/pages/sign-in.tsx",
+            "apps/dashboard/src/pages/settings.tsx",
+            "apps/dashboard/src/pages/new-workflow-drawer.tsx",
+            "apps/dashboard/src/pages/create-workflow.tsx"
+          ],
+          "outliers": [
+            {
+              "symbol": "ActivityFeed",
+              "verdict": "look"
+            },
+            {
+              "symbol": "NewLayoutDrawer",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "TestWorkflowRouteHandler",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "TemplateModal",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Only ActivityFeed is a real page missing the suffix; NewLayoutDrawer, TemplateModal (workflows.tsx) and the route redirect handler are drawers/modals/helpers living in pages/ (like NewWorkflowDrawer, used by create-workflow.tsx), so 1 of 4 counted.",
+          "rubric": "v3",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "held_out": true,
+  "status": "started",
+  "manifest": "eval/holdout-primary.json",
+  "set_id": "ts-primary-2026-11-05",
+  "core_sha256": "6b8c9a25ee556846e7b5bf7061487a550f73f74c3fd97686153b229a53881d1c",
+  "product_commit": "ab1a8f348039310fcf908f65b99cb6d90cc1f5e3",
+  "started_at": "2026-11-07T19:26:00.178Z"
+}

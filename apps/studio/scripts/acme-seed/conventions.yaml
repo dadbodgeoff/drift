@@ -1,0 +1,380 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - page
+  - route
+  suffixes:
+  - controller
+  - service
+conventions:
+- id: D-987321
+  status: accepted
+  mode: advise
+  summary: >-
+    files in packages/ui/** do not import from apps/web/** (declared dependencies,
+    and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: packages/ui
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:apps/web
+  evidence:
+    holders: 60
+    total: 61
+    lower_bound: 0.913
+    lift: 3.0
+  example: packages/ui/src/alert.tsx#(file)
+  selector_version: 3
+- id: D-e599ac
+  status: rejected
+  mode: advise
+  summary: "apps/api: functions in src/** are named `run*`, except a shared part (used by several members, not a member)"
+  role:
+    package: apps/api
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: run*
+  evidence:
+    holders: 40
+    total: 40
+    lower_bound: 0.912
+    lift: 5.683
+    role_members: 41
+  example: apps/api/src/jobs/job10.ts#runJob10
+  selector_version: 3
+- id: D-ed1ec0
+  status: accepted
+  mode: block
+  summary: "apps/web: HTTP handlers in app/api/workspaces/** (route files) are wrapped in withWorkspace()"
+  role:
+    package: apps/web
+    dir: app/api/workspaces
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - apps/web/lib/auth.ts#withWorkspace
+  evidence:
+    holders: 68
+    total: 70
+    lower_bound: 0.902
+    lift: 3.329
+  example: apps/web/app/api/workspaces/[id]/alerts/route.ts#GET
+  selector_version: 3
+- id: D-b0d245
+  status: accepted
+  mode: block
+  summary: "apps/web: HTTP handlers in app/** (route files) are wrapped in withAdmin() or withWorkspace()"
+  role:
+    package: apps/web
+    dir: app
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - apps/web/lib/auth.ts#withAdmin
+    - apps/web/lib/auth.ts#withWorkspace
+  evidence:
+    holders: 87
+    total: 93
+    lower_bound: 0.866
+    lift: 2.505
+    split:
+    - - apps/web/lib/auth.ts#withWorkspace
+      - 68
+    - - apps/web/lib/auth.ts#withAdmin
+      - 19
+  example: apps/web/app/api/admin/abuse/route.ts#GET
+  selector_version: 3
+  exceptions:
+  - member: apps/web/app/api/oauth/callback/route.ts#GET
+    reason: the OAuth callback runs before any session exists
+- id: D-43b8c8
+  status: accepted
+  mode: advise
+  summary: "apps/api: classes in src/** (*.service files) are registered in Module() providers of apps/api/src/app.module.ts"
+  role:
+    package: apps/api
+    dir: src
+    file: "*.service"
+    entry: "*"
+    kind: class
+  rule:
+    type: registered_in
+    slot: arg:pkg:@nestjs/common#Module@0:providers
+    path: apps/api/src/app.module.ts
+  evidence:
+    holders: 24
+    total: 24
+    lower_bound: 0.862
+    lift: 1.0
+  example: apps/api/src/alerts/alerts.service.ts#AlertsService
+  selector_version: 3
+- id: D-a312d9
+  status: accepted
+  mode: advise
+  summary: "apps/api: classes in src/** (*.controller files) are registered in Module() controllers of apps/api/src/app.module.ts"
+  role:
+    package: apps/api
+    dir: src
+    file: "*.controller"
+    entry: "*"
+    kind: class
+  rule:
+    type: registered_in
+    slot: arg:pkg:@nestjs/common#Module@0:controllers
+    path: apps/api/src/app.module.ts
+  evidence:
+    holders: 24
+    total: 24
+    lower_bound: 0.862
+    lift: 1.0
+  example: apps/api/src/alerts/alerts.controller.ts#AlertsController
+  selector_version: 3
+- id: D-ccf957
+  status: accepted
+  mode: block
+  summary: "apps/api: HTTP handlers in src/** (*.controller files) are decorated with UseGuards()"
+  role:
+    package: apps/api
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#UseGuards
+  evidence:
+    holders: 46
+    total: 48
+    lower_bound: 0.86
+    lift: 4.854
+  example: apps/api/src/alerts/alerts.controller.ts#GET /alerts/:id
+  selector_version: 3
+- id: D-b5f755
+  status: proposed
+  mode: advise
+  summary: "packages/emails: components in src/** render inside <EmailLayout>, except 2 shared parts (used by several members, not a member)"
+  role:
+    package: packages/emails
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: wrapped_by
+    kind: jsx
+    any_of:
+    - packages/emails/src/components/layout.tsx#EmailLayout
+  evidence:
+    holders: 23
+    total: 23
+    lower_bound: 0.857
+    lift: 4.76
+    role_members: 25
+  example: packages/emails/src/templates/comment-added.tsx#CommentAddedEmail
+  selector_version: 3
+- id: D-d779d0
+  status: accepted
+  mode: advise
+  summary: "apps/api: functions in src/** pass `event` to audit(), except 2 members (not calling the callee)"
+  role:
+    package: apps/api
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: passes_key
+    callee: apps/api/src/jobs/audit.ts#audit
+    index: 0
+    key: event
+  evidence:
+    holders: 37
+    total: 39
+    lower_bound: 0.831
+    lift: 5.683
+    role_members: 41
+  example: apps/api/src/jobs/job10.ts#runJob10
+  selector_version: 3
+- id: D-82ce0b
+  status: accepted
+  mode: advise
+  summary: "services/agents: TypedDicts in agents/** take `TypedDict` from typing_extensions, not typing"
+  role:
+    package: services/agents
+    dir: agents
+    file: "*"
+    entry: '-'
+    kind: class
+    variety: typeddict
+  rule:
+    type: imports_from
+    name: TypedDict
+    source: pkg:typing_extensions#TypedDict
+    instead_of:
+    - pkg:python:typing#TypedDict
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 1.0
+    split:
+    - - typing_extensions
+      - 23
+    - - typing
+      - 1
+    python_members: 24
+  example: services/agents/agents/handoff.py#HandoffInput
+  selector_version: 3
+- id: D-be239c
+  status: proposed
+  mode: advise
+  summary: "apps/api: classes in src/** (*.controller files) are decorated with UseGuards()"
+  role:
+    package: apps/api
+    dir: src
+    file: "*.controller"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#UseGuards
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 3.25
+  example: apps/api/src/alerts/alerts.controller.ts#AlertsController
+  selector_version: 3
+- id: D-df89fd
+  status: accepted
+  mode: advise
+  summary: "apps/api: classes in src/** (*.service files) extend BaseService, except a member (of the module that defines a rule's target)"
+  role:
+    package: apps/api
+    dir: src
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - apps/api/src/common/base.service.ts#BaseService
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 3.12
+    role_members: 25
+  example: apps/api/src/alerts/alerts.service.ts#AlertsService
+  selector_version: 3
+- id: D-da92a0
+  status: accepted
+  mode: advise
+  summary: "packages/emails: components in src/templates/** render <Footer>"
+  role:
+    package: packages/emails
+    dir: src/templates
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: packages/emails/src/components/footer.tsx#Footer
+  evidence:
+    holders: 22
+    total: 23
+    lower_bound: 0.79
+    lift: 5.174
+  example: packages/emails/src/templates/comment-added.tsx#CommentAddedEmail
+  selector_version: 3
+- id: D-69e735
+  status: accepted
+  mode: advise
+  summary: "apps/web: pages in app/** (page files) render inside <PageShell>"
+  role:
+    package: apps/web
+    dir: app
+    file: page
+    entry: page
+    kind: component
+  rule:
+    type: wrapped_by
+    kind: jsx
+    any_of:
+    - apps/web/components/page-shell.tsx#PageShell
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 5.667
+  example: apps/web/app/(dashboard)/[slug]/alerts/page.tsx#AlertsPage
+  selector_version: 3
+- id: D-288d8d
+  status: accepted
+  mode: advise
+  summary: "apps/web: HTTP handlers in app/api/admin/** (route files) are wrapped in withAdmin()"
+  role:
+    package: apps/web
+    dir: app/api/admin
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - apps/web/lib/auth.ts#withAdmin
+  evidence:
+    holders: 19
+    total: 20
+    lower_bound: 0.764
+    lift: 11.65
+  example: apps/web/app/api/admin/abuse/route.ts#GET
+  selector_version: 3
+- id: D-50ba36
+  status: proposed
+  mode: advise
+  summary: "apps/web: server actions in lib/** are wrapped in authActionClient.inputSchema().action()"
+  role:
+    package: apps/web
+    dir: lib
+    file: "*"
+    entry: server_action
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 12.263
+  example: apps/web/lib/actions/archive-link.ts#archiveLinkAction
+  selector_version: 3

@@ -1,0 +1,25 @@
+[
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "T19",
+    "prompt": "/home/user/drift-wt/dev4/eval/study/runs/dev4-ts-2026-11-09/blindC-T19/prompts/label/A/T19.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev4/f11/cache/outbox/83a312af-2b33-4d0f-9481-2ecdd8e01649/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev4/f11/cache/workdirs/4a834d69-79b3-4210-9c82-f201f38c0040",
+    "checkout_status": [],
+    "expected": [
+      "T19/D-afc638",
+      "T19/D-b24e52",
+      "T19/D-c79a9e"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-09T04:10:29.904Z",
+    "collected": {
+      "at": "2026-11-09T04:14:03.015Z",
+      "dest": "eval/study/runs/dev4-ts-2026-11-09/blindC-T19/labels/A/T19.jsonl",
+      "records": 3,
+      "sha256": "17fae589b1a1259519f7b564e93b8a0eec5b67ec22c573c7b3cf7567e7a8a526"
+    }
+  }
+]

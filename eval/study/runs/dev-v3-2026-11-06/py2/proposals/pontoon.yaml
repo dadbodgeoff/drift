@@ -1,0 +1,63 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - actions
+  - admin
+  - forms
+  - hooks
+  - models
+  - reducer
+  - tasks
+  - test_models
+  - test_utils
+  - test_views
+  - urls
+  - utils
+  - views
+  suffixes:
+  - config
+  - test
+conventions:
+- id: D-94fc85
+  status: proposed
+  mode: advise
+  summary: "translate: functions in src/api/** declare their return type"
+  role:
+    package: translate
+    dir: src/api
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 45
+    total: 46
+    lower_bound: 0.887
+    lift: 2.215
+  example: translate/src/api/comment.ts#addComment
+- id: D-ddba4b
+  status: proposed
+  mode: advise
+  summary: "translate: functions in src/utils/** declare their return type"
+  role:
+    package: translate
+    dir: src/utils
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 29
+    total: 30
+    lower_bound: 0.833
+    lift: 2.189
+  example: translate/src/utils/asLocaleString.ts#asLocaleString

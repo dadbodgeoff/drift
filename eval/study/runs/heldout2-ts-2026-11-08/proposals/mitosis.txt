@@ -1,0 +1,34 @@
+3 conventions from 1068 units in 78 roles (0 default tier, 3 suggestions)
+
+3 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-e375ce] packages/core: functions in src/helpers/** do not use `any`
+    evidence: 128/135 (lower bound 0.90, lift 3.7)
+    tier:     suggestion (rule kind avoids:other)
+    agents:   not shown to agents (family below admission bar: 50% of 2)
+    example:  packages/core/src/helpers/apply-meta-tagname.ts#applyMetaTagName
+    outlier:  packages/core/src/helpers/babel-transform.ts:84 babelTransformCode
+    outlier:  packages/core/src/helpers/babel-transform.ts:124 babelTransformExpression
+    outlier:  packages/core/src/helpers/dedent.ts:9 dedent
+    outlier:  packages/core/src/helpers/is-mitosis-node.ts:3 isMitosisNode
+    outlier:  packages/core/src/helpers/set.ts:7 set
+    outlier:  packages/core/src/helpers/styles/collect-styled-components.ts:17 collectStyledComponents
+    outlier:  packages/core/src/helpers/typescript.ts:13 objectHasKey
+
+ 2. [D-2a2de0] packages/core: functions in src/generators/angular/** do not use `any`
+    evidence: 25/26 (lower bound 0.81, lift 4.1)
+    tier:     suggestion (rule kind avoids:other)
+    agents:   not shown to agents (family below admission bar: 50% of 2)
+    example:  packages/core/src/generators/angular/classic/plugins/get-code-processor-plugins.ts#getCodeProcessorPlugins
+    outlier:  packages/core/src/generators/angular/classic/plugins/get-class-properties-plugin.ts:141 getClassPropertiesPlugin
+
+ 3. [D-2e24b5] packages/eslint-plugin: files in src/rules/** have a test file
+    evidence: 18/19 (lower bound 0.75, lift 12.0)
+    tier:     suggestion (rule kind has_test)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  packages/eslint-plugin/src/rules/css-no-vars.ts#(file)
+    outlier:  packages/eslint-plugin/src/rules/index.ts:1 (file)
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

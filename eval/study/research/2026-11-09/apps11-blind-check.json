@@ -1,0 +1,2045 @@
+{
+  "//": "apps11 blind half, before/after check (PREREG-apps-coverage.md §6 step 4). Aggregates only: no blind repo, path, card or reason. Repos are identified only through eval/apps11-blind-hashes.json (set_id, core_sha256); the private files named by sha256 below stay in the operator scratch until apps-blind joins the build set.",
+  "set_id": "apps11-blind-2026-11-09",
+  "core_sha256": "576b91cca231c134d29570365065144cedd5a3e42fd4f7e184e8ccd61ee8c3c5",
+  "n_repos": 18,
+  "checks": {
+    "hashes_matched": "18/18 (slug, name, pin)",
+    "core_sha256_matched": true,
+    "select_apps_verify_private": "replays",
+    "checkouts_at_pin": true,
+    "census_failed": 0,
+    "census_dirty_after": 0
+  },
+  "arms": {
+    "declared_before": "F11",
+    "declared_after": "monorepo11",
+    "ship_arm": "F12"
+  },
+  "labelling": {
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "labelled_set": "union over the 3 arms of (root default-view shown) + (root opt-in-view shown Python); 4 cards, labeller-facing text byte-identical in all 3 arms",
+    "cards": 4,
+    "repos_with_cards": 4,
+    "labellers": "A (session default model), B (smaller model, per PREREG-F11-dev4-check §3); C not needed",
+    "leak_check": {
+      "agents_lines": 0,
+      "moves_labels": 0,
+      "pct_of_n": 0,
+      "tier_lines": 0
+    },
+    "agreement": {
+      "both": 4,
+      "exact_pct": 100,
+      "kappa": 1,
+      "disagreements": 0
+    },
+    "b_attempts_max": 1,
+    "private_sha256": {
+      "final_jsonl": "44587996bbb614862a17db310f421c0ec85ec38479c39c117b17e2036d25e164",
+      "queue_json": "6ea39190ea4cce6cb9099d3b7a90d76d53d17d85dd6c6cb9bb67cf597f9ec4dd",
+      "key_map": "92bf734f7ca350079ce8be2617b48c6d479bf2fefd5c5eaf420b454ebb3dd15e"
+    }
+  },
+  "results": {
+    "F11": {
+      "binary_sha256": "9a8c7cd52483b8678e2dd3fb9f32a488d0be592d0e476a8be511f09aa20bd247",
+      "census_commit": "cgu83-1a44d7ef-1794188563",
+      "coverage": {
+        "repos": 18,
+        "failed": 0,
+        "packages": {
+          "total": 204,
+          "per_repo": {
+            "n": 18,
+            "mean": 11.333333333333334,
+            "median": 5,
+            "zero": 0,
+            "min": 1,
+            "max": 64
+          },
+          "by_kind": {
+            "ts": 113,
+            "py": 86,
+            "ts+py": 5
+          }
+        },
+        "root_default": {
+          "silent_root": {
+            "repos": 15,
+            "of": 18,
+            "rate": 0.8333333333333334
+          },
+          "shown_per_repo": {
+            "n": 18,
+            "mean": 0.16666666666666666,
+            "median": 0,
+            "zero": 15,
+            "min": 0,
+            "max": 1
+          },
+          "shown_per_package": {
+            "n": 204,
+            "mean": 0.014705882352941176,
+            "median": 0,
+            "zero": 201,
+            "min": 0,
+            "max": 1
+          },
+          "packages_with_shown": {
+            "packages": 3,
+            "of": 204
+          },
+          "by_tier": {
+            "suggestion": 3
+          },
+          "by_language": {
+            "ts": 3
+          }
+        },
+        "root_python_opt_in": {
+          "silent_root": {
+            "repos": 14,
+            "of": 18,
+            "rate": 0.7777777777777778
+          },
+          "shown_per_repo": {
+            "n": 18,
+            "mean": 0.2222222222222222,
+            "median": 0,
+            "zero": 14,
+            "min": 0,
+            "max": 1
+          },
+          "shown_per_package": {
+            "n": 204,
+            "mean": 0.014705882352941176,
+            "median": 0,
+            "zero": 201,
+            "min": 0,
+            "max": 1
+          },
+          "packages_with_shown": {
+            "packages": 3,
+            "of": 204
+          },
+          "by_tier": {
+            "suggestion": 4
+          },
+          "by_language": {
+            "ts": 3,
+            "py": 1
+          }
+        },
+        "per_package_census": {
+          "//": "each package censused alone (--root <package>); Python packages: the larger of the default and opt-in views",
+          "shown_per_package": {
+            "n": 204,
+            "mean": 0.04411764705882353,
+            "median": 0,
+            "zero": 200,
+            "min": 0,
+            "max": 4
+          },
+          "packages_with_shown": {
+            "packages": 4,
+            "of": 204
+          },
+          "shown_per_repo": {
+            "n": 18,
+            "mean": 0.5,
+            "median": 0,
+            "zero": 14,
+            "min": 0,
+            "max": 4
+          },
+          "failed_packages": 0
+        }
+      },
+      "labels": {
+        "accepted_per_repo": {
+          "n": 18,
+          "mean": 0.16666666666666666,
+          "median": 0,
+          "zero": 15,
+          "min": 0,
+          "max": 1
+        },
+        "package_coverage": {
+          "packages": 3,
+          "of": 204,
+          "rate": 0.014705882352941176
+        },
+        "precision": {
+          "accept": 3,
+          "not_wrong": 4,
+          "shown": 4,
+          "unlabelled": 0
+        },
+        "label_mix": {
+          "ACCEPT": 3,
+          "TRIVIAL": 1
+        }
+      },
+      "D1_ts_default_tier_accept": {
+        "k": 0,
+        "n": 0,
+        "pct": null,
+        "wilson95": [
+          null,
+          null
+        ],
+        "cluster_bootstrap95": [
+          null,
+          null
+        ],
+        "cluster_t95": [
+          null,
+          null
+        ],
+        "clusters": 0
+      },
+      "D4_not_wrong": {
+        "ts_all_shown": {
+          "k": 3,
+          "n": 3,
+          "pct": 100,
+          "wilson95": [
+            43.9,
+            100
+          ],
+          "cluster_bootstrap95": [
+            100,
+            100
+          ],
+          "cluster_t95": [
+            100,
+            100
+          ],
+          "clusters": 3
+        },
+        "py_opt_in_all_shown": {
+          "k": 1,
+          "n": 1,
+          "pct": 100,
+          "wilson95": [
+            20.7,
+            100
+          ],
+          "cluster_bootstrap95": [
+            null,
+            null
+          ],
+          "cluster_t95": [
+            null,
+            null
+          ],
+          "clusters": 1
+        }
+      },
+      "per_card_accept": {
+        "ts_default": {
+          "k": 0,
+          "n": 0,
+          "pct": null,
+          "wilson95": [
+            null,
+            null
+          ],
+          "cluster_bootstrap95": [
+            null,
+            null
+          ],
+          "cluster_t95": [
+            null,
+            null
+          ],
+          "clusters": 0
+        },
+        "ts_suggestion": {
+          "k": 3,
+          "n": 3,
+          "pct": 100,
+          "wilson95": [
+            43.9,
+            100
+          ],
+          "cluster_bootstrap95": [
+            100,
+            100
+          ],
+          "cluster_t95": [
+            100,
+            100
+          ],
+          "clusters": 3
+        },
+        "ts_all": {
+          "k": 3,
+          "n": 3,
+          "pct": 100,
+          "wilson95": [
+            43.9,
+            100
+          ],
+          "cluster_bootstrap95": [
+            100,
+            100
+          ],
+          "cluster_t95": [
+            100,
+            100
+          ],
+          "clusters": 3
+        },
+        "py_default": {
+          "k": 0,
+          "n": 0,
+          "pct": null,
+          "wilson95": [
+            null,
+            null
+          ],
+          "cluster_bootstrap95": [
+            null,
+            null
+          ],
+          "cluster_t95": [
+            null,
+            null
+          ],
+          "clusters": 0
+        },
+        "py_suggestion": {
+          "k": 0,
+          "n": 1,
+          "pct": 0,
+          "wilson95": [
+            0,
+            79.3
+          ],
+          "cluster_bootstrap95": [
+            null,
+            null
+          ],
+          "cluster_t95": [
+            null,
+            null
+          ],
+          "clusters": 1
+        },
+        "py_all": {
+          "k": 0,
+          "n": 1,
+          "pct": 0,
+          "wilson95": [
+            0,
+            79.3
+          ],
+          "cluster_bootstrap95": [
+            null,
+            null
+          ],
+          "cluster_t95": [
+            null,
+            null
+          ],
+          "clusters": 1
+        }
+      },
+      "map_drift_map_mjs": {
+        "pooled": {
+          "files_parsed": {
+            "files": 13397,
+            "of_files": 13763,
+            "files_pct": 97.3,
+            "loc_pct": 96.6,
+            "per_repo_median_files_pct": 99.8,
+            "per_repo_range_files_pct": [
+              65.4,
+              100
+            ]
+          },
+          "files_in_package": {
+            "files": 9166,
+            "of_files": 13763,
+            "files_pct": 66.6,
+            "loc_pct": 59.2,
+            "per_repo_median_files_pct": 68.5,
+            "per_repo_range_files_pct": [
+              0,
+              99.8
+            ]
+          },
+          "files_in_nonroot_drift_package": {
+            "files": 9633,
+            "of_files": 13763,
+            "files_pct": 70,
+            "loc_pct": 60.9,
+            "per_repo_median_files_pct": 68.5,
+            "per_repo_range_files_pct": [
+              0,
+              99.9
+            ]
+          },
+          "files_in_role": {
+            "files": 8214,
+            "of_files": 13763,
+            "files_pct": 59.7,
+            "loc_pct": 64.9,
+            "per_repo_median_files_pct": 58.9,
+            "per_repo_range_files_pct": [
+              13.8,
+              85.6
+            ]
+          },
+          "files_in_any_role": {
+            "files": 10064,
+            "of_files": 13763,
+            "files_pct": 73.1,
+            "loc_pct": 70.9,
+            "per_repo_median_files_pct": 73,
+            "per_repo_range_files_pct": [
+              17.7,
+              98.8
+            ]
+          },
+          "files_under_mined": {
+            "files": 55,
+            "of_files": 13763,
+            "files_pct": 0.4,
+            "loc_pct": 0.2,
+            "per_repo_median_files_pct": 0,
+            "per_repo_range_files_pct": [
+              0,
+              3.7
+            ]
+          },
+          "files_under_shown": {
+            "files": 55,
+            "of_files": 13763,
+            "files_pct": 0.4,
+            "loc_pct": 0.2,
+            "per_repo_median_files_pct": 0,
+            "per_repo_range_files_pct": [
+              0,
+              3.7
+            ]
+          },
+          "files_under_mined_py": {
+            "files": 65,
+            "of_files": 13763,
+            "files_pct": 0.5,
+            "loc_pct": 0.3,
+            "per_repo_median_files_pct": 0,
+            "per_repo_range_files_pct": [
+              0,
+              3.7
+            ]
+          },
+          "files_under_shown_py": {
+            "files": 65,
+            "of_files": 13763,
+            "files_pct": 0.5,
+            "loc_pct": 0.3,
+            "per_repo_median_files_pct": 0,
+            "per_repo_range_files_pct": [
+              0,
+              3.7
+            ]
+          }
+        },
+        "imports": {
+          "resolved": 35470,
+          "unresolved": 458,
+          "rate": 0.9872522823424627,
+          "pct": 98.7
+        },
+        "per_package": {
+          "packages": 204,
+          "in_role_files": {
+            "n": 194,
+            "mean": 0.3189445353263998,
+            "median": 0.125,
+            "zero": 95,
+            "min": 0,
+            "max": 1
+          },
+          "in_role_loc": {
+            "n": 194,
+            "mean": 0.357419870878142,
+            "median": 0.13163049654000822,
+            "zero": 95,
+            "min": 0,
+            "max": 1
+          },
+          "under_shown_files": {
+            "n": 194,
+            "mean": 0.0008476133130638231,
+            "median": 0,
+            "zero": 191,
+            "min": 0,
+            "max": 0.07692307692307693
+          },
+          "silent": {
+            "default": 201,
+            "python_opt_in": 200
+          }
+        },
+        "unmapped_by_class": {
+          "test": {
+            "files": 2375,
+            "loc": 466945,
+            "reasons": {
+              "test path (forms no role)": 2375
+            }
+          },
+          "other": {
+            "files": 962,
+            "loc": 144978,
+            "reasons": {
+              "largest role 1-3 members (< 8)": 259,
+              "largest role 4-7 members (< 8)": 141,
+              "no exported symbol": 169,
+              "only base, abstract, view or type-variable classes": 19,
+              "Python role within fewer than 3 files": 16,
+              "not parsed: generated": 14,
+              "demo or integration-suite code": 341,
+              "not parsed: declaration": 1,
+              "not parsed: minified": 2
+            }
+          },
+          "component": {
+            "files": 597,
+            "loc": 55950,
+            "reasons": {
+              "no exported symbol": 137,
+              "largest role 1-3 members (< 8)": 38,
+              "largest role 4-7 members (< 8)": 54,
+              "demo or integration-suite code": 165,
+              "not in the fact index (not scanned)": 203
+            }
+          },
+          "index/__init__": {
+            "files": 506,
+            "loc": 12102,
+            "reasons": {
+              "no exported symbol": 472,
+              "largest role 1-3 members (< 8)": 24,
+              "largest role 4-7 members (< 8)": 3,
+              "demo or integration-suite code": 5,
+              "not parsed: generated": 2
+            }
+          },
+          "config": {
+            "files": 237,
+            "loc": 5815,
+            "reasons": {
+              "largest role 4-7 members (< 8)": 31,
+              "largest role 1-3 members (< 8)": 136,
+              "no exported symbol": 6,
+              "demo or integration-suite code": 61,
+              "not in the fact index (not scanned)": 1,
+              "Python role within fewer than 3 files": 2
+            }
+          },
+          "router/dep": {
+            "files": 197,
+            "loc": 42594,
+            "reasons": {
+              "no exported symbol": 83,
+              "largest role 1-3 members (< 8)": 12,
+              "largest role 4-7 members (< 8)": 18,
+              "not in the fact index (not scanned)": 84
+            }
+          },
+          "script": {
+            "files": 144,
+            "loc": 15849,
+            "reasons": {
+              "no exported symbol": 95,
+              "largest role 1-3 members (< 8)": 17,
+              "demo or integration-suite code": 9,
+              "Python role within fewer than 3 files": 3,
+              "not in the fact index (not scanned)": 1,
+              "only base, abstract, view or type-variable classes": 4,
+              "largest role 4-7 members (< 8)": 11,
+              "not parsed: minified": 4
+            }
+          },
+          "util": {
+            "files": 126,
+            "loc": 6614,
+            "reasons": {
+              "no exported symbol": 85,
+              "largest role 4-7 members (< 8)": 13,
+              "not parsed: minified": 1,
+              "only base, abstract, view or type-variable classes": 5,
+              "not parsed: generated": 4,
+              "largest role 1-3 members (< 8)": 11,
+              "demo or integration-suite code": 7
+            }
+          },
+          "pydantic/dataclass model": {
+            "files": 125,
+            "loc": 19996,
+            "reasons": {
+              "no exported symbol": 66,
+              "largest role 4-7 members (< 8)": 17,
+              "demo or integration-suite code": 27,
+              "not in the fact index (not scanned)": 1,
+              "largest role 1-3 members (< 8)": 7,
+              "Python role within fewer than 3 files": 5,
+              "only base, abstract, view or type-variable classes": 2
+            }
+          },
+          "service": {
+            "files": 75,
+            "loc": 2293,
+            "reasons": {
+              "largest role 4-7 members (< 8)": 4,
+              "largest role 1-3 members (< 8)": 2,
+              "no exported symbol": 62,
+              "only base, abstract, view or type-variable classes": 6,
+              "Python role within fewer than 3 files": 1
+            }
+          },
+          "ORM model": {
+            "files": 71,
+            "loc": 5138,
+            "reasons": {
+              "largest role 1-3 members (< 8)": 40,
+              "no exported symbol": 21,
+              "demo or integration-suite code": 1,
+              "Python role within fewer than 3 files": 4,
+              "largest role 4-7 members (< 8)": 5
+            }
+          },
+          "migration": {
+            "files": 43,
+            "loc": 3514,
+            "reasons": {
+              "not parsed: generated": 43
+            }
+          },
+          "route/page": {
+            "files": 39,
+            "loc": 4021,
+            "reasons": {
+              "largest role 1-3 members (< 8)": 18,
+              "no exported symbol": 2,
+              "largest role 4-7 members (< 8)": 10,
+              "Python role within fewer than 3 files": 2,
+              "not in the fact index (not scanned)": 1,
+              "demo or integration-suite code": 6
+            }
+          },
+          "types": {
+            "files": 38,
+            "loc": 5794,
+            "reasons": {
+              "not parsed: generated": 1,
+              "no exported symbol": 36,
+              "largest role 1-3 members (< 8)": 1
+            }
+          },
+          "hook": {
+            "files": 14,
+            "loc": 1112,
+            "reasons": {
+              "largest role 4-7 members (< 8)": 7,
+              "no exported symbol": 1,
+              "demo or integration-suite code": 5,
+              "largest role 1-3 members (< 8)": 1
+            }
+          }
+        },
+        "validation": {
+          "repos": 18,
+          "failed_check": 0
+        }
+      }
+    },
+    "monorepo11": {
+      "binary_sha256": "77061d1d70f53d0ae2f969950fed52cd9d5f5578e45ff349eed021375b824f13",
+      "census_commit": "cgu89-d5821e62-1794201954",
+      "coverage": {
+        "repos": 18,
+        "failed": 0,
+        "packages": {
+          "total": 204,
+          "per_repo": {
+            "n": 18,
+            "mean": 11.333333333333334,
+            "median": 5,
+            "zero": 0,
+            "min": 1,
+            "max": 64
+          },
+          "by_kind": {
+            "ts": 113,
+            "py": 86,
+            "ts+py": 5
+          }
+        },
+        "root_default": {
+          "silent_root": {
+            "repos": 15,
+            "of": 18,
+            "rate": 0.8333333333333334
+          },
+          "shown_per_repo": {
+            "n": 18,
+            "mean": 0.16666666666666666,
+            "median": 0,
+            "zero": 15,
+            "min": 0,
+            "max": 1
+          },
+          "shown_per_package": {
+            "n": 204,
+            "mean": 0.014705882352941176,
+            "median": 0,
+            "zero": 201,
+            "min": 0,
+            "max": 1
+          },
+          "packages_with_shown": {
+            "packages": 3,
+            "of": 204
+          },
+          "by_tier": {
+            "suggestion": 3
+          },
+          "by_language": {
+            "ts": 3
+          }
+        },
+        "root_python_opt_in": {
+          "silent_root": {
+            "repos": 14,
+            "of": 18,
+            "rate": 0.7777777777777778
+          },
+          "shown_per_repo": {
+            "n": 18,
+            "mean": 0.2222222222222222,
+            "median": 0,
+            "zero": 14,
+            "min": 0,
+            "max": 1
+          },
+          "shown_per_package": {
+            "n": 204,
+            "mean": 0.014705882352941176,
+            "median": 0,
+            "zero": 201,
+            "min": 0,
+            "max": 1
+          },
+          "packages_with_shown": {
+            "packages": 3,
+            "of": 204
+          },
+          "by_tier": {
+            "suggestion": 4
+          },
+          "by_language": {
+            "ts": 3,
+            "py": 1
+          }
+        },
+        "per_package_census": {
+          "//": "each package censused alone (--root <package>); Python packages: the larger of the default and opt-in views",
+          "shown_per_package": {
+            "n": 204,
+            "mean": 0.04411764705882353,
+            "median": 0,
+            "zero": 200,
+            "min": 0,
+            "max": 4
+          },
+          "packages_with_shown": {
+            "packages": 4,
+            "of": 204
+          },
+          "shown_per_repo": {
+            "n": 18,
+            "mean": 0.5,
+            "median": 0,
+            "zero": 14,
+            "min": 0,
+            "max": 4
+          },
+          "failed_packages": 0
+        }
+      },
+      "labels": {
+        "accepted_per_repo": {
+          "n": 18,
+          "mean": 0.16666666666666666,
+          "median": 0,
+          "zero": 15,
+          "min": 0,
+          "max": 1
+        },
+        "package_coverage": {
+          "packages": 3,
+          "of": 204,
+          "rate": 0.014705882352941176
+        },
+        "precision": {
+          "accept": 3,
+          "not_wrong": 4,
+          "shown": 4,
+          "unlabelled": 0
+        },
+        "label_mix": {
+          "ACCEPT": 3,
+          "TRIVIAL": 1
+        }
+      },
+      "D1_ts_default_tier_accept": {
+        "k": 0,
+        "n": 0,
+        "pct": null,
+        "wilson95": [
+          null,
+          null
+        ],
+        "cluster_bootstrap95": [
+          null,
+          null
+        ],
+        "cluster_t95": [
+          null,
+          null
+        ],
+        "clusters": 0
+      },
+      "D4_not_wrong": {
+        "ts_all_shown": {
+          "k": 3,
+          "n": 3,
+          "pct": 100,
+          "wilson95": [
+            43.9,
+            100
+          ],
+          "cluster_bootstrap95": [
+            100,
+            100
+          ],
+          "cluster_t95": [
+            100,
+            100
+          ],
+          "clusters": 3
+        },
+        "py_opt_in_all_shown": {
+          "k": 1,
+          "n": 1,
+          "pct": 100,
+          "wilson95": [
+            20.7,
+            100
+          ],
+          "cluster_bootstrap95": [
+            null,
+            null
+          ],
+          "cluster_t95": [
+            null,
+            null
+          ],
+          "clusters": 1
+        }
+      },
+      "per_card_accept": {
+        "ts_default": {
+          "k": 0,
+          "n": 0,
+          "pct": null,
+          "wilson95": [
+            null,
+            null
+          ],
+          "cluster_bootstrap95": [
+            null,
+            null
+          ],
+          "cluster_t95": [
+            null,
+            null
+          ],
+          "clusters": 0
+        },
+        "ts_suggestion": {
+          "k": 3,
+          "n": 3,
+          "pct": 100,
+          "wilson95": [
+            43.9,
+            100
+          ],
+          "cluster_bootstrap95": [
+            100,
+            100
+          ],
+          "cluster_t95": [
+            100,
+            100
+          ],
+          "clusters": 3
+        },
+        "ts_all": {
+          "k": 3,
+          "n": 3,
+          "pct": 100,
+          "wilson95": [
+            43.9,
+            100
+          ],
+          "cluster_bootstrap95": [
+            100,
+            100
+          ],
+          "cluster_t95": [
+            100,
+            100
+          ],
+          "clusters": 3
+        },
+        "py_default": {
+          "k": 0,
+          "n": 0,
+          "pct": null,
+          "wilson95": [
+            null,
+            null
+          ],
+          "cluster_bootstrap95": [
+            null,
+            null
+          ],
+          "cluster_t95": [
+            null,
+            null
+          ],
+          "clusters": 0
+        },
+        "py_suggestion": {
+          "k": 0,
+          "n": 1,
+          "pct": 0,
+          "wilson95": [
+            0,
+            79.3
+          ],
+          "cluster_bootstrap95": [
+            null,
+            null
+          ],
+          "cluster_t95": [
+            null,
+            null
+          ],
+          "clusters": 1
+        },
+        "py_all": {
+          "k": 0,
+          "n": 1,
+          "pct": 0,
+          "wilson95": [
+            0,
+            79.3
+          ],
+          "cluster_bootstrap95": [
+            null,
+            null
+          ],
+          "cluster_t95": [
+            null,
+            null
+          ],
+          "clusters": 1
+        }
+      },
+      "map_drift_map_mjs": {
+        "pooled": {
+          "files_parsed": {
+            "files": 13397,
+            "of_files": 13763,
+            "files_pct": 97.3,
+            "loc_pct": 96.6,
+            "per_repo_median_files_pct": 99.8,
+            "per_repo_range_files_pct": [
+              65.4,
+              100
+            ]
+          },
+          "files_in_package": {
+            "files": 9166,
+            "of_files": 13763,
+            "files_pct": 66.6,
+            "loc_pct": 59.2,
+            "per_repo_median_files_pct": 68.5,
+            "per_repo_range_files_pct": [
+              0,
+              99.8
+            ]
+          },
+          "files_in_nonroot_drift_package": {
+            "files": 9633,
+            "of_files": 13763,
+            "files_pct": 70,
+            "loc_pct": 60.9,
+            "per_repo_median_files_pct": 68.5,
+            "per_repo_range_files_pct": [
+              0,
+              99.9
+            ]
+          },
+          "files_in_role": {
+            "files": 8214,
+            "of_files": 13763,
+            "files_pct": 59.7,
+            "loc_pct": 64.9,
+            "per_repo_median_files_pct": 58.9,
+            "per_repo_range_files_pct": [
+              13.8,
+              85.6
+            ]
+          },
+          "files_in_any_role": {
+            "files": 10064,
+            "of_files": 13763,
+            "files_pct": 73.1,
+            "loc_pct": 70.9,
+            "per_repo_median_files_pct": 73,
+            "per_repo_range_files_pct": [
+              17.7,
+              98.8
+            ]
+          },
+          "files_under_mined": {
+            "files": 55,
+            "of_files": 13763,
+            "files_pct": 0.4,
+            "loc_pct": 0.2,
+            "per_repo_median_files_pct": 0,
+            "per_repo_range_files_pct": [
+              0,
+              3.7
+            ]
+          },
+          "files_under_shown": {
+            "files": 55,
+            "of_files": 13763,
+            "files_pct": 0.4,
+            "loc_pct": 0.2,
+            "per_repo_median_files_pct": 0,
+            "per_repo_range_files_pct": [
+              0,
+              3.7
+            ]
+          },
+          "files_under_mined_py": {
+            "files": 65,
+            "of_files": 13763,
+            "files_pct": 0.5,
+            "loc_pct": 0.3,
+            "per_repo_median_files_pct": 0,
+            "per_repo_range_files_pct": [
+              0,
+              3.7
+            ]
+          },
+          "files_under_shown_py": {
+            "files": 65,
+            "of_files": 13763,
+            "files_pct": 0.5,
+            "loc_pct": 0.3,
+            "per_repo_median_files_pct": 0,
+            "per_repo_range_files_pct": [
+              0,
+              3.7
+            ]
+          }
+        },
+        "imports": {
+          "resolved": 35368,
+          "unresolved": 457,
+          "rate": 0.9872435450104675,
+          "pct": 98.7
+        },
+        "per_package": {
+          "packages": 204,
+          "in_role_files": {
+            "n": 194,
+            "mean": 0.3189445353263998,
+            "median": 0.125,
+            "zero": 95,
+            "min": 0,
+            "max": 1
+          },
+          "in_role_loc": {
+            "n": 194,
+            "mean": 0.357419870878142,
+            "median": 0.13163049654000822,
+            "zero": 95,
+            "min": 0,
+            "max": 1
+          },
+          "under_shown_files": {
+            "n": 194,
+            "mean": 0.0008476133130638231,
+            "median": 0,
+            "zero": 191,
+            "min": 0,
+            "max": 0.07692307692307693
+          },
+          "silent": {
+            "default": 201,
+            "python_opt_in": 200
+          }
+        },
+        "unmapped_by_class": {
+          "test": {
+            "files": 2375,
+            "loc": 466945,
+            "reasons": {
+              "test path (forms no role)": 2375
+            }
+          },
+          "other": {
+            "files": 962,
+            "loc": 144978,
+            "reasons": {
+              "largest role 1-3 members (< 8)": 259,
+              "largest role 4-7 members (< 8)": 141,
+              "no exported symbol": 169,
+              "only base, abstract, view or type-variable classes": 19,
+              "Python role within fewer than 3 files": 16,
+              "not parsed: generated": 14,
+              "demo or integration-suite code": 341,
+              "not parsed: declaration": 1,
+              "not parsed: minified": 2
+            }
+          },
+          "component": {
+            "files": 597,
+            "loc": 55950,
+            "reasons": {
+              "no exported symbol": 137,
+              "largest role 1-3 members (< 8)": 38,
+              "largest role 4-7 members (< 8)": 54,
+              "demo or integration-suite code": 165,
+              "not in the fact index (not scanned)": 203
+            }
+          },
+          "index/__init__": {
+            "files": 506,
+            "loc": 12102,
+            "reasons": {
+              "no exported symbol": 472,
+              "largest role 1-3 members (< 8)": 24,
+              "largest role 4-7 members (< 8)": 3,
+              "demo or integration-suite code": 5,
+              "not parsed: generated": 2
+            }
+          },
+          "config": {
+            "files": 237,
+            "loc": 5815,
+            "reasons": {
+              "largest role 4-7 members (< 8)": 31,
+              "largest role 1-3 members (< 8)": 136,
+              "no exported symbol": 6,
+              "demo or integration-suite code": 61,
+              "not in the fact index (not scanned)": 1,
+              "Python role within fewer than 3 files": 2
+            }
+          },
+          "router/dep": {
+            "files": 197,
+            "loc": 42594,
+            "reasons": {
+              "no exported symbol": 83,
+              "largest role 1-3 members (< 8)": 12,
+              "largest role 4-7 members (< 8)": 18,
+              "not in the fact index (not scanned)": 84
+            }
+          },
+          "script": {
+            "files": 144,
+            "loc": 15849,
+            "reasons": {
+              "no exported symbol": 95,
+              "largest role 1-3 members (< 8)": 17,
+              "demo or integration-suite code": 9,
+              "Python role within fewer than 3 files": 3,
+              "not in the fact index (not scanned)": 1,
+              "only base, abstract, view or type-variable classes": 4,
+              "largest role 4-7 members (< 8)": 11,
+              "not parsed: minified": 4
+            }
+          },
+          "util": {
+            "files": 126,
+            "loc": 6614,
+            "reasons": {
+              "no exported symbol": 85,
+              "largest role 4-7 members (< 8)": 13,
+              "not parsed: minified": 1,
+              "only base, abstract, view or type-variable classes": 5,
+              "not parsed: generated": 4,
+              "largest role 1-3 members (< 8)": 11,
+              "demo or integration-suite code": 7
+            }
+          },
+          "pydantic/dataclass model": {
+            "files": 125,
+            "loc": 19996,
+            "reasons": {
+              "no exported symbol": 66,
+              "largest role 4-7 members (< 8)": 17,
+              "demo or integration-suite code": 27,
+              "not in the fact index (not scanned)": 1,
+              "largest role 1-3 members (< 8)": 7,
+              "Python role within fewer than 3 files": 5,
+              "only base, abstract, view or type-variable classes": 2
+            }
+          },
+          "service": {
+            "files": 75,
+            "loc": 2293,
+            "reasons": {
+              "largest role 4-7 members (< 8)": 4,
+              "largest role 1-3 members (< 8)": 2,
+              "no exported symbol": 62,
+              "only base, abstract, view or type-variable classes": 6,
+              "Python role within fewer than 3 files": 1
+            }
+          },
+          "ORM model": {
+            "files": 71,
+            "loc": 5138,
+            "reasons": {
+              "largest role 1-3 members (< 8)": 40,
+              "no exported symbol": 21,
+              "demo or integration-suite code": 1,
+              "Python role within fewer than 3 files": 4,
+              "largest role 4-7 members (< 8)": 5
+            }
+          },
+          "migration": {
+            "files": 43,
+            "loc": 3514,
+            "reasons": {
+              "not parsed: generated": 43
+            }
+          },
+          "route/page": {
+            "files": 39,
+            "loc": 4021,
+            "reasons": {
+              "largest role 1-3 members (< 8)": 17,
+              "no exported symbol": 2,
+              "largest role 4-7 members (< 8)": 11,
+              "Python role within fewer than 3 files": 2,
+              "not in the fact index (not scanned)": 1,
+              "demo or integration-suite code": 6
+            }
+          },
+          "types": {
+            "files": 38,
+            "loc": 5794,
+            "reasons": {
+              "not parsed: generated": 1,
+              "no exported symbol": 36,
+              "largest role 1-3 members (< 8)": 1
+            }
+          },
+          "hook": {
+            "files": 14,
+            "loc": 1112,
+            "reasons": {
+              "largest role 4-7 members (< 8)": 7,
+              "no exported symbol": 1,
+              "demo or integration-suite code": 5,
+              "largest role 1-3 members (< 8)": 1
+            }
+          }
+        },
+        "validation": {
+          "repos": 18,
+          "failed_check": 12
+        }
+      }
+    },
+    "F12": {
+      "binary_sha256": "b98b786329725f5c01ad5fa5382beec89324a2396a54c57c76033f97dc072251",
+      "census_commit": "cgu194-8348b84c-1794215605",
+      "coverage": {
+        "repos": 18,
+        "failed": 0,
+        "packages": {
+          "total": 204,
+          "per_repo": {
+            "n": 18,
+            "mean": 11.333333333333334,
+            "median": 5,
+            "zero": 0,
+            "min": 1,
+            "max": 64
+          },
+          "by_kind": {
+            "ts": 113,
+            "py": 86,
+            "ts+py": 5
+          }
+        },
+        "root_default": {
+          "silent_root": {
+            "repos": 15,
+            "of": 18,
+            "rate": 0.8333333333333334
+          },
+          "shown_per_repo": {
+            "n": 18,
+            "mean": 0.16666666666666666,
+            "median": 0,
+            "zero": 15,
+            "min": 0,
+            "max": 1
+          },
+          "shown_per_package": {
+            "n": 204,
+            "mean": 0.014705882352941176,
+            "median": 0,
+            "zero": 201,
+            "min": 0,
+            "max": 1
+          },
+          "packages_with_shown": {
+            "packages": 3,
+            "of": 204
+          },
+          "by_tier": {
+            "suggestion": 3
+          },
+          "by_language": {
+            "ts": 3
+          }
+        },
+        "root_python_opt_in": {
+          "silent_root": {
+            "repos": 14,
+            "of": 18,
+            "rate": 0.7777777777777778
+          },
+          "shown_per_repo": {
+            "n": 18,
+            "mean": 0.2222222222222222,
+            "median": 0,
+            "zero": 14,
+            "min": 0,
+            "max": 1
+          },
+          "shown_per_package": {
+            "n": 204,
+            "mean": 0.014705882352941176,
+            "median": 0,
+            "zero": 201,
+            "min": 0,
+            "max": 1
+          },
+          "packages_with_shown": {
+            "packages": 3,
+            "of": 204
+          },
+          "by_tier": {
+            "suggestion": 4
+          },
+          "by_language": {
+            "ts": 3,
+            "py": 1
+          }
+        },
+        "per_package_census": {
+          "//": "each package censused alone (--root <package>); Python packages: the larger of the default and opt-in views",
+          "shown_per_package": {
+            "n": 204,
+            "mean": 0.04411764705882353,
+            "median": 0,
+            "zero": 200,
+            "min": 0,
+            "max": 4
+          },
+          "packages_with_shown": {
+            "packages": 4,
+            "of": 204
+          },
+          "shown_per_repo": {
+            "n": 18,
+            "mean": 0.5,
+            "median": 0,
+            "zero": 14,
+            "min": 0,
+            "max": 4
+          },
+          "failed_packages": 0
+        }
+      },
+      "labels": {
+        "accepted_per_repo": {
+          "n": 18,
+          "mean": 0.16666666666666666,
+          "median": 0,
+          "zero": 15,
+          "min": 0,
+          "max": 1
+        },
+        "package_coverage": {
+          "packages": 3,
+          "of": 204,
+          "rate": 0.014705882352941176
+        },
+        "precision": {
+          "accept": 3,
+          "not_wrong": 4,
+          "shown": 4,
+          "unlabelled": 0
+        },
+        "label_mix": {
+          "ACCEPT": 3,
+          "TRIVIAL": 1
+        }
+      },
+      "D1_ts_default_tier_accept": {
+        "k": 0,
+        "n": 0,
+        "pct": null,
+        "wilson95": [
+          null,
+          null
+        ],
+        "cluster_bootstrap95": [
+          null,
+          null
+        ],
+        "cluster_t95": [
+          null,
+          null
+        ],
+        "clusters": 0
+      },
+      "D4_not_wrong": {
+        "ts_all_shown": {
+          "k": 3,
+          "n": 3,
+          "pct": 100,
+          "wilson95": [
+            43.9,
+            100
+          ],
+          "cluster_bootstrap95": [
+            100,
+            100
+          ],
+          "cluster_t95": [
+            100,
+            100
+          ],
+          "clusters": 3
+        },
+        "py_opt_in_all_shown": {
+          "k": 1,
+          "n": 1,
+          "pct": 100,
+          "wilson95": [
+            20.7,
+            100
+          ],
+          "cluster_bootstrap95": [
+            null,
+            null
+          ],
+          "cluster_t95": [
+            null,
+            null
+          ],
+          "clusters": 1
+        }
+      },
+      "per_card_accept": {
+        "ts_default": {
+          "k": 0,
+          "n": 0,
+          "pct": null,
+          "wilson95": [
+            null,
+            null
+          ],
+          "cluster_bootstrap95": [
+            null,
+            null
+          ],
+          "cluster_t95": [
+            null,
+            null
+          ],
+          "clusters": 0
+        },
+        "ts_suggestion": {
+          "k": 3,
+          "n": 3,
+          "pct": 100,
+          "wilson95": [
+            43.9,
+            100
+          ],
+          "cluster_bootstrap95": [
+            100,
+            100
+          ],
+          "cluster_t95": [
+            100,
+            100
+          ],
+          "clusters": 3
+        },
+        "ts_all": {
+          "k": 3,
+          "n": 3,
+          "pct": 100,
+          "wilson95": [
+            43.9,
+            100
+          ],
+          "cluster_bootstrap95": [
+            100,
+            100
+          ],
+          "cluster_t95": [
+            100,
+            100
+          ],
+          "clusters": 3
+        },
+        "py_default": {
+          "k": 0,
+          "n": 0,
+          "pct": null,
+          "wilson95": [
+            null,
+            null
+          ],
+          "cluster_bootstrap95": [
+            null,
+            null
+          ],
+          "cluster_t95": [
+            null,
+            null
+          ],
+          "clusters": 0
+        },
+        "py_suggestion": {
+          "k": 0,
+          "n": 1,
+          "pct": 0,
+          "wilson95": [
+            0,
+            79.3
+          ],
+          "cluster_bootstrap95": [
+            null,
+            null
+          ],
+          "cluster_t95": [
+            null,
+            null
+          ],
+          "clusters": 1
+        },
+        "py_all": {
+          "k": 0,
+          "n": 1,
+          "pct": 0,
+          "wilson95": [
+            0,
+            79.3
+          ],
+          "cluster_bootstrap95": [
+            null,
+            null
+          ],
+          "cluster_t95": [
+            null,
+            null
+          ],
+          "clusters": 1
+        }
+      },
+      "map_drift_map_mjs": {
+        "pooled": {
+          "files_parsed": {
+            "files": 13397,
+            "of_files": 13763,
+            "files_pct": 97.3,
+            "loc_pct": 96.6,
+            "per_repo_median_files_pct": 99.8,
+            "per_repo_range_files_pct": [
+              65.4,
+              100
+            ]
+          },
+          "files_in_package": {
+            "files": 9166,
+            "of_files": 13763,
+            "files_pct": 66.6,
+            "loc_pct": 59.2,
+            "per_repo_median_files_pct": 68.5,
+            "per_repo_range_files_pct": [
+              0,
+              99.8
+            ]
+          },
+          "files_in_nonroot_drift_package": {
+            "files": 9633,
+            "of_files": 13763,
+            "files_pct": 70,
+            "loc_pct": 60.9,
+            "per_repo_median_files_pct": 68.5,
+            "per_repo_range_files_pct": [
+              0,
+              99.9
+            ]
+          },
+          "files_in_role": {
+            "files": 8214,
+            "of_files": 13763,
+            "files_pct": 59.7,
+            "loc_pct": 64.9,
+            "per_repo_median_files_pct": 58.9,
+            "per_repo_range_files_pct": [
+              13.8,
+              85.6
+            ]
+          },
+          "files_in_any_role": {
+            "files": 10064,
+            "of_files": 13763,
+            "files_pct": 73.1,
+            "loc_pct": 70.9,
+            "per_repo_median_files_pct": 73,
+            "per_repo_range_files_pct": [
+              17.7,
+              98.8
+            ]
+          },
+          "files_under_mined": {
+            "files": 55,
+            "of_files": 13763,
+            "files_pct": 0.4,
+            "loc_pct": 0.2,
+            "per_repo_median_files_pct": 0,
+            "per_repo_range_files_pct": [
+              0,
+              3.7
+            ]
+          },
+          "files_under_shown": {
+            "files": 55,
+            "of_files": 13763,
+            "files_pct": 0.4,
+            "loc_pct": 0.2,
+            "per_repo_median_files_pct": 0,
+            "per_repo_range_files_pct": [
+              0,
+              3.7
+            ]
+          },
+          "files_under_mined_py": {
+            "files": 65,
+            "of_files": 13763,
+            "files_pct": 0.5,
+            "loc_pct": 0.3,
+            "per_repo_median_files_pct": 0,
+            "per_repo_range_files_pct": [
+              0,
+              3.7
+            ]
+          },
+          "files_under_shown_py": {
+            "files": 65,
+            "of_files": 13763,
+            "files_pct": 0.5,
+            "loc_pct": 0.3,
+            "per_repo_median_files_pct": 0,
+            "per_repo_range_files_pct": [
+              0,
+              3.7
+            ]
+          }
+        },
+        "imports": {
+          "resolved": 35368,
+          "unresolved": 457,
+          "rate": 0.9872435450104675,
+          "pct": 98.7
+        },
+        "per_package": {
+          "packages": 204,
+          "in_role_files": {
+            "n": 194,
+            "mean": 0.3189445353263998,
+            "median": 0.125,
+            "zero": 95,
+            "min": 0,
+            "max": 1
+          },
+          "in_role_loc": {
+            "n": 194,
+            "mean": 0.357419870878142,
+            "median": 0.13163049654000822,
+            "zero": 95,
+            "min": 0,
+            "max": 1
+          },
+          "under_shown_files": {
+            "n": 194,
+            "mean": 0.0008476133130638231,
+            "median": 0,
+            "zero": 191,
+            "min": 0,
+            "max": 0.07692307692307693
+          },
+          "silent": {
+            "default": 201,
+            "python_opt_in": 200
+          }
+        },
+        "unmapped_by_class": {
+          "test": {
+            "files": 2375,
+            "loc": 466945,
+            "reasons": {
+              "test path (forms no role)": 2375
+            }
+          },
+          "other": {
+            "files": 962,
+            "loc": 144978,
+            "reasons": {
+              "largest role 1-3 members (< 8)": 259,
+              "largest role 4-7 members (< 8)": 141,
+              "no exported symbol": 169,
+              "only base, abstract, view or type-variable classes": 19,
+              "Python role within fewer than 3 files": 16,
+              "not parsed: generated": 14,
+              "demo or integration-suite code": 341,
+              "not parsed: declaration": 1,
+              "not parsed: minified": 2
+            }
+          },
+          "component": {
+            "files": 597,
+            "loc": 55950,
+            "reasons": {
+              "no exported symbol": 137,
+              "largest role 1-3 members (< 8)": 38,
+              "largest role 4-7 members (< 8)": 54,
+              "demo or integration-suite code": 165,
+              "not in the fact index (not scanned)": 203
+            }
+          },
+          "index/__init__": {
+            "files": 506,
+            "loc": 12102,
+            "reasons": {
+              "no exported symbol": 472,
+              "largest role 1-3 members (< 8)": 24,
+              "largest role 4-7 members (< 8)": 3,
+              "demo or integration-suite code": 5,
+              "not parsed: generated": 2
+            }
+          },
+          "config": {
+            "files": 237,
+            "loc": 5815,
+            "reasons": {
+              "largest role 4-7 members (< 8)": 31,
+              "largest role 1-3 members (< 8)": 136,
+              "no exported symbol": 6,
+              "demo or integration-suite code": 61,
+              "not in the fact index (not scanned)": 1,
+              "Python role within fewer than 3 files": 2
+            }
+          },
+          "router/dep": {
+            "files": 197,
+            "loc": 42594,
+            "reasons": {
+              "no exported symbol": 83,
+              "largest role 1-3 members (< 8)": 12,
+              "largest role 4-7 members (< 8)": 18,
+              "not in the fact index (not scanned)": 84
+            }
+          },
+          "script": {
+            "files": 144,
+            "loc": 15849,
+            "reasons": {
+              "no exported symbol": 95,
+              "largest role 1-3 members (< 8)": 17,
+              "demo or integration-suite code": 9,
+              "Python role within fewer than 3 files": 3,
+              "not in the fact index (not scanned)": 1,
+              "only base, abstract, view or type-variable classes": 4,
+              "largest role 4-7 members (< 8)": 11,
+              "not parsed: minified": 4
+            }
+          },
+          "util": {
+            "files": 126,
+            "loc": 6614,
+            "reasons": {
+              "no exported symbol": 85,
+              "largest role 4-7 members (< 8)": 13,
+              "not parsed: minified": 1,
+              "only base, abstract, view or type-variable classes": 5,
+              "not parsed: generated": 4,
+              "largest role 1-3 members (< 8)": 11,
+              "demo or integration-suite code": 7
+            }
+          },
+          "pydantic/dataclass model": {
+            "files": 125,
+            "loc": 19996,
+            "reasons": {
+              "no exported symbol": 66,
+              "largest role 4-7 members (< 8)": 17,
+              "demo or integration-suite code": 27,
+              "not in the fact index (not scanned)": 1,
+              "largest role 1-3 members (< 8)": 7,
+              "Python role within fewer than 3 files": 5,
+              "only base, abstract, view or type-variable classes": 2
+            }
+          },
+          "service": {
+            "files": 75,
+            "loc": 2293,
+            "reasons": {
+              "largest role 4-7 members (< 8)": 4,
+              "largest role 1-3 members (< 8)": 2,
+              "no exported symbol": 62,
+              "only base, abstract, view or type-variable classes": 6,
+              "Python role within fewer than 3 files": 1
+            }
+          },
+          "ORM model": {
+            "files": 71,
+            "loc": 5138,
+            "reasons": {
+              "largest role 1-3 members (< 8)": 40,
+              "no exported symbol": 21,
+              "demo or integration-suite code": 1,
+              "Python role within fewer than 3 files": 4,
+              "largest role 4-7 members (< 8)": 5
+            }
+          },
+          "migration": {
+            "files": 43,
+            "loc": 3514,
+            "reasons": {
+              "not parsed: generated": 43
+            }
+          },
+          "route/page": {
+            "files": 39,
+            "loc": 4021,
+            "reasons": {
+              "largest role 1-3 members (< 8)": 17,
+              "no exported symbol": 2,
+              "largest role 4-7 members (< 8)": 11,
+              "Python role within fewer than 3 files": 2,
+              "not in the fact index (not scanned)": 1,
+              "demo or integration-suite code": 6
+            }
+          },
+          "types": {
+            "files": 38,
+            "loc": 5794,
+            "reasons": {
+              "not parsed: generated": 1,
+              "no exported symbol": 36,
+              "largest role 1-3 members (< 8)": 1
+            }
+          },
+          "hook": {
+            "files": 14,
+            "loc": 1112,
+            "reasons": {
+              "largest role 4-7 members (< 8)": 7,
+              "no exported symbol": 1,
+              "demo or integration-suite code": 5,
+              "largest role 1-3 members (< 8)": 1
+            }
+          }
+        },
+        "validation": {
+          "repos": 18,
+          "failed_check": 12
+        }
+      },
+      "map_census_coverage": {
+        "repos": 18,
+        "files": 13642,
+        "loc": 2533135,
+        "emits_layer_measure": false,
+        "measures": {
+          "parsed": {
+            "n": 13434,
+            "of": 13642,
+            "pooled_pct": 98.5,
+            "loc_pct_pooled": 98.6,
+            "per_repo_median_pct": 99.5,
+            "per_repo_range_pct": [
+              91.5,
+              100
+            ],
+            "repos_ge_90": 18
+          },
+          "package": {
+            "n": 12232,
+            "of": 13642,
+            "pooled_pct": 89.7,
+            "loc_pct_pooled": 86.2,
+            "per_repo_median_pct": 98.7,
+            "per_repo_range_pct": [
+              9.6,
+              100
+            ],
+            "repos_ge_90": 14
+          },
+          "role": {
+            "n": 12416,
+            "of": 13642,
+            "pooled_pct": 91,
+            "loc_pct_pooled": 93.2,
+            "per_repo_median_pct": 93.5,
+            "per_repo_range_pct": [
+              57.4,
+              99.9
+            ],
+            "repos_ge_90": 11
+          },
+          "imports_resolved": {
+            "n": 35391,
+            "of": 35846,
+            "pooled_pct": 98.7,
+            "loc_pct_pooled": null,
+            "per_repo_median_pct": 99.9,
+            "per_repo_range_pct": [
+              79.4,
+              100
+            ],
+            "repos_ge_90": 16
+          },
+          "entry_points": {
+            "n": 894,
+            "of": 13642,
+            "pooled_pct": 6.6,
+            "loc_pct_pooled": 6,
+            "per_repo_median_pct": 1.4,
+            "per_repo_range_pct": [
+              0,
+              32.4
+            ],
+            "repos_ge_90": 0
+          },
+          "under_mined": {
+            "n": 2715,
+            "of": 13642,
+            "pooled_pct": 19.9,
+            "loc_pct_pooled": 20.4,
+            "per_repo_median_pct": 8.8,
+            "per_repo_range_pct": [
+              0,
+              60.7
+            ],
+            "repos_ge_90": 0
+          },
+          "under_shown": {
+            "n": 55,
+            "of": 13642,
+            "pooled_pct": 0.4,
+            "loc_pct_pooled": 0.2,
+            "per_repo_median_pct": 0,
+            "per_repo_range_pct": [
+              0,
+              3.5
+            ],
+            "repos_ge_90": 0
+          },
+          "production_in_role": {
+            "n": 10101,
+            "of": 10638,
+            "pooled_pct": 95,
+            "loc_pct_pooled": null,
+            "per_repo_median_pct": 97.8,
+            "per_repo_range_pct": [
+              78.5,
+              100
+            ],
+            "repos_ge_90": 15
+          },
+          "production_narrower_than_package": {
+            "n": 9414,
+            "of": 10638,
+            "pooled_pct": 88.5,
+            "loc_pct_pooled": null,
+            "per_repo_median_pct": 91.8,
+            "per_repo_range_pct": [
+              54.6,
+              98.9
+            ],
+            "repos_ge_90": 10
+          },
+          "production_kind_keyed": {
+            "n": 2821,
+            "of": 10638,
+            "pooled_pct": 26.5,
+            "loc_pct_pooled": null,
+            "per_repo_median_pct": 17.8,
+            "per_repo_range_pct": [
+              0,
+              62.1
+            ],
+            "repos_ge_90": 0
+          },
+          "test_in_test_role": {
+            "n": 2315,
+            "of": 2377,
+            "pooled_pct": 97.4,
+            "loc_pct_pooled": null,
+            "per_repo_median_pct": 97.4,
+            "per_repo_range_pct": [
+              0,
+              100
+            ],
+            "repos_ge_90": 15
+          }
+        },
+        "conventions": {
+          "mined": 65,
+          "shown": 3
+        }
+      }
+    }
+  }
+}

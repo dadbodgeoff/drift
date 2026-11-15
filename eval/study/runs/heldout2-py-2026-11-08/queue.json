@@ -1,0 +1,1634 @@
+{
+  "run": "eval/study/runs/heldout2-py-2026-11-08",
+  "items": [
+    {
+      "uid": "statsmodels/D-7a9fce",
+      "repo": "statsmodels",
+      "id": "D-7a9fce",
+      "rank": 1,
+      "summary": "exported values in statsmodels/** (__init__ files) call PytestTester()",
+      "role": {
+        "package": "",
+        "dir": "statsmodels",
+        "file": "__init__",
+        "entry": "-",
+        "kind": "variable"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "statsmodels/tools/_test_runner.py#PytestTester"
+      },
+      "evidence": {
+        "holders": 34,
+        "total": 35,
+        "lower_bound": 0.85,
+        "lift": 79.4
+      },
+      "members": 35,
+      "example": "statsmodels/base/__init__.py#test",
+      "python_members": 35,
+      "outliers": 1,
+      "outlier_files": [
+        "statsmodels/formula/__init__.py"
+      ],
+      "block": " 1. [D-7a9fce] exported values in statsmodels/** (__init__ files) call PytestTester()\n    evidence: 34/35 (lower bound 0.85, lift 79.4)\n    agents:   not shown to agents (family below admission bar: 44% of 9)\n    example:  statsmodels/base/__init__.py#test\n    outlier:  statsmodels/formula/__init__.py:8 options",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "statsmodels/D-c38d19",
+      "repo": "statsmodels",
+      "id": "D-c38d19",
+      "rank": 2,
+      "summary": "dataclasses in statsmodels/** are named `*Result`",
+      "role": {
+        "package": "",
+        "dir": "statsmodels",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "variety": "dataclass"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Result"
+      },
+      "evidence": {
+        "holders": 33,
+        "total": 34,
+        "lower_bound": 0.85,
+        "lift": 8.3
+      },
+      "members": 34,
+      "example": "statsmodels/base/_parameter_inference.py#ScoreTestResult",
+      "python_members": 34,
+      "outliers": 1,
+      "outlier_files": [
+        "statsmodels/discrete/_diagnostics_count.py"
+      ],
+      "block": " 2. [D-c38d19] dataclasses in statsmodels/** are named `*Result`\n    evidence: 33/34 (lower bound 0.85, lift 8.3)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  statsmodels/base/_parameter_inference.py#ScoreTestResult\n    outlier:  statsmodels/discrete/_diagnostics_count.py:271 DispersionResults",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "statsmodels/D-2cf8e5",
+      "repo": "statsmodels",
+      "id": "D-2cf8e5",
+      "rank": 3,
+      "summary": "dataclasses in statsmodels/** extend LimitedIterationMixin",
+      "role": {
+        "package": "",
+        "dir": "statsmodels",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "variety": "dataclass"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "statsmodels/stats/base.py#LimitedIterationMixin"
+        ]
+      },
+      "evidence": {
+        "holders": 31,
+        "total": 34,
+        "lower_bound": 0.77,
+        "lift": 22.9
+      },
+      "members": 34,
+      "example": "statsmodels/base/_parameter_inference.py#ScoreTestResult",
+      "python_members": 34,
+      "outliers": 3,
+      "outlier_files": [
+        "statsmodels/stats/multivariate_tools.py"
+      ],
+      "block": " 3. [D-2cf8e5] dataclasses in statsmodels/** extend LimitedIterationMixin\n    evidence: 31/34 (lower bound 0.77, lift 22.9)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  statsmodels/base/_parameter_inference.py#ScoreTestResult\n    outlier:  statsmodels/stats/multivariate_tools.py:151 CCRankTestResult\n    outlier:  statsmodels/stats/multivariate_tools.py:286 CCStatsResult\n    outlier:  statsmodels/stats/multivariate_tools.py:19 PartialProjectResult",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "flagsmith/D-d1bd09",
+      "repo": "flagsmith",
+      "id": "D-d1bd09",
+      "rank": 1,
+      "summary": "api: serializers in features/** and organisations/** (serializers files) are named `*Serializer`",
+      "role": {
+        "package": "api",
+        "dir": "features",
+        "file": "serializers",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "serializer",
+        "also": [
+          {
+            "package": "api",
+            "dir": "organisations",
+            "file": "serializers",
+            "entry": "-",
+            "kind": "class",
+            "member_kind": "serializer"
+          }
+        ]
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "evidence": {
+        "holders": 84,
+        "total": 90,
+        "lower_bound": 0.86,
+        "lift": 3.8
+      },
+      "members": 90,
+      "example": "api/features/dependencies/serializers.py#ChangeRequestReferenceSerializer",
+      "python_members": 90,
+      "outliers": 6,
+      "outlier_files": [
+        "api/features/serializers.py",
+        "api/organisations/serializers.py"
+      ],
+      "block": " 1. [D-d1bd09] api: serializers in features/** and organisations/** (serializers files) are named `*Serializer`\n    evidence: 84/90 (lower bound 0.86, lift 3.8)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  api/features/dependencies/serializers.py#ChangeRequestReferenceSerializer\n    outlier:  api/features/serializers.py:787 FeatureStateSerializerCreate\n    outlier:  api/features/serializers.py:65 FeatureStateSerializerSmall\n    outlier:  api/features/serializers.py:503 UpdateFeatureSerializerWithMetadata\n    outlier:  api/organisations/serializers.py:150 InviteSerializerFull\n    outlier:  api/organisations/serializers.py:135 OrganisationSerializerBasic\n    outlier:  api/organisations/serializers.py:60 OrganisationSerializerFull",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "flagsmith/D-1e2cee",
+      "repo": "flagsmith",
+      "id": "D-1e2cee",
+      "rank": 2,
+      "summary": "api: exceptions in features/** (exceptions files) are named `*Error`",
+      "role": {
+        "package": "api",
+        "dir": "features",
+        "file": "exceptions",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "exception"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Error"
+      },
+      "evidence": {
+        "holders": 30,
+        "total": 31,
+        "lower_bound": 0.84,
+        "lift": 14.9
+      },
+      "members": 31,
+      "example": "api/features/dependencies/exceptions.py#ChangeRequestAlreadyCommittedError",
+      "python_members": 31,
+      "outliers": 1,
+      "outlier_files": [
+        "api/features/workflows/core/exceptions.py"
+      ],
+      "block": " 2. [D-1e2cee] api: exceptions in features/** (exceptions files) are named `*Error`\n    evidence: 30/31 (lower bound 0.84, lift 14.9)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  api/features/dependencies/exceptions.py#ChangeRequestAlreadyCommittedError\n    outlier:  api/features/workflows/core/exceptions.py:13 CannotApproveOwnChangeRequest",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "flagsmith/D-aecbf8",
+      "repo": "flagsmith",
+      "id": "D-aecbf8",
+      "rank": 3,
+      "summary": "api: HTTP handlers in environments/** (views files) are wrapped in EnvironmentKeyPermissions() or EnvironmentPermissions()",
+      "role": {
+        "package": "api",
+        "dir": "environments",
+        "file": "views",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "api/environments/permissions/permissions.py#EnvironmentKeyPermissions",
+          "api/environments/permissions/permissions.py#EnvironmentPermissions"
+        ]
+      },
+      "evidence": {
+        "holders": 18,
+        "total": 19,
+        "lower_bound": 0.75,
+        "lift": 59.9
+      },
+      "members": 19,
+      "example": "api/environments/identities/traits/views.py#SDKTraits.bulk_create",
+      "python_members": 19,
+      "outliers": 1,
+      "outlier_files": [
+        "api/environments/onboarding/views.py"
+      ],
+      "block": " 3. [D-aecbf8] api: HTTP handlers in environments/** (views files) are wrapped in EnvironmentKeyPermissions() or EnvironmentPermissions()\n    evidence: 18/19 (lower bound 0.75, lift 59.9)\n    agents:   not shown to agents (family below admission bar: 75% of 8)\n    split:    EnvironmentPermissions 10, EnvironmentKeyPermissions 8\n    example:  api/environments/identities/traits/views.py#SDKTraits.bulk_create\n    outlier:  api/environments/onboarding/views.py:27 EnvironmentOnboardingStatusAPIView.put",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "kunlun-m/D-9838d9",
+      "repo": "kunlun-m",
+      "id": "D-9838d9",
+      "rank": 1,
+      "summary": "functions in core/** (summary_generator files) declare their return type",
+      "role": {
+        "package": "",
+        "dir": "core",
+        "file": "summary_generator",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 38,
+        "total": 39,
+        "lower_bound": 0.87,
+        "lift": 5.1
+      },
+      "members": 39,
+      "example": "core/core_engine/c/summary_generator.py#generate_file_summaries",
+      "python_members": 39,
+      "outliers": 1,
+      "outlier_files": [
+        "core/core_engine/kotlin/summary_generator.py"
+      ],
+      "block": " 1. [D-9838d9] functions in core/** (summary_generator files) declare their return type\n    evidence: 38/39 (lower bound 0.87, lift 5.1)\n    agents:   not shown to agents (family below admission bar: 100% of 4)\n    example:  core/core_engine/c/summary_generator.py#generate_file_summaries\n    outlier:  core/core_engine/kotlin/summary_generator.py:458 generate_summaries_for_target",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "django-oscar/D-982b49",
+      "repo": "django-oscar",
+      "id": "D-982b49",
+      "rank": 1,
+      "summary": "forms in src/** (forms files) are named `*Form`",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "forms",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "form"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Form"
+      },
+      "evidence": {
+        "holders": 72,
+        "total": 72,
+        "lower_bound": 0.95,
+        "lift": 9.1
+      },
+      "members": 72,
+      "example": "src/oscar/apps/address/forms.py#UserAddressForm",
+      "python_members": 72,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 1. [D-982b49] forms in src/** (forms files) are named `*Form`\n    evidence: 72/72 (lower bound 0.95, lift 9.1)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  src/oscar/apps/address/forms.py#UserAddressForm",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dcs_liberation/D-841abc",
+      "repo": "dcs_liberation",
+      "id": "D-841abc",
+      "rank": 1,
+      "summary": "files in game/** do not import from qt_ui/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "game",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:qt_ui"
+      },
+      "evidence": {
+        "holders": 314,
+        "total": 315,
+        "lower_bound": 0.98,
+        "lift": 3
+      },
+      "members": 315,
+      "example": "game/aircraftparkinglocation.py#(file)",
+      "python_members": 315,
+      "outliers": 1,
+      "outlier_files": [
+        "game/persistence/savemanager.py"
+      ],
+      "block": " 1. [D-841abc] files in game/** do not import from qt_ui/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 314/315 (lower bound 0.98, lift 3.0)\n    agents:   not shown to agents (family below admission bar: 100% of 1)\n    example:  game/aircraftparkinglocation.py#(file)\n    outlier:  game/persistence/savemanager.py:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dcs_liberation/D-9fa25f",
+      "repo": "dcs_liberation",
+      "id": "D-9fa25f",
+      "rank": 2,
+      "summary": "files in game/** do not import from pydcs_extensions/highdigitsams/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "game",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:pydcs_extensions/highdigitsams"
+      },
+      "evidence": {
+        "holders": 314,
+        "total": 315,
+        "lower_bound": 0.98,
+        "lift": 3
+      },
+      "members": 315,
+      "example": "game/aircraftparkinglocation.py#(file)",
+      "python_members": 315,
+      "outliers": 1,
+      "outlier_files": [
+        "game/data/radar_db.py"
+      ],
+      "block": " 2. [D-9fa25f] files in game/** do not import from pydcs_extensions/highdigitsams/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 314/315 (lower bound 0.98, lift 3.0)\n    agents:   not shown to agents (family below admission bar: 100% of 1)\n    example:  game/aircraftparkinglocation.py#(file)\n    outlier:  game/data/radar_db.py:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dcs_liberation/D-424840",
+      "repo": "dcs_liberation",
+      "id": "D-424840",
+      "rank": 3,
+      "summary": "classes in qt_ui/** call super().__init__(), except 2 classes (with no override) and a shared part (used by several members, not a member)",
+      "role": {
+        "package": "",
+        "dir": "qt_ui",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "global#super().__init__"
+      },
+      "evidence": {
+        "holders": 181,
+        "total": 181,
+        "lower_bound": 0.98,
+        "lift": 3.7
+      },
+      "members": 184,
+      "example": "qt_ui/logging_handler.py#HookableInMemoryHandler",
+      "python_members": 184,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 3. [D-424840] classes in qt_ui/** call super().__init__(), except 2 classes (with no override) and a shared part (used by several members, not a member)\n    evidence: 181/181 (lower bound 0.98, lift 3.7)\n    agents:   not shown to agents (family below admission bar: 44% of 9)\n    example:  qt_ui/logging_handler.py#HookableInMemoryHandler\n    exempt:   qt_ui/dialogs.py:15 Dialog (shared part used by 5 members)\n    exempt:   qt_ui/widgets/map/QLiberationMap.py:14 LoggingWebPage (defines no __init__() of its own, so has no override that calls super().__init__())\n    exempt:   qt_ui/windows/mission/flight/waypoints/QFlightWaypointList.py:22 AltitudeEditorDelegate (defines no __init__() of its own, so has no override that calls super().__init__())",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dcs_liberation/D-aad2db",
+      "repo": "dcs_liberation",
+      "id": "D-aad2db",
+      "rank": 4,
+      "summary": "HTTP handlers in game/** (routes files) are wrapped in GameContext.require()",
+      "role": {
+        "package": "",
+        "dir": "game",
+        "file": "routes",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "game/server/dependencies.py#GameContext.require"
+        ]
+      },
+      "evidence": {
+        "holders": 29,
+        "total": 30,
+        "lower_bound": 0.83,
+        "lift": 6.7
+      },
+      "members": 30,
+      "example": "game/server/controlpoints/routes.py#cancel_travel",
+      "python_members": 30,
+      "outliers": 1,
+      "outlier_files": [
+        "game/server/game/routes.py"
+      ],
+      "block": " 4. [D-aad2db] HTTP handlers in game/** (routes files) are wrapped in GameContext.require()\n    evidence: 29/30 (lower bound 0.83, lift 6.7)\n    agents:   not shown to agents (family below admission bar: 75% of 8)\n    example:  game/server/controlpoints/routes.py#cancel_travel\n    outlier:  game/server/game/routes.py:10 game_state",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dcs_liberation/D-8bb671",
+      "repo": "dcs_liberation",
+      "id": "D-8bb671",
+      "rank": 5,
+      "summary": "classes in game/** (models files) extend BaseModel",
+      "role": {
+        "package": "",
+        "dir": "game",
+        "file": "models",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:pydantic#BaseModel"
+        ]
+      },
+      "evidence": {
+        "holders": 20,
+        "total": 21,
+        "lower_bound": 0.77,
+        "lift": 44
+      },
+      "members": 21,
+      "example": "game/server/combat/models.py#FrozenCombatJs",
+      "python_members": 21,
+      "outliers": 1,
+      "outlier_files": [
+        "game/server/supplyroutes/models.py"
+      ],
+      "block": " 5. [D-8bb671] classes in game/** (models files) extend BaseModel\n    evidence: 20/21 (lower bound 0.77, lift 44.0)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  game/server/combat/models.py#FrozenCombatJs\n    outlier:  game/server/supplyroutes/models.py:19 TransportFinder",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "dcs_liberation/D-0de628",
+      "repo": "dcs_liberation",
+      "id": "D-0de628",
+      "rank": 6,
+      "summary": "classes in game/missiongenerator/aircraft/waypoints/** extend PydcsWaypointBuilder",
+      "role": {
+        "package": "",
+        "dir": "game/missiongenerator/aircraft/waypoints",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "game/missiongenerator/aircraft/waypoints/pydcswaypointbuilder.py#PydcsWaypointBuilder"
+        ]
+      },
+      "evidence": {
+        "holders": 19,
+        "total": 20,
+        "lower_bound": 0.76,
+        "lift": 48.5
+      },
+      "members": 20,
+      "example": "game/missiongenerator/aircraft/waypoints/antishipingress.py#AntiShipIngressBuilder",
+      "python_members": 20,
+      "outliers": 1,
+      "outlier_files": [
+        "game/missiongenerator/aircraft/waypoints/waypointgenerator.py"
+      ],
+      "block": " 6. [D-0de628] classes in game/missiongenerator/aircraft/waypoints/** extend PydcsWaypointBuilder\n    evidence: 19/20 (lower bound 0.76, lift 48.5)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  game/missiongenerator/aircraft/waypoints/antishipingress.py#AntiShipIngressBuilder\n    outlier:  game/missiongenerator/aircraft/waypoints/waypointgenerator.py:47 WaypointGenerator",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "supoclip/D-006a69",
+      "repo": "supoclip",
+      "id": "D-006a69",
+      "rank": 1,
+      "summary": "frontend: components in src/** do not use raw HTML (innerHTML, dangerouslySetInnerHTML)",
+      "role": {
+        "package": "frontend",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "sink:raw_html"
+      },
+      "evidence": {
+        "holders": 190,
+        "total": 193,
+        "lower_bound": 0.95,
+        "lift": 13.6
+      },
+      "members": 193,
+      "example": "frontend/src/app/error.tsx#ErrorPage",
+      "python_members": null,
+      "outliers": 3,
+      "outlier_files": [
+        "frontend/src/components/articles/article-shell.tsx",
+        "frontend/src/components/home-app.tsx",
+        "frontend/src/components/supo-live-article.tsx"
+      ],
+      "block": " 1. [D-006a69] frontend: components in src/** do not use raw HTML (innerHTML, dangerouslySetInnerHTML)\n    evidence: 190/193 (lower bound 0.95, lift 13.6)\n    agents:   not shown to agents (family below admission bar: 50% of 2)\n    example:  frontend/src/app/error.tsx#ErrorPage\n    outlier:  frontend/src/components/articles/article-shell.tsx:34 ArticleShell\n    outlier:  frontend/src/components/home-app.tsx:137 HomeApp\n    outlier:  frontend/src/components/supo-live-article.tsx:15 SupoLiveArticle",
+      "family": "avoids_other",
+      "rule_kind": "avoids:other",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "supoclip/D-b27acc",
+      "repo": "supoclip",
+      "id": "D-b27acc",
+      "rank": 2,
+      "summary": "backend: HTTP handlers in src/** are wrapped in get_db()",
+      "role": {
+        "package": "backend",
+        "dir": "src",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "unresolved:...database#get_db"
+        ]
+      },
+      "evidence": {
+        "holders": 85,
+        "total": 90,
+        "lower_bound": 0.88,
+        "lift": 13.6
+      },
+      "members": 90,
+      "example": "backend/src/api/routes/account.py#send_affiliate_email",
+      "python_members": 90,
+      "outliers": 5,
+      "outlier_files": [
+        "backend/src/api/routes/feedback.py",
+        "backend/src/api/routes/media.py",
+        "backend/src/api/routes/tasks.py"
+      ],
+      "block": " 2. [D-b27acc] backend: HTTP handlers in src/** are wrapped in get_db()\n    evidence: 85/90 (lower bound 0.88, lift 13.6)\n    agents:   not shown to agents (family below admission bar: 75% of 8)\n    example:  backend/src/api/routes/account.py#send_affiliate_email\n    outlier:  backend/src/api/routes/feedback.py:44 submit_feedback\n    outlier:  backend/src/api/routes/media.py:301 get_available_transitions\n    outlier:  backend/src/api/routes/media.py:359 get_broll_status\n    outlier:  backend/src/api/routes/media.py:332 get_caption_templates\n    outlier:  backend/src/api/routes/tasks.py:932 get_task_progress_sse",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "supoclip/D-f0ff81",
+      "repo": "supoclip",
+      "id": "D-f0ff81",
+      "rank": 3,
+      "summary": "frontend: pages in src/** (page files) render <next>",
+      "role": {
+        "package": "frontend",
+        "dir": "src",
+        "file": "page",
+        "entry": "page",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "renders",
+        "component": "pkg:next#default"
+      },
+      "evidence": {
+        "holders": 25,
+        "total": 26,
+        "lower_bound": 0.81,
+        "lift": 3.6
+      },
+      "members": 26,
+      "example": "frontend/src/app/[slug]/page.tsx#SeoLandingPage",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "frontend/src/app/page.tsx"
+      ],
+      "block": " 3. [D-f0ff81] frontend: pages in src/** (page files) render <next>\n    evidence: 25/26 (lower bound 0.81, lift 3.6)\n    agents:   not shown to agents (family below admission bar: 40% of 10)\n    example:  frontend/src/app/[slug]/page.tsx#SeoLandingPage\n    outlier:  frontend/src/app/page.tsx:44 HomePage",
+      "family": "renders",
+      "rule_kind": "renders",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "vmlx/D-081097",
+      "repo": "vmlx",
+      "id": "D-081097",
+      "rank": 1,
+      "summary": "panel: components in src/** call useState() before useEffect(), except a shared part (used by several members, not a member)",
+      "role": {
+        "package": "panel",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "before",
+        "first": "pkg:react#useState",
+        "then": "pkg:react#useEffect"
+      },
+      "evidence": {
+        "holders": 51,
+        "total": 52,
+        "lower_bound": 0.9,
+        "lift": 1
+      },
+      "members": 53,
+      "example": "panel/src/renderer/src/App.tsx#App",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "panel/src/renderer/src/components/image/ImageGallery.tsx"
+      ],
+      "block": " 1. [D-081097] panel: components in src/** call useState() before useEffect(), except a shared part (used by several members, not a member)\n    evidence: 51/52 (lower bound 0.90, lift 1.0)\n    agents:   not shown to agents (family below admission bar: 10% of 10)\n    example:  panel/src/renderer/src/App.tsx#App\n    outlier:  panel/src/renderer/src/components/image/ImageGallery.tsx:31 ImageGallery\n    exempt:   panel/src/renderer/src/components/ui/Modal.tsx:13 Modal (shared part used by 3 members)",
+      "family": "ordering",
+      "rule_kind": "before",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "vmlx/D-5e79e4",
+      "repo": "vmlx",
+      "id": "D-5e79e4",
+      "rank": 2,
+      "summary": "classes in vmlx_engine/tool_parsers/** are decorated with ToolParserManager.register_module(), except a member (of the module that defines a rule's target)",
+      "role": {
+        "package": "",
+        "dir": "vmlx_engine/tool_parsers",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "vmlx_engine/tool_parsers/abstract_tool_parser.py#ToolParserManager.register_module"
+        ]
+      },
+      "evidence": {
+        "holders": 28,
+        "total": 28,
+        "lower_bound": 0.88,
+        "lift": 24.7
+      },
+      "members": 29,
+      "example": "vmlx_engine/tool_parsers/atem_tool_parser.py#AtemToolParser",
+      "python_members": 29,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 2. [D-5e79e4] classes in vmlx_engine/tool_parsers/** are decorated with ToolParserManager.register_module(), except a member (of the module that defines a rule's target)\n    evidence: 28/28 (lower bound 0.88, lift 24.7)\n    agents:   not shown to agents (family below admission bar: 50% of 6)\n    example:  vmlx_engine/tool_parsers/atem_tool_parser.py#AtemToolParser\n    exempt:   vmlx_engine/tool_parsers/abstract_tool_parser.py:456 ToolParserManager (in the module that defines ExtractedToolCallInformation (as for the role's rule \"call ExtractedToolCallInformation()\"))",
+      "family": "decorator",
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "vmlx/D-0bfd57",
+      "repo": "vmlx",
+      "id": "D-0bfd57",
+      "rank": 3,
+      "summary": "files in vmlx_engine/tool_parsers/** have a test file",
+      "role": {
+        "package": "",
+        "dir": "vmlx_engine/tool_parsers",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "has_test"
+      },
+      "evidence": {
+        "holders": 29,
+        "total": 30,
+        "lower_bound": 0.83,
+        "lift": 3.6
+      },
+      "members": 30,
+      "example": "vmlx_engine/tool_parsers/abstract_tool_parser.py#(file)",
+      "python_members": 30,
+      "outliers": 1,
+      "outlier_files": [
+        "vmlx_engine/tool_parsers/schema_types.py"
+      ],
+      "block": " 3. [D-0bfd57] files in vmlx_engine/tool_parsers/** have a test file\n    evidence: 29/30 (lower bound 0.83, lift 3.6)\n    agents:   not shown to agents (family below admission bar: 20% of 5)\n    example:  vmlx_engine/tool_parsers/abstract_tool_parser.py#(file)\n    outlier:  vmlx_engine/tool_parsers/schema_types.py:1 (file)",
+      "family": "repo",
+      "rule_kind": "has_test",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "vmlx/D-56a575",
+      "repo": "vmlx",
+      "id": "D-56a575",
+      "rank": 4,
+      "summary": "classes in vmlx_engine/tool_parsers/** call ExtractedToolCallInformation(), except a member (of the module that defines a rule's target)",
+      "role": {
+        "package": "",
+        "dir": "vmlx_engine/tool_parsers",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "vmlx_engine/tool_parsers/abstract_tool_parser.py#ExtractedToolCallInformation"
+      },
+      "evidence": {
+        "holders": 27,
+        "total": 28,
+        "lower_bound": 0.82,
+        "lift": 24.7
+      },
+      "members": 29,
+      "example": "vmlx_engine/tool_parsers/atem_tool_parser.py#AtemToolParser",
+      "python_members": 29,
+      "outliers": 1,
+      "outlier_files": [
+        "vmlx_engine/tool_parsers/dsml_v41_tool_parser.py"
+      ],
+      "block": " 4. [D-56a575] classes in vmlx_engine/tool_parsers/** call ExtractedToolCallInformation(), except a member (of the module that defines a rule's target)\n    evidence: 27/28 (lower bound 0.82, lift 24.7)\n    agents:   not shown to agents (family below admission bar: 44% of 9)\n    example:  vmlx_engine/tool_parsers/atem_tool_parser.py#AtemToolParser\n    outlier:  vmlx_engine/tool_parsers/dsml_v41_tool_parser.py:29 DSMLV41ToolParser\n    exempt:   vmlx_engine/tool_parsers/abstract_tool_parser.py:456 ToolParserManager (in the module that defines ExtractedToolCallInformation)",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "vmlx/D-5c3955",
+      "repo": "vmlx",
+      "id": "D-5c3955",
+      "rank": 5,
+      "summary": "panel: components in src/** call useTranslation() before useEffect()",
+      "role": {
+        "package": "panel",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "before",
+        "first": "panel/src/renderer/src/i18n/context.ts#useTranslation",
+        "then": "pkg:react#useEffect"
+      },
+      "evidence": {
+        "holders": 49,
+        "total": 53,
+        "lower_bound": 0.82,
+        "lift": 1
+      },
+      "members": 53,
+      "example": "panel/src/renderer/src/App.tsx#App",
+      "python_members": null,
+      "outliers": 4,
+      "outlier_files": [
+        "panel/src/renderer/src/components/Toast.tsx",
+        "panel/src/renderer/src/components/chat/InlineToolCall.tsx",
+        "panel/src/renderer/src/contexts/AppStateContext.tsx",
+        "panel/src/renderer/src/i18n/I18nProvider.tsx"
+      ],
+      "block": " 5. [D-5c3955] panel: components in src/** call useTranslation() before useEffect()\n    evidence: 49/53 (lower bound 0.82, lift 1.0)\n    agents:   not shown to agents (family below admission bar: 10% of 10)\n    example:  panel/src/renderer/src/App.tsx#App\n    outlier:  panel/src/renderer/src/components/Toast.tsx:57 ToastItem\n    outlier:  panel/src/renderer/src/components/chat/InlineToolCall.tsx:17 InlineToolCall\n    outlier:  panel/src/renderer/src/contexts/AppStateContext.tsx:57 AppStateProvider\n    outlier:  panel/src/renderer/src/i18n/I18nProvider.tsx:25 I18nProvider",
+      "family": "ordering",
+      "rule_kind": "before",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "vmlx/D-47df1d",
+      "repo": "vmlx",
+      "id": "D-47df1d",
+      "rank": 6,
+      "summary": "classes in vmlx_engine/** (language files) extend nn.Module, except a class (of another kind)",
+      "role": {
+        "package": "",
+        "dir": "vmlx_engine",
+        "file": "language",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:mlx#nn.Module"
+        ]
+      },
+      "evidence": {
+        "holders": 41,
+        "total": 44,
+        "lower_bound": 0.82,
+        "lift": 2.8
+      },
+      "members": 45,
+      "example": "vmlx_engine/models/dots3_note/language.py#Dots3DecoderLayer",
+      "python_members": 45,
+      "outliers": 3,
+      "outlier_files": [
+        "vmlx_engine/models/dots3_note/language.py",
+        "vmlx_engine/models/qwen3_5_family/qwen3_5/language.py",
+        "vmlx_engine/models/qwen4_exp/language.py"
+      ],
+      "block": " 6. [D-47df1d] classes in vmlx_engine/** (language files) extend nn.Module, except a class (of another kind)\n    evidence: 41/44 (lower bound 0.82, lift 2.8)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  vmlx_engine/models/dots3_note/language.py#Dots3DecoderLayer\n    outlier:  vmlx_engine/models/dots3_note/language.py:187 Dots3LatentCache\n    outlier:  vmlx_engine/models/qwen3_5_family/qwen3_5/language.py:120 Qwen3_5RotaryEmbedding\n    outlier:  vmlx_engine/models/qwen4_exp/language.py:461 RopeTable\n    exempt:   vmlx_engine/models/qwen4_exp/language.py:1168 GatedDeltaNet (another kind of class (extends models.qwen3_5.GatedDeltaNet))",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "vmlx/D-0fbf2a",
+      "repo": "vmlx",
+      "id": "D-0fbf2a",
+      "rank": 7,
+      "summary": "panel: components in src/** call useTranslation() before useState(), except 2 shared parts (used by several members, not a member)",
+      "role": {
+        "package": "panel",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "before",
+        "first": "panel/src/renderer/src/i18n/context.ts#useTranslation",
+        "then": "pkg:react#useState"
+      },
+      "evidence": {
+        "holders": 55,
+        "total": 61,
+        "lower_bound": 0.8,
+        "lift": 1
+      },
+      "members": 63,
+      "example": "panel/src/renderer/src/App.tsx#App",
+      "python_members": null,
+      "outliers": 6,
+      "outlier_files": [
+        "panel/src/renderer/src/components/Toast.tsx",
+        "panel/src/renderer/src/components/chat/InlineToolCall.tsx",
+        "panel/src/renderer/src/components/layout/Sidebar.tsx",
+        "panel/src/renderer/src/contexts/AppStateContext.tsx",
+        "panel/src/renderer/src/i18n/I18nProvider.tsx"
+      ],
+      "block": " 7. [D-0fbf2a] panel: components in src/** call useTranslation() before useState(), except 2 shared parts (used by several members, not a member)\n    evidence: 55/61 (lower bound 0.80, lift 1.0)\n    agents:   not shown to agents (family below admission bar: 10% of 10)\n    example:  panel/src/renderer/src/App.tsx#App\n    outlier:  panel/src/renderer/src/components/Toast.tsx:57 ToastItem\n    outlier:  panel/src/renderer/src/components/Toast.tsx:23 ToastProvider\n    outlier:  panel/src/renderer/src/components/chat/InlineToolCall.tsx:17 InlineToolCall\n    outlier:  panel/src/renderer/src/components/layout/Sidebar.tsx:13 Sidebar\n    outlier:  panel/src/renderer/src/contexts/AppStateContext.tsx:57 AppStateProvider\n    outlier:  panel/src/renderer/src/i18n/I18nProvider.tsx:25 I18nProvider\n    exempt:   panel/src/renderer/src/components/sessions/SessionConfigForm.tsx:2144 SliderField (shared part used by 2 members)\n    exempt:   panel/src/renderer/src/components/sessions/SessionConfigForm.tsx:1650 Tooltip (shared part used by 3 members)",
+      "family": "ordering",
+      "rule_kind": "before",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "vmlx/D-c1c977",
+      "repo": "vmlx",
+      "id": "D-c1c977",
+      "rank": 8,
+      "summary": "dataclasses in vmlx_engine/** (config files) are named `*Config`",
+      "role": {
+        "package": "",
+        "dir": "vmlx_engine",
+        "file": "config",
+        "entry": "-",
+        "kind": "class",
+        "variety": "dataclass"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Config"
+      },
+      "evidence": {
+        "holders": 23,
+        "total": 24,
+        "lower_bound": 0.8,
+        "lift": 12.5
+      },
+      "members": 24,
+      "example": "vmlx_engine/models/dots3_note/config.py#AudioConfig",
+      "python_members": 24,
+      "outliers": 1,
+      "outlier_files": [
+        "vmlx_engine/models/dots3_note/config.py"
+      ],
+      "block": " 8. [D-c1c977] dataclasses in vmlx_engine/** (config files) are named `*Config`\n    evidence: 23/24 (lower bound 0.80, lift 12.5)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  vmlx_engine/models/dots3_note/config.py#AudioConfig\n    outlier:  vmlx_engine/models/dots3_note/config.py:30 AttnGeom",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "fenic/D-a2ea38",
+      "repo": "fenic",
+      "id": "D-a2ea38",
+      "rank": 1,
+      "summary": "classes in src/fenic/core/_logical_plan/expressions/** extend LogicalExpr",
+      "role": {
+        "package": "",
+        "dir": "src/fenic/core/_logical_plan/expressions",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "src/fenic/core/_logical_plan/expressions/base.py#LogicalExpr"
+        ]
+      },
+      "evidence": {
+        "holders": 119,
+        "total": 121,
+        "lower_bound": 0.94,
+        "lift": 4
+      },
+      "members": 121,
+      "example": "src/fenic/core/_logical_plan/expressions/aggregate.py#ApproxCountDistinctExpr",
+      "python_members": 121,
+      "outliers": 2,
+      "outlier_files": [
+        "src/fenic/core/_logical_plan/expressions/text.py"
+      ],
+      "block": " 1. [D-a2ea38] classes in src/fenic/core/_logical_plan/expressions/** extend LogicalExpr\n    evidence: 119/121 (lower bound 0.94, lift 4.0)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  src/fenic/core/_logical_plan/expressions/aggregate.py#ApproxCountDistinctExpr\n    outlier:  src/fenic/core/_logical_plan/expressions/text.py:249 RecursiveTextChunkExprConfiguration\n    outlier:  src/fenic/core/_logical_plan/expressions/text.py:217 TextChunkExprConfiguration",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "fenic/D-e8fcfa",
+      "repo": "fenic",
+      "id": "D-e8fcfa",
+      "rank": 2,
+      "summary": "functions in src/fenic/api/functions/** call Column._from_logical_expr()",
+      "role": {
+        "package": "",
+        "dir": "src/fenic/api/functions",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "src/fenic/api/column.py#Column._from_logical_expr"
+      },
+      "evidence": {
+        "holders": 116,
+        "total": 123,
+        "lower_bound": 0.89,
+        "lift": 2.5
+      },
+      "members": 123,
+      "example": "src/fenic/api/functions/array.py#compact",
+      "python_members": 123,
+      "outliers": 7,
+      "outlier_files": [
+        "src/fenic/api/functions/builtin.py",
+        "src/fenic/api/functions/core.py"
+      ],
+      "block": " 2. [D-e8fcfa] functions in src/fenic/api/functions/** call Column._from_logical_expr()\n    evidence: 116/123 (lower bound 0.89, lift 2.5)\n    agents:   not shown to agents (family below admission bar: 44% of 9)\n    example:  src/fenic/api/functions/array.py#compact\n    outlier:  src/fenic/api/functions/builtin.py:603 asc\n    outlier:  src/fenic/api/functions/builtin.py:616 asc_nulls_first\n    outlier:  src/fenic/api/functions/builtin.py:629 asc_nulls_last\n    outlier:  src/fenic/api/functions/builtin.py:642 desc\n    outlier:  src/fenic/api/functions/builtin.py:655 desc_nulls_first\n    outlier:  src/fenic/api/functions/builtin.py:668 desc_nulls_last\n    outlier:  src/fenic/api/functions/core.py:17 col",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "fenic/D-7ef79c",
+      "repo": "fenic",
+      "id": "D-7ef79c",
+      "rank": 3,
+      "summary": "functions in src/fenic/api/** are decorated with validate_call()",
+      "role": {
+        "package": "",
+        "dir": "src/fenic/api",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:pydantic#validate_call"
+        ]
+      },
+      "evidence": {
+        "holders": 120,
+        "total": 130,
+        "lower_bound": 0.86,
+        "lift": 2.3
+      },
+      "members": 130,
+      "example": "src/fenic/api/functions/array.py#compact",
+      "python_members": 130,
+      "outliers": 10,
+      "outlier_files": [
+        "src/fenic/api/dataframe/_join_utils.py",
+        "src/fenic/api/functions/core.py",
+        "src/fenic/api/functions/dt.py",
+        "src/fenic/api/functions/embedding.py",
+        "src/fenic/api/mcp/_tool_generation_utils.py"
+      ],
+      "block": " 3. [D-7ef79c] functions in src/fenic/api/** are decorated with validate_call()\n    evidence: 120/130 (lower bound 0.86, lift 2.3)\n    agents:   not shown to agents (family below admission bar: 50% of 6)\n    example:  src/fenic/api/functions/array.py#compact\n    outlier:  src/fenic/api/dataframe/_join_utils.py:53 build_join_conditions\n    outlier:  src/fenic/api/dataframe/_join_utils.py:10 validate_join_parameters\n    outlier:  src/fenic/api/functions/core.py:66 empty\n    outlier:  src/fenic/api/functions/core.py:108 lit\n    outlier:  src/fenic/api/functions/core.py:32 null\n    outlier:  src/fenic/api/functions/dt.py:288 current_date\n    outlier:  src/fenic/api/functions/dt.py:273 current_timestamp\n    outlier:  src/fenic/api/functions/dt.py:258 now\n    outlier:  src/fenic/api/functions/embedding.py:17 normalize\n    outlier:  src/fenic/api/mcp/_tool_generation_utils.py:60 auto_generate_system_tools_from_tables",
+      "family": "decorator",
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "fenic/D-7ab0d9",
+      "repo": "fenic",
+      "id": "D-7ab0d9",
+      "rank": 4,
+      "summary": "classes in src/fenic/_backends/local/physical_plan/** pass `cache_info` to super().__init__(), except a member (not calling the callee)",
+      "role": {
+        "package": "",
+        "dir": "src/fenic/_backends/local/physical_plan",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "global#super().__init__",
+        "index": 99,
+        "key": "cache_info"
+      },
+      "evidence": {
+        "holders": 23,
+        "total": 23,
+        "lower_bound": 0.86,
+        "lift": 20.9
+      },
+      "members": 24,
+      "example": "src/fenic/_backends/local/physical_plan/aggregate.py#AggregateExec",
+      "python_members": 24,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 4. [D-7ab0d9] classes in src/fenic/_backends/local/physical_plan/** pass `cache_info` to super().__init__(), except a member (not calling the callee)\n    evidence: 23/23 (lower bound 0.86, lift 20.9)\n    agents:   not shown to agents (family below admission bar: 50% of 4)\n    example:  src/fenic/_backends/local/physical_plan/aggregate.py#AggregateExec\n    exempt:   src/fenic/_backends/local/physical_plan/optimizer/merge_duckdb_nodes.py:24 MergeDuckDBNodesRule (does not call super().__init__())",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "fenic/D-c30a2b",
+      "repo": "fenic",
+      "id": "D-c30a2b",
+      "rank": 5,
+      "summary": "functions in src/fenic/api/** call Column._from_col_or_name()",
+      "role": {
+        "package": "",
+        "dir": "src/fenic/api",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "src/fenic/api/column.py#Column._from_col_or_name"
+      },
+      "evidence": {
+        "holders": 112,
+        "total": 130,
+        "lower_bound": 0.79,
+        "lift": 2.3
+      },
+      "members": 130,
+      "example": "src/fenic/api/functions/array.py#compact",
+      "python_members": 130,
+      "outliers": 18,
+      "outlier_files": [
+        "src/fenic/api/dataframe/_join_utils.py",
+        "src/fenic/api/functions/builtin.py",
+        "src/fenic/api/functions/core.py",
+        "src/fenic/api/functions/dt.py",
+        "src/fenic/api/functions/semantic.py",
+        "src/fenic/api/functions/text.py",
+        "src/fenic/api/mcp/_tool_generation_utils.py",
+        "src/fenic/api/mcp/server.py"
+      ],
+      "block": " 5. [D-c30a2b] functions in src/fenic/api/** call Column._from_col_or_name()\n    evidence: 112/130 (lower bound 0.79, lift 2.3)\n    agents:   not shown to agents (family below admission bar: 44% of 9)\n    example:  src/fenic/api/functions/array.py#compact\n    outlier:  src/fenic/api/dataframe/_join_utils.py:10 validate_join_parameters\n    outlier:  src/fenic/api/functions/builtin.py:729 when\n    outlier:  src/fenic/api/functions/core.py:17 col\n    outlier:  src/fenic/api/functions/core.py:66 empty\n    outlier:  src/fenic/api/functions/core.py:108 lit\n    outlier:  src/fenic/api/functions/core.py:32 null\n    outlier:  src/fenic/api/functions/core.py:140 tool_param\n    outlier:  src/fenic/api/functions/dt.py:288 current_date\n    outlier:  src/fenic/api/functions/dt.py:273 current_timestamp\n    outlier:  src/fenic/api/functions/dt.py:258 now\n    outlier:  src/fenic/api/functions/semantic.py:108 map\n    outlier:  src/fenic/api/functions/semantic.py:282 predicate\n    outlier:  src/fenic/api/functions/text.py:1210 jinja\n    outlier:  src/fenic/api/mcp/_tool_generation_utils.py:60 auto_generate_system_tools_from_tables\n    outlier:  src/fenic/api/mcp/server.py:21 create_mcp_server\n    outlier:  src/fenic/api/mcp/server.py:54 run_mcp_server_asgi\n    outlier:  src/fenic/api/mcp/server.py:108 run_mcp_server_async\n    outlier:  src/fenic/api/mcp/server.py:81 run_mcp_server_sync",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "future-agi/D-148d14",
+      "repo": "future-agi",
+      "id": "D-148d14",
+      "rank": 1,
+      "summary": "futureagi: serializers in model_hub/** are named `*Serializer`",
+      "role": {
+        "package": "futureagi",
+        "dir": "model_hub",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "serializer"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "evidence": {
+        "holders": 422,
+        "total": 424,
+        "lower_bound": 0.98,
+        "lift": 2.3
+      },
+      "members": 424,
+      "example": "futureagi/model_hub/serializers/ai_filter.py#AIFilterConditionSerializer",
+      "python_members": 424,
+      "outliers": 2,
+      "outlier_files": [
+        "futureagi/model_hub/serializers/dataset_properties.py"
+      ],
+      "block": " 1. [D-148d14] futureagi: serializers in model_hub/** are named `*Serializer`\n    evidence: 422/424 (lower bound 0.98, lift 2.3)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  futureagi/model_hub/serializers/ai_filter.py#AIFilterConditionSerializer\n    outlier:  futureagi/model_hub/serializers/dataset_properties.py:25 Dataset\n    outlier:  futureagi/model_hub/serializers/dataset_properties.py:19 DatasetProperty",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "future-agi/D-7fb332",
+      "repo": "future-agi",
+      "id": "D-7fb332",
+      "rank": 2,
+      "summary": "futureagi: HTTP handlers in agentcc/** are wrapped in IsAdminToken() or permissions.IsAuthenticated()",
+      "role": {
+        "package": "futureagi",
+        "dir": "agentcc",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "futureagi/agentcc/permissions.py#IsAdminToken",
+          "pkg:rest_framework#permissions.IsAuthenticated"
+        ]
+      },
+      "evidence": {
+        "holders": 143,
+        "total": 145,
+        "lower_bound": 0.95,
+        "lift": 7.4
+      },
+      "members": 145,
+      "example": "futureagi/agentcc/views/analytics.py#AgentccAnalyticsViewSet.cost_breakdown",
+      "python_members": 145,
+      "outliers": 2,
+      "outlier_files": [
+        "futureagi/agentcc/views/shadow_webhook.py",
+        "futureagi/agentcc/views/webhook.py"
+      ],
+      "block": " 2. [D-7fb332] futureagi: HTTP handlers in agentcc/** are wrapped in IsAdminToken() or permissions.IsAuthenticated()\n    evidence: 143/145 (lower bound 0.95, lift 7.4)\n    agents:   not shown to agents (family below admission bar: 75% of 8)\n    split:    permissions.IsAuthenticated 140, IsAdminToken 3\n    example:  futureagi/agentcc/views/analytics.py#AgentccAnalyticsViewSet.cost_breakdown\n    outlier:  futureagi/agentcc/views/shadow_webhook.py:34 ShadowResultWebhookView.post\n    outlier:  futureagi/agentcc/views/webhook.py:27 GatewayWebhookView.post",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "future-agi/D-9873ea",
+      "repo": "future-agi",
+      "id": "D-9873ea",
+      "rank": 3,
+      "summary": "futureagi: functions in simulate/services/** declare their return type, except 4 shared parts (used by several members, not a member)",
+      "role": {
+        "package": "futureagi",
+        "dir": "simulate/services",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 585,
+        "total": 604,
+        "lower_bound": 0.95,
+        "lift": 2.8
+      },
+      "members": 608,
+      "example": "futureagi/simulate/services/agent_fix_agents.py#agent_kind",
+      "python_members": 608,
+      "outliers": 19,
+      "outlier_files": [
+        "futureagi/simulate/services/alk_simulate_ingestion.py",
+        "futureagi/simulate/services/chat_sim.py",
+        "futureagi/simulate/services/eval_config_edit.py",
+        "futureagi/simulate/services/harness_credentials.py",
+        "futureagi/simulate/services/harness_provider.py",
+        "futureagi/simulate/services/harness_versioning/rebuild.py",
+        "futureagi/simulate/services/hosted_runner.py",
+        "futureagi/simulate/services/insert_system_personas.py",
+        "futureagi/simulate/services/run_regrade.py",
+        "futureagi/simulate/services/scenario_service.py"
+      ],
+      "block": " 3. [D-9873ea] futureagi: functions in simulate/services/** declare their return type, except 4 shared parts (used by several members, not a member)\n    evidence: 585/604 (lower bound 0.95, lift 2.8)\n    agents:   not shown to agents (family below admission bar: 100% of 4)\n    example:  futureagi/simulate/services/agent_fix_agents.py#agent_kind\n    outlier:  futureagi/simulate/services/alk_simulate_ingestion.py:433 append_alk_sim_scenarios\n    outlier:  futureagi/simulate/services/chat_sim.py:648 finalize_chat_execution\n    outlier:  futureagi/simulate/services/chat_sim.py:493 send_message_to_chat\n    outlier:  futureagi/simulate/services/eval_config_edit.py:49 update_eval_config\n    outlier:  futureagi/simulate/services/eval_config_edit.py:32 visible_eval_template_query\n    outlier:  futureagi/simulate/services/harness_credentials.py:79 store_credential_file\n    outlier:  futureagi/simulate/services/harness_provider.py:89 get_harness_provider\n    outlier:  futureagi/simulate/services/harness_provider.py:110 request_organization\n    outlier:  futureagi/simulate/services/harness_provider.py:115 request_workspace\n    outlier:  futureagi/simulate/services/harness_provider.py:893 run_preflight_checks\n    outlier:  futureagi/simulate/services/harness_provider.py:143 scope_jobs\n    outlier:  futureagi/simulate/services/harness_versioning/rebuild.py:1660 fail_landing\n    outlier:  futureagi/simulate/services/harness_versioning/rebuild.py:261 waiting_since\n    outlier:  futureagi/simulate/services/hosted_runner.py:826 agent_field_for_run\n    outlier:  futureagi/simulate/services/hosted_runner.py:788 agent_field_for_version\n    outlier:  futureagi/simulate/services/insert_system_personas.py:15 insert_system_personas\n    outlier:  futureagi/simulate/services/run_regrade.py:106 regrade_run_evals\n    outlier:  futureagi/simulate/services/run_regrade.py:80 regrade_still_finishing\n    outlier:  futureagi/simulate/services/scenario_service.py:16 create_scenario\n    exempt:   futureagi/simulate/services/harness_versioning/drafts.py:1475 draft_rows (shared part used by 4 members)\n    exempt:   futureagi/simulate/services/harness_versioning/drafts.py:158 fresh_draft (shared part used by 6 members)\n    exempt:   futureagi/simulate/services/harness_versioning/drafts.py:175 require_no_rebuild (shared part used by 5 members)\n    exempt:   futureagi/simulate/services/hosted_runner.py:795 resolve_run_agent_version (shared part used by 3 members)",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "future-agi/D-a79a2e",
+      "repo": "future-agi",
+      "id": "D-a79a2e",
+      "rank": 4,
+      "summary": "futureagi: model classes in tracer/models/** extend BaseModel",
+      "role": {
+        "package": "futureagi",
+        "dir": "tracer/models",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "model"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "futureagi/tfc/utils/base_model.py#BaseModel"
+        ]
+      },
+      "evidence": {
+        "holders": 66,
+        "total": 66,
+        "lower_bound": 0.94,
+        "lift": 21.4
+      },
+      "members": 66,
+      "example": "futureagi/tracer/models/custom_eval_config.py#CustomEvalConfig",
+      "python_members": 66,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 4. [D-a79a2e] futureagi: model classes in tracer/models/** extend BaseModel\n    evidence: 66/66 (lower bound 0.94, lift 21.4)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  futureagi/tracer/models/custom_eval_config.py#CustomEvalConfig",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "future-agi/D-a0e724",
+      "repo": "future-agi",
+      "id": "D-a0e724",
+      "rank": 5,
+      "summary": "futureagi: model classes in tracer/** pass `on_delete` to db.models.ForeignKey(), except 2 members (not calling the callee)",
+      "role": null,
+      "rule": null,
+      "evidence": {
+        "holders": 64,
+        "total": 64,
+        "lower_bound": 0.94,
+        "lift": 20.7
+      },
+      "members": 64,
+      "example": "futureagi/tracer/models/custom_eval_config.py#CustomEvalConfig",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 5. [D-a0e724] futureagi: model classes in tracer/** pass `on_delete` to db.models.ForeignKey(), except 2 members (not calling the callee)\n    evidence: 64/64 (lower bound 0.94, lift 20.7)\n    agents:   not shown to agents (family below admission bar: 50% of 4)\n    example:  futureagi/tracer/models/custom_eval_config.py#CustomEvalConfig\n    exempt:   futureagi/tracer/models/trace_scan.py:23 TraceScanConfig (does not call db.models.ForeignKey())\n    exempt:   futureagi/tracer/models/trace_session.py:29 TraceSessionOverlay (does not call db.models.ForeignKey())",
+      "family": "argument_key",
+      "rule_kind": null,
+      "tier": "suggestion"
+    },
+    {
+      "uid": "future-agi/D-962248",
+      "repo": "future-agi",
+      "id": "D-962248",
+      "rank": 6,
+      "summary": "frontend: exported values in src/config/** pass `maximum` to readBoundedRuntimeInteger(), except a member (not calling the callee)",
+      "role": {
+        "package": "frontend",
+        "dir": "src/config",
+        "file": "*",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "frontend/src/config/runtime_limits.js#readBoundedRuntimeInteger",
+        "index": 2,
+        "key": "maximum"
+      },
+      "evidence": {
+        "holders": 49,
+        "total": 49,
+        "lower_bound": 0.93,
+        "lift": 86.8
+      },
+      "members": 50,
+      "example": "frontend/src/config/runtime_limits.js#AGGREGATION_POLL_BACKOFF_FACTOR",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 6. [D-962248] frontend: exported values in src/config/** pass `maximum` to readBoundedRuntimeInteger(), except a member (not calling the callee)\n    evidence: 49/49 (lower bound 0.93, lift 86.8)\n    agents:   not shown to agents (family below admission bar: 50% of 12)\n    example:  frontend/src/config/runtime_limits.js#AGGREGATION_POLL_BACKOFF_FACTOR\n    exempt:   frontend/src/config/runtime_limits.js:89 AGGREGATION_POLL_TIMEOUT_MS (does not call readBoundedRuntimeInteger())",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "future-agi/D-30f7c8",
+      "repo": "future-agi",
+      "id": "D-30f7c8",
+      "rank": 7,
+      "summary": "futureagi: HTTP handlers in ee/**, simulate/** and tracer/** are wrapped in permissions.IsAuthenticated()",
+      "role": {
+        "package": "futureagi",
+        "dir": "ee",
+        "file": "*",
+        "entry": "http",
+        "kind": "function",
+        "also": [
+          {
+            "package": "futureagi",
+            "dir": "simulate",
+            "file": "*",
+            "entry": "http",
+            "kind": "function"
+          },
+          {
+            "package": "futureagi",
+            "dir": "tracer",
+            "file": "*",
+            "entry": "http",
+            "kind": "function"
+          }
+        ]
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "pkg:rest_framework#permissions.IsAuthenticated"
+        ]
+      },
+      "evidence": {
+        "holders": 321,
+        "total": 337,
+        "lower_bound": 0.92,
+        "lift": 7.2
+      },
+      "members": 337,
+      "example": "futureagi/tracer/views/alerts.py#AlertDetailView.delete",
+      "python_members": 337,
+      "outliers": 16,
+      "outlier_files": [
+        "futureagi/ee/falcon_ai/views_connectors.py",
+        "futureagi/simulate/views/harness_github_webhook.py",
+        "futureagi/simulate/views/hosted_harness.py",
+        "futureagi/simulate/views/livekit_api.py",
+        "futureagi/tracer/views/clickhouse_health.py",
+        "futureagi/tracer/views/otlp.py",
+        "futureagi/tracer/views/shared_link.py"
+      ],
+      "block": " 7. [D-30f7c8] futureagi: HTTP handlers in ee/**, simulate/** and tracer/** are wrapped in permissions.IsAuthenticated()\n    evidence: 321/337 (lower bound 0.92, lift 7.2)\n    agents:   not shown to agents (family below admission bar: 75% of 8)\n    example:  futureagi/tracer/views/alerts.py#AlertDetailView.delete\n    outlier:  futureagi/ee/falcon_ai/views_connectors.py:440 MCPConnectorOAuthCallbackView.get\n    outlier:  futureagi/simulate/views/harness_github_webhook.py:62 HarnessGitHubWebhookView.post\n    outlier:  futureagi/simulate/views/hosted_harness.py:290 HostedHarnessIngressProxyView.patch\n    outlier:  futureagi/simulate/views/hosted_harness.py:276 HostedHarnessIngressProxyView.post\n    outlier:  futureagi/simulate/views/hosted_harness.py:283 HostedHarnessIngressProxyView.put\n    outlier:  futureagi/simulate/views/livekit_api.py:232 CallConfigView.get\n    outlier:  futureagi/simulate/views/livekit_api.py:324 CallExecutionUpdateView.patch\n    outlier:  futureagi/simulate/views/livekit_api.py:666 LiveKitWebhookView.post\n    outlier:  futureagi/simulate/views/livekit_api.py:303 PhoneResolutionView.get\n    outlier:  futureagi/simulate/views/livekit_api.py:362 TemporalSignalView.post\n    outlier:  futureagi/simulate/views/livekit_api.py:253 TranscriptsView.post\n    outlier:  futureagi/tracer/views/clickhouse_health.py:39 ClickHouseHealthView.get\n    outlier:  futureagi/tracer/views/otlp.py:358 OTLPHealthView.get\n    outlier:  futureagi/tracer/views/shared_link.py:330 SharedIssueSidebarView.get\n    outlier:  futureagi/tracer/views/shared_link.py:284 resolve_shared_issue_trace\n    outlier:  futureagi/tracer/views/shared_link.py:247 resolve_shared_link",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "future-agi/D-ad841f",
+      "repo": "future-agi",
+      "id": "D-ad841f",
+      "rank": 8,
+      "summary": "futureagi: model classes in simulate/models/** extend BaseModel",
+      "role": {
+        "package": "futureagi",
+        "dir": "simulate/models",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "model"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "futureagi/tfc/utils/base_model.py#BaseModel"
+        ]
+      },
+      "evidence": {
+        "holders": 45,
+        "total": 45,
+        "lower_bound": 0.92,
+        "lift": 21.4
+      },
+      "members": 45,
+      "example": "futureagi/simulate/models/agent_optimiser.py#AgentOptimiser",
+      "python_members": 45,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 8. [D-ad841f] futureagi: model classes in simulate/models/** extend BaseModel\n    evidence: 45/45 (lower bound 0.92, lift 21.4)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  futureagi/simulate/models/agent_optimiser.py#AgentOptimiser",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "future-agi/D-402240",
+      "repo": "future-agi",
+      "id": "D-402240",
+      "rank": 9,
+      "summary": "futureagi: functions in tfc/** (activities files) are decorated with activity.defn()",
+      "role": {
+        "package": "futureagi",
+        "dir": "tfc",
+        "file": "activities",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:temporalio#activity.defn"
+        ]
+      },
+      "evidence": {
+        "holders": 77,
+        "total": 82,
+        "lower_bound": 0.86,
+        "lift": 64.8
+      },
+      "members": 82,
+      "example": "futureagi/tfc/temporal/agent_playground/activities.py#analyze_graph_activity",
+      "python_members": 82,
+      "outliers": 5,
+      "outlier_files": [
+        "futureagi/tfc/temporal/background_tasks/activities.py"
+      ],
+      "block": " 9. [D-402240] futureagi: functions in tfc/** (activities files) are decorated with activity.defn()\n    evidence: 77/82 (lower bound 0.86, lift 64.8)\n    agents:   not shown to agents (family below admission bar: 50% of 6)\n    example:  futureagi/tfc/temporal/agent_playground/activities.py#analyze_graph_activity\n    outlier:  futureagi/tfc/temporal/background_tasks/activities.py:53 delete_compare_folder_activity\n    outlier:  futureagi/tfc/temporal/background_tasks/activities.py:107 ingest_kb_files_activity\n    outlier:  futureagi/tfc/temporal/background_tasks/activities.py:69 prepare_compare_dataset_activity\n    outlier:  futureagi/tfc/temporal/background_tasks/activities.py:25 process_huggingface_dataset_activity\n    outlier:  futureagi/tfc/temporal/background_tasks/activities.py:11 run_post_registration_activity",
+      "family": "decorator",
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "future-agi/D-85cfb8",
+      "repo": "future-agi",
+      "id": "D-85cfb8",
+      "rank": 10,
+      "summary": "futureagi: classes in tracer/management/** extend core.management.base.BaseCommand",
+      "role": {
+        "package": "futureagi",
+        "dir": "tracer/management",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:django#core.management.base.BaseCommand"
+        ]
+      },
+      "evidence": {
+        "holders": 24,
+        "total": 24,
+        "lower_bound": 0.86,
+        "lift": 87.8
+      },
+      "members": 24,
+      "example": "futureagi/tracer/management/commands/backfill_blank_eval_status.py#Command",
+      "python_members": 24,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": "10. [D-85cfb8] futureagi: classes in tracer/management/** extend core.management.base.BaseCommand\n    evidence: 24/24 (lower bound 0.86, lift 87.8)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  futureagi/tracer/management/commands/backfill_blank_eval_status.py#Command",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "future-agi/D-20c80e",
+      "repo": "future-agi",
+      "id": "D-20c80e",
+      "rank": 11,
+      "summary": "frontend: components in src/sections/gateway/** render <Stack>",
+      "role": {
+        "package": "frontend",
+        "dir": "src/sections/gateway",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "renders",
+        "component": "pkg:@mui/material#Stack"
+      },
+      "evidence": {
+        "holders": 78,
+        "total": 89,
+        "lower_bound": 0.79,
+        "lift": 3.5
+      },
+      "members": 89,
+      "example": "frontend/src/sections/gateway/GatewayOverviewSection.jsx#GatewayOverviewSection",
+      "python_members": null,
+      "outliers": 11,
+      "outlier_files": [
+        "frontend/src/sections/gateway/analytics/AnalyticsDashboardSection.jsx",
+        "frontend/src/sections/gateway/analytics/LatencyAnalytics.jsx",
+        "frontend/src/sections/gateway/analytics/TimeRangeSelector.jsx",
+        "frontend/src/sections/gateway/components/ConfirmDialog.jsx",
+        "frontend/src/sections/gateway/components/GatewayEmptyState.jsx",
+        "frontend/src/sections/gateway/components/InheritedBadge.jsx",
+        "frontend/src/sections/gateway/components/ResultCount.jsx",
+        "frontend/src/sections/gateway/context/GatewayContext.jsx",
+        "frontend/src/sections/gateway/logs/columns/ClippedColumnLabel.jsx",
+        "frontend/src/sections/gateway/logs/columns/MetadataCell.jsx",
+        "frontend/src/sections/gateway/mcp/MCPOverviewTab.jsx"
+      ],
+      "block": "11. [D-20c80e] frontend: components in src/sections/gateway/** render <Stack>\n    evidence: 78/89 (lower bound 0.79, lift 3.5)\n    agents:   not shown to agents (family below admission bar: 40% of 10)\n    example:  frontend/src/sections/gateway/GatewayOverviewSection.jsx#GatewayOverviewSection\n    outlier:  frontend/src/sections/gateway/analytics/AnalyticsDashboardSection.jsx:55 AnalyticsDashboardSection\n    outlier:  frontend/src/sections/gateway/analytics/LatencyAnalytics.jsx:174 LatencyAnalytics\n    outlier:  frontend/src/sections/gateway/analytics/TimeRangeSelector.jsx:14 TimeRangeSelector\n    outlier:  frontend/src/sections/gateway/components/ConfirmDialog.jsx:13 ConfirmDialog\n    outlier:  frontend/src/sections/gateway/components/GatewayEmptyState.jsx:30 GatewayEmptyState\n    outlier:  frontend/src/sections/gateway/components/InheritedBadge.jsx:5 InheritedBadge\n    outlier:  frontend/src/sections/gateway/components/ResultCount.jsx:5 ResultCount\n    outlier:  frontend/src/sections/gateway/context/GatewayContext.jsx:21 GatewayProvider\n    outlier:  frontend/src/sections/gateway/logs/columns/ClippedColumnLabel.jsx:8 ClippedColumnLabel\n    outlier:  frontend/src/sections/gateway/logs/columns/MetadataCell.jsx:28 MetadataCell\n    outlier:  frontend/src/sections/gateway/mcp/MCPOverviewTab.jsx:35 MCPOverviewTab",
+      "family": "renders",
+      "rule_kind": "renders",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "future-agi/D-a3b041",
+      "repo": "future-agi",
+      "id": "D-a3b041",
+      "rank": 12,
+      "summary": "frontend: exported values in src/assets/** are wrapped in memo()",
+      "role": {
+        "package": "frontend",
+        "dir": "src/assets",
+        "file": "*",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "pkg:react#memo"
+        ]
+      },
+      "evidence": {
+        "holders": 21,
+        "total": 22,
+        "lower_bound": 0.78,
+        "lift": 94.1
+      },
+      "members": 22,
+      "example": "frontend/src/assets/icons/auto-annotate-icon.jsx#MemoizedSentIcon",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "frontend/src/assets/data/countries.js"
+      ],
+      "block": "12. [D-a3b041] frontend: exported values in src/assets/** are wrapped in memo()\n    evidence: 21/22 (lower bound 0.78, lift 94.1)\n    agents:   not shown to agents (family below admission bar: 0% of 1)\n    example:  frontend/src/assets/icons/auto-annotate-icon.jsx#MemoizedSentIcon\n    outlier:  frontend/src/assets/data/countries.js:1 countries",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "future-agi/D-12246d",
+      "repo": "future-agi",
+      "id": "D-12246d",
+      "rank": 13,
+      "summary": "futureagi: HTTP handlers in accounts/** are decorated with validated_request()",
+      "role": {
+        "package": "futureagi",
+        "dir": "accounts",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "futureagi/tfc/utils/api_contracts.py#validated_request"
+        ]
+      },
+      "evidence": {
+        "holders": 32,
+        "total": 35,
+        "lower_bound": 0.78,
+        "lift": 13.5
+      },
+      "members": 35,
+      "example": "futureagi/accounts/views/keys.py#SecretKeyAPIViewSet.delete_secret_key",
+      "python_members": 35,
+      "outliers": 3,
+      "outlier_files": [
+        "futureagi/accounts/views/config.py",
+        "futureagi/accounts/views/keys.py",
+        "futureagi/accounts/views/organization_selection.py"
+      ],
+      "block": "13. [D-12246d] futureagi: HTTP handlers in accounts/** are decorated with validated_request()\n    evidence: 32/35 (lower bound 0.78, lift 13.5)\n    agents:   not shown to agents (family below admission bar: 50% of 6)\n    example:  futureagi/accounts/views/keys.py#SecretKeyAPIViewSet.delete_secret_key\n    outlier:  futureagi/accounts/views/config.py:31 public_config\n    outlier:  futureagi/accounts/views/keys.py:118 SecretKeyAPIViewSet.get_secret_keys\n    outlier:  futureagi/accounts/views/organization_selection.py:347 get_current_organization",
+      "family": "decorator",
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion"
+    }
+  ]
+}

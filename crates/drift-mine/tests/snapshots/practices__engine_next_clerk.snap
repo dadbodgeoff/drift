@@ -1,0 +1,337 @@
+---
+source: crates/drift-mine/tests/practices.rs
+expression: r
+---
+{
+  "version": 1,
+  "commit": null,
+  "facts_schema": 11,
+  "scope": {
+    "concern": null,
+    "package": null,
+    "path": null
+  },
+  "summary": {
+    "population": 4,
+    "known": 3,
+    "declared": 0,
+    "none": 1,
+    "unknown": 0,
+    "coverage": 1.0,
+    "concerns_at_target": 1,
+    "target": 0.9
+  },
+  "concerns": [
+    {
+      "id": "authn",
+      "title": "Authentication",
+      "unit": "entry_point",
+      "population": {
+        "total": 4,
+        "known": 3,
+        "declared": 0,
+        "none": 1,
+        "unknown": 0,
+        "coverage": 1.0,
+        "left_out": {
+          "tests": 0,
+          "non_production": 0
+        }
+      },
+      "variants": [
+        {
+          "id": "P-5113b8",
+          "key": "body_check:pkg:@clerk/nextjs/server#auth.userId+middleware:pkg:@clerk/nextjs/server#clerkMiddleware",
+          "label": "authn: body_check:pkg:@clerk/nextjs/server#auth.userId+middleware:pkg:@clerk/nextjs/server#clerkMiddleware",
+          "kind": "known",
+          "mechanisms": [
+            "body_check",
+            "middleware"
+          ],
+          "instruments": [
+            "pkg:@clerk/nextjs/server#auth.userId",
+            "pkg:@clerk/nextjs/server#clerkMiddleware"
+          ],
+          "source": "vocab",
+          "members": 3,
+          "share": 0.75,
+          "where": {
+            "packages": [
+              {
+                "package": "",
+                "members": 3,
+                "share_of_package": 0.75
+              }
+            ],
+            "dirs": [
+              {
+                "dir": "app/api",
+                "members": 3
+              },
+              {
+                "dir": "app/api/projects/[projectId]",
+                "members": 2
+              },
+              {
+                "dir": "app/api/legacy",
+                "members": 1
+              }
+            ],
+            "roles": [
+              {
+                "role": "R-37d6bf",
+                "members": 3
+              }
+            ],
+            "entry_kinds": [
+              {
+                "kind": "http",
+                "members": 3
+              }
+            ],
+            "methods": [
+              {
+                "method": "GET",
+                "members": 2
+              },
+              {
+                "method": "POST",
+                "members": 1
+              }
+            ]
+          },
+          "sets_apart": [],
+          "examples": [
+            {
+              "path": "lib/handlers.ts",
+              "symbol": "GET",
+              "line": 3
+            },
+            {
+              "path": "app/api/projects/[projectId]/route.ts",
+              "symbol": "GET",
+              "line": 6
+            },
+            {
+              "path": "app/api/projects/[projectId]/route.ts",
+              "symbol": "POST",
+              "line": 30
+            }
+          ],
+          "exceptions": [],
+          "exceptions_more": 0,
+          "conventions": [],
+          "promotable": null
+        },
+        {
+          "id": "P-01d468",
+          "key": "none:no guard",
+          "label": "no guard",
+          "kind": "none",
+          "mechanisms": [],
+          "instruments": [],
+          "source": "usage",
+          "members": 1,
+          "share": 0.25,
+          "where": {
+            "packages": [
+              {
+                "package": "",
+                "members": 1,
+                "share_of_package": 0.25
+              }
+            ],
+            "dirs": [
+              {
+                "dir": "app/api/webhooks/stripe",
+                "members": 1
+              }
+            ],
+            "roles": [
+              {
+                "role": "R-37d6bf",
+                "members": 1
+              }
+            ],
+            "entry_kinds": [
+              {
+                "kind": "http",
+                "members": 1
+              }
+            ],
+            "methods": [
+              {
+                "method": "POST",
+                "members": 1
+              }
+            ]
+          },
+          "sets_apart": [],
+          "examples": [
+            {
+              "path": "app/api/webhooks/stripe/route.ts",
+              "symbol": "POST",
+              "line": 5
+            }
+          ],
+          "exceptions": [],
+          "exceptions_more": 0,
+          "conventions": [],
+          "promotable": null
+        }
+      ],
+      "unknown": {
+        "members": 0,
+        "reasons": [],
+        "instruments": [],
+        "examples": []
+      },
+      "by_package": [
+        {
+          "package": "",
+          "total": 4,
+          "coverage": 1.0,
+          "variants": [
+            {
+              "id": "P-5113b8",
+              "members": 3,
+              "share": 0.75
+            },
+            {
+              "id": "P-01d468",
+              "members": 1,
+              "share": 0.25
+            }
+          ]
+        }
+      ],
+      "divergence": [],
+      "groups": [
+        {
+          "id": "G-76f8be",
+          "kind": "known",
+          "class": "user",
+          "instrument": "pkg:@clerk/nextjs/server#auth.userId",
+          "mechanisms": [
+            "body_check"
+          ],
+          "label": "authn: body_check:pkg:@clerk/nextjs/server#auth.userId+middleware:pkg:@clerk/nextjs/server#clerkMiddleware",
+          "members": 3,
+          "share": 0.75,
+          "variants": 1,
+          "top": [
+            {
+              "id": "P-5113b8",
+              "key": "body_check:pkg:@clerk/nextjs/server#auth.userId+middleware:pkg:@clerk/nextjs/server#clerkMiddleware",
+              "label": "authn: body_check:pkg:@clerk/nextjs/server#auth.userId+middleware:pkg:@clerk/nextjs/server#clerkMiddleware",
+              "members": 3
+            }
+          ],
+          "examples": [
+            {
+              "path": "lib/handlers.ts",
+              "symbol": "GET",
+              "line": 3
+            },
+            {
+              "path": "app/api/projects/[projectId]/route.ts",
+              "symbol": "GET",
+              "line": 6
+            },
+            {
+              "path": "app/api/projects/[projectId]/route.ts",
+              "symbol": "POST",
+              "line": 30
+            }
+          ]
+        },
+        {
+          "id": "G-b8e504",
+          "kind": "none",
+          "class": "",
+          "instrument": "",
+          "mechanisms": [],
+          "label": "no guard",
+          "members": 1,
+          "share": 0.25,
+          "variants": 1,
+          "top": [
+            {
+              "id": "P-01d468",
+              "key": "none:no guard",
+              "label": "no guard",
+              "members": 1
+            }
+          ],
+          "examples": [
+            {
+              "path": "app/api/webhooks/stripe/route.ts",
+              "symbol": "POST",
+              "line": 5
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "not_covered": [
+    "outbound calls (HTTP clients, timeouts, retries)",
+    "background jobs and queues",
+    "frontend data fetching",
+    "state and design system",
+    "hygiene (duplicate libraries, escape hatches)",
+    "declared vs actual (AGENTS.md, lint configs)",
+    "change over time (which variant new code adopts)"
+  ],
+  "recipes": [
+    {
+      "id": "E-081e0c",
+      "package": "",
+      "role": "http",
+      "label": "http entry points in .",
+      "population": 4,
+      "concerns": [
+        {
+          "concern": "authn",
+          "total": 4,
+          "variants": [
+            {
+              "id": "P-5113b8",
+              "label": "authn: body_check:pkg:@clerk/nextjs/server#auth.userId+middleware:pkg:@clerk/nextjs/server#clerkMiddleware",
+              "members": 3,
+              "share": 0.75
+            }
+          ],
+          "copy": {
+            "path": "lib/handlers.ts",
+            "symbol": "GET",
+            "line": 3
+          },
+          "none": 1,
+          "unknown": 0,
+          "differs": null
+        }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "kind": "none",
+      "concern": "authn",
+      "package": "",
+      "variants": [
+        "P-01d468"
+      ],
+      "members": 1,
+      "instrument": null,
+      "config_hint": null,
+      "examples": [
+        {
+          "path": "app/api/webhooks/stripe/route.ts",
+          "symbol": "POST",
+          "line": 5
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems: []
+  suffixes:
+  - config
+  - test
+conventions:
+- id: D-c9012b
+  status: proposed
+  mode: advise
+  summary: "frontend: functions in src/components/console/task/toolcalls/** are named `render*`"
+  role:
+    package: frontend
+    dir: src/components/console/task/toolcalls
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: render*
+  evidence:
+    holders: 29
+    total: 30
+    lower_bound: 0.833
+    lift: 34.891
+  example: frontend/src/components/console/task/toolcalls/apply_patch.tsx#renderDetail
+  selector_version: 3

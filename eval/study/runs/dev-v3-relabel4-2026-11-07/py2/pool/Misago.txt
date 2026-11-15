@@ -1,0 +1,57 @@
+7 conventions from 6296 units in 297 roles (0 default tier, 7 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-c9ae1e] classes in misago/permissions/hooks/** extend FilterHook
+    evidence: 67/67 (lower bound 0.95, lift 8.2)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  misago/permissions/hooks/build_user_category_permissions.py#BuildUserCategoryPermissionsHook
+    exempt:   misago/permissions/hooks/get_admin_category_permissions.py:27 GetAdminCategoryPermissionsHook (extends ActionHook, which the module of FilterHook defines beside it)
+
+ 2. [D-90a5d9] HTTP handlers in misago/** (urls files) call extensions.get()
+    evidence: 49/50 (lower bound 0.90, lift 9.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  misago/likes/urls.py#private_thread_post_like_view
+    outlier:  misago/core/testproject/urls.py:16 urlpatterns
+
+ 3. [D-e72fc8] classes in misago/posting/hooks/** extend FilterHook
+    evidence: 29/29 (lower bound 0.88, lift 8.1)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  misago/posting/hooks/get_private_thread_edit_formset.py#GetPrivateThreadEditFormsetHook
+    exempt:   misago/posting/hooks/validate_posting.py:33 ValidatePostingHook (extends ActionHook, which the module of FilterHook defines beside it)
+
+ 4. [D-5862f4] frontend: classes in src/components/** extend react.Component
+    evidence: 133/159 (lower bound 0.77, lift 10.2)
+    tier:     suggestion (rule kind wrapped_by:extends; decision D7 keeps only call wrappers and layering)
+    example:  frontend/src/components/Api/ApiFetch.jsx#ApiFetch
+    outlier:  frontend/src/components/edit-details/form.js:8 default
+    outlier:  frontend/src/components/modal-message.js:4 default
+    outlier:  frontend/src/components/poll/form/index.js:12 default
+    ... 23 more outliers
+
+ 5. [D-b4e5ff] classes in misago/** (forms files) are named `*Form`
+    evidence: 28/28 (lower bound 0.88, lift 16.7)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  misago/account/forms.py#AccountDeleteForm
+    exempt:   misago/account/forms.py:68 AccountNotifications (shared part used by 2 members)
+    exempt:   misago/admin/categories/forms.py:47 AdminCategoryChoiceField (shared part used by 2 members)
+    exempt:   misago/admin/categories/forms.py:51 AdminCategoryMultipleChoiceField (another kind of class (extends forms.TreeNodeMultipleChoiceField))
+
+ 6. [D-d8703c] classes in misago/permissions/** call super().__call__()
+    evidence: 68/68 (lower bound 0.95, lift 7.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  misago/permissions/hooks/build_user_category_permissions.py#BuildUserCategoryPermissionsHook
+    exempt:   misago/permissions/checkutils.py:7 PermissionCheckResult (defines no __call__() of its own, so has no override that calls super().__call__())
+    exempt:   misago/permissions/panels.py:5 MisagoUserPermissionsPanel (defines no __call__() of its own, so has no override that calls super().__call__())
+    exempt:   misago/permissions/proxy.py:16 UserPermissionsProxy (defines no __call__() of its own, so has no override that calls super().__call__())
+    ... 3 more exempt
+
+ 7. [D-d93d41] functions in misago/posting/** declare their return type
+    evidence: 28/31 (lower bound 0.75, lift 3.2)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  misago/posting/approval.py#require_private_thread_approval
+    outlier:  misago/posting/processcontent.py:37 highlight_post_code_blocks
+    outlier:  misago/posting/processcontent.py:24 process_post_content
+    outlier:  misago/posting/shortcuts.py:6 save_edited_post
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

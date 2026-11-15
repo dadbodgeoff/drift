@@ -1,0 +1,50 @@
+5 conventions from 15893 units in 401 roles (5 default tier, 0 suggestions)
+
+5 default-tier proposal(s) are block candidates: not shown to agents until you accept them (`drift review --accept <id>`, or the Studio). People see them first.
+
+Default tier: block candidates, each reaches agents once you accept it, and may block once accepted (`drift review`, b)
+
+ 1. [D-fcb801] files in src/main/** do not import from src/renderer/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 644/645 (lower bound 0.99, lift 3.0)
+    tier:     default
+    agents:   not shown to agents (block candidate: reaches agents once you accept it)
+    example:  src/main/DaemonClient.ts#(file)
+    outlier:  src/main/quit/quitAndStopCopy.ts:1 (file)
+
+ 2. [D-00025a] files in src/daemon/** do not import from src/cli/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 364/366 (lower bound 0.98, lift 3.0)
+    tier:     default
+    agents:   not shown to agents (block candidate: reaches agents once you accept it)
+    example:  src/daemon/AgentProcessTracker.ts#(file)
+    outlier:  src/daemon/a2aRemote/discovery.ts:1 (file)
+    outlier:  src/daemon/a2aRemote/tailnet.ts:1 (file)
+
+ 3. [D-48e1a6] files in src/shared/** do not import from src/main/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 379/382 (lower bound 0.98, lift 3.0)
+    tier:     default
+    agents:   not shown to agents (block candidate: reaches agents once you accept it)
+    example:  src/shared/ShellDetector.ts#(file)
+    outlier:  src/shared/daemon/daemonLauncherCore.ts:1 (file)
+    outlier:  src/shared/daemon/daemonProgress.ts:1 (file)
+    outlier:  src/shared/processHandleLiveness.ts:1 (file)
+
+ 4. [D-c1a36d] files in src/shared/** do not import from src/daemon/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 379/382 (lower bound 0.98, lift 3.0)
+    tier:     default
+    agents:   not shown to agents (block candidate: reaches agents once you accept it)
+    example:  src/shared/ShellDetector.ts#(file)
+    outlier:  src/shared/agentFirstRun.ts:1 (file)
+    outlier:  src/shared/daemon/daemonLauncherCore.ts:1 (file)
+    outlier:  src/shared/toolRefusal.ts:1 (file)
+
+ 5. [D-e8699e] files in src/daemon/** do not import from src/main/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 351/366 (lower bound 0.93, lift 3.0)
+    tier:     default
+    agents:   not shown to agents (block candidate: reaches agents once you accept it)
+    example:  src/daemon/AgentProcessTracker.ts#(file)
+    outlier:  src/daemon/DaemonPTYBridge.ts:1 (file)
+    outlier:  src/daemon/OutputInterpreter.ts:1 (file)
+    outlier:  src/daemon/a2aRemote/continueRootGit.ts:1 (file)
+    ... 12 more outliers
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

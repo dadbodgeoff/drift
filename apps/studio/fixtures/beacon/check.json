@@ -1,0 +1,218 @@
+{
+ "violations": [
+  {
+   "id": "D-0f9742",
+   "path": "packages/core/src/fixtures-billing.ts",
+   "symbol": "(file)",
+   "line": 1,
+   "summary": "files in packages/core/** do not import from packages/app/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+   "evidence": "201/204",
+   "example": "packages/core/src/c0.ts#(file)",
+   "mode": "advise",
+   "tier": "default",
+   "baselined": false,
+   "suppressed": false,
+   "suppressed_neighbour": true,
+   "import": {
+    "module": "packages/app/index.ts",
+    "line": 0
+   }
+  },
+  {
+   "id": "D-0f9742",
+   "path": "packages/core/src/late.ts",
+   "symbol": "(file)",
+   "line": 1,
+   "summary": "files in packages/core/** do not import from packages/app/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+   "evidence": "201/204",
+   "example": "packages/core/src/c0.ts#(file)",
+   "mode": "advise",
+   "tier": "default",
+   "baselined": false,
+   "suppressed": false,
+   "import": {
+    "module": "packages/app/index.ts",
+    "line": 0
+   }
+  },
+  {
+   "id": "D-0f9742",
+   "path": "packages/core/src/legacy.ts",
+   "symbol": "(file)",
+   "line": 1,
+   "summary": "files in packages/core/** do not import from packages/app/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+   "evidence": "201/204",
+   "example": "packages/core/src/c0.ts#(file)",
+   "mode": "advise",
+   "tier": "default",
+   "baselined": true,
+   "suppressed": false,
+   "import": {
+    "module": "packages/app/index.ts",
+    "line": 0
+   }
+  },
+  {
+   "id": "D-3a1c98",
+   "path": "packages/ui/src/debug-panel.ts",
+   "symbol": "(file)",
+   "line": 1,
+   "summary": "files in packages/ui/** do not import from apps/portal/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+   "evidence": "120/121",
+   "example": "packages/ui/src/part0.ts#(file)",
+   "mode": "advise",
+   "tier": "default",
+   "baselined": true,
+   "suppressed": false,
+   "import": {
+    "module": "apps/portal/lib/format/f1.ts",
+    "specifier": "../../../apps/portal/lib/format/f1",
+    "line": 1
+   }
+  },
+  {
+   "id": "D-8394d6",
+   "path": "apps/portal/app/api/refunds/route.ts",
+   "symbol": "GET",
+   "line": 1,
+   "summary": "apps/portal: HTTP handlers in app/** (route files) are wrapped in withSession()",
+   "evidence": "31/33",
+   "example": "apps/portal/app/api/accounts/route.ts#GET",
+   "mode": "advise",
+   "tier": "default",
+   "baselined": false,
+   "suppressed": false
+  },
+  {
+   "id": "D-8394d6",
+   "path": "apps/portal/app/api/status/route.ts",
+   "symbol": "GET",
+   "line": 1,
+   "summary": "apps/portal: HTTP handlers in app/** (route files) are wrapped in withSession()",
+   "evidence": "31/33",
+   "example": "apps/portal/app/api/accounts/route.ts#GET",
+   "mode": "advise",
+   "tier": "default",
+   "baselined": true,
+   "suppressed": false
+  }
+ ],
+ "fixed": [],
+ "exempt": [
+  {
+   "id": "D-0f9742",
+   "path": "packages/core/src/fixtures.ts",
+   "symbol": "(file)",
+   "line": 1,
+   "code": "different_kind",
+   "reason": "a person set this file apart as a different kind of thing (drift review)"
+  },
+  {
+   "id": "D-0f9742",
+   "path": "packages/core/src/seed.ts",
+   "symbol": "(file)",
+   "line": 1,
+   "code": "different_kind",
+   "reason": "a person set this file apart as a different kind of thing (drift review)"
+  },
+  {
+   "id": "D-8394d6",
+   "path": "apps/portal/app/api/health/route.ts",
+   "symbol": "GET",
+   "line": 1,
+   "code": "different_kind",
+   "reason": "a person set this file apart as a different kind of thing (drift review)"
+  }
+ ],
+ "suppressed_neighbour": [
+  {
+   "id": "D-0f9742",
+   "path": "packages/core/src/fixtures-billing.ts",
+   "symbol": "(file)",
+   "line": 1,
+   "nearest_apart": "packages/core/src/fixtures.ts#(file)",
+   "apart_code": "different_kind",
+   "apart_distance": 0,
+   "nearest_holder": "packages/core/src/c100.ts#(file)",
+   "holder_distance": 0.25
+  }
+ ],
+ "conventions": [
+  {
+   "id": "D-0f9742",
+   "status": "accepted",
+   "mode": "advise",
+   "effective_mode": "advise",
+   "tier": "default",
+   "tier_reason": null,
+   "language": "ts",
+   "names_package": false,
+   "rule_kind": "avoids:import",
+   "members": 204,
+   "blockable": true,
+   "agents": {
+    "shown_to_agents": true,
+    "reason": "default_tier",
+    "source": "default tier, accepted",
+    "text": "shown to agents (default tier)"
+   }
+  },
+  {
+   "id": "D-3a1c98",
+   "status": "accepted",
+   "mode": "advise",
+   "effective_mode": "advise",
+   "tier": "default",
+   "tier_reason": null,
+   "language": "ts",
+   "names_package": false,
+   "rule_kind": "avoids:import",
+   "members": 121,
+   "blockable": true,
+   "agents": {
+    "shown_to_agents": true,
+    "reason": "default_tier",
+    "source": "default tier, accepted",
+    "text": "shown to agents (default tier)"
+   }
+  },
+  {
+   "id": "D-6ff644",
+   "status": "rejected",
+   "mode": "advise",
+   "effective_mode": "advise",
+   "tier": "default",
+   "tier_reason": null,
+   "language": "ts",
+   "names_package": false,
+   "rule_kind": "avoids:import",
+   "members": 122,
+   "blockable": true,
+   "agents": {
+    "shown_to_agents": false,
+    "reason": "candidate",
+    "source": "default tier (block candidate)",
+    "text": "not shown to agents (block candidate: reaches agents once you accept it)"
+   }
+  },
+  {
+   "id": "D-8394d6",
+   "status": "accepted",
+   "mode": "advise",
+   "effective_mode": "advise",
+   "tier": "default",
+   "tier_reason": null,
+   "language": "ts",
+   "names_package": false,
+   "rule_kind": "wrapped_by:call",
+   "members": 33,
+   "blockable": true,
+   "agents": {
+    "shown_to_agents": true,
+    "reason": "default_tier",
+    "source": "default tier, accepted",
+    "text": "shown to agents (default tier)"
+   }
+  }
+ ]
+}

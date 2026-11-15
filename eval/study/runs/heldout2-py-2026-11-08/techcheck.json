@@ -1,0 +1,284 @@
+{
+  "manifest": "eval/holdout-2-2026-11-07-py.json",
+  "set_id": "py-heldout2-2026-11-07",
+  "drift_sha256": "41edaa85c656d5161430dc88c0549da4e908aca7c110a54dc3f0a612d7fec015",
+  "min_parseable": 200,
+  "results": [
+    {
+      "name": "statsmodels",
+      "sha": "772cb34aff9e95f5c3eb10f1fe1ff6cd393daa69",
+      "clone": true,
+      "scan": true,
+      "files": 1177,
+      "parse_errors": 0,
+      "parseable": 1177,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "flagsmith",
+      "sha": "4449ad4231392545807649e3b52a595999e0512d",
+      "clone": true,
+      "scan": true,
+      "files": 2789,
+      "parse_errors": 1,
+      "parseable": 2788,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "kunlun-m",
+      "sha": "04635cce43d7551b369b471ff3160c626ce5980a",
+      "clone": true,
+      "scan": true,
+      "files": 406,
+      "parse_errors": 0,
+      "parseable": 406,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "alphamaster",
+      "sha": "3727daf2d2cb5d7361bdbdb0867dba830a06cdf2",
+      "clone": true,
+      "scan": true,
+      "files": 181,
+      "parse_errors": 0,
+      "parseable": 181,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (181)"
+    },
+    {
+      "name": "dcs_liberation",
+      "sha": "2506d42674a36a1a581aeef6b5dd3476ff90c522",
+      "clone": true,
+      "scan": true,
+      "files": 684,
+      "parse_errors": 0,
+      "parseable": 684,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "supoclip",
+      "sha": "c62f3a5afd2744344b238d6f06bcfc70c6eac85e",
+      "clone": true,
+      "scan": true,
+      "files": 745,
+      "parse_errors": 0,
+      "parseable": 745,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "shhh",
+      "sha": "448acf4bed058d27a28a939b1ff5fba1601e2273",
+      "clone": true,
+      "scan": true,
+      "files": 31,
+      "parse_errors": 0,
+      "parseable": 31,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (31)"
+    },
+    {
+      "name": "nlweb",
+      "sha": "b423f15d9aeaa023ce75993ac9deed2354597043",
+      "clone": true,
+      "scan": true,
+      "files": 294,
+      "parse_errors": 0,
+      "parseable": 294,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "fenic",
+      "sha": "486e535508c16825069f5c33768cab25b031e143",
+      "clone": true,
+      "scan": true,
+      "files": 479,
+      "parse_errors": 0,
+      "parseable": 479,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "ghidramcp-ai-rename",
+      "sha": "bf591b526e44b5de2594c8c739bb2c17917ad86b",
+      "clone": true,
+      "scan": true,
+      "files": 7,
+      "parse_errors": 0,
+      "parseable": 7,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (7)"
+    }
+  ],
+  "reserves": [
+    {
+      "name": "django-oscar",
+      "sha": "a5ed3c9c17d4cf6ee18aa9795b493172416ab68b",
+      "clone": true,
+      "scan": true,
+      "files": 637,
+      "parse_errors": 0,
+      "parseable": 637,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "vmlx",
+      "sha": "350bea16eb40dfb7faddcb8b5508274963829f92",
+      "clone": true,
+      "scan": true,
+      "files": 2126,
+      "parse_errors": 0,
+      "parseable": 2126,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "octis",
+      "sha": "8f9a0ac5a12e3b72ecd77dcba4f181c77e4595f1",
+      "clone": true,
+      "scan": true,
+      "files": 89,
+      "parse_errors": 0,
+      "parseable": 89,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (89)"
+    },
+    {
+      "name": "lingbot-vla",
+      "sha": "4eb34b7693a0565c67433f8fac9c59a2e67eb60b",
+      "clone": true,
+      "scan": true,
+      "files": 111,
+      "parse_errors": 0,
+      "parseable": 111,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (111)"
+    },
+    {
+      "name": "future-agi",
+      "sha": "28e729aab169d75a2ca856fb4ed67fd1dda5901a",
+      "clone": true,
+      "scan": true,
+      "files": 8698,
+      "parse_errors": 0,
+      "parseable": 8698,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "agenticx",
+      "sha": "4383e6692116f309d781a9c295a257198da44c71",
+      "clone": true,
+      "scan": true,
+      "files": 5355,
+      "parse_errors": 1,
+      "parseable": 5354,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "sleepy",
+      "sha": "c0795250eb8508991c782b399c088af46b960a08",
+      "clone": true,
+      "scan": true,
+      "files": 36,
+      "parse_errors": 0,
+      "parseable": 36,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (36)"
+    },
+    {
+      "name": "sqlalchemy",
+      "sha": "4b13b4a246f3c53b8ed717648194f8893e70ff30",
+      "clone": true,
+      "scan": true,
+      "files": 678,
+      "parse_errors": 0,
+      "parseable": 678,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "pykeen",
+      "sha": "5beaada8623a7bc368db9f29a7a43ddd237888a6",
+      "clone": true,
+      "scan": true,
+      "files": 347,
+      "parse_errors": 0,
+      "parseable": 347,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "augmentoolkit",
+      "sha": "ec18b905f8a2fc1d64d345c04856cf2f036d9fc6",
+      "clone": true,
+      "scan": true,
+      "files": 128,
+      "parse_errors": 0,
+      "parseable": 128,
+      "pass": false,
+      "reason": "fewer than 200 parseable files (128)"
+    },
+    {
+      "name": "toil",
+      "sha": "5f8e625323a46523cb1746742de7fbf56a5f2634",
+      "clone": true,
+      "scan": true,
+      "files": 269,
+      "parse_errors": 1,
+      "parseable": 268,
+      "pass": true,
+      "reason": null
+    },
+    {
+      "name": "mobilerun",
+      "sha": "e34004270a9d7b68824b94a3a5ba6698cefea69d",
+      "clone": true,
+      "scan": true,
+      "files": 207,
+      "parse_errors": 0,
+      "parseable": 207,
+      "pass": true,
+      "reason": null
+    }
+  ],
+  "replaced": [
+    {
+      "date": "2026-11-08",
+      "repo": "alphamaster",
+      "reserve": "django-oscar",
+      "reason": "technical check: fewer than 200 parseable files (181)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "shhh",
+      "reserve": "vmlx",
+      "reason": "technical check: fewer than 200 parseable files (31)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "ghidramcp-ai-rename",
+      "reserve": "octis",
+      "reason": "technical check: fewer than 200 parseable files (7)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "octis",
+      "reserve": "lingbot-vla",
+      "reason": "technical check: fewer than 200 parseable files (89)"
+    },
+    {
+      "date": "2026-11-08",
+      "repo": "lingbot-vla",
+      "reserve": "future-agi",
+      "reason": "technical check: fewer than 200 parseable files (111)"
+    }
+  ]
+}

@@ -1,0 +1,145 @@
+---
+source: crates/drift-py/tests/conformance.rs
+expression: "serde_json::to_string_pretty(&r).unwrap()"
+---
+{
+  "schema_version": 11,
+  "files": [
+    {
+      "path": "Markdown/core.py",
+      "hash": "09c469bf6e57f8cb6a152a5f59b6614910fb0d2d252e63941e425427d3779fc8",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "render",
+          "origin": "Markdown/core.py#render",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "render",
+          "kind": "function",
+          "exported_as": [
+            "render"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "app.py",
+      "hash": "c56569f1ff58a7e0e06de49997ceed109cf0e32b5fc286ca6fdfc4f8aae669cb",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "Markdown/core.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "models.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:Models",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:markdown",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "main",
+          "origin": "app.py#main",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "main",
+          "kind": "function",
+          "exported_as": [
+            "main"
+          ],
+          "line": 7,
+          "wraps": [],
+          "calls": [
+            "Markdown/core.py#render"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "arg_value:Markdown/core.py#render"
+          ],
+          "string_literals": 0,
+          "order": [
+            "Markdown/core.py#render"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "models.py",
+      "hash": "3ceae248eacaf486357192011806a5bf7ebc58462f64e88fa1ddffd9be3cda4b",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "x",
+          "origin": "models.py#x",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "x",
+          "kind": "variable",
+          "exported_as": [
+            "x"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    }
+  ],
+  "skipped": []
+}

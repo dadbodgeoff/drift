@@ -1,0 +1,71 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - ExpandableTransactionItem
+  - Page
+  - _layout
+  - chains
+  - config
+  - constants
+  - contract
+  - create
+  - errors
+  - eslint
+  - feature
+  - hooks
+  - jest
+  - main
+  - messages
+  - mockData
+  - notifications
+  - safeContracts
+  - styles
+  - theme
+  - transactions
+  - types
+  - useSimulation
+  - utils
+  - validation
+  suffixes:
+  - builder
+  - config
+  - container
+  - cy
+  - e2e
+  - fixtures
+  - page
+  - pages
+  - service
+  - setup
+  - spec
+  - stories
+  - template
+  - test
+  - types
+conventions:
+- id: D-bb1a47
+  status: proposed
+  mode: advise
+  summary: >-
+    files in packages/utils/** do not import from apps/web/** (declared
+    dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: packages/utils
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:apps/web
+  evidence:
+    holders: 177
+    total: 178
+    lower_bound: 0.969
+    lift: 3.0
+  example: packages/utils/eslint.config.mjs#(file)
+  selector_version: 3

@@ -1,0 +1,97 @@
+12 conventions from 3083 units in 272 roles (0 default tier, 12 suggestions)
+
+12 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-410f0a] packages/admin-web-angular: classes in src/** (*.component files) are named `*Component`
+    evidence: 266/267 (lower bound 0.98, lift 2.5)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/admin-web-angular/src/app/@shared/carrier/carrier-mutation/carrier-mutation.component.ts#CarrierMutationComponent
+    outlier:  packages/admin-web-angular/src/app/@shared/render-component/store-product-is-available-checkbox/is-available-checkbox.component.ts:27 IsAvailableCheckBox
+
+ 2. [D-728139] packages/merchant-tablet-ionic: classes in src/** are decorated with Component()
+    evidence: 51/52 (lower bound 0.90, lift 2.1)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  packages/merchant-tablet-ionic/src/components/carrier-deliveries-table/customer.ts#CustomerComponent
+    outlier:  packages/merchant-tablet-ionic/src/@shared/forms/helpers.ts:4 FormHelpers
+
+ 3. [D-49be71] packages/shop-mobile-ionic: classes in src/** (*.module files) are named `*Module`
+    evidence: 41/42 (lower bound 0.88, lift 3.5)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/shop-mobile-ionic/src/app/+server-down/server-down.module.ts#ServerDownPageModule
+    outlier:  packages/shop-mobile-ionic/src/app/pages/+products/common/common-products.module.ts:16 CommonProducts
+
+ 4. [D-75c6f7] packages/core: classes in src/services/** are decorated with injectable(), except a class (of another kind)
+    evidence: 32/33 (lower bound 0.85, lift 27.8)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  packages/core/src/services/admins/AdminsService.ts#AdminsService
+    outlier:  packages/core/src/services/users/UserCommandService.ts:21 GetAboutUsCommand
+    exempt:   packages/core/src/services/users/UserCommandService.ts:64 GetAboutUsHandler (another kind of class (decorated with CommandHandler()))
+
+ 5. [D-96dc9f] packages/merchant-tablet-ionic: classes in src/** (*.component files) are named `*Component`
+    evidence: 32/33 (lower bound 0.85, lift 2.4)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/merchant-tablet-ionic/src/@shared/google-map/google-map.component.ts#GoogleMapComponent
+    outlier:  packages/merchant-tablet-ionic/src/pages/+warehouse/product-pictures-popup/product-images-popup.component.ts:10 ProductImagesPopup
+
+ 6. [D-07cce0] packages/shop-web-angular: classes in src/** (*.component files) are named `*Component`
+    evidence: 29/30 (lower bound 0.83, lift 2.4)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/shop-web-angular/src/app/+login/byLocation/byLocation.component.ts#LoginByLocationComponent
+    outlier:  packages/shop-web-angular/src/app/+login/login.component.ts:30 MyErrorStateMatcher
+
+ 7. [D-d08791] packages/shop-mobile-expo: components in src/components/** do not use `any`
+    evidence: 27/28 (lower bound 0.82, lift 7.2)
+    tier:     suggestion (rule kind avoids:other)
+    agents:   not shown to agents (family below admission bar: 50% of 2)
+    example:  packages/shop-mobile-expo/src/components/BuyProductBtn.tsx#BuyProductBtn
+    outlier:  packages/shop-mobile-expo/src/components/Providers/Paper.tsx:45 PaperProvider
+
+ 8. [D-0d5819] packages/core: classes in src/services/** are named `*Service`, except a companion (a helper or constant beside the members that follow it)
+    evidence: 31/33 (lower bound 0.80, lift 9.6)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/core/src/services/admins/AdminsService.ts#AdminsService
+    outlier:  packages/core/src/services/services.app.ts:50 ServicesApp
+    outlier:  packages/core/src/services/users/UserCommandService.ts:21 GetAboutUsCommand
+    exempt:   packages/core/src/services/users/UserCommandService.ts:64 GetAboutUsHandler (another kind of class (decorated with CommandHandler()) beside UserCommandService, which follows the scheme)
+
+ 9. [D-024ccb] packages/merchant-tablet-ionic: classes in src/components/** are named `*Component`
+    evidence: 31/33 (lower bound 0.80, lift 2.4)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/merchant-tablet-ionic/src/components/carrier-deliveries-table/customer.ts#CustomerComponent
+    outlier:  packages/merchant-tablet-ionic/src/components/confirm-delete-popup/confirm-delete-popup.ts:17 ConfirmDeletePopupPage
+    outlier:  packages/merchant-tablet-ionic/src/components/order-map-popup/order-map-popup.ts:21 OrderMapPopupPage
+
+10. [D-5bf6fb] packages/common-angular: classes in src/routers/** (*.service files) are named `*Router`
+    evidence: 20/21 (lower bound 0.77, lift 50.7)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/common-angular/src/routers/carrier-orders-router.service.ts#CarrierOrdersRouter
+    outlier:  packages/common-angular/src/routers/warehouse-users.service.ts:9 WarehouseUsersService
+
+11. [D-413b34] packages/admin-web-angular: classes in src/** (*.service files) are decorated with Injectable()
+    evidence: 29/32 (lower bound 0.76, lift 6.6)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  packages/admin-web-angular/src/app/@core/auth/admin-auth-strategy.service.ts#AdminAuthStrategy
+    outlier:  packages/admin-web-angular/src/app/@core/services/dashboard/orders-chart.service.ts:4 OrdersChart
+    outlier:  packages/admin-web-angular/src/app/@core/services/dashboard/orders-profit-chart.service.ts:6 OrderProfitChartSummary
+    outlier:  packages/admin-web-angular/src/app/@core/services/dashboard/profit-chart.service.ts:4 ProfitChart
+
+12. [D-5b38bb] packages/admin-web-angular: classes in src/app/@core/data/** (*.service files) are named `*Service`
+    evidence: 18/19 (lower bound 0.75, lift 10.0)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/admin-web-angular/src/app/@core/data/admins.service.ts#AdminsService
+    outlier:  packages/admin-web-angular/src/app/@core/data/store.service.ts:6 Store
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

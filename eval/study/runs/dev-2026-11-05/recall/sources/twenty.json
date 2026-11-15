@@ -1,0 +1,177 @@
+{
+  "repo": "twenty",
+  "files": [
+    {
+      "path": ".claude/skills/qa-scout/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/syncable-entity-builder-and-validation/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/syncable-entity-cache-and-transform/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/syncable-entity-integration/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/syncable-entity-runner-and-actions/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/syncable-entity-testing/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/syncable-entity-types-and-constants/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".github/CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/twenty-agent-skills/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/twenty-agent-skills/CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/twenty-apps/public/call-recorder/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/twenty-apps/public/call-recorder/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/twenty-apps/public/companion/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/twenty-apps/public/companion/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/twenty-apps/public/fathom/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/twenty-apps/public/fathom/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/twenty-apps/public/granola/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/twenty-apps/public/granola/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/twenty-apps/public/last-contact/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/twenty-apps/public/last-contact/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/twenty-apps/public/linear/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/twenty-apps/public/linkedin/CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/twenty-cli/CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/twenty-docs/developers/contribute/capabilities/frontend-development/style-guide.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/twenty-docs/developers/contribute/style-guide.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/create-twenty-app/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/twenty-cli/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/twenty-client-sdk/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/twenty-docs/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/twenty-emails/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/twenty-front-component-renderer/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/twenty-front/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/twenty-oxlint-rules/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/twenty-sdk/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/twenty-server/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/twenty-shared/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/twenty-ui/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/twenty-website/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/twenty-zapier/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "14 more .oxlintrc.json files, e.g. packages/twenty-apps/internal/real-estate/.oxlintrc.json, packages/twenty-apps/public/call-recorder/.oxlintrc.json, packages/twenty-apps/public/companion/.oxlintrc.json",
+      "kind": "lint (collapsed: read one or two)"
+    },
+    {
+      "path": "packages/twenty-oxlint-rules/",
+      "kind": "lint_custom (custom rule implementations)"
+    }
+  ]
+}

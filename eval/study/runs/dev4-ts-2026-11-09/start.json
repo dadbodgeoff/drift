@@ -1,0 +1,18 @@
+{
+  "//": "Start record of a dev4 census (WS-E at F11), committed and pushed before the census. held_out is false: dev4 is a blind dev pool (role dev), not a held-out set.",
+  "held_out": false,
+  "status": "started",
+  "role": "dev",
+  "manifest": "eval/study/runs/dev4-ts-2026-11-09/manifest.json",
+  "manifest_sha256": "07c98e01d3316ddc3d574ae86c5cc46ef6a4562a82214a5c0d885aa2ce9145b3",
+  "set_id": "ts-dev4-2026-11-08",
+  "source_manifest": "eval/dev4-2026-11-08.json",
+  "source_core_sha256": "89ef6d3a053a8f8716fa0b5ed54ad823da7db3765f7554dbaec955db8d99460e",
+  "product_commit": "1a44d7effbc6cd8c41a119524266630fdfce14de",
+  "binary": "/home/user/drift-bin/f11/drift",
+  "binary_sha256": "9a8c7cd52483b8678e2dd3fb9f32a488d0be592d0e476a8be511f09aa20bd247",
+  "tooling_base": "e86a3827eed6293a8afc1d3b20e575d5a46ed5b1",
+  "python_proposals": false,
+  "prereg": "eval/study/PREREG-F11-dev4-check.md",
+  "started_at": "2026-11-09T03:15:35.967Z"
+}

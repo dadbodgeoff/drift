@@ -1,0 +1,29 @@
+{
+  "//": "sha256 of the harness payloads and raw samples, kept out of the repository (they quote repository code).",
+  "files": {
+    "P04/payloads.json": "5bb5375d4af1439f33a21f58139ba2e2c8b58be605e2f97c3761f5aed761dc62",
+    "P04/samples.jsonl": "c47dd05575f9b03307ef0995353a2773a5a0be9dccfead59f825884bfb4ec599",
+    "P11/payloads.json": "e75ef0d35904bd786d0070065d3e7015cf630eb49b96d6488cf6d93a1e3210bf",
+    "P11/samples.jsonl": "43a0678cb64153ca52462ec36f9a27d39a4a0b2d63c1b7315cfdd33687ddeacc",
+    "P13/payloads.json": "f122439507ba6560f82858b9eb3fbc0f521f018cfa74165ce798fb58c30a418a",
+    "P13/samples.jsonl": "d900748f2a52912013e583d540fd7e7b2d298159e03410f2858bbeecf56bd92e",
+    "T02/payloads.json": "39325d2ededdc97f0922830edb31dd58dde3a5943bcf81900dd87b3ac5529996",
+    "T02/samples.jsonl": "6265e76a835c80b543bed8a1b1a6bed17db89c97c2a009ecf1df0597745daed0",
+    "T03/payloads.json": "c4a8f85b17ebe7d6cafd83a3a621599eb553a6934209282e12708fadc2ca8f40",
+    "T03/samples.jsonl": "f4f47ffa9ff439c2f3896f3836d68506e0e3af9034e66de3ec89ff6f2694c134",
+    "T04/payloads.json": "0628910c5bb710cd26ee9c7fed8b97de31a79fa47a8493c34db619ac76d64223",
+    "T04/samples.jsonl": "6910deb794b2947d44421dce868425a7310f5698839b5b3a07c387e1a323fccc",
+    "T05/payloads.json": "2fff0ffc23e97716ba566243ab2e0ce675d86efb4f6d9e88dc8ac95b72e0f821",
+    "T05/samples.jsonl": "0cdc6957736ecdf3c7f9b3a6d67196457d9b446073dcffcb6d81a76ef11acd91",
+    "T12/payloads.json": "09fb30802cf022664d5fab13a2bc8b8a8cc462b9cfb6f370018129381d793b3c",
+    "T12/samples.jsonl": "4ed38e97f2aec86c3096e9549221f213d4d8c3773896c04aada66676137b006b",
+    "T19/payloads.json": "cdb206b7d7738b8f4cd0c3101a62f8ff259be12f07e472095269e1a66e6bd8cd",
+    "T19/samples.jsonl": "6d0bf47023796f23be74b4f82e5a10ce86e819f279a08e248b1fb273164d7beb",
+    "T22/payloads.json": "6208334c2c8df5aeb264215f24b0646e777658010f4f15d590a69c415297c47c",
+    "T22/samples.jsonl": "609d1729b001c50c6caf09badf74fcc4893af5dfe30d5246a4b54f53f14eae32",
+    "T23/payloads.json": "202ba899c5e9532288f4c05c010069d086466c37291f7dc0a1320f100914fb46",
+    "T23/samples.jsonl": "a44b6c456d1ec640e333513ca8d9920861c9fdf8bf69aaf823be787c923a6bf4",
+    "T30/payloads.json": "18930b6a34420c93e44a7147312d7d8c6dfc1f3abba8cd59d0b57956fd569489",
+    "T30/samples.jsonl": "d5f4405fa99cdce8a2dd66f70e8ceb1e6f4c85af06e701638ff41371a2b80982"
+  }
+}

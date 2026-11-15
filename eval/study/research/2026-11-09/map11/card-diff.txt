@@ -1,0 +1,12 @@
+Card diff (proposals of census --json --max 15), totals: {"added_kind":11,"shown_added_kind":11,"added_test":3,"shown_added_test":3}
+  T02                            {"added_kind":1,"shown_added_kind":1}
+  T08                            {"added_kind":1,"shown_added_kind":1}
+  T13                            {"added_kind":1,"shown_added_kind":1}
+  cal.com                        {"added_kind":1,"shown_added_kind":1}
+  documenso                      {"added_kind":1,"shown_added_kind":1}
+  dub                            {"added_kind":1,"shown_added_kind":1}
+  formbricks                     {"added_kind":1,"shown_added_kind":1}
+  infisical                      {"added_kind":1,"shown_added_kind":1}
+  midday                         {"added_kind":3,"shown_added_kind":3}
+  novu                           {"added_test":1,"shown_added_test":1}
+  trpc                           {"added_test":2,"shown_added_test":2}

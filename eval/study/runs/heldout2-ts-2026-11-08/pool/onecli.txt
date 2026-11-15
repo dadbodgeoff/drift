@@ -1,0 +1,77 @@
+7 conventions from 7475 units in 301 roles (0 default tier, 7 suggestions)
+
+7 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-cc64dd] prisma models have a `id` field
+    evidence: 83/91 (lower bound 0.84, lift 1.0)
+    tier:     suggestion (rule kind model_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  packages/db/prisma/schema.prisma#Account
+    outlier:  packages/db/prisma/schema.prisma:1764 AgentLibrarySkill
+    outlier:  packages/db/prisma/schema.prisma:3100 BudgetSpend
+    outlier:  packages/db/prisma/schema.prisma:1967 ChannelSpaceReconciliation
+    ... 5 more outliers
+
+ 2. [D-b911e8] packages/api: functions in src/routes/** are named `*Routes`, except 3 companions (a helper or constant beside the members that follow it) and 2 shared parts (used by several members, not a member)
+    evidence: 75/82 (lower bound 0.83, lift 26.7)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/api/src/routes/agent-approval-outcomes.ts#agentApprovalOutcomeRoutes
+    outlier:  packages/api/src/routes/auth-session.ts:112 initSessionHooks
+    outlier:  packages/api/src/routes/channel-inbound-slack.ts:249 settleDetachedRepliesForTests
+    outlier:  packages/api/src/routes/instance-egress.ts:50 egressSyncToken
+    ... 4 more outliers
+    exempt:   packages/api/src/routes/connections.ts:51 disconnectOwnedConnection (shared part used by 2 members)
+    exempt:   packages/api/src/routes/connections.ts:99 renameOwnedConnection (shared part used by 2 members)
+    exempt:   packages/api/src/routes/instance-egress.ts:53 buildEgressFeed (a helper of instanceEgressRoutes, which uses it in its file)
+    ... 2 more exempt
+
+ 3. [D-1e0151] packages/api: functions in src/ee/routes/** are named `*Routes`, except a shared part (used by several members, not a member)
+    evidence: 19/19 (lower bound 0.83, lift 29.4)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/api/src/ee/routes/aws-marketplace.ts#awsMarketplaceRoutes
+    exempt:   packages/api/src/ee/routes/folder-route-params.ts:11 requiredConnectionId (shared part used by 2 members)
+
+ 4. [D-391beb] prisma models have a `createdAt` field
+    evidence: 82/91 (lower bound 0.82, lift 1.0)
+    tier:     suggestion (rule kind model_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  packages/db/prisma/schema.prisma#Account
+    outlier:  packages/db/prisma/schema.prisma:2999 AppAvailabilityRuleIdentity
+    outlier:  packages/db/prisma/schema.prisma:2839 AppConnection
+    outlier:  packages/db/prisma/schema.prisma:3100 BudgetSpend
+    ... 6 more outliers
+
+ 5. [D-608b7b] sql models have a `created_at` field
+    evidence: 98/110 (lower bound 0.82, lift 1.0)
+    tier:     suggestion (rule kind model_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  packages/db/prisma/migrations/0_init/migration.sql#AuditLog
+    outlier:  packages/db/prisma/migrations/0_init/migration.sql:21 ConnectedService
+    outlier:  packages/db/prisma/migrations/20260316175458_agent_secret_permissions/migration.sql:5 AgentSecret
+    outlier:  packages/db/prisma/migrations/20260326064538_add_user_geo_and_last_login/migration.sql:2 to
+    ... 9 more outliers
+
+ 6. [D-399322] sql models have a `id` field
+    evidence: 98/110 (lower bound 0.82, lift 1.0)
+    tier:     suggestion (rule kind model_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  packages/db/prisma/migrations/0_init/migration.sql#AuditLog
+    outlier:  packages/db/prisma/migrations/20260316175458_agent_secret_permissions/migration.sql:5 AgentSecret
+    outlier:  packages/db/prisma/migrations/20260324113112_add_account_layer/migration.sql:21 account_members
+    outlier:  packages/db/prisma/migrations/20260326064538_add_user_geo_and_last_login/migration.sql:2 to
+    ... 9 more outliers
+
+ 7. [D-e596bb] apps/web: pages in src/app/(dashboard)/** (page files) are named `*Page`
+    evidence: 30/33 (lower bound 0.76, lift 9.5)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  apps/web/src/app/(dashboard)/org/[orgId]/(admin)/channels/page.tsx#ChannelsSettingsPage
+    outlier:  apps/web/src/app/(dashboard)/org/[orgId]/(admin)/groups/page.tsx:5 Page
+    outlier:  apps/web/src/app/(dashboard)/org/[orgId]/(admin)/settings/app-availability/page.tsx:5 Page
+    outlier:  apps/web/src/app/(dashboard)/org/[orgId]/(admin)/settings/sso/page.tsx:5 Page
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

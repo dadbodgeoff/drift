@@ -1,0 +1,91 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - apps
+  - filtersets
+  - forms
+  - helpers
+  - powersync
+  - serializers
+  - signals
+  - tasks
+  - urls
+  - validators
+  - views
+  suffixes: []
+  layers:
+  - api/views
+conventions:
+- id: D-f93026
+  status: proposed
+  mode: advise
+  summary: serializers in wger/** (serializers files) are named `*Serializer`
+  role:
+    package: ""
+    dir: wger
+    file: serializers
+    entry: '-'
+    kind: class
+    member_kind: serializer
+  rule:
+    type: named
+    pattern: "*Serializer"
+  evidence:
+    holders: 76
+    total: 76
+    lower_bound: 0.952
+    lift: 6.4
+    python_members: 76
+  example: wger/core/api/serializers.py#LanguageCheckSerializer
+  selector_version: 3
+- id: D-3755b1
+  status: proposed
+  mode: advise
+  summary: exported values in wger/** (urls files) call urls.path()
+  role:
+    package: ""
+    dir: wger
+    file: urls
+    entry: '-'
+    kind: variable
+  rule:
+    type: calls
+    callee: pkg:django#urls.path
+  evidence:
+    holders: 44
+    total: 46
+    lower_bound: 0.855
+    lift: 3.63
+    python_members: 46
+  example: wger/config/urls.py#patterns_gym_config
+  selector_version: 3
+- id: D-82d21d
+  status: proposed
+  mode: advise
+  summary: >-
+    HTTP handlers in wger/** (api/views files) are decorated with
+    utils.extend_schema()
+  role:
+    package: ""
+    dir: wger
+    file: api/views
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:drf_spectacular#utils.extend_schema
+  evidence:
+    holders: 25
+    total: 26
+    lower_bound: 0.811
+    lift: 11.231
+    python_members: 26
+  example: wger/core/api/views.py#ApplicationVersionView.get
+  selector_version: 3

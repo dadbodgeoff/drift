@@ -1,0 +1,87 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - client
+  - contracts
+  - demoMiddleware
+  - evaluate
+  - install
+  - layout
+  - main
+  - page
+  - route
+  - types
+  suffixes:
+  - config
+  - repository
+  - test
+conventions:
+- id: D-005b17
+  status: proposed
+  mode: advise
+  summary: >-
+    files in app/lib/** do not import from app/policies/** (declared dependencies,
+    and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: app/lib
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:app/policies
+  evidence:
+    holders: 230
+    total: 232
+    lower_bound: 0.969
+    lift: 3.0
+  example: app/lib/AgentFilterContext.tsx#(file)
+  selector_version: 3
+- id: D-546fe2
+  status: proposed
+  mode: advise
+  summary: >-
+    functions in app/** (demoMiddleware files) are named `demo*`, except 2 shared
+    parts (used by several members, not a member)
+  role:
+    package: ""
+    dir: app
+    file: demoMiddleware
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: demo*
+  evidence:
+    holders: 38
+    total: 38
+    lower_bound: 0.908
+    lift: 48.2
+    role_members: 40
+  example: app/lib/demo/demoMiddleware.actions.ts#demoActionArtifacts
+  selector_version: 3
+- id: D-304043
+  status: proposed
+  mode: advise
+  summary: pages in app/** (page files) are named `*Page`
+  role:
+    package: ""
+    dir: app
+    file: page
+    entry: page
+    kind: component
+  rule:
+    type: named
+    pattern: "*Page"
+  evidence:
+    holders: 51
+    total: 52
+    lower_bound: 0.899
+    lift: 3.923
+  example: app/agents/page.tsx#AgentsPage
+  selector_version: 3

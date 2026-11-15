@@ -1,0 +1,18 @@
+{
+  "manifest": "eval/apps11-build.json",
+  "manifest_set_id": "apps11-build-2026-11-09",
+  "drift": {
+    "path": "/home/user/drift-bin/f11/drift",
+    "sha256": "9a8c7cd52483b8678e2dd3fb9f32a488d0be592d0e476a8be511f09aa20bd247",
+    "commit": "cgu83-1a44d7ef-1794188563"
+  },
+  "params": {
+    "max": 15,
+    "views": [
+      "root default",
+      "root --python-proposals",
+      "per package --root (defaults; Python packages also --python-proposals)"
+    ]
+  },
+  "started_at": "2026-11-09T03:47:47.794Z"
+}

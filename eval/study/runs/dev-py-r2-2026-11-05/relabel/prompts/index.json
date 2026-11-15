@@ -1,0 +1,274 @@
+[
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "polar",
+    "prompt": "/home/user/drift-wt/label-py/eval/study/runs/dev-py-r2-2026-11-05/relabel/prompts/label/A/polar.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/outbox/7d33a3e0-9ef9-440d-aa86-be697ce9a8e1/out.jsonl",
+    "expected": [
+      "polar/D-093712",
+      "polar/D-e5f85b",
+      "polar/D-f53bba",
+      "polar/D-fb4011",
+      "polar/D-2ef961",
+      "polar/D-f818d9"
+    ],
+    "rendered_at": "2026-11-05T23:11:18.631Z",
+    "collected": {
+      "at": "2026-11-05T23:15:01.124Z",
+      "dest": "eval/study/runs/dev-py-r2-2026-11-05/relabel/labels/A/polar.jsonl",
+      "records": 6,
+      "sha256": "aff391d70a225aff4bd8d2a86e96447b11f7031aeca3fc0b9a85507f155324ec"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "netbox",
+    "prompt": "/home/user/drift-wt/label-py/eval/study/runs/dev-py-r2-2026-11-05/relabel/prompts/label/A/netbox.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/outbox/cc4fbeae-5929-4394-a4aa-b9b19b9b6826/out.jsonl",
+    "expected": [
+      "netbox/D-cc1341",
+      "netbox/D-e5e365",
+      "netbox/D-e2c3e4",
+      "netbox/D-310ec7",
+      "netbox/D-cc8d72",
+      "netbox/D-58913a",
+      "netbox/D-73d13c",
+      "netbox/D-afb64d",
+      "netbox/D-c50348",
+      "netbox/D-937c0c",
+      "netbox/D-89919d"
+    ],
+    "rendered_at": "2026-11-05T23:11:18.637Z",
+    "collected": {
+      "at": "2026-11-05T23:15:49.044Z",
+      "dest": "eval/study/runs/dev-py-r2-2026-11-05/relabel/labels/A/netbox.jsonl",
+      "records": 11,
+      "sha256": "cf744e8bdb84b4357e3b246cffe495c6bd6f824ccb532cd65dbbb48e872c5f18"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "saleor",
+    "prompt": "/home/user/drift-wt/label-py/eval/study/runs/dev-py-r2-2026-11-05/relabel/prompts/label/A/saleor.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/outbox/5be15c24-634c-4de4-a9f8-73381691c5a1/out.jsonl",
+    "expected": [
+      "saleor/D-e36ea5"
+    ],
+    "rendered_at": "2026-11-05T23:11:18.638Z",
+    "collected": {
+      "at": "2026-11-05T23:13:34.027Z",
+      "dest": "eval/study/runs/dev-py-r2-2026-11-05/relabel/labels/A/saleor.jsonl",
+      "records": 1,
+      "sha256": "ea5728b2d08cfde306ef3a2e32c603ef3687ca96a647a30fd0606009fd8d31e6"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "CTFd",
+    "prompt": "/home/user/drift-wt/label-py/eval/study/runs/dev-py-r2-2026-11-05/relabel/prompts/label/A/CTFd.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/outbox/ef4586e1-2893-4b99-8f27-fd50dd6b79c3/out.jsonl",
+    "expected": [
+      "CTFd/D-560792",
+      "CTFd/D-f6c1fb"
+    ],
+    "rendered_at": "2026-11-05T23:11:18.642Z",
+    "collected": {
+      "at": "2026-11-05T23:13:34.032Z",
+      "dest": "eval/study/runs/dev-py-r2-2026-11-05/relabel/labels/A/CTFd.jsonl",
+      "records": 2,
+      "sha256": "848f191330a2decf916a85ae92109d9f04ca9398c9cfadfff7ca25ab2c58f3d4"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "langchain",
+    "prompt": "/home/user/drift-wt/label-py/eval/study/runs/dev-py-r2-2026-11-05/relabel/prompts/label/A/langchain.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/outbox/f6f8b9a0-e6e9-46d1-829a-f5bed6644bd6/out.jsonl",
+    "expected": [
+      "langchain/D-ede63a",
+      "langchain/D-468530"
+    ],
+    "rendered_at": "2026-11-05T23:11:18.644Z",
+    "collected": {
+      "at": "2026-11-05T23:13:34.042Z",
+      "dest": "eval/study/runs/dev-py-r2-2026-11-05/relabel/labels/A/langchain.jsonl",
+      "records": 2,
+      "sha256": "fe08aec450ee6d26aeba554f5360d27ef702aa06a32a33c009527cbd9b569dc6"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "saleor",
+    "prompt": "/home/user/drift-wt/label-py/eval/study/runs/dev-py-r2-2026-11-05/relabel/prompts/label/B/saleor.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/outbox/36d8bbe0-feef-4fdd-8222-c1f0b199bbbc/out.jsonl",
+    "expected": [
+      "saleor/D-e36ea5"
+    ],
+    "rendered_at": "2026-11-05T23:13:34.113Z",
+    "collected": {
+      "at": "2026-11-05T23:14:42.320Z",
+      "dest": "eval/study/runs/dev-py-r2-2026-11-05/relabel/labels/B/saleor.jsonl",
+      "records": 1,
+      "sha256": "c1ee94508c274b8bc051788bd1a39a1ea676c3a4a47e80f16d3d75d2092f9612"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "CTFd",
+    "prompt": "/home/user/drift-wt/label-py/eval/study/runs/dev-py-r2-2026-11-05/relabel/prompts/label/B/CTFd.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/outbox/d4e5473b-0be8-4889-a1d4-905093867ecc/out.jsonl",
+    "expected": [
+      "CTFd/D-560792",
+      "CTFd/D-f6c1fb"
+    ],
+    "rendered_at": "2026-11-05T23:13:34.114Z",
+    "collected": {
+      "at": "2026-11-05T23:14:42.324Z",
+      "dest": "eval/study/runs/dev-py-r2-2026-11-05/relabel/labels/B/CTFd.jsonl",
+      "records": 2,
+      "sha256": "ba89eb11c942dd05dfa47e43568a65ea2dbf326deea6c01af63bc877001ed1a2"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "langchain",
+    "prompt": "/home/user/drift-wt/label-py/eval/study/runs/dev-py-r2-2026-11-05/relabel/prompts/label/B/langchain.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/outbox/25d8dd5d-0cef-4ec1-8481-73a98fc27847/out.jsonl",
+    "expected": [
+      "langchain/D-ede63a",
+      "langchain/D-468530"
+    ],
+    "rendered_at": "2026-11-05T23:13:34.121Z",
+    "collected": {
+      "at": "2026-11-05T23:14:42.327Z",
+      "dest": "eval/study/runs/dev-py-r2-2026-11-05/relabel/labels/B/langchain.jsonl",
+      "records": 2,
+      "sha256": "7ff0864121d935f2c60e37d455c36b83422e72ba0b5088dab5743778752a8267"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "polar",
+    "prompt": "/home/user/drift-wt/label-py/eval/study/runs/dev-py-r2-2026-11-05/relabel/prompts/label/B/polar.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/outbox/006118a4-8bf6-4f48-b46b-46d8995bbc0e/out.jsonl",
+    "expected": [
+      "polar/D-093712",
+      "polar/D-e5f85b",
+      "polar/D-f53bba",
+      "polar/D-fb4011",
+      "polar/D-2ef961",
+      "polar/D-f818d9"
+    ],
+    "rendered_at": "2026-11-05T23:15:15.335Z",
+    "collected": {
+      "at": "2026-11-05T23:23:23.889Z",
+      "dest": "eval/study/runs/dev-py-r2-2026-11-05/relabel/labels/B/polar.jsonl",
+      "records": 6,
+      "sha256": "61864569b3798aafc7bc2fd6d179d3b3e17ebb7555f97195743a3b53d2ca89f2"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "netbox",
+    "prompt": "/home/user/drift-wt/label-py/eval/study/runs/dev-py-r2-2026-11-05/relabel/prompts/label/B/netbox.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/outbox/cc0fd848-e548-482d-9716-8ba98fe18239/out.jsonl",
+    "expected": [
+      "netbox/D-cc1341",
+      "netbox/D-e5e365",
+      "netbox/D-e2c3e4",
+      "netbox/D-310ec7",
+      "netbox/D-cc8d72",
+      "netbox/D-58913a",
+      "netbox/D-73d13c",
+      "netbox/D-afb64d",
+      "netbox/D-c50348",
+      "netbox/D-937c0c",
+      "netbox/D-89919d"
+    ],
+    "rendered_at": "2026-11-05T23:15:49.076Z",
+    "collected": {
+      "at": "2026-11-05T23:23:23.892Z",
+      "dest": "eval/study/runs/dev-py-r2-2026-11-05/relabel/labels/B/netbox.jsonl",
+      "records": 11,
+      "sha256": "4b191418b7ae4529d2eb7661e328315222d2bd12a4fc6ba3910b1608d539a490"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "polar",
+    "prompt": "/home/user/drift-wt/label-py/eval/study/runs/dev-py-r2-2026-11-05/relabel/prompts/adjudicate/C/polar.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/outbox/7075d641-ba01-4194-81a0-67b751ccb05a/out.jsonl",
+    "expected": [
+      "polar/D-fb4011"
+    ],
+    "rendered_at": "2026-11-05T23:23:38.514Z",
+    "collected": {
+      "at": "2026-11-05T23:24:38.921Z",
+      "dest": "eval/study/runs/dev-py-r2-2026-11-05/relabel/labels/C/polar.jsonl",
+      "records": 1,
+      "sha256": "cbefecc7f0cae7d19b1ac2c517f323a7afb8d33e824f19df3c4991b420c7804d"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "netbox",
+    "prompt": "/home/user/drift-wt/label-py/eval/study/runs/dev-py-r2-2026-11-05/relabel/prompts/adjudicate/C/netbox.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/outbox/08c10c05-2fc0-4ace-a937-b8b2115c6f7d/out.jsonl",
+    "expected": [
+      "netbox/D-310ec7"
+    ],
+    "rendered_at": "2026-11-05T23:23:38.514Z",
+    "collected": {
+      "at": "2026-11-05T23:24:38.932Z",
+      "dest": "eval/study/runs/dev-py-r2-2026-11-05/relabel/labels/C/netbox.jsonl",
+      "records": 1,
+      "sha256": "38ea290666be000880047cb73671d438cb9c737831a32c7b84b9ee7aafc99e34"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "saleor",
+    "prompt": "/home/user/drift-wt/label-py/eval/study/runs/dev-py-r2-2026-11-05/relabel/prompts/adjudicate/C/saleor.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/outbox/db45c5c3-2d92-4db3-9b8f-e71dc6285caf/out.jsonl",
+    "expected": [
+      "saleor/D-e36ea5"
+    ],
+    "rendered_at": "2026-11-05T23:23:38.515Z",
+    "collected": {
+      "at": "2026-11-05T23:24:38.934Z",
+      "dest": "eval/study/runs/dev-py-r2-2026-11-05/relabel/labels/C/saleor.jsonl",
+      "records": 1,
+      "sha256": "eaa772151e04043cd6521d620963e424fd0f32eae4d09603af725cdd1f11167c"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "langchain",
+    "prompt": "/home/user/drift-wt/label-py/eval/study/runs/dev-py-r2-2026-11-05/relabel/prompts/adjudicate/C/langchain.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/r2/cache/outbox/056d6d5e-e43a-4ffa-af60-df3b449f2a34/out.jsonl",
+    "expected": [
+      "langchain/D-468530"
+    ],
+    "rendered_at": "2026-11-05T23:23:38.516Z",
+    "collected": {
+      "at": "2026-11-05T23:24:38.935Z",
+      "dest": "eval/study/runs/dev-py-r2-2026-11-05/relabel/labels/C/langchain.jsonl",
+      "records": 1,
+      "sha256": "9ac102e29594640a29306f92ee7acc126ca159951693ef794f2ac90f47f306a9"
+    }
+  }
+]

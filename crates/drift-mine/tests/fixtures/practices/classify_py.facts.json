@@ -1,0 +1,1951 @@
+{
+  "schema_version": 11,
+  "files": [
+    {
+      "path": "svc/app/broken.py",
+      "hash": "f721858195a3f9ad7a0c57dc87abfe5b45526e0ca50eed2a50028a9f24b29a0e",
+      "lang": "py",
+      "package": "svc",
+      "parse_ok": false,
+      "directives": [],
+      "imports": [],
+      "exports": [
+        {
+          "name": "broken",
+          "origin": "svc/app/broken.py#broken",
+          "kind": "local"
+        },
+        {
+          "name": "helper",
+          "origin": "svc/app/broken.py#helper",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "broken",
+          "kind": "function",
+          "exported_as": [
+            "broken"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "helper",
+          "kind": "function",
+          "exported_as": [
+            "helper"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:sqlalchemy#create_engine"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "reads": [
+            "os.environ.X"
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "broken",
+          "kind": "http",
+          "method": "GET",
+          "route": "/broken",
+          "adapter": "fastapi"
+        }
+      ]
+    },
+    {
+      "path": "svc/app/db.py",
+      "hash": "e1861ea2feb6eb1694ae5864cd9b1a694af7e98d1bc07704200052e6273ae330",
+      "lang": "py",
+      "package": "svc",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:sqlalchemy",
+          "names": [
+            "create_engine"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "engine",
+          "origin": "svc/app/db.py#engine",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "engine",
+          "kind": "variable",
+          "exported_as": [
+            "engine"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:sqlalchemy#create_engine"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "reads": [
+            "os.environ.DATABASE_URL"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "svc/app/deps.py",
+      "hash": "7092564f9c0fdc53ad13324e12c1eb0923e29146a2c7b962b71f72558f9e3d60",
+      "lang": "py",
+      "package": "svc",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:fastapi",
+          "names": [
+            "HTTPException"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "require_admin",
+          "origin": "svc/app/deps.py#require_admin",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "require_admin",
+          "kind": "function",
+          "exported_as": [
+            "require_admin"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#HTTPException"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "rejects_caller",
+            "throw"
+          ],
+          "string_literals": 0,
+          "throws": [
+            "pkg:fastapi#HTTPException"
+          ],
+          "body_checks": [
+            {
+              "source": "param:user",
+              "reads": ".is_admin",
+              "compares": "",
+              "outcome": "forbidden"
+            }
+          ],
+          "responses": [
+            {
+              "status": 403,
+              "via": "throw",
+              "builder": "pkg:fastapi#HTTPException",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "svc/app/hooks.py",
+      "hash": "c67d9fb151ac1bffea7c4e4de7490194a0ab89a2ed414239917ebd259bbea1eb",
+      "lang": "py",
+      "package": "svc",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:stripe",
+          "names": [
+            "Webhook"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "stripe_hook",
+          "origin": "svc/app/hooks.py#stripe_hook",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "stripe_hook",
+          "kind": "function",
+          "exported_as": [
+            "stripe_hook"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:stripe#Webhook.construct_event"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input",
+            "rejects_caller",
+            "verifies_signature:pkg:stripe#Webhook.construct_event"
+          ],
+          "string_literals": 0,
+          "body_checks": [
+            {
+              "source": "pkg:stripe#Webhook.construct_event",
+              "reads": "",
+              "compares": "env",
+              "outcome": "unauthenticated"
+            }
+          ],
+          "headers": [
+            "stripe-signature"
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "stripe_hook",
+          "kind": "http",
+          "method": "POST",
+          "route": "/hooks/stripe",
+          "adapter": "fastapi"
+        }
+      ]
+    },
+    {
+      "path": "svc/app/jobs.py",
+      "hash": "e4f93ee3327b3789974fcfe33e3533f5c3c871f3b3c2fb68b6b8efaab768cedc",
+      "lang": "py",
+      "package": "svc",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:loguru",
+          "names": [
+            "logger"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:statsd",
+          "names": [
+            "StatsClient"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "metrics",
+          "origin": "svc/app/jobs.py#metrics",
+          "kind": "local"
+        },
+        {
+          "name": "run",
+          "origin": "svc/app/jobs.py#run",
+          "kind": "local"
+        },
+        {
+          "name": "tidy",
+          "origin": "svc/app/jobs.py#tidy",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "metrics",
+          "kind": "variable",
+          "exported_as": [
+            "metrics"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:statsd#StatsClient(new)"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "run",
+          "kind": "function",
+          "exported_as": [
+            "run"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "svc/app/jobs.py#metrics.info"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "log_calls": [
+            {
+              "callee": "svc/app/jobs.py#metrics.info",
+              "level": "info",
+              "in_catch": false,
+              "structured": false,
+              "passes_error": false
+            }
+          ]
+        },
+        {
+          "name": "tidy",
+          "kind": "function",
+          "exported_as": [
+            "tidy"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:loguru#logger.info"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "log_calls": [
+            {
+              "callee": "pkg:loguru#logger.info",
+              "level": "info",
+              "in_catch": false,
+              "structured": true,
+              "passes_error": false
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "svc/app/routes.py",
+      "hash": "4411df7a88f79489f4c0c69dffa3eae5420f9192646431834a56c5846cc3bc8c",
+      "lang": "py",
+      "package": "svc",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:fastapi",
+          "names": [
+            "APIRouter",
+            "HTTPException"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "svc/app/deps.py",
+          "names": [
+            "require_admin"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "svc/app/schemas.py",
+          "names": [
+            "AdminQuery"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "list_items",
+          "origin": "svc/app/routes.py#list_items",
+          "kind": "local"
+        },
+        {
+          "name": "admin_items",
+          "origin": "svc/app/routes.py#admin_items",
+          "kind": "local"
+        },
+        {
+          "name": "legacy",
+          "origin": "svc/app/routes.py#legacy",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "admin_items",
+          "kind": "function",
+          "exported_as": [
+            "admin_items"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "svc/app/deps.py#require_admin",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "pkg:fastapi#HTTPException"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input",
+            "throw"
+          ],
+          "string_literals": 0,
+          "throws": [
+            "pkg:fastapi#HTTPException"
+          ],
+          "inputs": [
+            "svc/app/schemas.py#AdminQuery"
+          ],
+          "responses": [
+            {
+              "status": 400,
+              "via": "throw",
+              "builder": "pkg:fastapi#HTTPException",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        },
+        {
+          "name": "legacy",
+          "kind": "function",
+          "exported_as": [
+            "legacy"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "unresolved:guards#check",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "list_items",
+          "kind": "function",
+          "exported_as": [
+            "list_items"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "admin_items",
+          "kind": "http",
+          "method": "GET",
+          "route": "/admin/items",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "legacy",
+          "kind": "http",
+          "method": "GET",
+          "route": "/legacy",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "list_items",
+          "kind": "http",
+          "method": "GET",
+          "route": "/items",
+          "adapter": "fastapi"
+        }
+      ]
+    },
+    {
+      "path": "svc/app/schemas.py",
+      "hash": "e39b74f190a2b4c290e027a4b425c04ab27a6a33c795234b4087169f11af13c6",
+      "lang": "py",
+      "package": "svc",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:pydantic",
+          "names": [
+            "BaseModel"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "AdminQuery",
+          "origin": "svc/app/schemas.py#AdminQuery",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "AdminQuery",
+          "kind": "class",
+          "exported_as": [
+            "AdminQuery"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:pydantic#BaseModel",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "svc/app/settings.py",
+      "hash": "f89587f8c25a1b1a9451eecddf05db325cd87d347c195dd32d915c0f54f40ddf",
+      "lang": "py",
+      "package": "svc",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:pydantic_settings",
+          "names": [
+            "BaseSettings"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "Settings",
+          "origin": "svc/app/settings.py#Settings",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "Settings",
+          "kind": "class",
+          "exported_as": [
+            "Settings"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:pydantic_settings#BaseSettings",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "svc/app/stdlog.py",
+      "hash": "347054b6f6fe367fca859a15ab7147730d6102ced77a18d85f31d110155c51dc",
+      "lang": "py",
+      "package": "svc",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:python:logging",
+          "names": [
+            "getLogger"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "logger",
+          "origin": "svc/app/stdlog.py#logger",
+          "kind": "local"
+        },
+        {
+          "name": "sync",
+          "origin": "svc/app/stdlog.py#sync",
+          "kind": "local"
+        },
+        {
+          "name": "direct",
+          "origin": "svc/app/stdlog.py#direct",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "direct",
+          "kind": "function",
+          "exported_as": [
+            "direct"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:python:logging#warning"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "log_calls": [
+            {
+              "callee": "pkg:python:logging#warning",
+              "level": "warn",
+              "in_catch": false,
+              "structured": false,
+              "passes_error": false
+            }
+          ]
+        },
+        {
+          "name": "logger",
+          "kind": "variable",
+          "exported_as": [
+            "logger"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:python:logging#getLogger"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "sync",
+          "kind": "function",
+          "exported_as": [
+            "sync"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "svc/app/stdlog.py#logger.info"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "log_calls": [
+            {
+              "callee": "svc/app/stdlog.py#logger.info",
+              "level": "info",
+              "in_catch": false,
+              "structured": true,
+              "passes_error": false
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "svc/app/tests/test_admin.py",
+      "hash": "a93857b3ccbafdc9a068d935af32669b07ea902f2bb072ed08bc12886eefb136",
+      "lang": "py",
+      "package": "svc",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:pytest",
+          "names": [
+            "fixture"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "test_admin",
+          "origin": "svc/app/tests/test_admin.py#test_admin",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "test_admin",
+          "kind": "function",
+          "exported_as": [
+            "test_admin"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:pytest#fixture"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [],
+      "test_requests": [
+        {
+          "method": "GET",
+          "route": "",
+          "target": "",
+          "statuses": [
+            200
+          ],
+          "dynamic": true
+        }
+      ]
+    },
+    {
+      "path": "svc/crm/insights.py",
+      "hash": "ec8c0cd83319a3f0041974b1bc977abd572982b06cde50d6ffd87ecb6366261f",
+      "lang": "py",
+      "package": "svc",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "svc/web/models.py",
+          "names": [
+            "Item"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "InsightsView",
+          "origin": "svc/crm/insights.py#InsightsView",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "InsightsView",
+          "kind": "class",
+          "exported_as": [
+            "InsightsView"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#views.APIView",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "InsightsView.get",
+          "kind": "function",
+          "exported_as": [],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#permissions.IsAuthenticated",
+              "kind": "config"
+            }
+          ],
+          "calls": [
+            "svc/web/models.py#Item.objects.filter"
+          ],
+          "renders": [],
+          "args": [
+            "svc/web/models.py#Item.objects.filter@99:created_at__gte",
+            "svc/web/models.py#Item.objects.filter@99:created_by"
+          ],
+          "controls": [
+            "reads_input"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "InsightsView.get",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/insights",
+          "adapter": "drf"
+        }
+      ]
+    },
+    {
+      "path": "svc/crm/permissions.py",
+      "hash": "4bea40a683b5fc0e0a969439c880a30e3308e08a4e539e1b60b0197d53cb7aa0",
+      "lang": "py",
+      "package": "svc",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:rest_framework.permissions",
+          "names": [
+            "BasePermission"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "HasOrgContext",
+          "origin": "svc/crm/permissions.py#HasOrgContext",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "HasOrgContext",
+          "kind": "class",
+          "exported_as": [
+            "HasOrgContext"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#permissions.BasePermission",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "members": [
+            {
+              "name": "has_permission",
+              "calls": [
+                "global#getattr"
+              ]
+            }
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "svc/crm/scoped.py",
+      "hash": "7cb44a7dca53ea631b4c5a0ae0ea99d988a30d0411c7a49d5fe1d436c592bbcf",
+      "lang": "py",
+      "package": "svc",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "svc/web/models.py",
+          "names": [
+            "Item"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "ItemList",
+          "origin": "svc/crm/scoped.py#ItemList",
+          "kind": "local"
+        },
+        {
+          "name": "OrgItems",
+          "origin": "svc/crm/scoped.py#OrgItems",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "ItemList",
+          "kind": "class",
+          "exported_as": [
+            "ItemList"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#views.APIView",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "ItemList.get",
+          "kind": "function",
+          "exported_as": [],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#permissions.IsAuthenticated",
+              "kind": "config"
+            }
+          ],
+          "calls": [
+            "svc/web/models.py#Item.objects.filter"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input"
+          ],
+          "string_literals": 0,
+          "scoped_queries": [
+            {
+              "callee": "svc/web/models.py#Item.objects.filter",
+              "key": "org",
+              "source": "session"
+            }
+          ]
+        },
+        {
+          "name": "OrgItems",
+          "kind": "class",
+          "exported_as": [
+            "OrgItems"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#views.APIView",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "OrgItems.get",
+          "kind": "function",
+          "exported_as": [],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#permissions.IsAuthenticated",
+              "kind": "config"
+            }
+          ],
+          "calls": [
+            "svc/web/models.py#Item.objects.filter"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input"
+          ],
+          "string_literals": 0,
+          "scoped_queries": [
+            {
+              "callee": "svc/web/models.py#Item.objects.filter",
+              "key": "org_id",
+              "source": "param"
+            }
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "ItemList.get",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/items/mine",
+          "adapter": "drf"
+        },
+        {
+          "symbol": "OrgItems.get",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/orgs/<uid:org_id>/items",
+          "adapter": "drf"
+        }
+      ]
+    },
+    {
+      "path": "svc/crm/views.py",
+      "hash": "6118a0b4bf928cb411323caf517cd61bd16463469dde6ae969533a2611a660c8",
+      "lang": "py",
+      "package": "svc",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:django.shortcuts",
+          "names": [
+            "get_object_or_404"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "svc/crm/permissions.py",
+          "names": [
+            "HasOrgContext"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "LeadView",
+          "origin": "svc/crm/views.py#LeadView",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "LeadView",
+          "kind": "class",
+          "exported_as": [
+            "LeadView"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#views.APIView",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "LeadView.get",
+          "kind": "function",
+          "exported_as": [],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#permissions.IsAuthenticated",
+              "kind": "config"
+            },
+            {
+              "wrapper": "svc/crm/permissions.py#HasOrgContext",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "pkg:django#shortcuts.get_object_or_404"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:django#shortcuts.get_object_or_404@99:org"
+          ],
+          "controls": [
+            "reads_input"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "LeadView.get",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/leads/<uid:pk>",
+          "adapter": "drf"
+        }
+      ]
+    },
+    {
+      "path": "svc/sec/auth.py",
+      "hash": "0623bff6477873d03d113e5818bf0edb42e090410a26177883b7532d77ebf76c",
+      "lang": "py",
+      "package": "svc",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:fastapi",
+          "names": [
+            "HTTPException"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:fastapi.security",
+          "names": [
+            "HTTPBearer"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:httpx",
+          "names": [
+            "Client"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:jwt",
+          "names": [
+            "decode"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "JWTBearer",
+          "origin": "svc/sec/auth.py#JWTBearer",
+          "kind": "local"
+        },
+        {
+          "name": "RoleChecker",
+          "origin": "svc/sec/auth.py#RoleChecker",
+          "kind": "local"
+        },
+        {
+          "name": "get_current_user",
+          "origin": "svc/sec/auth.py#get_current_user",
+          "kind": "local"
+        },
+        {
+          "name": "get_org_context",
+          "origin": "svc/sec/auth.py#get_org_context",
+          "kind": "local"
+        },
+        {
+          "name": "get_billing_client",
+          "origin": "svc/sec/auth.py#get_billing_client",
+          "kind": "local"
+        },
+        {
+          "name": "load_settings_file",
+          "origin": "svc/sec/auth.py#load_settings_file",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "JWTBearer",
+          "kind": "class",
+          "exported_as": [
+            "JWTBearer"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:fastapi#security.HTTPBearer",
+              "kind": "extends"
+            }
+          ],
+          "calls": [
+            "global#super().__call__",
+            "pkg:fastapi#HTTPException",
+            "pkg:jwt#decode"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "await",
+            "throw",
+            "try"
+          ],
+          "string_literals": 0,
+          "throws": [
+            "pkg:fastapi#HTTPException"
+          ],
+          "catches": [
+            {
+              "catches": [
+                "pkg:jwt#PyJWTError"
+              ],
+              "does": [
+                "respond:403"
+              ]
+            }
+          ],
+          "members": [
+            {
+              "name": "__call__",
+              "calls": [
+                "global#super().__call__",
+                "pkg:fastapi#HTTPException",
+                "pkg:jwt#decode"
+              ]
+            },
+            {
+              "name": "__init__",
+              "calls": [
+                "global#super().__init__"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "RoleChecker",
+          "kind": "class",
+          "exported_as": [
+            "RoleChecker"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#HTTPException"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "rejects_caller",
+            "throw"
+          ],
+          "string_literals": 0,
+          "throws": [
+            "pkg:fastapi#HTTPException"
+          ],
+          "members": [
+            {
+              "name": "__call__",
+              "calls": [
+                "pkg:fastapi#HTTPException"
+              ]
+            },
+            {
+              "name": "__init__"
+            }
+          ],
+          "body_checks": [
+            {
+              "source": "param:user",
+              "reads": ".role",
+              "compares": "param:self",
+              "outcome": "forbidden"
+            }
+          ],
+          "responses": [
+            {
+              "status": 403,
+              "via": "throw",
+              "builder": "pkg:fastapi#HTTPException",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        },
+        {
+          "name": "get_billing_client",
+          "kind": "function",
+          "exported_as": [
+            "get_billing_client"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "global#RuntimeError",
+            "pkg:httpx#Client"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "throw"
+          ],
+          "string_literals": 0,
+          "throws": [
+            "global#RuntimeError"
+          ]
+        },
+        {
+          "name": "get_current_user",
+          "kind": "function",
+          "exported_as": [
+            "get_current_user"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#HTTPException"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "rejects_caller",
+            "throw"
+          ],
+          "string_literals": 0,
+          "throws": [
+            "pkg:fastapi#HTTPException"
+          ],
+          "responses": [
+            {
+              "status": 401,
+              "via": "throw",
+              "builder": "pkg:fastapi#HTTPException",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ]
+        },
+        {
+          "name": "get_org_context",
+          "kind": "function",
+          "exported_as": [
+            "get_org_context"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "svc/sec/auth.py#get_current_user"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "load_settings_file",
+          "kind": "function",
+          "exported_as": [
+            "load_settings_file"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "global#open"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "svc/sec/routes.py",
+      "hash": "d9484fd526bb284baae899d503ba39598f49cfc6e155d906325db080f3e5abaf",
+      "lang": "py",
+      "package": "svc",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "svc/sec/auth.py",
+          "names": [
+            "JWTBearer",
+            "RoleChecker",
+            "get_billing_client",
+            "get_org_context",
+            "load_settings_file"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "bearer",
+          "origin": "svc/sec/routes.py#bearer",
+          "kind": "local"
+        },
+        {
+          "name": "admin",
+          "origin": "svc/sec/routes.py#admin",
+          "kind": "local"
+        },
+        {
+          "name": "role_only",
+          "origin": "svc/sec/routes.py#role_only",
+          "kind": "local"
+        },
+        {
+          "name": "ctx",
+          "origin": "svc/sec/routes.py#ctx",
+          "kind": "local"
+        },
+        {
+          "name": "billing",
+          "origin": "svc/sec/routes.py#billing",
+          "kind": "local"
+        },
+        {
+          "name": "billing2",
+          "origin": "svc/sec/routes.py#billing2",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "admin",
+          "kind": "function",
+          "exported_as": [
+            "admin"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "svc/sec/auth.py#RoleChecker",
+              "kind": "call"
+            },
+            {
+              "wrapper": "svc/sec/auth.py#JWTBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "bearer",
+          "kind": "function",
+          "exported_as": [
+            "bearer"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "svc/sec/auth.py#JWTBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "billing",
+          "kind": "function",
+          "exported_as": [
+            "billing"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "svc/sec/auth.py#get_billing_client",
+            "svc/sec/auth.py#load_settings_file"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "billing2",
+          "kind": "function",
+          "exported_as": [
+            "billing2"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "svc/sec/auth.py#get_billing_client"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "ctx",
+          "kind": "function",
+          "exported_as": [
+            "ctx"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "svc/sec/auth.py#get_org_context",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "role_only",
+          "kind": "function",
+          "exported_as": [
+            "role_only"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "svc/sec/auth.py#RoleChecker",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "bearer",
+          "kind": "http",
+          "method": "GET",
+          "route": "/sec/bearer",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "admin",
+          "kind": "http",
+          "method": "GET",
+          "route": "/sec/admin",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "role_only",
+          "kind": "http",
+          "method": "GET",
+          "route": "/sec/role_only",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "ctx",
+          "kind": "http",
+          "method": "GET",
+          "route": "/sec/ctx",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "billing",
+          "kind": "http",
+          "method": "GET",
+          "route": "/sec/billing",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "billing2",
+          "kind": "http",
+          "method": "GET",
+          "route": "/sec/billing2",
+          "adapter": "fastapi"
+        }
+      ]
+    },
+    {
+      "path": "svc/tests/test_routes.py",
+      "hash": "e4762533a2007d63bd18c1672d705662779a4ffa2bbdcbdb9227bd0ec1a67000",
+      "lang": "py",
+      "package": "svc",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:pytest",
+          "names": [
+            "fixture"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "test_list",
+          "origin": "svc/tests/test_routes.py#test_list",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "test_list",
+          "kind": "function",
+          "exported_as": [
+            "test_list"
+          ],
+          "line": 1,
+          "wraps": [],
+          "calls": [
+            "pkg:pytest#fixture"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [],
+      "test_requests": [
+        {
+          "method": "GET",
+          "route": "",
+          "target": "",
+          "statuses": [
+            200
+          ]
+        },
+        {
+          "method": "GET",
+          "route": "/items",
+          "target": "",
+          "statuses": [
+            200
+          ]
+        }
+      ]
+    },
+    {
+      "path": "svc/web/api.py",
+      "hash": "0aa3bad881c28e9c8100a4dd77014a9afbdc6cf63442a2cde7207b97bd781c48",
+      "lang": "py",
+      "package": "svc",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:rest_framework.views",
+          "names": [
+            "APIView"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "ItemList",
+          "origin": "svc/web/api.py#ItemList",
+          "kind": "local"
+        },
+        {
+          "name": "Ping",
+          "origin": "svc/web/api.py#Ping",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "ItemList",
+          "kind": "class",
+          "exported_as": [
+            "ItemList"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#views.APIView",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "ItemList.get",
+          "kind": "function",
+          "exported_as": [],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#authentication.TokenAuthentication",
+              "kind": "config_authenticates"
+            },
+            {
+              "wrapper": "pkg:rest_framework#permissions.IsAuthenticated",
+              "kind": "config"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "Ping",
+          "kind": "class",
+          "exported_as": [
+            "Ping"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#views.APIView",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "Ping.get",
+          "kind": "function",
+          "exported_as": [],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:rest_framework#authentication.TokenAuthentication",
+              "kind": "config_authenticates"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "ItemList.get",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/items",
+          "adapter": "drf"
+        },
+        {
+          "symbol": "Ping.get",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/ping",
+          "adapter": "drf"
+        }
+      ]
+    },
+    {
+      "path": "svc/web/models.py",
+      "hash": "8ffcb7c9eb540fe5ad11329663f9e0169cf27eae47bf33cb7d379f500e3035ee",
+      "lang": "py",
+      "package": "svc",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:django.db",
+          "names": [
+            "models"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "Item",
+          "origin": "svc/web/models.py#Item",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "Item",
+          "kind": "class",
+          "exported_as": [
+            "Item"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:django#db.models.Model",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "svc/web/views.py",
+      "hash": "32b5e29049f7d8023268428259e199bc1680551d47d3ebb3d5d8a8469fd01f9b",
+      "lang": "py",
+      "package": "svc",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:django.contrib.auth.decorators",
+          "names": [
+            "login_required"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "svc/web/models.py",
+          "names": [
+            "Item"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "ItemView",
+          "origin": "svc/web/views.py#ItemView",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "ItemView",
+          "kind": "class",
+          "exported_as": [
+            "ItemView"
+          ],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:django#views.View",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "ItemView.get",
+          "kind": "function",
+          "exported_as": [],
+          "line": 1,
+          "wraps": [
+            {
+              "wrapper": "pkg:django#contrib.auth.decorators.login_required",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [
+            "svc/web/models.py#Item.objects.filter"
+          ],
+          "renders": [],
+          "args": [
+            "svc/web/models.py#Item.objects.filter@99:org_id"
+          ],
+          "controls": [
+            "reads_input"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "ItemView.get",
+          "kind": "http",
+          "method": "GET",
+          "route": "/items/<int:pk>",
+          "adapter": "django"
+        }
+      ]
+    }
+  ],
+  "skipped": [],
+  "packages": [
+    {
+      "path": "svc",
+      "name": "svc",
+      "scripts": [],
+      "dependencies": [
+        "django@>=5",
+        "fastapi@>=0.110",
+        "loguru@>=0.7",
+        "pydantic-settings@>=2",
+        "pydantic@>=2",
+        "pytest@>=8",
+        "sqlalchemy@>=2"
+      ],
+      "compiler_flags": [],
+      "dev_only": [
+        "pytest"
+      ]
+    }
+  ]
+}

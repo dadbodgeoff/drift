@@ -1,0 +1,125 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - base
+  suffixes: []
+conventions:
+- id: D-a2ea38
+  status: proposed
+  mode: advise
+  summary: classes in src/fenic/core/_logical_plan/expressions/** extend LogicalExpr
+  role:
+    package: ""
+    dir: src/fenic/core/_logical_plan/expressions
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - src/fenic/core/_logical_plan/expressions/base.py#LogicalExpr
+  evidence:
+    holders: 119
+    total: 121
+    lower_bound: 0.942
+    lift: 3.981
+    python_members: 121
+  example: src/fenic/core/_logical_plan/expressions/aggregate.py#ApproxCountDistinctExpr
+  selector_version: 3
+- id: D-e8fcfa
+  status: proposed
+  mode: advise
+  summary: functions in src/fenic/api/functions/** call Column._from_logical_expr()
+  role:
+    package: ""
+    dir: src/fenic/api/functions
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: calls
+    callee: src/fenic/api/column.py#Column._from_logical_expr
+  evidence:
+    holders: 116
+    total: 123
+    lower_bound: 0.887
+    lift: 2.463
+    python_members: 123
+  example: src/fenic/api/functions/array.py#compact
+  selector_version: 3
+- id: D-7ef79c
+  status: proposed
+  mode: advise
+  summary: functions in src/fenic/api/** are decorated with validate_call()
+  role:
+    package: ""
+    dir: src/fenic/api
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:pydantic#validate_call
+  evidence:
+    holders: 120
+    total: 130
+    lower_bound: 0.864
+    lift: 2.331
+    python_members: 130
+  example: src/fenic/api/functions/array.py#compact
+  selector_version: 3
+- id: D-7ab0d9
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in src/fenic/_backends/local/physical_plan/** pass `cache_info` to
+    super().__init__(), except a member (not calling the callee)
+  role:
+    package: ""
+    dir: src/fenic/_backends/local/physical_plan
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: passes_key
+    callee: global#super().__init__
+    index: 99
+    key: cache_info
+  evidence:
+    holders: 23
+    total: 23
+    lower_bound: 0.857
+    lift: 20.917
+    role_members: 24
+    python_members: 24
+  example: src/fenic/_backends/local/physical_plan/aggregate.py#AggregateExec
+  selector_version: 3
+- id: D-c30a2b
+  status: proposed
+  mode: advise
+  summary: functions in src/fenic/api/** call Column._from_col_or_name()
+  role:
+    package: ""
+    dir: src/fenic/api
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: calls
+    callee: src/fenic/api/column.py#Column._from_col_or_name
+  evidence:
+    holders: 112
+    total: 130
+    lower_bound: 0.792
+    lift: 2.331
+    python_members: 130
+  example: src/fenic/api/functions/array.py#compact
+  selector_version: 3

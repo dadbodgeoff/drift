@@ -1,0 +1,159 @@
+{
+  "labels_sha256": {
+    "A": "cf2a956a60581f8daafd3d36d174588e6bd5debb60ffae9de3d637cfd2f8ccb5",
+    "B": "5c8952f5bda96a692dcb1d6a0b42bec524786d3c80e35ca8a0def2f2a35901fc"
+  },
+  "cases": [
+    {
+      "uid": "documenso/D-2a51e9",
+      "repo": "documenso",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "documenso/D-2a51e9",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/lib/advanced-fields-validation/validate-dropdown.ts",
+            "packages/lib/jobs/definitions/internal/seal-document.handler.ts",
+            "packages/lib/jobs/definitions/internal/sync-email-domains.handler.ts",
+            "packages/lib/jobs/definitions/internal/sync-organisation-seats.handler.ts",
+            "packages/lib/server-only/document/send-document.ts",
+            "packages/lib/server-only/organisation/accept-organisation-invitation.ts",
+            "packages/lib/server-only/organisation/create-organisation.ts",
+            "packages/lib/server-only/team/find-organisation-invoices.ts",
+            "packages/lib/utils/organisations-claims.ts",
+            "packages/lib/advanced-fields-validation/validate-text.ts",
+            "packages/lib/client-only/hooks/use-editor-fields.ts",
+            "packages/lib/server-only/document/delete-document.ts",
+            "packages/lib/package.json",
+            "packages/ee/package.json",
+            "packages/ee/FEATURES",
+            "packages/ee/LICENSE",
+            "packages/lib/tsconfig.json",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "seal-document.handler.ts",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "sync-email-domains.handler.ts",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "sync-organisation-seats.handler.ts",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "send-document.ts",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "accept-organisation-invitation.ts",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "create-organisation.ts",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "find-organisation-invoices.ts",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "organisations-claims.ts",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "The outliers are lib business logic deliberately calling Enterprise features listed in packages/ee/FEATURES (Stripe billing in create-organisation.ts behind IS_BILLING_ENABLED(), CSC/TSP finalisation in seal-document.handler.ts behind isTspEnvelope, email-domain sync jobs); this is a recurring integration pattern, so new billing/EE hooks would be false alarms. Only organisations-claims.ts importing plain limit constants is worth a look (1 of 8); hesitated with ACCEPT as a layering boundary since ee depends on lib.",
+          "labeller": "A"
+        },
+        "B": {
+          "uid": "documenso/D-2a51e9",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/lib/advanced-fields-validation/validate-dropdown.ts",
+            "packages/lib/jobs/definitions/internal/seal-document.handler.ts",
+            "packages/lib/jobs/definitions/internal/sync-email-domains.handler.ts",
+            "packages/lib/jobs/definitions/internal/sync-organisation-seats.handler.ts",
+            "packages/lib/server-only/document/send-document.ts",
+            "packages/lib/server-only/organisation/accept-organisation-invitation.ts",
+            "packages/lib/server-only/organisation/create-organisation.ts",
+            "packages/lib/server-only/team/find-organisation-invoices.ts",
+            "packages/lib/utils/organisations-claims.ts",
+            "packages/lib/server-only/organisation/delete-organisation.ts",
+            "packages/lib/server-only/organisation/delete-organisation-email.ts",
+            "packages/lib/utils/fields.ts",
+            "packages/lib/package.json",
+            "packages/ee/package.json",
+            "packages/ee/LICENSE",
+            "packages/lib/tsconfig.json",
+            "biome.json",
+            "package.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "seal-document.handler.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "sync-email-domains.handler.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "sync-organisation-seats.handler.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "send-document.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "accept-organisation-invitation.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "create-organisation.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "find-organisation-invoices.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "organisations-claims.ts",
+              "verdict": "mistake"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "packages/ee/package.json depends on @documenso/lib and is under a commercial LICENSE, while lib does not declare ee, so each outlier is an undeclared circular dependency of core on EE code worth confirming; organisations-claims.ts just pulls limit constants from ee. Hesitated with WRONG legit_outliers: the stripe/email-domain/TSP calls (create-organisation.ts, sync-organisation-seats.handler.ts) look like the repo's normal way of wiring EE features into core, with no alternative pattern.",
+          "labeller": "B"
+        }
+      }
+    }
+  ]
+}

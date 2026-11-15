@@ -1,0 +1,96 @@
+{
+  "name": "laya",
+  "repo": "aayushch/laya",
+  "sha": "0274181928f2c4c03aabaf9fd75a30870282c969",
+  "loc": 117000,
+  "shape": {
+    "mix": "ts+py",
+    "shape": "frontend+backend",
+    "js_dirs": 1,
+    "py_dirs": 1,
+    "workspace_files": [],
+    "frontend_dirs": [
+      "ui"
+    ],
+    "backend_dirs": [
+      "engine"
+    ]
+  },
+  "packages": [
+    {
+      "dir": "engine",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 1557,
+        "roles": 53,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 1557,
+        "roles": 53,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "ui",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 337,
+        "roles": 17,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    }
+  ],
+  "root": {
+    "default": {
+      "shown": 0,
+      "conventions": 0,
+      "units": 1898,
+      "roles": 80,
+      "tiers": {
+        "default": 0,
+        "suggestion": 0
+      },
+      "python_withheld": 0,
+      "secs": 1,
+      "cards": []
+    },
+    "python_opt_in": {
+      "shown": 0,
+      "conventions": 0,
+      "units": 1898,
+      "roles": 80,
+      "tiers": {
+        "default": 0,
+        "suggestion": 0
+      },
+      "python_withheld": null,
+      "secs": 0,
+      "cards": []
+    }
+  }
+}

@@ -1,0 +1,3 @@
+Card diff (proposals of census --json --max 15), totals: {"added_place":3,"shown_added_place":3}
+  cal.com                        {"added_place":1,"shown_added_place":1}
+  documenso                      {"added_place":2,"shown_added_place":2}

@@ -1,0 +1,22 @@
+2 conventions from 2560 units in 66 roles (0 default tier, 2 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-553404] packages/element: functions in src/** do not use `any`
+    evidence: 401/408 (lower bound 0.96, lift 6.5)
+    tier:     suggestion (rule kind avoids:other)
+    example:  packages/element/src/align.ts#alignElements
+    outlier:  packages/element/src/binding.ts:2994 isFixedPoint
+    outlier:  packages/element/src/image.ts:41 updateImageCache
+    outlier:  packages/element/src/mutateElement.ts:40 mutateElement
+    ... 4 more outliers
+
+ 2. [D-92af59] packages/excalidraw: exported values in actions/** are named `action*`
+    evidence: 91/95 (lower bound 0.90, lift 6.9)
+    tier:     suggestion (rule kind named)
+    example:  packages/excalidraw/actions/actionAddToLibrary.ts#actionAddToLibrary
+    outlier:  packages/excalidraw/actions/actionClipboard.tsx:260 copyText
+    outlier:  packages/excalidraw/actions/actionDistribute.tsx:74 distributeHorizontally
+    outlier:  packages/excalidraw/actions/actionDistribute.tsx:105 distributeVertically
+    ... 1 more outliers
+

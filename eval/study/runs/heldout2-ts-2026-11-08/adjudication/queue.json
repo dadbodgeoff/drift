@@ -1,0 +1,1144 @@
+{
+  "labels_sha256": {
+    "A": "ed4e050a83834387b61ef2b96a6d1f5df76377d8201c6d5aa1e6072486366b4d",
+    "B": "2d960fbc411f1e2210dbed13aae1d6f2fb8e90ebeaa58af3a541e6773aaa53ae"
+  },
+  "cases": [
+    {
+      "uid": "ever-demand/D-d08791",
+      "repo": "ever-demand",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "ever-demand/D-d08791",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/shop-mobile-expo/src/components/BuyProductBtn.tsx",
+            "packages/shop-mobile-expo/src/components/Providers/Paper.tsx",
+            "packages/shop-mobile-expo/src/components/Providers/Apollo.tsx",
+            "packages/shop-mobile-expo/src/components/Common/Icon.tsx",
+            "packages/shop-mobile-expo/.eslintrc.json",
+            "packages/shop-mobile-expo/tsconfig.json",
+            "packages/shop-mobile-expo/package.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "PaperProvider",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Component bodies avoid any (BuyProductBtn, ApolloProvider); PaperProvider annotates iconProps: any where Common/Icon.tsx already exports IconPropsType, a choice not a need. .eslintrc.json does not enable no-explicit-any. Hesitated with WRONG since Props interfaces in the same files freely use ReactElement<any> and () => any.",
+          "defects": [],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "ever-demand/D-d08791",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "misdescribes",
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "packages/shop-mobile-expo/src/components/BuyProductBtn.tsx",
+            "packages/shop-mobile-expo/src/components/Providers/Paper.tsx",
+            "packages/shop-mobile-expo/src/components/Providers/Redux.tsx",
+            "packages/shop-mobile-expo/src/components/Providers/App.tsx",
+            "packages/shop-mobile-expo/src/components/OrderDialog/Warn.tsx",
+            "packages/shop-mobile-expo/src/components/Common/Dialog.tsx",
+            "packages/shop-mobile-expo/.eslintrc.json",
+            "packages/shop-mobile-expo/tsconfig.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "PaperProvider",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R9"
+          ],
+          "reason": "Members use any freely in prop types (Redux.tsx and App.tsx have React.ReactElement<any>, Warn.tsx has onDismiss: () => any, and many Common files do too), so 'do not use any' is false for the sampled members as written; only the body-level (iconProps: any) in Paper.tsx is flagged. The eslintrc does not enable no-explicit-any. Hesitated with ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "ever-demand/D-5b38bb",
+      "repo": "ever-demand",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "ever-demand/D-5b38bb",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/admin-web-angular/src/app/@core/data/admins.service.ts",
+            "packages/admin-web-angular/src/app/@core/data/store.service.ts",
+            "packages/admin-web-angular/src/app/@core/data/carriers.service.ts",
+            "packages/admin-web-angular/src/app/@core/data/smart-table.service.ts",
+            "packages/admin-web-angular/tslint.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "Store",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "Data services (AdminsService, CarriersService, SmartTableService) are *Service, but Store is the localStorage-backed app state holder that every app in the monorepo deliberately names Store (shop-mobile-ionic, merchant-tablet-ionic, carrier-mobile-ionic, shop-web-angular), so it is a recurring deliberate name. Hesitated with ACCEPT, since within this directory it is a single class.",
+          "defects": [],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "ever-demand/D-5b38bb",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/admin-web-angular/src/app/@core/data/admins.service.ts",
+            "packages/admin-web-angular/src/app/@core/data/store.service.ts",
+            "packages/admin-web-angular/src/app/@core/data/orders.service.ts",
+            "packages/admin-web-angular/src/app/@core/data/state.service.ts",
+            "packages/admin-web-angular/src/app/@core/data/data.service.ts",
+            "tslint.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "Store",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "The @core/data services are AdminsService, OrdersService, StateService, DataService; store.service.ts exports an @Injectable named Store, a real service (localStorage-backed) that breaks the suffix scheme, though Store is the name used across the apps. Hesitated with WRONG for a single established-name outlier.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "ngx-bootstrap/D-f1448a",
+      "repo": "ngx-bootstrap",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "ngx-bootstrap/D-f1448a",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "libs/common-docs/package.json",
+            "libs/common-docs/tsconfig.json",
+            "tsconfig.base.json",
+            "_root/package.json",
+            "_root/tsconfig.json",
+            "src/chronos/package.json",
+            "src/chronos/tsconfig.json",
+            "src/datepicker/package.json",
+            "src/datepicker/tsconfig.json",
+            "src/accordion/package.json",
+            "src/accordion/tsconfig.json",
+            "libs/doc-pages/modal/package.json",
+            "libs/doc-pages/modal/tsconfig.json",
+            "src/component-loader/tsconfig.json",
+            "src/utils/tsconfig.json",
+            "eslint.config.mjs"
+          ],
+          "outliers": [
+            {
+              "symbol": "ngx-bootstrap-base",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "ngx-bootstrap/chronos",
+              "verdict": "look"
+            },
+            {
+              "symbol": "ngx-bootstrap/datepicker",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2",
+            "R8"
+          ],
+          "reason": "Packages set noFallthroughCasesInSwitch:true over the base's false (accordion, component-loader, doc-pages/modal); chronos and datepicker explicitly set it false, the kind of opt-out worth a second look in a new lib, while _root is a legacy leftover not extending the base. 2 of 3 look; nothing checks tsconfig flags. Hesitated with WRONG legit_outliers.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "ngx-bootstrap/D-f1448a",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "libs/common-docs/package.json",
+            "libs/common-docs/tsconfig.json",
+            "_root/package.json",
+            "_root/tsconfig.json",
+            "src/chronos/package.json",
+            "src/chronos/tsconfig.json",
+            "src/datepicker/package.json",
+            "src/datepicker/tsconfig.json",
+            "src/sortable/package.json",
+            "src/sortable/tsconfig.json",
+            "src/alert/package.json",
+            "src/alert/tsconfig.json",
+            "src/schematics/tsconfig.json",
+            "tsconfig.base.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "ngx-bootstrap-base",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "ngx-bootstrap/chronos",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "ngx-bootstrap/datepicker",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Most packages set noFallthroughCasesInSwitch true (common-docs, sortable, alert); the root is not a library package and chronos is a legacy port with everything relaxed, so only datepicker is a look (1 of 3). Hesitated with ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "ngx-bootstrap/D-c0155e",
+      "repo": "ngx-bootstrap",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "ngx-bootstrap/D-c0155e",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "libs/common-docs/package.json",
+            "libs/common-docs/tsconfig.json",
+            "tsconfig.base.json",
+            "_root/package.json",
+            "_root/tsconfig.json",
+            "_root/tslint.json",
+            "src/chronos/package.json",
+            "src/chronos/tsconfig.json",
+            "src/chronos/tsconfig.lib.json",
+            "src/component-loader/package.json",
+            "src/component-loader/tsconfig.json",
+            "src/datepicker/package.json",
+            "src/datepicker/tsconfig.json",
+            "src/schematics/package.json",
+            "src/schematics/tsconfig.json",
+            "src/schematics/tsconfig.lib.json",
+            "src/accordion/package.json",
+            "src/accordion/tsconfig.json",
+            "libs/doc-pages/modal/package.json",
+            "libs/doc-pages/modal/tsconfig.json",
+            "src/utils/package.json",
+            "src/utils/tsconfig.json",
+            "eslint.config.mjs"
+          ],
+          "outliers": [
+            {
+              "symbol": "ngx-bootstrap-base",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "ngx-bootstrap/chronos",
+              "verdict": "look"
+            },
+            {
+              "symbol": "ngx-bootstrap/component-loader",
+              "verdict": "look"
+            },
+            {
+              "symbol": "ngx-bootstrap/datepicker",
+              "verdict": "look"
+            },
+            {
+              "symbol": "schematics",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2",
+            "R8"
+          ],
+          "reason": "Library packages (accordion, utils, doc-pages/modal) override the base's noImplicitReturns:false with true; chronos, component-loader and datepicker are the same kind of Angular lib explicitly opting out (debt worth a second look), while _root is a legacy pre-nx leftover and schematics a standalone node tooling config. 3 of 5 look; no tool checks tsconfig flags. Hesitated with WRONG legit_outliers since the opt-outs are explicit.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "ngx-bootstrap/D-c0155e",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "libs/common-docs/package.json",
+            "libs/common-docs/tsconfig.json",
+            "_root/package.json",
+            "_root/tsconfig.json",
+            "src/chronos/package.json",
+            "src/chronos/tsconfig.json",
+            "src/component-loader/package.json",
+            "src/component-loader/tsconfig.json",
+            "src/datepicker/package.json",
+            "src/datepicker/tsconfig.json",
+            "src/schematics/package.json",
+            "src/schematics/tsconfig.json",
+            "src/sortable/package.json",
+            "src/sortable/tsconfig.json",
+            "src/alert/package.json",
+            "src/alert/tsconfig.json",
+            "src/tabs/package.json",
+            "tsconfig.base.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "ngx-bootstrap-base",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "ngx-bootstrap/chronos",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "ngx-bootstrap/component-loader",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "ngx-bootstrap/datepicker",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "schematics",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Angular lib packages (common-docs, sortable, alert) set noImplicitReturns true, but the root demo app and the node-based schematics are different kinds of package, and chronos, component-loader and datepicker explicitly set it false for legacy code; none is a mistake. Hesitated with ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "better-chatbot/D-ad0dad",
+      "repo": "better-chatbot",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "better-chatbot/D-ad0dad",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/web/src/lib/cockpit/alerts.ts",
+            "apps/web/src/lib/cockpit/data.ts",
+            "apps/web/src/lib/cockpit/providers/index.ts",
+            "apps/web/src/lib/cockpit/providers/schemas.ts",
+            "apps/web/src/lib/cockpit/format.ts",
+            "apps/web/src/lib/cockpit/reasons.ts",
+            "biome.json",
+            "apps/web/.eslintrc.json",
+            "apps/web/tsconfig.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "financeFeed",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "marketingFeed",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "productHealthFeed",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "seoFeed",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "summaryView",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "prepareProvider",
+              "verdict": "look"
+            },
+            {
+              "symbol": "parseProjectLines",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "format.ts and reasons.ts annotate their returns, but data.ts deliberately lets the feed builders infer their shape: CockpitToolData is defined as ReturnType<typeof financeFeed> etc., so the five feed/view outliers are a recurring inferred-shape category; only prepareProvider and parseProjectLines are ordinary unannotated functions (2 of 7). Hesitated with ACCEPT, as annotating them is a choice (R8).",
+          "defects": [],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "better-chatbot/D-ad0dad",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/web/src/lib/cockpit/alerts.ts",
+            "apps/web/src/lib/cockpit/data.ts",
+            "apps/web/src/lib/cockpit/providers/index.ts",
+            "apps/web/src/lib/cockpit/providers/schemas.ts",
+            "apps/web/src/lib/cockpit/feeds.ts",
+            "apps/web/src/lib/cockpit/format.ts",
+            "apps/web/src/lib/cockpit/channels.ts",
+            "apps/web/tsconfig.json",
+            "biome.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "financeFeed",
+              "verdict": "look"
+            },
+            {
+              "symbol": "marketingFeed",
+              "verdict": "look"
+            },
+            {
+              "symbol": "productHealthFeed",
+              "verdict": "look"
+            },
+            {
+              "symbol": "seoFeed",
+              "verdict": "look"
+            },
+            {
+              "symbol": "summaryView",
+              "verdict": "look"
+            },
+            {
+              "symbol": "prepareProvider",
+              "verdict": "look"
+            },
+            {
+              "symbol": "parseProjectLines",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Exported functions in alerts.ts, feeds.ts, format.ts and channels.ts annotate returns; the outliers (data.ts feeds, providers/index.ts prepareProvider, schemas.ts parseProjectLines) are ordinary exported functions with inferred object/promise returns, so it is a choice, not a lack of need. Neither biome.json nor tsconfig enforces it; hesitated with WRONG (inferred literal types deliberate).",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "mitosis/D-e375ce",
+      "repo": "mitosis",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "mitosis/D-e375ce",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/core/src/helpers/apply-meta-tagname.ts",
+            "packages/core/src/helpers/babel-transform.ts",
+            "packages/core/src/helpers/dedent.ts",
+            "packages/core/src/helpers/is-mitosis-node.ts",
+            "packages/core/src/helpers/set.ts",
+            "packages/core/src/helpers/styles/collect-styled-components.ts",
+            "packages/core/src/helpers/typescript.ts",
+            "packages/core/src/helpers/capitalize.ts",
+            "packages/core/src/helpers/is-upper-case.ts",
+            "packages/core/src/helpers/traverse-nodes.ts",
+            ".eslintrc.js",
+            ".eslintignore",
+            "package.json",
+            "packages/core/tsconfig.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "babelTransformCode",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "babelTransformExpression",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "dedent",
+              "verdict": "look"
+            },
+            {
+              "symbol": "isMitosisNode",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "set",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "collectStyledComponents",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "objectHasKey",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "There is no no-explicit-any lint rule, so this is not TRIVIAL. Most outliers are generic low-level utilities that deal with untyped data by design: the Babel visitor-state generic defaults in babel-transform.ts, a lodash-style set(obj: any) in set.ts, the unknown-narrowing type guard in is-mitosis-node.ts, and objectHasKey over an unconstrained T in typescript.ts. Only the `as any` cast in collect-styled-components.ts:58, plus perhaps dedent's any[], is drift, which makes 2 of 7. I hesitated with ACCEPT, since several of these could use unknown instead.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "mitosis/D-e375ce",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/core/src/helpers/apply-meta-tagname.ts",
+            "packages/core/src/helpers/babel-transform.ts",
+            "packages/core/src/helpers/dedent.ts",
+            "packages/core/src/helpers/is-mitosis-node.ts",
+            "packages/core/src/helpers/set.ts",
+            "packages/core/src/helpers/styles/collect-styled-components.ts",
+            "packages/core/src/helpers/typescript.ts",
+            "packages/core/src/helpers/camel-case.ts",
+            "packages/core/src/helpers/has.ts",
+            "packages/core/tsconfig.json",
+            ".eslintrc.js"
+          ],
+          "outliers": [
+            {
+              "symbol": "babelTransformCode",
+              "verdict": "look"
+            },
+            {
+              "symbol": "babelTransformExpression",
+              "verdict": "look"
+            },
+            {
+              "symbol": "dedent",
+              "verdict": "look"
+            },
+            {
+              "symbol": "isMitosisNode",
+              "verdict": "look"
+            },
+            {
+              "symbol": "set",
+              "verdict": "look"
+            },
+            {
+              "symbol": "collectStyledComponents",
+              "verdict": "look"
+            },
+            {
+              "symbol": "objectHasKey",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Root .eslintrc.js does not enable no-explicit-any and tsconfig strict does not forbid explicit any, so nothing catches it; members like camel-case.ts and has.ts are typed, while the outliers use any where unknown or a real type could fit (is-mitosis-node.ts cast, set.ts params), a choice. Hesitated with WRONG legit_outliers because some uses are generic defaults and a lodash-style helper.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "webstudio/D-50ff6f",
+      "repo": "webstudio",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "webstudio/D-50ff6f",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "packages/sdk-components-react-radix/src/accordion.ws.ts",
+            "packages/sdk-components-react-radix/src/label.ws.ts",
+            "packages/sdk-components-react-radix/src/dialog.ws.ts",
+            "packages/sdk-components-react-radix/src/switch.ws.ts",
+            "packages/sdk-components-react-radix/src/metas.ts",
+            "packages/sdk-components-react-radix/src/templates.ts",
+            "packages/sdk-components-react-radix/src/__generated__/label.props.ts",
+            "packages/sdk-components-react/src/metas.ts",
+            "packages/generate-arg-types/src/cli.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "meta",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Multi-component radix files export metaAccordion, metaDialog..., but label.ws.ts is the only single-component file and exports bare `meta`, matching the repo-wide single-component scheme (all sdk-components-react *.ws.ts export `meta`, and generate-arg-types emits bare `props` for one-component files); metas.ts re-exports it as Label. A new single-component radix file would follow the same legitimate pattern and be flagged.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "webstudio/D-50ff6f",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "packages/sdk-components-react-radix/src/accordion.ws.ts",
+            "packages/sdk-components-react-radix/src/label.ws.ts",
+            "packages/sdk-components-react-radix/src/tabs.ws.ts",
+            "packages/sdk-components-react-radix/src/checkbox.ws.ts",
+            "packages/sdk-components-react-radix/src/switch.ws.ts",
+            "packages/sdk-components-react-radix/src/metas.ts",
+            "packages/sdk-components-react-radix/src/label.tsx"
+          ],
+          "outliers": [
+            {
+              "symbol": "meta",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "All other ws files export metaX (metaAccordion, metaCheckbox, metaSwitch) and metas.ts re-exports them by name; label.ws.ts exports bare meta, a naming-scheme drift a new ws file could repeat and nothing lints.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "webstudio/D-07af70",
+      "repo": "webstudio",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "webstudio/D-07af70",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/builder/package.json",
+            "packages/sdk-cli/package.json",
+            "packages/css-data/package.json",
+            "packages/sdk/package.json",
+            "pnpm-workspace.yaml"
+          ],
+          "outliers": [
+            {
+              "symbol": "@webstudio-is/sdk-cli",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "apps/builder, packages/sdk and packages/css-data all depend on @webstudio-is/tsconfig via workspace:* (363 workspace:* specifiers vs 10 workspace:^ repo-wide); packages/sdk-cli uses workspace:^ for all its workspace deps, a drift it could trivially align. Nothing enforces it; hesitated with WRONG incidental since the specifier has no effect for a private devDependency.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "webstudio/D-07af70",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/builder/package.json",
+            "packages/sdk-cli/package.json",
+            "packages/sdk/package.json",
+            "packages/css-data/package.json",
+            "packages/react-sdk/package.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "@webstudio-is/sdk-cli",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "sdk-cli uses workspace:^ for all four of its workspace deps (consistent within the package, versions resolve identically in the workspace), so it is a deliberate per-package choice, not drift; hesitated with ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "responsible-ai-toolbox/D-a5a9f0",
+      "repo": "responsible-ai-toolbox",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "responsible-ai-toolbox/D-a5a9f0",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/dashboard-e2e/src/describer/fairness/configurationPages/describeConfigurationSelection.ts",
+            "apps/dashboard/src/model-assessment/model.py",
+            "apps/widget/src/app/modelData.ts",
+            "apps/dashboard-e2e/src/util/getSpan.ts",
+            "apps/widget/src/app/callFlaskService.ts",
+            ".eslintrc.json",
+            ".eslintrc/.eslintrc.typescript.eslintrc",
+            ".eslintrc/.eslintrc.type.eslintrc",
+            "apps/dashboard/.eslintrc.json",
+            "apps/widget/.eslintrc.json",
+            "apps/dashboard-e2e/.eslintrc.json",
+            "setup.cfg",
+            "pyproject.toml",
+            "requirements-linting.txt"
+          ],
+          "outliers": [
+            {
+              "symbol": "create_pipeline",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "split_label",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "train",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "All three outliers are Python functions in the lone apps/dashboard/src/model-assessment/model.py, where the repo's Python (flake8 config, mostly unannotated responsibleai code) does not annotate returns; the TS members are already forced by @typescript-eslint/explicit-function-return-type: error in .eslintrc/.eslintrc.typescript.eslintrc. Hesitated with TRIVIAL lint, since the TS side is fully lint-enforced and the outliers are outside eslint's scope.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "responsible-ai-toolbox/D-a5a9f0",
+          "rubric": "v3",
+          "label": "TRIVIAL",
+          "trivial_by": "lint",
+          "trivial_evidence": ".eslintrc/.eslintrc.typescript.eslintrc: @typescript-eslint/explicit-function-return-type error, extended by apps/*/.eslintrc.json via root .eslintrc.json; the outliers are Python functions in model.py, outside eslint's scope; lintall runs nx lint over all projects",
+          "lint_severity": "error",
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "apps/dashboard-e2e/src/describer/fairness/configurationPages/describeConfigurationSelection.ts",
+            "apps/dashboard/src/model-assessment/model.py",
+            "apps/dashboard-e2e/src/describer/interpret/describeErrorMessage.ts",
+            "apps/widget/src/app/callFlaskService.ts",
+            "apps/dashboard/src/app/App.tsx",
+            "apps/dashboard-e2e/.eslintrc.json",
+            "apps/dashboard/.eslintrc.json",
+            ".eslintrc/.eslintrc.typescript.eslintrc",
+            ".eslintrc.json",
+            "package.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "create_pipeline",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "split_label",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "train",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "Q2"
+          ],
+          "reason": "The three outliers are Python functions in model.py, so lint does not see them; every TS function in apps/ is already covered by explicit-function-return-type at error. Hesitated with WRONG mixed_group, since the outliers are Python and not part of the TS group.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "ownpilot/D-ba69a0",
+      "repo": "ownpilot",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "ownpilot/D-ba69a0",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/gateway/src/db/repositories/agents/index.ts",
+            "packages/gateway/src/db/repositories/agents/index.test.ts",
+            "packages/gateway/src/db/repositories/costs/provider-metrics.ts",
+            "packages/gateway/src/db/repositories/costs/usage.ts",
+            "packages/gateway/src/db/repositories/index.ts",
+            "packages/gateway/src/db/repositories/interfaces.ts",
+            "packages/gateway/src/db/repositories/jobs.ts",
+            "packages/gateway/src/db/repositories/workflows/workflow-types.ts",
+            "packages/gateway/src/db/repositories/memories.ts",
+            "packages/gateway/src/db/repositories/memories.test.ts",
+            "packages/gateway/src/db/repositories/ui-sessions.ts",
+            "packages/gateway/src/db/repositories/ui-sessions.test.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "costs/provider-metrics.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "costs/usage.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "index.ts",
+              "verdict": "one_off"
+            },
+            {
+              "symbol": "interfaces.ts",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "jobs.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "workflows/workflow-types.ts",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Repositories have sibling unit tests (memories.test.ts, ui-sessions.test.ts, agents/index.test.ts); ProviderMetricsRepository, UsageRepository and the jobs queue repository are real SQL-bearing repositories without one (look), while interfaces.ts and workflow-types.ts are type modules and index.ts the barrel. 3 of 5 counted; hesitated with WRONG legit_outliers because type-only files recur.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "ownpilot/D-ba69a0",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/gateway/src/db/repositories/agents/index.ts",
+            "packages/gateway/src/db/repositories/costs/provider-metrics.ts",
+            "packages/gateway/src/db/repositories/costs/usage.ts",
+            "packages/gateway/src/db/repositories/index.ts",
+            "packages/gateway/src/db/repositories/interfaces.ts",
+            "packages/gateway/src/db/repositories/jobs.ts",
+            "packages/gateway/src/db/repositories/workflows/workflow-types.ts",
+            "packages/gateway/src/db/repositories/memories.ts",
+            "packages/gateway/src/db/repositories/ui-sessions.ts",
+            "packages/gateway/src/db/repositories/costs/index.test.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "provider-metrics.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "usage.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "jobs.ts",
+              "verdict": "look"
+            },
+            {
+              "symbol": "index.ts",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "interfaces.ts",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "workflow-types.ts",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Three outliers are real repositories without a test (provider-metrics.ts, usage.ts, jobs.ts), but three are a barrel (index.ts), an interfaces file and a types file that need no test of their own. 3 of 6 is a tie, not most, so WRONG mixed_group. Hesitated with ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "planarally/D-988115",
+      "repo": "planarally",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "planarally/D-988115",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "client/src/assets/emits.ts",
+            "client/src/game/systems/notes/emits.ts",
+            "client/src/game/systems/groups/emits.ts",
+            "client/.oxlintrc.json",
+            ".oxlintrc.json",
+            "client/tsconfig.json"
+          ],
+          "outliers": [
+            {
+              "symbol": "getAsset",
+              "verdict": "look"
+            },
+            {
+              "symbol": "getAssetExtraData",
+              "verdict": "look"
+            },
+            {
+              "symbol": "getFolder",
+              "verdict": "look"
+            },
+            {
+              "symbol": "getFolderByPath",
+              "verdict": "look"
+            },
+            {
+              "symbol": "getFolderPath",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Exported socket emitters are named send*, including data-ack requests elsewhere (notes/emits.ts sendGetNote, groups/emits.ts sendGetGroupInfo); the assets/emits.ts get* wrappers are the same wrapSocketWithDataAck kind named off-scheme, and no oxlint rule covers naming. Hesitated with WRONG legit_outliers, since ack-requests in that one file consistently use get*.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "planarally/D-988115",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "client/src/assets/emits.ts",
+            "client/src/game/systems/chat/emits.ts",
+            "client/src/game/systems/room/emits.ts",
+            "client/src/game/systems/dice/emits.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "getAsset",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "getAssetExtraData",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "getFolder",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "getFolderByPath",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "getFolderPath",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "Send-only emits are named send* (chat/emits.ts, room/emits.ts), but all five outliers in assets/emits.ts are request/response calls via wrapSocketWithDataAck named get*, a recurring category where send* would be misleading.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    }
+  ]
+}

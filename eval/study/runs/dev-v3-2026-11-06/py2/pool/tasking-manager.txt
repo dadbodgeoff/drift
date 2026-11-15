@@ -1,0 +1,73 @@
+9 conventions from 2130 units in 98 roles (3 default tier, 6 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-cfe608] HTTP handlers in backend/** (resources files) are wrapped in get_db()
+    evidence: 94/98 (lower bound 0.90, lift 2.8)
+    tier:     default
+    example:  backend/api/annotations/resources.py#get_annotations
+    outlier:  backend/api/comments/resources.py:298 get_task_comments
+    outlier:  backend/api/tasks/resources.py:164 delete
+    outlier:  backend/api/tasks/resources.py:445 get_invalidated_tasks
+    ... 1 more outliers
+
+ 2. [D-3e220e] HTTP handlers in backend/** (actions files) are wrapped in get_db()
+    evidence: 42/43 (lower bound 0.88, lift 2.9)
+    tier:     default
+    example:  backend/api/licenses/actions.py#accept_license
+    outlier:  backend/api/projects/actions.py:381 intersecting_tiles
+
+ 3. [D-c373f7] HTTP handlers in backend/** are wrapped in get_db() or login_required() or login_required_optional()
+    evidence: 36/40 (lower bound 0.77, lift 2.6)
+    tier:     default
+    split:    get_db 20, login_required 13, login_required_optional 3
+    example:  backend/api/organisations/campaigns.py#delete_organisation_campaign
+    outlier:  backend/api/system/authentication.py:23 login
+    outlier:  backend/api/system/general.py:196 contact_admin
+    outlier:  backend/api/system/general.py:145 get
+    ... 1 more outliers
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 4. [D-86bd7f] HTTP handlers in backend/** (actions files) are wrapped in security.api_key.APIKeyHeader()
+    evidence: 42/43 (lower bound 0.88, lift 3.9)
+    tier:     suggestion (rule names a symbol from outside the repo)
+    example:  backend/api/licenses/actions.py#accept_license
+    outlier:  backend/api/users/actions.py:363 register_user_with_email
+
+ 5. [D-6ec938] frontend: classes in src/** extend PureComponent
+    evidence: 101/103 (lower bound 0.93, lift 3.8)
+    tier:     suggestion (rule names a symbol from outside the repo)
+    example:  frontend/src/components/svgIcons/alert.js#AlertIcon
+    outlier:  frontend/src/components/portal.js:11 Portal
+    outlier:  frontend/src/components/svgIcons/download.js:3 DownloadIcon
+
+ 6. [D-2dfb9d] classes in backend/models/dtos/** extend BaseModel
+    evidence: 147/148 (lower bound 0.96, lift 2.7)
+    tier:     suggestion (rule names a symbol from outside the repo)
+    example:  backend/models/dtos/application_dto.py#ApplicationDTO
+    outlier:  backend/models/dtos/validator_dto.py:10 ExtendedStringType
+
+ 7. [D-68243e] frontend: classes in src/** are named `*Icon`
+    evidence: 98/103 (lower bound 0.89, lift 3.8)
+    tier:     suggestion (rule kind named)
+    example:  frontend/src/components/svgIcons/alert.js#AlertIcon
+    outlier:  frontend/src/components/portal.js:11 Portal
+    outlier:  frontend/src/components/svgIcons/selectProject.js:3 SelectProject
+    outlier:  frontend/src/components/svgIcons/selectTask.js:3 SelectTask
+    ... 2 more outliers
+
+ 8. [D-4ede9c] HTTP handlers in backend/** (actions files) pass `content` to responses.JSONResponse()
+    evidence: 40/43 (lower bound 0.81, lift 4.0)
+    tier:     suggestion (rule kind passes_key)
+    example:  backend/api/licenses/actions.py#accept_license
+    outlier:  backend/api/teams/actions.py:468 remove_team_from_all_projects
+    outlier:  backend/api/teams/actions.py:428 remove_team_from_project
+    outlier:  backend/api/teams/actions.py:550 remove_teams_from_projects
+
+ 9. [D-0dbb9f] frontend: functions in src/api/** call api() before useQuery()
+    evidence: 26/27 (lower bound 0.82, lift 1.0)
+    tier:     suggestion (rule kind before)
+    example:  frontend/src/api/badges.js#useBadgesQuery
+    outlier:  frontend/src/api/stats.js:89 useUserOsmStatsQuery
+

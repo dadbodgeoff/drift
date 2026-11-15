@@ -1,0 +1,142 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - App
+  - CohortList
+  - Constants
+  - FeatureImportanceBar
+  - __init__
+  - aggregateFeatureImportance
+  - causalAnalysis
+  - cohort
+  - constants
+  - dataBalance
+  - datasetExplorer
+  - errorAnalysis
+  - errorMessage
+  - individualFeatureImportance
+  - jest
+  - modelOverview
+  - modelPerformance
+  - setup
+  - utils
+  - version
+  - whatIfCounterfactuals
+  suffixes:
+  - config
+  - spec
+  - styles
+  - test
+conventions:
+- id: D-0bfbdb
+  status: proposed
+  mode: advise
+  summary: "libs/core-ui: functions in src/** declare their return type"
+  role:
+    package: libs/core-ui
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 103
+    total: 105
+    lower_bound: 0.933
+    lift: 1.712
+  example: >-
+    libs/core-ui/src/lib/Cohort/ManualCohortManagement/CohortEditorPanelContentUtils.ts#getColumnItems
+  selector_version: 3
+- id: D-6cd898
+  status: proposed
+  mode: advise
+  summary: functions in apps/** do not use `any`
+  role:
+    package: ""
+    dir: apps
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: avoids
+    signal: any
+  evidence:
+    holders: 47
+    total: 48
+    lower_bound: 0.891
+    lift: 5.705
+    python_members: 3
+  example: >-
+    apps/dashboard-e2e/src/describer/fairness/configurationPages/describeConfigurationSelection.ts#checkFairnessMetricSelectionPage
+  selector_version: 3
+- id: D-a5a9f0
+  status: proposed
+  mode: advise
+  summary: functions in apps/** declare their return type
+  role:
+    package: ""
+    dir: apps
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 45
+    total: 48
+    lower_bound: 0.832
+    lift: 1.636
+    python_members: 3
+  example: >-
+    apps/dashboard-e2e/src/describer/fairness/configurationPages/describeConfigurationSelection.ts#checkFairnessMetricSelectionPage
+  selector_version: 3
+- id: D-bee410
+  status: proposed
+  mode: advise
+  summary: "libs/causality: functions in src/** declare their return type, except a shared part (used by several members, not a member)"
+  role:
+    package: libs/causality
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 25
+    total: 26
+    lower_bound: 0.811
+    lift: 1.616
+    role_members: 27
+  example: >-
+    libs/causality/src/lib/CausalAnalysisDashboard/Controls/CausalAnalysisView/CausalAggregateView/getCausalDisplayFeatureName.ts#getCausalDisplayFeatureName
+  selector_version: 3
+- id: D-ed6a98
+  status: proposed
+  mode: advise
+  summary: "libs/interpret-vision: classes in src/** render <Stack>"
+  role:
+    package: libs/interpret-vision
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: renders
+    component: pkg:@fluentui/react#Stack
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 3.368
+  example: >-
+    libs/interpret-vision/src/lib/VisionExplanationDashboard/Controls/CohortToolBar.tsx#CohortToolBar
+  selector_version: 3

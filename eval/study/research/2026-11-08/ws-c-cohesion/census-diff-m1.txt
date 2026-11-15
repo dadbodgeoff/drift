@@ -1,0 +1,9 @@
+GONE cal.com/D-8d7d13 [suggestion] WRONG/mixed_group (relabel5@7) v3=WRONG/mixed_group :: named ::  44/44->None :: packages/emails: functions in ./** are named `send*`, except 2 companions (a helper or constant beside the mem
+NEW  cal.com/D-c2e733 [suggestion] -/None () v3=-/None :: named ::  None->30/32 :: apps/api/v2: classes in src/modules/** (*.module files) are named `*Module`
+GONE infisical/D-156a6f [suggestion] WRONG/mixed_group (relabel5@7) v3=WRONG/mixed_group :: named ::  330/340->None :: backend: functions in src/server/routes/** are named `register*`, except 10 companions (a helper or constant b
+NEW  infisical/D-48958f [suggestion] -/None () v3=-/None :: renders ::  None->69/76 :: frontend: components in src/pages/secret-manager/integrations/** render <PageTitle>
+GONE infisical/D-4be5e9 [suggestion] WRONG/mixed_group (relabel5@7) v3=WRONG/mixed_group :: named ::  140/142->None :: backend: functions in src/ee/routes/** are named `register*`
+NEW  infisical/D-7fa4fe [suggestion] -/None () v3=-/None :: named ::  None->75/75 :: frontend: components in src/pages/secret-manager/integrations/** are named `*Page`, except a shared part (used
+GONE infisical/D-ac787f [suggestion] WRONG/mixed_group (relabel5@7) v3=-/None :: named ::  312/339->None :: backend: functions in src/server/routes/** are named `*Router`, except 9 companions (a helper or constant besi
+NEW  infisical/D-b0614f [suggestion] -/None () v3=-/None :: renders ::  None->66/75 :: frontend: components in src/pages/secret-manager/integrations/** render <Card>, except a shared part (used by 
+changed 8 | proposals before 224 after 224

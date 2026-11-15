@@ -1,0 +1,34 @@
+3 conventions from 2456 units in 128 roles (0 default tier, 3 suggestions)
+
+3 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-da58a2] backend: classes in app/models/schemas/** extend BaseModel
+    evidence: 100/102 (lower bound 0.93, lift 2.4)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 33% of 9)
+    example:  backend/app/models/schemas/ai_model.py#AIModelResponse
+    outlier:  backend/app/models/schemas/auth.py:27 UserCreate
+    outlier:  backend/app/models/schemas/auth.py:19 UserRead
+
+ 2. [D-6e1b64] backend: HTTP handlers in app/** are wrapped in get_current_user() or reject_agent_token()
+    evidence: 97/113 (lower bound 0.78, lift 6.1)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 75% of 8)
+    split:    get_current_user 94, reject_agent_token 3
+    example:  backend/app/api/endpoints/ai_model.py#list_models
+    outlier:  backend/app/api/endpoints/auth.py:152 get_me
+    outlier:  backend/app/api/endpoints/auth.py:51 login
+    outlier:  backend/app/api/endpoints/auth.py:197 logout
+    ... 13 more outliers
+
+ 3. [D-f863f3] frontend: components in src/components/editor/** are wrapped in memo()
+    evidence: 25/27 (lower bound 0.77, lift 2.0)
+    tier:     suggestion (rule names a symbol from outside the repo)
+    agents:   not shown to agents (family below admission bar: 0% of 1)
+    example:  frontend/src/components/editor/code-sidebar/CodeSidebar.tsx#CodeSidebar
+    outlier:  frontend/src/components/editor/editor-view/InlineChatWidget.tsx:18 InlineChatWidget
+    outlier:  frontend/src/components/editor/editor-view/ViewContentArea.tsx:44 ViewContentArea
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

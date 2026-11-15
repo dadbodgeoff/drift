@@ -1,0 +1,71 @@
+[
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "netbox",
+    "prompt": "/home/user/drift-wt/relabel4/eval/study/runs/dev-v3-relabel4-2026-11-07/py/relabel/prompts/label/A/netbox.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/outbox/acfa88eb-dbbd-4e30-8c4f-3982fdcebaac/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/workdirs/5d01fbbb-20db-4952-b54c-42d9c61548d1",
+    "checkout_status": [],
+    "expected": [
+      "netbox/D-76eb6b",
+      "netbox/D-58913a",
+      "netbox/D-afb64d",
+      "netbox/D-937c0c"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T11:40:36.406Z",
+    "collected": {
+      "at": "2026-11-07T11:54:47.805Z",
+      "dest": "eval/study/runs/dev-v3-relabel4-2026-11-07/py/relabel/labels/A/netbox.jsonl",
+      "records": 4,
+      "sha256": "ac6d7799a475da831544ee694549e2967dece88542b5363d52f8920d020150b7"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "netbox",
+    "prompt": "/home/user/drift-wt/relabel4/eval/study/runs/dev-v3-relabel4-2026-11-07/py/relabel/prompts/label/B/netbox.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/outbox/ad938d82-cf9d-4c55-b241-1b6f4a986ca5/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/workdirs/e23047bd-85c5-4030-93d3-c768bcb64f3d",
+    "checkout_status": [],
+    "expected": [
+      "netbox/D-76eb6b",
+      "netbox/D-58913a",
+      "netbox/D-afb64d",
+      "netbox/D-937c0c"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T12:00:06.435Z",
+    "collected": {
+      "at": "2026-11-07T12:01:46.728Z",
+      "dest": "eval/study/runs/dev-v3-relabel4-2026-11-07/py/relabel/labels/B/netbox.jsonl",
+      "records": 4,
+      "sha256": "21d3a7ef4c8a452a47908ee51fd129107e78a791119f095748f956cfd3669411"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "netbox",
+    "prompt": "/home/user/drift-wt/relabel4/eval/study/runs/dev-v3-relabel4-2026-11-07/py/relabel/prompts/adjudicate/C/netbox.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/outbox/6899c256-970b-4b8e-a57e-54567c936dcd/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx-ebf82b/workdirs/c29826a2-6e15-44ce-9efd-5b00fdb4549d",
+    "checkout_status": [],
+    "expected": [
+      "netbox/D-937c0c"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-07T12:03:09.356Z",
+    "collected": {
+      "at": "2026-11-07T12:04:37.488Z",
+      "dest": "eval/study/runs/dev-v3-relabel4-2026-11-07/py/relabel/labels/C/netbox.jsonl",
+      "records": 1,
+      "sha256": "5065152865f999456071d4a675aa1976fb8d9ccf2733324aa7d79c6b312401ce"
+    }
+  }
+]

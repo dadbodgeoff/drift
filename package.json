@@ -1,67 +1,21 @@
 {
-  "name": "drift",
+  "name": "drift-js",
   "private": true,
-  "version": "0.1.0",
-  "type": "module",
-  "engines": {
-    "node": ">=20.0.0"
-  },
+  "description": "JavaScript workspace for Drift's desktop app and design system (the CLI is Rust; see Cargo.toml)",
+  "license": "Apache-2.0",
+  "author": "Geoffrey Fernald",
+  "workspaces": [
+    "packages/ui",
+    "apps/studio"
+  ],
   "scripts": {
-    "build": "pnpm -r build",
-    "build:engine": "cargo build --release -p drift-engine",
-    "test": "pnpm test:engine && pnpm -r test",
-    "test:engine": "cargo test -p drift-engine",
-    "format:engine": "cargo fmt --all",
-    "format:engine:check": "cargo fmt --all -- --check",
-    "lint:engine": "cargo clippy -p drift-engine --all-targets -- -D warnings",
-    "test:e2e": "vitest run test/e2e --no-file-parallelism --maxWorkers=1",
-    "typecheck": "pnpm -r typecheck",
-    "verify": "pnpm build:engine && pnpm build && pnpm typecheck && pnpm test && pnpm test:e2e",
-    "check:boundaries": "node packages/cli/scripts/check-boundaries.mjs",
-    "validate:release-matrix": "node scripts/validate-engine-release-matrix.mjs",
-    "validate:claims": "node scripts/validate-product-claims.mjs",
-    "beta:proof": "node scripts/run-beta-proof.mjs",
-    "release:proof": "node scripts/generate-release-proof.mjs",
-    "verify:ci": "pnpm verify && pnpm test:harness && pnpm format:engine:check && pnpm lint:engine && pnpm check:boundaries && pnpm check:storage-lifecycle && pnpm check:storage-invariants && pnpm check:error-contract && pnpm check:vocabulary && pnpm check:surface-parity && pnpm check:payload-invariants && pnpm check:cell-ledger && pnpm check:engine-schema-parity && node scripts/validate-engine-release-matrix.mjs --allow-unverified && pnpm validate:claims && pnpm beta:proof && git diff --check",
-    "verify:evals": "pnpm eval:external && pnpm eval:breadth && pnpm eval:evasion && pnpm eval:bench && pnpm eval:presence && pnpm eval:determinism",
-    "verify:full": "pnpm verify:ci && pnpm verify:evals",
-    "eval:external": "node scripts/external-eval.mjs",
-    "eval:external:update": "node scripts/external-eval.mjs --update",
-    "eval:breadth": "node scripts/detection-breadth.mjs",
-    "eval:breadth:update": "node scripts/detection-breadth.mjs --update",
-    "eval:evasion": "node scripts/evasion-matrix.mjs",
-    "eval:evasion:update": "node scripts/evasion-matrix.mjs --update",
-    "eval:bench": "node scripts/beta-bench.mjs",
-    "eval:bench:update": "node scripts/beta-bench.mjs --update",
-    "eval:determinism": "node scripts/determinism.mjs",
-    "eval:determinism:update": "node scripts/determinism.mjs --update",
-    "run:log": "node scripts/run-log.mjs",
-    "test:harness": "vitest run --no-file-parallelism scripts/detection-breadth.test.mjs scripts/external-eval.test.mjs scripts/evasion-matrix.test.mjs scripts/validate-engine-release-matrix.test.mjs scripts/worktree-contamination.test.mjs scripts/beta-bench-ratchet.test.mjs scripts/validate-product-claims.test.mjs scripts/engine-handshake.test.mjs scripts/external-eval-start.test.mjs scripts/storage-lifecycle.test.mjs scripts/storage-invariants.test.mjs scripts/error-contract.test.mjs scripts/vocabulary-parity.test.mjs scripts/surface-parity.test.mjs scripts/payload-invariants.test.mjs scripts/convention-cell-ledger.test.mjs scripts/determinism-predicate.test.mjs scripts/engine-schema-parity.test.mjs scripts/chain-walker-parity.test.mjs",
-    "eval:prepare": "node scripts/prepare-quality-eval.mjs",
-    "eval:presence": "node scripts/presence-precision-recall.mjs",
-    "eval:presence:update": "node scripts/presence-precision-recall.mjs --update",
-    "check:storage-lifecycle": "node scripts/storage-lifecycle.mjs",
-    "check:storage-invariants": "node scripts/storage-invariants.mjs",
-    "check:error-contract": "node scripts/error-contract.mjs",
-    "check:vocabulary": "node scripts/vocabulary-parity.mjs",
-    "check:surface-parity": "node scripts/surface-parity.mjs",
-    "check:payload-invariants": "node scripts/payload-invariants.mjs",
-    "check:cell-ledger": "node scripts/convention-cell-ledger.mjs",
-    "check:engine-schema-parity": "node scripts/engine-schema-parity.mjs",
-    "vocabulary:generate": "node vocabulary/generate.mjs"
+    "typecheck": "npm run typecheck --workspaces",
+    "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspaces"
   },
-  "devDependencies": {
-    "@types/node": "^22.15.0",
-    "typescript": "^5.8.0",
-    "vitest": "^3.2.6"
+  "//": "overrides.minimatch: eslint 10 and typescript-eslint 8 pull minimatch 10.2.x, affected by GHSA-g3hv-75wg-m249 (ReDoS); 11.0.4 is the fixed release with the same API.",
+  "overrides": {
+    "minimatch": "11.0.4"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "better-sqlite3",
-      "esbuild"
-    ]
-  },
-  "packageManager": "pnpm@10.28.0",
-  "license": "MIT",
-  "description": "Local-first repo intelligence guardrail for AI-assisted code changes."
+  "type": "module"
 }

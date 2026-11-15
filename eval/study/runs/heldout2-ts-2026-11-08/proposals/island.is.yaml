@@ -1,0 +1,2147 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - ActionCard
+  - AdditionalDocumentsRequired
+  - AlertBanner
+  - ApiScopeUsers
+  - App
+  - ApplicationCard
+  - Applications
+  - Approved
+  - Attachments
+  - BankTransferPayment
+  - BaseInformation
+  - Breadcrumbs
+  - BulletList
+  - Button
+  - Calculator
+  - Card
+  - CaseFile
+  - Checkbox
+  - Comment
+  - Completed
+  - Conclusion
+  - ConfirmModal
+  - Confirmation
+  - Dashboard
+  - DefendantInfo
+  - Done
+  - Draft
+  - EditorInput
+  - ErrorScreen
+  - FocusableBox
+  - Footer
+  - Form
+  - Forms
+  - GrantTypes
+  - Header
+  - HearingArrangements
+  - Home
+  - Icon
+  - IconButton
+  - IdpProviders
+  - InReview
+  - IndictmentCaseFilesList
+  - IndictmentOverview
+  - Input
+  - Layout
+  - LinkButton
+  - List
+  - Login
+  - Logo
+  - MachineSelectField
+  - Menu
+  - Modal
+  - NotFound
+  - Overview
+  - Payment
+  - Payments
+  - Permissions
+  - PhoneInput
+  - Prerequisites
+  - RejectConfirmationModal
+  - Rejected
+  - Review
+  - ReviewDecision
+  - ReviewGroup
+  - Root
+  - Ruling
+  - RulingModifiedModal
+  - Search
+  - SearchInput
+  - SearchSection
+  - Select
+  - Skeleton
+  - Statistics
+  - StatisticsCard
+  - Summary
+  - Table
+  - TableOfContents
+  - Timeline
+  - Users
+  - VerdictTimelineCard
+  - "[*]"
+  - _app
+  - _document
+  - _layout
+  - access
+  - accessControl
+  - add
+  - address
+  - aid
+  - amount
+  - api
+  - api-configuration
+  - apiConfig
+  - apiConfiguration
+  - apiProvider
+  - apiScope
+  - apis
+  - app
+  - appealSummons
+  - applicant
+  - application
+  - applicationCheck
+  - applicationEvent
+  - applicationSubmittedEmail
+  - applicationSubmittedSms
+  - attachments
+  - audit
+  - auth
+  - backend
+  - blikkClient
+  - buildOpenApi
+  - cache
+  - case
+  - caseRepository
+  - caseTable
+  - catalogue
+  - chargeFjsV2Client
+  - children
+  - cleanup
+  - client
+  - clients
+  - cms-translations
+  - conclusion
+  - conclusionSection
+  - conditions
+  - config
+  - configFactory
+  - confirm-job-or-income
+  - confirmation
+  - constants
+  - consts
+  - context
+  - courseCharges
+  - courtSession
+  - create
+  - createFiles
+  - currentUser
+  - customsCalculator
+  - customsGeneral
+  - dataSchema
+  - date
+  - dateUtils
+  - deductionFactors
+  - defender
+  - definition
+  - delegation-overview
+  - delegationRequest
+  - delegations
+  - delete
+  - deliver
+  - directTaxPayment
+  - disabilityLicenseClient
+  - discount
+  - districtCommissionersLicenses
+  - document
+  - document-provider
+  - done
+  - drivingLicenseApi
+  - drivingLicenseClient
+  - education
+  - elastic
+  - email
+  - emailSignup
+  - endorsement
+  - enums
+  - environment
+  - error
+  - errors
+  - eslint
+  - eventLog
+  - exemptionForTransportationClient
+  - externalData
+  - externalDataSection
+  - factories
+  - feature-flag
+  - field
+  - fields
+  - file
+  - file-storage
+  - financeV3
+  - firearmLicenseClient
+  - flight
+  - form
+  - formApplicantTypes
+  - formatDate
+  - formatters
+  - gdpr
+  - getApplicationFeatureFlags
+  - getChargeItems
+  - getOverviewItems
+  - getSelectedMachine
+  - getSelectedVehicle
+  - globalSetup
+  - globalTeardown
+  - google-translate
+  - grant-type
+  - grant-types
+  - grants
+  - health
+  - health-insurance
+  - helpers
+  - history
+  - housing-benefit-calculator
+  - housing-benefits
+  - icelandic-name
+  - identity
+  - identity-confirmation
+  - idp-provider
+  - indictmentCount
+  - information
+  - input
+  - institution
+  - interfaces
+  - invoicePayment
+  - jest
+  - jwks
+  - legal-gazette
+  - license
+  - listItems
+  - login
+  - login-restrictions
+  - logout
+  - machineSubSection
+  - main
+  - mapper
+  - mappers
+  - message
+  - messageSuspension
+  - messages
+  - mockServiceWorker
+  - mocks
+  - module
+  - municipality
+  - nationalRegistry
+  - navigation
+  - next
+  - notification
+  - notificationSettings
+  - notifications
+  - ojoiApplicationClient
+  - openApi
+  - openapi-ts
+  - options
+  - organization
+  - organizationPermissions
+  - organizations
+  - output
+  - overview
+  - overviewItems
+  - overviewSection
+  - overviewUtils
+  - pagination
+  - passkeys-core
+  - passport
+  - paths
+  - payment
+  - paymentSection
+  - payments
+  - pdf
+  - personal-representative
+  - personal-representative-scope-permission
+  - personalRepresentatives
+  - personalTaxReturn
+  - pickMachineSubSection
+  - pickVehicleSubSection
+  - polyfills
+  - prerequisites
+  - prerequisitesSection
+  - program
+  - props
+  - provider
+  - providers
+  - queries
+  - questionnaire
+  - recyclingPartner
+  - refund
+  - requestHandlers
+  - requestReviewEmail
+  - requestReviewSms
+  - resolvers
+  - resource
+  - rolesRules
+  - routes
+  - runtimeEnvironment
+  - samgongustofa
+  - scopes
+  - screens
+  - search
+  - sectionFakeData
+  - sections
+  - seed
+  - seminars
+  - sequelize
+  - sequelizeConfig
+  - server
+  - serviceInterruptionBanner
+  - session
+  - sessions
+  - setup
+  - shared
+  - signature-collection
+  - sms
+  - staff
+  - statistics
+  - store
+  - styles
+  - subpoena
+  - syslumenn
+  - syslumennClient
+  - template
+  - testHelpers
+  - translation
+  - translations
+  - types
+  - university
+  - update
+  - uploadPoliceCaseFile
+  - useLazyMachineDetails
+  - useLazyQuery
+  - useLazyVehicleDetails
+  - useSubmitApplication
+  - user
+  - user-identities
+  - user-profile
+  - util
+  - utils
+  - vehicleOwnerChangeClient
+  - vehicles
+  - verdict
+  - victim
+  - web
+  - webpack
+  - worker
+  suffixes:
+  - action
+  - cache
+  - client
+  - config
+  - constants
+  - controller
+  - css
+  - decorator
+  - dto
+  - enum
+  - factory
+  - fetch
+  - filter
+  - fixture
+  - graphql
+  - guard
+  - helpers
+  - input
+  - interceptor
+  - jest
+  - list
+  - loader
+  - logic
+  - mapper
+  - middleware
+  - mixins
+  - mock
+  - mocks
+  - model
+  - module
+  - nextauth]
+  - payload
+  - pipe
+  - provider
+  - repository
+  - resolver
+  - response
+  - saga
+  - schema
+  - scope
+  - serializer
+  - service
+  - services
+  - setup
+  - spec
+  - state
+  - stories
+  - strings
+  - test
+  - type
+  - types
+  - union
+  - util
+  - utils
+conventions:
+- id: D-079ad8
+  status: proposed
+  mode: advise
+  summary: >-
+    files in libs/** do not import from infra/src/** (declared dependencies, and
+    lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: libs
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:infra/src
+  evidence:
+    holders: 6190
+    total: 6191
+    lower_bound: 0.999
+    lift: 3.0
+  example: libs/air-discount-scheme/consts/src/index.ts#(file)
+  selector_version: 3
+- id: D-eb0fe9
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in libs/** (*.input files) are decorated with InputType(), except 2
+    members (opting out with the wrapped package's own decorator)
+  role:
+    package: ""
+    dir: libs
+    file: "*.input"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/graphql#InputType
+  evidence:
+    holders: 675
+    total: 676
+    lower_bound: 0.992
+    lift: 6.235
+    role_members: 678
+  example: >-
+    libs/api/domains/air-discount-scheme/src/lib/discount-admin/dto/createExplicitDiscountCode.input.ts#CreateExplicitDiscountCodeInput
+  selector_version: 3
+- id: D-350b8e
+  status: proposed
+  mode: advise
+  summary: files in the repo use react-hook-form for forms, not formik/@tanstack/react-form
+  role:
+    package: ""
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: prefers_library
+    group: forms
+    preferred: react-hook-form
+  evidence:
+    holders: 413
+    total: 414
+    lower_bound: 0.986
+    lift: 1.0
+    split:
+    - - react-hook-form
+      - 413
+    - - formik
+      - 1
+  example: apps/auth-admin-web/components/Admin/form/ApiScopeUserCreateForm.tsx#(file)
+  selector_version: 3
+- id: D-3b538f
+  status: proposed
+  mode: advise
+  summary: exported values in libs/** (dataSchema files) are named `*Schema`
+  role:
+    package: ""
+    dir: libs
+    file: dataSchema
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Schema"
+  evidence:
+    holders: 172
+    total: 173
+    lower_bound: 0.968
+    lift: 68.708
+  example: >-
+    libs/application/templates/activation-allowance/src/lib/dataSchema.ts#ActivationAllowanceAnswersSchema
+  selector_version: 3
+- id: D-d6bde0
+  status: proposed
+  mode: advise
+  summary: >-
+    files in libs/island-ui/core/** do not import from libs/shared/** (declared
+    dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: libs/island-ui/core
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:libs/shared
+  evidence:
+    holders: 444
+    total: 452
+    lower_bound: 0.965
+    lift: 3.0
+  example: libs/island-ui/core/eslint.config.mjs#(file)
+  selector_version: 3
+- id: D-519283
+  status: proposed
+  mode: advise
+  summary: "apps/services/auth/admin-api: HTTP handlers in src/** (*.controller files) are decorated with UseGuards()"
+  role:
+    package: apps/services/auth/admin-api
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#UseGuards
+  evidence:
+    holders: 156
+    total: 158
+    lower_bound: 0.955
+    lift: 5.879
+  example: >-
+    apps/services/auth/admin-api/src/app/modules/access/access.controller.ts#DELETE
+    /api-access/:nationalId
+  selector_version: 3
+- id: D-b3ebaf
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in libs/api/domains/form-system/** and
+    libs/api/domains/signature-collection/** (*.input files) are named `*Input`
+  role:
+    package: ""
+    dir: libs/api/domains/form-system
+    file: "*.input"
+    entry: '-'
+    kind: class
+    also:
+    - package: ""
+      dir: libs/api/domains/signature-collection
+      file: "*.input"
+      entry: '-'
+      kind: class
+  rule:
+    type: named
+    pattern: "*Input"
+  evidence:
+    holders: 137
+    total: 139
+    lower_bound: 0.949
+    lift: 6.607
+  example: libs/api/domains/form-system/src/dto/applicant.input.ts#CreateApplicantDtoInput
+  selector_version: 3
+- id: D-76a60f
+  status: proposed
+  mode: advise
+  summary: >-
+    files in libs/shared/** do not import from libs/api/** (declared dependencies,
+    and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: libs/shared
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:libs/api
+  evidence:
+    holders: 98
+    total: 99
+    lower_bound: 0.945
+    lift: 3.0
+  example: libs/shared/babel/src/exportFinder/exportFinder.ts#(file)
+  selector_version: 3
+- id: D-0b7856
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in libs/api/domains/auth/**, libs/api/domains/documents/**,
+    libs/api/domains/education/**, libs/api/domains/health-directorate/**,
+    libs/api/domains/social-insurance/** and libs/api/domains/vmst-applications/** (*.model files) call
+    ObjectType()
+  role:
+    package: ""
+    dir: libs/api/domains/auth
+    file: "*.model"
+    entry: '-'
+    kind: class
+    also:
+    - package: ""
+      dir: libs/api/domains/documents
+      file: "*.model"
+      entry: '-'
+      kind: class
+    - package: ""
+      dir: libs/api/domains/education
+      file: "*.model"
+      entry: '-'
+      kind: class
+    - package: ""
+      dir: libs/api/domains/health-directorate
+      file: "*.model"
+      entry: '-'
+      kind: class
+    - package: ""
+      dir: libs/api/domains/social-insurance
+      file: "*.model"
+      entry: '-'
+      kind: class
+    - package: ""
+      dir: libs/api/domains/vmst-applications
+      file: "*.model"
+      entry: '-'
+      kind: class
+  rule:
+    type: calls
+    callee: pkg:@nestjs/graphql#ObjectType
+  evidence:
+    holders: 241
+    total: 249
+    lower_bound: 0.938
+    lift: 3.418
+  example: >-
+    libs/api/domains/health-directorate/src/lib/models/activePregnancy.model.ts#ActivePregnancy
+  selector_version: 3
+- id: D-1d0011
+  status: proposed
+  mode: advise
+  summary: functions in libs/cms/src/lib/models/** (*.model files) are named `map*`
+  role:
+    package: ""
+    dir: libs/cms/src/lib/models
+    file: "*.model"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: map*
+  evidence:
+    holders: 134
+    total: 137
+    lower_bound: 0.938
+    lift: 21.184
+  example: libs/cms/src/lib/models/accordionSlice.model.ts#mapAccordionSlice
+  selector_version: 3
+- id: D-601427
+  status: proposed
+  mode: advise
+  summary: functions in libs/cms/** (*.model files) declare their return type
+  role:
+    package: ""
+    dir: libs/cms
+    file: "*.model"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 134
+    total: 137
+    lower_bound: 0.938
+    lift: 3.182
+  example: libs/cms/src/lib/models/accordionSlice.model.ts#mapAccordionSlice
+  selector_version: 3
+- id: D-b3af94
+  status: proposed
+  mode: advise
+  summary: "apps/services/auth/admin-api: HTTP handlers in src/** (*.controller files) are decorated with Audit()"
+  role:
+    package: apps/services/auth/admin-api
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - libs/nest/audit/src/lib/audit.decorator.ts#Audit
+  evidence:
+    holders: 154
+    total: 158
+    lower_bound: 0.937
+    lift: 14.306
+  example: >-
+    apps/services/auth/admin-api/src/app/modules/access/access.controller.ts#DELETE
+    /api-access/:nationalId
+  selector_version: 3
+- id: D-d6cf4a
+  status: proposed
+  mode: advise
+  summary: classes in libs/api/** (*.service files) are named `*Service`
+  role:
+    package: ""
+    dir: libs/api
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Service"
+  evidence:
+    holders: 140
+    total: 144
+    lower_bound: 0.931
+    lift: 7.483
+  example: >-
+    libs/api/domains/air-discount-scheme/src/lib/discount-admin/discount-admin.service.ts#DiscountAdminService
+  selector_version: 3
+- id: D-b30b5f
+  status: proposed
+  mode: advise
+  summary: "apps/services/auth/admin-api: HTTP handlers in src/** (*.controller files) are decorated with Scopes()"
+  role:
+    package: apps/services/auth/admin-api
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - libs/auth-nest-tools/src/lib/scopes.decorator.ts#Scopes
+  evidence:
+    holders: 153
+    total: 158
+    lower_bound: 0.928
+    lift: 10.301
+  example: >-
+    apps/services/auth/admin-api/src/app/modules/access/access.controller.ts#DELETE
+    /api-access/:nationalId
+  selector_version: 3
+- id: D-94ae9e
+  status: proposed
+  mode: advise
+  summary: "apps/services/form-system: classes in src/** (*.dto files) are named `*Dto`"
+  role:
+    package: apps/services/form-system
+    dir: src
+    file: "*.dto"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Dto"
+  evidence:
+    holders: 72
+    total: 73
+    lower_bound: 0.926
+    lift: 15.903
+  example: >-
+    apps/services/form-system/src/app/modules/applications/models/dto/admin/applicationAdmin.dto.ts#ApplicationAdminDto
+  selector_version: 3
+- id: D-85c0db
+  status: proposed
+  mode: advise
+  summary: classes in apps/** (*.input files) are named `*Input`
+  role:
+    package: ""
+    dir: apps
+    file: "*.input"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Input"
+  evidence:
+    holders: 125
+    total: 129
+    lower_bound: 0.923
+    lift: 6.496
+  example: apps/financial-aid/api/src/app/modules/aid/dto/aid.input.ts#AidInput
+  selector_version: 3
+- id: D-7c747f
+  status: proposed
+  mode: advise
+  summary: >-
+    functions in libs/application/api/core/** (*.util files) declare their return
+    type, except a shared part (used by several members, not a member)
+  role:
+    package: ""
+    dir: libs/application/api/core
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 45
+    total: 45
+    lower_bound: 0.921
+    lift: 3.183
+    role_members: 46
+  example: >-
+    libs/application/api/core/src/lib/translation/dummy-data.util.ts#generateDummyData
+  selector_version: 3
+- id: D-10325d
+  status: proposed
+  mode: advise
+  summary: classes in libs/** (*.model files) are decorated with ObjectType()
+  role:
+    package: ""
+    dir: libs
+    file: "*.model"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/graphql#ObjectType
+  evidence:
+    holders: 1218
+    total: 1308
+    lower_bound: 0.916
+    lift: 3.288
+  example: >-
+    libs/api/domains/administration-of-occupational-safety-and-health/src/lib/models/course.model.ts#Course
+  selector_version: 3
+- id: D-ccd467
+  status: proposed
+  mode: advise
+  summary: >-
+    exported values in libs/** (externalData files) pass `checkboxLabel` to
+    defineMessages(), except a member (not calling the callee)
+  role:
+    package: ""
+    dir: libs
+    file: externalData
+    entry: '-'
+    kind: const
+  rule:
+    type: passes_key
+    callee: pkg:react-intl#defineMessages
+    index: 0
+    key: checkboxLabel
+  evidence:
+    holders: 37
+    total: 37
+    lower_bound: 0.906
+    lift: 278.769
+    role_members: 38
+  example: >-
+    libs/application/templates/activation-allowance/src/lib/messages/externalData.ts#externalData
+  selector_version: 3
+- id: D-db01af
+  status: proposed
+  mode: advise
+  summary: >-
+    graphql entry points in libs/api/domains/auth/**,
+    libs/api/domains/auth-admin/** and libs/api/domains/documents/** (*.resolver files) are decorated with
+    UseGuards()
+  role:
+    package: ""
+    dir: libs/api/domains/auth
+    file: "*.resolver"
+    entry: graphql
+    kind: function
+    also:
+    - package: ""
+      dir: libs/api/domains/auth-admin
+      file: "*.resolver"
+      entry: graphql
+      kind: function
+    - package: ""
+      dir: libs/api/domains/documents
+      file: "*.resolver"
+      entry: graphql
+      kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#UseGuards
+  evidence:
+    holders: 150
+    total: 158
+    lower_bound: 0.903
+    lift: 5.653
+  example: >-
+    libs/api/domains/auth-admin/src/lib/api-scope-user/api-scope-user.resolver.ts#MUTATION ApiScopeUserResolver.createApiScopeUser
+  selector_version: 3
+- id: D-afac63
+  status: proposed
+  mode: advise
+  summary: "apps/services/auth/admin-api: HTTP handlers in src/app/v2/** (*.controller files) are decorated with ApiTags()"
+  role:
+    package: apps/services/auth/admin-api
+    dir: src/app/v2
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/swagger#ApiTags
+  evidence:
+    holders: 52
+    total: 53
+    lower_bound: 0.901
+    lift: 16.606
+  example: >-
+    apps/services/auth/admin-api/src/app/v2/api-scope-users/me-api-scope-users.controller.ts#DELETE /me/api-scope-users
+  selector_version: 3
+- id: D-ca1680
+  status: proposed
+  mode: advise
+  summary: >-
+    graphql entry points in libs/api/domains/health-directorate/**,
+    libs/api/domains/signature-collection/**, libs/api/domains/social-insurance/** and
+    libs/api/domains/vehicles/** (*.resolver files) are decorated with Scopes()
+  role:
+    package: ""
+    dir: libs/api/domains/health-directorate
+    file: "*.resolver"
+    entry: graphql
+    kind: function
+    also:
+    - package: ""
+      dir: libs/api/domains/signature-collection
+      file: "*.resolver"
+      entry: graphql
+      kind: function
+    - package: ""
+      dir: libs/api/domains/social-insurance
+      file: "*.resolver"
+      entry: graphql
+      kind: function
+    - package: ""
+      dir: libs/api/domains/vehicles
+      file: "*.resolver"
+      entry: graphql
+      kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - libs/auth-nest-tools/src/lib/scopes.decorator.ts#Scopes
+  evidence:
+    holders: 141
+    total: 149
+    lower_bound: 0.898
+    lift: 10.066
+  example: >-
+    libs/api/domains/health-directorate/src/lib/resolvers/basicInformation.resolver.ts#MUTATION BasicInformationResolver.cancelAppointment
+  selector_version: 3
+- id: D-5e3ccc
+  status: proposed
+  mode: advise
+  summary: >-
+    graphql entry points in libs/api/domains/health-directorate/** (*.resolver
+    files) are decorated with Audit()
+  role:
+    package: ""
+    dir: libs/api/domains/health-directorate
+    file: "*.resolver"
+    entry: graphql
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - libs/nest/audit/src/lib/audit.decorator.ts#Audit
+  evidence:
+    holders: 49
+    total: 50
+    lower_bound: 0.895
+    lift: 14.384
+  example: >-
+    libs/api/domains/health-directorate/src/lib/resolvers/basicInformation.resolver.ts#MUTATION BasicInformationResolver.cancelAppointment
+  selector_version: 3
+- id: D-7cba6c
+  status: proposed
+  mode: advise
+  summary: functions in libs/api/domains/health-directorate/** declare their return type
+  role:
+    package: ""
+    dir: libs/api/domains/health-directorate
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 48
+    total: 49
+    lower_bound: 0.893
+    lift: 3.187
+  example: >-
+    libs/api/domains/health-directorate/src/lib/mappers/basicInformationMapper.ts#getAppointmentLinkActivationWindow
+  selector_version: 3
+- id: D-e579d2
+  status: proposed
+  mode: advise
+  summary: >-
+    components in libs/application/templates/directorate-of-equality/** render
+    <Box>, except a shared part (used by several members, not a member)
+  role:
+    package: ""
+    dir: libs/application/templates/directorate-of-equality
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: libs/island-ui/core/src/lib/Box/Box.tsx#Box
+  evidence:
+    holders: 31
+    total: 31
+    lower_bound: 0.89
+    lift: 1.626
+    role_members: 32
+  example: >-
+    libs/application/templates/directorate-of-equality/equality-report/src/components/html-editor/HTMLEditor.tsx#HTMLEditor
+  selector_version: 3
+- id: D-d3a160
+  status: proposed
+  mode: advise
+  summary: "apps/judicial-system/backend: functions in src/app/modules/case-table/** declare their return type"
+  role:
+    package: apps/judicial-system/backend
+    dir: src/app/modules/case-table
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 45
+    total: 46
+    lower_bound: 0.887
+    lift: 3.183
+  example: >-
+    apps/judicial-system/backend/src/app/modules/case-table/whereOptions/courtOfAppeals.ts#courtOfAppealsCasesCompletedWhereOptions
+  selector_version: 3
+- id: D-da0d39
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in libs/application/template-api-modules/src/lib/modules/** (*.service
+    files) extend BaseTemplateApiService, except a member (of the module that defines
+    a rule's target)
+  role:
+    package: ""
+    dir: libs/application/template-api-modules/src/lib/modules
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - >-
+      libs/application/template-api-modules/src/lib/modules/base-template-api.service.ts#BaseTemplateApiService
+  evidence:
+    holders: 115
+    total: 122
+    lower_bound: 0.886
+    lift: 44.86
+    role_members: 123
+  example: >-
+    libs/application/template-api-modules/src/lib/modules/shared/api/application/application.service.ts#ApplicationService
+  selector_version: 3
+- id: D-3ce8d6
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in libs/cms/src/lib/search/** (*.service files) pass `error` to
+    logger.warn(), except a member (not calling the callee)
+  role:
+    package: ""
+    dir: libs/cms/src/lib/search
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: passes_key
+    callee: libs/logging/src/lib/logging.ts#logger.warn
+    index: 1
+    key: error
+  evidence:
+    holders: 29
+    total: 29
+    lower_bound: 0.883
+    lift: 169.499
+    role_members: 30
+  example: libs/cms/src/lib/search/cmsSync.service.ts#CmsSyncService
+  selector_version: 3
+- id: D-c0f729
+  status: proposed
+  mode: advise
+  summary: >-
+    exported values in libs/** (paths files) are named `*Paths`, except 3
+    companions (a helper or constant beside the members that follow it)
+  role:
+    package: ""
+    dir: libs
+    file: paths
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Paths"
+  evidence:
+    holders: 42
+    total: 43
+    lower_bound: 0.879
+    lift: 311.464
+    role_members: 46
+  example: libs/portals/admin/air-discount-scheme/src/lib/paths.ts#AirDiscountSchemePaths
+  selector_version: 3
+- id: D-a1c4c1
+  status: proposed
+  mode: advise
+  summary: functions in libs/** (overviewItems files) are named `*Items`
+  role:
+    package: ""
+    dir: libs
+    file: overviewItems
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: "*Items"
+  evidence:
+    holders: 82
+    total: 87
+    lower_bound: 0.872
+    lift: 47.135
+  example: >-
+    libs/application/templates/iceland-health/accident-notification/src/utils/overviewItems.ts#aboutApplicantItems
+  selector_version: 3
+- id: D-4a6377
+  status: proposed
+  mode: advise
+  summary: classes in apps/** (*.service files) are named `*Service`
+  role:
+    package: ""
+    dir: apps
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Service"
+  evidence:
+    holders: 36
+    total: 37
+    lower_bound: 0.862
+    lift: 7.489
+  example: >-
+    apps/financial-aid/api/src/app/modules/municipalityNationalRegistryModule/municipalityNationalRegistry.service.ts#MunicipalityNationalRegistryService
+  selector_version: 3
+- id: D-82e745
+  status: proposed
+  mode: advise
+  summary: >-
+    exported values in libs/** (externalData files) pass `pageTitle` to
+    defineMessages(), except a member (not calling the callee)
+  role:
+    package: ""
+    dir: libs
+    file: externalData
+    entry: '-'
+    kind: const
+  rule:
+    type: passes_key
+    callee: pkg:react-intl#defineMessages
+    index: 0
+    key: pageTitle
+  evidence:
+    holders: 36
+    total: 37
+    lower_bound: 0.862
+    lift: 73.734
+    role_members: 38
+  example: >-
+    libs/application/templates/activation-allowance/src/lib/messages/externalData.ts#externalData
+  selector_version: 3
+- id: D-652608
+  status: proposed
+  mode: advise
+  summary: functions in libs/** (*.loader files) are named `*Loader`
+  role:
+    package: ""
+    dir: libs
+    file: "*.loader"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: "*Loader"
+  evidence:
+    holders: 35
+    total: 36
+    lower_bound: 0.858
+    lift: 282.763
+  example: >-
+    libs/portals/admin/air-discount-scheme/src/screens/Overview/Overview.loader.ts#overviewLoader
+  selector_version: 3
+- id: D-789652
+  status: proposed
+  mode: advise
+  summary: >-
+    graphql entry points in libs/cms/** (*.resolver files) are decorated with
+    CacheControl()
+  role:
+    package: ""
+    dir: libs/cms
+    file: "*.resolver"
+    entry: graphql
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - libs/nest/graphql/src/lib/cache-control.decorator.ts#CacheControl
+  evidence:
+    holders: 90
+    total: 97
+    lower_bound: 0.858
+    lift: 74.85
+  example: libs/cms/src/lib/cms.resolver.ts#FIELD ArticleResolver.relatedArticles
+  selector_version: 3
+- id: D-376c3e
+  status: proposed
+  mode: advise
+  summary: "apps/judicial-system/backend: classes in src/app/modules/repository/** (*.service files) throw on failure"
+  role:
+    package: apps/judicial-system/backend
+    dir: src/app/modules/repository
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: control
+    value: throw
+  evidence:
+    holders: 34
+    total: 35
+    lower_bound: 0.855
+    lift: 8.051
+  example: >-
+    apps/judicial-system/backend/src/app/modules/repository/services/appealCaseJudgeRepository.service.ts#AppealCaseJudgeRepositoryService
+  selector_version: 3
+- id: D-404dbb
+  status: proposed
+  mode: advise
+  summary: workspace packages enable `skipLibCheck` in tsconfig
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: flag:skipLibCheck
+  evidence:
+    holders: 34
+    total: 35
+    lower_bound: 0.855
+    lift: 1.0
+  example: apps/air-discount-scheme/backend/package.json#
+  selector_version: 3
+- id: D-1d9d5b
+  status: proposed
+  mode: advise
+  summary: "apps/services/form-system: HTTP handlers in src/** (*.controller files) are decorated with UseGuards()"
+  role:
+    package: apps/services/form-system
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#UseGuards
+  evidence:
+    holders: 61
+    total: 65
+    lower_bound: 0.852
+    lift: 5.588
+  example: >-
+    apps/services/form-system/src/app/modules/applications/admin.controller.ts#GET
+    /admin/institution-admin/application-types
+  selector_version: 3
+- id: D-3a15a2
+  status: proposed
+  mode: advise
+  summary: >-
+    exported values in libs/application/templates/signature-collection/** pass
+    `action` to defineTemplateApi(), except a member (not calling the callee)
+  role:
+    package: ""
+    dir: libs/application/templates/signature-collection
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: passes_key
+    callee: libs/application/types/src/lib/template-api/TemplateApi.ts#defineTemplateApi
+    index: 0
+    key: action
+  evidence:
+    holders: 22
+    total: 22
+    lower_bound: 0.851
+    lift: 38.63
+    role_members: 23
+  example: >-
+    libs/application/templates/signature-collection/municipal-list-creation/src/dataProviders/index.ts#CandidateApi
+  selector_version: 3
+- id: D-dc7481
+  status: proposed
+  mode: advise
+  summary: >-
+    functions in apps/judicial-system/web/** (*.logic files) declare their return
+    type
+  role:
+    package: ""
+    dir: apps/judicial-system/web
+    file: "*.logic"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 105
+    total: 115
+    lower_bound: 0.847
+    lift: 2.971
+  example: >-
+    apps/judicial-system/web/src/components/AppealAppointmentLetter/AppealAppointmentLetter.logic.ts#canViewAppealAppointmentLetter
+  selector_version: 3
+- id: D-12ab59
+  status: proposed
+  mode: advise
+  summary: components in libs/portals/admin/document-provider/** render <Box>
+  role:
+    package: ""
+    dir: libs/portals/admin/document-provider
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: libs/island-ui/core/src/lib/Box/Box.tsx#Box
+  evidence:
+    holders: 48
+    total: 51
+    lower_bound: 0.841
+    lift: 1.58
+  example: >-
+    libs/portals/admin/document-provider/src/components/AddTypeCategory/index.tsx#AddTypeCategory
+  selector_version: 3
+- id: D-c3f607
+  status: proposed
+  mode: advise
+  summary: functions in libs/application/core/** declare their return type
+  role:
+    package: ""
+    dir: libs/application/core
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 79
+    total: 86
+    lower_bound: 0.841
+    lift: 2.989
+  example: libs/application/core/src/lib/conditionUtils.ts#shouldShowFormItem
+  selector_version: 3
+- id: D-25f855
+  status: proposed
+  mode: advise
+  summary: "apps/financial-aid/backend: HTTP handlers in src/** (*.controller files) are decorated with Scopes()"
+  role:
+    package: apps/financial-aid/backend
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - libs/auth-nest-tools/src/lib/scopes.decorator.ts#Scopes
+  evidence:
+    holders: 38
+    total: 40
+    lower_bound: 0.835
+    lift: 10.105
+  example: >-
+    apps/financial-aid/backend/src/app/modules/application/application.controller.ts#GET /filters
+  selector_version: 3
+- id: D-3c505e
+  status: proposed
+  mode: advise
+  summary: pages in apps/contentful-apps/pages/fields/** are named `*Field`
+  role:
+    package: ""
+    dir: apps/contentful-apps/pages/fields
+    file: "*"
+    entry: page
+    kind: component
+  rule:
+    type: named
+    pattern: "*Field"
+  evidence:
+    holders: 38
+    total: 40
+    lower_bound: 0.835
+    lift: 27.064
+  example: apps/contentful-apps/pages/fields/404-redirect-urls-list-field.tsx#UrlsListField
+  selector_version: 3
+- id: D-e314b0
+  status: proposed
+  mode: advise
+  summary: "apps/services/auth/delegation-api: HTTP handlers in src/** (*.controller files) are decorated with Scopes()"
+  role:
+    package: apps/services/auth/delegation-api
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - libs/auth-nest-tools/src/lib/scopes.decorator.ts#Scopes
+  evidence:
+    holders: 29
+    total: 30
+    lower_bound: 0.833
+    lift: 10.283
+  example: >-
+    apps/services/auth/delegation-api/src/app/clients/clients.controller.ts#GET
+    /clients
+  selector_version: 3
+- id: D-83fdab
+  status: proposed
+  mode: advise
+  summary: "apps/judicial-system/backend: classes in src/** (*.guard files) throw on failure"
+  role:
+    package: apps/judicial-system/backend
+    dir: src
+    file: "*.guard"
+    entry: '-'
+    kind: class
+  rule:
+    type: control
+    value: throw
+  evidence:
+    holders: 52
+    total: 56
+    lower_bound: 0.83
+    lift: 7.696
+  example: >-
+    apps/judicial-system/backend/src/app/modules/appeal-case/guards/appealCaseExists.guard.ts#AppealCaseExistsGuard
+  selector_version: 3
+- id: D-7888d8
+  status: proposed
+  mode: advise
+  summary: >-
+    exported values in libs/** (Prerequisites files) pass `renderLastScreenButton`
+    to buildForm()
+  role:
+    package: ""
+    dir: libs
+    file: Prerequisites
+    entry: '-'
+    kind: const
+  rule:
+    type: passes_key
+    callee: libs/application/core/src/lib/formBuilders.ts#buildForm
+    index: 0
+    key: renderLastScreenButton
+  evidence:
+    holders: 28
+    total: 29
+    lower_bound: 0.828
+    lift: 72.337
+  example: >-
+    libs/application/templates/aosh/change-machine-supervisor/src/forms/Prerequisites.ts#PrerequisitesForm
+  selector_version: 3
+- id: D-24d3f9
+  status: proposed
+  mode: advise
+  summary: workspace packages enable `allowSyntheticDefaultImports` in tsconfig
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: flag:allowSyntheticDefaultImports
+  evidence:
+    holders: 33
+    total: 35
+    lower_bound: 0.814
+    lift: 1.0
+  example: apps/air-discount-scheme/backend/package.json#
+  selector_version: 3
+- id: D-a1886b
+  status: proposed
+  mode: advise
+  summary: "apps/judicial-system/backend: classes in src/app/modules/repository/** (*.service files) use `try`"
+  role:
+    package: apps/judicial-system/backend
+    dir: src/app/modules/repository
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: control
+    value: try
+  evidence:
+    holders: 33
+    total: 35
+    lower_bound: 0.814
+    lift: 12.81
+  example: >-
+    apps/judicial-system/backend/src/app/modules/repository/services/appealCaseJudgeRepository.service.ts#AppealCaseJudgeRepositoryService
+  selector_version: 3
+- id: D-f834fe
+  status: proposed
+  mode: advise
+  summary: workspace packages enable `esModuleInterop` in tsconfig
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: flag:esModuleInterop
+  evidence:
+    holders: 33
+    total: 35
+    lower_bound: 0.814
+    lift: 1.0
+  example: apps/air-discount-scheme/backend/package.json#
+  selector_version: 3
+- id: D-042ed3
+  status: proposed
+  mode: advise
+  summary: components in libs/application/ui-fields/** render <Box>
+  role:
+    package: ""
+    dir: libs/application/ui-fields
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: libs/island-ui/core/src/lib/Box/Box.tsx#Box
+  evidence:
+    holders: 46
+    total: 50
+    lower_bound: 0.812
+    lift: 1.544
+  example: >-
+    libs/application/ui-fields/src/lib/AccordionFormField/AccordionFormField.tsx#AccordionFormField
+  selector_version: 3
+- id: D-05f8bd
+  status: proposed
+  mode: advise
+  summary: "apps/services/auth/admin-api: classes in src/** (*.controller files) are decorated with UseGuards()"
+  role:
+    package: apps/services/auth/admin-api
+    dir: src
+    file: "*.controller"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#UseGuards
+  evidence:
+    holders: 31
+    total: 33
+    lower_bound: 0.804
+    lift: 13.762
+  example: >-
+    apps/services/auth/admin-api/src/app/modules/access/access.controller.ts#AccessController
+  selector_version: 3
+- id: D-b708db
+  status: proposed
+  mode: advise
+  summary: "apps/judicial-system/backend: functions in src/** (*.helpers files) declare their return type"
+  role:
+    package: apps/judicial-system/backend
+    dir: src
+    file: "*.helpers"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 3.118
+  example: >-
+    apps/judicial-system/backend/src/app/modules/appeal-case/appealCase.helpers.ts#appellantRepresentativeNationalIds
+  selector_version: 3
+- id: D-1f7184
+  status: proposed
+  mode: advise
+  summary: >-
+    functions in apps/web/components/connected/** are wrapped in next(), except 2
+    shared parts (used by several members, not a member)
+  role:
+    package: ""
+    dir: apps/web/components/connected
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - pkg:next#default
+  evidence:
+    holders: 52
+    total: 58
+    lower_bound: 0.792
+    lift: 121.246
+    role_members: 60
+  example: >-
+    apps/web/components/connected/AdministrationOfOccupationalSafetyAndHealthCourses/index.ts#AdministrationOfOccupationalSafetyAndHealthCourses
+  selector_version: 3
+- id: D-f63cc4
+  status: proposed
+  mode: advise
+  summary: "apps/judicial-system/backend: classes in src/** (*.controller files) are decorated with UseGuards()"
+  role:
+    package: apps/judicial-system/backend
+    dir: src
+    file: "*.controller"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#UseGuards
+  evidence:
+    holders: 35
+    total: 38
+    lower_bound: 0.792
+    lift: 13.494
+  example: >-
+    apps/judicial-system/backend/src/app/modules/appeal-case/appealCase.controller.ts#AppealCaseController
+  selector_version: 3
+- id: D-310ca4
+  status: proposed
+  mode: advise
+  summary: >-
+    components in apps/web/components/connected/CustomsGeneral/** call useState()
+    before useQuery()
+  role:
+    package: ""
+    dir: apps/web/components/connected/CustomsGeneral
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: before
+    first: pkg:react#useState
+    then: pkg:@apollo/client#useQuery
+  evidence:
+    holders: 22
+    total: 23
+    lower_bound: 0.79
+    lift: 1.0
+  example: >-
+    apps/web/components/connected/CustomsGeneral/CustomsGeneralAdvisories.tsx#CustomsGeneralAdvisories
+  selector_version: 3
+- id: D-3af77c
+  status: proposed
+  mode: advise
+  summary: "apps/services/user-profile: classes in src/** (*.dto files) are named `*Dto`"
+  role:
+    package: apps/services/user-profile
+    dir: src
+    file: "*.dto"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Dto"
+  evidence:
+    holders: 22
+    total: 23
+    lower_bound: 0.79
+    lift: 15.423
+  example: >-
+    apps/services/user-profile/src/app/user-profile/dto/actor-profile-email.dto.ts#ActorProfileEmailDto
+  selector_version: 3
+- id: D-473a63
+  status: proposed
+  mode: advise
+  summary: >-
+    exported values in libs/** (externalData files) pass `title` to
+    defineMessages(), except a member (not calling the callee)
+  role:
+    package: ""
+    dir: libs
+    file: externalData
+    entry: '-'
+    kind: const
+  rule:
+    type: passes_key
+    callee: pkg:react-intl#defineMessages
+    index: 0
+    key: title
+  evidence:
+    holders: 34
+    total: 37
+    lower_bound: 0.787
+    lift: 49.81
+    role_members: 38
+  example: >-
+    libs/application/templates/activation-allowance/src/lib/messages/externalData.ts#externalData
+  selector_version: 3
+- id: D-c24a94
+  status: proposed
+  mode: advise
+  summary: >-
+    graphql entry points in libs/api/domains/health-directorate/** (*.resolver
+    files) are decorated with FeatureFlag()
+  role:
+    package: ""
+    dir: libs/api/domains/health-directorate
+    file: "*.resolver"
+    entry: graphql
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - libs/nest/feature-flags/src/lib/feature-flag.decorator.ts#FeatureFlag
+  evidence:
+    holders: 45
+    total: 50
+    lower_bound: 0.786
+    lift: 44.405
+  example: >-
+    libs/api/domains/health-directorate/src/lib/resolvers/basicInformation.resolver.ts#MUTATION BasicInformationResolver.cancelAppointment
+  selector_version: 3
+- id: D-f0fd2e
+  status: proposed
+  mode: advise
+  summary: exported values in libs/** (Prerequisites files) pass `logo` to buildForm()
+  role:
+    package: ""
+    dir: libs
+    file: Prerequisites
+    entry: '-'
+    kind: const
+  rule:
+    type: passes_key
+    callee: libs/application/core/src/lib/formBuilders.ts#buildForm
+    index: 0
+    key: logo
+  evidence:
+    holders: 27
+    total: 29
+    lower_bound: 0.78
+    lift: 51.473
+  example: >-
+    libs/application/templates/aosh/change-machine-supervisor/src/forms/Prerequisites.ts#PrerequisitesForm
+  selector_version: 3
+- id: D-779a85
+  status: proposed
+  mode: advise
+  summary: classes in libs/api/** (*.resolver files) are decorated with UseGuards()
+  role:
+    package: ""
+    dir: libs/api
+    file: "*.resolver"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#UseGuards
+  evidence:
+    holders: 179
+    total: 215
+    lower_bound: 0.777
+    lift: 12.197
+  example: >-
+    libs/api/domains/air-discount-scheme/src/lib/discount-admin/discount-admin.resolver.ts#DiscountAdminResolver
+  selector_version: 3
+- id: D-b1cbdc
+  status: proposed
+  mode: advise
+  summary: classes in apps/** (*.resolver files) are decorated with UseGuards()
+  role:
+    package: ""
+    dir: apps
+    file: "*.resolver"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#UseGuards
+  evidence:
+    holders: 32
+    total: 35
+    lower_bound: 0.776
+    lift: 13.394
+  example: >-
+    apps/financial-aid/api/src/app/modules/apiKeys/apiKey.resolver.ts#ApiKeysResolver
+  selector_version: 3
+- id: D-d063e1
+  status: proposed
+  mode: advise
+  summary: "apps/skilavottord/ws: graphql entry points in src/** (*.resolver files) are decorated with Authorize()"
+  role:
+    package: apps/skilavottord/ws
+    dir: src
+    file: "*.resolver"
+    entry: graphql
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - apps/skilavottord/ws/src/app/modules/auth/auth.guard.ts#Authorize
+  evidence:
+    holders: 32
+    total: 35
+    lower_bound: 0.776
+    lift: 315.771
+  example: >-
+    apps/skilavottord/ws/src/app/modules/accessControl/accessControl.resolver.ts#MUTATION AccessControlResolver.createSkilavottordAccessControl
+  selector_version: 3
+- id: D-a0c902
+  status: proposed
+  mode: advise
+  summary: "apps/services/auth/admin-api: HTTP handlers in src/app/v2/** (*.controller files) pass `description` to Documentation()"
+  role:
+    package: apps/services/auth/admin-api
+    dir: src/app/v2
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: passes_key
+    callee: libs/nest/swagger/src/lib/documentation.decorator.ts#Documentation
+    index: 0
+    key: description
+  evidence:
+    holders: 47
+    total: 53
+    lower_bound: 0.774
+    lift: 66.222
+  example: >-
+    apps/services/auth/admin-api/src/app/v2/api-scope-users/me-api-scope-users.controller.ts#DELETE /me/api-scope-users
+  selector_version: 3
+- id: D-16cf8e
+  status: proposed
+  mode: advise
+  summary: classes in apps/financial-aid/** (*.model files) are named `*Model`
+  role:
+    package: ""
+    dir: apps/financial-aid
+    file: "*.model"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Model"
+  evidence:
+    holders: 31
+    total: 34
+    lower_bound: 0.77
+    lift: 43.355
+  example: apps/financial-aid/api/src/app/modules/aid/models/aid.model.ts#AidModel
+  selector_version: 3
+- id: D-4e7dc9
+  status: proposed
+  mode: advise
+  summary: classes in libs/application/** (*.service files) throw on failure
+  role:
+    package: ""
+    dir: libs/application
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: control
+    value: throw
+  evidence:
+    holders: 111
+    total: 132
+    lower_bound: 0.769
+    lift: 6.969
+  example: >-
+    libs/application/api/core/src/lib/application/application.service.ts#ApplicationService
+  selector_version: 3
+- id: D-b7d936
+  status: proposed
+  mode: advise
+  summary: >-
+    components in
+    libs/application/templates/transport-authority/transfer-of-vehicle-ownership/** render <Box>
+  role:
+    package: ""
+    dir: libs/application/templates/transport-authority/transfer-of-vehicle-ownership
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: libs/island-ui/core/src/lib/Box/Box.tsx#Box
+  evidence:
+    holders: 25
+    total: 27
+    lower_bound: 0.766
+    lift: 1.554
+  example: >-
+    libs/application/templates/transport-authority/transfer-of-vehicle-ownership/src/fields/ApplicationStatus/StatusStep/index.tsx#StatusStep
+  selector_version: 3
+- id: D-15c291
+  status: proposed
+  mode: advise
+  summary: "apps/native/app: components in src/app/(auth)/(tabs)/** call useIntl() before useCallback()"
+  role:
+    package: apps/native/app
+    dir: src/app/(auth)/(tabs)
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: before
+    first: pkg:react-intl#useIntl
+    then: pkg:react#useCallback
+  evidence:
+    holders: 19
+    total: 20
+    lower_bound: 0.764
+    lift: 1.0
+  example: >-
+    apps/native/app/src/app/(auth)/(tabs)/health/appointments/index.tsx#AppointmentsScreen
+  selector_version: 3
+- id: D-c37eb2
+  status: proposed
+  mode: advise
+  summary: classes in libs/cms/** (*.service files) use `try`
+  role:
+    package: ""
+    dir: libs/cms
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: control
+    value: try
+  evidence:
+    holders: 30
+    total: 33
+    lower_bound: 0.764
+    lift: 12.351
+  example: libs/cms/src/lib/cms.contentful.service.ts#CmsContentfulService
+  selector_version: 3
+- id: D-c57392
+  status: proposed
+  mode: advise
+  summary: "apps/services/documents: HTTP handlers in src/** (*.controller files) are decorated with Scopes()"
+  role:
+    package: apps/services/documents
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - libs/auth-nest-tools/src/lib/scopes.decorator.ts#Scopes
+  evidence:
+    holders: 19
+    total: 20
+    lower_bound: 0.764
+    lift: 10.105
+  example: >-
+    apps/services/documents/src/app/modules/document-provider/controllers/changelog.controller.ts#GET /changelogs/organisations/:organisationId
+  selector_version: 3
+- id: D-de5d76
+  status: proposed
+  mode: advise
+  summary: "apps/services/user-profile: HTTP handlers in src/** (*.controller files) are decorated with Documentation()"
+  role:
+    package: apps/services/user-profile
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - libs/nest/swagger/src/lib/documentation.decorator.ts#Documentation
+  evidence:
+    holders: 30
+    total: 33
+    lower_bound: 0.764
+    lift: 50.744
+  example: >-
+    apps/services/user-profile/src/app/user-profile/actor-user-profile.controller.ts#GET /actor/actor-profile
+  selector_version: 3
+- id: D-4c4d25
+  status: proposed
+  mode: advise
+  summary: components in libs/application/ui-fields/** are named `*Field`
+  role:
+    package: ""
+    dir: libs/application/ui-fields
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: named
+    pattern: "*Field"
+  evidence:
+    holders: 44
+    total: 50
+    lower_bound: 0.762
+    lift: 25.07
+  example: >-
+    libs/application/ui-fields/src/lib/AccordionFormField/AccordionFormField.tsx#AccordionFormField
+  selector_version: 3
+- id: D-8f4115
+  status: proposed
+  mode: advise
+  summary: >-
+    pages in apps/** ([*] files) are wrapped in withApollo() or withLocale()() or
+    withApollo()
+  role:
+    package: ""
+    dir: apps
+    file: "[*]"
+    entry: page
+    kind: const
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - apps/skilavottord/web/graphql/withApollo.ts#withApollo
+    - apps/skilavottord/web/i18n/withLocale.tsx#withLocale()
+    - apps/web/graphql/withApollo.tsx#withApollo
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 79.11
+    split:
+    - - apps/web/graphql/withApollo.tsx#withApollo
+      - 12
+    - - apps/skilavottord/web/i18n/withLocale.tsx#withLocale()
+      - 4
+    - - apps/skilavottord/web/graphql/withApollo.ts#withApollo
+      - 2
+  example: apps/skilavottord/web/pages/deregister-vehicle/[id].tsx#default
+  selector_version: 3
+- id: D-a3fa2c
+  status: proposed
+  mode: advise
+  summary: pages in apps/** are wrapped in withApollo()
+  role:
+    package: ""
+    dir: apps
+    file: "*"
+    entry: page
+    kind: const
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - apps/web/graphql/withApollo.tsx#withApollo
+  evidence:
+    holders: 142
+    total: 174
+    lower_bound: 0.752
+    lift: 84.415
+  example: apps/web/pages/[slug]/[subSlug]/index.ts#Screen
+  selector_version: 3
+- id: D-8575b6
+  status: proposed
+  mode: advise
+  summary: pages in apps/contentful-apps/** call useSDK() before useState()
+  role:
+    package: ""
+    dir: apps/contentful-apps
+    file: "*"
+    entry: page
+    kind: component
+  rule:
+    type: before
+    first: pkg:@contentful/react-apps-toolkit#useSDK
+    then: pkg:react#useState
+  evidence:
+    holders: 28
+    total: 31
+    lower_bound: 0.751
+    lift: 1.0
+  example: >-
+    apps/contentful-apps/pages/fields/active-translations-field.tsx#ActiveTranslationsField
+  selector_version: 3

@@ -1,0 +1,55 @@
+# generalise: policy M1 (M1: no TS naming on plain-function roles (§2.1)). Dev data; in-sample unless marked.
+
+## TS
+in-sample (relabel5 labels):
+   before 63.9% (94/147); not-wrong 67.3% (99/147); default 100.0% (30/30); WRONG 48; unlabelled 0; 11.3 cards/repo, 7.2 accepts/repo over 13 repos
+   after  66.2% (94/142); not-wrong 69.7% (99/142); default 100.0% (30/30); WRONG 43; unlabelled 0; 10.9 cards/repo, 7.2 accepts/repo over 13 repos
+   effect +2.3 pts accept
+undo-named reading (every change since dev-v3-2026-11-06 a round 4,5,6,8,9 PR names by id, undone; 48 restored cards):
+   before 43.6% (72/165); not-wrong 44.2% (73/165); default 75.0% (24/32); WRONG 92; unlabelled 0; 12.7 cards/repo, 5.5 accepts/repo over 13 repos
+   after  44.7% (72/161); not-wrong 45.3% (73/161); default 75.0% (24/32); WRONG 88; unlabelled 0; 12.4 cards/repo, 5.5 accepts/repo over 13 repos
+   effect +1.1 pts accept
+dev-v3 reading (the policy on the dev-v3 labels):
+   before 42.6% (69/162); not-wrong 43.2% (70/162); default 75.0% (24/32); WRONG 92; unlabelled 0; 12.5 cards/repo, 5.3 accepts/repo over 13 repos
+   after  43.7% (69/158); not-wrong 44.3% (70/158); default 75.0% (24/32); WRONG 88; unlabelled 0; 12.2 cards/repo, 5.3 accepts/repo over 13 repos
+   effect +1.1 pts accept
+folds (in-sample):
+   fold 1 [design]: 32.0% (8/25) -> 36.4% (8/22) (+4.4 pts); helped 3 in 1 repos; ACCEPT lost 0
+   fold 2: 83.8% (31/37) -> 83.8% (31/37) (+0.0 pts); helped 0 in 0 repos; ACCEPT lost 0
+   fold 3: 61.0% (25/41) -> 61.0% (25/41) (+0.0 pts); helped 0 in 0 repos; ACCEPT lost 0
+   fold 4 [design]: 68.2% (30/44) -> 71.4% (30/42) (+3.2 pts); helped 2 in 2 repos; ACCEPT lost 0
+   in-sample: design folds 55.1% (38/69) -> 59.4% (38/64) (+4.3 pts); other folds 71.8% (56/78) -> 71.8% (56/78) (+0.0 pts; per repo: accepts 0.00, WRONG 0.00, shown 0.00; 7 repos)
+   undo-named: design folds 35.0% (28/80) -> 36.8% (28/76) (+1.8 pts); other folds 51.8% (44/85) -> 51.8% (44/85) (+0.0 pts; per repo: accepts 0.00, WRONG 0.00, shown 0.00; 7 repos)
+   dev-v3: design folds 34.2% (27/79) -> 36.0% (27/75) (+1.8 pts); other folds 50.6% (42/83) -> 50.6% (42/83) (+0.0 pts; per repo: accepts 0.00, WRONG 0.00, shown 0.00; 7 repos)
+admission (§3.2): helps 3 repos across 2 folds (>= 3 across >= 2: yes); ACCEPT lost outside the design folds 0 (yes); other-fold effect +0.0 pts (NOT positive) -> NOT ADMITTED
+changed cards (5):
+   cal.com/D-8d7d13 fold 4 removed suggestion naming WRONG/mixed_group [helped]
+   dub/D-258285 fold 4 removed suggestion naming WRONG/mixed_group [helped]
+   infisical/D-156a6f fold 1 removed suggestion naming WRONG/mixed_group [helped]
+   infisical/D-4be5e9 fold 1 removed suggestion naming WRONG/mixed_group [helped]
+   infisical/D-ac787f fold 1 removed suggestion naming WRONG/mixed_group [helped]
+
+## Python
+in-sample (relabel5 labels):
+   before 61.0% (47/77); not-wrong 61.0% (47/77); default n/a; WRONG 30; unlabelled 0; 4.5 cards/repo, 2.8 accepts/repo over 17 repos
+   after  61.0% (47/77); not-wrong 61.0% (47/77); default n/a; WRONG 30; unlabelled 0; 4.5 cards/repo, 2.8 accepts/repo over 17 repos
+   effect +0.0 pts accept
+undo-named reading (every change since dev-v3-2026-11-06 a round 4,5,6,8,9 PR names by id, undone; 46 restored cards):
+   before 34.3% (34/99); not-wrong 35.4% (35/99); default n/a; WRONG 64; unlabelled 0; 5.8 cards/repo, 2.0 accepts/repo over 17 repos
+   after  34.3% (34/99); not-wrong 35.4% (35/99); default n/a; WRONG 64; unlabelled 0; 5.8 cards/repo, 2.0 accepts/repo over 17 repos
+   effect +0.0 pts accept
+dev-v3 reading (the policy on the dev-v3 labels):
+   before 31.6% (31/98); not-wrong 32.7% (32/98); default n/a; WRONG 66; unlabelled 0; 5.8 cards/repo, 1.8 accepts/repo over 17 repos
+   after  31.6% (31/98); not-wrong 32.7% (32/98); default n/a; WRONG 66; unlabelled 0; 5.8 cards/repo, 1.8 accepts/repo over 17 repos
+   effect +0.0 pts accept
+folds (in-sample):
+   fold 1 [design]: 57.7% (15/26) -> 57.7% (15/26) (+0.0 pts); helped 0 in 0 repos; ACCEPT lost 0
+   fold 2: 68.0% (17/25) -> 68.0% (17/25) (+0.0 pts); helped 0 in 0 repos; ACCEPT lost 0
+   fold 3: 50.0% (2/4) -> 50.0% (2/4) (+0.0 pts); helped 0 in 0 repos; ACCEPT lost 0
+   fold 4 [design]: 59.1% (13/22) -> 59.1% (13/22) (+0.0 pts); helped 0 in 0 repos; ACCEPT lost 0
+   in-sample: design folds 58.3% (28/48) -> 58.3% (28/48) (+0.0 pts); other folds 65.5% (19/29) -> 65.5% (19/29) (+0.0 pts; per repo: accepts 0.00, WRONG 0.00, shown 0.00; 8 repos)
+   undo-named: design folds 38.2% (21/55) -> 38.2% (21/55) (+0.0 pts); other folds 29.5% (13/44) -> 29.5% (13/44) (+0.0 pts; per repo: accepts 0.00, WRONG 0.00, shown 0.00; 8 repos)
+   dev-v3: design folds 33.3% (18/54) -> 33.3% (18/54) (+0.0 pts); other folds 29.5% (13/44) -> 29.5% (13/44) (+0.0 pts; per repo: accepts 0.00, WRONG 0.00, shown 0.00; 8 repos)
+admission (§3.2): no change in this language
+
+admitted: no

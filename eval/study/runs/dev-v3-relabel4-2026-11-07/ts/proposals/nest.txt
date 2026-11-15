@@ -1,0 +1,11 @@
+1 conventions from 1610 units in 67 roles (0 default tier, 1 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-897eda] packages/core: classes in errors/** (*.exception files) extend RuntimeException
+    evidence: 22/22 (lower bound 0.85, lift 9.7)
+    tier:     suggestion (rule kind wrapped_by:extends; decision D7 keeps only call wrappers and layering)
+    example:  packages/core/errors/exceptions/circular-dependency.exception.ts#CircularDependencyException
+    exempt:   packages/core/errors/exceptions/runtime.exception.ts:1 RuntimeException (in the module that defines RuntimeException)
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

@@ -1,0 +1,62 @@
+{
+  "a": "eval/study/runs/calib-v3-2026-11-06/py/labels/A",
+  "b": "eval/study/runs/calib-v3-2026-11-06/py/labels/B",
+  "n": 24,
+  "scope": 26,
+  "exact": 0.9583333333333334,
+  "kappa": 0.903225806451613,
+  "kappa_boot": {
+    "lo": 0.8384279475982533,
+    "hi": 1,
+    "clusters": 5
+  },
+  "accept_vs_not": {
+    "n": 24,
+    "po": 0.9583333333333334,
+    "pe": 0.5694444444444444,
+    "kappa": 0.903225806451613
+  },
+  "wrong_vs_not": {
+    "n": 24,
+    "po": 0.9583333333333334,
+    "pe": 0.5694444444444444,
+    "kappa": 0.903225806451613
+  },
+  "confusion": {
+    "ACCEPT": {
+      "ACCEPT": 7,
+      "TRIVIAL": 0,
+      "WRONG": 1
+    },
+    "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+    },
+    "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 16
+    }
+  },
+  "mix": {
+    "A": {
+      "ACCEPT": 8,
+      "TRIVIAL": 0,
+      "WRONG": 16
+    },
+    "B": {
+      "ACCEPT": 7,
+      "TRIVIAL": 0,
+      "WRONG": 17
+    }
+  },
+  "disagreements": [
+    {
+      "uid": "polar/D-093712",
+      "repo": "polar",
+      "a": "ACCEPT",
+      "b": "WRONG"
+    }
+  ]
+}

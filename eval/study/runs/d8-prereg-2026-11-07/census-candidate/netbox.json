@@ -1,0 +1,950 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "5cfbbb4-d8",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/d8/cache/repos/netbox",
+  "units": 6486,
+  "roles": 155,
+  "conventions": 12,
+  "shown": 12,
+  "tiers": {
+    "default": 0,
+    "suggestion": 12
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    },
+    "candidate": {
+      "decision": "D8",
+      "status": "candidate (pre-registered, not adopted)",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts",
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15,
+      "py": {
+        "min_members": 50,
+        "call_wrappers": "guards"
+      }
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-281ae8",
+      "rank": 1,
+      "summary": "classes in netbox/** (types files) are decorated with register_type()",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "types",
+        "entry": "-",
+        "kind": "class",
+        "members": 134
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "netbox/netbox/graphql/types.py#register_type"
+        ]
+      },
+      "evidence": {
+        "holders": 133,
+        "total": 134,
+        "lower_bound": 0.959,
+        "lift": 29.94,
+        "python_members": 134
+      },
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "netbox/circuits/graphql/types.py",
+        "symbol": "CircuitGroupAssignmentType",
+        "line": 141
+      },
+      "outliers": [
+        {
+          "path": "netbox/netbox/graphql/types.py",
+          "symbol": "NestedGroupObjectType",
+          "line": 153
+        }
+      ],
+      "outliers_total": 1,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-cc1341",
+      "rank": 2,
+      "summary": "classes in netbox/** (filtersets files) are decorated with register_filterset()",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "filtersets",
+        "entry": "-",
+        "kind": "class",
+        "members": 141
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "netbox/utilities/filtersets.py#register_filterset"
+        ]
+      },
+      "evidence": {
+        "holders": 138,
+        "total": 138,
+        "lower_bound": 0.973,
+        "lift": 28.454,
+        "role_members": 141,
+        "python_members": 141
+      },
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "netbox/circuits/filtersets.py",
+        "symbol": "CircuitFilterSet",
+        "line": 170
+      },
+      "outliers": [],
+      "outliers_total": 0,
+      "exempt": [
+        {
+          "path": "netbox/dcim/filtersets.py",
+          "symbol": "ConsoleConnectionFilterSet",
+          "line": 3478,
+          "code": "registered_key",
+          "reason": "its model ConsolePort is already registered with register_filterset() by ConsolePortFilterSet"
+        },
+        {
+          "path": "netbox/dcim/filtersets.py",
+          "symbol": "InterfaceConnectionFilterSet",
+          "line": 3492,
+          "code": "registered_key",
+          "reason": "its model Interface is already registered with register_filterset() by InterfaceFilterSet"
+        },
+        {
+          "path": "netbox/dcim/filtersets.py",
+          "symbol": "PowerConnectionFilterSet",
+          "line": 3485,
+          "code": "registered_key",
+          "reason": "its model PowerPort is already registered with register_filterset() by PowerPortFilterSet"
+        }
+      ],
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-76eb6b",
+      "rank": 3,
+      "summary": "classes in netbox/** (types files) pass `filters` to register_type()",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "types",
+        "entry": "-",
+        "kind": "class",
+        "members": 134
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "netbox/netbox/graphql/types.py#register_type",
+        "index": 99,
+        "key": "filters"
+      },
+      "evidence": {
+        "holders": 131,
+        "total": 133,
+        "lower_bound": 0.947,
+        "lift": 29.94,
+        "role_members": 134,
+        "python_members": 134
+      },
+      "rule_kind": "passes_key",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "netbox/circuits/graphql/types.py",
+        "symbol": "CircuitGroupAssignmentType",
+        "line": 141
+      },
+      "outliers": [
+        {
+          "path": "netbox/core/graphql/types.py",
+          "symbol": "ContentType",
+          "line": 49
+        },
+        {
+          "path": "netbox/netbox/graphql/types.py",
+          "symbol": "ContentTypeType",
+          "line": 204
+        }
+      ],
+      "outliers_total": 2,
+      "exempt": [
+        {
+          "path": "netbox/netbox/graphql/types.py",
+          "symbol": "NestedGroupObjectType",
+          "line": 153,
+          "code": "does_not_call",
+          "reason": "does not call register_type()"
+        }
+      ],
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-cc8d72",
+      "rank": 4,
+      "summary": "classes in netbox/** (forms/filtersets files) call FieldSet()",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "forms/filtersets",
+        "entry": "-",
+        "kind": "class",
+        "members": 136
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "netbox/utilities/forms/rendering.py#FieldSet"
+      },
+      "evidence": {
+        "holders": 132,
+        "total": 136,
+        "lower_bound": 0.927,
+        "lift": 10.727,
+        "python_members": 136
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "netbox/circuits/forms/filtersets.py",
+        "symbol": "CircuitFilterForm",
+        "line": 128
+      },
+      "outliers": [
+        {
+          "path": "netbox/dcim/forms/filtersets.py",
+          "symbol": "ConsoleConnectionFilterForm",
+          "line": 2495
+        },
+        {
+          "path": "netbox/dcim/forms/filtersets.py",
+          "symbol": "InterfaceConnectionFilterForm",
+          "line": 2543
+        },
+        {
+          "path": "netbox/dcim/forms/filtersets.py",
+          "symbol": "PowerConnectionFilterForm",
+          "line": 2519
+        },
+        {
+          "path": "netbox/extras/forms/filtersets.py",
+          "symbol": "NotificationGroupFilterForm",
+          "line": 640
+        }
+      ],
+      "outliers_total": 4,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-bc0c7d",
+      "rank": 5,
+      "summary": "classes in netbox/** (search files) are decorated with register_search()",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "search",
+        "entry": "-",
+        "kind": "class",
+        "members": 100
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "netbox/netbox/search/__init__.py#register_search"
+        ]
+      },
+      "evidence": {
+        "holders": 98,
+        "total": 98,
+        "lower_bound": 0.962,
+        "lift": 40.12,
+        "role_members": 100,
+        "python_members": 100
+      },
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "netbox/circuits/search.py",
+        "symbol": "CircuitGroupIndex",
+        "line": 17
+      },
+      "outliers": [],
+      "outliers_total": 0,
+      "exempt": [
+        {
+          "path": "netbox/extras/models/search.py",
+          "symbol": "CachedValue",
+          "line": 16,
+          "code": "another_kind",
+          "reason": "another kind of class (extends db.models.Model)"
+        },
+        {
+          "path": "netbox/netbox/forms/search.py",
+          "symbol": "SearchForm",
+          "line": 18,
+          "code": "another_kind",
+          "reason": "another kind of class (extends forms.Form)"
+        }
+      ],
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-4c4e2d",
+      "rank": 6,
+      "summary": "classes in netbox/** (model_forms files) call FieldSet()",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "model_forms",
+        "entry": "-",
+        "kind": "class",
+        "members": 146
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "netbox/utilities/forms/rendering.py#FieldSet"
+      },
+      "evidence": {
+        "holders": 129,
+        "total": 146,
+        "lower_bound": 0.821,
+        "lift": 9.614,
+        "python_members": 146
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "netbox/circuits/forms/model_forms.py",
+        "symbol": "CircuitForm",
+        "line": 141
+      },
+      "outliers": [
+        {
+          "path": "netbox/dcim/forms/model_forms.py",
+          "symbol": "CableForm",
+          "line": 1044
+        },
+        {
+          "path": "netbox/dcim/forms/model_forms.py",
+          "symbol": "DeviceForm",
+          "line": 770
+        },
+        {
+          "path": "netbox/dcim/forms/model_forms.py",
+          "symbol": "DeviceVCMembershipForm",
+          "line": 1260
+        },
+        {
+          "path": "netbox/dcim/forms/model_forms.py",
+          "symbol": "PopulateDeviceBayForm",
+          "line": 2281
+        },
+        {
+          "path": "netbox/dcim/forms/model_forms.py",
+          "symbol": "VCMemberSelectForm",
+          "line": 1301
+        },
+        {
+          "path": "netbox/dcim/forms/model_forms.py",
+          "symbol": "VirtualChassisForm",
+          "line": 1240
+        },
+        {
+          "path": "netbox/extras/forms/model_forms.py",
+          "symbol": "BookmarkForm",
+          "line": 525
+        },
+        {
+          "path": "netbox/extras/forms/model_forms.py",
+          "symbol": "JournalEntryForm",
+          "line": 920
+        },
+        {
+          "path": "netbox/extras/forms/model_forms.py",
+          "symbol": "NotificationGroupForm",
+          "line": 536
+        },
+        {
+          "path": "netbox/extras/forms/model_forms.py",
+          "symbol": "SubscriptionForm",
+          "line": 562
+        },
+        {
+          "path": "netbox/extras/forms/model_forms.py",
+          "symbol": "TableConfigForm",
+          "line": 446
+        },
+        {
+          "path": "netbox/ipam/forms/model_forms.py",
+          "symbol": "IPAddressAssignForm",
+          "line": 551
+        },
+        {
+          "path": "netbox/ipam/forms/model_forms.py",
+          "symbol": "VLANForm",
+          "line": 703
+        },
+        {
+          "path": "netbox/users/forms/model_forms.py",
+          "symbol": "TokenForm",
+          "line": 172
+        },
+        {
+          "path": "netbox/users/forms/model_forms.py",
+          "symbol": "UserTokenForm",
+          "line": 128
+        },
+        {
+          "path": "netbox/virtualization/forms/model_forms.py",
+          "symbol": "ClusterAddDevicesForm",
+          "line": 106
+        },
+        {
+          "path": "netbox/virtualization/forms/model_forms.py",
+          "symbol": "ClusterRemoveDevicesForm",
+          "line": 185
+        }
+      ],
+      "outliers_total": 17,
+      "inherited": [
+        {
+          "path": "netbox/dcim/forms/model_forms.py",
+          "symbol": "ConsolePortTemplateForm",
+          "line": 1386
+        },
+        {
+          "path": "netbox/dcim/forms/model_forms.py",
+          "symbol": "ConsoleServerPortTemplateForm",
+          "line": 1400
+        }
+      ],
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-e2c3e4",
+      "rank": 7,
+      "summary": "classes in netbox/** (choices files) extend ChoiceSet",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "choices",
+        "entry": "-",
+        "kind": "class",
+        "members": 119
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "netbox/utilities/choices.py#ChoiceSet"
+        ]
+      },
+      "evidence": {
+        "holders": 114,
+        "total": 114,
+        "lower_bound": 0.967,
+        "lift": 33.714,
+        "role_members": 119,
+        "python_members": 119
+      },
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "netbox/circuits/choices.py",
+        "symbol": "CircuitCommitRateChoices",
+        "line": 36
+      },
+      "outliers": [],
+      "outliers_total": 0,
+      "exempt": [
+        {
+          "path": "netbox/extras/choices.py",
+          "symbol": "EventRuleActionChoices",
+          "line": 305,
+          "code": "documented_exception",
+          "reason": "documented exception: \"Not a ChoiceSet\""
+        },
+        {
+          "path": "netbox/utilities/choices.py",
+          "symbol": "Choice",
+          "line": 19,
+          "code": "defining_module",
+          "reason": "in the module that defines ChoiceSet"
+        },
+        {
+          "path": "netbox/utilities/forms/fields/choices.py",
+          "symbol": "ChoiceField",
+          "line": 76,
+          "code": "named_for_base",
+          "reason": "a field, named for its base forms.ChoiceField"
+        },
+        {
+          "path": "netbox/utilities/forms/fields/choices.py",
+          "symbol": "MultipleChoiceField",
+          "line": 96,
+          "code": "named_for_base",
+          "reason": "a field, named for its base forms.MultipleChoiceField"
+        },
+        {
+          "path": "netbox/utilities/forms/fields/choices.py",
+          "symbol": "TypedChoiceField",
+          "line": 83,
+          "code": "named_for_base",
+          "reason": "a field, named for its base forms.TypedChoiceField"
+        }
+      ],
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-58913a",
+      "rank": 8,
+      "summary": "classes in netbox/** (choices files) call Choice()",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "choices",
+        "entry": "-",
+        "kind": "class",
+        "members": 119
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "netbox/utilities/choices.py#Choice"
+      },
+      "evidence": {
+        "holders": 106,
+        "total": 118,
+        "lower_bound": 0.831,
+        "lift": 33.714,
+        "role_members": 119,
+        "python_members": 119
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "netbox/circuits/choices.py",
+        "symbol": "CircuitCommitRateChoices",
+        "line": 36
+      },
+      "outliers": [
+        {
+          "path": "netbox/dcim/choices.py",
+          "symbol": "CoolingConnectorTypeChoices",
+          "line": 2267
+        },
+        {
+          "path": "netbox/dcim/choices.py",
+          "symbol": "CoolingFeedStatusChoices",
+          "line": 2225
+        },
+        {
+          "path": "netbox/dcim/choices.py",
+          "symbol": "CoolingMethodChoices",
+          "line": 2177
+        },
+        {
+          "path": "netbox/dcim/choices.py",
+          "symbol": "CoolingSourceStatusChoices",
+          "line": 2209
+        },
+        {
+          "path": "netbox/dcim/choices.py",
+          "symbol": "CoolingSourceTypeChoices",
+          "line": 2191
+        },
+        {
+          "path": "netbox/dcim/choices.py",
+          "symbol": "FluidTypeChoices",
+          "line": 2241
+        },
+        {
+          "path": "netbox/dcim/choices.py",
+          "symbol": "RackCoolingCapabilityChoices",
+          "line": 2255
+        },
+        {
+          "path": "netbox/extras/choices.py",
+          "symbol": "CustomFieldStatusChoices",
+          "line": 50
+        },
+        {
+          "path": "netbox/extras/choices.py",
+          "symbol": "EventRuleActionChoices",
+          "line": 305
+        },
+        {
+          "path": "netbox/utilities/forms/fields/choices.py",
+          "symbol": "ChoiceField",
+          "line": 76
+        },
+        {
+          "path": "netbox/utilities/forms/fields/choices.py",
+          "symbol": "MultipleChoiceField",
+          "line": 96
+        },
+        {
+          "path": "netbox/utilities/forms/fields/choices.py",
+          "symbol": "TypedChoiceField",
+          "line": 83
+        }
+      ],
+      "outliers_total": 12,
+      "exempt": [
+        {
+          "path": "netbox/utilities/choices.py",
+          "symbol": "Choice",
+          "line": 19,
+          "code": "own_target",
+          "reason": "the rule's own target"
+        }
+      ],
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-73d13c",
+      "rank": 9,
+      "summary": "HTTP handlers in netbox/** (api/views files) are named `*Set`",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "api/views",
+        "entry": "http",
+        "kind": "class",
+        "members": 137
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Set"
+      },
+      "evidence": {
+        "holders": 134,
+        "total": 137,
+        "lower_bound": 0.938,
+        "lift": 12.112,
+        "python_members": 137
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "netbox/circuits/api/views.py",
+        "symbol": "CircuitGroupAssignmentViewSet",
+        "line": 73
+      },
+      "outliers": [
+        {
+          "path": "netbox/extras/api/views.py",
+          "symbol": "DashboardView",
+          "line": 465
+        },
+        {
+          "path": "netbox/ipam/api/views.py",
+          "symbol": "IPRangeAvailableIPAddressesView",
+          "line": 460
+        },
+        {
+          "path": "netbox/ipam/api/views.py",
+          "symbol": "PrefixAvailableIPAddressesView",
+          "line": 454
+        }
+      ],
+      "outliers_total": 3,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-afb64d",
+      "rank": 10,
+      "summary": "classes in netbox/** (choices files) are named `*Choices`",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "choices",
+        "entry": "-",
+        "kind": "class",
+        "members": 119
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Choices"
+      },
+      "evidence": {
+        "holders": 115,
+        "total": 119,
+        "lower_bound": 0.917,
+        "lift": 33.714,
+        "python_members": 119
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "netbox/circuits/choices.py",
+        "symbol": "CircuitCommitRateChoices",
+        "line": 36
+      },
+      "outliers": [
+        {
+          "path": "netbox/utilities/choices.py",
+          "symbol": "Choice",
+          "line": 19
+        },
+        {
+          "path": "netbox/utilities/forms/fields/choices.py",
+          "symbol": "ChoiceField",
+          "line": 76
+        },
+        {
+          "path": "netbox/utilities/forms/fields/choices.py",
+          "symbol": "MultipleChoiceField",
+          "line": 96
+        },
+        {
+          "path": "netbox/utilities/forms/fields/choices.py",
+          "symbol": "TypedChoiceField",
+          "line": 83
+        }
+      ],
+      "outliers_total": 4,
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-937c0c",
+      "rank": 11,
+      "summary": "classes in netbox/ipam/api/** are named `*Serializer`",
+      "role": {
+        "package": "",
+        "dir": "netbox/ipam/api",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "members": 29
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "evidence": {
+        "holders": 27,
+        "total": 28,
+        "lower_bound": 0.823,
+        "lift": 18.221,
+        "role_members": 29,
+        "python_members": 29
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "netbox/ipam/api/serializers_/asns.py",
+        "symbol": "ASNRangeSerializer",
+        "line": 36
+      },
+      "outliers": [
+        {
+          "path": "netbox/ipam/api/field_serializers.py",
+          "symbol": "IPAddressField",
+          "line": 11
+        }
+      ],
+      "outliers_total": 1,
+      "exempt": [
+        {
+          "path": "netbox/ipam/api/field_serializers.py",
+          "symbol": "IPNetworkField",
+          "line": 31,
+          "code": "shared_part",
+          "reason": "shared part used by 2 members"
+        }
+      ],
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    },
+    {
+      "id": "D-310ec7",
+      "rank": 12,
+      "summary": "classes in netbox/ipam/tables/** pass `verbose_name` to Column()",
+      "role": {
+        "package": "",
+        "dir": "netbox/ipam/tables",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "members": 23
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:django_tables2#Column",
+        "index": 99,
+        "key": "verbose_name"
+      },
+      "evidence": {
+        "holders": 22,
+        "total": 22,
+        "lower_bound": 0.851,
+        "lift": 26.106,
+        "role_members": 23,
+        "python_members": 23
+      },
+      "rule_kind": "passes_key",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "netbox/ipam/tables/asn.py",
+        "symbol": "ASNRangeTable",
+        "line": 14
+      },
+      "outliers": [],
+      "outliers_total": 0,
+      "exempt": [
+        {
+          "path": "netbox/ipam/tables/ip.py",
+          "symbol": "AnnotatedIPAddressTable",
+          "line": 373,
+          "code": "does_not_call",
+          "reason": "does not call Column()"
+        }
+      ],
+      "candidate": {
+        "decision": "D8",
+        "tier": "suggestion",
+        "reason": "rule_kind",
+        "guards": null
+      }
+    }
+  ],
+  "largest_role": null
+}

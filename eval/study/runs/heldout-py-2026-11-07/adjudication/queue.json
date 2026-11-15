@@ -1,0 +1,653 @@
+{
+  "labels_sha256": {
+    "A": "0fc255097d6ac4b9210b0a9512b591ef097bd6717e22e1812cd6bfecf98eafbc",
+    "B": "42c720763369d5697ee117bff7145b4c29f35a25b98464662f408ead49004339"
+  },
+  "cases": [
+    {
+      "uid": "dbt-charts/D-e818b0",
+      "repo": "dbt-charts",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "dbt-charts/D-e818b0",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "false_outliers",
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "src/dbt_charts/agent_api/_link_scan.py",
+            "src/dbt_charts/agent_api/hex_project.py",
+            "src/dbt_charts/agent_api/inspect.py",
+            "tests/agent_api/test_hex.py",
+            "tests/core/test_inspect_cli.py",
+            "tests/cli/test_inspect_cli.py",
+            "tests/agent_api/test_result_models_frozen.py",
+            "tests/agent_api/test_link_scan.py",
+            "src/dbt_charts/agent_api/paging.py",
+            "tests/agent_api/test_paging.py",
+            "src/dbt_charts/agent_api/cache.py",
+            "tests/agent_api/test_cache.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "src/dbt_charts/agent_api/hex_project.py",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "src/dbt_charts/agent_api/inspect.py",
+              "verdict": "not_violation"
+            }
+          ],
+          "rules": [
+            "R6",
+            "R9"
+          ],
+          "reason": "Both outliers do have tests: hex_project.py is tested by tests/agent_api/test_hex.py (imports dbt_charts.agent_api.hex_project), and inspect.py's verbs are tested in tests/core/test_inspect_cli.py and its models in test_result_models_frozen.py; the tool only matched test_<module>.py names. Hesitated with ACCEPT, since as a name-matching rule a new untested module would be worth flagging, but the wording does not say the test must be named test_<module>.py.",
+          "defects": [],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "dbt-charts/D-e818b0",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "src/dbt_charts/agent_api/_link_scan.py",
+            "src/dbt_charts/agent_api/hex_project.py",
+            "src/dbt_charts/agent_api/inspect.py",
+            "src/dbt_charts/agent_api/cache.py",
+            "src/dbt_charts/agent_api/doctor.py",
+            "src/dbt_charts/agent_api/paging.py",
+            "tests/agent_api/test_link_scan.py",
+            "tests/agent_api/test_hex.py",
+            "tests/agent_api/test_cache.py",
+            "ruff.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "hex_project.py",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "inspect.py",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R6"
+          ],
+          "reason": "cache.py, doctor.py and paging.py each have tests/agent_api/test_<name>.py; hex_project.py is covered by test_hex.py (name mismatch, not_violation), while inspect.py has no test file in tests/agent_api (only a model import in test_result_models_frozen.py), a real gap worth a look. Hesitated with WRONG (naming-based, 1 counted outlier); no tool enforces it.",
+          "defects": [],
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "aws-parallelcluster/D-51bdb8",
+      "repo": "aws-parallelcluster",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "aws-parallelcluster/D-51bdb8",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "cli/src/pcluster/schemas/cluster_schema.py",
+            "cli/src/pcluster/schemas/common_schema.py",
+            "cli/src/pcluster/schemas/imagebuilder_schema.py",
+            "cli/.pylintrc",
+            "cli/.flake8"
+          ],
+          "outliers": [
+            {
+              "symbol": "CustomActionScriptSchemaBase",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Schema classes are named *Schema, including base classes (BaseNetworkingSchema, BaseIamSchema, BaseDevSettingsSchema in common_schema.py); CustomActionScriptSchemaBase breaks that Base*Schema scheme by choice, and no pylint/flake8 rule enforces the suffix. Hesitated with WRONG mixed_group because the exempted field class OneOrManyCustomActionField also lives here.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "aws-parallelcluster/D-51bdb8",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "cli/src/pcluster/schemas/cluster_schema.py",
+            "cli/src/pcluster/schemas/common_schema.py",
+            "cli/src/pcluster/schemas/imagebuilder_schema.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "CustomActionScriptSchemaBase",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "OneOrManyCustomActionField",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Schemas are named *Schema (common_schema.py, imagebuilder_schema.py); the outliers are a base class meant to be subclassed dynamically and a marshmallow field, a different kind of thing. Hesitated with ACCEPT for the Base class.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "veritasgraph/D-1d585e",
+      "repo": "veritasgraph",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "veritasgraph/D-1d585e",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "incidental",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "veritas-reason/veritasreason/change_management/change_log.py",
+            "veritas-reason/veritasreason/deduplication/entity_merger.py",
+            "veritas-reason/veritasreason/kg/temporal_query.py",
+            "veritas-reason/veritasreason/deduplication/similarity_calculator.py",
+            "veritas-reason/veritasreason/ontology/ontology_validator.py",
+            "veritas-reason/veritasreason/deduplication/merge_strategy.py",
+            "veritas-reason/veritasreason/pipeline/parallelism_manager.py",
+            "veritas-reason/veritasreason/normalize/data_cleaner.py",
+            "veritas-reason/pyproject.toml",
+            "veritas-reason/.pre-commit-config.yaml"
+          ],
+          "outliers": [
+            {
+              "symbol": "MutationRecord",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "MergeOperation",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "SimilarityResult",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "TemporalConsistencyIssue",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "SHACLViolation",
+              "verdict": "not_violation"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Every field() call in the package exists only to give list/dict defaults a default_factory (change_log.py:59, merge_strategy.py:80, parallelism_manager.py:51); a dataclass calling field(default=..., repr=False) or field(init=False) would be flagged for nothing, and field(default=[]) is already rejected by dataclasses at import. Hesitated with TRIVIAL framework.",
+          "defects": [],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "veritasgraph/D-1d585e",
+          "rubric": "v3",
+          "label": "TRIVIAL",
+          "trivial_by": "framework",
+          "trivial_evidence": "Python dataclasses raise ValueError at class definition (import time) for a list/dict/set default: 'mutable default ... use default_factory'; the 141 members using field() have mutable fields, and no outliers exist",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "veritas-reason/veritasreason/change_management/change_log.py",
+            "veritas-reason/veritasreason/deduplication/entity_merger.py",
+            "veritas-reason/veritasreason/reasoning/datalog_reasoner.py",
+            "veritas-reason/veritasreason/parse/code_parser.py",
+            "veritas-reason/veritasreason/parse/pdf_parser.py",
+            "veritas-reason/veritasreason/seed/seed_manager.py",
+            "veritas-reason/veritasreason/reasoning/deductive_reasoner.py",
+            "veritas-reason/pyproject.toml"
+          ],
+          "rules": [
+            "R5"
+          ],
+          "reason": "No outliers; exempt dataclasses (MergeOperation, DatalogFact, CodeComment) simply have no mutable-default need. The simplest violation, a list default without default_factory, fails at import. Hesitated with WRONG incidental.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "ods/D-4c758e",
+      "repo": "ods",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "ods/D-4c758e",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "high",
+          "checked": [
+            "ods/extensions/services/dashboard-api/routers/agents.py",
+            "ods/extensions/services/dashboard-api/security.py",
+            "ods/extensions/library/services/bark/server.py",
+            "ods/extensions/library/services/open-interpreter/server.py",
+            "ods/extensions/services/dashboard-api/routers/auth.py",
+            "ods/extensions/services/dashboard-api/routers/dashboard_session.py",
+            "ods/extensions/services/dashboard-api/routers/magic_link.py",
+            "ods/extensions/services/dashboard-api/routers/oauth_passthrough.py",
+            "ods/extensions/services/dashboard-api/routers/talk.py",
+            "ods/extensions/services/privacy-shield/proxy.py",
+            "ods/extensions/services/dashboard-api/routers/gpu.py",
+            "ods/extensions/services/dashboard-api/routers/privacy.py",
+            "ods/extensions/services/dashboard-api/routers/workflows.py",
+            "ods/extensions/services/dashboard-api/main.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "bark/server.py#text_to_speech",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "bark/server.py#list_voices",
+              "verdict": "look"
+            },
+            {
+              "symbol": "bark/server.py#health",
+              "verdict": "look"
+            },
+            {
+              "symbol": "open-interpreter/server.py#health",
+              "verdict": "look"
+            },
+            {
+              "symbol": "auth.py#hermes_session",
+              "verdict": "look"
+            },
+            {
+              "symbol": "auth.py#verify_session",
+              "verdict": "look"
+            },
+            {
+              "symbol": "dashboard_session.py#dashboard_login",
+              "verdict": "look"
+            },
+            {
+              "symbol": "dashboard_session.py#dashboard_logout",
+              "verdict": "look"
+            },
+            {
+              "symbol": "magic_link.py#redeem_magic_link",
+              "verdict": "look"
+            },
+            {
+              "symbol": "oauth_passthrough.py#oauth_callback",
+              "verdict": "look"
+            },
+            {
+              "symbol": "talk.py#talk_status",
+              "verdict": "look"
+            },
+            {
+              "symbol": "talk.py#talk_message",
+              "verdict": "look"
+            },
+            {
+              "symbol": "privacy-shield/proxy.py#health",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R9"
+          ],
+          "reason": "Handlers take Depends(verify_api_key) (agents.py, gpu.py, workflows.py, privacy-shield stats/proxy); outliers are reachable endpoints that skip it: cookie-session routes in talk.py (_require_session) and dashboard_session.py, login/magic-link/OAuth entry points, health probes, and bark's TTS server, which has no auth at all. Each is a security exception worth confirming (R3). The thrice-repeated name for three different same-named helpers makes the wording unclear.",
+          "defects": [
+            "ods/extensions/library/services/bark/server.py:147 /tts endpoint runs CPU-heavy generation with no authentication"
+          ],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "rubric": "v3",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "uid": "ods/D-4c758e",
+          "label": "WRONG",
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "ods/extensions/services/dashboard-api/routers/agents.py",
+            "ods/extensions/services/dashboard-api/security.py",
+            "ods/extensions/library/services/bark/server.py",
+            "ods/extensions/library/services/open-interpreter/server.py",
+            "ods/extensions/services/dashboard-api/routers/auth.py",
+            "ods/extensions/services/dashboard-api/routers/dashboard_session.py",
+            "ods/extensions/services/dashboard-api/routers/magic_link.py",
+            "ods/extensions/services/dashboard-api/routers/oauth_passthrough.py",
+            "ods/extensions/services/dashboard-api/routers/talk.py",
+            "ods/extensions/services/privacy-shield/proxy.py",
+            "ods/extensions/services/dashboard-api/routers/gpu.py",
+            "ods/extensions/services/dashboard-api/routers/privacy.py",
+            "ods/extensions/services/dashboard-api/main.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "bark.health",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "bark.text_to_speech",
+              "verdict": "look"
+            },
+            {
+              "symbol": "bark.text_to_speech_stream",
+              "verdict": "look"
+            },
+            {
+              "symbol": "bark.list_voices",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "open-interpreter.chat",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "open-interpreter.health",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "hermes_session",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "verify_session",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "dashboard_login",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "verify_dashboard_session",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "redeem_magic_link",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "oauth_callback",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "talk_status",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "privacy-shield.health",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "privacy-shield.proxy",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "talk_approval",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R9"
+          ],
+          "reason": "Wording repeats verify_api_key three times, so it is unclear. Outliers are mostly cookie-session talk routes, login/redeem/oauth public routes and health probes (legit); only bark TTS endpoints are plausible mistakes. Hesitated with ACCEPT as an auth rule.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "ods/D-6e9535",
+      "repo": "ods",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "ods/D-6e9535",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "ods/extensions/services/dashboard-api/routers/agents.py",
+            "ods/extensions/services/dashboard-api/security.py",
+            "ods/extensions/library/services/bark/server.py",
+            "ods/extensions/library/services/open-interpreter/server.py",
+            "ods/extensions/services/dashboard-api/routers/auth.py",
+            "ods/extensions/services/dashboard-api/routers/dashboard_session.py",
+            "ods/extensions/services/dashboard-api/routers/magic_link.py",
+            "ods/extensions/services/dashboard-api/routers/oauth_passthrough.py",
+            "ods/extensions/services/dashboard-api/routers/talk.py",
+            "ods/extensions/services/privacy-shield/proxy.py",
+            "ods/extensions/services/dashboard-api/routers/gpu.py",
+            "ods/extensions/services/dashboard-api/routers/privacy.py",
+            "ods/extensions/services/dashboard-api/routers/workflows.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "bark/server.py#text_to_speech",
+              "verdict": "mistake"
+            },
+            {
+              "symbol": "bark/server.py#health",
+              "verdict": "look"
+            },
+            {
+              "symbol": "open-interpreter/server.py#chat",
+              "verdict": "look"
+            },
+            {
+              "symbol": "privacy-shield/proxy.py#stats",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "privacy-shield/proxy.py#proxy",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "auth.py#hermes_session",
+              "verdict": "look"
+            },
+            {
+              "symbol": "dashboard_session.py#dashboard_login",
+              "verdict": "look"
+            },
+            {
+              "symbol": "magic_link.py#redeem_magic_link",
+              "verdict": "look"
+            },
+            {
+              "symbol": "oauth_passthrough.py#oauth_callback",
+              "verdict": "look"
+            },
+            {
+              "symbol": "talk.py#talk_status",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R6",
+            "R9"
+          ],
+          "reason": "security_scheme is the HTTPBearer(auto_error=False) object inside security.py's verify_api_key, so members follow it only transitively; privacy-shield's stats/proxy use a verify_api_key built on its own security_scheme (not_violation), and open-interpreter's chat uses its own HTTPBearer named security. The remaining outliers are the same unauthenticated or cookie-session endpoints as the verify_api_key rule (look, R3), so the warning still catches what matters. Clear is false: Depends(security_scheme) alone would satisfy the wording without authenticating. Hesitated with WRONG for that reason.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "rubric": "v3",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "uid": "ods/D-6e9535",
+          "label": "WRONG",
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "ods/extensions/services/dashboard-api/routers/agents.py",
+            "ods/extensions/services/dashboard-api/security.py",
+            "ods/extensions/library/services/bark/server.py",
+            "ods/extensions/library/services/open-interpreter/server.py",
+            "ods/extensions/services/dashboard-api/routers/auth.py",
+            "ods/extensions/services/dashboard-api/routers/dashboard_session.py",
+            "ods/extensions/services/dashboard-api/routers/magic_link.py",
+            "ods/extensions/services/dashboard-api/routers/oauth_passthrough.py",
+            "ods/extensions/services/dashboard-api/routers/talk.py",
+            "ods/extensions/services/privacy-shield/proxy.py",
+            "ods/extensions/services/dashboard-api/routers/gpu.py",
+            "ods/extensions/services/dashboard-api/routers/privacy.py",
+            "ods/extensions/services/dashboard-api/main.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "bark.health",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "bark.text_to_speech",
+              "verdict": "look"
+            },
+            {
+              "symbol": "bark.text_to_speech_stream",
+              "verdict": "look"
+            },
+            {
+              "symbol": "bark.list_voices",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "open-interpreter.chat",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "open-interpreter.health",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "hermes_session",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "verify_session",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "dashboard_login",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "verify_dashboard_session",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "redeem_magic_link",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "oauth_callback",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "talk_status",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "talk_message",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "privacy-shield.health",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "privacy-shield.proxy",
+              "verdict": "not_violation"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R3",
+            "R9"
+          ],
+          "reason": "Handlers use Depends(verify_api_key), which wraps security_scheme (security.py), so the wording is loose. Most outliers are legitimate non-API-key routes: cookie-session talk_* routes (_require_session), login/magic-link/oauth callbacks, health probes; only the bark TTS endpoints look like real gaps. Hesitated with ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    }
+  ]
+}

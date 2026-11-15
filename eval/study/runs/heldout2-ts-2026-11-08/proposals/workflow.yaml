@@ -1,0 +1,196 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - app
+  - chat
+  - input
+  - layout
+  - next
+  - nitro
+  - output-step
+  - output-workflow
+  - page
+  - route
+  - run
+  - step-executor
+  - step-single-flight
+  - steps
+  - test-direct-step-call
+  - types
+  - vite
+  - vitest
+  suffixes:
+  - child
+  - config
+  - post
+  - server
+  - test
+conventions:
+- id: D-e4aff0
+  status: proposed
+  mode: advise
+  summary: "packages/core: classes in src/** do not throw a bare Error"
+  role:
+    package: packages/core
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: avoids
+    signal: throw_error
+  evidence:
+    holders: 25
+    total: 26
+    lower_bound: 0.811
+    lift: 3.043
+  example: packages/core/src/context-errors.ts#UnavailableInWorkflowContextError
+  selector_version: 3
+- id: D-6d8dac
+  status: proposed
+  mode: advise
+  summary: workspace packages define a `build` script
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: script:build
+  evidence:
+    holders: 44
+    total: 48
+    lower_bound: 0.804
+    lift: 1.021
+  example: docs/package.json#docs
+  selector_version: 3
+- id: D-073046
+  status: proposed
+  mode: advise
+  summary: workspace packages use the @types/node version most workspace packages use
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: dependency_version
+    name: "@types/node"
+  evidence:
+    holders: 34
+    total: 37
+    lower_bound: 0.787
+    lift: 1.0
+    split:
+    - - "catalog:"
+      - 35
+    - - ^22
+      - 1
+    - - ^22.10.0
+      - 1
+    - - ^22.10.7
+      - 1
+  example: docs/package.json#docs
+  selector_version: 3
+- id: D-8fbbad
+  status: proposed
+  mode: advise
+  summary: workspace packages use the typescript version most workspace packages use
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: dependency_version
+    name: typescript
+  evidence:
+    holders: 32
+    total: 35
+    lower_bound: 0.776
+    lift: 1.0
+    split:
+    - - "catalog:"
+      - 32
+    - - ^5
+      - 1
+    - - ^5.7.0
+      - 1
+    - - ^6.0.3
+      - 1
+  example: docs/package.json#docs
+  selector_version: 3
+- id: D-a526a7
+  status: proposed
+  mode: advise
+  summary: workspace packages use the vitest version most workspace packages use
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: dependency_version
+    name: vitest
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 1.0
+    split:
+    - - "catalog:"
+      - 20
+    - - ^3.2.7
+      - 1
+  example: packages/cli/package.json#@workflow/cli
+  selector_version: 3
+- id: D-f75a3a
+  status: proposed
+  mode: advise
+  summary: "packages/web: functions in app/** (*.server files) call getWorldFromEnv() before createResponse()"
+  role:
+    package: packages/web
+    dir: app
+    file: "*.server"
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: packages/web/app/server/workflow-server-actions.server.ts#getWorldFromEnv
+    then: packages/web/app/server/workflow-server-actions.server.ts#createResponse
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 1.0
+  example: packages/web/app/server/workflow-server-actions.server.ts#bulkCancelRuns
+  selector_version: 3
+- id: D-f834fe
+  status: proposed
+  mode: advise
+  summary: workspace packages enable `esModuleInterop` in tsconfig
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: flag:esModuleInterop
+  evidence:
+    holders: 42
+    total: 48
+    lower_bound: 0.753
+    lift: 1.021
+  example: docs/package.json#docs
+  selector_version: 3

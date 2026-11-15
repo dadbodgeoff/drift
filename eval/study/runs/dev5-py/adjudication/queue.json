@@ -1,0 +1,91 @@
+{
+  "labels_sha256": {
+    "A": "d87fbb284280e47ab53ca4ab17646c9e78e6f9ab7a1387299c07daac9c050dd4",
+    "B": "fa7bf8a4cb595d90f56ace62e9a656dfd5d11e734ab358f9f64298b67f30f74a"
+  },
+  "cases": [
+    {
+      "uid": "P12/D-f883f3",
+      "repo": "P12",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "P12/D-f883f3",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "llava_next/lmms-eval/lmms_eval/tasks/spatialtreebench/metrics/mindcube_cogmap/parse_output.py",
+            "llava_next/lmms-eval/lmms_eval/tasks/spatialtreebench/metrics/mindcube_cogmap/src/evaluation/cogmap/graph_operations.py",
+            "llava_next/lmms-eval/lmms_eval/tasks/spatialtreebench/metrics/mindcube_cogmap/src/utils/spatial_utils.py",
+            "llava_next/lmms-eval/lmms_eval/tasks/spatialtreebench/metrics/mindcube_cogmap/src/evaluation/core/io_utils.py",
+            "llava_next/lmms-eval/lmms_eval/tasks/spatialtreebench/metrics/mindcube_cogmap/result_init.py",
+            "llava_next/lmms-eval/lmms_eval/tasks/spatialtreebench/metrics/mindcube_cogmap/src/evaluation/__init__.py",
+            "llava_next/lmms-eval/lmms_eval/tasks/spatialtreebench/metrics/mindcube_cogmap/src/evaluation/cogmap/cogmap_evaluator.py",
+            "llava_next/lmms-eval/lmms_eval/tasks/spatialtreebench/metrics/mindcube_cogmap/__init__.py",
+            "pyproject.toml",
+            ".pylintrc",
+            "llava_next/pyproject.toml",
+            "llava_next/lmms-eval/pyproject.toml",
+            "llava_next/lmms-eval/.pre-commit-config.yaml",
+            "llava_next/lmms-eval/.github/workflows/lint.yml",
+            "llava_next/lmms-eval/CLAUDE.md"
+          ],
+          "outliers": [
+            {
+              "symbol": "test_create_graph_from_cogmap",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Functions here annotate returns, including void ones with -> None (parse_output.py clean_and_parse_json, spatial_utils.py, core/io_utils.py save_json_results/print_basic_results); the one outlier, graph_operations.py:629, is a void inline smoke-test function that could carry -> None as easily, so it is a choice (R8), and lmms-eval/CLAUDE.md says type hints are required for all code. Nothing enforces it: ruff selects no ANN rules, there is no mypy config, and pre-commit runs only black and isort.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "P12/D-f883f3",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "llava_next/lmms-eval/lmms_eval/tasks/spatialtreebench/metrics/mindcube_cogmap/parse_output.py",
+            "llava_next/lmms-eval/lmms_eval/tasks/spatialtreebench/metrics/mindcube_cogmap/src/evaluation/cogmap/graph_operations.py",
+            "llava_next/lmms-eval/lmms_eval/tasks/spatialtreebench/metrics/mindcube_cogmap/src/evaluation/cogmap/cogmap_metrics.py",
+            "llava_next/lmms-eval/lmms_eval/tasks/spatialtreebench/metrics/mindcube_cogmap/src/utils/text_utils.py",
+            "llava_next/lmms-eval/pyproject.toml",
+            "llava_next/lmms-eval/.pre-commit-config.yaml"
+          ],
+          "outliers": [
+            {
+              "symbol": "test_create_graph_from_cogmap",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Only outlier is an inline test function with no return value (graph_operations.py:629) sitting in a production module under a TESTS banner; other functions (parse_output.py, text_utils.py, cogmap_metrics.py) are annotated, no type checker/lint enforces it. Hesitated between ACCEPT and WRONG; test code mixed into production counts as the one outlier.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    }
+  ]
+}

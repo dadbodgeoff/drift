@@ -1,0 +1,10 @@
+fold 5 T02 D-163bf8 new [UNLABELLED] - -> 1720/1721 out=1 default :: files in apps/buddy/** do not import from packaging/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+fold 5 T02 D-c983c0 gone [WRONG:mixed_group] 1720/1721 out=1 default -> - :: files in apps/buddy/** do not import from packaging/buddy/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+fold 5 T18 D-41177a gone [WRONG:legit_outliers] 124/126 out=2 default -> - :: files in scripts/** do not import from apps/admin/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+fold 5 T18 D-44e866 new [UNLABELLED] - -> 662/663 out=1 default :: files in apps/admin/** do not import from scripts/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+fold 5 T18 D-911706 new [UNLABELLED] - -> 124/126 out=2 default :: files in scripts/** do not import from apps/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+fold 4 cal.com D-2f232d gone [ACCEPT] 235/236 out=1 default -> - :: files in packages/lib/** do not import from apps/web/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+fold 4 cal.com D-5d6ff0 new [UNLABELLED] - -> 235/236 out=1 default :: files in packages/lib/** do not import from apps/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+fold 2 documenso D-7b5140 gone [ACCEPT] 637/641 out=4 default -> - :: files in packages/lib/** do not import from packages/auth/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+fold 2 documenso D-ea1182 new [UNLABELLED] - -> 640/641 out=1 default :: files in packages/lib/** do not import from packages/auth/** except from packages/auth/client/index.ts (declared dependencies, and lazy loads of peer 
+9 changed

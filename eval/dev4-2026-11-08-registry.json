@@ -1,0 +1,8 @@
+{
+  "//": "Core sha256 (lib.mjs coreSha) of the dev4 manifests, written once by select-holdout.mjs write --selection dev4; checked by verify. Not a held-out registry.",
+  "scheme": "core-v2",
+  "manifests": {
+    "eval/dev4-2026-11-08.json": "89ef6d3a053a8f8716fa0b5ed54ad823da7db3765f7554dbaec955db8d99460e",
+    "eval/dev4-2026-11-08-py.json": "e6b8bb12935ac07c4f6514d1d9cfefcb29c8b6af6e1ce78a45e33723fb213a96"
+  }
+}

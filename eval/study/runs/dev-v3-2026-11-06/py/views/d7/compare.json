@@ -1,0 +1,29 @@
+{
+  "shown": 39,
+  "d5_default": 10,
+  "d7_default": 0,
+  "d7_not_in_d5": [],
+  "moved_to_suggestion": {
+    "count": 10,
+    "by_rule_kind": {
+      "wrapped_by:call": 2,
+      "wrapped_by:extends": 5,
+      "wrapped_by:decorator": 3
+    },
+    "by_language": {
+      "py": 10
+    },
+    "uids": [
+      "polar/D-31bf00",
+      "polar/D-093712",
+      "polar/D-f80e7c",
+      "polar/D-f53bba",
+      "netbox/D-281ae8",
+      "netbox/D-cc1341",
+      "netbox/D-bc0c7d",
+      "netbox/D-e2c3e4",
+      "CTFd/D-560792",
+      "CTFd/D-f6c1fb"
+    ]
+  }
+}

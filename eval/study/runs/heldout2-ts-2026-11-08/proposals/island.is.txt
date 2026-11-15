@@ -1,0 +1,166 @@
+13 conventions from 57077 units in 4484 roles (1 default tier, 12 suggestions)
+
+12 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-a3fa2c] pages in apps/** are wrapped in withApollo()
+    evidence: 142/174 (lower bound 0.75, lift 84.4)
+    tier:     default
+    example:  apps/web/pages/[slug]/[subSlug]/index.ts#Screen
+    outlier:  apps/consultation-portal/pages/askriftir/index.tsx:81 default
+    outlier:  apps/consultation-portal/pages/index.tsx:47 default
+    outlier:  apps/consultation-portal/pages/minaraskriftir/index.tsx:91 default
+    outlier:  apps/consultation-portal/pages/umsagnir/index.tsx:8 default
+    outlier:  apps/payments/pages/3ds/index.tsx:70 default
+    outlier:  apps/payments/pages/[locale]/[paymentFlowId]/index.tsx:653 default
+    outlier:  apps/skilavottord/web/pages/access-control-company/index.tsx:5 default
+    outlier:  apps/skilavottord/web/pages/access-control/index.tsx:5 default
+    outlier:  apps/skilavottord/web/pages/company-info/index.tsx:5 default
+    outlier:  apps/skilavottord/web/pages/deregister-vehicle/index.ts:5 default
+    outlier:  apps/skilavottord/web/pages/deregister-vehicle/select.tsx:6 default
+    outlier:  apps/skilavottord/web/pages/en/access-control-company/index.tsx:5 default
+    outlier:  apps/skilavottord/web/pages/en/access-control/index.tsx:5 default
+    outlier:  apps/skilavottord/web/pages/en/company-info/index.tsx:5 default
+    outlier:  apps/skilavottord/web/pages/en/deregister-vehicle/index.ts:5 default
+    outlier:  apps/skilavottord/web/pages/en/deregister-vehicle/select.tsx:6 default
+    outlier:  apps/skilavottord/web/pages/en/municipalities/index.tsx:5 default
+    outlier:  apps/skilavottord/web/pages/en/my-cars/index.ts:6 default
+    outlier:  apps/skilavottord/web/pages/en/recycle-vehicle/[id]/completed.tsx:6 default
+    outlier:  apps/skilavottord/web/pages/en/recycle-vehicle/[id]/confirm.tsx:6 default
+    outlier:  apps/skilavottord/web/pages/en/recycle-vehicle/[id]/handover.tsx:7 default
+    outlier:  apps/skilavottord/web/pages/en/recycle-vehicle/[id]/recycle.tsx:6 default
+    outlier:  apps/skilavottord/web/pages/en/recycled-vehicles/index.ts:5 default
+    outlier:  apps/skilavottord/web/pages/en/recycling-companies/index.tsx:5 default
+    outlier:  apps/skilavottord/web/pages/municipalities/index.tsx:5 default
+    outlier:  apps/skilavottord/web/pages/my-cars/index.ts:6 default
+    outlier:  apps/skilavottord/web/pages/recycle-vehicle/[id]/completed.tsx:6 default
+    outlier:  apps/skilavottord/web/pages/recycle-vehicle/[id]/confirm.tsx:6 default
+    outlier:  apps/skilavottord/web/pages/recycle-vehicle/[id]/handover.tsx:7 default
+    outlier:  apps/skilavottord/web/pages/recycle-vehicle/[id]/recycle.tsx:6 default
+    outlier:  apps/skilavottord/web/pages/recycled-vehicles/index.ts:5 default
+    outlier:  apps/skilavottord/web/pages/recycling-companies/index.tsx:5 default
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 2. [D-519283] apps/services/auth/admin-api: HTTP handlers in src/** (*.controller files) are decorated with UseGuards()
+    evidence: 156/158 (lower bound 0.95, lift 5.9)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/services/auth/admin-api/src/app/modules/access/access.controller.ts#DELETE /api-access/:nationalId
+    outlier:  apps/services/auth/admin-api/src/app/v2/scopes/public-scopes.controller.ts:19 GET /public/tenants/:tenantId/scopes
+    outlier:  apps/services/auth/admin-api/src/app/v2/tenants/public-tenants.controller.ts:17 GET /public/tenants
+
+ 3. [D-b3af94] apps/services/auth/admin-api: HTTP handlers in src/** (*.controller files) are decorated with Audit()
+    evidence: 154/158 (lower bound 0.94, lift 14.3)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/services/auth/admin-api/src/app/modules/access/access.controller.ts#DELETE /api-access/:nationalId
+    outlier:  apps/services/auth/admin-api/src/app/v2/identity-confirmation/identity-confirmation.controller.ts:27 POST /identity-confirmation
+    outlier:  apps/services/auth/admin-api/src/app/v2/providers/providers.controller.ts:32 GET /providers
+    outlier:  apps/services/auth/admin-api/src/app/v2/scopes/public-scopes.controller.ts:19 GET /public/tenants/:tenantId/scopes
+    outlier:  apps/services/auth/admin-api/src/app/v2/tenants/public-tenants.controller.ts:17 GET /public/tenants
+
+ 4. [D-b30b5f] apps/services/auth/admin-api: HTTP handlers in src/** (*.controller files) are decorated with Scopes()
+    evidence: 153/158 (lower bound 0.93, lift 10.3)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/services/auth/admin-api/src/app/modules/access/access.controller.ts#DELETE /api-access/:nationalId
+    outlier:  apps/services/auth/admin-api/src/app/v2/delegations/delegation-admin.controller.ts:127 POST /delegation-admin/revert-zendesk
+    outlier:  apps/services/auth/admin-api/src/app/v2/delegations/delegation-admin.controller.ts:98 POST /delegation-admin/zendesk
+    outlier:  apps/services/auth/admin-api/src/app/v2/identity-confirmation/identity-confirmation.controller.ts:27 POST /identity-confirmation
+    outlier:  apps/services/auth/admin-api/src/app/v2/scopes/public-scopes.controller.ts:19 GET /public/tenants/:tenantId/scopes
+    outlier:  apps/services/auth/admin-api/src/app/v2/tenants/public-tenants.controller.ts:17 GET /public/tenants
+
+ 5. [D-5e3ccc] graphql entry points in libs/api/domains/health-directorate/** (*.resolver files) are decorated with Audit()
+    evidence: 49/50 (lower bound 0.90, lift 14.4)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  libs/api/domains/health-directorate/src/lib/resolvers/basicInformation.resolver.ts#MUTATION BasicInformationResolver.cancelAppointment
+    outlier:  libs/api/domains/health-directorate/src/lib/resolvers/healthConversations.resolver.ts:220 FIELD HealthConversationOrganizationResolver.resolveLogoUrl
+
+ 6. [D-9d506a] graphql entry points in libs/api/domains/health-directorate/**, libs/api/domains/signature-collection/** and libs/api/domains/social-insurance/** (*.resolver files) are decorated with Scopes()
+    evidence: 123/130 (lower bound 0.89, lift 10.1)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  libs/api/domains/health-directorate/src/lib/resolvers/basicInformation.resolver.ts#MUTATION BasicInformationResolver.cancelAppointment
+    outlier:  libs/api/domains/health-directorate/src/lib/resolvers/basicInformation.resolver.ts:73 FIELD BasicInformationResolver.resolveOrganList
+    outlier:  libs/api/domains/health-directorate/src/lib/resolvers/healthConversations.resolver.ts:220 FIELD HealthConversationOrganizationResolver.resolveLogoUrl
+    outlier:  libs/api/domains/signature-collection/src/lib/signatureCollection.resolver.ts:73 QUERY SignatureCollectionResolver.signatureCollectionAllOpenLists
+    outlier:  libs/api/domains/signature-collection/src/lib/signatureCollection.resolver.ts:63 QUERY SignatureCollectionResolver.signatureCollectionLatestForType
+    outlier:  libs/api/domains/social-insurance/src/lib/resolvers/incomePlan.resolver.ts:42 FIELD IncomePlanResolver.resolveField
+    outlier:  libs/api/domains/social-insurance/src/lib/resolvers/paymentPlan.resolver.ts:51 QUERY PaymentPlanResolver.getTemporaryCalculations
+    outlier:  libs/api/domains/social-insurance/src/lib/resolvers/pension.resolver.ts:20 QUERY PensionResolver.getPensionCalculation
+
+ 7. [D-da0d39] classes in libs/application/template-api-modules/src/lib/modules/** (*.service files) extend BaseTemplateApiService, except a member (of the module that defines a rule's target)
+    evidence: 115/122 (lower bound 0.89, lift 44.9)
+    tier:     suggestion (rule kind wrapped_by:extends; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 61% of 18)
+    example:  libs/application/template-api-modules/src/lib/modules/shared/api/application/application.service.ts#ApplicationService
+    outlier:  libs/application/template-api-modules/src/lib/modules/shared/services/attachment-s3.service.ts:24 AttachmentS3Service
+    outlier:  libs/application/template-api-modules/src/lib/modules/shared/shared.service.ts:28 SharedTemplateApiService
+    outlier:  libs/application/template-api-modules/src/lib/modules/template-api.service.ts:25 TemplateAPIService
+    outlier:  libs/application/template-api-modules/src/lib/modules/templates/data-protection-complaint/attachments/attachment-s3.service.ts:15 AttachmentS3Service
+    outlier:  libs/application/template-api-modules/src/lib/modules/templates/iceland-health/accident-notification/attachments/applicationAttachment.service.ts:16 ApplicationAttachmentService
+    outlier:  libs/application/template-api-modules/src/lib/modules/templates/parental-leave/children/children.service.ts:41 ChildrenService
+    outlier:  libs/application/template-api-modules/src/lib/modules/templates/public-debt-payment-plan/paymentPlanPrerequisites.service.ts:24 PrerequisitesService
+    exempt:   libs/application/template-api-modules/src/lib/modules/base-template-api.service.ts:5 BaseTemplateApiService (in the module that defines BaseTemplateApiService)
+
+ 8. [D-789652] graphql entry points in libs/cms/** (*.resolver files) are decorated with CacheControl()
+    evidence: 90/97 (lower bound 0.86, lift 74.8)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  libs/cms/src/lib/cms.resolver.ts#FIELD ArticleResolver.relatedArticles
+    outlier:  libs/cms/src/lib/cms.resolver.ts:1206 FIELD FeaturedGenericListItemsResolver.items
+    outlier:  libs/cms/src/lib/cms.resolver.ts:1190 FIELD GenericListResolver.filterTags
+    outlier:  libs/cms/src/lib/cms.resolver.ts:1179 FIELD IntroLinkImageResolver.id
+    outlier:  libs/cms/src/lib/cms.resolver.ts:1165 FIELD LatestGenericListItemsResolver.itemResponse
+    outlier:  libs/cms/src/lib/cms.resolver.ts:1014 FIELD PowerBiSliceResolver.powerBiEmbedPropsFromServer
+    outlier:  libs/cms/src/lib/cms.resolver.ts:1288 FIELD SupportQNAResolver.subCategory
+    outlier:  libs/cms/src/lib/cms.resolver.ts:1144 FIELD TeamListResolver.teamMembers
+
+ 9. [D-25f855] apps/financial-aid/backend: HTTP handlers in src/** (*.controller files) are decorated with Scopes()
+    evidence: 38/40 (lower bound 0.83, lift 10.1)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/financial-aid/backend/src/app/modules/application/application.controller.ts#GET /filters
+    outlier:  apps/financial-aid/backend/src/app/modules/openApiApplications/openApiApplication.controller.ts:31 GET /getAll
+    outlier:  apps/financial-aid/backend/src/app/modules/openApiApplications/openApiApplication.controller.ts:56 GET /id/:id
+
+10. [D-e314b0] apps/services/auth/delegation-api: HTTP handlers in src/** (*.controller files) are decorated with Scopes()
+    evidence: 29/30 (lower bound 0.83, lift 10.3)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/services/auth/delegation-api/src/app/clients/clients.controller.ts#GET /clients
+    outlier:  apps/services/auth/delegation-api/src/app/scopes/scopes.controller.ts:49 GET /scopes/delegation-settings
+
+11. [D-c24a94] graphql entry points in libs/api/domains/health-directorate/** (*.resolver files) are decorated with FeatureFlag()
+    evidence: 45/50 (lower bound 0.79, lift 44.4)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  libs/api/domains/health-directorate/src/lib/resolvers/basicInformation.resolver.ts#MUTATION BasicInformationResolver.cancelAppointment
+    outlier:  libs/api/domains/health-directorate/src/lib/resolvers/basicInformation.resolver.ts:73 FIELD BasicInformationResolver.resolveOrganList
+    outlier:  libs/api/domains/health-directorate/src/lib/resolvers/basicInformation.resolver.ts:83 MUTATION BasicInformationResolver.updateDonorStatus
+    outlier:  libs/api/domains/health-directorate/src/lib/resolvers/basicInformation.resolver.ts:59 QUERY BasicInformationResolver.getDonorStatus
+    outlier:  libs/api/domains/health-directorate/src/lib/resolvers/basicInformation.resolver.ts:99 QUERY BasicInformationResolver.getVaccinations
+    outlier:  libs/api/domains/health-directorate/src/lib/resolvers/healthConversations.resolver.ts:220 FIELD HealthConversationOrganizationResolver.resolveLogoUrl
+
+12. [D-d063e1] apps/skilavottord/ws: graphql entry points in src/** (*.resolver files) are decorated with Authorize()
+    evidence: 32/35 (lower bound 0.78, lift 315.8)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/skilavottord/ws/src/app/modules/accessControl/accessControl.resolver.ts#MUTATION AccessControlResolver.createSkilavottordAccessControl
+    outlier:  apps/skilavottord/ws/src/app/modules/recyclingRequest/recyclingRequestAppSys.resolver.ts:17 MUTATION RecyclingRequestAppSysResolver.createSkilavottordRecyclingRequestAppSys
+    outlier:  apps/skilavottord/ws/src/app/modules/vehicle/vehicleAppSys.resolver.ts:18 MUTATION VehicleAppSysResolver.createSkilavottordVehicleAppSys
+    outlier:  apps/skilavottord/ws/src/app/modules/vehicleOwner/vehicleOwnerAppSys.resolver.ts:14 MUTATION VehicleOwnerAppSysResolver.createSkilavottordVehicleOwnerAppSys
+
+13. [D-de5d76] apps/services/user-profile: HTTP handlers in src/** (*.controller files) are decorated with Documentation()
+    evidence: 30/33 (lower bound 0.76, lift 50.7)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    agents:   not shown to agents (family below admission bar: 41% of 17)
+    example:  apps/services/user-profile/src/app/user-profile/actor-user-profile.controller.ts#GET /actor/actor-profile
+    outlier:  apps/services/user-profile/src/app/user-profile/actor-user-profile.controller.ts:60 GET /actor/locale
+    outlier:  apps/services/user-profile/src/app/user-profile/me-user-profile.controller.ts:388 DELETE /me/device-tokens/:deviceToken
+    outlier:  apps/services/user-profile/src/app/user-profile/me-user-profile.controller.ts:367 PUT /me/device-tokens
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

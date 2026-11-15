@@ -1,0 +1,181 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - Extensions
+  - Models
+  - ODSTalk
+  - Pixel
+  - __init__
+  - main
+  - start
+  suffixes:
+  - config
+  - integration
+  - test
+conventions:
+- id: D-80b356
+  status: proposed
+  mode: advise
+  summary: functions in ods/** do not throw a bare Error
+  role:
+    package: ""
+    dir: ods
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: avoids
+    signal: throw_error
+  evidence:
+    holders: 1892
+    total: 1911
+    lower_bound: 0.985
+    lift: 11.022
+    python_members: 1849
+  example: ods/bin/extension_assets.py#check_space
+  selector_version: 2
+- id: D-4c758e
+  status: proposed
+  mode: advise
+  summary: >-
+    HTTP handlers in ods/** are wrapped in verify_api_key() or verify_api_key() or
+    verify_api_key()
+  role:
+    package: ""
+    dir: ods
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - ods/extensions/library/services/open-interpreter/server.py#verify_api_key
+    - ods/extensions/services/dashboard-api/security.py#verify_api_key
+    - ods/extensions/services/privacy-shield/proxy.py#verify_api_key
+  evidence:
+    holders: 178
+    total: 199
+    lower_bound: 0.844
+    lift: 12.855
+    split:
+    - - ods/extensions/services/dashboard-api/security.py#verify_api_key
+      - 174
+    - - ods/extensions/library/services/open-interpreter/server.py#verify_api_key
+      - 2
+    - - ods/extensions/services/privacy-shield/proxy.py#verify_api_key
+      - 2
+    python_members: 199
+  example: ods/extensions/services/dashboard-api/routers/agents.py#get_agent_metrics
+  selector_version: 2
+- id: D-f40096
+  status: proposed
+  mode: advise
+  summary: functions in ods/bin/remote_provider/** declare their return type
+  role:
+    package: ""
+    dir: ods/bin/remote_provider
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 30
+    total: 31
+    lower_bound: 0.838
+    lift: 3.275
+    python_members: 31
+  example: ods/bin/remote_provider/egress.py#connection_header_names
+  selector_version: 2
+- id: D-c72ce2
+  status: proposed
+  mode: advise
+  summary: files in ods/extensions/services/dashboard-api/** have a test file
+  role:
+    package: ""
+    dir: ods/extensions/services/dashboard-api
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 94
+    total: 104
+    lower_bound: 0.832
+    lift: 2.077
+    python_members: 104
+  example: ods/extensions/services/dashboard-api/agent_monitor.py#(file)
+  selector_version: 2
+- id: D-6e9535
+  status: proposed
+  mode: advise
+  summary: HTTP handlers in ods/** are wrapped in security_scheme()
+  role:
+    package: ""
+    dir: ods
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - ods/extensions/services/dashboard-api/security.py#security_scheme
+  evidence:
+    holders: 174
+    total: 199
+    lower_bound: 0.821
+    lift: 12.824
+    python_members: 199
+  example: ods/extensions/services/dashboard-api/routers/agents.py#get_agent_metrics
+  selector_version: 2
+- id: D-637b72
+  status: proposed
+  mode: advise
+  summary: functions in ods/bin/model_switchboard/** declare their return type
+  role:
+    package: ""
+    dir: ods/bin/model_switchboard
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 25
+    total: 26
+    lower_bound: 0.811
+    lift: 3.254
+    python_members: 26
+  example: ods/bin/model_switchboard/adapters.py#result
+  selector_version: 2
+- id: D-2264ef
+  status: proposed
+  mode: advise
+  summary: functions in ods/scripts/** declare their return type
+  role:
+    package: ""
+    dir: ods/scripts
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 292
+    total: 351
+    lower_bound: 0.789
+    lift: 2.7
+    role_members: 366
+    python_members: 366
+  example: ods/scripts/assign_gpus.py#assign_services
+  selector_version: 2

@@ -1,0 +1,264 @@
+{
+  "name": "monitorss",
+  "repo": "synzen/monitorss",
+  "sha": "1f8255f4787c1993bab4b9d9e6811abab956f215",
+  "loc": 263502,
+  "shape": {
+    "mix": "multi-ts",
+    "shape": "frontend+backend",
+    "js_dirs": 10,
+    "py_dirs": 0,
+    "workspace_files": [],
+    "frontend_dirs": [
+      "services/backend-api/client"
+    ],
+    "backend_dirs": [
+      "services/backend-api",
+      "services/feed-requests",
+      "services/user-feeds-next"
+    ]
+  },
+  "packages": [
+    {
+      "dir": "packages/contracts",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 27,
+        "roles": 5,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "packages/logger",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 14,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "scripts/generate-curated-feeds",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 4,
+        "roles": 0,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "services/backend-api",
+      "kind": "ts",
+      "default": {
+        "shown": 2,
+        "conventions": 2,
+        "units": 2604,
+        "roles": 177,
+        "tiers": {
+          "default": 0,
+          "suggestion": 2
+        },
+        "python_withheld": 0,
+        "secs": 1,
+        "cards": [
+          {
+            "id": "D-007cf8",
+            "tier": "suggestion",
+            "language": "ts",
+            "rule_kind": "named",
+            "role_package": "",
+            "package": "services/backend-api"
+          },
+          {
+            "id": "D-18f102",
+            "tier": "suggestion",
+            "language": "ts",
+            "rule_kind": "named",
+            "role_package": "client",
+            "package": "services/backend-api/client"
+          }
+        ]
+      }
+    },
+    {
+      "dir": "services/backend-api/client",
+      "kind": "ts",
+      "default": {
+        "shown": 1,
+        "conventions": 1,
+        "units": 1785,
+        "roles": 103,
+        "tiers": {
+          "default": 0,
+          "suggestion": 1
+        },
+        "python_withheld": 0,
+        "secs": 1,
+        "cards": [
+          {
+            "id": "D-d57165",
+            "tier": "suggestion",
+            "language": "ts",
+            "rule_kind": "named",
+            "role_package": "",
+            "package": "services/backend-api/client"
+          }
+        ]
+      }
+    },
+    {
+      "dir": "services/bot-presence",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 18,
+        "roles": 1,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "services/discord-rest-listener",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 49,
+        "roles": 5,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "services/feed-requests",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 83,
+        "roles": 8,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "services/user-feeds-next",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 295,
+        "roles": 32,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    }
+  ],
+  "root": {
+    "default": {
+      "shown": 2,
+      "conventions": 2,
+      "units": 3095,
+      "roles": 228,
+      "tiers": {
+        "default": 0,
+        "suggestion": 2
+      },
+      "python_withheld": 0,
+      "secs": 4,
+      "cards": [
+        {
+          "id": "D-028ee9",
+          "tier": "suggestion",
+          "language": "ts",
+          "rule_kind": "named",
+          "role_package": "services/backend-api",
+          "package": "services/backend-api"
+        },
+        {
+          "id": "D-5b98a3",
+          "tier": "suggestion",
+          "language": "ts",
+          "rule_kind": "named",
+          "role_package": "services/backend-api/client",
+          "package": "services/backend-api/client"
+        }
+      ]
+    },
+    "python_opt_in": {
+      "shown": 2,
+      "conventions": 2,
+      "units": 3095,
+      "roles": 228,
+      "tiers": {
+        "default": 0,
+        "suggestion": 2
+      },
+      "python_withheld": null,
+      "secs": 1,
+      "cards": [
+        {
+          "id": "D-028ee9",
+          "tier": "suggestion",
+          "language": "ts",
+          "rule_kind": "named",
+          "role_package": "services/backend-api",
+          "package": "services/backend-api"
+        },
+        {
+          "id": "D-5b98a3",
+          "tier": "suggestion",
+          "language": "ts",
+          "rule_kind": "named",
+          "role_package": "services/backend-api/client",
+          "package": "services/backend-api/client"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "repo": "create-t3-app",
+  "files": [
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "cli/eslint.config.js",
+      "kind": "lint"
+    }
+  ]
+}

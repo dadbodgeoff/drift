@@ -1,0 +1,37 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - exceptions
+  - port
+  - route
+  suffixes:
+  - config
+  - test
+conventions:
+- id: D-1062a8
+  status: proposed
+  mode: advise
+  summary: "agentex: exceptions in src/** (exceptions files) are named `*Error`"
+  role:
+    package: agentex
+    dir: src
+    file: exceptions
+    entry: '-'
+    kind: class
+    member_kind: exception
+  rule:
+    type: named
+    pattern: "*Error"
+  evidence:
+    holders: 21
+    total: 22
+    lower_bound: 0.782
+    lift: 11.42
+    python_members: 22
+  example: agentex/src/adapters/authentication/exceptions.py#AuthenticationError
+  selector_version: 3

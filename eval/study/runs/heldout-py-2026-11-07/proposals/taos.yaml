@@ -1,0 +1,188 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - ActivityApp
+  - LibraryApp
+  - LibraryView
+  - TemplatesView
+  - __init__
+  - capabilities
+  - conftest
+  - game
+  - store
+  - types
+  suffixes:
+  - spec
+  - test
+conventions:
+- id: D-fdff1c
+  status: proposed
+  mode: advise
+  summary: "desktop: functions in src/lib/** declare their return type"
+  role:
+    package: desktop
+    dir: src/lib
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 241
+    total: 245
+    lower_bound: 0.959
+    lift: 1.814
+  example: desktop/src/lib/a2a-receipts-api.ts#getReceipts
+  selector_version: 2
+- id: D-ccce4a
+  status: proposed
+  mode: advise
+  summary: functions in tinyagentos/** declare their return type
+  role:
+    package: ""
+    dir: tinyagentos
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 749
+    total: 778
+    lower_bound: 0.947
+    lift: 1.755
+    role_members: 787
+    python_members: 787
+  example: tinyagentos/__main__.py#main
+  selector_version: 2
+- id: D-499c0e
+  status: proposed
+  mode: advise
+  summary: functions in scripts/** declare their return type
+  role:
+    package: ""
+    dir: scripts
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 126
+    total: 129
+    lower_bound: 0.934
+    lift: 1.801
+    python_members: 129
+  example: scripts/_gitutil.py#diff_name_status_z
+  selector_version: 2
+- id: D-9441cc
+  status: proposed
+  mode: advise
+  summary: classes in tinyagentos/routes/** extend BaseModel
+  role:
+    package: ""
+    dir: tinyagentos/routes
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - pkg:pydantic#BaseModel
+  evidence:
+    holders: 257
+    total: 272
+    lower_bound: 0.911
+    lift: 2.518
+    python_members: 272
+  example: tinyagentos/routes/a2a_bus.py#BusSendBody
+  selector_version: 2
+- id: D-6d209c
+  status: proposed
+  mode: advise
+  summary: "desktop: functions in src/apps/** declare their return type"
+  role:
+    package: desktop
+    dir: src/apps
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 183
+    total: 193
+    lower_bound: 0.907
+    lift: 1.749
+  example: desktop/src/apps/BrowserApp/agent-ws-bridge.ts#openParentWs
+  selector_version: 2
+- id: D-c74a2e
+  status: proposed
+  mode: advise
+  summary: "desktop: components in src/apps/** call useState() before useEffect()"
+  role:
+    package: desktop
+    dir: src/apps
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: before
+    first: pkg:react#useState
+    then: pkg:react#useEffect
+  evidence:
+    holders: 133
+    total: 146
+    lower_bound: 0.854
+    lift: 1.0
+  example: desktop/src/apps/AgentBrowsersApp.tsx#AgentBrowsersApp
+  selector_version: 2
+- id: D-7acce3
+  status: proposed
+  mode: advise
+  summary: functions in tinyagentos/** (__init__ files) declare their return type
+  role:
+    package: ""
+    dir: tinyagentos
+    file: __init__
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 31
+    total: 32
+    lower_bound: 0.843
+    lift: 1.786
+    python_members: 32
+  example: tinyagentos/adapters/__init__.py#list_frameworks
+  selector_version: 2
+- id: D-e4696a
+  status: proposed
+  mode: advise
+  summary: "desktop: files in src/hooks/** have a test file"
+  role:
+    package: desktop
+    dir: src/hooks
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 26
+    total: 28
+    lower_bound: 0.774
+    lift: 1.541
+  example: desktop/src/hooks/use-agent-shortcuts.ts#(file)
+  selector_version: 2

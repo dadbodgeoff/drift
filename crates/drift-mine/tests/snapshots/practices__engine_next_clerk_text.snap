@@ -1,0 +1,13 @@
+---
+source: crates/drift-mine/tests/practices.rs
+expression: "practices::render(&r, false)"
+---
+Practices (facts, not rules): 4 unit(s) across 1 concern(s), 100% told: known, identified, or nothing found in what Drift read (1 at the 90% target).
+
+Authentication (entry points 4, coverage 100%, known 75%, none 25% (nothing found in what Drift read), unknown 0%):
+  A P-5113b8 authn: body_check:pkg:@clerk/nextjs/server#auth.userId+middleware:pkg:@clerk/nextjs/server#clerkMiddleware 75% (3) [.]
+      e.g. lib/handlers.ts:3 GET
+  B P-01d468 none: no guard in what Drift read 25% (1) [.]
+      e.g. app/api/webhooks/stripe/route.ts:5 POST
+
+Not covered yet: outbound calls (HTTP clients, timeouts, retries); background jobs and queues; frontend data fetching; state and design system; hygiene (duplicate libraries, escape hatches); declared vs actual (AGENTS.md, lint configs); change over time (which variant new code adopts).

@@ -1,0 +1,54 @@
+{
+ "schema": "drift-review-questions",
+ "schema_version": 1,
+ "question": "Are these the same kind of thing?",
+ "answers": {
+  "same": "Yes: accept the card (`drift review --answer ID=same`)",
+  "different": "No, these are different: pick the files whose flagged members are a different kind; they are exempt by path and the card is accepted (`--answer ID=different --set-apart PATH,...`; an entry point marked needs_confirmation also needs `--confirm-entry PATH#SYMBOL`)",
+  "not-a-convention": "Not a convention: reject the card (`--answer ID=not-a-convention`)"
+ },
+ "unanswered": "A candidate nobody answers stays a candidate and never reaches agents.",
+ "candidates": [
+  {
+   "id": "D-50ba36",
+   "summary": "apps/web: server actions in lib/** are wrapped in authActionClient.inputSchema().action()",
+   "rule_kind": "wrapped_by:call",
+   "family": "Call wrappers",
+   "holders_total": 18,
+   "members": 19,
+   "holders": [
+    {
+     "path": "apps/web/lib/actions/archive-link.ts",
+     "symbol": "archiveLinkAction",
+     "line": 7
+    },
+    {
+     "path": "apps/web/lib/actions/export-events.ts",
+     "symbol": "exportEventsAction",
+     "line": 7
+    },
+    {
+     "path": "apps/web/lib/actions/rename-tag.ts",
+     "symbol": "renameTagAction",
+     "line": 7
+    }
+   ],
+   "flagged": [
+    {
+     "path": "apps/web/lib/actions/ban-customer.ts",
+     "members": [
+      {
+       "symbol": "banCustomer",
+       "line": 5,
+       "needs_confirmation": true,
+       "legacy": true
+      }
+     ]
+    }
+   ],
+   "flagged_total": 1,
+   "auth_or_validation": true,
+   "set_apart": []
+  }
+ ]
+}

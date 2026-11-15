@@ -1,0 +1,154 @@
+15 conventions from 20822 units in 1186 roles
+
+ 1. [D-93cb8d] apps/studio: functions in components/** (*.utils files) do not throw a bare Error
+    evidence: 1047/1059 (lower bound 0.98, lift 9.5)
+    example:  apps/studio/components/grid/SupabaseGrid.utils.ts#buildTableEditorUrl
+    outlier:  apps/studio/components/interfaces/Database/Replication/DestinationPanel/DestinationForm/DestinationForm.utils.ts:406 buildDestinationConfig
+    outlier:  apps/studio/components/interfaces/Database/Replication/DestinationPanel/DestinationForm/DestinationForm.utils.ts:357 buildDestinationConfigForValidation
+    outlier:  apps/studio/components/interfaces/Database/Replication/DestinationPanel/DestinationForm/DestinationForm.utils.ts:164 buildTableSyncCopyConfig
+    outlier:  apps/studio/components/interfaces/Organization/TeamSettings/InviteMemberButton.utils.ts:92 buildProjectPayload
+    outlier:  apps/studio/components/interfaces/ProjectCreation/ProjectCreation.utils.ts:22 getAvailableRegions
+    outlier:  apps/studio/components/interfaces/Reports/Reports.utils.tsx:70 getLogsSql
+    outlier:  apps/studio/components/interfaces/Support/SupportForm.utils.tsx:113 formatSectionUrl
+    outlier:  apps/studio/components/interfaces/Support/SupportForm.utils.tsx:99 generateLink
+    outlier:  apps/studio/components/interfaces/Support/SupportForm.utils.tsx:73 getPageIcon
+    outlier:  apps/studio/components/interfaces/Support/SupportForm.utils.tsx:86 getPageSectionIcon
+    outlier:  apps/studio/components/interfaces/UnifiedLogs/UnifiedLogs.utils.ts:60 toQuerySearchParams
+    outlier:  apps/studio/components/ui/FileExplorerAndEditor/FileExplorerAndEditor.utils.ts:87 extractZipFile
+
+ 2. [D-e97861] apps/studio: HTTP handlers in pages/** call apiWrapper()
+    evidence: 68/79 (lower bound 0.77, lift 52.8)
+    example:  apps/studio/pages/api/ai/code/complete.ts#wrapper
+    outlier:  apps/studio/pages/api/check-cname.ts:5 handler
+    outlier:  apps/studio/pages/api/cli-release-version.ts:13 handler
+    outlier:  apps/studio/pages/api/connect/index.ts:33 getFileNames
+    outlier:  apps/studio/pages/api/enabled-features-overrides.ts:5 handler
+    outlier:  apps/studio/pages/api/get-deployment-commit.ts:33 handler
+    outlier:  apps/studio/pages/api/get-ip-address.ts:3 handler
+    outlier:  apps/studio/pages/api/get-s3-keys.ts:6 handler
+    outlier:  apps/studio/pages/api/get-utc-time.ts:5 handler
+    outlier:  apps/studio/pages/api/integrations/stripe-sync.ts:35 handler
+    outlier:  apps/studio/pages/api/mcp/index.ts:48 handler
+    outlier:  apps/studio/pages/api/parse-query.ts:98 handler
+
+ 3. [D-b10f47] apps/www: pages in pages/** render <DefaultLayout>
+    evidence: 60/62 (lower bound 0.89, lift 54.7)
+    example:  apps/www/pages/aup.tsx#AcceptableUsePolicyPage
+    outlier:  apps/www/pages/assistant.tsx:626 Assistant
+    outlier:  apps/www/pages/changelog.tsx:104 ChangelogPage
+
+ 4. [D-539058] packages/ui: components in src/components/shadcn/** call cn()
+    evidence: 191/216 (lower bound 0.83, lift 3.3)
+    example:  packages/ui/src/components/shadcn/ui/accordion.tsx#AccordionContent
+    outlier:  packages/ui/src/components/shadcn/ui/alert-dialog.tsx:23 AlertDialog
+    outlier:  packages/ui/src/components/shadcn/ui/alert-dialog.tsx:79 AlertDialogTrigger
+    outlier:  packages/ui/src/components/shadcn/ui/breadcrumb.tsx:7 Breadcrumb
+    outlier:  packages/ui/src/components/shadcn/ui/chart.tsx:66 ChartStyle
+    outlier:  packages/ui/src/components/shadcn/ui/command.tsx:28 CommandDialog
+    outlier:  packages/ui/src/components/shadcn/ui/dialog.tsx:31 DialogTrigger
+    outlier:  packages/ui/src/components/shadcn/ui/drawer.tsx:8 Drawer
+    outlier:  packages/ui/src/components/shadcn/ui/drawer.tsx:20 DrawerClose
+    outlier:  packages/ui/src/components/shadcn/ui/drawer.tsx:16 DrawerPortal
+    outlier:  packages/ui/src/components/shadcn/ui/drawer.tsx:12 DrawerTrigger
+    outlier:  packages/ui/src/components/shadcn/ui/dropdown-menu.tsx:10 DropdownMenu
+    outlier:  packages/ui/src/components/shadcn/ui/dropdown-menu.tsx:17 DropdownMenuTrigger
+    outlier:  packages/ui/src/components/shadcn/ui/form.tsx:116 FormControl
+    outlier:  packages/ui/src/components/shadcn/ui/form.tsx:33 FormField
+    outlier:  packages/ui/src/components/shadcn/ui/form.tsx:184 FormInputGroupInput
+    outlier:  packages/ui/src/components/shadcn/ui/form.tsx:199 FormInputGroupTextArea
+    outlier:  packages/ui/src/components/shadcn/ui/form.tsx:75 FormItem
+    outlier:  packages/ui/src/components/shadcn/ui/input-otp.tsx:58 InputOTPSeparator
+    outlier:  packages/ui/src/components/shadcn/ui/popover.tsx:12 PopoverTrigger
+    outlier:  packages/ui/src/components/shadcn/ui/resizable.tsx:86 ResizablePanel
+    outlier:  packages/ui/src/components/shadcn/ui/select.tsx:18 SelectValue
+    outlier:  packages/ui/src/components/shadcn/ui/sheet.tsx:13 SheetTrigger
+    outlier:  packages/ui/src/components/shadcn/ui/sidebar.tsx:715 SidebarMenuSubItem
+    outlier:  packages/ui/src/components/shadcn/ui/sonner-progress.tsx:16 SonnerProgress
+    outlier:  packages/ui/src/components/shadcn/ui/tooltip.tsx:12 Tooltip
+
+ 5. [D-c2e88c] apps/docs: functions in app/** (page files) are wrapped in genGuideMeta()
+    evidence: 29/30 (lower bound 0.83, lift 179.8)
+    example:  apps/docs/app/guides/ai-tools/[[...slug]]/page.tsx#generateMetadata
+    outlier:  apps/docs/app/page.tsx:22 generateMetadata
+
+ 6. [D-922bc7] packages/icons: exported values in src/** pass `fill` to createLucideIcon()
+    evidence: 23/24 (lower bound 0.80, lift 77.4)
+    example:  packages/icons/src/icons/REST-api.ts#RESTApi
+    outlier:  packages/icons/src/defaultAttributes.ts:1 default
+
+ 7. [D-9b2da2] apps/docs: layouts in app/** (layout files) render inside <Layout>
+    evidence: 20/21 (lower bound 0.77, lift 215.2)
+    example:  apps/docs/app/guides/ai-tools/layout.tsx#AiToolsLayout
+    outlier:  apps/docs/app/layout.tsx:57 RootLayout
+
+ 8. [D-db9d80] apps/www: pages in pages/** render <NextSeo>
+    evidence: 60/62 (lower bound 0.89, lift 66.3)
+    example:  apps/www/pages/aup.tsx#AcceptableUsePolicyPage
+    outlier:  apps/www/pages/changelog.tsx:104 ChangelogPage
+    outlier:  apps/www/pages/launch-week/ticket.tsx:7 Lw15Page
+
+ 9. [D-9644ab] packages/pg-meta: functions in src/sql/** are named `get*`
+    evidence: 65/73 (lower bound 0.80, lift 4.3)
+    example:  packages/pg-meta/src/sql/columns.ts#getColumnsSql
+    outlier:  packages/pg-meta/src/sql/studio/advisor/lints.ts:3 enrichLintsQuery
+    outlier:  packages/pg-meta/src/sql/studio/auth/get-users-common.ts:1 prefixToUUID
+    outlier:  packages/pg-meta/src/sql/studio/auth/get-users-common.ts:29 stringRange
+    outlier:  packages/pg-meta/src/sql/studio/database/misc.ts:19 replicationLagSql
+    outlier:  packages/pg-meta/src/sql/studio/database/privileges.ts:283 buildDefaultPrivilegesSql
+    outlier:  packages/pg-meta/src/sql/studio/database/privileges.ts:348 buildFunctionPrivilegesSql
+    outlier:  packages/pg-meta/src/sql/studio/database/privileges.ts:316 buildTablePrivilegesSql
+    outlier:  packages/pg-meta/src/sql/studio/database/table-definition.ts:727 createPgGetTabledefSql
+
+10. [D-f64778] apps/studio: exported values in routes/** call createFileRoute()
+    evidence: 231/232 (lower bound 0.98, lift 8.4)
+    example:  apps/studio/routes/_app/account/apps.tsx#Route
+    outlier:  apps/studio/routes/__root.tsx:321 Route
+
+11. [D-8446bc] apps/docs: exported values in app/guides/** (page files) are named `generate*`
+    evidence: 26/27 (lower bound 0.82, lift 99.9)
+    example:  apps/docs/app/guides/ai-tools/[[...slug]]/page.tsx#generateStaticParams
+    outlier:  apps/docs/app/guides/ai-tools/ai-prompts/[slug]/page.tsx:12 dynamicParams
+
+12. [D-43f5f0] apps/studio: functions in hooks/** are named `use*`
+    evidence: 97/112 (lower bound 0.79, lift 3.6)
+    example:  apps/studio/hooks/analytics/useComputeMetrics.ts#useComputeMetrics
+    outlier:  apps/studio/hooks/analytics/useFillTimeseriesSorted.ts:84 fillTimeseriesSorted
+    outlier:  apps/studio/hooks/analytics/useFillTimeseriesSorted.ts:46 hasValidTimestamp
+    outlier:  apps/studio/hooks/analytics/useFillTimeseriesSorted.ts:35 sortByTimestamp
+    outlier:  apps/studio/hooks/analytics/useLegacyLogsRewrite.ts:59 legacyLogsRewriteReducer
+    outlier:  apps/studio/hooks/branches/useEdgeFunctionsDiff.ts:51 fileKey
+    outlier:  apps/studio/hooks/misc/useCheckPermissions.ts:41 doPermissionsCheck
+    outlier:  apps/studio/hooks/misc/useCheckPermissionsV2.ts:16 FGA_PERMISSIONS
+    outlier:  apps/studio/hooks/misc/useCheckPermissionsV2.ts:39 doPermissionsCheckV2
+    outlier:  apps/studio/hooks/misc/useDataApiRevokeOnCreateDefault.ts:21 isInDataApiRevokeTreatment
+    outlier:  apps/studio/hooks/misc/useGitHubConfigDrift.ts:31 getGitBranchName
+    outlier:  apps/studio/hooks/misc/useHighAvailability.ts:19 filterSchemasForHighAvailability
+    outlier:  apps/studio/hooks/misc/useOrgOptedIntoAi.ts:15 getAiOptInLevel
+    outlier:  apps/studio/hooks/misc/useReportDateRange.ts:16 getIntervalGranularity
+    outlier:  apps/studio/hooks/misc/useReportDateRange.ts:26 resolveHelperFromUrl
+    outlier:  apps/studio/hooks/misc/withAuth.tsx:15 withAuth
+
+13. [D-cf40f5] apps/docs: layouts in app/** (layout files) are named `*Layout`
+    evidence: 20/21 (lower bound 0.77, lift 45.8)
+    example:  apps/docs/app/guides/ai-tools/layout.tsx#AiToolsLayout
+    outlier:  apps/docs/app/guides/observability/layout.tsx:3 MonitoringAndDebugging
+
+14. [D-df24f2] files in apps/studio/** use lucide-react for icons, not react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react
+    evidence: 870/872 (lower bound 0.99, lift 1.0)
+    split:    lucide-react 872, @heroicons/react 2
+    example:  apps/studio/components/grid/components/editor/DateTimeEditor.tsx#(file)
+    outlier:  apps/studio/components/interfaces/Linter/LintPageTabs.tsx:1 (file)
+    outlier:  apps/studio/components/interfaces/QueryPerformance/QueryPanel.tsx:1 (file)
+
+15. [D-3c4b60] packages/pg-meta: functions in src/** declare their return type
+    evidence: 107/115 (lower bound 0.87, lift 2.4)
+    example:  packages/pg-meta/src/pg-format/index.ts#acceptUntrustedSql
+    outlier:  packages/pg-meta/src/pg-meta-functions.ts:282 create
+    outlier:  packages/pg-meta/src/query/table-row-query.ts:94 formatPatternMatchFilterValue
+    outlier:  packages/pg-meta/src/query/table-row-query.ts:110 getDefaultOrderByColumns
+    outlier:  packages/pg-meta/src/query/table-row-query.ts:143 getPagination
+    outlier:  packages/pg-meta/src/sql/studio/advisor/lints.ts:3 enrichLintsQuery
+    outlier:  packages/pg-meta/src/sql/studio/auth/get-users-common.ts:1 prefixToUUID
+    outlier:  packages/pg-meta/src/sql/studio/database/privileges.ts:124 getExposedTableCountsSql
+    outlier:  packages/pg-meta/src/sql/tables.ts:19 getTablesSql
+

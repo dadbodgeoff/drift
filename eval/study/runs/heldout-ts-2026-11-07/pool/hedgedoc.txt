@@ -1,0 +1,12 @@
+1 conventions from 4513 units in 214 roles (0 default tier, 1 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-12d3c2] frontend: classes in src/extensions/external-lib-app-extensions/** are named `*Extension`
+    evidence: 24/26 (lower bound 0.76, lift 3.9)
+    tier:     suggestion (rule kind named)
+    example:  frontend/src/extensions/external-lib-app-extensions/abcjs/abcjs-app-extension.ts#AbcjsAppExtension
+    outlier:  frontend/src/extensions/external-lib-app-extensions/katex/katex-replacer.tsx:22 KatexReplacer
+    outlier:  frontend/src/extensions/external-lib-app-extensions/plantuml/plantuml-not-configured-component-replacer.tsx:17 PlantumlNotConfiguredComponentReplacer
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

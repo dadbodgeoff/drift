@@ -1,0 +1,76 @@
+8 conventions from 5381 units in 133 roles (0 default tier, 8 suggestions)
+
+8 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-081097] panel: components in src/** call useState() before useEffect(), except a shared part (used by several members, not a member)
+    evidence: 51/52 (lower bound 0.90, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  panel/src/renderer/src/App.tsx#App
+    outlier:  panel/src/renderer/src/components/image/ImageGallery.tsx:31 ImageGallery
+    exempt:   panel/src/renderer/src/components/ui/Modal.tsx:13 Modal (shared part used by 3 members)
+
+ 2. [D-5e79e4] classes in vmlx_engine/tool_parsers/** are decorated with ToolParserManager.register_module(), except a member (of the module that defines a rule's target)
+    evidence: 28/28 (lower bound 0.88, lift 24.7)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 50% of 6)
+    example:  vmlx_engine/tool_parsers/atem_tool_parser.py#AtemToolParser
+    exempt:   vmlx_engine/tool_parsers/abstract_tool_parser.py:456 ToolParserManager (in the module that defines ExtractedToolCallInformation (as for the role's rule "call ExtractedToolCallInformation()"))
+
+ 3. [D-0bfd57] files in vmlx_engine/tool_parsers/** have a test file
+    evidence: 29/30 (lower bound 0.83, lift 3.6)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 20% of 5)
+    example:  vmlx_engine/tool_parsers/abstract_tool_parser.py#(file)
+    outlier:  vmlx_engine/tool_parsers/schema_types.py:1 (file)
+
+ 4. [D-56a575] classes in vmlx_engine/tool_parsers/** call ExtractedToolCallInformation(), except a member (of the module that defines a rule's target)
+    evidence: 27/28 (lower bound 0.82, lift 24.7)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 44% of 9)
+    example:  vmlx_engine/tool_parsers/atem_tool_parser.py#AtemToolParser
+    outlier:  vmlx_engine/tool_parsers/dsml_v41_tool_parser.py:29 DSMLV41ToolParser
+    exempt:   vmlx_engine/tool_parsers/abstract_tool_parser.py:456 ToolParserManager (in the module that defines ExtractedToolCallInformation)
+
+ 5. [D-5c3955] panel: components in src/** call useTranslation() before useEffect()
+    evidence: 49/53 (lower bound 0.82, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  panel/src/renderer/src/App.tsx#App
+    outlier:  panel/src/renderer/src/components/Toast.tsx:57 ToastItem
+    outlier:  panel/src/renderer/src/components/chat/InlineToolCall.tsx:17 InlineToolCall
+    outlier:  panel/src/renderer/src/contexts/AppStateContext.tsx:57 AppStateProvider
+    ... 1 more outliers
+
+ 6. [D-47df1d] classes in vmlx_engine/** (language files) extend nn.Module, except a class (of another kind)
+    evidence: 41/44 (lower bound 0.82, lift 2.8)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 33% of 9)
+    example:  vmlx_engine/models/dots3_note/language.py#Dots3DecoderLayer
+    outlier:  vmlx_engine/models/dots3_note/language.py:187 Dots3LatentCache
+    outlier:  vmlx_engine/models/qwen3_5_family/qwen3_5/language.py:120 Qwen3_5RotaryEmbedding
+    outlier:  vmlx_engine/models/qwen4_exp/language.py:461 RopeTable
+    exempt:   vmlx_engine/models/qwen4_exp/language.py:1168 GatedDeltaNet (another kind of class (extends models.qwen3_5.GatedDeltaNet))
+
+ 7. [D-0fbf2a] panel: components in src/** call useTranslation() before useState(), except 2 shared parts (used by several members, not a member)
+    evidence: 55/61 (lower bound 0.80, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  panel/src/renderer/src/App.tsx#App
+    outlier:  panel/src/renderer/src/components/Toast.tsx:57 ToastItem
+    outlier:  panel/src/renderer/src/components/Toast.tsx:23 ToastProvider
+    outlier:  panel/src/renderer/src/components/chat/InlineToolCall.tsx:17 InlineToolCall
+    ... 3 more outliers
+    exempt:   panel/src/renderer/src/components/sessions/SessionConfigForm.tsx:2144 SliderField (shared part used by 2 members)
+    exempt:   panel/src/renderer/src/components/sessions/SessionConfigForm.tsx:1650 Tooltip (shared part used by 3 members)
+
+ 8. [D-c1c977] dataclasses in vmlx_engine/** (config files) are named `*Config`
+    evidence: 23/24 (lower bound 0.80, lift 12.5)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    agents:   not shown to agents (family below admission bar: 40% of 15)
+    example:  vmlx_engine/models/dots3_note/config.py#AudioConfig
+    outlier:  vmlx_engine/models/dots3_note/config.py:30 AttnGeom
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

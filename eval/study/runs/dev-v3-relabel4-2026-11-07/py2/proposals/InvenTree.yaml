@@ -1,0 +1,262 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - admin
+  - api
+  - apps
+  - events
+  - filters
+  - helpers
+  - mixins
+  - models
+  - serializers
+  - tasks
+  - test_api
+  - test_audit
+  - test_migrations
+  - tests
+  - validators
+  suffixes:
+  - config
+  - css
+  - spec
+conventions:
+- id: D-43f01e
+  status: proposed
+  mode: advise
+  summary: classes in src/** (serializers files) are named `*Serializer`
+  role:
+    package: ""
+    dir: src
+    file: serializers
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Serializer"
+  evidence:
+    holders: 205
+    total: 212
+    lower_bound: 0.933
+    lift: 4.671
+    python_members: 212
+  example: src/backend/InvenTree/InvenTree/serializers.py#DuplicateOptionsSerializer
+  selector_version: 2
+- id: D-095ebc
+  status: proposed
+  mode: advise
+  summary: "src/frontend: functions in src/components/tables/** declare their return type"
+  role:
+    package: src/frontend
+    dir: src/components/tables
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 69
+    total: 70
+    lower_bound: 0.923
+    lift: 2.529
+  example: src/frontend/src/components/tables/AppRowActions.tsx#AppRowViewAction
+  selector_version: 2
+- id: D-f31910
+  status: proposed
+  mode: advise
+  summary: classes in src/** (models files) call utils.translation.gettext_lazy()
+  role:
+    package: ""
+    dir: src
+    file: models
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: pkg:django#utils.translation.gettext_lazy
+  evidence:
+    holders: 76
+    total: 78
+    lower_bound: 0.911
+    lift: 3.122
+    role_members: 82
+    python_members: 82
+  example: src/backend/InvenTree/audit/models.py#AuditLogEntry
+  selector_version: 2
+- id: D-b24fe0
+  status: proposed
+  mode: advise
+  summary: "src/frontend: components in src/tables/** call useTable() before useCallback()"
+  role:
+    package: src/frontend
+    dir: src/tables
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: before
+    first: src/frontend/lib/hooks/UseTable.tsx#useTable
+    then: pkg:react#useCallback
+  evidence:
+    holders: 49
+    total: 50
+    lower_bound: 0.895
+    lift: 1.0
+  example: src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable
+  selector_version: 2
+- id: D-16c1ac
+  status: proposed
+  mode: advise
+  summary: "src/frontend: components in src/components/render/** declare their return type"
+  role:
+    package: src/frontend
+    dir: src/components/render
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 43
+    total: 44
+    lower_bound: 0.882
+    lift: 3.774
+  example: src/frontend/src/components/render/Build.tsx#RenderBuildItem
+  selector_version: 2
+- id: D-71f3ec
+  status: proposed
+  mode: advise
+  summary: "src/frontend: components in src/tables/** call useTable() before useState()"
+  role:
+    package: src/frontend
+    dir: src/tables
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: before
+    first: src/frontend/lib/hooks/UseTable.tsx#useTable
+    then: pkg:react#useState
+  evidence:
+    holders: 48
+    total: 50
+    lower_bound: 0.865
+    lift: 1.0
+  example: src/frontend/src/tables/bom/BomTable.tsx#BomTable
+  selector_version: 2
+- id: D-7e788c
+  status: proposed
+  mode: advise
+  summary: "src/frontend: components in src/tables/** call useMemo() before apiUrl()"
+  role:
+    package: src/frontend
+    dir: src/tables
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: before
+    first: pkg:react#useMemo
+    then: src/frontend/lib/functions/Api.tsx#apiUrl
+  evidence:
+    holders: 61
+    total: 65
+    lower_bound: 0.852
+    lift: 1.0
+  example: src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable
+  selector_version: 2
+- id: D-47d790
+  status: proposed
+  mode: advise
+  summary: classes in src/backend/InvenTree/plugin/samples/** extend InvenTreePlugin
+  role:
+    package: ""
+    dir: src/backend/InvenTree/plugin/samples
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - src/backend/InvenTree/plugin/plugin.py#InvenTreePlugin
+  evidence:
+    holders: 22
+    total: 22
+    lower_bound: 0.851
+    lift: 23.201
+    role_members: 23
+    python_members: 23
+  example: src/backend/InvenTree/plugin/samples/event/event_sample.py#EventPluginSample
+  selector_version: 2
+- id: D-455913
+  status: proposed
+  mode: advise
+  summary: "src/frontend: components in src/tables/** are named `*Table`"
+  role:
+    package: src/frontend
+    dir: src/tables
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: named
+    pattern: "*Table"
+  evidence:
+    holders: 76
+    total: 82
+    lower_bound: 0.849
+    lift: 5.003
+    role_members: 83
+  example: src/frontend/src/tables/bom/BomTable.tsx#BomTable
+  selector_version: 2
+- id: D-9838a4
+  status: proposed
+  mode: advise
+  summary: "src/frontend: components in src/tables/** call useTable() before apiUrl()"
+  role:
+    package: src/frontend
+    dir: src/tables
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: before
+    first: src/frontend/lib/hooks/UseTable.tsx#useTable
+    then: src/frontend/lib/functions/Api.tsx#apiUrl
+  evidence:
+    holders: 60
+    total: 65
+    lower_bound: 0.832
+    lift: 1.0
+  example: src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable
+  selector_version: 2
+- id: D-6f225b
+  status: proposed
+  mode: advise
+  summary: classes in src/** (admin files) are named `*Admin`
+  role:
+    package: ""
+    dir: src
+    file: admin
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Admin"
+  evidence:
+    holders: 66
+    total: 73
+    lower_bound: 0.815
+    lift: 15.175
+    role_members: 74
+    python_members: 74
+  example: src/backend/InvenTree/InvenTree/admin.py#CustomRateAdmin
+  selector_version: 2

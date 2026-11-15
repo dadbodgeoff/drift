@@ -1,0 +1,175 @@
+{
+  "//": "ACCEPT-labelled conventions each policy must contain (see lib.EXPECT_FILE). Regenerate with verify-tasks.mjs --write-expect after re-verifying the tasks with a new drift build.",
+  "//drift_sha256": "Informational: the drift build these expectations were verified with. buildPolicy checks the proposed and accepted ids against `repos`, not this hash; the policy cache in a work dir is keyed on the binary separately.",
+  "//block": "ACCEPT ids each policy sets to block mode: the default tier (census --json `tier`, drift_mine::tier). Suggestions are accepted in advise mode; the A/B measures the tiered product as shipped and never passes --force. Initially derived with lib.mjs tierOf from eval/study/runs/dev-2026-11-05/queue.json (built with drift_sha256 above); verify-tasks.mjs --write-expect regenerates it from the policies.",
+  "drift_sha256": "a343b8633a87e279b2c62ef90fc5ed7b9378966f92a5b6e1c70ff9946fef437d",
+  "repos": {
+    "cal.com": [
+      "D-0b36fb",
+      "D-42ab67",
+      "D-4791b7",
+      "D-777a50",
+      "D-7aa96c",
+      "D-8d7d13",
+      "D-931b9c",
+      "D-c459f1",
+      "D-ec4221"
+    ],
+    "documenso": [
+      "D-041293",
+      "D-2a51e9",
+      "D-55ae12",
+      "D-7b5140",
+      "D-879e02",
+      "D-9b91c3",
+      "D-d19fc6",
+      "D-d51d70",
+      "D-efe3da"
+    ],
+    "dub": [
+      "D-015190",
+      "D-50df58",
+      "D-742eb6",
+      "D-79cc0a",
+      "D-83351e",
+      "D-d24d21",
+      "D-e25af3",
+      "D-ebbc30"
+    ],
+    "formbricks": [
+      "D-5303d3",
+      "D-5adbb0",
+      "D-60208a",
+      "D-71e798",
+      "D-73b648",
+      "D-87fcf9",
+      "D-b8f1ee",
+      "D-c7604b",
+      "D-cf32c5",
+      "D-ec0946"
+    ],
+    "immich": [
+      "D-26380c",
+      "D-379261",
+      "D-3b4f47",
+      "D-63d2cd",
+      "D-876763",
+      "D-8ab952",
+      "D-c10e8e",
+      "D-ed6dc0"
+    ],
+    "infisical": [
+      "D-055c32",
+      "D-16b725",
+      "D-1b2542",
+      "D-1e9bb3",
+      "D-259bd1",
+      "D-272621",
+      "D-34f463",
+      "D-7731c9",
+      "D-d7b5b7",
+      "D-d9b44e",
+      "D-dfa77a",
+      "D-fd3f1a"
+    ],
+    "midday": [
+      "D-50255f",
+      "D-5880dd",
+      "D-7da2b9",
+      "D-86f372",
+      "D-afc38b",
+      "D-b57953",
+      "D-b8cff6",
+      "D-f90103",
+      "D-ff6099"
+    ],
+    "novu": [
+      "D-2467a6",
+      "D-2e9dcc",
+      "D-36a604",
+      "D-3f3e16",
+      "D-462c2b",
+      "D-53fcf5",
+      "D-6d3bdc",
+      "D-7c65a3",
+      "D-91e753",
+      "D-94d735",
+      "D-af3463"
+    ]
+  },
+  "drift_version": "drift 0.1.0-dev",
+  "block": {
+    "cal.com": [
+      "D-0b36fb",
+      "D-777a50",
+      "D-7aa96c",
+      "D-931b9c",
+      "D-ec4221"
+    ],
+    "documenso": [
+      "D-041293",
+      "D-2a51e9",
+      "D-55ae12",
+      "D-7b5140",
+      "D-9b91c3",
+      "D-d51d70",
+      "D-efe3da"
+    ],
+    "dub": [
+      "D-015190",
+      "D-50df58",
+      "D-83351e",
+      "D-d24d21",
+      "D-e25af3",
+      "D-ebbc30"
+    ],
+    "formbricks": [
+      "D-5303d3",
+      "D-60208a",
+      "D-71e798",
+      "D-73b648",
+      "D-b8f1ee",
+      "D-cf32c5",
+      "D-ec0946"
+    ],
+    "immich": [
+      "D-3b4f47",
+      "D-63d2cd",
+      "D-876763",
+      "D-c10e8e",
+      "D-ed6dc0"
+    ],
+    "infisical": [
+      "D-055c32",
+      "D-1b2542",
+      "D-1e9bb3",
+      "D-259bd1",
+      "D-272621",
+      "D-34f463",
+      "D-7731c9",
+      "D-d7b5b7",
+      "D-d9b44e",
+      "D-fd3f1a"
+    ],
+    "midday": [
+      "D-50255f",
+      "D-5880dd",
+      "D-7da2b9",
+      "D-afc38b",
+      "D-b57953",
+      "D-b8cff6",
+      "D-f90103",
+      "D-ff6099"
+    ],
+    "novu": [
+      "D-36a604",
+      "D-3f3e16",
+      "D-462c2b",
+      "D-53fcf5",
+      "D-6d3bdc",
+      "D-7c65a3",
+      "D-91e753",
+      "D-94d735"
+    ]
+  }
+}

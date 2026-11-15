@@ -1,0 +1,577 @@
+{
+  "run": "eval/study/runs/dev4-ts-2026-11-09",
+  "items": [
+    {
+      "uid": "T02/D-673949",
+      "repo": "T02",
+      "id": "D-673949",
+      "rank": 1,
+      "summary": "apps/api: classes in src/** (*.service files) are named `*Service`",
+      "role": {
+        "package": "apps/api",
+        "dir": "src",
+        "file": "*.service",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Service"
+      },
+      "evidence": {
+        "holders": 36,
+        "total": 37,
+        "lower_bound": 0.86,
+        "lift": 6.4
+      },
+      "members": 37,
+      "example": "apps/api/src/auth/service/auth.service.ts#AuthService",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "apps/api/src/common/slug-generator.service.ts"
+      ],
+      "block": " 1. [D-673949] apps/api: classes in src/** (*.service files) are named `*Service`\n    evidence: 36/37 (lower bound 0.86, lift 6.4)\n    agents:   not shown to agents (family below admission bar: 56% of 37)\n    example:  apps/api/src/auth/service/auth.service.ts#AuthService\n    outlier:  apps/api/src/common/slug-generator.service.ts:15 SlugGenerator",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "T03/D-5214da",
+      "repo": "T03",
+      "id": "D-5214da",
+      "rank": 1,
+      "summary": "functions in packages/** (dodopayments files) declare their return type",
+      "role": {
+        "package": "",
+        "dir": "packages",
+        "file": "dodopayments",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 20,
+        "total": 21,
+        "lower_bound": 0.77,
+        "lift": 3
+      },
+      "members": 21,
+      "example": "packages/templates/express/src/lib/dodopayments.ts#getDodoPaymentsClient",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/templates/nextjs/lib/dodopayments.ts"
+      ],
+      "block": " 1. [D-5214da] functions in packages/** (dodopayments files) declare their return type\n    evidence: 20/21 (lower bound 0.77, lift 3.0)\n    agents:   not shown to agents (family below admission bar: 80% of 10)\n    example:  packages/templates/express/src/lib/dodopayments.ts#getDodoPaymentsClient\n    outlier:  packages/templates/nextjs/lib/dodopayments.ts:225 checkout",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "T04/D-3552cb",
+      "repo": "T04",
+      "id": "D-3552cb",
+      "rank": 1,
+      "summary": "frontend: exported values in mock/** are named `mock*`, except a companion (a helper or constant beside the members that follow it)",
+      "role": {
+        "package": "frontend",
+        "dir": "mock",
+        "file": "*",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "mock*"
+      },
+      "evidence": {
+        "holders": 40,
+        "total": 40,
+        "lower_bound": 0.91,
+        "lift": 4.9
+      },
+      "members": 41,
+      "example": "frontend/mock/config.ts#MOCK_DELAY",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 1. [D-3552cb] frontend: exported values in mock/** are named `mock*`, except a companion (a helper or constant beside the members that follow it)\n    evidence: 40/40 (lower bound 0.91, lift 4.9)\n    agents:   not shown to agents (family below admission bar: 56% of 37)\n    example:  frontend/mock/config.ts#MOCK_DELAY\n    exempt:   frontend/mock/config.ts:13 USE_MOCK (a constant beside MOCK_DELAY, which follows the scheme)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "T04/D-3a5714",
+      "repo": "T04",
+      "id": "D-3a5714",
+      "rank": 2,
+      "summary": "frontend: functions in services/** (*.service files) declare their return type",
+      "role": {
+        "package": "frontend",
+        "dir": "services",
+        "file": "*.service",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 52,
+        "total": 53,
+        "lower_bound": 0.9,
+        "lift": 2
+      },
+      "members": 53,
+      "example": "frontend/services/auth.service.ts#changePassword",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "frontend/services/target.service.ts"
+      ],
+      "block": " 2. [D-3a5714] frontend: functions in services/** (*.service files) declare their return type\n    evidence: 52/53 (lower bound 0.90, lift 2.0)\n    agents:   not shown to agents (family below admission bar: 80% of 10)\n    example:  frontend/services/auth.service.ts#changePassword\n    outlier:  frontend/services/target.service.ts:116 getTargetOrganizations",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "T05/D-2aa20d",
+      "repo": "T05",
+      "id": "D-2aa20d",
+      "rank": 1,
+      "summary": "backend: classes in apps/cloud/src/analytics/** (*.dto files) are named `*Dto`, except 3 companions (a helper or constant beside the members that follow it)",
+      "role": {
+        "package": "backend",
+        "dir": "apps/cloud/src/analytics",
+        "file": "*.dto",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Dto"
+      },
+      "evidence": {
+        "holders": 68,
+        "total": 69,
+        "lower_bound": 0.92,
+        "lift": 2.2
+      },
+      "members": 72,
+      "example": "backend/apps/cloud/src/analytics/dto/data-deletion.dto.ts#DataDeletionDto",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "backend/apps/cloud/src/analytics/dto/get-custom-event-meta.dto.ts"
+      ],
+      "block": " 1. [D-2aa20d] backend: classes in apps/cloud/src/analytics/** (*.dto files) are named `*Dto`, except 3 companions (a helper or constant beside the members that follow it)\n    evidence: 68/69 (lower bound 0.92, lift 2.2)\n    agents:   not shown to agents (family below admission bar: 56% of 37)\n    example:  backend/apps/cloud/src/analytics/dto/data-deletion.dto.ts#DataDeletionDto\n    outlier:  backend/apps/cloud/src/analytics/dto/get-custom-event-meta.dto.ts:7 GetCustomEventMetadata\n    exempt:   backend/apps/cloud/src/analytics/dto/events.dto.ts:43 MetadataKeysQuantity (another kind of class (decorated with ValidatorConstraint()) beside EventsDto, which follows the scheme)\n    exempt:   backend/apps/cloud/src/analytics/dto/events.dto.ts:23 MetadataSizeLimit (another kind of class (decorated with ValidatorConstraint()) beside EventsDto, which follows the scheme)\n    exempt:   backend/apps/cloud/src/analytics/dto/events.dto.ts:74 MetadataValueType (another kind of class (decorated with ValidatorConstraint()) beside EventsDto, which follows the scheme)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "T12/D-bb1a47",
+      "repo": "T12",
+      "id": "D-bb1a47",
+      "rank": 1,
+      "summary": "files in packages/utils/** do not import from apps/web/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "packages/utils",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:apps/web"
+      },
+      "evidence": {
+        "holders": 177,
+        "total": 178,
+        "lower_bound": 0.97,
+        "lift": 3
+      },
+      "members": 178,
+      "example": "packages/utils/eslint.config.mjs#(file)",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/utils/src/services/security/modules/BlockaidModule/index.ts"
+      ],
+      "block": " 1. [D-bb1a47] files in packages/utils/** do not import from apps/web/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 177/178 (lower bound 0.97, lift 3.0)\n    agents:   not shown to agents (block candidate: reaches agents once you accept it)\n    example:  packages/utils/eslint.config.mjs#(file)\n    outlier:  packages/utils/src/services/security/modules/BlockaidModule/index.ts:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "T19/D-afc638",
+      "repo": "T19",
+      "id": "D-afc638",
+      "rank": 1,
+      "summary": "files in packages/plugin-variables/** do not import from packages/operate/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "packages/plugin-variables",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:packages/operate"
+      },
+      "evidence": {
+        "holders": 289,
+        "total": 290,
+        "lower_bound": 0.98,
+        "lift": 3
+      },
+      "members": 290,
+      "example": "packages/plugin-variables/.madrun.js#(file)",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/plugin-variables/lib/remove-unused/fixture/ts-import-equals-declaration.ts"
+      ],
+      "block": " 1. [D-afc638] files in packages/plugin-variables/** do not import from packages/operate/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 289/290 (lower bound 0.98, lift 3.0)\n    agents:   not shown to agents (block candidate: reaches agents once you accept it)\n    example:  packages/plugin-variables/.madrun.js#(file)\n    outlier:  packages/plugin-variables/lib/remove-unused/fixture/ts-import-equals-declaration.ts:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "T19/D-b24e52",
+      "repo": "T19",
+      "id": "D-b24e52",
+      "rank": 2,
+      "summary": "packages/plugin-variables: files in lib/remove-unused/** do not import from packages/putout/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "packages/plugin-variables",
+        "dir": "lib/remove-unused",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:packages/putout"
+      },
+      "evidence": {
+        "holders": 127,
+        "total": 133,
+        "lower_bound": 0.91,
+        "lift": 3
+      },
+      "members": 133,
+      "example": "packages/plugin-variables/lib/remove-unused/fixture.js#(file)",
+      "python_members": null,
+      "outliers": 6,
+      "outlier_files": [
+        "packages/plugin-variables/lib/remove-unused/get-vars/get-vars.js",
+        "packages/plugin-variables/lib/remove-unused/get-vars/index.js",
+        "packages/plugin-variables/lib/remove-unused/get-vars/use-params.js",
+        "packages/plugin-variables/lib/remove-unused/get-vars/visitors/call-expression.js",
+        "packages/plugin-variables/lib/remove-unused/get-vars/visitors/export-named-declaration.js",
+        "packages/plugin-variables/lib/remove-unused/index.js"
+      ],
+      "block": " 2. [D-b24e52] packages/plugin-variables: files in lib/remove-unused/** do not import from packages/putout/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 127/133 (lower bound 0.91, lift 3.0)\n    agents:   not shown to agents (block candidate: reaches agents once you accept it)\n    example:  packages/plugin-variables/lib/remove-unused/fixture.js#(file)\n    outlier:  packages/plugin-variables/lib/remove-unused/get-vars/get-vars.js:1 (file)\n    outlier:  packages/plugin-variables/lib/remove-unused/get-vars/index.js:1 (file)\n    outlier:  packages/plugin-variables/lib/remove-unused/get-vars/use-params.js:1 (file)\n    outlier:  packages/plugin-variables/lib/remove-unused/get-vars/visitors/call-expression.js:1 (file)\n    outlier:  packages/plugin-variables/lib/remove-unused/get-vars/visitors/export-named-declaration.js:1 (file)\n    outlier:  packages/plugin-variables/lib/remove-unused/index.js:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "T19/D-c79a9e",
+      "repo": "T19",
+      "id": "D-c79a9e",
+      "rank": 3,
+      "summary": "files in packages/plugin-types/** do not import from packages/putout/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "packages/plugin-types",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:packages/putout"
+      },
+      "evidence": {
+        "holders": 120,
+        "total": 123,
+        "lower_bound": 0.93,
+        "lift": 3
+      },
+      "members": 123,
+      "example": "packages/plugin-types/.madrun.js#(file)",
+      "python_members": null,
+      "outliers": 3,
+      "outlier_files": [
+        "packages/plugin-types/lib/apply-boolean/index.js",
+        "packages/plugin-types/lib/convert-typeof-to-is-type/index.js",
+        "packages/plugin-types/lib/remove-useless-constructor/index.js"
+      ],
+      "block": " 3. [D-c79a9e] files in packages/plugin-types/** do not import from packages/putout/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 120/123 (lower bound 0.93, lift 3.0)\n    agents:   not shown to agents (block candidate: reaches agents once you accept it)\n    example:  packages/plugin-types/.madrun.js#(file)\n    outlier:  packages/plugin-types/lib/apply-boolean/index.js:1 (file)\n    outlier:  packages/plugin-types/lib/convert-typeof-to-is-type/index.js:1 (file)\n    outlier:  packages/plugin-types/lib/remove-useless-constructor/index.js:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "T22/D-638d89",
+      "repo": "T22",
+      "id": "D-638d89",
+      "rank": 1,
+      "summary": "files in server/routes/** do not import from server/sliderule/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "server/routes",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:server/sliderule"
+      },
+      "evidence": {
+        "holders": 254,
+        "total": 255,
+        "lower_bound": 0.98,
+        "lift": 3
+      },
+      "members": 255,
+      "example": "server/routes/a2a-python-runtime.ts#(file)",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "server/routes/sliderule.ts"
+      ],
+      "block": " 1. [D-638d89] files in server/routes/** do not import from server/sliderule/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 254/255 (lower bound 0.98, lift 3.0)\n    agents:   not shown to agents (block candidate: reaches agents once you accept it)\n    example:  server/routes/a2a-python-runtime.ts#(file)\n    outlier:  server/routes/sliderule.ts:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "T22/D-30aed1",
+      "repo": "T22",
+      "id": "D-30aed1",
+      "rank": 2,
+      "summary": "files in server/core/** do not import from server/routes/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "server/core",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:server/routes"
+      },
+      "evidence": {
+        "holders": 97,
+        "total": 100,
+        "lower_bound": 0.92,
+        "lift": 3
+      },
+      "members": 100,
+      "example": "server/core/a2a-adapters/claude.ts#(file)",
+      "python_members": null,
+      "outliers": 3,
+      "outlier_files": [
+        "server/core/vision-output.ts",
+        "server/core/web-aigc-runtime-extra-adapters.ts",
+        "server/core/workflow-runtime-engine.ts"
+      ],
+      "block": " 2. [D-30aed1] files in server/core/** do not import from server/routes/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 97/100 (lower bound 0.92, lift 3.0)\n    agents:   not shown to agents (block candidate: reaches agents once you accept it)\n    example:  server/core/a2a-adapters/claude.ts#(file)\n    outlier:  server/core/vision-output.ts:1 (file)\n    outlier:  server/core/web-aigc-runtime-extra-adapters.ts:1 (file)\n    outlier:  server/core/workflow-runtime-engine.ts:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "T23/D-c9012b",
+      "repo": "T23",
+      "id": "D-c9012b",
+      "rank": 1,
+      "summary": "frontend: functions in src/components/console/task/toolcalls/** are named `render*`",
+      "role": {
+        "package": "frontend",
+        "dir": "src/components/console/task/toolcalls",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "render*"
+      },
+      "evidence": {
+        "holders": 29,
+        "total": 30,
+        "lower_bound": 0.83,
+        "lift": 34.9
+      },
+      "members": 30,
+      "example": "frontend/src/components/console/task/toolcalls/apply_patch.tsx#renderDetail",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "frontend/src/components/console/task/toolcalls/apply_patch.tsx"
+      ],
+      "block": " 1. [D-c9012b] frontend: functions in src/components/console/task/toolcalls/** are named `render*`\n    evidence: 29/30 (lower bound 0.83, lift 34.9)\n    agents:   not shown to agents (family below admission bar: 56% of 37)\n    example:  frontend/src/components/console/task/toolcalls/apply_patch.tsx#renderDetail\n    outlier:  frontend/src/components/console/task/toolcalls/apply_patch.tsx:13 match",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "T30/D-fcb801",
+      "repo": "T30",
+      "id": "D-fcb801",
+      "rank": 1,
+      "summary": "files in src/main/** do not import from src/renderer/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "src/main",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:src/renderer"
+      },
+      "evidence": {
+        "holders": 644,
+        "total": 645,
+        "lower_bound": 0.99,
+        "lift": 3
+      },
+      "members": 645,
+      "example": "src/main/DaemonClient.ts#(file)",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "src/main/quit/quitAndStopCopy.ts"
+      ],
+      "block": " 1. [D-fcb801] files in src/main/** do not import from src/renderer/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 644/645 (lower bound 0.99, lift 3.0)\n    agents:   not shown to agents (block candidate: reaches agents once you accept it)\n    example:  src/main/DaemonClient.ts#(file)\n    outlier:  src/main/quit/quitAndStopCopy.ts:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "T30/D-00025a",
+      "repo": "T30",
+      "id": "D-00025a",
+      "rank": 2,
+      "summary": "files in src/daemon/** do not import from src/cli/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "src/daemon",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:src/cli"
+      },
+      "evidence": {
+        "holders": 364,
+        "total": 366,
+        "lower_bound": 0.98,
+        "lift": 3
+      },
+      "members": 366,
+      "example": "src/daemon/AgentProcessTracker.ts#(file)",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "src/daemon/a2aRemote/discovery.ts",
+        "src/daemon/a2aRemote/tailnet.ts"
+      ],
+      "block": " 2. [D-00025a] files in src/daemon/** do not import from src/cli/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 364/366 (lower bound 0.98, lift 3.0)\n    agents:   not shown to agents (block candidate: reaches agents once you accept it)\n    example:  src/daemon/AgentProcessTracker.ts#(file)\n    outlier:  src/daemon/a2aRemote/discovery.ts:1 (file)\n    outlier:  src/daemon/a2aRemote/tailnet.ts:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "T30/D-48e1a6",
+      "repo": "T30",
+      "id": "D-48e1a6",
+      "rank": 3,
+      "summary": "files in src/shared/** do not import from src/main/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "src/shared",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:src/main"
+      },
+      "evidence": {
+        "holders": 379,
+        "total": 382,
+        "lower_bound": 0.98,
+        "lift": 3
+      },
+      "members": 382,
+      "example": "src/shared/ShellDetector.ts#(file)",
+      "python_members": null,
+      "outliers": 3,
+      "outlier_files": [
+        "src/shared/daemon/daemonLauncherCore.ts",
+        "src/shared/daemon/daemonProgress.ts",
+        "src/shared/processHandleLiveness.ts"
+      ],
+      "block": " 3. [D-48e1a6] files in src/shared/** do not import from src/main/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 379/382 (lower bound 0.98, lift 3.0)\n    agents:   not shown to agents (block candidate: reaches agents once you accept it)\n    example:  src/shared/ShellDetector.ts#(file)\n    outlier:  src/shared/daemon/daemonLauncherCore.ts:1 (file)\n    outlier:  src/shared/daemon/daemonProgress.ts:1 (file)\n    outlier:  src/shared/processHandleLiveness.ts:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "T30/D-c1a36d",
+      "repo": "T30",
+      "id": "D-c1a36d",
+      "rank": 4,
+      "summary": "files in src/shared/** do not import from src/daemon/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "src/shared",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:src/daemon"
+      },
+      "evidence": {
+        "holders": 379,
+        "total": 382,
+        "lower_bound": 0.98,
+        "lift": 3
+      },
+      "members": 382,
+      "example": "src/shared/ShellDetector.ts#(file)",
+      "python_members": null,
+      "outliers": 3,
+      "outlier_files": [
+        "src/shared/agentFirstRun.ts",
+        "src/shared/daemon/daemonLauncherCore.ts",
+        "src/shared/toolRefusal.ts"
+      ],
+      "block": " 4. [D-c1a36d] files in src/shared/** do not import from src/daemon/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 379/382 (lower bound 0.98, lift 3.0)\n    agents:   not shown to agents (block candidate: reaches agents once you accept it)\n    example:  src/shared/ShellDetector.ts#(file)\n    outlier:  src/shared/agentFirstRun.ts:1 (file)\n    outlier:  src/shared/daemon/daemonLauncherCore.ts:1 (file)\n    outlier:  src/shared/toolRefusal.ts:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    }
+  ]
+}

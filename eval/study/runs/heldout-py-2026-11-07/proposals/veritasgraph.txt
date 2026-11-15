@@ -1,0 +1,67 @@
+5 conventions from 2456 units in 110 roles (0 default tier, 5 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-b12755] veritas-reason: classes in veritasreason/explorer/** extend BaseModel
+    evidence: 81/84 (lower bound 0.90, lift 8.1)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  veritas-reason/veritasreason/explorer/routes/ontology.py#AlignmentRequest
+    outlier:  veritas-reason/veritasreason/explorer/search_index.py:93 GraphSearchIndex
+    outlier:  veritas-reason/veritasreason/explorer/session.py:37 GraphSession
+    outlier:  veritas-reason/veritasreason/explorer/ws.py:17 ConnectionManager
+
+ 2. [D-a849e1] veritas-reason: classes in veritasreason/normalize/** call get_logger()
+    evidence: 23/24 (lower bound 0.80, lift 2.4)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  veritas-reason/veritasreason/normalize/data_cleaner.py#DataCleaner
+    outlier:  veritas-reason/veritasreason/normalize/normalize_provenance.py:18 NormalizerWithProvenance
+
+ 3. [D-1d585e] veritas-reason: dataclasses in veritasreason/** pass `default_factory` to field()
+    evidence: 141/141 (lower bound 0.97, lift 4.5)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  veritas-reason/veritasreason/change_management/change_log.py#ChangeLogEntry
+    exempt:   veritas-reason/veritasreason/change_management/change_log.py:114 MutationRecord (does not call field())
+    exempt:   veritas-reason/veritasreason/deduplication/entity_merger.py:55 MergeOperation (does not call field())
+    exempt:   veritas-reason/veritasreason/deduplication/merge_strategy.py:64 PropertyMergeRule (does not call field())
+    exempt:   veritas-reason/veritasreason/deduplication/similarity_calculator.py:61 SimilarityResult (does not call field())
+    exempt:   veritas-reason/veritasreason/explorer/search_index.py:80 IndexedNodeDocument (does not call field())
+    exempt:   veritas-reason/veritasreason/kg/temporal_query.py:28 TemporalConsistencyIssue (does not call field())
+    exempt:   veritas-reason/veritasreason/kg/temporal_query.py:35 TemporalConsistencyReport (does not call field())
+    exempt:   veritas-reason/veritasreason/kg/temporal_query_rewriter.py:56 TemporalQueryResult (does not call field())
+    exempt:   veritas-reason/veritasreason/kg/temporal_reasoning.py:20 TemporalInterval (does not call field())
+    exempt:   veritas-reason/veritasreason/normalize/data_cleaner.py:41 DuplicateGroup (does not call field())
+    exempt:   veritas-reason/veritasreason/ontology/ontology_generator.py:720 PropertyShape (does not call field())
+    exempt:   veritas-reason/veritasreason/ontology/ontology_validator.py:25 SHACLViolation (does not call field())
+    exempt:   veritas-reason/veritasreason/parse/code_parser.py:58 CodeComment (does not call field())
+    exempt:   veritas-reason/veritasreason/parse/docling_parser.py:64 DoclingMetadata (does not call field())
+    exempt:   veritas-reason/veritasreason/parse/docx_parser.py:58 DocxMetadata (does not call field())
+    exempt:   veritas-reason/veritasreason/parse/html_parser.py:43 HTMLMetadata (does not call field())
+    exempt:   veritas-reason/veritasreason/parse/json_parser.py:40 JSONData (does not call field())
+    exempt:   veritas-reason/veritasreason/parse/pdf_parser.py:53 PDFMetadata (does not call field())
+    exempt:   veritas-reason/veritasreason/pipeline/parallelism_manager.py:56 ParallelExecutionResult (does not call field())
+    exempt:   veritas-reason/veritasreason/reasoning/datalog_reasoner.py:18 DatalogFact (does not call field())
+    exempt:   veritas-reason/veritasreason/reasoning/datalog_reasoner.py:29 DatalogRule (does not call field())
+    exempt:   veritas-reason/veritasreason/semantic_extract/llm_extraction.py:74 LLMResponse (does not call field())
+
+ 4. [D-3e5d8c] veritas-reason: classes in veritasreason/parse/** call get_logger()
+    evidence: 23/25 (lower bound 0.75, lift 2.3)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  veritas-reason/veritasreason/parse/code_parser.py#CodeParser
+    outlier:  veritas-reason/veritasreason/parse/parse_provenance.py:20 ParserWithProvenance
+    outlier:  veritas-reason/veritasreason/parse/web_parser.py:155 HTMLContentParser
+
+ 5. [D-e381dd] veritas-reason: HTTP handlers in veritasreason/explorer/** pass `response_model` to APIRouter.api_route()
+    evidence: 60/69 (lower bound 0.77, lift 10.3)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  veritas-reason/veritasreason/explorer/routes/analytics.py#get_analytics
+    outlier:  veritas-reason/veritasreason/explorer/routes/annotations.py:56 delete_annotation
+    outlier:  veritas-reason/veritasreason/explorer/routes/export_import.py:244 export_distance_enriched
+    outlier:  veritas-reason/veritasreason/explorer/routes/export_import.py:197 export_graph
+    outlier:  veritas-reason/veritasreason/explorer/routes/ontology.py:1905 add_comment
+    outlier:  veritas-reason/veritasreason/explorer/routes/ontology.py:1763 approve_proposal
+    outlier:  veritas-reason/veritasreason/explorer/routes/ontology.py:1793 publish_proposal
+    outlier:  veritas-reason/veritasreason/explorer/routes/ontology.py:1778 reject_proposal
+    outlier:  veritas-reason/veritasreason/explorer/routes/ontology.py:1485 remove_ontology
+    outlier:  veritas-reason/veritasreason/explorer/routes/provenance.py:158 export_provenance_report
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

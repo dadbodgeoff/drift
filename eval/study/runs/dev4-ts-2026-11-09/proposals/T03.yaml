@@ -1,0 +1,40 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - checkout
+  - customer
+  - dodopayments
+  - payments
+  - products
+  - route
+  - stripe
+  - subscriptions
+  - webhook
+  suffixes:
+  - config
+  - controller
+conventions:
+- id: D-5214da
+  status: proposed
+  mode: advise
+  summary: functions in packages/** (dodopayments files) declare their return type
+  role:
+    package: ""
+    dir: packages
+    file: dodopayments
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 2.996
+  example: packages/templates/express/src/lib/dodopayments.ts#getDodoPaymentsClient
+  selector_version: 3

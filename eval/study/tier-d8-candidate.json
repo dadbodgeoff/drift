@@ -1,0 +1,52 @@
+{
+ "//": "The CANDIDATE default-tier definition of decision D8 (pre-registered 2026-11-07, before any Python labelling for it; NOT adopted). Nothing ships it: the product's tier is still D7's (tier-d7.json, crates/drift-mine/src/tier.rs tier_of), Python still advises only, and no held-out manifest holds this block (lib.mjs HELD_OUT_TIER_FILES names tier-d7.json only). `drift census --json --candidate d8` reports, per proposal, the tier this block would give (drift_mine::tier::d8_candidate_reason); lib.mjs tierOf applies it to queue items that carry `guards` (stage.mjs --candidate-json); eval/study/tier.test.mjs and the Rust test tier::tests::d8_candidate_matches_the_study run the shared d8_cases of tier-cases.json through both. The pre-registration, its thresholds and its stopping rules are in eval/study/README.md (decision D8) and eval/study/runs/d8-prereg-2026-11-07/README.md.",
+ "tier": {
+  "//": "Decision D8 candidate. TypeScript/JavaScript: exactly D7 (call wrappers and layering, in-repo targets, roles of >= 15 members). Python: call wrappers (wrapped_by:call) whose every alternative is a guard, and layering (avoids:import), each only when every symbol the rule names is defined in the repository (default.target in_repo), in roles of >= 50 members (default.by_language.py.min_members). A call wrapper's alternatives are guards when the product's guard notion holds for each (drift_mine::security::authenticates, the one mining uses for auth variant sets since #60: read from the definition, it rejects callers who are not signed in or not allowed; a name that opens access is never one). The study cannot read definitions, so lib.mjs tierOf takes it from the queue item's `guards` (true only when the product said so: missing or false is suggestion tier, failing closed). Decorators, base classes, passes_key and every other Python kind stay suggestion tier. Everything else is suggestion tier. Release gate: Python's default tier ships as advise until it measures >= 95% default-tier accept under rubric v3, judged per D1 on a primary held-out run, AND on at least 30 default-tier cards (D8).",
+  "kind": "rule_kind",
+  "decision": "D8",
+  "status": "candidate",
+  "default": {
+   "//": "TypeScript/JavaScript as in D7; Python guard call wrappers and layering in roles of >= 50 members",
+   "rule_kinds": [
+    "wrapped_by:call",
+    "avoids:import"
+   ],
+   "languages": [
+    "ts",
+    "py"
+   ],
+   "min_members": 15,
+   "target": "in_repo",
+   "by_language": {
+    "py": {
+     "min_members": 50,
+     "call_wrappers": "guards"
+    }
+   }
+  },
+  "suggestion": {
+   "//": "D7's suggestion kinds; Python call wrappers with an alternative that is not a guard, and Python roles under 50 members",
+   "rule_kinds": [
+    "calls",
+    "named",
+    "avoids:other",
+    "prefers_library",
+    "before",
+    "has_test",
+    "model_has",
+    "package_has",
+    "dependency_version",
+    "wrapped_by:try",
+    "control",
+    "directive",
+    "throws",
+    "passes_key",
+    "renders",
+    "wrapped_by:decorator",
+    "wrapped_by:extends",
+    "wrapped_by:jsx"
+   ]
+  },
+  "not_wrong_over": "all_shown"
+ }
+}

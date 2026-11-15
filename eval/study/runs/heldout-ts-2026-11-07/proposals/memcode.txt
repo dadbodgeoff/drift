@@ -1,0 +1,11 @@
+1 conventions from 752 units in 57 roles (1 default tier, 0 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-3a63a0] files in backend/** do not import from meresei/backend/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)
+    evidence: 108/109 (lower bound 0.95, lift 3.0)
+    tier:     default
+    example:  backend/afterMiddleware.js#(file)
+    outlier:  backend/index.js:1 (file)
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

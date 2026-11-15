@@ -1,0 +1,75 @@
+8 conventions from 6377 units in 169 roles (0 default tier, 8 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-9441cc] classes in tinyagentos/routes/** extend BaseModel
+    evidence: 257/272 (lower bound 0.91, lift 2.5)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  tinyagentos/routes/a2a_bus.py#BusSendBody
+    outlier:  tinyagentos/routes/agent_versions.py:66 InvalidContainerTargetError
+    outlier:  tinyagentos/routes/agents.py:54 IdempotencyCache
+    outlier:  tinyagentos/routes/desktop_browser/agent_pin.py:16 AgentNotFoundError
+    ... 12 more outliers
+
+ 2. [D-ccce4a] functions in tinyagentos/** declare their return type
+    evidence: 749/778 (lower bound 0.95, lift 1.8)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  tinyagentos/__main__.py#main
+    outlier:  tinyagentos/agent_controller_listener.py:26 create_agent_controller_app
+    outlier:  tinyagentos/agent_image.py:85 register_prefetch_endpoint
+    outlier:  tinyagentos/agent_tools/coding_model.py:137 make_litellm_model_step
+    ... 26 more outliers
+    exempt:   tinyagentos/cluster/ble/proto.py:105 b64 (shared part used by 3 members)
+    exempt:   tinyagentos/cluster/ble/proto.py:234 commitment (shared part used by 2 members)
+    exempt:   tinyagentos/cluster/ble/proto.py:246 derive_code (shared part used by 2 members)
+    ... 6 more exempt
+
+ 3. [D-fdff1c] desktop: functions in src/lib/** declare their return type
+    evidence: 241/245 (lower bound 0.96, lift 1.8)
+    tier:     suggestion (rule kind control)
+    example:  desktop/src/lib/a2a-receipts-api.ts#getReceipts
+    outlier:  desktop/src/lib/account-client.ts:169 login
+    outlier:  desktop/src/lib/account-client.ts:172 register
+    outlier:  desktop/src/lib/use-thread-panel.ts:3 useThreadPanel
+    ... 1 more outliers
+
+ 4. [D-499c0e] functions in scripts/** declare their return type
+    evidence: 126/129 (lower bound 0.93, lift 1.8)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  scripts/_gitutil.py#diff_name_status_z
+    outlier:  scripts/check_non_discriminating.py:305 pytest_configure
+    outlier:  scripts/check_non_discriminating.py:451 pytest_runtest_protocol
+    outlier:  scripts/mobile-screenshots.py:12 main
+
+ 5. [D-6d209c] desktop: functions in src/apps/** declare their return type
+    evidence: 183/193 (lower bound 0.91, lift 1.7)
+    tier:     suggestion (rule kind control)
+    example:  desktop/src/apps/BrowserApp/agent-ws-bridge.ts#openParentWs
+    outlier:  desktop/src/apps/BrowserApp/keyboard.ts:48 useBrowserKeyboardShortcuts
+    outlier:  desktop/src/apps/MessagesApp/index.tsx:322 renderContent
+    outlier:  desktop/src/apps/MessagesApp/index.tsx:348 renderInline
+    ... 7 more outliers
+
+ 6. [D-c74a2e] desktop: components in src/apps/** call useState() before useEffect()
+    evidence: 133/146 (lower bound 0.85, lift 1.0)
+    tier:     suggestion (rule kind before)
+    example:  desktop/src/apps/AgentBrowsersApp.tsx#AgentBrowsersApp
+    outlier:  desktop/src/apps/BrowserApp/AddressSuggest.tsx:22 AddressSuggest
+    outlier:  desktop/src/apps/BrowserApp/MoveTabMenu.tsx:24 MoveTabMenu
+    outlier:  desktop/src/apps/BrowserApp/TabRenderer.tsx:57 TabRenderer
+    ... 10 more outliers
+
+ 7. [D-7acce3] functions in tinyagentos/** (__init__ files) declare their return type
+    evidence: 31/32 (lower bound 0.84, lift 1.8)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    example:  tinyagentos/adapters/__init__.py#list_frameworks
+    outlier:  tinyagentos/routes/__init__.py:1 register_all_routers
+
+ 8. [D-e4696a] desktop: files in src/hooks/** have a test file
+    evidence: 26/28 (lower bound 0.77, lift 1.5)
+    tier:     suggestion (rule kind has_test)
+    example:  desktop/src/hooks/use-agent-shortcuts.ts#(file)
+    outlier:  desktop/src/hooks/use-is-square-viewport.ts:1 (file)
+    outlier:  desktop/src/hooks/use-update-available.ts:1 (file)
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

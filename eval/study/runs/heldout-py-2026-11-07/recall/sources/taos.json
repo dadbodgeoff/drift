@@ -1,0 +1,29 @@
+{
+  "repo": "taos",
+  "files": [
+    {
+      "path": ".claude/skills/taos-agent/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/taos-development-skill/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/contributor-pitfalls.md",
+      "kind": "doc"
+    }
+  ]
+}

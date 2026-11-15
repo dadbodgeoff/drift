@@ -1,21 +1,19 @@
-# Security Policy
+# Security policy
 
-Drift is designed as a local-first repo intelligence tool. It scans local source, stores Drift state in local SQLite, and does not require cloud sync.
+Drift parses untrusted code and runs inside AI agents' hooks, so we treat
+security reports as the highest priority.
 
-## Reporting
+## Reporting a vulnerability
 
-Report security issues privately through GitHub Security Advisories when available. If that is not available, open a minimal issue asking for a private contact path.
+Please report privately through GitHub's **Report a vulnerability** button on
+this repository's Security tab. Do not open a public issue.
 
-Do not include private source code, secrets, tokens, customer data, `.env` contents, certificates, private keys, or proprietary repo dumps in public issues.
+We aim to acknowledge reports within 2 business days and to agree a fix and
+disclosure date with you. We credit reporters unless you prefer otherwise.
 
-## Current Boundaries
+## Scope
 
-- Drift backs up Drift state, not source code.
-- Agent-facing CLI and MCP surfaces should emit metadata, graph facts, evidence locations, policy decisions, and redaction metadata, not source snippets.
-- MCP tools are read-only.
-- Governance mutations require explicit human confirmation in CLI.
-- The Rust engine owns deterministic parser, graph, candidate, and check authority.
-
-## Supported Versions
-
-Pre-1.0 releases receive best-effort security fixes on `main`. Public beta users should stay on the latest published version.
+In scope: the `drift` CLI and libraries, hook output (including prompt
+injection through repository content), the GitHub Action, and release
+artifacts. Findings about third-party repositories that Drift happened to scan
+are out of scope; report those to their maintainers.

@@ -1,0 +1,36 @@
+[graph]
+all-features = true
+
+[advisories]
+version = 2
+yanked = "deny"
+
+[licenses]
+version = 2
+confidence-threshold = 0.9
+allow = [
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "MIT",
+  "BSD-3-Clause",
+  "Unicode-3.0",
+  "Zlib",
+  "CC0-1.0",
+  "BSL-1.0",
+]
+# ruff's parser decodes `\N{NAME}` escapes with a table generated from Unicode's
+# data files, which carry Unicode-DFS-2016 (the predecessor of the Unicode-3.0
+# licence allowed above). Allowed for that one crate only.
+exceptions = [
+  { crate = "ruff_unicode_names2", allow = ["Unicode-DFS-2016"] },
+]
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+allow-wildcard-paths = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

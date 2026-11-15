@@ -1,0 +1,201 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - config
+  - language
+  - register
+  - vision
+  suffixes:
+  - config
+  - patched
+  - test
+conventions:
+- id: D-081097
+  status: proposed
+  mode: advise
+  summary: "panel: components in src/** call useState() before useEffect(), except a shared part (used by several members, not a member)"
+  role:
+    package: panel
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: before
+    first: pkg:react#useState
+    then: pkg:react#useEffect
+  evidence:
+    holders: 51
+    total: 52
+    lower_bound: 0.899
+    lift: 1.0
+    role_members: 53
+  example: panel/src/renderer/src/App.tsx#App
+  selector_version: 3
+- id: D-5e79e4
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in vmlx_engine/tool_parsers/** are decorated with
+    ToolParserManager.register_module(), except a member (of the module that defines a rule's target)
+  role:
+    package: ""
+    dir: vmlx_engine/tool_parsers
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - >-
+      vmlx_engine/tool_parsers/abstract_tool_parser.py#ToolParserManager.register_module
+  evidence:
+    holders: 28
+    total: 28
+    lower_bound: 0.879
+    lift: 24.724
+    role_members: 29
+    python_members: 29
+  example: vmlx_engine/tool_parsers/atem_tool_parser.py#AtemToolParser
+  selector_version: 3
+- id: D-0bfd57
+  status: proposed
+  mode: advise
+  summary: files in vmlx_engine/tool_parsers/** have a test file
+  role:
+    package: ""
+    dir: vmlx_engine/tool_parsers
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 29
+    total: 30
+    lower_bound: 0.833
+    lift: 3.564
+    python_members: 30
+  example: vmlx_engine/tool_parsers/abstract_tool_parser.py#(file)
+  selector_version: 3
+- id: D-56a575
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in vmlx_engine/tool_parsers/** call ExtractedToolCallInformation(),
+    except a member (of the module that defines a rule's target)
+  role:
+    package: ""
+    dir: vmlx_engine/tool_parsers
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: vmlx_engine/tool_parsers/abstract_tool_parser.py#ExtractedToolCallInformation
+  evidence:
+    holders: 27
+    total: 28
+    lower_bound: 0.823
+    lift: 24.724
+    role_members: 29
+    python_members: 29
+  example: vmlx_engine/tool_parsers/atem_tool_parser.py#AtemToolParser
+  selector_version: 3
+- id: D-5c3955
+  status: proposed
+  mode: advise
+  summary: "panel: components in src/** call useTranslation() before useEffect()"
+  role:
+    package: panel
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: before
+    first: panel/src/renderer/src/i18n/context.ts#useTranslation
+    then: pkg:react#useEffect
+  evidence:
+    holders: 49
+    total: 53
+    lower_bound: 0.821
+    lift: 1.0
+  example: panel/src/renderer/src/App.tsx#App
+  selector_version: 3
+- id: D-47df1d
+  status: proposed
+  mode: advise
+  summary: >-
+    classes in vmlx_engine/** (language files) extend nn.Module, except a class (of
+    another kind)
+  role:
+    package: ""
+    dir: vmlx_engine
+    file: language
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - pkg:mlx#nn.Module
+  evidence:
+    holders: 41
+    total: 44
+    lower_bound: 0.818
+    lift: 2.828
+    role_members: 45
+    python_members: 45
+  example: vmlx_engine/models/dots3_note/language.py#Dots3DecoderLayer
+  selector_version: 3
+- id: D-0fbf2a
+  status: proposed
+  mode: advise
+  summary: "panel: components in src/** call useTranslation() before useState(), except 2 shared parts (used by several members, not a member)"
+  role:
+    package: panel
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: before
+    first: panel/src/renderer/src/i18n/context.ts#useTranslation
+    then: pkg:react#useState
+  evidence:
+    holders: 55
+    total: 61
+    lower_bound: 0.802
+    lift: 1.0
+    role_members: 63
+  example: panel/src/renderer/src/App.tsx#App
+  selector_version: 3
+- id: D-c1c977
+  status: proposed
+  mode: advise
+  summary: dataclasses in vmlx_engine/** (config files) are named `*Config`
+  role:
+    package: ""
+    dir: vmlx_engine
+    file: config
+    entry: '-'
+    kind: class
+    variety: dataclass
+  rule:
+    type: named
+    pattern: "*Config"
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 12.493
+    python_members: 24
+  example: vmlx_engine/models/dots3_note/config.py#AudioConfig
+  selector_version: 3

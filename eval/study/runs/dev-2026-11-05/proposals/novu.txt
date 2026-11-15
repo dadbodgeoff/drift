@@ -1,0 +1,107 @@
+15 conventions from 20844 units in 1366 roles
+
+ 1. [D-2467a6] playground/nextjs: components in src/components/ui/** call cn()
+    evidence: 73/75 (lower bound 0.91, lift 6.7)
+    example:  playground/nextjs/src/components/ui/accordion.tsx#AccordionContent
+    outlier:  playground/nextjs/src/components/ui/command.tsx:26 CommandDialog
+    outlier:  playground/nextjs/src/components/ui/command.tsx:70 CommandEmpty
+
+ 2. [D-7c65a3] packages/providers: classes in src/** (*.provider files) extend BaseProvider
+    evidence: 79/89 (lower bound 0.81, lift 33.0)
+    example:  packages/providers/src/lib/chat/chat-webhook/chat-webhook.provider.ts#ChatWebhookProvider
+    outlier:  packages/providers/src/base.provider.ts:21 BaseProvider
+    outlier:  packages/providers/src/lib/email/email-webhook/email-webhook.provider.ts:35 EmailWebhookUrlBlockedError
+    outlier:  packages/providers/src/lib/push/apns/apns.provider.ts:8 APNSPushProvider
+    outlier:  packages/providers/src/lib/push/expo/expo.provider.ts:8 ExpoPushProvider
+    outlier:  packages/providers/src/lib/push/fcm/fcm.provider.ts:28 FcmPushProvider
+    outlier:  packages/providers/src/lib/push/one-signal/one-signal.provider.ts:10 OneSignalPushProvider
+    outlier:  packages/providers/src/lib/push/push-webhook/push-webhook.provider.ts:14 PushWebhookPushProvider
+    outlier:  packages/providers/src/lib/push/pusher-beams/pusher-beams.provider.ts:10 PusherBeamsPushProvider
+    outlier:  packages/providers/src/lib/push/pushpad/pushpad.provider.ts:8 PushpadPushProvider
+    outlier:  packages/providers/src/lib/tool/tool-webhook/tool-webhook.provider.ts:29 ToolWebhookProvider
+
+ 3. [D-462c2b] libs/application-generic: classes in src/factories/sms/** (*.handler files) extend BaseSmsHandler
+    evidence: 39/40 (lower bound 0.87, lift 74.4)
+    example:  libs/application-generic/src/factories/sms/handlers/africas-talking.handler.ts#AfricasTalkingSmsHandler
+    outlier:  libs/application-generic/src/factories/sms/handlers/base.handler.ts:6 BaseSmsHandler
+
+ 4. [D-af3463] packages/js: functions in src/** (helpers files) call NovuError(new)()
+    evidence: 36/37 (lower bound 0.86, lift 135.5)
+    example:  packages/js/src/channel-connections/helpers.ts#deleteChannelConnection
+    outlier:  packages/js/src/notifications/helpers.ts:20 ensureNotificationInstance
+
+ 5. [D-36a604] apps/api: HTTP handlers in src/app/inbox/** (*.controller files) are decorated with UseGuards()
+    evidence: 36/37 (lower bound 0.86, lift 53.9)
+    example:  apps/api/src/app/inbox/inbox.controller.ts#DELETE /inbox/channel-connections/:identifier
+    outlier:  apps/api/src/app/inbox/inbox.controller.ts:161 POST /inbox/session
+
+ 6. [D-3f3e16] apps/api: HTTP handlers in src/app/integrations/** (*.controller files) are decorated with ApiOperation()
+    evidence: 32/34 (lower bound 0.81, lift 16.2)
+    example:  apps/api/src/app/integrations/integrations-mobile-configure-public.controller.ts#GET /integrations/mobile-configure/status
+    outlier:  apps/api/src/app/integrations/integrations.controller.ts:478 GET /integrations/:channelType/limit
+    outlier:  apps/api/src/app/integrations/integrations.controller.ts:502 GET /integrations/in-app/status
+
+ 7. [D-2e9dcc] apps/api: classes in src/** (*.command files) are named `*Command`
+    evidence: 409/415 (lower bound 0.97, lift 5.6)
+    example:  apps/api/src/app/activity/usecases/build-active-subscribers-chart/build-active-subscribers-chart.command.ts#BuildActiveSubscribersChartCommand
+    outlier:  apps/api/src/app/agents/conversation-runtime/reply/handle-agent-reply/handle-agent-reply.command.ts:16 QuoteReplyContextDto
+    outlier:  apps/api/src/app/bridge/usecases/sync/sync.command.ts:60 WorkflowDefine
+    outlier:  apps/api/src/app/shared/commands/project.command.ts:17 EnvironmentWithSubscriber
+    outlier:  apps/api/src/app/step-resolvers/usecases/sync-step-resolver-to-environment/sync-step-resolver-to-environment.command.ts:7 StepResolverSourceData
+    outlier:  apps/api/src/app/step-resolvers/usecases/sync-step-resolver-to-environment/sync-step-resolver-to-environment.command.ts:23 StepResolverTargetData
+    outlier:  apps/api/src/app/subscriptions/usecases/create-subscriptions/create-subscriptions.command.ts:8 TopicSubscriberIdentifier
+
+ 8. [D-cc571a] apps/api: classes in src/** (*.usecase files) are decorated with Injectable()
+    evidence: 406/412 (lower bound 0.97, lift 3.8)
+    example:  apps/api/src/app/activity/usecases/build-active-subscribers-chart/build-active-subscribers-chart.usecase.ts#BuildActiveSubscribersChart
+    outlier:  apps/api/src/app/environments-v1/usecases/output-renderers/base-translation-renderer.usecase.ts:15 BaseTranslationRendererUsecase
+    outlier:  apps/api/src/app/environments-v1/usecases/output-renderers/chat-output-renderer.usecase.ts:22 ChatOutputRendererCommand
+    outlier:  apps/api/src/app/environments-v1/usecases/output-renderers/email-output-renderer.usecase.ts:60 EmailOutputRendererCommand
+    outlier:  apps/api/src/app/environments-v1/usecases/output-renderers/in-app-output-renderer.usecase.ts:9 InAppOutputRendererCommand
+    outlier:  apps/api/src/app/environments-v1/usecases/output-renderers/sms-output-renderer.usecase.ts:9 SmsOutputRendererCommand
+    outlier:  apps/api/src/app/user/usecases/base-user-profile.usecase.ts:4 BaseUserProfileUsecase
+
+ 9. [D-6d3bdc] libs/application-generic: classes in src/factories/mail/** (*.handler files) extend BaseEmailHandler
+    evidence: 21/22 (lower bound 0.78, lift 135.2)
+    example:  libs/application-generic/src/factories/mail/handlers/anypost.handler.ts#AnypostHandler
+    outlier:  libs/application-generic/src/factories/mail/handlers/base.handler.ts:7 BaseEmailHandler
+
+10. [D-91e753] playground/nextjs: pages in src/** render <Title>
+    evidence: 25/27 (lower bound 0.77, lift 93.3)
+    example:  playground/nextjs/src/pages/agent-human/index.tsx#AgentHumanPage
+    outlier:  playground/nextjs/src/pages/custom-popover/index.tsx:6 CustomPopoverPage
+    outlier:  playground/nextjs/src/pages/hooks/index.tsx:7 Page
+
+11. [D-53fcf5] apps/api: classes in src/app/inbox/** (*.command files) extend EnvironmentWithSubscriber
+    evidence: 18/19 (lower bound 0.75, lift 80.5)
+    example:  apps/api/src/app/inbox/usecases/bulk-update-preferences/bulk-update-preferences.command.ts#BulkUpdatePreferencesCommand
+    outlier:  apps/api/src/app/inbox/usecases/session/session.command.ts:7 SessionCommand
+
+12. [D-94d735] libs/application-generic: classes in src/factories/chat/** (*.handler files) extend BaseChatHandler
+    evidence: 18/19 (lower bound 0.75, lift 156.6)
+    example:  libs/application-generic/src/factories/chat/handlers/chat-webhook.handler.ts#ChatWebhookHandler
+    outlier:  libs/application-generic/src/factories/chat/handlers/base.handler.ts:7 BaseChatHandler
+
+13. [D-cac0d0] apps/human-dashboard: components in src/components/ui/** call cn()
+    evidence: 23/25 (lower bound 0.75, lift 20.3)
+    example:  apps/human-dashboard/src/components/ui/agent-avatar.tsx#AgentAvatar
+    outlier:  apps/human-dashboard/src/components/ui/copy-button.tsx:33 CopyButton
+    outlier:  apps/human-dashboard/src/components/ui/toast.tsx:45 Toaster
+
+14. [D-b386b6] apps/dashboard: functions in src/hooks/** are named `use*`
+    evidence: 220/227 (lower bound 0.94, lift 10.1)
+    example:  apps/dashboard/src/hooks/use-activity-url-state.ts#useActivityUrlState
+    outlier:  apps/dashboard/src/hooks/use-channel-first-connected-endpoint.ts:87 channelFirstConnectedEndpointQueryOptions
+    outlier:  apps/dashboard/src/hooks/use-channel-first-connected-endpoint.ts:68 findFirstGenuineConnectedEndpoint
+    outlier:  apps/dashboard/src/hooks/use-channel-first-connected-endpoint.ts:54 isGenuineConnectedEndpoint
+    outlier:  apps/dashboard/src/hooks/use-horizontal-scroll-edges.ts:10 buildEdgeFadeMask
+    outlier:  apps/dashboard/src/hooks/use-persisted-page-size.ts:61 getPersistedPageSize
+    outlier:  apps/dashboard/src/hooks/use-translation-validation.ts:59 validateTranslationKey
+    outlier:  apps/dashboard/src/hooks/use-web-chat-prompt.ts:11 resolveWebChatConnectRuntime
+
+15. [D-bd4e93] apps/api: HTTP handlers in src/app/subscribers-v2/** (*.controller files) are decorated with ApiParam()
+    evidence: 24/26 (lower bound 0.76, lift 72.1)
+    example:  apps/api/src/app/subscribers-v2/subscribers.controller.ts#DELETE /subscribers/:subscriberId
+    outlier:  apps/api/src/app/subscribers-v2/subscribers.controller.ts:138 GET /subscribers
+    outlier:  apps/api/src/app/subscribers-v2/subscribers.controller.ts:195 POST /subscribers
+

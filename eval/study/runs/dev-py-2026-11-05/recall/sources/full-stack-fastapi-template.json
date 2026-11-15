@@ -1,0 +1,29 @@
+{
+  "repo": "full-stack-fastapi-template",
+  "files": [
+    {
+      "path": ".agents/skills/library-skills/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".claude/skills/library-skills/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "backend/pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "frontend/biome.json",
+      "kind": "lint"
+    },
+    {
+      "path": "packages/react-email/biome.json",
+      "kind": "lint"
+    }
+  ]
+}

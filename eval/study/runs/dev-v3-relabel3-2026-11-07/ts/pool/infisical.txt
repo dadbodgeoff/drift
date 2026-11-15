@@ -1,0 +1,563 @@
+63 conventions from 26175 units in 1176 roles (4 default tier, 59 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-c4efb8] backend: HTTP handlers in src/** are wrapped in verifyAuth() or passport.authenticate()
+    evidence: 1579/1702 (lower bound 0.91, lift 5.6)
+    tier:     default
+    split:    verifyAuth 1576, passport.authenticate 3
+    example:  backend/src/ee/routes/scep/pki-scep-router.ts#POST /:profileId/challenge
+    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:246 GET /:identifier/cacerts
+    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:336 GET /applications/:applicationId/profiles/:profileId/cacerts
+    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:170 POST /:identifier/simpleenroll
+    ... 120 more outliers
+
+ 2. [D-f674a5] backend: HTTP handlers in src/ee/** are wrapped in verifyAuth()
+    evidence: 561/611 (lower bound 0.89, lift 5.6)
+    tier:     default
+    example:  backend/src/ee/routes/scep/pki-scep-router.ts#POST /:profileId/challenge
+    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:246 GET /:identifier/cacerts
+    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:336 GET /applications/:applicationId/profiles/:profileId/cacerts
+    outlier:  backend/src/ee/routes/est/certificate-est-router.ts:170 POST /:identifier/simpleenroll
+    ... 47 more outliers
+
+ 3. [D-1e9bb3] backend: HTTP handlers in src/server/routes/v2/** are wrapped in verifyAuth()
+    evidence: 88/96 (lower bound 0.84, lift 5.6)
+    tier:     default
+    example:  backend/src/server/routes/v2/certificate-authority-router.ts#GET /
+    outlier:  backend/src/server/routes/v2/deprecated-project-router.ts:29 GET /:workspaceId/encrypted-key
+    outlier:  backend/src/server/routes/v2/mfa-router.ts:105 GET /mfa/check/totp
+    outlier:  backend/src/server/routes/v2/mfa-router.ts:202 GET /mfa/check/webauthn
+    ... 5 more outliers
+
+ 4. [D-7731c9] backend: HTTP handlers in src/server/routes/v3/** are wrapped in verifyAuth()
+    evidence: 44/50 (lower bound 0.76, lift 5.3)
+    tier:     default
+    example:  backend/src/server/routes/v3/deprecated-certificates-router.ts#PATCH /:certificateId/config
+    outlier:  backend/src/server/routes/v3/login-router.ts:221 POST /login
+    outlier:  backend/src/server/routes/v3/login-router.ts:14 POST /login1
+    outlier:  backend/src/server/routes/v3/login-router.ts:136 POST /login2
+    ... 3 more outliers
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 5. [D-272621] backend: functions in src/server/routes/v1/app-connection-routers/** pass `app` to registerAppConnectionEndpoints()
+    evidence: 92/102 (lower bound 0.83, lift 89.9)
+    tier:     suggestion (rule kind passes_key)
+    example:  backend/src/server/routes/v1/app-connection-routers/1password-connection-router.ts#registerOnePassConnectionRouter
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:49 buildAppConnectionRouteContext
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:319 buildCreateAppConnectionRoute
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:502 buildDeleteAppConnectionRoute
+    ... 7 more outliers
+    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:628 registerAppConnectionEndpoints (the rule's own target)
+
+ 6. [D-16b725] backend: HTTP handlers in src/ee/routes/v1/agent-vault-routers/** call actorContext()
+    evidence: 64/72 (lower bound 0.80, lift 114.9)
+    tier:     suggestion (rule kind calls)
+    example:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-access-bundle-router.ts#DELETE /:accessBundleId
+    outlier:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-project-router.ts:9 GET /
+    outlier:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-proxy-agent-router.ts:84 POST /bootstrap
+    outlier:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-proxy-agent-router.ts:125 POST /heartbeat
+    ... 5 more outliers
+
+ 7. [D-bf8c50] frontend: components in src/pages/organization/AppConnections/** render <GenericAppConnectionsFields>
+    evidence: 96/110 (lower bound 0.80, lift 22.1)
+    tier:     suggestion (rule kind renders)
+    example:  frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/1PasswordConnectionForm.tsx#OnePassConnectionForm
+    outlier:  frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AddAppConnectionModal.tsx:32 AddAppConnectionModal
+    outlier:  frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/AppConnectionForm.tsx:798 AppConnectionForm
+    outlier:  frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/GitHubAppSelector.tsx:75 GitHubAppSelector
+    ... 11 more outliers
+    exempt:   frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/AppConnectionFormFooter.tsx:19 AppConnectionFormFooter (shared part used by 83 members)
+    exempt:   frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/GenericAppConnectionFields.tsx:58 GenericAppConnectionsFields (the rule's own target)
+    exempt:   frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/shared/CredentialRotationForm.tsx:27 CredentialRotationForm (shared part used by 7 members)
+    ... 1 more exempt
+
+ 8. [D-d9b44e] backend: functions in src/server/routes/v1/secret-sync-routers/** pass `createSchema` to registerSyncSecretsEndpoints()
+    evidence: 50/51 (lower bound 0.90, lift 176.8)
+    tier:     suggestion (rule kind passes_key)
+    example:  backend/src/server/routes/v1/secret-sync-routers/1password-sync-router.ts#registerOnePassSyncRouter
+    outlier:  backend/src/server/routes/v1/secret-sync-routers/secret-sync-router.ts:201 registerSecretSyncRouter
+    exempt:   backend/src/server/routes/v1/secret-sync-routers/secret-sync-endpoints.ts:17 registerSyncSecretsEndpoints (the rule's own target)
+
+ 9. [D-055c32] backend: components in src/** render inside <BaseEmailWrapper>
+    evidence: 54/54 (lower bound 0.93, lift 44.2)
+    tier:     suggestion (rule kind wrapped_by:jsx; decision D7 keeps only call wrappers and layering)
+    example:  backend/src/services/smtp/emails/AccessApprovalRequestTemplate.tsx#AccessApprovalRequestTemplate
+    exempt:   backend/src/services/smtp/emails/BaseButton.tsx:9 BaseButton (shared part used by 32 members)
+    exempt:   backend/src/services/smtp/emails/BaseEmailWrapper.tsx:11 BaseEmailWrapper (shared part used by 54 members)
+    exempt:   backend/src/services/smtp/emails/BaseLink.tsx:9 BaseLink (shared part used by 29 members)
+
+10. [D-1b2542] backend: functions in src/ee/routes/v2/secret-rotation-v2-routers/** pass `createSchema` to registerSecretRotationEndpoints()
+    evidence: 30/31 (lower bound 0.84, lift 298.9)
+    tier:     suggestion (rule kind passes_key)
+    example:  backend/src/ee/routes/v2/secret-rotation-v2-routers/auth0-client-secret-rotation-router.ts#registerAuth0ClientSecretRotationRouter
+    outlier:  backend/src/ee/routes/v2/secret-rotation-v2-routers/secret-rotation-v2-router.ts:73 registerSecretRotationV2Router
+    exempt:   backend/src/ee/routes/v2/secret-rotation-v2-routers/secret-rotation-v2-endpoints.ts:21 registerSecretRotationEndpoints (the rule's own target)
+
+11. [D-dfa77a] frontend: functions in src/hooks/api/identities/** (mutations files) call identitiesKeys.getIdentityById()
+    evidence: 41/46 (lower bound 0.77, lift 203.0)
+    tier:     suggestion (rule kind calls)
+    example:  frontend/src/hooks/api/identities/mutations.tsx#useAddIdentityAliCloudAuth
+    outlier:  frontend/src/hooks/api/identities/mutations.tsx:215 useCreateIdentityUniversalAuthClientSecret
+    outlier:  frontend/src/hooks/api/identities/mutations.tsx:1793 useCreateTokenIdentityTokenAuth
+    outlier:  frontend/src/hooks/api/identities/mutations.tsx:1837 useRevokeIdentityTokenAuthToken
+    ... 2 more outliers
+
+12. [D-156a6f] backend: functions in src/server/routes/** are named `register*`
+    evidence: 327/338 (lower bound 0.94, lift 18.9)
+    tier:     suggestion (rule kind named)
+    example:  backend/src/server/routes/bdd/bdd-nock-router.dev.ts#registerBddNockRouter
+    outlier:  backend/src/server/routes/mfa-step-up-fns.ts:117 ensureFactorEnrollmentStepUpMfa
+    outlier:  backend/src/server/routes/mfa-step-up-fns.ts:37 ensureStepUpMfa
+    outlier:  backend/src/server/routes/mfa-step-up-fns.ts:14 getStepUpSessionId
+    ... 8 more outliers
+    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:49 buildAppConnectionRouteContext (a helper of registerAppConnectionEndpoints, which uses it in its file)
+    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:319 buildCreateAppConnectionRoute (a helper of registerAppConnectionEndpoints, which uses it in its file)
+    exempt:   backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:502 buildDeleteAppConnectionRoute (a helper of registerAppConnectionEndpoints, which uses it in its file)
+    ... 8 more exempt
+
+13. [D-fd3f1a] frontend: components in src/components/secret-rotations-v2/forms/SecretRotationV2ReviewFields/** render <SecretRotationReviewSection>
+    evidence: 27/28 (lower bound 0.82, lift 87.0)
+    tier:     suggestion (rule kind renders)
+    example:  frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ReviewFields/Auth0ClientSecretRotationReviewFields.tsx#Auth0ClientSecretRotationReviewFields
+    outlier:  frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ReviewFields/SecretRotationReviewFields.tsx:71 SecretRotationV2ReviewFields
+    exempt:   frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ReviewFields/shared/SecretRotationReviewSection.tsx:10 SecretRotationReviewSection (the rule's own target)
+
+14. [D-ac787f] backend: functions in src/server/routes/** are named `*Router`
+    evidence: 309/345 (lower bound 0.86, lift 19.3)
+    tier:     suggestion (rule kind named)
+    example:  backend/src/server/routes/bdd/bdd-nock-router.dev.ts#registerBddNockRouter
+    outlier:  backend/src/server/routes/index.ts:660 registerRoutes
+    outlier:  backend/src/server/routes/mfa-step-up-fns.ts:117 ensureFactorEnrollmentStepUpMfa
+    outlier:  backend/src/server/routes/mfa-step-up-fns.ts:37 ensureStepUpMfa
+    ... 33 more outliers
+    exempt:   backend/src/server/routes/v1/dashboard-secret-search-fns.ts:40 isSecretPathMatch (shared part used by 2 members)
+    exempt:   backend/src/server/routes/v1/hsm-connector-router-schemas.ts:13 gatewayPickRefiner (shared part used by 2 members)
+    exempt:   backend/src/server/routes/v1/secret-validation-rule-routers/secret-validation-rule-endpoints.ts:24 registerSecretValidationRuleEndpoints (shared part used by 3 members)
+    ... 1 more exempt
+
+15. [D-d7b5b7] frontend: components in src/pages/secret-manager/SecretSyncDetailsByIDPage/** render <Detail>
+    evidence: 65/68 (lower bound 0.88, lift 12.2)
+    tier:     suggestion (rule kind renders)
+    example:  frontend/src/pages/secret-manager/SecretSyncDetailsByIDPage/components/AzureEntraIdScimSyncSourceSection.tsx#AzureEntraIdScimSyncSourceSection
+    outlier:  frontend/src/pages/secret-manager/SecretSyncDetailsByIDPage/SecretSyncDetailsByIDPage.tsx:148 SecretSyncDetailsByIDPage
+    outlier:  frontend/src/pages/secret-manager/SecretSyncDetailsByIDPage/components/SecretSyncActionTriggers.tsx:53 SecretSyncActionTriggers
+    outlier:  frontend/src/pages/secret-manager/SecretSyncDetailsByIDPage/components/SecretSyncAuditLogsSection.tsx:38 SecretSyncAuditLogsSection
+
+16. [D-536c03] frontend: components in src/components/secret-syncs/forms/** are named `*Fields`
+    evidence: 128/134 (lower bound 0.91, lift 7.9)
+    tier:     suggestion (rule kind named)
+    example:  frontend/src/components/secret-syncs/forms/AzureEntraIdScimSyncSourceFields.tsx#AzureEntraIdScimSyncSourceFields
+    outlier:  frontend/src/components/secret-syncs/forms/CreateSecretSyncForm.tsx:151 CreateSecretSyncForm
+    outlier:  frontend/src/components/secret-syncs/forms/DuplicateDestinationConfirmationModal.tsx:24 DuplicateDestinationConfirmationModal
+    outlier:  frontend/src/components/secret-syncs/forms/EditSecretSyncForm.tsx:130 EditSecretSyncForm
+    ... 3 more outliers
+    exempt:   frontend/src/components/secret-syncs/forms/SecretSyncInitialSyncBehaviorFields.tsx:286 InitialSyncAlerts (shared part used by 2 members)
+
+17. [D-4be5e9] backend: functions in src/ee/routes/** are named `register*`
+    evidence: 140/150 (lower bound 0.88, lift 18.8)
+    tier:     suggestion (rule kind named)
+    example:  backend/src/ee/routes/est/certificate-est-router.ts#registerCertificateEstRouter
+    outlier:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-router-fns.ts:5 actorContext
+    outlier:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-schemas.ts:59 AgentVaultDescriptionSchema
+    outlier:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-schemas.ts:746 AgentVaultMemberIdsSchema
+    ... 7 more outliers
+
+18. [D-48958f] frontend: components in src/pages/secret-manager/integrations/** render <PageTitle>
+    evidence: 69/76 (lower bound 0.82, lift 11.7)
+    tier:     suggestion (rule kind renders)
+    example:  frontend/src/pages/secret-manager/integrations/AwsParameterStoreAuthorizePage/AwsParameterStoreAuthorizePage.tsx#AWSParameterStoreAuthorizeIntegrationPage
+    outlier:  frontend/src/pages/secret-manager/integrations/AzureAppConfigurationOauthCallbackPage/AzureAppConfigurationOauthCallbackPage.tsx:13 AzureAppConfigurationOauthCallbackPage
+    outlier:  frontend/src/pages/secret-manager/integrations/AzureKeyVaultOauthCallbackPage/AzureKeyVaultOauthCallback.tsx:13 AzureKeyVaultOauthCallbackPage
+    outlier:  frontend/src/pages/secret-manager/integrations/BitbucketOauthCallbackPage/BitbucketOauthCallbackPage.tsx:13 BitbucketOauthCallbackPage
+    ... 4 more outliers
+
+19. [D-b0614f] frontend: components in src/pages/secret-manager/integrations/** render <Card>
+    evidence: 66/75 (lower bound 0.79, lift 6.4)
+    tier:     suggestion (rule kind renders)
+    example:  frontend/src/pages/secret-manager/integrations/AwsParameterStoreAuthorizePage/AwsParameterStoreAuthorizePage.tsx#AWSParameterStoreAuthorizeIntegrationPage
+    outlier:  frontend/src/pages/secret-manager/integrations/AzureAppConfigurationOauthCallbackPage/AzureAppConfigurationOauthCallbackPage.tsx:13 AzureAppConfigurationOauthCallbackPage
+    outlier:  frontend/src/pages/secret-manager/integrations/AzureKeyVaultOauthCallbackPage/AzureKeyVaultOauthCallback.tsx:13 AzureKeyVaultOauthCallbackPage
+    outlier:  frontend/src/pages/secret-manager/integrations/BitbucketOauthCallbackPage/BitbucketOauthCallbackPage.tsx:13 BitbucketOauthCallbackPage
+    ... 6 more outliers
+    exempt:   frontend/src/pages/secret-manager/integrations/components/IntegrationOauthCallbackStatus.tsx:72 IntegrationOauthCallbackStatus (shared part used by 7 members)
+
+20. [D-7fa4fe] frontend: components in src/pages/secret-manager/integrations/** are named `*Page`
+    evidence: 75/75 (lower bound 0.95, lift 11.4)
+    tier:     suggestion (rule kind named)
+    example:  frontend/src/pages/secret-manager/integrations/AwsParameterStoreAuthorizePage/AwsParameterStoreAuthorizePage.tsx#AWSParameterStoreAuthorizeIntegrationPage
+    exempt:   frontend/src/pages/secret-manager/integrations/components/IntegrationOauthCallbackStatus.tsx:72 IntegrationOauthCallbackStatus (shared part used by 7 members)
+
+21. [D-970965] backend: functions in src/ee/routes/** are named `*Router`
+    evidence: 130/149 (lower bound 0.81, lift 18.9)
+    tier:     suggestion (rule kind named)
+    example:  backend/src/ee/routes/est/certificate-est-router.ts#registerCertificateEstRouter
+    outlier:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-router-fns.ts:5 actorContext
+    outlier:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-schemas.ts:59 AgentVaultDescriptionSchema
+    outlier:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-schemas.ts:746 AgentVaultMemberIdsSchema
+    ... 16 more outliers
+    exempt:   backend/src/ee/routes/v2/secret-scanning-v2-routers/secret-scanning-v2-endpoints.ts:29 registerSecretScanningEndpoints (shared part used by 3 members)
+
+22. [D-d120f6] backend: components in src/** render <Section>
+    evidence: 55/55 (lower bound 0.94, lift 44.2)
+    tier:     suggestion (rule kind renders)
+    example:  backend/src/services/smtp/emails/AccessApprovalRequestTemplate.tsx#AccessApprovalRequestTemplate
+    exempt:   backend/src/services/smtp/emails/BaseButton.tsx:9 BaseButton (shared part used by 32 members)
+    exempt:   backend/src/services/smtp/emails/BaseLink.tsx:9 BaseLink (shared part used by 29 members)
+
+23. [D-a7c358] frontend: components in src/pages/organization/AppConnections/** render <Info>
+    evidence: 95/112 (lower bound 0.77, lift 11.0)
+    tier:     suggestion (rule kind renders)
+    example:  frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/1PasswordConnectionForm.tsx#OnePassConnectionForm
+    outlier:  frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AddAppConnectionModal.tsx:32 AddAppConnectionModal
+    outlier:  frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/AppConnectionForm.tsx:798 AppConnectionForm
+    outlier:  frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/GenericAppConnectionFields.tsx:58 GenericAppConnectionsFields
+    ... 14 more outliers
+    exempt:   frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/AppConnectionFormFooter.tsx:19 AppConnectionFormFooter (shared part used by 83 members)
+    exempt:   frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionHeader.tsx:11 AppConnectionHeader (shared part used by 2 members)
+
+24. [D-8ce72f] frontend: components in src/components/secret-syncs/forms/SecretSyncDestinationFields/** render <FieldGroup>
+    evidence: 52/54 (lower bound 0.88, lift 17.1)
+    tier:     suggestion (rule kind renders)
+    example:  frontend/src/components/secret-syncs/forms/SecretSyncDestinationFields/1PasswordSyncFields.tsx#OnePassSyncFields
+    outlier:  frontend/src/components/secret-syncs/forms/SecretSyncDestinationFields/SecretSyncDestinationFields.tsx:59 SecretSyncDestinationFields
+    outlier:  frontend/src/components/secret-syncs/forms/SecretSyncDestinationFields/shared/AwsRegionSelect.tsx:23 AwsRegionSelect
+
+25. [D-34dd19] frontend: components in src/pages/secret-manager/SecretSyncDetailsByIDPage/** are named `*Section`
+    evidence: 66/68 (lower bound 0.90, lift 10.2)
+    tier:     suggestion (rule kind named)
+    example:  frontend/src/pages/secret-manager/SecretSyncDetailsByIDPage/components/AzureEntraIdScimSyncSourceSection.tsx#AzureEntraIdScimSyncSourceSection
+    outlier:  frontend/src/pages/secret-manager/SecretSyncDetailsByIDPage/SecretSyncDetailsByIDPage.tsx:148 SecretSyncDetailsByIDPage
+    outlier:  frontend/src/pages/secret-manager/SecretSyncDetailsByIDPage/components/SecretSyncActionTriggers.tsx:53 SecretSyncActionTriggers
+
+26. [D-adfb06] backend: classes in src/ee/services/pki-acme/** extend AcmeError
+    evidence: 20/20 (lower bound 0.84, lift 4.0)
+    tier:     suggestion (rule kind wrapped_by:extends; decision D7 keeps only call wrappers and layering)
+    example:  backend/src/ee/services/pki-acme/pki-acme-errors.ts#AcmeAccountDoesNotExistError
+    exempt:   backend/src/ee/services/pki-acme/pki-acme-errors.ts:43 AcmeError (in the module that defines AcmeError)
+
+27. [D-b8da90] frontend: components in src/components/secret-syncs/forms/SecretSyncDestinationFields/** render inside <FieldGroup>
+    evidence: 51/54 (lower bound 0.85, lift 34.5)
+    tier:     suggestion (rule kind wrapped_by:jsx; decision D7 keeps only call wrappers and layering)
+    example:  frontend/src/components/secret-syncs/forms/SecretSyncDestinationFields/1PasswordSyncFields.tsx#OnePassSyncFields
+    outlier:  frontend/src/components/secret-syncs/forms/SecretSyncDestinationFields/GcpSyncFields.tsx:55 GcpSyncFields
+    outlier:  frontend/src/components/secret-syncs/forms/SecretSyncDestinationFields/SecretSyncDestinationFields.tsx:59 SecretSyncDestinationFields
+    outlier:  frontend/src/components/secret-syncs/forms/SecretSyncDestinationFields/shared/AwsRegionSelect.tsx:23 AwsRegionSelect
+
+28. [D-ac8f81] frontend: exported values in src/hooks/api/appConnections/** are named `*Method`
+    evidence: 95/103 (lower bound 0.85, lift 22.6)
+    tier:     suggestion (rule kind named)
+    example:  frontend/src/hooks/api/appConnections/types/1password-connection.ts#OnePassConnectionMethod
+    outlier:  frontend/src/hooks/api/appConnections/types/adcs-connection.ts:10 CreateAdcsConnectionSchema
+    outlier:  frontend/src/hooks/api/appConnections/types/azure-adcs-connection.ts:10 CreateAzureADCSConnectionSchema
+    outlier:  frontend/src/hooks/api/appConnections/types/databricks-connection.ts:8 DatabricksConnectionScope
+    ... 5 more outliers
+    exempt:   frontend/src/hooks/api/appConnections/types/venafi-connection.ts:17 VENAFI_REGION_LABELS (a constant beside VenafiConnectionMethod, which follows the scheme)
+
+29. [D-3026de] frontend: components in src/components/secret-rotations-v2/forms/** are named `*Fields`
+    evidence: 88/97 (lower bound 0.83, lift 7.6)
+    tier:     suggestion (rule kind named)
+    example:  frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ConfigurationFields.tsx#SecretRotationV2ConfigurationFields
+    outlier:  frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ConnectionField.tsx:38 SecretRotationV2ConnectionField
+    outlier:  frontend/src/components/secret-rotations-v2/forms/SecretRotationV2Form.tsx:126 SecretRotationV2Form
+    outlier:  frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ParametersFields/StripeApiKeyPermissionSelector.tsx:124 StripeApiKeyPermissionSelector
+    ... 6 more outliers
+
+30. [D-b14eaf] frontend: exported values in src/context/** (types files) are named `*Actions`
+    evidence: 63/70 (lower bound 0.81, lift 37.6)
+    tier:     suggestion (rule kind named)
+    example:  frontend/src/context/OrgPermissionContext/types.ts#OrgGatewayPermissionActions
+    outlier:  frontend/src/context/OrgPermissionContext/types.ts:131 OrgPermissionAdminConsoleAction
+    outlier:  frontend/src/context/OrgPermissionContext/types.ts:135 OrgPermissionSecretShareAction
+    outlier:  frontend/src/context/OrgPermissionContext/types.ts:66 OrgPermissionSubjects
+    ... 4 more outliers
+
+31. [D-e78af7] frontend: exported values in src/** (queries files) are named `*Keys`
+    evidence: 87/99 (lower bound 0.80, lift 50.6)
+    tier:     suggestion (rule kind named)
+    example:  frontend/src/hooks/api/accessApproval/queries.tsx#accessApprovalKeys
+    outlier:  frontend/src/hooks/api/approvalGrants/queries.tsx:7 approvalGrantQuery
+    outlier:  frontend/src/hooks/api/approvalPolicies/queries.tsx:15 approvalPolicyQuery
+    outlier:  frontend/src/hooks/api/approvalRequests/queries.tsx:7 approvalRequestQuery
+    ... 9 more outliers
+    exempt:   frontend/src/hooks/api/agentVault/queries.tsx:80 AGENT_VAULT_SESSION_LOG_LIVE_POLL_MS (a constant beside agentVaultKeys, which follows the scheme)
+    exempt:   frontend/src/hooks/api/pkiSyncs/queries.tsx:120 MAX_RESOLVED_CERTIFICATE_ORDERS (a constant beside pkiSyncKeys, which follows the scheme)
+
+32. [D-1e30ba] frontend: components in src/pages/organization/AppConnections/** render <Tooltip>
+    evidence: 99/112 (lower bound 0.81, lift 4.1)
+    tier:     suggestion (rule kind renders)
+    example:  frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/1PasswordConnectionForm.tsx#OnePassConnectionForm
+    outlier:  frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AddAppConnectionModal.tsx:32 AddAppConnectionModal
+    outlier:  frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/AppConnectionForm.tsx:798 AppConnectionForm
+    outlier:  frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/GenericAppConnectionFields.tsx:58 GenericAppConnectionsFields
+    ... 10 more outliers
+    exempt:   frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/AppConnectionFormFooter.tsx:19 AppConnectionFormFooter (shared part used by 83 members)
+    exempt:   frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionHeader.tsx:11 AppConnectionHeader (shared part used by 2 members)
+
+33. [D-9d0e71] frontend: components in src/pages/organization/AppConnections/** are named `*Form`
+    evidence: 97/112 (lower bound 0.79, lift 11.7)
+    tier:     suggestion (rule kind named)
+    example:  frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/1PasswordConnectionForm.tsx#OnePassConnectionForm
+    outlier:  frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AddAppConnectionModal.tsx:32 AddAppConnectionModal
+    outlier:  frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/GenericAppConnectionFields.tsx:58 GenericAppConnectionsFields
+    outlier:  frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/GitHubAppSelector.tsx:75 GitHubAppSelector
+    ... 12 more outliers
+    exempt:   frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/AppConnectionFormFooter.tsx:19 AppConnectionFormFooter (shared part used by 83 members)
+    exempt:   frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionHeader.tsx:11 AppConnectionHeader (shared part used by 2 members)
+
+34. [D-06334f] frontend: functions in src/** (mutations files) pass `mutationFn` to useMutation()
+    evidence: 477/481 (lower bound 0.98, lift 14.8)
+    tier:     suggestion (rule kind passes_key)
+    example:  frontend/src/hooks/api/agentVault/mutations.tsx#useAddAgentVaultAccessBundleMembers
+    outlier:  frontend/src/hooks/api/ca/mutations.tsx:308 useInstallCaCertificateAdcs
+    outlier:  frontend/src/hooks/api/ca/mutations.tsx:310 useInstallCaCertificateAdcsNative
+    outlier:  frontend/src/hooks/api/ca/mutations.tsx:306 useInstallCaCertificateVenafi
+    ... 1 more outliers
+
+35. [D-6df386] frontend: components in src/pages/organization/AppConnections/** render <Controller>
+    evidence: 97/112 (lower bound 0.79, lift 3.8)
+    tier:     suggestion (rule kind renders)
+    example:  frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/1PasswordConnectionForm.tsx#OnePassConnectionForm
+    outlier:  frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AddAppConnectionModal.tsx:32 AddAppConnectionModal
+    outlier:  frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/AppConnectionForm.tsx:798 AppConnectionForm
+    outlier:  frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/GenericAppConnectionFields.tsx:58 GenericAppConnectionsFields
+    ... 12 more outliers
+    exempt:   frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/AppConnectionFormFooter.tsx:19 AppConnectionFormFooter (shared part used by 83 members)
+    exempt:   frontend/src/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionHeader.tsx:11 AppConnectionHeader (shared part used by 2 members)
+
+36. [D-433226] backend: functions in src/db/** declare their return type
+    evidence: 1223/1250 (lower bound 0.97, lift 2.9)
+    tier:     suggestion (rule kind control)
+    example:  backend/src/db/migrations/20231128072457_user.ts#down
+    outlier:  backend/src/db/clickhouse-migration-runner.ts:37 ensureClickHouseSchema
+    outlier:  backend/src/db/instance.ts:119 initAuditLogDbConnection
+    outlier:  backend/src/db/instance.ts:39 initDbConnection
+    ... 24 more outliers
+    exempt:   backend/src/db/migrations/utils/approval-migration.ts:401 buildBypasserRows (shared part used by 2 members)
+    exempt:   backend/src/db/migrations/utils/approval-migration.ts:384 buildPolicyEnvironmentRows (shared part used by 2 members)
+    exempt:   backend/src/db/migrations/utils/approval-migration.ts:387 buildPolicyStepRows (shared part used by 2 members)
+    ... 15 more exempt
+
+37. [D-6034c7] frontend: functions in src/** (mutations files) pass `onSuccess` to useMutation()
+    evidence: 430/481 (lower bound 0.86, lift 15.1)
+    tier:     suggestion (rule kind passes_key)
+    example:  frontend/src/hooks/api/agentVault/mutations.tsx#useAddAgentVaultAccessBundleMembers
+    outlier:  frontend/src/hooks/api/agentVault/mutations.tsx:594 useCompleteAgentVaultOauthAuthorization
+    outlier:  frontend/src/hooks/api/agentVault/mutations.tsx:581 useCreateAgentVaultOauthAuthorization
+    outlier:  frontend/src/hooks/api/agentVault/mutations.tsx:611 useListAgentVaultMcpTools
+    ... 48 more outliers
+
+38. [D-defa54] frontend: components in src/components/secret-syncs/forms/** call useFormContext()
+    evidence: 130/135 (lower bound 0.92, lift 7.7)
+    tier:     suggestion (rule kind calls)
+    example:  frontend/src/components/secret-syncs/forms/AzureEntraIdScimSyncSourceFields.tsx#AzureEntraIdScimSyncSourceFields
+    outlier:  frontend/src/components/secret-syncs/forms/CreateSecretSyncForm.tsx:151 CreateSecretSyncForm
+    outlier:  frontend/src/components/secret-syncs/forms/DuplicateDestinationConfirmationModal.tsx:24 DuplicateDestinationConfirmationModal
+    outlier:  frontend/src/components/secret-syncs/forms/EditSecretSyncForm.tsx:130 EditSecretSyncForm
+    ... 2 more outliers
+
+39. [D-91b6f1] frontend: components in src/components/secret-syncs/forms/SecretSyncDestinationFields/** render <Field>
+    evidence: 51/54 (lower bound 0.85, lift 3.3)
+    tier:     suggestion (rule kind renders)
+    example:  frontend/src/components/secret-syncs/forms/SecretSyncDestinationFields/1PasswordSyncFields.tsx#OnePassSyncFields
+    outlier:  frontend/src/components/secret-syncs/forms/SecretSyncDestinationFields/DaytonaSyncFields.tsx:4 DaytonaSyncFields
+    outlier:  frontend/src/components/secret-syncs/forms/SecretSyncDestinationFields/SecretSyncDestinationFields.tsx:59 SecretSyncDestinationFields
+    outlier:  frontend/src/components/secret-syncs/forms/SecretSyncDestinationFields/shared/AwsRegionSelect.tsx:23 AwsRegionSelect
+
+40. [D-fe4da6] frontend: functions in src/hooks/api/appConnections/** (queries files) pass `queryFn` to useQuery()
+    evidence: 114/117 (lower bound 0.93, lift 17.0)
+    tier:     suggestion (rule kind passes_key)
+    example:  frontend/src/hooks/api/appConnections/1password/queries.tsx#useOnePassConnectionListVaults
+    outlier:  frontend/src/hooks/api/appConnections/azure/queries.tsx:43 fetchAzureDevOpsProjects
+    outlier:  frontend/src/hooks/api/appConnections/queries.tsx:62 useGetAppConnectionOption
+    outlier:  frontend/src/hooks/api/appConnections/queries.tsx:109 useListAvailableAppConnectionsForApps
+
+41. [D-07a62f] frontend: functions in src/** (mutation files) pass `mutationFn` to useMutation()
+    evidence: 94/96 (lower bound 0.93, lift 14.6)
+    tier:     suggestion (rule kind passes_key)
+    example:  frontend/src/hooks/api/accessApproval/mutation.tsx#useCancelAccessRequest
+    outlier:  frontend/src/hooks/api/orgAdmin/mutation.tsx:8 grantOrgAdminProjectAccess
+    outlier:  frontend/src/hooks/api/users/mutation.tsx:31 sendEmailVerificationCode
+
+42. [D-7f0c51] frontend: functions in src/hooks/api/appConnections/** (queries files) call apiRequest.get()
+    evidence: 113/117 (lower bound 0.92, lift 18.9)
+    tier:     suggestion (rule kind calls)
+    example:  frontend/src/hooks/api/appConnections/1password/queries.tsx#useOnePassConnectionListVaults
+    outlier:  frontend/src/hooks/api/appConnections/azure/queries.tsx:57 useGetAzureDevOpsProjects
+    outlier:  frontend/src/hooks/api/appConnections/queries.tsx:62 useGetAppConnectionOption
+    outlier:  frontend/src/hooks/api/appConnections/queries.tsx:125 useListAvailableAppConnections
+    ... 1 more outliers
+
+43. [D-c03369] frontend: components in src/pages/secret-manager/integrations/** call useProject()
+    evidence: 74/76 (lower bound 0.91, lift 7.7)
+    tier:     suggestion (rule kind calls)
+    example:  frontend/src/pages/secret-manager/integrations/AwsParameterStoreAuthorizePage/AwsParameterStoreAuthorizePage.tsx#AWSParameterStoreAuthorizeIntegrationPage
+    outlier:  frontend/src/pages/secret-manager/integrations/AzureKeyVaultAuthorizePage/AzureKeyVaultAuthorizePage.tsx:32 AzureKeyVaultAuthorizePage
+    outlier:  frontend/src/pages/secret-manager/integrations/components/IntegrationOauthCallbackStatus.tsx:72 IntegrationOauthCallbackStatus
+
+44. [D-2afa40] frontend: components in src/pages/secret-manager/integrations/** call useOrganization()
+    evidence: 73/76 (lower bound 0.89, lift 7.3)
+    tier:     suggestion (rule kind calls)
+    example:  frontend/src/pages/secret-manager/integrations/AwsParameterStoreAuthorizePage/AwsParameterStoreAuthorizePage.tsx#AWSParameterStoreAuthorizeIntegrationPage
+    outlier:  frontend/src/pages/secret-manager/integrations/AzureKeyVaultAuthorizePage/AzureKeyVaultAuthorizePage.tsx:32 AzureKeyVaultAuthorizePage
+    outlier:  frontend/src/pages/secret-manager/integrations/GitlabAuthorizePage/GitlabAuthorizePage.tsx:36 GitlabAuthorizePage
+    outlier:  frontend/src/pages/secret-manager/integrations/components/IntegrationOauthCallbackStatus.tsx:72 IntegrationOauthCallbackStatus
+
+45. [D-9c7d99] frontend: components in src/components/secret-rotations-v2/forms/** call useFormContext()
+    evidence: 89/97 (lower bound 0.85, lift 7.3)
+    tier:     suggestion (rule kind calls)
+    example:  frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ConfigurationFields.tsx#SecretRotationV2ConfigurationFields
+    outlier:  frontend/src/components/secret-rotations-v2/forms/SecretRotationV2Form.tsx:126 SecretRotationV2Form
+    outlier:  frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ParametersFields/StripeApiKeyPermissionSelector.tsx:124 StripeApiKeyPermissionSelector
+    outlier:  frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ParametersFields/shared/CloudflareIpListInput.tsx:40 CloudflareIpListField
+    ... 5 more outliers
+
+46. [D-2cfcc0] frontend: components in src/components/secret-rotations-v2/forms/SecretRotationV2ParametersFields/** render <Field>
+    evidence: 30/33 (lower bound 0.76, lift 3.2)
+    tier:     suggestion (rule kind renders)
+    example:  frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ParametersFields/Auth0ClientSecretRotationParametersFields.tsx#Auth0ClientSecretRotationParametersFields
+    outlier:  frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ParametersFields/SecretRotationV2ParametersFields.tsx:68 SecretRotationV2ParametersFields
+    outlier:  frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ParametersFields/StripeApiKeyPermissionSelector.tsx:124 StripeApiKeyPermissionSelector
+    outlier:  frontend/src/components/secret-rotations-v2/forms/SecretRotationV2ParametersFields/shared/CreateUserStatementAlert.tsx:18 CreateUserStatementAlert
+
+47. [D-6e757d] files in frontend/** use lucide-react for icons, not react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react
+    evidence: 1121/1131 (lower bound 0.98, lift 1.0)
+    tier:     suggestion (rule kind prefers_library)
+    split:    lucide-react 1125, react-icons 10
+    example:  frontend/src/components/agent-vault/AccessBundleMemberRow.tsx#(file)
+    outlier:  frontend/src/components/auth/SignupCompleteStep.tsx:1 (file)
+    outlier:  frontend/src/pages/admin/IntegrationsPage/components/MicrosoftTeamsIntegrationForm.tsx:1 (file)
+    outlier:  frontend/src/pages/admin/IntegrationsPage/components/SlackIntegrationForm.tsx:1 (file)
+    ... 7 more outliers
+
+48. [D-8aac8d] frontend: exported values in src/pages/secret-manager/integrations/** (route files) pass `params` to linkOptions()
+    evidence: 75/84 (lower bound 0.81, lift 39.7)
+    tier:     suggestion (rule kind passes_key)
+    example:  frontend/src/pages/secret-manager/integrations/AwsParameterStoreAuthorizePage/route.tsx#Route
+    outlier:  frontend/src/pages/secret-manager/integrations/AzureAppConfigurationOauthCallbackPage/route.tsx:9 AzureAppConfigurationOauthCallbackPageQueryParamsSchema
+    outlier:  frontend/src/pages/secret-manager/integrations/AzureKeyVaultOauthCallbackPage/route.tsx:9 AzureKeyVaultOauthCallbackQueryParamsSchema
+    outlier:  frontend/src/pages/secret-manager/integrations/BitbucketOauthCallbackPage/route.tsx:9 BitbucketOauthCallbackQueryParamsSchema
+    ... 6 more outliers
+
+49. [D-76ad8b] backend: exported values in src/services/app-connection/** are named `*Schema`
+    evidence: 709/875 (lower bound 0.78, lift 2.2)
+    tier:     suggestion (rule kind named)
+    example:  backend/src/services/app-connection/1password/1password-connection-schemas.ts#CreateOnePassConnectionSchema
+    outlier:  backend/src/services/app-connection/1password/1password-connection-enums.ts:1 OnePassConnectionMethod
+    outlier:  backend/src/services/app-connection/adcs/adcs-connection-enums.ts:1 ADCSConnectionMethod
+    outlier:  backend/src/services/app-connection/anthropic/anthropic-connection-enums.ts:1 AnthropicConnectionMethod
+    ... 163 more outliers
+    exempt:   backend/src/services/app-connection/s3-compatible/s3-compatible-connection-schemas.ts:111 S3_COMPATIBLE_ENDPOINT_ERROR (a constant beside CreateS3CompatibleConnectionSchema, which follows the scheme)
+    exempt:   backend/src/services/app-connection/s3-compatible/s3-compatible-connection-schemas.ts:41 S3_COMPATIBLE_PROVIDER_MAP (a constant beside CreateS3CompatibleConnectionSchema, which follows the scheme)
+    exempt:   backend/src/services/app-connection/ultradns/ultradns-connection-fns.ts:24 ultraDNSRequest (shared part used by 2 members)
+
+50. [D-9d3025] frontend: exported values in src/components/secret-syncs/** pass `destination` to z.object()
+    evidence: 52/55 (lower bound 0.85, lift 36.0)
+    tier:     suggestion (rule kind passes_key)
+    example:  frontend/src/components/secret-syncs/forms/schemas/1password-sync-destination-schema.ts#OnePassSyncDestinationSchema
+    outlier:  frontend/src/components/secret-syncs/forms/schemas/netlify-sync-destination-schema.ts:6 NetlifySyncContext
+    outlier:  frontend/src/components/secret-syncs/forms/schemas/secret-sync-schema.ts:111 SecretSyncFormSchema
+    outlier:  frontend/src/components/secret-syncs/forms/schemas/secret-sync-schema.ts:113 UpdateSecretSyncFormSchema
+
+51. [D-2bfc9e] frontend: components in src/components/secret-rotations-v2/forms/SecretRotationV2SecretsMappingFields/** render <Field>
+    evidence: 27/29 (lower bound 0.78, lift 3.3)
+    tier:     suggestion (rule kind renders)
+    example:  frontend/src/components/secret-rotations-v2/forms/SecretRotationV2SecretsMappingFields/Auth0ClientSecretRotationSecretsMappingFields.tsx#Auth0ClientSecretRotationSecretsMappingFields
+    outlier:  frontend/src/components/secret-rotations-v2/forms/SecretRotationV2SecretsMappingFields/SecretRotationV2SecretsMappingFields.tsx:69 SecretRotationV2SecretsMappingFields
+    outlier:  frontend/src/components/secret-rotations-v2/forms/SecretRotationV2SecretsMappingFields/shared/SecretsMappingTable.tsx:11 SecretsMappingTable
+
+52. [D-c0b272] frontend: exported values in src/components/secret-syncs/** call z.string()
+    evidence: 50/55 (lower bound 0.80, lift 7.7)
+    tier:     suggestion (rule kind calls)
+    example:  frontend/src/components/secret-syncs/forms/schemas/1password-sync-destination-schema.ts#OnePassSyncDestinationSchema
+    outlier:  frontend/src/components/secret-syncs/forms/schemas/daytona-sync-destination-schema.ts:6 DaytonaSyncDestinationSchema
+    outlier:  frontend/src/components/secret-syncs/forms/schemas/netlify-sync-destination-schema.ts:6 NetlifySyncContext
+    outlier:  frontend/src/components/secret-syncs/forms/schemas/portainer-sync-destination-schema.ts:6 PortainerSyncDestinationSchema
+    ... 2 more outliers
+
+53. [D-6329f1] frontend: exported values in src/components/secret-syncs/** are named `*Schema`
+    evidence: 54/55 (lower bound 0.90, lift 2.6)
+    tier:     suggestion (rule kind named)
+    example:  frontend/src/components/secret-syncs/forms/schemas/1password-sync-destination-schema.ts#OnePassSyncDestinationSchema
+    outlier:  frontend/src/components/secret-syncs/forms/schemas/netlify-sync-destination-schema.ts:6 NetlifySyncContext
+
+54. [D-da7482] backend: exported values in src/ee/routes/v1/agent-vault-routers/** are named `*Schema`
+    evidence: 44/44 (lower bound 0.92, lift 2.5)
+    tier:     suggestion (rule kind named)
+    example:  backend/src/ee/routes/v1/agent-vault-routers/agent-vault-schemas.ts#AgentVaultActorRefSchema
+
+55. [D-02365f] frontend: functions in src/components/dynamic-secrets/** declare their return type
+    evidence: 121/139 (lower bound 0.81, lift 2.5)
+    tier:     suggestion (rule kind control)
+    example:  frontend/src/components/dynamic-secrets/DynamicSecretProviderForm/createSubmission.ts#submitDynamicSecretCreatePayloads
+    outlier:  frontend/src/components/dynamic-secrets/DynamicSecretProviderForm/providerDefinitions/awsManagedStoresContract.ts:214 getAwsElastiCacheEditPayload
+    outlier:  frontend/src/components/dynamic-secrets/DynamicSecretProviderForm/providerDefinitions/awsManagedStoresContract.ts:219 getAwsMemoryDbEditPayload
+    outlier:  frontend/src/components/dynamic-secrets/DynamicSecretProviderForm/providerDefinitions/azureSqlDatabaseContract.ts:29 azureSqlPasswordRequirementsSchema
+    ... 15 more outliers
+    exempt:   frontend/src/components/dynamic-secrets/DynamicSecretProviderForm/providerDefinitions/clickHouseContract.ts:90 getDefaultClickHousePasswordRequirements (shared part used by 2 members)
+    exempt:   frontend/src/components/dynamic-secrets/DynamicSecretProviderForm/providerDefinitions/kubernetesContract.ts:44 kubernetesCreateInputsSchema (shared part used by 2 members)
+    exempt:   frontend/src/components/dynamic-secrets/DynamicSecretProviderForm/providerDefinitions/kubernetesContract.ts:122 kubernetesEditInputsSchema (shared part used by 2 members)
+    ... 5 more exempt
+
+56. [D-4da889] backend: functions in src/server/routes/v1/app-connection-routers/** call registerAppConnectionEndpoints() before verifyAuth()
+    evidence: 64/73 (lower bound 0.78, lift 1.0)
+    tier:     suggestion (rule kind before)
+    example:  backend/src/server/routes/v1/app-connection-routers/1password-connection-router.ts#registerOnePassConnectionRouter
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:319 buildCreateAppConnectionRoute
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:502 buildDeleteAppConnectionRoute
+    outlier:  backend/src/server/routes/v1/app-connection-routers/app-connection-endpoints.ts:254 buildGetAppConnectionByNameRoute
+    ... 6 more outliers
+
+57. [D-8810b7] frontend: functions in src/pages/organization/BillingV2Page/** declare their return type
+    evidence: 35/37 (lower bound 0.82, lift 2.8)
+    tier:     suggestion (rule kind control)
+    example:  frontend/src/pages/organization/BillingV2Page/billing-v2-format.ts#billingV2ErrorCode
+    outlier:  frontend/src/pages/organization/BillingV2Page/billing-v2-offline-usage.ts:115 offlineQueryDimensions
+    outlier:  frontend/src/pages/organization/BillingV2Page/useOfflineBilling.ts:14 useOfflineBilling
+    exempt:   frontend/src/pages/organization/BillingV2Page/components/UsageBreakdownSheet.tsx:56 breakdownableDimensions (shared part used by 2 members)
+
+58. [D-b74384] frontend: functions in src/hooks/api/identities/** (mutations files) call organizationKeys.getOrgIdentityMemberships() before identitiesKeys.getIdentityById()
+    evidence: 39/41 (lower bound 0.84, lift 1.0)
+    tier:     suggestion (rule kind before)
+    example:  frontend/src/hooks/api/identities/mutations.tsx#useAddIdentityAliCloudAuth
+    outlier:  frontend/src/hooks/api/identities/mutations.tsx:2018 useClearIdentityLdapAuthLockouts
+    outlier:  frontend/src/hooks/api/identities/mutations.tsx:260 useClearIdentityUniversalAuthLockouts
+
+59. [D-151831] frontend: functions in src/** (mutations files) call useQueryClient() before useMutation()
+    evidence: 428/477 (lower bound 0.87, lift 1.0)
+    tier:     suggestion (rule kind before)
+    example:  frontend/src/hooks/api/agentVault/mutations.tsx#useAddAgentVaultAccessBundleMembers
+    outlier:  frontend/src/hooks/api/agentVault/mutations.tsx:102 useAddAgentVaultDelegationSubjects
+    outlier:  frontend/src/hooks/api/agentVault/mutations.tsx:594 useCompleteAgentVaultOauthAuthorization
+    outlier:  frontend/src/hooks/api/agentVault/mutations.tsx:581 useCreateAgentVaultOauthAuthorization
+    ... 46 more outliers
+
+60. [D-553e95] backend: functions in src/ee/services/pam-web-access/clickhouse/** declare their return type
+    evidence: 18/19 (lower bound 0.75, lift 2.9)
+    tier:     suggestion (rule kind control)
+    example:  backend/src/ee/services/pam-web-access/clickhouse/pam-clickhouse-client.ts#clickhouseErrorFields
+    outlier:  backend/src/ee/services/pam-web-access/clickhouse/pam-clickhouse-data-explorer-metadata.ts:35 toColumns
+
+61. [D-e309b7] frontend: functions in src/hooks/api/appConnections/** (queries files) call useQuery() before apiRequest.get()
+    evidence: 112/113 (lower bound 0.95, lift 1.0)
+    tier:     suggestion (rule kind before)
+    example:  frontend/src/hooks/api/appConnections/1password/queries.tsx#useOnePassConnectionListVaults
+    outlier:  frontend/src/hooks/api/appConnections/azure/queries.tsx:43 fetchAzureDevOpsProjects
+
+62. [D-406431] frontend: functions in src/** (mutation files) call useQueryClient() before useMutation()
+    evidence: 79/94 (lower bound 0.75, lift 1.0)
+    tier:     suggestion (rule kind before)
+    example:  frontend/src/hooks/api/accessApproval/mutation.tsx#useCancelAccessRequest
+    outlier:  frontend/src/hooks/api/accountRecovery/mutation.tsx:40 useEnableEmailAuthAccountRecovery
+    outlier:  frontend/src/hooks/api/accountRecovery/mutation.tsx:11 useSendAccountRecoveryEmail
+    outlier:  frontend/src/hooks/api/accountRecovery/mutation.tsx:24 useVerifyAccountRecoveryEmail
+    ... 12 more outliers
+
+63. [D-fb843c] frontend: functions in src/hooks/api/pam/** (queries files) call useQuery() before apiRequest.get()
+    evidence: 29/30 (lower bound 0.83, lift 1.0)
+    tier:     suggestion (rule kind before)
+    example:  frontend/src/hooks/api/pam/queries.tsx#useGetPamAccessCapabilities
+    outlier:  frontend/src/hooks/api/pam/queries.tsx:53 fetchPamProjectId
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

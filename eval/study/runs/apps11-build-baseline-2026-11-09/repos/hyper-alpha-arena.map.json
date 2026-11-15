@@ -1,0 +1,350 @@
+{
+  "name": "hyper-alpha-arena",
+  "sha": "2b5c064952c034d9a82b9caca9484478e7a0d32b",
+  "check": {
+    "default": {
+      "roles": 55,
+      "census_roles": 55,
+      "units": 2721,
+      "census_units": 2721,
+      "proposals": 0,
+      "member_counts_match": 0
+    },
+    "python_opt_in": {
+      "roles": 55,
+      "census_roles": 55,
+      "units": 2721,
+      "census_units": 2721,
+      "proposals": 0,
+      "member_counts_match": 0
+    }
+  },
+  "repo": {
+    "files_parsed": {
+      "files": 338,
+      "of_files": 339,
+      "loc": 126344,
+      "of_loc": 126588
+    },
+    "files_in_package": {
+      "files": 338,
+      "of_files": 339,
+      "loc": 126344,
+      "of_loc": 126588
+    },
+    "files_in_nonroot_drift_package": {
+      "files": 338,
+      "of_files": 339,
+      "loc": 126344,
+      "of_loc": 126588
+    },
+    "files_in_role": {
+      "files": 299,
+      "of_files": 339,
+      "loc": 119279,
+      "of_loc": 126588
+    },
+    "files_in_any_role": {
+      "files": 337,
+      "of_files": 339,
+      "loc": 126156,
+      "of_loc": 126588
+    },
+    "imports": {
+      "internal_resolved": 1328,
+      "internal_unresolved": 1
+    },
+    "files_under_mined": {
+      "files": 0,
+      "of_files": 339,
+      "loc": 0,
+      "of_loc": 126588
+    },
+    "files_under_shown": {
+      "files": 0,
+      "of_files": 339,
+      "loc": 0,
+      "of_loc": 126588
+    },
+    "files_under_mined_py": {
+      "files": 0,
+      "of_files": 339,
+      "loc": 0,
+      "of_loc": 126588
+    },
+    "files_under_shown_py": {
+      "files": 0,
+      "of_files": 339,
+      "loc": 0,
+      "of_loc": 126588
+    }
+  },
+  "per_package": [
+    {
+      "dir": "backend",
+      "kind": "py",
+      "files_parsed": {
+        "files": 184,
+        "of_files": 185,
+        "loc": 74306,
+        "of_loc": 74550
+      },
+      "files_in_package": {
+        "files": 184,
+        "of_files": 185,
+        "loc": 74306,
+        "of_loc": 74550
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 184,
+        "of_files": 185,
+        "loc": 74306,
+        "of_loc": 74550
+      },
+      "files_in_role": {
+        "files": 153,
+        "of_files": 185,
+        "loc": 68468,
+        "of_loc": 74550
+      },
+      "files_in_any_role": {
+        "files": 183,
+        "of_files": 185,
+        "loc": 74118,
+        "of_loc": 74550
+      },
+      "imports": {
+        "internal_resolved": 727,
+        "internal_unresolved": 0
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 185,
+        "loc": 0,
+        "of_loc": 74550
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 185,
+        "loc": 0,
+        "of_loc": 74550
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 185,
+        "loc": 0,
+        "of_loc": 74550
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 185,
+        "loc": 0,
+        "of_loc": 74550
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    },
+    {
+      "dir": "frontend",
+      "kind": "ts",
+      "files_parsed": {
+        "files": 154,
+        "of_files": 154,
+        "loc": 52038,
+        "of_loc": 52038
+      },
+      "files_in_package": {
+        "files": 154,
+        "of_files": 154,
+        "loc": 52038,
+        "of_loc": 52038
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 154,
+        "of_files": 154,
+        "loc": 52038,
+        "of_loc": 52038
+      },
+      "files_in_role": {
+        "files": 146,
+        "of_files": 154,
+        "loc": 50811,
+        "of_loc": 52038
+      },
+      "files_in_any_role": {
+        "files": 154,
+        "of_files": 154,
+        "loc": 52038,
+        "of_loc": 52038
+      },
+      "imports": {
+        "internal_resolved": 601,
+        "internal_unresolved": 1
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 154,
+        "loc": 0,
+        "of_loc": 52038
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 154,
+        "loc": 0,
+        "of_loc": 52038
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 154,
+        "loc": 0,
+        "of_loc": 52038
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 154,
+        "loc": 0,
+        "of_loc": 52038
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    }
+  ],
+  "unmapped": [
+    {
+      "class": "route/page",
+      "why": "Python role within fewer than 3 files",
+      "files": 1,
+      "loc": 2135
+    },
+    {
+      "class": "other",
+      "why": "largest role 4-7 members (< 8)",
+      "files": 5,
+      "loc": 2050
+    },
+    {
+      "class": "route/page",
+      "why": "no exported symbol",
+      "files": 1,
+      "loc": 819
+    },
+    {
+      "class": "other",
+      "why": "largest role 1-3 members (< 8)",
+      "files": 3,
+      "loc": 602
+    },
+    {
+      "class": "config",
+      "why": "Python role within fewer than 3 files",
+      "files": 2,
+      "loc": 259
+    },
+    {
+      "class": "script",
+      "why": "not in the fact index (not scanned)",
+      "files": 1,
+      "loc": 244
+    },
+    {
+      "class": "types",
+      "why": "no exported symbol",
+      "files": 1,
+      "loc": 209
+    },
+    {
+      "class": "pydantic/dataclass model",
+      "why": "only base, abstract, view or type-variable classes",
+      "files": 1,
+      "loc": 195
+    },
+    {
+      "class": "test",
+      "why": "test path (forms no role)",
+      "files": 1,
+      "loc": 188
+    },
+    {
+      "class": "util",
+      "why": "Python role within fewer than 3 files",
+      "files": 2,
+      "loc": 170
+    },
+    {
+      "class": "config",
+      "why": "largest role 4-7 members (< 8)",
+      "files": 3,
+      "loc": 143
+    },
+    {
+      "class": "index/__init__",
+      "why": "largest role 1-3 members (< 8)",
+      "files": 1,
+      "loc": 73
+    },
+    {
+      "class": "index/__init__",
+      "why": "no exported symbol",
+      "files": 4,
+      "loc": 69
+    },
+    {
+      "class": "other",
+      "why": "no exported symbol",
+      "files": 2,
+      "loc": 57
+    },
+    {
+      "class": "other",
+      "why": "Python role within fewer than 3 files",
+      "files": 1,
+      "loc": 44
+    },
+    {
+      "class": "service",
+      "why": "no exported symbol",
+      "files": 4,
+      "loc": 24
+    },
+    {
+      "class": "component",
+      "why": "no exported symbol",
+      "files": 2,
+      "loc": 15
+    },
+    {
+      "class": "ORM model",
+      "why": "largest role 1-3 members (< 8)",
+      "files": 1,
+      "loc": 12
+    },
+    {
+      "class": "util",
+      "why": "no exported symbol",
+      "files": 1,
+      "loc": 1
+    },
+    {
+      "class": "router/dep",
+      "why": "no exported symbol",
+      "files": 1,
+      "loc": 0
+    },
+    {
+      "class": "config",
+      "why": "no exported symbol",
+      "files": 1,
+      "loc": 0
+    },
+    {
+      "class": "pydantic/dataclass model",
+      "why": "no exported symbol",
+      "files": 1,
+      "loc": 0
+    }
+  ]
+}

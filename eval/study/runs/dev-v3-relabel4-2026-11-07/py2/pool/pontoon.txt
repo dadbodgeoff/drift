@@ -1,0 +1,17 @@
+2 conventions from 1931 units in 104 roles (0 default tier, 2 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-94fc85] translate: functions in src/api/** declare their return type
+    evidence: 45/46 (lower bound 0.89, lift 2.2)
+    tier:     suggestion (rule kind control)
+    example:  translate/src/api/comment.ts#addComment
+    outlier:  translate/src/api/machinery.ts:57 abortMachineryRequests
+
+ 2. [D-ddba4b] translate: functions in src/utils/** declare their return type
+    evidence: 29/30 (lower bound 0.83, lift 2.2)
+    tier:     suggestion (rule kind control)
+    example:  translate/src/utils/asLocaleString.ts#asLocaleString
+    outlier:  translate/src/utils/hooks/useOnDiscard.ts:9 useOnDiscard
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

@@ -1,0 +1,89 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - EditTool
+  - ReadTool
+  - __init__
+  suffixes:
+  - config
+  - test
+  - types
+conventions:
+- id: D-da58a2
+  status: proposed
+  mode: advise
+  summary: "backend: classes in app/models/schemas/** extend BaseModel"
+  role:
+    package: backend
+    dir: app/models/schemas
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - pkg:pydantic#BaseModel
+  evidence:
+    holders: 100
+    total: 102
+    lower_bound: 0.931
+    lift: 2.437
+    python_members: 102
+  example: backend/app/models/schemas/ai_model.py#AIModelResponse
+  selector_version: 3
+- id: D-6e1b64
+  status: proposed
+  mode: advise
+  summary: "backend: HTTP handlers in app/** are wrapped in get_current_user() or reject_agent_token()"
+  role:
+    package: backend
+    dir: app
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - backend/app/core/security.py#get_current_user
+    - backend/app/core/user_manager.py#reject_agent_token
+  evidence:
+    holders: 97
+    total: 113
+    lower_bound: 0.782
+    lift: 6.088
+    split:
+    - - backend/app/core/security.py#get_current_user
+      - 94
+    - - backend/app/core/user_manager.py#reject_agent_token
+      - 3
+    python_members: 113
+  example: backend/app/api/endpoints/ai_model.py#list_models
+  selector_version: 3
+- id: D-f863f3
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/components/editor/** are wrapped in memo()"
+  role:
+    package: frontend
+    dir: src/components/editor
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - pkg:react#memo
+  evidence:
+    holders: 25
+    total: 27
+    lower_bound: 0.766
+    lift: 2.029
+  example: frontend/src/components/editor/code-sidebar/CodeSidebar.tsx#CodeSidebar
+  selector_version: 3

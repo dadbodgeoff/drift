@@ -1,0 +1,15 @@
+1 conventions from 1931 units in 106 roles (0 default tier, 1 suggestions)
+
+1 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-6957a9] translate: functions in src/api/** and src/utils/** declare their return type
+    evidence: 74/76 (lower bound 0.91, lift 2.2)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  translate/src/api/comment.ts#addComment
+    outlier:  translate/src/api/machinery.ts:57 abortMachineryRequests
+    outlier:  translate/src/utils/hooks/useOnDiscard.ts:9 useOnDiscard
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

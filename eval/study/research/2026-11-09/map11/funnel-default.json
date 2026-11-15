@@ -1,0 +1,7170 @@
+{
+ "keyings": [
+  {
+   "keying": "kind",
+   "lang": "py",
+   "groups": 11972,
+   "too_small": 10223,
+   "one_file": 664,
+   "roles": 1085,
+   "drafted": 157,
+   "mined": 50,
+   "shown": 0,
+   "mined_per_100_roles": 4.61
+  },
+  {
+   "keying": "kind",
+   "lang": "ts",
+   "groups": 44938,
+   "too_small": 39961,
+   "one_file": 0,
+   "roles": 4977,
+   "drafted": 797,
+   "mined": 115,
+   "shown": 34,
+   "mined_per_100_roles": 2.31
+  },
+  {
+   "keying": "package",
+   "lang": "py",
+   "groups": 88,
+   "too_small": 50,
+   "one_file": 2,
+   "roles": 36,
+   "drafted": 0,
+   "mined": 1,
+   "shown": 0,
+   "mined_per_100_roles": 2.78
+  },
+  {
+   "keying": "package",
+   "lang": "ts",
+   "groups": 1328,
+   "too_small": 739,
+   "one_file": 0,
+   "roles": 589,
+   "drafted": 86,
+   "mined": 38,
+   "shown": 13,
+   "mined_per_100_roles": 6.45
+  },
+  {
+   "keying": "path",
+   "lang": "py",
+   "groups": 5388,
+   "too_small": 3532,
+   "one_file": 230,
+   "roles": 1626,
+   "drafted": 65,
+   "mined": 27,
+   "shown": 0,
+   "mined_per_100_roles": 1.66
+  },
+  {
+   "keying": "path",
+   "lang": "ts",
+   "groups": 29813,
+   "too_small": 21328,
+   "one_file": 0,
+   "roles": 8485,
+   "drafted": 513,
+   "mined": 74,
+   "shown": 14,
+   "mined_per_100_roles": 0.87
+  }
+ ],
+ "families": [
+  {
+   "family": "calls",
+   "keying": "kind",
+   "lang": "ts",
+   "observed": 190434,
+   "drafted": 172,
+   "mined": 5,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 189467,
+    "universal": 787,
+    "call_family_hidden": 97,
+    "mandated": 39,
+    "duplicate": 18,
+    "lift": 8,
+    "tautology": 8,
+    "show_policy": 5,
+    "other_kind_outliers": 3,
+    "how_built": 2
+   }
+  },
+  {
+   "family": "passes_key",
+   "keying": "kind",
+   "lang": "ts",
+   "observed": 204261,
+   "drafted": 127,
+   "mined": 10,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 203750,
+    "universal": 374,
+    "duplicate": 54,
+    "mandated": 39,
+    "tautology": 12,
+    "show_policy": 10,
+    "lift": 9,
+    "cap_repo": 6,
+    "path_params": 3,
+    "compiler": 2,
+    "key_structure": 1,
+    "optional_key": 1
+   }
+  },
+  {
+   "family": "named",
+   "keying": "kind",
+   "lang": "ts",
+   "observed": 0,
+   "drafted": 127,
+   "mined": 23,
+   "proposed": 14,
+   "shown": 14,
+   "not_listed": 0,
+   "top_gate": "duplicate",
+   "drops": {
+    "duplicate": 63,
+    "cap_repo": 26,
+    "mandated": 12,
+    "show_policy": 9,
+    "other_kind_outliers": 2,
+    "path_params": 1
+   }
+  },
+  {
+   "family": "wrapped_by:decorator",
+   "keying": "kind",
+   "lang": "ts",
+   "observed": 1732,
+   "drafted": 113,
+   "mined": 15,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 1040,
+    "universal": 579,
+    "duplicate": 38,
+    "mandated": 35,
+    "show_policy": 15,
+    "tautology": 10,
+    "cap_repo": 6,
+    "other_kind_outliers": 5,
+    "file_local": 2,
+    "merged": 1,
+    "path_params": 1
+   }
+  },
+  {
+   "family": "calls",
+   "keying": "path",
+   "lang": "ts",
+   "observed": 387663,
+   "drafted": 98,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 387330,
+    "universal": 213,
+    "call_family_hidden": 67,
+    "lift": 22,
+    "how_built": 19,
+    "tautology": 4,
+    "duplicate": 3,
+    "file_local": 3,
+    "mandated": 2
+   }
+  },
+  {
+   "family": "renders",
+   "keying": "path",
+   "lang": "ts",
+   "observed": 164795,
+   "drafted": 97,
+   "mined": 9,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 164622,
+    "universal": 72,
+    "duplicate": 63,
+    "cap_repo": 11,
+    "show_policy": 9,
+    "tautology": 8,
+    "lift": 4,
+    "mandated": 4,
+    "cap_role": 2
+   }
+  },
+  {
+   "family": "named",
+   "keying": "path",
+   "lang": "ts",
+   "observed": 0,
+   "drafted": 86,
+   "mined": 19,
+   "proposed": 6,
+   "shown": 6,
+   "not_listed": 0,
+   "top_gate": "duplicate",
+   "drops": {
+    "duplicate": 34,
+    "cap_repo": 16,
+    "mandated": 14,
+    "show_policy": 13,
+    "file_local": 3
+   }
+  },
+  {
+   "family": "control",
+   "keying": "kind",
+   "lang": "ts",
+   "observed": 3566,
+   "drafted": 77,
+   "mined": 9,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 3070,
+    "universal": 363,
+    "lift": 56,
+    "lint": 35,
+    "duplicate": 18,
+    "show_policy": 9,
+    "input": 7,
+    "cap_repo": 5,
+    "merged": 2,
+    "file_local": 1
+   }
+  },
+  {
+   "family": "before",
+   "keying": "kind",
+   "lang": "ts",
+   "observed": 0,
+   "drafted": 63,
+   "mined": 4,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "duplicate",
+   "drops": {
+    "duplicate": 27,
+    "how_built": 16,
+    "cap_repo": 8,
+    "cap_role": 8,
+    "show_policy": 4
+   }
+  },
+  {
+   "family": "before",
+   "keying": "path",
+   "lang": "ts",
+   "observed": 0,
+   "drafted": 60,
+   "mined": 6,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "how_built",
+   "drops": {
+    "how_built": 32,
+    "duplicate": 9,
+    "cap_repo": 8,
+    "show_policy": 6,
+    "cap_role": 5
+   }
+  },
+  {
+   "family": "wrapped_by:call",
+   "keying": "kind",
+   "lang": "ts",
+   "observed": 567,
+   "drafted": 49,
+   "mined": 20,
+   "proposed": 20,
+   "shown": 20,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 466,
+    "universal": 67,
+    "duplicate": 28,
+    "narrowed_out": 1
+   }
+  },
+  {
+   "family": "control",
+   "keying": "path",
+   "lang": "ts",
+   "observed": 8065,
+   "drafted": 47,
+   "mined": 13,
+   "proposed": 5,
+   "shown": 5,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 7407,
+    "universal": 455,
+    "lift": 156,
+    "lint": 18,
+    "duplicate": 10,
+    "show_policy": 8,
+    "cap_repo": 4,
+    "merged": 2
+   }
+  },
+  {
+   "family": "passes_key",
+   "keying": "path",
+   "lang": "ts",
+   "observed": 288530,
+   "drafted": 41,
+   "mined": 7,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 288195,
+    "optional_key": 190,
+    "universal": 104,
+    "duplicate": 28,
+    "show_policy": 7,
+    "cap_repo": 2,
+    "compiler": 2,
+    "key_structure": 1,
+    "mandated": 1
+   }
+  },
+  {
+   "family": "avoids:other",
+   "keying": "path",
+   "lang": "ts",
+   "observed": 0,
+   "drafted": 36,
+   "mined": 4,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "uncorroborated",
+   "drops": {
+    "uncorroborated": 26,
+    "lint": 6,
+    "show_policy": 4
+   }
+  },
+  {
+   "family": "package_has",
+   "keying": "package",
+   "lang": "ts",
+   "observed": 1600,
+   "drafted": 34,
+   "mined": 5,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 1560,
+    "duplicate": 18,
+    "cap_repo": 7,
+    "universal": 6,
+    "show_policy": 5,
+    "cap_role": 4
+   }
+  },
+  {
+   "family": "calls",
+   "keying": "kind",
+   "lang": "py",
+   "observed": 39600,
+   "drafted": 33,
+   "mined": 9,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 39459,
+    "universal": 103,
+    "python_family_hidden": 13,
+    "show_policy": 9,
+    "duplicate": 5,
+    "lift": 5,
+    "holders_one_file": 2,
+    "narrowed_out": 2,
+    "merged": 1,
+    "tautology": 1
+   }
+  },
+  {
+   "family": "wrapped_by:extends",
+   "keying": "kind",
+   "lang": "ts",
+   "observed": 1340,
+   "drafted": 31,
+   "mined": 14,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 1042,
+    "indirect_base": 235,
+    "universal": 32,
+    "duplicate": 17,
+    "show_policy": 14
+   }
+  },
+  {
+   "family": "wrapped_by:call",
+   "keying": "kind",
+   "lang": "py",
+   "observed": 500,
+   "drafted": 27,
+   "mined": 7,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 471,
+    "duplicate": 18,
+    "universal": 8,
+    "show_policy": 7,
+    "merged": 2
+   }
+  },
+  {
+   "family": "wrapped_by:extends",
+   "keying": "kind",
+   "lang": "py",
+   "observed": 3691,
+   "drafted": 25,
+   "mined": 5,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 1500,
+    "indirect_base": 1237,
+    "refines_base": 782,
+    "universal": 147,
+    "tautology": 12,
+    "duplicate": 7,
+    "show_policy": 5,
+    "merged": 1
+   }
+  },
+  {
+   "family": "named",
+   "keying": "kind",
+   "lang": "py",
+   "observed": 0,
+   "drafted": 24,
+   "mined": 14,
+   "proposed": 11,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "python_off",
+   "drops": {
+    "python_off": 11,
+    "duplicate": 8,
+    "show_policy": 3,
+    "merged": 2
+   }
+  },
+  {
+   "family": "avoids:other",
+   "keying": "path",
+   "lang": "py",
+   "observed": 0,
+   "drafted": 21,
+   "mined": 1,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "uncorroborated",
+   "drops": {
+    "uncorroborated": 16,
+    "python_family_hidden": 4,
+    "show_policy": 1
+   }
+  },
+  {
+   "family": "dependency_version",
+   "keying": "package",
+   "lang": "ts",
+   "observed": 0,
+   "drafted": 19,
+   "mined": 11,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "show_policy",
+   "drops": {
+    "show_policy": 11,
+    "duplicate": 4,
+    "cap_role": 2,
+    "cap_repo": 1,
+    "merged": 1
+   }
+  },
+  {
+   "family": "model_has",
+   "keying": "kind",
+   "lang": "ts",
+   "observed": 10756,
+   "drafted": 17,
+   "mined": 10,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 10728,
+    "universal": 11,
+    "show_policy": 10,
+    "cap_repo": 6,
+    "merged": 1
+   }
+  },
+  {
+   "family": "avoids:import",
+   "keying": "package",
+   "lang": "ts",
+   "observed": 0,
+   "drafted": 17,
+   "mined": 12,
+   "proposed": 12,
+   "shown": 12,
+   "not_listed": 0,
+   "top_gate": "cap_avoid",
+   "drops": {
+    "cap_avoid": 3,
+    "duplicate": 1,
+    "lint_layering": 1
+   }
+  },
+  {
+   "family": "avoids:other",
+   "keying": "kind",
+   "lang": "ts",
+   "observed": 0,
+   "drafted": 17,
+   "mined": 2,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "uncorroborated",
+   "drops": {
+    "uncorroborated": 9,
+    "lint": 5,
+    "show_policy": 2,
+    "duplicate": 1
+   }
+  },
+  {
+   "family": "passes_key",
+   "keying": "kind",
+   "lang": "py",
+   "observed": 32094,
+   "drafted": 16,
+   "mined": 5,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 26517,
+    "optional_key": 5418,
+    "universal": 135,
+    "lift": 8,
+    "holders_one_file": 6,
+    "show_policy": 5,
+    "duplicate": 4,
+    "tautology": 1
+   }
+  },
+  {
+   "family": "wrapped_by:decorator",
+   "keying": "kind",
+   "lang": "py",
+   "observed": 322,
+   "drafted": 14,
+   "mined": 8,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 232,
+    "universal": 76,
+    "show_policy": 8,
+    "duplicate": 6
+   }
+  },
+  {
+   "family": "wrapped_by:extends",
+   "keying": "path",
+   "lang": "py",
+   "observed": 5186,
+   "drafted": 12,
+   "mined": 7,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 3323,
+    "indirect_base": 1151,
+    "refines_base": 649,
+    "universal": 51,
+    "show_policy": 7,
+    "duplicate": 3,
+    "holders_one_file": 1,
+    "tautology": 1
+   }
+  },
+  {
+   "family": "avoids:import",
+   "keying": "path",
+   "lang": "ts",
+   "observed": 0,
+   "drafted": 12,
+   "mined": 2,
+   "proposed": 2,
+   "shown": 2,
+   "not_listed": 0,
+   "top_gate": "duplicate",
+   "drops": {
+    "duplicate": 9,
+    "merged": 1
+   }
+  },
+  {
+   "family": "wrapped_by:jsx",
+   "keying": "path",
+   "lang": "ts",
+   "observed": 20272,
+   "drafted": 11,
+   "mined": 1,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 20251,
+    "universal": 10,
+    "duplicate": 6,
+    "cap_repo": 2,
+    "mandated": 1,
+    "show_policy": 1,
+    "tautology": 1
+   }
+  },
+  {
+   "family": "wrapped_by:extends",
+   "keying": "path",
+   "lang": "ts",
+   "observed": 570,
+   "drafted": 11,
+   "mined": 5,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 473,
+    "indirect_base": 75,
+    "universal": 9,
+    "show_policy": 5,
+    "duplicate": 4,
+    "lift": 2,
+    "cap_repo": 1,
+    "tautology": 1
+   }
+  },
+  {
+   "family": "prefers_library",
+   "keying": "package",
+   "lang": "ts",
+   "observed": 0,
+   "drafted": 11,
+   "mined": 7,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "show_policy",
+   "drops": {
+    "show_policy": 7,
+    "cap_repo": 4
+   }
+  },
+  {
+   "family": "before",
+   "keying": "kind",
+   "lang": "py",
+   "observed": 0,
+   "drafted": 10,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "python_family_hidden",
+   "drops": {
+    "python_family_hidden": 10
+   }
+  },
+  {
+   "family": "calls",
+   "keying": "path",
+   "lang": "py",
+   "observed": 91902,
+   "drafted": 9,
+   "mined": 3,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 91843,
+    "universal": 47,
+    "duplicate": 5,
+    "lift": 3,
+    "show_policy": 3,
+    "narrowed_out": 1
+   }
+  },
+  {
+   "family": "control",
+   "keying": "path",
+   "lang": "py",
+   "observed": 1565,
+   "drafted": 6,
+   "mined": 5,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 1427,
+    "universal": 103,
+    "lift": 29,
+    "show_policy": 5,
+    "duplicate": 1
+   }
+  },
+  {
+   "family": "has_test",
+   "keying": "path",
+   "lang": "ts",
+   "observed": 1526,
+   "drafted": 6,
+   "mined": 4,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 1510,
+    "universal": 10,
+    "show_policy": 4,
+    "cap_repo": 1,
+    "duplicate": 1
+   }
+  },
+  {
+   "family": "has_test",
+   "keying": "path",
+   "lang": "py",
+   "observed": 345,
+   "drafted": 6,
+   "mined": 3,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 314,
+    "universal": 24,
+    "show_policy": 3,
+    "merged": 2,
+    "duplicate": 1,
+    "lift": 1
+   }
+  },
+  {
+   "family": "avoids:other",
+   "keying": "kind",
+   "lang": "py",
+   "observed": 0,
+   "drafted": 6,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "uncorroborated",
+   "drops": {
+    "uncorroborated": 6
+   }
+  },
+  {
+   "family": "wrapped_by:call",
+   "keying": "path",
+   "lang": "ts",
+   "observed": 1570,
+   "drafted": 5,
+   "mined": 2,
+   "proposed": 1,
+   "shown": 1,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 1554,
+    "universal": 12,
+    "file_local": 2,
+    "duplicate": 1,
+    "show_policy": 1
+   }
+  },
+  {
+   "family": "wrapped_by:decorator",
+   "keying": "path",
+   "lang": "py",
+   "observed": 699,
+   "drafted": 4,
+   "mined": 1,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 695,
+    "tautology": 2,
+    "duplicate": 1,
+    "show_policy": 1
+   }
+  },
+  {
+   "family": "has_test",
+   "keying": "package",
+   "lang": "ts",
+   "observed": 273,
+   "drafted": 4,
+   "mined": 2,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 263,
+    "universal": 6,
+    "duplicate": 2,
+    "show_policy": 2
+   }
+  },
+  {
+   "family": "avoids:import",
+   "keying": "path",
+   "lang": "py",
+   "observed": 0,
+   "drafted": 4,
+   "mined": 5,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "show_policy",
+   "drops": {
+    "show_policy": 5
+   }
+  },
+  {
+   "family": "passes_key",
+   "keying": "path",
+   "lang": "py",
+   "observed": 60753,
+   "drafted": 3,
+   "mined": 2,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 54846,
+    "optional_key": 5889,
+    "universal": 15,
+    "show_policy": 2,
+    "tautology": 1
+   }
+  },
+  {
+   "family": "renders",
+   "keying": "kind",
+   "lang": "ts",
+   "observed": 12390,
+   "drafted": 2,
+   "mined": 1,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 12354,
+    "universal": 34,
+    "duplicate": 1,
+    "show_policy": 1
+   }
+  },
+  {
+   "family": "throws",
+   "keying": "path",
+   "lang": "ts",
+   "observed": 4485,
+   "drafted": 2,
+   "mined": 1,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 4481,
+    "universal": 2,
+    "duplicate": 1,
+    "show_policy": 1
+   }
+  },
+  {
+   "family": "imports_from",
+   "keying": "kind",
+   "lang": "py",
+   "observed": 0,
+   "drafted": 2,
+   "mined": 1,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "duplicate",
+   "drops": {
+    "duplicate": 1,
+    "show_policy": 1
+   }
+  },
+  {
+   "family": "throws",
+   "keying": "kind",
+   "lang": "ts",
+   "observed": 3541,
+   "drafted": 1,
+   "mined": 1,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 3528,
+    "universal": 12,
+    "show_policy": 1
+   }
+  },
+  {
+   "family": "wrapped_by:jsx",
+   "keying": "kind",
+   "lang": "ts",
+   "observed": 1313,
+   "drafted": 1,
+   "mined": 1,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 1306,
+    "universal": 6,
+    "show_policy": 1
+   }
+  },
+  {
+   "family": "wrapped_by:decorator",
+   "keying": "path",
+   "lang": "ts",
+   "observed": 137,
+   "drafted": 1,
+   "mined": 1,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 119,
+    "universal": 17,
+    "show_policy": 1
+   }
+  },
+  {
+   "family": "named",
+   "keying": "package",
+   "lang": "ts",
+   "observed": 0,
+   "drafted": 1,
+   "mined": 1,
+   "proposed": 1,
+   "shown": 1,
+   "not_listed": 0,
+   "top_gate": null,
+   "drops": {}
+  },
+  {
+   "family": "throws",
+   "keying": "path",
+   "lang": "py",
+   "observed": 2573,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 2573
+   }
+  },
+  {
+   "family": "calls",
+   "keying": "package",
+   "lang": "ts",
+   "observed": 1985,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 1985
+   }
+  },
+  {
+   "family": "passes_key",
+   "keying": "package",
+   "lang": "ts",
+   "observed": 1243,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 1243
+   }
+  },
+  {
+   "family": "control",
+   "keying": "kind",
+   "lang": "py",
+   "observed": 891,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 862,
+    "universal": 24,
+    "lift": 5
+   }
+  },
+  {
+   "family": "throws",
+   "keying": "kind",
+   "lang": "py",
+   "observed": 811,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 811
+   }
+  },
+  {
+   "family": "wrapped_by:try",
+   "keying": "path",
+   "lang": "ts",
+   "observed": 535,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 535
+   }
+  },
+  {
+   "family": "calls",
+   "keying": "package",
+   "lang": "py",
+   "observed": 448,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 448
+   }
+  },
+  {
+   "family": "has_test",
+   "keying": "kind",
+   "lang": "ts",
+   "observed": 231,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 228,
+    "universal": 3
+   }
+  },
+  {
+   "family": "passes_key",
+   "keying": "package",
+   "lang": "py",
+   "observed": 200,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 177,
+    "optional_key": 23
+   }
+  },
+  {
+   "family": "wrapped_by:try",
+   "keying": "kind",
+   "lang": "ts",
+   "observed": 200,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 195,
+    "universal": 5
+   }
+  },
+  {
+   "family": "wrapped_by:try",
+   "keying": "path",
+   "lang": "py",
+   "observed": 135,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 135
+   }
+  },
+  {
+   "family": "has_test",
+   "keying": "kind",
+   "lang": "py",
+   "observed": 91,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "universal",
+   "drops": {
+    "universal": 85,
+    "wilson": 6
+   }
+  },
+  {
+   "family": "control",
+   "keying": "package",
+   "lang": "ts",
+   "observed": 80,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 69,
+    "universal": 6,
+    "lift": 5
+   }
+  },
+  {
+   "family": "wrapped_by:try",
+   "keying": "kind",
+   "lang": "py",
+   "observed": 63,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 63
+   }
+  },
+  {
+   "family": "has_test",
+   "keying": "package",
+   "lang": "py",
+   "observed": 32,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 32
+   }
+  },
+  {
+   "family": "throws",
+   "keying": "package",
+   "lang": "ts",
+   "observed": 23,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 23
+   }
+  },
+  {
+   "family": "wrapped_by:call",
+   "keying": "package",
+   "lang": "ts",
+   "observed": 19,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 19
+   }
+  },
+  {
+   "family": "wrapped_by:call",
+   "keying": "path",
+   "lang": "py",
+   "observed": 15,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 15
+   }
+  },
+  {
+   "family": "wrapped_by:extends",
+   "keying": "package",
+   "lang": "ts",
+   "observed": 13,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 9,
+    "indirect_base": 3,
+    "universal": 1
+   }
+  },
+  {
+   "family": "wrapped_by:authenticates",
+   "keying": "kind",
+   "lang": "py",
+   "observed": 9,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 9
+   }
+  },
+  {
+   "family": "wrapped_by:opens",
+   "keying": "kind",
+   "lang": "py",
+   "observed": 8,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 8
+   }
+  },
+  {
+   "family": "wrapped_by:try",
+   "keying": "package",
+   "lang": "ts",
+   "observed": 8,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 8
+   }
+  },
+  {
+   "family": "throws",
+   "keying": "package",
+   "lang": "py",
+   "observed": 7,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 7
+   }
+  },
+  {
+   "family": "control",
+   "keying": "package",
+   "lang": "py",
+   "observed": 4,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 4
+   }
+  },
+  {
+   "family": "wrapped_by:decorator",
+   "keying": "package",
+   "lang": "py",
+   "observed": 3,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 3
+   }
+  },
+  {
+   "family": "wrapped_by:try",
+   "keying": "package",
+   "lang": "py",
+   "observed": 1,
+   "drafted": 0,
+   "mined": 0,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "wilson",
+   "drops": {
+    "wilson": 1
+   }
+  },
+  {
+   "family": "dependency_version",
+   "keying": "package",
+   "lang": "py",
+   "observed": 0,
+   "drafted": 0,
+   "mined": 1,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "show_policy",
+   "drops": {
+    "show_policy": 1
+   }
+  },
+  {
+   "family": "model_has",
+   "keying": "kind",
+   "lang": "py",
+   "observed": 0,
+   "drafted": 0,
+   "mined": 1,
+   "proposed": 0,
+   "shown": 0,
+   "not_listed": 0,
+   "top_gate": "show_policy",
+   "drops": {
+    "show_policy": 1
+   }
+  }
+ ],
+ "folds": {
+  "1": {
+   "keyings": [
+    {
+     "keying": "kind",
+     "lang": "py",
+     "groups": 2615,
+     "too_small": 2251,
+     "one_file": 107,
+     "roles": 257,
+     "drafted": 33,
+     "mined": 13,
+     "shown": 0,
+     "mined_per_100_roles": 5.06
+    },
+    {
+     "keying": "kind",
+     "lang": "ts",
+     "groups": 2961,
+     "too_small": 2574,
+     "one_file": 0,
+     "roles": 387,
+     "drafted": 181,
+     "mined": 18,
+     "shown": 6,
+     "mined_per_100_roles": 4.65
+    },
+    {
+     "keying": "package",
+     "lang": "py",
+     "groups": 15,
+     "too_small": 14,
+     "one_file": 0,
+     "roles": 1,
+     "drafted": 0,
+     "mined": 0,
+     "shown": 0,
+     "mined_per_100_roles": 0
+    },
+    {
+     "keying": "package",
+     "lang": "ts",
+     "groups": 90,
+     "too_small": 60,
+     "one_file": 0,
+     "roles": 30,
+     "drafted": 1,
+     "mined": 0,
+     "shown": 0,
+     "mined_per_100_roles": 0
+    },
+    {
+     "keying": "path",
+     "lang": "py",
+     "groups": 876,
+     "too_small": 647,
+     "one_file": 29,
+     "roles": 200,
+     "drafted": 5,
+     "mined": 2,
+     "shown": 0,
+     "mined_per_100_roles": 1
+    },
+    {
+     "keying": "path",
+     "lang": "ts",
+     "groups": 4190,
+     "too_small": 3026,
+     "one_file": 0,
+     "roles": 1164,
+     "drafted": 220,
+     "mined": 18,
+     "shown": 2,
+     "mined_per_100_roles": 1.55
+    }
+   ],
+   "families": [
+    {
+     "family": "renders",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 31320,
+     "drafted": 65,
+     "mined": 3,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 31236,
+      "duplicate": 50,
+      "universal": 19,
+      "cap_repo": 11,
+      "show_policy": 3,
+      "cap_role": 1
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 9637,
+     "drafted": 49,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 9545,
+      "universal": 43,
+      "duplicate": 24,
+      "tautology": 12,
+      "mandated": 7,
+      "cap_repo": 5,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "named",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 40,
+     "mined": 5,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "duplicate",
+     "drops": {
+      "duplicate": 25,
+      "cap_repo": 9,
+      "show_policy": 5,
+      "file_local": 1
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 14373,
+     "drafted": 39,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 14271,
+      "universal": 61,
+      "call_family_hidden": 21,
+      "mandated": 12,
+      "tautology": 4,
+      "duplicate": 2,
+      "lift": 2
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 80598,
+     "drafted": 33,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 80547,
+      "call_family_hidden": 28,
+      "universal": 12,
+      "lift": 6,
+      "duplicate": 2,
+      "tautology": 2,
+      "file_local": 1
+     }
+    },
+    {
+     "family": "before",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 30,
+     "mined": 4,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "how_built",
+     "drops": {
+      "how_built": 12,
+      "cap_role": 5,
+      "duplicate": 5,
+      "cap_repo": 4,
+      "show_policy": 4
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 73576,
+     "drafted": 26,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 73540,
+      "duplicate": 22,
+      "optional_key": 10,
+      "show_policy": 2,
+      "cap_repo": 1,
+      "compiler": 1
+     }
+    },
+    {
+     "family": "named",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 26,
+     "mined": 3,
+     "proposed": 2,
+     "shown": 2,
+     "not_listed": 0,
+     "top_gate": "duplicate",
+     "drops": {
+      "duplicate": 10,
+      "mandated": 10,
+      "cap_repo": 3,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "before",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 19,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "duplicate",
+     "drops": {
+      "duplicate": 13,
+      "cap_repo": 5,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 103,
+     "drafted": 18,
+     "mined": 5,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 73,
+      "universal": 12,
+      "duplicate": 5,
+      "show_policy": 5,
+      "mandated": 4,
+      "tautology": 4
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 58,
+     "drafted": 16,
+     "mined": 4,
+     "proposed": 4,
+     "shown": 4,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 33,
+      "universal": 13,
+      "duplicate": 12
+     }
+    },
+    {
+     "family": "control",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 1163,
+     "drafted": 14,
+     "mined": 3,
+     "proposed": 2,
+     "shown": 2,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 1140,
+      "universal": 8,
+      "duplicate": 5,
+      "cap_repo": 3,
+      "lint": 2,
+      "lift": 1,
+      "merged": 1,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 1295,
+     "drafted": 12,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 724,
+      "indirect_base": 438,
+      "refines_base": 85,
+      "universal": 36,
+      "duplicate": 5,
+      "tautology": 4,
+      "show_policy": 2,
+      "merged": 1
+     }
+    },
+    {
+     "family": "named",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 0,
+     "drafted": 11,
+     "mined": 6,
+     "proposed": 5,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "python_off",
+     "drops": {
+      "python_off": 5,
+      "duplicate": 4,
+      "merged": 1,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "wrapped_by:jsx",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 2080,
+     "drafted": 7,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 2072,
+      "duplicate": 5,
+      "cap_repo": 1,
+      "show_policy": 1,
+      "universal": 1
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 78,
+     "drafted": 7,
+     "mined": 4,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 49,
+      "indirect_base": 21,
+      "show_policy": 4,
+      "duplicate": 3,
+      "universal": 1
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 9746,
+     "drafted": 5,
+     "mined": 3,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 9732,
+      "universal": 9,
+      "show_policy": 3,
+      "duplicate": 2
+     }
+    },
+    {
+     "family": "avoids:other",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 5,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "lint",
+     "drops": {
+      "lint": 5
+     }
+    },
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 123,
+     "drafted": 4,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 112,
+      "universal": 7,
+      "duplicate": 2,
+      "show_policy": 2
+     }
+    },
+    {
+     "family": "avoids:other",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 4,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "lint",
+     "drops": {
+      "lint": 4
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "path",
+     "lang": "py",
+     "observed": 956,
+     "drafted": 2,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 832,
+      "indirect_base": 112,
+      "universal": 7,
+      "refines_base": 3,
+      "duplicate": 1,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "control",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 249,
+     "drafted": 2,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 238,
+      "universal": 6,
+      "lift": 3,
+      "lint": 2
+     }
+    },
+    {
+     "family": "avoids:other",
+     "keying": "path",
+     "lang": "py",
+     "observed": 0,
+     "drafted": 2,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "python_family_hidden",
+     "drops": {
+      "python_family_hidden": 2
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 8443,
+     "drafted": 1,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 7146,
+      "optional_key": 1291,
+      "universal": 5,
+      "duplicate": 1
+     }
+    },
+    {
+     "family": "control",
+     "keying": "path",
+     "lang": "py",
+     "observed": 227,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 215,
+      "universal": 7,
+      "lift": 4,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 63,
+     "drafted": 1,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 54,
+      "indirect_base": 5,
+      "lift": 2,
+      "cap_repo": 1,
+      "universal": 1
+     }
+    },
+    {
+     "family": "prefers_library",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 1,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "cap_repo",
+     "drops": {
+      "cap_repo": 1
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "path",
+     "lang": "py",
+     "observed": 11582,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 11575,
+      "universal": 6,
+      "lift": 1
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "path",
+     "lang": "py",
+     "observed": 7128,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 6352,
+      "optional_key": 776
+     }
+    },
+    {
+     "family": "model_has",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 1302,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 1302
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 946,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 946
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "path",
+     "lang": "py",
+     "observed": 349,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 349
+     }
+    },
+    {
+     "family": "control",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 254,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 252,
+      "lift": 2
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 251,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 249,
+      "universal": 2
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 175,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 175
+     }
+    },
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "path",
+     "lang": "py",
+     "observed": 153,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 153
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 132,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 132
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 127,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 127
+     }
+    },
+    {
+     "family": "package_has",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 83,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 78,
+      "universal": 5
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 63,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 63
+     }
+    },
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 57,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 57
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 54,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 54
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 36,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "universal",
+     "drops": {
+      "universal": 36
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "path",
+     "lang": "py",
+     "observed": 33,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 33
+     }
+    },
+    {
+     "family": "renders",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 20,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 20
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "path",
+     "lang": "py",
+     "observed": 15,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 15
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 14,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 14
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 13,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 13
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 6,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 6
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 5,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 5
+     }
+    },
+    {
+     "family": "wrapped_by:authenticates",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 4,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 4
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "package",
+     "lang": "py",
+     "observed": 1,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 1
+     }
+    },
+    {
+     "family": "wrapped_by:opens",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 1,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 1
+     }
+    }
+   ]
+  },
+  "2": {
+   "keyings": [
+    {
+     "keying": "kind",
+     "lang": "py",
+     "groups": 3760,
+     "too_small": 3298,
+     "one_file": 186,
+     "roles": 276,
+     "drafted": 46,
+     "mined": 16,
+     "shown": 0,
+     "mined_per_100_roles": 5.8
+    },
+    {
+     "keying": "kind",
+     "lang": "ts",
+     "groups": 8522,
+     "too_small": 7709,
+     "one_file": 0,
+     "roles": 813,
+     "drafted": 92,
+     "mined": 20,
+     "shown": 11,
+     "mined_per_100_roles": 2.46
+    },
+    {
+     "keying": "package",
+     "lang": "py",
+     "groups": 36,
+     "too_small": 12,
+     "one_file": 2,
+     "roles": 22,
+     "drafted": 0,
+     "mined": 1,
+     "shown": 0,
+     "mined_per_100_roles": 4.55
+    },
+    {
+     "keying": "package",
+     "lang": "ts",
+     "groups": 271,
+     "too_small": 112,
+     "one_file": 0,
+     "roles": 159,
+     "drafted": 15,
+     "mined": 9,
+     "shown": 4,
+     "mined_per_100_roles": 5.66
+    },
+    {
+     "keying": "path",
+     "lang": "py",
+     "groups": 1282,
+     "too_small": 910,
+     "one_file": 34,
+     "roles": 338,
+     "drafted": 10,
+     "mined": 7,
+     "shown": 0,
+     "mined_per_100_roles": 2.07
+    },
+    {
+     "keying": "path",
+     "lang": "ts",
+     "groups": 4313,
+     "too_small": 3089,
+     "one_file": 0,
+     "roles": 1224,
+     "drafted": 41,
+     "mined": 9,
+     "shown": 4,
+     "mined_per_100_roles": 0.74
+    }
+   ],
+   "families": [
+    {
+     "family": "named",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 32,
+     "mined": 8,
+     "proposed": 6,
+     "shown": 6,
+     "not_listed": 0,
+     "top_gate": "duplicate",
+     "drops": {
+      "duplicate": 17,
+      "cap_repo": 5,
+      "other_kind_outliers": 2,
+      "show_policy": 2
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 8109,
+     "drafted": 15,
+     "mined": 4,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 8070,
+      "universal": 19,
+      "python_family_hidden": 8,
+      "lift": 5,
+      "show_policy": 4,
+      "duplicate": 1,
+      "merged": 1,
+      "narrowed_out": 1
+     }
+    },
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 515,
+     "drafted": 13,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 361,
+      "universal": 141,
+      "mandated": 9,
+      "show_policy": 2,
+      "merged": 1,
+      "path_params": 1
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 25725,
+     "drafted": 12,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 25636,
+      "universal": 77,
+      "mandated": 9,
+      "call_family_hidden": 3
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 43097,
+     "drafted": 11,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 43066,
+      "universal": 20,
+      "mandated": 6,
+      "path_params": 3,
+      "cap_repo": 1,
+      "duplicate": 1
+     }
+    },
+    {
+     "family": "renders",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 20082,
+     "drafted": 11,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 20056,
+      "universal": 13,
+      "tautology": 7,
+      "duplicate": 3,
+      "lift": 2,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 601,
+     "drafted": 11,
+     "mined": 5,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 456,
+      "indirect_base": 129,
+      "duplicate": 6,
+      "show_policy": 5,
+      "universal": 5
+     }
+    },
+    {
+     "family": "before",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 0,
+     "drafted": 10,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "python_family_hidden",
+     "drops": {
+      "python_family_hidden": 10
+     }
+    },
+    {
+     "family": "named",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 9,
+     "mined": 5,
+     "proposed": 3,
+     "shown": 3,
+     "not_listed": 0,
+     "top_gate": "duplicate",
+     "drops": {
+      "duplicate": 2,
+      "show_policy": 2,
+      "cap_repo": 1,
+      "mandated": 1
+     }
+    },
+    {
+     "family": "named",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 0,
+     "drafted": 7,
+     "mined": 4,
+     "proposed": 2,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "duplicate",
+     "drops": {
+      "duplicate": 2,
+      "python_off": 2,
+      "show_policy": 2,
+      "merged": 1
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 1416,
+     "drafted": 5,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "indirect_base",
+     "drops": {
+      "indirect_base": 580,
+      "wilson": 481,
+      "refines_base": 304,
+      "universal": 46,
+      "tautology": 4,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "control",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 538,
+     "drafted": 5,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 460,
+      "universal": 66,
+      "lift": 7,
+      "input": 4,
+      "cap_repo": 1
+     }
+    },
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 88,
+     "drafted": 5,
+     "mined": 4,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 72,
+      "universal": 11,
+      "show_policy": 4,
+      "duplicate": 1
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 50,
+     "drafted": 5,
+     "mined": 5,
+     "proposed": 5,
+     "shown": 5,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 44,
+      "universal": 2
+     }
+    },
+    {
+     "family": "avoids:import",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 5,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "duplicate",
+     "drops": {
+      "duplicate": 5
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 115,
+     "drafted": 4,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 105,
+      "universal": 6,
+      "duplicate": 2,
+      "show_policy": 2
+     }
+    },
+    {
+     "family": "avoids:import",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 4,
+     "mined": 4,
+     "proposed": 4,
+     "shown": 4,
+     "not_listed": 0,
+     "top_gate": null,
+     "drops": {}
+    },
+    {
+     "family": "dependency_version",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 4,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "show_policy",
+     "drops": {
+      "show_policy": 2,
+      "duplicate": 1,
+      "merged": 1
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 44121,
+     "drafted": 3,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 44095,
+      "universal": 19,
+      "lift": 4,
+      "call_family_hidden": 2,
+      "how_built": 1
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "path",
+     "lang": "py",
+     "observed": 11090,
+     "drafted": 3,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 11068,
+      "universal": 18,
+      "duplicate": 2,
+      "lift": 1,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "wrapped_by:jsx",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 2457,
+     "drafted": 3,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 2451,
+      "universal": 3,
+      "cap_repo": 1,
+      "duplicate": 1,
+      "tautology": 1
+     }
+    },
+    {
+     "family": "model_has",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 2047,
+     "drafted": 3,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 2042,
+      "cap_repo": 2,
+      "universal": 2,
+      "merged": 1
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "path",
+     "lang": "py",
+     "observed": 1263,
+     "drafted": 3,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 780,
+      "indirect_base": 322,
+      "refines_base": 149,
+      "universal": 9,
+      "show_policy": 2,
+      "duplicate": 1
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 102,
+     "drafted": 3,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 81,
+      "indirect_base": 17,
+      "duplicate": 2,
+      "show_policy": 1,
+      "universal": 1
+     }
+    },
+    {
+     "family": "before",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 3,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "how_built",
+     "drops": {
+      "how_built": 2,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "prefers_library",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 3,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "cap_repo",
+     "drops": {
+      "cap_repo": 2,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 8189,
+     "drafted": 2,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 6859,
+      "optional_key": 1318,
+      "universal": 6,
+      "lift": 4,
+      "duplicate": 1,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 215,
+     "drafted": 2,
+     "mined": 1,
+     "proposed": 1,
+     "shown": 1,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 210,
+      "universal": 3,
+      "duplicate": 1
+     }
+    },
+    {
+     "family": "avoids:other",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 2,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "uncorroborated",
+     "drops": {
+      "uncorroborated": 2
+     }
+    },
+    {
+     "family": "imports_from",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 0,
+     "drafted": 2,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "duplicate",
+     "drops": {
+      "duplicate": 1,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "path",
+     "lang": "py",
+     "observed": 6790,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 6109,
+      "optional_key": 670,
+      "universal": 10,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "control",
+     "keying": "path",
+     "lang": "py",
+     "observed": 295,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 273,
+      "universal": 21,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "avoids:import",
+     "keying": "path",
+     "lang": "py",
+     "observed": 0,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "show_policy",
+     "drops": {
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "avoids:other",
+     "keying": "path",
+     "lang": "py",
+     "observed": 0,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "show_policy",
+     "drops": {
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 33892,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 33887,
+      "universal": 5
+     }
+    },
+    {
+     "family": "renders",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 2125,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 2118,
+      "universal": 7
+     }
+    },
+    {
+     "family": "control",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 1169,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 1034,
+      "universal": 100,
+      "lift": 35
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 658,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 655,
+      "universal": 3
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 653,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 652,
+      "universal": 1
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "path",
+     "lang": "py",
+     "observed": 573,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 573
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "package",
+     "lang": "py",
+     "observed": 448,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 448
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 328,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 328
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 326,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 326
+     }
+    },
+    {
+     "family": "package_has",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 314,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 314
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 222,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 222
+     }
+    },
+    {
+     "family": "control",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 218,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 213,
+      "universal": 5
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 207,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 207
+     }
+    },
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "path",
+     "lang": "py",
+     "observed": 202,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 202
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "package",
+     "lang": "py",
+     "observed": 200,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 177,
+      "optional_key": 23
+     }
+    },
+    {
+     "family": "wrapped_by:jsx",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 133,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 133
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "path",
+     "lang": "py",
+     "observed": 93,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 90,
+      "universal": 3
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 90,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 90
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 60,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 60
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "path",
+     "lang": "py",
+     "observed": 27,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 27
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 22,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "universal",
+     "drops": {
+      "universal": 22
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 21,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 21
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "package",
+     "lang": "py",
+     "observed": 18,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 18
+     }
+    },
+    {
+     "family": "control",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 16,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 12,
+      "lift": 2,
+      "universal": 2
+     }
+    },
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 14,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 14
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 14,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 14
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 10,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 10
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 8,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 8
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "package",
+     "lang": "py",
+     "observed": 7,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 7
+     }
+    },
+    {
+     "family": "control",
+     "keying": "package",
+     "lang": "py",
+     "observed": 4,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 4
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "path",
+     "lang": "py",
+     "observed": 3,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 3
+     }
+    },
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "package",
+     "lang": "py",
+     "observed": 3,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 3
+     }
+    },
+    {
+     "family": "wrapped_by:authenticates",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 2,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 2
+     }
+    },
+    {
+     "family": "wrapped_by:opens",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 2,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 2
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "package",
+     "lang": "py",
+     "observed": 1,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 1
+     }
+    },
+    {
+     "family": "dependency_version",
+     "keying": "package",
+     "lang": "py",
+     "observed": 0,
+     "drafted": 0,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "show_policy",
+     "drops": {
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "model_has",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 0,
+     "drafted": 0,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "show_policy",
+     "drops": {
+      "show_policy": 1
+     }
+    }
+   ]
+  },
+  "3": {
+   "keyings": [
+    {
+     "keying": "kind",
+     "lang": "py",
+     "groups": 1947,
+     "too_small": 1717,
+     "one_file": 100,
+     "roles": 130,
+     "drafted": 10,
+     "mined": 1,
+     "shown": 0,
+     "mined_per_100_roles": 0.77
+    },
+    {
+     "keying": "kind",
+     "lang": "ts",
+     "groups": 18962,
+     "too_small": 16573,
+     "one_file": 0,
+     "roles": 2389,
+     "drafted": 269,
+     "mined": 26,
+     "shown": 5,
+     "mined_per_100_roles": 1.09
+    },
+    {
+     "keying": "package",
+     "lang": "py",
+     "groups": 5,
+     "too_small": 2,
+     "one_file": 0,
+     "roles": 3,
+     "drafted": 0,
+     "mined": 0,
+     "shown": 0,
+     "mined_per_100_roles": 0
+    },
+    {
+     "keying": "package",
+     "lang": "ts",
+     "groups": 186,
+     "too_small": 81,
+     "one_file": 0,
+     "roles": 105,
+     "drafted": 8,
+     "mined": 7,
+     "shown": 1,
+     "mined_per_100_roles": 6.67
+    },
+    {
+     "keying": "path",
+     "lang": "py",
+     "groups": 839,
+     "too_small": 533,
+     "one_file": 39,
+     "roles": 267,
+     "drafted": 8,
+     "mined": 2,
+     "shown": 0,
+     "mined_per_100_roles": 0.75
+    },
+    {
+     "keying": "path",
+     "lang": "ts",
+     "groups": 11391,
+     "too_small": 8094,
+     "one_file": 0,
+     "roles": 3297,
+     "drafted": 70,
+     "mined": 9,
+     "shown": 0,
+     "mined_per_100_roles": 0.27
+    }
+   ],
+   "families": [
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 703,
+     "drafted": 65,
+     "mined": 6,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "universal",
+     "drops": {
+      "universal": 322,
+      "wilson": 316,
+      "duplicate": 28,
+      "mandated": 18,
+      "cap_repo": 6,
+      "show_policy": 6,
+      "other_kind_outliers": 5,
+      "file_local": 2
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 79089,
+     "drafted": 49,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 78728,
+      "universal": 310,
+      "mandated": 16,
+      "duplicate": 15,
+      "call_family_hidden": 14,
+      "other_kind_outliers": 3,
+      "lift": 2,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "control",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 1839,
+     "drafted": 45,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 1536,
+      "universal": 214,
+      "lift": 44,
+      "lint": 33,
+      "duplicate": 6,
+      "cap_repo": 3,
+      "show_policy": 2,
+      "file_local": 1
+     }
+    },
+    {
+     "family": "named",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 40,
+     "mined": 3,
+     "proposed": 3,
+     "shown": 3,
+     "not_listed": 0,
+     "top_gate": "duplicate",
+     "drops": {
+      "duplicate": 24,
+      "cap_repo": 13
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 93176,
+     "drafted": 38,
+     "mined": 4,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 92912,
+      "universal": 226,
+      "mandated": 17,
+      "duplicate": 16,
+      "show_policy": 4,
+      "compiler": 1
+     }
+    },
+    {
+     "family": "control",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 2684,
+     "drafted": 22,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 2445,
+      "universal": 146,
+      "lift": 71,
+      "lint": 16,
+      "duplicate": 3,
+      "show_policy": 2,
+      "cap_repo": 1
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 124927,
+     "drafted": 16,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 124817,
+      "universal": 86,
+      "lift": 8,
+      "call_family_hidden": 6,
+      "how_built": 5,
+      "file_local": 2,
+      "mandated": 2,
+      "duplicate": 1
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 304,
+     "drafted": 13,
+     "mined": 5,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 197,
+      "indirect_base": 70,
+      "universal": 24,
+      "duplicate": 8,
+      "show_policy": 5
+     }
+    },
+    {
+     "family": "named",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 13,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "cap_repo",
+     "drops": {
+      "cap_repo": 6,
+      "duplicate": 4,
+      "mandated": 2,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 227,
+     "drafted": 8,
+     "mined": 2,
+     "proposed": 2,
+     "shown": 2,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 208,
+      "universal": 11,
+      "duplicate": 5,
+      "narrowed_out": 1
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 91201,
+     "drafted": 7,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 91135,
+      "universal": 59,
+      "duplicate": 3,
+      "show_policy": 2,
+      "compiler": 1,
+      "mandated": 1
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 3962,
+     "drafted": 6,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 3524,
+      "optional_key": 424,
+      "universal": 8,
+      "holders_one_file": 6
+     }
+    },
+    {
+     "family": "before",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 6,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "duplicate",
+     "drops": {
+      "duplicate": 3,
+      "how_built": 2,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "prefers_library",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 6,
+     "mined": 5,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "show_policy",
+     "drops": {
+      "show_policy": 5,
+      "cap_repo": 1
+     }
+    },
+    {
+     "family": "before",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 5,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "cap_repo",
+     "drops": {
+      "cap_repo": 2,
+      "how_built": 2,
+      "duplicate": 1
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "path",
+     "lang": "py",
+     "observed": 64,
+     "drafted": 4,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 45,
+      "universal": 15,
+      "merged": 2,
+      "duplicate": 1,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 874,
+     "drafted": 3,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 863,
+      "universal": 8,
+      "cap_repo": 1,
+      "duplicate": 1,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 6538,
+     "drafted": 2,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 6533,
+      "universal": 3,
+      "holders_one_file": 2
+     }
+    },
+    {
+     "family": "renders",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 3297,
+     "drafted": 2,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 3276,
+      "universal": 19,
+      "duplicate": 1,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "avoids:other",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 2,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "uncorroborated",
+     "drops": {
+      "uncorroborated": 2
+     }
+    },
+    {
+     "family": "avoids:other",
+     "keying": "path",
+     "lang": "py",
+     "observed": 0,
+     "drafted": 2,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "python_family_hidden",
+     "drops": {
+      "python_family_hidden": 1,
+      "uncorroborated": 1
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "path",
+     "lang": "py",
+     "observed": 1603,
+     "drafted": 1,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 1052,
+      "indirect_base": 409,
+      "refines_base": 126,
+      "universal": 15,
+      "holders_one_file": 1
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 451,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 446,
+      "universal": 4,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "wrapped_by:jsx",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 361,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 355,
+      "universal": 5,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "package_has",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 286,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 285,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "control",
+     "keying": "path",
+     "lang": "py",
+     "observed": 262,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 258,
+      "lift": 2,
+      "show_policy": 1,
+      "universal": 1
+     }
+    },
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 44,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 29,
+      "universal": 14,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "avoids:import",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 1,
+     "shown": 1,
+     "not_listed": 0,
+     "top_gate": null,
+     "drops": {}
+    },
+    {
+     "family": "avoids:import",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 1,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "duplicate",
+     "drops": {
+      "duplicate": 1
+     }
+    },
+    {
+     "family": "avoids:other",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 0,
+     "drafted": 1,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "uncorroborated",
+     "drops": {
+      "uncorroborated": 1
+     }
+    },
+    {
+     "family": "avoids:other",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "show_policy",
+     "drops": {
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "named",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 0,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 1,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "python_off",
+     "drops": {
+      "python_off": 1
+     }
+    },
+    {
+     "family": "renders",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 77718,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 77710,
+      "universal": 8
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "path",
+     "lang": "py",
+     "observed": 16525,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 16516,
+      "universal": 8,
+      "lift": 1
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "path",
+     "lang": "py",
+     "observed": 15151,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 14241,
+      "optional_key": 910
+     }
+    },
+    {
+     "family": "wrapped_by:jsx",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 10994,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 10992,
+      "universal": 2
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 2221,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 2215,
+      "universal": 6
+     }
+    },
+    {
+     "family": "model_has",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 1500,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 1498,
+      "universal": 2
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 1228,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 1228
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 623,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 623
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 454,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 454
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "path",
+     "lang": "py",
+     "observed": 284,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 284
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 217,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 127,
+      "indirect_base": 63,
+      "refines_base": 22,
+      "universal": 5
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 168,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 168
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 153,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 150,
+      "universal": 3
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 143,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 140,
+      "universal": 3
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 125,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 125
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 118,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 118
+     }
+    },
+    {
+     "family": "control",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 116,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 112,
+      "universal": 4
+     }
+    },
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "path",
+     "lang": "py",
+     "observed": 100,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 100
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 64,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 64
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 47,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 40,
+      "indirect_base": 7
+     }
+    },
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 30,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 25,
+      "universal": 5
+     }
+    },
+    {
+     "family": "control",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 22,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 21,
+      "lift": 1
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 17,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "universal",
+     "drops": {
+      "universal": 17
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "path",
+     "lang": "py",
+     "observed": 16,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 16
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 12,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 12
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 7,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 7
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 6,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 6
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "path",
+     "lang": "py",
+     "observed": 6,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 6
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 5,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 4,
+      "universal": 1
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "package",
+     "lang": "py",
+     "observed": 3,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 3
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 3,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 3
+     }
+    }
+   ]
+  },
+  "4": {
+   "keyings": [
+    {
+     "keying": "kind",
+     "lang": "py",
+     "groups": 1304,
+     "too_small": 1100,
+     "one_file": 76,
+     "roles": 128,
+     "drafted": 40,
+     "mined": 12,
+     "shown": 0,
+     "mined_per_100_roles": 9.38
+    },
+    {
+     "keying": "kind",
+     "lang": "ts",
+     "groups": 7213,
+     "too_small": 6554,
+     "one_file": 0,
+     "roles": 659,
+     "drafted": 134,
+     "mined": 25,
+     "shown": 8,
+     "mined_per_100_roles": 3.79
+    },
+    {
+     "keying": "package",
+     "lang": "py",
+     "groups": 17,
+     "too_small": 14,
+     "one_file": 0,
+     "roles": 3,
+     "drafted": 0,
+     "mined": 0,
+     "shown": 0,
+     "mined_per_100_roles": 0
+    },
+    {
+     "keying": "package",
+     "lang": "ts",
+     "groups": 347,
+     "too_small": 240,
+     "one_file": 0,
+     "roles": 107,
+     "drafted": 19,
+     "mined": 7,
+     "shown": 6,
+     "mined_per_100_roles": 6.54
+    },
+    {
+     "keying": "path",
+     "lang": "py",
+     "groups": 560,
+     "too_small": 345,
+     "one_file": 25,
+     "roles": 190,
+     "drafted": 10,
+     "mined": 4,
+     "shown": 0,
+     "mined_per_100_roles": 2.11
+    },
+    {
+     "keying": "path",
+     "lang": "ts",
+     "groups": 3978,
+     "too_small": 3011,
+     "one_file": 0,
+     "roles": 967,
+     "drafted": 94,
+     "mined": 18,
+     "shown": 2,
+     "mined_per_100_roles": 1.86
+    }
+   ],
+   "families": [
+    {
+     "family": "before",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 26,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "duplicate",
+     "drops": {
+      "duplicate": 10,
+      "cap_role": 8,
+      "cap_repo": 3,
+      "how_built": 3,
+      "show_policy": 2
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 45109,
+     "drafted": 24,
+     "mined": 3,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 45036,
+      "universal": 49,
+      "duplicate": 11,
+      "mandated": 8,
+      "show_policy": 3,
+      "compiler": 1,
+      "key_structure": 1
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 22720,
+     "drafted": 22,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 22613,
+      "universal": 85,
+      "call_family_hidden": 18,
+      "how_built": 2,
+      "show_policy": 2
+     }
+    },
+    {
+     "family": "named",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 22,
+     "mined": 7,
+     "proposed": 2,
+     "shown": 2,
+     "not_listed": 0,
+     "top_gate": "mandated",
+     "drops": {
+      "mandated": 11,
+      "show_policy": 5,
+      "duplicate": 3,
+      "file_local": 1
+     }
+    },
+    {
+     "family": "renders",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 17926,
+     "drafted": 21,
+     "mined": 5,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 17872,
+      "universal": 31,
+      "duplicate": 10,
+      "show_policy": 5,
+      "mandated": 4,
+      "lift": 2,
+      "cap_role": 1,
+      "tautology": 1
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 112,
+     "drafted": 21,
+     "mined": 6,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 89,
+      "duplicate": 13,
+      "show_policy": 6,
+      "universal": 5,
+      "merged": 2
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 34095,
+     "drafted": 19,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 34045,
+      "universal": 31,
+      "call_family_hidden": 9,
+      "how_built": 8,
+      "tautology": 2
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 201,
+     "drafted": 19,
+     "mined": 8,
+     "proposed": 8,
+     "shown": 8,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 154,
+      "universal": 38,
+      "duplicate": 11
+     }
+    },
+    {
+     "family": "named",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 16,
+     "mined": 4,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "duplicate",
+     "drops": {
+      "duplicate": 6,
+      "cap_repo": 5,
+      "show_policy": 4,
+      "path_params": 1
+     }
+    },
+    {
+     "family": "control",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 492,
+     "drafted": 10,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 469,
+      "universal": 13,
+      "duplicate": 4,
+      "input": 3,
+      "show_policy": 2,
+      "cap_repo": 1
+     }
+    },
+    {
+     "family": "avoids:import",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 10,
+     "mined": 5,
+     "proposed": 5,
+     "shown": 5,
+     "not_listed": 0,
+     "top_gate": "cap_avoid",
+     "drops": {
+      "cap_avoid": 3,
+      "duplicate": 1,
+      "lint_layering": 1
+     }
+    },
+    {
+     "family": "avoids:other",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 9,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "uncorroborated",
+     "drops": {
+      "uncorroborated": 7,
+      "lint": 2
+     }
+    },
+    {
+     "family": "before",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 8,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "duplicate",
+     "drops": {
+      "duplicate": 3,
+      "cap_repo": 2,
+      "how_built": 2,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 274,
+     "drafted": 7,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 204,
+      "universal": 63,
+      "duplicate": 5,
+      "show_policy": 2
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 6149,
+     "drafted": 6,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 6076,
+      "universal": 67,
+      "python_family_hidden": 5,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 58,
+     "drafted": 6,
+     "mined": 3,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 49,
+      "show_policy": 3,
+      "duplicate": 2,
+      "universal": 2,
+      "indirect_base": 1,
+      "tautology": 1
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "path",
+     "lang": "py",
+     "observed": 9334,
+     "drafted": 5,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 9327,
+      "duplicate": 2,
+      "show_policy": 2,
+      "universal": 2,
+      "narrowed_out": 1
+     }
+    },
+    {
+     "family": "model_has",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 3141,
+     "drafted": 5,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 3133,
+      "cap_repo": 4,
+      "universal": 3,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "avoids:other",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 5,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "uncorroborated",
+     "drops": {
+      "uncorroborated": 4,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "package_has",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 236,
+     "drafted": 4,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 232,
+      "cap_repo": 4
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 141,
+     "drafted": 4,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 67,
+      "indirect_base": 33,
+      "universal": 31,
+      "refines_base": 6,
+      "duplicate": 2,
+      "show_policy": 1,
+      "tautology": 1
+     }
+    },
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 31,
+     "drafted": 4,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 16,
+      "universal": 11,
+      "duplicate": 3,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "dependency_version",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 4,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "duplicate",
+     "drops": {
+      "duplicate": 2,
+      "cap_repo": 1,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 39405,
+     "drafted": 3,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 39394,
+      "universal": 8,
+      "duplicate": 2,
+      "cap_repo": 1
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 7207,
+     "drafted": 3,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 5711,
+      "optional_key": 1382,
+      "universal": 111,
+      "show_policy": 2,
+      "duplicate": 1
+     }
+    },
+    {
+     "family": "avoids:other",
+     "keying": "path",
+     "lang": "py",
+     "observed": 0,
+     "drafted": 3,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "uncorroborated",
+     "drops": {
+      "uncorroborated": 2,
+      "python_family_hidden": 1
+     }
+    },
+    {
+     "family": "avoids:import",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 2,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "duplicate",
+     "drops": {
+      "duplicate": 2
+     }
+    },
+    {
+     "family": "wrapped_by:jsx",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 1982,
+     "drafted": 1,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 1977,
+      "universal": 4,
+      "mandated": 1
+     }
+    },
+    {
+     "family": "control",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 929,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 906,
+      "universal": 22,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 394,
+     "drafted": 1,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 391,
+      "universal": 2,
+      "file_local": 1
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "path",
+     "lang": "py",
+     "observed": 206,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 175,
+      "indirect_base": 15,
+      "universal": 14,
+      "refines_base": 1,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "control",
+     "keying": "path",
+     "lang": "py",
+     "observed": 161,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 142,
+      "universal": 16,
+      "lift": 2,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 98,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 95,
+      "universal": 2,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "avoids:other",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 0,
+     "drafted": 1,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "uncorroborated",
+     "drops": {
+      "uncorroborated": 1
+     }
+    },
+    {
+     "family": "named",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 0,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 1,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "python_off",
+     "drops": {
+      "python_off": 1
+     }
+    },
+    {
+     "family": "named",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 1,
+     "shown": 1,
+     "not_listed": 0,
+     "top_gate": null,
+     "drops": {}
+    },
+    {
+     "family": "passes_key",
+     "keying": "path",
+     "lang": "py",
+     "observed": 7407,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 6297,
+      "optional_key": 1107,
+      "universal": 3
+     }
+    },
+    {
+     "family": "renders",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 5334,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 5329,
+      "universal": 5
+     }
+    },
+    {
+     "family": "wrapped_by:jsx",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 686,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 686
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 592,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 592
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 386,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 386
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 366,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 366
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "path",
+     "lang": "py",
+     "observed": 331,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 331
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 298,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 292,
+      "indirect_base": 6
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 257,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 257
+     }
+    },
+    {
+     "family": "control",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 128,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 118,
+      "universal": 10
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 107,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 107
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 62,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 62
+     }
+    },
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "path",
+     "lang": "py",
+     "observed": 60,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 60
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "path",
+     "lang": "py",
+     "observed": 43,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 43
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 39,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 39
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 33,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 31,
+      "universal": 2
+     }
+    },
+    {
+     "family": "control",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 18,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 17,
+      "universal": 1
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 18,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 18
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 14,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "universal",
+     "drops": {
+      "universal": 8,
+      "wilson": 6
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "path",
+     "lang": "py",
+     "observed": 14,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 14
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 7,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 7
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 5,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 5
+     }
+    },
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 5,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 5
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 5,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "indirect_base",
+     "drops": {
+      "indirect_base": 3,
+      "wilson": 2
+     }
+    },
+    {
+     "family": "wrapped_by:opens",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 5,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 5
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "package",
+     "lang": "py",
+     "observed": 3,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 3
+     }
+    },
+    {
+     "family": "wrapped_by:authenticates",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 3,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 3
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 3,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 3
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "path",
+     "lang": "py",
+     "observed": 2,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 2
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 2,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 2
+     }
+    }
+   ]
+  },
+  "5": {
+   "keyings": [
+    {
+     "keying": "kind",
+     "lang": "py",
+     "groups": 2346,
+     "too_small": 1857,
+     "one_file": 195,
+     "roles": 294,
+     "drafted": 28,
+     "mined": 8,
+     "shown": 0,
+     "mined_per_100_roles": 2.72
+    },
+    {
+     "keying": "kind",
+     "lang": "ts",
+     "groups": 7280,
+     "too_small": 6551,
+     "one_file": 0,
+     "roles": 729,
+     "drafted": 121,
+     "mined": 26,
+     "shown": 4,
+     "mined_per_100_roles": 3.57
+    },
+    {
+     "keying": "package",
+     "lang": "py",
+     "groups": 15,
+     "too_small": 8,
+     "one_file": 0,
+     "roles": 7,
+     "drafted": 0,
+     "mined": 0,
+     "shown": 0,
+     "mined_per_100_roles": 0
+    },
+    {
+     "keying": "package",
+     "lang": "ts",
+     "groups": 434,
+     "too_small": 246,
+     "one_file": 0,
+     "roles": 188,
+     "drafted": 43,
+     "mined": 15,
+     "shown": 2,
+     "mined_per_100_roles": 7.98
+    },
+    {
+     "keying": "path",
+     "lang": "py",
+     "groups": 1831,
+     "too_small": 1097,
+     "one_file": 103,
+     "roles": 631,
+     "drafted": 32,
+     "mined": 12,
+     "shown": 0,
+     "mined_per_100_roles": 1.9
+    },
+    {
+     "keying": "path",
+     "lang": "ts",
+     "groups": 5941,
+     "too_small": 4108,
+     "one_file": 0,
+     "roles": 1833,
+     "drafted": 88,
+     "mined": 20,
+     "shown": 6,
+     "mined_per_100_roles": 1.09
+    }
+   ],
+   "families": [
+    {
+     "family": "calls",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 48527,
+     "drafted": 50,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 48219,
+      "universal": 254,
+      "call_family_hidden": 41,
+      "lift": 4,
+      "tautology": 4,
+      "mandated": 2,
+      "show_policy": 2,
+      "duplicate": 1
+     }
+    },
+    {
+     "family": "package_has",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 681,
+     "drafted": 29,
+     "mined": 4,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 651,
+      "duplicate": 18,
+      "cap_role": 4,
+      "show_policy": 4,
+      "cap_repo": 3,
+      "universal": 1
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 103922,
+     "drafted": 27,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 103826,
+      "universal": 65,
+      "call_family_hidden": 22,
+      "how_built": 5,
+      "lift": 4
+     }
+    },
+    {
+     "family": "avoids:other",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 20,
+     "mined": 3,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "uncorroborated",
+     "drops": {
+      "uncorroborated": 17,
+      "show_policy": 3
+     }
+    },
+    {
+     "family": "control",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 448,
+     "drafted": 15,
+     "mined": 5,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 367,
+      "universal": 64,
+      "duplicate": 8,
+      "show_policy": 5,
+      "lift": 2,
+      "merged": 2
+     }
+    },
+    {
+     "family": "before",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 14,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "how_built",
+     "drops": {
+      "how_built": 14
+     }
+    },
+    {
+     "family": "avoids:other",
+     "keying": "path",
+     "lang": "py",
+     "observed": 0,
+     "drafted": 13,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "uncorroborated",
+     "drops": {
+      "uncorroborated": 13
+     }
+    },
+    {
+     "family": "named",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 13,
+     "mined": 5,
+     "proposed": 3,
+     "shown": 3,
+     "not_listed": 0,
+     "top_gate": "duplicate",
+     "drops": {
+      "duplicate": 6,
+      "mandated": 2,
+      "show_policy": 2
+     }
+    },
+    {
+     "family": "before",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 12,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "how_built",
+     "drops": {
+      "how_built": 11,
+      "duplicate": 1
+     }
+    },
+    {
+     "family": "dependency_version",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 11,
+     "mined": 8,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "show_policy",
+     "drops": {
+      "show_policy": 8,
+      "cap_role": 2,
+      "duplicate": 1
+     }
+    },
+    {
+     "family": "control",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 2120,
+     "drafted": 10,
+     "mined": 7,
+     "proposed": 3,
+     "shown": 3,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 1882,
+      "universal": 179,
+      "lift": 49,
+      "show_policy": 4,
+      "duplicate": 2,
+      "merged": 1
+     }
+    },
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 137,
+     "drafted": 10,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 86,
+      "universal": 41,
+      "tautology": 6,
+      "mandated": 4
+     }
+    },
+    {
+     "family": "model_has",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 2766,
+     "drafted": 9,
+     "mined": 9,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 2753,
+      "show_policy": 9,
+      "universal": 4
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 170,
+     "drafted": 6,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 167,
+      "duplicate": 5,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 50456,
+     "drafted": 5,
+     "mined": 3,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 50239,
+      "optional_key": 180,
+      "universal": 32,
+      "show_policy": 3,
+      "duplicate": 1,
+      "key_structure": 1
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 13242,
+     "drafted": 5,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 13191,
+      "universal": 36,
+      "lift": 9,
+      "duplicate": 2,
+      "show_policy": 2,
+      "mandated": 1,
+      "optional_key": 1
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 9058,
+     "drafted": 5,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 9048,
+      "universal": 5,
+      "duplicate": 2,
+      "narrowed_out": 1,
+      "show_policy": 1,
+      "tautology": 1
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "path",
+     "lang": "py",
+     "observed": 1158,
+     "drafted": 5,
+     "mined": 3,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 484,
+      "refines_base": 370,
+      "indirect_base": 293,
+      "universal": 6,
+      "show_policy": 3,
+      "duplicate": 1,
+      "tautology": 1
+     }
+    },
+    {
+     "family": "avoids:other",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 5,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "uncorroborated",
+     "drops": {
+      "uncorroborated": 3,
+      "duplicate": 1,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 4293,
+     "drafted": 4,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 3277,
+      "optional_key": 1003,
+      "universal": 5,
+      "lift": 4,
+      "show_policy": 2,
+      "duplicate": 1,
+      "tautology": 1
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 622,
+     "drafted": 4,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "refines_base",
+     "drops": {
+      "refines_base": 365,
+      "indirect_base": 123,
+      "wilson": 101,
+      "universal": 29,
+      "tautology": 3,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "path",
+     "lang": "py",
+     "observed": 184,
+     "drafted": 4,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 180,
+      "tautology": 2,
+      "duplicate": 1,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "avoids:import",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 4,
+     "mined": 2,
+     "proposed": 2,
+     "shown": 2,
+     "not_listed": 0,
+     "top_gate": "duplicate",
+     "drops": {
+      "duplicate": 1,
+      "merged": 1
+     }
+    },
+    {
+     "family": "avoids:other",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 0,
+     "drafted": 4,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "uncorroborated",
+     "drops": {
+      "uncorroborated": 4
+     }
+    },
+    {
+     "family": "named",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 0,
+     "drafted": 4,
+     "mined": 2,
+     "proposed": 2,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "duplicate",
+     "drops": {
+      "duplicate": 2,
+      "python_off": 2
+     }
+    },
+    {
+     "family": "avoids:import",
+     "keying": "path",
+     "lang": "py",
+     "observed": 0,
+     "drafted": 3,
+     "mined": 4,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "show_policy",
+     "drops": {
+      "show_policy": 4
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "path",
+     "lang": "py",
+     "observed": 24277,
+     "drafted": 2,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 21847,
+      "optional_key": 2426,
+      "universal": 2,
+      "show_policy": 1,
+      "tautology": 1
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 1292,
+     "drafted": 2,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 1289,
+      "duplicate": 1,
+      "show_policy": 1,
+      "universal": 1
+     }
+    },
+    {
+     "family": "control",
+     "keying": "path",
+     "lang": "py",
+     "observed": 620,
+     "drafted": 2,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 539,
+      "universal": 58,
+      "lift": 21,
+      "duplicate": 1,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 200,
+     "drafted": 2,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 198,
+      "show_policy": 2
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "path",
+     "lang": "py",
+     "observed": 112,
+     "drafted": 2,
+     "mined": 2,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 103,
+      "universal": 6,
+      "show_policy": 2,
+      "lift": 1
+     }
+    },
+    {
+     "family": "avoids:import",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 2,
+     "mined": 2,
+     "proposed": 2,
+     "shown": 2,
+     "not_listed": 0,
+     "top_gate": null,
+     "drops": {}
+    },
+    {
+     "family": "named",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 2,
+     "mined": 1,
+     "proposed": 1,
+     "shown": 1,
+     "not_listed": 0,
+     "top_gate": "file_local",
+     "drops": {
+      "file_local": 1
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "path",
+     "lang": "py",
+     "observed": 43371,
+     "drafted": 1,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 43357,
+      "universal": 13,
+      "duplicate": 1
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 300,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 249,
+      "indirect_base": 45,
+      "universal": 5,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 278,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 274,
+      "universal": 3,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 259,
+     "drafted": 1,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 258,
+      "file_local": 1,
+      "universal": 1
+     }
+    },
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 50,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "universal",
+     "drops": {
+      "universal": 42,
+      "wilson": 7,
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 31,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 1,
+     "shown": 1,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 27,
+      "universal": 3
+     }
+    },
+    {
+     "family": "prefers_library",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 0,
+     "drafted": 1,
+     "mined": 1,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "show_policy",
+     "drops": {
+      "show_policy": 1
+     }
+    },
+    {
+     "family": "renders",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 17749,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 17748,
+      "universal": 1
+     }
+    },
+    {
+     "family": "wrapped_by:jsx",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 2759,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 2759
+     }
+    },
+    {
+     "family": "renders",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 1614,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 1611,
+      "universal": 3
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "path",
+     "lang": "py",
+     "observed": 1036,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 1036
+     }
+    },
+    {
+     "family": "calls",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 442,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 442
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 197,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 197
+     }
+    },
+    {
+     "family": "control",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 175,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 167,
+      "universal": 5,
+      "lift": 3
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 152,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 152
+     }
+    },
+    {
+     "family": "wrapped_by:jsx",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 133,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 132,
+      "universal": 1
+     }
+    },
+    {
+     "family": "passes_key",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 77,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 77
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "path",
+     "lang": "py",
+     "observed": 63,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 63
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 59,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 48,
+      "indirect_base": 9,
+      "universal": 2
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 42,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 42
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 30,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 27,
+      "universal": 3
+     }
+    },
+    {
+     "family": "control",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 24,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 19,
+      "universal": 3,
+      "lift": 2
+     }
+    },
+    {
+     "family": "wrapped_by:decorator",
+     "keying": "path",
+     "lang": "ts",
+     "observed": 17,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 14,
+      "universal": 3
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 9,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 9
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 9,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 9
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "package",
+     "lang": "py",
+     "observed": 7,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 7
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "kind",
+     "lang": "ts",
+     "observed": 5,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 5
+     }
+    },
+    {
+     "family": "throws",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 4,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 4
+     }
+    },
+    {
+     "family": "wrapped_by:call",
+     "keying": "path",
+     "lang": "py",
+     "observed": 4,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 4
+     }
+    },
+    {
+     "family": "wrapped_by:extends",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 3,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 3
+     }
+    },
+    {
+     "family": "wrapped_by:try",
+     "keying": "package",
+     "lang": "ts",
+     "observed": 3,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "wilson",
+     "drops": {
+      "wilson": 3
+     }
+    },
+    {
+     "family": "has_test",
+     "keying": "kind",
+     "lang": "py",
+     "observed": 2,
+     "drafted": 0,
+     "mined": 0,
+     "proposed": 0,
+     "shown": 0,
+     "not_listed": 0,
+     "top_gate": "universal",
+     "drops": {
+      "universal": 2
+     }
+    }
+   ]
+  }
+ }
+}

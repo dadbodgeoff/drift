@@ -1,0 +1,36 @@
+4 conventions from 8543 units in 316 roles (0 default tier, 4 suggestions)
+
+4 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-50ff6f] packages/sdk-components-react-radix: exported values in src/** (*.ws files) are named `meta*`
+    evidence: 48/49 (lower bound 0.89, lift 38.1)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/sdk-components-react-radix/src/accordion.ws.ts#metaAccordion
+    outlier:  packages/sdk-components-react-radix/src/label.ws.ts:6 meta
+
+ 2. [D-72343d] packages/sdk-components-react-radix: exported values in src/** (*.props files) are named `props*`
+    evidence: 48/49 (lower bound 0.89, lift 37.3)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  packages/sdk-components-react-radix/src/__generated__/accordion.props.ts#propsAccordion
+    outlier:  packages/sdk-components-react-radix/src/__generated__/label.props.ts:3 props
+
+ 3. [D-681d54] packages/sdk-components-react: components in src/** are wrapped in forwardRef()
+    evidence: 42/43 (lower bound 0.88, lift 2.1)
+    tier:     suggestion (rule names a symbol from outside the repo)
+    agents:   not shown to agents (family below admission bar: 0% of 1)
+    example:  packages/sdk-components-react/src/alert.tsx#Alert
+    outlier:  packages/sdk-components-react/src/instant-scroll-restoration.tsx:45 InstantScrollRestoration
+
+ 4. [D-07af70] workspace packages use the @webstudio-is/tsconfig version most workspace packages use
+    evidence: 41/42 (lower bound 0.88, lift 1.0)
+    tier:     suggestion (rule kind dependency_version)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    split:    workspace:* 41, workspace:^ 1
+    example:  apps/builder/package.json#@webstudio-is/builder
+    outlier:  packages/sdk-cli/package.json:1 @webstudio-is/sdk-cli
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

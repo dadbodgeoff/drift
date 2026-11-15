@@ -1,0 +1,117 @@
+{
+  "run": "eval/study/runs/dev4-ts-2026-11-09/blindC-T19",
+  "items": [
+    {
+      "uid": "T19/D-afc638",
+      "repo": "T19",
+      "id": "D-afc638",
+      "rank": 1,
+      "summary": "files in packages/plugin-variables/** do not import from packages/operate/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "packages/plugin-variables",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:packages/operate"
+      },
+      "evidence": {
+        "holders": 289,
+        "total": 290,
+        "lower_bound": 0.98,
+        "lift": 3
+      },
+      "members": 290,
+      "example": "packages/plugin-variables/.madrun.js#(file)",
+      "python_members": null,
+      "outliers": 1,
+      "outlier_files": [
+        "packages/plugin-variables/lib/remove-unused/fixture/ts-import-equals-declaration.ts"
+      ],
+      "block": " 1. [D-afc638] files in packages/plugin-variables/** do not import from packages/operate/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 289/290 (lower bound 0.98, lift 3.0)\n    agents:   not shown to agents (block candidate: reaches agents once you accept it)\n    example:  packages/plugin-variables/.madrun.js#(file)\n    outlier:  packages/plugin-variables/lib/remove-unused/fixture/ts-import-equals-declaration.ts:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "T19/D-b24e52",
+      "repo": "T19",
+      "id": "D-b24e52",
+      "rank": 2,
+      "summary": "packages/plugin-variables: files in lib/remove-unused/** do not import from packages/putout/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "packages/plugin-variables",
+        "dir": "lib/remove-unused",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:packages/putout"
+      },
+      "evidence": {
+        "holders": 127,
+        "total": 133,
+        "lower_bound": 0.91,
+        "lift": 3
+      },
+      "members": 133,
+      "example": "packages/plugin-variables/lib/remove-unused/fixture.js#(file)",
+      "python_members": null,
+      "outliers": 6,
+      "outlier_files": [
+        "packages/plugin-variables/lib/remove-unused/get-vars/get-vars.js",
+        "packages/plugin-variables/lib/remove-unused/get-vars/index.js",
+        "packages/plugin-variables/lib/remove-unused/get-vars/use-params.js",
+        "packages/plugin-variables/lib/remove-unused/get-vars/visitors/call-expression.js",
+        "packages/plugin-variables/lib/remove-unused/get-vars/visitors/export-named-declaration.js",
+        "packages/plugin-variables/lib/remove-unused/index.js"
+      ],
+      "block": " 2. [D-b24e52] packages/plugin-variables: files in lib/remove-unused/** do not import from packages/putout/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 127/133 (lower bound 0.91, lift 3.0)\n    agents:   not shown to agents (block candidate: reaches agents once you accept it)\n    example:  packages/plugin-variables/lib/remove-unused/fixture.js#(file)\n    outlier:  packages/plugin-variables/lib/remove-unused/get-vars/get-vars.js:1 (file)\n    outlier:  packages/plugin-variables/lib/remove-unused/get-vars/index.js:1 (file)\n    outlier:  packages/plugin-variables/lib/remove-unused/get-vars/use-params.js:1 (file)\n    outlier:  packages/plugin-variables/lib/remove-unused/get-vars/visitors/call-expression.js:1 (file)\n    outlier:  packages/plugin-variables/lib/remove-unused/get-vars/visitors/export-named-declaration.js:1 (file)\n    outlier:  packages/plugin-variables/lib/remove-unused/index.js:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "T19/D-c79a9e",
+      "repo": "T19",
+      "id": "D-c79a9e",
+      "rank": 3,
+      "summary": "files in packages/plugin-types/** do not import from packages/putout/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "packages/plugin-types",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:packages/putout"
+      },
+      "evidence": {
+        "holders": 120,
+        "total": 123,
+        "lower_bound": 0.93,
+        "lift": 3
+      },
+      "members": 123,
+      "example": "packages/plugin-types/.madrun.js#(file)",
+      "python_members": null,
+      "outliers": 3,
+      "outlier_files": [
+        "packages/plugin-types/lib/apply-boolean/index.js",
+        "packages/plugin-types/lib/convert-typeof-to-is-type/index.js",
+        "packages/plugin-types/lib/remove-useless-constructor/index.js"
+      ],
+      "block": " 3. [D-c79a9e] files in packages/plugin-types/** do not import from packages/putout/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 120/123 (lower bound 0.93, lift 3.0)\n    agents:   not shown to agents (block candidate: reaches agents once you accept it)\n    example:  packages/plugin-types/.madrun.js#(file)\n    outlier:  packages/plugin-types/lib/apply-boolean/index.js:1 (file)\n    outlier:  packages/plugin-types/lib/convert-typeof-to-is-type/index.js:1 (file)\n    outlier:  packages/plugin-types/lib/remove-useless-constructor/index.js:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    }
+  ]
+}

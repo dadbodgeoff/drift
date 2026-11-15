@@ -1,0 +1,270 @@
+{
+  "labels_sha256": {
+    "A": "ed525503b4b92ca41cebe43038cef593623f3e7404ada8cd6eea4c1d95daa982",
+    "B": "74fb6c9bb0af2c312971950fc4e1c9b9dcc141858012072839e28814a630d01f"
+  },
+  "excluded": {
+    "repos": [
+      "CTFd"
+    ],
+    "uids": [
+      "CTFd/D-560792",
+      "CTFd/D-f6c1fb"
+    ],
+    "reason": "CTFd's labeller in the v3 calibration was stopped by a safety system (a false positive on capture-the-flag content); the repo is excluded from this run and its 2 proposals stay unlabelled",
+    "at": "2026-11-06T04:25:57.905Z"
+  },
+  "cases": [
+    {
+      "uid": "netbox/D-cc8d72",
+      "repo": "netbox",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "netbox/D-cc8d72",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "netbox/circuits/forms/filtersets.py",
+            "netbox/dcim/forms/filtersets.py",
+            "netbox/extras/forms/filtersets.py",
+            "netbox/users/forms/filtersets.py",
+            "netbox/core/forms/filtersets.py",
+            "netbox/netbox/forms/filtersets.py",
+            "netbox/utilities/forms/forms.py",
+            "netbox/templates/inc/filter_list.html",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "ConsoleConnectionFilterForm",
+              "verdict": "look"
+            },
+            {
+              "symbol": "InterfaceConnectionFilterForm",
+              "verdict": "look"
+            },
+            {
+              "symbol": "PowerConnectionFilterForm",
+              "verdict": "look"
+            },
+            {
+              "symbol": "NotificationGroupFilterForm",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Even tiny FilterForm subclasses group fields with FieldSet (ConfigRevisionFilterForm in core, TokenFilterForm in users, ImageAttachmentFilterForm in extras); the three dcim connection filter forms and NotificationGroupFilterForm could do the same and simply don't, falling back to the flat rendering in inc/filter_list.html. Hesitated with WRONG legit_outliers since the template fallback makes fieldsets optional.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "netbox/D-cc8d72",
+          "label": "WRONG",
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "netbox/circuits/forms/filtersets.py",
+            "netbox/dcim/forms/filtersets.py",
+            "netbox/extras/forms/filtersets.py",
+            "netbox/netbox/forms/filtersets.py",
+            "netbox/utilities/forms/forms.py",
+            "netbox/templates/inc/filter_list.html",
+            "netbox/dcim/views.py",
+            "netbox/extras/views.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "ConsoleConnectionFilterForm",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "InterfaceConnectionFilterForm",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "PowerConnectionFilterForm",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "NotificationGroupFilterForm",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "The three connection filter forms (dcim/forms/filtersets.py:2495-2543) are small non-model forms of three fields; filter_list.html falls back to listing all fields without fieldsets. Only NotificationGroupFilterForm is a plain omission, 1 of 4, so not most. Hesitated with ACCEPT.",
+          "rubric": "v3",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "saleor/D-e86c5d",
+      "repo": "saleor",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "saleor/D-e86c5d",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "saleor/graphql/account/bulk_mutations/customer_bulk_delete.py",
+            "saleor/graphql/account/tests/bulk_mutations/test_customer_bulk_delete.py",
+            "saleor/graphql/account/mixins.py",
+            "saleor/graphql/account/tests/mutations/account/test_account_register.py",
+            "saleor/graphql/account/mutations/account/account_register.py",
+            "saleor/graphql/account/mutations/staff/staff_create.py",
+            "saleor/graphql/account/tests/mutations/staff/test_staff_create.py",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "mixins.py",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Mutation modules each have a mirrored test_<name>.py (customer_bulk_delete, account_register, staff_create), but mixins.py is a shared mixin module (AddressMetadataMixin, AppImpersonateMixin) exercised through the address/account mutation tests, like the other untested support modules here (mutations/staff/base.py, sorters.py, types.py); 0 of 1 counted outliers is a mistake, so new helper modules would be flagged for nothing.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "saleor/D-e86c5d",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "saleor/graphql/account/bulk_mutations/customer_bulk_delete.py",
+            "saleor/graphql/account/mixins.py",
+            "saleor/graphql/account/tests/bulk_mutations/test_customer_bulk_delete.py",
+            "saleor/graphql/account/tests/test_i18n.py",
+            "saleor/graphql/account/tests/test_account_utils.py",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "mixins.py",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "Account modules have matching tests (test_customer_bulk_delete.py, test_i18n.py); mixins.py has none of its own, worth a second look, though the wording does not say how a test file is matched. Hesitated with WRONG.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "saleor/D-0da0cf",
+      "repo": "saleor",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "saleor/D-0da0cf",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "saleor/graphql/app/dataloaders/app.py",
+            "saleor/graphql/app/tests/queries/test_app.py",
+            "saleor/graphql/app/dataloaders/thumbnail.py",
+            "saleor/graphql/app/tests/queries/test_apps_installations.py",
+            "saleor/graphql/app/mutations/app_create.py",
+            "saleor/graphql/app/tests/mutations/test_app_create.py",
+            "saleor/graphql/app/mutations/app_token_create.py",
+            "saleor/graphql/app/tests/mutations/test_app_token_create.py",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "thumbnail.py",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R9"
+          ],
+          "reason": "Mutations have mirrored tests (app_create -> test_app_create.py), but the example dataloaders/app.py only matches by name collision with queries/test_app.py, which tests the app query; dataloaders here are tested through query tests, and thumbnail.py is two declarative BaseThumbnailBySizeAndFormatLoader subclasses covered by test_apps_installations.py thumbnail queries, so new dataloader modules would get false alarms. Hesitated with mixed_group.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "saleor/D-0da0cf",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "saleor/graphql/app/dataloaders/app.py",
+            "saleor/graphql/app/dataloaders/thumbnail.py",
+            "saleor/graphql/app/tests/test_app_by_token_loader_use_cache.py",
+            "saleor/graphql/app/tests/mutations/test_app_create.py",
+            "saleor/graphql/app/tests/test_utils.py",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "thumbnail.py",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "App modules have tests (test_app_create.py, test_utils.py, loader cache test); thumbnail.py loaders have none, worth a second look, but how a test file is matched is unclear. Hesitated with WRONG.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    }
+  ]
+}

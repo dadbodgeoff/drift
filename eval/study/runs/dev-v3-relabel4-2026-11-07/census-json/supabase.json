@@ -1,0 +1,993 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "cgu47-2c81ba4-1794051240",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel4/restage-2c81ba4/cache/repos/supabase",
+  "units": 19907,
+  "roles": 1160,
+  "conventions": 14,
+  "shown": 14,
+  "tiers": {
+    "default": 1,
+    "suggestion": 13
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-e93eb6",
+      "rank": 1,
+      "summary": "apps/docs: functions named `generateMetadata` in app/guides/** (page files) are wrapped in genGuideMeta()",
+      "role": {
+        "package": "apps/docs",
+        "dir": "app/guides",
+        "file": "page",
+        "entry": "-",
+        "kind": "function",
+        "export_name": "generateMetadata",
+        "members": 30
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "apps/docs/features/docs/GuidesMdx.utils.tsx#genGuideMeta"
+        ]
+      },
+      "evidence": {
+        "holders": 29,
+        "total": 30,
+        "lower_bound": 0.833,
+        "lift": 176.667
+      },
+      "rule_kind": "wrapped_by:call",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/docs/app/guides/ai-tools/[[...slug]]/page.tsx",
+        "symbol": "generateMetadata",
+        "line": 21
+      },
+      "outliers": [
+        {
+          "path": "apps/docs/app/guides/ai-tools/ai-prompts/[slug]/page.tsx",
+          "symbol": "generateMetadata",
+          "line": 58
+        }
+      ],
+      "outliers_total": 1
+    },
+    {
+      "id": "D-e97861",
+      "rank": 2,
+      "summary": "apps/studio: HTTP handlers in pages/** call apiWrapper()",
+      "role": {
+        "package": "apps/studio",
+        "dir": "pages",
+        "file": "*",
+        "entry": "http",
+        "kind": "function",
+        "members": 82
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "apps/studio/lib/api/apiWrapper.ts#apiWrapper"
+      },
+      "evidence": {
+        "holders": 71,
+        "total": 82,
+        "lower_bound": 0.776,
+        "lift": 52.148
+      },
+      "rule_kind": "calls",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/studio/pages/api/ai/code/complete.ts",
+        "symbol": "wrapper",
+        "line": 348
+      },
+      "outliers": [
+        {
+          "path": "apps/studio/pages/api/check-cname.ts",
+          "symbol": "handler",
+          "line": 5
+        },
+        {
+          "path": "apps/studio/pages/api/cli-release-version.ts",
+          "symbol": "handler",
+          "line": 13
+        },
+        {
+          "path": "apps/studio/pages/api/connect/index.ts",
+          "symbol": "getFileNames",
+          "line": 33
+        },
+        {
+          "path": "apps/studio/pages/api/enabled-features-overrides.ts",
+          "symbol": "handler",
+          "line": 5
+        },
+        {
+          "path": "apps/studio/pages/api/get-deployment-commit.ts",
+          "symbol": "handler",
+          "line": 33
+        },
+        {
+          "path": "apps/studio/pages/api/get-ip-address.ts",
+          "symbol": "handler",
+          "line": 3
+        },
+        {
+          "path": "apps/studio/pages/api/get-s3-keys.ts",
+          "symbol": "handler",
+          "line": 6
+        },
+        {
+          "path": "apps/studio/pages/api/get-utc-time.ts",
+          "symbol": "handler",
+          "line": 5
+        },
+        {
+          "path": "apps/studio/pages/api/integrations/stripe-sync.ts",
+          "symbol": "handler",
+          "line": 35
+        },
+        {
+          "path": "apps/studio/pages/api/mcp/index.ts",
+          "symbol": "handler",
+          "line": 48
+        },
+        {
+          "path": "apps/studio/pages/api/parse-query.ts",
+          "symbol": "handler",
+          "line": 98
+        }
+      ],
+      "outliers_total": 11
+    },
+    {
+      "id": "D-922bc7",
+      "rank": 3,
+      "summary": "packages/icons: exported values in src/** pass `fill` to createLucideIcon()",
+      "role": {
+        "package": "packages/icons",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "const",
+        "members": 31
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "packages/icons/src/createSupabaseIcon.ts#createLucideIcon",
+        "index": 2,
+        "key": "fill"
+      },
+      "evidence": {
+        "holders": 30,
+        "total": 30,
+        "lower_bound": 0.886,
+        "lift": 72.527,
+        "role_members": 31
+      },
+      "rule_kind": "passes_key",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/icons/src/icons/REST-api.ts",
+        "symbol": "RESTApi",
+        "line": 13
+      },
+      "outliers": [],
+      "outliers_total": 0,
+      "exempt": [
+        {
+          "path": "packages/icons/src/defaultAttributes.ts",
+          "symbol": "default",
+          "line": 1,
+          "code": "does_not_call",
+          "reason": "does not call createLucideIcon()"
+        }
+      ],
+      "key_type": "unknown"
+    },
+    {
+      "id": "D-9b2da2",
+      "rank": 4,
+      "summary": "apps/docs: layouts in app/** (layout files) render inside <Layout>",
+      "role": {
+        "package": "apps/docs",
+        "dir": "app",
+        "file": "layout",
+        "entry": "layout",
+        "kind": "component",
+        "members": 21
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "jsx",
+        "any_of": [
+          "apps/docs/layouts/guides/index.tsx#Layout"
+        ]
+      },
+      "evidence": {
+        "holders": 20,
+        "total": 21,
+        "lower_bound": 0.773,
+        "lift": 208.714
+      },
+      "rule_kind": "wrapped_by:jsx",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/docs/app/guides/ai-tools/layout.tsx",
+        "symbol": "AiToolsLayout",
+        "line": 3
+      },
+      "outliers": [
+        {
+          "path": "apps/docs/app/layout.tsx",
+          "symbol": "RootLayout",
+          "line": 57
+        }
+      ],
+      "outliers_total": 1
+    },
+    {
+      "id": "D-db9d80",
+      "rank": 5,
+      "summary": "apps/www: pages in pages/** render <NextSeo>",
+      "role": {
+        "package": "apps/www",
+        "dir": "pages",
+        "file": "*",
+        "entry": "page",
+        "kind": "component",
+        "members": 60
+      },
+      "rule": {
+        "type": "renders",
+        "component": "pkg:next-seo#NextSeo"
+      },
+      "evidence": {
+        "holders": 59,
+        "total": 60,
+        "lower_bound": 0.911,
+        "lift": 64.328
+      },
+      "rule_kind": "renders",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "apps/www/pages/assistant.tsx",
+        "symbol": "Assistant",
+        "line": 626
+      },
+      "outliers": [
+        {
+          "path": "apps/www/pages/launch-week/ticket.tsx",
+          "symbol": "Lw15Page",
+          "line": 7
+        }
+      ],
+      "outliers_total": 1
+    },
+    {
+      "id": "D-5bd6b4",
+      "rank": 6,
+      "summary": "apps/studio: exported values in data/** (keys files) are named `*Keys`",
+      "role": {
+        "package": "apps/studio",
+        "dir": "data",
+        "file": "keys",
+        "entry": "-",
+        "kind": "const",
+        "members": 87
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Keys"
+      },
+      "evidence": {
+        "holders": 85,
+        "total": 86,
+        "lower_bound": 0.937,
+        "lift": 29.954,
+        "role_members": 87
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/studio/data/__templates/keys.ts",
+        "symbol": "resourceKeys",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "apps/studio/data/third-party-auth/keys.ts",
+          "symbol": "keys",
+          "line": 1
+        }
+      ],
+      "outliers_total": 1,
+      "exempt": [
+        {
+          "path": "apps/studio/data/projects/keys.ts",
+          "symbol": "INFINITE_PROJECTS_KEY_PREFIX",
+          "line": 1,
+          "code": "companion",
+          "reason": "a constant beside projectKeys, which follows the scheme"
+        }
+      ]
+    },
+    {
+      "id": "D-cf40f5",
+      "rank": 7,
+      "summary": "apps/docs: layouts in app/** (layout files) are named `*Layout`",
+      "role": {
+        "package": "apps/docs",
+        "dir": "app",
+        "file": "layout",
+        "entry": "layout",
+        "kind": "component",
+        "members": 21
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Layout"
+      },
+      "evidence": {
+        "holders": 20,
+        "total": 21,
+        "lower_bound": 0.773,
+        "lift": 50.293
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/docs/app/guides/ai-tools/layout.tsx",
+        "symbol": "AiToolsLayout",
+        "line": 3
+      },
+      "outliers": [
+        {
+          "path": "apps/docs/app/guides/observability/layout.tsx",
+          "symbol": "MonitoringAndDebugging",
+          "line": 3
+        }
+      ],
+      "outliers_total": 1
+    },
+    {
+      "id": "D-df24f2",
+      "rank": 8,
+      "summary": "files in apps/studio/** use lucide-react for icons, not react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react",
+      "role": {
+        "package": "apps/studio",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 872
+      },
+      "rule": {
+        "type": "prefers_library",
+        "group": "icons",
+        "preferred": "lucide-react"
+      },
+      "evidence": {
+        "holders": 870,
+        "total": 872,
+        "lower_bound": 0.992,
+        "lift": 1.0,
+        "split": [
+          [
+            "lucide-react",
+            872
+          ],
+          [
+            "@heroicons/react",
+            2
+          ]
+        ]
+      },
+      "rule_kind": "prefers_library",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/studio/components/grid/components/editor/DateTimeEditor.tsx",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "apps/studio/components/interfaces/Linter/LintPageTabs.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/studio/components/interfaces/QueryPerformance/QueryPanel.tsx",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 2
+    },
+    {
+      "id": "D-3c4b60",
+      "rank": 9,
+      "summary": "packages/pg-meta: functions in src/** declare their return type",
+      "role": {
+        "package": "packages/pg-meta",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "function",
+        "members": 125
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 117,
+        "total": 123,
+        "lower_bound": 0.898,
+        "lift": 2.399,
+        "role_members": 125
+      },
+      "rule_kind": "control",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "packages/pg-meta/src/pg-format/index.ts",
+        "symbol": "acceptUntrustedSql",
+        "line": 396
+      },
+      "outliers": [
+        {
+          "path": "packages/pg-meta/src/pg-meta-functions.ts",
+          "symbol": "create",
+          "line": 282
+        },
+        {
+          "path": "packages/pg-meta/src/query/table-row-query.ts",
+          "symbol": "formatPatternMatchFilterValue",
+          "line": 94
+        },
+        {
+          "path": "packages/pg-meta/src/query/table-row-query.ts",
+          "symbol": "getPagination",
+          "line": 143
+        },
+        {
+          "path": "packages/pg-meta/src/sql/studio/advisor/lints.ts",
+          "symbol": "enrichLintsQuery",
+          "line": 3
+        },
+        {
+          "path": "packages/pg-meta/src/sql/studio/auth/get-users-common.ts",
+          "symbol": "prefixToUUID",
+          "line": 1
+        },
+        {
+          "path": "packages/pg-meta/src/sql/studio/database/privileges.ts",
+          "symbol": "getExposedTableCountsSql",
+          "line": 124
+        }
+      ],
+      "outliers_total": 6,
+      "exempt": [
+        {
+          "path": "packages/pg-meta/src/query/table-row-query.ts",
+          "symbol": "getDefaultOrderByColumns",
+          "line": 110,
+          "code": "shared_part",
+          "reason": "shared part used by 2 members"
+        },
+        {
+          "path": "packages/pg-meta/src/sql/tables.ts",
+          "symbol": "getTablesSql",
+          "line": 19,
+          "code": "shared_part",
+          "reason": "shared part used by 2 members"
+        }
+      ]
+    },
+    {
+      "id": "D-7c4152",
+      "rank": 10,
+      "summary": "files in apps/studio/** use dayjs for dates, not date-fns/moment/luxon",
+      "role": {
+        "package": "apps/studio",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 174
+      },
+      "rule": {
+        "type": "prefers_library",
+        "group": "dates",
+        "preferred": "dayjs"
+      },
+      "evidence": {
+        "holders": 162,
+        "total": 174,
+        "lower_bound": 0.883,
+        "lift": 1.0,
+        "split": [
+          [
+            "dayjs",
+            163
+          ],
+          [
+            "date-fns",
+            12
+          ]
+        ]
+      },
+      "rule_kind": "prefers_library",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/studio/components/grid/components/editor/DateTimeEditor.tsx",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "apps/studio/components/grid/components/header/filter/FilterPopoverNew.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/studio/components/grid/components/header/filter/FilterPopoverNew.utils.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/studio/components/interfaces/Auth/AuthProvidersForm/FormField.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/studio/components/interfaces/Integrations/templates/StripeSyncEngine/StripeSyncSettingsPage.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/studio/components/interfaces/Organization/PrivateApps/Apps/ViewAppSheet/ViewAppSheetInfo.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/studio/components/interfaces/Storage/StorageSettings/StorageCredItem.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/studio/components/ui/DataTable/DataTable.constants.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/studio/components/ui/DataTable/DataTable.utils.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/studio/components/ui/DataTable/DataTableSheetRowAction.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/studio/components/ui/DataTable/TimelineChart.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/studio/components/ui/DatePicker/TimeSplitInput.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/studio/components/ui/DatePicker/index.tsx",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 12
+    },
+    {
+      "id": "D-100c39",
+      "rank": 11,
+      "summary": "files in apps/www/** use lucide-react for icons, not react-icons/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react",
+      "role": {
+        "package": "apps/www",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 177
+      },
+      "rule": {
+        "type": "prefers_library",
+        "group": "icons",
+        "preferred": "lucide-react"
+      },
+      "evidence": {
+        "holders": 150,
+        "total": 177,
+        "lower_bound": 0.787,
+        "lift": 1.0,
+        "split": [
+          [
+            "lucide-react",
+            169
+          ],
+          [
+            "@heroicons/react",
+            27
+          ]
+        ]
+      },
+      "rule_kind": "prefers_library",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/www/_go/lead-gen/ask-supabase-select.tsx",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "apps/www/app/pricing/PricingContent.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/components/EventCallout.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/components/Footer/index.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/components/LaunchWeek/11/Releases/components/DaySection.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/components/LaunchWeek/12/Releases/components/DaySection.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/components/LaunchWeek/13/Releases/components/DaySection.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/components/LaunchWeek/14/Releases/components/DaySection.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/components/LaunchWeek/7/LaunchSection/ArticleButton.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/components/LaunchWeek/7/LaunchSection/ProductButton.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/components/LaunchWeek/7/LaunchSection/ProductButtonListItem.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/components/LaunchWeek/7/LaunchSection/index.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/components/LaunchWeek/X/Releases/components/DaySection.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/components/Pricing/PricingComputeSection.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/data/ga.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/data/solutions/agencies.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/data/solutions/agents.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/data/solutions/b2b-saas.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/data/solutions/beginners.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/data/solutions/developers.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/data/solutions/firebase.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/data/solutions/hackathon.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/data/solutions/innovation-teams.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/data/solutions/neon.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/data/solutions/postgres-developers.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/data/solutions/startups.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/pages/careers.tsx",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "apps/www/pages/events/[slug].tsx",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 27
+    },
+    {
+      "id": "D-d8dcea",
+      "rank": 12,
+      "summary": "apps/docs: functions in internals/** declare their return type",
+      "role": {
+        "package": "apps/docs",
+        "dir": "internals",
+        "file": "*",
+        "entry": "-",
+        "kind": "function",
+        "members": 35
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 33,
+        "total": 35,
+        "lower_bound": 0.814,
+        "lift": 2.416
+      },
+      "rule_kind": "control",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/docs/internals/internal-links.ts",
+        "symbol": "getInternalLinkBaseUrl",
+        "line": 33
+      },
+      "outliers": [
+        {
+          "path": "apps/docs/internals/files/reference-lib.ts",
+          "symbol": "generateReferencePages",
+          "line": 4
+        },
+        {
+          "path": "apps/docs/internals/internal-links.ts",
+          "symbol": "addBaseUrlPrefix",
+          "line": 40
+        }
+      ],
+      "outliers_total": 2
+    },
+    {
+      "id": "D-017ce5",
+      "rank": 13,
+      "summary": "apps/studio: functions in lib/** (*.utils files) declare their return type",
+      "role": {
+        "package": "apps/studio",
+        "dir": "lib",
+        "file": "*.utils",
+        "entry": "-",
+        "kind": "function",
+        "members": 42
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 38,
+        "total": 42,
+        "lower_bound": 0.779,
+        "lift": 2.319
+      },
+      "rule_kind": "control",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/studio/lib/ai/generate-assistant-response.utils.ts",
+        "symbol": "buildSystemPrompt",
+        "line": 19
+      },
+      "outliers": [
+        {
+          "path": "apps/studio/lib/ai/generate-assistant-response.utils.ts",
+          "symbol": "hideToolErrorsFromModel",
+          "line": 78
+        },
+        {
+          "path": "apps/studio/lib/ai/generate-assistant-response.utils.ts",
+          "symbol": "prepareMessagesForModel",
+          "line": 53
+        },
+        {
+          "path": "apps/studio/lib/api/snippets.utils.ts",
+          "symbol": "getSnippet",
+          "line": 210
+        },
+        {
+          "path": "apps/studio/lib/integrations/vercel-install.utils.ts",
+          "symbol": "buildVercelInstallRouteQuery",
+          "line": 68
+        }
+      ],
+      "outliers_total": 4
+    },
+    {
+      "id": "D-c59437",
+      "rank": 14,
+      "summary": "workspace packages define a `clean` script",
+      "role": {
+        "package": "",
+        "dir": ".",
+        "file": "package.json",
+        "entry": "-",
+        "kind": "package",
+        "members": 25
+      },
+      "rule": {
+        "type": "package_has",
+        "item": "script:clean"
+      },
+      "evidence": {
+        "holders": 23,
+        "total": 25,
+        "lower_bound": 0.75,
+        "lift": 1.0
+      },
+      "rule_kind": "package_has",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "apps/design-system/package.json",
+        "symbol": "design-system",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "apps/kb/package.json",
+          "symbol": "kb",
+          "line": 1
+        },
+        {
+          "path": "packages/tsconfig/package.json",
+          "symbol": "tsconfig",
+          "line": 1
+        }
+      ],
+      "outliers_total": 2
+    }
+  ],
+  "largest_role": null
+}

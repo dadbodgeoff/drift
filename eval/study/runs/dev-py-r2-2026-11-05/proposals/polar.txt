@@ -1,0 +1,156 @@
+15 conventions from 14125 units in 576 roles (8 default tier, 7 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-31bf00] server: HTTP handlers in polar/** (endpoints files) are wrapped in get_authentication_session() or Authenticator() or _web_user_or_anonymous() or get_login_organization() or AccountPolicyGuard() or OrgPolicyGuard() or PayoutAccountPolicyGuard() or WebUserAuthorizer() or WebUserAuthorizerFresh() or _get_client_dependency() or get_authentication_session() or _get_safe_return_url_dependency() or get_pagination_params() or OrderPolicyGuard() or get_db_read_session() or get_db_session()
+    evidence: 364/370 (lower bound 0.96, lift 7.5)
+    tier:     default
+    split:    Authenticator 228, OrgPolicyGuard 49, WebUserAuthorizer 22, get_db_session 19, WebUserAuthorizerFresh 9, get_authentication_session 5, PayoutAccountPolicyGuard 5, get_pagination_params 5, _get_safe_return_url_dependency 4, get_login_organization 3, AccountPolicyGuard 3, _get_client_dependency 3, get_db_read_session 3, _web_user_or_anonymous 2, get_authentication_session 2, OrderPolicyGuard 2
+    example:  server/polar/account/endpoints.py#get
+    outlier:  server/polar/agent/endpoints.py:150 auth_md
+    outlier:  server/polar/auth/endpoints.py:103 start
+    outlier:  server/polar/auth/sso/endpoints.py:149 authorize
+    outlier:  server/polar/customer_portal/auth/endpoints.py:44 start
+    outlier:  server/polar/event/endpoints.py:441 ingest_v2027_01
+    outlier:  server/polar/integrations/plain/endpoints.py:17 get_cards
+
+ 2. [D-77dc4b] server: job entry points in polar/** (tasks files) pass `priority` to actor()
+    evidence: 174/177 (lower bound 0.95, lift 18.5)
+    tier:     default
+    example:  server/polar/auth/tasks.py#auth_delete_expired
+    outlier:  server/polar/integrations/tinybird/tasks.py:35 ingest
+    outlier:  server/polar/support_case/tasks.py:69 notify_organization_of_new_message
+    outlier:  server/polar/webhook/tasks.py:66 webhook_event_send
+
+ 3. [D-093712] server: HTTP handlers in polar/** are wrapped in Authenticator() or _web_user_or_anonymous() or WebUserAuthorizer() or _RoleCheck() or _UnionBillingRoleCheck() or get_authorization_server() or get_token() or get_db_session()
+    evidence: 47/52 (lower bound 0.79, lift 7.4)
+    tier:     default
+    split:    Authenticator 16, _UnionBillingRoleCheck 8, get_db_session 6, _web_user_or_anonymous 5, _RoleCheck 4, get_authorization_server 4, WebUserAuthorizer 2, get_token 2
+    example:  server/polar/customer_portal/endpoints/benefit_grant.py#get
+    outlier:  server/polar/customer_portal/endpoints/customer.py:142 list_payment_methods
+    outlier:  server/polar/customer_portal/endpoints/customer_email_update.py:76 check_email_update
+    outlier:  server/polar/customer_portal/endpoints/oauth_accounts.py:81 authorize
+    outlier:  server/polar/oauth2/endpoints/well_known.py:16 well_known_jwks
+    outlier:  server/polar/oauth2/endpoints/well_known.py:36 well_known_oauth_protected_resource
+
+ 4. [D-f80e7c] server: classes in polar/** (repository files) extend RepositoryBase
+    evidence: 88/90 (lower bound 0.92, lift 29.7)
+    tier:     default
+    example:  server/polar/account/repository.py#AccountRepository
+    outlier:  server/polar/authz/repository.py:114 AuthzRepository
+    outlier:  server/polar/user_organization/repository.py:13 UserOrganizationRepository
+
+ 5. [D-9c16e6] server/emails: components in src/emails/** render <Text>
+    evidence: 44/45 (lower bound 0.88, lift 28.7)
+    tier:     default
+    example:  server/emails/src/emails/chargeback_prevention_refund.tsx#ChargebackPreventionRefund
+    outlier:  server/emails/src/emails/subscription_updated.tsx:14 SubscriptionUpdated
+
+ 6. [D-e5f85b] server: enums in polar/** extend StrEnum
+    evidence: 124/127 (lower bound 0.93, lift 14.0)
+    tier:     default
+    example:  server/polar/auth/permission.py#OrganizationPermission
+    outlier:  server/polar/models/organization.py:284 SupportTier
+    outlier:  server/polar/worker/_queues.py:4 TaskPriority
+    outlier:  server/polar/worker/_runner.py:134 RetryAction
+
+ 7. [D-26e577] clients/apps/orbit: pages in src/** (page files) render <PageHeader>
+    evidence: 29/30 (lower bound 0.83, lift 52.9)
+    tier:     default
+    example:  clients/apps/orbit/src/app/components/alert/page.tsx#AlertPage
+    outlier:  clients/apps/orbit/src/app/page.tsx:113 HomePage
+
+ 8. [D-f53bba] server: classes in polar/integrations/** (schemas files) extend Schema
+    evidence: 47/52 (lower bound 0.79, lift 2.8)
+    tier:     default
+    example:  server/polar/integrations/aws/s3/schemas.py#S3DownloadURL
+    outlier:  server/polar/integrations/plain/schemas.py:32 CustomerCard
+    outlier:  server/polar/integrations/plain/schemas.py:15 CustomerCardCustomer
+    outlier:  server/polar/integrations/plain/schemas.py:21 CustomerCardThread
+    outlier:  server/polar/integrations/plain/schemas.py:26 CustomerCardsRequest
+    outlier:  server/polar/integrations/plain/schemas.py:38 CustomerCardsResponse
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 9. [D-5ef201] server: job entry points in polar/** (tasks files) call AsyncSessionMaker()
+    evidence: 161/177 (lower bound 0.86, lift 18.5)
+    tier:     suggestion (rule kind calls)
+    example:  server/polar/auth/tasks.py#auth_delete_expired
+    outlier:  server/polar/benefit/tasks.py:106 benefit_enqueue_grants
+    outlier:  server/polar/eventstream/tasks.py:6 eventstream_publish
+    outlier:  server/polar/integrations/polar/tasks.py:78 add_member
+    outlier:  server/polar/integrations/polar/tasks.py:42 create_customer
+    outlier:  server/polar/integrations/polar/tasks.py:181 delete_customer
+    outlier:  server/polar/integrations/polar/tasks.py:161 remove_member
+    outlier:  server/polar/integrations/polar/tasks.py:214 track_organization_review_usage
+    outlier:  server/polar/integrations/polar/tasks.py:145 update_customer_slug
+    outlier:  server/polar/integrations/polar/tasks.py:114 update_member
+    outlier:  server/polar/integrations/tinybird/tasks.py:35 ingest
+    outlier:  server/polar/observability/invariants/tasks.py:42 check_invariant
+    outlier:  server/polar/observability/invariants/tasks.py:28 enqueue_invariants
+    outlier:  server/polar/observability/slo_report/tasks.py:22 slo_report_send_weekly
+    outlier:  server/polar/order/tasks.py:464 order_invoice
+    outlier:  server/polar/receipt/tasks.py:59 receipt_render
+    outlier:  server/polar/reducer/tasks.py:27 invalidate_cache
+
+10. [D-dfae92] clients/packages/ui: components in src/components/ui/** call cn()
+    evidence: 72/77 (lower bound 0.86, lift 19.8)
+    tier:     suggestion (rule kind calls)
+    example:  clients/packages/ui/src/components/ui/accordion.tsx#AccordionContent
+    outlier:  clients/packages/ui/src/components/ui/chart.tsx:78 ChartStyle
+    outlier:  clients/packages/ui/src/components/ui/command.tsx:65 CommandEmpty
+    outlier:  clients/packages/ui/src/components/ui/form.tsx:110 FormControl
+    outlier:  clients/packages/ui/src/components/ui/form.tsx:32 FormField
+    outlier:  clients/packages/ui/src/components/ui/sidebar.tsx:679 SidebarMenuSubItem
+
+11. [D-27ad3b] clients/apps/web: pages in src/app/(main)/dashboard/[*]/** (page files) call getServerSideAPI()
+    evidence: 49/55 (lower bound 0.78, lift 18.9)
+    tier:     suggestion (rule kind calls)
+    example:  clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/(home)/page.tsx#Page
+    outlier:  clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/customers/[customerId]/events/page.tsx:16 Page
+    outlier:  clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/customers/[customerId]/members/page.tsx:17 Page
+    outlier:  clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/customers/[customerId]/page.tsx:16 Page
+    outlier:  clients/apps/web/src/app/(main)/dashboard/[organization]/(header)/customers/[customerId]/usage/page.tsx:16 Page
+    outlier:  clients/apps/web/src/app/(main)/dashboard/[organization]/cli/token/page.tsx:8 Page
+    outlier:  clients/apps/web/src/app/(main)/dashboard/[organization]/onboarding/integrate/page.tsx:3 Page
+
+12. [D-fb4011] clients/apps/app: functions in hooks/polar/** call usePolarClient()
+    evidence: 34/38 (lower bound 0.76, lift 87.2)
+    tier:     suggestion (rule kind calls)
+    example:  clients/apps/app/hooks/polar/checkout_links.ts#useCheckoutLink
+    outlier:  clients/apps/app/hooks/polar/finance.ts:171 usePayout
+    outlier:  clients/apps/app/hooks/polar/metrics.ts:9 toISODate
+    outlier:  clients/apps/app/hooks/polar/metrics.ts:64 toValueDataPoints
+    outlier:  clients/apps/app/hooks/polar/users.ts:6 useDeleteUser
+
+13. [D-2ef961] server: classes in polar/models/** call orm.mapped_column()
+    evidence: 120/133 (lower bound 0.84, lift 18.6)
+    tier:     suggestion (rule kind calls)
+    example:  server/polar/models/account.py#Account
+    outlier:  server/polar/models/benefit.py:25 TaxApplicationMustBeSpecified
+    outlier:  server/polar/models/benefit_grant.py:55 BenefitGrantScopeArgs
+    outlier:  server/polar/models/benefit_grant.py:73 BenefitGrantScopeComparator
+    outlier:  server/polar/models/event.py:56 CustomerComparator
+    outlier:  server/polar/models/file.py:86 DownloadableFile
+    outlier:  server/polar/models/file.py:98 OrganizationAvatarFile
+    outlier:  server/polar/models/file.py:92 ProductMediaFile
+    outlier:  server/polar/models/file.py:104 SupportCaseAttachmentFile
+    outlier:  server/polar/models/merchant_migration_operation.py:63 MerchantMigrationOperation
+    outlier:  server/polar/models/merchant_migration_operation.py:42 MerchantMigrationOperationSelection
+    outlier:  server/polar/models/merchant_migration_operation.py:129 MerchantMigrationOperationType
+    outlier:  server/polar/models/organization.py:329 InvalidStatusTransitionError
+    outlier:  server/polar/models/organization.py:63 PayoutAccountNotReady
+
+14. [D-232dfa] server: exported values in polar/** (auth files) call Depends()
+    evidence: 79/81 (lower bound 0.91, lift 7.2)
+    tier:     suggestion (rule kind calls)
+    example:  server/polar/benefit/auth.py#BenefitGrantsRead
+    outlier:  server/polar/file/auth.py:16 FileRead
+    outlier:  server/polar/file/auth.py:24 FileWrite
+
+15. [D-f818d9] clients/packages/cli: files in src/services/** have a test file
+    evidence: 23/24 (lower bound 0.80, lift 3.6)
+    tier:     suggestion (rule kind has_test)
+    example:  clients/packages/cli/src/services/api.ts#(file)
+    outlier:  clients/packages/cli/src/services/billing-config/api.ts:1 (file)
+

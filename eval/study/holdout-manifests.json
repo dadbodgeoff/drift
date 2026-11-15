@@ -1,0 +1,280 @@
+{
+  "//": "Registered held-out manifests: sha256 of each one's canonicalised frozen core (coreSha in lib.mjs: set_id, role, frozen_at, repos, reserves, tier, max, pool), keyed by repo-relative path. prepare.mjs pins the scheme, and walks the git history of every held-out manifest file: any version that has frozen_at must still exist (same set_id) with an identical core, so re-pins, renames and scheme bumps are refused. `amendments` (append-only) are the only way a frozen core changes: the tier only, each in the history of every held-out run record (lib.mjs heldOutHistoryProblems). `corrections` (append-only) change a descriptive field (decision, by, note) of one amendment without rewriting it.",
+  "scheme": "core-v2",
+  "manifests": {
+    "eval/holdout.json": "ca69f1b9f514f100dbef25fccde123df0bde4e5cded768bdb3bc2619ba4d7d34",
+    "eval/holdout-py.json": "6c44f508e915191d7ffb272d95ed539efbf34e8f690221c5ae1670ff03a2d8d6",
+    "eval/holdout-primary.json": "6b8c9a25ee556846e7b5bf7061487a550f73f74c3fd97686153b229a53881d1c",
+    "eval/holdout-primary-py.json": "dcc7fdb945992d50da0968f06d33554175c70940e1ec0489c330723c612efd8d",
+    "eval/holdout-2-2026-11-07.json": "3543c20771ceedd74aeb023df4e92ac9c6b2bcf113b26320fbc71afb59a8dba3",
+    "eval/holdout-2-2026-11-07-py.json": "96943fb1adc0cb2d62d637b5e2ede8aeae9cb2d83aa7cac571a53680e5776740"
+  },
+  "amendments": [
+    {
+      "path": "eval/holdout-primary.json",
+      "set_id": "ts-primary-2026-11-05",
+      "superseded_core": "b48222ed54dc1508a9f553a5f757f1374756a1761a9f5f506e9477e09a964da3",
+      "core": "32eaec101864064205038c7cf6bd75f89d676d929898e399c3b9470a297fe5ef",
+      "fields": [
+        "tier"
+      ],
+      "decision": "D5",
+      "date": "2026-11-06",
+      "by": "founder (approved), lead (applied)",
+      "note": "tier replaced by eval/study/tier-d5.json before any held-out census; every other core field unchanged"
+    },
+    {
+      "path": "eval/holdout-primary-py.json",
+      "set_id": "py-primary-2026-11-05",
+      "superseded_core": "6fc408189780be6df93e63075d73103205e85273193b2116551ee3cc56668efb",
+      "core": "2cbf10577e1bd0b86cdf6df5c5b78fe70e42a59f76af390350f05978f74c7d64",
+      "fields": [
+        "tier"
+      ],
+      "decision": "D5",
+      "date": "2026-11-06",
+      "by": "founder (approved), lead (applied)",
+      "note": "tier replaced by eval/study/tier-d5.json before any held-out census; every other core field unchanged"
+    },
+    {
+      "path": "eval/holdout.json",
+      "set_id": "ts-2026-11-05",
+      "superseded_core": "9e3d162aec16fa3bbfe10c7c1be21748599b11c14d9271ba19ce26b61999e56d",
+      "core": "c1eff913350dd7f4cadb9a946d5165af4353e17d19c67294568478be4dfc31a1",
+      "fields": [
+        "tier"
+      ],
+      "decision": "D5",
+      "date": "2026-11-06",
+      "by": "lead (decided and applied)",
+      "note": "secondary set: tier replaced by eval/study/tier-d5.json before any held-out census, so it runs and measures the product's tier; every other core field unchanged"
+    },
+    {
+      "path": "eval/holdout-py.json",
+      "set_id": "py-2026-11-05",
+      "superseded_core": "b86b37c798478901e27931826ee5ada7edec13999985d7a88b172e2a9072159c",
+      "core": "7bb5fff9f853b531fadb444c18f720de7b33230b73b9ad01163f4e74ee20e598",
+      "fields": [
+        "tier"
+      ],
+      "decision": "D5",
+      "date": "2026-11-06",
+      "by": "lead (decided and applied)",
+      "note": "secondary set: tier replaced by eval/study/tier-d5.json before any held-out census, so it runs and measures the product's tier; every other core field unchanged"
+    },
+    {
+      "path": "eval/holdout-primary.json",
+      "set_id": "ts-primary-2026-11-05",
+      "superseded_core": "b48222ed54dc1508a9f553a5f757f1374756a1761a9f5f506e9477e09a964da3",
+      "core": "ebd52c7b07fc487a718c86cc2bc2e2264f1e30b45b6d4aa5c9696c3df3c64ed3",
+      "fields": [
+        "tier"
+      ],
+      "decision": "D7",
+      "date": "2026-11-06",
+      "by": "founder (approved), lead (applied)",
+      "note": "tier replaced by eval/study/tier-d7.json before any held-out census; every other core field unchanged"
+    },
+    {
+      "path": "eval/holdout-primary.json",
+      "set_id": "ts-primary-2026-11-05",
+      "superseded_core": "32eaec101864064205038c7cf6bd75f89d676d929898e399c3b9470a297fe5ef",
+      "core": "ebd52c7b07fc487a718c86cc2bc2e2264f1e30b45b6d4aa5c9696c3df3c64ed3",
+      "fields": [
+        "tier"
+      ],
+      "decision": "D7",
+      "date": "2026-11-06",
+      "by": "founder (approved), lead (applied)",
+      "note": "tier replaced by eval/study/tier-d7.json before any held-out census; every other core field unchanged"
+    },
+    {
+      "path": "eval/holdout-primary-py.json",
+      "set_id": "py-primary-2026-11-05",
+      "superseded_core": "6fc408189780be6df93e63075d73103205e85273193b2116551ee3cc56668efb",
+      "core": "409a10236e353fe05574affdb525e26147203c47e87466b33cd1f2fbe8538f38",
+      "fields": [
+        "tier"
+      ],
+      "decision": "D7",
+      "date": "2026-11-06",
+      "by": "founder (approved), lead (applied)",
+      "note": "tier replaced by eval/study/tier-d7.json before any held-out census; every other core field unchanged"
+    },
+    {
+      "path": "eval/holdout-primary-py.json",
+      "set_id": "py-primary-2026-11-05",
+      "superseded_core": "2cbf10577e1bd0b86cdf6df5c5b78fe70e42a59f76af390350f05978f74c7d64",
+      "core": "409a10236e353fe05574affdb525e26147203c47e87466b33cd1f2fbe8538f38",
+      "fields": [
+        "tier"
+      ],
+      "decision": "D7",
+      "date": "2026-11-06",
+      "by": "founder (approved), lead (applied)",
+      "note": "tier replaced by eval/study/tier-d7.json before any held-out census; every other core field unchanged"
+    },
+    {
+      "path": "eval/holdout.json",
+      "set_id": "ts-2026-11-05",
+      "superseded_core": "9e3d162aec16fa3bbfe10c7c1be21748599b11c14d9271ba19ce26b61999e56d",
+      "core": "ca69f1b9f514f100dbef25fccde123df0bde4e5cded768bdb3bc2619ba4d7d34",
+      "fields": [
+        "tier"
+      ],
+      "decision": "D7a",
+      "date": "2026-11-06",
+      "by": "lead (decided and applied)",
+      "note": "secondary set: tier replaced by eval/study/tier-d7.json before any held-out census, so it runs and measures the product's tier (decision D7); every other core field unchanged"
+    },
+    {
+      "path": "eval/holdout.json",
+      "set_id": "ts-2026-11-05",
+      "superseded_core": "c1eff913350dd7f4cadb9a946d5165af4353e17d19c67294568478be4dfc31a1",
+      "core": "ca69f1b9f514f100dbef25fccde123df0bde4e5cded768bdb3bc2619ba4d7d34",
+      "fields": [
+        "tier"
+      ],
+      "decision": "D7a",
+      "date": "2026-11-06",
+      "by": "lead (decided and applied)",
+      "note": "secondary set: tier replaced by eval/study/tier-d7.json before any held-out census, so it runs and measures the product's tier (decision D7); every other core field unchanged"
+    },
+    {
+      "path": "eval/holdout-py.json",
+      "set_id": "py-2026-11-05",
+      "superseded_core": "b86b37c798478901e27931826ee5ada7edec13999985d7a88b172e2a9072159c",
+      "core": "6c44f508e915191d7ffb272d95ed539efbf34e8f690221c5ae1670ff03a2d8d6",
+      "fields": [
+        "tier"
+      ],
+      "decision": "D7a",
+      "date": "2026-11-06",
+      "by": "lead (decided and applied)",
+      "note": "secondary set: tier replaced by eval/study/tier-d7.json before any held-out census, so it runs and measures the product's tier (decision D7); every other core field unchanged"
+    },
+    {
+      "path": "eval/holdout-py.json",
+      "set_id": "py-2026-11-05",
+      "superseded_core": "7bb5fff9f853b531fadb444c18f720de7b33230b73b9ad01163f4e74ee20e598",
+      "core": "6c44f508e915191d7ffb272d95ed539efbf34e8f690221c5ae1670ff03a2d8d6",
+      "fields": [
+        "tier"
+      ],
+      "decision": "D7a",
+      "date": "2026-11-06",
+      "by": "lead (decided and applied)",
+      "note": "secondary set: tier replaced by eval/study/tier-d7.json before any held-out census, so it runs and measures the product's tier (decision D7); every other core field unchanged"
+    },
+    {
+      "path": "eval/holdout-primary.json",
+      "set_id": "ts-primary-2026-11-05",
+      "superseded_core": "b48222ed54dc1508a9f553a5f757f1374756a1761a9f5f506e9477e09a964da3",
+      "core": "6b8c9a25ee556846e7b5bf7061487a550f73f74c3fd97686153b229a53881d1c",
+      "fields": [
+        "tier",
+        "reserves"
+      ],
+      "decision": "D9",
+      "date": "2026-11-07",
+      "by": "lead (decided), held-out run operator (applied)",
+      "note": "reserves extended by decision D9 (reserve exhaustion at runbook step 4), before any held-out census: 8 reserves appended, drawn by select-holdout.mjs extend (eval/study/selection/primary-2026-11-05-d9.json); every earlier reserve unchanged; tier as amended by D7"
+    },
+    {
+      "path": "eval/holdout-primary.json",
+      "set_id": "ts-primary-2026-11-05",
+      "superseded_core": "32eaec101864064205038c7cf6bd75f89d676d929898e399c3b9470a297fe5ef",
+      "core": "6b8c9a25ee556846e7b5bf7061487a550f73f74c3fd97686153b229a53881d1c",
+      "fields": [
+        "tier",
+        "reserves"
+      ],
+      "decision": "D9",
+      "date": "2026-11-07",
+      "by": "lead (decided), held-out run operator (applied)",
+      "note": "reserves extended by decision D9 (reserve exhaustion at runbook step 4), before any held-out census: 8 reserves appended, drawn by select-holdout.mjs extend (eval/study/selection/primary-2026-11-05-d9.json); every earlier reserve unchanged; tier as amended by D7"
+    },
+    {
+      "path": "eval/holdout-primary.json",
+      "set_id": "ts-primary-2026-11-05",
+      "superseded_core": "ebd52c7b07fc487a718c86cc2bc2e2264f1e30b45b6d4aa5c9696c3df3c64ed3",
+      "core": "6b8c9a25ee556846e7b5bf7061487a550f73f74c3fd97686153b229a53881d1c",
+      "fields": [
+        "reserves"
+      ],
+      "decision": "D9",
+      "date": "2026-11-07",
+      "by": "lead (decided), held-out run operator (applied)",
+      "note": "reserves extended by decision D9 (reserve exhaustion at runbook step 4), before any held-out census: 8 reserves appended, drawn by select-holdout.mjs extend (eval/study/selection/primary-2026-11-05-d9.json); every earlier reserve unchanged"
+    },
+    {
+      "path": "eval/holdout-primary-py.json",
+      "set_id": "py-primary-2026-11-05",
+      "superseded_core": "6fc408189780be6df93e63075d73103205e85273193b2116551ee3cc56668efb",
+      "core": "dcc7fdb945992d50da0968f06d33554175c70940e1ec0489c330723c612efd8d",
+      "fields": [
+        "tier",
+        "reserves"
+      ],
+      "decision": "D9",
+      "date": "2026-11-07",
+      "by": "lead (decided), held-out run operator (applied)",
+      "note": "reserves extended by decision D9 (reserve exhaustion at runbook step 4), before any held-out census: 4 reserves appended, drawn by select-holdout.mjs extend (eval/study/selection/primary-2026-11-05-d9.json); every earlier reserve unchanged; tier as amended by D7"
+    },
+    {
+      "path": "eval/holdout-primary-py.json",
+      "set_id": "py-primary-2026-11-05",
+      "superseded_core": "2cbf10577e1bd0b86cdf6df5c5b78fe70e42a59f76af390350f05978f74c7d64",
+      "core": "dcc7fdb945992d50da0968f06d33554175c70940e1ec0489c330723c612efd8d",
+      "fields": [
+        "tier",
+        "reserves"
+      ],
+      "decision": "D9",
+      "date": "2026-11-07",
+      "by": "lead (decided), held-out run operator (applied)",
+      "note": "reserves extended by decision D9 (reserve exhaustion at runbook step 4), before any held-out census: 4 reserves appended, drawn by select-holdout.mjs extend (eval/study/selection/primary-2026-11-05-d9.json); every earlier reserve unchanged; tier as amended by D7"
+    },
+    {
+      "path": "eval/holdout-primary-py.json",
+      "set_id": "py-primary-2026-11-05",
+      "superseded_core": "409a10236e353fe05574affdb525e26147203c47e87466b33cd1f2fbe8538f38",
+      "core": "dcc7fdb945992d50da0968f06d33554175c70940e1ec0489c330723c612efd8d",
+      "fields": [
+        "reserves"
+      ],
+      "decision": "D9",
+      "date": "2026-11-07",
+      "by": "lead (decided), held-out run operator (applied)",
+      "note": "reserves extended by decision D9 (reserve exhaustion at runbook step 4), before any held-out census: 4 reserves appended, drawn by select-holdout.mjs extend (eval/study/selection/primary-2026-11-05-d9.json); every earlier reserve unchanged"
+    }
+  ],
+  "corrections": [
+    {
+      "amendment": [
+        "eval/holdout.json",
+        "9e3d162aec16fa3bbfe10c7c1be21748599b11c14d9271ba19ce26b61999e56d",
+        "c1eff913350dd7f4cadb9a946d5165af4353e17d19c67294568478be4dfc31a1"
+      ],
+      "field": "decision",
+      "from": "D5",
+      "to": "D5a",
+      "date": "2026-11-06",
+      "by": "lead",
+      "reason": "D5 (founder-approved) covered the primary sets; measuring the secondary sets under the D5 tier is the lead decision D5a (2026-11-06). Recorded as a correction because amendments are append-only."
+    },
+    {
+      "amendment": [
+        "eval/holdout-py.json",
+        "b86b37c798478901e27931826ee5ada7edec13999985d7a88b172e2a9072159c",
+        "7bb5fff9f853b531fadb444c18f720de7b33230b73b9ad01163f4e74ee20e598"
+      ],
+      "field": "decision",
+      "from": "D5",
+      "to": "D5a",
+      "date": "2026-11-06",
+      "by": "lead",
+      "reason": "D5 (founder-approved) covered the primary sets; measuring the secondary sets under the D5 tier is the lead decision D5a (2026-11-06). Recorded as a correction because amendments are append-only."
+    }
+  ]
+}

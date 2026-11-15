@@ -1,0 +1,76 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems: []
+  suffixes:
+  - config
+  - stories
+  - test
+conventions:
+- id: D-a8984b
+  status: proposed
+  mode: advise
+  summary: >-
+    files in src/components/** do not import from src/files/** (declared
+    dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: src/components
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:src/files
+  evidence:
+    holders: 55
+    total: 56
+    lower_bound: 0.906
+    lift: 3.0
+  example: src/components/about-ipfs/AboutIpfs.js#(file)
+  selector_version: 2
+- id: D-f05190
+  status: proposed
+  mode: advise
+  summary: >-
+    files in src/components/** do not import from src/settings/** (declared
+    dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: src/components
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:src/settings
+  evidence:
+    holders: 55
+    total: 56
+    lower_bound: 0.906
+    lift: 3.0
+  example: src/components/about-ipfs/AboutIpfs.js#(file)
+  selector_version: 2
+- id: D-ca6863
+  status: proposed
+  mode: advise
+  summary: functions in src/lib/** do not call console.*
+  role:
+    package: ""
+    dir: src/lib
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: avoids
+    signal: console
+  evidence:
+    holders: 42
+    total: 44
+    lower_bound: 0.849
+    lift: 3.246
+  example: src/lib/count-dirs.js#countDirs
+  selector_version: 2

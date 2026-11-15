@@ -1,0 +1,683 @@
+[
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "Django-CRM",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/Django-CRM.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/0659a36c-aabd-4b65-8bda-55ae369c68f9/out.jsonl",
+    "expected": [
+      "Django-CRM/D-4a6ea2",
+      "Django-CRM/D-f135a4",
+      "Django-CRM/D-220569",
+      "Django-CRM/D-4b232f",
+      "Django-CRM/D-e62e87",
+      "Django-CRM/D-8ee062",
+      "Django-CRM/D-0bd0ec",
+      "Django-CRM/D-9c2214",
+      "Django-CRM/D-f01192"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T03:55:57.555Z",
+    "collected": {
+      "at": "2026-11-06T04:09:59.280Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/A/Django-CRM.jsonl",
+      "records": 9,
+      "sha256": "ab04d09ed9f05255b4e055da83ca485afb57d3808d31aefe63d81efb07c9305c"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "InvenTree",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/InvenTree.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/c831b483-1d3e-4b74-a545-35d606504f58/out.jsonl",
+    "expected": [
+      "InvenTree/D-47d790",
+      "InvenTree/D-43f01e",
+      "InvenTree/D-455913",
+      "InvenTree/D-6f225b",
+      "InvenTree/D-16c1ac",
+      "InvenTree/D-095ebc",
+      "InvenTree/D-7e788c",
+      "InvenTree/D-9838a4",
+      "InvenTree/D-f31910",
+      "InvenTree/D-b24fe0",
+      "InvenTree/D-71f3ec"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T03:55:57.556Z",
+    "collected": {
+      "at": "2026-11-06T04:09:59.295Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/A/InvenTree.jsonl",
+      "records": 11,
+      "sha256": "b26de4fdd251c86c53dcf756b2ba5bc71b69aa394d829cfd7cf9006c7ba33a83"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "ralph",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/ralph.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/891598dd-63bd-4007-b5db-858df25558a2/out.jsonl",
+    "expected": [
+      "ralph/D-4529f9",
+      "ralph/D-5b6f70",
+      "ralph/D-5bf491",
+      "ralph/D-b1df5c",
+      "ralph/D-43f01e",
+      "ralph/D-cfd5da"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T03:55:57.556Z",
+    "collected": {
+      "at": "2026-11-06T04:09:59.302Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/A/ralph.jsonl",
+      "records": 6,
+      "sha256": "f5b1a7fe1bc702290ff335833bf72060a1e80f4e552d2c115a881948237a9c65"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "Misago",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/Misago.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/20a99723-9ee3-4fd7-8af3-d917aa752c37/out.jsonl",
+    "expected": [
+      "Misago/D-c9ae1e",
+      "Misago/D-e72fc8",
+      "Misago/D-90a5d9",
+      "Misago/D-5862f4",
+      "Misago/D-b4e5ff",
+      "Misago/D-d8703c",
+      "Misago/D-d01155",
+      "Misago/D-d93d41"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T03:55:57.556Z",
+    "collected": {
+      "at": "2026-11-06T04:09:59.317Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/A/Misago.jsonl",
+      "records": 8,
+      "sha256": "c017d5e6f6a041f2e04c54f82eaccdda386e4c0dea3bd1d2937c21008d40bddd"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "paperless-ngx",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/paperless-ngx.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/7caa6b33-ae87-44c6-9160-0251b7449e5a/out.jsonl",
+    "expected": [
+      "paperless-ngx/D-c3460b",
+      "paperless-ngx/D-de2489",
+      "paperless-ngx/D-1d6a6a"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T03:55:57.557Z",
+    "collected": {
+      "at": "2026-11-06T04:09:59.329Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/A/paperless-ngx.jsonl",
+      "records": 3,
+      "sha256": "6f77a994e7915f54e4f2aee91a187fb9fd129f89148beb22cb7b5d3bf4a88a6a"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "wger",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/wger.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/560d92dd-cfa3-4485-bb26-66393a2449ea/out.jsonl",
+    "expected": [
+      "wger/D-82d21d",
+      "wger/D-db04dc",
+      "wger/D-3755b1"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T03:55:57.557Z",
+    "collected": {
+      "at": "2026-11-06T04:10:39.537Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/A/wger.jsonl",
+      "records": 3,
+      "sha256": "fb3157999b3baaa02b3c71682c54c74cb22abb62b806f5775b208e7389aeac3f"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "lotus",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/lotus.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/8fd7ccb1-a8d3-4957-b3a6-fa69100361eb/out.jsonl",
+    "expected": [
+      "lotus/D-e5b6fe",
+      "lotus/D-26d6a0",
+      "lotus/D-1cbdac",
+      "lotus/D-2ab768"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T03:55:57.557Z",
+    "collected": {
+      "at": "2026-11-06T04:09:59.338Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/A/lotus.jsonl",
+      "records": 4,
+      "sha256": "2bf8786df1bd15d705d75e35285b4b999ecd0107ac467e423fdc110a0d45bb1d"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "pontoon",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/pontoon.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/b58cb678-f4b9-414c-a22e-d04127d4eb4b/out.jsonl",
+    "expected": [
+      "pontoon/D-94fc85",
+      "pontoon/D-ddba4b"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T03:55:57.558Z",
+    "collected": {
+      "at": "2026-11-06T04:09:59.347Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/A/pontoon.jsonl",
+      "records": 2,
+      "sha256": "21301b7070341dd06018a69dbe479b6595d9c849f8ce29d0cd84a2987943d4c5"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "open-wearables",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/open-wearables.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/0dabe4e4-0f82-452b-941a-db3546c6b136/out.jsonl",
+    "expected": [
+      "open-wearables/D-3b39dc",
+      "open-wearables/D-ff3192",
+      "open-wearables/D-6606a8",
+      "open-wearables/D-262064",
+      "open-wearables/D-b21ebc",
+      "open-wearables/D-8ffd6f",
+      "open-wearables/D-baa886",
+      "open-wearables/D-4c541f"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T03:55:57.559Z",
+    "collected": {
+      "at": "2026-11-06T04:09:59.359Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/A/open-wearables.jsonl",
+      "records": 8,
+      "sha256": "c6c8196c8f96ecaa31393b3bd36e9d8c0221f1c3253737b5bc188e53df044378"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "tasking-manager",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/tasking-manager.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/b6c663a6-95be-436a-a40d-25642cb09835/out.jsonl",
+    "expected": [
+      "tasking-manager/D-cfe608",
+      "tasking-manager/D-3e220e",
+      "tasking-manager/D-c373f7",
+      "tasking-manager/D-86bd7f",
+      "tasking-manager/D-6ec938",
+      "tasking-manager/D-2dfb9d",
+      "tasking-manager/D-68243e",
+      "tasking-manager/D-4ede9c",
+      "tasking-manager/D-0dbb9f"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T03:55:57.559Z",
+    "collected": {
+      "at": "2026-11-06T04:09:59.364Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/A/tasking-manager.jsonl",
+      "records": 9,
+      "sha256": "62f73cc1aedd3e68d211ffdbaf7197003f0e77826cc04caa799fa454c7239ed1"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "simplelogin",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/simplelogin.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/ab00e3a5-2a09-4380-8d89-2f32a6ea6d80/out.jsonl",
+    "expected": [
+      "simplelogin/D-2a4960",
+      "simplelogin/D-7fa3b5",
+      "simplelogin/D-e29828",
+      "simplelogin/D-ace6d1",
+      "simplelogin/D-a4e9f4",
+      "simplelogin/D-8ab5d8",
+      "simplelogin/D-dbae61",
+      "simplelogin/D-a9b19b",
+      "simplelogin/D-dd624b",
+      "simplelogin/D-a1dfa4"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T03:55:57.559Z",
+    "collected": {
+      "at": "2026-11-06T04:09:59.367Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/A/simplelogin.jsonl",
+      "records": 10,
+      "sha256": "1bb856027cbb6bc76b366aea7041c4bb3f627b21670e107f086cc5b25dc9fb38"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "changedetection.io",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/changedetection.io.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/f7ead0ca-89f5-4705-ad84-4618bc95f6ad/out.jsonl",
+    "expected": [
+      "changedetection.io/D-2619c7",
+      "changedetection.io/D-7f369e",
+      "changedetection.io/D-1ce566"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T03:55:57.559Z",
+    "collected": {
+      "at": "2026-11-06T04:09:59.373Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/A/changedetection.io.jsonl",
+      "records": 3,
+      "sha256": "b342bcaf6b8a6a04eeae0d18f2f3c1320b6b551fabe9f97cc3018ba05aead53f"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "Django-CRM",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/Django-CRM.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/3f0f8ede-1fea-4792-924f-a2ee82472c70/out.jsonl",
+    "expected": [
+      "Django-CRM/D-4a6ea2",
+      "Django-CRM/D-f135a4",
+      "Django-CRM/D-220569",
+      "Django-CRM/D-4b232f",
+      "Django-CRM/D-e62e87",
+      "Django-CRM/D-8ee062",
+      "Django-CRM/D-0bd0ec",
+      "Django-CRM/D-9c2214",
+      "Django-CRM/D-f01192"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:09:59.506Z",
+    "collected": {
+      "at": "2026-11-06T04:18:16.882Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/B/Django-CRM.jsonl",
+      "records": 9,
+      "sha256": "cc97d67dc4b1bc5fb4daf4fc3a8d0c640f7a202dbfd5730e96b54c140fa55951"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "InvenTree",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/InvenTree.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/ae01f8b7-304b-4213-bb86-92a9cdb3da4b/out.jsonl",
+    "expected": [
+      "InvenTree/D-47d790",
+      "InvenTree/D-43f01e",
+      "InvenTree/D-455913",
+      "InvenTree/D-6f225b",
+      "InvenTree/D-16c1ac",
+      "InvenTree/D-095ebc",
+      "InvenTree/D-7e788c",
+      "InvenTree/D-9838a4",
+      "InvenTree/D-f31910",
+      "InvenTree/D-b24fe0",
+      "InvenTree/D-71f3ec"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:09:59.519Z",
+    "collected": {
+      "at": "2026-11-06T04:14:02.785Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/B/InvenTree.jsonl",
+      "records": 11,
+      "sha256": "27b1fa5e7b3ccb7d4033e670c47b8ed5bf8f30bf13b6bc58123e708c86e77d53"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "ralph",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/ralph.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/69302885-8ebf-4ac1-a372-6670eb98a899/out.jsonl",
+    "expected": [
+      "ralph/D-4529f9",
+      "ralph/D-5b6f70",
+      "ralph/D-5bf491",
+      "ralph/D-b1df5c",
+      "ralph/D-43f01e",
+      "ralph/D-cfd5da"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:09:59.520Z",
+    "collected": {
+      "at": "2026-11-06T04:18:16.886Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/B/ralph.jsonl",
+      "records": 6,
+      "sha256": "31838da526b61cb3c7df14748d5242cb5e9fb2d0503246a00249baa20cf33eca"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "Misago",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/Misago.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/c8b1ec66-5468-406a-83a3-dce820039074/out.jsonl",
+    "expected": [
+      "Misago/D-c9ae1e",
+      "Misago/D-e72fc8",
+      "Misago/D-90a5d9",
+      "Misago/D-5862f4",
+      "Misago/D-b4e5ff",
+      "Misago/D-d8703c",
+      "Misago/D-d01155",
+      "Misago/D-d93d41"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:09:59.521Z",
+    "collected": {
+      "at": "2026-11-06T04:14:12.791Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/B/Misago.jsonl",
+      "records": 8,
+      "sha256": "085cf005ed7899f1c093f6b247f1b3ddefe485f31a13a2e8f2232cffcdb320a1"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "paperless-ngx",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/paperless-ngx.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/67ae2481-2f96-4f37-aab2-7800059ba2ed/out.jsonl",
+    "expected": [
+      "paperless-ngx/D-c3460b",
+      "paperless-ngx/D-de2489",
+      "paperless-ngx/D-1d6a6a"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:09:59.533Z",
+    "collected": {
+      "at": "2026-11-06T04:14:02.802Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/B/paperless-ngx.jsonl",
+      "records": 3,
+      "sha256": "809e5b420b44ef964fb593dcfb95988394d7b549c4d4411417b2d0378b900643"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "lotus",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/lotus.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/fa683141-0665-4a5e-866a-eb4659e0280b/out.jsonl",
+    "expected": [
+      "lotus/D-e5b6fe",
+      "lotus/D-26d6a0",
+      "lotus/D-1cbdac",
+      "lotus/D-2ab768"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:09:59.535Z",
+    "collected": {
+      "at": "2026-11-06T04:25:50.262Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/B/lotus.jsonl",
+      "records": 4,
+      "sha256": "203322edb8524b6aaa7b7f340a30fdd068ff8324783c28ff53ae51d44ccfeff3"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "pontoon",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/pontoon.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/b78940d5-9e48-4a27-972b-e98e8f5c9e8c/out.jsonl",
+    "expected": [
+      "pontoon/D-94fc85",
+      "pontoon/D-ddba4b"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:09:59.536Z",
+    "collected": {
+      "at": "2026-11-06T04:18:16.898Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/B/pontoon.jsonl",
+      "records": 2,
+      "sha256": "be4c7afae24f2e2355f53a36c9910317410820609bd77e0e8a5a0516386dbe33"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "open-wearables",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/open-wearables.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/e3a5a68d-82e6-4deb-85b0-ea5d4ddd6929/out.jsonl",
+    "expected": [
+      "open-wearables/D-3b39dc",
+      "open-wearables/D-ff3192",
+      "open-wearables/D-6606a8",
+      "open-wearables/D-262064",
+      "open-wearables/D-b21ebc",
+      "open-wearables/D-8ffd6f",
+      "open-wearables/D-baa886",
+      "open-wearables/D-4c541f"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:09:59.537Z",
+    "collected": {
+      "at": "2026-11-06T04:18:16.906Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/B/open-wearables.jsonl",
+      "records": 8,
+      "sha256": "eb3602a2fbd5600a9631e80aaa4324f4d3a9c5b43771ef616859011c10899bfa"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "tasking-manager",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/tasking-manager.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/88375a28-fcc9-4842-8bb4-67f2ed275fd6/out.jsonl",
+    "expected": [
+      "tasking-manager/D-cfe608",
+      "tasking-manager/D-3e220e",
+      "tasking-manager/D-c373f7",
+      "tasking-manager/D-86bd7f",
+      "tasking-manager/D-6ec938",
+      "tasking-manager/D-2dfb9d",
+      "tasking-manager/D-68243e",
+      "tasking-manager/D-4ede9c",
+      "tasking-manager/D-0dbb9f"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:09:59.537Z",
+    "collected": {
+      "at": "2026-11-06T04:18:16.913Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/B/tasking-manager.jsonl",
+      "records": 9,
+      "sha256": "84136a05b16db855fa3fc0ef5517385ee6149a92e026afd17ad7882f3f93e447"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "simplelogin",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/simplelogin.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/c6920099-0633-4eff-8831-1810b2d32762/out.jsonl",
+    "expected": [
+      "simplelogin/D-2a4960",
+      "simplelogin/D-7fa3b5",
+      "simplelogin/D-e29828",
+      "simplelogin/D-ace6d1",
+      "simplelogin/D-a4e9f4",
+      "simplelogin/D-8ab5d8",
+      "simplelogin/D-dbae61",
+      "simplelogin/D-a9b19b",
+      "simplelogin/D-dd624b",
+      "simplelogin/D-a1dfa4"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:09:59.538Z",
+    "collected": {
+      "at": "2026-11-06T04:18:16.922Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/B/simplelogin.jsonl",
+      "records": 10,
+      "sha256": "c7cb9b651e9f084768bcff51f35d7b834d2572d8177990a5099afb4f9987d241"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "changedetection.io",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/changedetection.io.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/4741fea5-6be0-495c-9881-db9a6de20cf4/out.jsonl",
+    "expected": [
+      "changedetection.io/D-2619c7",
+      "changedetection.io/D-7f369e",
+      "changedetection.io/D-1ce566"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:09:59.538Z",
+    "collected": {
+      "at": "2026-11-06T04:25:50.270Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/B/changedetection.io.jsonl",
+      "records": 3,
+      "sha256": "10efdc99c8b97f8f3320788f26cbe8c764dc1433bda642e518186932464f1aee"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "wger",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/wger.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/15884f47-c902-46de-b8de-d3949a89b3e2/out.jsonl",
+    "expected": [
+      "wger/D-82d21d",
+      "wger/D-db04dc",
+      "wger/D-3755b1"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:10:39.735Z",
+    "collected": {
+      "at": "2026-11-06T04:18:16.930Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/B/wger.jsonl",
+      "records": 3,
+      "sha256": "81240773e4668edf419342900b4c454708b635d3b7173d955c75936e21fa8250"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "Django-CRM",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/adjudicate/C/Django-CRM.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/375bba22-a48e-4f92-b830-103e681cc95e/out.jsonl",
+    "expected": [
+      "Django-CRM/D-f135a4",
+      "Django-CRM/D-8ee062"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:26:18.434Z",
+    "collected": {
+      "at": "2026-11-06T04:30:30.174Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/C/Django-CRM.jsonl",
+      "records": 2,
+      "sha256": "a0ca8ca750052fca84094a92033d8ab3f399146674d0ece651cc4f34984b01ff"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "Misago",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/adjudicate/C/Misago.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/46e060ea-09e8-48be-8eef-768f0549ba9c/out.jsonl",
+    "expected": [
+      "Misago/D-90a5d9"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:26:18.434Z",
+    "collected": {
+      "at": "2026-11-06T04:30:30.178Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/C/Misago.jsonl",
+      "records": 1,
+      "sha256": "8fb0fee3c972b96026a8b28a1cc2d8a3309b6d94c9a98dbcaebf8aca6faadff7"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "lotus",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/adjudicate/C/lotus.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/a835f532-54e7-4faa-a27c-ac004239c235/out.jsonl",
+    "expected": [
+      "lotus/D-e5b6fe"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:26:18.435Z",
+    "collected": {
+      "at": "2026-11-06T04:30:30.180Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/C/lotus.jsonl",
+      "records": 1,
+      "sha256": "227f893d089e81cafd81afeff13f8ba3dcb8e031961bc9b8df3cad66e534c50d"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "open-wearables",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/adjudicate/C/open-wearables.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/c668e22b-fd86-4aa6-a2f5-6d34bc88f466/out.jsonl",
+    "expected": [
+      "open-wearables/D-3b39dc"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:26:18.435Z",
+    "collected": {
+      "at": "2026-11-06T04:30:30.183Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/C/open-wearables.jsonl",
+      "records": 1,
+      "sha256": "afbd5c983b9a2465178f6a8eac3543f4171735e9050f0449d58d2e85b83a9f6a"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "tasking-manager",
+    "prompt": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev-v3/wt/eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/adjudicate/C/tasking-manager.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/8aa17e88-a9db-4c6e-bfe8-ecd0f5643641/out.jsonl",
+    "expected": [
+      "tasking-manager/D-cfe608",
+      "tasking-manager/D-c373f7"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T04:26:18.436Z",
+    "collected": {
+      "at": "2026-11-06T04:30:30.183Z",
+      "dest": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/C/tasking-manager.jsonl",
+      "records": 2,
+      "sha256": "dfd6bfde8c2e7a2676ce79b72b739306e5b66916ee879a090c78eb6a049ffba5"
+    }
+  }
+]

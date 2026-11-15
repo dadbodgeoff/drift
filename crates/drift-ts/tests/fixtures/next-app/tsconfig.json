@@ -1,0 +1,9 @@
+{
+  // JSONC with comments and trailing commas, like real projects.
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": { "@/*": ["./*"], },
+    "experimentalDecorators": true,
+    "strict": true,
+  },
+}

@@ -1,0 +1,71 @@
+7 conventions from 4771 units in 231 roles (0 default tier, 7 suggestions)
+
+7 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-e4aff0] packages/core: classes in src/** do not throw a bare Error
+    evidence: 25/26 (lower bound 0.81, lift 3.0)
+    tier:     suggestion (rule kind avoids:other)
+    agents:   not shown to agents (family below admission bar: 50% of 2)
+    example:  packages/core/src/context-errors.ts#UnavailableInWorkflowContextError
+    outlier:  packages/core/src/test-support/append-only-world.ts:124 AppendOnlyWorld
+
+ 2. [D-6d8dac] workspace packages define a `build` script
+    evidence: 44/48 (lower bound 0.80, lift 1.0)
+    tier:     suggestion (rule kind package_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  docs/package.json#docs
+    outlier:  packages/tsconfig/package.json:1 @workflow/tsconfig
+    outlier:  workbench/python/package.json:1 @workflow/example-python
+    outlier:  workbench/sim-world/package.json:1 @workflow/sim-world-workbench
+    outlier:  workbench/vitest/package.json:1 @workflow/vitest-workbench
+
+ 3. [D-073046] workspace packages use the @types/node version most workspace packages use
+    evidence: 34/37 (lower bound 0.79, lift 1.0)
+    tier:     suggestion (rule kind dependency_version)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    split:    catalog: 35, ^22 1, ^22.10.0 1, ^22.10.7 1
+    example:  docs/package.json#docs
+    outlier:  tarballs/package.json:1 tarballs
+    outlier:  workbench/nest/package.json:1 @workflow/example-nest
+    outlier:  workbench/swc-playground/package.json:1 workflow-sdk-compiler-playground
+
+ 4. [D-8fbbad] workspace packages use the typescript version most workspace packages use
+    evidence: 32/35 (lower bound 0.78, lift 1.0)
+    tier:     suggestion (rule kind dependency_version)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    split:    catalog: 32, ^5 1, ^5.7.0 1, ^6.0.3 1
+    example:  docs/package.json#docs
+    outlier:  tarballs/package.json:1 tarballs
+    outlier:  workbench/sveltekit/package.json:1 @workflow/example-sveltekit
+    outlier:  workbench/swc-playground/package.json:1 workflow-sdk-compiler-playground
+
+ 5. [D-a526a7] workspace packages use the vitest version most workspace packages use
+    evidence: 20/21 (lower bound 0.77, lift 1.0)
+    tier:     suggestion (rule kind dependency_version)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    split:    catalog: 20, ^3.2.7 1
+    example:  packages/cli/package.json#@workflow/cli
+    outlier:  packages/web/package.json:1 @workflow/web
+
+ 6. [D-f75a3a] packages/web: functions in app/** (*.server files) call getWorldFromEnv() before createResponse()
+    evidence: 18/19 (lower bound 0.75, lift 1.0)
+    tier:     suggestion (rule kind before)
+    agents:   not shown to agents (family below admission bar: 10% of 10)
+    example:  packages/web/app/server/workflow-server-actions.server.ts#bulkCancelRuns
+    outlier:  packages/web/app/server/workflow-server-actions.server.ts:1260 fetchWorkflowsManifest
+
+ 7. [D-f834fe] workspace packages enable `esModuleInterop` in tsconfig
+    evidence: 42/48 (lower bound 0.75, lift 1.0)
+    tier:     suggestion (rule kind package_has)
+    agents:   not shown to agents (family below admission bar: 46% of 15)
+    example:  docs/package.json#docs
+    outlier:  packages/swc-plugin-workflow/package.json:1 @workflow/swc-plugin
+    outlier:  packages/tsconfig/package.json:1 @workflow/tsconfig
+    outlier:  workbench/astro/package.json:1 @workflow/example-astro
+    outlier:  workbench/nuxt/package.json:1 @workflow/example-nuxt
+    outlier:  workbench/python/package.json:1 @workflow/example-python
+    outlier:  workbench/vitest/package.json:1 @workflow/vitest-workbench
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

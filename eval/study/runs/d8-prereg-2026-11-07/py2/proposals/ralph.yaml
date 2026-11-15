@@ -1,0 +1,162 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - admin
+  - api
+  - apps
+  - base
+  - factories
+  - fields
+  - filters
+  - forms
+  - helpers
+  - mixins
+  - models
+  - routers
+  - serializers
+  - signals
+  - test_admin
+  - test_api
+  - test_models
+  - tests
+  - urls
+  - utils
+  - views
+  suffixes: []
+  layers:
+  - tests/apps
+  - tests/factories
+  - tests/models
+conventions:
+- id: D-5bf491
+  status: proposed
+  mode: advise
+  summary: exported values in src/** do not read os.environ directly
+  role:
+    package: ""
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: avoids
+    signal: os_environ
+  evidence:
+    holders: 106
+    total: 114
+    lower_bound: 0.868
+    lift: 4.118
+    python_members: 114
+  example: src/ralph/accounts/management/commands/_base.py#ANSI_ESCAPE_RE
+- id: D-43f01e
+  status: proposed
+  mode: advise
+  summary: classes in src/** (serializers files) are named `*Serializer`
+  role:
+    package: ""
+    dir: src
+    file: serializers
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Serializer"
+  evidence:
+    holders: 51
+    total: 54
+    lower_bound: 0.849
+    lift: 7.131
+    role_members: 55
+    python_members: 55
+  example: src/ralph/assets/api/serializers.py#AssetHolderSerializer
+- id: D-5b6f70
+  status: proposed
+  mode: advise
+  summary: classes in src/** (serializers files) extend RalphAPISerializer
+  role:
+    package: ""
+    dir: src
+    file: serializers
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - src/ralph/api/serializers.py#RalphAPISerializer
+  evidence:
+    holders: 49
+    total: 52
+    lower_bound: 0.844
+    lift: 7.619
+    role_members: 55
+    python_members: 55
+  example: src/ralph/assets/api/serializers.py#AssetHolderSerializer
+- id: D-b1df5c
+  status: proposed
+  mode: advise
+  summary: classes in src/** (api files) are named `*Serializer`
+  role:
+    package: ""
+    dir: src
+    file: api
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Serializer"
+  evidence:
+    holders: 58
+    total: 63
+    lower_bound: 0.827
+    lift: 7.08
+    python_members: 63
+  example: src/ralph/access_cards/api.py#AccessCardSerializer
+- id: D-4529f9
+  status: proposed
+  mode: advise
+  summary: classes in src/** (api files) extend RalphAPISerializer
+  role:
+    package: ""
+    dir: src
+    file: api
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - src/ralph/api/serializers.py#RalphAPISerializer
+  evidence:
+    holders: 54
+    total: 59
+    lower_bound: 0.816
+    lift: 7.33
+    role_members: 63
+    python_members: 63
+  example: src/ralph/access_cards/api.py#AccessCardSerializer
+- id: D-cfd5da
+  status: proposed
+  mode: advise
+  summary: functions in src/ralph/switchports/** declare their return type
+  role:
+    package: ""
+    dir: src/ralph/switchports
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 31
+    total: 34
+    lower_bound: 0.77
+    lift: 5.553
+    python_members: 34
+  example: src/ralph/switchports/connections/planning.py#switch_port_owner

@@ -1,0 +1,27 @@
+TS layering proposals (census --all --max 200), per fold. Shown = census --json --max 15.
+fold	repos	cards	shown	outliers	split_roles	split_cards	h1_widenable_in_principle	h1_widenable_in_principle_shown	h2_strict	h2_strict_shown	h2_loose	h2_loose_shown	h3_type_only_importers	h3_type_only_importers_shown	h3_files
+1	4	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+2	4	4	4	24	1	4	0	0	1	1	1	1	2	2	17
+3	4	1	1	1	0	0	1	1	0	0	0	0	0	0	0
+4	4	8	5	19	2	4	2	1	0	0	2	2	2	0	3
+5	12	4	4	6	0	0	2	2	0	0	1	1	0	0	0
+all	28	17	14	50	3	8	5	4	1	1	4	4	4	2	20
+
+Labels of shown cards (relabel5 / dev3), by tag, per fold:
+  fold 2 any: ACCEPT 4
+  fold 2 h2_loose: ACCEPT 1
+  fold 2 h2_strict: ACCEPT 1
+  fold 2 h3_type_only_importers: ACCEPT 2
+  fold 3 any: ACCEPT 1
+  fold 3 h1_widenable_in_principle: ACCEPT 1
+  fold 4 any: ACCEPT 5
+  fold 4 h1_widenable_in_principle: ACCEPT 1
+  fold 4 h2_loose: ACCEPT 2
+  fold 5 any: ACCEPT 1, TRIVIAL 1, WRONG:legit_outliers 1, WRONG:mixed_group 1
+  fold 5 h1_widenable_in_principle: WRONG:legit_outliers 1, WRONG:mixed_group 1
+  fold 5 h2_loose: WRONG:legit_outliers 1
+  fold all any: ACCEPT 11, TRIVIAL 1, WRONG:legit_outliers 1, WRONG:mixed_group 1
+  fold all h1_widenable_in_principle: ACCEPT 2, WRONG:legit_outliers 1, WRONG:mixed_group 1
+  fold all h2_loose: ACCEPT 3, WRONG:legit_outliers 1
+  fold all h2_strict: ACCEPT 1
+  fold all h3_type_only_importers: ACCEPT 2

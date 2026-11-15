@@ -1,0 +1,1209 @@
+{
+  "run": "eval/study/runs/dev-ts-r2-2026-11-05/relabel",
+  "items": [
+    {
+      "uid": "twenty/D-868e25",
+      "repo": "twenty",
+      "id": "D-868e25",
+      "rank": 15,
+      "summary": "packages/twenty-front: components in src/modules/command-menu-item/engine-command/record/** call useHeadlessCommandContextApi()",
+      "role": {
+        "package": "packages/twenty-front",
+        "dir": "src/modules/command-menu-item/engine-command/record",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "packages/twenty-front/src/modules/command-menu-item/engine-command/hooks/useHeadlessCommandContextApi.ts#useHeadlessCommandContextApi"
+      },
+      "evidence": {
+        "holders": 49,
+        "total": 54,
+        "lower_bound": 0.8,
+        "lift": 64.1
+      },
+      "members": 54,
+      "example": "packages/twenty-front/src/modules/command-menu-item/engine-command/record/components/AddRecordsToMessageListCommand.tsx#AddRecordsToMessageListCommand",
+      "outliers": 5,
+      "outlier_files": [
+        "packages/twenty-front/src/modules/command-menu-item/engine-command/record/components/OpenEmailBlockSettingsSingleRecordCommand.tsx",
+        "packages/twenty-front/src/modules/command-menu-item/engine-command/record/components/OpenEmailPageStyleSingleRecordCommand.tsx",
+        "packages/twenty-front/src/modules/command-menu-item/engine-command/record/no-selection/components/CreateGlobalRecordCommand.tsx",
+        "packages/twenty-front/src/modules/command-menu-item/engine-command/record/single-record/workflow-runs/components/RetryWorkflowRunSingleRecordCommand.tsx",
+        "packages/twenty-front/src/modules/command-menu-item/engine-command/record/single-record/workflow-runs/components/StopWorkflowRunSingleRecordCommand.tsx"
+      ],
+      "block": "15. [D-868e25] packages/twenty-front: components in src/modules/command-menu-item/engine-command/record/** call useHeadlessCommandContextApi()\n    evidence: 49/54 (lower bound 0.80, lift 64.1)\n    example:  packages/twenty-front/src/modules/command-menu-item/engine-command/record/components/AddRecordsToMessageListCommand.tsx#AddRecordsToMessageListCommand\n    outlier:  packages/twenty-front/src/modules/command-menu-item/engine-command/record/components/OpenEmailBlockSettingsSingleRecordCommand.tsx:4 OpenEmailBlockSettingsSingleRecordCommand\n    outlier:  packages/twenty-front/src/modules/command-menu-item/engine-command/record/components/OpenEmailPageStyleSingleRecordCommand.tsx:4 OpenEmailPageStyleSingleRecordCommand\n    outlier:  packages/twenty-front/src/modules/command-menu-item/engine-command/record/no-selection/components/CreateGlobalRecordCommand.tsx:9 CreateGlobalRecordCommand\n    outlier:  packages/twenty-front/src/modules/command-menu-item/engine-command/record/single-record/workflow-runs/components/RetryWorkflowRunSingleRecordCommand.tsx:5 RetryWorkflowRunSingleRecordCommand\n    outlier:  packages/twenty-front/src/modules/command-menu-item/engine-command/record/single-record/workflow-runs/components/StopWorkflowRunSingleRecordCommand.tsx:5 StopWorkflowRunSingleRecordCommand",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "default"
+    },
+    {
+      "uid": "formbricks/D-514f45",
+      "repo": "formbricks",
+      "id": "D-514f45",
+      "rank": 12,
+      "summary": "apps/web: files in lib/** have a test file",
+      "role": {
+        "package": "apps/web",
+        "dir": "lib",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "has_test"
+      },
+      "evidence": {
+        "holders": 177,
+        "total": 215,
+        "lower_bound": 0.77,
+        "lift": 2.2
+      },
+      "members": 215,
+      "example": "apps/web/lib/ai/availability.ts#(file)",
+      "outliers": 38,
+      "outlier_files": [
+        "apps/web/lib/analysis-export/files.ts",
+        "apps/web/lib/authorization/evaluator.ts",
+        "apps/web/lib/authzed/backfill-apply.ts",
+        "apps/web/lib/authzed/backfill-cli-command.ts",
+        "apps/web/lib/authzed/index.ts",
+        "apps/web/lib/authzed/organization-parent.ts",
+        "apps/web/lib/authzed/outbox-types.ts",
+        "apps/web/lib/authzed/projection-boundary.ts",
+        "apps/web/lib/authzed/projection.ts",
+        "apps/web/lib/authzed/relationship-batches.ts",
+        "apps/web/lib/authzed/survey-relationships.ts",
+        "apps/web/lib/brand-color.ts",
+        "apps/web/lib/cn.ts",
+        "apps/web/lib/env-client.ts",
+        "apps/web/lib/feedback-source/survey-elements.ts",
+        "apps/web/lib/instance.ts",
+        "apps/web/lib/jobs/recurring-registrations.ts",
+        "apps/web/lib/localStorage.ts",
+        "apps/web/lib/markdownIt.ts",
+        "apps/web/lib/optimizable-image-hosts.mjs",
+        "apps/web/lib/pollyfills/structuredClone.ts",
+        "apps/web/lib/posthog/ai-tracing-feature.ts",
+        "apps/web/lib/posthog/index.ts",
+        "apps/web/lib/response/pagination.ts",
+        "apps/web/lib/sentry/SentryClientConfigScript.tsx",
+        "apps/web/lib/sentry/SentryUser.tsx",
+        "apps/web/lib/sentry/client-runtime-config.ts",
+        "apps/web/lib/sentry/replay-integration.ts",
+        "apps/web/lib/survey/fill-codes.ts",
+        "apps/web/lib/survey/visibility/actor-context.ts",
+        "apps/web/lib/survey/visibility/api-key.ts",
+        "apps/web/lib/survey/visibility/gates.ts",
+        "apps/web/lib/user/public-user.ts",
+        "apps/web/lib/utils/debounce.ts",
+        "apps/web/lib/utils/hooks/useClickOutside.ts",
+        "apps/web/lib/utils/hooks/useSyncScroll.ts",
+        "apps/web/lib/utils/object.ts",
+        "apps/web/lib/utils/postgres-text.ts"
+      ],
+      "block": "12. [D-514f45] apps/web: files in lib/** have a test file\n    evidence: 177/215 (lower bound 0.77, lift 2.2)\n    example:  apps/web/lib/ai/availability.ts#(file)\n    outlier:  apps/web/lib/analysis-export/files.ts:1 (file)\n    outlier:  apps/web/lib/authorization/evaluator.ts:1 (file)\n    outlier:  apps/web/lib/authzed/backfill-apply.ts:1 (file)\n    outlier:  apps/web/lib/authzed/backfill-cli-command.ts:1 (file)\n    outlier:  apps/web/lib/authzed/index.ts:1 (file)\n    outlier:  apps/web/lib/authzed/organization-parent.ts:1 (file)\n    outlier:  apps/web/lib/authzed/outbox-types.ts:1 (file)\n    outlier:  apps/web/lib/authzed/projection-boundary.ts:1 (file)\n    outlier:  apps/web/lib/authzed/projection.ts:1 (file)\n    outlier:  apps/web/lib/authzed/relationship-batches.ts:1 (file)\n    outlier:  apps/web/lib/authzed/survey-relationships.ts:1 (file)\n    outlier:  apps/web/lib/brand-color.ts:1 (file)\n    outlier:  apps/web/lib/cn.ts:1 (file)\n    outlier:  apps/web/lib/env-client.ts:1 (file)\n    outlier:  apps/web/lib/feedback-source/survey-elements.ts:1 (file)\n    outlier:  apps/web/lib/instance.ts:1 (file)\n    outlier:  apps/web/lib/jobs/recurring-registrations.ts:1 (file)\n    outlier:  apps/web/lib/localStorage.ts:1 (file)\n    outlier:  apps/web/lib/markdownIt.ts:1 (file)\n    outlier:  apps/web/lib/optimizable-image-hosts.mjs:1 (file)\n    outlier:  apps/web/lib/pollyfills/structuredClone.ts:1 (file)\n    outlier:  apps/web/lib/posthog/ai-tracing-feature.ts:1 (file)\n    outlier:  apps/web/lib/posthog/index.ts:1 (file)\n    outlier:  apps/web/lib/response/pagination.ts:1 (file)\n    outlier:  apps/web/lib/sentry/SentryClientConfigScript.tsx:1 (file)\n    outlier:  apps/web/lib/sentry/SentryUser.tsx:1 (file)\n    outlier:  apps/web/lib/sentry/client-runtime-config.ts:1 (file)\n    outlier:  apps/web/lib/sentry/replay-integration.ts:1 (file)\n    outlier:  apps/web/lib/survey/fill-codes.ts:1 (file)\n    outlier:  apps/web/lib/survey/visibility/actor-context.ts:1 (file)\n    outlier:  apps/web/lib/survey/visibility/api-key.ts:1 (file)\n    outlier:  apps/web/lib/survey/visibility/gates.ts:1 (file)\n    outlier:  apps/web/lib/user/public-user.ts:1 (file)\n    outlier:  apps/web/lib/utils/debounce.ts:1 (file)\n    outlier:  apps/web/lib/utils/hooks/useClickOutside.ts:1 (file)\n    outlier:  apps/web/lib/utils/hooks/useSyncScroll.ts:1 (file)\n    outlier:  apps/web/lib/utils/object.ts:1 (file)\n    outlier:  apps/web/lib/utils/postgres-text.ts:1 (file)",
+      "family": "repo",
+      "rule_kind": "has_test",
+      "tier": "default"
+    },
+    {
+      "uid": "formbricks/D-3cabc8",
+      "repo": "formbricks",
+      "id": "D-3cabc8",
+      "rank": 15,
+      "summary": "apps/web: functions in modules/** (route files) call handleApiError() before responses.successResponse()",
+      "role": {
+        "package": "apps/web",
+        "dir": "modules",
+        "file": "route",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "before",
+        "first": "apps/web/modules/api/v2/lib/utils.ts#handleApiError",
+        "then": "apps/web/modules/api/v2/lib/response.ts#responses.successResponse"
+      },
+      "evidence": {
+        "holders": 26,
+        "total": 28,
+        "lower_bound": 0.77,
+        "lift": 1
+      },
+      "members": 28,
+      "example": "apps/web/modules/api/v2/management/contact-attribute-keys/[contactAttributeKeyId]/route.ts#DELETE",
+      "outliers": 2,
+      "outlier_files": [
+        "apps/web/modules/api/v2/health/route.ts",
+        "apps/web/modules/api/v2/roles/route.ts"
+      ],
+      "block": "15. [D-3cabc8] apps/web: functions in modules/** (route files) call handleApiError() before responses.successResponse()\n    evidence: 26/28 (lower bound 0.77, lift 1.0)\n    example:  apps/web/modules/api/v2/management/contact-attribute-keys/[contactAttributeKeyId]/route.ts#DELETE\n    outlier:  apps/web/modules/api/v2/health/route.ts:4 GET\n    outlier:  apps/web/modules/api/v2/roles/route.ts:7 GET",
+      "family": "ordering",
+      "rule_kind": "before",
+      "tier": "default"
+    },
+    {
+      "uid": "cal.com/D-441d0e",
+      "repo": "cal.com",
+      "id": "D-441d0e",
+      "rank": 6,
+      "summary": "files in packages/lib/** do not import from packages/features/** (declared dependencies excepted)",
+      "role": {
+        "package": "packages/lib",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:packages/features"
+      },
+      "evidence": {
+        "holders": 234,
+        "total": 236,
+        "lower_bound": 0.97,
+        "lift": 3
+      },
+      "members": 236,
+      "example": "packages/lib/CalEventParser.ts#(file)",
+      "outliers": 2,
+      "outlier_files": [
+        "packages/lib/holidays/HolidayService.ts",
+        "packages/lib/holidays/HolidayServiceCachingProxy.ts"
+      ],
+      "block": " 6. [D-441d0e] files in packages/lib/** do not import from packages/features/** (declared dependencies excepted)\n    evidence: 234/236 (lower bound 0.97, lift 3.0)\n    example:  packages/lib/CalEventParser.ts#(file)\n    outlier:  packages/lib/holidays/HolidayService.ts:1 (file)\n    outlier:  packages/lib/holidays/HolidayServiceCachingProxy.ts:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "cal.com/D-f26528",
+      "repo": "cal.com",
+      "id": "D-f26528",
+      "rank": 8,
+      "summary": "files in packages/emails/** do not import from packages/features/** (declared dependencies excepted)",
+      "role": {
+        "package": "packages/emails",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:packages/features"
+      },
+      "evidence": {
+        "holders": 136,
+        "total": 139,
+        "lower_bound": 0.94,
+        "lift": 3
+      },
+      "members": 139,
+      "example": "packages/emails/auth-email-service.ts#(file)",
+      "outliers": 3,
+      "outlier_files": [
+        "packages/emails/email-manager.ts",
+        "packages/emails/templates/_base-email.ts",
+        "packages/emails/templates/organizer-request-email.ts"
+      ],
+      "block": " 8. [D-f26528] files in packages/emails/** do not import from packages/features/** (declared dependencies excepted)\n    evidence: 136/139 (lower bound 0.94, lift 3.0)\n    example:  packages/emails/auth-email-service.ts#(file)\n    outlier:  packages/emails/email-manager.ts:1 (file)\n    outlier:  packages/emails/templates/_base-email.ts:1 (file)\n    outlier:  packages/emails/templates/organizer-request-email.ts:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "cal.com/D-554063",
+      "repo": "cal.com",
+      "id": "D-554063",
+      "rank": 13,
+      "summary": "packages/emails: components in src/templates/** are named `*Email`",
+      "role": {
+        "package": "packages/emails",
+        "dir": "src/templates",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Email"
+      },
+      "evidence": {
+        "holders": 45,
+        "total": 47,
+        "lower_bound": 0.86,
+        "lift": 26.2
+      },
+      "members": 47,
+      "example": "packages/emails/src/templates/AdminOAuthClientNotificationEmail.tsx#AdminOAuthClientNotificationEmail",
+      "outliers": 2,
+      "outlier_files": [
+        "packages/emails/src/templates/BookingRedirectEmailNotification.tsx",
+        "packages/emails/src/templates/VerifyEmailByCode.tsx"
+      ],
+      "block": "13. [D-554063] packages/emails: components in src/templates/** are named `*Email`\n    evidence: 45/47 (lower bound 0.86, lift 26.2)\n    example:  packages/emails/src/templates/AdminOAuthClientNotificationEmail.tsx#AdminOAuthClientNotificationEmail\n    outlier:  packages/emails/src/templates/BookingRedirectEmailNotification.tsx:4 BookingRedirectEmailNotification\n    outlier:  packages/emails/src/templates/VerifyEmailByCode.tsx:9 VerifyEmailByCode",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "cal.com/D-e5e923",
+      "repo": "cal.com",
+      "id": "D-e5e923",
+      "rank": 15,
+      "summary": "packages/emails: classes in templates/** are named `*Email`",
+      "role": {
+        "package": "packages/emails",
+        "dir": "templates",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Email"
+      },
+      "evidence": {
+        "holders": 44,
+        "total": 48,
+        "lower_bound": 0.8,
+        "lift": 21.6
+      },
+      "members": 48,
+      "example": "packages/emails/templates/account-verify-email.ts#AccountVerifyEmail",
+      "outliers": 4,
+      "outlier_files": [
+        "packages/emails/templates/admin-oauth-client-notification.ts",
+        "packages/emails/templates/admin-organization-notification.ts",
+        "packages/emails/templates/booking-redirect-notification.ts",
+        "packages/emails/templates/organization-email-verification.ts"
+      ],
+      "block": "15. [D-e5e923] packages/emails: classes in templates/** are named `*Email`\n    evidence: 44/48 (lower bound 0.80, lift 21.6)\n    example:  packages/emails/templates/account-verify-email.ts#AccountVerifyEmail\n    outlier:  packages/emails/templates/admin-oauth-client-notification.ts:18 AdminOAuthClientNotification\n    outlier:  packages/emails/templates/admin-organization-notification.ts:16 AdminOrganizationNotification\n    outlier:  packages/emails/templates/booking-redirect-notification.ts:9 BookingRedirectNotification\n    outlier:  packages/emails/templates/organization-email-verification.ts:16 OrganizationEmailVerification",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "documenso/D-55ae12",
+      "repo": "documenso",
+      "id": "D-55ae12",
+      "rank": 2,
+      "summary": "packages/trpc: rpc entry points in server/envelope-router/** are wrapped in authenticatedProcedure()",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server/envelope-router",
+        "file": "*",
+        "entry": "rpc",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "packages/trpc/server/trpc.ts#authenticatedProcedure"
+        ]
+      },
+      "evidence": {
+        "holders": 42,
+        "total": 47,
+        "lower_bound": 0.77,
+        "lift": 7.1
+      },
+      "members": 47,
+      "example": "packages/trpc/server/envelope-router/attachment/create-attachment.ts#createAttachmentRoute",
+      "outliers": 5,
+      "outlier_files": [
+        "packages/trpc/server/envelope-router/attachment/find-attachments.ts",
+        "packages/trpc/server/envelope-router/envelope-recipients/report-recipient.ts",
+        "packages/trpc/server/envelope-router/get-envelope-items-by-token.ts",
+        "packages/trpc/server/envelope-router/sign-envelope-field.ts",
+        "packages/trpc/server/envelope-router/signing-status-envelope.ts"
+      ],
+      "block": " 2. [D-55ae12] packages/trpc: rpc entry points in server/envelope-router/** are wrapped in authenticatedProcedure()\n    evidence: 42/47 (lower bound 0.77, lift 7.1)\n    example:  packages/trpc/server/envelope-router/attachment/create-attachment.ts#createAttachmentRoute\n    outlier:  packages/trpc/server/envelope-router/attachment/find-attachments.ts:12 findAttachmentsRoute\n    outlier:  packages/trpc/server/envelope-router/envelope-recipients/report-recipient.ts:15 reportRecipientRoute\n    outlier:  packages/trpc/server/envelope-router/get-envelope-items-by-token.ts:15 getEnvelopeItemsByTokenRoute\n    outlier:  packages/trpc/server/envelope-router/sign-envelope-field.ts:18 signEnvelopeFieldRoute\n    outlier:  packages/trpc/server/envelope-router/signing-status-envelope.ts:12 signingStatusEnvelopeRoute",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "documenso/D-d51d70",
+      "repo": "documenso",
+      "id": "D-d51d70",
+      "rank": 3,
+      "summary": "packages/trpc: rpc entry points in server/organisation-router/** are wrapped in authenticatedProcedure()",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server/organisation-router",
+        "file": "*",
+        "entry": "rpc",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "packages/trpc/server/trpc.ts#authenticatedProcedure"
+        ]
+      },
+      "evidence": {
+        "holders": 28,
+        "total": 30,
+        "lower_bound": 0.79,
+        "lift": 7.4
+      },
+      "members": 30,
+      "example": "packages/trpc/server/organisation-router/create-organisation-group.ts#createOrganisationGroupRoute",
+      "outliers": 2,
+      "outlier_files": [
+        "packages/trpc/server/organisation-router/accept-organisation-member-invite.ts",
+        "packages/trpc/server/organisation-router/decline-organisation-member-invite.ts"
+      ],
+      "block": " 3. [D-d51d70] packages/trpc: rpc entry points in server/organisation-router/** are wrapped in authenticatedProcedure()\n    evidence: 28/30 (lower bound 0.79, lift 7.4)\n    example:  packages/trpc/server/organisation-router/create-organisation-group.ts#createOrganisationGroupRoute\n    outlier:  packages/trpc/server/organisation-router/accept-organisation-member-invite.ts:9 acceptOrganisationMemberInviteRoute\n    outlier:  packages/trpc/server/organisation-router/decline-organisation-member-invite.ts:11 declineOrganisationMemberInviteRoute",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "documenso/D-c3b713",
+      "repo": "documenso",
+      "id": "D-c3b713",
+      "rank": 8,
+      "summary": "files in packages/lib/** do not import from packages/ui/** (declared dependencies excepted)",
+      "role": {
+        "package": "packages/lib",
+        "dir": "**",
+        "file": "*",
+        "entry": "-",
+        "kind": "module"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:packages/ui"
+      },
+      "evidence": {
+        "holders": 633,
+        "total": 641,
+        "lower_bound": 0.98,
+        "lift": 3
+      },
+      "members": 641,
+      "example": "packages/lib/advanced-fields-validation/validate-dropdown.ts#(file)",
+      "outliers": 8,
+      "outlier_files": [
+        "packages/lib/advanced-fields-validation/validate-checkbox.ts",
+        "packages/lib/advanced-fields-validation/validate-number.ts",
+        "packages/lib/client-only/providers/envelope-editor-provider.tsx",
+        "packages/lib/client-only/providers/envelope-render-provider.tsx",
+        "packages/lib/server-only/document/send-document.ts",
+        "packages/lib/universal/field-renderer/field-canvas-style.ts",
+        "packages/lib/universal/field-renderer/field-generic-items.ts",
+        "packages/lib/utils/envelope-signing.ts"
+      ],
+      "block": " 8. [D-c3b713] files in packages/lib/** do not import from packages/ui/** (declared dependencies excepted)\n    evidence: 633/641 (lower bound 0.98, lift 3.0)\n    example:  packages/lib/advanced-fields-validation/validate-dropdown.ts#(file)\n    outlier:  packages/lib/advanced-fields-validation/validate-checkbox.ts:1 (file)\n    outlier:  packages/lib/advanced-fields-validation/validate-number.ts:1 (file)\n    outlier:  packages/lib/client-only/providers/envelope-editor-provider.tsx:1 (file)\n    outlier:  packages/lib/client-only/providers/envelope-render-provider.tsx:1 (file)\n    outlier:  packages/lib/server-only/document/send-document.ts:1 (file)\n    outlier:  packages/lib/universal/field-renderer/field-canvas-style.ts:1 (file)\n    outlier:  packages/lib/universal/field-renderer/field-generic-items.ts:1 (file)\n    outlier:  packages/lib/utils/envelope-signing.ts:1 (file)",
+      "family": "layering",
+      "rule_kind": "avoids:import",
+      "tier": "default"
+    },
+    {
+      "uid": "documenso/D-d19fc6",
+      "repo": "documenso",
+      "id": "D-d19fc6",
+      "rank": 10,
+      "summary": "packages/trpc: rpc entry points in server/** validate their input with a schema",
+      "role": {
+        "package": "packages/trpc",
+        "dir": "server",
+        "file": "*",
+        "entry": "rpc",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "validates"
+      },
+      "evidence": {
+        "holders": 212,
+        "total": 215,
+        "lower_bound": 0.96,
+        "lift": 4.3
+      },
+      "members": 215,
+      "example": "packages/trpc/server/admin-router/admin-search.ts#adminSearchRoute",
+      "outliers": 3,
+      "outlier_files": [
+        "packages/trpc/server/auth-router/get-auth-methods.ts",
+        "packages/trpc/server/enterprise-router/get-plans.ts",
+        "packages/trpc/server/organisation-router/get-organisation-session.ts"
+      ],
+      "block": "10. [D-d19fc6] packages/trpc: rpc entry points in server/** validate their input with a schema\n    evidence: 212/215 (lower bound 0.96, lift 4.3)\n    example:  packages/trpc/server/admin-router/admin-search.ts#adminSearchRoute\n    outlier:  packages/trpc/server/auth-router/get-auth-methods.ts:9 getAuthMethodsRoute\n    outlier:  packages/trpc/server/enterprise-router/get-plans.ts:7 getPlansRoute\n    outlier:  packages/trpc/server/organisation-router/get-organisation-session.ts:12 getOrganisationSessionRoute",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "default"
+    },
+    {
+      "uid": "documenso/D-aafe01",
+      "repo": "documenso",
+      "id": "D-aafe01",
+      "rank": 14,
+      "summary": "packages/email: components in templates/** are named `*Template`",
+      "role": {
+        "package": "packages/email",
+        "dir": "templates",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Template"
+      },
+      "evidence": {
+        "holders": 28,
+        "total": 31,
+        "lower_bound": 0.75,
+        "lift": 27.3
+      },
+      "members": 31,
+      "example": "packages/email/templates/access-auth-2fa.tsx#AccessAuth2FAEmailTemplate",
+      "outliers": 3,
+      "outlier_files": [
+        "packages/email/templates/bulk-send-complete.tsx",
+        "packages/email/templates/document-rejected.tsx",
+        "packages/email/templates/document-rejection-confirmed.tsx"
+      ],
+      "block": "14. [D-aafe01] packages/email: components in templates/** are named `*Template`\n    evidence: 28/31 (lower bound 0.75, lift 27.3)\n    example:  packages/email/templates/access-auth-2fa.tsx#AccessAuth2FAEmailTemplate\n    outlier:  packages/email/templates/bulk-send-complete.tsx:17 BulkSendCompleteEmail\n    outlier:  packages/email/templates/document-rejected.tsx:17 DocumentRejectedEmail\n    outlier:  packages/email/templates/document-rejection-confirmed.tsx:17 DocumentRejectionConfirmedEmail",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "excalidraw/D-553404",
+      "repo": "excalidraw",
+      "id": "D-553404",
+      "rank": 1,
+      "summary": "packages/element: functions in src/** do not use `any`",
+      "role": {
+        "package": "packages/element",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "any"
+      },
+      "evidence": {
+        "holders": 401,
+        "total": 408,
+        "lower_bound": 0.96,
+        "lift": 6.5
+      },
+      "members": 408,
+      "example": "packages/element/src/align.ts#alignElements",
+      "outliers": 7,
+      "outlier_files": [
+        "packages/element/src/binding.ts",
+        "packages/element/src/image.ts",
+        "packages/element/src/mutateElement.ts",
+        "packages/element/src/transform.ts",
+        "packages/element/src/typeChecks.ts",
+        "packages/element/src/visualdebug.ts"
+      ],
+      "block": " 1. [D-553404] packages/element: functions in src/** do not use `any`\n    evidence: 401/408 (lower bound 0.96, lift 6.5)\n    example:  packages/element/src/align.ts#alignElements\n    outlier:  packages/element/src/binding.ts:2994 isFixedPoint\n    outlier:  packages/element/src/image.ts:41 updateImageCache\n    outlier:  packages/element/src/mutateElement.ts:40 mutateElement\n    outlier:  packages/element/src/mutateElement.ts:149 newElementWith\n    outlier:  packages/element/src/transform.ts:680 convertToExcalidrawElements\n    outlier:  packages/element/src/typeChecks.ts:255 isExcalidrawElement\n    outlier:  packages/element/src/visualdebug.ts:224 debugDrawPoints",
+      "family": "avoids_other",
+      "rule_kind": "avoids:other",
+      "tier": "default"
+    },
+    {
+      "uid": "ai/D-fc5ef7",
+      "repo": "ai",
+      "id": "D-fc5ef7",
+      "rank": 1,
+      "summary": "packages/codemod: functions in src/codemods/** are wrapped in createTransformer()",
+      "role": {
+        "package": "packages/codemod",
+        "dir": "src/codemods",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "packages/codemod/src/codemods/lib/create-transformer.ts#createTransformer"
+        ]
+      },
+      "evidence": {
+        "holders": 109,
+        "total": 114,
+        "lower_bound": 0.9,
+        "lift": 18
+      },
+      "members": 114,
+      "example": "packages/codemod/src/codemods/v4/remove-ai-stream-methods-from-stream-text-result.ts#default",
+      "outliers": 5,
+      "outlier_files": [
+        "packages/codemod/src/codemods/lib/add-await-fn.ts",
+        "packages/codemod/src/codemods/lib/add-comment.ts",
+        "packages/codemod/src/codemods/lib/create-transformer.ts",
+        "packages/codemod/src/codemods/lib/remove-await-fn.ts",
+        "packages/codemod/src/codemods/lib/remove-facade.ts"
+      ],
+      "block": " 1. [D-fc5ef7] packages/codemod: functions in src/codemods/** are wrapped in createTransformer()\n    evidence: 109/114 (lower bound 0.90, lift 18.0)\n    example:  packages/codemod/src/codemods/v4/remove-ai-stream-methods-from-stream-text-result.ts#default\n    outlier:  packages/codemod/src/codemods/lib/add-await-fn.ts:3 addAwaitFn\n    outlier:  packages/codemod/src/codemods/lib/add-comment.ts:26 insertCommentOnce\n    outlier:  packages/codemod/src/codemods/lib/create-transformer.ts:32 createTransformer\n    outlier:  packages/codemod/src/codemods/lib/remove-await-fn.ts:3 removeAwaitFn\n    outlier:  packages/codemod/src/codemods/lib/remove-facade.ts:9 removeFacade",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "supabase/D-b10f47",
+      "repo": "supabase",
+      "id": "D-b10f47",
+      "rank": 1,
+      "summary": "apps/www: pages in pages/** render <DefaultLayout>",
+      "role": {
+        "package": "apps/www",
+        "dir": "pages",
+        "file": "*",
+        "entry": "page",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "renders",
+        "component": "apps/www/components/Layouts/Default.tsx#DefaultLayout"
+      },
+      "evidence": {
+        "holders": 58,
+        "total": 60,
+        "lower_bound": 0.89,
+        "lift": 52.9
+      },
+      "members": 60,
+      "example": "apps/www/pages/aup.tsx#AcceptableUsePolicyPage",
+      "outliers": 2,
+      "outlier_files": [
+        "apps/www/pages/assistant.tsx",
+        "apps/www/pages/changelog.tsx"
+      ],
+      "block": " 1. [D-b10f47] apps/www: pages in pages/** render <DefaultLayout>\n    evidence: 58/60 (lower bound 0.89, lift 52.9)\n    example:  apps/www/pages/aup.tsx#AcceptableUsePolicyPage\n    outlier:  apps/www/pages/assistant.tsx:626 Assistant\n    outlier:  apps/www/pages/changelog.tsx:104 ChangelogPage",
+      "family": "renders",
+      "rule_kind": "renders",
+      "tier": "default"
+    },
+    {
+      "uid": "supabase/D-922bc7",
+      "repo": "supabase",
+      "id": "D-922bc7",
+      "rank": 2,
+      "summary": "packages/icons: exported values in src/** pass `fill` to createLucideIcon()",
+      "role": {
+        "package": "packages/icons",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "packages/icons/src/createSupabaseIcon.ts#createLucideIcon",
+        "index": 2,
+        "key": "fill"
+      },
+      "evidence": {
+        "holders": 30,
+        "total": 31,
+        "lower_bound": 0.84,
+        "lift": 73.1
+      },
+      "members": 31,
+      "example": "packages/icons/src/icons/REST-api.ts#RESTApi",
+      "outliers": 1,
+      "outlier_files": [
+        "packages/icons/src/defaultAttributes.ts"
+      ],
+      "block": " 2. [D-922bc7] packages/icons: exported values in src/** pass `fill` to createLucideIcon()\n    evidence: 30/31 (lower bound 0.84, lift 73.1)\n    example:  packages/icons/src/icons/REST-api.ts#RESTApi\n    outlier:  packages/icons/src/defaultAttributes.ts:1 default",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "default"
+    },
+    {
+      "uid": "supabase/D-db9d80",
+      "repo": "supabase",
+      "id": "D-db9d80",
+      "rank": 5,
+      "summary": "apps/www: pages in pages/** render <NextSeo>",
+      "role": {
+        "package": "apps/www",
+        "dir": "pages",
+        "file": "*",
+        "entry": "page",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "renders",
+        "component": "pkg:next-seo#NextSeo"
+      },
+      "evidence": {
+        "holders": 58,
+        "total": 60,
+        "lower_bound": 0.89,
+        "lift": 64.1
+      },
+      "members": 60,
+      "example": "apps/www/pages/aup.tsx#AcceptableUsePolicyPage",
+      "outliers": 2,
+      "outlier_files": [
+        "apps/www/pages/changelog.tsx",
+        "apps/www/pages/launch-week/ticket.tsx"
+      ],
+      "block": " 5. [D-db9d80] apps/www: pages in pages/** render <NextSeo>\n    evidence: 58/60 (lower bound 0.89, lift 64.1)\n    example:  apps/www/pages/aup.tsx#AcceptableUsePolicyPage\n    outlier:  apps/www/pages/changelog.tsx:104 ChangelogPage\n    outlier:  apps/www/pages/launch-week/ticket.tsx:7 Lw15Page",
+      "family": "renders",
+      "rule_kind": "renders",
+      "tier": "default"
+    },
+    {
+      "uid": "supabase/D-e97861",
+      "repo": "supabase",
+      "id": "D-e97861",
+      "rank": 6,
+      "summary": "apps/studio: HTTP handlers in pages/** call apiWrapper()",
+      "role": {
+        "package": "apps/studio",
+        "dir": "pages",
+        "file": "*",
+        "entry": "http",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "apps/studio/lib/api/apiWrapper.ts#apiWrapper"
+      },
+      "evidence": {
+        "holders": 71,
+        "total": 82,
+        "lower_bound": 0.78,
+        "lift": 52
+      },
+      "members": 82,
+      "example": "apps/studio/pages/api/ai/code/complete.ts#wrapper",
+      "outliers": 11,
+      "outlier_files": [
+        "apps/studio/pages/api/check-cname.ts",
+        "apps/studio/pages/api/cli-release-version.ts",
+        "apps/studio/pages/api/connect/index.ts",
+        "apps/studio/pages/api/enabled-features-overrides.ts",
+        "apps/studio/pages/api/get-deployment-commit.ts",
+        "apps/studio/pages/api/get-ip-address.ts",
+        "apps/studio/pages/api/get-s3-keys.ts",
+        "apps/studio/pages/api/get-utc-time.ts",
+        "apps/studio/pages/api/integrations/stripe-sync.ts",
+        "apps/studio/pages/api/mcp/index.ts",
+        "apps/studio/pages/api/parse-query.ts"
+      ],
+      "block": " 6. [D-e97861] apps/studio: HTTP handlers in pages/** call apiWrapper()\n    evidence: 71/82 (lower bound 0.78, lift 52.0)\n    example:  apps/studio/pages/api/ai/code/complete.ts#wrapper\n    outlier:  apps/studio/pages/api/check-cname.ts:5 handler\n    outlier:  apps/studio/pages/api/cli-release-version.ts:13 handler\n    outlier:  apps/studio/pages/api/connect/index.ts:33 getFileNames\n    outlier:  apps/studio/pages/api/enabled-features-overrides.ts:5 handler\n    outlier:  apps/studio/pages/api/get-deployment-commit.ts:33 handler\n    outlier:  apps/studio/pages/api/get-ip-address.ts:3 handler\n    outlier:  apps/studio/pages/api/get-s3-keys.ts:6 handler\n    outlier:  apps/studio/pages/api/get-utc-time.ts:5 handler\n    outlier:  apps/studio/pages/api/integrations/stripe-sync.ts:35 handler\n    outlier:  apps/studio/pages/api/mcp/index.ts:48 handler\n    outlier:  apps/studio/pages/api/parse-query.ts:98 handler",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "default"
+    },
+    {
+      "uid": "supabase/D-3c4b60",
+      "repo": "supabase",
+      "id": "D-3c4b60",
+      "rank": 10,
+      "summary": "packages/pg-meta: functions in src/** declare their return type",
+      "role": {
+        "package": "packages/pg-meta",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 117,
+        "total": 125,
+        "lower_bound": 0.88,
+        "lift": 2.4
+      },
+      "members": 125,
+      "example": "packages/pg-meta/src/pg-format/index.ts#acceptUntrustedSql",
+      "outliers": 8,
+      "outlier_files": [
+        "packages/pg-meta/src/pg-meta-functions.ts",
+        "packages/pg-meta/src/query/table-row-query.ts",
+        "packages/pg-meta/src/sql/studio/advisor/lints.ts",
+        "packages/pg-meta/src/sql/studio/auth/get-users-common.ts",
+        "packages/pg-meta/src/sql/studio/database/privileges.ts",
+        "packages/pg-meta/src/sql/tables.ts"
+      ],
+      "block": "10. [D-3c4b60] packages/pg-meta: functions in src/** declare their return type\n    evidence: 117/125 (lower bound 0.88, lift 2.4)\n    example:  packages/pg-meta/src/pg-format/index.ts#acceptUntrustedSql\n    outlier:  packages/pg-meta/src/pg-meta-functions.ts:282 create\n    outlier:  packages/pg-meta/src/query/table-row-query.ts:94 formatPatternMatchFilterValue\n    outlier:  packages/pg-meta/src/query/table-row-query.ts:110 getDefaultOrderByColumns\n    outlier:  packages/pg-meta/src/query/table-row-query.ts:143 getPagination\n    outlier:  packages/pg-meta/src/sql/studio/advisor/lints.ts:3 enrichLintsQuery\n    outlier:  packages/pg-meta/src/sql/studio/auth/get-users-common.ts:1 prefixToUUID\n    outlier:  packages/pg-meta/src/sql/studio/database/privileges.ts:124 getExposedTableCountsSql\n    outlier:  packages/pg-meta/src/sql/tables.ts:19 getTablesSql",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "default"
+    },
+    {
+      "uid": "supabase/D-d8dcea",
+      "repo": "supabase",
+      "id": "D-d8dcea",
+      "rank": 13,
+      "summary": "apps/docs: functions in internals/** declare their return type",
+      "role": {
+        "package": "apps/docs",
+        "dir": "internals",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 33,
+        "total": 35,
+        "lower_bound": 0.81,
+        "lift": 2.4
+      },
+      "members": 35,
+      "example": "apps/docs/internals/internal-links.ts#getInternalLinkBaseUrl",
+      "outliers": 2,
+      "outlier_files": [
+        "apps/docs/internals/files/reference-lib.ts",
+        "apps/docs/internals/internal-links.ts"
+      ],
+      "block": "13. [D-d8dcea] apps/docs: functions in internals/** declare their return type\n    evidence: 33/35 (lower bound 0.81, lift 2.4)\n    example:  apps/docs/internals/internal-links.ts#getInternalLinkBaseUrl\n    outlier:  apps/docs/internals/files/reference-lib.ts:4 generateReferencePages\n    outlier:  apps/docs/internals/internal-links.ts:40 addBaseUrlPrefix",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "default"
+    },
+    {
+      "uid": "supabase/D-c59437",
+      "repo": "supabase",
+      "id": "D-c59437",
+      "rank": 15,
+      "summary": "workspace packages define a `clean` script",
+      "role": {
+        "package": "",
+        "dir": ".",
+        "file": "package.json",
+        "entry": "-",
+        "kind": "package"
+      },
+      "rule": {
+        "type": "package_has",
+        "item": "script:clean"
+      },
+      "evidence": {
+        "holders": 23,
+        "total": 25,
+        "lower_bound": 0.75,
+        "lift": 1
+      },
+      "members": 25,
+      "example": "apps/design-system/package.json#design-system",
+      "outliers": 2,
+      "outlier_files": [
+        "apps/kb/package.json",
+        "packages/tsconfig/package.json"
+      ],
+      "block": "15. [D-c59437] workspace packages define a `clean` script\n    evidence: 23/25 (lower bound 0.75, lift 1.0)\n    example:  apps/design-system/package.json#design-system\n    outlier:  apps/kb/package.json:1 kb\n    outlier:  packages/tsconfig/package.json:1 tsconfig",
+      "family": "repo",
+      "rule_kind": "package_has",
+      "tier": "default"
+    },
+    {
+      "uid": "novu/D-4512a2",
+      "repo": "novu",
+      "id": "D-4512a2",
+      "rank": 13,
+      "summary": "libs/application-generic: classes in src/** (*.service files) are named `*Service`",
+      "role": {
+        "package": "libs/application-generic",
+        "dir": "src",
+        "file": "*.service",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Service"
+      },
+      "evidence": {
+        "holders": 69,
+        "total": 72,
+        "lower_bound": 0.89,
+        "lift": 17.3
+      },
+      "members": 72,
+      "example": "libs/application-generic/src/services/agent-email-inbox-quota/agent-email-inbox-quota.service.ts#AgentEmailInboxQuotaService",
+      "outliers": 3,
+      "outlier_files": [
+        "libs/application-generic/src/health/queue-health-indicator.service.ts",
+        "libs/application-generic/src/services/agent-email-inbox-quota/agent-email-inbox-quota.service.ts",
+        "libs/application-generic/src/services/queues/queue-base.service.ts"
+      ],
+      "block": "13. [D-4512a2] libs/application-generic: classes in src/** (*.service files) are named `*Service`\n    evidence: 69/72 (lower bound 0.89, lift 17.3)\n    example:  libs/application-generic/src/services/agent-email-inbox-quota/agent-email-inbox-quota.service.ts#AgentEmailInboxQuotaService\n    outlier:  libs/application-generic/src/health/queue-health-indicator.service.ts:8 QueueHealthIndicator\n    outlier:  libs/application-generic/src/services/agent-email-inbox-quota/agent-email-inbox-quota.service.ts:56 AgentEmailInboxQuotaExceededException\n    outlier:  libs/application-generic/src/services/queues/queue-base.service.ts:25 PartialDispatchError",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "novu/D-dbba9a",
+      "repo": "novu",
+      "id": "D-dbba9a",
+      "rank": 14,
+      "summary": "apps/dashboard: components in src/pages/** are named `*Page`",
+      "role": {
+        "package": "apps/dashboard",
+        "dir": "src/pages",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Page"
+      },
+      "evidence": {
+        "holders": 62,
+        "total": 67,
+        "lower_bound": 0.84,
+        "lift": 20.6
+      },
+      "members": 67,
+      "example": "apps/dashboard/src/pages/access-denied-page.tsx#AccessDeniedPage",
+      "outliers": 5,
+      "outlier_files": [
+        "apps/dashboard/src/pages/activity-feed.tsx",
+        "apps/dashboard/src/pages/new-layout-drawer.tsx",
+        "apps/dashboard/src/pages/new-workflow-drawer.tsx",
+        "apps/dashboard/src/pages/test-workflow-route-handler.tsx",
+        "apps/dashboard/src/pages/workflows.tsx"
+      ],
+      "block": "14. [D-dbba9a] apps/dashboard: components in src/pages/** are named `*Page`\n    evidence: 62/67 (lower bound 0.84, lift 20.6)\n    example:  apps/dashboard/src/pages/access-denied-page.tsx#AccessDeniedPage\n    outlier:  apps/dashboard/src/pages/activity-feed.tsx:17 ActivityFeed\n    outlier:  apps/dashboard/src/pages/new-layout-drawer.tsx:44 NewLayoutDrawer\n    outlier:  apps/dashboard/src/pages/new-workflow-drawer.tsx:31 NewWorkflowDrawer\n    outlier:  apps/dashboard/src/pages/test-workflow-route-handler.tsx:5 TestWorkflowRouteHandler\n    outlier:  apps/dashboard/src/pages/workflows.tsx:639 TemplateModal",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "novu/D-808edd",
+      "repo": "novu",
+      "id": "D-808edd",
+      "rank": 15,
+      "summary": "libs/application-generic: classes in src/** (*.command files) are named `*Command`",
+      "role": {
+        "package": "libs/application-generic",
+        "dir": "src",
+        "file": "*.command",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Command"
+      },
+      "evidence": {
+        "holders": 90,
+        "total": 104,
+        "lower_bound": 0.79,
+        "lift": 4.9
+      },
+      "members": 104,
+      "example": "libs/application-generic/src/commands/authenticated.command.ts#AuthenticatedCommand",
+      "outliers": 14,
+      "outlier_files": [
+        "libs/application-generic/src/commands/base.command.ts",
+        "libs/application-generic/src/commands/project.command.ts",
+        "libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts",
+        "libs/application-generic/src/usecases/upsert-workflow/upsert-workflow.command.ts"
+      ],
+      "block": "15. [D-808edd] libs/application-generic: classes in src/** (*.command files) are named `*Command`\n    evidence: 90/104 (lower bound 0.79, lift 4.9)\n    example:  libs/application-generic/src/commands/authenticated.command.ts#AuthenticatedCommand\n    outlier:  libs/application-generic/src/commands/base.command.ts:95 CommandValidationException\n    outlier:  libs/application-generic/src/commands/base.command.ts:35 ConstraintValidation\n    outlier:  libs/application-generic/src/commands/project.command.ts:74 EnvironmentWithSubscriber\n    outlier:  libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:23 ChannelPreferencePartial\n    outlier:  libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:96 ChannelPreferenceRequired\n    outlier:  libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:29 ChannelPreferencesPartial\n    outlier:  libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:101 ChannelPreferencesRequired\n    outlier:  libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:67 PreferencesPartial\n    outlier:  libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:133 PreferencesRequired\n    outlier:  libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:13 WorkflowPreferencePartial\n    outlier:  libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:88 WorkflowPreferenceRequired\n    outlier:  libs/application-generic/src/usecases/upsert-workflow/upsert-workflow.command.ts:32 ChannelPreferenceData\n    outlier:  libs/application-generic/src/usecases/upsert-workflow/upsert-workflow.command.ts:37 WorkflowPreferenceData\n    outlier:  libs/application-generic/src/usecases/upsert-workflow/upsert-workflow.command.ts:45 WorkflowPreferencesUpsertData",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "immich/D-d7122f",
+      "repo": "immich",
+      "id": "D-d7122f",
+      "rank": 10,
+      "summary": "server: functions in src/utils/** do not use `any`",
+      "role": {
+        "package": "server",
+        "dir": "src/utils",
+        "file": "*",
+        "entry": "-",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "any"
+      },
+      "evidence": {
+        "holders": 97,
+        "total": 101,
+        "lower_bound": 0.9,
+        "lift": 3.3
+      },
+      "members": 101,
+      "example": "server/src/utils/access.ts#areSetsEqual",
+      "outliers": 4,
+      "outlier_files": [
+        "server/src/utils/file.ts",
+        "server/src/utils/logger.ts",
+        "server/src/utils/misc.ts"
+      ],
+      "block": "10. [D-d7122f] server: functions in src/utils/** do not use `any`\n    evidence: 97/101 (lower bound 0.90, lift 3.3)\n    example:  server/src/utils/access.ts#areSetsEqual\n    outlier:  server/src/utils/file.ts:47 sendFile\n    outlier:  server/src/utils/logger.ts:7 isConnectionAbortedError\n    outlier:  server/src/utils/misc.ts:32 getMethodNames\n    outlier:  server/src/utils/misc.ts:105 handlePromiseError",
+      "family": "avoids_other",
+      "rule_kind": "avoids:other",
+      "tier": "default"
+    },
+    {
+      "uid": "midday/D-ef5012",
+      "repo": "midday",
+      "id": "D-ef5012",
+      "rank": 1,
+      "summary": "apps/api: rpc entry points in src/** are wrapped in internalProcedure() or protectedProcedure() or publicProcedure()",
+      "role": {
+        "package": "apps/api",
+        "dir": "src",
+        "file": "*",
+        "entry": "rpc",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "apps/api/src/trpc/init.ts#internalProcedure",
+          "apps/api/src/trpc/init.ts#protectedProcedure",
+          "apps/api/src/trpc/init.ts#publicProcedure"
+        ]
+      },
+      "evidence": {
+        "holders": 254,
+        "total": 255,
+        "lower_bound": 0.98,
+        "lift": 7.6
+      },
+      "members": 255,
+      "example": "apps/api/src/trpc/routers/accounting.ts#MUTATION disconnect",
+      "outliers": 1,
+      "outlier_files": [
+        "apps/api/src/trpc/routers/banking.ts"
+      ],
+      "block": " 1. [D-ef5012] apps/api: rpc entry points in src/** are wrapped in internalProcedure() or protectedProcedure() or publicProcedure()\n    evidence: 254/255 (lower bound 0.98, lift 7.6)\n    split:    protectedProcedure 242, internalProcedure 6, publicProcedure 6\n    example:  apps/api/src/trpc/routers/accounting.ts#MUTATION disconnect\n    outlier:  apps/api/src/trpc/routers/banking.ts:291 QUERY getProviderAccounts",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "midday/D-d1b6ba",
+      "repo": "midday",
+      "id": "D-d1b6ba",
+      "rank": 9,
+      "summary": "apps/api: rpc entry points in src/** validate their input with a schema",
+      "role": {
+        "package": "apps/api",
+        "dir": "src",
+        "file": "*",
+        "entry": "rpc",
+        "kind": "function"
+      },
+      "rule": {
+        "type": "control",
+        "value": "validates"
+      },
+      "evidence": {
+        "holders": 211,
+        "total": 255,
+        "lower_bound": 0.78,
+        "lift": 6.4
+      },
+      "members": 255,
+      "example": "apps/api/src/trpc/routers/accounting.ts#MUTATION disconnect",
+      "outliers": 44,
+      "outlier_files": [
+        "apps/api/src/trpc/routers/accounting.ts",
+        "apps/api/src/trpc/routers/api-keys.ts",
+        "apps/api/src/trpc/routers/apps.ts",
+        "apps/api/src/trpc/routers/bank-accounts.ts",
+        "apps/api/src/trpc/routers/banking.ts",
+        "apps/api/src/trpc/routers/billing.ts",
+        "apps/api/src/trpc/routers/connectors.ts",
+        "apps/api/src/trpc/routers/document-tags.ts",
+        "apps/api/src/trpc/routers/inbox-accounts.ts",
+        "apps/api/src/trpc/routers/invoice-payments.ts",
+        "apps/api/src/trpc/routers/invoice-template.ts",
+        "apps/api/src/trpc/routers/invoice.ts",
+        "apps/api/src/trpc/routers/notification-settings.ts",
+        "apps/api/src/trpc/routers/oauth-applications.ts",
+        "apps/api/src/trpc/routers/overview.ts",
+        "apps/api/src/trpc/routers/tags.ts",
+        "apps/api/src/trpc/routers/team.ts",
+        "apps/api/src/trpc/routers/transactions.ts",
+        "apps/api/src/trpc/routers/user.ts"
+      ],
+      "block": " 9. [D-d1b6ba] apps/api: rpc entry points in src/** validate their input with a schema\n    evidence: 211/255 (lower bound 0.78, lift 6.4)\n    example:  apps/api/src/trpc/routers/accounting.ts#MUTATION disconnect\n    outlier:  apps/api/src/trpc/routers/accounting.ts:90 QUERY getConnections\n    outlier:  apps/api/src/trpc/routers/api-keys.ts:14 QUERY get\n    outlier:  apps/api/src/trpc/routers/apps.ts:19 QUERY get\n    outlier:  apps/api/src/trpc/routers/bank-accounts.ts:74 QUERY balances\n    outlier:  apps/api/src/trpc/routers/bank-accounts.ts:70 QUERY currencies\n    outlier:  apps/api/src/trpc/routers/bank-accounts.ts:62 QUERY getWithPaymentInfo\n    outlier:  apps/api/src/trpc/routers/banking.ts:384 QUERY rates\n    outlier:  apps/api/src/trpc/routers/billing.ts:240 MUTATION getPortalUrl\n    outlier:  apps/api/src/trpc/routers/billing.ts:316 MUTATION reactivateSubscription\n    outlier:  apps/api/src/trpc/routers/billing.ts:211 QUERY getActiveSubscription\n    outlier:  apps/api/src/trpc/routers/connectors.ts:21 QUERY connections\n    outlier:  apps/api/src/trpc/routers/connectors.ts:17 QUERY list\n    outlier:  apps/api/src/trpc/routers/document-tags.ts:16 QUERY get\n    outlier:  apps/api/src/trpc/routers/inbox-accounts.ts:23 QUERY get\n    outlier:  apps/api/src/trpc/routers/invoice-payments.ts:55 MUTATION disconnectStripe\n    outlier:  apps/api/src/trpc/routers/invoice-payments.ts:33 QUERY getConnectUrl\n    outlier:  apps/api/src/trpc/routers/invoice-payments.ts:15 QUERY stripeStatus\n    outlier:  apps/api/src/trpc/routers/invoice-template.ts:79 QUERY count\n    outlier:  apps/api/src/trpc/routers/invoice-template.ts:17 QUERY list\n    outlier:  apps/api/src/trpc/routers/invoice.ts:788 QUERY averageDaysToPayment\n    outlier:  apps/api/src/trpc/routers/invoice.ts:794 QUERY averageInvoiceSize\n    outlier:  apps/api/src/trpc/routers/invoice.ts:279 QUERY defaultSettings\n    outlier:  apps/api/src/trpc/routers/invoice.ts:782 QUERY inactiveClientsCount\n    outlier:  apps/api/src/trpc/routers/invoice.ts:776 QUERY mostActiveClient\n    outlier:  apps/api/src/trpc/routers/invoice.ts:806 QUERY newCustomersCount\n    outlier:  apps/api/src/trpc/routers/invoice.ts:104 QUERY paymentStatus\n    outlier:  apps/api/src/trpc/routers/invoice.ts:800 QUERY topRevenueClient\n    outlier:  apps/api/src/trpc/routers/notification-settings.ts:26 QUERY getAll\n    outlier:  apps/api/src/trpc/routers/oauth-applications.ts:301 QUERY authorized\n    outlier:  apps/api/src/trpc/routers/oauth-applications.ts:38 QUERY list\n    outlier:  apps/api/src/trpc/routers/overview.ts:5 QUERY summary\n    outlier:  apps/api/src/trpc/routers/tags.ts:10 QUERY get\n    outlier:  apps/api/src/trpc/routers/team.ts:400 MUTATION exportAllData\n    outlier:  apps/api/src/trpc/routers/team.ts:383 QUERY availablePlans\n    outlier:  apps/api/src/trpc/routers/team.ts:425 QUERY connectionStatus\n    outlier:  apps/api/src/trpc/routers/team.ts:45 QUERY current\n    outlier:  apps/api/src/trpc/routers/team.ts:311 QUERY invitesByEmail\n    outlier:  apps/api/src/trpc/routers/team.ts:66 QUERY list\n    outlier:  apps/api/src/trpc/routers/team.ts:62 QUERY members\n    outlier:  apps/api/src/trpc/routers/team.ts:307 QUERY teamInvites\n    outlier:  apps/api/src/trpc/routers/transactions.ts:81 QUERY getReviewCount\n    outlier:  apps/api/src/trpc/routers/user.ts:74 MUTATION delete\n    outlier:  apps/api/src/trpc/routers/user.ts:89 QUERY invites\n    outlier:  apps/api/src/trpc/routers/user.ts:19 QUERY me",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "default"
+    },
+    {
+      "uid": "midday/D-efc6d4",
+      "repo": "midday",
+      "id": "D-efc6d4",
+      "rank": 10,
+      "summary": "apps/api: exported values in src/trpc/** call createTRPCRouter()",
+      "role": {
+        "package": "apps/api",
+        "dir": "src/trpc",
+        "file": "*",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "apps/api/src/trpc/init.ts#createTRPCRouter"
+      },
+      "evidence": {
+        "holders": 38,
+        "total": 41,
+        "lower_bound": 0.81,
+        "lift": 31.6
+      },
+      "members": 41,
+      "example": "apps/api/src/trpc/routers/_app.ts#appRouter",
+      "outliers": 3,
+      "outlier_files": [
+        "apps/api/src/trpc/init.ts"
+      ],
+      "block": "10. [D-efc6d4] apps/api: exported values in src/trpc/** call createTRPCRouter()\n    evidence: 38/41 (lower bound 0.81, lift 31.6)\n    example:  apps/api/src/trpc/routers/_app.ts#appRouter\n    outlier:  apps/api/src/trpc/init.ts:87 createCallerFactory\n    outlier:  apps/api/src/trpc/init.ts:86 createTRPCRouter\n    outlier:  apps/api/src/trpc/init.ts:120 publicProcedure",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "default"
+    },
+    {
+      "uid": "midday/D-98e729",
+      "repo": "midday",
+      "id": "D-98e729",
+      "rank": 12,
+      "summary": "apps/api: exported values in src/trpc/** are named `*Router`",
+      "role": {
+        "package": "apps/api",
+        "dir": "src/trpc",
+        "file": "*",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Router"
+      },
+      "evidence": {
+        "holders": 39,
+        "total": 41,
+        "lower_bound": 0.84,
+        "lift": 21.6
+      },
+      "members": 41,
+      "example": "apps/api/src/trpc/routers/_app.ts#appRouter",
+      "outliers": 2,
+      "outlier_files": [
+        "apps/api/src/trpc/init.ts"
+      ],
+      "block": "12. [D-98e729] apps/api: exported values in src/trpc/** are named `*Router`\n    evidence: 39/41 (lower bound 0.84, lift 21.6)\n    example:  apps/api/src/trpc/routers/_app.ts#appRouter\n    outlier:  apps/api/src/trpc/init.ts:87 createCallerFactory\n    outlier:  apps/api/src/trpc/init.ts:120 publicProcedure",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "midday/D-495f56",
+      "repo": "midday",
+      "id": "D-495f56",
+      "rank": 13,
+      "summary": "apps/api: exported values in src/schemas/** are named `*Schema`",
+      "role": {
+        "package": "apps/api",
+        "dir": "src/schemas",
+        "file": "*",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Schema"
+      },
+      "evidence": {
+        "holders": 308,
+        "total": 309,
+        "lower_bound": 0.98,
+        "lift": 2.7
+      },
+      "members": 309,
+      "example": "apps/api/src/schemas/api-keys.ts#deleteApiKeySchema",
+      "outliers": 1,
+      "outlier_files": [
+        "apps/api/src/schemas/invoice.ts"
+      ],
+      "block": "13. [D-495f56] apps/api: exported values in src/schemas/** are named `*Schema`\n    evidence: 308/309 (lower bound 0.98, lift 2.7)\n    example:  apps/api/src/schemas/api-keys.ts#deleteApiKeySchema\n    outlier:  apps/api/src/schemas/invoice.ts:337 draftInvoiceSchemaWithOpenApi",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "midday/D-f6c709",
+      "repo": "midday",
+      "id": "D-f6c709",
+      "rank": 14,
+      "summary": "apps/api: exported values in src/schemas/** call z.object()",
+      "role": {
+        "package": "apps/api",
+        "dir": "src/schemas",
+        "file": "*",
+        "entry": "-",
+        "kind": "const"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:@hono/zod-openapi#z.object"
+      },
+      "evidence": {
+        "holders": 256,
+        "total": 309,
+        "lower_bound": 0.78,
+        "lift": 4.2
+      },
+      "members": 309,
+      "example": "apps/api/src/schemas/api-keys.ts#deleteApiKeySchema",
+      "outliers": 53,
+      "outlier_files": [
+        "apps/api/src/schemas/accounting.ts",
+        "apps/api/src/schemas/banking.ts",
+        "apps/api/src/schemas/billing.ts",
+        "apps/api/src/schemas/documents.ts",
+        "apps/api/src/schemas/inbox.ts",
+        "apps/api/src/schemas/invoice-recurring.ts",
+        "apps/api/src/schemas/invoice.ts",
+        "apps/api/src/schemas/jobs.ts",
+        "apps/api/src/schemas/notification-settings.ts",
+        "apps/api/src/schemas/oauth-flow.ts",
+        "apps/api/src/schemas/reports.ts",
+        "apps/api/src/schemas/tracker-entries.ts",
+        "apps/api/src/schemas/transactions.ts"
+      ],
+      "block": "14. [D-f6c709] apps/api: exported values in src/schemas/** call z.object()\n    evidence: 256/309 (lower bound 0.78, lift 4.2)\n    example:  apps/api/src/schemas/api-keys.ts#deleteApiKeySchema\n    outlier:  apps/api/src/schemas/accounting.ts:6 accountingProviderIdSchema\n    outlier:  apps/api/src/schemas/accounting.ts:32 disconnectProviderSchema\n    outlier:  apps/api/src/schemas/accounting.ts:16 exportToAccountingSchema\n    outlier:  apps/api/src/schemas/accounting.ts:39 getAccountsSchema\n    outlier:  apps/api/src/schemas/accounting.ts:24 getSyncStatusSchema\n    outlier:  apps/api/src/schemas/banking.ts:10 accountTypeSchema\n    outlier:  apps/api/src/schemas/banking.ts:65 connectionByReferenceSchema\n    outlier:  apps/api/src/schemas/banking.ts:53 connectionStatusSchema\n    outlier:  apps/api/src/schemas/banking.ts:59 deleteConnectionSchema\n    outlier:  apps/api/src/schemas/banking.ts:48 enablebankingExchangeSchema\n    outlier:  apps/api/src/schemas/banking.ts:42 enablebankingLinkSchema\n    outlier:  apps/api/src/schemas/banking.ts:77 getBalanceSchema\n    outlier:  apps/api/src/schemas/banking.ts:70 getProviderAccountsSchema\n    outlier:  apps/api/src/schemas/banking.ts:85 getProviderTransactionsSchema\n    outlier:  apps/api/src/schemas/banking.ts:37 gocardlessAgreementSchema\n    outlier:  apps/api/src/schemas/banking.ts:30 gocardlessLinkSchema\n    outlier:  apps/api/src/schemas/banking.ts:26 plaidExchangeSchema\n    outlier:  apps/api/src/schemas/banking.ts:19 plaidLinkSchema\n    outlier:  apps/api/src/schemas/banking.ts:3 providerSchema\n    outlier:  apps/api/src/schemas/billing.ts:26 cancelSubscriptionSchema\n    outlier:  apps/api/src/schemas/billing.ts:20 checkoutResponseSchema\n    outlier:  apps/api/src/schemas/billing.ts:10 createCheckoutSchema\n    outlier:  apps/api/src/schemas/billing.ts:3 getBillingOrdersSchema\n    outlier:  apps/api/src/schemas/documents.ts:136 signedUrlsSchema\n    outlier:  apps/api/src/schemas/inbox.ts:183 deleteInboxManySchema\n    outlier:  apps/api/src/schemas/invoice-recurring.ts:29 invoiceRecurringEndTypeSchema\n    outlier:  apps/api/src/schemas/invoice-recurring.ts:26 invoiceRecurringFrequencySchema\n    outlier:  apps/api/src/schemas/invoice-recurring.ts:32 invoiceRecurringStatusSchema\n    outlier:  apps/api/src/schemas/invoice.ts:1366 createInvoiceResponseSchema\n    outlier:  apps/api/src/schemas/invoice.ts:1198 draftInvoiceRequestSchema\n    outlier:  apps/api/src/schemas/invoice.ts:268 draftInvoiceSchema\n    outlier:  apps/api/src/schemas/invoice.ts:337 draftInvoiceSchemaWithOpenApi\n    outlier:  apps/api/src/schemas/invoice.ts:162 draftLineItemSchema\n    outlier:  apps/api/src/schemas/invoice.ts:69 editorFieldSchema\n    outlier:  apps/api/src/schemas/invoice.ts:286 restDraftInvoiceSchema\n    outlier:  apps/api/src/schemas/invoice.ts:168 restDraftLineItemSchema\n    outlier:  apps/api/src/schemas/invoice.ts:749 restInvoiceTemplateSchema\n    outlier:  apps/api/src/schemas/invoice.ts:136 restUpsertInvoiceTemplateSchema\n    outlier:  apps/api/src/schemas/invoice.ts:1392 updateInvoiceResponseSchema\n    outlier:  apps/api/src/schemas/invoice.ts:129 upsertInvoiceTemplateSchema\n    outlier:  apps/api/src/schemas/jobs.ts:7 getJobStatusSchema\n    outlier:  apps/api/src/schemas/jobs.ts:14 jobStatusSchema\n    outlier:  apps/api/src/schemas/notification-settings.ts:16 bulkUpdateNotificationSettingsSchema\n    outlier:  apps/api/src/schemas/notification-settings.ts:5 getNotificationSettingsSchema\n    outlier:  apps/api/src/schemas/notification-settings.ts:3 notificationChannelSchema\n    outlier:  apps/api/src/schemas/notification-settings.ts:10 updateNotificationSettingSchema\n    outlier:  apps/api/src/schemas/oauth-flow.ts:113 oauthTokenEndpointRequestSchema\n    outlier:  apps/api/src/schemas/reports.ts:734 reportTypeSchema\n    outlier:  apps/api/src/schemas/tracker-entries.ts:415 timerResponseSchema\n    outlier:  apps/api/src/schemas/transactions.ts:960 createTransactionsResponseSchema\n    outlier:  apps/api/src/schemas/transactions.ts:897 createTransactionsSchema\n    outlier:  apps/api/src/schemas/transactions.ts:574 deleteTransactionsResponseSchema\n    outlier:  apps/api/src/schemas/transactions.ts:560 deleteTransactionsSchema",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "default"
+    }
+  ]
+}

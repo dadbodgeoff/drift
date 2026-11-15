@@ -1,0 +1,21 @@
+{
+  "repo": "platypush",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "setup.cfg",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": "platypush/backend/http/webapp/eslint.config.mjs",
+      "kind": "lint"
+    }
+  ]
+}

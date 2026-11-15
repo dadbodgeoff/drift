@@ -1,0 +1,8 @@
+{
+  "name": "@acme/db",
+  "version": "0.0.0",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@prisma/client": "5.22.0"
+  }
+}

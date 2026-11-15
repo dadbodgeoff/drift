@@ -1,0 +1,127 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - admin
+  - apps
+  - authentication
+  - base
+  - client
+  - conftest
+  - constants
+  - dataclasses
+  - exceptions
+  - fields
+  - helpers
+  - managers
+  - mappers
+  - metrics
+  - middleware
+  - models
+  - permissions
+  - serializers
+  - services
+  - signals
+  - tasks
+  - test_mappers
+  - test_migrations
+  - test_models
+  - test_services
+  - test_tasks
+  - test_views
+  - types
+  - urls
+  - utils
+  - views
+  suffixes:
+  - config
+  - playwright
+  - pw
+  - stories
+  - test
+  - types
+conventions:
+- id: D-d1bd09
+  status: proposed
+  mode: advise
+  summary: "api: serializers in features/** and organisations/** (serializers files) are named `*Serializer`"
+  role:
+    package: api
+    dir: features
+    file: serializers
+    entry: '-'
+    kind: class
+    member_kind: serializer
+    also:
+    - package: api
+      dir: organisations
+      file: serializers
+      entry: '-'
+      kind: class
+      member_kind: serializer
+  rule:
+    type: named
+    pattern: "*Serializer"
+  evidence:
+    holders: 84
+    total: 90
+    lower_bound: 0.862
+    lift: 3.798
+    python_members: 90
+  example: api/features/dependencies/serializers.py#ChangeRequestReferenceSerializer
+  selector_version: 3
+- id: D-1e2cee
+  status: proposed
+  mode: advise
+  summary: "api: exceptions in features/** (exceptions files) are named `*Error`"
+  role:
+    package: api
+    dir: features
+    file: exceptions
+    entry: '-'
+    kind: class
+    member_kind: exception
+  rule:
+    type: named
+    pattern: "*Error"
+  evidence:
+    holders: 30
+    total: 31
+    lower_bound: 0.838
+    lift: 14.867
+    python_members: 31
+  example: api/features/dependencies/exceptions.py#ChangeRequestAlreadyCommittedError
+  selector_version: 3
+- id: D-aecbf8
+  status: proposed
+  mode: advise
+  summary: "api: HTTP handlers in environments/** (views files) are wrapped in EnvironmentKeyPermissions() or EnvironmentPermissions()"
+  role:
+    package: api
+    dir: environments
+    file: views
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - api/environments/permissions/permissions.py#EnvironmentKeyPermissions
+    - api/environments/permissions/permissions.py#EnvironmentPermissions
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 59.931
+    split:
+    - - api/environments/permissions/permissions.py#EnvironmentPermissions
+      - 10
+    - - api/environments/permissions/permissions.py#EnvironmentKeyPermissions
+      - 8
+    python_members: 19
+  example: api/environments/identities/traits/views.py#SDKTraits.bulk_create
+  selector_version: 3

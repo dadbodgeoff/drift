@@ -1,0 +1,76 @@
+/* React Flow, themed with tokens. */
+.dui-graph {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: var(--color-surface);
+}
+.dui-graph .react-flow {
+  --xy-background-color: var(--color-surface);
+  --xy-node-color: var(--color-text-primary);
+  --xy-node-border: 1px solid var(--color-border);
+  --xy-node-background-color: var(--color-raised);
+  --xy-edge-stroke: var(--color-border-strong);
+  --xy-edge-stroke-selected: var(--color-accent);
+  --xy-minimap-background-color: var(--color-sunken);
+  --xy-minimap-mask-background-color: color-mix(in srgb, var(--color-bg) 70%, transparent);
+  --xy-minimap-node-background-color: var(--color-border);
+  --xy-controls-button-background-color: var(--color-raised);
+  --xy-controls-button-background-color-hover: var(--color-hover);
+  --xy-controls-button-color: var(--color-text-secondary);
+  --xy-controls-button-border-color: var(--color-border);
+  --xy-selection-background-color: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  --xy-selection-border: 1px solid var(--color-accent);
+  font-family: var(--font-sans);
+}
+.dui-graph__bg {
+  --xy-background-pattern-color: color-mix(in srgb, var(--color-border) 70%, transparent);
+}
+.dui-graph .react-flow__controls {
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+.dui-graph .react-flow__controls-button {
+  width: 28px;
+  height: 28px;
+}
+.dui-graph .react-flow__controls-button svg {
+  fill: currentColor;
+}
+.dui-graph__minimap {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+.dui-graph .react-flow__node:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+.dui-graph .react-flow__edge:focus-visible path {
+  stroke: var(--color-focus);
+}
+.dui-graph__busy {
+  position: absolute;
+  left: 50%;
+  top: 12px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-overlay);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md);
+  color: var(--color-text-secondary);
+  font-size: var(--type-body-sm-size);
+  z-index: 5;
+}
+.dui-graph__busy.is-error {
+  color: var(--color-danger);
+}

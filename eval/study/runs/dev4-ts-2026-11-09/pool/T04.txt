@@ -1,0 +1,21 @@
+2 conventions from 2387 units in 132 roles (0 default tier, 2 suggestions)
+
+2 suggestion(s) are not shown to agents: their rule family is below the admission bar (the admission bar is 85% of 10 labelled cards accepted). People still see them (`--all` lists those past the suggestion cap); `drift review --show-to-agents <id>` shows one to agents anyway.
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-3552cb] frontend: exported values in mock/** are named `mock*`, except a companion (a helper or constant beside the members that follow it)
+    evidence: 40/40 (lower bound 0.91, lift 4.9)
+    tier:     suggestion (rule kind named)
+    agents:   not shown to agents (family below admission bar: 56% of 37)
+    example:  frontend/mock/config.ts#MOCK_DELAY
+    exempt:   frontend/mock/config.ts:13 USE_MOCK (a constant beside MOCK_DELAY, which follows the scheme)
+
+ 2. [D-3a5714] frontend: functions in services/** (*.service files) declare their return type
+    evidence: 52/53 (lower bound 0.90, lift 2.0)
+    tier:     suggestion (rule kind control)
+    agents:   not shown to agents (family below admission bar: 80% of 10)
+    example:  frontend/services/auth.service.ts#changePassword
+    outlier:  frontend/services/target.service.ts:116 getTargetOrganizations
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

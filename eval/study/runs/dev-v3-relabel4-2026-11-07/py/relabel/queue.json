@@ -1,0 +1,146 @@
+{
+  "run": "eval/study/runs/dev-v3-relabel4-2026-11-07/py/relabel",
+  "items": [
+    {
+      "uid": "netbox/D-76eb6b",
+      "repo": "netbox",
+      "id": "D-76eb6b",
+      "rank": 3,
+      "summary": "classes in netbox/** (types files) pass `filters` to register_type()",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "types",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "netbox/netbox/graphql/types.py#register_type",
+        "index": 99,
+        "key": "filters"
+      },
+      "evidence": {
+        "holders": 131,
+        "total": 132,
+        "lower_bound": 0.96,
+        "lift": 29.9
+      },
+      "members": 134,
+      "example": "netbox/circuits/graphql/types.py#CircuitGroupAssignmentType",
+      "python_members": 134,
+      "outliers": 1,
+      "outlier_files": [
+        "netbox/core/graphql/types.py"
+      ],
+      "block": " 3. [D-76eb6b] classes in netbox/** (types files) pass `filters` to register_type()\n    evidence: 131/132 (lower bound 0.96, lift 29.9)\n    example:  netbox/circuits/graphql/types.py#CircuitGroupAssignmentType\n    outlier:  netbox/core/graphql/types.py:49 ContentType\n    exempt:   netbox/netbox/graphql/types.py:204 ContentTypeType (in the module that defines register_type)\n    exempt:   netbox/netbox/graphql/types.py:153 NestedGroupObjectType (in the module that defines register_type)",
+      "family": "argument_key",
+      "rule_kind": "passes_key",
+      "tier": "default"
+    },
+    {
+      "uid": "netbox/D-58913a",
+      "repo": "netbox",
+      "id": "D-58913a",
+      "rank": 8,
+      "summary": "classes in netbox/** (choices files) call Choice()",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "choices",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "netbox/utilities/choices.py#Choice"
+      },
+      "evidence": {
+        "holders": 106,
+        "total": 115,
+        "lower_bound": 0.86,
+        "lift": 33.7
+      },
+      "members": 119,
+      "example": "netbox/circuits/choices.py#CircuitCommitRateChoices",
+      "python_members": 119,
+      "outliers": 9,
+      "outlier_files": [
+        "netbox/dcim/choices.py",
+        "netbox/extras/choices.py"
+      ],
+      "block": " 8. [D-58913a] classes in netbox/** (choices files) call Choice()\n    evidence: 106/115 (lower bound 0.86, lift 33.7)\n    example:  netbox/circuits/choices.py#CircuitCommitRateChoices\n    outlier:  netbox/dcim/choices.py:2267 CoolingConnectorTypeChoices\n    outlier:  netbox/dcim/choices.py:2225 CoolingFeedStatusChoices\n    outlier:  netbox/dcim/choices.py:2177 CoolingMethodChoices\n    outlier:  netbox/dcim/choices.py:2209 CoolingSourceStatusChoices\n    outlier:  netbox/dcim/choices.py:2191 CoolingSourceTypeChoices\n    outlier:  netbox/dcim/choices.py:2241 FluidTypeChoices\n    outlier:  netbox/dcim/choices.py:2255 RackCoolingCapabilityChoices\n    outlier:  netbox/extras/choices.py:50 CustomFieldStatusChoices\n    outlier:  netbox/extras/choices.py:305 EventRuleActionChoices\n    exempt:   netbox/utilities/choices.py:19 Choice (in the module that defines ChoiceSet)\n    exempt:   netbox/utilities/forms/fields/choices.py:76 ChoiceField (another kind of class (extends forms.ChoiceField))\n    exempt:   netbox/utilities/forms/fields/choices.py:96 MultipleChoiceField (another kind of class (extends forms.MultipleChoiceField))\n    exempt:   netbox/utilities/forms/fields/choices.py:83 TypedChoiceField (another kind of class (extends forms.TypedChoiceField))",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "default"
+    },
+    {
+      "uid": "netbox/D-afb64d",
+      "repo": "netbox",
+      "id": "D-afb64d",
+      "rank": 10,
+      "summary": "classes in netbox/** (choices files) are named `*Choices`",
+      "role": {
+        "package": "",
+        "dir": "netbox",
+        "file": "choices",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Choices"
+      },
+      "evidence": {
+        "holders": 115,
+        "total": 116,
+        "lower_bound": 0.95,
+        "lift": 33.7
+      },
+      "members": 119,
+      "example": "netbox/circuits/choices.py#CircuitCommitRateChoices",
+      "python_members": 119,
+      "outliers": 1,
+      "outlier_files": [
+        "netbox/utilities/choices.py"
+      ],
+      "block": "10. [D-afb64d] classes in netbox/** (choices files) are named `*Choices`\n    evidence: 115/116 (lower bound 0.95, lift 33.7)\n    example:  netbox/circuits/choices.py#CircuitCommitRateChoices\n    outlier:  netbox/utilities/choices.py:19 Choice\n    exempt:   netbox/utilities/forms/fields/choices.py:76 ChoiceField (another kind of class (extends forms.ChoiceField))\n    exempt:   netbox/utilities/forms/fields/choices.py:96 MultipleChoiceField (another kind of class (extends forms.MultipleChoiceField))\n    exempt:   netbox/utilities/forms/fields/choices.py:83 TypedChoiceField (another kind of class (extends forms.TypedChoiceField))",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    },
+    {
+      "uid": "netbox/D-937c0c",
+      "repo": "netbox",
+      "id": "D-937c0c",
+      "rank": 11,
+      "summary": "classes in netbox/ipam/api/** are named `*Serializer`",
+      "role": {
+        "package": "",
+        "dir": "netbox/ipam/api",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "evidence": {
+        "holders": 27,
+        "total": 27,
+        "lower_bound": 0.88,
+        "lift": 18.2
+      },
+      "members": 29,
+      "example": "netbox/ipam/api/serializers_/asns.py#ASNRangeSerializer",
+      "python_members": 29,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": "11. [D-937c0c] classes in netbox/ipam/api/** are named `*Serializer`\n    evidence: 27/27 (lower bound 0.88, lift 18.2)\n    example:  netbox/ipam/api/serializers_/asns.py#ASNRangeSerializer\n    exempt:   netbox/ipam/api/field_serializers.py:11 IPAddressField (another kind of class (extends serializers.CharField))\n    exempt:   netbox/ipam/api/field_serializers.py:31 IPNetworkField (shared part used by 2 members)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "default"
+    }
+  ]
+}

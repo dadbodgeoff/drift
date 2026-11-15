@@ -1,0 +1,9 @@
+{
+  "held_out": true,
+  "status": "started",
+  "manifest": "eval/holdout-primary-py.json",
+  "set_id": "py-primary-2026-11-05",
+  "core_sha256": "dcc7fdb945992d50da0968f06d33554175c70940e1ec0489c330723c612efd8d",
+  "product_commit": "ab1a8f348039310fcf908f65b99cb6d90cc1f5e3",
+  "started_at": "2026-11-07T19:26:02.728Z"
+}

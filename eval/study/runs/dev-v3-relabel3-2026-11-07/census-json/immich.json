@@ -1,0 +1,1221 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "cgu29-7d63aa3-1794031224",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/relabel3prep/restage-7d63aa3/cache/repos/immich",
+  "units": 3678,
+  "roles": 128,
+  "conventions": 14,
+  "shown": 14,
+  "tiers": {
+    "default": 0,
+    "suggestion": 14
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-876763",
+      "rank": 1,
+      "summary": "server: HTTP handlers in src/** (*.controller files) are decorated with Authenticated()",
+      "role": {
+        "package": "server",
+        "dir": "src",
+        "file": "*.controller",
+        "entry": "http",
+        "kind": "function",
+        "members": 315
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "server/src/middleware/auth.guard.ts#Authenticated"
+        ]
+      },
+      "evidence": {
+        "holders": 304,
+        "total": 315,
+        "lower_bound": 0.939,
+        "lift": 5.146
+      },
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "server/src/controllers/activity.controller.ts",
+        "symbol": "DELETE /activities/:id",
+        "line": 65
+      },
+      "outliers": [
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "DELETE /admin/database-backups",
+          "line": 81
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /admin/database-backups",
+          "line": 63
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /admin/database-backups/:filename",
+          "line": 70
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /admin/maintenance/detect-install",
+          "line": 103
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /admin/maintenance/status",
+          "line": 98
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /server/config",
+          "line": 47
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /server/ping",
+          "line": 52
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /server/version",
+          "line": 57
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "POST /admin/database-backups/upload",
+          "line": 88
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "POST /admin/maintenance",
+          "line": 123
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "POST /admin/maintenance/login",
+          "line": 108
+        }
+      ],
+      "outliers_total": 11
+    },
+    {
+      "id": "D-c10e8e",
+      "rank": 2,
+      "summary": "server: HTTP handlers in src/** (*.controller files) are decorated with Endpoint()",
+      "role": {
+        "package": "server",
+        "dir": "src",
+        "file": "*.controller",
+        "entry": "http",
+        "kind": "function",
+        "members": 315
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "server/src/decorators.ts#Endpoint"
+        ]
+      },
+      "evidence": {
+        "holders": 287,
+        "total": 315,
+        "lower_bound": 0.875,
+        "lift": 5.146
+      },
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "server/src/controllers/activity.controller.ts",
+        "symbol": "DELETE /activities/:id",
+        "line": 65
+      },
+      "outliers": [
+        {
+          "path": "server/src/controllers/api-key.controller.ts",
+          "symbol": "PATCH /api-keys/:id",
+          "line": 75
+        },
+        {
+          "path": "server/src/controllers/app.controller.ts",
+          "symbol": "GET /.well-known/immich",
+          "line": 14
+        },
+        {
+          "path": "server/src/controllers/app.controller.ts",
+          "symbol": "GET /.well-known/webauthn",
+          "line": 25
+        },
+        {
+          "path": "server/src/controllers/app.controller.ts",
+          "symbol": "GET /custom.css",
+          "line": 32
+        },
+        {
+          "path": "server/src/controllers/asset.controller.ts",
+          "symbol": "PATCH /",
+          "line": 68
+        },
+        {
+          "path": "server/src/controllers/asset.controller.ts",
+          "symbol": "PATCH /:id",
+          "line": 152
+        },
+        {
+          "path": "server/src/controllers/library.controller.ts",
+          "symbol": "PATCH /libraries/:id",
+          "line": 66
+        },
+        {
+          "path": "server/src/controllers/memory.controller.ts",
+          "symbol": "PATCH /memories/:id",
+          "line": 84
+        },
+        {
+          "path": "server/src/controllers/person.controller.ts",
+          "symbol": "PATCH /people/:id",
+          "line": 126
+        },
+        {
+          "path": "server/src/controllers/session.controller.ts",
+          "symbol": "PATCH /sessions/:id",
+          "line": 70
+        },
+        {
+          "path": "server/src/controllers/stack.controller.ts",
+          "symbol": "PATCH /stacks/:id",
+          "line": 78
+        },
+        {
+          "path": "server/src/controllers/tag.controller.ts",
+          "symbol": "PATCH /tags/:id",
+          "line": 90
+        },
+        {
+          "path": "server/src/controllers/user-admin.controller.ts",
+          "symbol": "PATCH /admin/users/:id",
+          "line": 74
+        },
+        {
+          "path": "server/src/controllers/user-admin.controller.ts",
+          "symbol": "PATCH /admin/users/:id/preferences",
+          "line": 167
+        },
+        {
+          "path": "server/src/controllers/user.controller.ts",
+          "symbol": "PATCH /me",
+          "line": 88
+        },
+        {
+          "path": "server/src/controllers/user.controller.ts",
+          "symbol": "PATCH /me/preferences",
+          "line": 120
+        },
+        {
+          "path": "server/src/controllers/workflow.controller.ts",
+          "symbol": "PATCH /workflows/:id",
+          "line": 96
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "DELETE /admin/database-backups",
+          "line": 81
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /admin/database-backups",
+          "line": 63
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /admin/database-backups/:filename",
+          "line": 70
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /admin/maintenance/detect-install",
+          "line": 103
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /admin/maintenance/status",
+          "line": 98
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /server/config",
+          "line": 47
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /server/ping",
+          "line": 52
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /server/version",
+          "line": 57
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "POST /admin/database-backups/upload",
+          "line": 88
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "POST /admin/maintenance",
+          "line": 123
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "POST /admin/maintenance/login",
+          "line": 108
+        }
+      ],
+      "outliers_total": 28
+    },
+    {
+      "id": "D-4fc758",
+      "rank": 3,
+      "summary": "server: HTTP handlers in src/** (*.controller files) are decorated with ApiTags()",
+      "role": {
+        "package": "server",
+        "dir": "src",
+        "file": "*.controller",
+        "entry": "http",
+        "kind": "function",
+        "members": 315
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:@nestjs/swagger#ApiTags"
+        ]
+      },
+      "evidence": {
+        "holders": 301,
+        "total": 315,
+        "lower_bound": 0.927,
+        "lift": 5.146
+      },
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "server/src/controllers/activity.controller.ts",
+        "symbol": "DELETE /activities/:id",
+        "line": 65
+      },
+      "outliers": [
+        {
+          "path": "server/src/controllers/app.controller.ts",
+          "symbol": "GET /.well-known/immich",
+          "line": 14
+        },
+        {
+          "path": "server/src/controllers/app.controller.ts",
+          "symbol": "GET /.well-known/webauthn",
+          "line": 25
+        },
+        {
+          "path": "server/src/controllers/app.controller.ts",
+          "symbol": "GET /custom.css",
+          "line": 32
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "DELETE /admin/database-backups",
+          "line": 81
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /admin/database-backups",
+          "line": 63
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /admin/database-backups/:filename",
+          "line": 70
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /admin/maintenance/detect-install",
+          "line": 103
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /admin/maintenance/status",
+          "line": 98
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /server/config",
+          "line": 47
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /server/ping",
+          "line": 52
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /server/version",
+          "line": 57
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "POST /admin/database-backups/upload",
+          "line": 88
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "POST /admin/maintenance",
+          "line": 123
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "POST /admin/maintenance/login",
+          "line": 108
+        }
+      ],
+      "outliers_total": 14
+    },
+    {
+      "id": "D-63d2cd",
+      "rank": 4,
+      "summary": "server: HTTP handlers in src/** (*.controller files) pass `permission` to Authenticated()",
+      "role": {
+        "package": "server",
+        "dir": "src",
+        "file": "*.controller",
+        "entry": "http",
+        "kind": "function",
+        "members": 315
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "server/src/middleware/auth.guard.ts#Authenticated",
+        "index": 0,
+        "key": "permission"
+      },
+      "evidence": {
+        "holders": 273,
+        "total": 315,
+        "lower_bound": 0.825,
+        "lift": 5.146
+      },
+      "rule_kind": "passes_key",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "server/src/controllers/activity.controller.ts",
+        "symbol": "DELETE /activities/:id",
+        "line": 65
+      },
+      "outliers": [
+        {
+          "path": "server/src/controllers/app.controller.ts",
+          "symbol": "GET /.well-known/immich",
+          "line": 14
+        },
+        {
+          "path": "server/src/controllers/app.controller.ts",
+          "symbol": "GET /.well-known/webauthn",
+          "line": 25
+        },
+        {
+          "path": "server/src/controllers/app.controller.ts",
+          "symbol": "GET /custom.css",
+          "line": 32
+        },
+        {
+          "path": "server/src/controllers/auth.controller.ts",
+          "symbol": "GET /auth/status",
+          "line": 111
+        },
+        {
+          "path": "server/src/controllers/auth.controller.ts",
+          "symbol": "POST /auth/admin-sign-up",
+          "line": 53
+        },
+        {
+          "path": "server/src/controllers/auth.controller.ts",
+          "symbol": "POST /auth/login",
+          "line": 30
+        },
+        {
+          "path": "server/src/controllers/auth.controller.ts",
+          "symbol": "POST /auth/logout",
+          "line": 88
+        },
+        {
+          "path": "server/src/controllers/auth.controller.ts",
+          "symbol": "POST /auth/session/lock",
+          "line": 171
+        },
+        {
+          "path": "server/src/controllers/auth.controller.ts",
+          "symbol": "POST /auth/session/unlock",
+          "line": 159
+        },
+        {
+          "path": "server/src/controllers/config-public.controller.ts",
+          "symbol": "GET /public/config",
+          "line": 14
+        },
+        {
+          "path": "server/src/controllers/config-public.controller.ts",
+          "symbol": "GET /public/config/defaults",
+          "line": 25
+        },
+        {
+          "path": "server/src/controllers/database-backup.controller.ts",
+          "symbol": "POST /admin/database-backups/start-restore",
+          "line": 68
+        },
+        {
+          "path": "server/src/controllers/library.controller.ts",
+          "symbol": "POST /libraries/:id/validate",
+          "line": 85
+        },
+        {
+          "path": "server/src/controllers/maintenance.controller.ts",
+          "symbol": "GET /admin/maintenance/status",
+          "line": 24
+        },
+        {
+          "path": "server/src/controllers/maintenance.controller.ts",
+          "symbol": "POST /admin/maintenance/login",
+          "line": 46
+        },
+        {
+          "path": "server/src/controllers/oauth.controller.ts",
+          "symbol": "GET /oauth/mobile-redirect",
+          "line": 24
+        },
+        {
+          "path": "server/src/controllers/oauth.controller.ts",
+          "symbol": "POST /oauth/authorize",
+          "line": 40
+        },
+        {
+          "path": "server/src/controllers/oauth.controller.ts",
+          "symbol": "POST /oauth/backchannel-logout",
+          "line": 120
+        },
+        {
+          "path": "server/src/controllers/oauth.controller.ts",
+          "symbol": "POST /oauth/callback",
+          "line": 66
+        },
+        {
+          "path": "server/src/controllers/oauth.controller.ts",
+          "symbol": "POST /oauth/link",
+          "line": 92
+        },
+        {
+          "path": "server/src/controllers/oauth.controller.ts",
+          "symbol": "POST /oauth/unlink",
+          "line": 108
+        },
+        {
+          "path": "server/src/controllers/passkey.controller.ts",
+          "symbol": "POST /passkeys/authentication/finish",
+          "line": 80
+        },
+        {
+          "path": "server/src/controllers/passkey.controller.ts",
+          "symbol": "POST /passkeys/authentication/start",
+          "line": 68
+        },
+        {
+          "path": "server/src/controllers/server.controller.ts",
+          "symbol": "GET /server/config",
+          "line": 114
+        },
+        {
+          "path": "server/src/controllers/server.controller.ts",
+          "symbol": "GET /server/features",
+          "line": 99
+        },
+        {
+          "path": "server/src/controllers/server.controller.ts",
+          "symbol": "GET /server/media-types",
+          "line": 140
+        },
+        {
+          "path": "server/src/controllers/server.controller.ts",
+          "symbol": "GET /server/ping",
+          "line": 66
+        },
+        {
+          "path": "server/src/controllers/server.controller.ts",
+          "symbol": "GET /server/version",
+          "line": 77
+        },
+        {
+          "path": "server/src/controllers/server.controller.ts",
+          "symbol": "GET /server/version-history",
+          "line": 88
+        },
+        {
+          "path": "server/src/controllers/shared-link.controller.ts",
+          "symbol": "GET /shared-links/me",
+          "line": 91
+        },
+        {
+          "path": "server/src/controllers/shared-link.controller.ts",
+          "symbol": "POST /shared-links/login",
+          "line": 69
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "DELETE /admin/database-backups",
+          "line": 81
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /admin/database-backups",
+          "line": 63
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /admin/database-backups/:filename",
+          "line": 70
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /admin/maintenance/detect-install",
+          "line": 103
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /admin/maintenance/status",
+          "line": 98
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /server/config",
+          "line": 47
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /server/ping",
+          "line": 52
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "GET /server/version",
+          "line": 57
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "POST /admin/database-backups/upload",
+          "line": 88
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "POST /admin/maintenance",
+          "line": 123
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "POST /admin/maintenance/login",
+          "line": 108
+        }
+      ],
+      "outliers_total": 42,
+      "key_type": "unknown"
+    },
+    {
+      "id": "D-379261",
+      "rank": 5,
+      "summary": "server: HTTP handlers in src/** (*.controller files) do not use `any`",
+      "role": {
+        "package": "server",
+        "dir": "src",
+        "file": "*.controller",
+        "entry": "http",
+        "kind": "function",
+        "members": 315
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "any"
+      },
+      "evidence": {
+        "holders": 314,
+        "total": 315,
+        "lower_bound": 0.982,
+        "lift": 48.721
+      },
+      "rule_kind": "avoids:other",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "server/src/controllers/activity.controller.ts",
+        "symbol": "DELETE /activities/:id",
+        "line": 65
+      },
+      "outliers": [
+        {
+          "path": "server/src/controllers/sync.controller.ts",
+          "symbol": "POST /sync/stream",
+          "line": 20
+        }
+      ],
+      "outliers_total": 1
+    },
+    {
+      "id": "D-3b4f47",
+      "rank": 6,
+      "summary": "server: classes in src/** (*.service files) extend BaseService",
+      "role": {
+        "package": "server",
+        "dir": "src",
+        "file": "*.service",
+        "entry": "-",
+        "kind": "class",
+        "members": 57
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "server/src/services/base.service.ts#BaseService"
+        ]
+      },
+      "evidence": {
+        "holders": 52,
+        "total": 56,
+        "lower_bound": 0.83,
+        "lift": 11.737,
+        "role_members": 57
+      },
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "server/src/services/activity.service.ts",
+        "symbol": "ActivityService",
+        "line": 19
+      },
+      "outliers": [
+        {
+          "path": "server/src/maintenance/maintenance-worker.service.ts",
+          "symbol": "MaintenanceWorkerService",
+          "line": 42
+        },
+        {
+          "path": "server/src/services/api.service.ts",
+          "symbol": "ApiService",
+          "line": 29
+        },
+        {
+          "path": "server/src/services/database-backup.service.ts",
+          "symbol": "DatabaseBackupService",
+          "line": 36
+        },
+        {
+          "path": "server/src/services/futo-backups.service.ts",
+          "symbol": "FutoBackupsService",
+          "line": 16
+        }
+      ],
+      "outliers_total": 4,
+      "exempt": [
+        {
+          "path": "server/src/services/base.service.ts",
+          "symbol": "BaseService",
+          "line": 144,
+          "code": "defining_module",
+          "reason": "in the module that defines BaseService"
+        }
+      ]
+    },
+    {
+      "id": "D-26380c",
+      "rank": 7,
+      "summary": "server: classes in src/** (*.repository files) are named `*Repository`",
+      "role": {
+        "package": "server",
+        "dir": "src",
+        "file": "*.repository",
+        "entry": "-",
+        "kind": "class",
+        "members": 63
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Repository"
+      },
+      "evidence": {
+        "holders": 61,
+        "total": 62,
+        "lower_bound": 0.914,
+        "lift": 10.448,
+        "role_members": 63
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "server/src/maintenance/maintenance-health.repository.ts",
+        "symbol": "MaintenanceHealthRepository",
+        "line": 11
+      },
+      "outliers": [
+        {
+          "path": "server/src/repositories/sync.repository.ts",
+          "symbol": "BaseSync",
+          "line": 101
+        }
+      ],
+      "outliers_total": 1,
+      "exempt": [
+        {
+          "path": "server/src/repositories/logging.repository.ts",
+          "symbol": "MyConsoleLogger",
+          "line": 25,
+          "code": "companion",
+          "reason": "another kind of class (extends ConsoleLogger) beside LoggingRepository, which follows the scheme"
+        }
+      ]
+    },
+    {
+      "id": "D-ed6dc0",
+      "rank": 8,
+      "summary": "server: classes in src/** (*.controller files) are decorated with ApiTags()",
+      "role": {
+        "package": "server",
+        "dir": "src",
+        "file": "*.controller",
+        "entry": "-",
+        "kind": "class",
+        "members": 48
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:@nestjs/swagger#ApiTags"
+        ]
+      },
+      "evidence": {
+        "holders": 46,
+        "total": 48,
+        "lower_bound": 0.86,
+        "lift": 13.938
+      },
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "server/src/controllers/activity.controller.ts",
+        "symbol": "ActivityController",
+        "line": 20
+      },
+      "outliers": [
+        {
+          "path": "server/src/controllers/app.controller.ts",
+          "symbol": "AppController",
+          "line": 8
+        },
+        {
+          "path": "server/src/maintenance/maintenance-worker.controller.ts",
+          "symbol": "MaintenanceWorkerController",
+          "line": 39
+        }
+      ],
+      "outliers_total": 2
+    },
+    {
+      "id": "D-d7122f",
+      "rank": 9,
+      "summary": "server: functions in src/utils/** do not use `any`",
+      "role": {
+        "package": "server",
+        "dir": "src/utils",
+        "file": "*",
+        "entry": "-",
+        "kind": "function",
+        "members": 101
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "any"
+      },
+      "evidence": {
+        "holders": 97,
+        "total": 101,
+        "lower_bound": 0.903,
+        "lift": 3.306
+      },
+      "rule_kind": "avoids:other",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "server/src/utils/access.ts",
+        "symbol": "areSetsEqual",
+        "line": 22
+      },
+      "outliers": [
+        {
+          "path": "server/src/utils/file.ts",
+          "symbol": "sendFile",
+          "line": 47
+        },
+        {
+          "path": "server/src/utils/logger.ts",
+          "symbol": "isConnectionAbortedError",
+          "line": 7
+        },
+        {
+          "path": "server/src/utils/misc.ts",
+          "symbol": "getMethodNames",
+          "line": 32
+        },
+        {
+          "path": "server/src/utils/misc.ts",
+          "symbol": "handlePromiseError",
+          "line": 105
+        }
+      ],
+      "outliers_total": 4
+    },
+    {
+      "id": "D-d3f2f9",
+      "rank": 10,
+      "summary": "server: classes in src/** (*.dto files) extend createZodDto()",
+      "role": {
+        "package": "server",
+        "dir": "src",
+        "file": "*.dto",
+        "entry": "-",
+        "kind": "class",
+        "members": 259
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:nestjs-zod#createZodDto()"
+        ]
+      },
+      "evidence": {
+        "holders": 258,
+        "total": 259,
+        "lower_bound": 0.978,
+        "lift": 2.544
+      },
+      "rule_kind": "wrapped_by:extends",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": true,
+      "blockable": true,
+      "example": {
+        "path": "server/src/dtos/activity.dto.ts",
+        "symbol": "ActivityCreateDto",
+        "line": 77
+      },
+      "outliers": [
+        {
+          "path": "server/src/dtos/user-profile.dto.ts",
+          "symbol": "CreateProfileImageDto",
+          "line": 7
+        }
+      ],
+      "outliers_total": 1
+    },
+    {
+      "id": "D-ac672e",
+      "rank": 11,
+      "summary": "server: functions in src/schema/** declare their return type",
+      "role": {
+        "package": "server",
+        "dir": "src/schema",
+        "file": "*",
+        "entry": "-",
+        "kind": "function",
+        "members": 208
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 207,
+        "total": 208,
+        "lower_bound": 0.973,
+        "lift": 3.546
+      },
+      "rule_kind": "control",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "server/src/schema/migrations/1744910873969-InitialMigration.ts",
+        "symbol": "down",
+        "line": 610
+      },
+      "outliers": [
+        {
+          "path": "server/src/schema/migrations/1761755618862-FixColumnNames.ts",
+          "symbol": "down",
+          "line": 97
+        }
+      ],
+      "outliers_total": 1
+    },
+    {
+      "id": "D-f0120c",
+      "rank": 12,
+      "summary": "server: classes in src/** (*.dto files) are named `*Dto`",
+      "role": {
+        "package": "server",
+        "dir": "src",
+        "file": "*.dto",
+        "entry": "-",
+        "kind": "class",
+        "members": 259
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Dto"
+      },
+      "evidence": {
+        "holders": 251,
+        "total": 259,
+        "lower_bound": 0.94,
+        "lift": 2.542
+      },
+      "rule_kind": "named",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "server/src/dtos/activity.dto.ts",
+        "symbol": "ActivityCreateDto",
+        "line": 77
+      },
+      "outliers": [
+        {
+          "path": "server/src/dtos/asset.dto.ts",
+          "symbol": "AssetMetadataRouteParams",
+          "line": 187
+        },
+        {
+          "path": "server/src/dtos/download.dto.ts",
+          "symbol": "DownloadArchiveInfo",
+          "line": 54
+        },
+        {
+          "path": "server/src/dtos/server.dto.ts",
+          "symbol": "ReleaseEventV1",
+          "line": 207
+        },
+        {
+          "path": "server/src/dtos/server.dto.ts",
+          "symbol": "ServerPingResponse",
+          "line": 180
+        },
+        {
+          "path": "server/src/dtos/sync.dto.ts",
+          "symbol": "SyncAssetEditV1",
+          "line": 203
+        },
+        {
+          "path": "server/src/dtos/sync.dto.ts",
+          "symbol": "SyncAssetExifV1",
+          "line": 197
+        },
+        {
+          "path": "server/src/dtos/sync.dto.ts",
+          "symbol": "SyncAssetV1",
+          "line": 127
+        },
+        {
+          "path": "server/src/dtos/sync.dto.ts",
+          "symbol": "SyncAssetV2",
+          "line": 129
+        }
+      ],
+      "outliers_total": 8
+    },
+    {
+      "id": "D-57ead0",
+      "rank": 13,
+      "summary": "server: functions in src/** (*.dto files) declare their return type",
+      "role": {
+        "package": "server",
+        "dir": "src",
+        "file": "*.dto",
+        "entry": "-",
+        "kind": "function",
+        "members": 40
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 36,
+        "total": 40,
+        "lower_bound": 0.769,
+        "lift": 3.206
+      },
+      "rule_kind": "control",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "server/src/dtos/activity.dto.ts",
+        "symbol": "mapActivity",
+        "line": 65
+      },
+      "outliers": [
+        {
+          "path": "server/src/dtos/auth.dto.ts",
+          "symbol": "isEditedOnly",
+          "line": 26
+        },
+        {
+          "path": "server/src/dtos/auth.dto.ts",
+          "symbol": "isMetadataHidden",
+          "line": 24
+        },
+        {
+          "path": "server/src/dtos/plugin-manifest.dto.ts",
+          "symbol": "PluginManifestMethodSchemaSchema",
+          "line": 10
+        },
+        {
+          "path": "server/src/dtos/stack.dto.ts",
+          "symbol": "mapStack",
+          "line": 39
+        }
+      ],
+      "outliers_total": 4
+    },
+    {
+      "id": "D-c8db80",
+      "rank": 14,
+      "summary": "web: functions in src/** (+page files) call authenticate() before getFormatter()",
+      "role": {
+        "package": "web",
+        "dir": "src",
+        "file": "+page",
+        "entry": "-",
+        "kind": "function",
+        "members": 51
+      },
+      "rule": {
+        "type": "before",
+        "first": "web/src/lib/utils/auth.ts#authenticate",
+        "then": "web/src/lib/utils/i18n.ts#getFormatter"
+      },
+      "evidence": {
+        "holders": 48,
+        "total": 51,
+        "lower_bound": 0.841,
+        "lift": 1.0
+      },
+      "rule_kind": "before",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "blockable": true,
+      "example": {
+        "path": "web/src/routes/(user)/albums/+page.ts",
+        "symbol": "load",
+        "line": 7
+      },
+      "outliers": [
+        {
+          "path": "web/src/routes/+page.ts",
+          "symbol": "load",
+          "line": 13
+        },
+        {
+          "path": "web/src/routes/auth/login/+page.ts",
+          "symbol": "load",
+          "line": 9
+        },
+        {
+          "path": "web/src/routes/auth/register/+page.ts",
+          "symbol": "load",
+          "line": 8
+        }
+      ],
+      "outliers_total": 3
+    }
+  ],
+  "largest_role": null
+}

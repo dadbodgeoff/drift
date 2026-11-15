@@ -1,0 +1,236 @@
+{
+  "name": "chunky",
+  "sha": "b70af834a630820c75e90e41837850182e3d241b",
+  "check": {
+    "default": {
+      "roles": 33,
+      "census_roles": 33,
+      "units": 474,
+      "census_units": 474,
+      "proposals": 0,
+      "member_counts_match": 0
+    },
+    "python_opt_in": {
+      "roles": 33,
+      "census_roles": 33,
+      "units": 474,
+      "census_units": 474,
+      "proposals": 0,
+      "member_counts_match": 0
+    }
+  },
+  "repo": {
+    "files_parsed": {
+      "files": 155,
+      "of_files": 156,
+      "loc": 22959,
+      "of_loc": 23122
+    },
+    "files_in_package": {
+      "files": 82,
+      "of_files": 156,
+      "loc": 11598,
+      "of_loc": 23122
+    },
+    "files_in_nonroot_drift_package": {
+      "files": 82,
+      "of_files": 156,
+      "loc": 11598,
+      "of_loc": 23122
+    },
+    "files_in_role": {
+      "files": 105,
+      "of_files": 156,
+      "loc": 18964,
+      "of_loc": 23122
+    },
+    "files_in_any_role": {
+      "files": 122,
+      "of_files": 156,
+      "loc": 19440,
+      "of_loc": 23122
+    },
+    "imports": {
+      "internal_resolved": 453,
+      "internal_unresolved": 0
+    },
+    "files_under_mined": {
+      "files": 0,
+      "of_files": 156,
+      "loc": 0,
+      "of_loc": 23122
+    },
+    "files_under_shown": {
+      "files": 0,
+      "of_files": 156,
+      "loc": 0,
+      "of_loc": 23122
+    },
+    "files_under_mined_py": {
+      "files": 0,
+      "of_files": 156,
+      "loc": 0,
+      "of_loc": 23122
+    },
+    "files_under_shown_py": {
+      "files": 0,
+      "of_files": 156,
+      "loc": 0,
+      "of_loc": 23122
+    }
+  },
+  "per_package": [
+    {
+      "dir": "frontend",
+      "kind": "ts",
+      "files_parsed": {
+        "files": 82,
+        "of_files": 83,
+        "loc": 11598,
+        "of_loc": 11761
+      },
+      "files_in_package": {
+        "files": 82,
+        "of_files": 83,
+        "loc": 11598,
+        "of_loc": 11761
+      },
+      "files_in_nonroot_drift_package": {
+        "files": 82,
+        "of_files": 83,
+        "loc": 11598,
+        "of_loc": 11761
+      },
+      "files_in_role": {
+        "files": 60,
+        "of_files": 83,
+        "loc": 9784,
+        "of_loc": 11761
+      },
+      "files_in_any_role": {
+        "files": 67,
+        "of_files": 83,
+        "loc": 10071,
+        "of_loc": 11761
+      },
+      "imports": {
+        "internal_resolved": 254,
+        "internal_unresolved": 0
+      },
+      "files_under_mined": {
+        "files": 0,
+        "of_files": 83,
+        "loc": 0,
+        "of_loc": 11761
+      },
+      "files_under_shown": {
+        "files": 0,
+        "of_files": 83,
+        "loc": 0,
+        "of_loc": 11761
+      },
+      "files_under_mined_py": {
+        "files": 0,
+        "of_files": 83,
+        "loc": 0,
+        "of_loc": 11761
+      },
+      "files_under_shown_py": {
+        "files": 0,
+        "of_files": 83,
+        "loc": 0,
+        "of_loc": 11761
+      },
+      "silent": {
+        "default": true,
+        "python_opt_in": true
+      }
+    }
+  ],
+  "unmapped": [
+    {
+      "class": "test",
+      "why": "test path (forms no role)",
+      "files": 33,
+      "loc": 3519
+    },
+    {
+      "class": "types",
+      "why": "no exported symbol",
+      "files": 1,
+      "loc": 180
+    },
+    {
+      "class": "component",
+      "why": "not in the fact index (not scanned)",
+      "files": 1,
+      "loc": 163
+    },
+    {
+      "class": "other",
+      "why": "only base, abstract, view or type-variable classes",
+      "files": 2,
+      "loc": 102
+    },
+    {
+      "class": "config",
+      "why": "largest role 1-3 members (< 8)",
+      "files": 3,
+      "loc": 61
+    },
+    {
+      "class": "index/__init__",
+      "why": "no exported symbol",
+      "files": 2,
+      "loc": 45
+    },
+    {
+      "class": "util",
+      "why": "no exported symbol",
+      "files": 2,
+      "loc": 34
+    },
+    {
+      "class": "component",
+      "why": "largest role 1-3 members (< 8)",
+      "files": 1,
+      "loc": 28
+    },
+    {
+      "class": "component",
+      "why": "no exported symbol",
+      "files": 1,
+      "loc": 10
+    },
+    {
+      "class": "script",
+      "why": "no exported symbol",
+      "files": 1,
+      "loc": 8
+    },
+    {
+      "class": "other",
+      "why": "no exported symbol",
+      "files": 1,
+      "loc": 8
+    },
+    {
+      "class": "ORM model",
+      "why": "no exported symbol",
+      "files": 1,
+      "loc": 0
+    },
+    {
+      "class": "router/dep",
+      "why": "no exported symbol",
+      "files": 1,
+      "loc": 0
+    },
+    {
+      "class": "service",
+      "why": "no exported symbol",
+      "files": 1,
+      "loc": 0
+    }
+  ]
+}

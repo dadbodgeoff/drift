@@ -1,0 +1,17 @@
+{
+  "repo": "cosmos-transfer1",
+  "files": [
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "pyproject.toml",
+      "kind": "lint (python config sections)"
+    },
+    {
+      "path": ".flake8",
+      "kind": "lint"
+    }
+  ]
+}

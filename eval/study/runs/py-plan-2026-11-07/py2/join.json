@@ -1,0 +1,3033 @@
+{
+  "part": "py2",
+  "labels_from": "eval/study/runs/dev-v3-2026-11-06/py2/final.jsonl",
+  "labelled_at": "debc33a3483ba9c53dfac93d50bbadf58553ea27",
+  "not_scanned": [],
+  "scanned": [
+    {
+      "repo": "Django-CRM",
+      "sha": "f63fe8cf22bd818cea45427b48ef59da24206ff1",
+      "shown": 9,
+      "tiers": {
+        "default": 0,
+        "suggestion": 9
+      },
+      "commit": "feefad6-pyplan"
+    },
+    {
+      "repo": "InvenTree",
+      "sha": "c5c878d6afe67cf612f436d04c6479dc18a3c2dd",
+      "shown": 11,
+      "tiers": {
+        "default": 0,
+        "suggestion": 11
+      },
+      "commit": "feefad6-pyplan"
+    },
+    {
+      "repo": "ralph",
+      "sha": "39d1d45f8cd3d987b9adbdfdf22dfe15da921fad",
+      "shown": 6,
+      "tiers": {
+        "default": 0,
+        "suggestion": 6
+      },
+      "commit": "feefad6-pyplan"
+    },
+    {
+      "repo": "Misago",
+      "sha": "4a37d19d3d9f74064c75cdda6856350b2daea5df",
+      "shown": 8,
+      "tiers": {
+        "default": 0,
+        "suggestion": 8
+      },
+      "commit": "feefad6-pyplan"
+    },
+    {
+      "repo": "paperless-ngx",
+      "sha": "cb3513c6f3cee9b4f769afe7fd58616c6ad21ca6",
+      "shown": 3,
+      "tiers": {
+        "default": 0,
+        "suggestion": 3
+      },
+      "commit": "feefad6-pyplan"
+    },
+    {
+      "repo": "wger",
+      "sha": "fa01090126bfeee32d9d829234c12bf941757319",
+      "shown": 3,
+      "tiers": {
+        "default": 0,
+        "suggestion": 3
+      },
+      "commit": "feefad6-pyplan"
+    },
+    {
+      "repo": "lotus",
+      "sha": "9c4fe5daa746b0136a1ea0aed54930e37289ab78",
+      "shown": 4,
+      "tiers": {
+        "default": 0,
+        "suggestion": 4
+      },
+      "commit": "feefad6-pyplan"
+    },
+    {
+      "repo": "pontoon",
+      "sha": "2690c3315d04b7e0d8637c36583bb16056e0e9bd",
+      "shown": 2,
+      "tiers": {
+        "default": 0,
+        "suggestion": 2
+      },
+      "commit": "feefad6-pyplan"
+    },
+    {
+      "repo": "open-wearables",
+      "sha": "76a504f54f43b269f972547f7ef92c9ea0e38a21",
+      "shown": 8,
+      "tiers": {
+        "default": 0,
+        "suggestion": 8
+      },
+      "commit": "feefad6-pyplan"
+    },
+    {
+      "repo": "tasking-manager",
+      "sha": "cbf2ec89c38bf876bbc4de048f782978247ecfd9",
+      "shown": 8,
+      "tiers": {
+        "default": 0,
+        "suggestion": 8
+      },
+      "commit": "feefad6-pyplan"
+    },
+    {
+      "repo": "simplelogin",
+      "sha": "b3cf76443994c95db4cbe8e3878cdf29f2372013",
+      "shown": 10,
+      "tiers": {
+        "default": 0,
+        "suggestion": 10
+      },
+      "commit": "feefad6-pyplan"
+    },
+    {
+      "repo": "changedetection.io",
+      "sha": "43c697c32e1be1fceb8a2d265cfbcb8ecf15f6d5",
+      "shown": 3,
+      "tiers": {
+        "default": 0,
+        "suggestion": 3
+      },
+      "commit": "feefad6-pyplan"
+    }
+  ],
+  "proposals": [
+    {
+      "uid": "Django-CRM/D-220569",
+      "repo": "Django-CRM",
+      "id": "D-220569",
+      "rank": 1,
+      "summary": "backend: HTTP handlers in cases/** are wrapped in IsPortalContact() or permissions.IsAuthenticated()",
+      "rule_kind": "wrapped_by:call",
+      "group": "call:auth",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 94,
+      "evidence": {
+        "holders": 88,
+        "total": 94,
+        "lower_bound": 0.868,
+        "lift": 4.648
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "backend/common/portal_auth.py#IsPortalContact",
+          "pkg:rest_framework#permissions.IsAuthenticated"
+        ]
+      },
+      "example": "backend/cases/analytics_views.py#AnalyticsAgentsView.get",
+      "outliers": 6,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "Cases views use IsAuthenticated (kanban_views, solution_views) or IsPortalContact (PortalBaseView) in permission_classes, and with no DEFAULT_PERMISSION_CLASSES a view without one is open; the six outliers are AllowAny public CSAT, help-center and inbound-mail webhook endpoints, public by design and worth confirming (R3). Set on the class rather than wrapping handlers, so clear: false.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-220569] backend: HTTP handlers in cases/** are wrapped in IsPortalContact() or permissions.IsAuthenticated()\n    evidence: 88/94 (lower bound 0.87, lift 4.6)\n    split:    permissions.IsAuthenticated 81, IsPortalContact 7\n    example:  backend/cases/analytics_views.py#AnalyticsAgentsView.get\n    outlier:  backend/cases/csat_views.py:111 PublicCsatView.get\n    outlier:  backend/cases/csat_views.py:155 PublicCsatView.post\n    outlier:  backend/cases/help_center_views.py:178 PublicHelpCenterArticleView.get\n    outlier:  backend/cases/help_center_views.py:138 PublicHelpCenterListView.get\n    outlier:  backend/cases/inbound_views.py:625 InboundCatchAllView.post\n    outlier:  backend/cases/inbound_views.py:379 InboundMailboxWebhookView.post",
+      "d5_conditions": false
+    },
+    {
+      "uid": "Django-CRM/D-4a6ea2",
+      "repo": "Django-CRM",
+      "id": "D-4a6ea2",
+      "rank": 2,
+      "summary": "backend: HTTP handlers in leads/** are wrapped in HasOrgContext()",
+      "rule_kind": "wrapped_by:call",
+      "group": "call:auth",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 41,
+      "evidence": {
+        "holders": 39,
+        "total": 41,
+        "lower_bound": 0.839,
+        "lift": 5.044
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "backend/common/permissions.py#HasOrgContext"
+        ]
+      },
+      "example": "backend/leads/views/import_views.py#LeadImportCommitView.post",
+      "outliers": 2,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "Leads views declare permission_classes = (IsAuthenticated, HasOrgContext) (import_views, source_views, lead_views); LeadIntakePostView is a public AllowAny webhook by design, and CreateLeadFromSite declares no permission_classes at all (DRF default AllowAny) although its docstring says it still requires an authenticated caller, so both deserve confirmation.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-4a6ea2] backend: HTTP handlers in leads/** are wrapped in HasOrgContext()\n    evidence: 39/41 (lower bound 0.84, lift 5.0)\n    example:  backend/leads/views/import_views.py#LeadImportCommitView.post\n    outlier:  backend/leads/views/intake_public_views.py:139 LeadIntakePostView.post\n    outlier:  backend/leads/views/lead_interactions.py:255 CreateLeadFromSite.post",
+      "d5_conditions": true
+    },
+    {
+      "uid": "Django-CRM/D-f135a4",
+      "repo": "Django-CRM",
+      "id": "D-f135a4",
+      "rank": 3,
+      "summary": "backend: HTTP handlers in cases/** are wrapped in HasOrgContext()",
+      "rule_kind": "wrapped_by:call",
+      "group": "call:auth",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 94,
+      "evidence": {
+        "holders": 81,
+        "total": 94,
+        "lower_bound": 0.778,
+        "lift": 4.57
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "backend/common/permissions.py#HasOrgContext"
+        ]
+      },
+      "example": "backend/cases/analytics_views.py#AnalyticsAgentsView.get",
+      "outliers": 13,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "HasOrgContext (common/permissions.py:95) is the tenant-scope permission set via permission_classes on the class (analytics_views.py:322 _AnalyticsBaseView, kanban_views.py, kb_views.py:57); nothing enforces it (ruff.toml selects only E/F/I; settings.py has no DEFAULT_PERMISSION_CLASSES). All 13 outliers are reachable endpoints that read org-scoped data while skipping it: AllowAny CSAT/help-center/inbound webhooks (csat_views.py:108, help_center_views.py:112, inbound_views.py:377/623) and portal views on PortalBaseView with IsPortalContact (portal_views.py:93-94), so by R3 each is a security exception worth confirming (look), 13/13. Rule sits on the class, not the handler, so clear: false. Hesitated with WRONG legit_outliers, since portal views are a recurring, deliberately differently-gated category.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-f135a4] backend: HTTP handlers in cases/** are wrapped in HasOrgContext()\n    evidence: 81/94 (lower bound 0.78, lift 4.6)\n    example:  backend/cases/analytics_views.py#AnalyticsAgentsView.get\n    outlier:  backend/cases/csat_views.py:111 PublicCsatView.get\n    outlier:  backend/cases/csat_views.py:155 PublicCsatView.post\n    outlier:  backend/cases/help_center_views.py:178 PublicHelpCenterArticleView.get\n    outlier:  backend/cases/help_center_views.py:138 PublicHelpCenterListView.get\n    outlier:  backend/cases/inbound_views.py:625 InboundCatchAllView.post\n    outlier:  backend/cases/inbound_views.py:379 InboundMailboxWebhookView.post\n    outlier:  backend/cases/portal_views.py:292 PortalArticleDetailView.get\n    outlier:  backend/cases/portal_views.py:256 PortalArticleListView.get\n    outlier:  backend/cases/portal_views.py:334 PortalArticleSuggestView.get\n    outlier:  backend/cases/portal_views.py:374 PortalCaseCommentView.post\n    outlier:  backend/cases/portal_views.py:203 PortalCaseDetailView.get\n    outlier:  backend/cases/portal_views.py:134 PortalCaseListView.get\n    outlier:  backend/cases/portal_views.py:167 PortalCaseListView.post",
+      "d5_conditions": true
+    },
+    {
+      "uid": "Django-CRM/D-4b232f",
+      "repo": "Django-CRM",
+      "id": "D-4b232f",
+      "rank": 4,
+      "summary": "backend: HTTP handlers in common/** are wrapped in permissions.IsAuthenticated()",
+      "rule_kind": "wrapped_by:call",
+      "group": "call:auth",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 98,
+      "evidence": {
+        "holders": 88,
+        "total": 98,
+        "lower_bound": 0.822,
+        "lift": 4.533
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "pkg:rest_framework#permissions.IsAuthenticated"
+        ]
+      },
+      "example": "backend/common/search_views.py#GlobalSearchView.get",
+      "outliers": 10,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "Common views declare permission_classes = (IsAuthenticated, HasOrgContext) (search_views, tags_views, user_views) and settings set no DEFAULT_PERMISSION_CLASSES, so a view without it is open; the outliers are sign-in, logout and token-feed endpoints with permission_classes = [] that are public by design, exactly the exceptions a reviewer should confirm (R3). It is a class attribute, not a wrapper on the handler, so clear: false.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-4b232f] backend: HTTP handlers in common/** are wrapped in permissions.IsAuthenticated()\n    evidence: 88/98 (lower bound 0.82, lift 4.5)\n    example:  backend/common/search_views.py#GlobalSearchView.get\n    outlier:  backend/common/views/auth_views.py:300 GoogleIdTokenView.post\n    outlier:  backend/common/views/auth_views.py:130 GoogleOAuthCallbackView.post\n    outlier:  backend/common/views/auth_views.py:587 LogoutView.post\n    outlier:  backend/common/views/auth_views.py:790 MagicLinkRequestView.post\n    outlier:  backend/common/views/auth_views.py:986 MagicLinkVerifyCodeView.post\n    outlier:  backend/common/views/auth_views.py:864 MagicLinkVerifyView.post\n    outlier:  backend/common/views/auth_views.py:457 OrgAwareTokenRefreshView.post\n    outlier:  backend/common/views/calendar_feed_views.py:232 PublicCalendarFeedView.get\n    outlier:  backend/common/views/portal_auth_views.py:71 PortalLoginRequestView.post\n    outlier:  backend/common/views/portal_auth_views.py:188 PortalLoginVerifyView.post",
+      "d5_conditions": false
+    },
+    {
+      "uid": "Django-CRM/D-e62e87",
+      "repo": "Django-CRM",
+      "id": "D-e62e87",
+      "rank": 5,
+      "summary": "backend: HTTP handlers in common/** call response.Response()",
+      "rule_kind": "calls",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 98,
+      "evidence": {
+        "holders": 94,
+        "total": 98,
+        "lower_bound": 0.9,
+        "lift": 4.717
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:rest_framework#response.Response"
+      },
+      "example": "backend/common/search_views.py#GlobalSearchView.get",
+      "outliers": 4,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "false_outliers",
+      "trivial_by": null,
+      "label_reason": "3 of 4 outliers return a Response through helpers (SecurityAuditLogListView via paginator.get_paginated_response; OrgUpdateView put/patch via _write, which returns Response), and AttachmentDownloadView legitimately streams a FileResponse.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-e62e87] backend: HTTP handlers in common/** call response.Response()\n    evidence: 94/98 (lower bound 0.90, lift 4.7)\n    example:  backend/common/search_views.py#GlobalSearchView.get\n    outlier:  backend/common/views/attachment_views.py:63 AttachmentDownloadView.get\n    outlier:  backend/common/views/audit_log_views.py:156 SecurityAuditLogListView.get\n    outlier:  backend/common/views/organization_views.py:270 OrgUpdateView.patch\n    outlier:  backend/common/views/organization_views.py:257 OrgUpdateView.put",
+      "d5_conditions": false
+    },
+    {
+      "uid": "Django-CRM/D-8ee062",
+      "repo": "Django-CRM",
+      "id": "D-8ee062",
+      "rank": 6,
+      "summary": "frontend: files in src/lib/v2/** have a test file",
+      "rule_kind": "has_test",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "members": 38,
+      "evidence": {
+        "holders": 35,
+        "total": 38,
+        "lower_bound": 0.792,
+        "lift": 3.085
+      },
+      "rule": {
+        "type": "has_test"
+      },
+      "example": "frontend/src/lib/v2/audit-log.ts#(file)",
+      "outliers": 3,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "incidental",
+      "trivial_by": null,
+      "label_reason": "Members are logic modules with a co-located vitest file (audit-log.test.ts, merge-label.test.ts, format.test.ts); nothing in eslint.config.js or vitest.config.js requires one. author.ts's authorText is tested in connected-apps.test.ts:49-54 (not_violation), enums.ts is a 482-line table of label/tone constants with two one-line label helpers (lacks the need, legit), and only lead-alerts.ts has untested logic (reminderExtra, look): 1 of 2 counted is a tie, so not ACCEPT. Hesitated with ACCEPT if author.ts is counted as a look for lacking its own test file.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-8ee062] frontend: files in src/lib/v2/** have a test file\n    evidence: 35/38 (lower bound 0.79, lift 3.1)\n    example:  frontend/src/lib/v2/audit-log.ts#(file)\n    outlier:  frontend/src/lib/v2/author.ts:1 (file)\n    outlier:  frontend/src/lib/v2/enums.ts:1 (file)\n    outlier:  frontend/src/lib/v2/lead-alerts.ts:1 (file)",
+      "d5_conditions": true
+    },
+    {
+      "uid": "Django-CRM/D-0bd0ec",
+      "repo": "Django-CRM",
+      "id": "D-0bd0ec",
+      "rank": 7,
+      "summary": "backend: HTTP handlers in cases/** call response.Response()",
+      "rule_kind": "calls",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 94,
+      "evidence": {
+        "holders": 88,
+        "total": 94,
+        "lower_bound": 0.868,
+        "lift": 4.604
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:rest_framework#response.Response"
+      },
+      "example": "backend/cases/analytics_views.py#AnalyticsAgentsView.get",
+      "outliers": 6,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "false_outliers",
+      "trivial_by": null,
+      "label_reason": "Every outlier returns a Response through a helper: CaseKanbanView.get via _get_status_kanban/_get_pipeline_kanban (return Response), SolutionDetailView put/patch via _update, SolutionListView via get_paginated_response, and the time views via create_entry/start_timer, which return Response.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-0bd0ec] backend: HTTP handlers in cases/** call response.Response()\n    evidence: 88/94 (lower bound 0.87, lift 4.6)\n    example:  backend/cases/analytics_views.py#AnalyticsAgentsView.get\n    outlier:  backend/cases/kanban_views.py:63 CaseKanbanView.get\n    outlier:  backend/cases/solution_views.py:254 SolutionDetailView.patch\n    outlier:  backend/cases/solution_views.py:244 SolutionDetailView.put\n    outlier:  backend/cases/solution_views.py:93 SolutionListView.get\n    outlier:  backend/cases/time_views.py:360 TimeEntryListCreateView.post\n    outlier:  backend/cases/time_views.py:374 TimeEntryStartView.post",
+      "d5_conditions": false
+    },
+    {
+      "uid": "Django-CRM/D-9c2214",
+      "repo": "Django-CRM",
+      "id": "D-9c2214",
+      "rank": 8,
+      "summary": "backend: HTTP handlers in cases/** pass `tags` to utils.extend_schema()",
+      "rule_kind": "passes_key",
+      "group": "passes_key",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 94,
+      "evidence": {
+        "holders": 80,
+        "total": 94,
+        "lower_bound": 0.765,
+        "lift": 4.402
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:drf_spectacular#utils.extend_schema",
+        "index": 99,
+        "key": "tags"
+      },
+      "example": "backend/cases/analytics_views.py#AnalyticsAgentsView.get",
+      "outliers": 14,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "Nearly every cases handler sets an OpenAPI tag (110 extend_schema calls, tags like \"Cases\", \"cases-analytics\"); in time_views.py the later handlers drop tags while their siblings in the same file pass tags=[\"Cases\"], which is drift, and the portal views simply omit tags they could add as easily. Hesitated with WRONG legit_outliers in case the untagged portal realm (also untagged in portal_auth_views.py) is deliberate.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-9c2214] backend: HTTP handlers in cases/** pass `tags` to utils.extend_schema()\n    evidence: 80/94 (lower bound 0.77, lift 4.4)\n    example:  backend/cases/analytics_views.py#AnalyticsAgentsView.get\n    outlier:  backend/cases/portal_views.py:292 PortalArticleDetailView.get\n    outlier:  backend/cases/portal_views.py:256 PortalArticleListView.get\n    outlier:  backend/cases/portal_views.py:334 PortalArticleSuggestView.get\n    outlier:  backend/cases/portal_views.py:374 PortalCaseCommentView.post\n    outlier:  backend/cases/portal_views.py:203 PortalCaseDetailView.get\n    outlier:  backend/cases/portal_views.py:134 PortalCaseListView.get\n    outlier:  backend/cases/portal_views.py:167 PortalCaseListView.post\n    outlier:  backend/cases/time_views.py:506 TimeEntryDetailView.delete\n    outlier:  backend/cases/time_views.py:459 TimeEntryDetailView.put\n    outlier:  backend/cases/time_views.py:531 TimeEntryStopView.post\n    outlier:  backend/cases/time_views.py:771 TimeReportExportView.get\n    outlier:  backend/cases/time_views.py:736 TimeReportView.get\n    outlier:  backend/cases/time_views.py:589 TimesheetView.get\n    outlier:  backend/cases/time_views.py:566 UnbilledEntriesView.get",
+      "d5_conditions": false
+    },
+    {
+      "uid": "Django-CRM/D-f01192",
+      "repo": "Django-CRM",
+      "id": "D-f01192",
+      "rank": 9,
+      "summary": "backend: HTTP handlers in leads/** call response.Response()",
+      "rule_kind": "calls",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 41,
+      "evidence": {
+        "holders": 39,
+        "total": 41,
+        "lower_bound": 0.839,
+        "lift": 4.678
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:rest_framework#response.Response"
+      },
+      "example": "backend/leads/views/import_views.py#LeadImportCommitView.post",
+      "outliers": 2,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "false_outliers",
+      "trivial_by": null,
+      "label_reason": "Both outliers return a Response through helpers: LeadIntakePostView.post via _answer/_refuse/_refused (_answer is `return Response(body, status=code)`), LeadKanbanView.get via _get_status_kanban/_get_pipeline_kanban, which return Response.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-f01192] backend: HTTP handlers in leads/** call response.Response()\n    evidence: 39/41 (lower bound 0.84, lift 4.7)\n    example:  backend/leads/views/import_views.py#LeadImportCommitView.post\n    outlier:  backend/leads/views/intake_public_views.py:139 LeadIntakePostView.post\n    outlier:  backend/leads/views/kanban_views.py:70 LeadKanbanView.get",
+      "d5_conditions": false
+    },
+    {
+      "uid": "InvenTree/D-47d790",
+      "repo": "InvenTree",
+      "id": "D-47d790",
+      "rank": 1,
+      "summary": "classes in src/backend/InvenTree/plugin/samples/** extend InvenTreePlugin",
+      "rule_kind": "wrapped_by:extends",
+      "group": "base",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 23,
+      "evidence": {
+        "holders": 22,
+        "total": 22,
+        "lower_bound": 0.851,
+        "lift": 23.201
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "src/backend/InvenTree/plugin/plugin.py#InvenTreePlugin"
+        ]
+      },
+      "example": "src/backend/InvenTree/plugin/samples/event/event_sample.py#EventPluginSample",
+      "outliers": 0,
+      "exempt": 1,
+      "status": "changed",
+      "label": null,
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": null,
+      "old_label": {
+        "label": "TRIVIAL",
+        "wrong_because": null
+      },
+      "diff": {
+        "removed": [],
+        "added": [
+          "    exempt:   src/backend/InvenTree/plugin/samples/machines/sample_printer.py:19 SamplePrinterDriver (a driver, named for its base LabelPrinterBaseDriver)"
+        ]
+      },
+      "block": "[D-47d790] classes in src/backend/InvenTree/plugin/samples/** extend InvenTreePlugin\n    evidence: 22/22 (lower bound 0.85, lift 23.2)\n    example:  src/backend/InvenTree/plugin/samples/event/event_sample.py#EventPluginSample\n    exempt:   src/backend/InvenTree/plugin/samples/machines/sample_printer.py:19 SamplePrinterDriver (a driver, named for its base LabelPrinterBaseDriver)",
+      "d5_conditions": true
+    },
+    {
+      "uid": "InvenTree/D-43f01e",
+      "repo": "InvenTree",
+      "id": "D-43f01e",
+      "rank": 2,
+      "summary": "classes in src/** (serializers files) are named `*Serializer`",
+      "rule_kind": "named",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 212,
+      "evidence": {
+        "holders": 205,
+        "total": 212,
+        "lower_bound": 0.933,
+        "lift": 4.671
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "example": "src/backend/InvenTree/InvenTree/serializers.py#DuplicateOptionsSerializer",
+      "outliers": 7,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "mixed_group",
+      "trivial_by": null,
+      "label_reason": "Six outliers are DRF serializer field classes (subclasses of serializers.Field/ChoiceField/FileField, named *Field), a recurring different kind of thing; only PartThumbSerializerUpdate (part/serializers.py:259) is a serializer off the naming scheme, 1 of 7.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-43f01e] classes in src/** (serializers files) are named `*Serializer`\n    evidence: 205/212 (lower bound 0.93, lift 4.7)\n    example:  src/backend/InvenTree/InvenTree/serializers.py#DuplicateOptionsSerializer\n    outlier:  src/backend/InvenTree/InvenTree/serializers.py:1033 ContentTypeField\n    outlier:  src/backend/InvenTree/InvenTree/serializers.py:641 DependentField\n    outlier:  src/backend/InvenTree/InvenTree/serializers.py:922 InvenTreeAttachmentSerializerField\n    outlier:  src/backend/InvenTree/InvenTree/serializers.py:961 InvenTreeDecimalField\n    outlier:  src/backend/InvenTree/InvenTree/serializers.py:947 InvenTreeImageSerializerField\n    outlier:  src/backend/InvenTree/common/serializers.py:42 SettingsValueField\n    outlier:  src/backend/InvenTree/part/serializers.py:259 PartThumbSerializerUpdate",
+      "d5_conditions": true
+    },
+    {
+      "uid": "InvenTree/D-455913",
+      "repo": "InvenTree",
+      "id": "D-455913",
+      "rank": 3,
+      "summary": "src/frontend: components in src/tables/** are named `*Table`",
+      "rule_kind": "named",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "members": 83,
+      "evidence": {
+        "holders": 76,
+        "total": 83,
+        "lower_bound": 0.836,
+        "lift": 5.003
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Table"
+      },
+      "example": "src/frontend/src/tables/bom/BomTable.tsx#BomTable",
+      "outliers": 7,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "mixed_group",
+      "trivial_by": null,
+      "label_reason": "The tables directory also holds detail drawers co-located with their tables (GroupDrawer, UserDrawer, SnippetDrawer, TemplateDrawer, SelectionListDrawer, a recurring *Drawer scheme), a column-builder function (SupplierPriceBreakColumns) and a filter widget (ParameterFilter); none are tables, so 0 of 7 outliers are mistakes.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-455913] src/frontend: components in src/tables/** are named `*Table`\n    evidence: 76/83 (lower bound 0.84, lift 5.0)\n    example:  src/frontend/src/tables/bom/BomTable.tsx#BomTable\n    outlier:  src/frontend/src/tables/general/ParametricDataTableFilters.tsx:200 ParameterFilter\n    outlier:  src/frontend/src/tables/purchasing/SupplierPriceBreakTable.tsx:41 SupplierPriceBreakColumns\n    outlier:  src/frontend/src/tables/settings/GroupTable.tsx:39 GroupDrawer\n    outlier:  src/frontend/src/tables/settings/SelectionListDrawer.tsx:147 SelectionListDrawer\n    outlier:  src/frontend/src/tables/settings/SnippetTable.tsx:49 SnippetDrawer\n    outlier:  src/frontend/src/tables/settings/TemplateTable.tsx:88 TemplateDrawer\n    outlier:  src/frontend/src/tables/settings/UserTable.tsx:63 UserDrawer",
+      "d5_conditions": true
+    },
+    {
+      "uid": "InvenTree/D-6f225b",
+      "repo": "InvenTree",
+      "id": "D-6f225b",
+      "rank": 4,
+      "summary": "classes in src/** (admin files) are named `*Admin`",
+      "rule_kind": "named",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 74,
+      "evidence": {
+        "holders": 66,
+        "total": 74,
+        "lower_bound": 0.801,
+        "lift": 15.175
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Admin"
+      },
+      "example": "src/backend/InvenTree/InvenTree/admin.py#CustomRateAdmin",
+      "outliers": 8,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "mixed_group",
+      "trivial_by": null,
+      "label_reason": "Admin files also hold TabularInline classes consistently named *Inline (company, machine, plugin, stock, users), a ModelForm (InvenTreeGroupAdminForm) and a resource Meta template (GeneralExtraLineMeta); these are not ModelAdmins, so new inlines and forms would be falsely flagged.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-6f225b] classes in src/** (admin files) are named `*Admin`\n    evidence: 66/74 (lower bound 0.80, lift 15.2)\n    example:  src/backend/InvenTree/InvenTree/admin.py#CustomRateAdmin\n    outlier:  src/backend/InvenTree/company/admin.py:28 SupplierPriceBreakInline\n    outlier:  src/backend/InvenTree/machine/admin.py:9 MachineSettingInline\n    outlier:  src/backend/InvenTree/order/admin.py:18 GeneralExtraLineMeta\n    outlier:  src/backend/InvenTree/plugin/admin.py:38 PluginSettingInline\n    outlier:  src/backend/InvenTree/plugin/admin.py:46 PluginUserSettingInline\n    outlier:  src/backend/InvenTree/stock/admin.py:9 LocationInline\n    outlier:  src/backend/InvenTree/users/admin.py:87 InvenTreeGroupAdminForm\n    outlier:  src/backend/InvenTree/users/admin.py:72 RuleSetInline",
+      "d5_conditions": true
+    },
+    {
+      "uid": "InvenTree/D-16c1ac",
+      "repo": "InvenTree",
+      "id": "D-16c1ac",
+      "rank": 5,
+      "summary": "src/frontend: components in src/components/render/** declare their return type",
+      "rule_kind": "control",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "members": 44,
+      "evidence": {
+        "holders": 43,
+        "total": 44,
+        "lower_bound": 0.882,
+        "lift": 3.774
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "example": "src/frontend/src/components/render/Build.tsx#RenderBuildItem",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "Render components consistently declare ): ReactNode (RenderBuildItem, RenderPart, RenderStockLocation); ModelHoverCard is an ordinary component that could annotate as easily and does not, and biome.json has no rule enforcing it.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-16c1ac] src/frontend: components in src/components/render/** declare their return type\n    evidence: 43/44 (lower bound 0.88, lift 3.8)\n    example:  src/frontend/src/components/render/Build.tsx#RenderBuildItem\n    outlier:  src/frontend/src/components/render/ModelHoverCard.tsx:23 ModelHoverCard",
+      "d5_conditions": true
+    },
+    {
+      "uid": "InvenTree/D-095ebc",
+      "repo": "InvenTree",
+      "id": "D-095ebc",
+      "rank": 6,
+      "summary": "src/frontend: functions in src/components/tables/** declare their return type",
+      "rule_kind": "control",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "members": 70,
+      "evidence": {
+        "holders": 69,
+        "total": 70,
+        "lower_bound": 0.923,
+        "lift": 2.529
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "example": "src/frontend/src/components/tables/AppRowActions.tsx#AppRowViewAction",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "Helper functions annotate returns (ColumnRenderers PartColumn(): TableColumn, getFilterType(): TableFilterType, filterDisplayLabel(): string right beside the outlier); filterDisplayValue is an ordinary function that simply omits it, and biome.json enables no explicit-return-type rule.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-095ebc] src/frontend: functions in src/components/tables/** declare their return type\n    evidence: 69/70 (lower bound 0.92, lift 2.5)\n    example:  src/frontend/src/components/tables/AppRowActions.tsx#AppRowViewAction\n    outlier:  src/frontend/src/components/tables/Filter.tsx:29 filterDisplayValue",
+      "d5_conditions": true
+    },
+    {
+      "uid": "InvenTree/D-7e788c",
+      "repo": "InvenTree",
+      "id": "D-7e788c",
+      "rank": 7,
+      "summary": "src/frontend: components in src/tables/** call useMemo() before apiUrl()",
+      "rule_kind": "before",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": true,
+      "members": 65,
+      "evidence": {
+        "holders": 61,
+        "total": 65,
+        "lower_bound": 0.852,
+        "lift": 1
+      },
+      "rule": {
+        "type": "before",
+        "first": "pkg:react#useMemo",
+        "then": "src/frontend/lib/functions/Api.tsx#apiUrl"
+      },
+      "example": "src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable",
+      "outliers": 4,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "incidental",
+      "trivial_by": null,
+      "label_reason": "Co-occurrence order with no effect: members call apiUrl() last only in the <InvenTreeTable url=...> JSX, while AuditLogTable (useFilters url), InstalledItemsTable (useCreateApiFormModal url), ParametricDataTable (useQuery) and PartThumbTable need an apiUrl earlier for form/query hooks.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-7e788c] src/frontend: components in src/tables/** call useMemo() before apiUrl()\n    evidence: 61/65 (lower bound 0.85, lift 1.0)\n    example:  src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable\n    outlier:  src/frontend/src/tables/general/AuditLogTable.tsx:459 AuditLogTable\n    outlier:  src/frontend/src/tables/general/ParametricDataTable.tsx:145 ParametricDataTable\n    outlier:  src/frontend/src/tables/part/PartThumbTable.tsx:133 PartThumbTable\n    outlier:  src/frontend/src/tables/stock/InstalledItemsTable.tsx:27 InstalledItemsTable",
+      "d5_conditions": false
+    },
+    {
+      "uid": "InvenTree/D-9838a4",
+      "repo": "InvenTree",
+      "id": "D-9838a4",
+      "rank": 8,
+      "summary": "src/frontend: components in src/tables/** call useTable() before apiUrl()",
+      "rule_kind": "before",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "members": 65,
+      "evidence": {
+        "holders": 60,
+        "total": 65,
+        "lower_bound": 0.832,
+        "lift": 1
+      },
+      "rule": {
+        "type": "before",
+        "first": "src/frontend/lib/hooks/UseTable.tsx#useTable",
+        "then": "src/frontend/lib/functions/Api.tsx#apiUrl"
+      },
+      "example": "src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable",
+      "outliers": 5,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "incidental",
+      "trivial_by": null,
+      "label_reason": "Every outlier lacks useTable entirely: NotificationTable receives tableState as a prop, PartThumbTable is a thumbnail grid, and the three drawers are detail views; the order itself has no effect, so such components would be flagged for nothing.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-9838a4] src/frontend: components in src/tables/** call useTable() before apiUrl()\n    evidence: 60/65 (lower bound 0.83, lift 1.0)\n    example:  src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable\n    outlier:  src/frontend/src/tables/notifications/NotificationTable.tsx:11 NotificationTable\n    outlier:  src/frontend/src/tables/part/PartThumbTable.tsx:133 PartThumbTable\n    outlier:  src/frontend/src/tables/settings/SnippetTable.tsx:49 SnippetDrawer\n    outlier:  src/frontend/src/tables/settings/TemplateTable.tsx:88 TemplateDrawer\n    outlier:  src/frontend/src/tables/settings/UserTable.tsx:63 UserDrawer",
+      "d5_conditions": true
+    },
+    {
+      "uid": "InvenTree/D-f31910",
+      "repo": "InvenTree",
+      "id": "D-f31910",
+      "rank": 9,
+      "summary": "classes in src/** (models files) call utils.translation.gettext_lazy()",
+      "rule_kind": "calls",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 82,
+      "evidence": {
+        "holders": 76,
+        "total": 82,
+        "lower_bound": 0.849,
+        "lift": 3.122
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:django#utils.translation.gettext_lazy"
+      },
+      "example": "src/backend/InvenTree/audit/models.py#AuditLogEntry",
+      "outliers": 6,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "mixed_group",
+      "trivial_by": null,
+      "label_reason": "Models use _() for verbose_name/help_text (AuditLogEntry, Company), but models files also contain managers, querysets and an enum metaclass with no user-facing strings; only Owner (users/models.py:502, a model whose fields lack translated verbose_name) is worth a look, 1 of 6.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-f31910] classes in src/** (models files) call utils.translation.gettext_lazy()\n    evidence: 76/82 (lower bound 0.85, lift 3.1)\n    example:  src/backend/InvenTree/audit/models.py#AuditLogEntry\n    outlier:  src/backend/InvenTree/audit/models.py:165 AuditLogEntryManager\n    outlier:  src/backend/InvenTree/common/models.py:3778 NoDeleteManager\n    outlier:  src/backend/InvenTree/common/models.py:3768 NoDeleteQuerySet\n    outlier:  src/backend/InvenTree/common/models.py:80 RenderMeta\n    outlier:  src/backend/InvenTree/common/models.py:213 SettingsManager\n    outlier:  src/backend/InvenTree/users/models.py:502 Owner",
+      "d5_conditions": false
+    },
+    {
+      "uid": "InvenTree/D-b24fe0",
+      "repo": "InvenTree",
+      "id": "D-b24fe0",
+      "rank": 10,
+      "summary": "src/frontend: components in src/tables/** call useTable() before useCallback()",
+      "rule_kind": "before",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": true,
+      "members": 50,
+      "evidence": {
+        "holders": 49,
+        "total": 50,
+        "lower_bound": 0.895,
+        "lift": 1
+      },
+      "rule": {
+        "type": "before",
+        "first": "src/frontend/lib/hooks/UseTable.tsx#useTable",
+        "then": "pkg:react#useCallback"
+      },
+      "example": "src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "incidental",
+      "trivial_by": null,
+      "label_reason": "Hook order with no effect; the only outlier, UserDrawer (UserTable.tsx:63), is a detail drawer that never calls useTable but uses useCallback for saving groups, so components without a table state would be flagged for nothing.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-b24fe0] src/frontend: components in src/tables/** call useTable() before useCallback()\n    evidence: 49/50 (lower bound 0.90, lift 1.0)\n    example:  src/frontend/src/tables/bom/UsedInTable.tsx#UsedInTable\n    outlier:  src/frontend/src/tables/settings/UserTable.tsx:63 UserDrawer",
+      "d5_conditions": false
+    },
+    {
+      "uid": "InvenTree/D-71f3ec",
+      "repo": "InvenTree",
+      "id": "D-71f3ec",
+      "rank": 11,
+      "summary": "src/frontend: components in src/tables/** call useTable() before useState()",
+      "rule_kind": "before",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": true,
+      "members": 50,
+      "evidence": {
+        "holders": 48,
+        "total": 50,
+        "lower_bound": 0.865,
+        "lift": 1
+      },
+      "rule": {
+        "type": "before",
+        "first": "src/frontend/lib/hooks/UseTable.tsx#useTable",
+        "then": "pkg:react#useState"
+      },
+      "example": "src/frontend/src/tables/bom/BomTable.tsx#BomTable",
+      "outliers": 2,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "incidental",
+      "trivial_by": null,
+      "label_reason": "Hook call order with no runtime effect: PartThumbTable never calls useTable (a thumbnail grid built on useQuery), and ApiTokenTable calls useTable after its useState calls and works identically; new components without useTable would be flagged for nothing.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-71f3ec] src/frontend: components in src/tables/** call useTable() before useState()\n    evidence: 48/50 (lower bound 0.86, lift 1.0)\n    example:  src/frontend/src/tables/bom/BomTable.tsx#BomTable\n    outlier:  src/frontend/src/tables/part/PartThumbTable.tsx:133 PartThumbTable\n    outlier:  src/frontend/src/tables/settings/ApiTokenTable.tsx:36 ApiTokenTable",
+      "d5_conditions": false
+    },
+    {
+      "uid": "ralph/D-4529f9",
+      "repo": "ralph",
+      "id": "D-4529f9",
+      "rank": 1,
+      "summary": "classes in src/** (api files) extend RalphAPISerializer",
+      "rule_kind": "wrapped_by:extends",
+      "group": "base",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 63,
+      "evidence": {
+        "holders": 54,
+        "total": 59,
+        "lower_bound": 0.816,
+        "lift": 7.33
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "src/ralph/api/serializers.py#RalphAPISerializer"
+        ]
+      },
+      "example": "src/ralph/access_cards/api.py#AccessCardSerializer",
+      "outliers": 5,
+      "exempt": 4,
+      "status": "changed",
+      "label": null,
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": null,
+      "old_label": {
+        "label": "WRONG",
+        "wrong_because": "mixed_group"
+      },
+      "diff": {
+        "removed": [
+          "    evidence: 54/63 (lower bound 0.75, lift 7.3)",
+          "    outlier:  src/ralph/lib/mixins/api.py:8 ChoiceFieldWithOtherOptionField",
+          "    outlier:  src/ralph/lib/permissions/api.py:152 IsAuthenticated",
+          "    outlier:  src/ralph/lib/permissions/api.py:24 PermissionsForObjectFilter",
+          "    outlier:  src/ralph/virtual/api.py:314 VirtualServerFilterSet"
+        ],
+        "added": [
+          "    evidence: 54/59 (lower bound 0.82, lift 7.3)",
+          "    exempt:   src/ralph/lib/mixins/api.py:8 ChoiceFieldWithOtherOptionField (another kind of class (extends serializers.ChoiceField))",
+          "    exempt:   src/ralph/lib/permissions/api.py:152 IsAuthenticated (another kind of class (extends permissions.IsAuthenticated))",
+          "    exempt:   src/ralph/lib/permissions/api.py:24 PermissionsForObjectFilter (another kind of class (extends filters.BaseFilterBackend))",
+          "    exempt:   src/ralph/virtual/api.py:314 VirtualServerFilterSet (another kind of class (extends FilterSet))"
+        ]
+      },
+      "block": "[D-4529f9] classes in src/** (api files) extend RalphAPISerializer\n    evidence: 54/59 (lower bound 0.82, lift 7.3)\n    example:  src/ralph/access_cards/api.py#AccessCardSerializer\n    outlier:  src/ralph/lib/permissions/api.py:162 RalphPermission\n    outlier:  src/ralph/networks/api.py:64 IPAddressSaveSerializer\n    outlier:  src/ralph/virtual/api.py:62 SaveCloudFlavorSerializer\n    outlier:  src/ralph/virtual/api.py:84 SaveCloudHostSerializer\n    outlier:  src/ralph/virtual/api.py:182 VirtualServerSaveSerializer\n    exempt:   src/ralph/lib/mixins/api.py:8 ChoiceFieldWithOtherOptionField (another kind of class (extends serializers.ChoiceField))\n    exempt:   src/ralph/lib/permissions/api.py:152 IsAuthenticated (another kind of class (extends permissions.IsAuthenticated))\n    exempt:   src/ralph/lib/permissions/api.py:24 PermissionsForObjectFilter (another kind of class (extends filters.BaseFilterBackend))\n    exempt:   src/ralph/virtual/api.py:314 VirtualServerFilterSet (another kind of class (extends FilterSet))",
+      "d5_conditions": true
+    },
+    {
+      "uid": "ralph/D-5b6f70",
+      "repo": "ralph",
+      "id": "D-5b6f70",
+      "rank": 2,
+      "summary": "classes in src/** (serializers files) extend RalphAPISerializer",
+      "rule_kind": "wrapped_by:extends",
+      "group": "base",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 55,
+      "evidence": {
+        "holders": 49,
+        "total": 52,
+        "lower_bound": 0.844,
+        "lift": 7.619
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "src/ralph/api/serializers.py#RalphAPISerializer"
+        ]
+      },
+      "example": "src/ralph/assets/api/serializers.py#AssetHolderSerializer",
+      "outliers": 3,
+      "exempt": 3,
+      "status": "changed",
+      "label": null,
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": null,
+      "old_label": {
+        "label": "WRONG",
+        "wrong_because": "legit_outliers"
+      },
+      "diff": {
+        "removed": [
+          "    evidence: 49/55 (lower bound 0.78, lift 7.6)",
+          "    outlier:  src/ralph/api/serializers.py:31 AdditionalLookupRelatedField",
+          "    outlier:  src/ralph/api/serializers.py:56 DeclaredFieldsMetaclass",
+          "    outlier:  src/ralph/api/serializers.py:297 RalphAPISerializerMetaclass"
+        ],
+        "added": [
+          "    evidence: 49/52 (lower bound 0.84, lift 7.6)",
+          "    exempt:   src/ralph/api/serializers.py:31 AdditionalLookupRelatedField (in the module that defines RalphAPISerializer)",
+          "    exempt:   src/ralph/api/serializers.py:56 DeclaredFieldsMetaclass (in the module that defines RalphAPISerializer)",
+          "    exempt:   src/ralph/api/serializers.py:297 RalphAPISerializerMetaclass (in the module that defines RalphAPISerializer)"
+        ]
+      },
+      "block": "[D-5b6f70] classes in src/** (serializers files) extend RalphAPISerializer\n    evidence: 49/52 (lower bound 0.84, lift 7.6)\n    example:  src/ralph/assets/api/serializers.py#AssetHolderSerializer\n    outlier:  src/ralph/assets/api/serializers.py:255 AssetModelSaveSerializer\n    outlier:  src/ralph/data_center/api/serializers.py:183 DataCenterAssetSaveSerializer\n    outlier:  src/ralph/lib/custom_fields/api/serializers.py:64 CustomFieldValueSaveSerializer\n    exempt:   src/ralph/api/serializers.py:31 AdditionalLookupRelatedField (in the module that defines RalphAPISerializer)\n    exempt:   src/ralph/api/serializers.py:56 DeclaredFieldsMetaclass (in the module that defines RalphAPISerializer)\n    exempt:   src/ralph/api/serializers.py:297 RalphAPISerializerMetaclass (in the module that defines RalphAPISerializer)",
+      "d5_conditions": true
+    },
+    {
+      "uid": "ralph/D-5bf491",
+      "repo": "ralph",
+      "id": "D-5bf491",
+      "rank": 3,
+      "summary": "exported values in src/** do not read os.environ directly",
+      "rule_kind": "avoids:other",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 114,
+      "evidence": {
+        "holders": 106,
+        "total": 114,
+        "lower_bound": 0.868,
+        "lift": 4.118
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "os_environ"
+      },
+      "example": "src/ralph/accounts/management/commands/_base.py#ANSI_ESCAPE_RE",
+      "outliers": 8,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "legit_outliers",
+      "trivial_by": null,
+      "label_reason": "Every outlier is a Django setting in settings/prod.py or settings/test.py, whose job is to read os.environ (settings/base.py does the same throughout); ordinary module constants like ANSI_ESCAPE_RE or switchports/constants.py simply have no reason to. New settings would be flagged for nothing.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-5bf491] exported values in src/** do not read os.environ directly\n    evidence: 106/114 (lower bound 0.87, lift 4.1)\n    example:  src/ralph/accounts/management/commands/_base.py#ANSI_ESCAPE_RE\n    outlier:  src/ralph/settings/prod.py:27 CACHES\n    outlier:  src/ralph/settings/prod.py:66 STATSD_GRAPHS_PREFIX\n    outlier:  src/ralph/settings/prod.py:58 STATSD_HOST\n    outlier:  src/ralph/settings/prod.py:61 STATSD_MAXUDPSIZE\n    outlier:  src/ralph/settings/prod.py:59 STATSD_PORT\n    outlier:  src/ralph/settings/prod.py:60 STATSD_PREFIX\n    outlier:  src/ralph/settings/test.py:75 SKIP_MIGRATIONS\n    outlier:  src/ralph/settings/test.py:14 TEST_DB_ENGINE",
+      "d5_conditions": true
+    },
+    {
+      "uid": "ralph/D-b1df5c",
+      "repo": "ralph",
+      "id": "D-b1df5c",
+      "rank": 4,
+      "summary": "classes in src/** (api files) are named `*Serializer`",
+      "rule_kind": "named",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 63,
+      "evidence": {
+        "holders": 58,
+        "total": 63,
+        "lower_bound": 0.827,
+        "lift": 7.08
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "example": "src/ralph/access_cards/api.py#AccessCardSerializer",
+      "outliers": 5,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "mixed_group",
+      "trivial_by": null,
+      "label_reason": "Serializers in api.py files are named *Serializer (access_cards, networks, virtual), but the outliers are a serializer field (lib/mixins/api.py), DRF permission and filter-backend classes (lib/permissions/api.py) and a FilterSet (virtual/api.py): other kinds of classes that legitimately live in api.py, 0 of 5 mistakes.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-b1df5c] classes in src/** (api files) are named `*Serializer`\n    evidence: 58/63 (lower bound 0.83, lift 7.1)\n    example:  src/ralph/access_cards/api.py#AccessCardSerializer\n    outlier:  src/ralph/lib/mixins/api.py:8 ChoiceFieldWithOtherOptionField\n    outlier:  src/ralph/lib/permissions/api.py:152 IsAuthenticated\n    outlier:  src/ralph/lib/permissions/api.py:24 PermissionsForObjectFilter\n    outlier:  src/ralph/lib/permissions/api.py:162 RalphPermission\n    outlier:  src/ralph/virtual/api.py:314 VirtualServerFilterSet",
+      "d5_conditions": true
+    },
+    {
+      "uid": "ralph/D-43f01e",
+      "repo": "ralph",
+      "id": "D-43f01e",
+      "rank": 5,
+      "summary": "classes in src/** (serializers files) are named `*Serializer`",
+      "rule_kind": "named",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 55,
+      "evidence": {
+        "holders": 51,
+        "total": 54,
+        "lower_bound": 0.849,
+        "lift": 7.131
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "example": "src/ralph/assets/api/serializers.py#AssetHolderSerializer",
+      "outliers": 3,
+      "exempt": 1,
+      "status": "changed",
+      "label": null,
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": null,
+      "old_label": {
+        "label": "WRONG",
+        "wrong_because": "mixed_group"
+      },
+      "diff": {
+        "removed": [
+          "    evidence: 51/55 (lower bound 0.83, lift 7.1)",
+          "    outlier:  src/ralph/api/serializers.py:31 AdditionalLookupRelatedField"
+        ],
+        "added": [
+          "    evidence: 51/54 (lower bound 0.85, lift 7.1)",
+          "    exempt:   src/ralph/api/serializers.py:31 AdditionalLookupRelatedField (shared part used by 2 members)"
+        ]
+      },
+      "block": "[D-43f01e] classes in src/** (serializers files) are named `*Serializer`\n    evidence: 51/54 (lower bound 0.85, lift 7.1)\n    example:  src/ralph/assets/api/serializers.py#AssetHolderSerializer\n    outlier:  src/ralph/api/serializers.py:56 DeclaredFieldsMetaclass\n    outlier:  src/ralph/api/serializers.py:297 RalphAPISerializerMetaclass\n    outlier:  src/ralph/dashboards/api/serializers.py:11 GraphSerializerDetail\n    exempt:   src/ralph/api/serializers.py:31 AdditionalLookupRelatedField (shared part used by 2 members)",
+      "d5_conditions": true
+    },
+    {
+      "uid": "ralph/D-cfd5da",
+      "repo": "ralph",
+      "id": "D-cfd5da",
+      "rank": 6,
+      "summary": "functions in src/ralph/switchports/** declare their return type",
+      "rule_kind": "control",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 34,
+      "evidence": {
+        "holders": 31,
+        "total": 34,
+        "lower_bound": 0.77,
+        "lift": 5.553
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "example": "src/ralph/switchports/connections/planning.py#switch_port_owner",
+      "outliers": 3,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "switchports functions annotate returns (planning.py, mac.py, sync/switches.py); format_speed, status_symbol (presentation.py) and run_rack_refresh (sync/tasks.py) are ordinary functions that could as easily annotate, a choice not a need. mypy.ini has no disallow_untyped_defs and ruff selects no ANN rules, so nothing enforces it.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-cfd5da] functions in src/ralph/switchports/** declare their return type\n    evidence: 31/34 (lower bound 0.77, lift 5.6)\n    example:  src/ralph/switchports/connections/planning.py#switch_port_owner\n    outlier:  src/ralph/switchports/presentation.py:14 format_speed\n    outlier:  src/ralph/switchports/presentation.py:26 status_symbol\n    outlier:  src/ralph/switchports/sync/tasks.py:97 run_rack_refresh",
+      "d5_conditions": true
+    },
+    {
+      "uid": "Misago/D-c9ae1e",
+      "repo": "Misago",
+      "id": "D-c9ae1e",
+      "rank": 1,
+      "summary": "classes in misago/permissions/hooks/** extend FilterHook",
+      "rule_kind": "wrapped_by:extends",
+      "group": "base",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 68,
+      "evidence": {
+        "holders": 67,
+        "total": 68,
+        "lower_bound": 0.921,
+        "lift": 8.241
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "misago/plugins/hooks.py#FilterHook"
+        ]
+      },
+      "example": "misago/permissions/hooks/build_user_category_permissions.py#BuildUserCategoryPermissionsHook",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "legit_outliers",
+      "trivial_by": null,
+      "label_reason": "GetAdminCategoryPermissionsHook extends ActionHook on purpose: plugins append actions that each contribute permissions, which __call__ concatenates; ActionHook is the second hook kind in plugins/hooks.py (also used by posting/hooks/validate_posting.py), so new action hooks would get false alarms. 0 of 1.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-c9ae1e] classes in misago/permissions/hooks/** extend FilterHook\n    evidence: 67/68 (lower bound 0.92, lift 8.2)\n    example:  misago/permissions/hooks/build_user_category_permissions.py#BuildUserCategoryPermissionsHook\n    outlier:  misago/permissions/hooks/get_admin_category_permissions.py:27 GetAdminCategoryPermissionsHook",
+      "d5_conditions": true
+    },
+    {
+      "uid": "Misago/D-90a5d9",
+      "repo": "Misago",
+      "id": "D-90a5d9",
+      "rank": 2,
+      "summary": "HTTP handlers in misago/** (urls files) call extensions.get()",
+      "rule_kind": "calls",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 50,
+      "evidence": {
+        "holders": 49,
+        "total": 50,
+        "lower_bound": 0.895,
+        "lift": 9.6
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "misago/plugins/extensions.py#extensions.get"
+      },
+      "example": "misago/likes/urls.py#private_thread_post_like_view",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "All 49 members are module-level view variables built as extensions.get(View).as_view() (likes/, posting/, threads/, privatethreads/ urls.py), which makes views extendable by plugins via ExtensionRegistry.get in plugins/extensions.py. The only outlier is urlpatterns in core/testproject/urls.py, the test project's root URLconf (ROOT_URLCONF in tests) that composes misago.urls, so it is the one aggregator (one_off, R1). With nothing left to count, a new view variable written as bare View.as_view() is not caught by any tool: .ruff.toml selects only I and nothing type-checks. It drops plugin extensibility, so it is worth flagging. clear=false because 'HTTP handlers' reads as covering inline View.as_view() inside path() too, and solutions/, polls/ and account/ urls.py do that without extensions.get. Hesitated with WRONG mixed_group, which would apply if urlpatterns counted as a recurring non-handler kind.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-90a5d9] HTTP handlers in misago/** (urls files) call extensions.get()\n    evidence: 49/50 (lower bound 0.90, lift 9.6)\n    example:  misago/likes/urls.py#private_thread_post_like_view\n    outlier:  misago/core/testproject/urls.py:16 urlpatterns",
+      "d5_conditions": true
+    },
+    {
+      "uid": "Misago/D-e72fc8",
+      "repo": "Misago",
+      "id": "D-e72fc8",
+      "rank": 3,
+      "summary": "classes in misago/posting/hooks/** extend FilterHook",
+      "rule_kind": "wrapped_by:extends",
+      "group": "base",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 30,
+      "evidence": {
+        "holders": 29,
+        "total": 30,
+        "lower_bound": 0.833,
+        "lift": 8.085
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "misago/plugins/hooks.py#FilterHook"
+        ]
+      },
+      "example": "misago/posting/hooks/get_private_thread_edit_formset.py#GetPrivateThreadEditFormsetHook",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "legit_outliers",
+      "trivial_by": null,
+      "label_reason": "ValidatePostingHook deliberately extends ActionHook (plugins append_action validators that all run), the second hook kind defined in plugins/hooks.py and also used in permissions/hooks/get_admin_category_permissions.py; a new action hook in posting/hooks would be falsely told to extend FilterHook. 0 of 1.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-e72fc8] classes in misago/posting/hooks/** extend FilterHook\n    evidence: 29/30 (lower bound 0.83, lift 8.1)\n    example:  misago/posting/hooks/get_private_thread_edit_formset.py#GetPrivateThreadEditFormsetHook\n    outlier:  misago/posting/hooks/validate_posting.py:33 ValidatePostingHook",
+      "d5_conditions": true
+    },
+    {
+      "uid": "Misago/D-5862f4",
+      "repo": "Misago",
+      "id": "D-5862f4",
+      "rank": 4,
+      "summary": "frontend: classes in src/components/** extend react.Component",
+      "rule_kind": "wrapped_by:extends",
+      "group": "base",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": true,
+      "members": 159,
+      "evidence": {
+        "holders": 133,
+        "total": 159,
+        "lower_bound": 0.771,
+        "lift": 10.222
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:react#default.Component"
+        ]
+      },
+      "example": "frontend/src/components/Api/ApiFetch.jsx#ApiFetch",
+      "outliers": 26,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "false_outliers",
+      "trivial_by": null,
+      "label_reason": "Every outlier opened extends a repo component that itself extends React.Component (Form in components/form.js, PanelMessage in panel-message.js, Followers in profile/followers.js), so they are React components through their base; extending Form is the intended pattern for forms. Even read as direct-base only, they would be legit, not mistakes.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-5862f4] frontend: classes in src/components/** extend react.Component\n    evidence: 133/159 (lower bound 0.77, lift 10.2)\n    example:  frontend/src/components/Api/ApiFetch.jsx#ApiFetch\n    outlier:  frontend/src/components/edit-details/form.js:8 default\n    outlier:  frontend/src/components/modal-message.js:4 default\n    outlier:  frontend/src/components/poll/form/index.js:12 default\n    outlier:  frontend/src/components/poll/voting/index.js:14 default\n    outlier:  frontend/src/components/posting/edit.js:15 default\n    outlier:  frontend/src/components/posting/reply.js:15 default\n    outlier:  frontend/src/components/posting/start-private.js:15 default\n    outlier:  frontend/src/components/posting/start.js:17 default\n    outlier:  frontend/src/components/posts-list/post/controls/move.js:10 default\n    outlier:  frontend/src/components/posts-list/post/controls/split.js:70 ModerationForm\n    outlier:  frontend/src/components/profile/follows.js:4 default\n    outlier:  frontend/src/components/profile/moderation/avatar-controls.js:13 default\n    outlier:  frontend/src/components/profile/moderation/change-username.js:14 default\n    outlier:  frontend/src/components/profile/moderation/delete-account.js:12 default\n    outlier:  frontend/src/components/register.js:17 RegisterForm\n    outlier:  frontend/src/components/request-activation-link.js:10 RequestLinkForm\n    outlier:  frontend/src/components/request-password-reset.js:11 RequestResetForm\n    outlier:  frontend/src/components/reset-password-form.js:13 ResetPasswordForm\n    outlier:  frontend/src/components/search-route/form.js:18 default\n    outlier:  frontend/src/components/sign-in.js:11 default\n    outlier:  frontend/src/components/social-auth/register.js:13 Register\n    outlier:  frontend/src/components/thread/moderation/posts/move.js:11 default\n    outlier:  frontend/src/components/thread/moderation/posts/split.js:71 ModerationForm\n    outlier:  frontend/src/components/thread/moderation/thread/ThreadChangeTitleModal.jsx:11 default\n    outlier:  frontend/src/components/thread/moderation/thread/merge.js:11 default\n    outlier:  frontend/src/components/thread/moderation/thread/move.js:14 default",
+      "d5_conditions": false
+    },
+    {
+      "uid": "Misago/D-b4e5ff",
+      "repo": "Misago",
+      "id": "D-b4e5ff",
+      "rank": 5,
+      "summary": "classes in misago/** (forms files) are named `*Form`",
+      "rule_kind": "named",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 31,
+      "evidence": {
+        "holders": 28,
+        "total": 29,
+        "lower_bound": 0.828,
+        "lift": 16.734
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Form"
+      },
+      "example": "misago/account/forms.py#AccountDeleteForm",
+      "outliers": 1,
+      "exempt": 2,
+      "status": "changed",
+      "label": null,
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": null,
+      "old_label": {
+        "label": "WRONG",
+        "wrong_because": "mixed_group"
+      },
+      "diff": {
+        "removed": [
+          "    evidence: 28/31 (lower bound 0.75, lift 16.7)",
+          "    outlier:  misago/account/forms.py:68 AccountNotifications",
+          "    outlier:  misago/admin/categories/forms.py:47 AdminCategoryChoiceField"
+        ],
+        "added": [
+          "    evidence: 28/29 (lower bound 0.83, lift 16.7)",
+          "    exempt:   misago/account/forms.py:68 AccountNotifications (shared part used by 2 members)",
+          "    exempt:   misago/admin/categories/forms.py:47 AdminCategoryChoiceField (shared part used by 2 members)"
+        ]
+      },
+      "block": "[D-b4e5ff] classes in misago/** (forms files) are named `*Form`\n    evidence: 28/29 (lower bound 0.83, lift 16.7)\n    example:  misago/account/forms.py#AccountDeleteForm\n    outlier:  misago/admin/categories/forms.py:51 AdminCategoryMultipleChoiceField\n    exempt:   misago/account/forms.py:68 AccountNotifications (shared part used by 2 members)\n    exempt:   misago/admin/categories/forms.py:47 AdminCategoryChoiceField (shared part used by 2 members)",
+      "d5_conditions": true
+    },
+    {
+      "uid": "Misago/D-d8703c",
+      "repo": "Misago",
+      "id": "D-d8703c",
+      "rank": 6,
+      "summary": "classes in misago/permissions/** call super().__call__()",
+      "rule_kind": "calls",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 74,
+      "evidence": {
+        "holders": 68,
+        "total": 74,
+        "lower_bound": 0.834,
+        "lift": 7.612
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "global#super().__call__"
+      },
+      "example": "misago/permissions/hooks/build_user_category_permissions.py#BuildUserCategoryPermissionsHook",
+      "outliers": 6,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "mixed_group",
+      "trivial_by": null,
+      "label_reason": "Only the hook classes in permissions/hooks/ override __call__ and delegate to FilterHook/ActionHook via super().__call__(); the outliers are ordinary classes (a result object in checkutils.py, a debug-toolbar Panel, the permissions proxy, queryset filters) with no __call__ at all, so any new non-hook class in misago/permissions would be flagged for nothing. 0 of 6 counted outliers are mistakes.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-d8703c] classes in misago/permissions/** call super().__call__()\n    evidence: 68/74 (lower bound 0.83, lift 7.6)\n    example:  misago/permissions/hooks/build_user_category_permissions.py#BuildUserCategoryPermissionsHook\n    outlier:  misago/permissions/checkutils.py:7 PermissionCheckResult\n    outlier:  misago/permissions/panels.py:5 MisagoUserPermissionsPanel\n    outlier:  misago/permissions/proxy.py:16 UserPermissionsProxy\n    outlier:  misago/permissions/threads/querysets.py:30 CategoryQueries\n    outlier:  misago/permissions/threads/querysets.py:119 CategoryThreadsQuerysetFilter\n    outlier:  misago/permissions/threads/querysets.py:59 ThreadsQuerysetFilter",
+      "d5_conditions": false
+    },
+    {
+      "uid": "Misago/D-d01155",
+      "repo": "Misago",
+      "id": "D-d01155",
+      "rank": 7,
+      "summary": "classes in misago/permissions/** call super()",
+      "rule_kind": "calls",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 74,
+      "evidence": {
+        "holders": 69,
+        "total": 74,
+        "lower_bound": 0.851,
+        "lift": 4.319
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "global#super"
+      },
+      "example": "misago/permissions/hooks/build_user_category_permissions.py#BuildUserCategoryPermissionsHook",
+      "outliers": 5,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "mixed_group",
+      "trivial_by": null,
+      "label_reason": "Members are hook classes whose __call__ returns super().__call__(...); outliers are plain helper classes (checkutils.py result, panels.py debug panel, proxy.py, querysets.py) with no base behaviour to delegate to. 0 of 5 counted outliers are mistakes; 'call super()' without saying which method is also vague.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-d01155] classes in misago/permissions/** call super()\n    evidence: 69/74 (lower bound 0.85, lift 4.3)\n    example:  misago/permissions/hooks/build_user_category_permissions.py#BuildUserCategoryPermissionsHook\n    outlier:  misago/permissions/checkutils.py:7 PermissionCheckResult\n    outlier:  misago/permissions/panels.py:5 MisagoUserPermissionsPanel\n    outlier:  misago/permissions/proxy.py:16 UserPermissionsProxy\n    outlier:  misago/permissions/threads/querysets.py:30 CategoryQueries\n    outlier:  misago/permissions/threads/querysets.py:59 ThreadsQuerysetFilter",
+      "d5_conditions": false
+    },
+    {
+      "uid": "Misago/D-d93d41",
+      "repo": "Misago",
+      "id": "D-d93d41",
+      "rank": 8,
+      "summary": "functions in misago/posting/** declare their return type",
+      "rule_kind": "control",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 31,
+      "evidence": {
+        "holders": 28,
+        "total": 31,
+        "lower_bound": 0.751,
+        "lift": 3.156
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "example": "misago/posting/approval.py#require_private_thread_approval",
+      "outliers": 3,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "approval.py and floodcontrol.py annotate returns (including '-> None' in flood_control), while the outliers in processcontent.py and shortcuts.py are ordinary None-returning functions that simply omit '-> None': a choice, not a lack of need; ruff only selects 'I' and no mypy runs. Hesitated with WRONG since validators.py also has unannotated functions the tool did not list.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-d93d41] functions in misago/posting/** declare their return type\n    evidence: 28/31 (lower bound 0.75, lift 3.2)\n    example:  misago/posting/approval.py#require_private_thread_approval\n    outlier:  misago/posting/processcontent.py:37 highlight_post_code_blocks\n    outlier:  misago/posting/processcontent.py:24 process_post_content\n    outlier:  misago/posting/shortcuts.py:6 save_edited_post",
+      "d5_conditions": true
+    },
+    {
+      "uid": "paperless-ngx/D-c3460b",
+      "repo": "paperless-ngx",
+      "id": "D-c3460b",
+      "rank": 1,
+      "summary": "src-ui: classes in src/app/components/common/input/** (*.component files) extend AbstractInputComponent",
+      "rule_kind": "wrapped_by:extends",
+      "group": "base",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": false,
+      "members": 20,
+      "evidence": {
+        "holders": 19,
+        "total": 20,
+        "lower_bound": 0.764,
+        "lift": 31.15
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "src-ui/src/app/components/common/input/abstract-input.ts#AbstractInputComponent"
+        ]
+      },
+      "example": "src-ui/src/app/components/common/input/check/check.component.ts#CheckComponent",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "All other inputs (check, select, number, date, permissions-form) extend AbstractInputComponent<T>; TagsComponent instead re-implements ControlValueAccessor by hand, duplicating writeValue/registerOnChange/setDisabledState/title/disabled/hint from abstract-input.ts, even though SelectComponent shows an ng-select input can extend the base. No lint or type rule enforces the base class, so flagging a new input that skips it is worth a review look.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-c3460b] src-ui: classes in src/app/components/common/input/** (*.component files) extend AbstractInputComponent\n    evidence: 19/20 (lower bound 0.76, lift 31.1)\n    example:  src-ui/src/app/components/common/input/check/check.component.ts#CheckComponent\n    outlier:  src-ui/src/app/components/common/input/tags/tags.component.ts:50 TagsComponent",
+      "d5_conditions": true
+    },
+    {
+      "uid": "paperless-ngx/D-de2489",
+      "repo": "paperless-ngx",
+      "id": "D-de2489",
+      "rank": 2,
+      "summary": "src-ui: classes in src/** (*.component files) are named `*Component`",
+      "rule_kind": "named",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "members": 119,
+      "evidence": {
+        "holders": 114,
+        "total": 114,
+        "lower_bound": 0.967,
+        "lift": 5.19
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Component"
+      },
+      "example": "src-ui/src/app/app.component.ts#AppComponent",
+      "outliers": 0,
+      "exempt": 5,
+      "status": "changed",
+      "label": null,
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": null,
+      "old_label": {
+        "label": "WRONG",
+        "wrong_because": "mixed_group"
+      },
+      "diff": {
+        "removed": [
+          "    evidence: 114/119 (lower bound 0.91, lift 5.2)",
+          "    outlier:  src-ui/src/app/components/common/custom-fields-query-dropdown/custom-fields-query-dropdown.component.ts:72 CustomFieldQueriesModel",
+          "    outlier:  src-ui/src/app/components/common/filterable-dropdown/filterable-dropdown.component.ts:62 FilterableDropdownSelectionModel",
+          "    outlier:  src-ui/src/app/components/common/permissions-filter-dropdown/permissions-filter-dropdown.component.ts:28 PermissionsSelectionModel",
+          "    outlier:  src-ui/src/app/components/loading-component/loading.component.ts:6 LoadingComponentWithPermissions",
+          "    outlier:  src-ui/src/app/components/with-permissions/with-permissions.component.ts:6 ComponentWithPermissions"
+        ],
+        "added": [
+          "    evidence: 114/114 (lower bound 0.97, lift 5.2)",
+          "    exempt:   src-ui/src/app/components/common/custom-fields-query-dropdown/custom-fields-query-dropdown.component.ts:72 CustomFieldQueriesModel (shared part used by 3 members)",
+          "    exempt:   src-ui/src/app/components/common/filterable-dropdown/filterable-dropdown.component.ts:62 FilterableDropdownSelectionModel (shared part used by 2 members)",
+          "    exempt:   src-ui/src/app/components/common/permissions-filter-dropdown/permissions-filter-dropdown.component.ts:28 PermissionsSelectionModel (shared part used by 2 members)",
+          "    exempt:   src-ui/src/app/components/loading-component/loading.component.ts:6 LoadingComponentWithPermissions (shared part used by 22 members)",
+          "    exempt:   src-ui/src/app/components/with-permissions/with-permissions.component.ts:6 ComponentWithPermissions (shared part used by 16 members)"
+        ]
+      },
+      "block": "[D-de2489] src-ui: classes in src/** (*.component files) are named `*Component`\n    evidence: 114/114 (lower bound 0.97, lift 5.2)\n    example:  src-ui/src/app/app.component.ts#AppComponent\n    exempt:   src-ui/src/app/components/common/custom-fields-query-dropdown/custom-fields-query-dropdown.component.ts:72 CustomFieldQueriesModel (shared part used by 3 members)\n    exempt:   src-ui/src/app/components/common/filterable-dropdown/filterable-dropdown.component.ts:62 FilterableDropdownSelectionModel (shared part used by 2 members)\n    exempt:   src-ui/src/app/components/common/permissions-filter-dropdown/permissions-filter-dropdown.component.ts:28 PermissionsSelectionModel (shared part used by 2 members)\n    exempt:   src-ui/src/app/components/loading-component/loading.component.ts:6 LoadingComponentWithPermissions (shared part used by 22 members)\n    exempt:   src-ui/src/app/components/with-permissions/with-permissions.component.ts:6 ComponentWithPermissions (shared part used by 16 members)",
+      "d5_conditions": true
+    },
+    {
+      "uid": "paperless-ngx/D-1d6a6a",
+      "repo": "paperless-ngx",
+      "id": "D-1d6a6a",
+      "rank": 3,
+      "summary": "src-ui: classes in src/** (*.service files) are decorated with Injectable()",
+      "rule_kind": "wrapped_by:decorator",
+      "group": "decorator",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": true,
+      "members": 36,
+      "evidence": {
+        "holders": 35,
+        "total": 36,
+        "lower_bound": 0.858,
+        "lift": 13.766
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:@angular/core#Injectable"
+        ]
+      },
+      "example": "src-ui/src/app/services/chat.service.ts#ChatService",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "mixed_group",
+      "trivial_by": null,
+      "label_reason": "Real services (ChatService, DocumentService, AbstractPaperlessService) carry @Injectable({providedIn:'root'}), but the only outlier FileStatus is a plain data/progress model co-located in websocket-status.service.ts next to the injectable WebsocketStatusService; another such model class in a service file would be flagged for nothing (0 of 1 counted). Angular would catch a real DI-ed service without the decorator, but not this kind of violation.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-1d6a6a] src-ui: classes in src/** (*.service files) are decorated with Injectable()\n    evidence: 35/36 (lower bound 0.86, lift 13.8)\n    example:  src-ui/src/app/services/chat.service.ts#ChatService\n    outlier:  src-ui/src/app/services/websocket-status.service.ts:45 FileStatus",
+      "d5_conditions": false
+    },
+    {
+      "uid": "wger/D-82d21d",
+      "repo": "wger",
+      "id": "D-82d21d",
+      "rank": 1,
+      "summary": "HTTP handlers in wger/** (api/views files) are decorated with utils.extend_schema()",
+      "rule_kind": "wrapped_by:decorator",
+      "group": "decorator",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 26,
+      "evidence": {
+        "holders": 25,
+        "total": 26,
+        "lower_bound": 0.811,
+        "lift": 11.231
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:drf_spectacular#utils.extend_schema"
+        ]
+      },
+      "example": "wger/core/api/views.py#ApplicationVersionView.get",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "legit_outliers",
+      "trivial_by": null,
+      "label_reason": "Members are custom @action methods and plain ViewSet get() handlers whose responses drf-spectacular cannot infer (manager/nutrition api views, core ApplicationVersionView.get); the only outlier overrides the standard list() of a ReadOnlyModelViewSet with serializer_class set, so its schema is inferred automatically, and future overrides of standard actions would be false alarms. Hesitated with ACCEPT, since a new custom @action without extend_schema would be worth flagging.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-82d21d] HTTP handlers in wger/** (api/views files) are decorated with utils.extend_schema()\n    evidence: 25/26 (lower bound 0.81, lift 11.2)\n    example:  wger/core/api/views.py#ApplicationVersionView.get\n    outlier:  wger/exercises/api/views.py:264 ExerciseInfoViewset.list",
+      "d5_conditions": false
+    },
+    {
+      "uid": "wger/D-db04dc",
+      "repo": "wger",
+      "id": "D-db04dc",
+      "rank": 2,
+      "summary": "classes in wger/** (serializers files) are named `*Serializer`",
+      "rule_kind": "named",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 79,
+      "evidence": {
+        "holders": 76,
+        "total": 79,
+        "lower_bound": 0.894,
+        "lift": 6.157
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "example": "wger/core/api/serializers.py#LanguageCheckSerializer",
+      "outliers": 3,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "mixed_group",
+      "trivial_by": null,
+      "label_reason": "Serializer classes (LanguageCheckSerializer, MealSerializer, WeightEntrySerializer, gallery ImageSerializer) are named *Serializer, but all three outliers are custom DRF field classes (subclassing ImageField/FileField/PrimaryKeyRelatedField) co-located in serializers.py and correctly named *Field; a new field class there would be falsely told to end in Serializer.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-db04dc] classes in wger/** (serializers files) are named `*Serializer`\n    evidence: 76/79 (lower bound 0.89, lift 6.2)\n    example:  wger/core/api/serializers.py#LanguageCheckSerializer\n    outlier:  wger/exercises/api/serializers.py:217 AbsoluteUrlFileField\n    outlier:  wger/exercises/api/serializers.py:202 AbsoluteUrlImageField\n    outlier:  wger/manager/api/serializers.py:555 OwnerScopedSessionField",
+      "d5_conditions": true
+    },
+    {
+      "uid": "wger/D-3755b1",
+      "repo": "wger",
+      "id": "D-3755b1",
+      "rank": 3,
+      "summary": "exported values in wger/** (urls files) call urls.path()",
+      "rule_kind": "calls",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 46,
+      "evidence": {
+        "holders": 44,
+        "total": 46,
+        "lower_bound": 0.855,
+        "lift": 3.63
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:django#urls.path"
+      },
+      "example": "wger/config/urls.py#patterns_gym_config",
+      "outliers": 2,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "mixed_group",
+      "trivial_by": null,
+      "label_reason": "Pattern lists in urls files (patterns_gym_config, nutrition patterns_bmi, weight urlpatterns) are lists of path() calls, but wger/urls.py also defines the root DRF DefaultRouter (the one aggregator, one_off) and a sitemaps dict mapping names to Sitemap classes, a different kind of module-level value that has no reason to call path(); 0 of 1 counted outliers is a mistake.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-3755b1] exported values in wger/** (urls files) call urls.path()\n    evidence: 44/46 (lower bound 0.85, lift 3.6)\n    example:  wger/config/urls.py#patterns_gym_config\n    outlier:  wger/urls.py:59 router\n    outlier:  wger/urls.py:265 sitemaps",
+      "d5_conditions": false
+    },
+    {
+      "uid": "lotus/D-e5b6fe",
+      "repo": "lotus",
+      "id": "D-e5b6fe",
+      "rank": 1,
+      "summary": "backend: HTTP handlers in metering_billing/** are decorated with utils.extend_schema()",
+      "rule_kind": "wrapped_by:decorator",
+      "group": "decorator",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 70,
+      "evidence": {
+        "holders": 69,
+        "total": 70,
+        "lower_bound": 0.923,
+        "lift": 2.629
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:drf_spectacular#utils.extend_schema"
+        ]
+      },
+      "example": "backend/metering_billing/views/auth_views.py#DemoLoginView.post",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "Handlers carry drf_spectacular's @extend_schema (DemoLoginView.post in auth_views.py, PaymentProcesorView.get/post in payment_processor_views.py, PeriodMetricRevenueView.get in views.py; even the unauthenticated, csrf_exempt track_event in api/views.py), and nothing enforces it (ruff selects only E/F in pyproject.toml), so not TRIVIAL. The lone outlier is not a legit recurring category: generate_schema.py runs spectacular over every path, and without the decorator docs/openapi_private.yaml:4117 lists /stripe/webhook/ with no body and OrganizationApiKeyAuth/TokenAuth security although the view uses authentication_classes([]); extend_schema(exclude=True) or a real schema would fix it, so 1 of 1 is look and the warning is worth it. clear false because 'utils.extend_schema' reads like metering_billing.utils rather than drf_spectacular.utils.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-e5b6fe] backend: HTTP handlers in metering_billing/** are decorated with utils.extend_schema()\n    evidence: 69/70 (lower bound 0.92, lift 2.6)\n    example:  backend/metering_billing/views/auth_views.py#DemoLoginView.post\n    outlier:  backend/metering_billing/views/webhook_views.py:55 stripe_webhook_endpoint",
+      "d5_conditions": false
+    },
+    {
+      "uid": "lotus/D-26d6a0",
+      "repo": "lotus",
+      "id": "D-26d6a0",
+      "rank": 2,
+      "summary": "backend: classes in api/** are named `*Serializer`",
+      "rule_kind": "named",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 92,
+      "evidence": {
+        "holders": 85,
+        "total": 92,
+        "lower_bound": 0.851,
+        "lift": 2.023
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "example": "backend/api/serializers/model_serializers.py#AddOnSerializer",
+      "outliers": 7,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "Every class in api/serializers (AddOnSerializer, nonmodel_serializers.py, webhook_serializers.py) is a DRF serializer named *Serializer; apart from the single AppConfig, the outliers are serializers too whose names drift off the scheme (ListSubscriptionRecordFilter, UsageAlertPayload, *SerializerOld/*SerializerDelete suffixes). Ruff selects only E/F, so nothing enforces naming.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-26d6a0] backend: classes in api/** are named `*Serializer`\n    evidence: 85/92 (lower bound 0.85, lift 2.0)\n    example:  backend/api/serializers/model_serializers.py#AddOnSerializer\n    outlier:  backend/api/apps.py:4 ApiConfig\n    outlier:  backend/api/serializers/model_serializers.py:134 LightweightCustomerSerializerForInvoice\n    outlier:  backend/api/serializers/model_serializers.py:2171 ListSubscriptionRecordFilter\n    outlier:  backend/api/serializers/model_serializers.py:1630 SubscriptionRecordCreateSerializerOld\n    outlier:  backend/api/serializers/model_serializers.py:2141 SubscriptionRecordFilterSerializerDelete\n    outlier:  backend/api/serializers/model_serializers.py:1876 SubscriptionRecordUpdateSerializerOld\n    outlier:  backend/api/serializers/webhook_serializers.py:48 UsageAlertPayload",
+      "d5_conditions": true
+    },
+    {
+      "uid": "lotus/D-1cbdac",
+      "repo": "lotus",
+      "id": "D-1cbdac",
+      "rank": 3,
+      "summary": "backend: classes in metering_billing/serializers/** are named `*Serializer`",
+      "rule_kind": "named",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 163,
+      "evidence": {
+        "holders": 140,
+        "total": 163,
+        "lower_bound": 0.797,
+        "lift": 1.88
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "example": "backend/metering_billing/serializers/auth_serializers.py#DemoRegistrationDetailSerializer",
+      "outliers": 23,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "mixed_group",
+      "trivial_by": null,
+      "label_reason": "Serializers in auth/request/response_serializers.py follow *Serializer, but serializer_utils.py and model_serializers.py also hold DRF field classes (*UUIDField, SlugRelatedField*, ActivityGenericRelatedField) and a JSON encoder, which are a different kind of thing; only 2 of 23 counted outliers are misnamed serializers, so a new field class would be told to be named *Serializer.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-1cbdac] backend: classes in metering_billing/serializers/** are named `*Serializer`\n    evidence: 140/163 (lower bound 0.80, lift 1.9)\n    example:  backend/metering_billing/serializers/auth_serializers.py#DemoRegistrationDetailSerializer\n    outlier:  backend/metering_billing/serializers/model_serializers.py:2398 ActivityGenericRelatedField\n    outlier:  backend/metering_billing/serializers/model_serializers.py:1687 ListSubscriptionRecordFilter\n    outlier:  backend/metering_billing/serializers/model_serializers.py:1675 SubscriptionRecordFilterSerializerDelete\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:296 AddOnSubscriptionUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:326 AddOnUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:284 AddOnVersionUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:248 AnalysisUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:242 BacktestUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:254 BalanceAdjustmentUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:93 DjangoJSONEncoder\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:290 FeatureUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:272 InvoiceUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:260 MetricUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:236 OrganizationUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:266 PlanUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:278 PlanVersionUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:103 SlugRelatedFieldWithOrganization\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:190 SlugRelatedFieldWithOrganizationPK\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:302 SubscriptionUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:14 TimeZoneSerializerField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:308 UsageAlertUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:314 WebhookEndpointUUIDField\n    outlier:  backend/metering_billing/serializers/serializer_utils.py:320 WebhookSecretUUIDField",
+      "d5_conditions": true
+    },
+    {
+      "uid": "lotus/D-2ab768",
+      "repo": "lotus",
+      "id": "D-2ab768",
+      "rank": 4,
+      "summary": "django models have a `organization` field",
+      "rule_kind": "model_has",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 49,
+      "evidence": {
+        "holders": 46,
+        "total": 49,
+        "lower_bound": 0.835,
+        "lift": 1
+      },
+      "rule": {
+        "type": "model_has",
+        "field": "organization"
+      },
+      "example": "backend/metering_billing/models.py#APIToken",
+      "outliers": 3,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "legit_outliers",
+      "trivial_by": null,
+      "label_reason": "Tenant-scoped models (APIToken, Tag, Backtest, RecurringCharge in models.py, all models live in this one file) carry an organization FK, but Organization is the tenant itself (one_off) and Team/TeamInviteToken are team-level models that sit above organizations and are scoped by a team FK, a recurring category that would be falsely flagged. Hesitated with ACCEPT since org scoping is the multi-tenancy boundary checked in permissions.py.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-2ab768] django models have a `organization` field\n    evidence: 46/49 (lower bound 0.83, lift 1.0)\n    example:  backend/metering_billing/models.py#APIToken\n    outlier:  backend/metering_billing/models.py:202 Organization\n    outlier:  backend/metering_billing/models.py:90 Team\n    outlier:  backend/metering_billing/models.py:2073 TeamInviteToken",
+      "d5_conditions": true
+    },
+    {
+      "uid": "pontoon/D-94fc85",
+      "repo": "pontoon",
+      "id": "D-94fc85",
+      "rank": 1,
+      "summary": "translate: functions in src/api/** declare their return type",
+      "rule_kind": "control",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "members": 46,
+      "evidence": {
+        "holders": 45,
+        "total": 46,
+        "lower_bound": 0.887,
+        "lift": 2.215
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "example": "translate/src/api/comment.ts#addComment",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "API functions declare their return types (comment.ts addComment: Promise<void>, entity.ts fetchPretranslateStatus: Promise<PretranslateStatus>, user.ts fetchUserData: Promise<ApiUserData>), unenforced by eslint.config.mjs; machinery.ts abortMachineryRequests is an ordinary exported void function with an inferred return, a choice not a lacking need (R8), so 1 of 1 'look'.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-94fc85] translate: functions in src/api/** declare their return type\n    evidence: 45/46 (lower bound 0.89, lift 2.2)\n    example:  translate/src/api/comment.ts#addComment\n    outlier:  translate/src/api/machinery.ts:57 abortMachineryRequests",
+      "d5_conditions": true
+    },
+    {
+      "uid": "pontoon/D-ddba4b",
+      "repo": "pontoon",
+      "id": "D-ddba4b",
+      "rank": 2,
+      "summary": "translate: functions in src/utils/** declare their return type",
+      "rule_kind": "control",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "members": 30,
+      "evidence": {
+        "holders": 29,
+        "total": 30,
+        "lower_bound": 0.833,
+        "lift": 2.189
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "example": "translate/src/utils/asLocaleString.ts#asLocaleString",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "Exported utils annotate returns (asLocaleString: string, scrollIntoView: void, getPlainMessage: string) and no lint rule enforces it (eslint.config.mjs has no explicit-function-return-type); the lone outlier useOnDiscard is an ordinary void-returning function that could write ': void' as scrollIntoView does, so it is a choice (R8), a 'look'. Hesitated with WRONG legit_outliers since hooks elsewhere in the repo often omit return types.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-ddba4b] translate: functions in src/utils/** declare their return type\n    evidence: 29/30 (lower bound 0.83, lift 2.2)\n    example:  translate/src/utils/asLocaleString.ts#asLocaleString\n    outlier:  translate/src/utils/hooks/useOnDiscard.ts:9 useOnDiscard",
+      "d5_conditions": true
+    },
+    {
+      "uid": "open-wearables/D-dadcea",
+      "repo": "open-wearables",
+      "id": "D-dadcea",
+      "rank": 1,
+      "summary": "backend: HTTP handlers in app/** are wrapped in _get_db_dependency()",
+      "rule_kind": "wrapped_by:call",
+      "group": "call:resource",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 117,
+      "evidence": {
+        "holders": 106,
+        "total": 117,
+        "lower_bound": 0.839,
+        "lift": 8.236
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "backend/app/database.py#_get_db_dependency"
+        ]
+      },
+      "example": "backend/app/api/routes/v1/api_keys.py#create_api_key",
+      "outliers": 11,
+      "exempt": 0,
+      "status": "new",
+      "label": null,
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": null,
+      "old_label": null,
+      "diff": null,
+      "block": "[D-dadcea] backend: HTTP handlers in app/** are wrapped in _get_db_dependency()\n    evidence: 106/117 (lower bound 0.84, lift 8.2)\n    example:  backend/app/api/routes/v1/api_keys.py#create_api_key\n    outlier:  backend/app/api/routes/v1/import_xml.py:217 receive_sns_notification\n    outlier:  backend/app/api/routes/v1/meta.py:149 get_coverage\n    outlier:  backend/app/api/routes/v1/oura_webhooks.py:51 oura_webhook_health\n    outlier:  backend/app/api/routes/v1/oura_webhooks.py:42 oura_webhook_verification\n    outlier:  backend/app/api/routes/v1/outgoing_webhooks.py:109 list_event_types\n    outlier:  backend/app/api/routes/v1/sync_status.py:68 stream_user_sync_status\n    outlier:  backend/app/api/routes/v1/webhooks.py:139 probe_provider_webhook\n    outlier:  backend/app/api/routes/v1/webhooks.py:301 probe_provider_webhook_with_token\n    outlier:  backend/app/api/routes/v1/webhooks.py:119 verify_provider_webhook\n    outlier:  backend/app/api/routes/v1/webhooks.py:295 verify_provider_webhook_with_token\n    outlier:  backend/app/main.py:130 root",
+      "d5_conditions": true
+    },
+    {
+      "uid": "open-wearables/D-ff3192",
+      "repo": "open-wearables",
+      "id": "D-ff3192",
+      "rank": 2,
+      "summary": "backend: functions in app/services/providers/garmin/backfill_state/** call get_redis_client()",
+      "rule_kind": "calls",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 33,
+      "evidence": {
+        "holders": 31,
+        "total": 33,
+        "lower_bound": 0.804,
+        "lift": 14.155
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "backend/app/integrations/redis_client.py#get_redis_client"
+      },
+      "example": "backend/app/services/providers/garmin/backfill_state/core.py#acquire_backfill_lock",
+      "outliers": 2,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "false_outliers",
+      "trivial_by": null,
+      "label_reason": "Both outliers in window_state.py read Redis through get_anchor_timestamp/get_current_window/_floored, which call get_redis_client() themselves, so they comply through a helper; members like record_timed_out_entry (retry_state.py) and mark_type_triggered (type_tracking.py) call it directly.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-ff3192] backend: functions in app/services/providers/garmin/backfill_state/** call get_redis_client()\n    evidence: 31/33 (lower bound 0.80, lift 14.2)\n    example:  backend/app/services/providers/garmin/backfill_state/core.py#acquire_backfill_lock\n    outlier:  backend/app/services/providers/garmin/backfill_state/window_state.py:62 get_window_date_range\n    outlier:  backend/app/services/providers/garmin/backfill_state/window_state.py:76 get_window_date_range_for_index",
+      "d5_conditions": true
+    },
+    {
+      "uid": "open-wearables/D-6606a8",
+      "repo": "open-wearables",
+      "id": "D-6606a8",
+      "rank": 3,
+      "summary": "backend: functions in app/services/providers/garmin/backfill_state/** call _get_key()",
+      "rule_kind": "calls",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 33,
+      "evidence": {
+        "holders": 30,
+        "total": 33,
+        "lower_bound": 0.764,
+        "lift": 29.412
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "backend/app/services/providers/garmin/backfill_state/core.py#_get_key"
+      },
+      "example": "backend/app/services/providers/garmin/backfill_state/core.py#acquire_backfill_lock",
+      "outliers": 3,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "false_outliers",
+      "trivial_by": null,
+      "label_reason": "get_window_date_range and get_window_date_range_for_index build keys through get_anchor_timestamp/get_current_window/_floored, which call _get_key(); only update_window_cell hand-builds its matrix key with an f-string (same pattern persist_window_results and get_backfill_status use), so 2 of 3 outliers are not_violation.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-6606a8] backend: functions in app/services/providers/garmin/backfill_state/** call _get_key()\n    evidence: 30/33 (lower bound 0.76, lift 29.4)\n    example:  backend/app/services/providers/garmin/backfill_state/core.py#acquire_backfill_lock\n    outlier:  backend/app/services/providers/garmin/backfill_state/window_state.py:62 get_window_date_range\n    outlier:  backend/app/services/providers/garmin/backfill_state/window_state.py:76 get_window_date_range_for_index\n    outlier:  backend/app/services/providers/garmin/backfill_state/window_state.py:91 update_window_cell",
+      "d5_conditions": true
+    },
+    {
+      "uid": "open-wearables/D-262064",
+      "repo": "open-wearables",
+      "id": "D-262064",
+      "rank": 4,
+      "summary": "backend: enums in app/schemas/** extend StrEnum",
+      "rule_kind": "wrapped_by:extends",
+      "group": "base",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 57,
+      "evidence": {
+        "holders": 53,
+        "total": 57,
+        "lower_bound": 0.833,
+        "lift": 9.484
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:python:enum#StrEnum"
+        ]
+      },
+      "example": "backend/app/schemas/auth/authentication_method.py#AuthenticationMethod",
+      "outliers": 4,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "Schema enums use StrEnum (authentication_method.py, whoop/webhook.py, sync_request.py); three outliers use the older `str, Enum` mixin for the same kind of string enum, a choice worth flagging, while TimeShape is an internal plain Enum; ruff does not select UP, so nothing enforces it. 3 of 4 look.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-262064] backend: enums in app/schemas/** extend StrEnum\n    evidence: 53/57 (lower bound 0.83, lift 9.5)\n    example:  backend/app/schemas/auth/authentication_method.py#AuthenticationMethod\n    outlier:  backend/app/schemas/enums/aggregation_method.py:6 AggregationMethod\n    outlier:  backend/app/schemas/enums/provider.py:4 ProviderName\n    outlier:  backend/app/schemas/enums/series_types.py:23 SeriesType\n    outlier:  backend/app/schemas/providers/google/health_api.py:33 TimeShape",
+      "d5_conditions": false
+    },
+    {
+      "uid": "open-wearables/D-b21ebc",
+      "repo": "open-wearables",
+      "id": "D-b21ebc",
+      "rank": 5,
+      "summary": "backend: exported values in app/integrations/** call get_logger()",
+      "rule_kind": "calls",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 33,
+      "evidence": {
+        "holders": 31,
+        "total": 33,
+        "lower_bound": 0.804,
+        "lift": 2.613
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "backend/app/utils/structured_logging.py#get_logger"
+      },
+      "example": "backend/app/integrations/celery/core.py#logger",
+      "outliers": 2,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "mixed_group",
+      "trivial_by": null,
+      "label_reason": "Members are the module-level `logger = get_logger(__name__)` lines (celery/core.py, sentry.py, periodic_sync_task.py); the outliers at backfill_task.py:510-511 are backwards-compatibility aliases of a task, a different kind of exported value that would be told to call get_logger().",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-b21ebc] backend: exported values in app/integrations/** call get_logger()\n    evidence: 31/33 (lower bound 0.80, lift 2.6)\n    example:  backend/app/integrations/celery/core.py#logger\n    outlier:  backend/app/integrations/celery/tasks/garmin/backfill_task.py:511 continue_garmin_backfill\n    outlier:  backend/app/integrations/celery/tasks/garmin/backfill_task.py:510 trigger_next_backfill",
+      "d5_conditions": true
+    },
+    {
+      "uid": "open-wearables/D-8ffd6f",
+      "repo": "open-wearables",
+      "id": "D-8ffd6f",
+      "rank": 6,
+      "summary": "backend: classes in app/repositories/** are named `*Repository`",
+      "rule_kind": "named",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 29,
+      "evidence": {
+        "holders": 28,
+        "total": 29,
+        "lower_bound": 0.828,
+        "lift": 23.772
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Repository"
+      },
+      "example": "backend/app/repositories/aggregate_backfill_repository.py#AggregateBackfillRepository",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "mixed_group",
+      "trivial_by": null,
+      "label_reason": "WriteCounts (data_point_series_repository.py:144) is an int-subclass result type returned by bulk upserts, not a repository; the repositories package routinely co-locates such value types (NamedTuples, dataclasses like SourceRanking, SampleDay), so 0 of 1 counted outliers is a mistake.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-8ffd6f] backend: classes in app/repositories/** are named `*Repository`\n    evidence: 28/29 (lower bound 0.83, lift 23.8)\n    example:  backend/app/repositories/aggregate_backfill_repository.py#AggregateBackfillRepository\n    outlier:  backend/app/repositories/data_point_series_repository.py:144 WriteCounts",
+      "d5_conditions": true
+    },
+    {
+      "uid": "open-wearables/D-baa886",
+      "repo": "open-wearables",
+      "id": "D-baa886",
+      "rank": 7,
+      "summary": "backend: functions in app/services/providers/garmin/** call str()",
+      "rule_kind": "calls",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 38,
+      "evidence": {
+        "holders": 35,
+        "total": 38,
+        "lower_bound": 0.792,
+        "lift": 7.237
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "global#str"
+      },
+      "example": "backend/app/services/providers/garmin/backfill_state/core.py#acquire_backfill_lock",
+      "outliers": 3,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "incidental",
+      "trivial_by": null,
+      "label_reason": "Members call str() only to normalise a `str | UUID` user_id (e.g. `uid = str(user_id)` in retry_state.py, type_tracking.py); the outliers pass user_id straight to helpers (_get_key, get_anchor_timestamp) that do the conversion, so they lack the need. Either incidental or false_outliers via R6; WRONG either way.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-baa886] backend: functions in app/services/providers/garmin/** call str()\n    evidence: 35/38 (lower bound 0.79, lift 7.2)\n    example:  backend/app/services/providers/garmin/backfill_state/core.py#acquire_backfill_lock\n    outlier:  backend/app/services/providers/garmin/backfill_state/core.py:30 get_trace_id\n    outlier:  backend/app/services/providers/garmin/backfill_state/window_state.py:62 get_window_date_range\n    outlier:  backend/app/services/providers/garmin/backfill_state/window_state.py:76 get_window_date_range_for_index",
+      "d5_conditions": false
+    },
+    {
+      "uid": "open-wearables/D-4c541f",
+      "repo": "open-wearables",
+      "id": "D-4c541f",
+      "rank": 8,
+      "summary": "frontend: functions in src/routes/(app)/** (*.server files) call requireToken()",
+      "rule_kind": "calls",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": true,
+      "members": 24,
+      "evidence": {
+        "holders": 23,
+        "total": 24,
+        "lower_bound": 0.798,
+        "lift": 30.119
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:$lib#requireToken"
+      },
+      "example": "frontend/src/routes/(app)/dashboard/+page.server.ts#load",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "guard.ts says loads run concurrently with the layout guard so each must call requireToken(); the only outlier is the root (app)/+layout.server.ts, the layout guard itself that checks the session inline, and a new load skipping requireToken would be an auth gap no type check catches.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-4c541f] frontend: functions in src/routes/(app)/** (*.server files) call requireToken()\n    evidence: 23/24 (lower bound 0.80, lift 30.1)\n    example:  frontend/src/routes/(app)/dashboard/+page.server.ts#load\n    outlier:  frontend/src/routes/(app)/+layout.server.ts:7 load",
+      "d5_conditions": false
+    },
+    {
+      "uid": "tasking-manager/D-c7acd1",
+      "repo": "tasking-manager",
+      "id": "D-c7acd1",
+      "rank": 1,
+      "summary": "HTTP handlers in backend/** (actions files) are wrapped in admin_only() or login_required()",
+      "rule_kind": "wrapped_by:call",
+      "group": "call:auth",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 43,
+      "evidence": {
+        "holders": 42,
+        "total": 43,
+        "lower_bound": 0.879,
+        "lift": 4.151
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "backend/services/users/authentication_service.py#admin_only",
+          "backend/services/users/authentication_service.py#login_required"
+        ]
+      },
+      "example": "backend/api/licenses/actions.py#accept_license",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "new",
+      "label": null,
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": null,
+      "old_label": null,
+      "diff": null,
+      "block": "[D-c7acd1] HTTP handlers in backend/** (actions files) are wrapped in admin_only() or login_required()\n    evidence: 42/43 (lower bound 0.88, lift 4.2)\n    split:    login_required 37, admin_only 5\n    example:  backend/api/licenses/actions.py#accept_license\n    outlier:  backend/api/users/actions.py:363 register_user_with_email",
+      "d5_conditions": true
+    },
+    {
+      "uid": "tasking-manager/D-cfe608",
+      "repo": "tasking-manager",
+      "id": "D-cfe608",
+      "rank": 2,
+      "summary": "HTTP handlers in backend/** (resources files) are wrapped in get_db()",
+      "rule_kind": "wrapped_by:call",
+      "group": "call:resource",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 98,
+      "evidence": {
+        "holders": 94,
+        "total": 98,
+        "lower_bound": 0.9,
+        "lift": 2.836
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "backend/db.py#get_db"
+        ]
+      },
+      "example": "backend/api/annotations/resources.py#get_annotations",
+      "outliers": 4,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "Resource handlers take db: Database = Depends(get_db) (annotations, campaigns, countries, licenses resources.py). Contrary to reviewer 2, three outliers do need the DB: tasks/resources.py:164 delete calls UserService.get_user_by_id(user_id) though user_service.py:65 requires db; get_invalidated_tasks calls ValidatorService.get_user_invalidated_tasks, which calls get_user_by_username(username) without the db that user_service.py:74 requires; get_task_comments is a half-ported stub whose DB call is commented out. Only tasks_aoi (pure GridService.trim_grid_to_aoi) lacks the need, so 3 of 4 are worth flagging. Nothing catches it: no type checker is configured and FastAPI registers the routes anyway.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-cfe608] HTTP handlers in backend/** (resources files) are wrapped in get_db()\n    evidence: 94/98 (lower bound 0.90, lift 2.8)\n    example:  backend/api/annotations/resources.py#get_annotations\n    outlier:  backend/api/comments/resources.py:298 get_task_comments\n    outlier:  backend/api/tasks/resources.py:164 delete\n    outlier:  backend/api/tasks/resources.py:445 get_invalidated_tasks\n    outlier:  backend/api/tasks/resources.py:344 tasks_aoi",
+      "d5_conditions": true
+    },
+    {
+      "uid": "tasking-manager/D-3e220e",
+      "repo": "tasking-manager",
+      "id": "D-3e220e",
+      "rank": 3,
+      "summary": "HTTP handlers in backend/** (actions files) are wrapped in get_db()",
+      "rule_kind": "wrapped_by:call",
+      "group": "call:resource",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 43,
+      "evidence": {
+        "holders": 42,
+        "total": 43,
+        "lower_bound": 0.879,
+        "lift": 2.888
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "backend/db.py#get_db"
+        ]
+      },
+      "example": "backend/api/licenses/actions.py#accept_license",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "incidental",
+      "trivial_by": null,
+      "label_reason": "Handlers take Depends(get_db) because they query the database (tasks/actions.py, notifications/actions.py); intersecting_tiles in projects/actions.py only runs GridService.trim_grid_to_aoi on the body and needs no connection, so a DB-free handler would be flagged for nothing.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-3e220e] HTTP handlers in backend/** (actions files) are wrapped in get_db()\n    evidence: 42/43 (lower bound 0.88, lift 2.9)\n    example:  backend/api/licenses/actions.py#accept_license\n    outlier:  backend/api/projects/actions.py:381 intersecting_tiles",
+      "d5_conditions": true
+    },
+    {
+      "uid": "tasking-manager/D-6ec938",
+      "repo": "tasking-manager",
+      "id": "D-6ec938",
+      "rank": 4,
+      "summary": "frontend: classes in src/** extend PureComponent",
+      "rule_kind": "wrapped_by:extends",
+      "group": "base",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind_d7",
+      "language": "ts",
+      "names_package": true,
+      "members": 103,
+      "evidence": {
+        "holders": 101,
+        "total": 103,
+        "lower_bound": 0.932,
+        "lift": 3.826
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:react#PureComponent"
+        ]
+      },
+      "example": "frontend/src/components/svgIcons/alert.js#AlertIcon",
+      "outliers": 2,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "mixed_group",
+      "trivial_by": null,
+      "label_reason": "DownloadIcon extends React.PureComponent, so it complies; the only counted outlier is Portal (portal.js), a DOM-portal infrastructure component with lifecycle methods, not an icon, so 0 of 1 counted and a new non-icon class in src/** would be told wrongly to extend PureComponent.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-6ec938] frontend: classes in src/** extend PureComponent\n    evidence: 101/103 (lower bound 0.93, lift 3.8)\n    example:  frontend/src/components/svgIcons/alert.js#AlertIcon\n    outlier:  frontend/src/components/portal.js:11 Portal\n    outlier:  frontend/src/components/svgIcons/download.js:3 DownloadIcon",
+      "d5_conditions": false
+    },
+    {
+      "uid": "tasking-manager/D-2dfb9d",
+      "repo": "tasking-manager",
+      "id": "D-2dfb9d",
+      "rank": 5,
+      "summary": "classes in backend/models/dtos/** extend BaseModel",
+      "rule_kind": "wrapped_by:extends",
+      "group": "base",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 148,
+      "evidence": {
+        "holders": 147,
+        "total": 148,
+        "lower_bound": 0.963,
+        "lift": 2.689
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:pydantic#BaseModel"
+        ]
+      },
+      "example": "backend/models/dtos/application_dto.py#ApplicationDTO",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "mixed_group",
+      "trivial_by": null,
+      "label_reason": "DTOs in application_dto.py and project_dto.py extend pydantic BaseModel, but the one outlier, ExtendedStringType in validator_dto.py, is a str subclass field type, not a DTO; 0 of 1 counted, so a helper type added under dtos/ would be flagged wrongly.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-2dfb9d] classes in backend/models/dtos/** extend BaseModel\n    evidence: 147/148 (lower bound 0.96, lift 2.7)\n    example:  backend/models/dtos/application_dto.py#ApplicationDTO\n    outlier:  backend/models/dtos/validator_dto.py:10 ExtendedStringType",
+      "d5_conditions": false
+    },
+    {
+      "uid": "tasking-manager/D-68243e",
+      "repo": "tasking-manager",
+      "id": "D-68243e",
+      "rank": 6,
+      "summary": "frontend: classes in src/** are named `*Icon`",
+      "rule_kind": "named",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "members": 103,
+      "evidence": {
+        "holders": 98,
+        "total": 103,
+        "lower_bound": 0.891,
+        "lift": 3.825
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Icon"
+      },
+      "example": "frontend/src/components/svgIcons/alert.js#AlertIcon",
+      "outliers": 5,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "The class components are SVG icons named *Icon (alert.js, bell.js, close.js); SelectProject/SelectTask and the FullStarIcon* colour variants are svgIcons named off the suffix scheme (look), while Portal is a non-icon component (legit). 4 of 5 counted are look; hesitated with WRONG mixed_group because the src/** scope would push any non-icon class to an *Icon name. No lint naming rule (eslintConfig extends react-app).",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-68243e] frontend: classes in src/** are named `*Icon`\n    evidence: 98/103 (lower bound 0.89, lift 3.8)\n    example:  frontend/src/components/svgIcons/alert.js#AlertIcon\n    outlier:  frontend/src/components/portal.js:11 Portal\n    outlier:  frontend/src/components/svgIcons/selectProject.js:3 SelectProject\n    outlier:  frontend/src/components/svgIcons/selectTask.js:3 SelectTask\n    outlier:  frontend/src/components/svgIcons/star.js:56 FullStarIconBlue\n    outlier:  frontend/src/components/svgIcons/star.js:44 FullStarIconYellow",
+      "d5_conditions": true
+    },
+    {
+      "uid": "tasking-manager/D-4ede9c",
+      "repo": "tasking-manager",
+      "id": "D-4ede9c",
+      "rank": 7,
+      "summary": "HTTP handlers in backend/** (actions files) pass `content` to responses.JSONResponse()",
+      "rule_kind": "passes_key",
+      "group": "passes_key",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 43,
+      "evidence": {
+        "holders": 40,
+        "total": 43,
+        "lower_bound": 0.814,
+        "lift": 4.016
+      },
+      "rule": {
+        "type": "passes_key",
+        "callee": "pkg:fastapi#responses.JSONResponse",
+        "index": 99,
+        "key": "content"
+      },
+      "example": "backend/api/licenses/actions.py#accept_license",
+      "outliers": 3,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "false_outliers",
+      "trivial_by": null,
+      "label_reason": "All three outliers in teams/actions.py do pass the content, positionally (JSONResponse({...}, status_code=...)), while members in projects/actions.py and notifications/actions.py use content=; the tool only saw the keyword. Hesitated with ACCEPT if the rule is read strictly as 'use the content= keyword', which would be a minor style look.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-4ede9c] HTTP handlers in backend/** (actions files) pass `content` to responses.JSONResponse()\n    evidence: 40/43 (lower bound 0.81, lift 4.0)\n    example:  backend/api/licenses/actions.py#accept_license\n    outlier:  backend/api/teams/actions.py:468 remove_team_from_all_projects\n    outlier:  backend/api/teams/actions.py:428 remove_team_from_project\n    outlier:  backend/api/teams/actions.py:550 remove_teams_from_projects",
+      "d5_conditions": false
+    },
+    {
+      "uid": "tasking-manager/D-0dbb9f",
+      "repo": "tasking-manager",
+      "id": "D-0dbb9f",
+      "rank": 8,
+      "summary": "frontend: functions in src/api/** call api() before useQuery()",
+      "rule_kind": "before",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": true,
+      "members": 27,
+      "evidence": {
+        "holders": 26,
+        "total": 27,
+        "lower_bound": 0.817,
+        "lift": 1
+      },
+      "rule": {
+        "type": "before",
+        "first": "frontend/src/api/apiClient.js#api",
+        "then": "pkg:@tanstack/react-query#useQuery"
+      },
+      "example": "frontend/src/api/badges.js#useBadgesQuery",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "false_outliers",
+      "trivial_by": null,
+      "label_reason": "The only outlier, stats.js useUserOsmStatsQuery, fetches through the module's ohsomeProxyAPI helper, which itself calls api(token).get(...), so it follows the rule via a helper (R6); members in teams.js and notifications.js call api() in the queryFn like badges.js.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-0dbb9f] frontend: functions in src/api/** call api() before useQuery()\n    evidence: 26/27 (lower bound 0.82, lift 1.0)\n    example:  frontend/src/api/badges.js#useBadgesQuery\n    outlier:  frontend/src/api/stats.js:89 useUserOsmStatsQuery",
+      "d5_conditions": false
+    },
+    {
+      "uid": "simplelogin/D-7fa3b5",
+      "repo": "simplelogin",
+      "id": "D-7fa3b5",
+      "rank": 1,
+      "summary": "functions in app/** do not use redirects to computed URLs",
+      "rule_kind": "avoids:other",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 361,
+      "evidence": {
+        "holders": 360,
+        "total": 361,
+        "lower_bound": 0.984,
+        "lift": 40.347
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "sink:dynamic_redirect"
+      },
+      "example": "app/abuser.py#mark_user_as_abuser",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "misdescribes",
+      "trivial_by": null,
+      "label_reason": "Many members redirect to computed URLs without being flagged: login.py and api_to_cookie.py redirect(next_url), oidc.py/google.py redirect(authorization_url), oauth/views/authorize.py redirect(final_redirect_uri) and redirect(construct_url(...)); the rule is false for the group, and after_login is only one of many such redirects (its callers mostly sanitize next_url).",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-7fa3b5] functions in app/** do not use redirects to computed URLs\n    evidence: 360/361 (lower bound 0.98, lift 40.3)\n    example:  app/abuser.py#mark_user_as_abuser\n    outlier:  app/auth/views/login_utils.py:13 after_login",
+      "d5_conditions": true
+    },
+    {
+      "uid": "simplelogin/D-2a4960",
+      "repo": "simplelogin",
+      "id": "D-2a4960",
+      "rank": 2,
+      "summary": "files in app/** do not import from events/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "rule_kind": "avoids:import",
+      "group": "layering",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 195,
+      "evidence": {
+        "holders": 193,
+        "total": 195,
+        "lower_bound": 0.963,
+        "lift": 3
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:events"
+      },
+      "example": "app/abuser.py#(file)",
+      "outliers": 2,
+      "exempt": 0,
+      "status": "changed",
+      "label": null,
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": null,
+      "old_label": {
+        "label": "ACCEPT",
+        "wrong_because": null
+      },
+      "diff": {
+        "removed": [
+          "[D-2a4960] files in app/** do not import from events/** (declared dependencies excepted)"
+        ],
+        "added": [
+          "[D-2a4960] files in app/** do not import from events/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)"
+        ]
+      },
+      "block": "[D-2a4960] files in app/** do not import from events/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 193/195 (lower bound 0.96, lift 3.0)\n    example:  app/abuser.py#(file)\n    outlier:  app/jobs/send_event_job.py:1 (file)\n    outlier:  app/jobs/sync_subscription_job.py:1 (file)",
+      "d5_conditions": true
+    },
+    {
+      "uid": "simplelogin/D-e29828",
+      "repo": "simplelogin",
+      "id": "D-e29828",
+      "rank": 3,
+      "summary": "classes in app/dashboard/** extend FlaskForm",
+      "rule_kind": "wrapped_by:extends",
+      "group": "base",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 26,
+      "evidence": {
+        "holders": 25,
+        "total": 26,
+        "lower_bound": 0.811,
+        "lift": 7.596
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "pkg:flask_wtf#FlaskForm"
+        ]
+      },
+      "example": "app/dashboard/views/alias_contact_manager.py#NewContactForm",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "mixed_group",
+      "trivial_by": null,
+      "label_reason": "Forms in dashboard views do extend FlaskForm (mailbox.py, alias_trash.py), but AliasLog in alias_log.py is a view-model data holder, like the Stats and ContactInfo dataclasses in index.py and alias_contact_manager.py; a new such helper class would be told to extend FlaskForm.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-e29828] classes in app/dashboard/** extend FlaskForm\n    evidence: 25/26 (lower bound 0.81, lift 7.6)\n    example:  app/dashboard/views/alias_contact_manager.py#NewContactForm\n    outlier:  app/dashboard/views/alias_log.py:11 AliasLog",
+      "d5_conditions": false
+    },
+    {
+      "uid": "simplelogin/D-ace6d1",
+      "repo": "simplelogin",
+      "id": "D-ace6d1",
+      "rank": 4,
+      "summary": "HTTP handlers in app/api/** call jsonify()",
+      "rule_kind": "calls",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 52,
+      "evidence": {
+        "holders": 51,
+        "total": 52,
+        "lower_bound": 0.899,
+        "lift": 11.854
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:flask#jsonify"
+      },
+      "example": "app/api/views/alias.py#create_contact_route",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "legit_outliers",
+      "trivial_by": null,
+      "label_reason": "JSON endpoints return jsonify(...) (notification.py, setting.py, export_data in export.py), but export_aliases returns an importable CSV via alias_export_csv, a file-download endpoint that legitimately does not return JSON; new download endpoints would be falsely flagged.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-ace6d1] HTTP handlers in app/api/** call jsonify()\n    evidence: 51/52 (lower bound 0.90, lift 11.9)\n    example:  app/api/views/alias.py#create_contact_route\n    outlier:  app/api/views/export.py:40 export_aliases",
+      "d5_conditions": false
+    },
+    {
+      "uid": "simplelogin/D-a4e9f4",
+      "repo": "simplelogin",
+      "id": "D-a4e9f4",
+      "rank": 5,
+      "summary": "HTTP handlers in app/dashboard/** call redirect()",
+      "rule_kind": "calls",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 49,
+      "evidence": {
+        "holders": 45,
+        "total": 49,
+        "lower_bound": 0.808,
+        "lift": 7.233
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:flask#redirect"
+      },
+      "example": "app/dashboard/views/account_setting.py#account_setting",
+      "outliers": 4,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "incidental",
+      "trivial_by": null,
+      "label_reason": "Handlers redirect after POST actions or failed checks (api_key.py, coupon.py, app.py); the outliers are GET-only pages or a CSV download (alias_export.py) with no action to redirect after.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-a4e9f4] HTTP handlers in app/dashboard/** call redirect()\n    evidence: 45/49 (lower bound 0.81, lift 7.2)\n    example:  app/dashboard/views/account_setting.py#account_setting\n    outlier:  app/dashboard/views/alias_export.py:8 alias_export_route\n    outlier:  app/dashboard/views/notification.py:41 notifications_route\n    outlier:  app/dashboard/views/pricing.py:77 subscription_success\n    outlier:  app/dashboard/views/refused_email.py:9 refused_email_route",
+      "d5_conditions": false
+    },
+    {
+      "uid": "simplelogin/D-8ab5d8",
+      "repo": "simplelogin",
+      "id": "D-8ab5d8",
+      "rank": 6,
+      "summary": "HTTP handlers in app/dashboard/** call url_for()",
+      "rule_kind": "calls",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 49,
+      "evidence": {
+        "holders": 44,
+        "total": 49,
+        "lower_bound": 0.782,
+        "lift": 7.319
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:flask#url_for"
+      },
+      "example": "app/dashboard/views/account_setting.py#account_setting",
+      "outliers": 5,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "incidental",
+      "trivial_by": null,
+      "label_reason": "url_for() is called because handlers redirect to named routes (api_key.py, coupon.py); the outliers build no URLs: read-only renders, a CSV download, and app.py which redirects to request.url, a pattern also used in api_key.py:60.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-8ab5d8] HTTP handlers in app/dashboard/** call url_for()\n    evidence: 44/49 (lower bound 0.78, lift 7.3)\n    example:  app/dashboard/views/account_setting.py#account_setting\n    outlier:  app/dashboard/views/alias_export.py:8 alias_export_route\n    outlier:  app/dashboard/views/app.py:12 app_route\n    outlier:  app/dashboard/views/notification.py:41 notifications_route\n    outlier:  app/dashboard/views/pricing.py:77 subscription_success\n    outlier:  app/dashboard/views/refused_email.py:9 refused_email_route",
+      "d5_conditions": false
+    },
+    {
+      "uid": "simplelogin/D-dbae61",
+      "repo": "simplelogin",
+      "id": "D-dbae61",
+      "rank": 7,
+      "summary": "HTTP handlers in app/dashboard/** call flash()",
+      "rule_kind": "calls",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 49,
+      "evidence": {
+        "holders": 44,
+        "total": 49,
+        "lower_bound": 0.782,
+        "lift": 7.771
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:flask#flash"
+      },
+      "example": "app/dashboard/views/account_setting.py#account_setting",
+      "outliers": 5,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "incidental",
+      "trivial_by": null,
+      "label_reason": "flash() is called by handlers that report the result of an action (api_key.py, coupon.py); the outliers return a CSV (alias_export.py), render read-only pages (notification.py, pricing.py, refused_email.py) or just set a cookie (setup_done.py), so they lack the need.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-dbae61] HTTP handlers in app/dashboard/** call flash()\n    evidence: 44/49 (lower bound 0.78, lift 7.8)\n    example:  app/dashboard/views/account_setting.py#account_setting\n    outlier:  app/dashboard/views/alias_export.py:8 alias_export_route\n    outlier:  app/dashboard/views/notification.py:41 notifications_route\n    outlier:  app/dashboard/views/pricing.py:77 subscription_success\n    outlier:  app/dashboard/views/refused_email.py:9 refused_email_route\n    outlier:  app/dashboard/views/setup_done.py:9 setup_done",
+      "d5_conditions": false
+    },
+    {
+      "uid": "simplelogin/D-a9b19b",
+      "repo": "simplelogin",
+      "id": "D-a9b19b",
+      "rank": 8,
+      "summary": "HTTP handlers in app/dashboard/** call flash() before redirect()",
+      "rule_kind": "before",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 45,
+      "evidence": {
+        "holders": 42,
+        "total": 45,
+        "lower_bound": 0.821,
+        "lift": 1
+      },
+      "rule": {
+        "type": "before",
+        "first": "pkg:flask#flash",
+        "then": "pkg:flask#redirect"
+      },
+      "example": "app/dashboard/views/account_setting.py#account_setting",
+      "outliers": 3,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "incidental",
+      "trivial_by": null,
+      "label_reason": "The order is a by-product of early returns: enter_admin.py:30 and enter_sudo.py:48 redirect on success paths that need no message before a later error flash, and setup_done.py only sets a cookie and redirects with nothing to flash; none is a mistake.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-a9b19b] HTTP handlers in app/dashboard/** call flash() before redirect()\n    evidence: 42/45 (lower bound 0.82, lift 1.0)\n    example:  app/dashboard/views/account_setting.py#account_setting\n    outlier:  app/dashboard/views/enter_admin.py:24 enter_admin\n    outlier:  app/dashboard/views/enter_sudo.py:26 enter_sudo\n    outlier:  app/dashboard/views/setup_done.py:9 setup_done",
+      "d5_conditions": false
+    },
+    {
+      "uid": "simplelogin/D-dd624b",
+      "repo": "simplelogin",
+      "id": "D-dd624b",
+      "rank": 9,
+      "summary": "HTTP handlers in app/dashboard/** call flash() before render_template()",
+      "rule_kind": "before",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 39,
+      "evidence": {
+        "holders": 36,
+        "total": 39,
+        "lower_bound": 0.797,
+        "lift": 1
+      },
+      "rule": {
+        "type": "before",
+        "first": "pkg:flask#flash",
+        "then": "pkg:flask#render_template"
+      },
+      "example": "app/dashboard/views/account_setting.py#account_setting",
+      "outliers": 3,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "incidental",
+      "trivial_by": null,
+      "label_reason": "Handlers flash before render_template only when they process a form and have a message (api_key.py, coupon.py); notifications_route, subscription_success and refused_email_route are read-only pages with nothing to flash.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-dd624b] HTTP handlers in app/dashboard/** call flash() before render_template()\n    evidence: 36/39 (lower bound 0.80, lift 1.0)\n    example:  app/dashboard/views/account_setting.py#account_setting\n    outlier:  app/dashboard/views/notification.py:41 notifications_route\n    outlier:  app/dashboard/views/pricing.py:77 subscription_success\n    outlier:  app/dashboard/views/refused_email.py:9 refused_email_route",
+      "d5_conditions": false
+    },
+    {
+      "uid": "simplelogin/D-a1dfa4",
+      "repo": "simplelogin",
+      "id": "D-a1dfa4",
+      "rank": 10,
+      "summary": "HTTP handlers in app/auth/** call redirect() before url_for()",
+      "rule_kind": "before",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": true,
+      "members": 21,
+      "evidence": {
+        "holders": 20,
+        "total": 21,
+        "lower_bound": 0.773,
+        "lift": 1
+      },
+      "rule": {
+        "type": "before",
+        "first": "pkg:flask#redirect",
+        "then": "pkg:flask#url_for"
+      },
+      "example": "app/auth/views/activate.py#activate",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "incidental",
+      "trivial_by": null,
+      "label_reason": "redirect() appearing before url_for() is just the nesting redirect(url_for(...)) seen in activate.py, logout.py and resend_activation.py, with no runtime effect; reset_password.py passes url_for(...) to after_login(), which does the redirect itself, a legitimate pattern.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-a1dfa4] HTTP handlers in app/auth/** call redirect() before url_for()\n    evidence: 20/21 (lower bound 0.77, lift 1.0)\n    example:  app/auth/views/activate.py#activate\n    outlier:  app/auth/views/reset_password.py:22 reset_password",
+      "d5_conditions": false
+    },
+    {
+      "uid": "changedetection.io/D-2619c7",
+      "repo": "changedetection.io",
+      "id": "D-2619c7",
+      "rank": 1,
+      "summary": "HTTP handlers in changedetectionio/** are decorated with validate_openapi_request()",
+      "rule_kind": "wrapped_by:decorator",
+      "group": "decorator",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 24,
+      "evidence": {
+        "holders": 23,
+        "total": 24,
+        "lower_bound": 0.798,
+        "lift": 24.083
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "changedetectionio/api/__init__.py#validate_openapi_request"
+        ]
+      },
+      "example": "changedetectionio/api/Changes.py#Changes.get",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "legit_outliers",
+      "trivial_by": null,
+      "label_reason": "flask-restful Resource methods in api/ carry @validate_openapi_request (Search.get, Notifications.post); the only outlier Spec.get is the public, unauthenticated GET that serves the spec itself and reads no input, and the decorator skips validation for GETs anyway (api/__init__.py:259), so nothing is at stake under R3 and 0 of 1 counts. Wording 'HTTP handlers in changedetectionio/**' wrongly suggests Flask blueprint routes too, hence clear=false; hesitated with ACCEPT since new API resources taking bodies should be validated.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-2619c7] HTTP handlers in changedetectionio/** are decorated with validate_openapi_request()\n    evidence: 23/24 (lower bound 0.80, lift 24.1)\n    example:  changedetectionio/api/Changes.py#Changes.get\n    outlier:  changedetectionio/api/Spec.py:15 Spec.get",
+      "d5_conditions": true
+    },
+    {
+      "uid": "changedetection.io/D-7f369e",
+      "repo": "changedetection.io",
+      "id": "D-7f369e",
+      "rank": 2,
+      "summary": "exported values in changedetectionio/blueprint/** do not read os.environ directly",
+      "rule_kind": "avoids:other",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 64,
+      "evidence": {
+        "holders": 63,
+        "total": 64,
+        "lower_bound": 0.917,
+        "lift": 6.436
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "os_environ"
+      },
+      "example": "changedetectionio/blueprint/add_watch_ui/browser_config.py#REQUIRED_CAPABILITIES",
+      "outliers": 1,
+      "exempt": 0,
+      "status": "identical",
+      "label": "WRONG",
+      "wrong_because": "incidental",
+      "trivial_by": null,
+      "label_reason": "Members are fixed constants (REQUIRED_CAPABILITIES, ACCESS_TOKEN_SECONDS, DEFAULT_NAME) that have no reason to be env-tunable; the outlier is an env-tunable limit written exactly the house way (float(os.getenv(...)) at module level, as in api/Changes.py, llm/client.py DEFAULT_TIMEOUT and backups/restore.py), so new tunables would be flagged for nothing. 0 of 1 counted outliers is a mistake.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-7f369e] exported values in changedetectionio/blueprint/** do not read os.environ directly\n    evidence: 63/64 (lower bound 0.92, lift 6.4)\n    example:  changedetectionio/blueprint/add_watch_ui/browser_config.py#REQUIRED_CAPABILITIES\n    outlier:  changedetectionio/blueprint/mcp/tools.py:32 CHANGES_TIME_BUDGET",
+      "d5_conditions": true
+    },
+    {
+      "uid": "changedetection.io/D-1ce566",
+      "repo": "changedetection.io",
+      "id": "D-1ce566",
+      "rank": 3,
+      "summary": "functions in changedetectionio/llm/** declare their return type",
+      "rule_kind": "control",
+      "group": "other",
+      "tier": "suggestion",
+      "tier_reason": "language_advise",
+      "language": "py",
+      "names_package": false,
+      "members": 32,
+      "evidence": {
+        "holders": 29,
+        "total": 32,
+        "lower_bound": 0.758,
+        "lift": 8.878
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "example": "changedetectionio/llm/bm25_trim.py#trim_to_relevant",
+      "outliers": 3,
+      "exempt": 0,
+      "status": "identical",
+      "label": "ACCEPT",
+      "wrong_because": null,
+      "trivial_by": null,
+      "label_reason": "Public llm functions annotate returns (trim_to_relevant -> str, parse_eval_response -> dict, build_preview_prompt -> str, completion -> tuple[...]); the outliers are ordinary public functions whose returns (bool|None, list, completion's tuple) could be annotated just as easily, a choice not a need. .ruff.toml selects no ANN rules and no mypy is configured, so nothing enforces it.",
+      "old_label": null,
+      "diff": null,
+      "block": "[D-1ce566] functions in changedetectionio/llm/** declare their return type\n    evidence: 29/32 (lower bound 0.76, lift 8.9)\n    example:  changedetectionio/llm/bm25_trim.py#trim_to_relevant\n    outlier:  changedetectionio/llm/client.py:281 completion_isolated\n    outlier:  changedetectionio/llm/evaluator.py:310 tag_llm_decision\n    outlier:  changedetectionio/llm/model_list.py:101 list_models",
+      "d5_conditions": true
+    }
+  ],
+  "gone": [
+    {
+      "uid": "open-wearables/D-3b39dc",
+      "rule_kind": "wrapped_by:call",
+      "summary": "backend: HTTP handlers in app/** are wrapped in _require_data_lifecycle_enabled() or _svix_app_id() or _get_strategy() or _get_db_dependency() or get_current_developer() or get_sdk_auth()",
+      "label": "ACCEPT",
+      "wrong_because": null
+    },
+    {
+      "uid": "tasking-manager/D-c373f7",
+      "rule_kind": "wrapped_by:call",
+      "summary": "HTTP handlers in backend/** are wrapped in get_db() or login_required() or login_required_optional()",
+      "label": "WRONG",
+      "wrong_because": "legit_outliers"
+    },
+    {
+      "uid": "tasking-manager/D-86bd7f",
+      "rule_kind": "wrapped_by:call",
+      "summary": "HTTP handlers in backend/** (actions files) are wrapped in security.api_key.APIKeyHeader()",
+      "label": "ACCEPT",
+      "wrong_because": null
+    }
+  ]
+}

@@ -1,0 +1,139 @@
+{
+  "//": "Analyst reading for the Python default-tier plan (README.md). NOT labels: `projected` is how the card at main feefad6 reads against rubric v3 to the analyst, for the cards whose v3 label did not carry (changed or new since debc33a). Only a blind v3 relabel decides them. `fix_classes` are ranked by how many WRONG cards (labelled WRONG at an identical card, or projected WRONG) of the D5 Python kinds under the D5 conditions each would remove. `overfit` flags a fix whose only dev evidence is one repository's case.",
+  "pool": "Python proposals (census language py) of the D5 kinds (wrapped_by:call, wrapped_by:decorator, wrapped_by:extends, passes_key, avoids:import), whose rule names only in-repo symbols and whose role has >= 15 members: 18 cards in 9 repos (summary.json subsets[5])",
+  "projected": [
+    {
+      "uid": "tasking-manager/D-c7acd1",
+      "status": "new",
+      "projected": "ACCEPT",
+      "why": "Auth guards admin_only/login_required (Depends/Security in the handler signature), 42/43; the one outlier, register_user_with_email, is a public reachable endpoint that skips auth, worth confirming (R3). It replaces D-86bd7f (same outlier, APIKeyHeader wording), labelled ACCEPT."
+    },
+    {
+      "uid": "open-wearables/D-dadcea",
+      "status": "new",
+      "projected": "WRONG incidental",
+      "why": "A database-session dependency (_get_db_dependency), not a guard; the 11 outliers are webhook verification, health and probe endpoints that touch no database. Same shape as tasking-manager D-3e220e (get_db, WRONG incidental)."
+    },
+    {
+      "uid": "simplelogin/D-2a4960",
+      "status": "changed",
+      "projected": "ACCEPT",
+      "why": "Only the summary wording changed (lazy loads now named in the exception clause); evidence and outliers are the labelled card's, which was ACCEPT."
+    },
+    {
+      "uid": "netbox/D-e2c3e4",
+      "status": "changed",
+      "projected": "ACCEPT",
+      "why": "114/114: both labelled outliers (and three fields) are now exempt with reasons; nothing enforces ChoiceSet."
+    },
+    {
+      "uid": "InvenTree/D-47d790",
+      "status": "changed",
+      "projected": "TRIVIAL",
+      "why": "Unchanged evidence (22/22) plus one exempt driver; the old card was TRIVIAL (the plugin registry loads only InvenTreePlugin subclasses)."
+    },
+    {
+      "uid": "netbox/D-76eb6b",
+      "status": "changed",
+      "projected": "WRONG legit_outliers",
+      "why": "Only an exempt line was added; the two ContentType utility-type outliers that made it legit_outliers are still there."
+    },
+    {
+      "uid": "netbox/D-bc0c7d",
+      "status": "changed",
+      "projected": "WRONG mixed_group",
+      "why": "CachedValue (a Django model) is now exempt, but SearchForm (a form among search indexes) is still an outlier: 0 of 1 counted."
+    },
+    {
+      "uid": "ralph/D-4529f9",
+      "status": "changed",
+      "projected": "WRONG legit_outliers",
+      "why": "Four non-serializers are now exempt; the five left are RalphPermission (a permission class) and four write serializers that extend RalphAPISaveSerializer on purpose: 0 of 5 mistakes."
+    },
+    {
+      "uid": "ralph/D-5b6f70",
+      "status": "changed",
+      "projected": "WRONG legit_outliers",
+      "why": "The field and metaclasses are now exempt; the three left are the *SaveSerializer write serializers the labelled card was legit_outliers for."
+    }
+  ],
+  "fix_classes": [
+    {
+      "rank": 1,
+      "name": "Sibling bases: a member that extends another base defined beside the target, with the same parent (FilterHook/ActionHook in misago/plugins/hooks.py; RalphAPISerializer/RalphAPISaveSerializer), is the same kind on purpose: name both in any_of, or do not propose the single-base rule",
+      "removes_wrong": [
+        "Misago/D-c9ae1e",
+        "Misago/D-e72fc8",
+        "ralph/D-5b6f70 (projected)",
+        "ralph/D-4529f9 (projected; needs rank 7 as well)"
+      ],
+      "count": 4,
+      "repos": 2,
+      "overfit": "medium: two repos, but Misago's two cards are one root cause (one module, one sibling); ralph is the only independent second case. Must not exempt a member that extends the sibling by mistake (a guard-shaped base stays strict)."
+    },
+    {
+      "rank": 2,
+      "name": "Resource dependencies are not conventions: a Python call-wrapper rule whose wrapper only provides a resource (a database session or connection: get_db, _get_db_dependency) is incidental; keep call-wrapper rules whose wrapper is a guard (the product's guard_shaped / auth-set notion)",
+      "removes_wrong": [
+        "tasking-manager/D-3e220e",
+        "open-wearables/D-dadcea (projected)"
+      ],
+      "count": 2,
+      "repos": 2,
+      "cost": "also removes tasking-manager/D-cfe608, labelled ACCEPT (its outliers do need the database), so the subset loses one ACCEPT",
+      "overfit": "low: a kind-level cut, the Python analogue of D7 keeping guards, not a per-case exemption"
+    },
+    {
+      "rank": 3,
+      "name": "F3/F4 for decorator rules: a class of another kind in a file named for the followers' kind (SearchForm in forms/search.py among search indexes) or a base type in the module that defines the decorator (NestedGroupObjectType in netbox/graphql/types.py beside register_type) is not about the rule",
+      "removes_wrong": [
+        "netbox/D-bc0c7d (projected)",
+        "netbox/D-281ae8"
+      ],
+      "count": 2,
+      "repos": 1,
+      "overfit": "HIGH: both cases are netbox; the exemption doc comments already cite netbox's search indexes"
+    },
+    {
+      "rank": 4,
+      "name": "F7 (registry key already taken) does not fire at main: netbox's connection filtersets still show as outliers although every registered filterset has its own Meta.model and none is held twice",
+      "removes_wrong": [
+        "netbox/D-cc1341"
+      ],
+      "count": 1,
+      "repos": 1,
+      "overfit": "HIGH: F7 was written for this one dev case (its doc comment names netbox's connection filtersets); fixing it moves one dev card and says nothing about held-out repos"
+    },
+    {
+      "rank": 5,
+      "name": "Input-less handlers: a request-validation decorator or wrapper (validate_openapi_request) is not about a handler that reads no input (Spec.get, which serves the spec itself)",
+      "removes_wrong": [
+        "changedetection.io/D-2619c7"
+      ],
+      "count": 1,
+      "repos": 1,
+      "overfit": "HIGH for Python (one dev case), though the category is generic (RUBRIC-v3's own legit_outliers example: read-only endpoints without a body schema)"
+    },
+    {
+      "rank": 6,
+      "name": "passes_key: utility graphql types for a package model (ContentType) are not model types",
+      "removes_wrong": [
+        "netbox/D-76eb6b (projected)"
+      ],
+      "count": 1,
+      "repos": 1,
+      "overfit": "HIGH: one dev case"
+    },
+    {
+      "rank": 7,
+      "name": "Another kind of class among serializers: a permission class (RalphPermission) in an api.py of serializers",
+      "removes_wrong": [
+        "ralph/D-4529f9 (projected; with rank 1)"
+      ],
+      "count": 0,
+      "repos": 1,
+      "overfit": "HIGH: one card, and it only clears with fix 1"
+    }
+  ],
+  "after_every_fix": "Pool of 18 today: 6 ACCEPT (3 labelled, 3 projected), 1 TRIVIAL (projected), 11 WRONG (6 labelled, 5 projected). Rank 2 drops its 3 resource-dependency cards (2 WRONG, 1 ACCEPT), leaving 15. With every other fix class and each card it clears turning ACCEPT (the most optimistic reading: an exemption can also leave a card TRIVIAL or drop it): 14/15 ACCEPT, 93.3%, Wilson 70.2-98.8%. Without the fixes flagged HIGH overfit (ranks 3 to 7): 8/15, 53.3%, Wilson 30.1-75.2%."
+}

@@ -1,0 +1,4 @@
+GONE T18/D-ea1da6 [default] WRONG/mixed_group (dev3) v3=-/None :: wrapped_by:call ::  35/37->None :: packages/api: functions in src/** (route files) are wrapped in withOperation()
+GONE ai/D-fc5ef7 [default] ACCEPT/None (relabel5@7) v3=WRONG/mixed_group :: wrapped_by:call ::  109/109->None :: packages/codemod: functions in src/codemods/** are wrapped in createTransformer(), except 3 factories (returning functio
+GONE supabase/D-e93eb6 [default] ACCEPT/None (relabel5@7) v3=-/None :: wrapped_by:call ::  29/30->None :: apps/docs: functions named `generateMetadata` in app/guides/** (page files) are wrapped in genGuideMeta()
+changed 3 | proposals before 72 after 69

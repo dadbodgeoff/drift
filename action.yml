@@ -1,0 +1,160 @@
+name: Drift check
+description: Check pull requests against the conventions your team accepted with Drift, and upload findings to code scanning.
+branding:
+  icon: check-circle
+  color: blue
+
+inputs:
+  args:
+    description: Extra arguments for `drift check` (for example `--strict`).
+    required: false
+    default: ""
+  upload-sarif:
+    description: "Upload results to GitHub code scanning (needs `security-events: write`)."
+    required: false
+    default: "true"
+  drift-ref:
+    description: Git ref of Drift to build. Pin a tag or commit for reproducible CI.
+    required: false
+    default: "main"
+  pr-mode:
+    description: "On pull_request events, report and fail only on what the pull request introduces (`drift check --diff-base origin/<base>`). Works with a shallow checkout (it fetches the base branch and deepens until the merge base is there); `fetch-depth: 0` avoids the extra fetches. Set to \"false\" to check the whole repository."
+    required: false
+    default: "true"
+  security:
+    description: "On pull_request events in PR mode, also run `drift security --diff-base origin/<base> --github`: notice annotations and a job summary of what the pull request introduces (entry points lacking a guard their siblings share, unguarded entry points reaching a risky operation, risky operations and client leaks added, entry points made internet-facing). Facts for review; it never fails the job. Off by default until its precision is measured; set to \"true\" to run it."
+    required: false
+    default: "false"
+  security-comment:
+    description: "With `security`, also post the same findings as one pull request comment when the pull request introduces any (needs `pull-requests: write`; uses `github.token`). Off by default: the job summary and annotations need no extra permission."
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    # Resolve the ref to one commit, matching full ref names only (`ls-remote`
+    # patterns match suffixes: `v1` would also match `refs/heads/archive/v1`).
+    # The cache key and the build both use that commit, so a branch such as
+    # `main` is rebuilt when it moves and never mixed with another build.
+    - name: Resolve Drift ref
+      id: ref
+      shell: bash
+      env:
+        DRIFT_REF: ${{ inputs.drift-ref }}
+      run: |
+        url=https://github.com/dadbodgeoff/drift
+        if [[ "$DRIFT_REF" =~ ^[0-9a-f]{40}$ ]]; then
+          sha="$DRIFT_REF"
+        else
+          refs=$(git ls-remote --heads --tags "$url")
+          sha=""
+          for want in "refs/tags/$DRIFT_REF^{}" "refs/tags/$DRIFT_REF" "refs/heads/$DRIFT_REF"; do
+            sha=$(awk -v w="$want" '$2 == w { print $1; exit }' <<<"$refs")
+            [ -n "$sha" ] && break
+          done
+        fi
+        if [ -z "$sha" ]; then
+          echo "::error::drift-ref '$DRIFT_REF' is not a tag, a branch or a full 40-character commit SHA of $url"
+          exit 1
+        fi
+        echo "sha=$sha" >> "$GITHUB_OUTPUT"
+        # A fresh fact cache outside the checkout: pull request code must not be
+        # able to supply cached facts (Drift also ignores a git-tracked .drift/cache).
+        echo "DRIFT_CACHE_DIR=$(mktemp -d "$RUNNER_TEMP/drift-cache.XXXXXX")" >> "$GITHUB_ENV"
+    - name: Cache Drift build
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      with:
+        path: ~/.cargo/bin/drift
+        key: drift-${{ runner.os }}-${{ steps.ref.outputs.sha }}
+    - name: Install Drift
+      shell: bash
+      env:
+        DRIFT_SHA: ${{ steps.ref.outputs.sha }}
+      run: |
+        if ! command -v drift >/dev/null; then
+          cargo install --locked --git https://github.com/dadbodgeoff/drift --rev "$DRIFT_SHA" drift-cli
+        fi
+    # Code scanning gets the whole repository's new violations: it tracks alerts
+    # across branches itself and shows a pull request only the alerts it adds.
+    # Exit 1 (violations found) is expected here; any other failure stops the job.
+    - name: Drift check (SARIF)
+      if: ${{ inputs.upload-sarif == 'true' }}
+      shell: bash
+      env:
+        DRIFT_ARGS: ${{ inputs.args }}
+      # Written outside the checkout, so it is never part of a diff.
+      run: |
+        status=0
+        drift check --format sarif $DRIFT_ARGS > "$RUNNER_TEMP/drift.sarif" || status=$?
+        if [ "$status" -gt 1 ]; then exit "$status"; fi
+    - name: Upload SARIF
+      if: ${{ inputs.upload-sarif == 'true' }}
+      uses: github/codeql-action/upload-sarif@f3bbb05694c2f74569081c28664c0866d64dec21 # v4.39.3
+      with:
+        sarif_file: ${{ runner.temp }}/drift.sarif
+        category: drift
+    # Annotations on the changed lines and a job summary. On pull_request events
+    # (unless pr-mode is "false") only what the pull request introduces is reported,
+    # and only its violations of block-mode conventions fail the check. Every other
+    # event (push, pull_request_target, merge_group, ...) checks the whole repository.
+    # A shallow checkout is deepened until the merge base with the base branch is
+    # there; `fetch-depth: 0` avoids the extra fetches.
+    - name: Drift check
+      shell: bash
+      env:
+        DRIFT_ARGS: ${{ inputs.args }}
+        DRIFT_PR_MODE: ${{ inputs.pr-mode }}
+        DRIFT_EVENT: ${{ github.event_name }}
+        DRIFT_BASE_REF: ${{ github.base_ref }}
+      run: |
+        diff_args=()
+        if [ "$DRIFT_EVENT" = "pull_request" ] && [ "$DRIFT_PR_MODE" != "false" ] && [ -n "$DRIFT_BASE_REF" ]; then
+          base="origin/$DRIFT_BASE_REF"
+          if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
+            refspec="+refs/heads/$DRIFT_BASE_REF:refs/remotes/origin/$DRIFT_BASE_REF"
+            git fetch --no-tags --quiet --depth=100 origin "$refspec" || true
+            tries=1
+            until git merge-base "$base" HEAD >/dev/null 2>&1 || [ "$tries" -ge 10 ]; do
+              git fetch --no-tags --quiet --deepen=100 origin "$refspec" || break
+              tries=$((tries + 1))
+            done
+            if ! git merge-base "$base" HEAD >/dev/null 2>&1; then
+              echo "drift: no merge base with $base within $((tries * 100)) commits; fetching the full history (git fetch --unshallow)"
+              git fetch --no-tags --quiet --unshallow origin "$refspec" || true
+            fi
+          fi
+          diff_args=(--diff-base "$base")
+        fi
+        drift check --format github "${diff_args[@]}" $DRIFT_ARGS
+    # What the pull request introduces, security-wise, as notices and a job summary.
+    # Facts for a reviewer: this step never fails the job. The base branch was fetched
+    # by the step above.
+    - name: Drift security
+      if: ${{ always() && inputs.security == 'true' && inputs.pr-mode != 'false' && github.event_name == 'pull_request' && github.base_ref != '' }}
+      shell: bash
+      env:
+        DRIFT_BASE_REF: ${{ github.base_ref }}
+      run: |
+        if git merge-base "origin/$DRIFT_BASE_REF" HEAD >/dev/null 2>&1; then
+          drift security --diff-base "origin/$DRIFT_BASE_REF" --github
+        else
+          echo "drift security: no merge base with origin/$DRIFT_BASE_REF; skipped"
+        fi
+    # One comment with the same findings, only when there are any, so a clean pull
+    # request gets no comment. Opt-in: it needs `pull-requests: write`.
+    - name: Drift security comment
+      if: ${{ always() && inputs.security-comment == 'true' && inputs.security == 'true' && inputs.pr-mode != 'false' && github.event_name == 'pull_request' && github.base_ref != '' }}
+      shell: bash
+      env:
+        DRIFT_BASE_REF: ${{ github.base_ref }}
+        GH_TOKEN: ${{ github.token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      run: |
+        base="origin/$DRIFT_BASE_REF"
+        git merge-base "$base" HEAD >/dev/null 2>&1 || exit 0
+        drift security --diff-base "$base" --json > "$RUNNER_TEMP/drift-security.json"
+        if jq -e '(.guard_gaps + .unguarded_reaching + .sinks + .leaks + .now_public) | length > 0' "$RUNNER_TEMP/drift-security.json" >/dev/null; then
+          { echo '<!-- drift-security -->'; echo '```'; drift security --diff-base "$base"; echo '```'; } > "$RUNNER_TEMP/drift-security.md"
+          gh pr comment "$PR_NUMBER" --body-file "$RUNNER_TEMP/drift-security.md"
+        fi

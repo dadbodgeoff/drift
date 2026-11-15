@@ -1,0 +1,76 @@
+{
+  "schema": "drift-review-questions",
+  "schema_version": 1,
+  "question": "Are these the same kind of thing?",
+  "answers": {
+    "same": "Yes: accept the card (`drift review --answer ID=same`)",
+    "different": "No, these are different: pick the files whose flagged members are a different kind; they are exempt by path and the card is accepted (`--answer ID=different --set-apart PATH,...`; an entry point marked needs_confirmation also needs `--confirm-entry PATH#SYMBOL`)",
+    "not-a-convention": "Not a convention: reject the card (`--answer ID=not-a-convention`)"
+  },
+  "unanswered": "A candidate nobody answers stays a candidate: no agent is shown it as a convention.",
+  "candidates": [
+    {
+      "id": "D-0f9742",
+      "summary": "files in packages/core/** do not import from packages/app/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "rule_kind": "avoids:import",
+      "family": "Layering",
+      "holders_total": 200,
+      "members": 203,
+      "holders": [
+        {
+          "path": "packages/core/src/c0.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/core/src/c22.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "packages/core/src/c79.ts",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "flagged": [
+        {
+          "path": "packages/core/src/fixtures.ts",
+          "members": [
+            {
+              "symbol": "(file)",
+              "line": 1,
+              "needs_confirmation": false,
+              "legacy": true
+            }
+          ]
+        },
+        {
+          "path": "packages/core/src/legacy.ts",
+          "members": [
+            {
+              "symbol": "(file)",
+              "line": 1,
+              "needs_confirmation": false,
+              "legacy": true
+            }
+          ]
+        },
+        {
+          "path": "packages/core/src/seed.ts",
+          "members": [
+            {
+              "symbol": "(file)",
+              "line": 1,
+              "needs_confirmation": false,
+              "legacy": true
+            }
+          ]
+        }
+      ],
+      "flagged_total": 3,
+      "auth_or_validation": false,
+      "set_apart": []
+    }
+  ]
+}

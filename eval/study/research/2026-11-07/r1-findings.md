@@ -1,0 +1,16 @@
+# R1 audit, key findings (relabel4, dev, in-sample, main c1d9b92). Full data: ../r1/
+- TS sugg 62/117 53.0% [44-62]; Py 31/63 49.2% [37-61]; TS cards in Py repos 7/20 35% (flat every round; not in headline). TS incl: 69/137 50.4%.
+- v3 A/B kappa 0.82 (426 pairs). WRONGs near-unanimous (TS 52/52, Py 29/31); split labels sit on ACCEPT side (TS 11/62, Py 8/31). Flip C -> TS 43.6%.
+- Own audit 40W/20A: flip 1 each -> net 0. Labels faithful to rubric.
+- Rubric R1 "one legit outlier however few => WRONG": cards with <=1 outlier & >=95% holders = 7/52 TS WRONG, 19/31 Py WRONG. Per-card metric stricter than par goal ("rarely misleads").
+- Labellers treat `exempt:` lines as legit outliers -> WRONG; rubric/prompt never defines exempt lines. 6/7 zero-outlier WRONGs rest on exempt lines. #97 flipped only 5/15 Py.
+- Ceilings: plan strict TS 62.7 / Py 63.3; +partial W1/W2 71.6/68.3; +credit exempt lines 71.6/73.3; +everything 83.3/76.7. At observed 40% fix rate: 58.6-66.9 / 55.3-60.7. Irreducible ~14% TS, ~22% Py.
+- W0 at 85%/n>=10 admits NO family today. Best near-line: TS naming(34), decorators(16), base classes(15), Py naming(15) at 85-93% only in best case.
+- W1 TS: only ~3/12 naming mixed_group mix symbol kinds; rest same-kind (helpers among routers, base/abstract classes, non-schema consts, secondary components). Out-of-spec kinds: TS class lineage, graphql FIELD vs QUERY, initializer callee (8 cards).
+- W1 Py: 8 clean + 3 partial of 31.
+- W2 strict: ~4/25 TS, 0/10 Py qualify. TS legit_outliers mostly OpenAPI/docs decorators (immich x4, cal.com), email templates (dub x3), no-input validation, command/service variants — not public endpoints (R3 already ACCEPTs those).
+- W5 6/8 rests on Django-CRM (4) + db-session deps; 20 cards not available from dev.
+- Outlier count predicts TS accept (0:84%,1:68%,2:56%,3+:35%) but not Py.
+- Repo concentration: immich, twenty, formbricks, dub, infisical = 35/52 TS WRONG. LORO moves TS 48-57%.
+- Hidden role predicates in wording (twenty D-2df337 "288/288" of ~676 classes; netbox D-937c0c) — cheap wording fix.
+- Gains since dev-v3 ~half from cards no longer shown (13 ACCEPT lost), half flips. ACCEPT never flipped to WRONG after product change (26/26).

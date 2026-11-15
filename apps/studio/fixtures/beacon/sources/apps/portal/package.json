@@ -1,0 +1,8 @@
+{
+  "name": "@beacon/portal",
+  "private": true,
+  "dependencies": {
+    "next": "15.0.0",
+    "@beacon/core": "*"
+  }
+}

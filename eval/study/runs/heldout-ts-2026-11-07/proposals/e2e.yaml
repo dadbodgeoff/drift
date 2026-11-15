@@ -1,0 +1,82 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - agentic
+  - daemon
+  - deterministic
+  - e2e
+  - fixtures
+  - provider
+  - secrets
+  - server
+  - store
+  - vitest
+  suffixes:
+  - config
+  - e2e
+  - test
+conventions:
+- id: D-d07023
+  status: proposed
+  mode: advise
+  summary: "packages/mobile: functions in src/** do not throw a bare Error"
+  role:
+    package: packages/mobile
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: avoids
+    signal: throw_error
+  evidence:
+    holders: 51
+    total: 52
+    lower_bound: 0.899
+    lift: 7.33
+  example: packages/mobile/src/actions.ts#pointerInteraction
+  selector_version: 2
+- id: D-ebee38
+  status: proposed
+  mode: advise
+  summary: "apps/mobile-benchmark: components in src/** render <Text>"
+  role:
+    package: apps/mobile-benchmark
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: pkg:react-native#Text
+  evidence:
+    holders: 24
+    total: 26
+    lower_bound: 0.759
+    lift: 2.923
+  example: apps/mobile-benchmark/src/Examples/ApplePay.tsx#ApplePay
+  selector_version: 2
+- id: D-6c629b
+  status: proposed
+  mode: advise
+  summary: "apps/mobile-benchmark: components in src/Examples/** render <View>"
+  role:
+    package: apps/mobile-benchmark
+    dir: src/Examples
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: pkg:react-native#View
+  evidence:
+    holders: 23
+    total: 25
+    lower_bound: 0.75
+    lift: 3.04
+  example: apps/mobile-benchmark/src/Examples/ApplePay.tsx#ApplePay
+  selector_version: 2

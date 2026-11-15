@@ -1,0 +1,545 @@
+{
+  "rule": "one batch = one (labeller, repo) prompt, launched as one fresh agent (README 'Launching'; REVIEWER-PROMPT.md 'Isolation'); A and B of one repo never at the same time",
+  "batches": [
+    {
+      "part": "ts",
+      "labeller": "A",
+      "repo": "dub",
+      "proposals": 7,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/A/dub.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/c612b3eb-3a8e-4235-a13b-2557f9978b8c/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "ts",
+      "labeller": "B",
+      "repo": "dub",
+      "proposals": 7,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/B/dub.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "ts",
+      "labeller": "A",
+      "repo": "twenty",
+      "proposals": 10,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/A/twenty.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/8aee04a6-043d-44ed-9500-f615d4dbaa54/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "ts",
+      "labeller": "B",
+      "repo": "twenty",
+      "proposals": 10,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/B/twenty.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "ts",
+      "labeller": "A",
+      "repo": "formbricks",
+      "proposals": 15,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/A/formbricks.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/1647a56a-a73f-42da-8bb5-00ebd8966953/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "ts",
+      "labeller": "B",
+      "repo": "formbricks",
+      "proposals": 15,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/B/formbricks.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "ts",
+      "labeller": "A",
+      "repo": "cal.com",
+      "proposals": 12,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/A/cal.com.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/a1368733-7d6f-41ab-90b3-c1d54f9bca46/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "ts",
+      "labeller": "B",
+      "repo": "cal.com",
+      "proposals": 12,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/B/cal.com.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "ts",
+      "labeller": "A",
+      "repo": "documenso",
+      "proposals": 12,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/A/documenso.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/9ceb6c42-da1f-49b7-82b2-50dec3182181/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "ts",
+      "labeller": "B",
+      "repo": "documenso",
+      "proposals": 12,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/B/documenso.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "ts",
+      "labeller": "A",
+      "repo": "excalidraw",
+      "proposals": 2,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/A/excalidraw.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/c96126d5-0db2-49b9-9a93-7d7ab4cc8f04/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "ts",
+      "labeller": "B",
+      "repo": "excalidraw",
+      "proposals": 2,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/B/excalidraw.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "ts",
+      "labeller": "A",
+      "repo": "ai",
+      "proposals": 4,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/A/ai.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/cef02dfd-7e8b-4465-80b0-99fbd32285bb/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "ts",
+      "labeller": "B",
+      "repo": "ai",
+      "proposals": 4,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/B/ai.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "ts",
+      "labeller": "A",
+      "repo": "nest",
+      "proposals": 4,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/A/nest.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/b845304e-8a14-45eb-ac09-fab0d5366683/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "ts",
+      "labeller": "B",
+      "repo": "nest",
+      "proposals": 4,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/B/nest.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "ts",
+      "labeller": "A",
+      "repo": "supabase",
+      "proposals": 12,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/A/supabase.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/860287d4-177a-4da1-89f1-922f3e9f7c19/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "ts",
+      "labeller": "B",
+      "repo": "supabase",
+      "proposals": 12,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/B/supabase.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "ts",
+      "labeller": "A",
+      "repo": "novu",
+      "proposals": 14,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/A/novu.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/8c1cc20b-387e-478c-999b-7c6a00b8d46e/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "ts",
+      "labeller": "B",
+      "repo": "novu",
+      "proposals": 14,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/B/novu.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "ts",
+      "labeller": "A",
+      "repo": "immich",
+      "proposals": 11,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/A/immich.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/d898ca0f-4453-4144-81b3-31960db221fa/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "ts",
+      "labeller": "B",
+      "repo": "immich",
+      "proposals": 11,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/B/immich.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "ts",
+      "labeller": "A",
+      "repo": "midday",
+      "proposals": 9,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/A/midday.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/13b4abba-8d98-446b-8869-e36b992f143a/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "ts",
+      "labeller": "B",
+      "repo": "midday",
+      "proposals": 9,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/B/midday.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "ts",
+      "labeller": "A",
+      "repo": "infisical",
+      "proposals": 13,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/A/infisical.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/96575069-59c6-4336-8b40-fd0961633e1a/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "ts",
+      "labeller": "B",
+      "repo": "infisical",
+      "proposals": 13,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/prompts/label/B/infisical.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "py",
+      "labeller": "A",
+      "repo": "polar",
+      "proposals": 6,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/label/A/polar.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/0c815cac-70b5-482d-97b5-7ce94f5d981f/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "py",
+      "labeller": "B",
+      "repo": "polar",
+      "proposals": 6,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/label/B/polar.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "py",
+      "labeller": "A",
+      "repo": "netbox",
+      "proposals": 7,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/label/A/netbox.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/8e097526-8544-4769-8234-9d8f31620028/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "py",
+      "labeller": "B",
+      "repo": "netbox",
+      "proposals": 7,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/label/B/netbox.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "py",
+      "labeller": "A",
+      "repo": "saleor",
+      "proposals": 4,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/label/A/saleor.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/b79814c3-8885-4ff0-9f21-cee48b73a84a/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "py",
+      "labeller": "B",
+      "repo": "saleor",
+      "proposals": 4,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/label/B/saleor.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "py",
+      "labeller": "A",
+      "repo": "CTFd",
+      "proposals": 2,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/label/A/CTFd.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/f1aaad2a-b08a-4311-b515-5a60bdf3e889/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "py",
+      "labeller": "B",
+      "repo": "CTFd",
+      "proposals": 2,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/label/B/CTFd.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "py",
+      "labeller": "A",
+      "repo": "fastapi",
+      "proposals": 1,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/label/A/fastapi.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/edec2371-6095-4c05-a2f6-153c0a37ab17/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "py",
+      "labeller": "B",
+      "repo": "fastapi",
+      "proposals": 1,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py/relabel/prompts/label/B/fastapi.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "py2",
+      "labeller": "A",
+      "repo": "Django-CRM",
+      "proposals": 9,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/Django-CRM.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/0659a36c-aabd-4b65-8bda-55ae369c68f9/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "py2",
+      "labeller": "B",
+      "repo": "Django-CRM",
+      "proposals": 9,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/Django-CRM.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "py2",
+      "labeller": "A",
+      "repo": "InvenTree",
+      "proposals": 11,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/InvenTree.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/c831b483-1d3e-4b74-a545-35d606504f58/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "py2",
+      "labeller": "B",
+      "repo": "InvenTree",
+      "proposals": 11,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/InvenTree.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "py2",
+      "labeller": "A",
+      "repo": "ralph",
+      "proposals": 6,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/ralph.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/891598dd-63bd-4007-b5db-858df25558a2/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "py2",
+      "labeller": "B",
+      "repo": "ralph",
+      "proposals": 6,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/ralph.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "py2",
+      "labeller": "A",
+      "repo": "Misago",
+      "proposals": 8,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/Misago.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/20a99723-9ee3-4fd7-8af3-d917aa752c37/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "py2",
+      "labeller": "B",
+      "repo": "Misago",
+      "proposals": 8,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/Misago.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "py2",
+      "labeller": "A",
+      "repo": "paperless-ngx",
+      "proposals": 3,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/paperless-ngx.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/7caa6b33-ae87-44c6-9160-0251b7449e5a/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "py2",
+      "labeller": "B",
+      "repo": "paperless-ngx",
+      "proposals": 3,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/paperless-ngx.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "py2",
+      "labeller": "A",
+      "repo": "wger",
+      "proposals": 3,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/wger.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/560d92dd-cfa3-4485-bb26-66393a2449ea/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "py2",
+      "labeller": "B",
+      "repo": "wger",
+      "proposals": 3,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/wger.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "py2",
+      "labeller": "A",
+      "repo": "lotus",
+      "proposals": 4,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/lotus.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/8fd7ccb1-a8d3-4957-b3a6-fa69100361eb/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "py2",
+      "labeller": "B",
+      "repo": "lotus",
+      "proposals": 4,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/lotus.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "py2",
+      "labeller": "A",
+      "repo": "pontoon",
+      "proposals": 2,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/pontoon.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/b58cb678-f4b9-414c-a22e-d04127d4eb4b/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "py2",
+      "labeller": "B",
+      "repo": "pontoon",
+      "proposals": 2,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/pontoon.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "py2",
+      "labeller": "A",
+      "repo": "open-wearables",
+      "proposals": 8,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/open-wearables.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/0dabe4e4-0f82-452b-941a-db3546c6b136/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "py2",
+      "labeller": "B",
+      "repo": "open-wearables",
+      "proposals": 8,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/open-wearables.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "py2",
+      "labeller": "A",
+      "repo": "tasking-manager",
+      "proposals": 9,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/tasking-manager.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/b6c663a6-95be-436a-a40d-25642cb09835/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "py2",
+      "labeller": "B",
+      "repo": "tasking-manager",
+      "proposals": 9,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/tasking-manager.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "py2",
+      "labeller": "A",
+      "repo": "simplelogin",
+      "proposals": 10,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/simplelogin.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/ab00e3a5-2a09-4380-8d89-2f32a6ea6d80/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "py2",
+      "labeller": "B",
+      "repo": "simplelogin",
+      "proposals": 10,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/simplelogin.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    },
+    {
+      "part": "py2",
+      "labeller": "A",
+      "repo": "changedetection.io",
+      "proposals": 3,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/A/changedetection.io.md",
+      "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx3/outbox/f7ead0ca-89f5-4705-ad84-4618bc95f6ad/out.jsonl",
+      "status": "rendered"
+    },
+    {
+      "part": "py2",
+      "labeller": "B",
+      "repo": "changedetection.io",
+      "proposals": 3,
+      "prompt": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/prompts/label/B/changedetection.io.md",
+      "output": null,
+      "status": "not rendered (prompt.mjs renders it once the other labeller's output for this repo is collected)"
+    }
+  ]
+}

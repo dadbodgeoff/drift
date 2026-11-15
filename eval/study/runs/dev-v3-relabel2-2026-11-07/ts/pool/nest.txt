@@ -1,0 +1,16 @@
+2 conventions from 1610 units in 67 roles (0 default tier, 2 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-897eda] packages/core: classes in errors/** (*.exception files) extend RuntimeException
+    evidence: 22/22 (lower bound 0.85, lift 9.7)
+    tier:     suggestion (rule kind wrapped_by:extends; decision D7 keeps only call wrappers and layering)
+    example:  packages/core/errors/exceptions/circular-dependency.exception.ts#CircularDependencyException
+    exempt:   packages/core/errors/exceptions/runtime.exception.ts:1 RuntimeException (in the module that defines RuntimeException)
+
+ 2. [D-3915b0] packages/microservices: classes in errors/** (*.exception files) do not use `any`
+    evidence: 20/21 (lower bound 0.77, lift 12.1)
+    tier:     suggestion (rule kind avoids:other)
+    example:  packages/microservices/errors/corrupted-packet-length.exception.ts#CorruptedPacketLengthException
+    outlier:  packages/microservices/errors/invalid-tcp-data-reception.exception.ts:3 InvalidTcpDataReceptionException
+

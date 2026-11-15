@@ -1,0 +1,117 @@
+14 conventions from 3678 units in 128 roles (0 default tier, 14 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-876763] server: HTTP handlers in src/** (*.controller files) are decorated with Authenticated()
+    evidence: 304/315 (lower bound 0.94, lift 5.1)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    example:  server/src/controllers/activity.controller.ts#DELETE /activities/:id
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:81 DELETE /admin/database-backups
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:63 GET /admin/database-backups
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:70 GET /admin/database-backups/:filename
+    ... 8 more outliers
+
+ 2. [D-c10e8e] server: HTTP handlers in src/** (*.controller files) are decorated with Endpoint()
+    evidence: 287/315 (lower bound 0.88, lift 5.1)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    example:  server/src/controllers/activity.controller.ts#DELETE /activities/:id
+    outlier:  server/src/controllers/api-key.controller.ts:75 PATCH /api-keys/:id
+    outlier:  server/src/controllers/app.controller.ts:14 GET /.well-known/immich
+    outlier:  server/src/controllers/app.controller.ts:25 GET /.well-known/webauthn
+    ... 25 more outliers
+
+ 3. [D-4fc758] server: HTTP handlers in src/** (*.controller files) are decorated with ApiTags()
+    evidence: 301/315 (lower bound 0.93, lift 5.1)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    example:  server/src/controllers/activity.controller.ts#DELETE /activities/:id
+    outlier:  server/src/controllers/app.controller.ts:14 GET /.well-known/immich
+    outlier:  server/src/controllers/app.controller.ts:25 GET /.well-known/webauthn
+    outlier:  server/src/controllers/app.controller.ts:32 GET /custom.css
+    ... 11 more outliers
+
+ 4. [D-63d2cd] server: HTTP handlers in src/** (*.controller files) pass `permission` to Authenticated()
+    evidence: 273/315 (lower bound 0.82, lift 5.1)
+    tier:     suggestion (rule kind passes_key)
+    example:  server/src/controllers/activity.controller.ts#DELETE /activities/:id
+    outlier:  server/src/controllers/app.controller.ts:14 GET /.well-known/immich
+    outlier:  server/src/controllers/app.controller.ts:25 GET /.well-known/webauthn
+    outlier:  server/src/controllers/app.controller.ts:32 GET /custom.css
+    ... 39 more outliers
+
+ 5. [D-379261] server: HTTP handlers in src/** (*.controller files) do not use `any`
+    evidence: 314/315 (lower bound 0.98, lift 48.7)
+    tier:     suggestion (rule kind avoids:other)
+    example:  server/src/controllers/activity.controller.ts#DELETE /activities/:id
+    outlier:  server/src/controllers/sync.controller.ts:20 POST /sync/stream
+
+ 6. [D-3b4f47] server: classes in src/** (*.service files) extend BaseService
+    evidence: 52/56 (lower bound 0.83, lift 11.7)
+    tier:     suggestion (rule kind wrapped_by:extends; decision D7 keeps only call wrappers and layering)
+    example:  server/src/services/activity.service.ts#ActivityService
+    outlier:  server/src/maintenance/maintenance-worker.service.ts:42 MaintenanceWorkerService
+    outlier:  server/src/services/api.service.ts:29 ApiService
+    outlier:  server/src/services/database-backup.service.ts:36 DatabaseBackupService
+    ... 1 more outliers
+    exempt:   server/src/services/base.service.ts:144 BaseService (in the module that defines BaseService)
+
+ 7. [D-26380c] server: classes in src/** (*.repository files) are named `*Repository`
+    evidence: 61/63 (lower bound 0.89, lift 10.4)
+    tier:     suggestion (rule kind named)
+    example:  server/src/maintenance/maintenance-health.repository.ts#MaintenanceHealthRepository
+    outlier:  server/src/repositories/logging.repository.ts:25 MyConsoleLogger
+    outlier:  server/src/repositories/sync.repository.ts:101 BaseSync
+
+ 8. [D-ed6dc0] server: classes in src/** (*.controller files) are decorated with ApiTags()
+    evidence: 46/48 (lower bound 0.86, lift 13.9)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    example:  server/src/controllers/activity.controller.ts#ActivityController
+    outlier:  server/src/controllers/app.controller.ts:8 AppController
+    outlier:  server/src/maintenance/maintenance-worker.controller.ts:39 MaintenanceWorkerController
+
+ 9. [D-d7122f] server: functions in src/utils/** do not use `any`
+    evidence: 97/101 (lower bound 0.90, lift 3.3)
+    tier:     suggestion (rule kind avoids:other)
+    example:  server/src/utils/access.ts#areSetsEqual
+    outlier:  server/src/utils/file.ts:47 sendFile
+    outlier:  server/src/utils/logger.ts:7 isConnectionAbortedError
+    outlier:  server/src/utils/misc.ts:32 getMethodNames
+    ... 1 more outliers
+
+10. [D-d3f2f9] server: classes in src/** (*.dto files) extend createZodDto()
+    evidence: 258/259 (lower bound 0.98, lift 2.5)
+    tier:     suggestion (rule kind wrapped_by:extends; decision D7 keeps only call wrappers and layering)
+    example:  server/src/dtos/activity.dto.ts#ActivityCreateDto
+    outlier:  server/src/dtos/user-profile.dto.ts:7 CreateProfileImageDto
+
+11. [D-ac672e] server: functions in src/schema/** declare their return type
+    evidence: 207/208 (lower bound 0.97, lift 3.5)
+    tier:     suggestion (rule kind control)
+    example:  server/src/schema/migrations/1744910873969-InitialMigration.ts#down
+    outlier:  server/src/schema/migrations/1761755618862-FixColumnNames.ts:97 down
+
+12. [D-f0120c] server: classes in src/** (*.dto files) are named `*Dto`
+    evidence: 251/259 (lower bound 0.94, lift 2.5)
+    tier:     suggestion (rule kind named)
+    example:  server/src/dtos/activity.dto.ts#ActivityCreateDto
+    outlier:  server/src/dtos/asset.dto.ts:187 AssetMetadataRouteParams
+    outlier:  server/src/dtos/download.dto.ts:54 DownloadArchiveInfo
+    outlier:  server/src/dtos/server.dto.ts:207 ReleaseEventV1
+    ... 5 more outliers
+
+13. [D-57ead0] server: functions in src/** (*.dto files) declare their return type
+    evidence: 36/40 (lower bound 0.77, lift 3.2)
+    tier:     suggestion (rule kind control)
+    example:  server/src/dtos/activity.dto.ts#mapActivity
+    outlier:  server/src/dtos/auth.dto.ts:26 isEditedOnly
+    outlier:  server/src/dtos/auth.dto.ts:24 isMetadataHidden
+    outlier:  server/src/dtos/plugin-manifest.dto.ts:10 PluginManifestMethodSchemaSchema
+    ... 1 more outliers
+
+14. [D-c8db80] web: functions in src/** (+page files) call authenticate() before getFormatter()
+    evidence: 48/51 (lower bound 0.84, lift 1.0)
+    tier:     suggestion (rule kind before)
+    example:  web/src/routes/(user)/albums/+page.ts#load
+    outlier:  web/src/routes/+page.ts:13 load
+    outlier:  web/src/routes/auth/login/+page.ts:9 load
+    outlier:  web/src/routes/auth/register/+page.ts:8 load
+

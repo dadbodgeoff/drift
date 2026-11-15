@@ -1,0 +1,814 @@
+{
+  "dev3_ts_repos": 12,
+  "dev3_py_repos": 8,
+  "s1": {
+    "v3": {
+      "shown": 32,
+      "accept": 24,
+      "repos": 9,
+      "causes": {
+        "WRONG/legit_outliers": 3,
+        "WRONG/false_outliers": 3,
+        "WRONG/mixed_group": 2
+      },
+      "wrapper": [
+        14,
+        19
+      ],
+      "layering": [
+        10,
+        13
+      ]
+    },
+    "r2": {
+      "shown": 29,
+      "accept": 27,
+      "repos": 8,
+      "causes": {
+        "WRONG/mixed_group": 1,
+        "WRONG/legit_outliers": 1
+      },
+      "wrapper": [
+        17,
+        19
+      ],
+      "layering": [
+        10,
+        10
+      ]
+    },
+    "r3": {
+      "shown": 29,
+      "accept": 29,
+      "repos": 8,
+      "causes": {},
+      "wrapper": [
+        19,
+        19
+      ],
+      "layering": [
+        10,
+        10
+      ]
+    },
+    "r4": {
+      "shown": 30,
+      "accept": 30,
+      "repos": 8,
+      "causes": {},
+      "wrapper": [
+        20,
+        20
+      ],
+      "layering": [
+        10,
+        10
+      ]
+    },
+    "r5": {
+      "shown": 30,
+      "accept": 30,
+      "repos": 8,
+      "causes": {},
+      "wrapper": [
+        20,
+        20
+      ],
+      "layering": [
+        10,
+        10
+      ]
+    },
+    "dev3": {
+      "shown": 5,
+      "accept": 1,
+      "repos": 4,
+      "causes": {
+        "WRONG/mixed_group": 2,
+        "TRIVIAL": 1,
+        "WRONG/legit_outliers": 1
+      },
+      "wrapper": [
+        0,
+        1
+      ],
+      "layering": [
+        1,
+        4
+      ]
+    },
+    "pooled_oos": {
+      "accept": 7,
+      "shown": 15
+    }
+  },
+  "s2": {
+    "v3": {
+      "real": 150,
+      "n": 198,
+      "traced": 32,
+      "cards": 32,
+      "bands": {
+        "none_real": [
+          0,
+          5
+        ],
+        "under_half": [
+          1,
+          2
+        ],
+        "half_plus": [
+          23,
+          25
+        ],
+        "no_outliers": [
+          0,
+          0
+        ]
+      }
+    },
+    "r2": {
+      "real": 254,
+      "n": 303,
+      "traced": 29,
+      "cards": 29,
+      "bands": {
+        "none_real": [
+          0,
+          1
+        ],
+        "under_half": [
+          0,
+          1
+        ],
+        "half_plus": [
+          27,
+          27
+        ],
+        "no_outliers": [
+          0,
+          1
+        ]
+      }
+    },
+    "r3": {
+      "real": 252,
+      "n": 290,
+      "traced": 29,
+      "cards": 29,
+      "bands": {
+        "none_real": [
+          0,
+          0
+        ],
+        "under_half": [
+          0,
+          0
+        ],
+        "half_plus": [
+          28,
+          28
+        ],
+        "no_outliers": [
+          1,
+          1
+        ]
+      }
+    },
+    "r4": {
+      "real": 256,
+      "n": 299,
+      "traced": 30,
+      "cards": 30,
+      "bands": {
+        "none_real": [
+          0,
+          0
+        ],
+        "under_half": [
+          0,
+          0
+        ],
+        "half_plus": [
+          29,
+          29
+        ],
+        "no_outliers": [
+          1,
+          1
+        ]
+      }
+    },
+    "r5": {
+      "real": 261,
+      "n": 294,
+      "traced": 30,
+      "cards": 30,
+      "bands": {
+        "none_real": [
+          1,
+          1
+        ],
+        "under_half": [
+          1,
+          1
+        ],
+        "half_plus": [
+          28,
+          28
+        ],
+        "no_outliers": [
+          1,
+          1
+        ]
+      }
+    },
+    "dev3": {
+      "real": 5,
+      "n": 16,
+      "traced": 5,
+      "cards": 5,
+      "bands": {
+        "none_real": [
+          0,
+          3
+        ],
+        "under_half": [
+          0,
+          0
+        ],
+        "half_plus": [
+          1,
+          2
+        ],
+        "no_outliers": [
+          0,
+          0
+        ]
+      }
+    }
+  },
+  "s3": {
+    "v3_fates": {
+      "ACCEPT -> gone (named)": 4,
+      "ACCEPT -> default (named)": 20,
+      "non-ACCEPT -> gone (named)": 7,
+      "non-ACCEPT -> default (named)": 1
+    },
+    "r5_origins": {
+      "same id, dev-v3 default ACCEPT (named)": 20,
+      "new id since dev-v3 (named)": 9,
+      "same id, dev-v3 default WRONG (named)": 1
+    }
+  },
+  "s4": {
+    "v3": {
+      "security_wrapper": [
+        14,
+        17
+      ],
+      "layering": [
+        10,
+        13
+      ],
+      "other_wrapper": [
+        0,
+        2
+      ]
+    },
+    "r2": {
+      "security_wrapper": [
+        17,
+        17
+      ],
+      "layering": [
+        10,
+        10
+      ],
+      "other_wrapper": [
+        0,
+        2
+      ]
+    },
+    "r3": {
+      "security_wrapper": [
+        17,
+        17
+      ],
+      "layering": [
+        10,
+        10
+      ],
+      "other_wrapper": [
+        2,
+        2
+      ]
+    },
+    "r4": {
+      "security_wrapper": [
+        17,
+        17
+      ],
+      "layering": [
+        10,
+        10
+      ],
+      "other_wrapper": [
+        3,
+        3
+      ]
+    },
+    "r5": {
+      "security_wrapper": [
+        17,
+        17
+      ],
+      "layering": [
+        10,
+        10
+      ],
+      "other_wrapper": [
+        3,
+        3
+      ]
+    },
+    "dev3": {
+      "layering": [
+        1,
+        4
+      ],
+      "other_wrapper": [
+        0,
+        1
+      ]
+    }
+  },
+  "s5": {
+    "v3": {
+      "1": {
+        "accept": 3,
+        "shown": 6,
+        "repos": 2
+      },
+      "2": {
+        "accept": 8,
+        "shown": 9,
+        "repos": 2
+      },
+      "3": {
+        "accept": 2,
+        "shown": 5,
+        "repos": 2
+      },
+      "4": {
+        "accept": 11,
+        "shown": 12,
+        "repos": 3
+      }
+    },
+    "r5": {
+      "1": {
+        "accept": 4,
+        "shown": 4,
+        "repos": 1
+      },
+      "2": {
+        "accept": 10,
+        "shown": 10,
+        "repos": 2
+      },
+      "3": {
+        "accept": 3,
+        "shown": 3,
+        "repos": 2
+      },
+      "4": {
+        "accept": 13,
+        "shown": 13,
+        "repos": 3
+      }
+    },
+    "dev3": {
+      "5": {
+        "accept": 1,
+        "shown": 5,
+        "repos": 4
+      }
+    }
+  },
+  "s6": {
+    "a": {
+      "r5": {
+        "default": [
+          30,
+          30
+        ],
+        "d4": [
+          43,
+          46
+        ],
+        "accepts_per_repo": 2.6875,
+        "agents_unvetted": [
+          30,
+          30
+        ]
+      },
+      "v3": {
+        "default": [
+          24,
+          32
+        ],
+        "d4": [
+          27,
+          39
+        ],
+        "accepts_per_repo": 1.6875,
+        "agents_unvetted": [
+          24,
+          32
+        ]
+      },
+      "dev3": {
+        "default": [
+          1,
+          5
+        ],
+        "d4": [
+          8,
+          12
+        ],
+        "accepts_per_repo": 0.5833333333333334,
+        "agents_unvetted": [
+          1,
+          5
+        ]
+      }
+    },
+    "b": {
+      "r5": {
+        "default": [
+          0,
+          0
+        ],
+        "d4": [
+          13,
+          16
+        ],
+        "accepts_per_repo": 0.8125,
+        "agents_unvetted": [
+          0,
+          0
+        ]
+      },
+      "v3": {
+        "default": [
+          0,
+          0
+        ],
+        "d4": [
+          3,
+          7
+        ],
+        "accepts_per_repo": 0.1875,
+        "agents_unvetted": [
+          0,
+          0
+        ]
+      },
+      "dev3": {
+        "default": [
+          0,
+          0
+        ],
+        "d4": [
+          6,
+          7
+        ],
+        "accepts_per_repo": 0.5,
+        "agents_unvetted": [
+          0,
+          0
+        ]
+      }
+    },
+    "b-humans": {
+      "r5": {
+        "default": [
+          0,
+          0
+        ],
+        "d4": [
+          43,
+          46
+        ],
+        "accepts_per_repo": 2.6875,
+        "agents_unvetted": [
+          0,
+          0
+        ]
+      },
+      "v3": {
+        "default": [
+          0,
+          0
+        ],
+        "d4": [
+          27,
+          39
+        ],
+        "accepts_per_repo": 1.6875,
+        "agents_unvetted": [
+          0,
+          0
+        ]
+      },
+      "dev3": {
+        "default": [
+          0,
+          0
+        ],
+        "d4": [
+          8,
+          12
+        ],
+        "accepts_per_repo": 0.5833333333333334,
+        "agents_unvetted": [
+          0,
+          0
+        ]
+      }
+    },
+    "c-0": {
+      "r5": {
+        "default": [
+          1,
+          1
+        ],
+        "d4": [
+          14,
+          17
+        ],
+        "accepts_per_repo": 0.875,
+        "agents_unvetted": [
+          1,
+          1
+        ]
+      },
+      "v3": {
+        "default": [
+          0,
+          0
+        ],
+        "d4": [
+          3,
+          7
+        ],
+        "accepts_per_repo": 0.1875,
+        "agents_unvetted": [
+          0,
+          0
+        ]
+      },
+      "dev3": {
+        "default": [
+          0,
+          0
+        ],
+        "d4": [
+          6,
+          7
+        ],
+        "accepts_per_repo": 0.5,
+        "agents_unvetted": [
+          0,
+          0
+        ]
+      }
+    },
+    "c-<=1": {
+      "r5": {
+        "default": [
+          8,
+          8
+        ],
+        "d4": [
+          21,
+          24
+        ],
+        "accepts_per_repo": 1.3125,
+        "agents_unvetted": [
+          8,
+          8
+        ]
+      },
+      "v3": {
+        "default": [
+          8,
+          13
+        ],
+        "d4": [
+          11,
+          20
+        ],
+        "accepts_per_repo": 0.6875,
+        "agents_unvetted": [
+          8,
+          13
+        ]
+      },
+      "dev3": {
+        "default": [
+          0,
+          2
+        ],
+        "d4": [
+          7,
+          9
+        ],
+        "accepts_per_repo": 0.5,
+        "agents_unvetted": [
+          0,
+          2
+        ]
+      }
+    },
+    "c-security": {
+      "r5": {
+        "default": [
+          17,
+          17
+        ],
+        "d4": [
+          30,
+          33
+        ],
+        "accepts_per_repo": 1.875,
+        "agents_unvetted": [
+          17,
+          17
+        ]
+      },
+      "v3": {
+        "default": [
+          14,
+          17
+        ],
+        "d4": [
+          17,
+          24
+        ],
+        "accepts_per_repo": 1.0625,
+        "agents_unvetted": [
+          14,
+          17
+        ]
+      },
+      "dev3": {
+        "default": [
+          0,
+          0
+        ],
+        "d4": [
+          6,
+          7
+        ],
+        "accepts_per_repo": 0.5,
+        "agents_unvetted": [
+          0,
+          0
+        ]
+      }
+    },
+    "d": {
+      "r5": {
+        "default": [
+          30,
+          30
+        ],
+        "d4": [
+          43,
+          46
+        ],
+        "accepts_per_repo": 2.6875,
+        "agents_unvetted": [
+          0,
+          0
+        ]
+      },
+      "v3": {
+        "default": [
+          24,
+          32
+        ],
+        "d4": [
+          27,
+          39
+        ],
+        "accepts_per_repo": 1.6875,
+        "agents_unvetted": [
+          0,
+          0
+        ]
+      },
+      "dev3": {
+        "default": [
+          1,
+          5
+        ],
+        "d4": [
+          8,
+          12
+        ],
+        "accepts_per_repo": 0.5833333333333334,
+        "agents_unvetted": [
+          0,
+          0
+        ]
+      }
+    }
+  },
+  "s7": {
+    "r5": {
+      "accept": 12,
+      "shown": 12,
+      "repos": 18
+    },
+    "v3": {
+      "accept": 6,
+      "shown": 7,
+      "repos": 18
+    },
+    "dev3": {
+      "accept": 1,
+      "shown": 2,
+      "repos": 8,
+      "causes": {
+        "WRONG/mixed_group": 1
+      }
+    }
+  },
+  "s8": {
+    "ts": {
+      "12": {
+        "boot_dev3": 0.12865,
+        "poisson_dev3": 0.13337167407000727,
+        "poisson_heldout1": 0.10094613315456658
+      },
+      "18": {
+        "boot_dev3": 0.48625,
+        "poisson_dev3": 0.47536147351239444,
+        "poisson_heldout1": 0.4012861644769632
+      },
+      "24": {
+        "boot_dev3": 0.80145,
+        "poisson_dev3": 0.7797793533983011,
+        "poisson_heldout1": 0.7136729569710969
+      },
+      "30": {
+        "boot_dev3": 0.95385,
+        "poisson_dev3": 0.9301745368159524,
+        "poisson_heldout1": 0.8948898732309455
+      },
+      "36": {
+        "boot_dev3": 0.99355,
+        "poisson_dev3": 0.9819978068521692,
+        "poisson_heldout1": 0.9683803443626157
+      },
+      "42": {
+        "boot_dev3": 0.9996,
+        "poisson_dev3": 0.996025703189312,
+        "poisson_heldout1": 0.9918211344173
+      }
+    },
+    "py": {
+      "8": {
+        "boot_dev3": 0,
+        "poisson_build": 0.04558693889492227
+      },
+      "12": {
+        "boot_dev3": 0,
+        "poisson_build": 0.28337574127298915
+      },
+      "16": {
+        "boot_dev3": 0.00225,
+        "poisson_build": 0.6222483739544267
+      },
+      "20": {
+        "boot_dev3": 0.01475,
+        "poisson_build": 0.855094775521847
+      },
+      "24": {
+        "boot_dev3": 0.05875,
+        "poisson_build": 0.9567016840581342
+      },
+      "30": {
+        "boot_dev3": 0.21125,
+        "poisson_build": 0.9950045876916924
+      },
+      "40": {
+        "boot_dev3": 0.63205,
+        "poisson_build": 0.9999274128920843
+      }
+    }
+  }
+}

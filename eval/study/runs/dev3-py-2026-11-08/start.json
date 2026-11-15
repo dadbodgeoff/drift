@@ -1,0 +1,15 @@
+{
+  "//": "Start record of a dev3 census (WS-F), committed and pushed before the census. held_out is false: dev3 is a blind dev pool (role dev), not a held-out set.",
+  "held_out": false,
+  "status": "started",
+  "role": "dev",
+  "manifest": "eval/study/runs/dev3-py-2026-11-08/manifest.json",
+  "manifest_sha256": "f1d9ac70d0345a1c4cf3944acfb73acf35887496a79410fb89210e57dc308126",
+  "set_id": "py-dev3-2026-11-08",
+  "source_manifest": "eval/dev3-2026-11-08-py.json",
+  "source_core_sha256": "3c0b0cceaa61c5fd60d98eced55cd590136c25e935fe50c47df590dfaa799954",
+  "product_commit": "5151e5cb40b980f3db61416662dadbcf47c2f1ba",
+  "binary_sha256": "bf33e175ede9283c26ba7cca1ac257820867e8874e5f76171bac63785db65b11",
+  "prereg": "eval/study/PREREG-F10-dev3-check.md",
+  "started_at": "2026-11-08T16:18:45.394Z"
+}

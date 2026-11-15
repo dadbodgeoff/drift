@@ -1,0 +1,54 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - App
+  - charts
+  suffixes:
+  - chunk
+  - config
+  - test
+conventions:
+- id: D-553404
+  status: proposed
+  mode: advise
+  summary: "packages/element: functions in src/** do not use `any`"
+  role:
+    package: packages/element
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: avoids
+    signal: any
+  evidence:
+    holders: 401
+    total: 408
+    lower_bound: 0.965
+    lift: 6.426
+  example: packages/element/src/align.ts#alignElements
+  selector_version: 2
+- id: D-92af59
+  status: proposed
+  mode: advise
+  summary: "packages/excalidraw: exported values in actions/** are named `action*`"
+  role:
+    package: packages/excalidraw
+    dir: actions
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: action*
+  evidence:
+    holders: 91
+    total: 95
+    lower_bound: 0.897
+    lift: 6.832
+  example: packages/excalidraw/actions/actionAddToLibrary.ts#actionAddToLibrary
+  selector_version: 2

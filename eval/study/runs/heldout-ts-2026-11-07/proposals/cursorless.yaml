@@ -1,0 +1,53 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems: []
+  suffixes:
+  - config
+  - fixture
+  - test
+  - types
+conventions:
+- id: D-373f39
+  status: proposed
+  mode: advise
+  summary: "packages/lib-common: exported values in src/scopeSupportFacets/** are named `*Support`"
+  role:
+    package: packages/lib-common
+    dir: src/scopeSupportFacets
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Support"
+  evidence:
+    holders: 39
+    total: 41
+    lower_bound: 0.839
+    lift: 4.923
+  example: packages/lib-common/src/scopeSupportFacets/c.ts#cCoreScopeSupport
+  selector_version: 2
+- id: D-cd8fd8
+  status: proposed
+  mode: advise
+  summary: workspace packages enable `forceConsistentCasingInFileNames` in tsconfig
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: package_has
+    item: flag:forceConsistentCasingInFileNames
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 1.042
+  example: packages/app-neovim/package.json#@cursorless/app-neovim
+  selector_version: 2

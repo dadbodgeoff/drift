@@ -1,0 +1,949 @@
+{
+  "run": "eval/study/runs/dev-v3-relabel5-2026-11-07/py2/relabel",
+  "items": [
+    {
+      "uid": "Django-CRM/D-39c60a",
+      "repo": "Django-CRM",
+      "id": "D-39c60a",
+      "rank": 2,
+      "summary": "backend: HTTP handlers in cases/** and leads/** are wrapped in HasOrgContext()",
+      "role": {
+        "package": "backend",
+        "dir": "cases",
+        "file": "*",
+        "entry": "http",
+        "kind": "function",
+        "also": [
+          {
+            "package": "backend",
+            "dir": "leads",
+            "file": "*",
+            "entry": "http",
+            "kind": "function"
+          }
+        ]
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "backend/common/permissions.py#HasOrgContext"
+        ]
+      },
+      "evidence": {
+        "holders": 120,
+        "total": 135,
+        "lower_bound": 0.82,
+        "lift": 4.7
+      },
+      "members": 135,
+      "example": "backend/cases/analytics_views.py#AnalyticsAgentsView.get",
+      "python_members": 135,
+      "outliers": 15,
+      "outlier_files": [
+        "backend/cases/csat_views.py",
+        "backend/cases/help_center_views.py",
+        "backend/cases/inbound_views.py",
+        "backend/cases/portal_views.py",
+        "backend/leads/views/intake_public_views.py",
+        "backend/leads/views/lead_interactions.py"
+      ],
+      "block": " 2. [D-39c60a] backend: HTTP handlers in cases/** and leads/** are wrapped in HasOrgContext()\n    evidence: 120/135 (lower bound 0.82, lift 4.7)\n    agents:   not shown to agents (family below admission bar: 75% of 8)\n    example:  backend/cases/analytics_views.py#AnalyticsAgentsView.get\n    outlier:  backend/cases/csat_views.py:111 PublicCsatView.get\n    outlier:  backend/cases/csat_views.py:155 PublicCsatView.post\n    outlier:  backend/cases/help_center_views.py:178 PublicHelpCenterArticleView.get\n    outlier:  backend/cases/help_center_views.py:138 PublicHelpCenterListView.get\n    outlier:  backend/cases/inbound_views.py:625 InboundCatchAllView.post\n    outlier:  backend/cases/inbound_views.py:379 InboundMailboxWebhookView.post\n    outlier:  backend/cases/portal_views.py:292 PortalArticleDetailView.get\n    outlier:  backend/cases/portal_views.py:256 PortalArticleListView.get\n    outlier:  backend/cases/portal_views.py:334 PortalArticleSuggestView.get\n    outlier:  backend/cases/portal_views.py:374 PortalCaseCommentView.post\n    outlier:  backend/cases/portal_views.py:203 PortalCaseDetailView.get\n    outlier:  backend/cases/portal_views.py:134 PortalCaseListView.get\n    outlier:  backend/cases/portal_views.py:167 PortalCaseListView.post\n    outlier:  backend/leads/views/intake_public_views.py:139 LeadIntakePostView.post\n    outlier:  backend/leads/views/lead_interactions.py:255 CreateLeadFromSite.post",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "InvenTree/D-7c0991",
+      "repo": "InvenTree",
+      "id": "D-7c0991",
+      "rank": 1,
+      "summary": "serializers in src/** (serializers files) are named `*Serializer`",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "serializers",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "serializer"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "evidence": {
+        "holders": 199,
+        "total": 200,
+        "lower_bound": 0.97,
+        "lift": 4.8
+      },
+      "members": 200,
+      "example": "src/backend/InvenTree/InvenTree/serializers.py#DuplicateOptionsSerializer",
+      "python_members": 200,
+      "outliers": 1,
+      "outlier_files": [
+        "src/backend/InvenTree/part/serializers.py"
+      ],
+      "block": " 1. [D-7c0991] serializers in src/** (serializers files) are named `*Serializer`\n    evidence: 199/200 (lower bound 0.97, lift 4.8)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  src/backend/InvenTree/InvenTree/serializers.py#DuplicateOptionsSerializer\n    outlier:  src/backend/InvenTree/part/serializers.py:259 PartThumbSerializerUpdate",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "InvenTree/D-c2b101",
+      "repo": "InvenTree",
+      "id": "D-c2b101",
+      "rank": 2,
+      "summary": "admin classes in src/** (admin files) are named `*Admin`",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "admin",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "admin"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Admin"
+      },
+      "evidence": {
+        "holders": 58,
+        "total": 58,
+        "lower_bound": 0.94,
+        "lift": 17
+      },
+      "members": 58,
+      "example": "src/backend/InvenTree/audit/admin.py#AuditLogEntryAdmin",
+      "python_members": 58,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 2. [D-c2b101] admin classes in src/** (admin files) are named `*Admin`\n    evidence: 58/58 (lower bound 0.94, lift 17.0)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  src/backend/InvenTree/audit/admin.py#AuditLogEntryAdmin",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "InvenTree/D-90cbee",
+      "repo": "InvenTree",
+      "id": "D-90cbee",
+      "rank": 4,
+      "summary": "model classes in src/** (models files) call utils.translation.gettext_lazy()",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "models",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "model"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:django#utils.translation.gettext_lazy"
+      },
+      "evidence": {
+        "holders": 67,
+        "total": 68,
+        "lower_bound": 0.92,
+        "lift": 3.4
+      },
+      "members": 68,
+      "example": "src/backend/InvenTree/common/models.py#Attachment",
+      "python_members": 68,
+      "outliers": 1,
+      "outlier_files": [
+        "src/backend/InvenTree/users/models.py"
+      ],
+      "block": " 4. [D-90cbee] model classes in src/** (models files) call utils.translation.gettext_lazy()\n    evidence: 67/68 (lower bound 0.92, lift 3.4)\n    agents:   not shown to agents (family below admission bar: 44% of 9)\n    example:  src/backend/InvenTree/common/models.py#Attachment\n    outlier:  src/backend/InvenTree/users/models.py:502 Owner",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "InvenTree/D-100344",
+      "repo": "InvenTree",
+      "id": "D-100344",
+      "rank": 8,
+      "summary": "admin classes in src/** (admin files) are decorated with contrib.admin.register()",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "admin",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "admin"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "decorator",
+        "any_of": [
+          "pkg:django#contrib.admin.register"
+        ]
+      },
+      "evidence": {
+        "holders": 55,
+        "total": 58,
+        "lower_bound": 0.86,
+        "lift": 19.7
+      },
+      "members": 58,
+      "example": "src/backend/InvenTree/audit/admin.py#AuditLogEntryAdmin",
+      "python_members": 58,
+      "outliers": 3,
+      "outlier_files": [
+        "src/backend/InvenTree/common/admin.py",
+        "src/backend/InvenTree/plugin/admin.py",
+        "src/backend/InvenTree/users/admin.py"
+      ],
+      "block": " 8. [D-100344] admin classes in src/** (admin files) are decorated with contrib.admin.register()\n    evidence: 55/58 (lower bound 0.86, lift 19.7)\n    agents:   not shown to agents (family below admission bar: 50% of 6)\n    example:  src/backend/InvenTree/audit/admin.py#AuditLogEntryAdmin\n    outlier:  src/backend/InvenTree/common/admin.py:222 ReadOnlyAdmin\n    outlier:  src/backend/InvenTree/plugin/admin.py:54 PluginConfigAdmin\n    outlier:  src/backend/InvenTree/users/admin.py:130 InvenTreeUserAdmin",
+      "family": "decorator",
+      "rule_kind": "wrapped_by:decorator",
+      "tier": "default"
+    },
+    {
+      "uid": "InvenTree/D-455913",
+      "repo": "InvenTree",
+      "id": "D-455913",
+      "rank": 10,
+      "summary": "src/frontend: components in src/tables/** are named `*Table`, except a companion (a helper or constant beside the members that follow it)",
+      "role": {
+        "package": "src/frontend",
+        "dir": "src/tables",
+        "file": "*",
+        "entry": "-",
+        "kind": "component"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Table"
+      },
+      "evidence": {
+        "holders": 76,
+        "total": 82,
+        "lower_bound": 0.85,
+        "lift": 5
+      },
+      "members": 83,
+      "example": "src/frontend/src/tables/bom/BomTable.tsx#BomTable",
+      "python_members": null,
+      "outliers": 6,
+      "outlier_files": [
+        "src/frontend/src/tables/general/ParametricDataTableFilters.tsx",
+        "src/frontend/src/tables/settings/GroupTable.tsx",
+        "src/frontend/src/tables/settings/SelectionListDrawer.tsx",
+        "src/frontend/src/tables/settings/SnippetTable.tsx",
+        "src/frontend/src/tables/settings/TemplateTable.tsx",
+        "src/frontend/src/tables/settings/UserTable.tsx"
+      ],
+      "block": "10. [D-455913] src/frontend: components in src/tables/** are named `*Table`, except a companion (a helper or constant beside the members that follow it)\n    evidence: 76/82 (lower bound 0.85, lift 5.0)\n    agents:   not shown to agents (family below admission bar: 56% of 37)\n    example:  src/frontend/src/tables/bom/BomTable.tsx#BomTable\n    outlier:  src/frontend/src/tables/general/ParametricDataTableFilters.tsx:200 ParameterFilter\n    outlier:  src/frontend/src/tables/settings/GroupTable.tsx:39 GroupDrawer\n    outlier:  src/frontend/src/tables/settings/SelectionListDrawer.tsx:147 SelectionListDrawer\n    outlier:  src/frontend/src/tables/settings/SnippetTable.tsx:49 SnippetDrawer\n    outlier:  src/frontend/src/tables/settings/TemplateTable.tsx:88 TemplateDrawer\n    outlier:  src/frontend/src/tables/settings/UserTable.tsx:63 UserDrawer\n    exempt:   src/frontend/src/tables/purchasing/SupplierPriceBreakTable.tsx:41 SupplierPriceBreakColumns (a helper of SupplierPriceBreakTable, which uses it in its file)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "InvenTree/D-b5f2f2",
+      "repo": "InvenTree",
+      "id": "D-b5f2f2",
+      "rank": 12,
+      "summary": "classes in src/backend/InvenTree/plugin/** extend InvenTreePlugin, except 2 classes (named for a base of another kind)",
+      "role": {
+        "package": "",
+        "dir": "src/backend/InvenTree/plugin",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "src/backend/InvenTree/plugin/plugin.py#InvenTreePlugin"
+        ]
+      },
+      "evidence": {
+        "holders": 47,
+        "total": 51,
+        "lower_bound": 0.81,
+        "lift": 21.5
+      },
+      "members": 53,
+      "example": "src/backend/InvenTree/plugin/broken/bad_actor.py#BadActorPlugin",
+      "python_members": 53,
+      "outliers": 4,
+      "outlier_files": [
+        "src/backend/InvenTree/plugin/base/integration/NotificationMixin.py",
+        "src/backend/InvenTree/plugin/base/integration/SettingsMixin.py",
+        "src/backend/InvenTree/plugin/registry.py"
+      ],
+      "block": "12. [D-b5f2f2] classes in src/backend/InvenTree/plugin/** extend InvenTreePlugin, except 2 classes (named for a base of another kind)\n    evidence: 47/51 (lower bound 0.81, lift 21.5)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  src/backend/InvenTree/plugin/broken/bad_actor.py#BadActorPlugin\n    outlier:  src/backend/InvenTree/plugin/base/integration/NotificationMixin.py:18 SettingsKeyType\n    outlier:  src/backend/InvenTree/plugin/base/integration/SettingsMixin.py:23 SettingsKeyType\n    outlier:  src/backend/InvenTree/plugin/base/integration/SettingsMixin.py:20 User\n    outlier:  src/backend/InvenTree/plugin/registry.py:80 PluginsRegistry\n    exempt:   src/backend/InvenTree/plugin/samples/machines/sample_printer.py:19 SamplePrinterDriver (a driver, named for its base LabelPrinterBaseDriver)\n    exempt:   src/backend/InvenTree/plugin/template.py:8 PluginTemplateLoader (a loader, named for its base template.loaders.filesystem.Loader)",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "default"
+    },
+    {
+      "uid": "ralph/D-40c349",
+      "repo": "ralph",
+      "id": "D-40c349",
+      "rank": 1,
+      "summary": "serializers in src/** (api and serializers files) extend RalphAPISerializer, except 7 classes (on a sibling base the target's module defines)",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "api",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "serializer",
+        "also": [
+          {
+            "package": "",
+            "dir": "src",
+            "file": "serializers",
+            "entry": "-",
+            "kind": "class",
+            "member_kind": "serializer"
+          }
+        ]
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "src/ralph/api/serializers.py#RalphAPISerializer"
+        ]
+      },
+      "evidence": {
+        "holders": 103,
+        "total": 103,
+        "lower_bound": 0.96,
+        "lift": 8.6
+      },
+      "members": 110,
+      "example": "src/ralph/access_cards/api.py#AccessCardSerializer",
+      "python_members": 110,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 1. [D-40c349] serializers in src/** (api and serializers files) extend RalphAPISerializer, except 7 classes (on a sibling base the target's module defines)\n    evidence: 103/103 (lower bound 0.96, lift 8.6)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  src/ralph/access_cards/api.py#AccessCardSerializer\n    exempt:   src/ralph/assets/api/serializers.py:255 AssetModelSaveSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)\n    exempt:   src/ralph/data_center/api/serializers.py:183 DataCenterAssetSaveSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)\n    exempt:   src/ralph/lib/custom_fields/api/serializers.py:64 CustomFieldValueSaveSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)\n    exempt:   src/ralph/networks/api.py:64 IPAddressSaveSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)\n    exempt:   src/ralph/virtual/api.py:62 SaveCloudFlavorSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)\n    exempt:   src/ralph/virtual/api.py:84 SaveCloudHostSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)\n    exempt:   src/ralph/virtual/api.py:182 VirtualServerSaveSerializer (extends RalphAPISaveSerializer, which the module of RalphAPISerializer defines beside it)",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "default"
+    },
+    {
+      "uid": "ralph/D-03c0d5",
+      "repo": "ralph",
+      "id": "D-03c0d5",
+      "rank": 2,
+      "summary": "serializers in src/** (api and serializers files) are named `*Serializer`",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "api",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "serializer",
+        "also": [
+          {
+            "package": "",
+            "dir": "src",
+            "file": "serializers",
+            "entry": "-",
+            "kind": "class",
+            "member_kind": "serializer"
+          }
+        ]
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "evidence": {
+        "holders": 109,
+        "total": 110,
+        "lower_bound": 0.95,
+        "lift": 7.6
+      },
+      "members": 110,
+      "example": "src/ralph/access_cards/api.py#AccessCardSerializer",
+      "python_members": 110,
+      "outliers": 1,
+      "outlier_files": [
+        "src/ralph/dashboards/api/serializers.py"
+      ],
+      "block": " 2. [D-03c0d5] serializers in src/** (api and serializers files) are named `*Serializer`\n    evidence: 109/110 (lower bound 0.95, lift 7.6)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  src/ralph/access_cards/api.py#AccessCardSerializer\n    outlier:  src/ralph/dashboards/api/serializers.py:11 GraphSerializerDetail",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "ralph/D-c2b101",
+      "repo": "ralph",
+      "id": "D-c2b101",
+      "rank": 3,
+      "summary": "admin classes in src/** (admin files) are named `*Admin`",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "admin",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "admin"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Admin"
+      },
+      "evidence": {
+        "holders": 94,
+        "total": 98,
+        "lower_bound": 0.9,
+        "lift": 10.2
+      },
+      "members": 98,
+      "example": "src/ralph/access_cards/admin.py#AccessCardAdmin",
+      "python_members": 98,
+      "outliers": 4,
+      "outlier_files": [
+        "src/ralph/domains/admin.py",
+        "src/ralph/licences/admin.py",
+        "src/ralph/reports/admin.py",
+        "src/ralph/virtual/admin.py"
+      ],
+      "block": " 3. [D-c2b101] admin classes in src/** (admin files) are named `*Admin`\n    evidence: 94/98 (lower bound 0.90, lift 10.2)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  src/ralph/access_cards/admin.py#AccessCardAdmin\n    outlier:  src/ralph/domains/admin.py:138 DomainCategory\n    outlier:  src/ralph/licences/admin.py:224 Software\n    outlier:  src/ralph/reports/admin.py:13 ReportLanguage\n    outlier:  src/ralph/virtual/admin.py:45 VirtualServerTypeForm",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "ralph/D-a68e99",
+      "repo": "ralph",
+      "id": "D-a68e99",
+      "rank": 4,
+      "summary": "model classes in src/** extend AdminAbsoluteUrlMixin",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "model"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "src/ralph/lib/mixins/models.py#AdminAbsoluteUrlMixin"
+        ]
+      },
+      "evidence": {
+        "holders": 49,
+        "total": 53,
+        "lower_bound": 0.82,
+        "lift": 9
+      },
+      "members": 53,
+      "example": "src/ralph/assets/models/assets.py#AssetHolder",
+      "python_members": 53,
+      "outliers": 4,
+      "outlier_files": [
+        "src/ralph/assets/models/assets.py",
+        "src/ralph/switchports/models/connections.py",
+        "src/ralph/switchports/models/validation.py"
+      ],
+      "block": " 4. [D-a68e99] model classes in src/** extend AdminAbsoluteUrlMixin\n    evidence: 49/53 (lower bound 0.82, lift 9.0)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  src/ralph/assets/models/assets.py#AssetHolder\n    outlier:  src/ralph/assets/models/assets.py:262 AssetLastHostname\n    outlier:  src/ralph/switchports/models/connections.py:43 Connection\n    outlier:  src/ralph/switchports/models/connections.py:50 ConnectionMember\n    outlier:  src/ralph/switchports/models/validation.py:20 BackendValidationResult",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "default"
+    },
+    {
+      "uid": "Misago/D-d8703c",
+      "repo": "Misago",
+      "id": "D-d8703c",
+      "rank": 1,
+      "summary": "classes in misago/permissions/** call super().__call__(), except 6 classes (with no override)",
+      "role": {
+        "package": "",
+        "dir": "misago/permissions",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "global#super().__call__"
+      },
+      "evidence": {
+        "holders": 68,
+        "total": 68,
+        "lower_bound": 0.95,
+        "lift": 7.6
+      },
+      "members": 74,
+      "example": "misago/permissions/hooks/build_user_category_permissions.py#BuildUserCategoryPermissionsHook",
+      "python_members": 74,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 1. [D-d8703c] classes in misago/permissions/** call super().__call__(), except 6 classes (with no override)\n    evidence: 68/68 (lower bound 0.95, lift 7.6)\n    agents:   not shown to agents (family below admission bar: 44% of 9)\n    example:  misago/permissions/hooks/build_user_category_permissions.py#BuildUserCategoryPermissionsHook\n    exempt:   misago/permissions/checkutils.py:7 PermissionCheckResult (defines no __call__() of its own, so has no override that calls super().__call__())\n    exempt:   misago/permissions/panels.py:5 MisagoUserPermissionsPanel (defines no __call__() of its own, so has no override that calls super().__call__())\n    exempt:   misago/permissions/proxy.py:16 UserPermissionsProxy (defines no __call__() of its own, so has no override that calls super().__call__())\n    exempt:   misago/permissions/threads/querysets.py:30 CategoryQueries (defines no __call__() of its own, so has no override that calls super().__call__())\n    exempt:   misago/permissions/threads/querysets.py:119 CategoryThreadsQuerysetFilter (defines no __call__() of its own, so has no override that calls super().__call__())\n    exempt:   misago/permissions/threads/querysets.py:59 ThreadsQuerysetFilter (defines no __call__() of its own, so has no override that calls super().__call__())",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "Misago/D-c9ae1e",
+      "repo": "Misago",
+      "id": "D-c9ae1e",
+      "rank": 2,
+      "summary": "classes in misago/permissions/hooks/** extend FilterHook, except a class (on a sibling base the target's module defines)",
+      "role": {
+        "package": "",
+        "dir": "misago/permissions/hooks",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "misago/plugins/hooks.py#FilterHook"
+        ]
+      },
+      "evidence": {
+        "holders": 67,
+        "total": 67,
+        "lower_bound": 0.95,
+        "lift": 8.2
+      },
+      "members": 68,
+      "example": "misago/permissions/hooks/build_user_category_permissions.py#BuildUserCategoryPermissionsHook",
+      "python_members": 68,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 2. [D-c9ae1e] classes in misago/permissions/hooks/** extend FilterHook, except a class (on a sibling base the target's module defines)\n    evidence: 67/67 (lower bound 0.95, lift 8.2)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  misago/permissions/hooks/build_user_category_permissions.py#BuildUserCategoryPermissionsHook\n    exempt:   misago/permissions/hooks/get_admin_category_permissions.py:27 GetAdminCategoryPermissionsHook (extends ActionHook, which the module of FilterHook defines beside it)",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "default"
+    },
+    {
+      "uid": "Misago/D-e72fc8",
+      "repo": "Misago",
+      "id": "D-e72fc8",
+      "rank": 4,
+      "summary": "classes in misago/posting/hooks/** extend FilterHook, except a class (on a sibling base the target's module defines)",
+      "role": {
+        "package": "",
+        "dir": "misago/posting/hooks",
+        "file": "*",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "extends",
+        "any_of": [
+          "misago/plugins/hooks.py#FilterHook"
+        ]
+      },
+      "evidence": {
+        "holders": 29,
+        "total": 29,
+        "lower_bound": 0.88,
+        "lift": 8.1
+      },
+      "members": 30,
+      "example": "misago/posting/hooks/get_private_thread_edit_formset.py#GetPrivateThreadEditFormsetHook",
+      "python_members": 30,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 4. [D-e72fc8] classes in misago/posting/hooks/** extend FilterHook, except a class (on a sibling base the target's module defines)\n    evidence: 29/29 (lower bound 0.88, lift 8.1)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  misago/posting/hooks/get_private_thread_edit_formset.py#GetPrivateThreadEditFormsetHook\n    exempt:   misago/posting/hooks/validate_posting.py:33 ValidatePostingHook (extends ActionHook, which the module of FilterHook defines beside it)",
+      "family": "base_class",
+      "rule_kind": "wrapped_by:extends",
+      "tier": "default"
+    },
+    {
+      "uid": "Misago/D-562769",
+      "repo": "Misago",
+      "id": "D-562769",
+      "rank": 5,
+      "summary": "forms in misago/** (forms files) are named `*Form`",
+      "role": {
+        "package": "",
+        "dir": "misago",
+        "file": "forms",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "form"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Form"
+      },
+      "evidence": {
+        "holders": 28,
+        "total": 28,
+        "lower_bound": 0.88,
+        "lift": 18.5
+      },
+      "members": 28,
+      "example": "misago/account/forms.py#AccountDeleteForm",
+      "python_members": 28,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 5. [D-562769] forms in misago/** (forms files) are named `*Form`\n    evidence: 28/28 (lower bound 0.88, lift 18.5)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  misago/account/forms.py#AccountDeleteForm",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "paperless-ngx/D-de2489",
+      "repo": "paperless-ngx",
+      "id": "D-de2489",
+      "rank": 1,
+      "summary": "src-ui: classes in src/** (*.component files) are named `*Component`, except 5 shared parts (used by several members, not a member)",
+      "role": {
+        "package": "src-ui",
+        "dir": "src",
+        "file": "*.component",
+        "entry": "-",
+        "kind": "class"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Component"
+      },
+      "evidence": {
+        "holders": 114,
+        "total": 114,
+        "lower_bound": 0.97,
+        "lift": 5.2
+      },
+      "members": 119,
+      "example": "src-ui/src/app/app.component.ts#AppComponent",
+      "python_members": null,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 1. [D-de2489] src-ui: classes in src/** (*.component files) are named `*Component`, except 5 shared parts (used by several members, not a member)\n    evidence: 114/114 (lower bound 0.97, lift 5.2)\n    agents:   not shown to agents (family below admission bar: 56% of 37)\n    example:  src-ui/src/app/app.component.ts#AppComponent\n    exempt:   src-ui/src/app/components/common/custom-fields-query-dropdown/custom-fields-query-dropdown.component.ts:72 CustomFieldQueriesModel (shared part used by 3 members)\n    exempt:   src-ui/src/app/components/common/filterable-dropdown/filterable-dropdown.component.ts:62 FilterableDropdownSelectionModel (shared part used by 2 members)\n    exempt:   src-ui/src/app/components/common/permissions-filter-dropdown/permissions-filter-dropdown.component.ts:28 PermissionsSelectionModel (shared part used by 2 members)\n    exempt:   src-ui/src/app/components/loading-component/loading.component.ts:6 LoadingComponentWithPermissions (shared part used by 22 members)\n    exempt:   src-ui/src/app/components/with-permissions/with-permissions.component.ts:6 ComponentWithPermissions (shared part used by 16 members)",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "paperless-ngx/D-b958b1",
+      "repo": "paperless-ngx",
+      "id": "D-b958b1",
+      "rank": 2,
+      "summary": "serializers in src/** are named `*Serializer`",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "serializer"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "evidence": {
+        "holders": 60,
+        "total": 61,
+        "lower_bound": 0.91,
+        "lift": 9.4
+      },
+      "members": 61,
+      "example": "src/documents/serialisers.py#AcknowledgeTasksViewSerializer",
+      "python_members": 61,
+      "outliers": 1,
+      "outlier_files": [
+        "src/documents/views.py"
+      ],
+      "block": " 2. [D-b958b1] serializers in src/** are named `*Serializer`\n    evidence: 60/61 (lower bound 0.91, lift 9.4)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  src/documents/serialisers.py#AcknowledgeTasksViewSerializer\n    outlier:  src/documents/views.py:698 EmailDocumentDetailSchema",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "paperless-ngx/D-0dfb1b",
+      "repo": "paperless-ngx",
+      "id": "D-0dfb1b",
+      "rank": 4,
+      "summary": "model classes in src/** call utils.translation.gettext_lazy()",
+      "role": {
+        "package": "",
+        "dir": "src",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "model"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:django#utils.translation.gettext_lazy"
+      },
+      "evidence": {
+        "holders": 24,
+        "total": 25,
+        "lower_bound": 0.81,
+        "lift": 12.5
+      },
+      "members": 25,
+      "example": "src/documents/models.py#Correspondent",
+      "python_members": 25,
+      "outliers": 1,
+      "outlier_files": [
+        "src/documents/models.py"
+      ],
+      "block": " 4. [D-0dfb1b] model classes in src/** call utils.translation.gettext_lazy()\n    evidence: 24/25 (lower bound 0.81, lift 12.5)\n    agents:   not shown to agents (family below admission bar: 44% of 9)\n    example:  src/documents/models.py#Correspondent\n    outlier:  src/documents/models.py:776 UiSettings",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "wger/D-f93026",
+      "repo": "wger",
+      "id": "D-f93026",
+      "rank": 1,
+      "summary": "serializers in wger/** (serializers files) are named `*Serializer`",
+      "role": {
+        "package": "",
+        "dir": "wger",
+        "file": "serializers",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "serializer"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "evidence": {
+        "holders": 76,
+        "total": 76,
+        "lower_bound": 0.95,
+        "lift": 6.4
+      },
+      "members": 76,
+      "example": "wger/core/api/serializers.py#LanguageCheckSerializer",
+      "python_members": 76,
+      "outliers": 0,
+      "outlier_files": [],
+      "block": " 1. [D-f93026] serializers in wger/** (serializers files) are named `*Serializer`\n    evidence: 76/76 (lower bound 0.95, lift 6.4)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  wger/core/api/serializers.py#LanguageCheckSerializer",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "lotus/D-7d8745",
+      "repo": "lotus",
+      "id": "D-7d8745",
+      "rank": 1,
+      "summary": "backend: serializers in api/** and metering_billing/** are named `*Serializer`",
+      "role": {
+        "package": "backend",
+        "dir": "api",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "serializer",
+        "also": [
+          {
+            "package": "backend",
+            "dir": "metering_billing",
+            "file": "*",
+            "entry": "-",
+            "kind": "class",
+            "member_kind": "serializer"
+          }
+        ]
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Serializer"
+      },
+      "evidence": {
+        "holders": 229,
+        "total": 237,
+        "lower_bound": 0.94,
+        "lift": 2.1
+      },
+      "members": 237,
+      "example": "backend/metering_billing/serializers/auth_serializers.py#DemoRegistrationDetailSerializer",
+      "python_members": 237,
+      "outliers": 8,
+      "outlier_files": [
+        "backend/api/serializers/model_serializers.py",
+        "backend/api/serializers/webhook_serializers.py",
+        "backend/metering_billing/serializers/model_serializers.py"
+      ],
+      "block": " 1. [D-7d8745] backend: serializers in api/** and metering_billing/** are named `*Serializer`\n    evidence: 229/237 (lower bound 0.94, lift 2.1)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  backend/metering_billing/serializers/auth_serializers.py#DemoRegistrationDetailSerializer\n    outlier:  backend/api/serializers/model_serializers.py:134 LightweightCustomerSerializerForInvoice\n    outlier:  backend/api/serializers/model_serializers.py:2171 ListSubscriptionRecordFilter\n    outlier:  backend/api/serializers/model_serializers.py:1630 SubscriptionRecordCreateSerializerOld\n    outlier:  backend/api/serializers/model_serializers.py:2141 SubscriptionRecordFilterSerializerDelete\n    outlier:  backend/api/serializers/model_serializers.py:1876 SubscriptionRecordUpdateSerializerOld\n    outlier:  backend/api/serializers/webhook_serializers.py:48 UsageAlertPayload\n    outlier:  backend/metering_billing/serializers/model_serializers.py:1687 ListSubscriptionRecordFilter\n    outlier:  backend/metering_billing/serializers/model_serializers.py:1675 SubscriptionRecordFilterSerializerDelete",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "pontoon/D-6957a9",
+      "repo": "pontoon",
+      "id": "D-6957a9",
+      "rank": 1,
+      "summary": "translate: functions in src/api/** and src/utils/** declare their return type",
+      "role": {
+        "package": "translate",
+        "dir": "src/api",
+        "file": "*",
+        "entry": "-",
+        "kind": "function",
+        "also": [
+          {
+            "package": "translate",
+            "dir": "src/utils",
+            "file": "*",
+            "entry": "-",
+            "kind": "function"
+          }
+        ]
+      },
+      "rule": {
+        "type": "control",
+        "value": "typed_return"
+      },
+      "evidence": {
+        "holders": 74,
+        "total": 76,
+        "lower_bound": 0.91,
+        "lift": 2.2
+      },
+      "members": 76,
+      "example": "translate/src/api/comment.ts#addComment",
+      "python_members": null,
+      "outliers": 2,
+      "outlier_files": [
+        "translate/src/api/machinery.ts",
+        "translate/src/utils/hooks/useOnDiscard.ts"
+      ],
+      "block": " 1. [D-6957a9] translate: functions in src/api/** and src/utils/** declare their return type\n    evidence: 74/76 (lower bound 0.91, lift 2.2)\n    agents:   not shown to agents (family below admission bar: 80% of 10)\n    example:  translate/src/api/comment.ts#addComment\n    outlier:  translate/src/api/machinery.ts:57 abortMachineryRequests\n    outlier:  translate/src/utils/hooks/useOnDiscard.ts:9 useOnDiscard",
+      "family": "control",
+      "rule_kind": "control",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "tasking-manager/D-ee4d58",
+      "repo": "tasking-manager",
+      "id": "D-ee4d58",
+      "rank": 3,
+      "summary": "HTTP handlers in backend/** (actions and resources files) are wrapped in get_db()",
+      "role": {
+        "package": "",
+        "dir": "backend",
+        "file": "actions",
+        "entry": "http",
+        "kind": "function",
+        "also": [
+          {
+            "package": "",
+            "dir": "backend",
+            "file": "resources",
+            "entry": "http",
+            "kind": "function"
+          }
+        ]
+      },
+      "rule": {
+        "type": "wrapped_by",
+        "kind": "call",
+        "any_of": [
+          "backend/db.py#get_db"
+        ]
+      },
+      "evidence": {
+        "holders": 136,
+        "total": 141,
+        "lower_bound": 0.92,
+        "lift": 2.9
+      },
+      "members": 141,
+      "example": "backend/api/annotations/resources.py#get_annotations",
+      "python_members": 141,
+      "outliers": 5,
+      "outlier_files": [
+        "backend/api/comments/resources.py",
+        "backend/api/projects/actions.py",
+        "backend/api/tasks/resources.py"
+      ],
+      "block": " 3. [D-ee4d58] HTTP handlers in backend/** (actions and resources files) are wrapped in get_db()\n    evidence: 136/141 (lower bound 0.92, lift 2.9)\n    agents:   not shown to agents (family below admission bar: 75% of 8)\n    example:  backend/api/annotations/resources.py#get_annotations\n    outlier:  backend/api/comments/resources.py:298 get_task_comments\n    outlier:  backend/api/projects/actions.py:381 intersecting_tiles\n    outlier:  backend/api/tasks/resources.py:164 delete\n    outlier:  backend/api/tasks/resources.py:445 get_invalidated_tasks\n    outlier:  backend/api/tasks/resources.py:344 tasks_aoi",
+      "family": "wrapper",
+      "rule_kind": "wrapped_by:call",
+      "tier": "default"
+    },
+    {
+      "uid": "tasking-manager/D-665f41",
+      "repo": "tasking-manager",
+      "id": "D-665f41",
+      "rank": 8,
+      "summary": "exceptions in backend/services/** are named `*Error`",
+      "role": {
+        "package": "",
+        "dir": "backend/services",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "exception"
+      },
+      "rule": {
+        "type": "named",
+        "pattern": "*Error"
+      },
+      "evidence": {
+        "holders": 19,
+        "total": 20,
+        "lower_bound": 0.76,
+        "lift": 18.9
+      },
+      "members": 20,
+      "example": "backend/services/campaign_service.py#CampaignServiceError",
+      "python_members": 20,
+      "outliers": 1,
+      "outlier_files": [
+        "backend/services/team_service.py"
+      ],
+      "block": " 8. [D-665f41] exceptions in backend/services/** are named `*Error`\n    evidence: 19/20 (lower bound 0.76, lift 18.9)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  backend/services/campaign_service.py#CampaignServiceError\n    outlier:  backend/services/team_service.py:43 TeamJoinNotAllowed",
+      "family": "naming",
+      "rule_kind": "named",
+      "tier": "suggestion"
+    },
+    {
+      "uid": "changedetection.io/D-129993",
+      "repo": "changedetection.io",
+      "id": "D-129993",
+      "rank": 1,
+      "summary": "forms in changedetectionio/** call lazy_gettext()",
+      "role": {
+        "package": "",
+        "dir": "changedetectionio",
+        "file": "*",
+        "entry": "-",
+        "kind": "class",
+        "member_kind": "form"
+      },
+      "rule": {
+        "type": "calls",
+        "callee": "pkg:flask_babel#lazy_gettext"
+      },
+      "evidence": {
+        "holders": 26,
+        "total": 27,
+        "lower_bound": 0.82,
+        "lift": 4.7
+      },
+      "members": 27,
+      "example": "changedetectionio/blueprint/backups/restore.py#RestoreForm",
+      "python_members": 27,
+      "outliers": 1,
+      "outlier_files": [
+        "changedetectionio/forms.py"
+      ],
+      "block": " 1. [D-129993] forms in changedetectionio/** call lazy_gettext()\n    evidence: 26/27 (lower bound 0.82, lift 4.7)\n    agents:   not shown to agents (family below admission bar: 44% of 9)\n    example:  changedetectionio/blueprint/backups/restore.py#RestoreForm\n    outlier:  changedetectionio/forms.py:181 TimeDurationForm",
+      "family": "calls",
+      "rule_kind": "calls",
+      "tier": "suggestion"
+    }
+  ]
+}

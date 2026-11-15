@@ -1,0 +1,497 @@
+{
+  "labels_sha256": {
+    "A": "35b14e5ed20801f9fca8909568e74a2f48ef2027626d76e7bde4002da9147493",
+    "B": "82a4b6f81e8e085aff04054626fc42728cbcfd4f00e82b1da99b12ffb48573dd"
+  },
+  "cases": [
+    {
+      "uid": "InvenTree/D-90cbee",
+      "repo": "InvenTree",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "InvenTree/D-90cbee",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "src/backend/InvenTree/common/models.py",
+            "src/backend/InvenTree/users/models.py",
+            "src/backend/InvenTree/company/models.py",
+            "src/backend/InvenTree/build/models.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "Owner",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Models translate verbose_name and help_text with _() (common/models.py Attachment Meta, company/models.py Company, build/models.py BuildLine). users/models.py:502 Owner has fields and a Meta but no translated labels, which it could add as easily as the other models, so it is a choice rather than a missing need. Hesitated with WRONG incidental, since the call is tied to having user-facing strings.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "InvenTree/D-90cbee",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "incidental",
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "src/backend/InvenTree/common/models.py",
+            "src/backend/InvenTree/users/models.py",
+            "src/backend/InvenTree/InvenTree/models.py",
+            "src/backend/InvenTree/part/models.py",
+            "src/backend/InvenTree/machine/models.py",
+            "src/backend/InvenTree/scim/models.py",
+            "src/backend/InvenTree/audit/models.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "Owner",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Models import gettext_lazy because they carry translatable verbose names and help texts (machine, scim, audit models); Owner in users/models.py:502 has no user-facing strings (only generic FK fields), so a new such model would be flagged for nothing.",
+          "defects": [],
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "Misago/D-d8703c",
+      "repo": "Misago",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "Misago/D-d8703c",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": false,
+          "confidence": "low",
+          "checked": [
+            "misago/permissions/hooks/build_user_category_permissions.py",
+            "misago/permissions/checkutils.py",
+            "misago/permissions/panels.py",
+            "misago/permissions/proxy.py",
+            "misago/permissions/threads/querysets.py",
+            "misago/permissions/hooks/check_like_post_permission.py",
+            "misago/permissions/hooks/copy_group_permissions.py",
+            "misago/permissions/hooks/get_admin_category_permissions.py",
+            "misago/plugins/hooks.py",
+            "misago/posting/hooks/validate_posting.py",
+            ".ruff.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "PermissionCheckResult",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "MisagoUserPermissionsPanel",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "UserPermissionsProxy",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "CategoryQueries",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "ThreadsQuerysetFilter",
+              "verdict": "not_violation"
+            },
+            {
+              "symbol": "CategoryThreadsQuerysetFilter",
+              "verdict": "not_violation"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8",
+            "R9"
+          ],
+          "reason": "All 68 members are hook classes whose typed __call__ override delegates to super().__call__() (check_like_post_permission.py, copy_group_permissions.py, and the ActionHook in get_admin_category_permissions.py); the exempted classes (checkutils.py, proxy.py, querysets.py) define no __call__, so nothing is left to count, and a hook override that skips super() silently drops the plugin filter chain. Wording says all classes in permissions/** while it really means __call__ overrides (and excludes Protocol stubs), so clear=false; hesitated with WRONG incidental since ValidatePostingHook in posting/hooks reimplements ActionHook.__call__ legitimately without super().",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "Misago/D-d8703c",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "incidental",
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "misago/permissions/hooks/build_user_category_permissions.py",
+            "misago/permissions/checkutils.py",
+            "misago/permissions/panels.py",
+            "misago/permissions/proxy.py",
+            "misago/permissions/threads/querysets.py",
+            "misago/permissions/hooks/check_see_thread_permission.py",
+            "misago/permissions/hooks/copy_group_permissions.py",
+            "misago/permissions/hooks/check_like_post_permission.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "PermissionCheckResult",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "MisagoUserPermissionsPanel",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "UserPermissionsProxy",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "CategoryQueries",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "ThreadsQuerysetFilter",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "CategoryThreadsQuerysetFilter",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Hook classes define __call__ that returns super().__call__(...) (check_see_thread_permission.py, copy_group_permissions.py); every outlier is an ordinary class with no __call__ at all, so they lack the need and a new such class would be flagged for nothing.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "Misago/D-c9ae1e",
+      "repo": "Misago",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "Misago/D-c9ae1e",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "misago/permissions/hooks/build_user_category_permissions.py",
+            "misago/permissions/hooks/get_admin_category_permissions.py",
+            "misago/permissions/hooks/check_like_post_permission.py",
+            "misago/permissions/hooks/copy_group_permissions.py",
+            "misago/permissions/hooks/__init__.py",
+            "misago/plugins/hooks.py",
+            ".ruff.toml",
+            ".github/workflows/tests.yml"
+          ],
+          "outliers": [
+            {
+              "symbol": "GetAdminCategoryPermissionsHook",
+              "verdict": "not_violation"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "Every hook module defines Action/Filter Protocols plus one hook class on FilterHook[...] with __slots__ = FilterHook.__slots__ and a typed __call__ (build_user_category_permissions.py, check_like_post_permission.py, copy_group_permissions.py); the only exception is the exempted ActionHook in get_admin_category_permissions.py. No counted outliers; a new hook class on neither base would break the plugin append_filter API, and .ruff.toml selects only I, so nothing catches it.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "Misago/D-c9ae1e",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "misago/permissions/hooks/build_user_category_permissions.py",
+            "misago/permissions/hooks/get_admin_category_permissions.py",
+            "misago/permissions/hooks/check_see_thread_permission.py",
+            "misago/permissions/hooks/copy_group_permissions.py",
+            "misago/plugins/hooks.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "GetAdminCategoryPermissionsHook",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Permission hooks extend FilterHook (check_see_thread_permission.py, copy_group_permissions.py), but GetAdminCategoryPermissionsHook is an ActionHook, a legitimately different hook kind defined beside FilterHook; an agent writing another action hook would get a false alarm. Hesitated with ACCEPT.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "Misago/D-e72fc8",
+      "repo": "Misago",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "Misago/D-e72fc8",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "misago/posting/hooks/get_private_thread_edit_formset.py",
+            "misago/posting/hooks/validate_posting.py",
+            "misago/posting/hooks/highlight_post_code_blocks.py",
+            "misago/posting/hooks/save_thread_reply_state.py",
+            "misago/plugins/hooks.py",
+            ".ruff.toml",
+            ".github/workflows/tests.yml"
+          ],
+          "outliers": [
+            {
+              "symbol": "ValidatePostingHook",
+              "verdict": "not_violation"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "Posting hook classes extend FilterHook[Action, Filter] with FilterHook.__slots__ and a super().__call__ override (get_private_thread_edit_formset.py, highlight_post_code_blocks.py, save_thread_reply_state.py); the only other one is the exempted ActionHook in validate_posting.py. No counted outliers; a hook on neither base breaks the plugin API and no lint/type tool (ruff selects only I) would catch it.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "Misago/D-e72fc8",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "misago/posting/hooks/get_private_thread_edit_formset.py",
+            "misago/posting/hooks/validate_posting.py",
+            "misago/posting/hooks/validate_thread_title.py",
+            "misago/posting/hooks/get_thread_reply_state.py",
+            "misago/plugins/hooks.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "ValidatePostingHook",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Posting hooks extend FilterHook (validate_thread_title.py, get_thread_reply_state.py), but ValidatePostingHook deliberately extends ActionHook, a distinct hook kind in plugins/hooks.py (also used in permissions), so a new action-only hook would be told to use FilterHook; hesitated with ACCEPT since only one outlier.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "paperless-ngx/D-0dfb1b",
+      "repo": "paperless-ngx",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "paperless-ngx/D-0dfb1b",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "src/documents/models.py",
+            "src/paperless_mail/models.py",
+            "src/paperless/models.py",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "UiSettings",
+              "verdict": "look"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Models translate verbose names and field labels with gettext_lazy as _ (Correspondent Meta, DocumentBarcode and WorkflowRun fields, MailAccount, ApplicationConfiguration), even models not registered in admin; UiSettings (models.py:776) has fields and no translated labels or Meta, a choice rather than a lack of need. No ruff DJ rule enforces this, so the i18n convention is worth a review comment.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "paperless-ngx/D-0dfb1b",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "incidental",
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "src/documents/models.py",
+            "src/paperless_mail/models.py",
+            "src/paperless/models.py",
+            "pyproject.toml"
+          ],
+          "outliers": [
+            {
+              "symbol": "UiSettings",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Models import gettext_lazy because they have verbose_name/field labels (Correspondent, MailAccount); the outlier UiSettings has no user-facing strings (user FK, JSON settings, __str__), so it lacks the need and new such models would be flagged for nothing.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "changedetection.io/D-129993",
+      "repo": "changedetection.io",
+      "order": [
+        "A",
+        "B"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "changedetection.io/D-129993",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "high",
+          "checked": [
+            "changedetectionio/blueprint/backups/restore.py",
+            "changedetectionio/forms.py",
+            "changedetectionio/conditions/form.py",
+            "changedetectionio/processors/restock_diff/forms.py",
+            "changedetectionio/blueprint/tags/form.py"
+          ],
+          "outliers": [
+            {
+              "symbol": "TimeDurationForm",
+              "verdict": "mistake"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "WTForms forms wrap their user-facing labels in flask_babel lazy_gettext (imported as _l) for i18n (RestoreForm in restore.py, ConditionFormRow in conditions/form.py, RestockSettingsForm, SingleTag). The one outlier TimeDurationForm (forms.py:181) gives its fields no label, so WTForms falls back to the untranslated 'Hours'/'Minutes' names, which LabelAfterInputTableWidget renders; no lint rule checks this, so a warning is a useful review comment.",
+          "defects": [
+            "changedetectionio/forms.py:182 TimeDurationForm hours/minutes fields have no _l() label, so 'Hours'/'Minutes' render untranslated in the scheduler table"
+          ],
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "changedetection.io/D-129993",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "incidental",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "changedetectionio/blueprint/backups/restore.py",
+            "changedetectionio/forms.py",
+            "changedetectionio/blueprint/tags/form.py",
+            "changedetectionio/conditions/form.py",
+            "changedetectionio/processors/restock_diff/forms.py",
+            "setup.cfg"
+          ],
+          "outliers": [
+            {
+              "symbol": "TimeDurationForm",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Forms use _l() because their fields have user-visible labels/messages (restore.py, tags/form.py, conditions/form.py); TimeDurationForm (forms.py:181) is two label-less SelectFields with no translatable text, so a new such form would be flagged for nothing. Hesitated with ACCEPT given the single outlier.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - +Head
+  - +Page
+  - +data
+  - "[*]"
+  - _index
+  - _ui
+  - auth
+  - constants
+  - extension
+  - html
+  - layout
+  - migration
+  - patch
+  - project-settings
+  - property-label
+  - redirect-url
+  - rest
+  - root
+  - routes
+  - types
+  - video
+  - vite
+  - vitest
+  suffixes:
+  - $
+  - _index
+  - asset-query-manifest
+  - asset-query-runtime
+  - assets
+  - callback
+  - client
+  - config
+  - css
+  - e2e
+  - has-redirects
+  - props
+  - redirects
+  - server
+  - stories
+  - template
+  - test
+  - test-fixtures
+  - txt]
+  - ws
+  - xml
+conventions:
+- id: D-50ff6f
+  status: proposed
+  mode: advise
+  summary: "packages/sdk-components-react-radix: exported values in src/** (*.ws files) are named `meta*`"
+  role:
+    package: packages/sdk-components-react-radix
+    dir: src
+    file: "*.ws"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: meta*
+  evidence:
+    holders: 48
+    total: 49
+    lower_bound: 0.893
+    lift: 38.122
+  example: packages/sdk-components-react-radix/src/accordion.ws.ts#metaAccordion
+  selector_version: 3
+- id: D-72343d
+  status: proposed
+  mode: advise
+  summary: "packages/sdk-components-react-radix: exported values in src/** (*.props files) are named `props*`"
+  role:
+    package: packages/sdk-components-react-radix
+    dir: src
+    file: "*.props"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: props*
+  evidence:
+    holders: 48
+    total: 49
+    lower_bound: 0.893
+    lift: 37.344
+  example: >-
+    packages/sdk-components-react-radix/src/__generated__/accordion.props.ts#propsAccordion
+  selector_version: 3
+- id: D-681d54
+  status: proposed
+  mode: advise
+  summary: "packages/sdk-components-react: components in src/** are wrapped in forwardRef()"
+  role:
+    package: packages/sdk-components-react
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - pkg:react#forwardRef
+  evidence:
+    holders: 42
+    total: 43
+    lower_bound: 0.879
+    lift: 2.081
+  example: packages/sdk-components-react/src/alert.tsx#Alert
+  selector_version: 3
+- id: D-07af70
+  status: proposed
+  mode: advise
+  summary: >-
+    workspace packages use the @webstudio-is/tsconfig version most workspace
+    packages use
+  role:
+    package: ""
+    dir: '.'
+    file: package.json
+    entry: '-'
+    kind: package
+  rule:
+    type: dependency_version
+    name: "@webstudio-is/tsconfig"
+  evidence:
+    holders: 41
+    total: 42
+    lower_bound: 0.877
+    lift: 1.0
+    split:
+    - - workspace:*
+      - 41
+    - - workspace:^
+      - 1
+  example: apps/builder/package.json#@webstudio-is/builder
+  selector_version: 3

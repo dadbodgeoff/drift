@@ -1,0 +1,3966 @@
+---
+source: crates/drift-py/tests/conformance.rs
+expression: "serde_json::to_string_pretty(&r).unwrap()"
+---
+{
+  "schema_version": 11,
+  "files": [
+    {
+      "path": "app/__init__.py",
+      "hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [],
+      "symbols": [],
+      "entry_points": []
+    },
+    {
+      "path": "app/deps.py",
+      "hash": "288b6a55959f818c759a917438a0495eeeff2bf6fffc1455895148e1a6c5c0a2",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:fastapi",
+          "names": [
+            "Depends",
+            "Security"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:fastapi.security",
+          "names": [
+            "HTTPBearer",
+            "OAuth2PasswordBearer"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:python:dataclasses",
+          "names": [
+            "dataclass"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:python:typing",
+          "names": [
+            "Annotated",
+            "Optional"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "AUTH_REQUIRED",
+          "origin": "app/deps.py#AUTH_REQUIRED",
+          "kind": "local"
+        },
+        {
+          "name": "Auth",
+          "origin": "app/deps.py#Auth",
+          "kind": "local"
+        },
+        {
+          "name": "AuthDep",
+          "origin": "app/deps.py#AuthDep",
+          "kind": "local"
+        },
+        {
+          "name": "CurrentUser",
+          "origin": "app/deps.py#CurrentUser",
+          "kind": "local"
+        },
+        {
+          "name": "DEBUG",
+          "origin": "app/deps.py#DEBUG",
+          "kind": "local"
+        },
+        {
+          "name": "DataAuth",
+          "origin": "app/deps.py#DataAuth",
+          "kind": "local"
+        },
+        {
+          "name": "MaybeUser",
+          "origin": "app/deps.py#MaybeUser",
+          "kind": "local"
+        },
+        {
+          "name": "Pagination",
+          "origin": "app/deps.py#Pagination",
+          "kind": "local"
+        },
+        {
+          "name": "Require",
+          "origin": "app/deps.py#Require",
+          "kind": "local"
+        },
+        {
+          "name": "RoleChecker",
+          "origin": "app/deps.py#RoleChecker",
+          "kind": "local"
+        },
+        {
+          "name": "Roles",
+          "origin": "app/deps.py#Roles",
+          "kind": "local"
+        },
+        {
+          "name": "Signer",
+          "origin": "app/deps.py#Signer",
+          "kind": "local"
+        },
+        {
+          "name": "SubAuth",
+          "origin": "app/deps.py#SubAuth",
+          "kind": "local"
+        },
+        {
+          "name": "SuperUser",
+          "origin": "app/deps.py#SuperUser",
+          "kind": "local"
+        },
+        {
+          "name": "auth_context",
+          "origin": "app/deps.py#auth_context",
+          "kind": "local"
+        },
+        {
+          "name": "get_auth",
+          "origin": "app/deps.py#get_auth",
+          "kind": "local"
+        },
+        {
+          "name": "get_current_active_user",
+          "origin": "app/deps.py#get_current_active_user",
+          "kind": "local"
+        },
+        {
+          "name": "get_current_superuser",
+          "origin": "app/deps.py#get_current_superuser",
+          "kind": "local"
+        },
+        {
+          "name": "get_current_user",
+          "origin": "app/deps.py#get_current_user",
+          "kind": "local"
+        },
+        {
+          "name": "get_db",
+          "origin": "app/deps.py#get_db",
+          "kind": "local"
+        },
+        {
+          "name": "get_optional_user",
+          "origin": "app/deps.py#get_optional_user",
+          "kind": "local"
+        },
+        {
+          "name": "get_relaxed_user",
+          "origin": "app/deps.py#get_relaxed_user",
+          "kind": "local"
+        },
+        {
+          "name": "get_token_user",
+          "origin": "app/deps.py#get_token_user",
+          "kind": "local"
+        },
+        {
+          "name": "get_viewer",
+          "origin": "app/deps.py#get_viewer",
+          "kind": "local"
+        },
+        {
+          "name": "get_wrapped_user",
+          "origin": "app/deps.py#get_wrapped_user",
+          "kind": "local"
+        },
+        {
+          "name": "lax",
+          "origin": "app/deps.py#lax",
+          "kind": "local"
+        },
+        {
+          "name": "loose",
+          "origin": "app/deps.py#loose",
+          "kind": "local"
+        },
+        {
+          "name": "oauth2_scheme",
+          "origin": "app/deps.py#oauth2_scheme",
+          "kind": "local"
+        },
+        {
+          "name": "optional_scheme",
+          "origin": "app/deps.py#optional_scheme",
+          "kind": "local"
+        },
+        {
+          "name": "optional_scopes_user",
+          "origin": "app/deps.py#optional_scopes_user",
+          "kind": "local"
+        },
+        {
+          "name": "positional_scheme",
+          "origin": "app/deps.py#positional_scheme",
+          "kind": "local"
+        },
+        {
+          "name": "public_auth",
+          "origin": "app/deps.py#public_auth",
+          "kind": "local"
+        },
+        {
+          "name": "public_key_auth",
+          "origin": "app/deps.py#public_key_auth",
+          "kind": "local"
+        },
+        {
+          "name": "relaxed",
+          "origin": "app/deps.py#relaxed",
+          "kind": "local"
+        },
+        {
+          "name": "require",
+          "origin": "app/deps.py#require",
+          "kind": "local"
+        },
+        {
+          "name": "require_admin",
+          "origin": "app/deps.py#require_admin",
+          "kind": "local"
+        },
+        {
+          "name": "require_any",
+          "origin": "app/deps.py#require_any",
+          "kind": "local"
+        },
+        {
+          "name": "require_flag",
+          "origin": "app/deps.py#require_flag",
+          "kind": "local"
+        },
+        {
+          "name": "require_role",
+          "origin": "app/deps.py#require_role",
+          "kind": "local"
+        },
+        {
+          "name": "sign",
+          "origin": "app/deps.py#sign",
+          "kind": "local"
+        },
+        {
+          "name": "strict_auth",
+          "origin": "app/deps.py#strict_auth",
+          "kind": "local"
+        },
+        {
+          "name": "verify_public_key",
+          "origin": "app/deps.py#verify_public_key",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "AUTH_REQUIRED",
+          "kind": "function",
+          "exported_as": [
+            "AUTH_REQUIRED"
+          ],
+          "line": 32,
+          "wraps": [
+            {
+              "wrapper": "pkg:fastapi#Depends",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "app/deps.py#get_current_user(ref)"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "shape:=pkg:fastapi#Depends(?)"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "Auth",
+          "kind": "class",
+          "exported_as": [
+            "Auth"
+          ],
+          "line": 129,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "__call__=",
+            "__init__="
+          ],
+          "controls": [
+            "attr_param:required\trequired\t0"
+          ],
+          "string_literals": 0,
+          "traits": [
+            "subclassed"
+          ],
+          "members": [
+            {
+              "name": "__call__"
+            },
+            {
+              "name": "__init__"
+            }
+          ]
+        },
+        {
+          "name": "AuthDep",
+          "kind": "variable",
+          "exported_as": [
+            "AuthDep"
+          ],
+          "line": 33,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "alias_of": "global#str"
+        },
+        {
+          "name": "CurrentUser",
+          "kind": "variable",
+          "exported_as": [
+            "CurrentUser"
+          ],
+          "line": 31,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#Depends"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "order": [
+            "pkg:fastapi#Depends"
+          ],
+          "alias_of": "global#str"
+        },
+        {
+          "name": "DEBUG",
+          "kind": "const",
+          "exported_as": [
+            "DEBUG"
+          ],
+          "line": 108,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "DataAuth",
+          "kind": "class",
+          "exported_as": [
+            "DataAuth"
+          ],
+          "line": 187,
+          "wraps": [
+            {
+              "wrapper": "pkg:python:dataclasses#dataclass",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "__call__=",
+            "required="
+          ],
+          "controls": [
+            "attr_param:required\trequired\t0"
+          ],
+          "string_literals": 0,
+          "traits": [
+            "dataclass"
+          ],
+          "members": [
+            {
+              "name": "__call__"
+            }
+          ]
+        },
+        {
+          "name": "MaybeUser",
+          "kind": "variable",
+          "exported_as": [
+            "MaybeUser"
+          ],
+          "line": 99,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#Depends"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "order": [
+            "pkg:fastapi#Depends"
+          ],
+          "alias_of": "global#str"
+        },
+        {
+          "name": "Pagination",
+          "kind": "class",
+          "exported_as": [
+            "Pagination"
+          ],
+          "line": 49,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "__init__="
+          ],
+          "controls": [
+            "attr_param:page\tpage\t1"
+          ],
+          "string_literals": 0,
+          "members": [
+            {
+              "name": "__init__"
+            }
+          ]
+        },
+        {
+          "name": "Require",
+          "kind": "class",
+          "exported_as": [
+            "Require"
+          ],
+          "line": 121,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "__call__=",
+            "__init__="
+          ],
+          "controls": [
+            "attr_param:optional\toptional\t0"
+          ],
+          "string_literals": 0,
+          "members": [
+            {
+              "name": "__call__"
+            },
+            {
+              "name": "__init__"
+            }
+          ]
+        },
+        {
+          "name": "RoleChecker",
+          "kind": "class",
+          "exported_as": [
+            "RoleChecker"
+          ],
+          "line": 38,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "__call__=",
+            "__init__="
+          ],
+          "controls": [
+            "attr_param:role\trole\t0"
+          ],
+          "string_literals": 0,
+          "members": [
+            {
+              "name": "__call__"
+            },
+            {
+              "name": "__init__"
+            }
+          ]
+        },
+        {
+          "name": "Roles",
+          "kind": "class",
+          "exported_as": [
+            "Roles"
+          ],
+          "line": 195,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "__call__=",
+            "__init__="
+          ],
+          "controls": [
+            "attr_param:required\trequired\t0"
+          ],
+          "string_literals": 0,
+          "members": [
+            {
+              "name": "__call__"
+            },
+            {
+              "name": "__init__"
+            }
+          ]
+        },
+        {
+          "name": "Signer",
+          "kind": "class",
+          "exported_as": [
+            "Signer"
+          ],
+          "line": 54,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "__call__=",
+            "__init__="
+          ],
+          "controls": [
+            "attr_param:user\tuser\t0"
+          ],
+          "string_literals": 1,
+          "members": [
+            {
+              "name": "__call__"
+            },
+            {
+              "name": "__init__"
+            }
+          ],
+          "attr_types": [
+            "user=app/deps.py#CurrentUser"
+          ]
+        },
+        {
+          "name": "SubAuth",
+          "kind": "class",
+          "exported_as": [
+            "SubAuth"
+          ],
+          "line": 183,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#Auth",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "SuperUser",
+          "kind": "variable",
+          "exported_as": [
+            "SuperUser"
+          ],
+          "line": 34,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#Depends"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "order": [
+            "pkg:fastapi#Depends"
+          ],
+          "alias_of": "global#str"
+        },
+        {
+          "name": "auth_context",
+          "kind": "function",
+          "exported_as": [
+            "auth_context"
+          ],
+          "line": 82,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "get_auth",
+          "kind": "function",
+          "exported_as": [
+            "get_auth"
+          ],
+          "line": 92,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "hands_back_param"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "get_current_active_user",
+          "kind": "function",
+          "exported_as": [
+            "get_current_active_user"
+          ],
+          "line": 22,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "get_current_superuser",
+          "kind": "function",
+          "exported_as": [
+            "get_current_superuser"
+          ],
+          "line": 26,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "get_current_user",
+          "kind": "function",
+          "exported_as": [
+            "get_current_user"
+          ],
+          "line": 17,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "get_db",
+          "kind": "function",
+          "exported_as": [
+            "get_db"
+          ],
+          "line": 13,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 1
+        },
+        {
+          "name": "get_optional_user",
+          "kind": "function",
+          "exported_as": [
+            "get_optional_user"
+          ],
+          "line": 67,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "get_relaxed_user",
+          "kind": "function",
+          "exported_as": [
+            "get_relaxed_user"
+          ],
+          "line": 144,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "get_token_user",
+          "kind": "function",
+          "exported_as": [
+            "get_token_user"
+          ],
+          "line": 77,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "get_viewer",
+          "kind": "function",
+          "exported_as": [
+            "get_viewer"
+          ],
+          "line": 72,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "hands_back_param",
+            "typed_return"
+          ],
+          "string_literals": 1
+        },
+        {
+          "name": "get_wrapped_user",
+          "kind": "function",
+          "exported_as": [
+            "get_wrapped_user"
+          ],
+          "line": 102,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "hands_back_param",
+            "typed_return"
+          ],
+          "string_literals": 1
+        },
+        {
+          "name": "lax",
+          "kind": "variable",
+          "exported_as": [
+            "lax"
+          ],
+          "line": 140,
+          "wraps": [],
+          "calls": [
+            "app/deps.py#Auth"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "arg_value:app/deps.py#Auth\t#0\tliteral",
+            "shape:=app/deps.py#Auth(False)"
+          ],
+          "string_literals": 0,
+          "order": [
+            "app/deps.py#Auth"
+          ]
+        },
+        {
+          "name": "loose",
+          "kind": "variable",
+          "exported_as": [
+            "loose"
+          ],
+          "line": 139,
+          "wraps": [],
+          "calls": [
+            "app/deps.py#Require"
+          ],
+          "renders": [],
+          "args": [
+            "app/deps.py#Require@99:optional"
+          ],
+          "controls": [
+            "arg_value:app/deps.py#Require\toptional\tliteral",
+            "shape:=app/deps.py#Require(optional=True)"
+          ],
+          "string_literals": 0,
+          "order": [
+            "app/deps.py#Require"
+          ]
+        },
+        {
+          "name": "oauth2_scheme",
+          "kind": "variable",
+          "exported_as": [
+            "oauth2_scheme"
+          ],
+          "line": 9,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#security.OAuth2PasswordBearer"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:fastapi#security.OAuth2PasswordBearer@99:tokenUrl"
+          ],
+          "controls": [
+            "shape:=pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:fastapi#security.OAuth2PasswordBearer"
+          ]
+        },
+        {
+          "name": "optional_scheme",
+          "kind": "variable",
+          "exported_as": [
+            "optional_scheme"
+          ],
+          "line": 10,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#security.OAuth2PasswordBearer"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:fastapi#security.OAuth2PasswordBearer@99:auto_error",
+            "pkg:fastapi#security.OAuth2PasswordBearer@99:tokenUrl"
+          ],
+          "controls": [
+            "shape:=pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit,auto_error=False)"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:fastapi#security.OAuth2PasswordBearer"
+          ]
+        },
+        {
+          "name": "optional_scopes_user",
+          "kind": "function",
+          "exported_as": [
+            "optional_scopes_user"
+          ],
+          "line": 208,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "positional_scheme",
+          "kind": "variable",
+          "exported_as": [
+            "positional_scheme"
+          ],
+          "line": 109,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#security.OAuth2PasswordBearer"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "shape:=pkg:fastapi#security.OAuth2PasswordBearer(lit,None,None,None,False)"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:fastapi#security.OAuth2PasswordBearer"
+          ]
+        },
+        {
+          "name": "public_auth",
+          "kind": "function",
+          "exported_as": [
+            "public_auth"
+          ],
+          "line": 87,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "public_key_auth",
+          "kind": "function",
+          "exported_as": [
+            "public_key_auth"
+          ],
+          "line": 204,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "relaxed",
+          "kind": "variable",
+          "exported_as": [
+            "relaxed"
+          ],
+          "line": 138,
+          "wraps": [],
+          "calls": [
+            "app/deps.py#Auth"
+          ],
+          "renders": [],
+          "args": [
+            "app/deps.py#Auth@99:required"
+          ],
+          "controls": [
+            "arg_value:app/deps.py#Auth\trequired\tliteral",
+            "shape:=app/deps.py#Auth(required=False)"
+          ],
+          "string_literals": 0,
+          "order": [
+            "app/deps.py#Auth"
+          ]
+        },
+        {
+          "name": "require",
+          "kind": "function",
+          "exported_as": [
+            "require"
+          ],
+          "line": 112,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "hands_back_param"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "require_admin",
+          "kind": "variable",
+          "exported_as": [
+            "require_admin"
+          ],
+          "line": 46,
+          "wraps": [],
+          "calls": [
+            "app/deps.py#RoleChecker"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "arg_value:app/deps.py#RoleChecker\t#0\tliteral",
+            "shape:=app/deps.py#RoleChecker(lit)"
+          ],
+          "string_literals": 1,
+          "order": [
+            "app/deps.py#RoleChecker"
+          ]
+        },
+        {
+          "name": "require_any",
+          "kind": "function",
+          "exported_as": [
+            "require_any"
+          ],
+          "line": 155,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "hands_back_param"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "require_flag",
+          "kind": "function",
+          "exported_as": [
+            "require_flag"
+          ],
+          "line": 173,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "hands_back_param"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "require_role",
+          "kind": "function",
+          "exported_as": [
+            "require_role"
+          ],
+          "line": 164,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "hands_back_param"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "sign",
+          "kind": "variable",
+          "exported_as": [
+            "sign"
+          ],
+          "line": 63,
+          "wraps": [],
+          "calls": [
+            "app/deps.py#Signer"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "arg_value:app/deps.py#Signer\t#0\tliteral",
+            "shape:=app/deps.py#Signer(lit)"
+          ],
+          "string_literals": 1,
+          "order": [
+            "app/deps.py#Signer"
+          ]
+        },
+        {
+          "name": "strict_auth",
+          "kind": "variable",
+          "exported_as": [
+            "strict_auth"
+          ],
+          "line": 141,
+          "wraps": [],
+          "calls": [
+            "app/deps.py#Auth"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "arg_value:app/deps.py#Auth\t#0\tliteral",
+            "shape:=app/deps.py#Auth(True)"
+          ],
+          "string_literals": 0,
+          "order": [
+            "app/deps.py#Auth"
+          ]
+        },
+        {
+          "name": "verify_public_key",
+          "kind": "function",
+          "exported_as": [
+            "verify_public_key"
+          ],
+          "line": 149,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "app/main.py",
+      "hash": "dad711daa11369f6eb40605313762bd87cde7b11971a61f54c8cc502d0d32c60",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "app/deps.py",
+          "names": [
+            "get_current_active_user"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "app/routes/guarded.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "app/routes/mounted.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "app/routes/soft.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "app/routes/strict.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:fastapi",
+          "names": [
+            "Depends",
+            "FastAPI"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "app",
+          "origin": "app/main.py#app",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "(module)",
+          "kind": "module",
+          "exported_as": [],
+          "line": 7,
+          "wraps": [],
+          "calls": [
+            "app/main.py#app.include_router",
+            "pkg:fastapi#Depends"
+          ],
+          "renders": [],
+          "args": [
+            "app/main.py#app.include_router@99:dependencies"
+          ],
+          "controls": [
+            "arg_value:app/main.py#app.include_router\t#0\tvalue app/routes/guarded.py#*",
+            "arg_value:app/main.py#app.include_router\t#0\tvalue app/routes/mounted.py#*\tdependencies\tunread",
+            "arg_value:app/main.py#app.include_router\t#0\tvalue app/routes/soft.py#*",
+            "arg_value:app/main.py#app.include_router\t#0\tvalue app/routes/strict.py#*"
+          ],
+          "string_literals": 0,
+          "order": [
+            "app/main.py#app.include_router",
+            "pkg:fastapi#Depends"
+          ]
+        },
+        {
+          "name": "app",
+          "kind": "variable",
+          "exported_as": [
+            "app"
+          ],
+          "line": 6,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#FastAPI"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "shape:=pkg:fastapi#FastAPI()"
+          ],
+          "string_literals": 0,
+          "order": [
+            "pkg:fastapi#FastAPI"
+          ]
+        }
+      ],
+      "entry_points": [],
+      "registries": [
+        {
+          "slot": "arg:app/main.py#app.include_router@99:dependencies",
+          "line": 11,
+          "items": [
+            {
+              "target": "app/deps.py#get_current_active_user",
+              "line": 11
+            }
+          ]
+        },
+        {
+          "slot": "calls:app/main.py#app",
+          "line": 7,
+          "items": [
+            {
+              "target": "app/deps.py#get_current_active_user",
+              "line": 11
+            },
+            {
+              "target": "app/routes/guarded.py#router",
+              "line": 8
+            },
+            {
+              "target": "app/routes/mounted.py#router",
+              "line": 11
+            },
+            {
+              "target": "app/routes/soft.py#router",
+              "line": 9
+            },
+            {
+              "target": "app/routes/strict.py#router",
+              "line": 7
+            }
+          ]
+        }
+      ],
+      "apps": [
+        {
+          "name": "app",
+          "line": 6
+        }
+      ]
+    },
+    {
+      "path": "app/routes/__init__.py",
+      "hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [],
+      "symbols": [],
+      "entry_points": []
+    },
+    {
+      "path": "app/routes/guarded.py",
+      "hash": "21b6a5b9b46826656150f40c61bb62ada182be29a0e30bd2232a37636f79248e",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "app/deps.py",
+          "names": [
+            "get_current_active_user"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:fastapi",
+          "names": [
+            "APIRouter",
+            "Depends"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "guarded_list",
+          "origin": "app/routes/guarded.py#guarded_list",
+          "kind": "local"
+        },
+        {
+          "name": "router",
+          "origin": "app/routes/guarded.py#router",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "guarded_list",
+          "kind": "function",
+          "exported_as": [
+            "guarded_list"
+          ],
+          "line": 9,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#get_current_active_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "router",
+          "kind": "variable",
+          "exported_as": [
+            "router"
+          ],
+          "line": 6,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#APIRouter",
+            "pkg:fastapi#Depends"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:fastapi#APIRouter@99:dependencies",
+            "pkg:fastapi#APIRouter@99:prefix"
+          ],
+          "controls": [
+            "shape:=pkg:fastapi#APIRouter(prefix=lit,dependencies=?)"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:fastapi#APIRouter",
+            "pkg:fastapi#Depends"
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "guarded_list",
+          "kind": "http",
+          "method": "GET",
+          "route": "/guarded",
+          "adapter": "fastapi"
+        }
+      ],
+      "registries": [
+        {
+          "slot": "arg:pkg:fastapi#APIRouter@99:dependencies",
+          "line": 6,
+          "items": [
+            {
+              "target": "app/deps.py#get_current_active_user",
+              "line": 6
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "app/routes/mounted.py",
+      "hash": "ef99b42a94dae7ca660783f8e07bf2961341085cc72c2a0e32fe4b141d3407dd",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:fastapi",
+          "names": [
+            "APIRouter"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "mounted_list",
+          "origin": "app/routes/mounted.py#mounted_list",
+          "kind": "local"
+        },
+        {
+          "name": "router",
+          "origin": "app/routes/mounted.py#router",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "mounted_list",
+          "kind": "function",
+          "exported_as": [
+            "mounted_list"
+          ],
+          "line": 6,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#get_current_active_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "router",
+          "kind": "variable",
+          "exported_as": [
+            "router"
+          ],
+          "line": 3,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#APIRouter"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:fastapi#APIRouter@99:prefix"
+          ],
+          "controls": [
+            "shape:=pkg:fastapi#APIRouter(prefix=lit)"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:fastapi#APIRouter"
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "mounted_list",
+          "kind": "http",
+          "method": "GET",
+          "route": "/mounted",
+          "adapter": "fastapi"
+        }
+      ]
+    },
+    {
+      "path": "app/routes/soft.py",
+      "hash": "da085fd9f0dd85bbe050ea7e2627d729cd8db641b2ba0349b23626870a409134",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "app/deps.py",
+          "names": [
+            "Auth",
+            "DEBUG",
+            "DataAuth",
+            "Require",
+            "SubAuth",
+            "auth_context",
+            "get_auth",
+            "get_optional_user",
+            "get_relaxed_user",
+            "get_token_user",
+            "get_viewer",
+            "get_wrapped_user",
+            "lax",
+            "loose",
+            "optional_scheme",
+            "positional_scheme",
+            "public_auth",
+            "relaxed",
+            "require",
+            "require_flag",
+            "sign"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:fastapi",
+          "names": [
+            "APIRouter",
+            "Depends",
+            "Security"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:fastapi.security",
+          "names": [
+            "HTTPBearer"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "FLAGS",
+          "origin": "app/routes/soft.py#FLAGS",
+          "kind": "local"
+        },
+        {
+          "name": "OPTS",
+          "origin": "app/routes/soft.py#OPTS",
+          "kind": "local"
+        },
+        {
+          "name": "router",
+          "origin": "app/routes/soft.py#router",
+          "kind": "local"
+        },
+        {
+          "name": "via_auth_context",
+          "origin": "app/routes/soft.py#via_auth_context",
+          "kind": "local"
+        },
+        {
+          "name": "via_auto_error",
+          "origin": "app/routes/soft.py#via_auto_error",
+          "kind": "local"
+        },
+        {
+          "name": "via_dataclass",
+          "origin": "app/routes/soft.py#via_dataclass",
+          "kind": "local"
+        },
+        {
+          "name": "via_double_starred",
+          "origin": "app/routes/soft.py#via_double_starred",
+          "kind": "local"
+        },
+        {
+          "name": "via_inherited_init",
+          "origin": "app/routes/soft.py#via_inherited_init",
+          "kind": "local"
+        },
+        {
+          "name": "via_init_only",
+          "origin": "app/routes/soft.py#via_init_only",
+          "kind": "local"
+        },
+        {
+          "name": "via_maybe_alias",
+          "origin": "app/routes/soft.py#via_maybe_alias",
+          "kind": "local"
+        },
+        {
+          "name": "via_non_literal",
+          "origin": "app/routes/soft.py#via_non_literal",
+          "kind": "local"
+        },
+        {
+          "name": "via_optional",
+          "origin": "app/routes/soft.py#via_optional",
+          "kind": "local"
+        },
+        {
+          "name": "via_optional_instance",
+          "origin": "app/routes/soft.py#via_optional_instance",
+          "kind": "local"
+        },
+        {
+          "name": "via_positional_class",
+          "origin": "app/routes/soft.py#via_positional_class",
+          "kind": "local"
+        },
+        {
+          "name": "via_positional_factory",
+          "origin": "app/routes/soft.py#via_positional_factory",
+          "kind": "local"
+        },
+        {
+          "name": "via_positional_instance",
+          "origin": "app/routes/soft.py#via_positional_instance",
+          "kind": "local"
+        },
+        {
+          "name": "via_positional_only",
+          "origin": "app/routes/soft.py#via_positional_only",
+          "kind": "local"
+        },
+        {
+          "name": "via_positional_scheme",
+          "origin": "app/routes/soft.py#via_positional_scheme",
+          "kind": "local"
+        },
+        {
+          "name": "via_public_auth",
+          "origin": "app/routes/soft.py#via_public_auth",
+          "kind": "local"
+        },
+        {
+          "name": "via_required_instance",
+          "origin": "app/routes/soft.py#via_required_instance",
+          "kind": "local"
+        },
+        {
+          "name": "via_soft_factory",
+          "origin": "app/routes/soft.py#via_soft_factory",
+          "kind": "local"
+        },
+        {
+          "name": "via_soft_inline",
+          "origin": "app/routes/soft.py#via_soft_inline",
+          "kind": "local"
+        },
+        {
+          "name": "via_soft_instance_chain",
+          "origin": "app/routes/soft.py#via_soft_instance_chain",
+          "kind": "local"
+        },
+        {
+          "name": "via_soft_scheme",
+          "origin": "app/routes/soft.py#via_soft_scheme",
+          "kind": "local"
+        },
+        {
+          "name": "via_starred",
+          "origin": "app/routes/soft.py#via_starred",
+          "kind": "local"
+        },
+        {
+          "name": "via_viewer",
+          "origin": "app/routes/soft.py#via_viewer",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "FLAGS",
+          "kind": "const",
+          "exported_as": [
+            "FLAGS"
+          ],
+          "line": 136,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        },
+        {
+          "name": "OPTS",
+          "kind": "const",
+          "exported_as": [
+            "OPTS"
+          ],
+          "line": 137,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 1
+        },
+        {
+          "name": "router",
+          "kind": "variable",
+          "exported_as": [
+            "router"
+          ],
+          "line": 28,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#APIRouter"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:fastapi#APIRouter@99:prefix"
+          ],
+          "controls": [
+            "shape:=pkg:fastapi#APIRouter(prefix=lit)"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:fastapi#APIRouter"
+          ]
+        },
+        {
+          "name": "via_auth_context",
+          "kind": "function",
+          "exported_as": [
+            "via_auth_context"
+          ],
+          "line": 61,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#auth_context",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/deps.py#get_db",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_auto_error",
+          "kind": "function",
+          "exported_as": [
+            "via_auto_error"
+          ],
+          "line": 41,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#get_token_user",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_dataclass",
+          "kind": "function",
+          "exported_as": [
+            "via_dataclass"
+          ],
+          "line": 131,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_double_starred",
+          "kind": "function",
+          "exported_as": [
+            "via_double_starred"
+          ],
+          "line": 145,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_inherited_init",
+          "kind": "function",
+          "exported_as": [
+            "via_inherited_init"
+          ],
+          "line": 126,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_init_only",
+          "kind": "function",
+          "exported_as": [
+            "via_init_only"
+          ],
+          "line": 76,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#Signer",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/deps.py#get_db",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:app/deps.py#Signer(lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_maybe_alias",
+          "kind": "function",
+          "exported_as": [
+            "via_maybe_alias"
+          ],
+          "line": 71,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#get_wrapped_user",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_non_literal",
+          "kind": "function",
+          "exported_as": [
+            "via_non_literal"
+          ],
+          "line": 96,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_optional",
+          "kind": "function",
+          "exported_as": [
+            "via_optional"
+          ],
+          "line": 31,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#get_optional_user",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_optional_instance",
+          "kind": "function",
+          "exported_as": [
+            "via_optional_instance"
+          ],
+          "line": 106,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#loose",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_positional_class",
+          "kind": "function",
+          "exported_as": [
+            "via_positional_class"
+          ],
+          "line": 86,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_positional_factory",
+          "kind": "function",
+          "exported_as": [
+            "via_positional_factory"
+          ],
+          "line": 81,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_positional_instance",
+          "kind": "function",
+          "exported_as": [
+            "via_positional_instance"
+          ],
+          "line": 111,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#lax",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_positional_only",
+          "kind": "function",
+          "exported_as": [
+            "via_positional_only"
+          ],
+          "line": 121,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_positional_scheme",
+          "kind": "function",
+          "exported_as": [
+            "via_positional_scheme"
+          ],
+          "line": 91,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#positional_scheme",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_public_auth",
+          "kind": "function",
+          "exported_as": [
+            "via_public_auth"
+          ],
+          "line": 66,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#public_auth",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_required_instance",
+          "kind": "function",
+          "exported_as": [
+            "via_required_instance"
+          ],
+          "line": 101,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#relaxed",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_soft_factory",
+          "kind": "function",
+          "exported_as": [
+            "via_soft_factory"
+          ],
+          "line": 56,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_soft_inline",
+          "kind": "function",
+          "exported_as": [
+            "via_soft_inline"
+          ],
+          "line": 51,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_soft_instance_chain",
+          "kind": "function",
+          "exported_as": [
+            "via_soft_instance_chain"
+          ],
+          "line": 116,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#get_relaxed_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/deps.py#relaxed",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_soft_scheme",
+          "kind": "function",
+          "exported_as": [
+            "via_soft_scheme"
+          ],
+          "line": 46,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#optional_scheme",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_starred",
+          "kind": "function",
+          "exported_as": [
+            "via_starred"
+          ],
+          "line": 140,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_viewer",
+          "kind": "function",
+          "exported_as": [
+            "via_viewer"
+          ],
+          "line": 36,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#get_viewer",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/deps.py#get_db",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "via_auth_context",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/context",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_auto_error",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/token",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_dataclass",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/dataclass",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_double_starred",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/double-starred",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_inherited_init",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/inherited-init",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_init_only",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/signed",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_maybe_alias",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/maybe",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_non_literal",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/non-literal",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_optional",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/optional",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_optional_instance",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/optional-instance",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_positional_class",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/positional-class",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_positional_factory",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/positional-factory",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_positional_instance",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/positional-instance",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_positional_only",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/positional-only",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_positional_scheme",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/positional-scheme",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_public_auth",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/public",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_required_instance",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/required-instance",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_soft_factory",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/factory",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_soft_inline",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/bearer",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_soft_instance_chain",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/soft-instance-chain",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_soft_scheme",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/scheme",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_starred",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/starred",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_viewer",
+          "kind": "http",
+          "method": "GET",
+          "route": "/soft/viewer",
+          "adapter": "fastapi"
+        }
+      ],
+      "listed": {
+        "entry_points": [
+          {
+            "symbol": "via_auth_context",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/context",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_auto_error",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/token",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_dataclass",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/dataclass",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_double_starred",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/double-starred",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_inherited_init",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/inherited-init",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_init_only",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/signed",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_maybe_alias",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/maybe",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_non_literal",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/non-literal",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_optional",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/optional",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_optional_instance",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/optional-instance",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_positional_class",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/positional-class",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_positional_factory",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/positional-factory",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_positional_instance",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/positional-instance",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_positional_only",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/positional-only",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_positional_scheme",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/positional-scheme",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_public_auth",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/public",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_required_instance",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/required-instance",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_soft_factory",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/factory",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_soft_inline",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/bearer",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_soft_instance_chain",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/soft-instance-chain",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_soft_scheme",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/scheme",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_starred",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/starred",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "via_viewer",
+            "kind": "http",
+            "method": "GET",
+            "route": "/soft/viewer",
+            "adapter": "fastapi"
+          }
+        ],
+        "symbols": [
+          {
+            "name": "via_dataclass",
+            "kind": "function",
+            "exported_as": [
+              "via_dataclass"
+            ],
+            "line": 131,
+            "wraps": [
+              {
+                "wrapper": "app/deps.py#DataAuth",
+                "kind": "call"
+              },
+              {
+                "wrapper": "app/deps.py#get_current_user",
+                "kind": "call"
+              },
+              {
+                "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+                "kind": "call"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input",
+              "shape:app/deps.py#DataAuth(False)",
+              "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+              "typed_return"
+            ],
+            "string_literals": 0
+          },
+          {
+            "name": "via_double_starred",
+            "kind": "function",
+            "exported_as": [
+              "via_double_starred"
+            ],
+            "line": 145,
+            "wraps": [
+              {
+                "wrapper": "app/deps.py#Auth",
+                "kind": "call"
+              },
+              {
+                "wrapper": "app/deps.py#get_current_user",
+                "kind": "call"
+              },
+              {
+                "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+                "kind": "call"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input",
+              "shape:app/deps.py#Auth(**)",
+              "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+              "typed_return"
+            ],
+            "string_literals": 0
+          },
+          {
+            "name": "via_inherited_init",
+            "kind": "function",
+            "exported_as": [
+              "via_inherited_init"
+            ],
+            "line": 126,
+            "wraps": [
+              {
+                "wrapper": "app/deps.py#SubAuth",
+                "kind": "call"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input",
+              "shape:app/deps.py#SubAuth(False)",
+              "typed_return"
+            ],
+            "string_literals": 0
+          },
+          {
+            "name": "via_non_literal",
+            "kind": "function",
+            "exported_as": [
+              "via_non_literal"
+            ],
+            "line": 96,
+            "wraps": [
+              {
+                "wrapper": "pkg:fastapi#security.HTTPBearer",
+                "kind": "call"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input",
+              "shape:pkg:fastapi#security.HTTPBearer(auto_error=?)",
+              "typed_return"
+            ],
+            "string_literals": 0
+          },
+          {
+            "name": "via_optional",
+            "kind": "function",
+            "exported_as": [
+              "via_optional"
+            ],
+            "line": 31,
+            "wraps": [
+              {
+                "wrapper": "app/deps.py#get_optional_user",
+                "kind": "call"
+              },
+              {
+                "wrapper": "app/deps.py#get_current_user",
+                "kind": "call"
+              },
+              {
+                "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+                "kind": "call"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input",
+              "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+              "typed_return"
+            ],
+            "string_literals": 0
+          },
+          {
+            "name": "via_optional_instance",
+            "kind": "function",
+            "exported_as": [
+              "via_optional_instance"
+            ],
+            "line": 106,
+            "wraps": [
+              {
+                "wrapper": "app/deps.py#Require",
+                "kind": "call"
+              },
+              {
+                "wrapper": "app/deps.py#get_current_user",
+                "kind": "call"
+              },
+              {
+                "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+                "kind": "call"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input",
+              "shape:app/deps.py#Require(optional=True)",
+              "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+              "typed_return"
+            ],
+            "string_literals": 0
+          },
+          {
+            "name": "via_positional_class",
+            "kind": "function",
+            "exported_as": [
+              "via_positional_class"
+            ],
+            "line": 86,
+            "wraps": [
+              {
+                "wrapper": "app/deps.py#Require",
+                "kind": "call"
+              },
+              {
+                "wrapper": "app/deps.py#get_current_user",
+                "kind": "call"
+              },
+              {
+                "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+                "kind": "call"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input",
+              "shape:app/deps.py#Require(True)",
+              "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+              "typed_return"
+            ],
+            "string_literals": 0
+          },
+          {
+            "name": "via_positional_factory",
+            "kind": "function",
+            "exported_as": [
+              "via_positional_factory"
+            ],
+            "line": 81,
+            "wraps": [
+              {
+                "wrapper": "app/deps.py#require",
+                "kind": "call"
+              },
+              {
+                "wrapper": "app/deps.py#get_current_user",
+                "kind": "call"
+              },
+              {
+                "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+                "kind": "call"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input",
+              "shape:app/deps.py#require(True)",
+              "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+              "typed_return"
+            ],
+            "string_literals": 0
+          },
+          {
+            "name": "via_positional_instance",
+            "kind": "function",
+            "exported_as": [
+              "via_positional_instance"
+            ],
+            "line": 111,
+            "wraps": [
+              {
+                "wrapper": "app/deps.py#Auth",
+                "kind": "call"
+              },
+              {
+                "wrapper": "app/deps.py#get_current_user",
+                "kind": "call"
+              },
+              {
+                "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+                "kind": "call"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input",
+              "shape:app/deps.py#Auth(False)",
+              "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+              "typed_return"
+            ],
+            "string_literals": 0
+          },
+          {
+            "name": "via_positional_only",
+            "kind": "function",
+            "exported_as": [
+              "via_positional_only"
+            ],
+            "line": 121,
+            "wraps": [
+              {
+                "wrapper": "app/deps.py#require_flag",
+                "kind": "call"
+              },
+              {
+                "wrapper": "app/deps.py#get_current_user",
+                "kind": "call"
+              },
+              {
+                "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+                "kind": "call"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input",
+              "shape:app/deps.py#require_flag(True)",
+              "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+              "typed_return"
+            ],
+            "string_literals": 0
+          },
+          {
+            "name": "via_positional_scheme",
+            "kind": "function",
+            "exported_as": [
+              "via_positional_scheme"
+            ],
+            "line": 91,
+            "wraps": [
+              {
+                "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+                "kind": "call"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input",
+              "shape:pkg:fastapi#security.OAuth2PasswordBearer(lit,None,None,None,False)",
+              "typed_return"
+            ],
+            "string_literals": 0
+          },
+          {
+            "name": "via_public_auth",
+            "kind": "function",
+            "exported_as": [
+              "via_public_auth"
+            ],
+            "line": 66,
+            "wraps": [
+              {
+                "wrapper": "app/deps.py#public_auth",
+                "kind": "call"
+              },
+              {
+                "wrapper": "app/deps.py#get_current_user",
+                "kind": "call"
+              },
+              {
+                "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+                "kind": "call"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input",
+              "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+              "typed_return"
+            ],
+            "string_literals": 0
+          },
+          {
+            "name": "via_required_instance",
+            "kind": "function",
+            "exported_as": [
+              "via_required_instance"
+            ],
+            "line": 101,
+            "wraps": [
+              {
+                "wrapper": "app/deps.py#Auth",
+                "kind": "call"
+              },
+              {
+                "wrapper": "app/deps.py#get_current_user",
+                "kind": "call"
+              },
+              {
+                "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+                "kind": "call"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input",
+              "shape:app/deps.py#Auth(required=False)",
+              "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+              "typed_return"
+            ],
+            "string_literals": 0
+          },
+          {
+            "name": "via_soft_factory",
+            "kind": "function",
+            "exported_as": [
+              "via_soft_factory"
+            ],
+            "line": 56,
+            "wraps": [
+              {
+                "wrapper": "app/deps.py#get_auth",
+                "kind": "call"
+              },
+              {
+                "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+                "kind": "call"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input",
+              "shape:app/deps.py#get_auth(required=False)",
+              "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+              "typed_return"
+            ],
+            "string_literals": 0
+          },
+          {
+            "name": "via_soft_inline",
+            "kind": "function",
+            "exported_as": [
+              "via_soft_inline"
+            ],
+            "line": 51,
+            "wraps": [
+              {
+                "wrapper": "pkg:fastapi#security.HTTPBearer",
+                "kind": "call"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input",
+              "shape:pkg:fastapi#security.HTTPBearer(auto_error=False)",
+              "typed_return"
+            ],
+            "string_literals": 0
+          },
+          {
+            "name": "via_soft_instance_chain",
+            "kind": "function",
+            "exported_as": [
+              "via_soft_instance_chain"
+            ],
+            "line": 116,
+            "wraps": [
+              {
+                "wrapper": "app/deps.py#get_relaxed_user",
+                "kind": "call"
+              },
+              {
+                "wrapper": "app/deps.py#Auth",
+                "kind": "call"
+              },
+              {
+                "wrapper": "app/deps.py#get_current_user",
+                "kind": "call"
+              },
+              {
+                "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+                "kind": "call"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input",
+              "shape:app/deps.py#Auth(required=False)",
+              "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+              "typed_return"
+            ],
+            "string_literals": 0
+          },
+          {
+            "name": "via_soft_scheme",
+            "kind": "function",
+            "exported_as": [
+              "via_soft_scheme"
+            ],
+            "line": 46,
+            "wraps": [
+              {
+                "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+                "kind": "call"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input",
+              "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit,auto_error=False)",
+              "typed_return"
+            ],
+            "string_literals": 0
+          },
+          {
+            "name": "via_starred",
+            "kind": "function",
+            "exported_as": [
+              "via_starred"
+            ],
+            "line": 140,
+            "wraps": [
+              {
+                "wrapper": "app/deps.py#Auth",
+                "kind": "call"
+              },
+              {
+                "wrapper": "app/deps.py#get_current_user",
+                "kind": "call"
+              },
+              {
+                "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+                "kind": "call"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input",
+              "shape:app/deps.py#Auth(*)",
+              "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+              "typed_return"
+            ],
+            "string_literals": 0
+          }
+        ]
+      }
+    },
+    {
+      "path": "app/routes/strict.py",
+      "hash": "7b3c4f0ecd8c7ebdb2d2ca8cf7cf794df0212eb3db924f16fa9ed54eb23ac6d8",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "app/deps.py",
+          "names": [
+            "AUTH_REQUIRED",
+            "AuthDep",
+            "CurrentUser",
+            "Pagination",
+            "Require",
+            "Roles",
+            "SubAuth",
+            "SuperUser",
+            "get_current_active_user",
+            "get_current_user",
+            "optional_scopes_user",
+            "public_key_auth",
+            "require_admin",
+            "require_any",
+            "require_role",
+            "strict_auth",
+            "verify_public_key"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:fastapi",
+          "names": [
+            "APIRouter",
+            "Depends",
+            "Security"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:python:typing",
+          "names": [
+            "Optional"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "router",
+          "origin": "app/routes/strict.py#router",
+          "kind": "local"
+        },
+        {
+          "name": "via_alias",
+          "origin": "app/routes/strict.py#via_alias",
+          "kind": "local"
+        },
+        {
+          "name": "via_alias_of_chain",
+          "origin": "app/routes/strict.py#via_alias_of_chain",
+          "kind": "local"
+        },
+        {
+          "name": "via_chain",
+          "origin": "app/routes/strict.py#via_chain",
+          "kind": "local"
+        },
+        {
+          "name": "via_class",
+          "origin": "app/routes/strict.py#via_class",
+          "kind": "local"
+        },
+        {
+          "name": "via_constant",
+          "origin": "app/routes/strict.py#via_constant",
+          "kind": "local"
+        },
+        {
+          "name": "via_default_constant",
+          "origin": "app/routes/strict.py#via_default_constant",
+          "kind": "local"
+        },
+        {
+          "name": "via_inherited_strict",
+          "origin": "app/routes/strict.py#via_inherited_strict",
+          "kind": "local"
+        },
+        {
+          "name": "via_instance",
+          "origin": "app/routes/strict.py#via_instance",
+          "kind": "local"
+        },
+        {
+          "name": "via_keyword_only",
+          "origin": "app/routes/strict.py#via_keyword_only",
+          "kind": "local"
+        },
+        {
+          "name": "via_list_literal",
+          "origin": "app/routes/strict.py#via_list_literal",
+          "kind": "local"
+        },
+        {
+          "name": "via_list_literal_keyword",
+          "origin": "app/routes/strict.py#via_list_literal_keyword",
+          "kind": "local"
+        },
+        {
+          "name": "via_optional_route_param",
+          "origin": "app/routes/strict.py#via_optional_route_param",
+          "kind": "local"
+        },
+        {
+          "name": "via_optional_scopes_user",
+          "origin": "app/routes/strict.py#via_optional_scopes_user",
+          "kind": "local"
+        },
+        {
+          "name": "via_public_key_auth",
+          "origin": "app/routes/strict.py#via_public_key_auth",
+          "kind": "local"
+        },
+        {
+          "name": "via_security_scopes",
+          "origin": "app/routes/strict.py#via_security_scopes",
+          "kind": "local"
+        },
+        {
+          "name": "via_strict_instance",
+          "origin": "app/routes/strict.py#via_strict_instance",
+          "kind": "local"
+        },
+        {
+          "name": "via_strict_positional_class",
+          "origin": "app/routes/strict.py#via_strict_positional_class",
+          "kind": "local"
+        },
+        {
+          "name": "via_strict_soft_word",
+          "origin": "app/routes/strict.py#via_strict_soft_word",
+          "kind": "local"
+        },
+        {
+          "name": "via_varargs",
+          "origin": "app/routes/strict.py#via_varargs",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "router",
+          "kind": "variable",
+          "exported_as": [
+            "router"
+          ],
+          "line": 25,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#APIRouter"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:fastapi#APIRouter@99:prefix"
+          ],
+          "controls": [
+            "shape:=pkg:fastapi#APIRouter(prefix=lit)"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:fastapi#APIRouter"
+          ]
+        },
+        {
+          "name": "via_alias",
+          "kind": "function",
+          "exported_as": [
+            "via_alias"
+          ],
+          "line": 38,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_alias_of_chain",
+          "kind": "function",
+          "exported_as": [
+            "via_alias_of_chain"
+          ],
+          "line": 33,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#get_current_superuser",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/deps.py#get_current_active_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_chain",
+          "kind": "function",
+          "exported_as": [
+            "via_chain"
+          ],
+          "line": 28,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#get_current_active_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_class",
+          "kind": "function",
+          "exported_as": [
+            "via_class"
+          ],
+          "line": 58,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#Pagination",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "returns_unread",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_constant",
+          "kind": "function",
+          "exported_as": [
+            "via_constant"
+          ],
+          "line": 43,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_default_constant",
+          "kind": "function",
+          "exported_as": [
+            "via_default_constant"
+          ],
+          "line": 48,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_inherited_strict",
+          "kind": "function",
+          "exported_as": [
+            "via_inherited_strict"
+          ],
+          "line": 98,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#SubAuth",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:app/deps.py#SubAuth(True)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_instance",
+          "kind": "function",
+          "exported_as": [
+            "via_instance"
+          ],
+          "line": 53,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#RoleChecker",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:app/deps.py#RoleChecker(lit)",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_keyword_only",
+          "kind": "function",
+          "exported_as": [
+            "via_keyword_only"
+          ],
+          "line": 93,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#require_role",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:app/deps.py#require_role(False)",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_list_literal",
+          "kind": "function",
+          "exported_as": [
+            "via_list_literal"
+          ],
+          "line": 103,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#Roles",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:app/deps.py#Roles(lit)",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_list_literal_keyword",
+          "kind": "function",
+          "exported_as": [
+            "via_list_literal_keyword"
+          ],
+          "line": 108,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#Roles",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:app/deps.py#Roles(required=lit)",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_optional_route_param",
+          "kind": "function",
+          "exported_as": [
+            "via_optional_route_param"
+          ],
+          "line": 73,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "hands_back_param",
+            "no_input",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 1
+        },
+        {
+          "name": "via_optional_scopes_user",
+          "kind": "function",
+          "exported_as": [
+            "via_optional_scopes_user"
+          ],
+          "line": 118,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#optional_scopes_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_public_key_auth",
+          "kind": "function",
+          "exported_as": [
+            "via_public_key_auth"
+          ],
+          "line": 113,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#public_key_auth",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_security_scopes",
+          "kind": "function",
+          "exported_as": [
+            "via_security_scopes"
+          ],
+          "line": 78,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_strict_instance",
+          "kind": "function",
+          "exported_as": [
+            "via_strict_instance"
+          ],
+          "line": 68,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#Auth",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:app/deps.py#Auth(True)",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_strict_positional_class",
+          "kind": "function",
+          "exported_as": [
+            "via_strict_positional_class"
+          ],
+          "line": 63,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#Require",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:app/deps.py#Require(False)",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_strict_soft_word",
+          "kind": "function",
+          "exported_as": [
+            "via_strict_soft_word"
+          ],
+          "line": 83,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#verify_public_key",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "via_varargs",
+          "kind": "function",
+          "exported_as": [
+            "via_varargs"
+          ],
+          "line": 88,
+          "wraps": [
+            {
+              "wrapper": "app/deps.py#require_any",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "shape:app/deps.py#require_any(True)",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "via_alias",
+          "kind": "http",
+          "method": "GET",
+          "route": "/strict/alias",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_alias_of_chain",
+          "kind": "http",
+          "method": "GET",
+          "route": "/strict/super",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_chain",
+          "kind": "http",
+          "method": "GET",
+          "route": "/strict/active",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_class",
+          "kind": "http",
+          "method": "GET",
+          "route": "/strict/page",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_constant",
+          "kind": "http",
+          "method": "GET",
+          "route": "/strict/constant",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_default_constant",
+          "kind": "http",
+          "method": "GET",
+          "route": "/strict/default-constant",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_inherited_strict",
+          "kind": "http",
+          "method": "GET",
+          "route": "/strict/inherited-strict",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_instance",
+          "kind": "http",
+          "method": "GET",
+          "route": "/strict/admin",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_keyword_only",
+          "kind": "http",
+          "method": "GET",
+          "route": "/strict/keyword-only",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_list_literal",
+          "kind": "http",
+          "method": "GET",
+          "route": "/strict/list-literal",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_list_literal_keyword",
+          "kind": "http",
+          "method": "GET",
+          "route": "/strict/list-literal-keyword",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_optional_route_param",
+          "kind": "http",
+          "method": "GET",
+          "route": "/strict/optional-param",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_optional_scopes_user",
+          "kind": "http",
+          "method": "GET",
+          "route": "/strict/optional-scopes",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_public_key_auth",
+          "kind": "http",
+          "method": "GET",
+          "route": "/strict/public-key-auth",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_security_scopes",
+          "kind": "http",
+          "method": "GET",
+          "route": "/strict/scopes",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_strict_instance",
+          "kind": "http",
+          "method": "GET",
+          "route": "/strict/strict-instance",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_strict_positional_class",
+          "kind": "http",
+          "method": "GET",
+          "route": "/strict/strict-positional-class",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_strict_soft_word",
+          "kind": "http",
+          "method": "GET",
+          "route": "/strict/public-key",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "via_varargs",
+          "kind": "http",
+          "method": "GET",
+          "route": "/strict/varargs",
+          "adapter": "fastapi"
+        }
+      ]
+    }
+  ],
+  "skipped": [],
+  "packages": [
+    {
+      "path": "",
+      "name": "fastapi-deps",
+      "scripts": [],
+      "dependencies": [
+        "fastapi@*"
+      ],
+      "compiler_flags": [],
+      "manifest": "pyproject.toml"
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+diff --git a/crates/drift-cli/src/pr.rs b/crates/drift-cli/src/pr.rs
+index 49cbb0ff..dcf15857 100644
+--- a/crates/drift-cli/src/pr.rs
++++ b/crates/drift-cli/src/pr.rs
+@@ -286,6 +286,7 @@ impl DiffScope {
+                 .filter(|e| self.files.contains_key(&e.path))
+                 .cloned()
+                 .collect(),
++            study_holds: Vec::new(),
+         }
+     }
+ 
+diff --git a/crates/drift-mine/src/check.rs b/crates/drift-mine/src/check.rs
+index c4941c78..09053fe2 100644
+--- a/crates/drift-mine/src/check.rs
++++ b/crates/drift-mine/src/check.rs
+@@ -231,6 +231,10 @@ pub struct CheckReport {
+     /// `suppressed_neighbour`. Omitted when there are none.
+     #[serde(default, skip_serializing_if = "Vec::is_empty")]
+     pub suppressed_neighbour: Vec<NeighbourHold>,
++    /// recall11 study patch (never on main): with DRIFT_STUDY_MEMBERS=1, every
++    /// `id path#symbol` a convention holds on. Not serialised when empty.
++    #[serde(default, skip_serializing_if = "Vec::is_empty")]
++    pub study_holds: Vec<String>,
+ }
+ 
+ /// A warning the neighbour gate held back ([`CheckReport::suppressed_neighbour`]).
+@@ -372,6 +376,7 @@ pub fn check_gated(
+     let mut holders: BTreeMap<&str, Vec<usize>> = BTreeMap::new();
+     // Members of files a person set apart as a different kind: their lock entries stay.
+     let mut set_apart: Vec<(String, String)> = Vec::new();
++    let study_members = std::env::var_os("DRIFT_STUDY_MEMBERS").is_some_and(|v| v == "1");
+     for (ui, u) in all.iter().enumerate() {
+         let path = u.path();
+         if only_paths.is_some_and(|p| !p.contains(&path)) {
+@@ -382,6 +387,11 @@ pub fn check_gated(
+             let why = match classify(c, u, &policy.conventions, &contexts) {
+                 None => continue,
+                 Some(Verdict::Holds) => {
++                    if study_members {
++                        report
++                            .study_holds
++                            .push(format!("{} {path}#{}", c.id, u.name()));
++                    }
+                     if gate && c.rule.applies_in(Some(&c.role), &u.view, contexts.of(c)) {
+                         holders.entry(c.id.as_str()).or_default().push(ui);
+                     }
+diff --git a/crates/drift-mine/src/show.rs b/crates/drift-mine/src/show.rs
+index 9bf659e6..b5c661d0 100644
+--- a/crates/drift-mine/src/show.rs
++++ b/crates/drift-mine/src/show.rs
+@@ -67,6 +67,10 @@ pub const TEST_UNSHOWN_ENV: &str = "DRIFT_TEST_UNSHOWN";
+ /// Whether the policy applies: always in a release build; in a debug build unless
+ /// [`TEST_UNSHOWN_ENV`] is `1`.
+ pub fn enforced() -> bool {
++    // recall11 study patch (never on main): DRIFT_STUDY_UNSHOWN=1 mines hidden cards too.
++    if std::env::var_os("DRIFT_STUDY_UNSHOWN").is_some_and(|v| v == "1") {
++        return false;
++    }
+     #[cfg(debug_assertions)]
+     if std::env::var_os(TEST_UNSHOWN_ENV).is_some_and(|v| v == "1") {
+         return false;

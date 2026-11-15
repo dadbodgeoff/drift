@@ -1,0 +1,2416 @@
+{
+ "run": "eval/study/runs/dev-v3-relabel6-2026-11-10/py4/views/d7",
+ "from": "the Python cards of the mined pool of the dev4 repos at 3f2bd7b3 (census/), with their labels",
+ "items": [
+  {
+   "uid": "dev4:P01/D-646cc1",
+   "repo": "dev4:P01",
+   "id": "D-646cc1",
+   "rank": 1,
+   "summary": "sqlalchemy models have a `id` field",
+   "role": {
+    "package": "",
+    "dir": "sqlalchemy",
+    "file": "(model)",
+    "entry": "-",
+    "kind": "model"
+   },
+   "rule": {
+    "type": "model_has",
+    "field": "id"
+   },
+   "evidence": {
+    "holders": 130,
+    "total": 134,
+    "lower_bound": 0.93,
+    "lift": 1.5
+   },
+   "members": 134,
+   "example": "2015/12/24/Creating a RESTFul API in Flask Using Flask-Restless and Flask-SQLAlchemy - GET Requests/flask-restless-get/restless.py#Person",
+   "python_members": 134,
+   "outliers": 4,
+   "outlier_files": [
+    "2017/09/28/Connect to Twitter and Github With OAuth in Flask Using Flask-Dance [Part 1]/app.py",
+    "2017/10/12/Integrating Flask-Dance With Flask-Login and Flask-SQLAlchemy[Part 2]/app.py",
+    "2025/04/02/Getting Started With Flask-Security/flask_security_example/app/models.py",
+    "2025/04/04/Sending Emails in Flask-Security With Celery/flask_security_example/app/models.py"
+   ],
+   "block": " 1. [D-646cc1] sqlalchemy models have a `id` field\n    evidence: 130/134 (lower bound 0.93, lift 1.5)\n    agents:   not shown to agents (family below admission bar: 20% of 5)\n    example:  2015/12/24/Creating a RESTFul API in Flask Using Flask-Restless and Flask-SQLAlchemy - GET Requests/flask-restless-get/restless.py#Person\n    outlier:  2017/09/28/Connect to Twitter and Github With OAuth in Flask Using Flask-Dance [Part 1]/app.py:29 OAuth\n    outlier:  2017/10/12/Integrating Flask-Dance With Flask-Login and Flask-SQLAlchemy[Part 2]/app.py:29 OAuth\n    outlier:  2025/04/02/Getting Started With Flask-Security/flask_security_example/app/models.py:13 User\n    outlier:  2025/04/04/Sending Emails in Flask-Security With Celery/flask_security_example/app/models.py:13 User",
+   "family": "repo",
+   "rule_kind": "model_has",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L10/D-646cc1"
+  },
+  {
+   "uid": "dev4:P02/D-db73ae",
+   "repo": "dev4:P02",
+   "id": "D-db73ae",
+   "rank": 1,
+   "summary": "functions in api/** do not use requests to computed URLs",
+   "role": {
+    "package": "",
+    "dir": "api",
+    "file": "*",
+    "entry": "-",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "avoids",
+    "signal": "sink:dynamic_fetch"
+   },
+   "evidence": {
+    "holders": 294,
+    "total": 296,
+    "lower_bound": 0.98,
+    "lift": 20.3
+   },
+   "members": 296,
+   "example": "api/v1/views/account_life.py#create_account_life",
+   "python_members": 296,
+   "outliers": 2,
+   "outlier_files": [
+    "api/v1/views/platform_config.py",
+    "api/v1/views/webhook.py"
+   ],
+   "block": " 1. [D-db73ae] functions in api/** do not use requests to computed URLs\n    evidence: 294/296 (lower bound 0.98, lift 20.3)\n    agents:   not shown to agents (family below admission bar: 0% of 1)\n    example:  api/v1/views/account_life.py#create_account_life\n    outlier:  api/v1/views/platform_config.py:106 get_version\n    outlier:  api/v1/views/webhook.py:180 retry_webhook_history",
+   "family": "avoids_other",
+   "rule_kind": "avoids:other",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L13/D-db73ae"
+  },
+  {
+   "uid": "dev4:P02/D-dede8c",
+   "repo": "dev4:P02",
+   "id": "D-dede8c",
+   "rank": 2,
+   "summary": "functions in api/** pass `roles` to operation(), except 20 members (not calling the callee)",
+   "role": {
+    "package": "",
+    "dir": "api",
+    "file": "*",
+    "entry": "-",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "passes_key",
+    "callee": "arkid/core/api.py#operation",
+    "index": 99,
+    "key": "roles"
+   },
+   "evidence": {
+    "holders": 270,
+    "total": 276,
+    "lower_bound": 0.95,
+    "lift": 1.9
+   },
+   "members": 296,
+   "example": "api/v1/views/account_life.py#create_account_life",
+   "python_members": 296,
+   "outliers": 6,
+   "outlier_files": [
+    "api/v1/views/auth.py",
+    "api/v1/views/loginpage.py",
+    "api/v1/views/platform_config.py",
+    "api/v1/views/register.py",
+    "api/v1/views/tenant.py"
+   ],
+   "block": " 2. [D-dede8c] functions in api/** pass `roles` to operation(), except 20 members (not calling the callee)\n    evidence: 270/276 (lower bound 0.95, lift 1.9)\n    agents:   not shown to agents (family below admission bar: 50% of 4)\n    example:  api/v1/views/account_life.py#create_account_life\n    outlier:  api/v1/views/auth.py:11 auth\n    outlier:  api/v1/views/auth.py:35 reset_passowrd\n    outlier:  api/v1/views/loginpage.py:105 login_page\n    outlier:  api/v1/views/platform_config.py:21 get_platform_config_with_no_permission\n    outlier:  api/v1/views/register.py:29 register\n    outlier:  api/v1/views/tenant.py:111 default_tenant\n    exempt:   api/v1/schema/scim_sync.py:53 utc_to_local_datetime (does not call operation())\n    exempt:   api/v1/schema/scim_sync.py:60 utc_to_local_str (does not call operation())\n    exempt:   api/v1/views/account_life.py:182 update_or_create_periodic_task (does not call operation())\n    exempt:   api/v1/views/arkstore.py:458 get_arkstore_category_http (does not call operation())\n    exempt:   api/v1/views/arkstore.py:55 get_arkstore_list (does not call operation())\n    exempt:   api/v1/views/devices.py:5 get_device_list (does not call operation())\n    exempt:   api/v1/views/front_theme.py:53 load_front_theme_list (does not call operation())\n    exempt:   api/v1/views/log.py:17 get_log (does not call operation())\n    exempt:   api/v1/views/log.py:23 get_log_config (does not call operation())\n    exempt:   api/v1/views/log.py:5 get_manager_logs (does not call operation())\n    exempt:   api/v1/views/log.py:11 get_user_logs (does not call operation())\n    exempt:   api/v1/views/log.py:29 update_log_config (does not call operation())\n    exempt:   api/v1/views/permission.py:168 get_arkstore_permission_bin (does not call operation())\n    exempt:   api/v1/views/permission.py:158 get_arkstore_permission_str (does not call operation())\n    exempt:   api/v1/views/platform_config.py:50 get_frontend_url (does not call operation())\n    exempt:   api/v1/views/platform_config.py:64 set_frontend_url (does not call operation())\n    exempt:   api/v1/views/scim_sync.py:64 delete_periodic_task (does not call operation())\n    exempt:   api/v1/views/scim_sync.py:34 update_or_create_periodic_task (does not call operation())\n    exempt:   api/v1/views/tenant.py:141 get_tenant_by_slug (does not call operation())\n    exempt:   api/v1/views/user.py:142 user_fields (does not call operation())",
+   "family": "argument_key",
+   "rule_kind": "passes_key",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L13/D-dede8c"
+  },
+  {
+   "uid": "dev4:P02/D-e0fe86",
+   "repo": "dev4:P02",
+   "id": "D-e0fe86",
+   "rank": 3,
+   "summary": "files in arkid/** do not import from oauth2_provider/views/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+   "role": {
+    "package": "",
+    "dir": "arkid",
+    "file": "*",
+    "entry": "-",
+    "kind": "module"
+   },
+   "rule": {
+    "type": "avoids",
+    "signal": "import:oauth2_provider/views"
+   },
+   "evidence": {
+    "holders": 57,
+    "total": 58,
+    "lower_bound": 0.91,
+    "lift": 3
+   },
+   "members": 58,
+   "example": "arkid/api.py#(file)",
+   "python_members": 58,
+   "outliers": 1,
+   "outlier_files": [
+    "arkid/common/arkstore.py"
+   ],
+   "block": " 3. [D-e0fe86] files in arkid/** do not import from oauth2_provider/views/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 57/58 (lower bound 0.91, lift 3.0)\n    agents:   not shown to agents (family below admission bar: 100% of 1)\n    example:  arkid/api.py#(file)\n    outlier:  arkid/common/arkstore.py:1 (file)",
+   "family": "layering",
+   "rule_kind": "avoids:import",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L13/D-e0fe86"
+  },
+  {
+   "uid": "dev4:P02/D-5ff563",
+   "repo": "dev4:P02",
+   "id": "D-5ff563",
+   "rank": 4,
+   "summary": "functions in api/v1/views/** are decorated with operation()",
+   "role": {
+    "package": "",
+    "dir": "api/v1/views",
+    "file": "*",
+    "entry": "-",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "decorator",
+    "any_of": [
+     "arkid/core/api.py#operation"
+    ]
+   },
+   "evidence": {
+    "holders": 276,
+    "total": 294,
+    "lower_bound": 0.91,
+    "lift": 1.9
+   },
+   "members": 294,
+   "example": "api/v1/views/account_life.py#create_account_life",
+   "python_members": 294,
+   "outliers": 18,
+   "outlier_files": [
+    "api/v1/views/account_life.py",
+    "api/v1/views/arkstore.py",
+    "api/v1/views/devices.py",
+    "api/v1/views/front_theme.py",
+    "api/v1/views/log.py",
+    "api/v1/views/permission.py",
+    "api/v1/views/platform_config.py",
+    "api/v1/views/scim_sync.py",
+    "api/v1/views/tenant.py",
+    "api/v1/views/user.py"
+   ],
+   "block": " 4. [D-5ff563] functions in api/v1/views/** are decorated with operation()\n    evidence: 276/294 (lower bound 0.91, lift 1.9)\n    agents:   not shown to agents (family below admission bar: 50% of 6)\n    example:  api/v1/views/account_life.py#create_account_life\n    outlier:  api/v1/views/account_life.py:182 update_or_create_periodic_task\n    outlier:  api/v1/views/arkstore.py:458 get_arkstore_category_http\n    outlier:  api/v1/views/arkstore.py:55 get_arkstore_list\n    outlier:  api/v1/views/devices.py:5 get_device_list\n    outlier:  api/v1/views/front_theme.py:53 load_front_theme_list\n    outlier:  api/v1/views/log.py:17 get_log\n    outlier:  api/v1/views/log.py:23 get_log_config\n    outlier:  api/v1/views/log.py:5 get_manager_logs\n    outlier:  api/v1/views/log.py:11 get_user_logs\n    outlier:  api/v1/views/log.py:29 update_log_config\n    outlier:  api/v1/views/permission.py:168 get_arkstore_permission_bin\n    outlier:  api/v1/views/permission.py:158 get_arkstore_permission_str\n    outlier:  api/v1/views/platform_config.py:50 get_frontend_url\n    outlier:  api/v1/views/platform_config.py:64 set_frontend_url\n    outlier:  api/v1/views/scim_sync.py:64 delete_periodic_task\n    outlier:  api/v1/views/scim_sync.py:34 update_or_create_periodic_task\n    outlier:  api/v1/views/tenant.py:141 get_tenant_by_slug\n    outlier:  api/v1/views/user.py:142 user_fields",
+   "family": "decorator",
+   "rule_kind": "wrapped_by:decorator",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L13/D-5ff563"
+  },
+  {
+   "uid": "dev4:P02/D-8f4fcc",
+   "repo": "dev4:P02",
+   "id": "D-8f4fcc",
+   "rank": 5,
+   "summary": "classes in docs/** (models files) extend apps.AppConfig, except 2 classes (of another kind)",
+   "role": {
+    "package": "",
+    "dir": "docs",
+    "file": "models",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "pkg:django#apps.AppConfig"
+    ]
+   },
+   "evidence": {
+    "holders": 25,
+    "total": 25,
+    "lower_bound": 0.87,
+    "lift": 27.7
+   },
+   "members": 27,
+   "example": "docs/en/docs/Other Plug -In/com_longgui_app_protocol_cas_server/models.py#LongguiCaseAppConfig",
+   "python_members": 27,
+   "outliers": 0,
+   "outlier_files": [],
+   "block": " 5. [D-8f4fcc] classes in docs/** (models files) extend apps.AppConfig, except 2 classes (of another kind)\n    evidence: 25/25 (lower bound 0.87, lift 27.7)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  docs/en/docs/Other Plug -In/com_longgui_app_protocol_cas_server/models.py#LongguiCaseAppConfig\n    exempt:   docs/en/docs/Other Plug -In/com_longgui_app_protocol_cas_server/models.py:297 ProxyGrantingTicketManager (another kind of class (extends db.models.Manager))\n    exempt:   docs/en/docs/Other Plug -In/com_longgui_app_protocol_cas_server/models.py:216 ServiceTicketManager (another kind of class (extends db.models.Manager))",
+   "family": "base_class",
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L13/D-8f4fcc"
+  },
+  {
+   "uid": "dev4:P02/D-57bd2b",
+   "repo": "dev4:P02",
+   "id": "D-57bd2b",
+   "rank": 6,
+   "summary": "classes in api/v1/views/** extend Schema",
+   "role": {
+    "package": "",
+    "dir": "api/v1/views",
+    "file": "*",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "pkg:ninja#Schema"
+    ]
+   },
+   "evidence": {
+    "holders": 75,
+    "total": 85,
+    "lower_bound": 0.8,
+    "lift": 2.1
+   },
+   "members": 85,
+   "example": "api/v1/views/arkstore.py#Amount",
+   "python_members": 85,
+   "outliers": 10,
+   "outlier_files": [
+    "api/v1/views/approve_action.py",
+    "api/v1/views/extension.py",
+    "api/v1/views/loginpage.py",
+    "api/v1/views/register.py",
+    "api/v1/views/scim_sync.py",
+    "api/v1/views/tenant_extension.py"
+   ],
+   "block": " 6. [D-57bd2b] classes in api/v1/views/** extend Schema\n    evidence: 75/85 (lower bound 0.80, lift 2.1)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  api/v1/views/arkstore.py#Amount\n    outlier:  api/v1/views/approve_action.py:117 ApproveSystemExtensionListOut\n    outlier:  api/v1/views/extension.py:203 ExtensionItemOut\n    outlier:  api/v1/views/extension.py:82 ExtensionListOut\n    outlier:  api/v1/views/loginpage.py:90 LoginPageTenantSchema\n    outlier:  api/v1/views/register.py:13 RegisterTenantSchema\n    outlier:  api/v1/views/scim_sync.py:165 ScimServerOut\n    outlier:  api/v1/views/tenant_extension.py:52 TenantExtensionConfigOut\n    outlier:  api/v1/views/tenant_extension.py:195 TenantExtensionListOut\n    outlier:  api/v1/views/tenant_extension.py:204 TenantPlatformExtensionListOut\n    outlier:  api/v1/views/tenant_extension.py:212 TenantRentedExtensionListOut",
+   "family": "base_class",
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L13/D-57bd2b"
+  },
+  {
+   "uid": "dev4:P02/D-9229df",
+   "repo": "dev4:P02",
+   "id": "D-9229df",
+   "rank": 7,
+   "summary": "classes in docs/** (schema files) extend Schema",
+   "role": {
+    "package": "",
+    "dir": "docs",
+    "file": "schema",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "pkg:ninja#Schema"
+    ]
+   },
+   "evidence": {
+    "holders": 90,
+    "total": 104,
+    "lower_bound": 0.79,
+    "lift": 2
+   },
+   "members": 104,
+   "example": "docs/en/docs/Other Plug -In/com_longgui_account_active/schema.py#AccountActiveSwitchOutBaseSchema",
+   "python_members": 104,
+   "outliers": 14,
+   "outlier_files": [
+    "docs/en/docs/Other Plug -In/com_longgui_auth_factor_scan/schema.py",
+    "docs/en/docs/Other Plug -In/com_longgui_auth_factor_webauthn/schema.py",
+    "docs/en/docs/Other Plug -In/com_longgui_custom_field/schema.py",
+    "docs/en/docs/System Plug -In/com_longgui_auto_form_fill/schema.py"
+   ],
+   "block": " 7. [D-9229df] classes in docs/** (schema files) extend Schema\n    evidence: 90/104 (lower bound 0.79, lift 2.0)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  docs/en/docs/Other Plug -In/com_longgui_account_active/schema.py#AccountActiveSwitchOutBaseSchema\n    outlier:  docs/en/docs/Other Plug -In/com_longgui_auth_factor_scan/schema.py:13 QRCodeCreateOut\n    outlier:  docs/en/docs/Other Plug -In/com_longgui_auth_factor_scan/schema.py:6 QRCodeIn\n    outlier:  docs/en/docs/Other Plug -In/com_longgui_auth_factor_scan/schema.py:20 QRCodeStatusOut\n    outlier:  docs/en/docs/Other Plug -In/com_longgui_auth_factor_webauthn/schema.py:30 AuthenticationOptionsRequestSchema\n    outlier:  docs/en/docs/Other Plug -In/com_longgui_auth_factor_webauthn/schema.py:42 AuthenticationResponseSchema\n    outlier:  docs/en/docs/Other Plug -In/com_longgui_auth_factor_webauthn/schema.py:78 CredentialItemSchema\n    outlier:  docs/en/docs/Other Plug -In/com_longgui_auth_factor_webauthn/schema.py:7 RegistrationOptionsRequestSchema\n    outlier:  docs/en/docs/Other Plug -In/com_longgui_auth_factor_webauthn/schema.py:18 RegistrationResponseSchema\n    outlier:  docs/en/docs/Other Plug -In/com_longgui_auth_factor_webauthn/schema.py:55 WebAuthnCredential\n    outlier:  docs/en/docs/Other Plug -In/com_longgui_custom_field/schema.py:14 CustomFieldItemOut\n    outlier:  docs/en/docs/System Plug -In/com_longgui_auto_form_fill/schema.py:147 AutoFormFillUserDetailItemMineOut\n    outlier:  docs/en/docs/System Plug -In/com_longgui_auto_form_fill/schema.py:93 AutoFormFillUserDetailItemOut\n    outlier:  docs/en/docs/System Plug -In/com_longgui_auto_form_fill/schema.py:32 AutoFormFillUserItemOut\n    outlier:  docs/en/docs/System Plug -In/com_longgui_auto_form_fill/schema.py:121 AutoFormFillUserMineItemOut",
+   "family": "base_class",
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L13/D-9229df"
+  },
+  {
+   "uid": "dev4:P02/D-faf7b3",
+   "repo": "dev4:P02",
+   "id": "D-faf7b3",
+   "rank": 8,
+   "summary": "model classes in arkid/** (models files) extend BaseModel",
+   "role": {
+    "package": "",
+    "dir": "arkid",
+    "file": "models",
+    "entry": "-",
+    "kind": "class",
+    "member_kind": "model"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "arkid/common/model.py#BaseModel"
+    ]
+   },
+   "evidence": {
+    "holders": 27,
+    "total": 29,
+    "lower_bound": 0.78,
+    "lift": 14.9
+   },
+   "members": 29,
+   "example": "arkid/config/models.py#PasswordComplexity",
+   "python_members": 29,
+   "outliers": 2,
+   "outlier_files": [
+    "arkid/core/models.py"
+   ],
+   "block": " 8. [D-faf7b3] model classes in arkid/** (models files) extend BaseModel\n    evidence: 27/29 (lower bound 0.78, lift 14.9)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  arkid/config/models.py#PasswordComplexity\n    outlier:  arkid/core/models.py:13 EmptyModel\n    outlier:  arkid/core/models.py:582 ExpiringToken",
+   "family": "base_class",
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L13/D-faf7b3"
+  },
+  {
+   "uid": "dev4:P04/D-7bdafb",
+   "repo": "dev4:P04",
+   "id": "D-7bdafb",
+   "rank": 1,
+   "summary": "HTTP handlers in lfs/** (views files) extend contrib.auth.mixins.PermissionRequiredMixin",
+   "role": {
+    "package": "",
+    "dir": "lfs",
+    "file": "views",
+    "entry": "http",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "pkg:django#contrib.auth.mixins.PermissionRequiredMixin"
+    ]
+   },
+   "evidence": {
+    "holders": 141,
+    "total": 142,
+    "lower_bound": 0.96,
+    "lift": 2.1
+   },
+   "members": 142,
+   "example": "lfs/manage/actions/views.py#ActionCreateView",
+   "python_members": 142,
+   "outliers": 1,
+   "outlier_files": [
+    "lfs/core/views.py"
+   ],
+   "block": " 1. [D-7bdafb] HTTP handlers in lfs/** (views files) extend contrib.auth.mixins.PermissionRequiredMixin\n    evidence: 141/142 (lower bound 0.96, lift 2.1)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  lfs/manage/actions/views.py#ActionCreateView\n    outlier:  lfs/core/views.py:64 TextTemplateView",
+   "family": "base_class",
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L14/D-7bdafb"
+  },
+  {
+   "uid": "dev4:P04/D-9de24d",
+   "repo": "dev4:P04",
+   "id": "D-9de24d",
+   "rank": 1,
+   "summary": "forms in lfs/** (forms files) are named `*Form`",
+   "role": {
+    "package": "",
+    "dir": "lfs",
+    "file": "forms",
+    "entry": "-",
+    "kind": "class",
+    "member_kind": "form"
+   },
+   "rule": {
+    "type": "named",
+    "pattern": "*Form"
+   },
+   "evidence": {
+    "holders": 58,
+    "total": 58,
+    "lower_bound": 0.94,
+    "lift": 6.2
+   },
+   "members": 58,
+   "example": "lfs/addresses/forms.py#AddressBaseForm",
+   "python_members": 58,
+   "outliers": 0,
+   "outlier_files": [],
+   "block": " 2. [D-9de24d] forms in lfs/** (forms files) are named `*Form`\n    evidence: 58/58 (lower bound 0.94, lift 6.2)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  lfs/addresses/forms.py#AddressBaseForm",
+   "family": "naming",
+   "rule_kind": "named",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/dev4-py-2026-11-09:P04/D-9de24d"
+  },
+  {
+   "uid": "dev4:P07/D-67278e",
+   "repo": "dev4:P07",
+   "id": "D-67278e",
+   "rank": 1,
+   "summary": "classes in strawberry/extensions/** extend SchemaExtension",
+   "role": {
+    "package": "",
+    "dir": "strawberry/extensions",
+    "file": "*",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "strawberry/extensions/base_extension.py#SchemaExtension"
+    ]
+   },
+   "evidence": {
+    "holders": 20,
+    "total": 21,
+    "lower_bound": 0.77,
+    "lift": 13.9
+   },
+   "members": 21,
+   "example": "strawberry/extensions/directives.py#DirectivesExtension",
+   "python_members": 21,
+   "outliers": 1,
+   "outlier_files": [
+    "strawberry/extensions/runner.py"
+   ],
+   "block": " 1. [D-67278e] classes in strawberry/extensions/** extend SchemaExtension\n    evidence: 20/21 (lower bound 0.77, lift 13.9)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  strawberry/extensions/directives.py#DirectivesExtension\n    outlier:  strawberry/extensions/runner.py:21 SchemaExtensionsRunner",
+   "family": "base_class",
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L07/D-67278e"
+  },
+  {
+   "uid": "dev4:P09/D-c55373",
+   "repo": "dev4:P09",
+   "id": "D-c55373",
+   "rank": 1,
+   "summary": "cli entry points in src/sparkrun/cli/_setup/** are decorated with pass_context()",
+   "role": {
+    "package": "",
+    "dir": "src/sparkrun/cli/_setup",
+    "file": "*",
+    "entry": "cli",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "decorator",
+    "any_of": [
+     "pkg:click#pass_context"
+    ]
+   },
+   "evidence": {
+    "holders": 29,
+    "total": 30,
+    "lower_bound": 0.83,
+    "lift": 14.9
+   },
+   "members": 30,
+   "example": "src/sparkrun/cli/_setup/_commands.py#setup_clear_cache",
+   "python_members": 30,
+   "outliers": 1,
+   "outlier_files": [
+    "src/sparkrun/cli/_setup/_commands.py"
+   ],
+   "block": " 1. [D-c55373] cli entry points in src/sparkrun/cli/_setup/** are decorated with pass_context()\n    evidence: 29/30 (lower bound 0.83, lift 14.9)\n    agents:   not shown to agents (family below admission bar: 50% of 6)\n    example:  src/sparkrun/cli/_setup/_commands.py#setup_clear_cache\n    outlier:  src/sparkrun/cli/_setup/_commands.py:1670 setup_prune_job_metadata_cache",
+   "family": "decorator",
+   "rule_kind": "wrapped_by:decorator",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L08/D-c55373"
+  },
+  {
+   "uid": "dev4:P09/D-9a436f",
+   "repo": "dev4:P09",
+   "id": "D-9a436f",
+   "rank": 2,
+   "summary": "functions in src/** use the team's `quote` (src/sparkrun/utils/shell.py), not `shlex.quote`",
+   "role": {
+    "package": "",
+    "dir": "src",
+    "file": "*",
+    "entry": "-",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "imports_from",
+    "name": "quote",
+    "source": "src/sparkrun/utils/shell.py#quote",
+    "instead_of": [
+     "pkg:python:shlex#quote"
+    ]
+   },
+   "evidence": {
+    "holders": 47,
+    "total": 51,
+    "lower_bound": 0.81,
+    "lift": 1
+   },
+   "members": 51,
+   "example": "src/sparkrun/containers/distribute.py#distribute_image_from_head",
+   "python_members": 51,
+   "outliers": 4,
+   "outlier_files": [
+    "src/sparkrun/core/setup_probe.py",
+    "src/sparkrun/orchestration/executors/_seccomp.py",
+    "src/sparkrun/plugins/oci_relay/pins.py"
+   ],
+   "block": " 2. [D-9a436f] functions in src/** use the team's `quote` (src/sparkrun/utils/shell.py), not `shlex.quote`\n    evidence: 47/51 (lower bound 0.81, lift 1.0)\n    agents:   not shown to agents (family below admission bar: 100% of 1)\n    split:    src/sparkrun/utils/shell.py 47, shlex.quote 4\n    example:  src/sparkrun/containers/distribute.py#distribute_image_from_head\n    outlier:  src/sparkrun/core/setup_probe.py:91 probe_setup_hosts\n    outlier:  src/sparkrun/orchestration/executors/_seccomp.py:121 profile_option\n    outlier:  src/sparkrun/plugins/oci_relay/pins.py:117 preflight\n    outlier:  src/sparkrun/plugins/oci_relay/pins.py:92 record",
+   "family": "import_source",
+   "rule_kind": "imports_from",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L08/D-9a436f"
+  },
+  {
+   "uid": "dev4:P10/D-777ed7",
+   "repo": "dev4:P10",
+   "id": "D-777ed7",
+   "rank": 1,
+   "summary": "classes in app/schemas/** pass `description` to Field(), except 15 members (not calling the callee)",
+   "role": {
+    "package": "",
+    "dir": "app/schemas",
+    "file": "*",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "passes_key",
+    "callee": "pkg:pydantic#Field",
+    "index": 99,
+    "key": "description"
+   },
+   "evidence": {
+    "holders": 510,
+    "total": 511,
+    "lower_bound": 0.99,
+    "lift": 3.6
+   },
+   "members": 526,
+   "example": "app/schemas/agent.py#AgentChatAttachment",
+   "python_members": 526,
+   "outliers": 1,
+   "outlier_files": [
+    "app/schemas/plugin.py"
+   ],
+   "block": " 1. [D-777ed7] classes in app/schemas/** pass `description` to Field(), except 15 members (not calling the callee)\n    evidence: 510/511 (lower bound 0.99, lift 3.6)\n    agents:   not shown to agents (family below admission bar: 50% of 4)\n    example:  app/schemas/agent.py#AgentChatAttachment\n    outlier:  app/schemas/plugin.py:787 PluginFoldersData\n    exempt:   app/schemas/category.py:36 MediaCategoryMap (does not call Field())\n    exempt:   app/schemas/common.py:19 JsonObject (does not call Field())\n    exempt:   app/schemas/common.py:25 JsonObjectList (does not call Field())\n    exempt:   app/schemas/context.py:546 MediaSearchResults (does not call Field())\n    exempt:   app/schemas/event.py:131 EmptyEventData (does not call Field())\n    exempt:   app/schemas/exception.py:65 OperationInterrupted (does not call Field())\n    exempt:   app/schemas/mcp.py:199 McpJsonRpcEmptyResult (does not call Field())\n    exempt:   app/schemas/mcp.py:20 McpJsonSchema (does not call Field())\n    exempt:   app/schemas/mediaserver.py:136 MediaServerExistingEpisodes (does not call Field())\n    exempt:   app/schemas/message.py:79 WebMessageItem (does not call Field())\n    exempt:   app/schemas/mfa.py:12 PasskeyOptions (does not call Field())\n    exempt:   app/schemas/plugin.py:699 PluginRatingMap (does not call Field())\n    exempt:   app/schemas/site.py:151 SiteMappingData (does not call Field())\n    exempt:   app/schemas/transfer.py:92 DownloadingTorrent (does not call Field())\n    exempt:   app/schemas/transfer.py:86 TransferTorrent (does not call Field())",
+   "family": "argument_key",
+   "rule_kind": "passes_key",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L12/D-777ed7"
+  },
+  {
+   "uid": "dev4:P10/D-12cec6",
+   "repo": "dev4:P10",
+   "id": "D-12cec6",
+   "rank": 2,
+   "summary": "HTTP handlers in app/** pass `response_model` to APIRouter.api_route()",
+   "role": {
+    "package": "",
+    "dir": "app",
+    "file": "*",
+    "entry": "http",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "passes_key",
+    "callee": "pkg:fastapi#APIRouter.api_route",
+    "index": 99,
+    "key": "response_model"
+   },
+   "evidence": {
+    "holders": 426,
+    "total": 430,
+    "lower_bound": 0.98,
+    "lift": 5.9
+   },
+   "members": 430,
+   "example": "app/api/endpoints/agent.py#delete_agent_chat_session",
+   "python_members": 430,
+   "outliers": 4,
+   "outlier_files": [
+    "app/adapters/web/health.py",
+    "app/api/endpoints/plugin.py"
+   ],
+   "block": " 2. [D-12cec6] HTTP handlers in app/** pass `response_model` to APIRouter.api_route()\n    evidence: 426/430 (lower bound 0.98, lift 5.9)\n    agents:   not shown to agents (family below admission bar: 50% of 4)\n    example:  app/api/endpoints/agent.py#delete_agent_chat_session\n    outlier:  app/adapters/web/health.py:12 liveness\n    outlier:  app/adapters/web/health.py:21 readiness\n    outlier:  app/api/endpoints/plugin.py:734 plugin_dashboard\n    outlier:  app/api/endpoints/plugin.py:713 plugin_dashboard_by_key",
+   "family": "argument_key",
+   "rule_kind": "passes_key",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L12/D-12cec6"
+  },
+  {
+   "uid": "dev4:P10/D-d1e42a",
+   "repo": "dev4:P10",
+   "id": "D-d1e42a",
+   "rank": 3,
+   "summary": "HTTP handlers in app/** pass `summary` to APIRouter.api_route()",
+   "role": {
+    "package": "",
+    "dir": "app",
+    "file": "*",
+    "entry": "http",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "passes_key",
+    "callee": "pkg:fastapi#APIRouter.api_route",
+    "index": 99,
+    "key": "summary"
+   },
+   "evidence": {
+    "holders": 423,
+    "total": 430,
+    "lower_bound": 0.97,
+    "lift": 5.9
+   },
+   "members": 430,
+   "example": "app/api/endpoints/agent.py#delete_agent_chat_session",
+   "python_members": 430,
+   "outliers": 7,
+   "outlier_files": [
+    "app/adapters/web/health.py",
+    "app/api/servcookie.py"
+   ],
+   "block": " 3. [D-d1e42a] HTTP handlers in app/** pass `summary` to APIRouter.api_route()\n    evidence: 423/430 (lower bound 0.97, lift 5.9)\n    agents:   not shown to agents (family below admission bar: 50% of 4)\n    example:  app/api/endpoints/agent.py#delete_agent_chat_session\n    outlier:  app/adapters/web/health.py:12 liveness\n    outlier:  app/adapters/web/health.py:21 readiness\n    outlier:  app/api/servcookie.py:202 get_cookie\n    outlier:  app/api/servcookie.py:105 get_root\n    outlier:  app/api/servcookie.py:214 post_cookie\n    outlier:  app/api/servcookie.py:123 post_root\n    outlier:  app/api/servcookie.py:141 update_cookie",
+   "family": "argument_key",
+   "rule_kind": "passes_key",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L12/D-d1e42a"
+  },
+  {
+   "uid": "dev4:P10/D-90989d",
+   "repo": "dev4:P10",
+   "id": "D-90989d",
+   "rank": 4,
+   "summary": "files in app/application/** do not import from app/agent/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+   "role": {
+    "package": "",
+    "dir": "app/application",
+    "file": "*",
+    "entry": "-",
+    "kind": "module"
+   },
+   "rule": {
+    "type": "avoids",
+    "signal": "import:app/agent"
+   },
+   "evidence": {
+    "holders": 153,
+    "total": 154,
+    "lower_bound": 0.96,
+    "lift": 3
+   },
+   "members": 154,
+   "example": "app/application/agent.py#(file)",
+   "python_members": 154,
+   "outliers": 1,
+   "outlier_files": [
+    "app/application/messaging/webagent/stream.py"
+   ],
+   "block": " 4. [D-90989d] files in app/application/** do not import from app/agent/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 153/154 (lower bound 0.96, lift 3.0)\n    agents:   not shown to agents (family below admission bar: 100% of 1)\n    example:  app/application/agent.py#(file)\n    outlier:  app/application/messaging/webagent/stream.py:1 (file)",
+   "family": "layering",
+   "rule_kind": "avoids:import",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L12/D-90989d"
+  },
+  {
+   "uid": "dev4:P10/D-24cb66",
+   "repo": "dev4:P10",
+   "id": "D-24cb66",
+   "rank": 5,
+   "summary": "classes in app/schemas/** extend BaseModel",
+   "role": {
+    "package": "",
+    "dir": "app/schemas",
+    "file": "*",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "pkg:pydantic#BaseModel"
+    ]
+   },
+   "evidence": {
+    "holders": 515,
+    "total": 526,
+    "lower_bound": 0.96,
+    "lift": 3.7
+   },
+   "members": 526,
+   "example": "app/schemas/agent.py#AgentChatAttachment",
+   "python_members": 526,
+   "outliers": 11,
+   "outlier_files": [
+    "app/schemas/category.py",
+    "app/schemas/common.py",
+    "app/schemas/context.py",
+    "app/schemas/exception.py",
+    "app/schemas/mcp.py",
+    "app/schemas/mediaserver.py",
+    "app/schemas/mfa.py",
+    "app/schemas/plugin.py",
+    "app/schemas/site.py"
+   ],
+   "block": " 5. [D-24cb66] classes in app/schemas/** extend BaseModel\n    evidence: 515/526 (lower bound 0.96, lift 3.7)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  app/schemas/agent.py#AgentChatAttachment\n    outlier:  app/schemas/category.py:36 MediaCategoryMap\n    outlier:  app/schemas/common.py:19 JsonObject\n    outlier:  app/schemas/common.py:25 JsonObjectList\n    outlier:  app/schemas/context.py:546 MediaSearchResults\n    outlier:  app/schemas/exception.py:65 OperationInterrupted\n    outlier:  app/schemas/mcp.py:20 McpJsonSchema\n    outlier:  app/schemas/mediaserver.py:136 MediaServerExistingEpisodes\n    outlier:  app/schemas/mfa.py:12 PasskeyOptions\n    outlier:  app/schemas/plugin.py:787 PluginFoldersData\n    outlier:  app/schemas/plugin.py:699 PluginRatingMap\n    outlier:  app/schemas/site.py:151 SiteMappingData",
+   "family": "base_class",
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L12/D-24cb66"
+  },
+  {
+   "uid": "dev4:P10/D-90cb74",
+   "repo": "dev4:P10",
+   "id": "D-90cb74",
+   "rank": 6,
+   "summary": "classes in app/agent/tools/impl/** pass `description` to Field()",
+   "role": {
+    "package": "",
+    "dir": "app/agent/tools/impl",
+    "file": "*",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "passes_key",
+    "callee": "pkg:pydantic#Field",
+    "index": 99,
+    "key": "description"
+   },
+   "evidence": {
+    "holders": 42,
+    "total": 42,
+    "lower_bound": 0.92,
+    "lift": 3.7
+   },
+   "members": 42,
+   "example": "app/agent/tools/impl/agent_task.py#AgentTaskInput",
+   "python_members": 42,
+   "outliers": 0,
+   "outlier_files": [],
+   "block": " 6. [D-90cb74] classes in app/agent/tools/impl/** pass `description` to Field()\n    evidence: 42/42 (lower bound 0.92, lift 3.7)\n    agents:   not shown to agents (family below admission bar: 50% of 4)\n    example:  app/agent/tools/impl/agent_task.py#AgentTaskInput",
+   "family": "argument_key",
+   "rule_kind": "passes_key",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L12/D-90cb74"
+  },
+  {
+   "uid": "dev4:P10/D-514683",
+   "repo": "dev4:P10",
+   "id": "D-514683",
+   "rank": 7,
+   "summary": "HTTP handlers in app/** are wrapped in verify_apikey() or verify_apitoken() or verify_token() or get_current_active_manage_user() or get_current_active_manage_user_async() or get_current_active_superuser() or get_current_active_superuser_async() or get_current_active_user() or get_current_active_user_async() or get_widget_grant() or _verify_log_resource_superuser()",
+   "role": {
+    "package": "",
+    "dir": "app",
+    "file": "*",
+    "entry": "http",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "call",
+    "any_of": [
+     "app/adapters/web/security/access.py#verify_apikey",
+     "app/adapters/web/security/access.py#verify_apitoken",
+     "app/adapters/web/security/access.py#verify_token",
+     "app/api/dependencies/auth.py#get_current_active_manage_user",
+     "app/api/dependencies/auth.py#get_current_active_manage_user_async",
+     "app/api/dependencies/auth.py#get_current_active_superuser",
+     "app/api/dependencies/auth.py#get_current_active_superuser_async",
+     "app/api/dependencies/auth.py#get_current_active_user",
+     "app/api/dependencies/auth.py#get_current_active_user_async",
+     "app/api/dependencies/widget.py#get_widget_grant",
+     "app/api/endpoints/system.py#_verify_log_resource_superuser"
+    ]
+   },
+   "evidence": {
+    "holders": 388,
+    "total": 430,
+    "lower_bound": 0.87,
+    "lift": 5.8
+   },
+   "members": 430,
+   "example": "app/api/endpoints/agent.py#delete_agent_chat_session",
+   "python_members": 430,
+   "outliers": 42,
+   "outlier_files": [
+    "app/adapters/web/health.py",
+    "app/api/endpoints/agent.py",
+    "app/api/endpoints/anthropic.py",
+    "app/api/endpoints/auth.py",
+    "app/api/endpoints/github.py",
+    "app/api/endpoints/llm.py",
+    "app/api/endpoints/login.py",
+    "app/api/endpoints/mfa.py",
+    "app/api/endpoints/openai.py",
+    "app/api/endpoints/plugin.py",
+    "app/api/endpoints/search.py",
+    "app/api/endpoints/subexecution.py",
+    "app/api/endpoints/subscribe.py",
+    "app/api/endpoints/system.py",
+    "app/api/servcookie.py"
+   ],
+   "block": " 7. [D-514683] HTTP handlers in app/** are wrapped in verify_apikey() or verify_apitoken() or verify_token() or get_current_active_manage_user() or get_current_active_manage_user_async() or get_current_active_superuser() or get_current_active_superuser_async() or get_current_active_user() or get_current_active_user_async() or get_widget_grant() or _verify_log_resource_superuser()\n    evidence: 388/430 (lower bound 0.87, lift 5.8)\n    agents:   not shown to agents (family below admission bar: 75% of 8)\n    split:    verify_token 103, get_current_active_superuser_async 77, get_current_active_user_async 43, get_current_active_manage_user 39, get_current_active_superuser 34, get_current_active_user 31, get_current_active_manage_user_async 26, verify_apikey 22, verify_apitoken 9, get_widget_grant 2, _verify_log_resource_superuser 2\n    example:  app/api/endpoints/agent.py#delete_agent_chat_session\n    outlier:  app/adapters/web/health.py:12 liveness\n    outlier:  app/adapters/web/health.py:21 readiness\n    outlier:  app/api/endpoints/agent.py:224 download_web_agent_file\n    outlier:  app/api/endpoints/anthropic.py:238 messages\n    outlier:  app/api/endpoints/auth.py:71 auth_exchange\n    outlier:  app/api/endpoints/auth.py:55 auth_providers\n    outlier:  app/api/endpoints/github.py:289 clear_initialization_token\n    outlier:  app/api/endpoints/github.py:193 get_initialization_auth_status\n    outlier:  app/api/endpoints/github.py:238 poll_initialization_auth\n    outlier:  app/api/endpoints/github.py:268 save_initialization_manual_token\n    outlier:  app/api/endpoints/github.py:209 start_initialization_auth\n    outlier:  app/api/endpoints/llm.py:55 llm_provider_auth_callback\n    outlier:  app/api/endpoints/login.py:43 get_initialization_status\n    outlier:  app/api/endpoints/login.py:69 initialize_instance\n    outlier:  app/api/endpoints/login.py:151 login_access_token\n    outlier:  app/api/endpoints/login.py:248 wallpaper\n    outlier:  app/api/endpoints/login.py:263 wallpapers\n    outlier:  app/api/endpoints/mfa.py:404 passkey_authenticate_finish\n    outlier:  app/api/endpoints/mfa.py:353 passkey_authenticate_start\n    outlier:  app/api/endpoints/openai.py:808 chat_completions\n    outlier:  app/api/endpoints/openai.py:586 list_models\n    outlier:  app/api/endpoints/openai.py:831 responses\n    outlier:  app/api/endpoints/plugin.py:759 plugin_static_file\n    outlier:  app/api/endpoints/plugin.py:605 remotes\n    outlier:  app/api/endpoints/search.py:442 search_by_id_stream\n    outlier:  app/api/endpoints/search.py:574 search_by_title_stream\n    outlier:  app/api/endpoints/search.py:771 search_subtitle_by_id_stream\n    outlier:  app/api/endpoints/search.py:656 search_subtitle_by_title_stream\n    outlier:  app/api/endpoints/subexecution.py:270 download_subscription_logs\n    outlier:  app/api/endpoints/subexecution.py:214 get_subscription_logs\n    outlier:  app/api/endpoints/subscribe.py:522 seerr_subscribe\n    outlier:  app/api/endpoints/system.py:370 cache_img\n    outlier:  app/api/endpoints/system.py:444 get_global_setting\n    outlier:  app/api/endpoints/system.py:781 get_message\n    outlier:  app/api/endpoints/system.py:697 get_progress\n    outlier:  app/api/endpoints/system.py:403 notification_image\n    outlier:  app/api/endpoints/system.py:322 proxy_img\n    outlier:  app/api/servcookie.py:202 get_cookie\n    outlier:  app/api/servcookie.py:105 get_root\n    outlier:  app/api/servcookie.py:214 post_cookie\n    outlier:  app/api/servcookie.py:123 post_root\n    outlier:  app/api/servcookie.py:141 update_cookie",
+   "family": "wrapper",
+   "rule_kind": "wrapped_by:call",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L12/D-514683"
+  },
+  {
+   "uid": "dev4:P10/D-abdb4f",
+   "repo": "dev4:P10",
+   "id": "D-abdb4f",
+   "rank": 8,
+   "summary": "mixins in app/modules/** (__init__ files) extend _ModuleBase",
+   "role": {
+    "package": "",
+    "dir": "app/modules",
+    "file": "__init__",
+    "entry": "-",
+    "kind": "class",
+    "member_kind": "mixin"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "app/modules/__init__.py#_ModuleBase"
+    ]
+   },
+   "evidence": {
+    "holders": 17,
+    "total": 17,
+    "lower_bound": 0.82,
+    "lift": 55.6
+   },
+   "members": 17,
+   "example": "app/modules/acoustid/__init__.py#AcoustIdModule",
+   "python_members": 17,
+   "outliers": 0,
+   "outlier_files": [],
+   "block": " 8. [D-abdb4f] mixins in app/modules/** (__init__ files) extend _ModuleBase\n    evidence: 17/17 (lower bound 0.82, lift 55.6)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  app/modules/acoustid/__init__.py#AcoustIdModule",
+   "family": "base_class",
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L12/D-abdb4f"
+  },
+  {
+   "uid": "dev4:P10/D-10790b",
+   "repo": "dev4:P10",
+   "id": "D-10790b",
+   "rank": 9,
+   "summary": "classes in app/modules/themoviedb/tmdbv3api/** extend TMDb",
+   "role": {
+    "package": "",
+    "dir": "app/modules/themoviedb/tmdbv3api",
+    "file": "*",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "app/modules/themoviedb/tmdbv3api/tmdb.py#TMDb"
+    ]
+   },
+   "evidence": {
+    "holders": 24,
+    "total": 25,
+    "lower_bound": 0.81,
+    "lift": 93.4
+   },
+   "members": 25,
+   "example": "app/modules/themoviedb/tmdbv3api/objs/account.py#Account",
+   "python_members": 25,
+   "outliers": 1,
+   "outlier_files": [
+    "app/modules/themoviedb/tmdbv3api/as_obj.py"
+   ],
+   "block": " 9. [D-10790b] classes in app/modules/themoviedb/tmdbv3api/** extend TMDb\n    evidence: 24/25 (lower bound 0.81, lift 93.4)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  app/modules/themoviedb/tmdbv3api/objs/account.py#Account\n    outlier:  app/modules/themoviedb/tmdbv3api/as_obj.py:13 AsObj",
+   "family": "base_class",
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L12/D-10790b"
+  },
+  {
+   "uid": "dev4:P10/D-2180b6",
+   "repo": "dev4:P10",
+   "id": "D-2180b6",
+   "rank": 10,
+   "summary": "exceptions in app/** are named `*Error`, except 2 shared parts (used by several members, not a member)",
+   "role": {
+    "package": "",
+    "dir": "app",
+    "file": "*",
+    "entry": "-",
+    "kind": "class",
+    "member_kind": "exception"
+   },
+   "rule": {
+    "type": "named",
+    "pattern": "*Error"
+   },
+   "evidence": {
+    "holders": 86,
+    "total": 99,
+    "lower_bound": 0.79,
+    "lift": 19.7
+   },
+   "members": 101,
+   "example": "app/adapters/network/feishu.py#FatalConnectionError",
+   "python_members": 101,
+   "outliers": 13,
+   "outlier_files": [
+    "app/adapters/external/wechat.py",
+    "app/adapters/system/fsproxy.py",
+    "app/agent/llm/helper.py",
+    "app/application/subscription/sitebudget.py",
+    "app/modules/filemanager/storages/alipan.py",
+    "app/modules/filemanager/storages/u115.py",
+    "app/modules/telegram/telegram.py",
+    "app/modules/wechat/wechat.py",
+    "app/schemas/exception.py"
+   ],
+   "block": "10. [D-2180b6] exceptions in app/** are named `*Error`, except 2 shared parts (used by several members, not a member)\n    evidence: 86/99 (lower bound 0.79, lift 19.7)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  app/adapters/network/feishu.py#FatalConnectionError\n    outlier:  app/adapters/external/wechat.py:47 FormatException\n    outlier:  app/adapters/system/fsproxy.py:47 FileSystemTimeout\n    outlier:  app/agent/llm/helper.py:45 LLMTestTimeout\n    outlier:  app/application/subscription/sitebudget.py:16 SubscriptionSearchCancelled\n    outlier:  app/application/subscription/sitebudget.py:58 SubscriptionSiteBudgetUnavailable\n    outlier:  app/modules/filemanager/storages/alipan.py:31 NoCheckInException\n    outlier:  app/modules/filemanager/storages/alipan.py:38 SessionInvalidException\n    outlier:  app/modules/filemanager/storages/u115.py:52 NoCheckInException\n    outlier:  app/modules/telegram/telegram.py:158 RetryException\n    outlier:  app/modules/wechat/wechat.py:26 RetryException\n    outlier:  app/schemas/exception.py:33 APIRateLimitException\n    outlier:  app/schemas/exception.py:41 RateLimitExceededException\n    outlier:  app/schemas/exception.py:121 TMDbException\n    exempt:   app/application/subscription/execution.py:92 SubscriptionSiteSearchFailed (shared part used by 2 members)\n    exempt:   app/application/subscription/sitebudget.py:37 SubscriptionSearchDeferred (shared part used by 2 members)",
+   "family": "naming",
+   "rule_kind": "named",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L12/D-2180b6"
+  },
+  {
+   "uid": "dev4:P11/D-4cf9ca",
+   "repo": "dev4:P11",
+   "id": "D-4cf9ca",
+   "rank": 1,
+   "summary": "classes in jesse/** (__init__ files) extend Strategy, except a class (of another kind)",
+   "role": {
+    "package": "",
+    "dir": "jesse",
+    "file": "__init__",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "jesse/strategies/Strategy.py#Strategy"
+    ]
+   },
+   "evidence": {
+    "holders": 165,
+    "total": 168,
+    "lower_bound": 0.95,
+    "lift": 3
+   },
+   "members": 169,
+   "example": "jesse/services/strategy_handler/ExampleStrategy/__init__.py#ExampleStrategy",
+   "python_members": 169,
+   "outliers": 3,
+   "outlier_files": [
+    "jesse/libs/dynamic_numpy_array/__init__.py",
+    "jesse/routes/__init__.py",
+    "jesse/store/__init__.py"
+   ],
+   "block": " 1. [D-4cf9ca] classes in jesse/** (__init__ files) extend Strategy, except a class (of another kind)\n    evidence: 165/168 (lower bound 0.95, lift 3.0)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  jesse/services/strategy_handler/ExampleStrategy/__init__.py#ExampleStrategy\n    outlier:  jesse/libs/dynamic_numpy_array/__init__.py:6 DynamicNumpyArray\n    outlier:  jesse/routes/__init__.py:13 RouterClass\n    outlier:  jesse/store/__init__.py:13 StoreClass\n    exempt:   jesse/libs/custom_json/__init__.py:5 NpEncoder (another kind of class (extends JSONEncoder))",
+   "family": "base_class",
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L05/D-4cf9ca"
+  },
+  {
+   "uid": "dev4:P11/D-f6962f",
+   "repo": "dev4:P11",
+   "id": "D-f6962f",
+   "rank": 2,
+   "summary": "HTTP handlers in jesse/** are wrapped in require_auth() or require_auth_token()",
+   "role": {
+    "package": "",
+    "dir": "jesse",
+    "file": "*",
+    "entry": "http",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "call",
+    "any_of": [
+     "jesse/services/auth.py#require_auth",
+     "jesse/services/auth.py#require_auth_token"
+    ]
+   },
+   "evidence": {
+    "holders": 170,
+    "total": 179,
+    "lower_bound": 0.91,
+    "lift": 7.3
+   },
+   "members": 179,
+   "example": "jesse/controllers/ai_model_controller.py#delete_ai_model_endpoint",
+   "python_members": 179,
+   "outliers": 9,
+   "outlier_files": [
+    "jesse/app.py",
+    "jesse/controllers/auth_controller.py",
+    "jesse/controllers/backtest_controller.py",
+    "jesse/controllers/candles_controller.py",
+    "jesse/controllers/mcp_controller.py",
+    "jesse/controllers/significance_test_controller.py"
+   ],
+   "block": " 2. [D-f6962f] HTTP handlers in jesse/** are wrapped in require_auth() or require_auth_token()\n    evidence: 170/179 (lower bound 0.91, lift 7.3)\n    agents:   not shown to agents (family below admission bar: 75% of 8)\n    split:    require_auth 165, require_auth_token 5\n    example:  jesse/controllers/ai_model_controller.py#delete_ai_model_endpoint\n    outlier:  jesse/app.py:40 index\n    outlier:  jesse/controllers/auth_controller.py:31 auth\n    outlier:  jesse/controllers/auth_controller.py:15 login\n    outlier:  jesse/controllers/backtest_controller.py:117 download_backtest_report\n    outlier:  jesse/controllers/backtest_controller.py:95 get_charts_image\n    outlier:  jesse/controllers/candles_controller.py:66 export_candles\n    outlier:  jesse/controllers/mcp_controller.py:272 mcp_endpoint\n    outlier:  jesse/controllers/mcp_controller.py:277 mcp_endpoint_trailing_slash\n    outlier:  jesse/controllers/significance_test_controller.py:174 get_chart",
+   "family": "wrapper",
+   "rule_kind": "wrapped_by:call",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L05/D-f6962f"
+  },
+  {
+   "uid": "dev4:P11/D-e52e21",
+   "repo": "dev4:P11",
+   "id": "D-e52e21",
+   "rank": 3,
+   "summary": "classes in jesse/modes/** pass `name` to super().__init__(), except 3 members (not calling the callee)",
+   "role": {
+    "package": "",
+    "dir": "jesse/modes",
+    "file": "*",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "passes_key",
+    "callee": "global#super().__init__",
+    "index": 99,
+    "key": "name"
+   },
+   "evidence": {
+    "holders": 30,
+    "total": 30,
+    "lower_bound": 0.89,
+    "lift": 12.9
+   },
+   "members": 33,
+   "example": "jesse/modes/import_candles_mode/drivers/Apex/ApexOmniPerpetual.py#ApexOmniPerpetual",
+   "python_members": 33,
+   "outliers": 0,
+   "outlier_files": [],
+   "block": " 3. [D-e52e21] classes in jesse/modes/** pass `name` to super().__init__(), except 3 members (not calling the callee)\n    evidence: 30/30 (lower bound 0.89, lift 12.9)\n    agents:   not shown to agents (family below admission bar: 50% of 4)\n    example:  jesse/modes/import_candles_mode/drivers/Apex/ApexOmniPerpetual.py#ApexOmniPerpetual\n    exempt:   jesse/modes/monte_carlo_mode/MonteCarloRunner.py:37 MonteCarloRunner (does not call super().__init__())\n    exempt:   jesse/modes/optimize_mode/Optimize.py:89 Optimizer (does not call super().__init__())\n    exempt:   jesse/modes/significance_test_mode/SignificanceTestRunner.py:18 SignificanceTestRunner (does not call super().__init__())",
+   "family": "argument_key",
+   "rule_kind": "passes_key",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L05/D-e52e21"
+  },
+  {
+   "uid": "dev4:P11/D-5199d3",
+   "repo": "dev4:P11",
+   "id": "D-5199d3",
+   "rank": 1,
+   "summary": "exceptions in jesse/services/** are named `*Error`",
+   "role": {
+    "package": "",
+    "dir": "jesse/services",
+    "file": "*",
+    "entry": "-",
+    "kind": "class",
+    "member_kind": "exception"
+   },
+   "rule": {
+    "type": "named",
+    "pattern": "*Error"
+   },
+   "evidence": {
+    "holders": 30,
+    "total": 31,
+    "lower_bound": 0.84,
+    "lift": 12.7
+   },
+   "members": 31,
+   "example": "jesse/services/auth.py#InvalidAuthError",
+   "python_members": 31,
+   "outliers": 1,
+   "outlier_files": [
+    "jesse/services/historical_data/errors.py"
+   ],
+   "block": " 4. [D-5199d3] exceptions in jesse/services/** are named `*Error`\n    evidence: 30/31 (lower bound 0.84, lift 12.7)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  jesse/services/auth.py#InvalidAuthError\n    outlier:  jesse/services/historical_data/errors.py:76 HistoricalDataImportCancelled",
+   "family": "naming",
+   "rule_kind": "named",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/dev4-py-2026-11-09:P11/D-5199d3"
+  },
+  {
+   "uid": "dev4:P11/D-94b403",
+   "repo": "dev4:P11",
+   "id": "D-94b403",
+   "rank": 5,
+   "summary": "exported values in jesse/controllers/** call APIRouter()",
+   "role": {
+    "package": "",
+    "dir": "jesse/controllers",
+    "file": "*",
+    "entry": "-",
+    "kind": "variable"
+   },
+   "rule": {
+    "type": "calls",
+    "callee": "pkg:fastapi#APIRouter"
+   },
+   "evidence": {
+    "holders": 29,
+    "total": 31,
+    "lower_bound": 0.79,
+    "lift": 9.9
+   },
+   "members": 31,
+   "example": "jesse/controllers/ai_model_controller.py#router",
+   "python_members": 31,
+   "outliers": 2,
+   "outlier_files": [
+    "jesse/controllers/route_templates_controller.py"
+   ],
+   "block": " 5. [D-94b403] exported values in jesse/controllers/** call APIRouter()\n    evidence: 29/31 (lower bound 0.79, lift 9.9)\n    agents:   not shown to agents (family below admission bar: 44% of 9)\n    example:  jesse/controllers/ai_model_controller.py#router\n    outlier:  jesse/controllers/route_templates_controller.py:15 RouteValue\n    outlier:  jesse/controllers/route_templates_controller.py:14 TemplateName",
+   "family": "calls",
+   "rule_kind": "calls",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L05/D-94b403"
+  },
+  {
+   "uid": "dev4:P11/D-7cf543",
+   "repo": "dev4:P11",
+   "id": "D-7cf543",
+   "rank": 6,
+   "summary": "functions in jesse/modes/import_candles_mode/** throw on failure",
+   "role": {
+    "package": "",
+    "dir": "jesse/modes/import_candles_mode",
+    "file": "*",
+    "entry": "-",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "control",
+    "value": "throw"
+   },
+   "evidence": {
+    "holders": 21,
+    "total": 22,
+    "lower_bound": 0.78,
+    "lift": 5.7
+   },
+   "members": 22,
+   "example": "jesse/modes/import_candles_mode/drivers/Apex/apex_omni_utils.py#interval_to_timeframe",
+   "python_members": 22,
+   "outliers": 1,
+   "outlier_files": [
+    "jesse/modes/import_candles_mode/drivers/KuCoin/kucoin_utils.py"
+   ],
+   "block": " 6. [D-7cf543] functions in jesse/modes/import_candles_mode/** throw on failure\n    evidence: 21/22 (lower bound 0.78, lift 5.7)\n    agents:   not shown to agents (family below admission bar: 100% of 4)\n    example:  jesse/modes/import_candles_mode/drivers/Apex/apex_omni_utils.py#interval_to_timeframe\n    outlier:  jesse/modes/import_candles_mode/drivers/KuCoin/kucoin_utils.py:46 jesse_symbol_to_futures_contract",
+   "family": "control",
+   "rule_kind": "control",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L05/D-7cf543"
+  },
+  {
+   "uid": "dev4:P12/D-a1a397",
+   "repo": "dev4:P12",
+   "id": "D-a1a397",
+   "rank": 1,
+   "summary": "functions in aion-chat/scripts/** declare their return type",
+   "role": {
+    "package": "",
+    "dir": "aion-chat/scripts",
+    "file": "*",
+    "entry": "-",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "control",
+    "value": "typed_return"
+   },
+   "evidence": {
+    "holders": 42,
+    "total": 43,
+    "lower_bound": 0.88,
+    "lift": 2.7
+   },
+   "members": 43,
+   "example": "aion-chat/scripts/archive_original_recovered_database.py#copy_verified_missing_only",
+   "python_members": 43,
+   "outliers": 1,
+   "outlier_files": [
+    "aion-chat/scripts/merge_theater_tts_cache.py"
+   ],
+   "block": " 1. [D-a1a397] functions in aion-chat/scripts/** declare their return type\n    evidence: 42/43 (lower bound 0.88, lift 2.7)\n    agents:   not shown to agents (family below admission bar: 100% of 4)\n    example:  aion-chat/scripts/archive_original_recovered_database.py#copy_verified_missing_only\n    outlier:  aion-chat/scripts/merge_theater_tts_cache.py:10 collect_groups",
+   "family": "control",
+   "rule_kind": "control",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L15/D-a1a397"
+  },
+  {
+   "uid": "dev4:P12/D-c303a2",
+   "repo": "dev4:P12",
+   "id": "D-c303a2",
+   "rank": 2,
+   "summary": "AionsHome-Visitor-Lounge: functions in src/** declare their return type",
+   "role": {
+    "package": "AionsHome-Visitor-Lounge",
+    "dir": "src",
+    "file": "*",
+    "entry": "-",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "control",
+    "value": "typed_return"
+   },
+   "evidence": {
+    "holders": 35,
+    "total": 36,
+    "lower_bound": 0.86,
+    "lift": 2.7
+   },
+   "members": 36,
+   "example": "AionsHome-Visitor-Lounge/src/visitor_lounge/admin_app.py#build_admin_app",
+   "python_members": 36,
+   "outliers": 1,
+   "outlier_files": [
+    "AionsHome-Visitor-Lounge/src/visitor_lounge/mcp_tools.py"
+   ],
+   "block": " 2. [D-c303a2] AionsHome-Visitor-Lounge: functions in src/** declare their return type\n    evidence: 35/36 (lower bound 0.86, lift 2.7)\n    agents:   not shown to agents (family below admission bar: 100% of 4)\n    example:  AionsHome-Visitor-Lounge/src/visitor_lounge/admin_app.py#build_admin_app\n    outlier:  AionsHome-Visitor-Lounge/src/visitor_lounge/mcp_tools.py:33 logged_tool",
+   "family": "control",
+   "rule_kind": "control",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L15/D-c303a2"
+  },
+  {
+   "uid": "dev4:P12/D-ddff9e",
+   "repo": "dev4:P12",
+   "id": "D-ddff9e",
+   "rank": 3,
+   "summary": "classes in aion-chat/** extend BaseModel",
+   "role": {
+    "package": "",
+    "dir": "aion-chat",
+    "file": "*",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "pkg:pydantic#BaseModel"
+    ]
+   },
+   "evidence": {
+    "holders": 218,
+    "total": 270,
+    "lower_bound": 0.76,
+    "lift": 1.5
+   },
+   "members": 270,
+   "example": "aion-chat/billiards/routes.py#Action",
+   "python_members": 270,
+   "outliers": 52,
+   "outlier_files": [
+    "aion-chat/activity.py",
+    "aion-chat/ai_providers.py",
+    "aion-chat/album.py",
+    "aion-chat/app_supervision_ai.py",
+    "aion-chat/autonomy.py",
+    "aion-chat/billiards/routes.py",
+    "aion-chat/billiards/service.py",
+    "aion-chat/billiards/store.py",
+    "aion-chat/book.py",
+    "aion-chat/camera.py",
+    "aion-chat/device_context.py",
+    "aion-chat/fund.py",
+    "aion-chat/generation_control.py",
+    "aion-chat/home_assistant_events.py",
+    "aion-chat/kitchen_chat.py",
+    "aion-chat/lounge_friends.py",
+    "aion-chat/lounge_receptions.py",
+    "aion-chat/lounge_visit.py",
+    "aion-chat/lounge_visit_commands.py",
+    "aion-chat/lounge_visit_repository.py",
+    "aion-chat/lounge_visit_tasks.py",
+    "aion-chat/main.py",
+    "aion-chat/mcp_client.py",
+    "aion-chat/music_station.py",
+    "aion-chat/phone_camera.py",
+    "aion-chat/qq_social/policy.py",
+    "aion-chat/qq_social/service.py",
+    "aion-chat/qq_social/store.py",
+    "aion-chat/qq_social/transport.py",
+    "aion-chat/repair_store.py",
+    "aion-chat/reply_timing.py",
+    "aion-chat/safe_live_stream.py",
+    "aion-chat/schedule.py",
+    "aion-chat/security_access.py",
+    "aion-chat/stream_safety.py",
+    "aion-chat/taobao_shopping.py",
+    "aion-chat/tts.py",
+    "aion-chat/voice.py",
+    "aion-chat/web_search.py",
+    "aion-chat/wechat_mode_dispatcher.py",
+    "aion-chat/wechat_openclaw_runtime.py",
+    "aion-chat/widget_control.py",
+    "aion-chat/ws.py"
+   ],
+   "block": " 3. [D-ddff9e] classes in aion-chat/** extend BaseModel\n    evidence: 218/270 (lower bound 0.76, lift 1.5)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  aion-chat/billiards/routes.py#Action\n    outlier:  aion-chat/activity.py:149 PCActivityTracker\n    outlier:  aion-chat/activity.py:286 PCDisplayTracker\n    outlier:  aion-chat/ai_providers.py:243 GeminiCliNoiseFilter\n    outlier:  aion-chat/ai_providers.py:77 ThinkTagReasoningFilter\n    outlier:  aion-chat/album.py:23 AlbumStore\n    outlier:  aion-chat/app_supervision_ai.py:37 AppSupervisionStateCache\n    outlier:  aion-chat/autonomy.py:2318 IdleAutonomyManager\n    outlier:  aion-chat/billiards/routes.py:18 BilliardsAssets\n    outlier:  aion-chat/billiards/service.py:43 BilliardsService\n    outlier:  aion-chat/billiards/store.py:8 SessionStore\n    outlier:  aion-chat/book.py:58 ParsedBook\n    outlier:  aion-chat/book.py:42 ParsedChapter\n    outlier:  aion-chat/camera.py:381 CameraMonitor\n    outlier:  aion-chat/device_context.py:92 DeviceContextStore\n    outlier:  aion-chat/fund.py:463 FundScheduler\n    outlier:  aion-chat/generation_control.py:36 Generation\n    outlier:  aion-chat/generation_control.py:160 GenerationQueue\n    outlier:  aion-chat/home_assistant_events.py:26 HomeAssistantEventListener\n    outlier:  aion-chat/kitchen_chat.py:29 KitchenProtocolFilter\n    outlier:  aion-chat/lounge_friends.py:58 LoungeFriendStore\n    outlier:  aion-chat/lounge_receptions.py:64 LoungeReceptionHistory\n    outlier:  aion-chat/lounge_visit.py:156 LoungeVisitCoordinator\n    outlier:  aion-chat/lounge_visit_commands.py:67 LoungeVisitCommandStreamFilter\n    outlier:  aion-chat/lounge_visit_repository.py:101 LoungeVisitRepository\n    outlier:  aion-chat/lounge_visit_tasks.py:8 LoungeVisitTaskRegistry\n    outlier:  aion-chat/main.py:295 NoCacheStaticMiddleware\n    outlier:  aion-chat/mcp_client.py:109 MCPManager\n    outlier:  aion-chat/music_station.py:39 MusicStationStore\n    outlier:  aion-chat/phone_camera.py:58 PhoneCameraCoordinator\n    outlier:  aion-chat/qq_social/policy.py:5 ReplyPolicy\n    outlier:  aion-chat/qq_social/service.py:21 Service\n    outlier:  aion-chat/qq_social/store.py:42 Store\n    outlier:  aion-chat/qq_social/transport.py:19 BotTransport\n    outlier:  aion-chat/repair_store.py:20 RepairStore\n    outlier:  aion-chat/reply_timing.py:12 ReplyTiming\n    outlier:  aion-chat/safe_live_stream.py:193 KnownCommandStreamFilter\n    outlier:  aion-chat/safe_live_stream.py:120 SafeLiveStreamGuard\n    outlier:  aion-chat/schedule.py:268 ScheduleManager\n    outlier:  aion-chat/security_access.py:48 IpGeolocationResolver\n    outlier:  aion-chat/security_access.py:941 SecurityAccessMiddleware\n    outlier:  aion-chat/security_access.py:209 SecurityAccessService\n    outlier:  aion-chat/stream_safety.py:30 StreamActivity\n    outlier:  aion-chat/stream_safety.py:129 StreamSafetyGuard\n    outlier:  aion-chat/taobao_shopping.py:60 TaobaoStore\n    outlier:  aion-chat/tts.py:486 TTSStreamer\n    outlier:  aion-chat/voice.py:38 VoiceWakeup\n    outlier:  aion-chat/web_search.py:161 WebCommandStreamFilter\n    outlier:  aion-chat/wechat_mode_dispatcher.py:89 WeChatModeDispatcher\n    outlier:  aion-chat/wechat_openclaw_runtime.py:115 OpenClawWeixinBridgeRuntime\n    outlier:  aion-chat/widget_control.py:27 WidgetAssetCatalog\n    outlier:  aion-chat/widget_control.py:114 WidgetControlStore\n    outlier:  aion-chat/ws.py:57 ConnectionManager",
+   "family": "base_class",
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L15/D-ddff9e"
+  },
+  {
+   "uid": "dev4:P13/D-1adc1f",
+   "repo": "dev4:P13",
+   "id": "D-1adc1f",
+   "rank": 1,
+   "summary": "files in rio/components/** do not import from rio/debug/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+   "role": {
+    "package": "",
+    "dir": "rio/components",
+    "file": "*",
+    "entry": "-",
+    "kind": "module"
+   },
+   "rule": {
+    "type": "avoids",
+    "signal": "import:rio/debug"
+   },
+   "evidence": {
+    "holders": 74,
+    "total": 75,
+    "lower_bound": 0.93,
+    "lift": 3
+   },
+   "members": 75,
+   "example": "rio/components/app_root.py#(file)",
+   "python_members": 75,
+   "outliers": 1,
+   "outlier_files": [
+    "rio/components/root_components.py"
+   ],
+   "block": " 1. [D-1adc1f] files in rio/components/** do not import from rio/debug/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 74/75 (lower bound 0.93, lift 3.0)\n    agents:   not shown to agents (family below admission bar: 100% of 1)\n    example:  rio/components/app_root.py#(file)\n    outlier:  rio/components/root_components.py:1 (file)",
+   "family": "layering",
+   "rule_kind": "avoids:import",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L11/D-1adc1f"
+  },
+  {
+   "uid": "dev4:P13/D-a0db39",
+   "repo": "dev4:P13",
+   "id": "D-a0db39",
+   "rank": 2,
+   "summary": "classes in rio/snippets/** extend Component",
+   "role": {
+    "package": "",
+    "dir": "rio/snippets",
+    "file": "*",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "rio/components/component.py#Component"
+    ]
+   },
+   "evidence": {
+    "holders": 148,
+    "total": 153,
+    "lower_bound": 0.93,
+    "lift": 2
+   },
+   "members": 153,
+   "example": "rio/snippets/snippet-files/other-examples/simple_counter_app.py#Counter",
+   "python_members": 153,
+   "outliers": 5,
+   "outlier_files": [
+    "rio/snippets/snippet-files/project-template-Admin Panel/components/single_select_dropdown.py",
+    "rio/snippets/snippet-files/project-template-Authentication/persistence.py",
+    "rio/snippets/snippet-files/project-template-Sales Dashboard/persistence.py",
+    "rio/snippets/snippet-files/project-template-Simple CRUD/persistence.py",
+    "rio/snippets/snippet_manager.py"
+   ],
+   "block": " 2. [D-a0db39] classes in rio/snippets/** extend Component\n    evidence: 148/153 (lower bound 0.93, lift 2.0)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  rio/snippets/snippet-files/other-examples/simple_counter_app.py#Counter\n    outlier:  rio/snippets/snippet-files/project-template-Admin Panel/components/single_select_dropdown.py:150 NotGiven\n    outlier:  rio/snippets/snippet-files/project-template-Authentication/persistence.py:11 Persistence\n    outlier:  rio/snippets/snippet-files/project-template-Sales Dashboard/persistence.py:7 Persistence\n    outlier:  rio/snippets/snippet-files/project-template-Simple CRUD/persistence.py:4 Persistence\n    outlier:  rio/snippets/snippet_manager.py:118 SnippetManager",
+   "family": "base_class",
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L11/D-a0db39"
+  },
+  {
+   "uid": "dev4:P13/D-190e4e",
+   "repo": "dev4:P13",
+   "id": "D-190e4e",
+   "rank": 1,
+   "summary": "dataclasses in rio/components/** are named `*Event`",
+   "role": {
+    "package": "",
+    "dir": "rio/components",
+    "file": "*",
+    "entry": "-",
+    "kind": "class",
+    "variety": "dataclass"
+   },
+   "rule": {
+    "type": "named",
+    "pattern": "*Event"
+   },
+   "evidence": {
+    "holders": 30,
+    "total": 31,
+    "lower_bound": 0.84,
+    "lift": 11.1
+   },
+   "members": 31,
+   "example": "rio/components/calendar.py#DateChangeEvent",
+   "python_members": 31,
+   "outliers": 1,
+   "outlier_files": [
+    "rio/components/tabs.py"
+   ],
+   "block": " 5. [D-190e4e] dataclasses in rio/components/** are named `*Event`\n    evidence: 30/31 (lower bound 0.84, lift 11.1)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  rio/components/calendar.py#DateChangeEvent\n    outlier:  rio/components/tabs.py:11 TabItem",
+   "family": "naming",
+   "rule_kind": "named",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/dev4-py-2026-11-09:P13/D-190e4e"
+  },
+  {
+   "uid": "dev4:P13/D-e398ab",
+   "repo": "dev4:P13",
+   "id": "D-e398ab",
+   "rank": 6,
+   "summary": "classes in rio/components/** are decorated with final()",
+   "role": {
+    "package": "",
+    "dir": "rio/components",
+    "file": "*",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "decorator",
+    "any_of": [
+     "pkg:python:typing#final"
+    ]
+   },
+   "evidence": {
+    "holders": 75,
+    "total": 89,
+    "lower_bound": 0.75,
+    "lift": 3.9
+   },
+   "members": 89,
+   "example": "rio/components/banner.py#Banner",
+   "python_members": 89,
+   "outliers": 14,
+   "outlier_files": [
+    "rio/components/app_root.py",
+    "rio/components/auto_form.py",
+    "rio/components/calendar.py",
+    "rio/components/class_container.py",
+    "rio/components/code_explorer.py",
+    "rio/components/devel_component.py",
+    "rio/components/error_placeholder.py",
+    "rio/components/form_builder.py",
+    "rio/components/root_components.py",
+    "rio/components/switcher_bar.py",
+    "rio/components/tabs.py",
+    "rio/components/tree_items.py",
+    "rio/components/tree_view.py"
+   ],
+   "block": " 6. [D-e398ab] classes in rio/components/** are decorated with final()\n    evidence: 75/89 (lower bound 0.75, lift 3.9)\n    agents:   not shown to agents (family below admission bar: 50% of 6)\n    example:  rio/components/banner.py#Banner\n    outlier:  rio/components/app_root.py:115 AppRoot\n    outlier:  rio/components/auto_form.py:27 AutoForm\n    outlier:  rio/components/calendar.py:39 Calendar\n    outlier:  rio/components/class_container.py:14 ClassContainer\n    outlier:  rio/components/code_explorer.py:16 CodeExplorer\n    outlier:  rio/components/devel_component.py:25 DevelComponent\n    outlier:  rio/components/error_placeholder.py:8 ErrorPlaceholder\n    outlier:  rio/components/form_builder.py:47 FormBuilder\n    outlier:  rio/components/root_components.py:51 FundamentalRootComponent\n    outlier:  rio/components/root_components.py:21 HighLevelRootComponent\n    outlier:  rio/components/switcher_bar.py:44 SwitcherBarItem\n    outlier:  rio/components/tabs.py:32 Tabs\n    outlier:  rio/components/tree_items.py:308 SimpleTreeItem\n    outlier:  rio/components/tree_view.py:29 TreeView",
+   "family": "decorator",
+   "rule_kind": "wrapped_by:decorator",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L11/D-e398ab"
+  },
+  {
+   "uid": "dev4:P13/D-199390",
+   "repo": "dev4:P13",
+   "id": "D-199390",
+   "rank": 7,
+   "summary": "dataclasses in rio/components/** are decorated with final()",
+   "role": {
+    "package": "",
+    "dir": "rio/components",
+    "file": "*",
+    "entry": "-",
+    "kind": "class",
+    "variety": "dataclass"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "decorator",
+    "any_of": [
+     "pkg:python:typing#final"
+    ]
+   },
+   "evidence": {
+    "holders": 28,
+    "total": 31,
+    "lower_bound": 0.75,
+    "lift": 4.2
+   },
+   "members": 31,
+   "example": "rio/components/calendar.py#DateChangeEvent",
+   "python_members": 31,
+   "outliers": 3,
+   "outlier_files": [
+    "rio/components/component.py",
+    "rio/components/pointer_event_listener.py",
+    "rio/components/tabs.py"
+   ],
+   "block": " 7. [D-199390] dataclasses in rio/components/** are decorated with final()\n    evidence: 28/31 (lower bound 0.75, lift 4.2)\n    agents:   not shown to agents (family below admission bar: 50% of 6)\n    example:  rio/components/calendar.py#DateChangeEvent\n    outlier:  rio/components/component.py:99 ComponentResizeEvent\n    outlier:  rio/components/pointer_event_listener.py:24 PointerEvent\n    outlier:  rio/components/tabs.py:11 TabItem",
+   "family": "decorator",
+   "rule_kind": "wrapped_by:decorator",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L11/D-199390"
+  },
+  {
+   "uid": "dev4:P15/D-5c69ee",
+   "repo": "dev4:P15",
+   "id": "D-5c69ee",
+   "rank": 1,
+   "summary": "functions in scientific-skills/Other/ppt-master/** and scientific-skills/Other/spreadsheet-ops/** declare their return type",
+   "role": {
+    "package": "",
+    "dir": "scientific-skills/Other/ppt-master",
+    "file": "*",
+    "entry": "-",
+    "kind": "function",
+    "also": [
+     {
+      "package": "",
+      "dir": "scientific-skills/Other/spreadsheet-ops",
+      "file": "*",
+      "entry": "-",
+      "kind": "function"
+     }
+    ]
+   },
+   "rule": {
+    "type": "control",
+    "value": "typed_return"
+   },
+   "evidence": {
+    "holders": 428,
+    "total": 430,
+    "lower_bound": 0.98,
+    "lift": 1.9
+   },
+   "members": 430,
+   "example": "scientific-skills/Other/ppt-master/scripts/analyze_images.py#analyze_images",
+   "python_members": 430,
+   "outliers": 2,
+   "outlier_files": [
+    "scientific-skills/Other/ppt-master/scripts/visual_review.py",
+    "scientific-skills/Other/spreadsheet-ops/scripts/build_charts.py"
+   ],
+   "block": " 1. [D-5c69ee] functions in scientific-skills/Other/ppt-master/** and scientific-skills/Other/spreadsheet-ops/** declare their return type\n    evidence: 428/430 (lower bound 0.98, lift 1.9)\n    agents:   not shown to agents (family below admission bar: 100% of 4)\n    example:  scientific-skills/Other/ppt-master/scripts/analyze_images.py#analyze_images\n    outlier:  scientific-skills/Other/ppt-master/scripts/visual_review.py:52 file_lock\n    outlier:  scientific-skills/Other/spreadsheet-ops/scripts/build_charts.py:32 build_chart",
+   "family": "control",
+   "rule_kind": "control",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L04/D-5c69ee"
+  },
+  {
+   "uid": "dev4:P15/D-67f324",
+   "repo": "dev4:P15",
+   "id": "D-67f324",
+   "rank": 2,
+   "summary": "functions in awesome-med-research-skills/Academic Writing/** declare their return type, except a shared part (used by several members, not a member)",
+   "role": {
+    "package": "",
+    "dir": "awesome-med-research-skills/Academic Writing",
+    "file": "*",
+    "entry": "-",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "control",
+    "value": "typed_return"
+   },
+   "evidence": {
+    "holders": 37,
+    "total": 37,
+    "lower_bound": 0.91,
+    "lift": 1.9
+   },
+   "members": 38,
+   "example": "awesome-med-research-skills/Academic Writing/arxiv-preflight/scripts/extract_manuscript_text.py#discover_root_tex",
+   "python_members": 38,
+   "outliers": 0,
+   "outlier_files": [],
+   "block": " 2. [D-67f324] functions in awesome-med-research-skills/Academic Writing/** declare their return type, except a shared part (used by several members, not a member)\n    evidence: 37/37 (lower bound 0.91, lift 1.9)\n    agents:   not shown to agents (family below admission bar: 100% of 4)\n    example:  awesome-med-research-skills/Academic Writing/arxiv-preflight/scripts/extract_manuscript_text.py#discover_root_tex\n    exempt:   awesome-med-research-skills/Academic Writing/arxiv-preflight/scripts/verify_references.py:199 http_get_json (shared part used by 3 members)",
+   "family": "control",
+   "rule_kind": "control",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L04/D-67f324"
+  },
+  {
+   "uid": "dev4:P15/D-c481ac",
+   "repo": "dev4:P15",
+   "id": "D-c481ac",
+   "rank": 3,
+   "summary": "cli entry points in scientific-skills/** (main files) pass `description` to ArgumentParser()",
+   "role": {
+    "package": "",
+    "dir": "scientific-skills",
+    "file": "main",
+    "entry": "cli",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "passes_key",
+    "callee": "pkg:python:argparse#ArgumentParser",
+    "index": 99,
+    "key": "description"
+   },
+   "evidence": {
+    "holders": 144,
+    "total": 153,
+    "lower_bound": 0.89,
+    "lift": 5.7
+   },
+   "members": 153,
+   "example": "scientific-skills/Academic Writing/abstract-summarizer/scripts/main.py#main",
+   "python_members": 153,
+   "outliers": 9,
+   "outlier_files": [
+    "scientific-skills/Academic Writing/ectd-xml-compiler/scripts/main.py",
+    "scientific-skills/Academic Writing/grant-mock-reviewer/scripts/main.py",
+    "scientific-skills/Data Analysis/phylogenetic-tree-styler/scripts/main.py",
+    "scientific-skills/Data Analysis/pseudotime-trajectory-viz/scripts/main.py",
+    "scientific-skills/Data Analysis/spatial-transcriptomics-mapper/scripts/main.py",
+    "scientific-skills/Data Analysis/volcano-plot-script/scripts/main.py",
+    "scientific-skills/Evidence Insight/systematic-review-screener/scripts/main.py",
+    "scientific-skills/Evidence Insight/variant-annotation/scripts/main.py",
+    "scientific-skills/Protocol Design/adaptive-trial-simulator/scripts/main.py"
+   ],
+   "block": " 3. [D-c481ac] cli entry points in scientific-skills/** (main files) pass `description` to ArgumentParser()\n    evidence: 144/153 (lower bound 0.89, lift 5.7)\n    agents:   not shown to agents (family below admission bar: 50% of 4)\n    example:  scientific-skills/Academic Writing/abstract-summarizer/scripts/main.py#main\n    outlier:  scientific-skills/Academic Writing/ectd-xml-compiler/scripts/main.py:479 main\n    outlier:  scientific-skills/Academic Writing/grant-mock-reviewer/scripts/main.py:558 main\n    outlier:  scientific-skills/Data Analysis/phylogenetic-tree-styler/scripts/main.py:246 main\n    outlier:  scientific-skills/Data Analysis/pseudotime-trajectory-viz/scripts/main.py:556 main\n    outlier:  scientific-skills/Data Analysis/spatial-transcriptomics-mapper/scripts/main.py:914 main\n    outlier:  scientific-skills/Data Analysis/volcano-plot-script/scripts/main.py:308 main\n    outlier:  scientific-skills/Evidence Insight/systematic-review-screener/scripts/main.py:487 main\n    outlier:  scientific-skills/Evidence Insight/variant-annotation/scripts/main.py:527 main\n    outlier:  scientific-skills/Protocol Design/adaptive-trial-simulator/scripts/main.py:644 main",
+   "family": "argument_key",
+   "rule_kind": "passes_key",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L04/D-c481ac"
+  },
+  {
+   "uid": "dev4:P17/D-9e3a75",
+   "repo": "dev4:P17",
+   "id": "D-9e3a75",
+   "rank": 1,
+   "summary": "functions in cryodrgn/** do not use unsafe deserialisation (pickle, yaml.load)",
+   "role": {
+    "package": "",
+    "dir": "cryodrgn",
+    "file": "*",
+    "entry": "-",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "avoids",
+    "signal": "sink:unsafe_deserialize"
+   },
+   "evidence": {
+    "holders": 586,
+    "total": 591,
+    "lower_bound": 0.98,
+    "lift": 33.1
+   },
+   "members": 591,
+   "example": "cryodrgn/analysis.py#cluster_gmm",
+   "python_members": 591,
+   "outliers": 5,
+   "outlier_files": [
+    "cryodrgn/commands/abinit_het_old.py",
+    "cryodrgn/commands/graph_traversal.py",
+    "cryodrgn/commands/pc_traversal.py",
+    "cryodrgn/utils.py"
+   ],
+   "block": " 1. [D-9e3a75] functions in cryodrgn/** do not use unsafe deserialisation (pickle, yaml.load)\n    evidence: 586/591 (lower bound 0.98, lift 33.1)\n    agents:   not shown to agents (family below admission bar: 0% of 1)\n    example:  cryodrgn/analysis.py#cluster_gmm\n    outlier:  cryodrgn/commands/abinit_het_old.py:745 main\n    outlier:  cryodrgn/commands/graph_traversal.py:153 main\n    outlier:  cryodrgn/commands/pc_traversal.py:58 main\n    outlier:  cryodrgn/utils.py:262 assert_pkl_close\n    outlier:  cryodrgn/utils.py:80 load_pkl",
+   "family": "avoids_other",
+   "rule_kind": "avoids:other",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L20/D-9e3a75"
+  },
+  {
+   "uid": "dev4:P19/D-815f43",
+   "repo": "dev4:P19",
+   "id": "D-815f43",
+   "rank": 1,
+   "summary": "functions in backend/** do not use requests to computed URLs",
+   "role": {
+    "package": "",
+    "dir": "backend",
+    "file": "*",
+    "entry": "-",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "avoids",
+    "signal": "sink:dynamic_fetch"
+   },
+   "evidence": {
+    "holders": 48,
+    "total": 49,
+    "lower_bound": 0.89,
+    "lift": 7
+   },
+   "members": 49,
+   "example": "backend/api/chat_copilot.py#create_interaction_executor",
+   "python_members": 49,
+   "outliers": 1,
+   "outlier_files": [
+    "backend/utils/streaming.py"
+   ],
+   "block": " 1. [D-815f43] functions in backend/** do not use requests to computed URLs\n    evidence: 48/49 (lower bound 0.89, lift 7.0)\n    agents:   not shown to agents (family below admission bar: 0% of 1)\n    example:  backend/api/chat_copilot.py#create_interaction_executor\n    outlier:  backend/utils/streaming.py:47 extract_title_and_image_links",
+   "family": "avoids_other",
+   "rule_kind": "avoids:other",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L18/D-815f43"
+  },
+  {
+   "uid": "dev4:P20/D-c83dc9",
+   "repo": "dev4:P20",
+   "id": "D-c83dc9",
+   "rank": 1,
+   "summary": "realtime/flashdreams: classes in flashdreams/recipes/** extend nn.Module, except 2 classes (of another kind)",
+   "role": {
+    "package": "realtime/flashdreams",
+    "dir": "flashdreams/recipes",
+    "file": "*",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "pkg:torch#nn.Module"
+    ]
+   },
+   "evidence": {
+    "holders": 27,
+    "total": 27,
+    "lower_bound": 0.88,
+    "lift": 7.7
+   },
+   "members": 29,
+   "example": "realtime/flashdreams/flashdreams/recipes/taehv/impl.py#Clamp",
+   "python_members": 29,
+   "outliers": 0,
+   "outlier_files": [],
+   "block": " 1. [D-c83dc9] realtime/flashdreams: classes in flashdreams/recipes/** extend nn.Module, except 2 classes (of another kind)\n    evidence: 27/27 (lower bound 0.88, lift 7.7)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  realtime/flashdreams/flashdreams/recipes/taehv/impl.py#Clamp\n    exempt:   realtime/flashdreams/flashdreams/recipes/wan/autoencoder/vae.py:169 CausalConv3d (another kind of class (extends nn.Conv3d))\n    exempt:   realtime/flashdreams/flashdreams/recipes/wan/transformer/impl/modules.py:61 FP32LayerNorm (another kind of class (extends nn.LayerNorm))",
+   "family": "base_class",
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L06/D-c83dc9"
+  },
+  {
+   "uid": "dev4:P21/D-63aac8",
+   "repo": "dev4:P21",
+   "id": "D-63aac8",
+   "rank": 1,
+   "summary": "classes in spyder/** (confpage files) call _()",
+   "role": {
+    "package": "",
+    "dir": "spyder",
+    "file": "confpage",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "calls",
+    "callee": "spyder/config/base.py#_"
+   },
+   "evidence": {
+    "holders": 18,
+    "total": 19,
+    "lower_bound": 0.75,
+    "lift": 3.3
+   },
+   "members": 19,
+   "example": "spyder/plugins/appearance/confpage.py#AppearanceConfigPage",
+   "python_members": 19,
+   "outliers": 1,
+   "outlier_files": [
+    "spyder/plugins/languageservices/confpage.py"
+   ],
+   "block": " 1. [D-63aac8] classes in spyder/** (confpage files) call _()\n    evidence: 18/19 (lower bound 0.75, lift 3.3)\n    agents:   not shown to agents (family below admission bar: 44% of 9)\n    example:  spyder/plugins/appearance/confpage.py#AppearanceConfigPage\n    outlier:  spyder/plugins/languageservices/confpage.py:36 ProviderTabHost",
+   "family": "calls",
+   "rule_kind": "calls",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L22/D-63aac8"
+  },
+  {
+   "uid": "dev4:P22/D-3b341a",
+   "repo": "dev4:P22",
+   "id": "D-3b341a",
+   "rank": 1,
+   "summary": "packages/derisk-serve: classes in src/** (api/schemas files) extend BaseModel",
+   "role": {
+    "package": "packages/derisk-serve",
+    "dir": "src",
+    "file": "api/schemas",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "pkg:pydantic#BaseModel"
+    ]
+   },
+   "evidence": {
+    "holders": 167,
+    "total": 168,
+    "lower_bound": 0.97,
+    "lift": 3.9
+   },
+   "members": 168,
+   "example": "packages/derisk-serve/src/derisk_serve/agent/chat/api/schemas.py#ServeRequest",
+   "python_members": 168,
+   "outliers": 1,
+   "outlier_files": [
+    "packages/derisk-serve/src/derisk_serve/rag/api/schemas.py"
+   ],
+   "block": " 1. [D-3b341a] packages/derisk-serve: classes in src/** (api/schemas files) extend BaseModel\n    evidence: 167/168 (lower bound 0.97, lift 3.9)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  packages/derisk-serve/src/derisk_serve/agent/chat/api/schemas.py#ServeRequest\n    outlier:  packages/derisk-serve/src/derisk_serve/rag/api/schemas.py:944 ExcelDataJSONEncoder",
+   "family": "base_class",
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L21/D-3b341a"
+  },
+  {
+   "uid": "dev4:P22/D-147823",
+   "repo": "dev4:P22",
+   "id": "D-147823",
+   "rank": 2,
+   "summary": "files in packages/derisk-ext/** do not import from packages/derisk-serve/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+   "role": {
+    "package": "packages/derisk-ext",
+    "dir": "**",
+    "file": "*",
+    "entry": "-",
+    "kind": "module"
+   },
+   "rule": {
+    "type": "avoids",
+    "signal": "import:packages/derisk-serve"
+   },
+   "evidence": {
+    "holders": 243,
+    "total": 251,
+    "lower_bound": 0.94,
+    "lift": 3
+   },
+   "members": 251,
+   "example": "packages/derisk-ext/src/derisk_ext/__init__.py#(file)",
+   "python_members": 251,
+   "outliers": 8,
+   "outlier_files": [
+    "packages/derisk-ext/src/derisk_ext/agent/actions/derisk_tool_action.py",
+    "packages/derisk-ext/src/derisk_ext/agent/actions/monitor_action.py",
+    "packages/derisk-ext/src/derisk_ext/agent/agents/open_ta/tools/flamegraph_cpu_analyzer.py",
+    "packages/derisk-ext/src/derisk_ext/agent/agents/open_ta/tools/xls_analysis.py",
+    "packages/derisk-ext/src/derisk_ext/rag/knowledge/yuque_url.py",
+    "packages/derisk-ext/src/derisk_ext/rag/yuque_index/ant_yuque_loader.py",
+    "packages/derisk-ext/src/derisk_ext/sandbox/local/improved_provider.py",
+    "packages/derisk-ext/src/derisk_ext/vis/derisk/derisk_vis_incr_converter.py"
+   ],
+   "block": " 2. [D-147823] files in packages/derisk-ext/** do not import from packages/derisk-serve/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 243/251 (lower bound 0.94, lift 3.0)\n    agents:   not shown to agents (family below admission bar: 100% of 1)\n    example:  packages/derisk-ext/src/derisk_ext/__init__.py#(file)\n    outlier:  packages/derisk-ext/src/derisk_ext/agent/actions/derisk_tool_action.py:1 (file)\n    outlier:  packages/derisk-ext/src/derisk_ext/agent/actions/monitor_action.py:1 (file)\n    outlier:  packages/derisk-ext/src/derisk_ext/agent/agents/open_ta/tools/flamegraph_cpu_analyzer.py:1 (file)\n    outlier:  packages/derisk-ext/src/derisk_ext/agent/agents/open_ta/tools/xls_analysis.py:1 (file)\n    outlier:  packages/derisk-ext/src/derisk_ext/rag/knowledge/yuque_url.py:1 (file)\n    outlier:  packages/derisk-ext/src/derisk_ext/rag/yuque_index/ant_yuque_loader.py:1 (file)\n    outlier:  packages/derisk-ext/src/derisk_ext/sandbox/local/improved_provider.py:1 (file)\n    outlier:  packages/derisk-ext/src/derisk_ext/vis/derisk/derisk_vis_incr_converter.py:1 (file)",
+   "family": "layering",
+   "rule_kind": "avoids:import",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L21/D-147823"
+  },
+  {
+   "uid": "dev4:P22/D-a2a172",
+   "repo": "dev4:P22",
+   "id": "D-a2a172",
+   "rank": 3,
+   "summary": "packages/derisk-serve: functions in src/** (api/endpoints files) declare their return type",
+   "role": {
+    "package": "packages/derisk-serve",
+    "dir": "src",
+    "file": "api/endpoints",
+    "entry": "-",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "control",
+    "value": "typed_return"
+   },
+   "evidence": {
+    "holders": 81,
+    "total": 83,
+    "lower_bound": 0.92,
+    "lift": 2.2
+   },
+   "members": 83,
+   "example": "packages/derisk-serve/src/derisk_serve/agent/chat/api/endpoints.py#check_api_key",
+   "python_members": 83,
+   "outliers": 2,
+   "outlier_files": [
+    "packages/derisk-serve/src/derisk_serve/rag/api/endpoints.py",
+    "packages/derisk-serve/src/derisk_serve/scene_strategy/api/endpoints.py"
+   ],
+   "block": " 3. [D-a2a172] packages/derisk-serve: functions in src/** (api/endpoints files) declare their return type\n    evidence: 81/83 (lower bound 0.92, lift 2.2)\n    agents:   not shown to agents (family below admission bar: 100% of 4)\n    example:  packages/derisk-serve/src/derisk_serve/agent/chat/api/endpoints.py#check_api_key\n    outlier:  packages/derisk-serve/src/derisk_serve/rag/api/endpoints.py:1891 init_documents_auto_run\n    outlier:  packages/derisk-serve/src/derisk_serve/scene_strategy/api/endpoints.py:232 register_router",
+   "family": "control",
+   "rule_kind": "control",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L21/D-a2a172"
+  },
+  {
+   "uid": "dev4:P22/D-5c37f4",
+   "repo": "dev4:P22",
+   "id": "D-5c37f4",
+   "rank": 4,
+   "summary": "packages/derisk-core: classes in src/derisk/agent/tools/builtin/** pass `category` to ToolMetadata(), except 2 members (not calling the callee)",
+   "role": {
+    "package": "packages/derisk-core",
+    "dir": "src/derisk/agent/tools/builtin",
+    "file": "*",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "passes_key",
+    "callee": "packages/derisk-core/src/derisk/agent/tools/metadata.py#ToolMetadata",
+    "index": 99,
+    "key": "category"
+   },
+   "evidence": {
+    "holders": 40,
+    "total": 40,
+    "lower_bound": 0.91,
+    "lift": 65.7
+   },
+   "members": 42,
+   "example": "packages/derisk-core/src/derisk/agent/tools/builtin/agent/agent_tools.py#KnowledgeTool",
+   "python_members": 42,
+   "outliers": 0,
+   "outlier_files": [],
+   "block": " 4. [D-5c37f4] packages/derisk-core: classes in src/derisk/agent/tools/builtin/** pass `category` to ToolMetadata(), except 2 members (not calling the callee)\n    evidence: 40/40 (lower bound 0.91, lift 65.7)\n    agents:   not shown to agents (family below admission bar: 50% of 4)\n    example:  packages/derisk-core/src/derisk/agent/tools/builtin/agent/agent_tools.py#KnowledgeTool\n    exempt:   packages/derisk-core/src/derisk/agent/tools/builtin/sandbox/browser.py:53 BrowserResult (does not call ToolMetadata())\n    exempt:   packages/derisk-core/src/derisk/agent/tools/builtin/sandbox/browser.py:67 ScreenshotAnalysis (does not call ToolMetadata())",
+   "family": "argument_key",
+   "rule_kind": "passes_key",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L21/D-5c37f4"
+  },
+  {
+   "uid": "dev4:P22/D-646cc1",
+   "repo": "dev4:P22",
+   "id": "D-646cc1",
+   "rank": 5,
+   "summary": "sqlalchemy models have a `id` field",
+   "role": {
+    "package": "",
+    "dir": "sqlalchemy",
+    "file": "(model)",
+    "entry": "-",
+    "kind": "model"
+   },
+   "rule": {
+    "type": "model_has",
+    "field": "id"
+   },
+   "evidence": {
+    "holders": 65,
+    "total": 67,
+    "lower_bound": 0.9,
+    "lift": 1
+   },
+   "members": 67,
+   "example": "packages/derisk-app/src/derisk_app/auth/user_service.py#UserEntity",
+   "python_members": 67,
+   "outliers": 2,
+   "outlier_files": [
+    "packages/derisk-serve/src/derisk_serve/mcp/models/models.py",
+    "packages/derisk-serve/src/derisk_serve/skill/models/models.py"
+   ],
+   "block": " 5. [D-646cc1] sqlalchemy models have a `id` field\n    evidence: 65/67 (lower bound 0.90, lift 1.0)\n    agents:   not shown to agents (family below admission bar: 20% of 5)\n    example:  packages/derisk-app/src/derisk_app/auth/user_service.py#UserEntity\n    outlier:  packages/derisk-serve/src/derisk_serve/mcp/models/models.py:28 ServeEntity\n    outlier:  packages/derisk-serve/src/derisk_serve/skill/models/models.py:30 SkillEntity",
+   "family": "repo",
+   "rule_kind": "model_has",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L21/D-646cc1"
+  },
+  {
+   "uid": "dev4:P22/D-b640da",
+   "repo": "dev4:P22",
+   "id": "D-b640da",
+   "rank": 7,
+   "summary": "packages/derisk-core: functions in src/derisk/agent/expand/** declare their return type",
+   "role": {
+    "package": "packages/derisk-core",
+    "dir": "src/derisk/agent/expand",
+    "file": "*",
+    "entry": "-",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "control",
+    "value": "typed_return"
+   },
+   "evidence": {
+    "holders": 37,
+    "total": 38,
+    "lower_bound": 0.86,
+    "lift": 2.2
+   },
+   "members": 38,
+   "example": "packages/derisk-core/src/derisk/agent/expand/code_agent/actions/code_action.py#parse_code_metadata",
+   "python_members": 38,
+   "outliers": 1,
+   "outlier_files": [
+    "packages/derisk-core/src/derisk/agent/expand/pdca_agent/tools/todo_plan_tools.py"
+   ],
+   "block": " 7. [D-b640da] packages/derisk-core: functions in src/derisk/agent/expand/** declare their return type\n    evidence: 37/38 (lower bound 0.86, lift 2.2)\n    agents:   not shown to agents (family below admission bar: 100% of 4)\n    example:  packages/derisk-core/src/derisk/agent/expand/code_agent/actions/code_action.py#parse_code_metadata\n    outlier:  packages/derisk-core/src/derisk/agent/expand/pdca_agent/tools/todo_plan_tools.py:280 example_usage",
+   "family": "control",
+   "rule_kind": "control",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L21/D-b640da"
+  },
+  {
+   "uid": "dev4:P22/D-a41623",
+   "repo": "dev4:P22",
+   "id": "D-a41623",
+   "rank": 8,
+   "summary": "packages/derisk-core: functions in src/derisk/core/** declare their return type",
+   "role": {
+    "package": "packages/derisk-core",
+    "dir": "src/derisk/core",
+    "file": "*",
+    "entry": "-",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "control",
+    "value": "typed_return"
+   },
+   "evidence": {
+    "holders": 36,
+    "total": 38,
+    "lower_bound": 0.83,
+    "lift": 2.1
+   },
+   "members": 38,
+   "example": "packages/derisk-core/src/derisk/core/agent/builtin/explore.py#create_explore_subagent",
+   "python_members": 38,
+   "outliers": 2,
+   "outlier_files": [
+    "packages/derisk-core/src/derisk/core/awel/flow/flow_factory.py",
+    "packages/derisk-core/src/derisk/core/awel/util/http_util.py"
+   ],
+   "block": " 8. [D-a41623] packages/derisk-core: functions in src/derisk/core/** declare their return type\n    evidence: 36/38 (lower bound 0.83, lift 2.1)\n    agents:   not shown to agents (family below admission bar: 100% of 4)\n    example:  packages/derisk-core/src/derisk/core/agent/builtin/explore.py#create_explore_subagent\n    outlier:  packages/derisk-core/src/derisk/core/awel/flow/flow_factory.py:1018 fill_flow_panel\n    outlier:  packages/derisk-core/src/derisk/core/awel/util/http_util.py:6 join_paths",
+   "family": "control",
+   "rule_kind": "control",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L21/D-a41623"
+  },
+  {
+   "uid": "dev4:P22/D-7a7ea5",
+   "repo": "dev4:P22",
+   "id": "D-7a7ea5",
+   "rank": 9,
+   "summary": "packages/derisk-serve: classes in src/** (serve files) extend BaseServe",
+   "role": {
+    "package": "packages/derisk-serve",
+    "dir": "src",
+    "file": "serve",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "packages/derisk-serve/src/derisk_serve/core/serve.py#BaseServe"
+    ]
+   },
+   "evidence": {
+    "holders": 26,
+    "total": 27,
+    "lower_bound": 0.82,
+    "lift": 127.8
+   },
+   "members": 27,
+   "example": "packages/derisk-serve/src/derisk_serve/agent/chat/serve.py#Serve",
+   "python_members": 27,
+   "outliers": 1,
+   "outlier_files": [
+    "packages/derisk-serve/src/derisk_serve/streaming/serve.py"
+   ],
+   "block": " 9. [D-7a7ea5] packages/derisk-serve: classes in src/** (serve files) extend BaseServe\n    evidence: 26/27 (lower bound 0.82, lift 127.8)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  packages/derisk-serve/src/derisk_serve/agent/chat/serve.py#Serve\n    outlier:  packages/derisk-serve/src/derisk_serve/streaming/serve.py:21 ServeConfig",
+   "family": "base_class",
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L21/D-7a7ea5"
+  },
+  {
+   "uid": "dev4:P22/D-ea5ed1",
+   "repo": "dev4:P22",
+   "id": "D-ea5ed1",
+   "rank": 10,
+   "summary": "packages/derisk-core: classes in src/derisk/agent/tools/builtin/** use `try`",
+   "role": {
+    "package": "packages/derisk-core",
+    "dir": "src/derisk/agent/tools/builtin",
+    "file": "*",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "control",
+    "value": "try"
+   },
+   "evidence": {
+    "holders": 39,
+    "total": 42,
+    "lower_bound": 0.81,
+    "lift": 5.3
+   },
+   "members": 42,
+   "example": "packages/derisk-core/src/derisk/agent/tools/builtin/agent/agent_tools.py#KnowledgeTool",
+   "python_members": 42,
+   "outliers": 3,
+   "outlier_files": [
+    "packages/derisk-core/src/derisk/agent/tools/builtin/agent/agent_tools.py",
+    "packages/derisk-core/src/derisk/agent/tools/builtin/sandbox/browser.py"
+   ],
+   "block": "10. [D-ea5ed1] packages/derisk-core: classes in src/derisk/agent/tools/builtin/** use `try`\n    evidence: 39/42 (lower bound 0.81, lift 5.3)\n    agents:   not shown to agents (family below admission bar: 100% of 4)\n    example:  packages/derisk-core/src/derisk/agent/tools/builtin/agent/agent_tools.py#KnowledgeTool\n    outlier:  packages/derisk-core/src/derisk/agent/tools/builtin/agent/agent_tools.py:20 TerminateTool\n    outlier:  packages/derisk-core/src/derisk/agent/tools/builtin/sandbox/browser.py:53 BrowserResult\n    outlier:  packages/derisk-core/src/derisk/agent/tools/builtin/sandbox/browser.py:67 ScreenshotAnalysis",
+   "family": "control",
+   "rule_kind": "control",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L21/D-ea5ed1"
+  },
+  {
+   "uid": "dev4:P22/D-1d9639",
+   "repo": "dev4:P22",
+   "id": "D-1d9639",
+   "rank": 11,
+   "summary": "packages/derisk-serve: classes in src/** (service/service files) call super().__init__()",
+   "role": {
+    "package": "packages/derisk-serve",
+    "dir": "src",
+    "file": "service/service",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "calls",
+    "callee": "global#super().__init__"
+   },
+   "evidence": {
+    "holders": 23,
+    "total": 24,
+    "lower_bound": 0.8,
+    "lift": 6.8
+   },
+   "members": 24,
+   "example": "packages/derisk-serve/src/derisk_serve/agent/chat/service/service.py#Service",
+   "python_members": 24,
+   "outliers": 1,
+   "outlier_files": [
+    "packages/derisk-serve/src/derisk_serve/multimodal/service/service.py"
+   ],
+   "block": "11. [D-1d9639] packages/derisk-serve: classes in src/** (service/service files) call super().__init__()\n    evidence: 23/24 (lower bound 0.80, lift 6.8)\n    agents:   not shown to agents (family below admission bar: 44% of 9)\n    example:  packages/derisk-serve/src/derisk_serve/agent/chat/service/service.py#Service\n    outlier:  packages/derisk-serve/src/derisk_serve/multimodal/service/service.py:21 MultimodalService",
+   "family": "calls",
+   "rule_kind": "calls",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L21/D-1d9639"
+  },
+  {
+   "uid": "dev4:P22/D-1de661",
+   "repo": "dev4:P22",
+   "id": "D-1de661",
+   "rank": 12,
+   "summary": "packages/derisk-core: classes in src/** (api files) extend BaseModel",
+   "role": {
+    "package": "packages/derisk-core",
+    "dir": "src",
+    "file": "api",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "pkg:pydantic#BaseModel"
+    ]
+   },
+   "evidence": {
+    "holders": 29,
+    "total": 31,
+    "lower_bound": 0.79,
+    "lift": 3.6
+   },
+   "members": 31,
+   "example": "packages/derisk-core/src/derisk/agent/tools/api.py#ToolAssociateRequest",
+   "python_members": 31,
+   "outliers": 2,
+   "outlier_files": [
+    "packages/derisk-core/src/derisk/agent/core_v2/integration/api.py",
+    "packages/derisk-core/src/derisk/model/cluster/apiserver/api.py"
+   ],
+   "block": "12. [D-1de661] packages/derisk-core: classes in src/** (api files) extend BaseModel\n    evidence: 29/31 (lower bound 0.79, lift 3.6)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  packages/derisk-core/src/derisk/agent/tools/api.py#ToolAssociateRequest\n    outlier:  packages/derisk-core/src/derisk/agent/core_v2/integration/api.py:30 V2AgentAPI\n    outlier:  packages/derisk-core/src/derisk/model/cluster/apiserver/api.py:182 APIServer",
+   "family": "base_class",
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L21/D-1de661"
+  },
+  {
+   "uid": "dev4:P22/D-310502",
+   "repo": "dev4:P22",
+   "id": "D-310502",
+   "rank": 13,
+   "summary": "packages/derisk-client: functions in src/** wrap their body in try/catch",
+   "role": {
+    "package": "packages/derisk-client",
+    "dir": "src",
+    "file": "*",
+    "entry": "-",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "try",
+    "any_of": [
+     "try"
+    ]
+   },
+   "evidence": {
+    "holders": 24,
+    "total": 26,
+    "lower_bound": 0.76,
+    "lift": 8.8
+   },
+   "members": 26,
+   "example": "packages/derisk-client/src/derisk_client/app.py#get_app",
+   "python_members": 26,
+   "outliers": 2,
+   "outlier_files": [
+    "packages/derisk-client/src/derisk_client/_cli.py"
+   ],
+   "block": "13. [D-310502] packages/derisk-client: functions in src/** wrap their body in try/catch\n    evidence: 24/26 (lower bound 0.76, lift 8.8)\n    agents:   not shown to agents (family below admission bar: 75% of 8)\n    example:  packages/derisk-client/src/derisk_client/app.py#get_app\n    outlier:  packages/derisk-client/src/derisk_client/_cli.py:54 add_base_flow_options\n    outlier:  packages/derisk-client/src/derisk_client/_cli.py:79 add_chat_options",
+   "family": "wrapper",
+   "rule_kind": "wrapped_by:try",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L21/D-310502"
+  },
+  {
+   "uid": "dev4:P23/D-018afe",
+   "repo": "dev4:P23",
+   "id": "D-018afe",
+   "rank": 1,
+   "summary": "functions in api/** declare their return type, except 2 shared parts (used by several members, not a member)",
+   "role": {
+    "package": "",
+    "dir": "api",
+    "file": "*",
+    "entry": "-",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "control",
+    "value": "typed_return"
+   },
+   "evidence": {
+    "holders": 44,
+    "total": 45,
+    "lower_bound": 0.88,
+    "lift": 6.6
+   },
+   "members": 47,
+   "example": "api/newsletter_service/_ac_client.py#get_ac_client",
+   "python_members": 47,
+   "outliers": 1,
+   "outlier_files": [
+    "api/mcp_auth_views.py"
+   ],
+   "block": " 1. [D-018afe] functions in api/** declare their return type, except 2 shared parts (used by several members, not a member)\n    evidence: 44/45 (lower bound 0.88, lift 6.6)\n    agents:   not shown to agents (family below admission bar: 100% of 4)\n    example:  api/newsletter_service/_ac_client.py#get_ac_client\n    outlier:  api/mcp_auth_views.py:40 mcp_authorize\n    exempt:   api/newsletter_service/_ac_client.py:298 requires_newsletter_service (shared part used by 5 members)\n    exempt:   api/newsletter_service/_errors.py:57 reraise_as_newsletter_service_error (shared part used by 15 members)",
+   "family": "control",
+   "rule_kind": "control",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L23/D-018afe"
+  },
+  {
+   "uid": "dev4:P24/D-1871a7",
+   "repo": "dev4:P24",
+   "id": "D-1871a7",
+   "rank": 1,
+   "summary": "files in ppsci/arch/** do not import from ppsci/data/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+   "role": {
+    "package": "",
+    "dir": "ppsci/arch",
+    "file": "*",
+    "entry": "-",
+    "kind": "module"
+   },
+   "rule": {
+    "type": "avoids",
+    "signal": "import:ppsci/data"
+   },
+   "evidence": {
+    "holders": 76,
+    "total": 77,
+    "lower_bound": 0.93,
+    "lift": 3
+   },
+   "members": 77,
+   "example": "ppsci/arch/activation.py#(file)",
+   "python_members": 77,
+   "outliers": 1,
+   "outlier_files": [
+    "ppsci/arch/cfdgcn.py"
+   ],
+   "block": " 1. [D-1871a7] files in ppsci/arch/** do not import from ppsci/data/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 76/77 (lower bound 0.93, lift 3.0)\n    agents:   not shown to agents (family below admission bar: 100% of 1)\n    example:  ppsci/arch/activation.py#(file)\n    outlier:  ppsci/arch/cfdgcn.py:1 (file)",
+   "family": "layering",
+   "rule_kind": "avoids:import",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L03/D-1871a7"
+  },
+  {
+   "uid": "dev4:P24/D-438d1f",
+   "repo": "dev4:P24",
+   "id": "D-438d1f",
+   "rank": 2,
+   "summary": "functions in jointContribution/HighResolution/ffd/** declare their return type",
+   "role": {
+    "package": "",
+    "dir": "jointContribution/HighResolution/ffd",
+    "file": "*",
+    "entry": "-",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "control",
+    "value": "typed_return"
+   },
+   "evidence": {
+    "holders": 35,
+    "total": 36,
+    "lower_bound": 0.86,
+    "lift": 2.7
+   },
+   "members": 36,
+   "example": "jointContribution/HighResolution/ffd/hooks.py#noop",
+   "python_members": 36,
+   "outliers": 1,
+   "outlier_files": [
+    "jointContribution/HighResolution/ffd/register.py"
+   ],
+   "block": " 2. [D-438d1f] functions in jointContribution/HighResolution/ffd/** declare their return type\n    evidence: 35/36 (lower bound 0.86, lift 2.7)\n    agents:   not shown to agents (family below admission bar: 100% of 4)\n    example:  jointContribution/HighResolution/ffd/hooks.py#noop\n    outlier:  jointContribution/HighResolution/ffd/register.py:158 main",
+   "family": "control",
+   "rule_kind": "control",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L03/D-438d1f"
+  }
+ ]
+}

@@ -1,0 +1,270 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - +layout
+  - +page
+  - __init__
+  - activity
+  - asset-file
+  - asset-media
+  - cluster-group
+  - config
+  - database
+  - database-backup
+  - download
+  - duplicate
+  - job
+  - map
+  - media
+  - notification
+  - partner
+  - plugin
+  - search
+  - server
+  - storage
+  - sync
+  - system-metadata
+  - trash
+  - types
+  - utils
+  suffixes:
+  - command
+  - config
+  - controller
+  - dto
+  - e2e-spec
+  - email
+  - factory
+  - interceptor
+  - mock
+  - query
+  - repository
+  - service
+  - spec
+  - store
+  - stub
+  - svelte
+  - table
+conventions:
+- id: D-d3f2f9
+  status: proposed
+  mode: advise
+  summary: "server: classes in src/** (*.dto files) extend createZodDto()"
+  role:
+    package: server
+    dir: src
+    file: "*.dto"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - pkg:nestjs-zod#createZodDto()
+  evidence:
+    holders: 258
+    total: 259
+    lower_bound: 0.978
+    lift: 2.544
+  example: server/src/dtos/activity.dto.ts#ActivityCreateDto
+  selector_version: 3
+- id: D-f0120c
+  status: proposed
+  mode: advise
+  summary: "server: classes in src/** (*.dto files) are named `*Dto`"
+  role:
+    package: server
+    dir: src
+    file: "*.dto"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Dto"
+  evidence:
+    holders: 251
+    total: 259
+    lower_bound: 0.94
+    lift: 2.542
+  example: server/src/dtos/activity.dto.ts#ActivityCreateDto
+  selector_version: 3
+- id: D-876763
+  status: proposed
+  mode: advise
+  summary: "server: HTTP handlers in src/** (*.controller files) are decorated with Authenticated()"
+  role:
+    package: server
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - server/src/middleware/auth.guard.ts#Authenticated
+  evidence:
+    holders: 304
+    total: 315
+    lower_bound: 0.939
+    lift: 5.13
+  example: server/src/controllers/activity.controller.ts#DELETE /activities/:id
+  selector_version: 3
+- id: D-4fc758
+  status: proposed
+  mode: advise
+  summary: "server: HTTP handlers in src/** (*.controller files) are decorated with ApiTags()"
+  role:
+    package: server
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/swagger#ApiTags
+  evidence:
+    holders: 301
+    total: 315
+    lower_bound: 0.927
+    lift: 5.13
+  example: server/src/controllers/activity.controller.ts#DELETE /activities/:id
+  selector_version: 3
+- id: D-26380c
+  status: proposed
+  mode: advise
+  summary: "server: classes in src/** (*.repository files) are named `*Repository`, except a companion (a helper or constant beside the members that follow it)"
+  role:
+    package: server
+    dir: src
+    file: "*.repository"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Repository"
+  evidence:
+    holders: 61
+    total: 62
+    lower_bound: 0.914
+    lift: 10.448
+    role_members: 63
+  example: >-
+    server/src/maintenance/maintenance-health.repository.ts#MaintenanceHealthRepository
+  selector_version: 3
+- id: D-c10e8e
+  status: proposed
+  mode: advise
+  summary: "server: HTTP handlers in src/** (*.controller files) are decorated with Endpoint()"
+  role:
+    package: server
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - server/src/decorators.ts#Endpoint
+  evidence:
+    holders: 287
+    total: 315
+    lower_bound: 0.875
+    lift: 5.13
+  example: server/src/controllers/activity.controller.ts#DELETE /activities/:id
+  selector_version: 3
+- id: D-ed6dc0
+  status: proposed
+  mode: advise
+  summary: "server: classes in src/** (*.controller files) are decorated with ApiTags()"
+  role:
+    package: server
+    dir: src
+    file: "*.controller"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/swagger#ApiTags
+  evidence:
+    holders: 46
+    total: 48
+    lower_bound: 0.86
+    lift: 13.938
+  example: server/src/controllers/activity.controller.ts#ActivityController
+  selector_version: 3
+- id: D-c8db80
+  status: proposed
+  mode: advise
+  summary: "web: functions in src/** (+page files) call authenticate() before getFormatter()"
+  role:
+    package: web
+    dir: src
+    file: +page
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: web/src/lib/utils/auth.ts#authenticate
+    then: web/src/lib/utils/i18n.ts#getFormatter
+  evidence:
+    holders: 48
+    total: 51
+    lower_bound: 0.841
+    lift: 1.0
+  example: web/src/routes/(user)/albums/+page.ts#load
+  selector_version: 3
+- id: D-3b4f47
+  status: proposed
+  mode: advise
+  summary: "server: classes in src/** (*.service files) extend BaseService, except a member (of the module that defines a rule's target)"
+  role:
+    package: server
+    dir: src
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - server/src/services/base.service.ts#BaseService
+  evidence:
+    holders: 52
+    total: 56
+    lower_bound: 0.83
+    lift: 11.737
+    role_members: 57
+  example: server/src/services/activity.service.ts#ActivityService
+  selector_version: 3
+- id: D-63d2cd
+  status: proposed
+  mode: advise
+  summary: "server: HTTP handlers in src/** (*.controller files) pass `permission` to Authenticated()"
+  role:
+    package: server
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: passes_key
+    callee: server/src/middleware/auth.guard.ts#Authenticated
+    index: 0
+    key: permission
+  evidence:
+    holders: 273
+    total: 315
+    lower_bound: 0.825
+    lift: 5.13
+  example: server/src/controllers/activity.controller.ts#DELETE /activities/:id
+  selector_version: 3

@@ -1,1 +1,0 @@
-{ "name": "enforcement-gate-adjacent-fixture", "private": true, "workspaces": ["packages/*"] }

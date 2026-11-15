@@ -1,0 +1,9 @@
+# drift.lock: legacy violations that never block. Fix code to remove lines.
+D-0f9742 packages/core/src/fixtures.ts#(file)
+D-0f9742 packages/core/src/legacy.ts#(file)
+D-0f9742 packages/core/src/seed.ts#(file)
+D-3a1c98 packages/ui/src/debug-panel.ts#(file)
+D-6ff644 packages/jobs/src/nightly-report.ts#(file)
+D-6ff644 packages/jobs/src/weekly-digest.ts#(file)
+D-8394d6 apps/portal/app/api/health/route.ts#GET
+D-8394d6 apps/portal/app/api/status/route.ts#GET

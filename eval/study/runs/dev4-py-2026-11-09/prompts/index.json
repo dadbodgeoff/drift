@@ -1,0 +1,128 @@
+[
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "P04",
+    "prompt": "/home/user/drift-wt/dev4/eval/study/runs/dev4-py-2026-11-09/prompts/label/A/P04.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev4/f11/cache/outbox/65b7798f-74aa-4eed-b6c0-a1ede2186fbb/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev4/f11/cache/workdirs/b42042aa-b354-4f24-a719-3e456864359b",
+    "checkout_status": [],
+    "expected": [
+      "P04/D-9de24d"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-09T04:02:14.206Z",
+    "collected": {
+      "at": "2026-11-09T04:04:02.033Z",
+      "dest": "eval/study/runs/dev4-py-2026-11-09/labels/A/P04.jsonl",
+      "records": 1,
+      "sha256": "1ce4cbb48e7e6c525c599ab187282d44c009cc6b2d6b5d179d25a0e03e3a0926"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "P11",
+    "prompt": "/home/user/drift-wt/dev4/eval/study/runs/dev4-py-2026-11-09/prompts/label/A/P11.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev4/f11/cache/outbox/04ef5a2d-ebc2-4e12-b437-1e5d4c497159/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev4/f11/cache/workdirs/1ebfae68-f383-4222-840d-1e8d861c2eb3",
+    "checkout_status": [],
+    "expected": [
+      "P11/D-5199d3"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-09T04:02:14.449Z",
+    "collected": {
+      "at": "2026-11-09T04:04:02.049Z",
+      "dest": "eval/study/runs/dev4-py-2026-11-09/labels/A/P11.jsonl",
+      "records": 1,
+      "sha256": "86fdbc43245642f5659e3e97b277555c8e90b5cdff78a52196351df976025e6a"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "P13",
+    "prompt": "/home/user/drift-wt/dev4/eval/study/runs/dev4-py-2026-11-09/prompts/label/A/P13.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev4/f11/cache/outbox/3d7c93ba-d312-471a-80d8-f63b4f777eab/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev4/f11/cache/workdirs/3480f0d3-fc08-44cb-9902-85daf4e2b51b",
+    "checkout_status": [],
+    "expected": [
+      "P13/D-190e4e"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-09T04:02:14.516Z",
+    "collected": {
+      "at": "2026-11-09T04:04:02.093Z",
+      "dest": "eval/study/runs/dev4-py-2026-11-09/labels/A/P13.jsonl",
+      "records": 1,
+      "sha256": "63d74c2f230d5af8a431e129682cad9c633a109fcb8680a96f6549fb6b3c5e7b"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "P04",
+    "prompt": "/home/user/drift-wt/dev4/eval/study/runs/dev4-py-2026-11-09/prompts/label/B/P04.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev4/f11/cache/outbox/e6a7bc66-b0d1-4cfd-96c4-5d363204553b/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev4/f11/cache/workdirs/41061cac-79f5-426e-93f6-6da43174e55a",
+    "checkout_status": [],
+    "expected": [
+      "P04/D-9de24d"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-09T04:04:05.204Z",
+    "collected": {
+      "at": "2026-11-09T04:06:26.343Z",
+      "dest": "eval/study/runs/dev4-py-2026-11-09/labels/B/P04.jsonl",
+      "records": 1,
+      "sha256": "d658b85ede3cf4a65636cf0391b05d9138dae658002c1699dc42215ff00afe9b"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "P11",
+    "prompt": "/home/user/drift-wt/dev4/eval/study/runs/dev4-py-2026-11-09/prompts/label/B/P11.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev4/f11/cache/outbox/d0bf64ae-ed2d-497c-903a-b548d4d93f15/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev4/f11/cache/workdirs/30e81ef1-e2d6-4afe-b1a6-4571f89700f1",
+    "checkout_status": [],
+    "expected": [
+      "P11/D-5199d3"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-09T04:04:05.351Z",
+    "collected": {
+      "at": "2026-11-09T04:06:26.387Z",
+      "dest": "eval/study/runs/dev4-py-2026-11-09/labels/B/P11.jsonl",
+      "records": 1,
+      "sha256": "d39ea4991d7791db145ffbbe4bff563814e9b604e150c82589d7b1bba141e3a3"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "P13",
+    "prompt": "/home/user/drift-wt/dev4/eval/study/runs/dev4-py-2026-11-09/prompts/label/B/P13.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev4/f11/cache/outbox/f3ebb451-00d0-43e7-b0fb-60e95fdc899b/out.jsonl",
+    "cwd": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev4/f11/cache/workdirs/16890fe5-5b1c-44e5-875e-12f9aa09c284",
+    "checkout_status": [],
+    "expected": [
+      "P13/D-190e4e"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-09T04:04:05.551Z",
+    "collected": {
+      "at": "2026-11-09T04:06:26.409Z",
+      "dest": "eval/study/runs/dev4-py-2026-11-09/labels/B/P13.jsonl",
+      "records": 1,
+      "sha256": "8c540e7ea691e078c93af73af0b08f7319a6b3cbd48318f4b0c813acfdf70f64"
+    }
+  }
+]

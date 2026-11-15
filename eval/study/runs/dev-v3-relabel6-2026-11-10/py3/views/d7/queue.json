@@ -1,0 +1,815 @@
+{
+ "run": "eval/study/runs/dev-v3-relabel6-2026-11-10/py3/views/d7",
+ "from": "the Python cards of the mined pool of the dev3 repos at 3f2bd7b3 (census/), with their labels",
+ "items": [
+  {
+   "uid": "dev3:P01/D-f18c6a",
+   "repo": "dev3:P01",
+   "id": "D-f18c6a",
+   "rank": 1,
+   "summary": "files in skylos/** do not import from skylos_mcp/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+   "role": {
+    "package": "",
+    "dir": "skylos",
+    "file": "*",
+    "entry": "-",
+    "kind": "module"
+   },
+   "rule": {
+    "type": "avoids",
+    "signal": "import:skylos_mcp"
+   },
+   "evidence": {
+    "holders": 844,
+    "total": 845,
+    "lower_bound": 0.99,
+    "lift": 3
+   },
+   "members": 845,
+   "example": "skylos/adapters/base.py#(file)",
+   "python_members": 845,
+   "outliers": 1,
+   "outlier_files": [
+    "skylos/commands/mcp_cmd.py"
+   ],
+   "block": " 1. [D-f18c6a] files in skylos/** do not import from skylos_mcp/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 844/845 (lower bound 0.99, lift 3.0)\n    agents:   not shown to agents (family below admission bar: 100% of 1)\n    example:  skylos/adapters/base.py#(file)\n    outlier:  skylos/commands/mcp_cmd.py:1 (file)",
+   "family": "layering",
+   "rule_kind": "avoids:import",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L16/D-f18c6a"
+  },
+  {
+   "uid": "dev3:P01/D-76337c",
+   "repo": "dev3:P01",
+   "id": "D-76337c",
+   "rank": 2,
+   "summary": "files in skylos/llm/** do not import from skylos/benchmarks/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+   "role": {
+    "package": "",
+    "dir": "skylos/llm",
+    "file": "*",
+    "entry": "-",
+    "kind": "module"
+   },
+   "rule": {
+    "type": "avoids",
+    "signal": "import:skylos/benchmarks"
+   },
+   "evidence": {
+    "holders": 62,
+    "total": 63,
+    "lower_bound": 0.92,
+    "lift": 3
+   },
+   "members": 63,
+   "example": "skylos/llm/_grounding.py#(file)",
+   "python_members": 63,
+   "outliers": 1,
+   "outlier_files": [
+    "skylos/llm/jev_triage.py"
+   ],
+   "block": " 2. [D-76337c] files in skylos/llm/** do not import from skylos/benchmarks/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 62/63 (lower bound 0.92, lift 3.0)\n    agents:   not shown to agents (family below admission bar: 100% of 1)\n    example:  skylos/llm/_grounding.py#(file)\n    outlier:  skylos/llm/jev_triage.py:1 (file)",
+   "family": "layering",
+   "rule_kind": "avoids:import",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L16/D-76337c"
+  },
+  {
+   "uid": "dev3:P01/D-9173d2",
+   "repo": "dev3:P01",
+   "id": "D-9173d2",
+   "rank": 3,
+   "summary": "files in skylos/llm/** do not import from skylos/agents/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+   "role": {
+    "package": "",
+    "dir": "skylos/llm",
+    "file": "*",
+    "entry": "-",
+    "kind": "module"
+   },
+   "rule": {
+    "type": "avoids",
+    "signal": "import:skylos/agents"
+   },
+   "evidence": {
+    "holders": 62,
+    "total": 63,
+    "lower_bound": 0.92,
+    "lift": 3
+   },
+   "members": 63,
+   "example": "skylos/llm/_grounding.py#(file)",
+   "python_members": 63,
+   "outliers": 1,
+   "outlier_files": [
+    "skylos/llm/harness/replay.py"
+   ],
+   "block": " 3. [D-9173d2] files in skylos/llm/** do not import from skylos/agents/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 62/63 (lower bound 0.92, lift 3.0)\n    agents:   not shown to agents (family below admission bar: 100% of 1)\n    example:  skylos/llm/_grounding.py#(file)\n    outlier:  skylos/llm/harness/replay.py:1 (file)",
+   "family": "layering",
+   "rule_kind": "avoids:import",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L16/D-9173d2"
+  },
+  {
+   "uid": "dev3:P01/D-f290f7",
+   "repo": "dev3:P01",
+   "id": "D-f290f7",
+   "rank": 4,
+   "summary": "classes in skylos/rules/quality/** extend SkylosRule",
+   "role": {
+    "package": "",
+    "dir": "skylos/rules/quality",
+    "file": "*",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "skylos/rules/base.py#SkylosRule"
+    ]
+   },
+   "evidence": {
+    "holders": 48,
+    "total": 52,
+    "lower_bound": 0.82,
+    "lift": 13.5
+   },
+   "members": 52,
+   "example": "skylos/rules/quality/_readability.py#OpaqueIdentifierRule",
+   "python_members": 52,
+   "outliers": 4,
+   "outlier_files": [
+    "skylos/rules/quality/_argument_contracts.py",
+    "skylos/rules/quality/_framework_practices.py",
+    "skylos/rules/quality/_parameter_context.py",
+    "skylos/rules/quality/_route_exposure.py"
+   ],
+   "block": " 4. [D-f290f7] classes in skylos/rules/quality/** extend SkylosRule\n    evidence: 48/52 (lower bound 0.82, lift 13.5)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  skylos/rules/quality/_readability.py#OpaqueIdentifierRule\n    outlier:  skylos/rules/quality/_argument_contracts.py:63 ArgumentContracts\n    outlier:  skylos/rules/quality/_framework_practices.py:24 FrameworkResponseContracts\n    outlier:  skylos/rules/quality/_parameter_context.py:19 ParameterContext\n    outlier:  skylos/rules/quality/_route_exposure.py:272 ModuleFacts",
+   "family": "base_class",
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L16/D-f290f7"
+  },
+  {
+   "uid": "dev3:P01/D-20b2f2",
+   "repo": "dev3:P01",
+   "id": "D-20b2f2",
+   "rank": 5,
+   "summary": "files in skylos/benchmarks/** have a test file",
+   "role": {
+    "package": "",
+    "dir": "skylos/benchmarks",
+    "file": "*",
+    "entry": "-",
+    "kind": "module"
+   },
+   "rule": {
+    "type": "has_test"
+   },
+   "evidence": {
+    "holders": 26,
+    "total": 28,
+    "lower_bound": 0.77,
+    "lift": 2.8
+   },
+   "members": 28,
+   "example": "skylos/benchmarks/_jev_dead_code_dataset.py#(file)",
+   "python_members": 28,
+   "outliers": 2,
+   "outlier_files": [
+    "skylos/benchmarks/_analysis_validation.py",
+    "skylos/benchmarks/cloud.py"
+   ],
+   "block": " 5. [D-20b2f2] files in skylos/benchmarks/** have a test file\n    evidence: 26/28 (lower bound 0.77, lift 2.8)\n    agents:   not shown to agents (family below admission bar: 20% of 5)\n    example:  skylos/benchmarks/_jev_dead_code_dataset.py#(file)\n    outlier:  skylos/benchmarks/_analysis_validation.py:1 (file)\n    outlier:  skylos/benchmarks/cloud.py:1 (file)",
+   "family": "repo",
+   "rule_kind": "has_test",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L16/D-20b2f2"
+  },
+  {
+   "uid": "dev3:P01/D-a3ce3d",
+   "repo": "dev3:P01",
+   "id": "D-a3ce3d",
+   "rank": 6,
+   "summary": "cli entry points in scripts/** pass `description` to ArgumentParser()",
+   "role": {
+    "package": "",
+    "dir": "scripts",
+    "file": "*",
+    "entry": "cli",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "passes_key",
+    "callee": "pkg:python:argparse#ArgumentParser",
+    "index": 99,
+    "key": "description"
+   },
+   "evidence": {
+    "holders": 25,
+    "total": 27,
+    "lower_bound": 0.77,
+    "lift": 49.5
+   },
+   "members": 27,
+   "example": "scripts/agent_behavior_benchmark.py#main",
+   "python_members": 27,
+   "outliers": 2,
+   "outlier_files": [
+    "scripts/jev_compare.py",
+    "scripts/jev_dead_code_benchmark.py"
+   ],
+   "block": " 6. [D-a3ce3d] cli entry points in scripts/** pass `description` to ArgumentParser()\n    evidence: 25/27 (lower bound 0.77, lift 49.5)\n    agents:   not shown to agents (family below admission bar: 50% of 4)\n    example:  scripts/agent_behavior_benchmark.py#main\n    outlier:  scripts/jev_compare.py:58 main\n    outlier:  scripts/jev_dead_code_benchmark.py:215 main",
+   "family": "argument_key",
+   "rule_kind": "passes_key",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L16/D-a3ce3d"
+  },
+  {
+   "uid": "dev3:P03/D-1062a8",
+   "repo": "dev3:P03",
+   "id": "D-1062a8",
+   "rank": 1,
+   "summary": "agentex: exceptions in src/** (exceptions files) are named `*Error`",
+   "role": {
+    "package": "agentex",
+    "dir": "src",
+    "file": "exceptions",
+    "entry": "-",
+    "kind": "class",
+    "member_kind": "exception"
+   },
+   "rule": {
+    "type": "named",
+    "pattern": "*Error"
+   },
+   "evidence": {
+    "holders": 21,
+    "total": 22,
+    "lower_bound": 0.78,
+    "lift": 11.4
+   },
+   "members": 22,
+   "example": "agentex/src/adapters/authentication/exceptions.py#AuthenticationError",
+   "python_members": 22,
+   "outliers": 1,
+   "outlier_files": [
+    "agentex/src/adapters/crud_store/exceptions.py"
+   ],
+   "block": " 1. [D-1062a8] agentex: exceptions in src/** (exceptions files) are named `*Error`\n    evidence: 21/22 (lower bound 0.78, lift 11.4)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  agentex/src/adapters/authentication/exceptions.py#AuthenticationError\n    outlier:  agentex/src/adapters/crud_store/exceptions.py:12 ItemDoesNotExist",
+   "family": "naming",
+   "rule_kind": "named",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/dev3-py-2026-11-08:P03/D-1062a8"
+  },
+  {
+   "uid": "dev3:P03/D-91d96c",
+   "repo": "dev3:P03",
+   "id": "D-91d96c",
+   "rank": 2,
+   "summary": "agentex: enums in src/** extend str",
+   "role": {
+    "package": "agentex",
+    "dir": "src",
+    "file": "*",
+    "entry": "-",
+    "kind": "class",
+    "variety": "enum"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "global#str"
+    ]
+   },
+   "evidence": {
+    "holders": 34,
+    "total": 38,
+    "lower_bound": 0.76,
+    "lift": 8.6
+   },
+   "members": 38,
+   "example": "agentex/src/api/schemas/agent_run_schedules.py#RunScheduleState",
+   "python_members": 38,
+   "outliers": 4,
+   "outlier_files": [
+    "agentex/src/adapters/crud_store/adapter_postgres.py",
+    "agentex/src/api/schemas/authorization_types.py"
+   ],
+   "block": " 2. [D-91d96c] agentex: enums in src/** extend str\n    evidence: 34/38 (lower bound 0.76, lift 8.6)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  agentex/src/api/schemas/agent_run_schedules.py#RunScheduleState\n    outlier:  agentex/src/adapters/crud_store/adapter_postgres.py:83 EmptyRelationships\n    outlier:  agentex/src/api/schemas/authorization_types.py:15 AgentexResourceType\n    outlier:  agentex/src/api/schemas/authorization_types.py:6 AuthorizedOperationType\n    outlier:  agentex/src/api/schemas/authorization_types.py:23 TaskChildResourceType",
+   "family": "base_class",
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L17/D-91d96c"
+  },
+  {
+   "uid": "dev3:P04/D-30139d",
+   "repo": "dev3:P04",
+   "id": "D-30139d",
+   "rank": 1,
+   "summary": "backend: classes in aci/common/schemas/** extend BaseModel",
+   "role": {
+    "package": "backend",
+    "dir": "aci/common/schemas",
+    "file": "*",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "pkg:pydantic#BaseModel"
+    ]
+   },
+   "evidence": {
+    "holders": 72,
+    "total": 73,
+    "lower_bound": 0.93,
+    "lift": 2.2
+   },
+   "members": 73,
+   "example": "backend/aci/common/schemas/agent.py#AgentCreate",
+   "python_members": 73,
+   "outliers": 1,
+   "outlier_files": [
+    "backend/aci/common/schemas/function.py"
+   ],
+   "block": " 1. [D-30139d] backend: classes in aci/common/schemas/** extend BaseModel\n    evidence: 72/73 (lower bound 0.93, lift 2.2)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  backend/aci/common/schemas/agent.py#AgentCreate\n    outlier:  backend/aci/common/schemas/function.py:28 ConnectorMetadata",
+   "family": "base_class",
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L02/D-30139d"
+  },
+  {
+   "uid": "dev3:P04/D-2d3433",
+   "repo": "dev3:P04",
+   "id": "D-2d3433",
+   "rank": 3,
+   "summary": "backend: HTTP handlers in aci/** are wrapped in get_request_context() or validate_api_key() or yield_db_session() or auth.require_user() or auth.require_user() or auth.require_user()",
+   "role": {
+    "package": "backend",
+    "dir": "aci",
+    "file": "*",
+    "entry": "http",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "call",
+    "any_of": [
+     "backend/aci/server/dependencies.py#get_request_context",
+     "backend/aci/server/dependencies.py#validate_api_key",
+     "backend/aci/server/dependencies.py#yield_db_session",
+     "backend/aci/server/main.py#auth.require_user",
+     "backend/aci/server/routes/billing.py#auth.require_user",
+     "backend/aci/server/routes/organizations.py#auth.require_user"
+    ]
+   },
+   "evidence": {
+    "holders": 43,
+    "total": 44,
+    "lower_bound": 0.88,
+    "lift": 7.7
+   },
+   "members": 44,
+   "example": "backend/aci/server/routes/agent.py#handle_chat",
+   "python_members": 44,
+   "outliers": 1,
+   "outlier_files": [
+    "backend/aci/server/routes/health.py"
+   ],
+   "block": " 3. [D-2d3433] backend: HTTP handlers in aci/** are wrapped in get_request_context() or validate_api_key() or yield_db_session() or auth.require_user() or auth.require_user() or auth.require_user()\n    evidence: 43/44 (lower bound 0.88, lift 7.7)\n    agents:   not shown to agents (family below admission bar: 75% of 8)\n    split:    get_request_context 14, validate_api_key 12, auth.require_user 7, yield_db_session 5, auth.require_user 3, auth.require_user 2\n    example:  backend/aci/server/routes/agent.py#handle_chat\n    outlier:  backend/aci/server/routes/health.py:10 health",
+   "family": "wrapper",
+   "rule_kind": "wrapped_by:call",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L02/D-2d3433"
+  },
+  {
+   "uid": "dev3:P06/D-8a3bd9",
+   "repo": "dev3:P06",
+   "id": "D-8a3bd9",
+   "rank": 1,
+   "summary": "files in src/ostorlab/assets/** have a test file",
+   "role": {
+    "package": "",
+    "dir": "src/ostorlab/assets",
+    "file": "*",
+    "entry": "-",
+    "kind": "module"
+   },
+   "rule": {
+    "type": "has_test"
+   },
+   "evidence": {
+    "holders": 28,
+    "total": 29,
+    "lower_bound": 0.83,
+    "lift": 2.3
+   },
+   "members": 29,
+   "example": "src/ostorlab/assets/android_aab.py#(file)",
+   "python_members": 29,
+   "outliers": 1,
+   "outlier_files": [
+    "src/ostorlab/assets/ipv6.py"
+   ],
+   "block": " 1. [D-8a3bd9] files in src/ostorlab/assets/** have a test file\n    evidence: 28/29 (lower bound 0.83, lift 2.3)\n    agents:   not shown to agents (family below admission bar: 20% of 5)\n    example:  src/ostorlab/assets/android_aab.py#(file)\n    outlier:  src/ostorlab/assets/ipv6.py:1 (file)",
+   "family": "repo",
+   "rule_kind": "has_test",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L09/D-8a3bd9"
+  },
+  {
+   "uid": "dev3:P06/D-f9ac22",
+   "repo": "dev3:P06",
+   "id": "D-f9ac22",
+   "rank": 2,
+   "summary": "cli entry points in src/ostorlab/cli/scan/** use `try`",
+   "role": {
+    "package": "",
+    "dir": "src/ostorlab/cli/scan",
+    "file": "*",
+    "entry": "cli",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "control",
+    "value": "try"
+   },
+   "evidence": {
+    "holders": 28,
+    "total": 30,
+    "lower_bound": 0.79,
+    "lift": 2.2
+   },
+   "members": 30,
+   "example": "src/ostorlab/cli/scan/pause/pause.py#pause",
+   "python_members": 30,
+   "outliers": 2,
+   "outlier_files": [
+    "src/ostorlab/cli/scan/list/list.py",
+    "src/ostorlab/cli/scan/stop/stop.py"
+   ],
+   "block": " 2. [D-f9ac22] cli entry points in src/ostorlab/cli/scan/** use `try`\n    evidence: 28/30 (lower bound 0.79, lift 2.2)\n    agents:   not shown to agents (family below admission bar: 100% of 4)\n    example:  src/ostorlab/cli/scan/pause/pause.py#pause\n    outlier:  src/ostorlab/cli/scan/list/list.py:17 list_scans\n    outlier:  src/ostorlab/cli/scan/stop/stop.py:16 stop",
+   "family": "control",
+   "rule_kind": "control",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L09/D-f9ac22"
+  },
+  {
+   "uid": "dev3:P06/D-90fed8",
+   "repo": "dev3:P06",
+   "id": "D-90fed8",
+   "rank": 3,
+   "summary": "dataclasses in src/ostorlab/assets/** are decorated with selector()",
+   "role": {
+    "package": "",
+    "dir": "src/ostorlab/assets",
+    "file": "*",
+    "entry": "-",
+    "kind": "class",
+    "variety": "dataclass"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "decorator",
+    "any_of": [
+     "src/ostorlab/assets/asset.py#selector"
+    ]
+   },
+   "evidence": {
+    "holders": 27,
+    "total": 29,
+    "lower_bound": 0.78,
+    "lift": 9.5
+   },
+   "members": 29,
+   "example": "src/ostorlab/assets/android_aab.py#AndroidAab",
+   "python_members": 29,
+   "outliers": 2,
+   "outlier_files": [
+    "src/ostorlab/assets/message.py",
+    "src/ostorlab/assets/ticket.py"
+   ],
+   "block": " 3. [D-90fed8] dataclasses in src/ostorlab/assets/** are decorated with selector()\n    evidence: 27/29 (lower bound 0.78, lift 9.5)\n    agents:   not shown to agents (family below admission bar: 50% of 6)\n    example:  src/ostorlab/assets/android_aab.py#AndroidAab\n    outlier:  src/ostorlab/assets/message.py:8 Message\n    outlier:  src/ostorlab/assets/ticket.py:8 Comment",
+   "family": "decorator",
+   "rule_kind": "wrapped_by:decorator",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L09/D-90fed8"
+  },
+  {
+   "uid": "dev3:P06/D-7cc6cd",
+   "repo": "dev3:P06",
+   "id": "D-7cc6cd",
+   "rank": 4,
+   "summary": "cli entry points in src/** are decorated with pass_context()",
+   "role": {
+    "package": "",
+    "dir": "src",
+    "file": "*",
+    "entry": "cli",
+    "kind": "function"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "decorator",
+    "any_of": [
+     "pkg:click#pass_context"
+    ]
+   },
+   "evidence": {
+    "holders": 42,
+    "total": 47,
+    "lower_bound": 0.77,
+    "lift": 3.6
+   },
+   "members": 47,
+   "example": "src/ostorlab/cli/ci_scan/run/assets/android_aab.py#android_aab",
+   "python_members": 47,
+   "outliers": 5,
+   "outlier_files": [
+    "src/ostorlab/cli/agent/delete/delete.py",
+    "src/ostorlab/cli/agent/healthcheck/healthcheck.py",
+    "src/ostorlab/cli/agent/install/install.py",
+    "src/ostorlab/cli/agent/search/search.py",
+    "src/ostorlab/cli/auth/login/login.py"
+   ],
+   "block": " 4. [D-7cc6cd] cli entry points in src/** are decorated with pass_context()\n    evidence: 42/47 (lower bound 0.77, lift 3.6)\n    agents:   not shown to agents (family below admission bar: 50% of 6)\n    example:  src/ostorlab/cli/ci_scan/run/assets/android_aab.py#android_aab\n    outlier:  src/ostorlab/cli/agent/delete/delete.py:18 delete\n    outlier:  src/ostorlab/cli/agent/healthcheck/healthcheck.py:16 healthcheck\n    outlier:  src/ostorlab/cli/agent/install/install.py:15 install\n    outlier:  src/ostorlab/cli/agent/search/search.py:23 search_cli\n    outlier:  src/ostorlab/cli/auth/login/login.py:16 login",
+   "family": "decorator",
+   "rule_kind": "wrapped_by:decorator",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool-2026-11-10:L09/D-7cc6cd"
+  },
+  {
+   "uid": "dev3:P09/D-d7c6ed",
+   "repo": "dev3:P09",
+   "id": "D-d7c6ed",
+   "rank": 1,
+   "summary": "files in care/** do not import from config/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+   "role": {
+    "package": "",
+    "dir": "care",
+    "file": "*",
+    "entry": "-",
+    "kind": "module"
+   },
+   "rule": {
+    "type": "avoids",
+    "signal": "import:config"
+   },
+   "evidence": {
+    "holders": 352,
+    "total": 360,
+    "lower_bound": 0.96,
+    "lift": 3
+   },
+   "members": 360,
+   "example": "care/audit_log/enums.py#(file)",
+   "python_members": 359,
+   "outliers": 8,
+   "outlier_files": [
+    "care/emr/api/otp_viewsets/login.py",
+    "care/emr/api/otp_viewsets/patient.py",
+    "care/emr/api/otp_viewsets/slot.py",
+    "care/emr/api/viewsets/organization.py",
+    "care/emr/models/location.py",
+    "care/emr/resources/account/sync_items.py",
+    "care/emr/utils/mfa.py",
+    "care/users/reset_password_views.py"
+   ],
+   "block": " 1. [D-d7c6ed] files in care/** do not import from config/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)\n    evidence: 352/360 (lower bound 0.96, lift 3.0)\n    agents:   not shown to agents (family below admission bar: 100% of 1)\n    example:  care/audit_log/enums.py#(file)\n    outlier:  care/emr/api/otp_viewsets/login.py:1 (file)\n    outlier:  care/emr/api/otp_viewsets/patient.py:1 (file)\n    outlier:  care/emr/api/otp_viewsets/slot.py:1 (file)\n    outlier:  care/emr/api/viewsets/organization.py:1 (file)\n    outlier:  care/emr/models/location.py:1 (file)\n    outlier:  care/emr/resources/account/sync_items.py:1 (file)\n    outlier:  care/emr/utils/mfa.py:1 (file)\n    outlier:  care/users/reset_password_views.py:1 (file)",
+   "family": "layering",
+   "rule_kind": "avoids:import",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L19/D-d7c6ed"
+  },
+  {
+   "uid": "dev3:P09/D-6b7197",
+   "repo": "dev3:P09",
+   "id": "D-6b7197",
+   "rank": 2,
+   "summary": "classes in care/emr/models/** pass `on_delete` to db.models.ForeignKey(), except 5 members (not calling the callee)",
+   "role": {
+    "package": "",
+    "dir": "care/emr/models",
+    "file": "*",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "passes_key",
+    "callee": "pkg:django#db.models.ForeignKey",
+    "index": 99,
+    "key": "on_delete"
+   },
+   "evidence": {
+    "holders": 50,
+    "total": 50,
+    "lower_bound": 0.93,
+    "lift": 13.6
+   },
+   "members": 55,
+   "example": "care/emr/models/consent.py#Consent",
+   "python_members": 55,
+   "outliers": 0,
+   "outlier_files": [],
+   "block": " 2. [D-6b7197] classes in care/emr/models/** pass `on_delete` to db.models.ForeignKey(), except 5 members (not calling the callee)\n    evidence: 50/50 (lower bound 0.93, lift 13.6)\n    agents:   not shown to agents (family below admission bar: 50% of 4)\n    example:  care/emr/models/consent.py#Consent\n    exempt:   care/emr/models/facility_config.py:7 FacilityMonetoryConfig (does not call db.models.ForeignKey())\n    exempt:   care/emr/models/meta_artifact.py:6 MetaArtifact (does not call db.models.ForeignKey())\n    exempt:   care/emr/models/organization.py:106 Organization (does not call db.models.ForeignKey())\n    exempt:   care/emr/models/patient.py:179 PatientIdentifierConfigCache (does not call db.models.ForeignKey())\n    exempt:   care/emr/models/questionnaire.py:10 Questionnaire (does not call db.models.ForeignKey())",
+   "family": "argument_key",
+   "rule_kind": "passes_key",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L19/D-6b7197"
+  },
+  {
+   "uid": "dev3:P09/D-da9d32",
+   "repo": "dev3:P09",
+   "id": "D-da9d32",
+   "rank": 3,
+   "summary": "classes in care/emr/models/** extend EMRBaseModel",
+   "role": {
+    "package": "",
+    "dir": "care/emr/models",
+    "file": "*",
+    "entry": "-",
+    "kind": "class"
+   },
+   "rule": {
+    "type": "wrapped_by",
+    "kind": "extends",
+    "any_of": [
+     "care/emr/models/__init__.py#EMRBaseModel"
+    ]
+   },
+   "evidence": {
+    "holders": 54,
+    "total": 55,
+    "lower_bound": 0.9,
+    "lift": 20.9
+   },
+   "members": 55,
+   "example": "care/emr/models/consent.py#Consent",
+   "python_members": 55,
+   "outliers": 1,
+   "outlier_files": [
+    "care/emr/models/patient.py"
+   ],
+   "block": " 3. [D-da9d32] classes in care/emr/models/** extend EMRBaseModel\n    evidence: 54/55 (lower bound 0.90, lift 20.9)\n    agents:   not shown to agents (family below admission bar: 33% of 9)\n    example:  care/emr/models/consent.py#Consent\n    outlier:  care/emr/models/patient.py:179 PatientIdentifierConfigCache",
+   "family": "base_class",
+   "rule_kind": "wrapped_by:extends",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L19/D-da9d32"
+  },
+  {
+   "uid": "dev3:P09/D-5bc712",
+   "repo": "dev3:P09",
+   "id": "D-5bc712",
+   "rank": 1,
+   "summary": "enums in care/security/permissions/** are named `*Permissions`",
+   "role": {
+    "package": "",
+    "dir": "care/security/permissions",
+    "file": "*",
+    "entry": "-",
+    "kind": "class",
+    "variety": "enum"
+   },
+   "rule": {
+    "type": "named",
+    "pattern": "*Permissions"
+   },
+   "evidence": {
+    "holders": 35,
+    "total": 36,
+    "lower_bound": 0.86,
+    "lift": 33.8
+   },
+   "members": 36,
+   "example": "care/security/permissions/account.py#AccountPermissions",
+   "python_members": 36,
+   "outliers": 1,
+   "outlier_files": [
+    "care/security/permissions/constants.py"
+   ],
+   "block": " 4. [D-5bc712] enums in care/security/permissions/** are named `*Permissions`\n    evidence: 35/36 (lower bound 0.86, lift 33.8)\n    agents:   not shown to agents (family below admission bar: 40% of 15)\n    example:  care/security/permissions/account.py#AccountPermissions\n    outlier:  care/security/permissions/constants.py:5 PermissionContext",
+   "family": "naming",
+   "rule_kind": "named",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/dev3-py-2026-11-08:P09/D-5bc712"
+  },
+  {
+   "uid": "dev3:P09/D-52b9b8",
+   "repo": "dev3:P09",
+   "id": "D-52b9b8",
+   "rank": 5,
+   "summary": "model classes in care/emr/models/** pass `on_delete` to db.models.ForeignKey()",
+   "role": {
+    "package": "",
+    "dir": "care/emr/models",
+    "file": "*",
+    "entry": "-",
+    "kind": "class",
+    "member_kind": "model"
+   },
+   "rule": {
+    "type": "passes_key",
+    "callee": "pkg:django#db.models.ForeignKey",
+    "index": 99,
+    "key": "on_delete"
+   },
+   "evidence": {
+    "holders": 21,
+    "total": 21,
+    "lower_bound": 0.84,
+    "lift": 15
+   },
+   "members": 21,
+   "example": "care/emr/models/account.py#Account",
+   "python_members": 21,
+   "outliers": 0,
+   "outlier_files": [],
+   "block": " 5. [D-52b9b8] model classes in care/emr/models/** pass `on_delete` to db.models.ForeignKey()\n    evidence: 21/21 (lower bound 0.84, lift 15.0)\n    agents:   not shown to agents (family below admission bar: 50% of 4)\n    example:  care/emr/models/account.py#Account",
+   "family": "argument_key",
+   "rule_kind": "passes_key",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L19/D-52b9b8"
+  },
+  {
+   "uid": "dev3:P09/D-07072d",
+   "repo": "dev3:P09",
+   "id": "D-07072d",
+   "rank": 6,
+   "summary": "model classes in care/emr/** pass `max_length` to db.models.CharField(), except a member (not calling the callee)",
+   "role": {
+    "package": "",
+    "dir": "care/emr",
+    "file": "*",
+    "entry": "-",
+    "kind": "class",
+    "member_kind": "model"
+   },
+   "rule": {
+    "type": "passes_key",
+    "callee": "pkg:django#db.models.CharField",
+    "index": 99,
+    "key": "max_length"
+   },
+   "evidence": {
+    "holders": 20,
+    "total": 20,
+    "lower_bound": 0.84,
+    "lift": 16.8
+   },
+   "members": 21,
+   "example": "care/emr/models/account.py#Account",
+   "python_members": 21,
+   "outliers": 0,
+   "outlier_files": [],
+   "block": " 6. [D-07072d] model classes in care/emr/** pass `max_length` to db.models.CharField(), except a member (not calling the callee)\n    evidence: 20/20 (lower bound 0.84, lift 16.8)\n    agents:   not shown to agents (family below admission bar: 50% of 4)\n    example:  care/emr/models/account.py#Account\n    exempt:   care/emr/models/encounter.py:66 EncounterOrganization (does not call db.models.CharField())",
+   "family": "argument_key",
+   "rule_kind": "passes_key",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L19/D-07072d"
+  },
+  {
+   "uid": "dev3:P09/D-2bd47d",
+   "repo": "dev3:P09",
+   "id": "D-2bd47d",
+   "rank": 7,
+   "summary": "enums in care/security/** call Permission()",
+   "role": {
+    "package": "",
+    "dir": "care/security",
+    "file": "*",
+    "entry": "-",
+    "kind": "class",
+    "variety": "enum"
+   },
+   "rule": {
+    "type": "calls",
+    "callee": "care/security/permissions/constants.py#Permission"
+   },
+   "evidence": {
+    "holders": 35,
+    "total": 37,
+    "lower_bound": 0.82,
+    "lift": 32.9
+   },
+   "members": 37,
+   "example": "care/security/permissions/account.py#AccountPermissions",
+   "python_members": 37,
+   "outliers": 2,
+   "outlier_files": [
+    "care/security/permissions/constants.py",
+    "care/security/roles/role.py"
+   ],
+   "block": " 7. [D-2bd47d] enums in care/security/** call Permission()\n    evidence: 35/37 (lower bound 0.82, lift 32.9)\n    agents:   not shown to agents (family below admission bar: 44% of 9)\n    example:  care/security/permissions/account.py#AccountPermissions\n    outlier:  care/security/permissions/constants.py:5 PermissionContext\n    outlier:  care/security/roles/role.py:5 RoleContext",
+   "family": "calls",
+   "rule_kind": "calls",
+   "tier": "suggestion",
+   "origin": "eval/study/runs/py12-pool2-2026-11-10:L19/D-2bd47d"
+  }
+ ]
+}

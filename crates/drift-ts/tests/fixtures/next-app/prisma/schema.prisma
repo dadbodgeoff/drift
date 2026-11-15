@@ -1,0 +1,6 @@
+model Link {
+  id          String @id
+  workspaceId String
+  url         String
+  @@index([workspaceId])
+}

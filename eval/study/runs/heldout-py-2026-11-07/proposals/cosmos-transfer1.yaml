@@ -1,0 +1,80 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  suffixes: []
+conventions:
+- id: D-fd9569
+  status: proposed
+  mode: advise
+  summary: >-
+    files in cosmos_transfer1/** do not import from scripts/** (declared
+    dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: ""
+    dir: cosmos_transfer1
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:scripts
+  evidence:
+    holders: 228
+    total: 229
+    lower_bound: 0.976
+    lift: 3.0
+    python_members: 229
+  example: >-
+    cosmos_transfer1/auxiliary/depth_anything/inference/depth_anything_pipeline.py#(file)
+  selector_version: 2
+- id: D-3c82bf
+  status: proposed
+  mode: advise
+  summary: >-
+    functions in cosmos_transfer1/auxiliary/tokenizer/inference/** declare their
+    return type
+  role:
+    package: ""
+    dir: cosmos_transfer1/auxiliary/tokenizer/inference
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 1.844
+    python_members: 21
+  example: cosmos_transfer1/auxiliary/tokenizer/inference/image_cli.py#main
+  selector_version: 2
+- id: D-877f3b
+  status: proposed
+  mode: advise
+  summary: classes in cosmos_transfer1/diffusion/training/modules/** extend nn.Module
+  role:
+    package: ""
+    dir: cosmos_transfer1/diffusion/training/modules
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - pkg:torch#nn.Module
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 2.211
+    python_members: 21
+  example: cosmos_transfer1/diffusion/training/modules/attention.py#Attention
+  selector_version: 2

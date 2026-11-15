@@ -1,0 +1,11 @@
+# R2 ablation, key findings (relabel4 dev, LORO). Data: ../r2/ (sim.out, results.json, frontier.png)
+- No policy reaches 90% LORO with >=5 cards shown in either language.
+- Perfect W1+W2+W3 ceiling: TS 93.9 / Py 91.2; proxies fix <25% of those cards.
+- Best LORO: TS 0-outliers 84% (16/19) [62-94], 16% coverage, 1.2/repo, not-wrong 95%; fragile (9/16 repos, novu 6/19); second sample +2 cards both WRONG -> 76% pooled.
+- TS concentration(c)+<=2 outliers 79% (30/38) 32% cov. Top-1 by Wilson: TS 77 / Py 57. Py top-1 by family 64% (9/14).
+- Python: no feature separates ACCEPT from WRONG; 0-outlier Py cards 50%.
+- Overfit gaps: logistic TS 94->33; tuned thresholds TS 88->55, Py 100->38; family >=75% 80->40; logistic+family prior shows nothing at 90.
+- Kind check +2 TS/+9 Py; outlier regularity +2 TS.
+- W2 as specified trivially true for 1 outlier (file name) -> removes 21 TS ACCEPT; plan vocabulary fixes 0 cards; multi-marker (>=2 outliers/marker) ~+4 TS, hides real violations on 12 ACCEPT cards.
+- W1 Py: lineage purity as mixed on ACCEPT as WRONG (conflicts with R1's 8 clean cases — check W1py projection).
+- Recommendation: W0 ship (admits nothing); pre-register "TS 0 outliers" candidate; W2 multi-marker only; W1 Py; W3; W4 rank by Wilson; no learned scorer.

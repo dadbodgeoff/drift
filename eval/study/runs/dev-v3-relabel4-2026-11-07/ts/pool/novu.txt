@@ -1,0 +1,180 @@
+23 conventions from 20012 units in 1310 roles (0 default tier, 23 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-7c65a3] packages/providers: classes in src/** (*.provider files) extend BaseProvider
+    evidence: 86/87 (lower bound 0.94, lift 33.5)
+    tier:     suggestion (rule kind wrapped_by:extends; decision D7 keeps only call wrappers and layering)
+    example:  packages/providers/src/lib/chat/chat-webhook/chat-webhook.provider.ts#ChatWebhookProvider
+    outlier:  packages/providers/src/lib/tool/tool-webhook/tool-webhook.provider.ts:29 ToolWebhookProvider
+    exempt:   packages/providers/src/base.provider.ts:21 BaseProvider (in the module that defines BaseProvider)
+    exempt:   packages/providers/src/lib/email/email-webhook/email-webhook.provider.ts:35 EmailWebhookUrlBlockedError (a error, named for its base Error)
+
+ 2. [D-462c2b] libs/application-generic: classes in src/factories/sms/** (*.handler files) extend BaseSmsHandler
+    evidence: 39/39 (lower bound 0.91, lift 75.4)
+    tier:     suggestion (rule kind wrapped_by:extends; decision D7 keeps only call wrappers and layering)
+    example:  libs/application-generic/src/factories/sms/handlers/africas-talking.handler.ts#AfricasTalkingSmsHandler
+    exempt:   libs/application-generic/src/factories/sms/handlers/base.handler.ts:6 BaseSmsHandler (in the module that defines BaseSmsHandler)
+
+ 3. [D-36a604] apps/api: HTTP handlers in src/app/inbox/** (*.controller files) are decorated with UseGuards()
+    evidence: 36/37 (lower bound 0.86, lift 53.3)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    example:  apps/api/src/app/inbox/inbox.controller.ts#DELETE /inbox/channel-connections/:identifier
+    outlier:  apps/api/src/app/inbox/inbox.controller.ts:161 POST /inbox/session
+
+ 4. [D-3f3e16] apps/api: HTTP handlers in src/app/integrations/** (*.controller files) are decorated with ApiOperation()
+    evidence: 32/34 (lower bound 0.81, lift 16.1)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    example:  apps/api/src/app/integrations/integrations-mobile-configure-public.controller.ts#GET /integrations/mobile-configure/status
+    outlier:  apps/api/src/app/integrations/integrations.controller.ts:478 GET /integrations/:channelType/limit
+    outlier:  apps/api/src/app/integrations/integrations.controller.ts:502 GET /integrations/in-app/status
+
+ 5. [D-2e9dcc] apps/api: classes in src/** (*.command files) are named `*Command`
+    evidence: 409/409 (lower bound 0.99, lift 5.6)
+    tier:     suggestion (rule kind named)
+    example:  apps/api/src/app/activity/usecases/build-active-subscribers-chart/build-active-subscribers-chart.command.ts#BuildActiveSubscribersChartCommand
+    exempt:   apps/api/src/app/agents/conversation-runtime/reply/handle-agent-reply/handle-agent-reply.command.ts:16 QuoteReplyContextDto (a plain class beside HandleAgentReplyCommand, which follows the scheme on its base)
+    exempt:   apps/api/src/app/bridge/usecases/sync/sync.command.ts:60 WorkflowDefine (a plain class beside SyncCommand, which follows the scheme on its base)
+    exempt:   apps/api/src/app/shared/commands/project.command.ts:17 EnvironmentWithSubscriber (shared part used by 35 members)
+    ... 3 more exempt
+
+ 6. [D-6d3bdc] libs/application-generic: classes in src/factories/mail/** (*.handler files) extend BaseEmailHandler
+    evidence: 21/21 (lower bound 0.84, lift 137.1)
+    tier:     suggestion (rule kind wrapped_by:extends; decision D7 keeps only call wrappers and layering)
+    example:  libs/application-generic/src/factories/mail/handlers/anypost.handler.ts#AnypostHandler
+    exempt:   libs/application-generic/src/factories/mail/handlers/base.handler.ts:7 BaseEmailHandler (in the module that defines BaseEmailHandler)
+
+ 7. [D-53fcf5] apps/api: classes in src/app/inbox/** (*.command files) extend EnvironmentWithSubscriber
+    evidence: 18/19 (lower bound 0.75, lift 81.6)
+    tier:     suggestion (rule kind wrapped_by:extends; decision D7 keeps only call wrappers and layering)
+    example:  apps/api/src/app/inbox/usecases/bulk-update-preferences/bulk-update-preferences.command.ts#BulkUpdatePreferencesCommand
+    outlier:  apps/api/src/app/inbox/usecases/session/session.command.ts:7 SessionCommand
+
+ 8. [D-94d735] libs/application-generic: classes in src/factories/chat/** (*.handler files) extend BaseChatHandler
+    evidence: 18/18 (lower bound 0.82, lift 158.7)
+    tier:     suggestion (rule kind wrapped_by:extends; decision D7 keeps only call wrappers and layering)
+    example:  libs/application-generic/src/factories/chat/handlers/chat-webhook.handler.ts#ChatWebhookHandler
+    exempt:   libs/application-generic/src/factories/chat/handlers/base.handler.ts:7 BaseChatHandler (in the module that defines BaseChatHandler)
+
+ 9. [D-52c44b] apps/api: HTTP handlers in src/app/widgets/** (*.controller files) are decorated with UseGuards()
+    evidence: 18/19 (lower bound 0.75, lift 51.9)
+    tier:     suggestion (rule kind wrapped_by:decorator; decision D7 keeps only call wrappers and layering)
+    example:  apps/api/src/app/widgets/widgets.controller.ts#DELETE /widgets/messages
+    outlier:  apps/api/src/app/widgets/widgets.controller.ts:102 POST /widgets/session/initialize
+
+10. [D-e79710] apps/api: classes in src/** (*.dto files) are named `*Dto`
+    evidence: 642/675 (lower bound 0.93, lift 3.6)
+    tier:     suggestion (rule kind named)
+    example:  apps/api/src/app/activity/dtos/get-charts.request.dto.ts#GetChartsRequestDto
+    outlier:  apps/api/src/app/blueprint/dtos/get-blueprint.response.dto.ts:3 GetBlueprintResponse
+    outlier:  apps/api/src/app/blueprint/dtos/grouped-blueprint.response.dto.ts:3 GroupedBlueprintResponse
+    outlier:  apps/api/src/app/events/dtos/trigger-event-request.dto.ts:115 ChannelOverrides
+    ... 30 more outliers
+    exempt:   apps/api/src/app/agents/shared/dtos/agent-reply-payload.dto.ts:46 IsValidReplyContent (another kind of class (decorated with ValidatorConstraint()) beside AddReactionPayloadDto, which follows the scheme)
+    exempt:   apps/api/src/app/agents/shared/dtos/agent-reply-payload.dto.ts:94 IsValidTypingOp (another kind of class (decorated with ValidatorConstraint()) beside AddReactionPayloadDto, which follows the scheme)
+    exempt:   apps/api/src/app/agents/shared/dtos/agent-signal.dto.ts:131 IsValidTriggerRecipient (another kind of class (decorated with ValidatorConstraint()) beside HumanSignalDto, which follows the scheme)
+
+11. [D-67ddb9] packages/providers: classes in src/** (*.provider files) are named `*Provider`
+    evidence: 88/88 (lower bound 0.96, lift 32.8)
+    tier:     suggestion (rule kind named)
+    example:  packages/providers/src/lib/chat/chat-webhook/chat-webhook.provider.ts#ChatWebhookProvider
+    exempt:   packages/providers/src/lib/email/email-webhook/email-webhook.provider.ts:35 EmailWebhookUrlBlockedError (another kind of class (extends Error) beside EmailWebhookProvider, which follows the scheme)
+
+12. [D-bdd970] libs/application-generic: classes in src/services/** (*.service files) are named `*Service`
+    evidence: 65/65 (lower bound 0.94, lift 17.3)
+    tier:     suggestion (rule kind named)
+    example:  libs/application-generic/src/services/agent-email-inbox-quota/agent-email-inbox-quota.service.ts#AgentEmailInboxQuotaService
+    exempt:   libs/application-generic/src/services/agent-email-inbox-quota/agent-email-inbox-quota.service.ts:56 AgentEmailInboxQuotaExceededException (another kind of class (extends HttpException) beside AgentEmailInboxQuotaService, which follows the scheme)
+    exempt:   libs/application-generic/src/services/queues/queue-base.service.ts:25 PartialDispatchError (another kind of class (extends Error) beside QueueBaseService, which follows the scheme)
+
+13. [D-dbba9a] apps/dashboard: components in src/pages/** are named `*Page`
+    evidence: 62/66 (lower bound 0.85, lift 20.6)
+    tier:     suggestion (rule kind named)
+    example:  apps/dashboard/src/pages/access-denied-page.tsx#AccessDeniedPage
+    outlier:  apps/dashboard/src/pages/activity-feed.tsx:17 ActivityFeed
+    outlier:  apps/dashboard/src/pages/new-layout-drawer.tsx:44 NewLayoutDrawer
+    outlier:  apps/dashboard/src/pages/test-workflow-route-handler.tsx:5 TestWorkflowRouteHandler
+    ... 1 more outliers
+    exempt:   apps/dashboard/src/pages/new-workflow-drawer.tsx:31 NewWorkflowDrawer (shared part used by 2 members)
+
+14. [D-808edd] libs/application-generic: classes in src/** (*.command files) are named `*Command`
+    evidence: 90/95 (lower bound 0.88, lift 4.9)
+    tier:     suggestion (rule kind named)
+    example:  libs/application-generic/src/commands/authenticated.command.ts#AuthenticatedCommand
+    outlier:  libs/application-generic/src/commands/base.command.ts:35 ConstraintValidation
+    outlier:  libs/application-generic/src/commands/project.command.ts:74 EnvironmentWithSubscriber
+    outlier:  libs/application-generic/src/usecases/upsert-workflow/upsert-workflow.command.ts:32 ChannelPreferenceData
+    ... 2 more outliers
+    exempt:   libs/application-generic/src/commands/base.command.ts:95 CommandValidationException (another kind of class (extends BadRequestException) beside BaseCommand, which follows the scheme)
+    exempt:   libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:23 ChannelPreferencePartial (a plain class beside UpsertPreferencesPartialBaseCommand, which follows the scheme on its base)
+    exempt:   libs/application-generic/src/usecases/upsert-preferences/upsert-preferences.command.ts:96 ChannelPreferenceRequired (a plain class beside UpsertPreferencesPartialBaseCommand, which follows the scheme on its base)
+    ... 6 more exempt
+
+15. [D-6ded6b] packages/framework: classes in src/** (*.errors files) are named `*Error`
+    evidence: 39/40 (lower bound 0.87, lift 22.8)
+    tier:     suggestion (rule kind named)
+    example:  packages/framework/src/errors/base.errors.ts#BadRequestError
+    outlier:  packages/framework/src/errors/resource.errors.ts:17 ResourceExecutionFailed
+
+16. [D-1b8741] libs/application-generic: exported values in src/schemas/control/** (*.schema files) are named `*Schema`
+    evidence: 30/30 (lower bound 0.89, lift 21.4)
+    tier:     suggestion (rule kind named)
+    example:  libs/application-generic/src/schemas/control/chat-control.schema.ts#chatControlSchema
+
+17. [D-74374a] libs/dal: classes in src/** (*.entity files) are named `*Entity`
+    evidence: 52/55 (lower bound 0.85, lift 53.9)
+    tier:     suggestion (rule kind named)
+    example:  libs/dal/src/repositories/agent-integration/agent-integration.entity.ts#AgentIntegrationEntity
+    outlier:  libs/dal/src/repositories/message-template/message-template.entity.ts:68 ControlSchemas
+    outlier:  libs/dal/src/repositories/notification-template/notification-template.entity.ts:147 NotificationStepData
+    outlier:  libs/dal/src/repositories/notification-template/notification-template.entity.ts:195 StepFilter
+    exempt:   libs/dal/src/repositories/translation-group/translation-group.entity.ts:14 TranslationGroupWithTranslations (another kind of class (extends TranslationGroupEntity) beside TranslationGroupEntity, which follows the scheme)
+
+18. [D-7b0a0f] packages/novu: components in src/commands/wizard/** render inside <Box>
+    evidence: 24/25 (lower bound 0.81, lift 35.8)
+    tier:     suggestion (rule kind wrapped_by:jsx; decision D7 keeps only call wrappers and layering)
+    example:  packages/novu/src/commands/wizard/ui/components/auth-pane.tsx#AuthPane
+    outlier:  packages/novu/src/commands/wizard/ui/markdown/table.tsx:11 MarkdownTable
+
+19. [D-b36837] packages/js: functions in src/** (helpers files) use `try`
+    evidence: 36/37 (lower bound 0.86, lift 11.1)
+    tier:     suggestion (rule kind control)
+    example:  packages/js/src/channel-connections/helpers.ts#deleteChannelConnection
+    outlier:  packages/js/src/notifications/helpers.ts:20 ensureNotificationInstance
+
+20. [D-1cdfa5] libs/application-generic: functions in src/services/cache/key-builders/** are named `build*`
+    evidence: 20/21 (lower bound 0.77, lift 19.0)
+    tier:     suggestion (rule kind named)
+    example:  libs/application-generic/src/services/cache/key-builders/builder.scoped.ts#buildEnvironmentScopedKey
+    outlier:  libs/application-generic/src/services/cache/key-builders/crypto.ts:3 createHash
+
+21. [D-68d6d9] libs/application-generic: classes in src/** (*.dto files) are named `*Dto`
+    evidence: 103/111 (lower bound 0.86, lift 3.3)
+    tier:     suggestion (rule kind named)
+    example:  libs/application-generic/src/dtos/base-issue.dto.ts#BaseIssueDto
+    outlier:  libs/application-generic/src/dtos/integration-issue.dto.ts:6 StepIntegrationIssue
+    outlier:  libs/application-generic/src/dtos/ui-schema-property.dto.ts:5 UiSchemaProperty
+    outlier:  libs/application-generic/src/dtos/ui-schema.dto.ts:7 UiSchema
+    ... 5 more outliers
+    exempt:   libs/application-generic/src/dtos/subscribers/subscriber-response.dto.ts:4 SubscriberResponseDtoOptional (a plain class beside SubscriberResponseDto, which follows the scheme on its base)
+    exempt:   libs/application-generic/src/dtos/workflow/generate-preview-response.dto.ts:76 ChatRenderOutput (another kind of class (extends RenderOutput) beside ActionDto, which follows the scheme)
+    exempt:   libs/application-generic/src/dtos/workflow/generate-preview-response.dto.ts:159 DelayRenderOutput (another kind of class (extends RenderOutput) beside ActionDto, which follows the scheme)
+    ... 5 more exempt
+
+22. [D-a83a64] files in apps/dashboard/** use react-icons for icons, not lucide-react/@heroicons/react/@tabler/icons-react/@radix-ui/react-icons/@phosphor-icons/react
+    evidence: 428/494 (lower bound 0.83, lift 1.0)
+    tier:     suggestion (rule kind prefers_library)
+    split:    react-icons 458, lucide-react 50, @radix-ui/react-icons 17
+    example:  apps/dashboard/src/components/activity/activity-calendar.tsx#(file)
+    outlier:  apps/dashboard/src/components/activity/activity-date-range-filter.tsx:1 (file)
+    outlier:  apps/dashboard/src/components/activity/activity-detail-card.tsx:1 (file)
+    outlier:  apps/dashboard/src/components/activity/activity-job-item.tsx:1 (file)
+    ... 63 more outliers
+
+23. [D-709b2b] apps/api: HTTP handlers in src/app/subscribers/** (*.controller files) pass `description` to ApiOperation()
+    evidence: 21/22 (lower bound 0.78, lift 20.3)
+    tier:     suggestion (rule kind passes_key)
+    example:  apps/api/src/app/subscribers/subscribersV1.controller.ts#DELETE /subscribers/:subscriberId
+    outlier:  apps/api/src/app/subscribers/subscribersV1.controller.ts:848 GET /subscribers/:subscriberId/credentials/:providerId/oauth
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

@@ -1,0 +1,102 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - apps
+  - base
+  - conftest
+  - const
+  - dataloaders
+  - enums
+  - error_codes
+  - events
+  - exceptions
+  - filters
+  - interface
+  - lock_objects
+  - models
+  - notifications
+  - plugin
+  - resolvers
+  - saleor3_22
+  - saleor3_23
+  - schema
+  - search
+  - shared
+  - sorters
+  - tasks
+  - test_exclude_shipping
+  - test_order
+  - test_plugin
+  - test_tasks
+  - test_utils
+  - types
+  - utils
+  suffixes: []
+  layers:
+  - mutations/base
+  - mutations/utils
+  - tests/conftest
+  - tests/test_utils
+  - tests/test_validators
+  - tests/utils
+conventions:
+- id: D-ac08d9
+  status: proposed
+  mode: advise
+  summary: enums in saleor/** (error_codes files) are named `*Code`
+  role:
+    package: ""
+    dir: saleor
+    file: error_codes
+    entry: '-'
+    kind: class
+    variety: enum
+  rule:
+    type: named
+    pattern: "*Code"
+  evidence:
+    holders: 91
+    total: 92
+    lower_bound: 0.941
+    lift: 26.047
+    python_members: 92
+  example: saleor/account/error_codes.py#AccountErrorCode
+  selector_version: 3
+- id: D-7e57d6
+  status: proposed
+  mode: advise
+  summary: >-
+    files in saleor/graphql/account/**, saleor/graphql/app/** and
+    saleor/graphql/order/** have a test file
+  role:
+    package: ""
+    dir: saleor/graphql/account
+    file: "*"
+    entry: '-'
+    kind: module
+    also:
+    - package: ""
+      dir: saleor/graphql/app
+      file: "*"
+      entry: '-'
+      kind: module
+    - package: ""
+      dir: saleor/graphql/order
+      file: "*"
+      entry: '-'
+      kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 106
+    total: 110
+    lower_bound: 0.91
+    lift: 1.618
+    python_members: 110
+  example: saleor/graphql/account/bulk_mutations/customer_bulk_delete.py#(file)
+  selector_version: 3

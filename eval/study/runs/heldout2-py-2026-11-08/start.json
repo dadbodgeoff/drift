@@ -1,0 +1,9 @@
+{
+  "held_out": true,
+  "status": "started",
+  "manifest": "eval/holdout-2-2026-11-07-py.json",
+  "set_id": "py-heldout2-2026-11-07",
+  "core_sha256": "96943fb1adc0cb2d62d637b5e2ede8aeae9cb2d83aa7cac571a53680e5776740",
+  "product_commit": "4e017e38ccc507d282ca31f49029ca48f035ddc1",
+  "started_at": "2026-11-08T01:46:56.044Z"
+}

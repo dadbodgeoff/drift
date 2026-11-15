@@ -1,0 +1,1695 @@
+{
+ "calibrations": [
+  {
+   "path": "eval/study/runs/calib-v3-2026-11-06",
+   "shift": {
+    "a": "eval/study/runs/calib-v3-2026-11-06/prior.jsonl",
+    "b": "eval/study/runs/calib-v3-2026-11-06/v3-final.jsonl",
+    "n": 61,
+    "scope": 61,
+    "exact": 0.639344262295082,
+    "kappa": 0.383838383838384,
+    "kappa_boot": {
+     "lo": 0.16578249336870024,
+     "hi": 0.5827530798071773,
+     "clusters": 16
+    },
+    "accept_vs_not": {
+     "n": 61,
+     "po": 0.7049180327868853,
+     "pe": 0.45982262832571885,
+     "kappa": 0.45373134328358217
+    },
+    "wrong_vs_not": {
+     "n": 61,
+     "po": 0.639344262295082,
+     "pe": 0.43509809191077664,
+     "kappa": 0.3615604186489059
+    },
+    "confusion": {
+     "ACCEPT": {
+      "ACCEPT": 19,
+      "TRIVIAL": 0,
+      "WRONG": 18
+     },
+     "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 4
+     },
+     "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 20
+     }
+    },
+    "mix": {
+     "A": {
+      "ACCEPT": 37,
+      "TRIVIAL": 4,
+      "WRONG": 20
+     },
+     "B": {
+      "ACCEPT": 19,
+      "TRIVIAL": 0,
+      "WRONG": 42
+     }
+    },
+    "disagreements": [
+     {
+      "uid": "dub/D-e25af3",
+      "repo": "dub",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "dub/D-3fad9a",
+      "repo": "dub",
+      "a": "TRIVIAL",
+      "b": "WRONG"
+     },
+     {
+      "uid": "dub/D-a23ff8",
+      "repo": "dub",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "dub/D-024a81",
+      "repo": "dub",
+      "a": "TRIVIAL",
+      "b": "WRONG"
+     },
+     {
+      "uid": "dub/D-742eb6",
+      "repo": "dub",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "dub/D-79cc0a",
+      "repo": "dub",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "twenty/D-47b768",
+      "repo": "twenty",
+      "a": "TRIVIAL",
+      "b": "WRONG"
+     },
+     {
+      "uid": "twenty/D-006db2",
+      "repo": "twenty",
+      "a": "TRIVIAL",
+      "b": "WRONG"
+     },
+     {
+      "uid": "ai/D-fc5ef7",
+      "repo": "ai",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "nest/D-f68b2a",
+      "repo": "nest",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "supabase/D-c59437",
+      "repo": "supabase",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "immich/D-c10e8e",
+      "repo": "immich",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "immich/D-26380c",
+      "repo": "immich",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "midday/D-7da2b9",
+      "repo": "midday",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "infisical/D-d9b44e",
+      "repo": "infisical",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "infisical/D-1b2542",
+      "repo": "infisical",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "full-stack-fastapi-template/D-6e757d",
+      "repo": "full-stack-fastapi-template",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "polar/D-fb4011",
+      "repo": "polar",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "netbox/D-cc1341",
+      "repo": "netbox",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "netbox/D-bc0c7d",
+      "repo": "netbox",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "saleor/D-6af632",
+      "repo": "saleor",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "langchain/D-468530",
+      "repo": "langchain",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     }
+    ]
+   },
+   "agreements": [
+    {
+     "path": "eval/study/runs/calib-v3-2026-11-06/py",
+     "agreement": {
+      "a": "eval/study/runs/calib-v3-2026-11-06/py/labels/A",
+      "b": "eval/study/runs/calib-v3-2026-11-06/py/labels/B",
+      "n": 24,
+      "scope": 26,
+      "exact": 0.9583333333333334,
+      "kappa": 0.903225806451613,
+      "kappa_boot": {
+       "lo": 0.8384279475982533,
+       "hi": 1,
+       "clusters": 5
+      },
+      "accept_vs_not": {
+       "n": 24,
+       "po": 0.9583333333333334,
+       "pe": 0.5694444444444444,
+       "kappa": 0.903225806451613
+      },
+      "wrong_vs_not": {
+       "n": 24,
+       "po": 0.9583333333333334,
+       "pe": 0.5694444444444444,
+       "kappa": 0.903225806451613
+      },
+      "confusion": {
+       "ACCEPT": {
+        "ACCEPT": 7,
+        "TRIVIAL": 0,
+        "WRONG": 1
+       },
+       "TRIVIAL": {
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 0
+       },
+       "WRONG": {
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 16
+       }
+      },
+      "mix": {
+       "A": {
+        "ACCEPT": 8,
+        "TRIVIAL": 0,
+        "WRONG": 16
+       },
+       "B": {
+        "ACCEPT": 7,
+        "TRIVIAL": 0,
+        "WRONG": 17
+       }
+      },
+      "disagreements": [
+       {
+        "uid": "polar/D-093712",
+        "repo": "polar",
+        "a": "ACCEPT",
+        "b": "WRONG"
+       }
+      ]
+     }
+    },
+    {
+     "path": "eval/study/runs/calib-v3-2026-11-06/ts",
+     "agreement": {
+      "a": "eval/study/runs/calib-v3-2026-11-06/ts/labels/A",
+      "b": "eval/study/runs/calib-v3-2026-11-06/ts/labels/B",
+      "n": 37,
+      "scope": 37,
+      "exact": 0.972972972972973,
+      "kappa": 0.9335727109515262,
+      "kappa_boot": {
+       "lo": 0.7843137254901962,
+       "hi": 1,
+       "clusters": 11
+      },
+      "accept_vs_not": {
+       "n": 37,
+       "po": 0.972972972972973,
+       "pe": 0.5931336742147553,
+       "kappa": 0.9335727109515262
+      },
+      "wrong_vs_not": {
+       "n": 37,
+       "po": 0.972972972972973,
+       "pe": 0.5931336742147553,
+       "kappa": 0.9335727109515262
+      },
+      "confusion": {
+       "ACCEPT": {
+        "ACCEPT": 10,
+        "TRIVIAL": 0,
+        "WRONG": 0
+       },
+       "TRIVIAL": {
+        "ACCEPT": 0,
+        "TRIVIAL": 0,
+        "WRONG": 0
+       },
+       "WRONG": {
+        "ACCEPT": 1,
+        "TRIVIAL": 0,
+        "WRONG": 26
+       }
+      },
+      "mix": {
+       "A": {
+        "ACCEPT": 10,
+        "TRIVIAL": 0,
+        "WRONG": 27
+       },
+       "B": {
+        "ACCEPT": 11,
+        "TRIVIAL": 0,
+        "WRONG": 26
+       }
+      },
+      "disagreements": [
+       {
+        "uid": "documenso/D-2a51e9",
+        "repo": "documenso",
+        "a": "WRONG",
+        "b": "ACCEPT"
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ],
+ "agreements": [
+  {
+   "path": "eval/study/runs/calib-v3-2026-11-06/py",
+   "agreement": {
+    "a": "eval/study/runs/calib-v3-2026-11-06/py/labels/A",
+    "b": "eval/study/runs/calib-v3-2026-11-06/py/labels/B",
+    "n": 24,
+    "scope": 26,
+    "exact": 0.9583333333333334,
+    "kappa": 0.903225806451613,
+    "kappa_boot": {
+     "lo": 0.8384279475982533,
+     "hi": 1,
+     "clusters": 5
+    },
+    "accept_vs_not": {
+     "n": 24,
+     "po": 0.9583333333333334,
+     "pe": 0.5694444444444444,
+     "kappa": 0.903225806451613
+    },
+    "wrong_vs_not": {
+     "n": 24,
+     "po": 0.9583333333333334,
+     "pe": 0.5694444444444444,
+     "kappa": 0.903225806451613
+    },
+    "confusion": {
+     "ACCEPT": {
+      "ACCEPT": 7,
+      "TRIVIAL": 0,
+      "WRONG": 1
+     },
+     "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+     },
+     "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 16
+     }
+    },
+    "mix": {
+     "A": {
+      "ACCEPT": 8,
+      "TRIVIAL": 0,
+      "WRONG": 16
+     },
+     "B": {
+      "ACCEPT": 7,
+      "TRIVIAL": 0,
+      "WRONG": 17
+     }
+    },
+    "disagreements": [
+     {
+      "uid": "polar/D-093712",
+      "repo": "polar",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     }
+    ]
+   }
+  },
+  {
+   "path": "eval/study/runs/calib-v3-2026-11-06/ts",
+   "agreement": {
+    "a": "eval/study/runs/calib-v3-2026-11-06/ts/labels/A",
+    "b": "eval/study/runs/calib-v3-2026-11-06/ts/labels/B",
+    "n": 37,
+    "scope": 37,
+    "exact": 0.972972972972973,
+    "kappa": 0.9335727109515262,
+    "kappa_boot": {
+     "lo": 0.7843137254901962,
+     "hi": 1,
+     "clusters": 11
+    },
+    "accept_vs_not": {
+     "n": 37,
+     "po": 0.972972972972973,
+     "pe": 0.5931336742147553,
+     "kappa": 0.9335727109515262
+    },
+    "wrong_vs_not": {
+     "n": 37,
+     "po": 0.972972972972973,
+     "pe": 0.5931336742147553,
+     "kappa": 0.9335727109515262
+    },
+    "confusion": {
+     "ACCEPT": {
+      "ACCEPT": 10,
+      "TRIVIAL": 0,
+      "WRONG": 0
+     },
+     "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+     },
+     "WRONG": {
+      "ACCEPT": 1,
+      "TRIVIAL": 0,
+      "WRONG": 26
+     }
+    },
+    "mix": {
+     "A": {
+      "ACCEPT": 10,
+      "TRIVIAL": 0,
+      "WRONG": 27
+     },
+     "B": {
+      "ACCEPT": 11,
+      "TRIVIAL": 0,
+      "WRONG": 26
+     }
+    },
+    "disagreements": [
+     {
+      "uid": "documenso/D-2a51e9",
+      "repo": "documenso",
+      "a": "WRONG",
+      "b": "ACCEPT"
+     }
+    ]
+   }
+  },
+  {
+   "path": "eval/study/runs/dev-py-2026-11-05",
+   "agreement": {
+    "a": "eval/study/runs/dev-py-2026-11-05/labels/A",
+    "b": "eval/study/runs/dev-py-2026-11-05/labels/B",
+    "n": 53,
+    "scope": 53,
+    "exact": 0.8867924528301887,
+    "kappa": 0.7698986975397974,
+    "kappa_boot": {
+     "lo": 0.4489795918367347,
+     "hi": 1,
+     "clusters": 8
+    },
+    "accept_vs_not": {
+     "n": 53,
+     "po": 0.8867924528301887,
+     "pe": 0.5080099679601282,
+     "kappa": 0.7698986975397974
+    },
+    "wrong_vs_not": {
+     "n": 53,
+     "po": 0.8867924528301887,
+     "pe": 0.5080099679601282,
+     "kappa": 0.7698986975397974
+    },
+    "confusion": {
+     "ACCEPT": {
+      "ACCEPT": 19,
+      "TRIVIAL": 0,
+      "WRONG": 6
+     },
+     "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+     },
+     "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 28
+     }
+    },
+    "mix": {
+     "A": {
+      "ACCEPT": 25,
+      "TRIVIAL": 0,
+      "WRONG": 28
+     },
+     "B": {
+      "ACCEPT": 19,
+      "TRIVIAL": 0,
+      "WRONG": 34
+     }
+    },
+    "disagreements": [
+     {
+      "uid": "netbox/D-bc0c7d",
+      "repo": "netbox",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "netbox/D-0eddf0",
+      "repo": "netbox",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "netbox/D-7d7f0c",
+      "repo": "netbox",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "CTFd/D-49130f",
+      "repo": "CTFd",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "CTFd/D-bd2596",
+      "repo": "CTFd",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "CTFd/D-ce2984",
+      "repo": "CTFd",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     }
+    ]
+   }
+  },
+  {
+   "path": "eval/study/runs/dev-py-r2-2026-11-05/relabel",
+   "agreement": {
+    "a": "eval/study/runs/dev-py-r2-2026-11-05/relabel/labels/A",
+    "b": "eval/study/runs/dev-py-r2-2026-11-05/relabel/labels/B",
+    "n": 22,
+    "scope": 22,
+    "exact": 0.8181818181818182,
+    "kappa": 0.6363636363636365,
+    "kappa_boot": {
+     "lo": 0.15384615384615374,
+     "hi": 0.813953488372093,
+     "clusters": 5
+    },
+    "accept_vs_not": {
+     "n": 22,
+     "po": 0.8181818181818182,
+     "pe": 0.5,
+     "kappa": 0.6363636363636365
+    },
+    "wrong_vs_not": {
+     "n": 22,
+     "po": 0.8181818181818182,
+     "pe": 0.5,
+     "kappa": 0.6363636363636365
+    },
+    "confusion": {
+     "ACCEPT": {
+      "ACCEPT": 9,
+      "TRIVIAL": 0,
+      "WRONG": 2
+     },
+     "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+     },
+     "WRONG": {
+      "ACCEPT": 2,
+      "TRIVIAL": 0,
+      "WRONG": 9
+     }
+    },
+    "mix": {
+     "A": {
+      "ACCEPT": 11,
+      "TRIVIAL": 0,
+      "WRONG": 11
+     },
+     "B": {
+      "ACCEPT": 11,
+      "TRIVIAL": 0,
+      "WRONG": 11
+     }
+    },
+    "disagreements": [
+     {
+      "uid": "polar/D-fb4011",
+      "repo": "polar",
+      "a": "WRONG",
+      "b": "ACCEPT"
+     },
+     {
+      "uid": "netbox/D-310ec7",
+      "repo": "netbox",
+      "a": "WRONG",
+      "b": "ACCEPT"
+     },
+     {
+      "uid": "saleor/D-e36ea5",
+      "repo": "saleor",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "langchain/D-468530",
+      "repo": "langchain",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     }
+    ]
+   }
+  },
+  {
+   "path": "eval/study/runs/dev-ts-r2-2026-11-05/relabel",
+   "agreement": {
+    "a": "eval/study/runs/dev-ts-r2-2026-11-05/relabel/labels/A",
+    "b": "eval/study/runs/dev-ts-r2-2026-11-05/relabel/labels/B",
+    "n": 31,
+    "scope": 31,
+    "exact": 0.8387096774193549,
+    "kappa": 0.6652267818574514,
+    "kappa_boot": {
+     "lo": 0.42622950819672123,
+     "hi": 0.901023890784983,
+     "clusters": 10
+    },
+    "accept_vs_not": {
+     "n": 31,
+     "po": 0.8387096774193549,
+     "pe": 0.5182101977107181,
+     "kappa": 0.6652267818574514
+    },
+    "wrong_vs_not": {
+     "n": 31,
+     "po": 0.8387096774193549,
+     "pe": 0.5182101977107181,
+     "kappa": 0.6652267818574514
+    },
+    "confusion": {
+     "ACCEPT": {
+      "ACCEPT": 16,
+      "TRIVIAL": 0,
+      "WRONG": 2
+     },
+     "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+     },
+     "WRONG": {
+      "ACCEPT": 3,
+      "TRIVIAL": 0,
+      "WRONG": 10
+     }
+    },
+    "mix": {
+     "A": {
+      "ACCEPT": 18,
+      "TRIVIAL": 0,
+      "WRONG": 13
+     },
+     "B": {
+      "ACCEPT": 19,
+      "TRIVIAL": 0,
+      "WRONG": 12
+     }
+    },
+    "disagreements": [
+     {
+      "uid": "ai/D-fc5ef7",
+      "repo": "ai",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "supabase/D-d8dcea",
+      "repo": "supabase",
+      "a": "WRONG",
+      "b": "ACCEPT"
+     },
+     {
+      "uid": "novu/D-4512a2",
+      "repo": "novu",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "midday/D-efc6d4",
+      "repo": "midday",
+      "a": "WRONG",
+      "b": "ACCEPT"
+     },
+     {
+      "uid": "midday/D-98e729",
+      "repo": "midday",
+      "a": "WRONG",
+      "b": "ACCEPT"
+     }
+    ]
+   }
+  },
+  {
+   "path": "eval/study/runs/dev-v3-2026-11-06/py/relabel",
+   "agreement": {
+    "a": "eval/study/runs/dev-v3-2026-11-06/py/relabel/labels/A",
+    "b": "eval/study/runs/dev-v3-2026-11-06/py/relabel/labels/B",
+    "rubric_sha256s": [
+     "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+    ],
+    "n": 18,
+    "scope": 20,
+    "exact": 0.8333333333333334,
+    "kappa": 0.64,
+    "kappa_boot": {
+     "lo": 0,
+     "hi": 1,
+     "clusters": 4
+    },
+    "accept_vs_not": {
+     "n": 18,
+     "po": 0.8333333333333334,
+     "pe": 0.5370370370370371,
+     "kappa": 0.64
+    },
+    "wrong_vs_not": {
+     "n": 18,
+     "po": 0.8333333333333334,
+     "pe": 0.5370370370370371,
+     "kappa": 0.64
+    },
+    "confusion": {
+     "ACCEPT": {
+      "ACCEPT": 5,
+      "TRIVIAL": 0,
+      "WRONG": 1
+     },
+     "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+     },
+     "WRONG": {
+      "ACCEPT": 2,
+      "TRIVIAL": 0,
+      "WRONG": 10
+     }
+    },
+    "mix": {
+     "A": {
+      "ACCEPT": 6,
+      "TRIVIAL": 0,
+      "WRONG": 12
+     },
+     "B": {
+      "ACCEPT": 7,
+      "TRIVIAL": 0,
+      "WRONG": 11
+     }
+    },
+    "disagreements": [
+     {
+      "uid": "netbox/D-cc8d72",
+      "repo": "netbox",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "saleor/D-e86c5d",
+      "repo": "saleor",
+      "a": "WRONG",
+      "b": "ACCEPT"
+     },
+     {
+      "uid": "saleor/D-0da0cf",
+      "repo": "saleor",
+      "a": "WRONG",
+      "b": "ACCEPT"
+     }
+    ]
+   }
+  },
+  {
+   "path": "eval/study/runs/dev-v3-2026-11-06/py2/relabel",
+   "agreement": {
+    "a": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/A",
+    "b": "eval/study/runs/dev-v3-2026-11-06/py2/relabel/labels/B",
+    "rubric_sha256s": [
+     "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+    ],
+    "n": 76,
+    "scope": 76,
+    "exact": 0.9078947368421053,
+    "kappa": 0.7850505050505051,
+    "kappa_boot": {
+     "lo": 0.664712778429074,
+     "hi": 0.9134615384615383,
+     "clusters": 12
+    },
+    "accept_vs_not": {
+     "n": 76,
+     "po": 0.9078947368421053,
+     "pe": 0.590027700831025,
+     "kappa": 0.7753378378378379
+    },
+    "wrong_vs_not": {
+     "n": 76,
+     "po": 0.9078947368421053,
+     "pe": 0.5789473684210527,
+     "kappa": 0.7812500000000001
+    },
+    "confusion": {
+     "ACCEPT": {
+      "ACCEPT": 18,
+      "TRIVIAL": 0,
+      "WRONG": 7
+     },
+     "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 1,
+      "WRONG": 0
+     },
+     "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 50
+     }
+    },
+    "mix": {
+     "A": {
+      "ACCEPT": 25,
+      "TRIVIAL": 1,
+      "WRONG": 50
+     },
+     "B": {
+      "ACCEPT": 18,
+      "TRIVIAL": 1,
+      "WRONG": 57
+     }
+    },
+    "disagreements": [
+     {
+      "uid": "Django-CRM/D-f135a4",
+      "repo": "Django-CRM",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "Django-CRM/D-8ee062",
+      "repo": "Django-CRM",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "Misago/D-90a5d9",
+      "repo": "Misago",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "lotus/D-e5b6fe",
+      "repo": "lotus",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "open-wearables/D-3b39dc",
+      "repo": "open-wearables",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "tasking-manager/D-cfe608",
+      "repo": "tasking-manager",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "tasking-manager/D-c373f7",
+      "repo": "tasking-manager",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     }
+    ]
+   }
+  },
+  {
+   "path": "eval/study/runs/dev-v3-2026-11-06/ts/relabel",
+   "agreement": {
+    "a": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/labels/A",
+    "b": "eval/study/runs/dev-v3-2026-11-06/ts/relabel/labels/B",
+    "rubric_sha256s": [
+     "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+    ],
+    "n": 125,
+    "scope": 125,
+    "exact": 0.92,
+    "kappa": 0.8428266063120836,
+    "kappa_boot": {
+     "lo": 0.7033018867924529,
+     "hi": 0.9510891353735133,
+     "clusters": 13
+    },
+    "accept_vs_not": {
+     "n": 125,
+     "po": 0.92,
+     "pe": 0.503744,
+     "kappa": 0.8387928810936292
+    },
+    "wrong_vs_not": {
+     "n": 125,
+     "po": 0.928,
+     "pe": 0.502016,
+     "kappa": 0.855417041511374
+    },
+    "confusion": {
+     "ACCEPT": {
+      "ACCEPT": 52,
+      "TRIVIAL": 1,
+      "WRONG": 5
+     },
+     "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 1,
+      "WRONG": 0
+     },
+     "WRONG": {
+      "ACCEPT": 4,
+      "TRIVIAL": 0,
+      "WRONG": 62
+     }
+    },
+    "mix": {
+     "A": {
+      "ACCEPT": 58,
+      "TRIVIAL": 1,
+      "WRONG": 66
+     },
+     "B": {
+      "ACCEPT": 56,
+      "TRIVIAL": 2,
+      "WRONG": 67
+     }
+    },
+    "disagreements": [
+     {
+      "uid": "dub/D-50df58",
+      "repo": "dub",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "dub/D-d24d21",
+      "repo": "dub",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "cal.com/D-0b36fb",
+      "repo": "cal.com",
+      "a": "WRONG",
+      "b": "ACCEPT"
+     },
+     {
+      "uid": "cal.com/D-5722ba",
+      "repo": "cal.com",
+      "a": "ACCEPT",
+      "b": "TRIVIAL"
+     },
+     {
+      "uid": "cal.com/D-fafac1",
+      "repo": "cal.com",
+      "a": "WRONG",
+      "b": "ACCEPT"
+     },
+     {
+      "uid": "nest/D-44a46d",
+      "repo": "nest",
+      "a": "WRONG",
+      "b": "ACCEPT"
+     },
+     {
+      "uid": "nest/D-48b32a",
+      "repo": "nest",
+      "a": "WRONG",
+      "b": "ACCEPT"
+     },
+     {
+      "uid": "novu/D-3f3e16",
+      "repo": "novu",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "novu/D-dbba9a",
+      "repo": "novu",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "immich/D-d3f2f9",
+      "repo": "immich",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     }
+    ]
+   }
+  },
+  {
+   "path": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel",
+   "agreement": {
+    "a": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/labels/A",
+    "b": "eval/study/runs/dev-v3-relabel-2026-11-06/ts/relabel/labels/B",
+    "rubric_sha256s": [
+     "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+    ],
+    "n": 9,
+    "scope": 9,
+    "exact": 0.8888888888888888,
+    "kappa": 0.7272727272727272,
+    "kappa_boot": {
+     "lo": 0,
+     "hi": 1,
+     "clusters": 7
+    },
+    "accept_vs_not": {
+     "n": 9,
+     "po": 0.8888888888888888,
+     "pe": 0.5925925925925926,
+     "kappa": 0.7272727272727272
+    },
+    "wrong_vs_not": {
+     "n": 9,
+     "po": 0.8888888888888888,
+     "pe": 0.5925925925925926,
+     "kappa": 0.7272727272727272
+    },
+    "confusion": {
+     "ACCEPT": {
+      "ACCEPT": 6,
+      "TRIVIAL": 0,
+      "WRONG": 1
+     },
+     "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+     },
+     "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 2
+     }
+    },
+    "mix": {
+     "A": {
+      "ACCEPT": 7,
+      "TRIVIAL": 0,
+      "WRONG": 2
+     },
+     "B": {
+      "ACCEPT": 6,
+      "TRIVIAL": 0,
+      "WRONG": 3
+     }
+    },
+    "disagreements": [
+     {
+      "uid": "dub/D-345913",
+      "repo": "dub",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     }
+    ]
+   }
+  },
+  {
+   "path": "eval/study/runs/dev-v3-relabel2-2026-11-07/ts/relabel",
+   "agreement": {
+    "a": "eval/study/runs/dev-v3-relabel2-2026-11-07/ts/relabel/labels/A",
+    "b": "eval/study/runs/dev-v3-relabel2-2026-11-07/ts/relabel/labels/B",
+    "rubric_sha256s": [
+     "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+    ],
+    "n": 53,
+    "scope": 53,
+    "exact": 0.9433962264150944,
+    "kappa": 0.8880281690140845,
+    "kappa_boot": {
+     "lo": 0.7749196141479099,
+     "hi": 1,
+     "clusters": 11
+    },
+    "accept_vs_not": {
+     "n": 53,
+     "po": 0.9433962264150944,
+     "pe": 0.5161979352082592,
+     "kappa": 0.8830022075055188
+    },
+    "wrong_vs_not": {
+     "n": 53,
+     "po": 0.9433962264150944,
+     "pe": 0.5097899608401566,
+     "kappa": 0.8845315904139434
+    },
+    "confusion": {
+     "ACCEPT": {
+      "ACCEPT": 20,
+      "TRIVIAL": 0,
+      "WRONG": 3
+     },
+     "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 1,
+      "WRONG": 0
+     },
+     "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 29
+     }
+    },
+    "mix": {
+     "A": {
+      "ACCEPT": 23,
+      "TRIVIAL": 1,
+      "WRONG": 29
+     },
+     "B": {
+      "ACCEPT": 20,
+      "TRIVIAL": 1,
+      "WRONG": 32
+     }
+    },
+    "disagreements": [
+     {
+      "uid": "twenty/D-70d216",
+      "repo": "twenty",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "documenso/D-4785b8",
+      "repo": "documenso",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "novu/D-dbba9a",
+      "repo": "novu",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     }
+    ]
+   }
+  },
+  {
+   "path": "eval/study/runs/dev-v3-relabel3-2026-11-07/py/relabel",
+   "agreement": {
+    "a": "eval/study/runs/dev-v3-relabel3-2026-11-07/py/relabel/labels/A",
+    "b": "eval/study/runs/dev-v3-relabel3-2026-11-07/py/relabel/labels/B",
+    "labels_sha256": {
+     "A": "a88e16815c3eaa432ad57701bf7ab3598ec29372a4af76b742045ca1af0cf7f2",
+     "B": "c042fc3d481413ccd95791a21d5322ad661059ba71c2919640e4ae96ec855276"
+    },
+    "computed_at": "2026-11-07T06:17:46.002Z",
+    "rubric_sha256s": [
+     "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+    ],
+    "n": 9,
+    "scope": 9,
+    "exact": 1,
+    "kappa": 1,
+    "kappa_boot": {
+     "lo": 1,
+     "hi": 1,
+     "clusters": 3
+    },
+    "accept_vs_not": {
+     "n": 9,
+     "po": 1,
+     "pe": 0.654320987654321,
+     "kappa": 1
+    },
+    "wrong_vs_not": {
+     "n": 9,
+     "po": 1,
+     "pe": 0.654320987654321,
+     "kappa": 1
+    },
+    "confusion": {
+     "ACCEPT": {
+      "ACCEPT": 7,
+      "TRIVIAL": 0,
+      "WRONG": 0
+     },
+     "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+     },
+     "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 2
+     }
+    },
+    "mix": {
+     "A": {
+      "ACCEPT": 7,
+      "TRIVIAL": 0,
+      "WRONG": 2
+     },
+     "B": {
+      "ACCEPT": 7,
+      "TRIVIAL": 0,
+      "WRONG": 2
+     }
+    },
+    "disagreements": []
+   }
+  },
+  {
+   "path": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel",
+   "agreement": {
+    "a": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/A",
+    "b": "eval/study/runs/dev-v3-relabel3-2026-11-07/py2/relabel/labels/B",
+    "labels_sha256": {
+     "A": "2619759a0a7bb5a15187a3b41ae2f47f3baf0cc11410fade2ab56e33e0956cef",
+     "B": "93e76ef0af6cbf9f20e36885157bdd2b2b8ce95e9e0a71f67333feab836b4e64"
+    },
+    "computed_at": "2026-11-07T06:15:59.593Z",
+    "rubric_sha256s": [
+     "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+    ],
+    "n": 12,
+    "scope": 12,
+    "exact": 0.8333333333333334,
+    "kappa": 0.6000000000000001,
+    "kappa_boot": {
+     "lo": 0,
+     "hi": 1,
+     "clusters": 8
+    },
+    "accept_vs_not": {
+     "n": 12,
+     "po": 0.8333333333333334,
+     "pe": 0.7083333333333334,
+     "kappa": 0.4285714285714286
+    },
+    "wrong_vs_not": {
+     "n": 12,
+     "po": 0.8333333333333334,
+     "pe": 0.6111111111111112,
+     "kappa": 0.5714285714285715
+    },
+    "confusion": {
+     "ACCEPT": {
+      "ACCEPT": 1,
+      "TRIVIAL": 0,
+      "WRONG": 2
+     },
+     "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 1,
+      "WRONG": 0
+     },
+     "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 8
+     }
+    },
+    "mix": {
+     "A": {
+      "ACCEPT": 3,
+      "TRIVIAL": 1,
+      "WRONG": 8
+     },
+     "B": {
+      "ACCEPT": 1,
+      "TRIVIAL": 1,
+      "WRONG": 10
+     }
+    },
+    "disagreements": [
+     {
+      "uid": "paperless-ngx/D-de2489",
+      "repo": "paperless-ngx",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "simplelogin/D-2a4960",
+      "repo": "simplelogin",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     }
+    ]
+   }
+  },
+  {
+   "path": "eval/study/runs/dev-v3-relabel3-2026-11-07/ts/relabel",
+   "agreement": {
+    "a": "eval/study/runs/dev-v3-relabel3-2026-11-07/ts/relabel/labels/A",
+    "b": "eval/study/runs/dev-v3-relabel3-2026-11-07/ts/relabel/labels/B",
+    "labels_sha256": {
+     "A": "1977811e5e23642c27a8c90e10cfcc92c2485c19a654b812729e32b9492a9c90",
+     "B": "129027f744a717056bd306316459242c352487c75c37175d575ff1224ed2295b"
+    },
+    "computed_at": "2026-11-07T06:20:56.876Z",
+    "rubric_sha256s": [
+     "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+    ],
+    "n": 20,
+    "scope": 20,
+    "exact": 0.8,
+    "kappa": 0.5876288659793816,
+    "kappa_boot": {
+     "lo": 0.09090909090909075,
+     "hi": 0.8433734939759037,
+     "clusters": 8
+    },
+    "accept_vs_not": {
+     "n": 20,
+     "po": 0.8,
+     "pe": 0.515,
+     "kappa": 0.5876288659793816
+    },
+    "wrong_vs_not": {
+     "n": 20,
+     "po": 0.8,
+     "pe": 0.515,
+     "kappa": 0.5876288659793816
+    },
+    "confusion": {
+     "ACCEPT": {
+      "ACCEPT": 10,
+      "TRIVIAL": 0,
+      "WRONG": 3
+     },
+     "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+     },
+     "WRONG": {
+      "ACCEPT": 1,
+      "TRIVIAL": 0,
+      "WRONG": 6
+     }
+    },
+    "mix": {
+     "A": {
+      "ACCEPT": 13,
+      "TRIVIAL": 0,
+      "WRONG": 7
+     },
+     "B": {
+      "ACCEPT": 11,
+      "TRIVIAL": 0,
+      "WRONG": 9
+     }
+    },
+    "disagreements": [
+     {
+      "uid": "cal.com/D-8d7d13",
+      "repo": "cal.com",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "documenso/D-a10f62",
+      "repo": "documenso",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "supabase/D-e93eb6",
+      "repo": "supabase",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "midday/D-b905f9",
+      "repo": "midday",
+      "a": "WRONG",
+      "b": "ACCEPT"
+     }
+    ]
+   }
+  },
+  {
+   "path": "eval/study/runs/dev-v3-relabel4-2026-11-07/py/relabel",
+   "agreement": {
+    "a": "eval/study/runs/dev-v3-relabel4-2026-11-07/py/relabel/labels/A",
+    "b": "eval/study/runs/dev-v3-relabel4-2026-11-07/py/relabel/labels/B",
+    "labels_sha256": {
+     "A": "383f1c16f3c041427d56129253d5e89d425dc0022f036713497a4845c1672a40",
+     "B": "699c95c14b95906817a230f2ac53c3c808690f4d3e8d748d460b8e1f6bb39234"
+    },
+    "computed_at": "2026-11-07T12:03:01.031Z",
+    "rubric_sha256s": [
+     "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+    ],
+    "n": 4,
+    "scope": 4,
+    "exact": 0.75,
+    "kappa": 0.5,
+    "kappa_boot": {
+     "lo": null,
+     "hi": null,
+     "clusters": 1
+    },
+    "accept_vs_not": {
+     "n": 4,
+     "po": 0.75,
+     "pe": 0.5,
+     "kappa": 0.5
+    },
+    "wrong_vs_not": {
+     "n": 4,
+     "po": 0.75,
+     "pe": 0.5,
+     "kappa": 0.5
+    },
+    "confusion": {
+     "ACCEPT": {
+      "ACCEPT": 1,
+      "TRIVIAL": 0,
+      "WRONG": 1
+     },
+     "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+     },
+     "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 2
+     }
+    },
+    "mix": {
+     "A": {
+      "ACCEPT": 2,
+      "TRIVIAL": 0,
+      "WRONG": 2
+     },
+     "B": {
+      "ACCEPT": 1,
+      "TRIVIAL": 0,
+      "WRONG": 3
+     }
+    },
+    "disagreements": [
+     {
+      "uid": "netbox/D-937c0c",
+      "repo": "netbox",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     }
+    ]
+   }
+  },
+  {
+   "path": "eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel",
+   "agreement": {
+    "a": "eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/labels/A",
+    "b": "eval/study/runs/dev-v3-relabel4-2026-11-07/py2/relabel/labels/B",
+    "labels_sha256": {
+     "A": "e7c07e35b6e4720f451a4136c6755fdbd2d11e26b83200be259889421cf651aa",
+     "B": "af7cac45c9cca2769bdc239570be1915f56f315e7f0318fb9df2398480c926de"
+    },
+    "computed_at": "2026-11-07T12:03:01.087Z",
+    "rubric_sha256s": [
+     "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+    ],
+    "n": 14,
+    "scope": 14,
+    "exact": 0.9285714285714286,
+    "kappa": 0.8372093023255814,
+    "kappa_boot": {
+     "lo": 0.2758620689655172,
+     "hi": 1,
+     "clusters": 6
+    },
+    "accept_vs_not": {
+     "n": 14,
+     "po": 0.9285714285714286,
+     "pe": 0.5612244897959184,
+     "kappa": 0.8372093023255814
+    },
+    "wrong_vs_not": {
+     "n": 14,
+     "po": 0.9285714285714286,
+     "pe": 0.5612244897959184,
+     "kappa": 0.8372093023255814
+    },
+    "confusion": {
+     "ACCEPT": {
+      "ACCEPT": 4,
+      "TRIVIAL": 0,
+      "WRONG": 1
+     },
+     "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 0
+     },
+     "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 9
+     }
+    },
+    "mix": {
+     "A": {
+      "ACCEPT": 5,
+      "TRIVIAL": 0,
+      "WRONG": 9
+     },
+     "B": {
+      "ACCEPT": 4,
+      "TRIVIAL": 0,
+      "WRONG": 10
+     }
+    },
+    "disagreements": [
+     {
+      "uid": "wger/D-db04dc",
+      "repo": "wger",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     }
+    ]
+   }
+  },
+  {
+   "path": "eval/study/runs/dev-v3-relabel4-2026-11-07/ts/relabel",
+   "agreement": {
+    "a": "eval/study/runs/dev-v3-relabel4-2026-11-07/ts/relabel/labels/A",
+    "b": "eval/study/runs/dev-v3-relabel4-2026-11-07/ts/relabel/labels/B",
+    "labels_sha256": {
+     "A": "5b4e18bae0ae4b7332aa40d20e22499eeb09ce5086aa68f2e54eca1735352df0",
+     "B": "c53336d691208b3ea764baf59fc1393abd351844132e085fb6a393e88cea9dbf"
+    },
+    "computed_at": "2026-11-07T12:03:35.184Z",
+    "rubric_sha256s": [
+     "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+    ],
+    "n": 25,
+    "scope": 25,
+    "exact": 0.8,
+    "kappa": 0.6537396121883657,
+    "kappa_boot": {
+     "lo": 0.33333333333333326,
+     "hi": 0.883720930232558,
+     "clusters": 9
+    },
+    "accept_vs_not": {
+     "n": 25,
+     "po": 0.8,
+     "pe": 0.5088,
+     "kappa": 0.5928338762214984
+    },
+    "wrong_vs_not": {
+     "n": 25,
+     "po": 0.8,
+     "pe": 0.4832,
+     "kappa": 0.6130030959752323
+    },
+    "confusion": {
+     "ACCEPT": {
+      "ACCEPT": 7,
+      "TRIVIAL": 0,
+      "WRONG": 5
+     },
+     "TRIVIAL": {
+      "ACCEPT": 0,
+      "TRIVIAL": 2,
+      "WRONG": 0
+     },
+     "WRONG": {
+      "ACCEPT": 0,
+      "TRIVIAL": 0,
+      "WRONG": 11
+     }
+    },
+    "mix": {
+     "A": {
+      "ACCEPT": 12,
+      "TRIVIAL": 2,
+      "WRONG": 11
+     },
+     "B": {
+      "ACCEPT": 7,
+      "TRIVIAL": 2,
+      "WRONG": 16
+     }
+    },
+    "disagreements": [
+     {
+      "uid": "cal.com/D-8d7d13",
+      "repo": "cal.com",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "ai/D-4683f7",
+      "repo": "ai",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "supabase/D-922bc7",
+      "repo": "supabase",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "midday/D-8fbbad",
+      "repo": "midday",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     },
+     {
+      "uid": "midday/D-798f44",
+      "repo": "midday",
+      "a": "ACCEPT",
+      "b": "WRONG"
+     }
+    ]
+   }
+  }
+ ],
+ "exclusions": [
+  {
+   "path": "eval/study/runs/dev-v3-2026-11-06/py/relabel/adjudication",
+   "excluded": {
+    "repos": [
+     "CTFd"
+    ],
+    "uids": [
+     "CTFd/D-560792",
+     "CTFd/D-f6c1fb"
+    ],
+    "reason": "CTFd's labeller in the v3 calibration was stopped by a safety system (a false positive on capture-the-flag content); the repo is excluded from this run and its 2 proposals stay unlabelled",
+    "at": "2026-11-06T04:25:57.905Z"
+   }
+  }
+ ],
+ "manifests": [
+  {
+   "path": "eval/repos-py-2.json",
+   "note": "Second Python DEV set (not held-out): pinned public Python applications for tuning and labelling rounds. Drift may be tuned on these repos, so their numbers are dev-set numbers.",
+   "repos": 12,
+   "language": "Python"
+  },
+  {
+   "path": "eval/repos-py.json",
+   "note": "Pinned public Python repos for the parser and resolution evaluation (dev set). Bump a sha deliberately and review the diff in results.",
+   "repos": 8,
+   "language": null
+  },
+  {
+   "path": "eval/repos.json",
+   "note": "Pinned public repos for the parser and mining evaluation (16: every route adapter is exercised by a real repo). Bump a sha deliberately and review the diff in results.",
+   "repos": 16,
+   "language": null
+  }
+ ]
+}

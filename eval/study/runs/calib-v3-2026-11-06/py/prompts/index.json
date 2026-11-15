@@ -1,0 +1,263 @@
+[
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "full-stack-fastapi-template",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/py/prompts/label/A/full-stack-fastapi-template.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/e7185ffd-a203-4ebe-8559-87e90462b921/out.jsonl",
+    "expected": [
+      "full-stack-fastapi-template/D-6e757d"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:09:49.334Z",
+    "collected": {
+      "at": "2026-11-06T01:23:22.992Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/py/labels/A/full-stack-fastapi-template.jsonl",
+      "records": 1,
+      "sha256": "b91200c03a42e7b48211d45f21af303cec4ebab4c65a5a954bf671c2fecd5921"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "polar",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/py/prompts/label/A/polar.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/36f3508e-0745-4b4c-ad1f-06b9448b0761/out.jsonl",
+    "expected": [
+      "polar/D-31bf00",
+      "polar/D-77dc4b",
+      "polar/D-093712",
+      "polar/D-9c16e6",
+      "polar/D-e5f85b",
+      "polar/D-26e577",
+      "polar/D-f53bba",
+      "polar/D-5ef201",
+      "polar/D-fb4011",
+      "polar/D-2ef961",
+      "polar/D-f818d9"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:09:49.342Z",
+    "collected": {
+      "at": "2026-11-06T01:23:23.000Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/py/labels/A/polar.jsonl",
+      "records": 11,
+      "sha256": "39f752c22c54466fe800435e90842be7d5c94d7798cb3045f3485edf397c5731"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "netbox",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/py/prompts/label/A/netbox.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/3514dfd5-d3d2-4104-9f1f-a2be85feac94/out.jsonl",
+    "expected": [
+      "netbox/D-cc1341",
+      "netbox/D-e5e365",
+      "netbox/D-bc0c7d",
+      "netbox/D-310ec7",
+      "netbox/D-4c4e2d",
+      "netbox/D-58913a",
+      "netbox/D-73d13c",
+      "netbox/D-937c0c"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:09:49.350Z",
+    "collected": {
+      "at": "2026-11-06T01:23:23.006Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/py/labels/A/netbox.jsonl",
+      "records": 8,
+      "sha256": "3c6b458e925e01607f97769b904047107ac068505a8c4fb97e7c676d6731c390"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "saleor",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/py/prompts/label/A/saleor.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/6cb1670e-a38f-4a19-8488-e436385e9d29/out.jsonl",
+    "expected": [
+      "saleor/D-e36ea5",
+      "saleor/D-ac08d9",
+      "saleor/D-6af632"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:09:49.355Z",
+    "collected": {
+      "at": "2026-11-06T01:23:23.009Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/py/labels/A/saleor.jsonl",
+      "records": 3,
+      "sha256": "aef2b9e63da4fb0fd00261f51a748dd11a32f3240ea05364b540407eec7225b8"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "CTFd",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/py/prompts/label/A/CTFd.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/0fe22581-80d7-4c9f-9f49-9fe4fb7bb83d/out.jsonl",
+    "expected": [
+      "CTFd/D-560792",
+      "CTFd/D-f6c1fb"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:09:49.366Z"
+  },
+  {
+    "stage": "label",
+    "labeller": "A",
+    "repo": "langchain",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/py/prompts/label/A/langchain.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/a1298a1a-d0b1-4e5f-aaf9-72a819cdae6d/out.jsonl",
+    "expected": [
+      "langchain/D-468530"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:09:49.374Z",
+    "collected": {
+      "at": "2026-11-06T01:23:23.014Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/py/labels/A/langchain.jsonl",
+      "records": 1,
+      "sha256": "a2aab404a7f180647f75c0da6fb111ce30dafdfc8dbee797338092687be91c8f"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "full-stack-fastapi-template",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/py/prompts/label/B/full-stack-fastapi-template.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/cf4a49f0-2930-48c8-9b08-991f569c84e1/out.jsonl",
+    "expected": [
+      "full-stack-fastapi-template/D-6e757d"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:23:35.164Z",
+    "collected": {
+      "at": "2026-11-06T01:28:45.772Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/py/labels/B/full-stack-fastapi-template.jsonl",
+      "records": 1,
+      "sha256": "fa4006b5d564c3a7539a071bef19637af42ef71168de2ec251e0a13781243d45"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "langchain",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/py/prompts/label/B/langchain.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/4f39e394-d549-4108-b9b6-54268cfe6e89/out.jsonl",
+    "expected": [
+      "langchain/D-468530"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:23:35.310Z",
+    "collected": {
+      "at": "2026-11-06T01:28:45.784Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/py/labels/B/langchain.jsonl",
+      "records": 1,
+      "sha256": "bbedfceae6aec574cf0c7a1fd974f432faa7b404264a359c1fa908eec644afd9"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "netbox",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/py/prompts/label/B/netbox.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/9af48b5b-096b-462e-9312-e354cda82995/out.jsonl",
+    "expected": [
+      "netbox/D-cc1341",
+      "netbox/D-e5e365",
+      "netbox/D-bc0c7d",
+      "netbox/D-310ec7",
+      "netbox/D-4c4e2d",
+      "netbox/D-58913a",
+      "netbox/D-73d13c",
+      "netbox/D-937c0c"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:23:35.432Z",
+    "collected": {
+      "at": "2026-11-06T01:28:45.790Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/py/labels/B/netbox.jsonl",
+      "records": 8,
+      "sha256": "6e52fd56e85c664b6916b017a402eb2fcdb28c136e0b34ffabe679658136584d"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "polar",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/py/prompts/label/B/polar.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/234f0e57-8b3c-49db-850c-bf5651ccd1d9/out.jsonl",
+    "expected": [
+      "polar/D-31bf00",
+      "polar/D-77dc4b",
+      "polar/D-093712",
+      "polar/D-9c16e6",
+      "polar/D-e5f85b",
+      "polar/D-26e577",
+      "polar/D-f53bba",
+      "polar/D-5ef201",
+      "polar/D-fb4011",
+      "polar/D-2ef961",
+      "polar/D-f818d9"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:23:35.492Z",
+    "collected": {
+      "at": "2026-11-06T01:28:45.794Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/py/labels/B/polar.jsonl",
+      "records": 11,
+      "sha256": "a1253ce86d8a2d41a2fac5c7ec404b506e9db4846d266d5bdab622a923c2c01f"
+    }
+  },
+  {
+    "stage": "label",
+    "labeller": "B",
+    "repo": "saleor",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/py/prompts/label/B/saleor.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/add2ae82-6b1e-4698-aba3-0a34189c6d3e/out.jsonl",
+    "expected": [
+      "saleor/D-e36ea5",
+      "saleor/D-ac08d9",
+      "saleor/D-6af632"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:23:35.580Z",
+    "collected": {
+      "at": "2026-11-06T01:28:45.795Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/py/labels/B/saleor.jsonl",
+      "records": 3,
+      "sha256": "73f3f2148ac80ec9d5510b356809b7c466900ac01279cd981d0809360f0cc610"
+    }
+  },
+  {
+    "stage": "adjudicate",
+    "labeller": "C",
+    "repo": "polar",
+    "prompt": "/home/user/drift-wt/rubric-v3/eval/study/runs/calib-v3-2026-11-06/py/prompts/adjudicate/C/polar.md",
+    "output": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/lbx/outbox/ca58809a-4443-4883-b11b-33ed4cb938cf/out.jsonl",
+    "expected": [
+      "polar/D-093712"
+    ],
+    "rubric": "v3",
+    "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd",
+    "rendered_at": "2026-11-06T01:28:53.160Z",
+    "collected": {
+      "at": "2026-11-06T01:30:18.545Z",
+      "dest": "eval/study/runs/calib-v3-2026-11-06/py/labels/C/polar.jsonl",
+      "records": 1,
+      "sha256": "dd9e4e13518834f38f45792677af064fef2c3f7c2196c830195d462a69adadcd"
+    }
+  }
+]

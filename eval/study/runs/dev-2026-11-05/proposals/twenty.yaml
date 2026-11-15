@@ -1,0 +1,2616 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - AlertDialog
+  - Autocomplete
+  - AvatarGroup
+  - Breadcrumb
+  - Button
+  - Checkbox
+  - CountrySelect
+  - CurrencyPicker
+  - DatePicker
+  - Dialog
+  - DirectionProvider
+  - Dropdown
+  - Heading
+  - NumberField
+  - NumberStepper
+  - OverflowingList
+  - PhoneCountryPicker
+  - Radio
+  - ResizeHandle
+  - Select
+  - Separator
+  - Switch
+  - Toaster
+  - access-policy
+  - agent
+  - agent-chat-channel
+  - agent-run-suspension
+  - api-key
+  - application
+  - application-authorization
+  - application-config
+  - application-registration
+  - application-registration-variable
+  - application-variable
+  - approved-access-domain
+  - auth
+  - billing
+  - billing-reminder
+  - cache-storage
+  - captcha
+  - clean-suspended-workspaces
+  - client-config
+  - command-menu-item
+  - connected-account
+  - create-calendar-event
+  - dashboard
+  - default-function
+  - default-role
+  - dpa
+  - email-verification
+  - emailing-domain
+  - enrich-companies
+  - enrich-company
+  - enrich-people
+  - enrich-person
+  - escape-sql-like-pattern
+  - event-log-emitter
+  - event-logs
+  - exception-handler
+  - feature-flag
+  - field-metadata
+  - file
+  - file-core-picture
+  - file-upload
+  - files-field
+  - front-component
+  - front-component-shared-dependencies
+  - get-server-route-url
+  - getting-started
+  - getting-started-workflow
+  - global-setup
+  - imap-smtp-caldav-connection
+  - index-metadata
+  - is-defined
+  - jest
+  - json-schema-to-input-schema
+  - lingui
+  - local
+  - logger
+  - logic-function
+  - main
+  - marketplace-catalog-sync
+  - mcp-server
+  - message-channel
+  - message-queue
+  - message-suppression
+  - minimal-metadata
+  - my
+  - navigation-menu-item
+  - object-metadata
+  - onboarding
+  - page
+  - page-layout
+  - page-layout-tab
+  - page-layout-widget
+  - permission-flag
+  - public-domain
+  - record-export
+  - record-permissions
+  - related-record-path
+  - role
+  - route
+  - route-trigger
+  - run-twenty
+  - schema
+  - search
+  - search-variable-in-output-schema
+  - send-email
+  - settings
+  - settings-menu-item
+  - skill
+  - timeline-activity
+  - timeline-activity-type
+  - to-error-message
+  - trash-cleanup
+  - twenty-config
+  - two-factor-authentication
+  - types
+  - universal-identifiers
+  - unsubscribe-topic
+  - usage-limit
+  - user
+  - user-application-variable-value
+  - user-session
+  - validation-rule
+  - view
+  - view-field
+  - view-field-group
+  - view-filter
+  - view-filter-group
+  - view-group
+  - view-sort
+  - vite
+  - vitest
+  - webhook
+  - workflow-handle-staled-runs
+  - workflow-run
+  - workflow-run-enqueue
+  - workflow-trigger
+  - workspace
+  - workspace-data-export
+  - workspace-invitation
+  - workspace-query-hook
+  suffixes:
+  - agent
+  - command
+  - command-definition
+  - command-menu-item
+  - command-runner
+  - composite-type
+  - config
+  - const
+  - constant
+  - constants
+  - controller
+  - data
+  - decorator
+  - driver
+  - dto
+  - email
+  - entity
+  - enum
+  - error
+  - event
+  - exception
+  - factory
+  - field
+  - filter
+  - front-component
+  - function
+  - generator
+  - guard
+  - handler
+  - health
+  - helper
+  - hook
+  - index
+  - input
+  - input-type
+  - integration-spec
+  - integration-test
+  - interceptor
+  - interface
+  - job
+  - job-constants
+  - json-schema
+  - listener
+  - middleware
+  - mock
+  - module
+  - module-definition
+  - module-factory
+  - navigation-menu-item
+  - object
+  - object-type
+  - output
+  - page-layout
+  - parser
+  - pausing-tool
+  - pre-query-hook
+  - provider
+  - resolver
+  - role
+  - rule
+  - scalar
+  - schema
+  - service
+  - setup
+  - spec
+  - storage
+  - stories
+  - strategy
+  - test
+  - test-type
+  - test-util
+  - token
+  - tool
+  - type
+  - type-test
+  - types
+  - util
+  - utils
+  - validate
+  - validator
+  - view
+  - workflow-action
+  - workspace-entity
+  - workspace-service
+conventions:
+- id: D-f37b9d
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.dto files) call ObjectType() before Field()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.dto"
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: pkg:@nestjs/graphql#ObjectType
+    then: pkg:@nestjs/graphql#Field
+  evidence:
+    holders: 400
+    total: 401
+    lower_bound: 0.986
+    lift: 1.0
+  example: >-
+    packages/twenty-server/src/engine/core-modules/admin-panel/dtos/admin-chat-message-part.dto.ts#AdminChatMessagePartDTO
+- id: D-2df337
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/database/commands/** are decorated with RegisteredInstanceCommand()"
+  role:
+    package: packages/twenty-server
+    dir: src/database/commands
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - >-
+      packages/twenty-server/src/engine/core-modules/upgrade/decorators/registered-instance-command.decorator.ts#RegisteredInstanceCommand
+  evidence:
+    holders: 288
+    total: 289
+    lower_bound: 0.981
+    lift: 15.37
+  example: >-
+    packages/twenty-server/src/database/commands/upgrade-version-command/1-21/1-21-instance-command-fast-1775129420309-add-view-field-group-id-index-on-view-field.ts#AddViewFieldGroupIdIndexOnViewFieldFastInstanceCommand
+- id: D-1d8e8b
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.module files) are decorated with Module()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.module"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#Module
+  evidence:
+    holders: 453
+    total: 457
+    lower_bound: 0.978
+    lift: 9.699
+  example: packages/twenty-server/src/app.module.ts#AppModule
+- id: D-0b57c0
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.command files) call RegisteredWorkspaceCommand() before WorkspaceCacheService.getOrRecompute()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.command"
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: >-
+      packages/twenty-server/src/engine/core-modules/upgrade/decorators/registered-workspace-command.decorator.ts#RegisteredWorkspaceCommand
+    then: >-
+      packages/twenty-server/src/engine/workspace-cache/services/workspace-cache.service.ts#WorkspaceCacheService.getOrRecompute
+  evidence:
+    holders: 240
+    total: 241
+    lower_bound: 0.977
+    lift: 1.0
+  example: >-
+    packages/twenty-server/src/database/commands/upgrade-version-command/1-21/1-21-workspace-command-1775500001000-add-compose-email-command-menu-item.command.ts#AddComposeEmailCommandMenuItemCommand
+- id: D-0929de
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.dto files) are decorated with ObjectType()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.dto"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/graphql#ObjectType
+  evidence:
+    holders: 402
+    total: 406
+    lower_bound: 0.975
+    lift: 9.796
+  example: >-
+    packages/twenty-server/src/engine/core-modules/admin-panel/dtos/admin-chat-message-part.dto.ts#AdminChatMessagePartDTO
+- id: D-b10be1
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.dto files) call Field()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.dto"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: pkg:@nestjs/graphql#Field
+  evidence:
+    holders: 401
+    total: 406
+    lower_bound: 0.971
+    lift: 5.758
+  example: >-
+    packages/twenty-server/src/engine/core-modules/admin-panel/dtos/admin-chat-message-part.dto.ts#AdminChatMessagePartDTO
+- id: D-3c6a15
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.service files) are named `*Service`"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Service"
+  evidence:
+    holders: 1077
+    total: 1099
+    lower_bound: 0.97
+    lift: 3.915
+  example: >-
+    packages/twenty-server/src/database/clickhouse/clickhouse.service.ts#ClickHouseService
+- id: D-64892b
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.service files) are decorated with Injectable()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#Injectable
+  evidence:
+    holders: 1077
+    total: 1099
+    lower_bound: 0.97
+    lift: 3.081
+  example: >-
+    packages/twenty-server/src/database/clickhouse/clickhouse.service.ts#ClickHouseService
+- id: D-8c0443
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.resolver files) are named `*Resolver`"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.resolver"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Resolver"
+  evidence:
+    holders: 143
+    total: 144
+    lower_bound: 0.962
+    lift: 30.847
+  example: >-
+    packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-ai-provider.resolver.ts#AdminPanelAiProviderResolver
+- id: D-6429a5
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: graphql entry points in src/engine/metadata-modules/** (*.resolver files) are decorated with MetadataResolver()"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/metadata-modules
+    file: "*.resolver"
+    entry: graphql
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - >-
+      packages/twenty-server/src/engine/api/graphql/graphql-config/decorators/metadata-resolver.decorator.ts#MetadataResolver
+  evidence:
+    holders: 286
+    total: 292
+    lower_bound: 0.956
+    lift: 21.118
+  example: >-
+    packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-run.resolver.ts#MUTATION AgentRunResolver.generate
+- id: D-ef410a
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.job files) are named `*Job`"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.job"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Job"
+  evidence:
+    holders: 123
+    total: 124
+    lower_bound: 0.956
+    lift: 35.534
+  example: >-
+    packages/twenty-server/src/engine/core-modules/application/application-install/jobs/trigger-install-application.job.ts#TriggerInstallApplicationJob
+- id: D-a6a57c
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.input files) call Field()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.input"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: pkg:@nestjs/graphql#Field
+  evidence:
+    holders: 315
+    total: 323
+    lower_bound: 0.952
+    lift: 5.685
+  example: >-
+    packages/twenty-server/src/engine/core-modules/admin-panel/dtos/admin-panel-usage-limit.input.ts#AdminPanelCreateUsageLimitInput
+- id: D-7d539b
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/engine/metadata-modules/** (*.input files) call InputType() before Field()"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/metadata-modules
+    file: "*.input"
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: pkg:@nestjs/graphql#InputType
+    then: pkg:@nestjs/graphql#Field
+  evidence:
+    holders: 139
+    total: 141
+    lower_bound: 0.95
+    lift: 1.0
+  example: >-
+    packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/dtos/generate.input.ts#GenerateInputDTO
+- id: D-70d216
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: graphql entry points in src/** (*.resolver files) are decorated with UseFilters()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.resolver"
+    entry: graphql
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#UseFilters
+  evidence:
+    holders: 686
+    total: 712
+    lower_bound: 0.947
+    lift: 14.536
+  example: >-
+    packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-ai-provider.resolver.ts#MUTATION AdminPanelAiProviderResolver.addAiProvider
+- id: D-16a83f
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-apps/public/slack: functions in src/** declare their return type"
+  role:
+    package: packages/twenty-apps/public/slack
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 228
+    total: 234
+    lower_bound: 0.945
+    lift: 1.566
+  example: >-
+    packages/twenty-apps/public/slack/src/front-components/hooks/use-can-manage-slack-user-links.ts#useCanManageSlackUserLinks
+- id: D-2456fc
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/database/** (*.command files) extend ProvisionedWorkspaceCommandRunner"
+  role:
+    package: packages/twenty-server
+    dir: src/database
+    file: "*.command"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - >-
+      packages/twenty-server/src/database/commands/command-runners/provisioned-workspace.command-runner.ts#ProvisionedWorkspaceCommandRunner
+  evidence:
+    holders: 295
+    total: 305
+    lower_bound: 0.941
+    lift: 14.369
+  example: >-
+    packages/twenty-server/src/database/commands/install-pre-installed-apps.command.ts#InstallPreInstalledAppsCommand
+- id: D-b9ed84
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/engine/metadata-modules/** (*.input files) are decorated with InputType()"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/metadata-modules
+    file: "*.input"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/graphql#InputType
+  evidence:
+    holders: 140
+    total: 143
+    lower_bound: 0.94
+    lift: 17.189
+  example: >-
+    packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/dtos/generate.input.ts#GenerateInputDTO
+- id: D-0cd62c
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: graphql entry points in src/engine/core-modules/application/** (*.resolver files) are decorated with MetadataResolver()"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/core-modules/application
+    file: "*.resolver"
+    entry: graphql
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - >-
+      packages/twenty-server/src/engine/api/graphql/graphql-config/decorators/metadata-resolver.decorator.ts#MetadataResolver
+  evidence:
+    holders: 87
+    total: 88
+    lower_bound: 0.938
+    lift: 21.316
+  example: >-
+    packages/twenty-server/src/engine/core-modules/application/application-authorization/application-authorization.resolver.ts#MUTATION ApplicationAuthorizationResolver.revokeApplicationAuthorization
+- id: D-24dc14
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-apps/public/call-recorder: functions in src/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-apps/public/call-recorder
+    dir: src
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 216
+    total: 223
+    lower_bound: 0.937
+    lift: 1.557
+  example: >-
+    packages/twenty-apps/public/call-recorder/src/front-components/utils/build-call-participant-display-items.util.ts#buildCallParticipantDisplayItems
+- id: D-c3298e
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/engine/core-modules/** (*.service files) call Injectable() before isDefined()"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/core-modules
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: pkg:@nestjs/common#Injectable
+    then: packages/twenty-shared/src/utils/index.ts#isDefined
+  evidence:
+    holders: 214
+    total: 222
+    lower_bound: 0.931
+    lift: 1.0
+  example: >-
+    packages/twenty-server/src/engine/core-modules/actor/services/actor-from-auth-context.service.ts#ActorFromAuthContextService
+- id: D-6052c0
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.module files) pass `providers` to Module()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.module"
+    entry: '-'
+    kind: class
+  rule:
+    type: passes_key
+    callee: pkg:@nestjs/common#Module
+    index: 0
+    key: providers
+  evidence:
+    holders: 432
+    total: 457
+    lower_bound: 0.92
+    lift: 9.697
+  example: packages/twenty-server/src/app.module.ts#AppModule
+- id: D-0d6a96
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-shared: functions in src/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-shared
+    dir: src
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 102
+    total: 105
+    lower_bound: 0.919
+    lift: 1.561
+  example: >-
+    packages/twenty-shared/src/ai/utils/apply-agent-chat-inbox-action.util.ts#applyAgentChatInboxAction
+- id: D-312474
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/engine/core-modules/application/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/core-modules/application
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 220
+    total: 231
+    lower_bound: 0.917
+    lift: 1.531
+  example: >-
+    packages/twenty-server/src/engine/core-modules/application/application-health/utils/build-user-health-check-rate-limit-key.util.ts#buildUserHealthCheckRateLimitKey
+- id: D-ae07f6
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-front: components in src/modules/command-menu-item/engine-command/** are named `*Command`"
+  role:
+    package: packages/twenty-front
+    dir: src/modules/command-menu-item/engine-command
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: named
+    pattern: "*Command"
+  evidence:
+    holders: 62
+    total: 63
+    lower_bound: 0.915
+    lift: 58.532
+  example: >-
+    packages/twenty-front/src/modules/command-menu-item/engine-command/components/HeadlessNavigateEngineCommand.tsx#HeadlessNavigateEngineCommand
+- id: D-359530
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/engine/core-modules/** (*.resolver files) call AccessPolicyGuard() before AuthWorkspace()"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/core-modules
+    file: "*.resolver"
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: >-
+      packages/twenty-server/src/engine/guards/access-policy.guard.ts#AccessPolicyGuard
+    then: >-
+      packages/twenty-server/src/engine/decorators/auth/auth-workspace.decorator.ts#AuthWorkspace
+  evidence:
+    holders: 60
+    total: 61
+    lower_bound: 0.913
+    lift: 1.0
+  example: >-
+    packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel.resolver.ts#AdminPanelResolver
+- id: D-f8b237
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/database/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-server
+    dir: src/database
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 197
+    total: 207
+    lower_bound: 0.913
+    lift: 1.53
+  example: >-
+    packages/twenty-server/src/database/clickhouse/utils/format-date-time-for-clickhouse.util.ts#formatDateTimeForClickHouse
+- id: D-8fef85
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/engine/permissions/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/permissions
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 93
+    total: 96
+    lower_bound: 0.912
+    lift: 1.557
+  example: >-
+    packages/twenty-server/src/engine/permissions/access-group/utils/build-access-group-ids-index-definition.util.ts#buildAccessGroupIdsIndexDefinition
+- id: D-3c2576
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-front-component-renderer: functions in src/polyfills/dom/** declare their return type"
+  role:
+    package: packages/twenty-front-component-renderer
+    dir: src/polyfills/dom
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 69
+    total: 71
+    lower_bound: 0.903
+    lift: 1.562
+  example: >-
+    packages/twenty-front-component-renderer/src/polyfills/dom/utils/buildAttributeCacheKey.ts#buildAttributeCacheKey
+- id: D-1b8502
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-front: components in src/pages/settings/** call useLingui() before getSettingsPath()"
+  role:
+    package: packages/twenty-front
+    dir: src/pages/settings
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: before
+    first: pkg:@lingui/react/macro#useLingui
+    then: packages/twenty-shared/src/utils/index.ts#getSettingsPath
+  evidence:
+    holders: 94
+    total: 98
+    lower_bound: 0.9
+    lift: 1.0
+  example: >-
+    packages/twenty-front/src/pages/settings/accounts/SettingsAccountDetail.tsx#SettingsAccountDetail
+- id: D-399632
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/modules/dashboard/chart-data/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-server
+    dir: src/modules/dashboard/chart-data
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 50
+    total: 51
+    lower_bound: 0.897
+    lift: 1.576
+  example: >-
+    packages/twenty-server/src/modules/dashboard/chart-data/utils/apply-cumulative-to-line-data-points.util.ts#applyCumulativeToLineDataPoints
+- id: D-c26126
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/engine/api/common/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/api/common
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 91
+    total: 95
+    lower_bound: 0.897
+    lift: 1.54
+  example: >-
+    packages/twenty-server/src/engine/api/common/common-args-processors/data-arg-processor/transformer-utils/transform-actor-field.util.ts#transformActorField
+- id: D-10bd76
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-apps/public/people-data-labs: functions in src/** declare their return type"
+  role:
+    package: packages/twenty-apps/public/people-data-labs
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 77
+    total: 80
+    lower_bound: 0.895
+    lift: 1.547
+  example: >-
+    packages/twenty-apps/public/people-data-labs/src/front-components/utils/build-enrichment-snackbar-params.ts#buildEnrichmentSnackbarParams
+- id: D-e7c0aa
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/database/** (*.module files) pass `imports` to Module()"
+  role:
+    package: packages/twenty-server
+    dir: src/database
+    file: "*.module"
+    entry: '-'
+    kind: class
+  rule:
+    type: passes_key
+    callee: pkg:@nestjs/common#Module
+    index: 0
+    key: imports
+  evidence:
+    holders: 63
+    total: 65
+    lower_bound: 0.895
+    lift: 10.955
+  example: >-
+    packages/twenty-server/src/database/commands/agent-history/agent-history-migration.module.ts#AgentHistoryMigrationModule
+- id: D-1b7a4a
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/** (*.tool files) are named `create*`"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.tool"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: create*
+  evidence:
+    holders: 47
+    total: 48
+    lower_bound: 0.891
+    lift: 32.196
+  example: >-
+    packages/twenty-server/src/engine/api/mcp/tools/list-object-metadata-names.tool.ts#createListObjectMetadataNamesTool
+- id: D-08084a
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-apps/public/fathom: functions in src/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-apps/public/fathom
+    dir: src
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 85
+    total: 89
+    lower_bound: 0.89
+    lift: 1.535
+  example: >-
+    packages/twenty-apps/public/fathom/src/logic-functions/utils/apply-fathom-media-download.util.ts#applyFathomMediaDownload
+- id: D-01fb4b
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-apps/public/linkedin: functions in src/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-apps/public/linkedin
+    dir: src
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 71
+    total: 74
+    lower_bound: 0.887
+    lift: 1.542
+  example: >-
+    packages/twenty-apps/public/linkedin/src/front-components/utils/format-linkedin-sync-progress-label.util.ts#formatLinkedinSyncProgressLabel
+- id: D-407e3b
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-apps/public/teams: functions in src/features/** declare their return type"
+  role:
+    package: packages/twenty-apps/public/teams
+    dir: src/features
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 148
+    total: 158
+    lower_bound: 0.887
+    lift: 1.505
+  example: >-
+    packages/twenty-apps/public/teams/src/features/chat/logic-functions/data/claim-teams-assistant-request.ts#claimTeamsAssistantRequest
+- id: D-ab4b2b
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/engine/metadata-modules/** (*.resolver files) call MetadataResolver() before Args()"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/metadata-modules
+    file: "*.resolver"
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: >-
+      packages/twenty-server/src/engine/api/graphql/graphql-config/decorators/metadata-resolver.decorator.ts#MetadataResolver
+    then: pkg:@nestjs/graphql#Args
+  evidence:
+    holders: 45
+    total: 46
+    lower_bound: 0.887
+    lift: 1.0
+  example: >-
+    packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-run.resolver.ts#AgentRunResolver
+- id: D-2dfdfd
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-front-component-renderer: functions in src/remote/** declare their return type"
+  role:
+    package: packages/twenty-front-component-renderer
+    dir: src/remote
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 58
+    total: 60
+    lower_bound: 0.886
+    lift: 1.554
+  example: >-
+    packages/twenty-front-component-renderer/src/remote/elements/utils/acknowledgeNativeEdit.ts#acknowledgeNativeEdit
+- id: D-4d66c6
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.resolver files) call UseGuards()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.resolver"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: pkg:@nestjs/common#UseGuards
+  evidence:
+    holders: 135
+    total: 144
+    lower_bound: 0.885
+    lift: 22.51
+  example: >-
+    packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-ai-provider.resolver.ts#AdminPanelAiProviderResolver
+- id: D-c9e843
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-front-component-renderer: functions in src/__stories__/twenty-ui-gallery/** call expect() before expect().not.toHaveBeenCalled()"
+  role:
+    package: packages/twenty-front-component-renderer
+    dir: src/__stories__/twenty-ui-gallery
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: pkg:storybook/test#expect
+    then: pkg:storybook/test#expect().not.toHaveBeenCalled
+  evidence:
+    holders: 79
+    total: 83
+    lower_bound: 0.883
+    lift: 1.0
+  example: >-
+    packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/animatedIconCrossfadeTest.ts#animatedIconCrossfadeTest
+- id: D-f2b3ac
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-shared: functions in src/application/** (*.util files) are named `get*`"
+  role:
+    package: packages/twenty-shared
+    dir: src/application
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: get*
+  evidence:
+    holders: 42
+    total: 43
+    lower_bound: 0.879
+    lift: 7.156
+  example: >-
+    packages/twenty-shared/src/application/deterministic-identifier/get-agent-universal-identifier.util.ts#getAgentUniversalIdentifier
+- id: D-7edef0
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-front-component-renderer: functions in src/__stories__/twenty-ui-gallery/** call within() before userEvent.click()"
+  role:
+    package: packages/twenty-front-component-renderer
+    dir: src/__stories__/twenty-ui-gallery
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: pkg:storybook/test#within
+    then: pkg:storybook/test#userEvent.click
+  evidence:
+    holders: 74
+    total: 78
+    lower_bound: 0.875
+    lift: 1.0
+  example: >-
+    packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/animatedIconCrossfadeTest.ts#animatedIconCrossfadeTest
+- id: D-5b3142
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/engine/metadata-modules/flat-field-metadata/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/metadata-modules/flat-field-metadata
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 82
+    total: 87
+    lower_bound: 0.872
+    lift: 1.515
+  example: >-
+    packages/twenty-server/src/engine/metadata-modules/flat-field-metadata/utils/build-field-by-object-id-and-name-key.util.ts#buildFieldByObjectIdAndNameKey
+- id: D-cb8a28
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/engine/metadata-modules/** (*.resolver files) call AuthWorkspace()"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/metadata-modules
+    file: "*.resolver"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: >-
+      packages/twenty-server/src/engine/decorators/auth/auth-workspace.decorator.ts#AuthWorkspace
+  evidence:
+    holders: 51
+    total: 53
+    lower_bound: 0.872
+    lift: 30.751
+  example: >-
+    packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-run.resolver.ts#AgentRunResolver
+- id: D-3c8584
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/engine/workspace-manager/workspace-migration/workspace-migration-runner/** (*.service files) extend WorkspaceMigrationRunnerActionHandler()"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/workspace-manager/workspace-migration/workspace-migration-runner
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - >-
+      packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/interfaces/workspace-migration-runner-action-handler-service.interface.ts#WorkspaceMigrationRunnerActionHandler()
+  evidence:
+    holders: 126
+    total: 136
+    lower_bound: 0.87
+    lift: 32.662
+  example: >-
+    packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/action-handlers/agent-chat-channel-role/services/create-agent-chat-channel-role-action-handler.service.ts#CreateAgentChatChannelRoleActionHandlerService
+- id: D-c39eb9
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.exception files) extend CustomException"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.exception"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - packages/twenty-server/src/utils/custom-exception.ts#CustomException
+  evidence:
+    holders: 126
+    total: 136
+    lower_bound: 0.87
+    lift: 31.902
+  example: >-
+    packages/twenty-server/src/database/clickhouse/clickhouse.exception.ts#ClickHouseException
+- id: D-dd54e2
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.entity files) call Column() before CreateDateColumn()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.entity"
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: pkg:typeorm#Column
+    then: pkg:typeorm#CreateDateColumn
+  evidence:
+    holders: 80
+    total: 85
+    lower_bound: 0.87
+    lift: 1.0
+  example: >-
+    packages/twenty-server/src/engine/core-modules/app-token/app-token.entity.ts#AppTokenEntity
+- id: D-b9badb
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/engine/metadata-modules/** (*.resolver files) call MetadataResolver() before AuthWorkspace()"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/metadata-modules
+    file: "*.resolver"
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: >-
+      packages/twenty-server/src/engine/api/graphql/graphql-config/decorators/metadata-resolver.decorator.ts#MetadataResolver
+    then: >-
+      packages/twenty-server/src/engine/decorators/auth/auth-workspace.decorator.ts#AuthWorkspace
+  evidence:
+    holders: 49
+    total: 51
+    lower_bound: 0.868
+    lift: 1.0
+  example: >-
+    packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-run.resolver.ts#AgentRunResolver
+- id: D-ed1cd4
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.resolver files) call AccessPolicyGuard()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.resolver"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: >-
+      packages/twenty-server/src/engine/guards/access-policy.guard.ts#AccessPolicyGuard
+  evidence:
+    holders: 133
+    total: 144
+    lower_bound: 0.868
+    lift: 26.132
+  example: >-
+    packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-ai-provider.resolver.ts#AdminPanelAiProviderResolver
+- id: D-1277a9
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-front-component-renderer: functions in src/__stories__/twenty-ui-gallery/** call within() before expect().not.toHaveBeenCalled()"
+  role:
+    package: packages/twenty-front-component-renderer
+    dir: src/__stories__/twenty-ui-gallery
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: pkg:storybook/test#within
+    then: pkg:storybook/test#expect().not.toHaveBeenCalled
+  evidence:
+    holders: 78
+    total: 83
+    lower_bound: 0.867
+    lift: 1.0
+  example: >-
+    packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/animatedIconCrossfadeTest.ts#animatedIconCrossfadeTest
+- id: D-236371
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.input files) are named `*Input`"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.input"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Input"
+  evidence:
+    holders: 292
+    total: 323
+    lower_bound: 0.867
+    lift: 13.566
+  example: >-
+    packages/twenty-server/src/engine/core-modules/admin-panel/dtos/admin-panel-usage-limit.input.ts#AdminPanelCreateUsageLimitInput
+- id: D-1fa42f
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: graphql entry points in src/engine/metadata-modules/ai/ai-chat/** (*.resolver files) are decorated with UseGuards()"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/metadata-modules/ai/ai-chat
+    file: "*.resolver"
+    entry: graphql
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#UseGuards
+  evidence:
+    holders: 37
+    total: 38
+    lower_bound: 0.865
+    lift: 16.136
+  example: >-
+    packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/resolvers/agent-chat-channel.resolver.ts#MUTATION AgentChatChannelResolver.createAgentChatChannel
+- id: D-47b768
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-front: exported values in src/modules/client-config/** pass `defaultValue` to createAtomState()"
+  role:
+    package: packages/twenty-front
+    dir: src/modules/client-config
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: passes_key
+    callee: >-
+      packages/twenty-front/src/modules/ui/utilities/state/jotai/utils/createAtomState.ts#createAtomState
+    index: 0
+    key: defaultValue
+  evidence:
+    holders: 36
+    total: 37
+    lower_bound: 0.862
+    lift: 34.998
+  example: >-
+    packages/twenty-front/src/modules/client-config/states/aiEvaluationModelsState.ts#aiEvaluationModelsState
+- id: D-3e18e7
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/modules/calendar/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-server
+    dir: src/modules/calendar
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 35
+    total: 36
+    lower_bound: 0.858
+    lift: 1.563
+  example: >-
+    packages/twenty-server/src/modules/calendar/calendar-event-creation-manager/drivers/utils/to-google-event-input.util.ts#toGoogleEventInput
+- id: D-dec8d8
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/engine/metadata-modules/ai/ai-agent-execution/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/metadata-modules/ai/ai-agent-execution
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 44
+    total: 46
+    lower_bound: 0.855
+    lift: 1.537
+  example: >-
+    packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/pausing-tools/utils/build-email-proposal.util.ts#buildEmailProposal
+- id: D-2a3e38
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: HTTP handlers in src/** (*.controller files) are decorated with UseFilters()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.controller"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#UseFilters
+  evidence:
+    holders: 140
+    total: 154
+    lower_bound: 0.853
+    lift: 13.716
+  example: >-
+    packages/twenty-server/src/engine/api/mcp/controllers/mcp-core.controller.ts#POST /
+- id: D-ea0a7d
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-front-component-renderer: functions in src/__stories__/twenty-ui-gallery/** call expect()"
+  role:
+    package: packages/twenty-front-component-renderer
+    dir: src/__stories__/twenty-ui-gallery
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: calls
+    callee: pkg:storybook#expect
+  evidence:
+    holders: 116
+    total: 127
+    lower_bound: 0.852
+    lift: 78.501
+  example: >-
+    packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/animatedIconCrossfadeTest.ts#animatedIconCrossfadeTest
+- id: D-9301d0
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/engine/api/graphql/direct-execution/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/api/graphql/direct-execution
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 33
+    total: 34
+    lower_bound: 0.851
+    lift: 1.56
+  example: >-
+    packages/twenty-server/src/engine/api/graphql/direct-execution/utils/assert-create-many-args.util.ts#assertCreateManyArgs
+- id: D-cab5e5
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.entity files) call Entity() before Index()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.entity"
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: pkg:typeorm#Entity
+    then: pkg:typeorm#Index
+  evidence:
+    holders: 67
+    total: 72
+    lower_bound: 0.848
+    lift: 1.0
+  example: >-
+    packages/twenty-server/src/engine/core-modules/app-token/app-token.entity.ts#AppTokenEntity
+- id: D-5ab5c8
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/modules/emailing/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-server
+    dir: src/modules/emailing
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 32
+    total: 33
+    lower_bound: 0.847
+    lift: 1.558
+  example: >-
+    packages/twenty-server/src/modules/emailing/utils/build-add-people-to-message-list-job-id.util.ts#buildAddPeopleToMessageListJobId
+- id: D-c50d74
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/engine/metadata-modules/page-layout-widget/** (*.dto files) call IsIn() before IsNotEmpty()"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/metadata-modules/page-layout-widget
+    file: "*.dto"
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: pkg:class-validator#IsIn
+    then: pkg:class-validator#IsNotEmpty
+  evidence:
+    holders: 32
+    total: 33
+    lower_bound: 0.847
+    lift: 1.0
+  example: >-
+    packages/twenty-server/src/engine/metadata-modules/page-layout-widget/dtos/aggregate-chart-configuration.dto.ts#AggregateChartConfigurationDTO
+- id: D-7e503c
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/engine/metadata-modules/** (*.resolver files) are decorated with MetadataResolver()"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/metadata-modules
+    file: "*.resolver"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - >-
+      packages/twenty-server/src/engine/api/graphql/graphql-config/decorators/metadata-resolver.decorator.ts#MetadataResolver
+  evidence:
+    holders: 50
+    total: 53
+    lower_bound: 0.846
+    lift: 34.349
+  example: >-
+    packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/resolvers/agent-run.resolver.ts#AgentRunResolver
+- id: D-7ee0d6
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-front: components in src/modules/command-menu-item/engine-command/** call isDefined() before doNotTranslate()"
+  role:
+    package: packages/twenty-front
+    dir: src/modules/command-menu-item/engine-command
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: before
+    first: packages/twenty-shared/src/utils/index.ts#isDefined
+    then: packages/twenty-shared/src/i18n/index.ts#doNotTranslate
+  evidence:
+    holders: 41
+    total: 43
+    lower_bound: 0.845
+    lift: 1.0
+  example: >-
+    packages/twenty-front/src/modules/command-menu-item/engine-command/record/components/AddRecordsToMessageListCommand.tsx#AddRecordsToMessageListCommand
+- id: D-3ce1f5
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/engine/api/rest/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/api/rest
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 31
+    total: 32
+    lower_bound: 0.843
+    lift: 1.557
+  example: >-
+    packages/twenty-server/src/engine/api/rest/core/utils/pick-rest-response-fields.util.ts#pickRestResponseFields
+- id: D-76a1c2
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/engine/metadata-modules/** (*.entity files) call Column() before JoinColumn()"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/metadata-modules
+    file: "*.entity"
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: pkg:typeorm#Column
+    then: pkg:typeorm#JoinColumn
+  evidence:
+    holders: 31
+    total: 32
+    lower_bound: 0.843
+    lift: 1.0
+  example: >-
+    packages/twenty-server/src/engine/metadata-modules/agent-chat-channel/entities/agent-chat-channel-role.entity.ts#AgentChatChannelRoleEntity
+- id: D-9eabd8
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.resolver files) are decorated with UseFilters()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.resolver"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#UseFilters
+  evidence:
+    holders: 130
+    total: 144
+    lower_bound: 0.843
+    lift: 23.451
+  example: >-
+    packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-ai-provider.resolver.ts#AdminPanelAiProviderResolver
+- id: D-bc65cf
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-ui: exported values in design-tokens/color/** pass `dark` to token()"
+  role:
+    package: packages/twenty-ui
+    dir: design-tokens/color
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: passes_key
+    callee: packages/twenty-ui/design-tokens/token.ts#token
+    index: 0
+    key: dark
+  evidence:
+    holders: 31
+    total: 32
+    lower_bound: 0.843
+    lift: 226.499
+  example: packages/twenty-ui/design-tokens/color/amber.ts#AMBER_COLOR_TOKENS
+- id: D-e5bbb3
+  status: proposed
+  mode: advise
+  summary: >-
+    files in packages/twenty-apps/public/call-recorder/** use @emotion/styled for
+    css-in-js, not styled-components/@emotion/react/@stitches/react
+  role:
+    package: packages/twenty-apps/public/call-recorder
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: prefers_library
+    group: css-in-js
+    preferred: "@emotion/styled"
+  evidence:
+    holders: 31
+    total: 32
+    lower_bound: 0.843
+    lift: 1.0
+    split:
+    - - "@emotion/styled"
+      - 32
+    - - "@emotion/react"
+      - 1
+  example: >-
+    packages/twenty-apps/public/call-recorder/src/front-components/components/CallParticipantsWidget.tsx#(file)
+- id: D-d3193e
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-front: functions in src/modules/validation-rules/utils/** declare their return type"
+  role:
+    package: packages/twenty-front
+    dir: src/modules/validation-rules/utils
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 30
+    total: 31
+    lower_bound: 0.838
+    lift: 1.555
+  example: >-
+    packages/twenty-front/src/modules/validation-rules/utils/buildValidationRuleEditorFields.ts#buildValidationRuleEditorFields
+- id: D-c75a75
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: exported values in src/** (*.exception files) are named `*Code`"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.exception"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Code"
+  evidence:
+    holders: 122
+    total: 136
+    lower_bound: 0.835
+    lift: 55.93
+  example: >-
+    packages/twenty-server/src/database/clickhouse/clickhouse.exception.ts#ClickHouseExceptionCode
+- id: D-43f9b2
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-apps/public/people-data-labs: files in src/logic-functions/utils/** have a test file"
+  role:
+    package: packages/twenty-apps/public/people-data-labs
+    dir: src/logic-functions/utils
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: has_test
+  evidence:
+    holders: 67
+    total: 73
+    lower_bound: 0.832
+    lift: 8.344
+  example: >-
+    packages/twenty-apps/public/people-data-labs/src/logic-functions/utils/aggregate-bulk-enrich-result.ts#(file)
+- id: D-6f062c
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/engine/core-modules/logic-function/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/core-modules/logic-function
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 45
+    total: 48
+    lower_bound: 0.832
+    lift: 1.507
+  example: >-
+    packages/twenty-server/src/engine/core-modules/logic-function/logic-function-drivers/drivers/lambda/utils/build-lambda-resource-name.util.ts#buildLambdaResourceName
+- id: D-5f30f5
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.factory files) are named `*Factory`"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.factory"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Factory"
+  evidence:
+    holders: 28
+    total: 29
+    lower_bound: 0.828
+    lift: 142.961
+  example: >-
+    packages/twenty-server/src/engine/api/common/common-args-processors/query-runner-args.factory.ts#QueryRunnerArgsFactory
+- id: D-f8c724
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: graphql entry points in src/engine/metadata-modules/ai/ai-chat/** (*.resolver files) are decorated with UseInterceptors()"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/metadata-modules/ai/ai-chat
+    file: "*.resolver"
+    entry: graphql
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#UseInterceptors
+  evidence:
+    holders: 36
+    total: 38
+    lower_bound: 0.827
+    lift: 53.909
+  example: >-
+    packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/resolvers/agent-chat-channel.resolver.ts#MUTATION AgentChatChannelResolver.createAgentChatChannel
+- id: D-fbc4dc
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/engine/metadata-modules/** (*.entity files) are decorated with Index()"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/metadata-modules
+    file: "*.entity"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:typeorm#Index
+  evidence:
+    holders: 43
+    total: 46
+    lower_bound: 0.825
+    lift: 58.483
+  example: >-
+    packages/twenty-server/src/engine/metadata-modules/agent-chat-channel/entities/agent-chat-channel-role.entity.ts#AgentChatChannelRoleEntity
+- id: D-10e82c
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-cli: functions in src/app/manifest/** declare their return type"
+  role:
+    package: packages/twenty-cli
+    dir: src/app/manifest
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 27
+    total: 28
+    lower_bound: 0.823
+    lift: 1.55
+  example: >-
+    packages/twenty-cli/src/app/manifest/build-and-validate-manifest.ts#buildAndValidateManifest
+- id: D-24fef5
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/modules/** (*.tool files) use `try`"
+  role:
+    package: packages/twenty-server
+    dir: src/modules
+    file: "*.tool"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: try
+  evidence:
+    holders: 27
+    total: 28
+    lower_bound: 0.823
+    lift: 16.327
+  example: >-
+    packages/twenty-server/src/modules/dashboard/tools/add-dashboard-tab.tool.ts#createAddDashboardTabTool
+- id: D-2ade4b
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/modules/timeline/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-server
+    dir: src/modules/timeline
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 27
+    total: 28
+    lower_bound: 0.823
+    lift: 1.55
+  example: >-
+    packages/twenty-server/src/modules/timeline/query-hooks/utils/timeline-activity-mutation-input.util.ts#assertTimelineActivityCreationInputIsValid
+- id: D-f5fb0d
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-front: exported values in src/modules/ai/states/selectors/** are named `agent*`"
+  role:
+    package: packages/twenty-front
+    dir: src/modules/ai/states/selectors
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: agent*
+  evidence:
+    holders: 27
+    total: 28
+    lower_bound: 0.823
+    lift: 115.948
+  example: >-
+    packages/twenty-front/src/modules/ai/states/selectors/agentChatAccessibleChannelsSelector.ts#agentChatAccessibleChannelsSelector
+- id: D-0b296a
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/engine/workspace-manager/workspace-migration/workspace-migration-runner/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/workspace-manager/workspace-migration/workspace-migration-runner
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 34
+    total: 36
+    lower_bound: 0.819
+    lift: 1.518
+  example: >-
+    packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-runner/action-handlers/command-menu-item/services/utils/from-universal-overrides-to-command-menu-item-overrides.util.ts#fromUniversalOverridesToCommandMenuItemOverrides
+- id: D-56545a
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-front-component-renderer: functions in src/__stories__/twenty-ui-gallery/** call within() before waitFor()"
+  role:
+    package: packages/twenty-front-component-renderer
+    dir: src/__stories__/twenty-ui-gallery
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: before
+    first: pkg:storybook/test#within
+    then: pkg:storybook/test#waitFor
+  evidence:
+    holders: 91
+    total: 102
+    lower_bound: 0.817
+    lift: 1.0
+  example: >-
+    packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/utils/animatedIconCrossfadeTest.ts#animatedIconCrossfadeTest
+- id: D-006db2
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-shared: functions in src/application/** (*.util files) pass `applicationUniversalIdentifier` to computeDeterministicUuid()"
+  role:
+    package: packages/twenty-shared
+    dir: src/application
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: passes_key
+    callee: >-
+      packages/twenty-shared/src/application/deterministic-identifier/compute-deterministic-uuid.util.ts#computeDeterministicUuid
+    index: 0
+    key: applicationUniversalIdentifier
+  evidence:
+    holders: 40
+    total: 43
+    lower_bound: 0.814
+    lift: 289.814
+  example: >-
+    packages/twenty-shared/src/application/deterministic-identifier/get-agent-universal-identifier.util.ts#getAgentUniversalIdentifier
+- id: D-3abdac
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-cli: functions in src/commands/** are named `run*`"
+  role:
+    package: packages/twenty-cli
+    dir: src/commands
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: run*
+  evidence:
+    holders: 40
+    total: 43
+    lower_bound: 0.814
+    lift: 170.479
+  example: >-
+    packages/twenty-cli/src/commands/api/graphql/run-api-graphql-command.ts#runApiGraphqlCommand
+- id: D-b54f48
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/engine/metadata-modules/flat-page-layout-widget/validators/** (*.util files) are named `validate*`"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/metadata-modules/flat-page-layout-widget/validators
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: validate*
+  evidence:
+    holders: 25
+    total: 26
+    lower_bound: 0.811
+    lift: 57.06
+  example: >-
+    packages/twenty-server/src/engine/metadata-modules/flat-page-layout-widget/validators/utils/validate-bar-chart-configuration.util.ts#validateBarChartConfiguration
+- id: D-4fa554
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-front-component-renderer: functions in scripts/** declare their return type"
+  role:
+    package: packages/twenty-front-component-renderer
+    dir: scripts
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 24
+    total: 25
+    lower_bound: 0.805
+    lift: 1.543
+  example: >-
+    packages/twenty-front-component-renderer/scripts/front-component-stories/createAvatarImageFixturePlugin.ts#createAvatarImageFixturePlugin
+- id: D-10ad29
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-sdk: exported values in src/sdk/define/** call createExpressionOnlyPlaceholder()"
+  role:
+    package: packages/twenty-sdk
+    dir: src/sdk/define
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: calls
+    callee: >-
+      packages/twenty-sdk/src/sdk/define/conditional-availability/conditional-availability-variables.ts#createExpressionOnlyPlaceholder
+  evidence:
+    holders: 31
+    total: 33
+    lower_bound: 0.804
+    lift: 255.061
+  example: >-
+    packages/twenty-sdk/src/sdk/define/conditional-availability/conditional-availability-variables.ts#canAccessFullAdminPanel
+- id: D-6a54b8
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: exported values in src/** (*.schema files) call z.object() before z.string()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.schema"
+    entry: '-'
+    kind: const
+  rule:
+    type: before
+    first: pkg:zod#z.object
+    then: pkg:zod#z.string
+  evidence:
+    holders: 31
+    total: 33
+    lower_bound: 0.804
+    lift: 1.0
+  example: >-
+    packages/twenty-server/src/database/commands/upgrade-version-command/2-9/ai-model-preferences.schema.ts#aiModelPreferencesSchema
+- id: D-b9a9ed
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.guard files) are decorated with Injectable()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.guard"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#Injectable
+  evidence:
+    holders: 31
+    total: 33
+    lower_bound: 0.804
+    lift: 2.953
+  example: packages/twenty-server/src/engine/api/mcp/guards/mcp-auth.guard.ts#McpAuthGuard
+- id: D-fea4d7
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/** (*.guard files) are named `is*`"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.guard"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: is*
+  evidence:
+    holders: 31
+    total: 33
+    lower_bound: 0.804
+    lift: 9.262
+  example: >-
+    packages/twenty-server/src/engine/api/common/common-args-processors/data-arg-processor/types/file-item.guard.ts#isFileOutputArray
+- id: D-868e25
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-front: components in src/modules/command-menu-item/engine-command/record/** call useHeadlessCommandContextApi()"
+  role:
+    package: packages/twenty-front
+    dir: src/modules/command-menu-item/engine-command/record
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: calls
+    callee: >-
+      packages/twenty-front/src/modules/command-menu-item/engine-command/hooks/useHeadlessCommandContextApi.ts#useHeadlessCommandContextApi
+  evidence:
+    holders: 49
+    total: 54
+    lower_bound: 0.801
+    lift: 64.152
+  example: >-
+    packages/twenty-front/src/modules/command-menu-item/engine-command/record/components/AddRecordsToMessageListCommand.tsx#AddRecordsToMessageListCommand
+- id: D-0811d0
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.controller files) call UseFilters() before Post()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.controller"
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: pkg:@nestjs/common#UseFilters
+    then: pkg:@nestjs/common#Post
+  evidence:
+    holders: 30
+    total: 32
+    lower_bound: 0.799
+    lift: 1.0
+  example: >-
+    packages/twenty-server/src/engine/api/mcp/controllers/mcp-core.controller.ts#McpCoreController
+- id: D-bd81cc
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-front-component-renderer: functions in src/utils/** declare their return type"
+  role:
+    package: packages/twenty-front-component-renderer
+    dir: src/utils
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 1.54
+  example: >-
+    packages/twenty-front-component-renderer/src/utils/clonable-error/buildClonableErrorPayload.ts#buildClonableErrorPayload
+- id: D-dce5ce
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-shared: functions in src/utils/tiptap/** declare their return type"
+  role:
+    package: packages/twenty-shared
+    dir: src/utils/tiptap
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 23
+    total: 24
+    lower_bound: 0.798
+    lift: 1.54
+  example: >-
+    packages/twenty-shared/src/utils/tiptap/convert-blocknote-to-rich-text-document.ts#convertBlockNoteToRichTextDocument
+- id: D-81a1f5
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/engine/metadata-modules/metadata-side-effect/** (*.service files) extend MetadataSideEffectHandler()"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/metadata-modules/metadata-side-effect
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - >-
+      packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/interfaces/base-metadata-side-effect-handler.service.ts#MetadataSideEffectHandler()
+  evidence:
+    holders: 36
+    total: 39
+    lower_bound: 0.797
+    lift: 113.897
+  example: >-
+    packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/handlers/field-metadata/services/field-index-view-field-on-create-side-effect-handler.service.ts#FieldIndexViewFieldOnCreateSideEffectHandlerService
+- id: D-78657c
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/modules/workflow/** (*.module files) pass `exports` to Module()"
+  role:
+    package: packages/twenty-server
+    dir: src/modules/workflow
+    file: "*.module"
+    entry: '-'
+    kind: class
+  rule:
+    type: passes_key
+    callee: pkg:@nestjs/common#Module
+    index: 0
+    key: exports
+  evidence:
+    holders: 35
+    total: 38
+    lower_bound: 0.792
+    lift: 14.06
+  example: >-
+    packages/twenty-server/src/modules/workflow/common/workflow-common.module.ts#WorkflowCommonModule
+- id: D-09b0f9
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/modules/workflow/workflow-builder/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-server
+    dir: src/modules/workflow/workflow-builder
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 22
+    total: 23
+    lower_bound: 0.79
+    lift: 1.537
+  example: >-
+    packages/twenty-server/src/modules/workflow/workflow-builder/utils/apply-workflow-step-positions.util.ts#applyWorkflowStepPositions
+- id: D-782bb4
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.workflow-action files) are decorated with Injectable()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.workflow-action"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:@nestjs/common#Injectable
+  evidence:
+    holders: 22
+    total: 23
+    lower_bound: 0.79
+    lift: 3.007
+  example: >-
+    packages/twenty-server/src/modules/workflow/workflow-executor/workflow-actions/ai-agent/ai-agent.workflow-action.ts#AiAgentWorkflowAction
+- id: D-85bd6f
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/engine/api/graphql/graphql-query-runner/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/api/graphql/graphql-query-runner
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 28
+    total: 30
+    lower_bound: 0.787
+    lift: 1.5
+  example: >-
+    packages/twenty-server/src/engine/api/graphql/graphql-query-runner/graphql-query-parsers/graphql-query-order/utils/build-order-by-column-expression.util.ts#buildOrderByColumnExpression
+- id: D-86d446
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/engine/workspace-manager/workspace-migration/utils/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/workspace-manager/workspace-migration/utils
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 28
+    total: 30
+    lower_bound: 0.787
+    lift: 1.5
+  example: >-
+    packages/twenty-server/src/engine/workspace-manager/workspace-migration/utils/add-flat-entity-to-flat-entity-maps-through-mutation-or-throw.util.ts#addFlatEntityToFlatEntityMapsThroughMutationOrThrow
+- id: D-b995e0
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.resolver files) call Args()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.resolver"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: pkg:@nestjs/graphql#Args
+  evidence:
+    holders: 123
+    total: 144
+    lower_bound: 0.787
+    lift: 30.847
+  example: >-
+    packages/twenty-server/src/engine/core-modules/admin-panel/admin-panel-ai-provider.resolver.ts#AdminPanelAiProviderResolver
+- id: D-65f290
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/engine/metadata-modules/page-layout-widget/** (*.dto files) call IsNotEmpty()"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/metadata-modules/page-layout-widget
+    file: "*.dto"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: pkg:class-validator#IsNotEmpty
+  evidence:
+    holders: 33
+    total: 36
+    lower_bound: 0.782
+    lift: 19.482
+  example: >-
+    packages/twenty-server/src/engine/metadata-modules/page-layout-widget/dtos/aggregate-chart-configuration.dto.ts#AggregateChartConfigurationDTO
+- id: D-532878
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.workspace-entity files) extend BaseWorkspaceEntity"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.workspace-entity"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - >-
+      packages/twenty-server/src/engine/twenty-orm/base.workspace-entity.ts#BaseWorkspaceEntity
+  evidence:
+    holders: 38
+    total: 42
+    lower_bound: 0.779
+    lift: 105.762
+  example: >-
+    packages/twenty-server/src/engine/metadata-modules/ai/ai-history/standard-objects/agent-chat-thread-participant.workspace-entity.ts#AgentChatThreadParticipantWorkspaceEntity
+- id: D-2814ee
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-ui: components in src/icon/** call useTheme()"
+  role:
+    package: packages/twenty-ui
+    dir: src/icon
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: calls
+    callee: packages/twenty-ui/src/theme/index.ts#useTheme
+  evidence:
+    holders: 43
+    total: 48
+    lower_bound: 0.778
+    lift: 8.999
+  example: packages/twenty-ui/src/icon/components/IconAddressBook.tsx#IconAddressBook
+- id: D-60358e
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-front-component-renderer: components in src/__stories__/twenty-ui-gallery/** call useState()"
+  role:
+    package: packages/twenty-front-component-renderer
+    dir: src/__stories__/twenty-ui-gallery
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: calls
+    callee: pkg:react#useState
+  evidence:
+    holders: 26
+    total: 28
+    lower_bound: 0.774
+    lift: 5.704
+  example: >-
+    packages/twenty-front-component-renderer/src/__stories__/twenty-ui-gallery/animated-icon-crossfade-example.tsx#AnimatedIconCrossfadeExample
+- id: D-020796
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: exported values in src/** (*.input-type files) are named `*Type`"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.input-type"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: "*Type"
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 67.363
+  example: >-
+    packages/twenty-server/src/engine/api/graphql/workspace-schema-builder/graphql-types/input/actor-context.input-type.ts#ActorContextInputType
+- id: D-019880
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-front: functions in src/modules/ai/components/** are named `*Effect`"
+  role:
+    package: packages/twenty-front
+    dir: src/modules/ai/components
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: "*Effect"
+  evidence:
+    holders: 25
+    total: 27
+    lower_bound: 0.766
+    lift: 43.874
+  example: >-
+    packages/twenty-front/src/modules/ai/components/AgentChatChannelThreadsLoadEffect.tsx#AgentChatChannelThreadsLoadEffect
+- id: D-5cb05f
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/database/commands/upgrade-version-command/** (*.command files) call WorkspaceCacheService.getOrRecompute()"
+  role:
+    package: packages/twenty-server
+    dir: src/database/commands/upgrade-version-command
+    file: "*.command"
+    entry: '-'
+    kind: class
+  rule:
+    type: calls
+    callee: >-
+      packages/twenty-server/src/engine/workspace-cache/services/workspace-cache.service.ts#WorkspaceCacheService.getOrRecompute
+  evidence:
+    holders: 240
+    total: 295
+    lower_bound: 0.765
+    lift: 10.325
+  example: >-
+    packages/twenty-server/src/database/commands/upgrade-version-command/1-21/1-21-workspace-command-1775500001000-add-compose-email-command-menu-item.command.ts#AddComposeEmailCommandMenuItemCommand
+- id: D-dd831e
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-apps/public/call-recorder: functions in src/logic-functions/** declare their return type"
+  role:
+    package: packages/twenty-apps/public/call-recorder
+    dir: src/logic-functions
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 19
+    total: 20
+    lower_bound: 0.764
+    lift: 1.527
+  example: >-
+    packages/twenty-apps/public/call-recorder/src/logic-functions/cancel-recall-bot-on-call-recording-delete.ts#cancelRecallBotOnCallRecordingDeleteHandler
+- id: D-0fc444
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/** (*.controller files) call UseFilters() before Req()"
+  role:
+    package: packages/twenty-server
+    dir: src
+    file: "*.controller"
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: pkg:@nestjs/common#UseFilters
+    then: pkg:@nestjs/common#Req
+  evidence:
+    holders: 34
+    total: 38
+    lower_bound: 0.759
+    lift: 1.0
+  example: >-
+    packages/twenty-server/src/engine/api/mcp/controllers/mcp-core.controller.ts#McpCoreController
+- id: D-6ba4de
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: classes in src/engine/metadata-modules/metadata-side-effect/** (*.service files) call MetadataSideEffectHandler() before isDefined()"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/metadata-modules/metadata-side-effect
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: before
+    first: >-
+      packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/interfaces/base-metadata-side-effect-handler.service.ts#MetadataSideEffectHandler
+    then: packages/twenty-shared/src/utils/index.ts#isDefined
+  evidence:
+    holders: 24
+    total: 26
+    lower_bound: 0.759
+    lift: 1.0
+  example: >-
+    packages/twenty-server/src/engine/metadata-modules/metadata-side-effect/handlers/field-metadata/services/field-index-view-field-on-create-side-effect-handler.service.ts#FieldIndexViewFieldOnCreateSideEffectHandlerService
+- id: D-ca2f11
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-server: functions in src/engine/core-modules/auth/utils/** (*.util files) declare their return type"
+  role:
+    package: packages/twenty-server
+    dir: src/engine/core-modules/auth/utils
+    file: "*.util"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 1.523
+  example: >-
+    packages/twenty-server/src/engine/core-modules/auth/utils/acquire-user-authentication-lock.util.ts#acquireUserAuthenticationLock
+- id: D-e9ec70
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-front: functions in src/modules/settings/admin-panel/utils/** declare their return type"
+  role:
+    package: packages/twenty-front
+    dir: src/modules/settings/admin-panel/utils
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 18
+    total: 19
+    lower_bound: 0.754
+    lift: 1.523
+  example: >-
+    packages/twenty-front/src/modules/settings/admin-panel/utils/buildAdminUsageLimitRows.ts#buildAdminUsageLimitRows
+- id: D-0f3537
+  status: proposed
+  mode: advise
+  summary: "packages/twenty-shared: exported values in src/workflow/schemas/** are named `workflow*`"
+  role:
+    package: packages/twenty-shared
+    dir: src/workflow/schemas
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: named
+    pattern: workflow*
+  evidence:
+    holders: 70
+    total: 83
+    lower_bound: 0.75
+    lift: 70.284
+  example: >-
+    packages/twenty-shared/src/workflow/schemas/ai-agent-action-schema.ts#workflowAiAgentActionSchema

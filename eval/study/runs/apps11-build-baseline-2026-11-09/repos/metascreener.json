@@ -1,0 +1,66 @@
+{
+  "name": "metascreener",
+  "repo": "chaokunhong/metascreener",
+  "sha": "532ee3cc10a7e22e54747d7c3413509c31b9a99b",
+  "loc": 105723,
+  "shape": {
+    "mix": "ts+py",
+    "shape": "frontend+backend",
+    "js_dirs": 1,
+    "py_dirs": 1,
+    "workspace_files": [],
+    "frontend_dirs": [
+      "frontend"
+    ],
+    "backend_dirs": [
+      ""
+    ]
+  },
+  "packages": [
+    {
+      "dir": "frontend",
+      "kind": "ts",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 23,
+        "roles": 1,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      }
+    }
+  ],
+  "root": {
+    "default": {
+      "shown": 0,
+      "conventions": 0,
+      "units": 1911,
+      "roles": 97,
+      "tiers": {
+        "default": 0,
+        "suggestion": 0
+      },
+      "python_withheld": 0,
+      "secs": 1,
+      "cards": []
+    },
+    "python_opt_in": {
+      "shown": 0,
+      "conventions": 0,
+      "units": 1911,
+      "roles": 97,
+      "tiers": {
+        "default": 0,
+        "suggestion": 0
+      },
+      "python_withheld": null,
+      "secs": 1,
+      "cards": []
+    }
+  }
+}

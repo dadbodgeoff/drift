@@ -1,0 +1,21 @@
+{
+  "repo": "dyrectorio",
+  "files": [
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "web/crux-ui/.eslintrc.js",
+      "kind": "lint"
+    },
+    {
+      "path": "web/crux/.eslintrc.js",
+      "kind": "lint"
+    },
+    {
+      "path": "web/crux-ui/eslint.config.js",
+      "kind": "lint"
+    }
+  ]
+}

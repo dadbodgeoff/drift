@@ -1,0 +1,85 @@
+{
+  "repo": "infisical",
+  "files": [
+    {
+      "path": ".agents/skills/docs-style/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": ".agents/skills/testing-secrets-ui/SKILL.md",
+      "kind": "agent_skill"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "backend-go/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "backend/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "backend/src/ee/services/agent-vault/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "backend/src/ee/services/pam/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "backend/src/ee/services/pki-discovery/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/CONTRIBUTING.MD",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/STYLE_GUIDE.md",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/documentation/getting-started/concepts/contributing.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "docs/documentation/platform/pam/architecture.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "e2e/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "frontend/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "tests/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "wasm/ironrdp-decoder/AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "backend/.oxlintrc.json",
+      "kind": "lint"
+    },
+    {
+      "path": "frontend/.oxlintrc.json",
+      "kind": "lint"
+    }
+  ]
+}

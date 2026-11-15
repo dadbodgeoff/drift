@@ -1,0 +1,35 @@
+{
+  "shown": 76,
+  "d5_default": 14,
+  "d7_default": 0,
+  "d7_not_in_d5": [],
+  "moved_to_suggestion": {
+    "count": 14,
+    "by_rule_kind": {
+      "wrapped_by:call": 6,
+      "wrapped_by:extends": 6,
+      "avoids:import": 1,
+      "wrapped_by:decorator": 1
+    },
+    "by_language": {
+      "py": 13,
+      "ts": 1
+    },
+    "uids": [
+      "Django-CRM/D-4a6ea2",
+      "Django-CRM/D-f135a4",
+      "InvenTree/D-47d790",
+      "ralph/D-4529f9",
+      "ralph/D-5b6f70",
+      "Misago/D-c9ae1e",
+      "Misago/D-e72fc8",
+      "paperless-ngx/D-c3460b",
+      "open-wearables/D-3b39dc",
+      "tasking-manager/D-cfe608",
+      "tasking-manager/D-3e220e",
+      "tasking-manager/D-c373f7",
+      "simplelogin/D-2a4960",
+      "changedetection.io/D-2619c7"
+    ]
+  }
+}

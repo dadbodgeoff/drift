@@ -1,0 +1,253 @@
+{
+  "labels_sha256": {
+    "A": "21af3eb1c747b1903e65034ae02f8df1f0745f4b092ca7eed7b6a60fb58f9afb",
+    "B": "9af9248ec2ada7cb747e1540adadd4a4693a04a3d5b385da1aab8495cd92d621"
+  },
+  "cases": [
+    {
+      "uid": "mercur/D-a8afe2",
+      "repo": "mercur",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "mercur/D-a8afe2",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/admin/src/hooks/api/api-keys.tsx",
+            "packages/admin/src/hooks/api/sellers.tsx",
+            "packages/admin/src/hooks/api/customers.tsx",
+            "packages/admin/src/hooks/api/promotions.tsx",
+            "packages/admin/src/hooks/api/orders.tsx",
+            "eslint.config.mts",
+            ".oxlintrc.json",
+            "packages/admin/tsconfig.json"
+          ],
+          "outliers": [],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Every exported non-function value in hooks/api is a query-key object named xQueryKeys (customersQueryKeys, promotionsQueryKeys, ordersQueryKeys), a team naming scheme no lint enforces; the only exception, SELLER_STATUS_LABELS in sellers.tsx, is exempted by the tool. Hesitated with WRONG mixed_group, since an agent exporting another constant from a hooks file would be told to name it *Keys.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "mercur/D-a8afe2",
+          "label": "WRONG",
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/admin/src/hooks/api/api-keys.tsx",
+            "packages/admin/src/hooks/api/sellers.tsx",
+            "packages/admin/src/hooks/api/regions.tsx",
+            "packages/admin/src/hooks/api/campaigns.tsx"
+          ],
+          "outliers": [
+            {
+              "symbol": "SELLER_STATUS_LABELS",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "Query-key exports are named *Keys, but sellers.tsx also exports non-key values (SELLER_STATUS_LABELS, sellerStatusOptions) that are legitimately not keys, so new such exports would be warned wrongly. Hesitated with ACCEPT.",
+          "rubric": "v3",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "kan/D-11877a",
+      "repo": "kan",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "kan/D-11877a",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/db/migrations/20250508083758_SetupTables.sql",
+            "packages/db/migrations/20260201215958_AddUserBoardFavouritesTable.sql",
+            "packages/db/migrations/20260922211628_AddBoardMembers.sql",
+            "packages/db/migrations/20260207214056_AddNotificationsTable.sql"
+          ],
+          "outliers": [
+            {
+              "symbol": "_card_labels",
+              "verdict": "look"
+            },
+            {
+              "symbol": "_card_workspace_members",
+              "verdict": "look"
+            },
+            {
+              "symbol": "workspace_slugs",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "Nearly every table, including the newer junction tables user_board_favorites and board_members, adds a createdAt timestamp, so the two bare join tables from the initial setup migration are worth a second look while workspace_slugs is a seeded lookup of reserved slugs; 2 of 3 counted. Hesitated with WRONG incidental, since pure join tables have no fields of their own.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "kan/D-11877a",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "mixed_group",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/db/migrations/20250508083758_SetupTables.sql",
+            "packages/db/src/schema/cards.ts",
+            "packages/db/src/schema/workspaces.ts",
+            "packages/db/src/schema/labels.ts",
+            "packages/db/src/schema/lists.ts",
+            "packages/db/src/schema/boards.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "_card_labels",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "_card_workspace_members",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "workspace_slugs",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R1",
+            "R2"
+          ],
+          "reason": "The outliers are pure join tables (composite PK of two FKs) and a slug lookup table with no entity lifecycle; entity tables in labels.ts, lists.ts, boards.ts have createdAt. Mined from a generated migration file, a new join table would be flagged for nothing. Hesitated with legit_outliers.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    },
+    {
+      "uid": "kan/D-798f44",
+      "repo": "kan",
+      "order": [
+        "B",
+        "A"
+      ],
+      "reviews": {
+        "A": {
+          "uid": "kan/D-798f44",
+          "rubric": "v3",
+          "label": "ACCEPT",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": null,
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/db/src/schema/auth.ts",
+            "packages/db/src/schema/cards.ts",
+            "packages/db/src/schema/workspaces.ts",
+            "packages/db/src/schema/boards.ts",
+            "packages/db/src/schema/labels.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "_card_labels",
+              "verdict": "look"
+            },
+            {
+              "symbol": "_card_workspace_members",
+              "verdict": "look"
+            },
+            {
+              "symbol": "workspace_slugs",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2",
+            "R8"
+          ],
+          "reason": "pgTable models carry createdAt, even the newer junction tables userBoardFavorites and boardMembers in boards.ts, so the bare cardsToLabels and cardToWorkspaceMembers join tables in cards.ts are worth a second look; slugs (workspace_slugs) in workspaces.ts is a seeded lookup table. 2 of 3 counted. Hesitated with WRONG incidental, since pure join tables have no fields of their own.",
+          "labeller": "A",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        },
+        "B": {
+          "uid": "kan/D-798f44",
+          "rubric": "v3",
+          "label": "WRONG",
+          "trivial_by": null,
+          "trivial_evidence": null,
+          "lint_severity": null,
+          "wrong_because": "legit_outliers",
+          "clear": true,
+          "confidence": "low",
+          "checked": [
+            "packages/db/src/schema/auth.ts",
+            "packages/db/src/schema/cards.ts",
+            "packages/db/src/schema/workspaces.ts",
+            "packages/db/src/schema/labels.ts",
+            "packages/db/src/schema/lists.ts",
+            "packages/db/src/schema/boards.ts"
+          ],
+          "outliers": [
+            {
+              "symbol": "_card_labels",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "_card_workspace_members",
+              "verdict": "legit"
+            },
+            {
+              "symbol": "workspace_slugs",
+              "verdict": "legit"
+            }
+          ],
+          "rules": [
+            "R2"
+          ],
+          "reason": "Entity tables have createdAt (labels.ts, lists.ts, boards.ts); the outliers are pure join tables (primaryKey on two FK columns) and a slug lookup, a recurring category that needs no creation timestamp, so new join tables would be falsely flagged. Hesitated with mixed_group.",
+          "labeller": "B",
+          "rubric_sha256": "79316bdc08a60209a5fb4cb887ad35a4ca4131255e96da2909c2242ac4e2c1dd"
+        }
+      }
+    }
+  ]
+}

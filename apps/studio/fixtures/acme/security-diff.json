@@ -1,0 +1,79 @@
+{
+ "guard_gaps": [
+  {
+   "guard": "withWorkspace",
+   "kind": "http",
+   "package": "apps/web",
+   "dir": "apps/web/app/api/workspaces",
+   "members": 74,
+   "with_guard": 70,
+   "entry": {
+    "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+    "symbol": "GET",
+    "line": 4,
+    "kind": "http",
+    "method": "GET",
+    "route": "/api/workspaces/[id]/archive-all",
+    "guards": []
+   },
+   "example": {
+    "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+    "symbol": "GET",
+    "line": 5,
+    "kind": "http",
+    "method": "GET",
+    "route": "/api/workspaces/[id]/alerts",
+    "guards": [
+     "withWorkspace"
+    ]
+   },
+   "convention": {
+    "id": "D-b0d245",
+    "status": "accepted",
+    "mode": "block"
+   }
+  },
+  {
+   "guard": "withWorkspace",
+   "kind": "http",
+   "package": "apps/web",
+   "dir": "apps/web/app/api/workspaces",
+   "members": 74,
+   "with_guard": 70,
+   "entry": {
+    "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+    "symbol": "GET",
+    "line": 5,
+    "kind": "http",
+    "method": "GET",
+    "route": "/api/workspaces/[id]/ping",
+    "guards": []
+   },
+   "example": {
+    "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+    "symbol": "GET",
+    "line": 5,
+    "kind": "http",
+    "method": "GET",
+    "route": "/api/workspaces/[id]/alerts",
+    "guards": [
+     "withWorkspace"
+    ]
+   },
+   "convention": {
+    "id": "D-b0d245",
+    "status": "accepted",
+    "mode": "block"
+   }
+  }
+ ],
+ "unguarded_reaching": [],
+ "sinks": [],
+ "leaks": [],
+ "now_public": [],
+ "diff": {
+  "base": "main",
+  "merge_base": "288a7c8154738efd5cd5a5d1fb485369b86be34b",
+  "files": 9
+ }
+}

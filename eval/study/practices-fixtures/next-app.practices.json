@@ -1,0 +1,129 @@
+{
+  "//": "Hand-written `drift practices --json` (version 1, PLAN-R13 §0.3) for practices.test.mjs: a made-up Next.js monorepo (acme-next). authn 20 units (withWorkspace 12, Clerk middleware 3, none 3, unknown 2); errors 10 (all known); config 4 with 1 unknown.",
+  "version": 1,
+  "commit": "cgu115-test",
+  "facts_schema": 11,
+  "scope": { "concern": null, "package": null, "path": null },
+  "summary": { "population": 34, "known": 28, "none": 3, "unknown": 3, "coverage": 0.912, "concerns_at_target": 2, "target": 0.9 },
+  "concerns": [
+    {
+      "id": "authn",
+      "title": "Authentication",
+      "unit": "entry_point",
+      "population": { "total": 20, "known": 15, "none": 3, "unknown": 2, "coverage": 0.9, "left_out": { "tests": 4, "non_production": 1 } },
+      "variants": [
+        {
+          "id": "P-a1b2c3",
+          "key": "wrap:apps/web/lib/auth.ts#withWorkspace",
+          "label": "wrapped in withWorkspace()",
+          "kind": "known",
+          "mechanisms": ["wrap"],
+          "instruments": ["apps/web/lib/auth.ts#withWorkspace"],
+          "source": "usage",
+          "members": 12,
+          "share": 0.6,
+          "where": {
+            "packages": [{ "package": "apps/web", "members": 12, "share_of_package": 0.8 }],
+            "dirs": [{ "dir": "apps/web/app/api", "members": 12 }],
+            "roles": [{ "role": "R-000001", "members": 12 }],
+            "entry_kinds": [{ "kind": "http", "members": 12 }],
+            "methods": [{ "method": "GET", "members": 7 }, { "method": "POST", "members": 5 }]
+          },
+          "sets_apart": [{ "attribute": "dir:apps/web/app/api", "in_variant": [12, 12], "in_dominant": [12, 12], "separation": 0.0, "purity": 1.0 }],
+          "examples": [
+            { "path": "apps/web/app/api/links/route.ts", "symbol": "GET", "line": 8 },
+            { "path": "apps/web/app/api/links/route.ts", "symbol": "POST", "line": 30 },
+            { "path": "apps/web/app/api/domains/route.ts", "symbol": "GET", "line": 5 }
+          ],
+          "exceptions": [
+            { "path": "apps/web/app/api/webhooks/stripe/route.ts", "symbol": "POST", "line": 11, "variant": "P-d4e5f6" },
+            { "path": "apps/web/app/api/og/route.ts", "symbol": "GET", "line": 3, "variant": "P-0n0n0n" },
+            { "path": "apps/web/app/api/proxy/route.ts", "symbol": "GET", "line": 9, "variant": "unknown" }
+          ],
+          "conventions": [{ "id": "D-123456", "status": "accepted", "mode": "block" }],
+          "promotable": { "rule": "wrapped_by", "role": "R-000001" }
+        },
+        {
+          "id": "P-d4e5f6",
+          "key": "middleware:pkg:@clerk/nextjs#clerkMiddleware",
+          "label": "covered by clerkMiddleware()",
+          "kind": "known",
+          "mechanisms": ["middleware"],
+          "instruments": ["pkg:@clerk/nextjs#clerkMiddleware"],
+          "source": "vocab",
+          "members": 3,
+          "share": 0.15,
+          "where": { "packages": [{ "package": "apps/admin", "members": 3, "share_of_package": 0.6 }], "dirs": [], "roles": [], "entry_kinds": [], "methods": [] },
+          "sets_apart": [
+            { "attribute": "package:apps/admin", "in_variant": [3, 3], "in_dominant": [0, 12], "separation": 0.4, "purity": 1.0 },
+            { "attribute": "imports:pkg:@clerk/nextjs", "in_variant": [3, 3], "in_dominant": [0, 12], "separation": 0.4, "purity": 1.0 }
+          ],
+          "examples": [
+            { "path": "apps/admin/app/api/users/route.ts", "symbol": "GET", "line": 4 },
+            { "path": "apps/admin/app/api/users/route.ts", "symbol": "DELETE", "line": 20 }
+          ],
+          "exceptions": [],
+          "conventions": [],
+          "promotable": null
+        },
+        {
+          "id": "P-0n0n0n",
+          "key": "none",
+          "label": "no guard, nothing opens it",
+          "kind": "none",
+          "mechanisms": [],
+          "instruments": [],
+          "source": "usage",
+          "members": 3,
+          "share": 0.15,
+          "where": { "packages": [{ "package": "apps/web", "members": 2, "share_of_package": 0.133 }, { "package": "apps/admin", "members": 1, "share_of_package": 0.2 }], "dirs": [], "roles": [], "entry_kinds": [], "methods": [] },
+          "sets_apart": [{ "attribute": "dir:apps/web/app/api/og", "in_variant": [1, 3], "in_dominant": [0, 12], "separation": 0.3, "purity": 1.0 }],
+          "examples": [
+            { "path": "apps/web/app/api/health/route.ts", "symbol": "GET", "line": 1 },
+            { "path": "apps/admin/app/api/ping/route.ts", "symbol": "GET", "line": 2 }
+          ],
+          "exceptions": [],
+          "conventions": [],
+          "promotable": null
+        }
+      ],
+      "unknown": {
+        "members": 2,
+        "reasons": [{ "reason": "opaque_wrapper", "members": 1 }, { "reason": "unresolved", "members": 1 }],
+        "instruments": [{ "instrument": "unclassified:withRateLimit", "members": 1 }],
+        "examples": [{ "path": "apps/web/app/api/limits/route.ts", "symbol": "GET", "line": 6, "reason": "opaque_wrapper", "instrument": "unclassified:withRateLimit" }]
+      },
+      "by_package": [
+        { "package": "apps/web", "total": 15, "coverage": 0.933, "variants": [{ "id": "P-a1b2c3", "members": 12, "share": 0.8 }, { "id": "P-0n0n0n", "members": 2, "share": 0.133 }] },
+        { "package": "apps/admin", "total": 5, "coverage": 0.8, "variants": [{ "id": "P-d4e5f6", "members": 3, "share": 0.6 }, { "id": "P-0n0n0n", "members": 1, "share": 0.2 }] }
+      ],
+      "divergence": [{ "package": "apps/admin", "dominant": "P-d4e5f6", "repo_dominant": "P-a1b2c3", "members": 3 }]
+    },
+    {
+      "id": "errors",
+      "title": "Error handling",
+      "unit": "entry_point",
+      "population": { "total": 10, "known": 10, "none": 0, "unknown": 0, "coverage": 1.0, "left_out": { "tests": 0, "non_production": 0 } },
+      "variants": [
+        { "id": "P-e1e1e1", "key": "in_body_try:respond:500", "label": "try/catch returning NextResponse.json({error})", "kind": "known", "mechanisms": ["in_body_try"], "instruments": ["pkg:next/server#NextResponse.json"], "source": "vocab", "members": 7, "share": 0.7, "where": {}, "sets_apart": [], "examples": [{ "path": "apps/web/app/api/links/route.ts", "symbol": "GET", "line": 8 }], "exceptions": [], "conventions": [], "promotable": null },
+        { "id": "P-e2e2e2", "key": "bubble", "label": "errors bubble to the framework default", "kind": "known", "mechanisms": ["bubble"], "instruments": [], "source": "usage", "members": 3, "share": 0.3, "where": {}, "sets_apart": [], "examples": [{ "path": "apps/admin/app/api/users/route.ts", "symbol": "GET", "line": 4 }], "exceptions": [], "conventions": [], "promotable": null }
+      ],
+      "unknown": { "members": 0, "reasons": [], "instruments": [], "examples": [] },
+      "by_package": [{ "package": "apps/web", "total": 10, "coverage": 1.0, "variants": [{ "id": "P-e1e1e1", "members": 7, "share": 0.7 }, { "id": "P-e2e2e2", "members": 3, "share": 0.3 }] }],
+      "divergence": []
+    },
+    {
+      "id": "config",
+      "title": "Config, secrets, feature flags",
+      "unit": "symbol",
+      "population": { "total": 4, "known": 3, "none": 0, "unknown": 1, "coverage": 0.75, "left_out": { "tests": 0, "non_production": 0 } },
+      "variants": [
+        { "id": "P-c0c0c0", "key": "config_module:apps/web/env.ts", "label": "reads through apps/web/env.ts", "kind": "known", "mechanisms": ["config_module"], "instruments": ["apps/web/env.ts"], "source": "usage", "members": 3, "share": 0.75, "where": {}, "sets_apart": [], "examples": [{ "path": "apps/web/lib/db.ts", "symbol": "db", "line": 2 }], "exceptions": [], "conventions": [], "promotable": { "rule": "avoids", "role": "R-000002" } }
+      ],
+      "unknown": { "members": 1, "reasons": [{ "reason": "dynamic", "members": 1 }], "instruments": [], "examples": [{ "path": "apps/web/lib/flags.ts", "symbol": "flag", "line": 3 }] },
+      "by_package": [{ "package": "apps/web", "total": 4, "coverage": 0.75, "variants": [{ "id": "P-c0c0c0", "members": 3, "share": 0.75 }] }],
+      "divergence": []
+    }
+  ],
+  "not_covered": ["outbound calls", "background jobs"]
+}

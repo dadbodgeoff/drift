@@ -1,0 +1,9 @@
+1 conventions from 2278 units in 108 roles
+
+ 1. [D-5f7728] workspace packages depend on zod@^4.2.1
+    evidence: 35/37 (lower bound 0.82, lift 1.0)
+    split:    ^4.2.1 35, catalog:www 1, npm:zod@^3.0.0 1
+    example:  examples/.experimental/next-app-dir/package.json#examples-next-app-dir
+    outlier:  packages/react-query/package.json:1 @trpc/react-query
+    outlier:  www/samples/v11/package.json:1 @samples/v11
+

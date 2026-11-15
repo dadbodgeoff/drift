@@ -1,0 +1,108 @@
+{
+  "name": "openmanus-rl",
+  "repo": "openmanus/openmanus-rl",
+  "sha": "c66d493022bc4c58e875ba73e8f6a07dd5d499a2",
+  "loc": 31080,
+  "shape": {
+    "mix": "multi-py",
+    "shape": "services",
+    "js_dirs": 0,
+    "py_dirs": 3,
+    "workspace_files": [],
+    "frontend_dirs": [],
+    "backend_dirs": [
+      "",
+      "openmanus_rl/environments/env_package/webshop/webshop"
+    ]
+  },
+  "packages": [
+    {
+      "dir": "openmanus_rl/environments/env_package/webshop/webshop",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 282,
+        "roles": 14,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 282,
+        "roles": 14,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    },
+    {
+      "dir": "openmanus_rl/environments/env_package/webshop/webshop/baseline_models",
+      "kind": "py",
+      "default": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 123,
+        "roles": 6,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": 0,
+        "secs": 0,
+        "cards": []
+      },
+      "python_opt_in": {
+        "shown": 0,
+        "conventions": 0,
+        "units": 123,
+        "roles": 6,
+        "tiers": {
+          "default": 0,
+          "suggestion": 0
+        },
+        "python_withheld": null,
+        "secs": 0,
+        "cards": []
+      }
+    }
+  ],
+  "root": {
+    "default": {
+      "shown": 0,
+      "conventions": 0,
+      "units": 1095,
+      "roles": 55,
+      "tiers": {
+        "default": 0,
+        "suggestion": 0
+      },
+      "python_withheld": 0,
+      "secs": 0,
+      "cards": []
+    },
+    "python_opt_in": {
+      "shown": 0,
+      "conventions": 0,
+      "units": 1095,
+      "roles": 55,
+      "tiers": {
+        "default": 0,
+        "suggestion": 0
+      },
+      "python_withheld": null,
+      "secs": 0,
+      "cards": []
+    }
+  }
+}

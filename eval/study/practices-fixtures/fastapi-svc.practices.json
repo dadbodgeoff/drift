@@ -1,0 +1,71 @@
+{
+  "//": "Hand-written `drift practices --json` (version 1, PLAN-R13 §0.3) for practices.test.mjs: a made-up FastAPI service (acme-api). It also carries the optional full member lists (`units`) that the sampler prefers to examples. authn 8 units: Depends(get_current_user) 4, none 2, unknown 2 (coverage 75%); testing 6: tested 5, untested 1.",
+  "version": 1,
+  "commit": "cgu115-test",
+  "facts_schema": 11,
+  "scope": { "concern": null, "package": null, "path": null },
+  "summary": { "population": 14, "known": 9, "none": 3, "unknown": 2, "coverage": 0.857, "concerns_at_target": 1, "target": 0.9 },
+  "concerns": [
+    {
+      "id": "authn",
+      "title": "Authentication",
+      "unit": "entry_point",
+      "population": { "total": 8, "known": 4, "none": 2, "unknown": 2, "coverage": 0.75, "left_out": { "tests": 0, "non_production": 0 } },
+      "variants": [
+        {
+          "id": "P-f00001", "key": "dependency:app/deps.py#get_current_user", "label": "Depends(get_current_user)", "kind": "known",
+          "mechanisms": ["dependency"], "instruments": ["app/deps.py#get_current_user"], "source": "usage", "members": 4, "share": 0.5,
+          "where": {}, "sets_apart": [{ "attribute": "dir:app/routers", "in_variant": [4, 4], "in_dominant": [4, 4], "separation": 0.0, "purity": 1.0 }],
+          "examples": [{ "path": "app/routers/items.py", "symbol": "list_items", "line": 10 }],
+          "units": [
+            { "path": "app/routers/items.py", "symbol": "list_items", "line": 10 },
+            { "path": "app/routers/items.py", "symbol": "create_item", "line": 22 },
+            { "path": "app/routers/users.py", "symbol": "me", "line": 7 },
+            { "path": "app/routers/users.py", "symbol": "update_me", "line": 15 }
+          ],
+          "exceptions": [], "conventions": [], "promotable": null
+        },
+        {
+          "id": "P-f00000", "key": "none", "label": "no guard, nothing opens it", "kind": "none",
+          "mechanisms": [], "instruments": [], "source": "usage", "members": 2, "share": 0.25, "where": {}, "sets_apart": [],
+          "examples": [{ "path": "app/routers/health.py", "symbol": "health", "line": 3 }],
+          "units": [{ "path": "app/routers/health.py", "symbol": "health", "line": 3 }, { "path": "app/routers/login.py", "symbol": "login", "line": 9 }],
+          "exceptions": [], "conventions": [], "promotable": null
+        }
+      ],
+      "unknown": {
+        "members": 2, "reasons": [{ "reason": "unparsed", "members": 2 }], "instruments": [],
+        "examples": [{ "path": "app/routers/legacy.py", "symbol": "old", "line": 4 }],
+        "units": [{ "path": "app/routers/legacy.py", "symbol": "old", "line": 4 }, { "path": "app/routers/legacy.py", "symbol": "older", "line": 12 }]
+      },
+      "by_package": [{ "package": ".", "total": 8, "coverage": 0.75, "variants": [{ "id": "P-f00001", "members": 4, "share": 0.5 }, { "id": "P-f00000", "members": 2, "share": 0.25 }] }],
+      "divergence": []
+    },
+    {
+      "id": "testing",
+      "title": "Testing practice",
+      "unit": "entry_point",
+      "population": { "total": 6, "known": 5, "none": 1, "unknown": 0, "coverage": 1.0, "left_out": { "tests": 0, "non_production": 0 } },
+      "variants": [
+        { "id": "P-7e5700", "key": "tested_some", "label": "tested, some required cases", "kind": "known", "mechanisms": ["test_request"], "instruments": ["pkg:fastapi.testclient#TestClient"], "source": "vocab", "members": 5, "share": 0.833, "where": {}, "sets_apart": [],
+          "examples": [{ "path": "app/routers/items.py", "symbol": "list_items", "line": 10 }],
+          "units": [
+            { "path": "app/routers/items.py", "symbol": "list_items", "line": 10 },
+            { "path": "app/routers/items.py", "symbol": "create_item", "line": 22 },
+            { "path": "app/routers/users.py", "symbol": "me", "line": 7 },
+            { "path": "app/routers/users.py", "symbol": "update_me", "line": 15 },
+            { "path": "app/routers/health.py", "symbol": "health", "line": 3 }
+          ],
+          "exceptions": [], "conventions": [], "promotable": null },
+        { "id": "P-7e5701", "key": "untested", "label": "not tested", "kind": "none", "mechanisms": [], "instruments": [], "source": "usage", "members": 1, "share": 0.167, "where": {}, "sets_apart": [],
+          "examples": [{ "path": "app/routers/login.py", "symbol": "login", "line": 9 }],
+          "units": [{ "path": "app/routers/login.py", "symbol": "login", "line": 9 }],
+          "exceptions": [], "conventions": [], "promotable": null }
+      ],
+      "unknown": { "members": 0, "reasons": [], "instruments": [], "examples": [], "units": [] },
+      "by_package": [{ "package": ".", "total": 6, "coverage": 1.0, "variants": [{ "id": "P-7e5700", "members": 5, "share": 0.833 }, { "id": "P-7e5701", "members": 1, "share": 0.167 }] }],
+      "divergence": []
+    }
+  ],
+  "not_covered": []
+}

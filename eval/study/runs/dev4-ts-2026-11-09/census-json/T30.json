@@ -1,0 +1,304 @@
+{
+  "schema": 1,
+  "engine": "drift 0.1.0-dev",
+  "commit": "cgu83-1a44d7ef-1794188563",
+  "root": "/tmp/claude-0/-home-user/55356579-373d-5769-975f-dff3ec91dfc9/scratchpad/dev4/f11/cache/repos/T30",
+  "units": 15893,
+  "roles": 401,
+  "conventions": 4,
+  "shown": 4,
+  "tiers": {
+    "default": 4,
+    "suggestion": 0
+  },
+  "agents": {
+    "hidden": 4,
+    "admission": {
+      "kind": "family_table",
+      "file": "crates/drift-mine/data/family-admission.json",
+      "run": "eval/study/runs/dev-v3-relabel4-2026-11-07",
+      "date": "2026-11-07",
+      "min_accept": 0.85,
+      "min_cards": 10
+    },
+    "candidates": 4
+  },
+  "suggestion_cap": {
+    "cap": 5,
+    "from": "default",
+    "suggestions": 0,
+    "listed": 0
+  },
+  "params": {
+    "max": 15,
+    "max_per_role": 5,
+    "min_role_size": 8,
+    "min_block_role_size": 15,
+    "min_lower_bound": 0.75,
+    "min_lift": 1.5,
+    "min_lift_external_call": 3.0,
+    "tier": {
+      "decision": "D7",
+      "default_rule_kinds": [
+        "wrapped_by:call",
+        "avoids:import"
+      ],
+      "default_languages": [
+        "ts"
+      ],
+      "advise_only_languages": [
+        "py"
+      ],
+      "target": "in_repo",
+      "min_members": 15
+    },
+    "show": {
+      "file": "crates/drift-mine/data/show-policy.json",
+      "schema": 1,
+      "run": "eval/study/runs/dev-v3-relabel5-2026-11-07",
+      "date": "2026-11-07",
+      "min_accept": 0.6,
+      "min_cards": 5,
+      "max_outliers": 1,
+      "admitted": {
+        "py": [
+          "naming"
+        ],
+        "ts": [
+          "control",
+          "naming"
+        ]
+      }
+    }
+  },
+  "proposals": [
+    {
+      "id": "D-fcb801",
+      "rank": 1,
+      "shown_by_default": true,
+      "summary": "files in src/main/** do not import from src/renderer/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "src/main",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 645
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:src/renderer"
+      },
+      "evidence": {
+        "holders": 644,
+        "total": 645,
+        "lower_bound": 0.991,
+        "lift": 3.0
+      },
+      "rule_kind": "avoids:import",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": false,
+        "reason": "candidate",
+        "source": "default tier (block candidate)",
+        "text": "not shown to agents (block candidate: reaches agents once you accept it)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "src/main/DaemonClient.ts",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "src/main/quit/quitAndStopCopy.ts",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 1
+    },
+    {
+      "id": "D-00025a",
+      "rank": 2,
+      "shown_by_default": true,
+      "summary": "files in src/daemon/** do not import from src/cli/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "src/daemon",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 366
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:src/cli"
+      },
+      "evidence": {
+        "holders": 364,
+        "total": 366,
+        "lower_bound": 0.98,
+        "lift": 3.0
+      },
+      "rule_kind": "avoids:import",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": false,
+        "reason": "candidate",
+        "source": "default tier (block candidate)",
+        "text": "not shown to agents (block candidate: reaches agents once you accept it)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "src/daemon/AgentProcessTracker.ts",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "src/daemon/a2aRemote/discovery.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "src/daemon/a2aRemote/tailnet.ts",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 2
+    },
+    {
+      "id": "D-48e1a6",
+      "rank": 3,
+      "shown_by_default": true,
+      "summary": "files in src/shared/** do not import from src/main/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "src/shared",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 382
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:src/main"
+      },
+      "evidence": {
+        "holders": 379,
+        "total": 382,
+        "lower_bound": 0.977,
+        "lift": 3.0
+      },
+      "rule_kind": "avoids:import",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": false,
+        "reason": "candidate",
+        "source": "default tier (block candidate)",
+        "text": "not shown to agents (block candidate: reaches agents once you accept it)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "src/shared/ShellDetector.ts",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "src/shared/daemon/daemonLauncherCore.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "src/shared/daemon/daemonProgress.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "src/shared/processHandleLiveness.ts",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 3
+    },
+    {
+      "id": "D-c1a36d",
+      "rank": 4,
+      "shown_by_default": true,
+      "summary": "files in src/shared/** do not import from src/daemon/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+      "role": {
+        "package": "",
+        "dir": "src/shared",
+        "file": "*",
+        "entry": "-",
+        "kind": "module",
+        "members": 382
+      },
+      "rule": {
+        "type": "avoids",
+        "signal": "import:src/daemon"
+      },
+      "evidence": {
+        "holders": 379,
+        "total": 382,
+        "lower_bound": 0.977,
+        "lift": 3.0
+      },
+      "rule_kind": "avoids:import",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "agents": {
+        "shown_to_agents": false,
+        "reason": "candidate",
+        "source": "default tier (block candidate)",
+        "text": "not shown to agents (block candidate: reaches agents once you accept it)"
+      },
+      "blockable": true,
+      "example": {
+        "path": "src/shared/ShellDetector.ts",
+        "symbol": "(file)",
+        "line": 1
+      },
+      "outliers": [
+        {
+          "path": "src/shared/agentFirstRun.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "src/shared/daemon/daemonLauncherCore.ts",
+          "symbol": "(file)",
+          "line": 1
+        },
+        {
+          "path": "src/shared/toolRefusal.ts",
+          "symbol": "(file)",
+          "line": 1
+        }
+      ],
+      "outliers_total": 3
+    }
+  ],
+  "largest_role": null,
+  "python_proposals": {
+    "enabled": false,
+    "decision": "D13-py",
+    "withheld": 0,
+    "opt_in": "proposals: {python: on} in .drift/config.yaml (census: --python-proposals)"
+  }
+}

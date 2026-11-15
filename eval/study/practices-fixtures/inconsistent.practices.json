@@ -1,0 +1,19 @@
+{
+  "//": "Hand-written, deliberately inconsistent `drift practices --json` for practices.test.mjs: known + none + unknown != total, and a by_package variant the concern does not list.",
+  "version": 1,
+  "commit": "cgu115-test",
+  "facts_schema": 11,
+  "scope": { "concern": null, "package": null, "path": null },
+  "summary": { "population": 5, "known": 5, "none": 0, "unknown": 0, "coverage": 1.0, "concerns_at_target": 1, "target": 0.9 },
+  "concerns": [
+    {
+      "id": "logging", "title": "Logging and observability", "unit": "symbol",
+      "population": { "total": 5, "known": 4, "none": 0, "unknown": 0, "coverage": 1.0, "left_out": { "tests": 0, "non_production": 0 } },
+      "variants": [{ "id": "P-1061e5", "key": "call:global#console", "label": "console", "kind": "known", "mechanisms": ["call"], "instruments": ["global#console"], "source": "vocab", "members": 4, "share": 0.8, "where": {}, "sets_apart": [], "examples": [], "exceptions": [], "conventions": [], "promotable": null }],
+      "unknown": { "members": 0, "reasons": [], "instruments": [], "examples": [] },
+      "by_package": [{ "package": ".", "total": 5, "coverage": 1.0, "variants": [{ "id": "P-ffffff", "members": 5, "share": 1.0 }] }],
+      "divergence": []
+    }
+  ],
+  "not_covered": []
+}

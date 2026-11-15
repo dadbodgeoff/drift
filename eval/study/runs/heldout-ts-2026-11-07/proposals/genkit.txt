@@ -1,0 +1,73 @@
+7 conventions from 4806 units in 258 roles (1 default tier, 6 suggestions)
+
+Default tier: may block once accepted (`drift review`, b)
+
+ 1. [D-5156e2] js/testapps/agents: functions in src/** are wrapped in ai.defineFlow() or ai.defineTool()
+    evidence: 25/26 (lower bound 0.81, lift 72.8)
+    tier:     default
+    split:    ai.defineFlow 20, ai.defineTool 5
+    example:  js/testapps/agents/src/auth-context-agent.ts#listMyOrders
+    outlier:  js/testapps/agents/src/research-agent.ts:61 researchAgent
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 2. [D-a6fa5c] genkit-tools/common: exported values in src/types/** are named `*Schema`
+    evidence: 163/166 (lower bound 0.95, lift 3.1)
+    tier:     suggestion (rule kind named)
+    example:  genkit-tools/common/src/types/action.ts#ActionMetadataSchema
+    outlier:  genkit-tools/common/src/types/eval.ts:147 EvalStatusEnum
+    outlier:  genkit-tools/common/src/types/model.ts:204 GenerationCommonConfigDescriptions
+    outlier:  genkit-tools/common/src/types/status.ts:19 StatusCodes
+    exempt:   genkit-tools/common/src/types/model.ts:448 GenerateActionOutputConfig (a helper of GenerateActionOptionsSchema, which uses it in its file)
+
+ 3. [D-7d5872] workspace packages enable `strict` in tsconfig
+    evidence: 70/72 (lower bound 0.90, lift 1.2)
+    tier:     suggestion (rule kind package_has)
+    example:  js/ai/package.json#@genkit-ai/ai
+    outlier:  genkit-tools/package.json:1 
+    outlier:  js/testapps/firebase-functions-sample1/package.json:1 
+
+ 4. [D-f04b97] workspace packages use the genkit version most workspace packages use
+    evidence: 47/48 (lower bound 0.89, lift 1.0)
+    tier:     suggestion (rule kind dependency_version)
+    split:    workspace:* 47, ^1.43.0 1
+    example:  js/doc-snippets/package.json#doc-snippets
+    outlier:  js/testapps/firebase-functions-sample1/functions/package.json:1 functions
+
+ 5. [D-2307d1] workspace packages use the rimraf version most workspace packages use
+    evidence: 49/51 (lower bound 0.87, lift 1.0)
+    tier:     suggestion (rule kind dependency_version)
+    split:    ^6.0.1 49, ^6.1.3 2
+    example:  js/ai/package.json#@genkit-ai/ai
+    outlier:  genkit-tools/common/package.json:1 @genkit-ai/tools-common
+    outlier:  genkit-tools/telemetry-server/package.json:1 @genkit-ai/telemetry-server
+
+ 6. [D-12213b] workspace packages enable `sourceMap` in tsconfig
+    evidence: 64/72 (lower bound 0.80, lift 1.2)
+    tier:     suggestion (rule kind package_has)
+    example:  js/ai/package.json#@genkit-ai/ai
+    outlier:  genkit-tools/package.json:1 
+    outlier:  js/testapps/a2ui/package.json:1 a2ui-testapp
+    outlier:  js/testapps/a2ui/web/package.json:1 a2ui-testapp-web
+    outlier:  js/testapps/agents/package.json:1 agents-testapp
+    outlier:  js/testapps/agents/web/package.json:1 agents-web-ui
+    outlier:  js/testapps/angular/package.json:1 angular-ssr-sample
+    outlier:  js/testapps/firebase-functions-sample1/package.json:1 
+    outlier:  js/testapps/vercel-ai-elements/package.json:1 vercel-ai-elements
+
+ 7. [D-c0155e] workspace packages enable `noImplicitReturns` in tsconfig
+    evidence: 62/72 (lower bound 0.76, lift 1.2)
+    tier:     suggestion (rule kind package_has)
+    example:  js/ai/package.json#@genkit-ai/ai
+    outlier:  genkit-tools/cli/package.json:1 genkit-cli
+    outlier:  genkit-tools/common/package.json:1 @genkit-ai/tools-common
+    outlier:  genkit-tools/package.json:1 
+    outlier:  genkit-tools/telemetry-server/package.json:1 @genkit-ai/telemetry-server
+    outlier:  js/testapps/a2ui/package.json:1 a2ui-testapp
+    outlier:  js/testapps/a2ui/web/package.json:1 a2ui-testapp-web
+    outlier:  js/testapps/agents/package.json:1 agents-testapp
+    outlier:  js/testapps/agents/web/package.json:1 agents-web-ui
+    outlier:  js/testapps/firebase-functions-sample1/package.json:1 
+    outlier:  js/testapps/vercel-ai-elements/package.json:1 vercel-ai-elements
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

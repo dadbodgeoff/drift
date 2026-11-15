@@ -1,0 +1,165 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - admin
+  - api
+  - apps
+  - base
+  - factories
+  - fields
+  - filters
+  - forms
+  - helpers
+  - mixins
+  - models
+  - routers
+  - serializers
+  - signals
+  - test_admin
+  - test_api
+  - test_models
+  - tests
+  - urls
+  - utils
+  - views
+  suffixes: []
+  layers:
+  - tests/apps
+  - tests/factories
+  - tests/models
+conventions:
+- id: D-40c349
+  status: proposed
+  mode: advise
+  summary: >-
+    serializers in src/** (api and serializers files) extend RalphAPISerializer,
+    except 7 classes (on a sibling base the target's module defines)
+  role:
+    package: ""
+    dir: src
+    file: api
+    entry: '-'
+    kind: class
+    member_kind: serializer
+    also:
+    - package: ""
+      dir: src
+      file: serializers
+      entry: '-'
+      kind: class
+      member_kind: serializer
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - src/ralph/api/serializers.py#RalphAPISerializer
+  evidence:
+    holders: 103
+    total: 103
+    lower_bound: 0.964
+    lift: 8.552
+    role_members: 110
+    python_members: 110
+  example: src/ralph/access_cards/api.py#AccessCardSerializer
+  selector_version: 3
+- id: D-03c0d5
+  status: proposed
+  mode: advise
+  summary: serializers in src/** (api and serializers files) are named `*Serializer`
+  role:
+    package: ""
+    dir: src
+    file: api
+    entry: '-'
+    kind: class
+    member_kind: serializer
+    also:
+    - package: ""
+      dir: src
+      file: serializers
+      entry: '-'
+      kind: class
+      member_kind: serializer
+  rule:
+    type: named
+    pattern: "*Serializer"
+  evidence:
+    holders: 109
+    total: 110
+    lower_bound: 0.95
+    lift: 7.621
+    python_members: 110
+  example: src/ralph/access_cards/api.py#AccessCardSerializer
+  selector_version: 3
+- id: D-c2b101
+  status: proposed
+  mode: advise
+  summary: admin classes in src/** (admin files) are named `*Admin`
+  role:
+    package: ""
+    dir: src
+    file: admin
+    entry: '-'
+    kind: class
+    member_kind: admin
+  rule:
+    type: named
+    pattern: "*Admin"
+  evidence:
+    holders: 94
+    total: 98
+    lower_bound: 0.9
+    lift: 10.152
+    python_members: 98
+  example: src/ralph/access_cards/admin.py#AccessCardAdmin
+  selector_version: 3
+- id: D-a68e99
+  status: proposed
+  mode: advise
+  summary: model classes in src/** extend AdminAbsoluteUrlMixin
+  role:
+    package: ""
+    dir: src
+    file: "*"
+    entry: '-'
+    kind: class
+    member_kind: model
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - src/ralph/lib/mixins/models.py#AdminAbsoluteUrlMixin
+  evidence:
+    holders: 49
+    total: 53
+    lower_bound: 0.821
+    lift: 8.985
+    python_members: 53
+  example: src/ralph/assets/models/assets.py#AssetHolder
+  selector_version: 3
+- id: D-cfd5da
+  status: proposed
+  mode: advise
+  summary: functions in src/ralph/switchports/** declare their return type
+  role:
+    package: ""
+    dir: src/ralph/switchports
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 31
+    total: 34
+    lower_bound: 0.77
+    lift: 5.553
+    python_members: 34
+  example: src/ralph/switchports/connections/planning.py#switch_port_owner
+  selector_version: 3

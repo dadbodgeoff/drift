@@ -1,0 +1,825 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - Actions
+  - __init__
+  - activities
+  - admin
+  - agent_definition
+  - agent_fix
+  - agent_version
+  - apps
+  - base
+  - client
+  - common
+  - conftest
+  - constant
+  - constants
+  - contracts
+  - dashboard
+  - evaluator
+  - helper
+  - list
+  - main
+  - metric
+  - monitor
+  - persona
+  - project
+  - prompt
+  - prompt_template
+  - prompts
+  - run_test
+  - runs
+  - scores
+  - signals
+  - states
+  - styles
+  - tableConfig
+  - test_activities
+  - types
+  - urls
+  - utils
+  - validation
+  - workflows
+  suffixes:
+  - config
+  - constants
+  - spec
+  - stories
+  - test
+  - utils
+  layers:
+  - serializers/contracts
+  - tests/conftest
+conventions:
+- id: D-bdb22f
+  status: proposed
+  mode: advise
+  summary: "futureagi: serializers in tracer/serializers/** are named `*Serializer`"
+  role:
+    package: futureagi
+    dir: tracer/serializers
+    file: "*"
+    entry: '-'
+    kind: class
+    member_kind: serializer
+  rule:
+    type: named
+    pattern: "*Serializer"
+  evidence:
+    holders: 295
+    total: 295
+    lower_bound: 0.987
+    lift: 2.298
+    python_members: 295
+  example: futureagi/tracer/serializers/annotation.py#AnnotationLabelResponseSerializer
+  selector_version: 3
+- id: D-148d14
+  status: proposed
+  mode: advise
+  summary: "futureagi: serializers in model_hub/** are named `*Serializer`"
+  role:
+    package: futureagi
+    dir: model_hub
+    file: "*"
+    entry: '-'
+    kind: class
+    member_kind: serializer
+  rule:
+    type: named
+    pattern: "*Serializer"
+  evidence:
+    holders: 422
+    total: 424
+    lower_bound: 0.983
+    lift: 2.287
+    python_members: 424
+  example: futureagi/model_hub/serializers/ai_filter.py#AIFilterConditionSerializer
+  selector_version: 3
+- id: D-944c29
+  status: proposed
+  mode: advise
+  summary: >-
+    files in frontend/** use @tanstack/react-query for data fetching, not
+    swr/@apollo/client/urql
+  role:
+    package: frontend
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: prefers_library
+    group: data fetching
+    preferred: "@tanstack/react-query"
+  evidence:
+    holders: 631
+    total: 636
+    lower_bound: 0.982
+    lift: 1.0
+    split:
+    - - "@tanstack/react-query"
+      - 633
+    - - swr
+      - 5
+  example: frontend/src/api/agent-definition/agent-definition-version.js#(file)
+  selector_version: 3
+- id: D-f9ab62
+  status: proposed
+  mode: advise
+  summary: "futureagi: model classes in model_hub/**, simulate/** and tracer/** pass `on_delete` to db.models.ForeignKey(), except 10 members (not calling the callee)"
+  role:
+    package: futureagi
+    dir: model_hub
+    file: "*"
+    entry: '-'
+    kind: class
+    member_kind: model
+    also:
+    - package: futureagi
+      dir: simulate
+      file: "*"
+      entry: '-'
+      kind: class
+      member_kind: model
+    - package: futureagi
+      dir: tracer
+      file: "*"
+      entry: '-'
+      kind: class
+      member_kind: model
+  rule:
+    type: passes_key
+    callee: pkg:django#db.models.ForeignKey
+    index: 99
+    key: on_delete
+  evidence:
+    holders: 179
+    total: 179
+    lower_bound: 0.979
+    lift: 21.363
+    role_members: 189
+    python_members: 189
+  example: futureagi/model_hub/models/ai_model.py#AIModel
+  selector_version: 3
+- id: D-67e24a
+  status: proposed
+  mode: advise
+  summary: "futureagi: model classes in simulate/** and tracer/** pass `max_length` to db.models.CharField(), except 12 members (not calling the callee)"
+  role:
+    package: futureagi
+    dir: simulate
+    file: "*"
+    entry: '-'
+    kind: class
+    member_kind: model
+    also:
+    - package: futureagi
+      dir: tracer
+      file: "*"
+      entry: '-'
+      kind: class
+      member_kind: model
+  rule:
+    type: passes_key
+    callee: pkg:django#db.models.CharField
+    index: 99
+    key: max_length
+  evidence:
+    holders: 99
+    total: 99
+    lower_bound: 0.963
+    lift: 22.221
+    role_members: 111
+    python_members: 111
+  example: futureagi/tracer/models/custom_eval_config.py#CustomEvalConfig
+  selector_version: 3
+- id: D-7fb332
+  status: proposed
+  mode: advise
+  summary: "futureagi: HTTP handlers in agentcc/** are wrapped in IsAdminToken() or permissions.IsAuthenticated()"
+  role:
+    package: futureagi
+    dir: agentcc
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - futureagi/agentcc/permissions.py#IsAdminToken
+    - pkg:rest_framework#permissions.IsAuthenticated
+  evidence:
+    holders: 143
+    total: 145
+    lower_bound: 0.951
+    lift: 7.44
+    split:
+    - - pkg:rest_framework#permissions.IsAuthenticated
+      - 140
+    - - futureagi/agentcc/permissions.py#IsAdminToken
+      - 3
+    python_members: 145
+  example: futureagi/agentcc/views/analytics.py#AgentccAnalyticsViewSet.cost_breakdown
+  selector_version: 3
+- id: D-9873ea
+  status: proposed
+  mode: advise
+  summary: "futureagi: functions in simulate/services/** declare their return type, except 4 shared parts (used by several members, not a member)"
+  role:
+    package: futureagi
+    dir: simulate/services
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 585
+    total: 604
+    lower_bound: 0.951
+    lift: 2.848
+    role_members: 608
+    python_members: 608
+  example: futureagi/simulate/services/agent_fix_agents.py#agent_kind
+  selector_version: 3
+- id: D-a79a2e
+  status: proposed
+  mode: advise
+  summary: "futureagi: model classes in tracer/models/** extend BaseModel"
+  role:
+    package: futureagi
+    dir: tracer/models
+    file: "*"
+    entry: '-'
+    kind: class
+    member_kind: model
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - futureagi/tfc/utils/base_model.py#BaseModel
+  evidence:
+    holders: 66
+    total: 66
+    lower_bound: 0.945
+    lift: 21.363
+    python_members: 66
+  example: futureagi/tracer/models/custom_eval_config.py#CustomEvalConfig
+  selector_version: 3
+- id: D-f43190
+  status: proposed
+  mode: advise
+  summary: "futureagi: serializers in accounts/serializers/** are named `*Serializer`"
+  role:
+    package: futureagi
+    dir: accounts/serializers
+    file: "*"
+    entry: '-'
+    kind: class
+    member_kind: serializer
+  rule:
+    type: named
+    pattern: "*Serializer"
+  evidence:
+    holders: 65
+    total: 65
+    lower_bound: 0.944
+    lift: 2.298
+    python_members: 65
+  example: futureagi/accounts/serializers/auth_token.py#AuthTokenSerializer
+  selector_version: 3
+- id: D-007021
+  status: proposed
+  mode: advise
+  summary: "futureagi: model classes in model_hub/**, simulate/** and tracer/** pass `default` to db.models.UUIDField(), except 13 members (not calling the callee)"
+  role:
+    package: futureagi
+    dir: model_hub
+    file: "*"
+    entry: '-'
+    kind: class
+    member_kind: model
+    also:
+    - package: futureagi
+      dir: simulate
+      file: "*"
+      entry: '-'
+      kind: class
+      member_kind: model
+    - package: futureagi
+      dir: tracer
+      file: "*"
+      entry: '-'
+      kind: class
+      member_kind: model
+  rule:
+    type: passes_key
+    callee: pkg:django#db.models.UUIDField
+    index: 99
+    key: default
+  evidence:
+    holders: 171
+    total: 176
+    lower_bound: 0.935
+    lift: 21.503
+    role_members: 189
+    python_members: 189
+  example: futureagi/model_hub/models/ai_model.py#AIModel
+  selector_version: 3
+- id: D-962248
+  status: proposed
+  mode: advise
+  summary: "frontend: exported values in src/config/** pass `maximum` to readBoundedRuntimeInteger(), except a member (not calling the callee)"
+  role:
+    package: frontend
+    dir: src/config
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: passes_key
+    callee: frontend/src/config/runtime_limits.js#readBoundedRuntimeInteger
+    index: 2
+    key: maximum
+  evidence:
+    holders: 49
+    total: 49
+    lower_bound: 0.927
+    lift: 86.78
+    role_members: 50
+  example: frontend/src/config/runtime_limits.js#AGGREGATION_POLL_BACKOFF_FACTOR
+  selector_version: 3
+- id: D-30f7c8
+  status: proposed
+  mode: advise
+  summary: "futureagi: HTTP handlers in ee/**, simulate/** and tracer/** are wrapped in permissions.IsAuthenticated()"
+  role:
+    package: futureagi
+    dir: ee
+    file: "*"
+    entry: http
+    kind: function
+    also:
+    - package: futureagi
+      dir: simulate
+      file: "*"
+      entry: http
+      kind: function
+    - package: futureagi
+      dir: tracer
+      file: "*"
+      entry: http
+      kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - pkg:rest_framework#permissions.IsAuthenticated
+  evidence:
+    holders: 321
+    total: 337
+    lower_bound: 0.924
+    lift: 7.206
+    python_members: 337
+  example: futureagi/tracer/views/alerts.py#AlertDetailView.delete
+  selector_version: 3
+- id: D-ad841f
+  status: proposed
+  mode: advise
+  summary: "futureagi: model classes in simulate/models/** extend BaseModel"
+  role:
+    package: futureagi
+    dir: simulate/models
+    file: "*"
+    entry: '-'
+    kind: class
+    member_kind: model
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - futureagi/tfc/utils/base_model.py#BaseModel
+  evidence:
+    holders: 45
+    total: 45
+    lower_bound: 0.921
+    lift: 21.363
+    python_members: 45
+  example: futureagi/simulate/models/agent_optimiser.py#AgentOptimiser
+  selector_version: 3
+- id: D-183e07
+  status: proposed
+  mode: advise
+  summary: >-
+    functions in deploy/** declare their return type, except a shared part (used by
+    several members, not a member)
+  role:
+    package: ""
+    dir: deploy
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 79
+    total: 81
+    lower_bound: 0.914
+    lift: 2.852
+    role_members: 82
+    python_members: 82
+  example: deploy/helm/futureagi/hack/rendered_checks.py#all_images
+  selector_version: 3
+- id: D-f55030
+  status: proposed
+  mode: advise
+  summary: "futureagi: model classes in model_hub/**, simulate/** and tracer/** call db.models.UUIDField()"
+  role:
+    package: futureagi
+    dir: model_hub
+    file: "*"
+    entry: '-'
+    kind: class
+    member_kind: model
+    also:
+    - package: futureagi
+      dir: simulate
+      file: "*"
+      entry: '-'
+      kind: class
+      member_kind: model
+    - package: futureagi
+      dir: tracer
+      file: "*"
+      entry: '-'
+      kind: class
+      member_kind: model
+  rule:
+    type: calls
+    callee: pkg:django#db.models.UUIDField
+  evidence:
+    holders: 178
+    total: 189
+    lower_bound: 0.899
+    lift: 20.355
+    python_members: 189
+  example: futureagi/model_hub/models/ai_model.py#AIModel
+  selector_version: 3
+- id: D-5fe5fa
+  status: proposed
+  mode: advise
+  summary: "futureagi: model classes in tracer/** pass `editable` to db.models.UUIDField(), except 3 members (not calling the callee)"
+  role:
+    package: futureagi
+    dir: tracer
+    file: "*"
+    entry: '-'
+    kind: class
+    member_kind: model
+  rule:
+    type: passes_key
+    callee: pkg:django#db.models.UUIDField
+    index: 99
+    key: editable
+  evidence:
+    holders: 61
+    total: 63
+    lower_bound: 0.891
+    lift: 20.374
+    role_members: 66
+    python_members: 66
+  example: futureagi/tracer/models/custom_eval_config.py#CustomEvalConfig
+  selector_version: 3
+- id: D-2c5d7f
+  status: proposed
+  mode: advise
+  summary: "futureagi: functions in tfc/deployment_telemetry/** and tfc/telemetry/** declare their return type, except a shared part (used by several members, not a member)"
+  role:
+    package: futureagi
+    dir: tfc/deployment_telemetry
+    file: "*"
+    entry: '-'
+    kind: function
+    also:
+    - package: futureagi
+      dir: tfc/telemetry
+      file: "*"
+      entry: '-'
+      kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 140
+    total: 149
+    lower_bound: 0.889
+    lift: 2.781
+    role_members: 150
+    python_members: 150
+  example: futureagi/tfc/telemetry/config.py#get_otlp_endpoint
+  selector_version: 3
+- id: D-8b4e4f
+  status: proposed
+  mode: advise
+  summary: "futureagi: serializers in agentcc/serializers/** are named `*Serializer`"
+  role:
+    package: futureagi
+    dir: agentcc/serializers
+    file: "*"
+    entry: '-'
+    kind: class
+    member_kind: serializer
+  rule:
+    type: named
+    pattern: "*Serializer"
+  evidence:
+    holders: 28
+    total: 28
+    lower_bound: 0.879
+    lift: 2.298
+    python_members: 28
+  example: futureagi/agentcc/serializers/api_key.py#AgentccAPIKeyCreateSerializer
+  selector_version: 3
+- id: D-1b828e
+  status: proposed
+  mode: advise
+  summary: files in frontend/** use zod for validation, not yup/joi/valibot/superstruct
+  role:
+    package: frontend
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: prefers_library
+    group: validation
+    preferred: zod
+  evidence:
+    holders: 106
+    total: 113
+    lower_bound: 0.878
+    lift: 1.0
+    split:
+    - - zod
+      - 106
+    - - yup
+      - 7
+  example: frontend/src/api/contracts/openapi-contract.js#(file)
+  selector_version: 3
+- id: D-670061
+  status: proposed
+  mode: advise
+  summary: "futureagi: functions in tracer/services/** declare their return type, except 10 shared parts (used by several members, not a member)"
+  role:
+    package: futureagi
+    dir: tracer/services
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 452
+    total: 500
+    lower_bound: 0.875
+    lift: 2.623
+    role_members: 510
+    python_members: 510
+  example: >-
+    futureagi/tracer/services/clickhouse/application_read_policy.py#application_read_settings
+  selector_version: 3
+- id: D-c95ca8
+  status: proposed
+  mode: advise
+  summary: "futureagi: model classes in model_hub/** pass `related_name` to db.models.ForeignKey(), except 5 members (not calling the callee)"
+  role:
+    package: futureagi
+    dir: model_hub
+    file: "*"
+    entry: '-'
+    kind: class
+    member_kind: model
+  rule:
+    type: passes_key
+    callee: pkg:django#db.models.ForeignKey
+    index: 99
+    key: related_name
+  evidence:
+    holders: 69
+    total: 73
+    lower_bound: 0.867
+    lift: 21.657
+    role_members: 78
+    python_members: 78
+  example: futureagi/model_hub/models/ai_model.py#AIModel
+  selector_version: 3
+- id: D-402240
+  status: proposed
+  mode: advise
+  summary: "futureagi: functions in tfc/** (activities files) are decorated with activity.defn()"
+  role:
+    package: futureagi
+    dir: tfc
+    file: activities
+    entry: '-'
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - pkg:temporalio#activity.defn
+  evidence:
+    holders: 77
+    total: 82
+    lower_bound: 0.865
+    lift: 64.793
+    python_members: 82
+  example: futureagi/tfc/temporal/agent_playground/activities.py#analyze_graph_activity
+  selector_version: 3
+- id: D-85cfb8
+  status: proposed
+  mode: advise
+  summary: "futureagi: classes in tracer/management/** extend core.management.base.BaseCommand"
+  role:
+    package: futureagi
+    dir: tracer/management
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: wrapped_by
+    kind: extends
+    any_of:
+    - pkg:django#core.management.base.BaseCommand
+  evidence:
+    holders: 24
+    total: 24
+    lower_bound: 0.862
+    lift: 87.825
+    python_members: 24
+  example: futureagi/tracer/management/commands/backfill_blank_eval_status.py#Command
+  selector_version: 3
+- id: D-f500c2
+  status: proposed
+  mode: advise
+  summary: "futureagi: functions in agent_playground/** declare their return type"
+  role:
+    package: futureagi
+    dir: agent_playground
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 52
+    total: 55
+    lower_bound: 0.851
+    lift: 2.799
+    python_members: 55
+  example: >-
+    futureagi/agent_playground/management/commands/seed_node_templates.py#seed_node_templates
+  selector_version: 3
+- id: D-239eab
+  status: proposed
+  mode: advise
+  summary: django models have a `id` field
+  role:
+    package: ""
+    dir: django
+    file: (model)
+    entry: '-'
+    kind: model
+  rule:
+    type: model_has
+    field: id
+  evidence:
+    holders: 258
+    total: 301
+    lower_bound: 0.813
+    lift: 1.0
+    python_members: 301
+  example: futureagi/accounts/models/audit_log.py#AuditLog
+  selector_version: 3
+- id: D-7233cc
+  status: proposed
+  mode: advise
+  summary: "futureagi: HTTP handlers in agentcc/** and model_hub/** use `try`"
+  role:
+    package: futureagi
+    dir: agentcc
+    file: "*"
+    entry: http
+    kind: function
+    also:
+    - package: futureagi
+      dir: model_hub
+      file: "*"
+      entry: http
+      kind: function
+  rule:
+    type: control
+    value: try
+  evidence:
+    holders: 418
+    total: 501
+    lower_bound: 0.799
+    lift: 3.203
+    python_members: 501
+  example: futureagi/model_hub/views/ai_eval_writer.py#AIEvalWriterView.post
+  selector_version: 3
+- id: D-20c80e
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/sections/gateway/** render <Stack>"
+  role:
+    package: frontend
+    dir: src/sections/gateway
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: pkg:@mui/material#Stack
+  evidence:
+    holders: 78
+    total: 89
+    lower_bound: 0.792
+    lift: 3.501
+  example: frontend/src/sections/gateway/GatewayOverviewSection.jsx#GatewayOverviewSection
+  selector_version: 3
+- id: D-a3b041
+  status: proposed
+  mode: advise
+  summary: "frontend: exported values in src/assets/** are wrapped in memo()"
+  role:
+    package: frontend
+    dir: src/assets
+    file: "*"
+    entry: '-'
+    kind: const
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - pkg:react#memo
+  evidence:
+    holders: 21
+    total: 22
+    lower_bound: 0.782
+    lift: 94.131
+  example: frontend/src/assets/icons/auto-annotate-icon.jsx#MemoizedSentIcon
+  selector_version: 3
+- id: D-12246d
+  status: proposed
+  mode: advise
+  summary: "futureagi: HTTP handlers in accounts/** are decorated with validated_request()"
+  role:
+    package: futureagi
+    dir: accounts
+    file: "*"
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: decorator
+    any_of:
+    - futureagi/tfc/utils/api_contracts.py#validated_request
+  evidence:
+    holders: 32
+    total: 35
+    lower_bound: 0.776
+    lift: 13.502
+    python_members: 35
+  example: futureagi/accounts/views/keys.py#SecretKeyAPIViewSet.delete_secret_key
+  selector_version: 3
+- id: D-8c1745
+  status: proposed
+  mode: advise
+  summary: "frontend: components in src/sections/falcon-ai/components/** render <src>"
+  role:
+    package: frontend
+    dir: src/sections/falcon-ai/components
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: renders
+    component: pkg:src#default
+  evidence:
+    holders: 19
+    total: 20
+    lower_bound: 0.764
+    lift: 1.654
+  example: frontend/src/sections/falcon-ai/components/AssistantMessage.jsx#AssistantMessage
+  selector_version: 3

@@ -1,0 +1,13 @@
+{
+  "repo": "restty",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": ".oxlintrc.json",
+      "kind": "lint"
+    }
+  ]
+}

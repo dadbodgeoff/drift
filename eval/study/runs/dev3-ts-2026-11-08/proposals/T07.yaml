@@ -1,0 +1,35 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - PropertiesPanel
+  - types
+  - vitest
+  suffixes:
+  - config
+  - test
+  - v1
+conventions:
+- id: D-51aa33
+  status: proposed
+  mode: advise
+  summary: "apps/web: components in src/motion/** declare their return type"
+  role:
+    package: apps/web
+    dir: src/motion
+    file: "*"
+    entry: '-'
+    kind: component
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 40
+    total: 41
+    lower_bound: 0.874
+    lift: 5.353
+  example: apps/web/src/motion/MotionCreatorShell.tsx#MotionCreatorShell
+  selector_version: 3

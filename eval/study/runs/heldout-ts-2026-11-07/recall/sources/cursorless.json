@@ -1,0 +1,33 @@
+{
+  "repo": "cursorless",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "kind": "doc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/app-neovim/cursorless.nvim/CONTRIBUTING.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/app-web-docs/src/docs/contributing/CONTRIBUTING.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/app-web-docs/src/docs/contributing/guidelines.md",
+      "kind": "doc"
+    },
+    {
+      "path": "packages/app-web-docs/src/docs/user/tutorial/basic-coding.mdx",
+      "kind": "doc"
+    },
+    {
+      "path": "pyproject.toml",
+      "kind": "lint (python config sections)"
+    }
+  ]
+}

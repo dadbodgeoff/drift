@@ -1,0 +1,43 @@
+{
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "drift hook claude SessionStart", "timeout": 30 }] }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+        "hooks": [{ "type": "command", "command": "drift hook claude PreToolUse", "timeout": 10 }]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": "drift hook claude PreToolUse", "timeout": 5 }]
+      },
+      {
+        "matcher": "Grep|Glob",
+        "hooks": [{ "type": "command", "command": "drift hook claude PreToolUse", "timeout": 5 }]
+      },
+      {
+        "matcher": "mcp__.*drift.*__drift_.*",
+        "hooks": [{ "type": "command", "command": "drift hook claude PreToolUse", "timeout": 5 }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+        "hooks": [{ "type": "command", "command": "drift hook claude PostToolUse", "timeout": 20 }]
+      }
+    ],
+    "UserPromptSubmit": [
+      { "hooks": [{ "type": "command", "command": "drift hook claude UserPromptSubmit", "timeout": 5 }] }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": "drift hook claude Stop", "timeout": 30 }] }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "clear",
+        "hooks": [{ "type": "command", "command": "drift hook claude SessionEnd", "timeout": 5 }]
+      }
+    ]
+  }
+}

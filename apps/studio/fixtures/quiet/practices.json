@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "commit": null,
+  "facts_schema": 11,
+  "scope": {
+    "concern": null,
+    "package": null,
+    "path": null
+  },
+  "summary": {
+    "population": 0,
+    "known": 0,
+    "none": 0,
+    "unknown": 0,
+    "coverage": 0.0,
+    "concerns_at_target": 0,
+    "target": 0.9
+  },
+  "concerns": [],
+  "not_covered": []
+}

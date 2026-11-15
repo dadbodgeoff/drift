@@ -1,0 +1,118 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 1
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - app
+  - bots
+  - constants
+  - executor
+  - main
+  - prisma
+  - routes
+  - tools
+  - typing
+  - ui
+  - users
+  - workspaces
+  suffixes:
+  - config
+  - constants
+  - controller
+  - decorator
+  - dto
+  - e2e
+  - guard
+  - interface
+  - module
+  - service
+  - spec
+  - utils
+conventions:
+- id: D-c983c0
+  status: proposed
+  mode: advise
+  summary: >-
+    files in apps/buddy/** do not import from packaging/buddy/** (declared
+    dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: apps/buddy
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:packaging/buddy
+  evidence:
+    holders: 1720
+    total: 1721
+    lower_bound: 0.997
+    lift: 3.0
+  example: apps/buddy/electron.vite.config.ts#(file)
+  selector_version: 3
+- id: D-f9ec7b
+  status: proposed
+  mode: advise
+  summary: "legacy/web-stack/apps/api: classes in src/** (*.service files) are named `*Service`, except 2 companions (a helper or constant beside the members that follow it)"
+  role:
+    package: legacy/web-stack/apps/api
+    dir: src
+    file: "*.service"
+    entry: '-'
+    kind: class
+  rule:
+    type: named
+    pattern: "*Service"
+  evidence:
+    holders: 61
+    total: 61
+    lower_bound: 0.941
+    lift: 3.973
+    role_members: 63
+  example: legacy/web-stack/apps/api/src/database/prisma.service.ts#PrismaService
+  selector_version: 3
+- id: D-3a6225
+  status: proposed
+  mode: advise
+  summary: "apps/buddy: functions in electron/preload/** are named `*Api`, except a shared part (used by several members, not a member)"
+  role:
+    package: apps/buddy
+    dir: electron/preload
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: named
+    pattern: "*Api"
+  evidence:
+    holders: 24
+    total: 24
+    lower_bound: 0.862
+    lift: 101.793
+    role_members: 25
+  example: apps/buddy/electron/preload/browser.ts#createBrowserApi
+  selector_version: 3
+- id: D-b25c1d
+  status: proposed
+  mode: advise
+  summary: "apps/buddy: classes in platform/extensions/** throw on failure"
+  role:
+    package: apps/buddy
+    dir: platform/extensions
+    file: "*"
+    entry: '-'
+    kind: class
+  rule:
+    type: control
+    value: throw
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 1.741
+  example: >-
+    apps/buddy/platform/extensions/ExtensionCatalogService.ts#ExtensionCatalogService
+  selector_version: 3

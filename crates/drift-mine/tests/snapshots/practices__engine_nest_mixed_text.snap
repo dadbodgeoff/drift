@@ -1,0 +1,12 @@
+---
+source: crates/drift-mine/tests/practices.rs
+expression: "practices::render(&r, false)"
+---
+Practices (facts, not rules): 2 unit(s) across 1 concern(s), 0% told: known, identified, or nothing found in what Drift read (0 at the 90% target).
+
+Authentication (entry points 2, coverage 0%, known 0%, none 0%, unknown 100%):
+  unknown 100% (2): unclassified 2
+      1 unit(s) use pkg:@nestjs/common#HttpCode; classify it in .drift/config.yaml: practices: {authn: {"pkg:@nestjs/common#HttpCode": "HttpCode"}}
+      1 unit(s) use pkg:@nestjs/common#UseGuards; classify it in .drift/config.yaml: practices: {authn: {"pkg:@nestjs/common#UseGuards": "UseGuards"}}
+
+Not covered yet: outbound calls (HTTP clients, timeouts, retries); background jobs and queues; frontend data fetching; state and design system; hygiene (duplicate libraries, escape hatches); declared vs actual (AGENTS.md, lint configs); change over time (which variant new code adopts).

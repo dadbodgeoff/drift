@@ -1,0 +1,19 @@
+2 conventions from 3709 units in 175 roles (0 default tier, 2 suggestions)
+
+Suggestions: advice only; blocking one needs `drift review --block <id> --force`
+
+ 1. [D-468530] Python packages use the pytest version most workspace packages use
+    evidence: 21/22 (lower bound 0.78, lift 1.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    split:    >=9.0.3,<10.0.0 21, >=9.0.3 1
+    example:  libs/core/pyproject.toml#langchain-core
+    outlier:  libs/standard-tests/pyproject.toml:1 langchain-tests
+
+ 2. [D-0e154c] libs/langchain_v1: TypedDicts in langchain/agents/** take `TypedDict` from typing_extensions, not typing
+    evidence: 18/19 (lower bound 0.75, lift 1.0)
+    tier:     suggestion (Python conventions advise only; decision D7)
+    split:    typing_extensions 18, typing 1
+    example:  libs/langchain_v1/langchain/agents/middleware/_redaction.py#PIIMatch
+    outlier:  libs/langchain_v1/langchain/agents/middleware/summarization.py:217 TriggerClause
+
+Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.

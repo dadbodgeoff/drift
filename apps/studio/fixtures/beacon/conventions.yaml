@@ -1,0 +1,116 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 2
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - __init__
+  - route
+  - serializers
+  suffixes: []
+review_log: "on"
+packages:
+- ""
+- apps/portal
+- packages/app
+- packages/core
+- packages/jobs
+- packages/ui
+- services/worker
+conventions:
+- id: D-0f9742
+  status: accepted
+  mode: advise
+  summary: >-
+    files in packages/core/** do not import from packages/app/** (declared
+    dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: packages/core
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:packages/app
+  evidence:
+    holders: 201
+    total: 204
+    lower_bound: 0.958
+    lift: 3.0
+  example: packages/core/src/c0.ts#(file)
+  selector_version: 3
+  different_kind:
+  - path: packages/core/src/fixtures.ts
+  - path: packages/core/src/seed.ts
+- id: D-3a1c98
+  status: accepted
+  mode: advise
+  summary: >-
+    files in packages/ui/** do not import from apps/portal/** (declared
+    dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: packages/ui
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:apps/portal
+  evidence:
+    holders: 120
+    total: 121
+    lower_bound: 0.955
+    lift: 3.0
+  example: packages/ui/src/part0.ts#(file)
+  selector_version: 3
+- id: D-6ff644
+  status: rejected
+  mode: advise
+  summary: >-
+    files in packages/jobs/** do not import from packages/app/** (declared
+    dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: packages/jobs
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:packages/app
+  evidence:
+    holders: 120
+    total: 122
+    lower_bound: 0.942
+    lift: 3.0
+  example: packages/jobs/src/job0.ts#(file)
+  selector_version: 3
+- id: D-8394d6
+  status: accepted
+  mode: advise
+  summary: "apps/portal: HTTP handlers in app/** (route files) are wrapped in withSession()"
+  role:
+    package: apps/portal
+    dir: app
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - apps/portal/lib/session.ts#withSession
+  evidence:
+    holders: 31
+    total: 33
+    lower_bound: 0.804
+    lift: 7.515
+  example: apps/portal/app/api/accounts/route.ts#GET
+  selector_version: 3
+  different_kind:
+  - path: apps/portal/app/api/health/route.ts
+    entry_points:
+    - GET

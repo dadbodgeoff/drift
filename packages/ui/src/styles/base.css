@@ -1,0 +1,224 @@
+/* Base: reset, typography roles, focus, scrollbars, utilities. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
+  font-feature-settings: "cv11", "calt";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+code,
+kbd,
+pre,
+.dui-mono {
+  font-family: var(--font-mono);
+  font-size: var(--type-code-size);
+  font-variant-ligatures: none;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 32%, transparent);
+}
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Type roles */
+.t-display,
+.t-h1,
+.t-h2 {
+  font-family: var(--font-display);
+  font-stretch: var(--shape-display-stretch);
+}
+.t-display {
+  font-size: var(--type-display-size);
+  line-height: var(--type-display-line);
+  font-weight: var(--type-display-weight);
+  letter-spacing: var(--type-display-tracking);
+  font-variant-numeric: tabular-nums;
+}
+.t-h1 {
+  font-size: var(--type-h1-size);
+  line-height: var(--type-h1-line);
+  font-weight: var(--type-h1-weight);
+  letter-spacing: var(--type-h1-tracking);
+}
+.t-h2 {
+  font-size: var(--type-h2-size);
+  line-height: var(--type-h2-line);
+  font-weight: var(--type-h2-weight);
+  letter-spacing: var(--type-h2-tracking);
+}
+.t-h3 {
+  font-size: var(--type-h3-size);
+  line-height: var(--type-h3-line);
+  font-weight: var(--type-h3-weight);
+  letter-spacing: var(--type-h3-tracking);
+}
+.t-h4 {
+  font-size: var(--type-h4-size);
+  line-height: var(--type-h4-line);
+  font-weight: var(--type-h4-weight);
+}
+.t-title {
+  font-size: var(--type-title-size);
+  line-height: var(--type-title-line);
+  font-weight: var(--type-title-weight);
+}
+.t-body {
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
+}
+.t-body-sm {
+  font-size: var(--type-body-sm-size);
+  line-height: var(--type-body-sm-line);
+}
+.t-caption {
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+  letter-spacing: var(--type-caption-tracking);
+}
+.t-overline,
+.dui-overline {
+  font-family: var(--font-label);
+  font-stretch: var(--shape-label-stretch);
+  font-size: var(--type-overline-size);
+  line-height: var(--type-overline-line);
+  font-weight: var(--type-overline-weight);
+  letter-spacing: var(--type-overline-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.t-code {
+  font-family: var(--font-mono);
+  font-size: var(--type-code-size);
+  line-height: var(--type-code-line);
+}
+.t-num {
+  font-variant-numeric: tabular-nums;
+}
+.t-secondary {
+  color: var(--color-text-secondary);
+}
+.t-muted {
+  color: var(--color-text-muted);
+}
+.t-danger {
+  color: var(--color-danger);
+}
+.t-warning {
+  color: var(--color-warning);
+}
+.t-success {
+  color: var(--color-success);
+}
+.t-accent {
+  color: var(--color-accent-text);
+}
+.t-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.dui-sr {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.dui-icon {
+  flex: none;
+  display: inline-block;
+  vertical-align: -3px;
+}
+
+/* Scrollbars that recede */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-border-strong);
+}
+
+body.dui-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

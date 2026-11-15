@@ -1,0 +1,1635 @@
+---
+source: crates/drift-py/tests/conformance.rs
+expression: "serde_json::to_string_pretty(&r).unwrap()"
+---
+{
+  "schema_version": 11,
+  "files": [
+    {
+      "path": "app/__init__.py",
+      "hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [],
+      "symbols": [],
+      "entry_points": []
+    },
+    {
+      "path": "app/api/__init__.py",
+      "hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [],
+      "symbols": [],
+      "entry_points": []
+    },
+    {
+      "path": "app/api/deps.py",
+      "hash": "3a8adb4a7ff5eb445d9a746acb4f20137e1ba1077a8f108336468f1b842bd189",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:fastapi",
+          "names": [
+            "Depends",
+            "HTTPException"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:fastapi.security",
+          "names": [
+            "OAuth2PasswordBearer"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:python:collections.abc",
+          "names": [
+            "Generator"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:python:typing",
+          "names": [
+            "Annotated"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "Authorizer",
+          "origin": "app/api/deps.py#Authorizer",
+          "kind": "local"
+        },
+        {
+          "name": "CurrentUser",
+          "origin": "app/api/deps.py#CurrentUser",
+          "kind": "local"
+        },
+        {
+          "name": "SessionDep",
+          "origin": "app/api/deps.py#SessionDep",
+          "kind": "local"
+        },
+        {
+          "name": "WriteItems",
+          "origin": "app/api/deps.py#WriteItems",
+          "kind": "local"
+        },
+        {
+          "name": "get_current_superuser",
+          "origin": "app/api/deps.py#get_current_superuser",
+          "kind": "local"
+        },
+        {
+          "name": "get_current_user",
+          "origin": "app/api/deps.py#get_current_user",
+          "kind": "local"
+        },
+        {
+          "name": "get_db",
+          "origin": "app/api/deps.py#get_db",
+          "kind": "local"
+        },
+        {
+          "name": "oauth2_scheme",
+          "origin": "app/api/deps.py#oauth2_scheme",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "Authorizer",
+          "kind": "class",
+          "exported_as": [
+            "Authorizer"
+          ],
+          "line": 30,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "__call__=",
+            "__init__="
+          ],
+          "controls": [
+            "attr_param:scope\tscope\t0"
+          ],
+          "string_literals": 0,
+          "members": [
+            {
+              "name": "__call__"
+            },
+            {
+              "name": "__init__"
+            }
+          ]
+        },
+        {
+          "name": "CurrentUser",
+          "kind": "variable",
+          "exported_as": [
+            "CurrentUser"
+          ],
+          "line": 23,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#Depends"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "order": [
+            "pkg:fastapi#Depends"
+          ],
+          "alias_of": "global#str"
+        },
+        {
+          "name": "SessionDep",
+          "kind": "variable",
+          "exported_as": [
+            "SessionDep"
+          ],
+          "line": 14,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#Depends"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "order": [
+            "pkg:fastapi#Depends"
+          ],
+          "alias_of": "global#str"
+        },
+        {
+          "name": "WriteItems",
+          "kind": "variable",
+          "exported_as": [
+            "WriteItems"
+          ],
+          "line": 39,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#Depends"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0,
+          "order": [
+            "pkg:fastapi#Depends"
+          ],
+          "alias_of": "global#str"
+        },
+        {
+          "name": "_write_items",
+          "kind": "variable",
+          "exported_as": [],
+          "line": 38,
+          "wraps": [],
+          "calls": [
+            "app/api/deps.py#Authorizer"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "arg_value:app/api/deps.py#Authorizer\t#0\tliteral",
+            "shape:=app/api/deps.py#Authorizer(lit)"
+          ],
+          "string_literals": 1,
+          "order": [
+            "app/api/deps.py#Authorizer"
+          ]
+        },
+        {
+          "name": "get_current_superuser",
+          "kind": "function",
+          "exported_as": [
+            "get_current_superuser"
+          ],
+          "line": 26,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "get_current_user",
+          "kind": "function",
+          "exported_as": [
+            "get_current_user"
+          ],
+          "line": 17,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#HTTPException"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:fastapi#HTTPException@99:detail",
+            "pkg:fastapi#HTTPException@99:status_code"
+          ],
+          "controls": [
+            "refuses_every",
+            "rejects_caller",
+            "throw",
+            "typed_return"
+          ],
+          "string_literals": 1,
+          "throws": [
+            "pkg:fastapi#HTTPException"
+          ],
+          "order": [
+            "pkg:fastapi#HTTPException"
+          ],
+          "body_checks": [
+            {
+              "source": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "reads": "",
+              "compares": "",
+              "outcome": "unauthenticated"
+            }
+          ],
+          "responses": [
+            {
+              "status": 401,
+              "via": "throw",
+              "builder": "pkg:fastapi#HTTPException",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ],
+          "raise_checks": [
+            {
+              "source": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "reads": "",
+              "compares": "",
+              "raises": "pkg:fastapi#HTTPException",
+              "status": 401
+            }
+          ]
+        },
+        {
+          "name": "get_db",
+          "kind": "function",
+          "exported_as": [
+            "get_db"
+          ],
+          "line": 10,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return"
+          ],
+          "string_literals": 1
+        },
+        {
+          "name": "oauth2_scheme",
+          "kind": "variable",
+          "exported_as": [
+            "oauth2_scheme"
+          ],
+          "line": 7,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#security.OAuth2PasswordBearer"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:fastapi#security.OAuth2PasswordBearer@99:tokenUrl"
+          ],
+          "controls": [
+            "shape:=pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:fastapi#security.OAuth2PasswordBearer"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "app/api/main.py",
+      "hash": "71abc327be47e7b7803ce1e1a5a37f900da546f19831fbe7dff42b4b5890ceb0",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "app/api/deps.py",
+          "names": [
+            "get_current_superuser"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "app/api/routes/admin.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "app/api/routes/items.py",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:fastapi",
+          "names": [
+            "APIRouter",
+            "Depends"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "api_router",
+          "origin": "app/api/main.py#api_router",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "(module)",
+          "kind": "module",
+          "exported_as": [],
+          "line": 7,
+          "wraps": [],
+          "calls": [
+            "app/api/main.py#api_router.include_router",
+            "pkg:fastapi#Depends"
+          ],
+          "renders": [],
+          "args": [
+            "app/api/main.py#api_router.include_router@99:dependencies",
+            "app/api/main.py#api_router.include_router@99:prefix"
+          ],
+          "controls": [
+            "arg_value:app/api/main.py#api_router.include_router\t#0\tvalue app/api/routes/admin.py#*\tprefix\tliteral\tdependencies\tunread",
+            "arg_value:app/api/main.py#api_router.include_router\t#0\tvalue app/api/routes/items.py#*"
+          ],
+          "string_literals": 1,
+          "order": [
+            "app/api/main.py#api_router.include_router",
+            "pkg:fastapi#Depends"
+          ]
+        },
+        {
+          "name": "api_router",
+          "kind": "variable",
+          "exported_as": [
+            "api_router"
+          ],
+          "line": 6,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#APIRouter"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "shape:=pkg:fastapi#APIRouter()"
+          ],
+          "string_literals": 0,
+          "order": [
+            "pkg:fastapi#APIRouter"
+          ]
+        }
+      ],
+      "entry_points": [],
+      "registries": [
+        {
+          "slot": "arg:app/api/main.py#api_router.include_router@99:dependencies",
+          "line": 9,
+          "items": [
+            {
+              "target": "app/api/deps.py#get_current_superuser",
+              "line": 9
+            }
+          ]
+        },
+        {
+          "slot": "calls:app/api/main.py#api_router",
+          "line": 7,
+          "items": [
+            {
+              "target": "app/api/deps.py#get_current_superuser",
+              "line": 9
+            },
+            {
+              "target": "app/api/routes/admin.py#router",
+              "line": 9
+            },
+            {
+              "target": "app/api/routes/items.py#router",
+              "line": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "app/api/routes/__init__.py",
+      "hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [],
+      "symbols": [],
+      "entry_points": []
+    },
+    {
+      "path": "app/api/routes/admin.py",
+      "hash": "2de7f18bad3b1b5621b97cf3875b6edfcb7446fc621f19e581370f5edc90aa69",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "app/core/routing.py",
+          "names": [
+            "VersionedRouter"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "delete_user",
+          "origin": "app/api/routes/admin.py#delete_user",
+          "kind": "local"
+        },
+        {
+          "name": "router",
+          "origin": "app/api/routes/admin.py#router",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "delete_user",
+          "kind": "function",
+          "exported_as": [
+            "delete_user"
+          ],
+          "line": 6,
+          "wraps": [
+            {
+              "wrapper": "app/api/deps.py#get_current_superuser",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/api/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/api/deps.py#get_db",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return"
+          ],
+          "string_literals": 0,
+          "app_middleware": [
+            "pkg:fastapi#middleware.cors.CORSMiddleware"
+          ]
+        },
+        {
+          "name": "router",
+          "kind": "variable",
+          "exported_as": [
+            "router"
+          ],
+          "line": 3,
+          "wraps": [],
+          "calls": [
+            "app/core/routing.py#VersionedRouter"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "arg_value:app/core/routing.py#VersionedRouter",
+            "shape:=app/core/routing.py#VersionedRouter()"
+          ],
+          "string_literals": 0,
+          "order": [
+            "app/core/routing.py#VersionedRouter"
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "delete_user",
+          "kind": "http",
+          "method": "DELETE",
+          "route": "/api/v1/admin/users/{user_id}",
+          "adapter": "fastapi"
+        }
+      ]
+    },
+    {
+      "path": "app/api/routes/items.py",
+      "hash": "10a26da65715594fe2e1b0c537a050bea598fd94452320087e9757758affe1ce",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "app/api/deps.py",
+          "names": [
+            "CurrentUser",
+            "SessionDep",
+            "WriteItems"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "app/models.py",
+          "names": [
+            "Item",
+            "ItemCreate"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:fastapi",
+          "names": [
+            "APIRouter",
+            "HTTPException"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:python:typing",
+          "names": [
+            "Any"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "read_items",
+          "origin": "app/api/routes/items.py#read_items",
+          "kind": "local"
+        },
+        {
+          "name": "router",
+          "origin": "app/api/routes/items.py#router",
+          "kind": "local"
+        },
+        {
+          "name": "sync_item",
+          "origin": "app/api/routes/items.py#sync_item",
+          "kind": "local"
+        },
+        {
+          "name": "update_item",
+          "origin": "app/api/routes/items.py#update_item",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "_helper",
+          "kind": "function",
+          "exported_as": [],
+          "line": 30,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "read_items",
+          "kind": "function",
+          "exported_as": [
+            "read_items"
+          ],
+          "line": 11,
+          "wraps": [
+            {
+              "wrapper": "app/api/deps.py#get_db",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/api/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "app/api/deps.py#SessionDep.exec"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:fastapi#APIRouter.api_route@99:response_model"
+          ],
+          "controls": [
+            "arg_value:app/api/deps.py#SessionDep.exec\t#0\tparam skip #2",
+            "param_flows",
+            "reads_input",
+            "returns_unread",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "typed_return",
+            "uses_any"
+          ],
+          "string_literals": 0,
+          "order": [
+            "app/api/deps.py#SessionDep.exec"
+          ],
+          "responses": [
+            {
+              "status": 0,
+              "via": "declared",
+              "builder": "",
+              "model": "app/models.py#Item",
+              "keys": [],
+              "in_catch": false
+            }
+          ],
+          "app_middleware": [
+            "pkg:fastapi#middleware.cors.CORSMiddleware"
+          ]
+        },
+        {
+          "name": "router",
+          "kind": "variable",
+          "exported_as": [
+            "router"
+          ],
+          "line": 8,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#APIRouter"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:fastapi#APIRouter@99:prefix",
+            "pkg:fastapi#APIRouter@99:tags"
+          ],
+          "controls": [
+            "shape:=pkg:fastapi#APIRouter(prefix=lit,tags=lit)"
+          ],
+          "string_literals": 2,
+          "order": [
+            "pkg:fastapi#APIRouter"
+          ]
+        },
+        {
+          "name": "sync_item",
+          "kind": "function",
+          "exported_as": [
+            "sync_item"
+          ],
+          "line": 25,
+          "wraps": [
+            {
+              "wrapper": "app/api/deps.py#get_db",
+              "kind": "call"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "reads_input",
+            "returns_request",
+            "typed_return",
+            "uses_any"
+          ],
+          "string_literals": 0,
+          "app_middleware": [
+            "pkg:fastapi#middleware.cors.CORSMiddleware"
+          ]
+        },
+        {
+          "name": "update_item",
+          "kind": "function",
+          "exported_as": [
+            "update_item"
+          ],
+          "line": 16,
+          "wraps": [
+            {
+              "wrapper": "app/api/deps.py#Authorizer",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/api/deps.py#get_current_user",
+              "kind": "call"
+            },
+            {
+              "wrapper": "app/api/deps.py#get_db",
+              "kind": "call"
+            },
+            {
+              "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+              "kind": "call"
+            }
+          ],
+          "calls": [
+            "app/api/deps.py#SessionDep.commit",
+            "app/models.py#Item.model_validate",
+            "pkg:fastapi#HTTPException"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:fastapi#APIRouter.api_route@99:response_model",
+            "pkg:fastapi#APIRouter.api_route@99:status_code",
+            "pkg:fastapi#HTTPException@99:detail",
+            "pkg:fastapi#HTTPException@99:status_code"
+          ],
+          "controls": [
+            "arg_value:app/api/deps.py#SessionDep.commit",
+            "arg_value:app/models.py#Item.model_validate\t#0\tparam body #3",
+            "await",
+            "param_flows",
+            "reads_input",
+            "returns_unread",
+            "shape:app/api/deps.py#Authorizer(lit)",
+            "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+            "throw",
+            "typed_return",
+            "uses_any",
+            "validates"
+          ],
+          "string_literals": 1,
+          "throws": [
+            "pkg:fastapi#HTTPException"
+          ],
+          "order": [
+            "app/models.py#Item.model_validate",
+            "pkg:fastapi#HTTPException",
+            "app/api/deps.py#SessionDep.commit"
+          ],
+          "responses": [
+            {
+              "status": 201,
+              "via": "declared",
+              "builder": "",
+              "model": "app/models.py#Item",
+              "keys": [],
+              "in_catch": false
+            },
+            {
+              "status": 404,
+              "via": "throw",
+              "builder": "pkg:fastapi#HTTPException",
+              "model": "",
+              "keys": [],
+              "in_catch": false
+            }
+          ],
+          "inputs": [
+            "app/models.py#ItemCreate"
+          ],
+          "raise_checks": [
+            {
+              "source": "app/models.py#Item.model_validate",
+              "reads": "",
+              "compares": "",
+              "raises": "pkg:fastapi#HTTPException",
+              "status": 404,
+              "after": [
+                "app/models.py#Item.model_validate"
+              ]
+            }
+          ],
+          "app_middleware": [
+            "pkg:fastapi#middleware.cors.CORSMiddleware"
+          ],
+          "is_async": true
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "read_items",
+          "kind": "http",
+          "method": "GET",
+          "route": "/api/v1/items",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "sync_item",
+          "kind": "http",
+          "method": "PATCH",
+          "route": "/api/v1/items/{item_id}/sync",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "sync_item",
+          "kind": "http",
+          "method": "PUT",
+          "route": "/api/v1/items/{item_id}/sync",
+          "adapter": "fastapi"
+        },
+        {
+          "symbol": "update_item",
+          "kind": "http",
+          "method": "POST",
+          "route": "/api/v1/items/{item_id}",
+          "adapter": "fastapi"
+        }
+      ],
+      "has_test": true
+    },
+    {
+      "path": "app/core/__init__.py",
+      "hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [],
+      "exports": [],
+      "symbols": [],
+      "entry_points": []
+    },
+    {
+      "path": "app/core/config.py",
+      "hash": "73cfed3c9dc3c17c5ffff4da842013d177081a6c257a5649b38b799ed6302c95",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:python:os",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "Settings",
+          "origin": "app/core/config.py#Settings",
+          "kind": "local"
+        },
+        {
+          "name": "settings",
+          "origin": "app/core/config.py#settings",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "Settings",
+          "kind": "class",
+          "exported_as": [
+            "Settings"
+          ],
+          "line": 4,
+          "wraps": [],
+          "calls": [
+            "pkg:python:os#getenv"
+          ],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "DATABASE_URL=",
+            "PROJECT_NAME=",
+            "SECRET_KEY=",
+            "SECRET_KEY=pkg:python:os#getenv"
+          ],
+          "controls": [],
+          "string_literals": 4,
+          "reads": [
+            "os.environ.DATABASE_URL",
+            "os.environ.SECRET_KEY"
+          ],
+          "order": [
+            "pkg:python:os#getenv"
+          ]
+        },
+        {
+          "name": "settings",
+          "kind": "variable",
+          "exported_as": [
+            "settings"
+          ],
+          "line": 10,
+          "wraps": [],
+          "calls": [
+            "app/core/config.py#Settings"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "arg_value:app/core/config.py#Settings",
+            "shape:=app/core/config.py#Settings()"
+          ],
+          "string_literals": 0,
+          "order": [
+            "app/core/config.py#Settings"
+          ]
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "app/core/routing.py",
+      "hash": "46303e41546b9c38f958dc1161dde51d2d9d807c21864172c1639b58e23d49d9",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:fastapi",
+          "names": [
+            "APIRouter"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "VersionedRouter",
+          "origin": "app/core/routing.py#VersionedRouter",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "VersionedRouter",
+          "kind": "class",
+          "exported_as": [
+            "VersionedRouter"
+          ],
+          "line": 4,
+          "wraps": [
+            {
+              "wrapper": "pkg:fastapi#APIRouter",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "app/main.py",
+      "hash": "c798880c7232d092a41678e884ccca2d77b11336c3f4451707bfc2ccd0c065c9",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "app/api/main.py",
+          "names": [
+            "api_router"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "app/core/config.py",
+          "names": [
+            "settings"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:fastapi",
+          "names": [
+            "FastAPI"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:fastapi.middleware.cors",
+          "names": [
+            "CORSMiddleware"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "app",
+          "origin": "app/main.py#app",
+          "kind": "local"
+        },
+        {
+          "name": "health",
+          "origin": "app/main.py#health",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "(module)",
+          "kind": "module",
+          "exported_as": [],
+          "line": 8,
+          "wraps": [],
+          "calls": [
+            "app/main.py#app.add_middleware",
+            "app/main.py#app.include_router"
+          ],
+          "renders": [],
+          "args": [
+            "app/main.py#app.add_middleware@99:allow_methods",
+            "app/main.py#app.add_middleware@99:allow_origins",
+            "app/main.py#app.include_router@99:prefix"
+          ],
+          "controls": [
+            "arg_value:app/main.py#app.add_middleware\t#0\tvalue pkg:fastapi#middleware.cors.CORSMiddleware\tallow_origins\tliteral\tallow_methods\tliteral",
+            "arg_value:app/main.py#app.include_router\t#0\tvalue app/api/main.py#api_router\tprefix\tliteral"
+          ],
+          "string_literals": 3,
+          "sinks": [
+            "cors_any_origin"
+          ],
+          "order": [
+            "app/main.py#app.add_middleware",
+            "app/main.py#app.include_router"
+          ]
+        },
+        {
+          "name": "app",
+          "kind": "variable",
+          "exported_as": [
+            "app"
+          ],
+          "line": 7,
+          "wraps": [],
+          "calls": [
+            "pkg:fastapi#FastAPI"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:fastapi#FastAPI@99:title"
+          ],
+          "controls": [
+            "shape:=pkg:fastapi#FastAPI(title=?)"
+          ],
+          "string_literals": 0,
+          "order": [
+            "pkg:fastapi#FastAPI"
+          ]
+        },
+        {
+          "name": "health",
+          "kind": "function",
+          "exported_as": [
+            "health"
+          ],
+          "line": 12,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "no_input",
+            "typed_return"
+          ],
+          "string_literals": 2,
+          "app_middleware": [
+            "pkg:fastapi#middleware.cors.CORSMiddleware"
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "health",
+          "kind": "http",
+          "method": "GET",
+          "route": "/health",
+          "adapter": "fastapi"
+        }
+      ],
+      "registries": [
+        {
+          "slot": "calls:app/main.py#app",
+          "line": 8,
+          "items": [
+            {
+              "target": "app/api/main.py#api_router",
+              "line": 9
+            }
+          ]
+        }
+      ],
+      "apps": [
+        {
+          "name": "app",
+          "line": 7
+        }
+      ]
+    },
+    {
+      "path": "app/models.py",
+      "hash": "37287fa862afb76a5010cd9c2ccbb1436c9990b63fcefd562ae5febb0d6fd42f",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:sqlmodel",
+          "names": [
+            "Field",
+            "SQLModel"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "Item",
+          "origin": "app/models.py#Item",
+          "kind": "local"
+        },
+        {
+          "name": "ItemCreate",
+          "origin": "app/models.py#ItemCreate",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "Item",
+          "kind": "class",
+          "exported_as": [
+            "Item"
+          ],
+          "line": 4,
+          "wraps": [
+            {
+              "wrapper": "pkg:sqlmodel#SQLModel",
+              "kind": "extends"
+            }
+          ],
+          "calls": [
+            "pkg:sqlmodel#Field"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:sqlmodel#Field@99:default",
+            "pkg:sqlmodel#Field@99:foreign_key",
+            "pkg:sqlmodel#Field@99:primary_key"
+          ],
+          "omits": [
+            "pkg:sqlmodel#Field@99:default",
+            "pkg:sqlmodel#Field@99:foreign_key",
+            "pkg:sqlmodel#Field@99:primary_key"
+          ],
+          "declares": [
+            "id=",
+            "id=pkg:sqlmodel#Field",
+            "owner_id=",
+            "owner_id=pkg:sqlmodel#Field",
+            "title="
+          ],
+          "controls": [],
+          "string_literals": 1,
+          "order": [
+            "pkg:sqlmodel#Field"
+          ]
+        },
+        {
+          "name": "ItemCreate",
+          "kind": "class",
+          "exported_as": [
+            "ItemCreate"
+          ],
+          "line": 10,
+          "wraps": [
+            {
+              "wrapper": "pkg:sqlmodel#SQLModel",
+              "kind": "extends"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "declares": [
+            "title="
+          ],
+          "controls": [],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "app/worker.py",
+      "hash": "2f33e18e5534e4a9888a98f9009fbb2b69a76012686a753a5a7ffe1c68b2ae67",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:celery",
+          "names": [
+            "Celery",
+            "shared_task"
+          ],
+          "type_only": false
+        },
+        {
+          "module": "pkg:celery.schedules",
+          "names": [
+            "crontab"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "celery_app",
+          "origin": "app/worker.py#celery_app",
+          "kind": "local"
+        },
+        {
+          "name": "cleanup",
+          "origin": "app/worker.py#cleanup",
+          "kind": "local"
+        },
+        {
+          "name": "reindex",
+          "origin": "app/worker.py#reindex",
+          "kind": "local"
+        },
+        {
+          "name": "send_email",
+          "origin": "app/worker.py#send_email",
+          "kind": "local"
+        },
+        {
+          "name": "setup_periodic_tasks",
+          "origin": "app/worker.py#setup_periodic_tasks",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "(module)",
+          "kind": "module",
+          "exported_as": [],
+          "line": 5,
+          "wraps": [],
+          "calls": [
+            "pkg:celery#schedules.crontab"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:celery#schedules.crontab@99:hour"
+          ],
+          "controls": [],
+          "string_literals": 8,
+          "order": [
+            "pkg:celery#schedules.crontab"
+          ]
+        },
+        {
+          "name": "celery_app",
+          "kind": "variable",
+          "exported_as": [
+            "celery_app"
+          ],
+          "line": 4,
+          "wraps": [],
+          "calls": [
+            "pkg:celery#Celery"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "shape:=pkg:celery#Celery(lit)"
+          ],
+          "string_literals": 1,
+          "order": [
+            "pkg:celery#Celery"
+          ]
+        },
+        {
+          "name": "cleanup",
+          "kind": "function",
+          "exported_as": [
+            "cleanup"
+          ],
+          "line": 16,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "reindex",
+          "kind": "function",
+          "exported_as": [
+            "reindex"
+          ],
+          "line": 21,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return"
+          ],
+          "string_literals": 0
+        },
+        {
+          "name": "send_email",
+          "kind": "function",
+          "exported_as": [
+            "send_email"
+          ],
+          "line": 11,
+          "wraps": [],
+          "calls": [
+            "global#print"
+          ],
+          "renders": [],
+          "args": [
+            "pkg:celery#Celery.task@99:bind"
+          ],
+          "controls": [
+            "param_flows",
+            "typed_return"
+          ],
+          "string_literals": 0,
+          "order": [
+            "global#print"
+          ],
+          "log_calls": [
+            {
+              "callee": "global#print",
+              "level": "print",
+              "in_catch": false,
+              "structured": false,
+              "passes_error": false
+            }
+          ]
+        },
+        {
+          "name": "setup_periodic_tasks",
+          "kind": "function",
+          "exported_as": [
+            "setup_periodic_tasks"
+          ],
+          "line": 26,
+          "wraps": [
+            {
+              "wrapper": "app/worker.py#celery_app.on_after_configure.connect",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [
+            "app/worker.py#reindex.s"
+          ],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "arg_value:app/worker.py#reindex.s",
+            "typed_return",
+            "unread_call"
+          ],
+          "string_literals": 1,
+          "order": [
+            "app/worker.py#reindex.s"
+          ],
+          "receiver_calls": [
+            "param:sender.add_periodic_task"
+          ]
+        }
+      ],
+      "entry_points": [
+        {
+          "symbol": "cleanup",
+          "kind": "cron",
+          "method": null,
+          "route": "nightly-cleanup",
+          "adapter": "celery"
+        },
+        {
+          "symbol": "cleanup",
+          "kind": "job",
+          "method": null,
+          "route": "app.worker.cleanup",
+          "adapter": "celery"
+        },
+        {
+          "symbol": "reindex",
+          "kind": "cron",
+          "method": null,
+          "route": "reindex-every-10-minutes",
+          "adapter": "celery"
+        },
+        {
+          "symbol": "reindex",
+          "kind": "job",
+          "method": null,
+          "route": "app.worker.reindex",
+          "adapter": "celery"
+        },
+        {
+          "symbol": "send_email",
+          "kind": "job",
+          "method": null,
+          "route": "send-email",
+          "adapter": "celery"
+        }
+      ],
+      "registries": [
+        {
+          "slot": "calls:app/worker.py#~sender",
+          "line": 28,
+          "items": [
+            {
+              "target": "app/worker.py#reindex",
+              "line": 28
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "tests/conftest.py",
+      "hash": "61103ee32041f478e0ee904f56edfefdfe446ab2b7a38f31f2c5f9c3884967bf",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "pkg:pytest",
+          "names": [
+            "*"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "client",
+          "origin": "tests/conftest.py#client",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "client",
+          "kind": "function",
+          "exported_as": [
+            "client"
+          ],
+          "line": 4,
+          "wraps": [
+            {
+              "wrapper": "pkg:pytest#fixture",
+              "kind": "decorator"
+            }
+          ],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    },
+    {
+      "path": "tests/test_items.py",
+      "hash": "932995431cb025d5e57d68b32d203f762394bdece598a5d1aa72748301a4b1c8",
+      "lang": "py",
+      "package": "",
+      "parse_ok": true,
+      "directives": [],
+      "imports": [
+        {
+          "module": "app/api/routes/items.py",
+          "names": [
+            "read_items"
+          ],
+          "type_only": false
+        }
+      ],
+      "exports": [
+        {
+          "name": "test_read_items",
+          "origin": "tests/test_items.py#test_read_items",
+          "kind": "local"
+        }
+      ],
+      "symbols": [
+        {
+          "name": "test_read_items",
+          "kind": "function",
+          "exported_as": [
+            "test_read_items"
+          ],
+          "line": 4,
+          "wraps": [],
+          "calls": [],
+          "renders": [],
+          "args": [],
+          "controls": [
+            "typed_return",
+            "unread_exit"
+          ],
+          "string_literals": 0
+        }
+      ],
+      "entry_points": []
+    }
+  ],
+  "skipped": [],
+  "models": [
+    {
+      "path": "app/models.py",
+      "name": "Item",
+      "source": "sqlmodel",
+      "line": 4,
+      "fields": [
+        "id",
+        "owner_id",
+        "title"
+      ]
+    }
+  ],
+  "packages": [
+    {
+      "path": "",
+      "name": "fastapi-app",
+      "scripts": [],
+      "dependencies": [
+        "celery@*",
+        "fastapi@*",
+        "sqlmodel@*"
+      ],
+      "compiler_flags": [],
+      "manifest": "pyproject.toml"
+    }
+  ]
+}
