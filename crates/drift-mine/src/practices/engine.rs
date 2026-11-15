@@ -1884,6 +1884,7 @@ fn variant_entry(
                 .collect::<Vec<_>>()
                 .join("+"),
             role: crate::map::role_id(&role),
+            place: None,
         })
     });
     let mut mechanisms: Vec<String> = key.uses.iter().map(|u| u.mechanism.clone()).collect();

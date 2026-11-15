@@ -1325,13 +1325,20 @@ pub struct ConventionLink {
     pub mode: String,
 }
 
-/// How `drift practices promote` would turn the variant into a convention.
+/// How `drift practices promote` would turn the variant into a convention: set where
+/// the variant may be promoted as the code stands ([`promote::candidates`]).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Promotable {
-    /// The rule's type (`wrapped_by`, `calls`, `throws`, ...).
+    /// The rule's type: `practice` ([`crate::mine::Rule::Practice`]).
     pub rule: String,
-    /// The role it would apply to (`R-…`).
+    /// The role it would apply to (`R-…`): empty for a `practice` rule, which holds in
+    /// a place and not in a role (kept for readers of v1).
     pub role: String,
+    /// The broadest place it may be promoted in, as [`promote::Place::shown`] names it
+    /// (`apps/api/views`, `.` the root package): what `drift practices promote <id>`
+    /// takes without `--in` (additive to v1).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub place: Option<String>,
 }
 
 /// A concern's unknown units.
