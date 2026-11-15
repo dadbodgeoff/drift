@@ -965,6 +965,11 @@ pub struct Linker<'r> {
     /// the caller by the name of one is verified by its body
     /// ([`Linker::by_name_only`]).
     repo_functions: BTreeSet<String>,
+    /// The methods of the instances of the repository's classes that bindings
+    /// hold (`path#sessions.getSession` of `export const sessions = new
+    /// Sessions()`), with whether the method's own body gives the caller
+    /// ([`crate::lower::RawMember::gives_caller`]).
+    repo_methods: BTreeMap<String, bool>,
     /// Those of them that turn away every request with no caller (a check of
     /// their own body that answers "not signed in", or a throw where what a
     /// callee gave is absent: [`drift_core::controls::REFUSES_WITHOUT`]): what
@@ -1350,6 +1355,7 @@ impl<'r> Linker<'r> {
             mount_parents: BTreeMap::new(),
             gives_caller: BTreeSet::new(),
             repo_functions: BTreeSet::new(),
+            repo_methods: BTreeMap::new(),
             refuses_without: BTreeSet::new(),
             handed: Vec::new(),
             registers: BTreeMap::new(),
@@ -1684,6 +1690,38 @@ impl<'r> Linker<'r> {
                     .iter()
                     .filter(|s| s.kind == drift_core::SymbolKind::Function)
                     .map(move |s| format!("{}#{}", f.rel_path, s.name))
+            })
+            .collect();
+        // The methods of what a binding built of a class of the repository holds.
+        let classes: BTreeMap<String, &crate::lower::RawSymbol> = files
+            .iter()
+            .flat_map(|f| {
+                f.raw
+                    .symbols
+                    .iter()
+                    .filter(|s| s.kind == drift_core::SymbolKind::Class)
+                    .map(move |s| (format!("{}#{}", f.rel_path, s.name), s))
+            })
+            .collect();
+        self.repo_methods = files
+            .iter()
+            .flat_map(|f| {
+                let classes = &classes;
+                let this = &*self;
+                f.raw.symbols.iter().flat_map(move |s| {
+                    s.built
+                        .as_ref()
+                        .and_then(|class| classes.get(&this.canon(&f.rel_path, class)))
+                        .into_iter()
+                        .flat_map(move |class| {
+                            class.members.iter().map(move |m| {
+                                (
+                                    format!("{}#{}.{}", f.rel_path, s.name, m.name),
+                                    m.gives_caller,
+                                )
+                            })
+                        })
+                })
             })
             .collect();
         // A holder's key is held where some body binds on it a value that is the
@@ -3016,13 +3054,20 @@ impl<'r> Linker<'r> {
     /// alone ([`drift_core::controls::CALLER_FROM`]: `getUser(req)`,
     /// `getSession(req)`), where its own body does not give the caller
     /// ([`drift_core::controls::GIVES_CALLER`]): it may hand back a row the
-    /// request names, or what the request sent. A package's accessor is what its
-    /// package documents, and a method of a binding is the binding's.
+    /// request names, or what the request sent. So is a function an object of
+    /// the repository holds (`auth.getUser(req)`, a symbol of its own:
+    /// [`crate::lower::RawSymbol::in_place`]) and a method of an instance of a
+    /// class of the repository a binding holds (`sessions.getSession(req)`).
+    /// A package's accessor is what its package documents, and so is a method of
+    /// what a package's call or class built.
     fn named_giver(&self, controls: &[String]) -> Option<String> {
         controls
             .iter()
             .filter_map(|c| c.strip_prefix(drift_core::controls::CALLER_FROM))
-            .find(|c| self.repo_functions.contains(*c) && !self.gives_caller.contains(*c))
+            .find(|c| {
+                (self.repo_functions.contains(*c) && !self.gives_caller.contains(*c))
+                    || self.repo_methods.get(*c) == Some(&false)
+            })
             .map(str::to_string)
     }
 

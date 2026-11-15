@@ -641,8 +641,25 @@ fn read_unit<'a>(
                 .filter_map(|(r, passed)| ts_unscoped_read(cx, r, &ev.around, passed))
                 .min();
         }
+        // TypeScript: the keys named for the caller that a body around the unit
+        // binds on the request to what the request sent
+        // ([`drift_core::controls::HOLDS_SENT`]: `req.user = req.body.user` in a
+        // middleware, a wrapper, the unit's own body or what it calls).
+        let sent: std::collections::BTreeSet<&str> = match !ev.python && cx.context().since_measured() {
+            true => reach
+                .nodes
+                .iter()
+                .flat_map(|r| held_keys(r.node, drift_core::controls::HOLDS_SENT))
+                .collect(),
+            false => Default::default(),
+        };
         for (i, r) in reach.nodes.iter().enumerate() {
             ev.passed = std::mem::take(&mut passed_to[i]);
+            // What this body reads under such a key as who calls is what the
+            // request chose: nothing it does with the caller's value is proven.
+            ev.sent = held_keys(r.node, drift_core::controls::READS_HELD)
+                .find(|k| sent.contains(k))
+                .map(str::to_string);
             // [STRICT]: what a body only some requests reach checks is found, not
             // proven: it is not the unit's practice, and it is not dropped either.
             ev.dominant = dominant[i];
@@ -792,6 +809,7 @@ fn read_unit<'a>(
                 forwards = Some(f);
             }
         }
+        ev.sent = None;
         // A check that was read where it is says what it compares; the name of the
         // method that holds it says less (`_ensure_access`, whose body compares
         // the row's organisation with the caller's, is a tenant check, not a role
@@ -1350,6 +1368,11 @@ struct Evidence {
     /// The calls of the body being read that the bodies of the reach make, with
     /// what each passes ([`passed`]).
     passed: Vec<Given>,
+    /// TypeScript: the key named for the caller the body being read reads as who
+    /// calls ([`drift_core::controls::READS_HELD`]) and a body around the unit
+    /// binds to what the request sent ([`drift_core::controls::HOLDS_SENT`]):
+    /// what the body does with the caller's value is found, not proven.
+    sent: Option<String>,
     /// Python: some body of the reach reads rows by nothing of the caller
     /// ([`reads_unscoped`]): a query filtered by the caller beside it scopes that
     /// query, not what the route reads.
@@ -1369,6 +1392,16 @@ impl Evidence {
         if let Some((obligation, when)) = self.cond.clone() {
             let declarable = self.dominant && self.named;
             self.find(mechanism, instrument, &obligation, &when, declarable);
+            return;
+        }
+        if self.sent.is_some() {
+            self.find(
+                mechanism,
+                instrument,
+                obligation::SIDES_NOT_CALLER_AND_RESOURCE,
+                "",
+                false,
+            );
             return;
         }
         self.uses.push(use_of(mechanism, instrument));
@@ -4468,6 +4501,16 @@ fn passed_for(side: &str, calls: &[Given]) -> Origin {
         Some(_) if given.iter().all(resource) => Origin::Handed,
         Some(_) => Origin::Unread,
     }
+}
+
+/// The keys a body's facts name under `control`
+/// ([`drift_core::controls::HOLDS_SENT`], [`drift_core::controls::READS_HELD`]).
+fn held_keys<'a>(n: Node<'a>, control: &'static str) -> impl Iterator<Item = &'a str> {
+    let facts: &'a [String] = match n {
+        Node::Sym(s) => &s.controls,
+        Node::Member(m) => &m.unread,
+    };
+    facts.iter().filter_map(move |f| f.strip_prefix(control))
 }
 
 /// What one call passes for the parameter `side` ([`passed_for`]); None where

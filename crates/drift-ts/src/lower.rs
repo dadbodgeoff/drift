@@ -15,7 +15,7 @@ use oxc_span::{GetSpan, SourceType};
 use serde::{Deserialize, Serialize};
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 82;
+pub const LOWERING_VERSION: u32 = 83;
 
 /// What an options object gives a Fastify route: for each hook it names
 /// (`onRequest`, `preHandler`), what that hook runs.
@@ -204,6 +204,13 @@ pub struct RawSymbol {
     /// to return a function.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub made_by: Option<RawRef>,
+    /// Values: the class the value is an instance of, where the binding is
+    /// bound to one built in place (`export const sessions = new Sessions()`).
+    /// Linking reads a method of the binding taken for who calls by its name
+    /// (`sessions.getSession(req)`) as the class's own, by what its body returns
+    /// ([`RawMember::gives_caller`]). TypeScript lowering 83.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub built: Option<RawRef>,
     /// Classes: each method's own calls and risky operations
     /// ([`drift_core::Symbol::members`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -572,6 +579,13 @@ pub struct RawMember {
     pub own_keys: Vec<(RawRef, String, Vec<RawRef>)>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub every_keys: Vec<(RawRef, String, Vec<RawRef>, bool)>,
+    /// Every `return` of the method that gives a value gives a value of the
+    /// caller or what was made of the request's credential
+    /// ([`drift_core::controls::RETURNS_CALLER`],
+    /// [`drift_core::controls::RETURNS_CREDENTIAL`]): a call of it on an instance
+    /// taken for who calls by its name gives the caller. TypeScript lowering 83.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub gives_caller: bool,
 }
 
 /// The calls of a body that give one key of an object a value of the caller
@@ -3972,6 +3986,10 @@ impl<'s> Lowerer<'s> {
                 };
                 let mut tmp = RawSymbol::empty(name, SymbolKind::Function, 0);
                 c.fill(&mut tmp);
+                let gives_caller = tmp.listed_controls.iter().any(|c| {
+                    c == drift_core::controls::RETURNS_CALLER
+                        || c == drift_core::controls::RETURNS_CREDENTIAL
+                });
                 let mut calls = tmp.calls;
                 calls.extend(siblings.found.into_iter().map(|m| RawRef {
                     base: RawBase::Local(class_name.to_string()),
@@ -4021,6 +4039,7 @@ impl<'s> Lowerer<'s> {
                     caller_from: tmp.caller_from,
                     own_keys: tmp.own_keys,
                     every_keys: tmp.every_keys,
+                    gives_caller,
                 }
             })
             .collect()
@@ -4032,7 +4051,7 @@ impl<'s> Lowerer<'s> {
     /// (`{ onRequest: guards.authenticate }`), that function is read, not what the
     /// object does as a whole. Listed for the practice map and `drift security` only
     /// ([`RawSymbol::in_place`]), never mined.
-    fn lower_object_methods(&mut self, name: &str, o: &ObjectExpression) {
+    fn lower_object_methods(&mut self, name: &str, o: &ObjectExpression, accessors: bool) {
         for p in &o.properties {
             let ObjectPropertyKind::ObjectProperty(p) = p else {
                 continue;
@@ -4046,6 +4065,11 @@ impl<'s> Lowerer<'s> {
             let Some(key) = key_name(&p.key).filter(|_| !p.computed) else {
                 continue;
             };
+            // Only the functions a call is read as an accessor of by its name
+            // (`accessors`): the listed reading, since the measured build.
+            if accessors && (routes::unmeasured_listing() || !caller::accessor_name(&key)) {
+                continue;
+            }
             let member = format!("{name}.{key}");
             if self.out.symbols.iter().any(|s| s.name == member) {
                 continue;
@@ -4183,6 +4207,14 @@ impl<'s> Lowerer<'s> {
             Expression::CallExpression(c) if sym.derives_from.is_none() => self
                 .canon_callee(&c.callee)
                 .filter(|r| !matches!(r.base, RawBase::Global(_)) && !r.member.contains('(')),
+            _ => None,
+        };
+        // The class the value is an instance of, built in place
+        // ([`RawSymbol::built`]).
+        let built = match unwrap_expr(init) {
+            Expression::NewExpression(n) => self
+                .canon_callee(&n.callee)
+                .filter(|r| !matches!(r.base, RawBase::Global(_))),
             _ => None,
         };
         let mut cur = unwrap_expr(init);
@@ -4391,6 +4423,9 @@ impl<'s> Lowerer<'s> {
         if matches!(sym.kind, SymbolKind::Const | SymbolKind::Variable) && !pascal {
             sym.made_by = made_by;
         }
+        if matches!(sym.kind, SymbolKind::Const | SymbolKind::Variable) {
+            sym.built = built;
+        }
         // An array a binding holds, with something in it that is no literal: handed
         // where a guard goes, each element runs ([`drift_core::GuardCall::LIST`]).
         if matches!(sym.kind, SymbolKind::Const | SymbolKind::Variable)
@@ -4493,9 +4528,11 @@ impl<'s> Lowerer<'s> {
         self.push_symbol(sym);
         if let Expression::ObjectExpression(o) = cur
             && plain
-            && rejects > 0
         {
-            self.lower_object_methods(name, o);
+            // Every function of an object that turns callers away; else those a
+            // call is read as a sign-in accessor by its name (`auth.getUser(req)`):
+            // what one gives is what its own body returns, not what it is called.
+            self.lower_object_methods(name, o, rejects == 0);
         }
     }
 
@@ -5080,6 +5117,7 @@ impl RawSymbol {
             derives_from: None,
             returns_wrapped_by: vec![],
             made_by: None,
+            built: None,
             members: vec![],
             server_reads: vec![],
             body_checks: vec![],
@@ -6238,6 +6276,25 @@ impl<'l, 's> Collector<'l, 's> {
         for from in flow.caller_from.borrow().iter() {
             if !sym.caller_from.contains(from) {
                 sym.caller_from.push(from.clone());
+            }
+        }
+        // A key named for the caller the body binds to what the request sent,
+        // and those it reads as who calls: the listed reading only.
+        if !routes::unmeasured_listing() {
+            let read = flow.held_read.borrow();
+            let held: Vec<String> = flow
+                .holds_sent
+                .iter()
+                .map(|k| format!("{}{k}", drift_core::controls::HOLDS_SENT))
+                .chain(
+                    read.iter()
+                        .map(|k| format!("{}{k}", drift_core::controls::READS_HELD)),
+                )
+                .collect();
+            for c in held {
+                if !sym.listed_controls.contains(&c) {
+                    sym.listed_controls.push(c);
+                }
             }
         }
         for giver in flow.returns_via() {

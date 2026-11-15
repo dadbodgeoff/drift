@@ -2080,6 +2080,21 @@ pub mod controls {
     /// What the callee of an [`ARG_VALUE`] starts with where the body calls a
     /// parameter, or a method of what one holds.
     pub const PARAM_CALLED: &str = "param:";
+    /// What starts the control of a body that binds, on the request or what
+    /// holds it, a key named for the caller to what the request sent:
+    /// `holds_sent:<key>` (`req.user = req.body.user`, `req.user = { id:
+    /// req.headers["x-user-id"] }`, `req.user = req.user || req.query.as`).
+    /// What a later body reads under that key is what the request chose, not
+    /// who calls. TypeScript lowering 83, the listed reading only; mining never
+    /// proposes it.
+    pub const HOLDS_SENT: &str = "holds_sent:";
+    /// What starts the control of a body that reads, off the request or what
+    /// holds it, a key named for the caller as who calls: `reads_held:<key>`
+    /// (`req.user.id`). Beside a body around the same unit that binds the key
+    /// to what the request sent ([`HOLDS_SENT`]), nothing the body does with
+    /// the caller's value is proven. TypeScript lowering 83, the listed reading
+    /// only; mining never proposes it.
+    pub const READS_HELD: &str = "reads_held:";
     /// What starts the control of a class that says which parameter of `__init__` an
     /// attribute of `self` is bound from, by a statement of the constructor's own
     /// body (`self.principal = principal`):

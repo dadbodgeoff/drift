@@ -502,6 +502,12 @@ fn words(name: &str) -> Vec<String> {
     out
 }
 
+/// `name` is one of the sign-in accessors a call is read as by its name
+/// (source 1, [`CALLER_ACCESSORS`]).
+pub(super) fn accessor_name(name: &str) -> bool {
+    CALLER_ACCESSORS.contains(&name)
+}
+
 /// A name that says the caller by its last word (`user`, `currentUser`,
 /// `authSession`; not `userId`, which names a value anyone may hold).
 fn caller_name(name: &str) -> bool {
@@ -656,6 +662,12 @@ pub(super) struct Flow {
     /// The callees of the repository whose call's value the body takes as the
     /// caller (source 1): [`drift_core::controls::CALLER_FROM`].
     pub(super) caller_from: std::cell::RefCell<BTreeSet<RawRef>>,
+    /// The keys named for the caller the body reads off a holder as who calls
+    /// ([`drift_core::controls::READS_HELD`]).
+    pub(super) held_read: std::cell::RefCell<BTreeSet<String>>,
+    /// The keys named for the caller the body binds on a holder to what the
+    /// request sent ([`drift_core::controls::HOLDS_SENT`]).
+    pub(super) holds_sent: BTreeSet<String>,
     /// Locals bound to what a keyed store of the file handed back under a key
     /// that is the caller's by its own source (`const cached =
     /// CACHE.get(JSON.stringify(token))`), by the store
@@ -884,7 +896,12 @@ impl<'l, 's> Collector<'l, 's> {
             // parameter (what is done with it is read where it is done).
             None => {}
             Some(k) if REQUEST_VALUES.contains(k) || FRAMEWORK_MEMBERS.contains(k) => {}
-            Some(k) if holder_key(k) => t.caller = true,
+            Some(k) if holder_key(k) => {
+                t.caller = true;
+                if plain_key(k) {
+                    self.flow.held_read.borrow_mut().insert((*k).to_string());
+                }
+            }
             // Any other key: what a body of the repository bound on the holder,
             // or, in a helper whose parameter is only named like one, a member
             // of what it was given.
@@ -1838,6 +1855,15 @@ impl<'l, 's> Collector<'l, 's> {
         {
             self.flow.self_locals.remove(&s);
         }
+        // A key named for the caller bound to what the request sent: what is
+        // read under it afterwards is what the request chose.
+        if let Some(key) = self.held_target(&it.left)
+            && holder_key(key)
+            && plain_key(key)
+            && self.request_sent(&it.right, 0)
+        {
+            self.flow.holds_sent.insert(key.to_string());
+        }
         let mut t = self.taint(&it.right);
         if t.is_empty() {
             // What a guard, a middleware or a strategy puts on the request is who
@@ -1904,6 +1930,134 @@ impl<'l, 's> Collector<'l, 's> {
             }
             None => {}
         }
+    }
+
+    /// The key an assignment binds on a request-scoped holder (`req.user = ...`,
+    /// `ctx.state.user = ...`, `req.session.user = ...`): the first key under
+    /// the holder and its stores that is no value of the request and no member
+    /// of the framework's.
+    fn held_target<'b>(&self, left: &'b AssignmentTarget) -> Option<&'b str> {
+        let AssignmentTarget::StaticMemberExpression(m) = left else {
+            return None;
+        };
+        let mut segs: Vec<&'b str> = vec![m.property.name.as_str()];
+        let mut cur = peel(&m.object);
+        let root = loop {
+            match cur {
+                Expression::StaticMemberExpression(m) => {
+                    segs.push(m.property.name.as_str());
+                    cur = peel(&m.object);
+                }
+                Expression::Identifier(id) => break self.symbol_of(id)?,
+                _ => return None,
+            }
+        };
+        segs.reverse();
+        let name = self.flow_param(root)?;
+        let mut rest = if HOLDER_PARAMS.contains(&name.as_str()) {
+            &segs[..]
+        } else if segs.first().is_some_and(|f| HOLDER_MEMBERS.contains(f)) {
+            &segs[1..]
+        } else {
+            return None;
+        };
+        while rest.first().is_some_and(|k| HOLDER_STORES.contains(k)) {
+            rest = &rest[1..];
+        }
+        rest.first()
+            .copied()
+            .filter(|k| !REQUEST_VALUES.contains(k) && !FRAMEWORK_MEMBERS.contains(k))
+    }
+
+    /// The value is what the request sent, or is built of it: a member of the
+    /// request's own values read off a holder (`req.body.user`,
+    /// `req.headers["x-user-id"]`, `ctx.request.query.as`), a local bound to
+    /// one, an object written in place that holds one, or an alternative that
+    /// may be one (`req.user || req.query.as`); and the row a call is asked for
+    /// by its own key with such a value ([`Collector::keyed_by_sent`]). What any
+    /// other call made of such a value is whatever the call does with it (a row
+    /// found by a key the caller was issued, a token verified), and is not read
+    /// here.
+    fn request_sent(&self, e: &Expression, depth: usize) -> bool {
+        if depth > 4 {
+            return false;
+        }
+        match peel(e) {
+            Expression::ObjectExpression(o) => o.properties.iter().any(|p| match p {
+                ObjectPropertyKind::ObjectProperty(p) => self.request_sent(&p.value, depth + 1),
+                ObjectPropertyKind::SpreadProperty(s) => self.request_sent(&s.argument, depth + 1),
+            }),
+            Expression::ConditionalExpression(c) => {
+                self.request_sent(&c.consequent, depth + 1)
+                    || self.request_sent(&c.alternate, depth + 1)
+            }
+            Expression::LogicalExpression(l) => {
+                self.request_sent(&l.left, depth + 1) || self.request_sent(&l.right, depth + 1)
+            }
+            Expression::AwaitExpression(a) => self.request_sent(&a.argument, depth + 1),
+            // A row the request names by its own key (`findUnique({ where: { id:
+            // req.headers["x-user-id"] } })`): whichever row the request chose.
+            Expression::CallExpression(c) => c
+                .arguments
+                .iter()
+                .any(|a| a.as_expression().is_some_and(|x| self.keyed_by_sent(x, 0))),
+            Expression::NewExpression(_) => false,
+            x => {
+                // Read off one of the function's own parameters under a key of
+                // the request's values, directly or through a local.
+                if self.param_root(x).is_some_and(|(_, at)| {
+                    at.split('.').skip(1).any(|k| REQUEST_VALUES.contains(&k))
+                }) {
+                    return true;
+                }
+                // The same off a holder that is no parameter of the function the
+                // walk started on (a callback's `req`).
+                let mut segs: Vec<&str> = Vec::new();
+                let mut cur = x;
+                let root = loop {
+                    match cur {
+                        Expression::StaticMemberExpression(m) => {
+                            segs.push(m.property.name.as_str());
+                            cur = peel(&m.object);
+                        }
+                        Expression::ComputedMemberExpression(m) => cur = peel(&m.object),
+                        Expression::Identifier(id) => break self.symbol_of(id),
+                        _ => break None,
+                    }
+                };
+                root.and_then(|s| self.flow_param(s)).is_some_and(|name| {
+                    (HOLDER_PARAMS.contains(&name.as_str())
+                        || segs.last().is_some_and(|f| HOLDER_MEMBERS.contains(f)))
+                        && segs.iter().any(|k| REQUEST_VALUES.contains(k))
+                })
+            }
+        }
+    }
+
+    /// An object handed to a call that names a row by its own key
+    /// ([`RECORD_KEYS`], `_id`) with what the request sent, at any depth (`{
+    /// where: { id } }` with `id` read off a header): the key of a record
+    /// identifies it and is no secret, so the row is whichever the request chose.
+    /// Not where the value is the credential the request carries (a session
+    /// looked up by the cookie's value): that is what the request was issued.
+    fn keyed_by_sent(&self, e: &Expression, depth: usize) -> bool {
+        let Expression::ObjectExpression(o) = peel(e) else {
+            return false;
+        };
+        depth < 4
+            && o.properties.iter().any(|p| {
+                let ObjectPropertyKind::ObjectProperty(p) = p else {
+                    return false;
+                };
+                let record_key = !p.computed
+                    && super::key_name(&p.key)
+                        .is_some_and(|k| RECORD_KEYS.contains(&k.as_str()) || k == "_id");
+                (record_key
+                    && !matches!(peel(&p.value), Expression::ObjectExpression(_))
+                    && self.request_sent(&p.value, 1)
+                    && !self.credential_read(&p.value))
+                    || self.keyed_by_sent(&p.value, depth + 1)
+            })
     }
 
     /// What the function the walk started on returns.
