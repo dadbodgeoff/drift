@@ -245,6 +245,30 @@ drift security --diff-base origin/main --fail-on unguarded-reaching,public
 
 They are listed under "CI workflows that run what an outsider wrote" (`workflows` in `--json`) and are a kind of the baseline (`workflow`). Nothing is run, and no action's own code is read.
 
+### Dependencies nothing fixes
+
+A dependency named by a version of a registry, with a lockfile that records its digest, is the code that was reviewed every time it installs. `drift security` reads the manifests for what they say instead:
+
+- **A repository named by a branch, a tag or nothing** (`mutable_git`): `"lib": "github:someone/lib"`, `lib @ git+https://host/someone/lib@main`, `lib = { git = "..." }`, `RUN pip install git+https://host/someone/lib`. What installs is whatever its owner pushes next. Not listed where the name is a full commit, or where a lockfile beside the manifest or above it records the commit that was resolved for that repository.
+- **An archive at a URL with no digest** (`unpinned_url`): `"lib": "https://host/lib.tgz"`, a wheel's URL in a requirements file with no `--hash`, `ADD https://host/tool /bin/tool` in a Dockerfile with no `--checksum`. Not listed where a lockfile records the URL with a digest.
+- **A source over plain HTTP, or with the certificate check off** (`plain_http`): `registry=http://...`, `--index-url http://...`, `--trusted-host`, `strict-ssl=false`, `verify_ssl = false`. A source on the machine itself (`localhost`) is not listed.
+- **A second package index beside the first** (`second_index`): `--extra-index-url`. pip takes a name from whichever index has the higher version, so a name meant for one index can be answered by the other.
+- **A download handed to an interpreter** (`piped_download`) in a Dockerfile's `RUN` or in a script `package.json` runs on install (`preinstall`, `install`, `postinstall`, `prepare`).
+
+Read: `package.json` with the npm, Yarn, pnpm and Bun lockfiles, `.npmrc`, `.yarnrc.yml`; `requirements*.txt`, `constraints*.txt` and the files of a `requirements` directory; `pyproject.toml` (PEP 508 strings, Poetry and uv tables) and `Pipfile` with their lockfiles; `Cargo.toml` with `Cargo.lock`; Dockerfiles. A path of the repository (`file:`, `workspace:`, `path = "..."`) is the repository's own code and is not listed. They are listed under "Dependencies installed from a source nothing fixes" (`dependencies` in `--json`) and are a kind of the baseline (`dependency`). Nothing is installed and nothing outside the repository is read: whether a published version is known to be vulnerable is another tool's question.
+
+### What the Kubernetes manifests open
+
+Drift does not read Kubernetes as a deployment of the repository's code: which image is built from which directory is not in the manifests, so a route's exposure stays unknown while they are there. What the manifests say of the cluster itself is read, object by object:
+
+- **A path from outside the cluster** (`ingress`): each rule of an `Ingress`, a Gateway API route (`backendRefs`) or an OpenShift `Route`, with the Service it sends to and the workloads that Service selects: `app.example.com/api to Service web:80, selecting Deployment/web (example/web:1.0)`.
+- **A Service with an address outside the cluster** (`public_service`): `type: LoadBalancer` or `NodePort`, or `externalIPs`, with the workloads it selects. A load balancer an annotation says is internal is not listed.
+- **A workload given the node it runs on** (`host_access`): the host's network, process or IPC namespace, a directory of the host mounted in, a port of the host, a privileged container, capabilities added. Where a Service or a path reaches the workload from outside, the row says which.
+- **A Secret whose values are written in the file** (`secret_value`): the keys are named, never the values. A value that is a placeholder to substitute (`${NAME}`) is not one, and a sealed or external secret is another kind.
+- **A role over everything, or a binding to callers with no credential** (`wide_role`): a rule with every verb on every resource, a binding to such a role (or to the cluster's own `cluster-admin`), a binding whose subject is `system:anonymous` or `system:unauthenticated`.
+
+A workload is any object with a pod template, whatever its kind, so an operator's own kinds (a `Rollout`) are read as a `Deployment` is. Objects are matched within a namespace, and where a repository holds the same application more than once (a base, an overlay, a release file) a Service selects the nearest manifests that match: its file, then its directory, then the rest. A file that does not parse as YAML or JSON is skipped, so a Helm template is not read until Helm has rendered it. They are listed under "What the Kubernetes manifests open" (`cluster` in `--json`) and are a kind of the baseline (`kubernetes`).
+
 ### The baseline: what is there is accepted, what is added is seen
 
 `--diff-base` needs a commit to compare with. The baseline asks the same question of a file the repository keeps:
@@ -254,7 +278,7 @@ drift security --write-baseline   # once, and whenever a finding is accepted
 drift security --ratchet          # in CI: exit 1 when something not in it is found
 ```
 
-`--write-baseline` writes `.drift/security.lock`: one line for every finding the repository has now. A finding is an entry point where Drift found no guard (`no-guard`), one that reaches a risky operation with no guard found (`unguarded-reaching`), one that lacks a guard or a scope its siblings share (`guard-gap`, `scope-gap`), one that signs the caller in and checks nothing of who they are, by the practice map (`no-authorization`), a risky operation (`risky`), a CI workflow step that runs what an outsider wrote (`workflow`), a client file reaching server-only code (`leak`). Each is keyed by its handler, method and route, never by its line, so a file that is edited keeps its findings. Entry points whose guard is unknown are not findings: what was not read may be the guard.
+`--write-baseline` writes `.drift/security.lock`: one line for every finding the repository has now. A finding is an entry point where Drift found no guard (`no-guard`), one that reaches a risky operation with no guard found (`unguarded-reaching`), one that lacks a guard or a scope its siblings share (`guard-gap`, `scope-gap`), one that signs the caller in and checks nothing of who they are, by the practice map (`no-authorization`), a risky operation (`risky`), a CI workflow step that runs what an outsider wrote (`workflow`), a dependency installed from a source nothing fixes (`dependency`), something a Kubernetes manifest opens (`kubernetes`), a client file reaching server-only code (`leak`). Each is keyed by its handler, method and route, never by its line, so a file that is edited keeps its findings. Entry points whose guard is unknown are not findings: what was not read may be the guard.
 
 `--ratchet` reads the inventory again and reports what is found and is not in the file, and what is in the file and is gone. It exits 1 when anything was added (`--fail-on <kinds>` narrows that to the kinds named).
 

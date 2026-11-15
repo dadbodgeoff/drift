@@ -186,6 +186,115 @@ fn a_workflow_that_runs_what_an_outsider_wrote_is_a_finding() {
     assert!(said.contains("script_injection"), "{said}");
 }
 
+/// A dependency a manifest names by a branch of a repository, with no lockfile
+/// that records its commit, is a finding of the inventory and of the baseline;
+/// the lockfile that records the commit takes it away.
+#[test]
+fn a_dependency_nothing_fixes_is_a_finding_until_a_lockfile_records_it() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    write(root, &format!("{HEAD}{BEFORE}"));
+    assert!(
+        drift(root, &["security", "--write-baseline"])
+            .status
+            .success()
+    );
+    std::fs::write(
+        root.join("package.json"),
+        "{\n  \"dependencies\": {\n    \"express\": \"^4.19.0\",\n    \"moving\": \"github:someone/moving#main\"\n  }\n}\n",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("Dockerfile"),
+        "FROM node:22\nRUN curl -fsSL https://example.com/install.sh | sh\n",
+    )
+    .unwrap();
+    let listed = drift(root, &["security"]);
+    let said = String::from_utf8_lossy(&listed.stdout);
+    assert!(
+        said.contains("Dependencies installed from a source nothing fixes"),
+        "{said}"
+    );
+    assert!(
+        said.contains("package.json:4  moving is a repository named by a branch"),
+        "{said}"
+    );
+    assert!(
+        said.contains("Dockerfile:2  hands a download to an interpreter"),
+        "{said}"
+    );
+    let json = drift(root, &["security", "--json"]);
+    let v: serde_json::Value = serde_json::from_slice(&json.stdout).unwrap();
+    let kinds: Vec<&str> = v["dependencies"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|d| d["kind"].as_str().unwrap())
+        .collect();
+    assert_eq!(kinds, ["mutable_git", "piped_download"], "{v}");
+    let added = drift(root, &["security", "--ratchet", "--fail-on", "dependency"]);
+    let said = String::from_utf8_lossy(&added.stdout);
+    assert_eq!(added.status.code(), Some(1), "{said}");
+    assert!(said.contains("mutable_git in package.json"), "{said}");
+    // The lockfile records the commit that was resolved: what installs is fixed.
+    std::fs::write(
+        root.join("package-lock.json"),
+        "{\n  \"packages\": {\n    \"node_modules/moving\": {\n      \"resolved\": \"git+ssh://git@github.com/someone/moving.git#0123456789abcdef0123456789abcdef01234567\"\n    }\n  }\n}\n",
+    )
+    .unwrap();
+    let json = drift(root, &["security", "--json"]);
+    let v: serde_json::Value = serde_json::from_slice(&json.stdout).unwrap();
+    let kinds: Vec<&str> = v["dependencies"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|d| d["kind"].as_str().unwrap())
+        .collect();
+    assert_eq!(kinds, ["piped_download"], "{v}");
+}
+
+/// What a Kubernetes manifest opens is a finding of the inventory and of the
+/// baseline: a path from outside, with the workload behind it.
+#[test]
+fn what_a_kubernetes_manifest_opens_is_a_finding() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    write(root, &format!("{HEAD}{BEFORE}"));
+    std::fs::create_dir_all(root.join("k8s")).unwrap();
+    std::fs::write(
+        root.join("k8s/web.yaml"),
+        "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web\nspec:\n  template:\n    metadata:\n      labels: {app: web}\n    spec:\n      containers:\n        - name: web\n          image: example/web:1\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: web\nspec:\n  selector: {app: web}\n  ports: [{port: 80}]\n",
+    )
+    .unwrap();
+    assert!(
+        drift(root, &["security", "--write-baseline"])
+            .status
+            .success()
+    );
+    // A Service inside the cluster opens nothing.
+    let quiet = drift(root, &["security", "--ratchet", "--fail-on", "kubernetes"]);
+    assert!(quiet.status.success());
+    std::fs::write(
+        root.join("k8s/ingress.yaml"),
+        "apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: front\nspec:\n  rules:\n    - host: app.example.com\n      http:\n        paths:\n          - path: /\n            pathType: Prefix\n            backend:\n              service:\n                name: web\n                port: {number: 80}\n",
+    )
+    .unwrap();
+    let listed = drift(root, &["security"]);
+    let said = String::from_utf8_lossy(&listed.stdout);
+    assert!(
+        said.contains("What the Kubernetes manifests open"),
+        "{said}"
+    );
+    assert!(
+        said.contains("k8s/ingress.yaml:4  Ingress/front routes requests from outside the cluster: app.example.com/ to Service web:80, selecting Deployment/web (example/web:1)"),
+        "{said}"
+    );
+    let added = drift(root, &["security", "--ratchet", "--fail-on", "kubernetes"]);
+    let said = String::from_utf8_lossy(&added.stdout);
+    assert_eq!(added.status.code(), Some(1), "{said}");
+    assert!(said.contains("ingress in k8s/ingress.yaml"), "{said}");
+}
+
 #[test]
 fn drift_check_fails_on_what_the_committed_baseline_does_not_hold() {
     let dir = tempfile::tempdir().unwrap();

@@ -9,7 +9,9 @@
 //! accepted as it is, and nothing more of it is let in without a person seeing
 //! it: a route with no guard, a route lacking the guard or the scope its siblings
 //! share, an unguarded route reaching a risky operation, a risky operation, a
-//! client file reaching server-only code.
+//! CI workflow step that runs what an outsider wrote, a dependency installed from
+//! a source nothing fixes, what a Kubernetes manifest opens, a client file reaching
+//! server-only code.
 //!
 //! Nothing here judges a finding. A finding a person accepts is added to the
 //! baseline by writing it again.
@@ -46,6 +48,11 @@ pub const KINDS: &[(&str, &str)] = &[
         "workflow",
         "CI workflow step(s) that run what an outsider wrote",
     ),
+    (
+        "dependency",
+        "dependenc(ies) installed from a source nothing fixes",
+    ),
+    ("kubernetes", "thing(s) the Kubernetes manifests open"),
     ("leak", "client file(s) reaching server-only code"),
 ];
 
@@ -172,6 +179,23 @@ pub fn findings(inv: &Inventory, facts: &drift_core::RepoFacts) -> Findings {
             format!("{} in {} job {}: {}", w.kind, w.path, w.job, w.detail),
             &w.path,
             w.line,
+        );
+    }
+    for d in &inv.dependencies {
+        // Keyed by what is installed and from where, never by its line.
+        add(
+            "dependency",
+            format!("{} in {}: {} {}", d.kind, d.path, d.name, d.detail),
+            &d.path,
+            d.line,
+        );
+    }
+    for c in &inv.cluster {
+        add(
+            "kubernetes",
+            format!("{} in {}: {} {}", c.kind, c.path, c.object, c.detail),
+            &c.path,
+            c.line,
         );
     }
     for l in &inv.client_leaks {

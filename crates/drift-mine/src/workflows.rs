@@ -199,7 +199,7 @@ fn program(command: &str) -> &str {
 /// from a downloader into one (`curl -fsSL https://x | sudo bash`), or an
 /// interpreter given what a downloader prints (`bash <(curl ...)`, `sh -c "$(curl
 /// ...)"`). The line it is on, as written.
-fn piped_download(run: &str) -> Option<&str> {
+pub(crate) fn piped_download(run: &str) -> Option<&str> {
     for line in run.lines() {
         let line = line.trim();
         if line.starts_with('#') {

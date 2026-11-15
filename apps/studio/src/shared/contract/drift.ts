@@ -1428,6 +1428,10 @@ export interface Inventory {
   }[];
   /** What the repository's CI workflows do with what an outsider controls: a pull request's code checked out where the repository's secrets are (`untrusted_checkout`), text of the event interpolated into a shell step (`script_injection`) (newer drift; absent when empty). Newer kinds: `unpinned_action` (another owner's action named by a tag, in a job that holds secrets or may write) and `piped_download` (a download handed to an interpreter). */
   workflows?: { kind: string; path: string; line: number; job: string; detail: string }[];
+  /** What the repository's manifests install that nothing fixes: a repository named by a branch, a tag or nothing with no lockfile recording its commit (`mutable_git`), an archive at a URL with no digest (`unpinned_url`), a source over plain HTTP or with the certificate check off (`plain_http`), a second package index (`second_index`), a download handed to an interpreter in an image build or an install script (`piped_download`). `name` is empty where the file says it of every dependency. Absent when there are none. */
+  dependencies?: { kind: string; path: string; line: number; name: string; detail: string }[];
+  /** What the repository's Kubernetes manifests open: a path from outside the cluster (`ingress`), a Service with an address outside it (`public_service`), a workload given the node it runs on (`host_access`), a Secret whose values are written in the file (`secret_value`, keys only), a role over everything or a binding to callers with no credential (`wide_role`). `object` is `Kind/name`, with the namespace first where the object names one. Absent when there are none. */
+  cluster?: { kind: string; path: string; line: number; object: string; detail: string }[];
   /** What could not be read around the inventory: a `.drift/conventions.yaml` that does not parse, so shared guards come without their `convention` (newer drift; absent when empty; older drift exited 2 instead). */
   warnings?: string[];
 }

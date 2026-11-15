@@ -3896,6 +3896,21 @@ pub struct Inventory {
     /// when empty.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub workflows: Vec<crate::workflows::WorkflowFinding>,
+    /// What the repository's manifests install that nothing fixes
+    /// ([`crate::dependencies`]): a repository named by a branch, an archive at a
+    /// URL with no digest, a source over plain HTTP, a second package index, a
+    /// download handed to an interpreter while an image is built or a package is
+    /// installed. Filled by the caller, which knows where the repository is. Not
+    /// serialised when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub dependencies: Vec<crate::dependencies::DependencyFinding>,
+    /// What the repository's Kubernetes manifests open ([`crate::kubernetes`]): a
+    /// path from outside the cluster, a Service with an address outside it, a
+    /// workload given the node it runs on, a Secret whose values are written in the
+    /// file, a role over everything. Filled by the caller, which knows where the
+    /// repository is. Not serialised when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub cluster: Vec<crate::kubernetes::ClusterFinding>,
     /// What could not be read around the inventory, so a part of it is missing (a
     /// `.drift/conventions.yaml` that does not parse: shared guards are listed without
     /// their conventions). Not serialised when empty.
@@ -8837,6 +8852,69 @@ pub fn render_at(
         }
         if workflows.len() > max_rows {
             let _ = writeln!(out, "  ... and {} more", workflows.len() - max_rows);
+        }
+    }
+    let dependencies: Vec<&crate::dependencies::DependencyFinding> = inv
+        .dependencies
+        .iter()
+        .filter(|d| only.is_none_or(|o| o.contains(&d.path)))
+        .collect();
+    if !dependencies.is_empty() {
+        let _ = writeln!(out, "\nDependencies installed from a source nothing fixes");
+        for d in dependencies.iter().take(max_rows) {
+            let what = match d.kind.as_str() {
+                "mutable_git" => {
+                    "is a repository named by a branch, a tag or nothing, and no lockfile records its commit"
+                }
+                "unpinned_url" => "is an archive at a URL, with no digest",
+                "plain_http" => "is fetched over plain HTTP or with the certificate check off",
+                "second_index" => {
+                    "adds a second package index: a name meant for one can be answered by the other"
+                }
+                _ => "hands a download to an interpreter",
+            };
+            let name = match d.name.is_empty() {
+                true => String::new(),
+                false => format!("{} ", sanitize(&d.name, 80)),
+            };
+            let _ = writeln!(
+                out,
+                "  {}:{}  {name}{what}: {}",
+                sanitize(&d.path, 160),
+                d.line,
+                sanitize(&d.detail, 120)
+            );
+        }
+        if dependencies.len() > max_rows {
+            let _ = writeln!(out, "  ... and {} more", dependencies.len() - max_rows);
+        }
+    }
+    let cluster: Vec<&crate::kubernetes::ClusterFinding> = inv
+        .cluster
+        .iter()
+        .filter(|c| only.is_none_or(|o| o.contains(&c.path)))
+        .collect();
+    if !cluster.is_empty() {
+        let _ = writeln!(out, "\nWhat the Kubernetes manifests open");
+        for c in cluster.iter().take(max_rows) {
+            let what = match c.kind.as_str() {
+                "ingress" => "routes requests from outside the cluster",
+                "public_service" => "has an address outside the cluster",
+                "host_access" => "is given the node it runs on",
+                "secret_value" => "is a Secret whose values are written in the file",
+                _ => "is a role over everything, or bound to callers with no credential",
+            };
+            let _ = writeln!(
+                out,
+                "  {}:{}  {} {what}: {}",
+                sanitize(&c.path, 160),
+                c.line,
+                sanitize(&c.object, 100),
+                sanitize(&c.detail, 200)
+            );
+        }
+        if cluster.len() > max_rows {
+            let _ = writeln!(out, "  ... and {} more", cluster.len() - max_rows);
         }
     }
     if !scope_gaps.is_empty() {

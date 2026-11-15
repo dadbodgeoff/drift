@@ -531,7 +531,7 @@ enum Command {
         /// (`.drift/security.lock`), and those of it that are gone, with no commit
         /// to compare with. Exits 1 when a finding was added (with --fail-on, only
         /// for the kinds named: `unguarded-reaching`, `no-guard`, `guard-gap`,
-        /// `scope-gap`, `no-authorization`, `risky`, `workflow`, `leak`, or `any`): what the repository has today
+        /// `scope-gap`, `no-authorization`, `risky`, `workflow`, `dependency`, `kubernetes`, `leak`, or `any`): what the repository has today
         /// is accepted as it is, and nothing more of it comes in unseen.
         #[arg(long, conflicts_with = "diff_base")]
         ratchet: bool,
@@ -2116,6 +2116,8 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 "no-authorization",
                 "risky",
                 "workflow",
+                "dependency",
+                "kubernetes",
                 "leak",
                 "public",
                 "any",
@@ -2127,9 +2129,12 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 anyhow::bail!("--fail-on needs --diff-base or --ratchet");
             }
             if diff_base.is_some()
-                && let Some(k) = fail_on
-                    .iter()
-                    .find(|k| matches!(k.as_str(), "scope-gap" | "no-authorization" | "workflow"))
+                && let Some(k) = fail_on.iter().find(|k| {
+                    matches!(
+                        k.as_str(),
+                        "scope-gap" | "no-authorization" | "workflow" | "dependency" | "kubernetes"
+                    )
+                })
             {
                 anyhow::bail!(
                     "--fail-on {k} is read against the baseline (--ratchet), not against a commit"
@@ -2146,6 +2151,8 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 drift_mine::security::Boundaries::load(&cli.root),
             );
             inv.workflows = drift_mine::workflows::read(root);
+            inv.dependencies = drift_mine::dependencies::read(root);
+            inv.cluster = drift_mine::kubernetes::read(root);
             // Each shared guard, linked to the convention that says the same (accepted
             // or proposed), when the project has conventions. A policy that cannot be
             // read only loses the links: the inventory is the repository's, not the
@@ -3900,6 +3907,8 @@ fn check_security(
         drift_mine::security::Boundaries::load(&cli.root),
     );
     inv.workflows = drift_mine::workflows::read(root);
+    inv.dependencies = drift_mine::dependencies::read(root);
+    inv.cluster = drift_mine::kubernetes::read(root);
     let found = baseline_findings(root, facts, &inv)?;
     Ok(Some(drift_mine::ratchet::compare(&found, &baseline)))
 }
