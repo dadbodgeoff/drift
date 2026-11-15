@@ -667,6 +667,19 @@ pub fn read<'a>(cx: &Cx<'a>, unit: &UnitRef<'a>) -> Reading {
         {
             continue;
         }
+        // TypeScript: the call that built the route's handler, where its callee
+        // hands back the function written in it and that function serves the
+        // request, is the handler's body, read above; not a middleware of the
+        // route. One that calls a continuation is a middleware wherever it stands.
+        if crate::guard_position::applies(sfile)
+            && crate::guard_position::builds_handler(cx, m)
+            && s.calls.iter().any(|c| {
+                c.strip_suffix("()(ref)")
+                    .is_some_and(|made_by| crate::mine::norm_ref(made_by) == crate::mine::norm_ref(m))
+            })
+        {
+            continue;
+        }
         match read_route_middleware(cx, sfile, s, m) {
             AppMiddleware::Guard(m, source) => r.add("middleware", &m, source),
             AppMiddleware::MayGuard(reason, m) => r.call_unknown(reason, m),

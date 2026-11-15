@@ -15,7 +15,7 @@ use oxc_span::{GetSpan, SourceType};
 use serde::{Deserialize, Serialize};
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 78;
+pub const LOWERING_VERSION: u32 = 79;
 
 /// What an options object gives a Fastify route: for each hook it names
 /// (`onRequest`, `preHandler`), what that hook runs.
@@ -336,6 +336,12 @@ pub struct RawSymbol {
     /// build read.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub listed_unwraps: Vec<RawRef>,
+    /// Routes only: the calls the listed reading holds beside `calls`, as `calls`
+    /// writes them: the reference to a function written in place in what the
+    /// call that built the handler was handed (`wrap(async (req, res) => { ...
+    /// })`), which is a symbol of that reading alone ([`RawSymbol::in_place`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub listed_calls: Vec<RawRef>,
     /// The calls whose shape is recorded ([`drift_core::Listed::guard_calls`]):
     /// those written at a guard position of a route, and those a body makes of an
     /// export of a package on the guard lists ([`drift_core::guard_lists::shaped`]).
@@ -359,6 +365,11 @@ pub struct RawSymbol {
     /// [`drift_core::SymbolCalls::given_credential`].
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub given_credential: Vec<RawRef>,
+    /// The verifying callees every call of which stands in a branch taken only
+    /// where what another call handed back is there, each after that callee
+    /// ([`drift_core::controls::GIVEN_RESULT_OF`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub given_result: Vec<(RawRef, RawRef)>,
     /// [`drift_core::SymbolCalls::verifies`].
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub verifies: Vec<String>,
@@ -1145,6 +1156,10 @@ struct Lowerer<'s> {
     line_starts: Vec<u32>,
     /// Local binding name -> (specifier, imported name).
     imports: BTreeMap<String, (String, String)>,
+    /// The module's own names for the runtime's global object (`const g = global as
+    /// typeof globalThis & { io: Server }`), each with the name it stands for: a
+    /// reference through one is a reference through the global.
+    global_names: BTreeMap<String, String>,
     out: RawFile,
     /// Accumulates top-level statements that are not declarations.
     module_sym: Option<RawSymbol>,
@@ -1295,6 +1310,9 @@ struct Lowerer<'s> {
     /// Of the parameters annotated with an object type literal, the members it gives a
     /// built-in value's type ([`builtin_members`]: `path` of `params: { path: string[] }`).
     param_builtins: HashMap<SymbolId, BTreeSet<String>>,
+    /// The parameters annotated with a type of plain data ([`data_type`]: `email:
+    /// string | RegExp`): none is the request, the response or the continuation.
+    data_params: HashSet<SymbolId>,
 }
 
 fn module_export_name(n: &ModuleExportName) -> String {
@@ -1792,6 +1810,62 @@ impl<'a> Visit<'a> for NextRewrites {
     }
 }
 
+/// The two headers HTTP gives a credential.
+fn credential_header(name: &str) -> bool {
+    name.eq_ignore_ascii_case("cookie") || name.eq_ignore_ascii_case("authorization")
+}
+
+/// `e` is the headers of a request: a member of that name, or a local taken
+/// apart from one under it.
+fn headers_of(e: &Expression, scoping: &Scoping, header_locals: &HashSet<SymbolId>) -> bool {
+    match unwrap_expr(e) {
+        Expression::StaticMemberExpression(m) => m.property.name == "headers",
+        Expression::Identifier(id) => id
+            .reference_id
+            .get()
+            .and_then(|r| scoping.get_reference(r).symbol_id())
+            .is_some_and(|s| header_locals.contains(&s)),
+        _ => false,
+    }
+}
+
+/// `headers.get("cookie")`, `req.header("Authorization")`.
+fn header_getter(m: &StaticMemberExpression, call: &CallExpression) -> bool {
+    matches!(m.property.name.as_str(), "get" | "header")
+        && matches!(
+            call.arguments.first().and_then(|a| a.as_expression()).map(unwrap_expr),
+            Some(Expression::StringLiteral(l)) if l.value.as_str().is_some_and(credential_header)
+        )
+}
+
+/// The locals a pattern binds to the `headers` of what it takes apart.
+fn header_bindings(p: &BindingPattern, out: &mut HashSet<SymbolId>) {
+    let BindingPattern::ObjectPattern(o) = p else {
+        return;
+    };
+    for prop in &o.properties {
+        let value = match &prop.value {
+            BindingPattern::AssignmentPattern(a) => &a.left,
+            v => v,
+        };
+        match value {
+            BindingPattern::BindingIdentifier(b) if matches!(&prop.key, PropertyKey::StaticIdentifier(k) if k.name == "headers") =>
+            {
+                out.extend(b.symbol_id.get());
+            }
+            v => header_bindings(v, out),
+        }
+    }
+}
+
+/// The names the language and its runtimes give the global object.
+const GLOBAL_OBJECTS: &[&str] = &["globalThis", "global", "window", "self"];
+
+/// True when the declaration binds for good (`const`).
+fn v_is_const(v: Option<&VariableDeclaration>) -> bool {
+    v.is_some_and(|v| v.kind == VariableDeclarationKind::Const)
+}
+
 fn lit(s: &StringLiteral) -> String {
     s.value.display().to_string()
 }
@@ -2079,6 +2153,7 @@ impl<'s> Lowerer<'s> {
             typescript: false,
             schema_values: BTreeSet::new(),
             plain_values: BTreeSet::new(),
+            global_names: BTreeMap::new(),
             object_keys_of: BTreeMap::new(),
             env_consts: BTreeMap::new(),
             env_helpers: BTreeMap::new(),
@@ -2094,6 +2169,7 @@ impl<'s> Lowerer<'s> {
             lowered_sites: HashSet::new(),
             params: HashMap::new(),
             param_builtins: HashMap::new(),
+            data_params: HashSet::new(),
         }
     }
 
@@ -2230,6 +2306,9 @@ impl<'s> Lowerer<'s> {
                             spec: spec.clone(),
                             name: imported.clone(),
                         });
+                    }
+                    if let Some(global) = self.global_names.get(name) {
+                        return Some(RawBase::Global(global.clone()));
                     }
                     Some(RawBase::Local(name.to_string()))
                 } else {
@@ -2389,6 +2468,28 @@ impl<'s> Lowerer<'s> {
                 }
             }
         }
+        // The module's own names for the global object.
+        for stmt in &program.body {
+            let decl = match stmt {
+                Statement::VariableDeclaration(v) => Some(&**v),
+                Statement::ExportDeclaration(e) => match &e.declaration {
+                    Declaration::VariableDeclaration(v) => Some(&**v),
+                    _ => None,
+                },
+                _ => None,
+            };
+            for d in decl.into_iter().flat_map(|v| &v.declarations) {
+                if v_is_const(decl)
+                    && let (BindingPattern::BindingIdentifier(id), Some(init)) = (&d.id, &d.init)
+                    && let Expression::Identifier(of) = unwrap_expr(init)
+                    && GLOBAL_OBJECTS.contains(&of.name.as_str())
+                    && matches!(self.resolve_ident(of), Some(RawBase::Global(_)))
+                {
+                    self.global_names
+                        .insert(id.name.to_string(), of.name.to_string());
+                }
+            }
+        }
         // A re-export (`export { x } from "s"`, `export * from "s"`, `export * as ns
         // from "s"`) is a static import of "s", as Python's `from s import x` in an
         // `__init__` is: the module loads with the file, however else it is loaded.
@@ -2502,13 +2603,18 @@ impl<'s> Lowerer<'s> {
             l: self,
             found: HashMap::new(),
             builtins: HashMap::new(),
+            data: HashSet::new(),
         };
         params.visit_program(program);
         let ParamFinder {
-            found, builtins, ..
+            found,
+            builtins,
+            data,
+            ..
         } = params;
         self.params = found;
         self.param_builtins = builtins;
+        self.data_params = data;
         for stmt in &program.body {
             self.lower_statement(stmt);
         }
@@ -4838,11 +4944,13 @@ impl RawSymbol {
             result_uses: vec![],
             rejection_goes_on: false,
             listed_unwraps: vec![],
+            listed_calls: vec![],
             guard_calls: vec![],
             hands_on: false,
             returns_function: false,
             caught: vec![],
             given_credential: vec![],
+            given_result: vec![],
             caught_params: vec![],
             verifies: vec![],
             caller_args: vec![],
@@ -4930,15 +5038,58 @@ struct Collector<'l, 's> {
     /// The locals bound to what a call or a lookup made of such a credential
     /// ([`Collector::credential_identity`]).
     cred_locals: HashSet<SymbolId>,
+    /// The locals bound to the `headers` of what they were taken apart from
+    /// (`({ headers }) => ...`, `const { headers } = req`).
+    header_locals: HashSet<SymbolId>,
+    /// The locals bound to a credential the request carries or a part of one, and
+    /// nothing else ([`Collector::sent_chain`]): absent where the credential is.
+    sent_locals: HashSet<SymbolId>,
+    /// Some `return` of the walk's own function gives such a value; some gives
+    /// anything else that is a value.
+    returns_sent: bool,
+    returns_not_sent: bool,
+    /// The locals bound for good to what a call handed back, with the callee
+    /// (`const token = tokenOf(req)`).
+    result_locals: HashMap<SymbolId, RawRef>,
+    /// The callees by whose value the enclosing branches are taken
+    /// ([`Collector::result_present`]), innermost last, and what is called in one,
+    /// with the callee the branch is by.
+    result_present: Vec<RawRef>,
+    called_with_result: BTreeSet<(RawRef, RawRef)>,
+    /// The calls that are a statement of their own under an `await`, by where they
+    /// start, and the callees with one.
+    await_sites: HashSet<u32>,
+    result_awaited: BTreeSet<RawRef>,
+    /// The functions written as the argument of a promise's own method on a
+    /// chain that is a statement nothing waits for (`load().then(tally).catch(()
+    /// => { throw new Error("...") })`), by where they start; how many of them
+    /// the walk is in; and whether a `throw` stands in one, and outside any.
+    /// What such a function throws rejects a promise nobody holds.
+    lost_fns: HashSet<u32>,
+    /// The body calls its continuation somewhere
+    /// ([`drift_core::controls::CONTINUES`]).
+    calls_on: bool,
+    in_lost: u32,
+    throw_lost: bool,
+    throw_kept: bool,
     /// Some `return` of the walk's own function gives such a value; some gives
     /// anything else that is a value.
     returns_cred: bool,
     returns_not_cred: bool,
+    /// Some `return` of the walk's own function gives plain data
+    /// ([`Collector::plain_chain`]); some gives anything else that is a value.
+    returns_plain: bool,
+    returns_not_plain: bool,
     /// [`RawSymbol::refuses_without`].
     refuses_without: BTreeSet<Vec<RawRef>>,
     /// [`RawSymbol::arg_sides`], [`RawSymbol::param_keys`].
     arg_sides: BTreeSet<(RawRef, Vec<(String, String)>)>,
     param_keys: BTreeSet<(RawRef, String, String)>,
+    /// The locals that hold plain data: a value built from literals and built-ins
+    /// only, or one read off such a local or off a binding of the file that holds
+    /// one (`const hit = table.find((row) => row.key === key)` of `const table =
+    /// [...]`). A method called on one is a built-in's, not a service's.
+    plain_locals: HashSet<SymbolId>,
     /// [`RawSymbol::loose_sides`].
     loose_sides: BTreeSet<(String, Vec<(String, String)>)>,
     /// The locals bound to what a call handed back, by the side that says so
@@ -5286,11 +5437,28 @@ impl<'l, 's> Collector<'l, 's> {
             own_locals: HashSet::new(),
             cred_seeds: HashSet::new(),
             cred_locals: HashSet::new(),
+            header_locals: HashSet::new(),
+            sent_locals: HashSet::new(),
+            returns_sent: false,
+            returns_not_sent: false,
+            result_locals: HashMap::new(),
+            result_present: Vec::new(),
+            called_with_result: BTreeSet::new(),
+            await_sites: HashSet::new(),
+            result_awaited: BTreeSet::new(),
+            lost_fns: HashSet::new(),
+            calls_on: false,
+            in_lost: 0,
+            throw_lost: false,
+            throw_kept: false,
             returns_cred: false,
             returns_not_cred: false,
+            returns_plain: false,
+            returns_not_plain: false,
             refuses_without: BTreeSet::new(),
             arg_sides: BTreeSet::new(),
             param_keys: BTreeSet::new(),
+            plain_locals: HashSet::new(),
             loose_sides: BTreeSet::new(),
             call_locals: HashMap::new(),
             param_locals: HashMap::new(),
@@ -5921,6 +6089,37 @@ impl<'l, 's> Collector<'l, 's> {
                 sym.listed_controls.push(c);
             }
         }
+        // What follows is said of a function: of what calling it does and gives. A
+        // class or an object holds functions and is called as none of them.
+        let callable = matches!(sym.kind, SymbolKind::Function | SymbolKind::Component);
+        // The body calls its continuation: it stands before what serves.
+        if callable && self.calls_on {
+            let c = drift_core::controls::CONTINUES.to_string();
+            if !sym.listed_controls.contains(&c) {
+                sym.listed_controls.push(c);
+            }
+        }
+        // Every `throw` of the body rejects a promise nothing waits for.
+        if callable && self.throw_lost && !self.throw_kept {
+            let c = drift_core::controls::THROWS_LOST.to_string();
+            if !sym.listed_controls.contains(&c) {
+                sym.listed_controls.push(c);
+            }
+        }
+        // Every value the function returns is a credential the request carries.
+        if callable && self.returns_sent && !self.returns_not_sent {
+            let c = drift_core::controls::RETURNS_SENT_CREDENTIAL.to_string();
+            if !sym.listed_controls.contains(&c) {
+                sym.listed_controls.push(c);
+            }
+        }
+        // Every value the function returns is plain data.
+        if callable && self.returns_plain && !self.returns_not_plain {
+            let c = drift_core::controls::RETURNS_DATA.to_string();
+            if !sym.listed_controls.contains(&c) {
+                sym.listed_controls.push(c);
+            }
+        }
         sym.made_fed_sinks
             .extend(std::mem::take(&mut self.made_fed_sinks));
         sym.made_passes
@@ -6015,15 +6214,24 @@ impl<'l, 's> Collector<'l, 's> {
         };
         // Of what is called only where a credential is present, what verifies.
         let without = std::mem::take(&mut self.called_without_credential);
+        let by_result = std::mem::take(&mut self.called_with_result);
+        let verifying = |r: &RawRef| {
+            matches!(&r.base, RawBase::Import { spec, .. }
+                if drift_core::guard_lists::verifying_package(spec)
+                    || drift_core::guard_lists::shaped(spec))
+        };
         sym.given_credential.extend(
             std::mem::take(&mut self.called_with_credential)
                 .into_iter()
-                .filter(|r| !without.contains(r))
-                .filter(|r| {
-                    matches!(&r.base, RawBase::Import { spec, .. }
-                        if drift_core::guard_lists::verifying_package(spec)
-                            || drift_core::guard_lists::shaped(spec))
-                }),
+                .filter(|r| !without.contains(r) && !by_result.iter().any(|(_, c)| c == r))
+                .filter(verifying),
+        );
+        // Of what is called only where what a call handed back is there, what
+        // verifies, with that callee.
+        sym.given_result.extend(
+            by_result
+                .into_iter()
+                .filter(|(_, r)| !without.contains(r) && verifying(r)),
         );
         let outside = std::mem::take(&mut self.called_outside);
         sym.caught.extend(
@@ -6051,6 +6259,9 @@ impl<'l, 's> Collector<'l, 's> {
         for r in &self.result_dropped {
             if !self.result_used.contains(r) {
                 sym.result_uses.push((r.clone(), "drop".to_string()));
+                if !self.result_awaited.contains(r) {
+                    sym.result_uses.push((r.clone(), "unawaited".to_string()));
+                }
             }
         }
         for (r, key) in &self.result_returned {
@@ -6507,7 +6718,15 @@ impl Collector<'_, '_> {
             }
         }
         let by_key = !keyed.is_empty();
-        given.extend(keyed);
+        // What an object says of itself (a spread or a computed key may have put
+        // anything under any key) is what its position holds: one word for the
+        // position, and never the caller's by a value written before the spread.
+        for (key, side) in keyed {
+            match given.iter_mut().find(|(at, _)| *at == key) {
+                Some(at) => at.1 = side,
+                None => given.push((key, side)),
+            }
+        }
         // A call given nothing but objects, lists and functions written in place
         // hands on no value by position: what it is given is read by its keys.
         let written_in_place = it.arguments.iter().all(|a| {
@@ -7843,6 +8062,7 @@ impl Collector<'_, '_> {
         let mut found = Vec::new();
         for item in &params.items {
             walk(&item.pattern, &mut found);
+            header_bindings(&item.pattern, &mut self.header_locals);
         }
         self.p.params.extend(found);
         self.flow_params(params);
@@ -8977,14 +9197,15 @@ impl Collector<'_, '_> {
         struct Reads<'x, 's> {
             scoping: &'s Scoping,
             seeds: &'x HashSet<SymbolId>,
+            header_locals: &'x HashSet<SymbolId>,
             found: bool,
         }
-        fn credential(name: &str) -> bool {
-            name.eq_ignore_ascii_case("cookie") || name.eq_ignore_ascii_case("authorization")
+        impl Reads<'_, '_> {
+            fn headers(&self, e: &Expression) -> bool {
+                headers_of(e, self.scoping, self.header_locals)
+            }
         }
-        fn headers(e: &Expression) -> bool {
-            matches!(unwrap_expr(e), Expression::StaticMemberExpression(m) if m.property.name == "headers")
-        }
+        use credential_header as credential;
         impl<'a> Visit<'a> for Reads<'_, '_> {
             fn visit_identifier_reference(&mut self, it: &IdentifierReference<'a>) {
                 self.found |= it
@@ -8995,13 +9216,13 @@ impl Collector<'_, '_> {
             }
             fn visit_static_member_expression(&mut self, it: &StaticMemberExpression<'a>) {
                 let name = it.property.name.as_str();
-                if name == "cookies" || (credential(name) && headers(&it.object)) {
+                if name == "cookies" || (credential(name) && self.headers(&it.object)) {
                     self.found = true;
                 }
                 walk::walk_static_member_expression(self, it);
             }
             fn visit_computed_member_expression(&mut self, it: &ComputedMemberExpression<'a>) {
-                if headers(&it.object)
+                if self.headers(&it.object)
                     && matches!(unwrap_expr(&it.expression), Expression::StringLiteral(l) if l.value.as_str().is_some_and(credential))
                 {
                     self.found = true;
@@ -9024,10 +9245,89 @@ impl Collector<'_, '_> {
         let mut reads = Reads {
             scoping: self.l.scoping,
             seeds: &self.cred_seeds,
+            header_locals: &self.header_locals,
             found: false,
         };
         reads.visit_expression(e);
         reads.found
+    }
+
+    /// `e` is a credential the request carries, a part of one, or what a method
+    /// of one made, and nothing else (`req.cookies.session`,
+    /// `headers.authorization.split(" ")[1]`, a local bound to one): a request
+    /// that carries no credential gives no value here. The cookies themselves
+    /// are not one: a request with none has an empty set of them.
+    fn sent_chain(&self, e: &Expression) -> bool {
+        let headers = |x: &Expression| headers_of(x, self.l.scoping, &self.header_locals);
+        let named = |x: &Expression| matches!(unwrap_expr(x), Expression::StringLiteral(l) if l.value.as_str().is_some_and(credential_header));
+        let member = |object: &Expression, name: &str, below: bool| {
+            (credential_header(name) && headers(object)) || (below && name == "cookies")
+        };
+        let mut at = peel(e);
+        // A member was read off what `at` is.
+        let mut below = false;
+        loop {
+            let (object, direct) = match at {
+                Expression::StaticMemberExpression(m) => (
+                    &m.object,
+                    member(&m.object, m.property.name.as_str(), below),
+                ),
+                Expression::ComputedMemberExpression(m) => {
+                    (&m.object, headers(&m.object) && named(&m.expression))
+                }
+                Expression::ChainExpression(c) => match &c.expression {
+                    ChainElement::StaticMemberExpression(m) => (
+                        &m.object,
+                        member(&m.object, m.property.name.as_str(), below),
+                    ),
+                    ChainElement::ComputedMemberExpression(m) => {
+                        (&m.object, headers(&m.object) && named(&m.expression))
+                    }
+                    // A method of the value: what it makes of a credential that
+                    // is not there is nothing.
+                    ChainElement::CallExpression(call) => match unwrap_expr(&call.callee) {
+                        Expression::StaticMemberExpression(m) => {
+                            (&m.object, header_getter(m, call))
+                        }
+                        _ => return false,
+                    },
+                    _ => return false,
+                },
+                Expression::CallExpression(call) => match unwrap_expr(&call.callee) {
+                    Expression::StaticMemberExpression(m) => (&m.object, header_getter(m, call)),
+                    _ => return false,
+                },
+                Expression::Identifier(id) => {
+                    return self
+                        .symbol_of(id)
+                        .is_some_and(|s| self.sent_locals.contains(&s));
+                }
+                _ => return false,
+            };
+            if direct {
+                return true;
+            }
+            below = true;
+            at = peel(object);
+        }
+    }
+
+    /// The callee by whose value the test holds: a local bound for good to what a
+    /// call handed back, read and nothing else (`const token = tokenOf(req); if
+    /// (token)`), or an `and` one operand of which is. Whether the callee hands
+    /// back a credential the request carries is its own fact
+    /// ([`drift_core::controls::RETURNS_SENT_CREDENTIAL`]).
+    fn result_present(&self, test: &Expression) -> Option<RawRef> {
+        match peel(test) {
+            Expression::LogicalExpression(l) if l.operator == LogicalOperator::And => self
+                .result_present(&l.left)
+                .or_else(|| self.result_present(&l.right)),
+            Expression::Identifier(id) => self
+                .symbol_of(id)
+                .and_then(|s| self.result_locals.get(&s))
+                .cloned(),
+            _ => None,
+        }
     }
 
     /// The parameter a value is reached from by its own members and their methods
@@ -9056,6 +9356,55 @@ impl Collector<'_, '_> {
                 }
                 _ => return None,
             };
+        }
+    }
+
+    /// What is iterated holds plain data: a value [`Collector::plain_chain`] reads
+    /// as plain, or a binding of the file that holds one.
+    fn plain_items(&self, e: &Expression) -> bool {
+        self.plain_chain(e)
+            || matches!(unwrap_expr(e), Expression::Identifier(id)
+            if matches!(
+                self.l.resolve_ident(id),
+                Some(RawBase::Local(name)) if self.l.plain_values.contains(&name)
+            ))
+    }
+
+    /// The value is plain data: built from literals and built-ins only
+    /// ([`Lowerer::plain_value`]), or read off, or handed back by a method of, a
+    /// local that holds plain data or a binding of the file that does
+    /// ([`Lowerer::plain_values`]).
+    fn plain_chain(&self, e: &Expression) -> bool {
+        if self.l.plain_value(e, 0) {
+            return true;
+        }
+        let mut at = unwrap_expr(e);
+        let mut read_on = false;
+        loop {
+            at = match at {
+                Expression::StaticMemberExpression(m) => unwrap_expr(&m.object),
+                Expression::ComputedMemberExpression(m) => unwrap_expr(&m.object),
+                Expression::CallExpression(c) => match unwrap_expr(&c.callee) {
+                    Expression::StaticMemberExpression(m) => unwrap_expr(&m.object),
+                    _ => return false,
+                },
+                Expression::Identifier(id) => {
+                    return match self.symbol_of(id) {
+                        Some(s) if self.plain_locals.contains(&s) => true,
+                        // A binding of the file itself is a function or a class as
+                        // easily as data: only what is read off it is data.
+                        _ => {
+                            read_on
+                                && matches!(
+                                    self.l.resolve_ident(id),
+                                    Some(RawBase::Local(name)) if self.l.plain_values.contains(&name)
+                                )
+                        }
+                    };
+                }
+                _ => return false,
+            };
+            read_on = true;
         }
     }
 
@@ -9208,6 +9557,16 @@ impl Collector<'_, '_> {
             self.returns_cred = true;
         } else {
             self.returns_not_cred = true;
+        }
+        if self.plain_items(e) {
+            self.returns_plain = true;
+        } else {
+            self.returns_not_plain = true;
+        }
+        if self.sent_chain(e) {
+            self.returns_sent = true;
+        } else {
+            self.returns_not_sent = true;
         }
     }
 
@@ -10424,6 +10783,35 @@ struct ParamFinder<'l, 's> {
     l: &'l Lowerer<'s>,
     found: HashMap<SymbolId, (String, Option<RawRef>)>,
     builtins: HashMap<SymbolId, BTreeSet<String>>,
+    data: HashSet<SymbolId>,
+}
+
+/// A type of plain data: a string, a number, a boolean, a bigint, a literal, an
+/// absent value, an array or a tuple, a built-in whose methods run no code of the
+/// repository ([`signals::PLAIN_TYPES`]), or a union of those.
+fn data_type(l: &Lowerer, t: &TSType) -> bool {
+    match t {
+        TSType::TSStringKeyword(_)
+        | TSType::TSNumberKeyword(_)
+        | TSType::TSBooleanKeyword(_)
+        | TSType::TSBigIntKeyword(_)
+        | TSType::TSNullKeyword(_)
+        | TSType::TSUndefinedKeyword(_)
+        | TSType::TSLiteralType(_)
+        | TSType::TSTemplateLiteralType(_)
+        | TSType::TSArrayType(_)
+        | TSType::TSTupleType(_) => true,
+        TSType::TSUnionType(u) => u.types.iter().all(|t| data_type(l, t)),
+        TSType::TSTypeOperatorType(o) => {
+            o.operator == TSTypeOperatorOperator::Readonly && data_type(l, &o.type_annotation)
+        }
+        TSType::TSTypeReference(r) => {
+            matches!(&r.type_name, TSTypeName::IdentifierReference(id)
+                if signals::PLAIN_TYPES.contains(&id.name.as_str())
+                    && matches!(l.resolve_ident(id), Some(RawBase::Global(_))))
+        }
+        _ => false,
+    }
 }
 
 /// The members an object type literal gives a built-in value's type: a string, a
@@ -10518,9 +10906,14 @@ impl<'a> Visit<'a> for ParamFinder<'_, '_> {
             (BindingPattern::BindingIdentifier(_), Some(t)) => builtin_members(&t.type_annotation),
             _ => BTreeSet::new(),
         };
+        let data = matches!((&it.pattern, &it.type_annotation),
+            (BindingPattern::BindingIdentifier(_), Some(t)) if data_type(self.l, &t.type_annotation));
         for (s, n) in found {
             if !builtins.is_empty() {
                 self.builtins.insert(s, builtins.clone());
+            }
+            if data {
+                self.data.insert(s);
             }
             self.found.insert(s, (n, ty.clone()));
         }
@@ -11734,6 +12127,9 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             && !matches!(r.base, RawBase::Global(_))
         {
             if self.drop_sites.contains(&it.span.start) {
+                if self.await_sites.contains(&it.span.start) {
+                    self.result_awaited.insert(r.clone());
+                }
                 self.result_dropped.insert(r);
             } else {
                 self.result_used.insert(r);
@@ -11900,8 +12296,12 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             }
             if self.cred_present > 0 {
                 self.called_with_credential.insert(r.clone());
-            } else {
+            } else if self.result_present.is_empty() {
                 self.called_without_credential.insert(r.clone());
+            } else {
+                for by in &self.result_present {
+                    self.called_with_result.insert((by.clone(), r.clone()));
+                }
             }
             self.calls.insert(r);
         } else {
@@ -11984,7 +12384,9 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
                 // callback over data is called with ([`Collector::param_values`]).
                 let handed = |id: &IdentifierReference| {
                     self.symbol_of(id).is_some_and(|s| {
-                        self.l.params.contains_key(&s) && !self.param_values.contains_key(&s)
+                        self.l.params.contains_key(&s)
+                            && !self.param_values.contains_key(&s)
+                            && !self.l.data_params.contains(&s)
                     })
                 };
                 let given_param = it.arguments.iter().any(|a| match a {
@@ -12007,8 +12409,9 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
                     && named.is_none()
                     && hands_value_on(it)
                     && matches!(root, Expression::Identifier(id)
-                        if self.symbol_of(id).is_some_and(|s| !self.param_values.contains_key(&s))
-                            && !param(id));
+                        if self.symbol_of(id).is_some_and(|s| {
+                            !self.param_values.contains_key(&s) && !self.plain_locals.contains(&s)
+                        }) && !param(id));
                 // A method written in the same object as the function that calls
                 // it through `this`: read with the value it is written in.
                 let own_method = matches!(
@@ -12104,6 +12507,9 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         }
         if self.continues(&it.callee) {
             self.continued = true;
+            // Called with nothing, it hands the request on as it is; with a
+            // value (`next(error)`) it hands that over, to what answers for it.
+            self.calls_on |= it.arguments.is_empty();
         }
     }
 
@@ -12265,6 +12671,8 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         // Each function hands control on in its own body, to the continuation it
         // receives.
         let outer = self.enter_fn(it.span.start, later);
+        let lost = u32::from(self.lost_fns.contains(&it.span.start));
+        self.in_lost += lost;
         self.own_this += 1;
         let of_value = self.object_fns.remove(&it.span.start);
         self.value_methods.push(of_value);
@@ -12275,6 +12683,7 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         self.continuation_names.pop();
         self.value_methods.pop();
         self.own_this -= 1;
+        self.in_lost -= lost;
         self.leave_fn(outer);
     }
 
@@ -12319,7 +12728,10 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             self.flow_return(body);
             self.note_return_credential(body);
         }
+        let lost = u32::from(self.lost_fns.contains(&it.span.start));
+        self.in_lost += lost;
         walk::walk_arrow_function_expression(self, it);
+        self.in_lost -= lost;
         self.continuation_names.pop();
         self.leave_fn(outer);
     }
@@ -12330,6 +12742,22 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             && u.operator == UnaryOperator::Void
         {
             e = unwrap_expr(&u.argument);
+        }
+        // The functions a chain nothing waits for hands to a promise's own
+        // methods: what one throws goes to the promise the method made.
+        let mut link = e;
+        while let Expression::CallExpression(c) = link
+            && let Expression::StaticMemberExpression(m) = unwrap_expr(&c.callee)
+            && matches!(m.property.name.as_str(), "then" | "catch" | "finally")
+        {
+            for a in c.arguments.iter().filter_map(|a| a.as_expression()) {
+                if let f @ (Expression::ArrowFunctionExpression(_)
+                | Expression::FunctionExpression(_)) = unwrap_expr(a)
+                {
+                    self.lost_fns.insert(f.span().start);
+                }
+            }
+            link = unwrap_expr(&m.object);
         }
         // `await requireSession(req);`: what the call hands back goes nowhere.
         // Not a call handed the continuation or a function written in place: what
@@ -12350,6 +12778,9 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
                 }))
         {
             self.drop_sites.insert(c.span.start);
+            if matches!(e, Expression::AwaitExpression(_)) {
+                self.await_sites.insert(c.span.start);
+            }
         }
         // The value of a call that is a statement of its own is dropped, and so is
         // that of the call a `.then()` / `.catch()` / `.finally()` hangs on.
@@ -12464,8 +12895,15 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         let (n0, k0) = (self.unauth_notes, self.free_refusal);
         self.free_refusal += u32::from(answers);
         let present = u32::from(self.credential_present(&it.test));
+        let by = match present {
+            0 => self.result_present(&it.test),
+            _ => None,
+        };
         self.cred_present += present;
+        let held = self.result_present.len();
+        self.result_present.extend(by);
         self.visit_statement(&it.consequent);
+        self.result_present.truncate(held);
         self.cred_present -= present;
         self.free_refusal = k0;
         if answers {
@@ -12557,6 +12995,15 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
 
     fn visit_for_of_statement(&mut self, it: &ForOfStatement<'a>) {
         self.flow_for_of(it);
+        // `for (const group of groups)` over plain data: each item is plain data.
+        if let ForStatementLeft::VariableDeclaration(decl) = &it.left
+            && let [one] = decl.declarations.as_slice()
+            && let BindingPattern::BindingIdentifier(b) = &one.id
+            && let Some(sym) = b.symbol_id.get()
+            && self.plain_items(&it.right)
+        {
+            self.plain_locals.insert(sym);
+        }
         self.branches += 1;
         walk::walk_for_of_statement(self, it);
         self.branches -= 1;
@@ -12784,6 +13231,10 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
 
     fn visit_throw_statement(&mut self, it: &ThrowStatement<'a>) {
         self.controls.insert("throw".into());
+        match self.in_lost {
+            0 => self.throw_kept = true,
+            _ => self.throw_lost = true,
+        }
         if self.counting() {
             let r = self.rejecting(&it.argument);
             self.other_rejection |= r == Some(drift_core::controls::Rejection::Unauthenticated);
@@ -13023,11 +13474,23 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
     }
 
     fn visit_variable_declarator(&mut self, it: &VariableDeclarator<'a>) {
+        header_bindings(&it.id, &mut self.header_locals);
         // A local bound to a value read off a parameter of the function made
         // ([`Collector::product_params`]) is one too.
         if let (BindingPattern::BindingIdentifier(id), Some(init)) = (&it.id, &it.init)
             && let Some(sym) = id.symbol_id.get()
         {
+            if self.const_decl {
+                if self.sent_chain(init) {
+                    self.sent_locals.insert(sym);
+                }
+                if let Expression::CallExpression(call) = peel(init)
+                    && let Some(r) = self.l.canon_callee(&call.callee)
+                    && !matches!(r.base, RawBase::Global(_))
+                {
+                    self.result_locals.insert(sym, r);
+                }
+            }
             if self.reads_product_param(init) {
                 self.product_params.insert(sym);
             }
@@ -13036,6 +13499,9 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             }
             if let Some(of) = self.param_chain(init) {
                 self.param_values.insert(sym, of);
+            }
+            if self.const_decl && self.plain_chain(init) {
+                self.plain_locals.insert(sym);
             }
             if self.credential_identity(init) {
                 self.cred_locals.insert(sym);

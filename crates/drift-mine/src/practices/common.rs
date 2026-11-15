@@ -569,6 +569,15 @@ pub fn bodies<'a>(cx: &Cx<'a>, s: &'a Symbol) -> Vec<&'a Symbol> {
                 let Some(r) = c.strip_suffix("(ref)") else {
                     continue;
                 };
+                // What a call of a function of the repository built, where that
+                // function hands back the one function written in it
+                // (`app.get("/me", currentUser())`): its facts are that body's.
+                let r = match r.strip_suffix("()") {
+                    Some(made_by) if crate::guard_position::returns_function(cx, made_by) => {
+                        made_by
+                    }
+                    _ => r,
+                };
                 if external(r) || out.len() >= MAX_BODIES {
                     continue;
                 }

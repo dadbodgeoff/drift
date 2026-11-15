@@ -91,7 +91,8 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "controls": [
               "await",
               "reads_input",
-              "returns_caller"
+              "returns_caller",
+              "returns_data"
             ],
             "string_literals": 0,
             "order": [
@@ -832,6 +833,26 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
       "has_test": true,
       "listed": {
         "entry_points": [],
+        "symbols": [
+          {
+            "name": "requireUser",
+            "kind": "function",
+            "exported_as": [
+              "requireUser"
+            ],
+            "line": 5,
+            "wraps": [],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input",
+              "returns_data"
+            ],
+            "string_literals": 1,
+            "is_async": true
+          }
+        ],
         "guard_calls": [
           {
             "symbol": "withAuth",

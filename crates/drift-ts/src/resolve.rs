@@ -3363,6 +3363,7 @@ impl<'r> Linker<'r> {
                     || !s.made_passes.is_empty()
                     || !s.nest_metadata.is_empty()
                     || !s.result_uses.is_empty()
+                    || !s.given_result.is_empty()
                     || !s.returns_builder.is_empty()
                     || !s.unread_exits.is_empty()
             })
@@ -3371,6 +3372,14 @@ impl<'r> Linker<'r> {
                 // by its value hands back ([`crate::lower::RawSymbol::result_uses`]).
                 let uses = s.result_uses.iter().filter_map(|(callee, how)| {
                     let callee = self.canon(rel, callee);
+                    // No call of it is waited for: of the repository's own, where
+                    // what it is can be read.
+                    if how == "unawaited" {
+                        return (!callee.starts_with("global#")
+                            && !callee.starts_with("pkg:")
+                            && !callee.starts_with("unresolved:"))
+                        .then(|| format!("{}{callee}", drift_core::controls::UNAWAITED));
+                    }
                     if !self.hands_back.contains(&callee) {
                         // A function that answers on the response it was handed:
                         // only that its value is dropped.
@@ -3473,6 +3482,14 @@ impl<'r> Linker<'r> {
                         )
                         .chain(metadata)
                         .chain(uses)
+                        .chain(s.given_result.iter().map(|(by, callee)| {
+                            format!(
+                                "{}{}\t{}",
+                                drift_core::controls::GIVEN_RESULT_OF,
+                                self.canon(rel, callee),
+                                self.canon(rel, by)
+                            )
+                        }))
                         .chain(built)
                         .chain(unread)
                         .collect::<Vec<String>>(),
@@ -3530,6 +3547,16 @@ impl<'r> Linker<'r> {
                 (s.name.as_str(), s.line, wraps.collect())
             })
             .collect();
+        // The calls of a route that only the listed reading holds
+        // ([`crate::lower::RawSymbol::listed_calls`]).
+        let listed_calls: Vec<(&str, u32, Vec<String>)> = raw_symbols
+            .iter()
+            .filter(|s| !s.listed_calls.is_empty())
+            .map(|s| {
+                let calls = s.listed_calls.iter().map(|r| self.canon(rel, r));
+                (s.name.as_str(), s.line, calls.collect())
+            })
+            .collect();
         // The guards a body's `useGlobalGuards(...)` names are what mining reads of
         // the call; the listed reading has the call itself, on the routes
         // ([`crate::lower::RawSymbol::measured_args`]).
@@ -3569,9 +3596,24 @@ impl<'r> Linker<'r> {
             || !measured_args.is_empty()
             || !goes_on.is_empty()
             || !unwraps.is_empty()
+            || !listed_calls.is_empty()
             || !built.is_empty()
         {
             let mut measured = facts.clone();
+            for (name, line, calls) in listed_calls {
+                for s in facts
+                    .symbols
+                    .iter_mut()
+                    .filter(|s| s.name == name && s.line == line)
+                {
+                    for c in &calls {
+                        if !s.calls.contains(c) {
+                            s.calls.push(c.clone());
+                        }
+                    }
+                    s.calls.sort();
+                }
+            }
             for (name, line, checks) in built {
                 for s in facts
                     .symbols

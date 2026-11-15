@@ -4840,6 +4840,17 @@ pub fn library_guard_in(ctx: &crate::context::RepoContext, canonical: &str) -> b
     {
         return true;
     }
+    // Every export the guard lists read the call shape of
+    // ([`drift_core::guard_lists::library_guard_export`]: express-jwt's default export
+    // of the versions before 7, as its `expressjwt`): one list, for the readings
+    // that prove a guard by its shape.
+    if ctx.since_measured()
+        && drift_core::guard_lists::library_guard_export(
+            crate::mine::norm_ref(canonical).trim_end_matches("()"),
+        )
+    {
+        return true;
+    }
     library_guard(canonical)
         && !(canonical.starts_with("pkg:fastapi#")
             && (ctx.passes_key(canonical, "auto_error")
@@ -6188,6 +6199,17 @@ fn guards_and_wrappers(
         {
             continue;
         }
+        // The call that built the route's handler, where its callee hands back the
+        // function written in it and that function serves the request: the
+        // handler's body, read below.
+        if crate::guard_position::builds_handler(cx, m)
+            && s.calls.iter().any(|c| {
+                c.strip_suffix("()(ref)")
+                    .is_some_and(|made_by| crate::mine::norm_ref(made_by) == same)
+            })
+        {
+            continue;
+        }
         match read_route_middleware(cx, file, s, m) {
             AppMiddleware::Guard(g, _) => {
                 by_middleware = true;
@@ -6400,7 +6422,7 @@ fn guards_and_wrappers(
     // (What a request handler's body may do to its caller is asked of request
     // entry points, as the practice map asks it.)
     let request = crate::practices::REQUEST_KINDS.contains(&entry.kind.as_str());
-    let (in_body, unproven) = body_guards(ctx, s, python, request);
+    let (in_body, unproven) = body_guards(cx, s, python, request);
     guards.extend(in_body);
     opaque.extend(unproven);
     if nest {
@@ -6607,11 +6629,12 @@ pub const BODY_CHECK: &str = " (body check)";
 /// Second, the calls that look like a guard and are not proven to reject
 /// ([`BodyCall::Unproven`]): never guards, they go to [`EntryRow::opaque`].
 fn body_guards(
-    ctx: &crate::context::RepoContext,
+    cx: &crate::practices::Cx<'_>,
     s: &Symbol,
     python: bool,
     request: bool,
 ) -> (Vec<String>, Vec<String>) {
+    let ctx = cx.context();
     let mut bodies: Vec<&Symbol> = vec![s];
     let mut level: Vec<&Symbol> = vec![s];
     for _ in 0..2 {
@@ -6620,6 +6643,14 @@ fn body_guards(
             for c in &b.calls {
                 let Some(r) = c.strip_suffix("(ref)") else {
                     continue;
+                };
+                // What a call of a function that hands back the function written
+                // in it built: that body ([`crate::practices::common::bodies`]).
+                let r = match r.strip_suffix("()") {
+                    Some(made_by) if crate::guard_position::returns_function(cx, made_by) => {
+                        made_by
+                    }
+                    _ => r,
                 };
                 if external(r) || bodies.len() >= 8 {
                     continue;

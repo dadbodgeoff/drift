@@ -1824,6 +1824,50 @@ pub mod controls {
     /// id finds, then `session.userId`). What it hands back is who the credential
     /// says, or nothing. Recorded by TypeScript (lowering 76, the listed reading).
     pub const RETURNS_CREDENTIAL: &str = "returns_credential";
+    /// Every value the function hands back is plain data: built from literals and
+    /// built-ins only, or read off a local or a binding of the file that holds
+    /// such a value (`function previous() { return solves[solves.length - 1] }` of
+    /// `const solves = [...]`). A method called on what it handed back is a
+    /// built-in's. Listed reading only; TypeScript lowering 79.
+    pub const RETURNS_DATA: &str = "returns_data";
+    /// A function whose every `return` that gives a value gives a credential the
+    /// request carries, a part of one, or what a method of one made, and nothing
+    /// else (`return req.cookies.session`, `const parts =
+    /// headers.authorization.split(" "); return parts[1]`): a request that carries
+    /// no credential is handed nothing. Listed reading only; TypeScript lowering 79.
+    pub const RETURNS_SENT_CREDENTIAL: &str = "returns_sent_credential";
+    /// What starts the control of a body every call of which to a verifying callee
+    /// stands in a branch taken only where what another call handed back is there
+    /// (`const token = tokenOf(req); if (token) { jwt.verify(token, key) }`): the
+    /// verifying callee, a tab, the callee whose value the branch is by, both
+    /// canonical. Where that callee hands back a credential the request carries or
+    /// nothing ([`RETURNS_SENT_CREDENTIAL`]), a request that carries none runs
+    /// past the verifying call, as [`super::SymbolCalls::given_credential`] says of
+    /// a credential read in the body itself. Listed reading only; TypeScript
+    /// lowering 79.
+    pub const GIVEN_RESULT_OF: &str = "given_result_of:";
+    /// What starts the control of a body every call of which to a function of the
+    /// repository is a statement of its own that nothing waits for
+    /// (`void audit(req);`, `notifyAll(order);`): where the callee is asynchronous
+    /// ([`super::Symbol::is_async`]), what it throws rejects a promise nobody
+    /// holds, and stops nothing in the body. Listed reading only; TypeScript
+    /// lowering 79.
+    pub const UNAWAITED: &str = "unawaited:";
+    /// Every `throw` of the body stands in a function written as the argument of
+    /// a promise's own method (`then`, `catch`, `finally`) on a chain that is a
+    /// statement nothing waits for (`Feedback.count().then(tally).catch(() => {
+    /// throw new Error("unavailable") })`): each rejects the promise the method
+    /// made, which nobody holds, and stops nothing in the body. The `throw`
+    /// control and [`super::Symbol::throws`] stay as the measured build wrote
+    /// them. Listed reading only; TypeScript lowering 79.
+    pub const THROWS_LOST: &str = "throws_lost";
+    /// The body calls its continuation with nothing somewhere (`next()`; not
+    /// `next(error)`, which hands an error to what answers for it): it is written
+    /// to stand before what serves the request, wherever it is given. A function a route is given last that does so (`app.post("/cards",
+    /// appendUserId())`, with the routes that serve registered after it) is read as
+    /// what stands at a guard position is, not as the handler that answers. Listed
+    /// reading only; TypeScript lowering 79.
+    pub const CONTINUES: &str = "continues";
     /// What starts the control of a body that throws for every request for which
     /// what a callee handed back is absent (`const userId = await
     /// getUserId(request); if (!userId) throw redirect(target)`): one for each such

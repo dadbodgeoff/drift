@@ -1009,7 +1009,7 @@ impl Lowerer<'_> {
 
 /// Built-in types whose values run no code of the repository when a method of
 /// theirs is called.
-const PLAIN_TYPES: &[&str] = &[
+pub(crate) const PLAIN_TYPES: &[&str] = &[
     "Array",
     "ReadonlyArray",
     "Map",

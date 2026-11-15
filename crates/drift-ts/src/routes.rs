@@ -2366,6 +2366,34 @@ impl Lowerer<'_> {
                         }
                         keys.fill(&mut sym);
                         self.handler_facts(Some(handler), &mut sym);
+                        // The handler is what a call built. A function written in
+                        // place in what the call was handed is the handler it wraps
+                        // (`wrap(async (req, res) => { ... })`): read as a function
+                        // of its own, the route's body for the readings that list.
+                        // A call handed no function stands where a guard may
+                        // (`app.get("/users", requireUser())`), as what is written
+                        // before a handler does: those readings take it as a
+                        // middleware of the route.
+                        let mut wrapped: Vec<&Expression> = Vec::new();
+                        if let Expression::CallExpression(call) = unwrap_expr(handler) {
+                            wrapped.extend(
+                                call.arguments
+                                    .iter()
+                                    .filter_map(|a| a.as_expression())
+                                    .flat_map(in_place_functions),
+                            );
+                            let mut named = Vec::new();
+                            self.inner_handler_refs(handler, &mut named, 0);
+                            if wrapped.is_empty()
+                                && named.is_empty()
+                                && let Some(r) = self.middleware_ref(handler)
+                            {
+                                self.route_position(handler, &mut sym, &mut unread);
+                                if !sym.app_middleware.contains(&r) {
+                                    sym.app_middleware.push(r);
+                                }
+                            }
+                        }
                         unread.extend(
                             self.scope_unread
                                 .get(&receiver)
@@ -2404,6 +2432,13 @@ impl Lowerer<'_> {
                             let hook = self.in_place_function(&receiver, "before", f);
                             if !sym.app_middleware.contains(&hook) {
                                 sym.app_middleware.push(hook);
+                            }
+                        }
+                        for f in wrapped {
+                            let mut body = self.in_place_function(&receiver, "handler", f);
+                            body.member.push_str("(ref)");
+                            if !sym.listed_calls.contains(&body) {
+                                sym.listed_calls.push(body);
                             }
                         }
                         self.push_route(adapter, &m.to_ascii_uppercase(), &path, line, sym);

@@ -709,6 +709,17 @@ pub fn library(canonical: &str, call: Option<&GuardCall>) -> Library {
     Library::Unlisted
 }
 
+/// The export is a library's own guard ([`LIBRARY_GUARDS`]), whatever shape it is
+/// called in: what [`library`] reads the shape of. No combinator, no member of a
+/// Fastify instance ([`listed_guard`] names those too).
+pub fn library_guard_export(canonical: &str) -> bool {
+    export_of(canonical).is_some_and(|(package, export, chain)| {
+        LIBRARY_GUARDS
+            .iter()
+            .any(|g| package_is(g.package, package) && guard_export(g, export, &chain))
+    })
+}
+
 fn guard_export(g: &LibraryGuard, export: &str, chain: &[&str]) -> bool {
     if g.package.ends_with('/') {
         // `auth.protect`, `auth().protect`.
