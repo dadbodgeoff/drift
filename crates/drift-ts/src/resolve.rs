@@ -958,6 +958,15 @@ pub struct Linker<'r> {
     /// plugin function): (the router it is mounted on, the prefix, the middleware
     /// active there, outermost first, as canonical ids).
     mount_parents: BTreeMap<String, BTreeSet<MountParent>>,
+    /// The functions that give the caller by what their body returns
+    /// ([`drift_core::controls::GIVES_CALLER`]).
+    gives_caller: BTreeSet<String>,
+    /// Those of them that turn away every request with no caller (a check of
+    /// their own body that answers "not signed in", or a throw where what a
+    /// callee gave is absent: [`drift_core::controls::REFUSES_WITHOUT`]): what
+    /// one hands back is who the request is from, not a setting read off the
+    /// caller.
+    refuses_without: BTreeSet<String>,
     /// The calls of a package whose result a router is given where a handler goes.
     handed: Vec<Handed>,
     /// What each function of the repository registers on the router it is handed
@@ -1335,6 +1344,8 @@ impl<'r> Linker<'r> {
             specs,
             modules,
             mount_parents: BTreeMap::new(),
+            gives_caller: BTreeSet::new(),
+            refuses_without: BTreeSet::new(),
             handed: Vec::new(),
             registers: BTreeMap::new(),
             decorated: BTreeMap::new(),
@@ -1588,6 +1599,77 @@ impl<'r> Linker<'r> {
                     .map(move |s| format!("{}#{}", f.rel_path, s.name))
             })
             .collect();
+        // What gives the caller by what its body returns
+        // ([`drift_core::controls::GIVES_CALLER`]): a value of the caller, what was
+        // made of the request's credential, or what such a function handed back, a
+        // few calls deep.
+        let mut gives: BTreeSet<String> = files
+            .iter()
+            .flat_map(|f| {
+                f.raw
+                    .symbols
+                    .iter()
+                    .filter(|s| {
+                        s.kind == drift_core::SymbolKind::Function
+                            && s.listed_controls.iter().any(|c| {
+                                c == drift_core::controls::RETURNS_CALLER
+                                    || c == drift_core::controls::RETURNS_CREDENTIAL
+                            })
+                    })
+                    .map(move |s| format!("{}#{}", f.rel_path, s.name))
+            })
+            .collect();
+        for _ in 0..4 {
+            let more: Vec<String> = files
+                .iter()
+                .flat_map(|f| f.raw.symbols.iter().map(move |s| (f, s)))
+                .filter(|(f, s)| {
+                    s.kind == drift_core::SymbolKind::Function
+                        && !s.returns_via.is_empty()
+                        && s.returns_via
+                            .iter()
+                            .all(|g| gives.contains(&self.canon(&f.rel_path, g)))
+                })
+                .map(|(f, s)| format!("{}#{}", f.rel_path, s.name))
+                .filter(|name| !gives.contains(name))
+                .collect();
+            if more.is_empty() {
+                break;
+            }
+            gives.extend(more);
+        }
+        // A name the file declares twice is not one function.
+        for f in files {
+            let mut seen: BTreeSet<&str> = BTreeSet::new();
+            for s in &f.raw.symbols {
+                if !seen.insert(s.name.as_str()) {
+                    gives.remove(&format!("{}#{}", f.rel_path, s.name));
+                }
+            }
+        }
+        self.returns_caller.extend(gives.iter().cloned());
+        self.refuses_without = files
+            .iter()
+            .flat_map(|f| {
+                f.raw
+                    .symbols
+                    .iter()
+                    .filter(|s| {
+                        !s.refuses_without.is_empty()
+                            || s.body_checks.iter().any(|c| {
+                                !c.conditional
+                                    && matches!(
+                                        c.outcome,
+                                        drift_core::CheckOutcome::Unauthenticated
+                                            | drift_core::CheckOutcome::SignInRedirect
+                                    )
+                            })
+                    })
+                    .map(move |s| format!("{}#{}", f.rel_path, s.name))
+            })
+            .filter(|name| gives.contains(name))
+            .collect();
+        self.gives_caller = gives;
         // A holder's key is held where some body binds on it a value that is the
         // caller's by its own source, or that such a function gives.
         self.held = files
@@ -2748,6 +2830,7 @@ impl<'r> Linker<'r> {
         loose_sides: &[(String, Vec<(String, String)>)],
         param_keys: &[(RawRef, String, String)],
         check_sides: &[crate::lower::CheckSides],
+        refuses_absent: &[String],
     ) -> Vec<String> {
         // A value read off what a call handed back names the call by its
         // canonical callee ([`crate::lower::RawSymbol::loose_sides`]).
@@ -2757,7 +2840,12 @@ impl<'r> Linker<'r> {
                 .filter(|j| j.starts_with('{'))
                 .and_then(|j| serde_json::from_str::<RawRef>(j).ok())
             {
-                Some(r) => format!("call {}", self.canon(rel, &r)),
+                // What a function that gives the caller handed back is the
+                // caller's ([`drift_core::controls::GIVES_CALLER`]).
+                Some(r) => match self.canon(rel, &r) {
+                    c if self.gives_caller.contains(&c) => "caller".to_string(),
+                    c => format!("call {c}"),
+                },
                 None => side.to_string(),
             }
         };
@@ -2785,12 +2873,17 @@ impl<'r> Linker<'r> {
             .map(|(c, given)| control(&c, given))
             .collect();
         out.extend(loose_sides.iter().map(|(c, given)| control(c, given)));
-        out.extend(param_keys.iter().map(|(callee, key, side)| {
-            format!(
-                "{}{}\t{key}\t{side}",
-                drift_core::controls::FILTER_VALUE,
-                self.canon(rel, callee)
-            )
+        // A key whose value was read off what a call handed back filters by the
+        // caller where that call gives the caller, and says nothing otherwise.
+        out.extend(param_keys.iter().filter_map(|(callee, key, given)| {
+            let given = side(given);
+            (!given.starts_with("call ")).then(|| {
+                format!(
+                    "{}{}\t{key}\t{given}",
+                    drift_core::controls::FILTER_VALUE,
+                    self.canon(rel, callee)
+                )
+            })
         }));
         // The sides of each comparison a check makes
         // ([`crate::lower::RawSymbol::check_sides`]), keyed as the check is written.
@@ -2808,9 +2901,99 @@ impl<'r> Linker<'r> {
                     )
                 }),
         );
+        // The calls whose result's absence the body refuses on
+        // ([`crate::lower::RawSymbol::refuses_absent`]).
+        out.extend(refuses_absent.iter().filter_map(|call| {
+            let call = side(call);
+            call.strip_prefix("call ")
+                .map(|callee| format!("{}{callee}", drift_core::controls::REFUSES_ABSENT))
+        }));
         out.sort();
         out.dedup();
         out
+    }
+
+    /// The callees a body signs the caller in by: what its own checks answer "not
+    /// signed in" on, and what it throws without.
+    fn signed_by(
+        &self,
+        rel: &str,
+        checks: &[crate::lower::RawBodyCheck],
+        refuses_without: &[Vec<RawRef>],
+    ) -> BTreeSet<String> {
+        checks
+            .iter()
+            .filter(|c| {
+                matches!(
+                    c.outcome,
+                    drift_core::CheckOutcome::Unauthenticated
+                        | drift_core::CheckOutcome::SignInRedirect
+                )
+            })
+            .filter_map(|c| match &c.source {
+                crate::lower::RawOperand::Ref(r) => Some(self.canon(rel, r)),
+                _ => None,
+            })
+            .chain(refuses_without.iter().flatten().map(|r| self.canon(rel, r)))
+            .collect()
+    }
+
+    /// The keys a body's calls give the caller itself, and those every call of a
+    /// callee gives a value of the caller, as the controls write them
+    /// ([`drift_core::controls::FILTER_OWN`],
+    /// [`drift_core::controls::FILTER_EVERY`]): where what may give each value
+    /// gives the caller ([`drift_core::controls::GIVES_CALLER`]).
+    ///
+    /// What a function hands back is the caller itself where the function gives the
+    /// caller and its absence is what turns a request away: the function throws
+    /// without it, or the body it is called in does (`signed_by`: the callees of
+    /// the body's own sign-in checks and refusals). One that gives a value of the
+    /// caller and never refuses (`localeOf(request)`) gives a setting.
+    fn own_controls(
+        &self,
+        rel: &str,
+        own_keys: &[(RawRef, String, Vec<RawRef>)],
+        every_keys: &[(RawRef, String, Vec<RawRef>, bool)],
+        signed_by: &BTreeSet<String>,
+    ) -> Vec<String> {
+        let given = |givers: &[RawRef]| {
+            givers
+                .iter()
+                .all(|g| self.gives_caller.contains(&self.canon(rel, g)))
+        };
+        let itself = |givers: &[RawRef]| {
+            givers.iter().all(|g| {
+                let g = self.canon(rel, g);
+                self.gives_caller.contains(&g)
+                    && (self.refuses_without.contains(&g) || signed_by.contains(&g))
+            })
+        };
+        let own =
+            own_keys
+                .iter()
+                .filter(|(_, _, givers)| itself(givers))
+                .map(|(callee, key, _)| {
+                    format!(
+                        "{}{}\t{key}",
+                        drift_core::controls::FILTER_OWN,
+                        self.canon(rel, callee)
+                    )
+                });
+        let every = every_keys
+            .iter()
+            .filter(|(_, _, givers, _)| given(givers))
+            .map(|(callee, key, givers, own)| {
+                format!(
+                    "{}{}\t{key}\t{}",
+                    drift_core::controls::FILTER_EVERY,
+                    self.canon(rel, callee),
+                    match *own && itself(givers) {
+                        true => "own",
+                        false => "caller",
+                    }
+                )
+            });
+        own.chain(every).collect()
     }
 
     pub fn link(&self, f: &LoweredFile, package: String) -> FileFacts {
@@ -2989,6 +3172,27 @@ impl<'r> Linker<'r> {
                         &s.loose_sides,
                         &s.param_keys,
                         &s.check_sides,
+                        &s.refuses_absent,
+                    ));
+                    controls.extend(s.leaving_calls.iter().map(|c| {
+                        format!(
+                            "{}{}",
+                            drift_core::controls::CALLED_LEAVING,
+                            self.canon(rel, c)
+                        )
+                    }));
+                    controls.extend(s.caller_from.iter().map(|c| {
+                        format!(
+                            "{}{}",
+                            drift_core::controls::CALLER_FROM,
+                            self.canon(rel, c)
+                        )
+                    }));
+                    controls.extend(self.own_controls(
+                        rel,
+                        &s.own_keys,
+                        &s.every_keys,
+                        &self.signed_by(rel, &s.body_checks, &s.refuses_without),
                     ));
                     controls.sort();
                     controls.dedup();
@@ -3097,6 +3301,27 @@ impl<'r> Linker<'r> {
                                 &m.loose_sides,
                                 &m.param_keys,
                                 &m.check_sides,
+                                &m.refuses_absent,
+                            ));
+                            unread.extend(m.leaving_calls.iter().map(|c| {
+                                format!(
+                                    "{}{}",
+                                    drift_core::controls::CALLED_LEAVING,
+                                    self.canon(rel, c)
+                                )
+                            }));
+                            unread.extend(m.caller_from.iter().map(|c| {
+                                format!(
+                                    "{}{}",
+                                    drift_core::controls::CALLER_FROM,
+                                    self.canon(rel, c)
+                                )
+                            }));
+                            unread.extend(self.own_controls(
+                                rel,
+                                &m.own_keys,
+                                &m.every_keys,
+                                &self.signed_by(rel, &m.body_checks, &[]),
                             ));
                             unread.extend(m.caller_keys.iter().map(|(callee, key)| {
                                 format!(
@@ -3492,6 +3717,8 @@ impl<'r> Linker<'r> {
                     || !s.given_result.is_empty()
                     || !s.returns_builder.is_empty()
                     || !s.unread_exits.is_empty()
+                    || s.returns_built.is_some()
+                    || self.gives_caller.contains(&format!("{rel}#{}", s.name))
             })
             .map(|s| {
                 // What the body does with what a function that turns callers away
@@ -3561,6 +3788,18 @@ impl<'r> Linker<'r> {
                     s.listed_controls
                         .iter()
                         .cloned()
+                        .chain(
+                            self.gives_caller
+                                .contains(&format!("{rel}#{}", s.name))
+                                .then(|| drift_core::controls::GIVES_CALLER.to_string()),
+                        )
+                        .chain(s.returns_built.iter().map(|class| {
+                            format!(
+                                "{}{}",
+                                drift_core::controls::RETURNS_BUILT,
+                                self.canon(rel, class)
+                            )
+                        }))
                         // Where the value a query filters by comes from: the
                         // caller's own ([`crate::lower::RawSymbol::caller_keys`]).
                         .chain(s.caller_keys.iter().map(|(callee, key)| {

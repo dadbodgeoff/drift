@@ -4338,6 +4338,7 @@ fn gives_identity(ctx: &crate::context::RepoContext, giver: &str) -> bool {
             && d.controls.iter().any(|c| {
                 c == drift_core::controls::RETURNS_CREDENTIAL
                     || c == drift_core::controls::RETURNS_CALLER
+                    || c == drift_core::controls::GIVES_CALLER
             })
     })
 }

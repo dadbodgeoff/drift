@@ -15,7 +15,7 @@ use oxc_span::{GetSpan, SourceType};
 use serde::{Deserialize, Serialize};
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 80;
+pub const LOWERING_VERSION: u32 = 81;
 
 /// What an options object gives a Fastify route: for each hook it names
 /// (`onRequest`, `preHandler`), what that hook runs.
@@ -295,6 +295,21 @@ pub struct RawSymbol {
     /// ([`Collector::note_verified_try`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub listed_controls: Vec<String>,
+    /// The functions the body calls with nothing, or with the request only, whose
+    /// value it hands back, where every `return` of the function that gives a
+    /// value gives a value of the caller or what one of these calls gave (`const
+    /// id = await seatOf(request); if (!id) throw redirect("/"); return id`).
+    /// Linking says whether each gives the caller
+    /// ([`drift_core::controls::GIVES_CALLER`]). TypeScript lowering 81.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub returns_via: Vec<RawRef>,
+    /// The class every `return` of the function that gives a value gives an
+    /// instance of, built in the body (`const client = new PrismaClient(); ...;
+    /// return client`, `() => new Pool(options)`): what the function hands back is
+    /// what it built ([`drift_core::controls::RETURNS_BUILT`]). TypeScript
+    /// lowering 81.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub returns_built: Option<RawRef>,
     /// NestJS route metadata, each as the start of a control and the key it is for:
     /// what a decorator sets ([`drift_core::controls::SETS_METADATA`]), what a guard
     /// class lets through ([`drift_core::controls::OPENS_FOR_METADATA`]) and that
@@ -355,6 +370,30 @@ pub struct RawSymbol {
     /// as [`RawSymbol::arg_sides`] writes one.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub check_sides: Vec<CheckSides>,
+    /// The calls of the body whose result's absence it refuses on, for every
+    /// request ([`drift_core::controls::REFUSES_ABSENT`]): each as
+    /// [`Collector::row_root`] writes the side of a value read off it.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub refuses_absent: Vec<String>,
+    /// The callees every call of which the body writes in what a `throw` outside
+    /// any `try` throws ([`drift_core::controls::CALLED_LEAVING`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub leaving_calls: Vec<RawRef>,
+    /// The callees whose call's value the body takes as the caller
+    /// ([`drift_core::controls::CALLER_FROM`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub caller_from: Vec<RawRef>,
+    /// The keys of the objects given to a callee that every call giving them gives
+    /// the caller itself ([`drift_core::controls::FILTER_OWN`]): the callee, the
+    /// key's path, and what may give the value (nothing where it is the caller's
+    /// by its own source).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub own_keys: Vec<(RawRef, String, Vec<RawRef>)>,
+    /// The keys every call of a callee gives a value of the caller
+    /// ([`drift_core::controls::FILTER_EVERY`]): the callee, the key's path, what
+    /// may give the values, and whether each is the caller itself.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub every_keys: Vec<(RawRef, String, Vec<RawRef>, bool)>,
     /// The calls whose shape is recorded ([`drift_core::Listed::guard_calls`]):
     /// those written at a guard position of a route, and those a body makes of an
     /// export of a package on the guard lists ([`drift_core::guard_lists::shaped`]).
@@ -505,6 +544,32 @@ pub struct RawMember {
     /// As [`RawSymbol::check_sides`], for this method alone.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub check_sides: Vec<CheckSides>,
+    /// As [`RawSymbol::refuses_absent`], for this method alone.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub refuses_absent: Vec<String>,
+    /// As [`RawSymbol::leaving_calls`], for this method alone.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub leaving_calls: Vec<RawRef>,
+    /// As [`RawSymbol::caller_from`], for this method alone.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub caller_from: Vec<RawRef>,
+    /// As [`RawSymbol::own_keys`] and [`RawSymbol::every_keys`], for this method
+    /// alone.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub own_keys: Vec<(RawRef, String, Vec<RawRef>)>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub every_keys: Vec<(RawRef, String, Vec<RawRef>, bool)>,
+}
+
+/// The calls of a body that give one key of an object a value of the caller
+/// ([`Collector::keyed`]).
+#[derive(Default)]
+struct KeyedCalls {
+    count: u32,
+    /// What may give the values (nothing for the caller's by its own source).
+    givers: BTreeSet<RawRef>,
+    /// Some call gives a value read off the caller that is not the caller itself.
+    other: bool,
 }
 
 /// The two sides of one comparison of a check ([`RawSymbol::check_sides`]): source,
@@ -3938,6 +4003,11 @@ impl<'s> Lowerer<'s> {
                     param_keys: tmp.param_keys,
                     loose_sides: tmp.loose_sides,
                     check_sides: tmp.check_sides,
+                    refuses_absent: tmp.refuses_absent,
+                    leaving_calls: tmp.leaving_calls,
+                    caller_from: tmp.caller_from,
+                    own_keys: tmp.own_keys,
+                    every_keys: tmp.every_keys,
                 }
             })
             .collect()
@@ -4931,6 +5001,43 @@ impl<'a> Visit<'a> for ParamLoads<'_, '_> {
     }
 }
 
+/// The statement always leaves by a `throw`.
+fn always_throws(s: &Statement) -> bool {
+    match s {
+        Statement::ThrowStatement(_) => true,
+        Statement::BlockStatement(b) => b.body.last().is_some_and(always_throws),
+        _ => false,
+    }
+}
+
+/// The value a test says is absent (`true`) or present (`false`): `!x`, `x ==
+/// null`, `x === undefined`, `x`, and their negations.
+fn absence_asked<'b, 'a>(test: &'b Expression<'a>) -> Option<(&'b Expression<'a>, bool)> {
+    let nothing = |x: &Expression| match peel(x) {
+        Expression::NullLiteral(_) => true,
+        Expression::Identifier(id) => id.name == "undefined",
+        _ => false,
+    };
+    match peel(test) {
+        Expression::UnaryExpression(u) if u.operator == UnaryOperator::LogicalNot => {
+            absence_asked(&u.argument).map(|(x, absent)| (x, !absent))
+        }
+        Expression::BinaryExpression(b) if b.operator.is_equality() => {
+            let equal = matches!(
+                b.operator,
+                BinaryOperator::StrictEquality | BinaryOperator::Equality
+            );
+            match (nothing(&b.left), nothing(&b.right)) {
+                (false, true) => Some((&b.left, equal)),
+                (true, false) => Some((&b.right, equal)),
+                _ => None,
+            }
+        }
+        Expression::LogicalExpression(_) | Expression::BinaryExpression(_) => None,
+        x => Some((x, false)),
+    }
+}
+
 impl RawSymbol {
     fn empty(name: &str, kind: SymbolKind, line: u32) -> Self {
         Self {
@@ -4981,6 +5088,8 @@ impl RawSymbol {
             app_passed: vec![],
             in_place: false,
             listed_controls: vec![],
+            returns_via: vec![],
+            returns_built: None,
             nest_metadata: vec![],
             measured_args: vec![],
             result_uses: vec![],
@@ -4989,6 +5098,11 @@ impl RawSymbol {
             listed_calls: vec![],
             attr_types: vec![],
             check_sides: vec![],
+            refuses_absent: vec![],
+            leaving_calls: vec![],
+            caller_from: vec![],
+            own_keys: vec![],
+            every_keys: vec![],
             guard_calls: vec![],
             hands_on: false,
             returns_function: false,
@@ -5095,6 +5209,13 @@ struct Collector<'l, 's> {
     /// The locals bound for good to what a call handed back, with the callee
     /// (`const token = tokenOf(req)`).
     result_locals: HashMap<SymbolId, RawRef>,
+    /// The locals bound for good to an instance built in place, with the class
+    /// (`const client = new PrismaClient()`), and the classes the `return`s of the
+    /// walk's own function give an instance of; some `return` gives anything else
+    /// that is a value ([`RawSymbol::returns_built`]).
+    built_locals: HashMap<SymbolId, RawRef>,
+    returns_built: BTreeSet<RawRef>,
+    returns_not_built: bool,
     /// The callees by whose value the enclosing branches are taken
     /// ([`Collector::result_present`]), innermost last, and what is called in one,
     /// with the callee the branch is by.
@@ -5130,6 +5251,8 @@ struct Collector<'l, 's> {
     arg_sides: BTreeSet<(RawRef, Vec<(String, String)>)>,
     /// [`RawSymbol::check_sides`].
     check_sides: BTreeSet<CheckSides>,
+    /// [`RawSymbol::refuses_absent`].
+    refuses_absent: BTreeSet<String>,
     param_keys: BTreeSet<(RawRef, String, String)>,
     /// The locals that hold plain data: a value built from literals and built-ins
     /// only, or one read off such a local or off a binding of the file that holds
@@ -5256,6 +5379,21 @@ struct Collector<'l, 's> {
     called_without_credential: BTreeSet<RawRef>,
     called_in_try: BTreeSet<RawRef>,
     called_outside: BTreeSet<RawRef>,
+    /// The function depth of the `throw` outside any `try` whose argument the walk
+    /// is in, and what is called there and anywhere else
+    /// ([`RawSymbol::leaving_calls`]).
+    in_throw: Option<u32>,
+    called_leaving: BTreeSet<RawRef>,
+    called_staying: BTreeSet<RawRef>,
+    /// How many calls of each callee the body makes, and under each key of the
+    /// objects they are given: how many give it a value of the caller, what may
+    /// give those, and whether each is the caller itself
+    /// ([`RawSymbol::every_keys`]); the keys some call gives anything else, or
+    /// writes where a spread or a computed key may write too
+    /// ([`RawSymbol::own_keys`]).
+    calls_of: BTreeMap<RawRef, u32>,
+    keyed: BTreeMap<(RawRef, String), KeyedCalls>,
+    keyed_else: BTreeSet<(RawRef, String)>,
     params_in_try: BTreeSet<String>,
     params_outside: BTreeSet<String>,
     /// What the function the walk started on returns
@@ -5488,6 +5626,9 @@ impl<'l, 's> Collector<'l, 's> {
             returns_sent: false,
             returns_not_sent: false,
             result_locals: HashMap::new(),
+            built_locals: HashMap::new(),
+            returns_built: BTreeSet::new(),
+            returns_not_built: false,
             result_present: Vec::new(),
             called_with_result: BTreeSet::new(),
             await_sites: HashSet::new(),
@@ -5504,6 +5645,7 @@ impl<'l, 's> Collector<'l, 's> {
             refuses_without: BTreeSet::new(),
             arg_sides: BTreeSet::new(),
             check_sides: BTreeSet::new(),
+            refuses_absent: BTreeSet::new(),
             param_keys: BTreeSet::new(),
             plain_locals: HashSet::new(),
             loose_sides: BTreeSet::new(),
@@ -5551,6 +5693,12 @@ impl<'l, 's> Collector<'l, 's> {
             called_with_credential: BTreeSet::new(),
             called_without_credential: BTreeSet::new(),
             called_in_try: BTreeSet::new(),
+            in_throw: None,
+            called_leaving: BTreeSet::new(),
+            called_staying: BTreeSet::new(),
+            calls_of: BTreeMap::new(),
+            keyed: BTreeMap::new(),
+            keyed_else: BTreeSet::new(),
             called_outside: BTreeSet::new(),
             params_in_try: BTreeSet::new(),
             params_outside: BTreeSet::new(),
@@ -6069,6 +6217,19 @@ impl<'l, 's> Collector<'l, 's> {
         if flow.returns_caller() && !sym.listed_controls.iter().any(|c| c == returns_caller) {
             sym.listed_controls.push(returns_caller.to_string());
         }
+        if !self.returns_not_built && self.returns_built.len() == 1 {
+            sym.returns_built = self.returns_built.pop_first();
+        }
+        for from in flow.caller_from.borrow().iter() {
+            if !sym.caller_from.contains(from) {
+                sym.caller_from.push(from.clone());
+            }
+        }
+        for giver in flow.returns_via() {
+            if !sym.returns_via.contains(giver) {
+                sym.returns_via.push(giver.clone());
+            }
+        }
         sym.param_flows |= flow.param_flows;
         for entry in flow.caller_args {
             if !sym.caller_args.contains(&entry) {
@@ -6127,6 +6288,31 @@ impl<'l, 's> Collector<'l, 's> {
         sym.arg_sides.extend(std::mem::take(&mut self.arg_sides));
         sym.check_sides
             .extend(std::mem::take(&mut self.check_sides));
+        sym.refuses_absent
+            .extend(std::mem::take(&mut self.refuses_absent));
+        let calls_of = std::mem::take(&mut self.calls_of);
+        let keyed_else = std::mem::take(&mut self.keyed_else);
+        for ((callee, key), calls) in std::mem::take(&mut self.keyed) {
+            let at = (callee, key);
+            if keyed_else.contains(&at) {
+                continue;
+            }
+            let givers: Vec<RawRef> = calls.givers.into_iter().collect();
+            let (callee, key) = at;
+            if !calls.other {
+                sym.own_keys
+                    .push((callee.clone(), key.clone(), givers.clone()));
+            }
+            if calls_of.get(&callee) == Some(&calls.count) {
+                sym.every_keys.push((callee, key, givers, !calls.other));
+            }
+        }
+        let staying = std::mem::take(&mut self.called_staying);
+        sym.leaving_calls.extend(
+            std::mem::take(&mut self.called_leaving)
+                .into_iter()
+                .filter(|r| !staying.contains(r)),
+        );
         sym.param_keys.extend(std::mem::take(&mut self.param_keys));
         sym.loose_sides
             .extend(std::mem::take(&mut self.loose_sides));
@@ -6792,6 +6978,70 @@ impl Collector<'_, '_> {
         (!given.is_empty() && (!written_in_place || by_key)).then_some(given)
     }
 
+    /// Counts, for one call of `callee`, the keys of an object it is given whose
+    /// value is a value of the caller ([`Collector::keyed`]), by the path
+    /// [`Collector::object_keys`] writes. A level with a spread or a computed key
+    /// says nothing of its keys: either may write any of them. `written` holds the
+    /// keys this call has given already: one given twice holds what was written
+    /// last.
+    fn keyed_values(
+        &mut self,
+        callee: &RawRef,
+        e: &Expression,
+        prefix: &str,
+        depth: usize,
+        written: &mut BTreeSet<String>,
+    ) {
+        let Expression::ObjectExpression(o) = unwrap_expr(e) else {
+            return;
+        };
+        let name = |p: &ObjectProperty| -> Option<String> {
+            match p.computed {
+                true => None,
+                false => p
+                    .key
+                    .static_name()
+                    .and_then(|k| k.as_str().map(str::to_string)),
+            }
+        };
+        let plain = o
+            .properties
+            .iter()
+            .all(|p| matches!(p, ObjectPropertyKind::ObjectProperty(p) if name(p).is_some()));
+        for p in &o.properties {
+            let ObjectPropertyKind::ObjectProperty(p) = p else {
+                continue;
+            };
+            let Some(k) = name(p) else {
+                continue;
+            };
+            let key = match prefix.is_empty() {
+                true => k,
+                false => format!("{prefix}.{k}"),
+            };
+            if matches!(unwrap_expr(&p.value), Expression::ObjectExpression(_)) {
+                if plain && depth + 1 < MAX_KEY_DEPTH {
+                    self.keyed_values(callee, &p.value, &key, depth + 1, written);
+                }
+                continue;
+            }
+            let at = (callee.clone(), key.clone());
+            let side = self.caller_side(&p.value);
+            match side {
+                Some(givers) if plain && written.insert(key) => {
+                    let own = self.caller_self(&p.value).is_some();
+                    let calls = self.keyed.entry(at).or_default();
+                    calls.count += 1;
+                    calls.givers.extend(givers);
+                    calls.other |= !own;
+                }
+                _ => {
+                    self.keyed_else.insert(at);
+                }
+            }
+        }
+    }
+
     /// Records the keys of an object given to `callee` whose value is a value of
     /// the caller by its own source ([`RawSymbol::caller_keys`]), by the path
     /// [`Collector::object_keys`] writes.
@@ -6819,6 +7069,10 @@ impl Collector<'_, '_> {
                 } else if let Some((name, at)) = self.param_root(&p.value) {
                     self.param_keys
                         .insert((callee.clone(), key, format!("param {name} {at}")));
+                } else if let Some(given) = self.row_root(&p.value) {
+                    // Read off what a call of the body handed back: the caller's
+                    // where linking says the callee gives the caller.
+                    self.param_keys.insert((callee.clone(), key, given));
                 }
             }
         }
@@ -9228,45 +9482,12 @@ impl Collector<'_, '_> {
     /// read where it is defined ([`NoCaller::Given`]). Read since the measured build
     /// (the listed reading only).
     fn throws_for_no_caller(&self, it: &IfStatement) -> Option<NoCaller> {
-        fn always_throws(s: &Statement) -> bool {
-            match s {
-                Statement::ThrowStatement(_) => true,
-                Statement::BlockStatement(b) => b.body.last().is_some_and(always_throws),
-                _ => false,
-            }
-        }
-        // The value a test says is absent (`true`) or present (`false`).
-        fn asked<'b, 'a>(test: &'b Expression<'a>) -> Option<(&'b Expression<'a>, bool)> {
-            let nothing = |x: &Expression| match peel(x) {
-                Expression::NullLiteral(_) => true,
-                Expression::Identifier(id) => id.name == "undefined",
-                _ => false,
-            };
-            match peel(test) {
-                Expression::UnaryExpression(u) if u.operator == UnaryOperator::LogicalNot => {
-                    asked(&u.argument).map(|(x, absent)| (x, !absent))
-                }
-                Expression::BinaryExpression(b) if b.operator.is_equality() => {
-                    let equal = matches!(
-                        b.operator,
-                        BinaryOperator::StrictEquality | BinaryOperator::Equality
-                    );
-                    match (nothing(&b.left), nothing(&b.right)) {
-                        (false, true) => Some((&b.left, equal)),
-                        (true, false) => Some((&b.right, equal)),
-                        _ => None,
-                    }
-                }
-                Expression::LogicalExpression(_) | Expression::BinaryExpression(_) => None,
-                x => Some((x, false)),
-            }
-        }
         // A test only some requests reach turns away those: a request that left
         // before it (`if (!cookie) return null`) passed no refusal.
         if !self.check_condition().is_empty() {
             return None;
         }
-        let (value, absent) = asked(&it.test)?;
+        let (value, absent) = absence_asked(&it.test)?;
         let otherwise = match (absent, &it.alternate) {
             (true, _) if always_throws(&it.consequent) => false,
             (false, Some(a)) if always_throws(a) => true,
@@ -9661,6 +9882,63 @@ impl Collector<'_, '_> {
         } else {
             self.returns_not_sent = true;
         }
+        let built = match peel(e) {
+            Expression::Identifier(id) => self
+                .symbol_of(id)
+                .and_then(|s| self.built_locals.get(&s))
+                .cloned(),
+            _ => self.built_in_place(e),
+        };
+        match built {
+            Some(r) => {
+                self.returns_built.insert(r);
+            }
+            None => self.returns_not_built = true,
+        }
+    }
+
+    /// The class of the repository or of a package an expression builds an
+    /// instance of (`new PrismaClient(options)`).
+    fn built_in_place(&self, e: &Expression) -> Option<RawRef> {
+        let Expression::NewExpression(n) = peel(e) else {
+            return None;
+        };
+        self.l
+            .canon(&n.callee)
+            .filter(|r| !matches!(r.base, RawBase::Global(_)))
+    }
+
+    /// An `if` every request reaches whose branch leaves by a refusal, taken where
+    /// what a call of the body handed back is absent (`if (!user) throw
+    /// forbidden()`, `if (row == null) return res.status(404).end()`): the call
+    /// ([`RawSymbol::refuses_absent`]).
+    fn note_refused_absent(&mut self, it: &IfStatement) {
+        if !self.check_condition().is_empty() {
+            return;
+        }
+        let Some((value, absent)) = absence_asked(&it.test) else {
+            return;
+        };
+        let branch = match (absent, &it.alternate) {
+            (true, _) => &it.consequent,
+            (false, Some(a)) => a,
+            _ => return,
+        };
+        if !always_throws(branch) && self.branch_outcome(branch).is_none() {
+            return;
+        }
+        // The value itself, not a member of it: a row with an empty field is
+        // still a row the call handed back.
+        let whole = match peel(value) {
+            Expression::AwaitExpression(a) => peel(&a.argument),
+            x => x,
+        };
+        if !matches!(whole, Expression::Identifier(_)) {
+            return;
+        }
+        if let Some(call) = self.row_root(whole) {
+            self.refuses_absent.insert(call);
+        }
     }
 
     /// Record the checks of an `if` whose branch turns the caller away; whether it
@@ -9673,6 +9951,7 @@ impl Collector<'_, '_> {
         if self.never_true(&it.test) {
             return false;
         }
+        self.note_refused_absent(it);
         // The branch that turns the caller away: the `else` is taken where the
         // condition does not hold.
         // A branch that returns a call of a refusal builder: of this file, its
@@ -12399,6 +12678,18 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             } else {
                 self.called_outside.insert(r.clone());
             }
+            if self.in_throw == Some(self.fn_depth) {
+                self.called_leaving.insert(r.clone());
+            } else {
+                self.called_staying.insert(r.clone());
+            }
+            *self.calls_of.entry(r.clone()).or_default() += 1;
+            let mut written = BTreeSet::new();
+            for a in &it.arguments {
+                if let Some(e) = a.as_expression() {
+                    self.keyed_values(&r, e, "", 0, &mut written);
+                }
+            }
             if self.cred_present > 0 {
                 self.called_with_credential.insert(r.clone());
             } else if self.result_present.is_empty() {
@@ -13369,7 +13660,14 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             peel(&it.argument).span().start,
             drift_core::ResponseVia::Throw,
         ));
+        let entered = self.in_throw.is_none() && self.in_try == 0;
+        if entered {
+            self.in_throw = Some(self.fn_depth);
+        }
         walk::walk_throw_statement(self, it);
+        if entered {
+            self.in_throw = None;
+        }
         self.p.exit = exit;
     }
 
@@ -13594,6 +13892,9 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
                     && !matches!(r.base, RawBase::Global(_))
                 {
                     self.result_locals.insert(sym, r);
+                }
+                if let Some(r) = self.built_in_place(init) {
+                    self.built_locals.insert(sym, r);
                 }
             }
             if self.reads_product_param(init) {

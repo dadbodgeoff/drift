@@ -1670,6 +1670,18 @@ fn keyed_expected(key: &str, u: &Use, s: &Source, lib: &Lib) -> &'static str {
         // give a value of the caller (a helper, a holder a middleware sets) proves
         // nothing, and neither does a key on no list.
         "known"
+    } else if key == "orgId"
+        && want == "unknown"
+        && s.name == "what-a-sign-in-helper-that-uses-the-identity-returns"
+        && keyed_in_an_object(u, lib)
+    {
+        // TypeScript lowering 81: a helper every `return` of which gives what a
+        // sign-in accessor gave gives the caller by what it returns
+        // (`drift_core::controls::GIVES_CALLER`), and the route signs the caller in
+        // by it: a member of what it hands back, under a key named for a tenant, is
+        // the tenancy filter as the accessor's own value is. A helper that may
+        // give anything else, and a holder, still prove nothing.
+        "known"
     } else {
         want
     }

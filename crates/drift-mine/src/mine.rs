@@ -3266,6 +3266,11 @@ fn features(view: &View, ctx: &RepoContext) -> BTreeSet<Rule> {
                 if !NON_CONVENTION_CONTROLS.contains(&c.as_str())
                     && !c.starts_with(drift_core::controls::SHAPE)
                     && !c.starts_with(drift_core::controls::SIDES)
+                    && !c.starts_with(drift_core::controls::REFUSES_ABSENT)
+                    && !c.starts_with(drift_core::controls::CALLED_LEAVING)
+                    && !c.starts_with(drift_core::controls::CALLER_FROM)
+                    && !c.starts_with(drift_core::controls::FILTER_OWN)
+                    && !c.starts_with(drift_core::controls::FILTER_EVERY)
                     && !c.starts_with(drift_core::controls::FILTER_VALUE)
                     && !c.starts_with(drift_core::controls::ARG_VALUE)
                     && !c.starts_with(drift_core::controls::ATTR_PARAM)
@@ -3283,6 +3288,8 @@ fn features(view: &View, ctx: &RepoContext) -> BTreeSet<Rule> {
                     && !c.starts_with(drift_core::controls::RETURNS_GIVEN)
                     && !c.starts_with(drift_core::controls::REFUSES_WITHOUT)
                     && c != drift_core::controls::RETURNS_CREDENTIAL
+                    && c != drift_core::controls::GIVES_CALLER
+                    && !c.starts_with(drift_core::controls::RETURNS_BUILT)
                     && !c.starts_with(drift_core::controls::ROWS)
                     && !c.starts_with(drift_core::controls::HANDED_AFTER)
                     && !c.starts_with(drift_core::controls::LEAVES_AFTER)

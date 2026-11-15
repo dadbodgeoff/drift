@@ -46,6 +46,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "await",
+            "caller_from:lib/auth.ts#requireUser",
             "reads_input"
           ],
           "string_literals": 0,
@@ -90,6 +91,8 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "args": [],
             "controls": [
               "await",
+              "caller_from:lib/auth.ts#requireUser",
+              "gives_caller",
               "reads_input",
               "returns_caller",
               "returns_data"

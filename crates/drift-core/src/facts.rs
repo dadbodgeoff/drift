@@ -1834,6 +1834,25 @@ pub mod controls {
     /// id finds, then `session.userId`). What it hands back is who the credential
     /// says, or nothing. Recorded by TypeScript (lowering 76, the listed reading).
     pub const RETURNS_CREDENTIAL: &str = "returns_credential";
+    /// A function of the repository whose every `return` that gives a value gives
+    /// a value of the caller, read from what its body does and never from what it
+    /// is called: by its own sources ([`RETURNS_CALLER`]), what was made of a
+    /// credential the request carries ([`RETURNS_CREDENTIAL`]), or what a function
+    /// that is one hands back where the body calls it with nothing or with the
+    /// request (`requireSeat(request)` returning what `seatOf(request)` gave), a
+    /// few calls deep. What a call of it hands back is the caller's, wherever the
+    /// value goes: a side `call <it>` is written `caller`. Linked by TypeScript
+    /// (lowering 81) into the listed reading only. Mining never proposes it.
+    pub const GIVES_CALLER: &str = "gives_caller";
+    /// `returns_built:<class>`: every `return` of the function that gives a value
+    /// gives an instance of the class, built in the body (`() => { const client =
+    /// new PrismaClient(); ...; return client }`). Where the function is bound to
+    /// what a call it was handed to gave back (`export const prisma =
+    /// remember("prisma", () => ...)`), a call through a member of the binding
+    /// (`prisma.user.findMany`) is a call on what the function built: a function
+    /// has no such member. Linked by TypeScript (lowering 81) into the listed
+    /// reading only. Mining never proposes it.
+    pub const RETURNS_BUILT: &str = "returns_built:";
     /// Every value the function hands back is plain data: built from literals and
     /// built-ins only, or read off a local or a binding of the file that holds
     /// such a value (`function previous() { return solves[solves.length - 1] }` of
@@ -1976,6 +1995,44 @@ pub mod controls {
     /// On a method the same strings are in [`crate::facts::Member::unread`].
     /// Recorded by Python (lowering 62). Mining never proposes it.
     pub const SIDES: &str = "sides:";
+    /// `called_leaving:<callee>`: every call of the callee the body makes is
+    /// written in what a `throw` outside any `try` throws (`throw redirect("/", {
+    /// headers: { "set-cookie": await sessions.destroySession(session) } })`): no
+    /// request the call ran for goes on to what the body does next, so what the
+    /// call changed is not changed before a check that follows. TypeScript
+    /// lowering 81; mining never proposes it.
+    pub const CALLED_LEAVING: &str = "called_leaving:";
+    /// `caller_from:<callee>`: the body takes what a call of the callee hands back
+    /// as who calls (`const userId = await requireUserId(request)`): what the
+    /// callee and the code it calls read to find that out is how the caller is
+    /// identified, not a scope of the rows the route reads. TypeScript lowering
+    /// 81; mining never proposes it.
+    pub const CALLER_FROM: &str = "caller_from:";
+    /// `filter_own:<callee>\t<key>`: every call of the callee the body makes that
+    /// gives the key gives it the caller itself or the key of the caller's record
+    /// (what a call that gives the caller handed back, whole; `session.user.id`),
+    /// and nothing else read off the caller (`session.user.orgId` is a group of
+    /// the caller): rows narrowed to it are this caller's, whatever the key is
+    /// called. TypeScript lowering 81; mining never proposes it.
+    pub const FILTER_OWN: &str = "filter_own:";
+    /// `filter_every:<callee>\t<key>\t<own|caller>`: every call of the callee the
+    /// body makes, on whatever path, gives the key a value of the caller (`own`
+    /// where each gives the caller itself, [`FILTER_OWN`]), in an object written
+    /// in place with no spread and no computed key at its level (`if (intent ===
+    /// "delete") await db.passkey.delete({ where: { id, userId } })`). A filter
+    /// that is itself under a condition (`where: flag ? undefined : { ... }`) is
+    /// not one. TypeScript lowering 81; mining never proposes it.
+    pub const FILTER_EVERY: &str = "filter_every:";
+    /// What starts the control of a body that leaves by a refusal (a `throw`, an
+    /// answer that turns the caller away) for every request for which what one
+    /// call of it handed back is absent (`const user = await db.user.findFirst({
+    /// where: { id: userId, roles: { some: { name } } } }); if (!user) throw
+    /// forbidden()`): the callee, canonical. What the call was given says what the
+    /// request must have for it to hand anything back
+    /// ([`ARG_VALUE`]). On a method the same strings are in
+    /// [`crate::facts::Member::unread`]. Recorded by TypeScript (lowering 81, the
+    /// listed reading). Mining never proposes it.
+    pub const REFUSES_ABSENT: &str = "refuses_absent:";
     /// What starts the control that says where the value a scoped query filters by
     /// comes from ([`crate::ScopedQuery`]): `filter_value:<callee>\t<key>\t<side>`,
     /// the side as [`SIDES`] writes one. Recorded by Python (lowering 62). Mining

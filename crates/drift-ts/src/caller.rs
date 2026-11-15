@@ -163,6 +163,10 @@ fn identity_value(e: &Expression) -> bool {
     }
 }
 
+/// The members the key of a record is read by, as the Python lowering reads them:
+/// `user.id`, `user.pk`, and the subject a token names (`claims.sub`).
+const RECORD_KEYS: &[&str] = &["id", "pk", "sub"];
+
 /// Sign-in accessors, by name (source 1).
 const CALLER_ACCESSORS: &[&str] = &[
     "auth",
@@ -632,6 +636,17 @@ pub(super) struct Flow {
     /// anything else that is a value.
     returns_caller: bool,
     returns_other: bool,
+    /// The functions called with nothing or with the request whose value a
+    /// `return` gives, and that some `return` gives a value that is neither the
+    /// caller's nor such a call's.
+    returns_given: BTreeSet<RawRef>,
+    returns_else: bool,
+    /// The callees of the repository whose call's value the body takes as the
+    /// caller (source 1): [`drift_core::controls::CALLER_FROM`].
+    pub(super) caller_from: std::cell::RefCell<BTreeSet<RawRef>>,
+    /// The locals bound to the caller itself or the key of the caller's record
+    /// ([`Collector::caller_self`]) and never bound again, with what may give it.
+    self_locals: HashMap<SymbolId, Vec<RawRef>>,
     /// The tags of the tagged templates of the body.
     pub(super) tags: BTreeSet<RawRef>,
     /// Walking the condition of an exit that answers "not signed in".
@@ -643,6 +658,15 @@ impl Flow {
     /// value ([`drift_core::controls::RETURNS_CALLER`]).
     pub(super) fn returns_caller(&self) -> bool {
         self.returns_caller && !self.returns_other
+    }
+}
+
+impl Flow {
+    /// The functions whose value the function hands back, where every `return`
+    /// that gives a value gives a value of the caller or what one of them gave
+    /// ([`super::RawSymbol::returns_via`]).
+    pub(super) fn returns_via(&self) -> impl Iterator<Item = &RawRef> {
+        self.returns_given.iter().filter(|_| !self.returns_else)
     }
 }
 
@@ -1117,6 +1141,74 @@ impl<'l, 's> Collector<'l, 's> {
                 if drift_core::guard_lists::verifying_package(spec))
     }
 
+    /// The value is the caller itself or the key of the caller's record, and
+    /// nothing else read off the caller: what a call that gives the caller handed
+    /// back, whole (`await requireUserId(request)`); the key of a value of the
+    /// caller ([`RECORD_KEYS`]: `session.user.id`, `claims.sub`); a conversion of
+    /// one (`String(session.user.id)`); a local bound to one and never bound
+    /// again. Rows a query narrows to it are this caller's and no one else's,
+    /// whatever the key is called; a group or a setting of the caller
+    /// (`session.user.orgId`) is not it. What may give it (nothing where it is the
+    /// caller's by its own source), for linking to say whether each gives the
+    /// caller.
+    pub(super) fn caller_self(&self, e: &Expression) -> Option<Vec<RawRef>> {
+        self.caller_self_at(e, 0)
+    }
+
+    fn caller_self_at(&self, e: &Expression, depth: usize) -> Option<Vec<RawRef>> {
+        if depth > 6 {
+            return None;
+        }
+        let whole = |t: Taint| (!t.param && t.of_caller()).then_some(t.via);
+        match peel(e) {
+            Expression::Identifier(id) => {
+                let s = self.symbol_of(id)?;
+                self.flow.self_locals.get(&s).cloned()
+            }
+            Expression::CallExpression(c) => {
+                if self.conversion(&c.callee) {
+                    return match c.arguments.as_slice() {
+                        [a] => a
+                            .as_expression()
+                            .and_then(|x| self.caller_self_at(x, depth + 1)),
+                        _ => None,
+                    };
+                }
+                // A read of a holder or a store gives what was put under the key,
+                // and a method that passes its object on gives a part of it.
+                if self.holder_call(c, "get").is_some()
+                    || self.context_store(c)
+                    || Self::method(&c.callee)
+                        .is_some_and(|(_, m)| m == "getStore" || PASS_METHODS.contains(&m))
+                {
+                    return None;
+                }
+                whole(self.taint_call(c, 0))
+            }
+            Expression::StaticMemberExpression(m)
+                if RECORD_KEYS.contains(&m.property.name.as_str()) =>
+            {
+                whole(self.taint(&m.object))
+            }
+            Expression::ChainExpression(c) => match &c.expression {
+                ChainElement::StaticMemberExpression(m)
+                    if RECORD_KEYS.contains(&m.property.name.as_str()) =>
+                {
+                    whole(self.taint(&m.object))
+                }
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+
+    /// The value is a value of the caller, whatever it says of the caller, and
+    /// nothing of a parameter: what may give it ([`Collector::caller_self`]).
+    pub(super) fn caller_side(&self, e: &Expression) -> Option<Vec<RawRef>> {
+        let t = self.taint(e);
+        (!t.param && t.of_caller()).then_some(t.via)
+    }
+
     /// Whose the value a call hands back is.
     fn taint_call(&self, c: &CallExpression, depth: usize) -> Taint {
         if let Some(k) = self.holder_call(c, "get") {
@@ -1148,6 +1240,11 @@ impl<'l, 's> Collector<'l, 's> {
         }
         let callee = self.l.canon_callee(&c.callee);
         if self.accessor(c, callee.as_ref()) {
+            if let Some(r) = &callee
+                && !matches!(r.base, RawBase::Global(_))
+            {
+                self.flow.caller_from.borrow_mut().insert(r.clone());
+            }
             return Taint::caller();
         }
         // What a function called with nothing, or with the request, hands back.
@@ -1569,6 +1666,20 @@ impl<'l, 's> Collector<'l, 's> {
         match id {
             BindingPattern::BindingIdentifier(b) => {
                 let Some(s) = b.symbol_id.get() else { return };
+                // The caller itself: the value whole, or the key of a record read
+                // where the name is bound (`const { id } = session.user`).
+                let whole = match path.split_last() {
+                    None => self.caller_self(init),
+                    Some((last, before)) if RECORD_KEYS.contains(last) => {
+                        let t = self.taint_path(init, before, 0);
+                        (!t.param && t.of_caller()).then_some(t.via)
+                    }
+                    Some(_) => None,
+                };
+                match whole {
+                    Some(givers) => self.flow.self_locals.insert(s, givers),
+                    None => self.flow.self_locals.remove(&s),
+                };
                 let t = self.taint_path(init, path, 0);
                 if t.is_empty() {
                     self.flow.locals.remove(&s);
@@ -1636,6 +1747,12 @@ impl<'l, 's> Collector<'l, 's> {
 
     /// `x = <value>`, `x.k = <value>`, `req.depot = <value>`.
     pub(super) fn flow_assign(&mut self, it: &AssignmentExpression) {
+        // A local bound again is whatever it was last given.
+        if let AssignmentTarget::AssignmentTargetIdentifier(id) = &it.left
+            && let Some(s) = self.symbol_of(id)
+        {
+            self.flow.self_locals.remove(&s);
+        }
         let mut t = self.taint(&it.right);
         if t.is_empty() {
             // What a guard, a middleware or a strategy puts on the request is who
@@ -1722,6 +1839,16 @@ impl<'l, 's> Collector<'l, 's> {
             self.flow.returns_caller = true;
         } else {
             self.flow.returns_other = true;
+            // What a function called with nothing or with the request gave, and
+            // nothing else: a holder's key is no function, a parameter's value
+            // is whatever was passed.
+            let given = !t.param
+                && !t.via.is_empty()
+                && t.via.iter().all(|g| !matches!(g.base, RawBase::Global(_)));
+            match given {
+                true => self.flow.returns_given.extend(t.via.iter().cloned()),
+                false => self.flow.returns_else = true,
+            }
         }
     }
 
