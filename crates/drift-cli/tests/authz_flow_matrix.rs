@@ -1663,9 +1663,37 @@ fn keyed_expected(key: &str, u: &Use, s: &Source, lib: &Lib) -> &'static str {
     };
     if key == "orgId" && !s.caller && want == "none" {
         "unknown"
+    } else if key == "orgId" && want == "unknown" && own_value(s) && keyed_in_an_object(u, lib) {
+        // TypeScript lowering 76: a key named for a tenant, filtered by a value that
+        // is the caller's by its own source, written as the value of that key in an
+        // object the query is given, is the route's tenancy filter. What only may
+        // give a value of the caller (a helper, a holder a middleware sets) proves
+        // nothing, and neither does a key on no list.
+        "known"
     } else {
         want
     }
+}
+
+/// The source is a value of the caller by itself (the request's user, a session, a
+/// decorated parameter), not what a helper hands back or a holder keeps: those may
+/// give one, which a filter is not proven by.
+fn own_value(s: &Source) -> bool {
+    s.caller
+        && !["helper-", "holder-", "ctx-member-", "what-"]
+            .iter()
+            .any(|given| s.name.starts_with(given))
+}
+
+/// The use writes the value as the value of the key in an object a query is given:
+/// `{ where: { orgId: v } }`, and the filters of the libraries that take one.
+fn keyed_in_an_object(u: &Use, lib: &Lib) -> bool {
+    u.name == "object-property"
+        || (u.name == "library-filter"
+            && matches!(
+                lib.name,
+                "prisma" | "typeorm-find" | "sequelize" | "mongoose"
+            ))
 }
 
 /// Every library in every position, the frameworks in turn: a fixture per library,

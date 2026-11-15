@@ -230,6 +230,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
+            "returns_given:app/api/deps.py#get_current_user",
             "typed_return"
           ],
           "string_literals": 0
@@ -253,6 +254,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "controls": [
             "refuses_every",
             "rejects_caller",
+            "returns_given:pkg:fastapi#security.OAuth2PasswordBearer",
             "throw",
             "typed_return"
           ],

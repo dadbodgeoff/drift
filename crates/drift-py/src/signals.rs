@@ -30,6 +30,7 @@ pub mod kind {
     pub const SECRET: &str = "hardcoded_secret";
     pub const DEBUG: &str = "debug_enabled";
     pub const TLS: &str = "tls_verify_disabled";
+    pub const MASS: &str = "mass_assignment";
 }
 
 /// Calls that open, send or remove the file at the path they are given.
@@ -564,6 +565,35 @@ impl Lowerer<'_> {
         }
         if is_false(keyword(c, "verify")) {
             out.push(kind::TLS);
+        }
+        // What the request sent, whole, unpacked into what is built or written:
+        // `User(**request.json)`, `Item.objects.create(**request.data)`,
+        // `user.update(**request.get_json())`. Every field the caller names is set.
+        let sent_whole = |e: &Expr| -> bool {
+            let e = match e {
+                Expr::Await(a) => a.value.as_ref(),
+                e => e,
+            };
+            let root =
+                |x: &Expr| matches!(x, Expr::Name(n) if matches!(n.id.as_str(), "request" | "req"));
+            match e {
+                Expr::Attribute(a) => {
+                    matches!(a.attr.as_str(), "json" | "form" | "data" | "POST" | "args")
+                        && root(&a.value)
+                }
+                Expr::Call(inner) => matches!(inner.func.as_ref(), Expr::Attribute(a)
+                    if matches!(a.attr.as_str(), "get_json" | "json" | "form" | "dict" | "to_dict")
+                        && (root(&a.value)
+                            || matches!(a.value.as_ref(), Expr::Attribute(b) if root(&b.value)))),
+                _ => false,
+            }
+        };
+        if c.arguments
+            .keywords
+            .iter()
+            .any(|k| k.arg.is_none() && sent_whole(&k.value))
+        {
+            out.push(kind::MASS);
         }
         out
     }

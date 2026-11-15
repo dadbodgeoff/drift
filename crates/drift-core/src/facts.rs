@@ -1740,6 +1740,18 @@ pub mod controls {
     /// Python (lowering 58), and by TypeScript (lowering 66) in the listed reading
     /// only. Mining never proposes it.
     pub const RETURNS_CALLER: &str = "returns_caller";
+    /// What starts the control of a function whose every `return` that gives a
+    /// value gives one read off what a dependency gave it, each dependency its own
+    /// entry (`returns_given:<dependency>`, canonical): `def get_current_user(db:
+    /// SessionDep, token: TokenDep): ... return db.get(User, claims.sub)`, where
+    /// the claims are what the verification of `token` handed back. The value is
+    /// one of the caller where every such dependency gives one (it signs the
+    /// caller in), which a reader decides. Read off a dependency's value: its
+    /// members and items, what a token verifier hands back of it (`jwt.decode`),
+    /// an object built from it alone (`Claims(**payload)`), and the row a primary
+    /// key read off it names (`db.get(User, sub)`, `User.objects.get(pk=sub)`).
+    /// Recorded by Python (lowering 69). Mining never proposes it.
+    pub const RETURNS_GIVEN: &str = "returns_given:";
     /// A function whose own body returns what the request sent in every `return`
     /// that gives a value: a header, a query, path, body or cookie value, a
     /// parameter that is not a dependency (`def team(x_team_id: str = Header(...)):

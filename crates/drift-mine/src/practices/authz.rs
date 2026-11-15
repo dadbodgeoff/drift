@@ -119,20 +119,41 @@ impl Concern for Authz {
 /// that code of the repository binds to one (`g.venue_id = get_jwt()["venue_id"]`
 /// in a `before_request`; `holders`: followed once).
 fn gives_caller(cx: &Cx<'_>, giver: &str, holders: bool) -> bool {
+    gives_caller_at(cx, giver, holders, 0)
+}
+
+/// [`gives_caller`], `depth` dependencies down: a function whose every return
+/// reads its value off what its own dependencies gave it
+/// ([`drift_core::controls::RETURNS_GIVEN`]: `get_current_user`, which loads the
+/// row the verified token names) gives a value of the caller where every one of
+/// those dependencies does.
+fn gives_caller_at(cx: &Cx<'_>, giver: &str, holders: bool, depth: usize) -> bool {
     let ctx = cx.context();
+    let given = |d: &drift_core::Symbol| -> bool {
+        let mut from = d
+            .controls
+            .iter()
+            .filter_map(|c| c.strip_prefix(drift_core::controls::RETURNS_GIVEN))
+            .peekable();
+        depth < 3
+            && from.peek().is_some()
+            && from.all(|dep| dep != giver && gives_caller_at(cx, dep, false, depth + 1))
+    };
     crate::security::authenticates(ctx, giver)
         || (!common::external(giver)
             && ctx.definition(giver).is_some_and(|d| {
                 d.kind == drift_core::SymbolKind::Function
                     && d.name == common::short(giver)
-                    && d.controls
+                    && (d
+                        .controls
                         .iter()
                         .any(|c| c == drift_core::controls::RETURNS_CALLER)
+                        || (ctx.since_measured() && given(d)))
             }))
         || (holders
             && ctx.held(giver).is_some_and(|from| {
                 from.iter()
-                    .any(|via| via.is_empty() || gives_caller(cx, via, false))
+                    .any(|via| via.is_empty() || gives_caller_at(cx, via, false, depth + 1))
             }))
 }
 
@@ -4272,6 +4293,10 @@ fn filters<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
             }
             continue;
         }
+        // TypeScript: the value the key filters by is the caller's own, by where
+        // the lowering read it ([`drift_core::controls::FILTER_VALUE`], side
+        // `caller`), in a call every request to the body reaches.
+        let callers = !ev.python && filtered_by_caller(n, callee, key);
         if names_tenant(last) {
             // The lowering's scoped queries say more (where the value came from).
             // [STRICT]: a key named for a tenant, with nothing recorded of where
@@ -4279,12 +4304,42 @@ fn filters<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
             // string, the body, a cookie or a constant filters by what the request
             // chose): found, not proven.
             if scoped.is_empty() {
-                ev.unsourced_filter("tenancy_filter", key);
+                match callers {
+                    true => ev.add(
+                        "tenancy_filter",
+                        &format!("{key} (session)"),
+                        VariantSource::Usage,
+                    ),
+                    false => ev.unsourced_filter("tenancy_filter", key),
+                }
             }
         } else if names_owner(last) {
-            ev.unsourced_filter("owner_filter", key);
+            match callers {
+                true => ev.add(
+                    "owner_filter",
+                    &format!("{key} (session)"),
+                    VariantSource::Usage,
+                ),
+                false => ev.unsourced_filter("owner_filter", key),
+            }
         }
     }
+}
+
+/// The body gives `callee` a value of the caller's own under `key`, in a call every
+/// request to the body reaches ([`drift_core::controls::FILTER_VALUE`] with the
+/// side `caller`, which the TypeScript lowering records): the query is filtered by
+/// who calls.
+fn filtered_by_caller(n: Node<'_>, callee: &str, key: &str) -> bool {
+    let facts: &[String] = match n {
+        Node::Sym(s) => &s.controls,
+        Node::Member(m) => &m.unread,
+    };
+    let want = format!(
+        "{}{callee}\t{key}\tcaller",
+        drift_core::controls::FILTER_VALUE
+    );
+    facts.contains(&want)
 }
 
 /// The call runs a query: a known database client, a Prisma-style `where` argument,

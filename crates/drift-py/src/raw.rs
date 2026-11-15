@@ -172,6 +172,11 @@ pub struct RawSymbol {
     /// listed reading only ([`drift_core::Listed`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub since_sinks: Vec<String>,
+    /// The dependencies whose value every `return` of the function that gives a
+    /// value reads it off ([`drift_core::controls::RETURNS_GIVEN`]); empty where a
+    /// return gives anything else.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub returns_given: Vec<RawDep>,
     pub order: Vec<RawRef>,
     /// FastAPI dependencies of a function, in parameter order; of a class, its
     /// `__init__`'s (what `Depends(Class)` runs).
@@ -1275,6 +1280,7 @@ impl RawSymbol {
             throws: vec![],
             sinks: vec![],
             since_sinks: vec![],
+            returns_given: vec![],
             order: vec![],
             deps: vec![],
             call_deps: vec![],

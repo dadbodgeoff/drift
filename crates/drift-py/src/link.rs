@@ -4729,6 +4729,19 @@ impl<'r> Linker<'r> {
                             format!("{}{callee}", drift_core::controls::VERIFIES_SIGNATURE)
                         }));
                         c.extend(self.origins(fi, &s.check_sides, &s.filter_values, &s.arg_sides));
+                        // What every return of the function reads its value off
+                        // ([`drift_core::controls::RETURNS_GIVEN`]): said only where
+                        // each dependency stands for something here.
+                        let given: Vec<Vec<Dep>> = s
+                            .returns_given
+                            .iter()
+                            .map(|d| self.dep_canon(fi, d, false))
+                            .collect();
+                        if !given.is_empty() && given.iter().all(|deps| !deps.is_empty()) {
+                            c.extend(given.iter().flatten().map(|dep| {
+                                format!("{}{}", drift_core::controls::RETURNS_GIVEN, dep.id)
+                            }));
+                        }
                         c.extend(s.attr_params.iter().map(|(attr, param, i)| {
                             format!("{}{attr}\t{param}\t{i}", drift_core::controls::ATTR_PARAM)
                         }));

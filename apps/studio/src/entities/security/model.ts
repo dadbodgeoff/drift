@@ -80,6 +80,8 @@ export const SINK_LABELS: Record<string, string> = {
   hardcoded_secret: "Signing secret written in the code",
   debug_enabled: "Server started in debug mode",
   tls_verify_disabled: "TLS certificate not verified",
+  mass_assignment: "Row written from the whole request body",
+  dynamic_regex: "Regular expression built from a value",
 };
 
 export const sinkLabel = (k: string) => SINK_LABELS[k] ?? k;

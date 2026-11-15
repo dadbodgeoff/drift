@@ -648,6 +648,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
+            "returns_given:app/deps.py#get_current_user",
             "typed_return"
           ],
           "string_literals": 0
@@ -664,6 +665,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
+            "returns_given:app/deps.py#get_current_active_user",
             "typed_return"
           ],
           "string_literals": 0
@@ -680,6 +682,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
+            "returns_given:pkg:fastapi#security.OAuth2PasswordBearer",
             "typed_return"
           ],
           "string_literals": 0
@@ -710,6 +713,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
+            "returns_given:app/deps.py#get_current_user",
             "typed_return"
           ],
           "string_literals": 0
@@ -726,6 +730,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
+            "returns_given:app/deps.py#Auth",
             "typed_return"
           ],
           "string_literals": 0
@@ -742,6 +747,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
+            "returns_given:pkg:fastapi#security.OAuth2PasswordBearer",
             "typed_return"
           ],
           "string_literals": 0
@@ -759,6 +765,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "hands_back_param",
+            "returns_given:app/deps.py#get_current_user",
             "typed_return"
           ],
           "string_literals": 1
@@ -776,6 +783,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "hands_back_param",
+            "returns_given:app/deps.py#get_current_user",
             "typed_return"
           ],
           "string_literals": 1
@@ -885,6 +893,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
+            "returns_given:app/deps.py#get_current_user",
             "typed_return"
           ],
           "string_literals": 0
@@ -922,6 +931,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
+            "returns_given:app/deps.py#get_current_user",
             "typed_return"
           ],
           "string_literals": 0
@@ -938,6 +948,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
+            "returns_given:app/deps.py#get_current_user",
             "typed_return"
           ],
           "string_literals": 0
@@ -1108,6 +1119,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
+            "returns_given:app/deps.py#get_current_user",
             "typed_return"
           ],
           "string_literals": 0
@@ -1750,6 +1762,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#auth_context",
             "typed_return"
           ],
           "string_literals": 0
@@ -1772,6 +1785,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#get_token_user",
             "typed_return"
           ],
           "string_literals": 0
@@ -1849,6 +1863,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#Signer",
             "shape:app/deps.py#Signer(lit)",
             "typed_return"
           ],
@@ -1872,6 +1887,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#get_wrapped_user",
             "typed_return"
           ],
           "string_literals": 0
@@ -1911,6 +1927,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#get_optional_user",
             "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
             "typed_return"
           ],
@@ -1934,6 +1951,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#loose",
             "typed_return"
           ],
           "string_literals": 0
@@ -1990,6 +2008,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#lax",
             "typed_return"
           ],
           "string_literals": 0
@@ -2029,6 +2048,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#positional_scheme",
             "typed_return"
           ],
           "string_literals": 0
@@ -2051,6 +2071,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#public_auth",
             "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
             "typed_return"
           ],
@@ -2074,6 +2095,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#relaxed",
             "typed_return"
           ],
           "string_literals": 0
@@ -2134,6 +2156,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#get_relaxed_user",
             "typed_return"
           ],
           "string_literals": 0
@@ -2156,6 +2179,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#optional_scheme",
             "typed_return"
           ],
           "string_literals": 0
@@ -2199,6 +2223,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#get_viewer",
             "typed_return"
           ],
           "string_literals": 0
@@ -2558,6 +2583,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "args": [],
             "controls": [
               "no_input",
+              "returns_given:app/deps.py#DataAuth",
               "shape:app/deps.py#DataAuth(False)",
               "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
               "typed_return"
@@ -2590,6 +2616,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "args": [],
             "controls": [
               "no_input",
+              "returns_given:app/deps.py#Auth",
               "shape:app/deps.py#Auth(**)",
               "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
               "typed_return"
@@ -2614,6 +2641,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "args": [],
             "controls": [
               "no_input",
+              "returns_given:app/deps.py#SubAuth",
               "shape:app/deps.py#SubAuth(False)",
               "typed_return"
             ],
@@ -2637,6 +2665,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "args": [],
             "controls": [
               "no_input",
+              "returns_given:pkg:fastapi#security.HTTPBearer",
               "shape:pkg:fastapi#security.HTTPBearer(auto_error=?)",
               "typed_return"
             ],
@@ -2668,6 +2697,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "args": [],
             "controls": [
               "no_input",
+              "returns_given:app/deps.py#get_optional_user",
               "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
               "typed_return"
             ],
@@ -2699,6 +2729,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "args": [],
             "controls": [
               "no_input",
+              "returns_given:app/deps.py#Require",
               "shape:app/deps.py#Require(optional=True)",
               "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
               "typed_return"
@@ -2731,6 +2762,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "args": [],
             "controls": [
               "no_input",
+              "returns_given:app/deps.py#Require",
               "shape:app/deps.py#Require(True)",
               "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
               "typed_return"
@@ -2763,6 +2795,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "args": [],
             "controls": [
               "no_input",
+              "returns_given:app/deps.py#require",
               "shape:app/deps.py#require(True)",
               "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
               "typed_return"
@@ -2795,6 +2828,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "args": [],
             "controls": [
               "no_input",
+              "returns_given:app/deps.py#Auth",
               "shape:app/deps.py#Auth(False)",
               "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
               "typed_return"
@@ -2827,6 +2861,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "args": [],
             "controls": [
               "no_input",
+              "returns_given:app/deps.py#require_flag",
               "shape:app/deps.py#require_flag(True)",
               "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
               "typed_return"
@@ -2851,6 +2886,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "args": [],
             "controls": [
               "no_input",
+              "returns_given:pkg:fastapi#security.OAuth2PasswordBearer",
               "shape:pkg:fastapi#security.OAuth2PasswordBearer(lit,None,None,None,False)",
               "typed_return"
             ],
@@ -2882,6 +2918,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "args": [],
             "controls": [
               "no_input",
+              "returns_given:app/deps.py#public_auth",
               "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
               "typed_return"
             ],
@@ -2913,6 +2950,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "args": [],
             "controls": [
               "no_input",
+              "returns_given:app/deps.py#Auth",
               "shape:app/deps.py#Auth(required=False)",
               "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
               "typed_return"
@@ -2941,6 +2979,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "args": [],
             "controls": [
               "no_input",
+              "returns_given:app/deps.py#get_auth",
               "shape:app/deps.py#get_auth(required=False)",
               "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
               "typed_return"
@@ -2965,6 +3004,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "args": [],
             "controls": [
               "no_input",
+              "returns_given:pkg:fastapi#security.HTTPBearer",
               "shape:pkg:fastapi#security.HTTPBearer(auto_error=False)",
               "typed_return"
             ],
@@ -3000,6 +3040,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "args": [],
             "controls": [
               "no_input",
+              "returns_given:app/deps.py#get_relaxed_user",
               "shape:app/deps.py#Auth(required=False)",
               "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
               "typed_return"
@@ -3024,6 +3065,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "args": [],
             "controls": [
               "no_input",
+              "returns_given:pkg:fastapi#security.OAuth2PasswordBearer",
               "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit,auto_error=False)",
               "typed_return"
             ],
@@ -3055,6 +3097,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "args": [],
             "controls": [
               "no_input",
+              "returns_given:app/deps.py#Auth",
               "shape:app/deps.py#Auth(*)",
               "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
               "typed_return"
@@ -3260,6 +3303,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#get_current_user",
             "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
             "typed_return"
           ],
@@ -3295,6 +3339,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#get_current_superuser",
             "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
             "typed_return"
           ],
@@ -3326,6 +3371,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#get_current_active_user",
             "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
             "typed_return"
           ],
@@ -3357,6 +3403,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#Pagination",
             "returns_unread",
             "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
             "typed_return"
@@ -3385,6 +3432,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#get_current_user",
             "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
             "typed_return"
           ],
@@ -3412,6 +3460,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "reads_input",
+            "returns_given:app/deps.py#get_current_user",
             "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
             "typed_return"
           ],
@@ -3435,6 +3484,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#SubAuth",
             "shape:app/deps.py#SubAuth(True)",
             "typed_return"
           ],
@@ -3466,6 +3516,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#RoleChecker",
             "shape:app/deps.py#RoleChecker(lit)",
             "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
             "typed_return"
@@ -3498,6 +3549,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#require_role",
             "shape:app/deps.py#require_role(False)",
             "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
             "typed_return"
@@ -3530,6 +3582,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#Roles",
             "shape:app/deps.py#Roles(lit)",
             "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
             "typed_return"
@@ -3562,6 +3615,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#Roles",
             "shape:app/deps.py#Roles(required=lit)",
             "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
             "typed_return"
@@ -3591,6 +3645,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "controls": [
             "hands_back_param",
             "no_input",
+            "returns_given:app/deps.py#get_current_user",
             "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
             "typed_return"
           ],
@@ -3622,6 +3677,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#optional_scopes_user",
             "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
             "typed_return"
           ],
@@ -3653,6 +3709,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#public_key_auth",
             "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
             "typed_return"
           ],
@@ -3680,6 +3737,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#get_current_user",
             "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
             "typed_return"
           ],
@@ -3711,6 +3769,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#Auth",
             "shape:app/deps.py#Auth(True)",
             "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
             "typed_return"
@@ -3743,6 +3802,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#Require",
             "shape:app/deps.py#Require(False)",
             "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
             "typed_return"
@@ -3775,6 +3835,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#verify_public_key",
             "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
             "typed_return"
           ],
@@ -3806,6 +3867,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "no_input",
+            "returns_given:app/deps.py#require_any",
             "shape:app/deps.py#require_any(True)",
             "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
             "typed_return"

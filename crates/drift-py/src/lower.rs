@@ -2570,6 +2570,11 @@ pub(crate) struct Collector<'l, 't> {
     /// each so far ([`drift_core::controls::RETURNS_CALLER`]); `None` before the
     /// first.
     returns_caller: Option<bool>,
+    /// The dependencies the returns of the symbol's own function read their value
+    /// off, and whether one gives anything else
+    /// ([`drift_core::controls::RETURNS_GIVEN`]).
+    returns_via: Vec<RawDep>,
+    returns_else: bool,
     /// A rejection that counts was a response the body returns, and one that was
     /// raised or made by a call (`abort(401)`), for
     /// [`drift_core::controls::RETURNS_REJECTION`].
@@ -2683,6 +2688,8 @@ impl<'l, 't> Collector<'l, 't> {
             returns_calls: BTreeSet::new(),
             caller_args: BTreeSet::new(),
             returns_caller: None,
+            returns_via: Vec::new(),
+            returns_else: false,
             rejects_by_return: false,
             rejects_otherwise: false,
             returns_401: false,
@@ -2779,6 +2786,9 @@ impl<'l, 't> Collector<'l, 't> {
         sym.throws.extend(self.throws);
         sym.sinks.extend(self.sinks);
         sym.since_sinks.extend(self.since_sinks);
+        if !self.returns_else && sym.kind == SymbolKind::Function {
+            sym.returns_given = std::mem::take(&mut self.returns_via);
+        }
         sym.forwards.extend(self.forwards);
         sym.body_checks.extend(self.body_checks);
         sym.raise_checks.extend(self.raise_checks);
@@ -4016,8 +4026,18 @@ impl<'a> Collector<'_, 'a> {
                     if let Some(v) = r.value.as_deref()
                         && !matches!(v, Expr::NoneLiteral(_))
                     {
-                        let caller = self.caller_value(v) == Some(None);
+                        let source = self.caller_value(v);
+                        let caller = source == Some(None);
                         self.returns_caller = Some(self.returns_caller.unwrap_or(true) && caller);
+                        match source {
+                            Some(Some(dep)) if !matches!(dep, RawDep::Gives(_)) => {
+                                if !self.returns_via.contains(&dep) {
+                                    self.returns_via.push(dep);
+                                }
+                            }
+                            Some(None) => {}
+                            _ => self.returns_else = true,
+                        }
                         // A parameter that is no dependency is what the request
                         // sent only in what FastAPI calls for a request; a reader
                         // asks of a dependency or a helper called with the request.

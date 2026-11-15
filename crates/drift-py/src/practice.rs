@@ -2438,6 +2438,46 @@ impl<'t> Collector<'_, 't> {
                 if bare && last_name(&c.func).is_some_and(|n| CALLER_ACCESSORS.contains(&n)) {
                     return Some(None);
                 }
+                // What a token verifier hands back of a value of the caller:
+                // `jwt.decode(token, key, algorithms=[...])`.
+                if self
+                    .canon(&c.func)
+                    .as_ref()
+                    .and_then(dotted)
+                    .is_some_and(|d| TOKEN_DECODERS.contains(&d.as_str()))
+                    && let Some(token) = c.arguments.args.first()
+                    && let Some(source) = self.caller_source(token, depth + 1)
+                {
+                    return Some(source);
+                }
+                // An object built from a value of the caller alone:
+                // `TokenPayload(**payload)`.
+                if let ([], [only]) = (&*c.arguments.args, &*c.arguments.keywords)
+                    && only.arg.is_none()
+                    && let Some(source) = self.caller_source(&only.value, depth + 1)
+                {
+                    return Some(source);
+                }
+                // The row a primary key of the caller's names: `db.get(User,
+                // claims.sub)`, `User.objects.get(pk=claims["sub"])`.
+                if let Expr::Attribute(a) = c.func.as_ref()
+                    && a.attr.as_str() == "get"
+                {
+                    let key = match (&*c.arguments.args, &*c.arguments.keywords) {
+                        ([Expr::Name(_) | Expr::Attribute(_), key], []) => Some(key),
+                        ([], [k])
+                            if k.arg
+                                .as_ref()
+                                .is_some_and(|n| matches!(n.as_str(), "pk" | "id")) =>
+                        {
+                            Some(&k.value)
+                        }
+                        _ => None,
+                    };
+                    if let Some(source) = key.and_then(|k| self.caller_source(k, depth + 1)) {
+                        return Some(source);
+                    }
+                }
                 match c.func.as_ref() {
                     // `claims.get("venue_id")`, `session.get("org", None)`.
                     Expr::Attribute(a)
@@ -3767,6 +3807,10 @@ fn path_names(e: &Expr) -> impl Iterator<Item = &str> {
 /// its older `get_jwt_claims()`, `get_raw_jwt()`; `auth.current_user()`
 /// (flask_httpauth) and `current_user_id()` (flask_praetorian). A function of the
 /// repository under one of these names is read the same.
+/// Calls that verify a token and hand back what it carries: of a value of the
+/// caller, a value of the caller.
+const TOKEN_DECODERS: &[&str] = &["jwt.decode", "jwt.api_jwt.decode", "jose.jwt.decode"];
+
 const CALLER_ACCESSORS: &[&str] = &[
     "get_jwt",
     "get_jwt_identity",

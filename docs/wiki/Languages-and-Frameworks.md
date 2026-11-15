@@ -26,6 +26,10 @@ Conventions are mined from any parsed code, whatever the framework. What follows
 | Hono | TS/JS | Routes on an app, with `basePath` | run |
 | NestJS | TS/JS | Controller routes (`@Controller` with `@Get`, `@Post`, ...); GraphQL resolvers (`@Query`, `@Mutation`, `@Subscription`, `@ResolveField`); schedules (`@Cron`, `@Interval`, `@Timeout`) | run (HTTP, GraphQL query, cron) |
 | Next.js | TS/JS | App-router route handlers (`route.ts`), pages (`page.tsx`), server actions (`"use server"`), pages-router API routes (`pages/api/*`) | run |
+| React Router 7 (framework mode) and Remix | TS/JS | Route modules under `app/routes/` and the root route: `loader` as `GET`, `action` as `POST`, under the path the file name gives (`users.$id.tsx` is `/users/:id`). Listed since the last measured build, with what runs before the route unread | run |
+| SvelteKit | TS/JS | `+server.ts` endpoints by exported method; `load` and `actions` of `+page.server.ts` and `+layout.server.ts`. Listed since, with `hooks.server` unread | run |
+| Nuxt and Nitro | TS/JS | `server/api/**` and `server/routes/**` handlers, the method from the file name (`[id].get.ts`). Listed since, with server middleware unread | run |
+| Koa (`@koa/router`, `koa-router`) | TS/JS | Routes on a router. Listed since; what a Koa middleware does is not read, so every route's guard is unknown | run |
 | tRPC | TS/JS | Procedures, as `rpc` entry points (`QUERY hello`) | run |
 | Inngest | TS/JS | Functions (`createFunction`), as `job` or, with a cron trigger, `cron` | run (job) |
 | BullMQ | TS/JS | Workers, as `job` | run |
@@ -50,7 +54,7 @@ A route registered in a way Drift cannot read (a loop it cannot unroll, `getattr
 
 ## Frameworks not listed
 
-These were tried on a small repository and their routes did not appear (**run**): Koa, Hapi, Restify, Remix, SvelteKit, Nuxt, Astro, Sanic, Tornado, aiohttp, Litestar, Bottle and Quart. The same holds, unverified, for any framework not in the table above. For such a repository:
+These were tried on a small repository and their routes did not appear (**run**): Hapi, Restify, Astro, Sanic, Tornado, aiohttp, Litestar, Bottle and Quart. (Koa, Remix and React Router, SvelteKit and Nuxt are listed since the last measured build; see the table above. Their routes are listed with their guard unknown unless one is found in the handler's own body, because what runs before them is not read.) The same holds, unverified, for any framework not in the table above. For such a repository:
 
 - `drift security` lists none of its routes, `drift practices` has no recipe for them, and a card says it knows no entry point for the file.
 - Convention mining, `drift check`, the review flow and the hooks' rule priming still work on the code as code.

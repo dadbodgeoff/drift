@@ -976,6 +976,9 @@ pub struct Linker<'r> {
     trpc: TrpcOrigins,
     /// Package directory -> built with Next.js ([`crate::nextjs::package_uses_next`]).
     next_packages: Mutex<BTreeMap<String, bool>>,
+    /// Package directory -> the file-convention router it is built with
+    /// ([`crate::filerouters::framework_of`]).
+    file_routers: Mutex<BTreeMap<String, Option<crate::filerouters::Framework>>>,
     /// What [`Linker::origin`] answered, per module and name.
     origins: OriginMemo,
     /// The middleware applied to the routes of each Nest application beside them
@@ -1332,6 +1335,7 @@ impl<'r> Linker<'r> {
             composed: BTreeMap::new(),
             trpc: TrpcOrigins::default(),
             next_packages: Mutex::new(BTreeMap::new()),
+            file_routers: Mutex::new(BTreeMap::new()),
             origins: OriginMemo::default(),
             nest: Vec::new(),
             nest_prefixed: BTreeSet::new(),
@@ -2650,6 +2654,15 @@ impl<'r> Linker<'r> {
             .or_insert_with(|| crate::nextjs::package_uses_next(&self.resolver.root, package))
     }
 
+    /// The file-convention router the package at `package` is built with, read once
+    /// per package.
+    fn file_router(&self, package: &str) -> Option<crate::filerouters::Framework> {
+        let mut memo = self.file_routers.lock().unwrap_or_else(|e| e.into_inner());
+        *memo
+            .entry(package.to_string())
+            .or_insert_with(|| crate::filerouters::framework_of(&self.resolver.root, package))
+    }
+
     pub fn link(&self, f: &LoweredFile, package: String) -> FileFacts {
         let rel = f.rel_path.as_str();
         let specs = &self.specs[rel];
@@ -3133,6 +3146,27 @@ impl<'r> Linker<'r> {
             })
             .collect();
         facts.entry_points = crate::nextjs::entry_points(&facts, self.uses_next(&facts.package));
+        // A route of a file-convention router other than Next.js: listed since the
+        // measured build, with what runs before it (a parent route, a server hook)
+        // unread.
+        if f.raw.file_routes
+            && let Some(framework) = self.file_router(&facts.package)
+        {
+            for e in crate::filerouters::entry_points(&facts, framework) {
+                if facts.entry_points.iter().any(|x| x.symbol == e.symbol) {
+                    continue;
+                }
+                facts.mounts.push(drift_core::MountFacts {
+                    symbol: e.symbol.clone(),
+                    route: e.route.clone().unwrap_or_default(),
+                    wraps: vec![],
+                    opaque: true,
+                    elsewhere: false,
+                    app_middleware: vec![],
+                });
+                facts.entry_points.push(e);
+            }
+        }
         // Route paths from adapters are file-local: one entry point for each way the
         // route's router is mounted, under that mount's prefix.
         for e in &raw_entry_points {
@@ -3196,6 +3230,7 @@ impl<'r> Linker<'r> {
             .iter()
             .filter(|s| {
                 !s.listed_controls.is_empty()
+                    || !s.caller_keys.is_empty()
                     || !s.nest_metadata.is_empty()
                     || !s.result_uses.is_empty()
                     || !s.returns_builder.is_empty()
@@ -3261,6 +3296,15 @@ impl<'r> Linker<'r> {
                     s.listed_controls
                         .iter()
                         .cloned()
+                        // Where the value a query filters by comes from: the
+                        // caller's own ([`crate::lower::RawSymbol::caller_keys`]).
+                        .chain(s.caller_keys.iter().map(|(callee, key)| {
+                            format!(
+                                "{}{}\t{key}\tcaller",
+                                drift_core::controls::FILTER_VALUE,
+                                self.canon(rel, callee)
+                            )
+                        }))
                         .chain(metadata)
                         .chain(uses)
                         .chain(built)

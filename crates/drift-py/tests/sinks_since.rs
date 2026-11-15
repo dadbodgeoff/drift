@@ -93,6 +93,10 @@ def unverified(url):
     return requests.get(url, verify=False)
 
 
+def assigned(User, request):
+    return User(**request.json)
+
+
 def served():
     app.run(host="0.0.0.0", debug=True)
 "#;
@@ -128,6 +132,7 @@ fn the_operations_read_since_are_in_the_listed_reading() {
         ("keyed", "hardcoded_secret"),
         ("unverified", "tls_verify_disabled"),
         ("served", "debug_enabled"),
+        ("assigned", "mass_assignment"),
     ] {
         assert!(
             sinks(&listed, symbol).iter().any(|k| k == want),

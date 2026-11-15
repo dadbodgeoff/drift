@@ -4,6 +4,7 @@
 //! modules and re-export chains -> framework adapters -> [`RepoFacts`].
 
 pub mod arena;
+pub mod filerouters;
 mod flow;
 mod index;
 pub mod lint;

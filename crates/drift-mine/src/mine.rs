@@ -654,6 +654,8 @@ fn signal_label(signal: &str) -> String {
             "hardcoded_secret" => "signing secrets written in the code",
             "debug_enabled" => "servers started in debug mode",
             "tls_verify_disabled" => "TLS without certificate verification",
+            "mass_assignment" => "rows written from the whole request body",
+            "dynamic_regex" => "regular expressions built from values",
             other => other,
         };
         return format!("do not use {what}");

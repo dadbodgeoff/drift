@@ -132,6 +132,8 @@ pub fn does(kind: &str) -> String {
         "hardcoded_secret" => "signs with a secret written in the code",
         "debug_enabled" => "starts a server in debug mode",
         "tls_verify_disabled" => "does not verify the TLS certificate",
+        "mass_assignment" => "writes a row from the whole request body",
+        "dynamic_regex" => "builds a regular expression from a value",
         other => return format!("has a risky operation ({})", sanitize(other, 40)),
     };
     format!("{what} ({kind})")

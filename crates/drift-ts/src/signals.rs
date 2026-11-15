@@ -28,7 +28,29 @@ pub mod kind {
     pub const NOSQL: &str = "nosql_injection";
     pub const SECRET: &str = "hardcoded_secret";
     pub const TLS: &str = "tls_verify_disabled";
+    pub const MASS: &str = "mass_assignment";
+    pub const REGEX: &str = "dynamic_regex";
 }
+
+/// HTTP clients whose request functions take the URL first, beside the ones the
+/// measured build read (`fetch`, axios, got, node-fetch, undici).
+const MORE_CLIENTS: &[&str] = &["needle", "superagent", "ky", "ofetch", "request", "phin"];
+
+/// Methods that write a row from the object they are given.
+const WRITE_METHODS: &[&str] = &[
+    "create",
+    "update",
+    "updateOne",
+    "updateMany",
+    "findByIdAndUpdate",
+    "findOneAndUpdate",
+    "upsert",
+    "insert",
+    "insertOne",
+    "save",
+    "build",
+    "merge",
+];
 
 /// Functions of `fs` that read, write or remove the file at the path they are given.
 const FS_FNS: &[&str] = &[
@@ -625,6 +647,18 @@ impl Lowerer<'_> {
         out
     }
 
+    /// A regular expression's pattern that is no constant: a value, or text built
+    /// from one.
+    pub(super) fn dynamic_pattern(&self, e: &Expression) -> bool {
+        match unwrap_expr(e) {
+            Expression::RegExpLiteral(_) => false,
+            Expression::TemplateLiteral(_) | Expression::BinaryExpression(_) => {
+                self.sql.builds_text(self.scoping, e)
+            }
+            other => !self.sql.constant(self.scoping, other),
+        }
+    }
+
     /// The function of a package a call names: `("fs", "readFile")` for
     /// `fs.readFile(...)`, `fs.promises.readFile(...)` and a named import of it.
     fn package_fn(&self, callee: &Expression) -> Option<(String, String)> {
@@ -744,6 +778,50 @@ impl Lowerer<'_> {
         };
         if secret {
             out.push(kind::SECRET);
+        }
+        // A request to a computed URL through a client the measured build did not
+        // read (`needle.get(url)`, `superagent.get(url)`).
+        if matches!(named, Some((p, f)) if MORE_CLIENTS.contains(&p)
+            && matches!(f, "default" | "get" | "post" | "put" | "patch" | "delete" | "head" | "request"))
+            && first.is_some_and(|e| {
+                !is_fixed_origin(e) && !matches!(unwrap_expr(e), Expression::ObjectExpression(_))
+            })
+        {
+            out.push(kind::FETCH);
+        }
+        // What the request sent, whole, written to a row: `User.create(req.body)`,
+        // `prisma.user.update({ where, data: req.body })`, `Object.assign(user,
+        // req.body)`. Every field the caller names is set, the ones the handler
+        // did not mean to expose among them.
+        let sent_whole = |e: &Expression| -> bool {
+            let e = match unwrap_expr(e) {
+                Expression::AwaitExpression(a) => unwrap_expr(&a.argument),
+                e => e,
+            };
+            match e {
+                Expression::StaticMemberExpression(m) => {
+                    matches!(m.property.name.as_str(), "body" | "query")
+                        && matches!(unwrap_expr(&m.object), Expression::Identifier(id)
+                            if matches!(id.name.as_str(), "req" | "request" | "ctx"))
+                }
+                // `await req.json()`, `c.req.json()`.
+                Expression::CallExpression(c) => {
+                    member_name(&c.callee) == Some("json") && c.arguments.is_empty()
+                }
+                _ => false,
+            }
+        };
+        let writes = member.is_some_and(|m| WRITE_METHODS.contains(&m));
+        let assigns = member == Some("assign")
+            && matches!(self.canon_callee(&c.callee), Some(r)
+                if matches!(&r.base, RawBase::Global(g) if g == "Object"));
+        if (writes
+            && args
+                .iter()
+                .any(|a| sent_whole(a) || object_value(a, "data").is_some_and(&sent_whole)))
+            || (assigns && args.iter().skip(1).any(|a| sent_whole(a)))
+        {
+            out.push(kind::MASS);
         }
         if args.iter().any(|a| {
             object_value(a, "rejectUnauthorized").is_some_and(

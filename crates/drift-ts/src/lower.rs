@@ -365,6 +365,14 @@ pub struct RawSymbol {
     /// reading only ([`drift_core::Listed`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub caller_args: Vec<(RawRef, Option<RawRef>)>,
+    /// The keys of an object a call is given whose value is a value of the caller
+    /// by its own source, for a call every request to the body reaches: the callee
+    /// and the key's path (`prisma.note.findMany({ where: { userId: session.user.id
+    /// } })` -> `where.userId`). Linked into the listed reading as
+    /// [`drift_core::controls::FILTER_VALUE`] with the side `caller`, which says
+    /// where the value a query filters by comes from. TypeScript lowering 76.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub caller_keys: Vec<(RawRef, String)>,
     /// [`drift_core::SymbolCalls::param_flows`].
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub param_flows: bool,
@@ -610,6 +618,12 @@ pub struct RawFile {
     /// Test files: specifiers mocked, and `msw:<route>` ([`drift_core::FileFacts::mocks`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub mocks: Vec<String>,
+    /// The file may hold an entry point of a file-convention router other than
+    /// Next.js ([`crate::filerouters::candidate`]): linking lists it where the
+    /// file's package is built with one. Not set where the file is lowered as the
+    /// last measured build listed it, which listed none.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub file_routes: bool,
     /// The lines of the registrations written as a route is that the lowering did
     /// not list ([`drift_core::FileFacts::unlisted_routes`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -999,6 +1013,11 @@ fn lower_semantic(
     };
     let (suppressions, comment_lines) = suppression_comments(program, text, &l);
     let mut out = l.finish();
+    {
+        let exported: Vec<&str> = out.exports.iter().map(|e| e.name.as_str()).collect();
+        out.file_routes =
+            crate::filerouters::candidate(rel_path, &exported) && !routes::unmeasured_listing();
+    }
     out.types = std::sync::Arc::new(types);
     for sym in out
         .symbols
@@ -4640,6 +4659,7 @@ impl RawSymbol {
             caught_params: vec![],
             verifies: vec![],
             caller_args: vec![],
+            caller_keys: vec![],
             param_flows: false,
             tags: vec![],
         }
@@ -4692,6 +4712,8 @@ struct Collector<'l, 's> {
     reads: BTreeSet<String>,
     throws: BTreeSet<RawRef>,
     sinks: BTreeSet<String>,
+    /// [`RawSymbol::caller_keys`].
+    caller_keys: BTreeSet<(RawRef, String)>,
     order: Vec<RawRef>,
     /// The callees whose call's value the body returns, outside any callback.
     returns_calls: BTreeSet<RawRef>,
@@ -5003,6 +5025,7 @@ impl<'l, 's> Collector<'l, 's> {
             reads: BTreeSet::new(),
             throws: BTreeSet::new(),
             sinks: BTreeSet::new(),
+            caller_keys: BTreeSet::new(),
             order: Vec::new(),
             returns_calls: BTreeSet::new(),
             skip_decorators: false,
@@ -5600,6 +5623,8 @@ impl<'l, 's> Collector<'l, 's> {
                 .filter(|r| !before.contains(r)),
         );
         sym.sinks.extend(std::mem::take(&mut self.sinks));
+        sym.caller_keys
+            .extend(std::mem::take(&mut self.caller_keys));
         for r in std::mem::take(&mut self.returns_calls) {
             if !sym.returns_calls.contains(&r) {
                 sym.returns_calls.push(r);
@@ -5778,6 +5803,35 @@ impl<'l, 's> Collector<'l, 's> {
 }
 
 impl Collector<'_, '_> {
+    /// Records the keys of an object given to `callee` whose value is a value of
+    /// the caller by its own source ([`RawSymbol::caller_keys`]), by the path
+    /// [`Collector::object_keys`] writes.
+    fn caller_keys_at(&mut self, callee: &RawRef, e: &Expression, prefix: &str, depth: usize) {
+        let Expression::ObjectExpression(o) = unwrap_expr(e) else {
+            return;
+        };
+        for p in &o.properties {
+            if let ObjectPropertyKind::ObjectProperty(p) = p
+                && !p.computed
+                && let Some(k) = p.key.static_name()
+                && let Some(k) = k.as_str()
+            {
+                let key = if prefix.is_empty() {
+                    k.to_string()
+                } else {
+                    format!("{prefix}.{k}")
+                };
+                if matches!(unwrap_expr(&p.value), Expression::ObjectExpression(_)) {
+                    if depth + 1 < MAX_KEY_DEPTH {
+                        self.caller_keys_at(callee, &p.value, &key, depth + 1);
+                    }
+                } else if self.taint(&p.value).callers_own() {
+                    self.caller_keys.insert((callee.clone(), key));
+                }
+            }
+        }
+    }
+
     /// A rejection here would turn the caller away: outside any `catch` clause and
     /// promise callback, and before the function has handed control on.
     fn counting(&self) -> bool {
@@ -10717,6 +10771,11 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             for (i, a) in it.arguments.iter().enumerate() {
                 if let Some(e) = a.as_expression() {
                     self.object_keys(&r, i, e);
+                    // A call every request reaches, and no other: a filter under a
+                    // branch scopes the requests that take it.
+                    if self.counting() && self.branches == 0 && !self.served {
+                        self.caller_keys_at(&r, e, "", 0);
+                    }
                 }
             }
             if !self.order.contains(&r) && self.order.len() < MAX_ORDER {
@@ -11473,6 +11532,18 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         if matches!(self.l.canon(&it.callee), Some(RawRef { base: RawBase::Global(ref n), ref member }) if n == "Function" && member.is_empty())
         {
             self.sinks.insert(signals::kind::EVAL.into());
+        }
+        // `new RegExp(pattern)` with a pattern built from a value: who writes the
+        // pattern decides how long a match takes. Read since the measured build.
+        if matches!(self.l.canon(&it.callee), Some(RawRef { base: RawBase::Global(ref n), ref member }) if n == "RegExp" && member.is_empty())
+            && it
+                .arguments
+                .first()
+                .and_then(|a| a.as_expression())
+                .is_some_and(|p| self.l.dynamic_pattern(p))
+            && !routes::unmeasured_listing()
+        {
+            self.sinks.insert(signals::kind::REGEX.into());
         }
         if let Some(mut r) = self.l.canon(&it.callee) {
             r.member.push_str("(new)");

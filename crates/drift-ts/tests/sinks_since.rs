@@ -51,6 +51,7 @@ import ejs from "ejs";
 import jwt from "jsonwebtoken";
 import session from "express-session";
 import https from "https";
+import needle from "needle";
 
 declare const users: any;
 declare const sanitizer: any;
@@ -110,6 +111,26 @@ export function signedFromEnv(payload: object) {
 
 export const sessions = session({ secret: "kekse", resave: false });
 
+export function fetched(url: string) {
+  return needle.get(url);
+}
+
+export function assigned(req: any) {
+  return users.create(req.body);
+}
+
+export function assignedFields(req: any) {
+  return users.create({ name: req.body.name });
+}
+
+export function matched(pattern: string, text: string) {
+  return new RegExp(pattern).test(text);
+}
+
+export function matchedLiteral(text: string) {
+  return new RegExp("^[a-z]+$").test(text);
+}
+
 export function unverified(url: string) {
   return https.request(url, { rejectUnauthorized: false });
 }
@@ -130,6 +151,9 @@ fn the_operations_read_since_are_in_the_listed_reading() {
         ("signed", "hardcoded_secret"),
         ("sessions", "hardcoded_secret"),
         ("unverified", "tls_verify_disabled"),
+        ("fetched", "dynamic_fetch"),
+        ("assigned", "mass_assignment"),
+        ("matched", "dynamic_regex"),
     ] {
         assert!(
             sinks(&listed, symbol).iter().any(|k| k == want),
@@ -143,6 +167,8 @@ fn the_operations_read_since_are_in_the_listed_reading() {
         "renderedLiteral",
         "whereLiteral",
         "signedFromEnv",
+        "assignedFields",
+        "matchedLiteral",
     ] {
         assert!(
             sinks(&listed, symbol).is_empty(),

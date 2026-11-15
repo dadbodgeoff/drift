@@ -568,6 +568,12 @@ impl Taint {
         !self.caller && !self.param && self.via.is_empty()
     }
 
+    /// A value of the caller by its own source (sources 1 to 4), and of nothing
+    /// that only may give one.
+    pub(super) fn callers_own(&self) -> bool {
+        self.caller && self.via.is_empty()
+    }
+
     /// A value of the caller, or of what may give one.
     fn of_caller(&self) -> bool {
         self.caller || !self.via.is_empty()

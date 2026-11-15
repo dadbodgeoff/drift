@@ -211,6 +211,11 @@ impl Lowerer<'_> {
             ("hono", "Hono", "", true) | ("@hono/zod-openapi", "OpenAPIHono", "", true) => {
                 Some("hono")
             }
+            // `new Router()` of `@koa/router`: its routes are listed since the
+            // measured build, and what a Koa middleware does is not read.
+            ("@koa/router" | "koa-router", "default", "", true) if !unmeasured_listing() => {
+                Some("koa")
+            }
             _ => None,
         }
     }
@@ -2320,6 +2325,12 @@ impl Lowerer<'_> {
                                 .flatten()
                                 .cloned(),
                         );
+                        // Koa: a middleware answers by setting `ctx.status` or by
+                        // `ctx.throw`, which the reading of a guard does not follow.
+                        if adapter == "koa" {
+                            unread
+                                .push("what a Koa middleware does, which is not read".to_string());
+                        }
                         // A route the module registers itself, on a router a
                         // function or a condition registers a middleware on: whether
                         // that runs before the route is not read. The measured build
@@ -3387,7 +3398,7 @@ pub(super) fn take_new_listing() -> bool {
 /// Notes a listing the last measured build did not make: a router with a base
 /// path, a registration at several paths. True where the file is being lowered as
 /// that build listed it, which did not read them.
-pub(super) fn unmeasured_listing() -> bool {
+pub(crate) fn unmeasured_listing() -> bool {
     NEW_LISTING.set(true);
     AS_MEASURED.get()
 }

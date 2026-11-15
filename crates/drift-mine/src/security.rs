@@ -35,6 +35,8 @@ pub const INPUT_SINKS: &[&str] = &[
     "path_traversal",
     "template_injection",
     "nosql_injection",
+    "mass_assignment",
+    "dynamic_regex",
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
