@@ -1778,6 +1778,22 @@ pub mod controls {
     /// 69) where some site has something that held; on a method the same strings
     /// are in [`crate::facts::Member::unread`]. Mining never proposes it.
     pub const HANDED_AFTER: &str = "handed_after:";
+    /// A function whose every `return` that gives a value gives what a call or a
+    /// lookup made of a credential the request carries: its `Cookie` or
+    /// `Authorization` header, or the cookies a framework parsed
+    /// (`store.getSession(request.headers.get("cookie"))`, then the row a session
+    /// id finds, then `session.userId`). What it hands back is who the credential
+    /// says, or nothing. Recorded by TypeScript (lowering 76, the listed reading).
+    pub const RETURNS_CREDENTIAL: &str = "returns_credential";
+    /// What starts the control of a body that throws for every request for which
+    /// what a callee handed back is absent (`const userId = await
+    /// getUserId(request); if (!userId) throw redirect(target)`): one for each such
+    /// test, with the callees that may have given the value, canonical and
+    /// tab-separated. The body turns away every request with no caller where each
+    /// of them gives the caller or nothing ([`RETURNS_CREDENTIAL`],
+    /// [`RETURNS_CALLER`], a library's session read); what is thrown is not asked.
+    /// Recorded by TypeScript (lowering 76, the listed reading).
+    pub const REFUSES_WITHOUT: &str = "refuses_without:";
     /// What starts a side of [`ARG_VALUE`] that is the caller itself or the key of
     /// the caller's record (`request.user`, `request.user.id`), before the side it
     /// is (`own caller`, `own gives <dependency>`): not something read off the

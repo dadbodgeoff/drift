@@ -979,6 +979,9 @@ pub struct Linker<'r> {
     /// Package directory -> the file-convention router it is built with
     /// ([`crate::filerouters::framework_of`]).
     file_routers: Mutex<BTreeMap<String, Option<crate::filerouters::Framework>>>,
+    /// The files that export a middleware of a file-convention route
+    /// ([`crate::lower::RawFile::route_middleware`]).
+    route_middleware: BTreeSet<String>,
     /// What [`Linker::origin`] answered, per module and name.
     origins: OriginMemo,
     /// The middleware applied to the routes of each Nest application beside them
@@ -1336,6 +1339,11 @@ impl<'r> Linker<'r> {
             trpc: TrpcOrigins::default(),
             next_packages: Mutex::new(BTreeMap::new()),
             file_routers: Mutex::new(BTreeMap::new()),
+            route_middleware: files
+                .iter()
+                .filter(|f| f.raw.route_middleware)
+                .map(|f| f.rel_path.clone())
+                .collect(),
             origins: OriginMemo::default(),
             nest: Vec::new(),
             nest_prefixed: BTreeSet::new(),
@@ -3152,6 +3160,19 @@ impl<'r> Linker<'r> {
         if f.raw.file_routes
             && let Some(framework) = self.file_router(&facts.package)
         {
+            // What runs before the handler is not read, but for a React Router
+            // or Remix route of a package that puts nothing there: no router of
+            // its own (a server whose middleware runs first) and no route module
+            // that exports a middleware.
+            let within = |path: &str| {
+                facts.package.is_empty()
+                    || path
+                        .strip_prefix(facts.package.as_str())
+                        .is_some_and(|rest| rest.starts_with('/'))
+            };
+            let unread_before = framework != crate::filerouters::Framework::ReactRouter
+                || self.routers.iter().any(|r| within(r))
+                || self.route_middleware.iter().any(|f| within(f));
             for e in crate::filerouters::entry_points(&facts, framework) {
                 if facts.entry_points.iter().any(|x| x.symbol == e.symbol) {
                     continue;
@@ -3160,7 +3181,7 @@ impl<'r> Linker<'r> {
                     symbol: e.symbol.clone(),
                     route: e.route.clone().unwrap_or_default(),
                     wraps: vec![],
-                    opaque: true,
+                    opaque: unread_before,
                     elsewhere: false,
                     app_middleware: vec![],
                 });
@@ -3233,6 +3254,7 @@ impl<'r> Linker<'r> {
                     || !s.caller_keys.is_empty()
                     || !s.fed_sinks.is_empty()
                     || !s.param_passes.is_empty()
+                    || !s.refuses_without.is_empty()
                     || !s.made_fed_sinks.is_empty()
                     || !s.made_passes.is_empty()
                     || !s.nest_metadata.is_empty()
@@ -3323,6 +3345,16 @@ impl<'r> Linker<'r> {
                                 .filter(|c| !c.starts_with("global#") && !c.starts_with("pkg:"))
                                 .map(|c| format!("{}{c}", drift_core::controls::PASSES_PARAM)),
                         )
+                        .chain(s.refuses_without.iter().map(|by| {
+                            format!(
+                                "{}{}",
+                                drift_core::controls::REFUSES_WITHOUT,
+                                by.iter()
+                                    .map(|callee| self.canon(rel, callee))
+                                    .collect::<Vec<_>>()
+                                    .join("\t")
+                            )
+                        }))
                         .chain(
                             s.made_fed_sinks
                                 .iter()

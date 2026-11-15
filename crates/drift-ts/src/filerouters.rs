@@ -8,11 +8,19 @@
 //! ([`candidate`]), and linking lists its entry points where the file's package is
 //! built with the framework ([`framework_of`]).
 //!
-//! What runs before such a route is not read: a parent route's loader or middleware,
-//! SvelteKit's `hooks.server` `handle`, a Nitro server middleware. So each is listed
-//! with what its mount adds unread ([`drift_core::MountFacts::opaque`]): a guard
-//! found in its own body is its guard, and where none is found its guard is unknown,
-//! never "no guard found".
+//! What runs before a SvelteKit or Nitro route is not read: SvelteKit's
+//! `hooks.server` `handle`, a Nitro server middleware or route rule. So each is
+//! listed with what its mount adds unread ([`drift_core::MountFacts::opaque`]): a
+//! guard found in its own body is listed, and where none is found its guard is
+//! unknown, never "no guard found".
+//!
+//! Nothing runs before a React Router or Remix `loader` or `action` but what the
+//! package itself puts there: a parent route's loader runs beside it, not before
+//! it, and answers nothing in its place. So its own body decides, and a handler
+//! that checks nothing has no guard, unless the package has a server of its own
+//! (a router some file of it binds: its middleware runs first) or a route module
+//! exports a middleware ([`exports_middleware`]); then what the mount adds is
+//! unread, as above.
 
 use drift_core::{EntryPoint, FileFacts};
 
@@ -141,6 +149,13 @@ fn template(segments: &[&str]) -> String {
         );
     }
     format!("/{}", out.join("/"))
+}
+
+/// The names a route module exports its middleware under (React Router 7).
+pub fn exports_middleware(exports: &[&str]) -> bool {
+    exports
+        .iter()
+        .any(|e| matches!(*e, "middleware" | "unstable_middleware"))
 }
 
 fn exports_named(facts: &FileFacts, name: &str) -> bool {

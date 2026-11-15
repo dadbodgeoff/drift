@@ -4,7 +4,9 @@
 //!
 //! They are listed with their path. What runs before one (a parent route, a server
 //! hook, a Koa middleware) is not read, so a route with no guard found in its own
-//! body reads guard unknown, never "no guard found".
+//! body reads guard unknown, never "no guard found". Nothing runs before a React
+//! Router or Remix handler but what the package itself puts there (a server of its
+//! own, a route middleware): without one, its own body decides.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -95,11 +97,105 @@ fn react_router_route_modules_are_listed() {
     expect(
         &routes(dir.path()),
         &[
-            ("GET /notes/:id", "unknown"),
-            ("POST /login", "unknown"),
-            ("POST /notes/:id", "unknown"),
+            ("GET /notes/:id", "none"),
+            ("POST /login", "none"),
+            ("POST /notes/:id", "none"),
         ],
     );
+}
+
+const RR_PACKAGE: &str = "{ \"name\": \"web\", \"dependencies\": { \"react-router\": \"7.1.0\", \"@react-router/node\": \"7.1.0\", \"express\": \"4.19.0\" } }\n";
+
+/// A helper that throws for every request with no caller: where a value of the
+/// caller is absent it leaves by a `throw`, whatever it throws and wherever a
+/// redirect sends them. One that throws where the caller is present, or where a
+/// row is absent, refuses no caller.
+const RR_AUTH: &str = r#"import { redirect } from "react-router";
+
+declare function sessionOf(request: Request): Promise<{ userId?: string } | null>;
+declare function noteOf(id: string): Promise<{ title: string } | null>;
+
+export async function getUserId(request: Request) {
+  const session = await sessionOf(request);
+  return session?.userId ?? null;
+}
+
+export async function requireUserId(request: Request) {
+  const userId = await getUserId(request);
+  if (!userId) {
+    const target = ["/welcome", new URL(request.url).pathname].join("?");
+    throw redirect(target);
+  }
+  return userId;
+}
+
+export async function requireAnonymous(request: Request) {
+  const userId = await getUserId(request);
+  if (userId) {
+    throw redirect("/");
+  }
+}
+
+export async function requireNote(id: string) {
+  const note = await noteOf(id);
+  if (!note) {
+    throw new Response("no such note", { status: 410 });
+  }
+  return note;
+}
+"#;
+
+const RR_ROUTES: &[(&str, &str)] = &[
+    (
+        "app/routes/mine.tsx",
+        "import { requireUserId } from \"../utils/auth.server\";\n\nexport async function loader({ request }: any) {\n  const userId = await requireUserId(request);\n  return { userId };\n}\n",
+    ),
+    (
+        "app/routes/join.tsx",
+        "import { requireAnonymous } from \"../utils/auth.server\";\n\nexport async function loader({ request }: any) {\n  await requireAnonymous(request);\n  return {};\n}\n",
+    ),
+    (
+        "app/routes/notes.$id.tsx",
+        "import { requireNote } from \"../utils/auth.server\";\n\nexport async function loader({ params }: any) {\n  return requireNote(params.id);\n}\n",
+    ),
+];
+
+#[test]
+fn a_react_router_handler_is_guarded_by_what_its_own_body_calls() {
+    let mut files = vec![
+        ("package.json", RR_PACKAGE),
+        ("app/utils/auth.server.ts", RR_AUTH),
+    ];
+    files.extend_from_slice(RR_ROUTES);
+    let dir = write(&files);
+    expect(
+        &routes(dir.path()),
+        &[
+            ("GET /join", "none"),
+            ("GET /mine", "guarded"),
+            ("GET /notes/:id", "none"),
+        ],
+    );
+}
+
+/// A package with a server of its own puts its middleware before every route: a
+/// handler that checks nothing has a guard that is unknown, not none.
+#[test]
+fn a_react_router_package_with_its_own_server_has_its_mounts_unread() {
+    let mut files = vec![
+        ("package.json", RR_PACKAGE),
+        ("app/utils/auth.server.ts", RR_AUTH),
+        (
+            "server/index.ts",
+            "import express from \"express\";\n\nexport const app = express();\napp.use(express.json());\n",
+        ),
+    ];
+    files.extend_from_slice(RR_ROUTES);
+    let dir = write(&files);
+    let got = routes(dir.path());
+    assert_eq!(got["GET /join"], "unknown", "{got:?}");
+    assert_eq!(got["GET /notes/:id"], "unknown", "{got:?}");
+    assert_ne!(got["GET /mine"], "none", "{got:?}");
 }
 
 #[test]
@@ -174,4 +270,92 @@ fn koa_router_routes_are_listed_with_their_middleware_unread() {
         &routes(dir.path()),
         &[("GET /items", "unknown"), ("POST /items", "unknown")],
     );
+}
+
+/// What gives the caller is read from what it does. A function whose every
+/// return gives what a lookup made of the request's `Cookie` header gives who
+/// calls, or nothing: a helper that throws where it gave nothing turns away
+/// every request with no caller. A function that looks up what the URL names
+/// gives a row, and one that returns before its test lets requests through that
+/// passed none.
+const RR_CREDENTIAL: &str = r#"import { redirect } from "react-router";
+
+declare const store: { open(cookie: string | null): Promise<{ get(key: string): string | undefined }> };
+declare const db: {
+  seat: { findUnique(q: unknown): Promise<{ holder: string } | null> };
+  draft: { findUnique(q: unknown): Promise<{ title: string } | null> };
+};
+
+export async function whoIs(request: Request) {
+  const jar = await store.open(request.headers.get("cookie"));
+  const seatId = jar.get("seat");
+  if (!seatId) return null;
+  const seat = await db.seat.findUnique({ where: { id: seatId } });
+  return seat?.holder ?? null;
+}
+
+export async function mustBeSeated(request: Request) {
+  const holder = await whoIs(request);
+  if (holder == null) {
+    throw redirect("/");
+  }
+  return holder;
+}
+
+export async function draftOf(request: Request) {
+  const id = new URL(request.url).searchParams.get("draft");
+  if (!id) return null;
+  return db.draft.findUnique({ where: { id } });
+}
+
+export async function mustHaveDraft(request: Request) {
+  const draft = await draftOf(request);
+  if (!draft) {
+    throw redirect("/drafts");
+  }
+  return draft;
+}
+
+export async function seatedUnlessPreview(request: Request) {
+  if (new URL(request.url).searchParams.has("preview")) return null;
+  const holder = await whoIs(request);
+  if (!holder) {
+    throw redirect("/");
+  }
+  return holder;
+}
+"#;
+
+#[test]
+fn what_gives_the_caller_is_read_from_the_credential_it_looks_up() {
+    let route = |helper: &str| {
+        format!(
+            "import {{ {helper} }} from \"../utils/seat.server\";\n\nexport async function loader({{ request }}: any) {{\n  const got = await {helper}(request);\n  return {{ got }};\n}}\n"
+        )
+    };
+    let (seated, draft, preview, asked) = (
+        route("mustBeSeated"),
+        route("mustHaveDraft"),
+        route("seatedUnlessPreview"),
+        route("whoIs"),
+    );
+    let dir = write(&[
+        (
+            "package.json",
+            "{ \"name\": \"web\", \"dependencies\": { \"react-router\": \"7.1.0\", \"@react-router/node\": \"7.1.0\" } }\n",
+        ),
+        ("app/utils/seat.server.ts", RR_CREDENTIAL),
+        ("app/routes/seated.tsx", &seated),
+        ("app/routes/draft.tsx", &draft),
+        ("app/routes/preview.tsx", &preview),
+        ("app/routes/asked.tsx", &asked),
+    ]);
+    let got = routes(dir.path());
+    assert_eq!(got["GET /seated"], "guarded", "{got:?}");
+    // A row the URL names is no caller.
+    assert_eq!(got["GET /draft"], "none", "{got:?}");
+    // Asking who calls turns no one away.
+    assert_eq!(got["GET /asked"], "none", "{got:?}");
+    // Some requests leave before the test: never a guard.
+    assert_ne!(got["GET /preview"], "guarded", "{got:?}");
 }

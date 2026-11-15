@@ -387,6 +387,11 @@ pub struct RawSymbol {
     pub made_fed_sinks: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub made_passes: Vec<RawRef>,
+    /// Where the body throws for every request for which what a callee gave is
+    /// absent, each with the callees that may have given it
+    /// ([`drift_core::controls::REFUSES_WITHOUT`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub refuses_without: Vec<Vec<RawRef>>,
     /// [`drift_core::SymbolCalls::param_flows`].
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub param_flows: bool,
@@ -638,6 +643,11 @@ pub struct RawFile {
     /// last measured build listed it, which listed none.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub file_routes: bool,
+    /// Such a file exports a middleware of its route
+    /// ([`crate::filerouters::exports_middleware`]): it runs before the handlers
+    /// of the routes below it.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub route_middleware: bool,
     /// The lines of the registrations written as a route is that the lowering did
     /// not list ([`drift_core::FileFacts::unlisted_routes`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1031,6 +1041,7 @@ fn lower_semantic(
         let exported: Vec<&str> = out.exports.iter().map(|e| e.name.as_str()).collect();
         out.file_routes =
             crate::filerouters::candidate(rel_path, &exported) && !routes::unmeasured_listing();
+        out.route_middleware = out.file_routes && crate::filerouters::exports_middleware(&exported);
     }
     out.types = std::sync::Arc::new(types);
     for sym in out
@@ -4686,6 +4697,7 @@ impl RawSymbol {
             caller_keys: vec![],
             fed_sinks: vec![],
             param_passes: vec![],
+            refuses_without: vec![],
             made_fed_sinks: vec![],
             made_passes: vec![],
             param_flows: false,
@@ -4757,6 +4769,18 @@ struct Collector<'l, 's> {
     /// The locals bound to a value read off a parameter of the walk's own function
     /// ([`Collector::reads_own_param`]).
     own_locals: HashSet<SymbolId>,
+    /// The locals bound to a credential the request carries, as it was sent
+    /// ([`Collector::credential_read`]).
+    cred_seeds: HashSet<SymbolId>,
+    /// The locals bound to what a call or a lookup made of such a credential
+    /// ([`Collector::credential_identity`]).
+    cred_locals: HashSet<SymbolId>,
+    /// Some `return` of the walk's own function gives such a value; some gives
+    /// anything else that is a value.
+    returns_cred: bool,
+    returns_not_cred: bool,
+    /// [`RawSymbol::refuses_without`].
+    refuses_without: BTreeSet<Vec<RawRef>>,
     order: Vec<RawRef>,
     /// The callees whose call's value the body returns, outside any callback.
     returns_calls: BTreeSet<RawRef>,
@@ -5075,6 +5099,11 @@ impl<'l, 's> Collector<'l, 's> {
             made_passes: BTreeSet::new(),
             product_params: HashSet::new(),
             own_locals: HashSet::new(),
+            cred_seeds: HashSet::new(),
+            cred_locals: HashSet::new(),
+            returns_cred: false,
+            returns_not_cred: false,
+            refuses_without: BTreeSet::new(),
             order: Vec::new(),
             returns_calls: BTreeSet::new(),
             skip_decorators: false,
@@ -5677,6 +5706,19 @@ impl<'l, 's> Collector<'l, 's> {
         sym.fed_sinks.extend(std::mem::take(&mut self.fed_sinks));
         sym.param_passes
             .extend(std::mem::take(&mut self.param_passes));
+        for site in std::mem::take(&mut self.refuses_without) {
+            if !sym.refuses_without.contains(&site) {
+                sym.refuses_without.push(site);
+            }
+        }
+        // Every value the function returns was made of a credential the request
+        // carries: what it gives is who the credential says, or nothing.
+        if self.returns_cred && !self.returns_not_cred {
+            let c = drift_core::controls::RETURNS_CREDENTIAL.to_string();
+            if !sym.listed_controls.contains(&c) {
+                sym.listed_controls.push(c);
+            }
+        }
         sym.made_fed_sinks
             .extend(std::mem::take(&mut self.made_fed_sinks));
         sym.made_passes
@@ -7110,6 +7152,16 @@ const SCHEMA_METHODS: &[&str] = &[
     "cast",
 ];
 
+/// What [`Collector::throws_for_no_caller`] found of an `if`.
+enum NoCaller {
+    /// The value tested says who calls: whether the `else` is the branch that
+    /// throws.
+    Own(bool),
+    /// The value tested is what one of these callees, given the request, handed
+    /// back.
+    Given(Vec<RawRef>),
+}
+
 /// The outcome a status says for a caller check.
 fn status_outcome(s: u16) -> Option<drift_core::CheckOutcome> {
     use drift_core::CheckOutcome;
@@ -8292,6 +8344,201 @@ impl Collector<'_, '_> {
         }
     }
 
+    /// The `if` throws for every request it takes a branch of, and takes that
+    /// branch exactly where a value that says who calls is absent (`if (!userId) {
+    /// ...; throw redirect(target) }`, `if (session == null) throw new Error("no
+    /// session")`; or the `else` of the opposite test): a request with no caller
+    /// never gets past it. What is thrown, and where a redirect sends them, is not
+    /// asked: the refusal is that the function is left.
+    ///
+    /// The value says who calls where it is the caller's by its own source, or
+    /// what a call or a lookup made of a credential the request carries
+    /// ([`Collector::credential_identity`]); where it is what a callee given the
+    /// request handed back, the callee is kept and whether it gives the caller is
+    /// read where it is defined ([`NoCaller::Given`]). Read since the measured build
+    /// (the listed reading only).
+    fn throws_for_no_caller(&self, it: &IfStatement) -> Option<NoCaller> {
+        fn always_throws(s: &Statement) -> bool {
+            match s {
+                Statement::ThrowStatement(_) => true,
+                Statement::BlockStatement(b) => b.body.last().is_some_and(always_throws),
+                _ => false,
+            }
+        }
+        // The value a test says is absent (`true`) or present (`false`).
+        fn asked<'b, 'a>(test: &'b Expression<'a>) -> Option<(&'b Expression<'a>, bool)> {
+            let nothing = |x: &Expression| match peel(x) {
+                Expression::NullLiteral(_) => true,
+                Expression::Identifier(id) => id.name == "undefined",
+                _ => false,
+            };
+            match peel(test) {
+                Expression::UnaryExpression(u) if u.operator == UnaryOperator::LogicalNot => {
+                    asked(&u.argument).map(|(x, absent)| (x, !absent))
+                }
+                Expression::BinaryExpression(b) if b.operator.is_equality() => {
+                    let equal = matches!(
+                        b.operator,
+                        BinaryOperator::StrictEquality | BinaryOperator::Equality
+                    );
+                    match (nothing(&b.left), nothing(&b.right)) {
+                        (false, true) => Some((&b.left, equal)),
+                        (true, false) => Some((&b.right, equal)),
+                        _ => None,
+                    }
+                }
+                Expression::LogicalExpression(_) | Expression::BinaryExpression(_) => None,
+                x => Some((x, false)),
+            }
+        }
+        // A test only some requests reach turns away those: a request that left
+        // before it (`if (!cookie) return null`) passed no refusal.
+        if !self.check_condition().is_empty() {
+            return None;
+        }
+        let (value, absent) = asked(&it.test)?;
+        let otherwise = match (absent, &it.alternate) {
+            (true, _) if always_throws(&it.consequent) => false,
+            (false, Some(a)) if always_throws(a) => true,
+            _ => return None,
+        };
+        let taint = self.taint(value);
+        if taint.callers_own() || self.credential_identity(value) {
+            return (!routes::unmeasured_listing()).then_some(NoCaller::Own(otherwise));
+        }
+        let by = taint.given_by();
+        (!by.is_empty()).then(|| NoCaller::Given(by.to_vec()))
+    }
+
+    /// `e` reads a credential the request carries, as it was sent: its `Cookie`
+    /// or `Authorization` header (`request.headers.get("cookie")`,
+    /// `req.headers.authorization`, `req.get("Authorization")`), the cookies a
+    /// framework parsed (`req.cookies`, `request.cookies`), or a local bound to one.
+    /// The two headers are the ones HTTP gives for it; no name of the repository
+    /// is asked.
+    fn credential_read(&self, e: &Expression) -> bool {
+        struct Reads<'x, 's> {
+            scoping: &'s Scoping,
+            seeds: &'x HashSet<SymbolId>,
+            found: bool,
+        }
+        fn credential(name: &str) -> bool {
+            name.eq_ignore_ascii_case("cookie") || name.eq_ignore_ascii_case("authorization")
+        }
+        fn headers(e: &Expression) -> bool {
+            matches!(unwrap_expr(e), Expression::StaticMemberExpression(m) if m.property.name == "headers")
+        }
+        impl<'a> Visit<'a> for Reads<'_, '_> {
+            fn visit_identifier_reference(&mut self, it: &IdentifierReference<'a>) {
+                self.found |= it
+                    .reference_id
+                    .get()
+                    .and_then(|r| self.scoping.get_reference(r).symbol_id())
+                    .is_some_and(|s| self.seeds.contains(&s));
+            }
+            fn visit_static_member_expression(&mut self, it: &StaticMemberExpression<'a>) {
+                let name = it.property.name.as_str();
+                if name == "cookies" || (credential(name) && headers(&it.object)) {
+                    self.found = true;
+                }
+                walk::walk_static_member_expression(self, it);
+            }
+            fn visit_computed_member_expression(&mut self, it: &ComputedMemberExpression<'a>) {
+                if headers(&it.object)
+                    && matches!(unwrap_expr(&it.expression), Expression::StringLiteral(l) if l.value.as_str().is_some_and(credential))
+                {
+                    self.found = true;
+                }
+                walk::walk_computed_member_expression(self, it);
+            }
+            fn visit_call_expression(&mut self, it: &CallExpression<'a>) {
+                if let Expression::StaticMemberExpression(m) = unwrap_expr(&it.callee)
+                    && matches!(m.property.name.as_str(), "get" | "header")
+                    && matches!(
+                        it.arguments.first().and_then(|a| a.as_expression()).map(unwrap_expr),
+                        Some(Expression::StringLiteral(l)) if l.value.as_str().is_some_and(credential)
+                    )
+                {
+                    self.found = true;
+                }
+                walk::walk_call_expression(self, it);
+            }
+        }
+        let mut reads = Reads {
+            scoping: self.l.scoping,
+            seeds: &self.cred_seeds,
+            found: false,
+        };
+        reads.visit_expression(e);
+        reads.found
+    }
+
+    /// `e` is what a call or a lookup made of a credential the request carries: a
+    /// call given one, or given what another such call made (`await
+    /// store.getSession(request.headers.get("cookie"))`, then `await
+    /// db.session.findUnique({ where: { id: sessionId } })`), a member read off
+    /// what one made (`session.userId`), or a local bound to one. The credential
+    /// itself is not one: it is what the request sent, and says nothing until
+    /// something looked it up.
+    fn credential_identity(&self, e: &Expression) -> bool {
+        let made = |x: &Expression| self.names_one(x, &|s| self.cred_locals.contains(&s));
+        let mut at = peel(e);
+        loop {
+            at = match at {
+                Expression::AwaitExpression(a) => peel(&a.argument),
+                Expression::StaticMemberExpression(m) => peel(&m.object),
+                Expression::ComputedMemberExpression(m) => peel(&m.object),
+                Expression::ChainExpression(c) => match &c.expression {
+                    ChainElement::StaticMemberExpression(m) => peel(&m.object),
+                    ChainElement::ComputedMemberExpression(m) => peel(&m.object),
+                    ChainElement::CallExpression(call) => {
+                        return call.arguments.iter().any(|a| {
+                            a.as_expression()
+                                .is_some_and(|x| made(x) || self.credential_read(x))
+                        }) || made(&call.callee);
+                    }
+                    _ => return false,
+                },
+                Expression::LogicalExpression(l)
+                    if matches!(l.operator, LogicalOperator::Coalesce | LogicalOperator::Or)
+                        && matches!(peel(&l.right), Expression::NullLiteral(_)) =>
+                {
+                    peel(&l.left)
+                }
+                Expression::Identifier(id) => {
+                    return self
+                        .symbol_of(id)
+                        .is_some_and(|s| self.cred_locals.contains(&s));
+                }
+                Expression::CallExpression(call) => {
+                    // A read of the credential itself (`headers.get("cookie")`)
+                    // is what was sent, not what was made of it.
+                    let given = call.arguments.iter().any(|a| {
+                        a.as_expression()
+                            .is_some_and(|x| made(x) || self.credential_read(x))
+                    });
+                    return given || made(&call.callee);
+                }
+                _ => return false,
+            };
+        }
+    }
+
+    /// Notes what a `return` of the walk's own function gives: what was made of a
+    /// credential, or another value. `null` and `undefined` are no value.
+    fn note_return_credential(&mut self, e: &Expression) {
+        match peel(e) {
+            Expression::NullLiteral(_) => return,
+            Expression::Identifier(id) if id.name == "undefined" => return,
+            _ => {}
+        }
+        if self.credential_identity(e) {
+            self.returns_cred = true;
+        } else {
+            self.returns_not_cred = true;
+        }
+    }
+
     /// Record the checks of an `if` whose branch turns the caller away; whether it
     /// read the exit of one of its branches.
     fn note_check(&mut self, it: &IfStatement) -> bool {
@@ -8321,7 +8568,22 @@ impl Collector<'_, '_> {
                             pending = Some(r);
                             (o, false, false)
                         }
-                        None => return false,
+                        // A branch that always throws, taken where a value of
+                        // the caller is absent: no caller without one gets past
+                        // it, whatever is thrown and wherever it sends them.
+                        None => match self.throws_for_no_caller(it) {
+                            Some(NoCaller::Own(otherwise)) => {
+                                self.builder_rejects = true;
+                                (drift_core::CheckOutcome::Unauthenticated, otherwise, false)
+                            }
+                            // What a callee gave: whether that is who calls is
+                            // said where the callee is read.
+                            Some(NoCaller::Given(by)) => {
+                                self.refuses_without.insert(by);
+                                return false;
+                            }
+                            None => return false,
+                        },
                     },
                 },
             },
@@ -11311,6 +11573,7 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             && let Some(body) = it.body.as_expression()
         {
             self.flow_return(body);
+            self.note_return_credential(body);
         }
         walk::walk_arrow_function_expression(self, it);
         self.continuation_names.pop();
@@ -11793,6 +12056,7 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             && let Some(arg) = &it.argument
         {
             self.flow_return(arg);
+            self.note_return_credential(arg);
         }
         // `return stripe.webhooks.constructEventAsync(...)`: the promise is the
         // function's value, and what rejects it is the caller's to answer.
@@ -11980,6 +12244,11 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             }
             if self.reads_own_param(init) {
                 self.own_locals.insert(sym);
+            }
+            if self.credential_identity(init) {
+                self.cred_locals.insert(sym);
+            } else if self.credential_read(init) {
+                self.cred_seeds.insert(sym);
             }
         }
         if let Some(init) = &it.init {

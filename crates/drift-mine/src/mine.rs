@@ -3278,6 +3278,8 @@ fn features(view: &View, ctx: &RepoContext) -> BTreeSet<Rule> {
                     && !c.starts_with(drift_core::controls::PASSES_PARAM)
                     && !c.starts_with(drift_core::controls::PASSES_MADE)
                     && !c.starts_with(drift_core::controls::RETURNS_GIVEN)
+                    && !c.starts_with(drift_core::controls::REFUSES_WITHOUT)
+                    && c != drift_core::controls::RETURNS_CREDENTIAL
                     && !c.starts_with(drift_core::controls::HANDED_AFTER)
                     && !c.starts_with(drift_core::controls::LEAVES_AFTER)
                     && !c.starts_with(drift_core::controls::TRUE_AFTER)

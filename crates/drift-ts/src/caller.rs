@@ -584,6 +584,15 @@ impl Taint {
         self.caller || !self.via.is_empty()
     }
 
+    /// What may have given the value, where nothing says it is the caller's by its
+    /// own source: the functions called with nothing or with the request.
+    pub(super) fn given_by(&self) -> &[RawRef] {
+        match self.caller {
+            true => &[],
+            false => &self.via,
+        }
+    }
+
     fn join(&mut self, other: Taint) {
         self.caller |= other.caller;
         self.param |= other.param;

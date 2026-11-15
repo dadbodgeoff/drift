@@ -4296,8 +4296,47 @@ pub fn authenticating_root(ctx: &crate::context::RepoContext, wrapper: &str) -> 
                 && (has(s, drift_core::controls::REJECTS_SOME)
                     || has(s, drift_core::controls::REFUSAL_NOT_RETURNED)))
                 && rejects(s))
+            // It throws for every request for which what gives the caller gave
+            // nothing, whatever it throws.
+            || (since && refuses_without_identity(ctx, s).is_some())
     })
     .filter(|root| !ctx.definition(root).is_some_and(overridden))
+}
+
+/// `giver` hands back who calls, or nothing: a library's session read
+/// ([`crate::practices::libraries::authn_callee`]); a function of the repository
+/// whose every return gives what was made of a credential the request carries
+/// ([`drift_core::controls::RETURNS_CREDENTIAL`]) or a value of the caller
+/// ([`drift_core::controls::RETURNS_CALLER`]). Read from what the function does:
+/// no word of its name is asked.
+fn gives_identity(ctx: &crate::context::RepoContext, giver: &str) -> bool {
+    let g = crate::mine::norm_ref(giver);
+    if external(&g) {
+        return crate::practices::libraries::authn_callee(&g);
+    }
+    let name = g.rsplit_once('#').map_or(&*g, |(_, n)| n);
+    ctx.definition(&g).is_some_and(|d| {
+        d.name == name
+            && d.controls.iter().any(|c| {
+                c == drift_core::controls::RETURNS_CREDENTIAL
+                    || c == drift_core::controls::RETURNS_CALLER
+            })
+    })
+}
+
+/// The body throws for every request for which what gives the caller gave
+/// nothing ([`drift_core::controls::REFUSES_WITHOUT`]): some test of it is on a
+/// value each of whose givers hands back who calls or nothing
+/// ([`gives_identity`]). The first such giver.
+pub(crate) fn refuses_without_identity<'a>(
+    ctx: &crate::context::RepoContext,
+    s: &'a Symbol,
+) -> Option<&'a str> {
+    s.controls
+        .iter()
+        .filter_map(|c| c.strip_prefix(drift_core::controls::REFUSES_WITHOUT))
+        .find(|by| !by.is_empty() && by.split('\t').all(|g| gives_identity(ctx, g)))
+        .and_then(|by| by.split('\t').next())
 }
 
 /// The body rejects a caller ([`drift_core::controls::REJECTS_CALLER`]) or throws an
@@ -6613,6 +6652,13 @@ fn body_guards(
                 continue;
             }
             out.push(format!("{what}{BODY_CHECK}"));
+        }
+        // TypeScript: the body throws where what gives the caller gave nothing.
+        if !python
+            && ctx.since_measured()
+            && let Some(giver) = refuses_without_identity(ctx, b)
+        {
+            out.push(format!("{}{BODY_CHECK}", short(giver)));
         }
         // TypeScript: a branch on the caller's value hands back what was not read.
         for c in &b.controls {
