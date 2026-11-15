@@ -429,3 +429,148 @@ fn what_is_no_data_session_and_a_body_that_was_not_read_prove_nothing() {
     // The session is handed on to a helper the facts do not type.
     assert!(!said("/me/helper").starts_with("known"), "{:?}", *READ);
 }
+
+/// Flask with Flask-SQLAlchemy: the session is read off the binding the models
+/// are declared on (`db.session` of `class Note(db.Model)`).
+const FLASK: &str = r#"from flask import Flask, jsonify, request
+from flask_login import LoginManager, current_user, login_required
+from flask_sqlalchemy import SQLAlchemy
+
+app = Flask(__name__)
+db = SQLAlchemy(app)
+login_manager = LoginManager(app)
+
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String)
+    password = db.Column(db.String)
+
+
+class Note(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    owner_id = db.Column(db.Integer)
+    text = db.Column(db.String)
+
+
+@app.post("/users/<int:user_id>/password")
+@login_required
+def set_password(user_id):
+    user = db.session.get(User, user_id)
+    user.password = request.form["password"]
+    db.session.add(user)
+    db.session.commit()
+    return jsonify(ok=True)
+
+
+@app.post("/me/password")
+@login_required
+def set_my_password():
+    current_user.password = request.form["password"]
+    db.session.add(current_user)
+    db.session.commit()
+    return jsonify(ok=True)
+
+
+@app.get("/users/<int:user_id>/notes")
+@login_required
+def notes_of(user_id):
+    user = User.query.get(user_id)
+    return jsonify([n.text for n in Note.query.filter_by(owner_id=user.id)])
+
+
+@app.get("/me/notes")
+@login_required
+def my_notes():
+    return jsonify([n.text for n in Note.query.filter_by(owner_id=current_user.id)])
+
+
+@app.post("/users/<int:user_id>/notes")
+@login_required
+def add_note(user_id):
+    user = User.query.get(user_id)
+    note = Note(owner_id=user.id, text=request.form["text"])
+    db.session.add(note)
+    db.session.commit()
+    return jsonify(ok=True)
+
+
+@app.post("/me/notes")
+@login_required
+def add_my_note():
+    note = Note(owner_id=current_user.id, text=request.form["text"])
+    db.session.add(note)
+    db.session.commit()
+    return jsonify(ok=True)
+
+
+@app.get("/notes/<int:note_id>")
+@login_required
+def note(note_id):
+    account = User.query.get(request.args["as"])
+    n = Note.query.filter_by(id=note_id, owner_id=account.id).first()
+    return jsonify(text=n.text)
+
+
+@app.get("/session-notes")
+@login_required
+def session_notes():
+    session_user = User.query.get(request.args["as"])
+    return jsonify([n.text for n in Note.query.filter_by(owner_id=session_user.id)])
+"#;
+
+#[test]
+fn a_session_of_the_binding_the_models_are_declared_on_is_a_data_session() {
+    let dir = tempfile::tempdir().unwrap();
+    for (rel, text) in [
+        ("requirements.txt", "flask\nflask-login\nflask-sqlalchemy\n"),
+        ("app/__init__.py", FLASK),
+    ] {
+        let p = dir.path().join(rel);
+        std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+        std::fs::write(p, text).unwrap();
+    }
+    let map = drift(dir.path(), &["practices", "--json", "--units"]);
+    let units = map["concerns"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["id"] == "authz")
+        .unwrap()["units"]
+        .as_array()
+        .unwrap()
+        .clone();
+    let said = |method: &str, route: &str| {
+        let u = units
+            .iter()
+            .find(|u| u["method"] == method && u["route"] == route)
+            .unwrap_or_else(|| panic!("no route {method} {route}"));
+        (
+            u["assignment"].as_str().unwrap().to_string(),
+            u["key"].as_str().unwrap_or_default().to_string(),
+        )
+    };
+    // The caller's own record, handed to the session and nothing else.
+    assert_eq!(
+        said("POST", "/me/password"),
+        ("known".to_string(), "own_record:the caller".to_string())
+    );
+    // A row built with its owner given the caller itself.
+    assert_eq!(
+        said("POST", "/me/notes"),
+        (
+            "known".to_string(),
+            "owner_stamp:owner_id (session)".to_string()
+        )
+    );
+    // A row the request names, and a row built for the user the request names,
+    // are not the caller's: nothing is proven of either.
+    assert_eq!(said("POST", "/users/<int:user_id>/password").0, "none");
+    assert_eq!(said("POST", "/users/<int:user_id>/notes").0, "unknown");
+    // Rows read by the key of a record the request chose are not the caller's
+    // rows, whatever the local is called.
+    for route in ["/users/<int:user_id>/notes", "/session-notes"] {
+        assert_eq!(said("GET", route).0, "unknown", "{route}");
+    }
+    assert_eq!(said("GET", "/me/notes").0, "known");
+}

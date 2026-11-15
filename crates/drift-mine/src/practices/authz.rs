@@ -3781,8 +3781,9 @@ fn pkg_arg_calls(facts: &[String]) -> impl Iterator<Item = (&str, Vec<(&str, &st
 /// on a model: a data library's own call (`pkg:sqlmodel#Session.add` on a
 /// parameter the package types), a call on a name of the repository annotated
 /// as one (`SessionDep = Annotated[Session, Depends(get_db)]`:
-/// [`Symbol::alias_of`]), or on a binding built from one ([`data_call`]). What
-/// it is handed is what it keeps, reads or drops.
+/// [`Symbol::alias_of`]), on a binding built from one ([`data_call`]), or on a
+/// binding the repository's models are declared on ([`models_declared_on`]).
+/// What it is handed is what it keeps, reads or drops.
 fn on_session(cx: &Cx<'_>, callee: &str) -> bool {
     use super::libraries::data_library;
     if model_of(cx, callee).is_some() {
@@ -3794,10 +3795,33 @@ fn on_session(cx: &Cx<'_>, callee: &str) -> bool {
     match cx.context().definition(callee) {
         Some(d) if !d.alias_of.is_empty() => data_library(&d.alias_of).is_some(),
         Some(d) => {
-            matches!(d.kind, SymbolKind::Const | SymbolKind::Variable) && data_call(cx, callee)
+            matches!(d.kind, SymbolKind::Const | SymbolKind::Variable)
+                && (data_call(cx, callee) || models_declared_on(cx, callee))
         }
         None => false,
     }
+}
+
+/// Python: `callee` is a call on a binding of the repository that a model of the
+/// repository is declared on: the class a model extends is read off it (`class
+/// Note(db.Model)` of `db = SQLAlchemy(app)`, whatever built the binding and
+/// whatever it is called). The models' own data layer, so `db.session.add(row)`
+/// is a call of its session.
+fn models_declared_on(cx: &Cx<'_>, callee: &str) -> bool {
+    let Some((module, path)) = callee.split_once('#') else {
+        return false;
+    };
+    let base = path.split(['.', '(']).next().unwrap_or_default();
+    if base.is_empty() || base.len() == path.len() {
+        return false;
+    }
+    let on = format!("{module}#{base}.");
+    let ctx = cx.context();
+    cx.facts.models.iter().any(|m| {
+        ctx.ancestors(&format!("{}#{}", m.path, m.name))
+            .iter()
+            .any(|a| a.starts_with(&on))
+    })
 }
 
 /// The model of the repository `callee` is, or is called on
