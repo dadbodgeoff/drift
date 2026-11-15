@@ -467,6 +467,293 @@ impl<'t> Lowerer<'t> {
         (!read).then(|| format!("permission_classes = {}", crate::lower::practice::words(e)))
     }
 
+    /// What a view's `get_permissions` returns, case by case
+    /// ([`RawSymbol::drf_permission_cases`]), where its body is nothing but tests
+    /// of the request's method or the view's action, each answered by a list of
+    /// classes: `if self.request.method in SAFE_METHODS: return [A()]` then `return
+    /// [B()]`; or a name bound to a list in each branch and returned instantiated
+    /// (`permission_classes = [A]` ... `return [p() for p in permission_classes]`).
+    /// `None` where anything else is written: the permissions are then not read,
+    /// as before.
+    pub(crate) fn permission_cases(&self, f: &ast::StmtFunctionDef) -> Option<Vec<RawPermCase>> {
+        let this = f
+            .parameters
+            .posonlyargs
+            .iter()
+            .chain(&f.parameters.args)
+            .next()?
+            .parameter
+            .name
+            .as_str();
+        // The name a branch binds its classes to: a local, or `self.permission_classes`.
+        let bound = |target: &Expr| -> Option<String> {
+            match target {
+                Expr::Name(n) => Some(n.id.to_string()),
+                Expr::Attribute(a)
+                    if a.attr.as_str() == "permission_classes"
+                        && matches!(a.value.as_ref(), Expr::Name(n) if n.id.as_str() == this) =>
+                {
+                    Some(format!("{this}.permission_classes"))
+                }
+                _ => None,
+            }
+        };
+        let mut cases: Vec<RawPermCase> = Vec::new();
+        // The tests no earlier branch held for.
+        let mut rest: Vec<RawPermTest> = Vec::new();
+        // The lists a name was bound to, by the tests of each binding.
+        // (The name, the cases its bindings make, and what it held before them.)
+        type Held = (String, Vec<RawPermCase>, Option<Option<Vec<RawRef>>>);
+        let mut held: Option<Held> = None;
+        for stmt in super::without_docstring(&f.body) {
+            match stmt {
+                Stmt::Pass(_) => {}
+                Stmt::Assign(a) => {
+                    let [target] = a.targets.as_slice() else {
+                        return None;
+                    };
+                    let name = bound(target)?;
+                    if held.is_some() {
+                        return None;
+                    }
+                    held = Some((name, Vec::new(), Some(self.permission_list(&a.value)?)));
+                }
+                Stmt::If(i) => {
+                    let branches = std::iter::once((Some(i.test.as_ref()), i.body.as_slice()))
+                        .chain(
+                            i.elif_else_clauses
+                                .iter()
+                                .map(|c| (c.test.as_ref(), c.body.as_slice())),
+                        );
+                    let mut otherwise = false;
+                    for (test, body) in branches {
+                        let mut tests = rest.clone();
+                        match test {
+                            Some(t) => {
+                                let t = self.permission_test(t, this)?;
+                                rest.push(RawPermTest {
+                                    holds: !t.holds,
+                                    ..t.clone()
+                                });
+                                tests.push(t);
+                            }
+                            None => otherwise = true,
+                        }
+                        match body {
+                            [Stmt::Return(r)] if held.as_ref().is_none_or(|h| h.1.is_empty()) => {
+                                if held.is_some() {
+                                    return None;
+                                }
+                                cases.push(RawPermCase {
+                                    tests,
+                                    classes: self.permission_list(r.value.as_deref()?)?,
+                                });
+                            }
+                            [Stmt::Assign(a)] if cases.is_empty() => {
+                                let [target] = a.targets.as_slice() else {
+                                    return None;
+                                };
+                                let name = bound(target)?;
+                                let h =
+                                    held.get_or_insert_with(|| (name.clone(), Vec::new(), None));
+                                if h.0 != name {
+                                    return None;
+                                }
+                                h.1.push(RawPermCase {
+                                    tests,
+                                    classes: self.permission_list(&a.value)?,
+                                });
+                            }
+                            _ => return None,
+                        }
+                    }
+                    if otherwise && held.is_none() {
+                        // Every request was answered.
+                        return Some(cases);
+                    }
+                    if otherwise && let Some(h) = &mut held {
+                        // No request keeps what the name held before.
+                        h.2 = None;
+                    }
+                }
+                Stmt::Return(r) => {
+                    let value = r.value.as_deref()?;
+                    return match held {
+                        None => {
+                            cases.push(RawPermCase {
+                                tests: rest,
+                                classes: self.permission_list(value)?,
+                            });
+                            Some(cases)
+                        }
+                        // The name, instantiated: `[p() for p in name]`, or, of
+                        // `self.permission_classes`, what the base's own method
+                        // makes of it.
+                        Some((name, mut bound_cases, default)) => {
+                            let of_name = |e: &Expr| bound(e).as_deref() == Some(name.as_str());
+                            let instantiated = match value {
+                                Expr::ListComp(l) => match l.generators.as_slice() {
+                                    [g] if g.ifs.is_empty() => {
+                                        of_name(&g.iter)
+                                            && matches!(l.elt.as_ref(), Expr::Call(c)
+                                                if c.arguments.is_empty()
+                                                    && matches!((c.func.as_ref(), &g.target),
+                                                        (Expr::Name(x), Expr::Name(t)) if x.id == t.id))
+                                    }
+                                    _ => false,
+                                },
+                                _ => {
+                                    name.ends_with(".permission_classes")
+                                        && self.permission_list(value) == Some(None)
+                                }
+                            };
+                            if !instantiated {
+                                return None;
+                            }
+                            // The requests no branch bound it for keep what it held.
+                            match default {
+                                Some(classes) => bound_cases.push(RawPermCase {
+                                    tests: rest,
+                                    classes,
+                                }),
+                                None if bound_cases.is_empty() => return None,
+                                None => {}
+                            }
+                            Some(bound_cases)
+                        }
+                    };
+                }
+                _ => return None,
+            }
+        }
+        None
+    }
+
+    /// The classes a `get_permissions` returns in one place: a list of classes or
+    /// of calls of them (`[IsAuthenticated(), IsOwner()]`), such a list
+    /// instantiated in a comprehension, or `super().get_permissions()` (`None`:
+    /// the view's `permission_classes`).
+    fn permission_list(&self, e: &Expr) -> Option<Option<Vec<RawRef>>> {
+        if let Expr::Call(c) = e
+            && c.arguments.is_empty()
+            && let Expr::Attribute(a) = c.func.as_ref()
+            && a.attr.as_str() == "get_permissions"
+            && matches!(a.value.as_ref(), Expr::Call(s)
+                if matches!(s.func.as_ref(), Expr::Name(n) if n.id.as_str() == "super"))
+        {
+            return Some(None);
+        }
+        let listed = match e {
+            Expr::ListComp(l) => match l.generators.as_slice() {
+                [g] if g.ifs.is_empty() => elements(&g.iter)?,
+                _ => return None,
+            },
+            other => elements(other)?,
+        };
+        listed
+            .iter()
+            .map(|x| {
+                let class = match x {
+                    Expr::Call(c) if c.arguments.is_empty() => c.func.as_ref(),
+                    Expr::Call(_) => return None,
+                    other => other,
+                };
+                matches!(class, Expr::Name(_) | Expr::Attribute(_))
+                    .then(|| self.canon(class))
+                    .flatten()
+                    .filter(|r| !matches!(r.base, RawBase::Global(_)))
+            })
+            .collect::<Option<Vec<RawRef>>>()
+            .map(Some)
+    }
+
+    /// A test `get_permissions` branches on ([`RawPermTest`]): the request's
+    /// method or the view's action against a literal, a list of literals, or DRF's
+    /// `SAFE_METHODS`; negated, or an `or` of such tests of one of the two.
+    fn permission_test(&self, e: &Expr, this: &str) -> Option<RawPermTest> {
+        match e {
+            Expr::UnaryOp(u) if u.op == ast::UnaryOp::Not => {
+                let t = self.permission_test(&u.operand, this)?;
+                Some(RawPermTest {
+                    holds: !t.holds,
+                    ..t
+                })
+            }
+            Expr::BoolOp(b) if b.op == ast::BoolOp::Or => {
+                let mut tests = b.values.iter().map(|v| self.permission_test(v, this));
+                let mut all = tests.next()??;
+                for t in tests {
+                    let t = t?;
+                    if !all.holds || !t.holds || t.action != all.action {
+                        return None;
+                    }
+                    all.names.extend(t.names);
+                }
+                Some(all)
+            }
+            Expr::Compare(c) => {
+                let ([op], [left, right]) = (&*c.ops, &*c.operands) else {
+                    return None;
+                };
+                let holds = match op {
+                    ast::CmpOp::Eq | ast::CmpOp::In => true,
+                    ast::CmpOp::NotEq | ast::CmpOp::NotIn => false,
+                    _ => return None,
+                };
+                // `self.action`, `self.request.method`, `request.method`.
+                let action = match left {
+                    Expr::Attribute(a)
+                        if a.attr.as_str() == "action"
+                            && matches!(a.value.as_ref(), Expr::Name(n) if n.id.as_str() == this) =>
+                    {
+                        true
+                    }
+                    Expr::Attribute(a) if a.attr.as_str() == "method" => match a.value.as_ref() {
+                        Expr::Name(n) if n.id.as_str() == "request" => false,
+                        Expr::Attribute(r)
+                            if r.attr.as_str() == "request"
+                                && matches!(r.value.as_ref(), Expr::Name(n) if n.id.as_str() == this) =>
+                        {
+                            false
+                        }
+                        _ => return None,
+                    },
+                    _ => return None,
+                };
+                let literal = |x: &Expr| match x {
+                    Expr::StringLiteral(s) => Some(s.value.to_str().to_string()),
+                    _ => None,
+                };
+                let mut names: Vec<String> = match (op, right) {
+                    (ast::CmpOp::Eq | ast::CmpOp::NotEq, r) => vec![literal(r)?],
+                    (_, r) if elements(r).is_some() => elements(r)?
+                        .iter()
+                        .map(literal)
+                        .collect::<Option<Vec<String>>>()?,
+                    (_, r)
+                        if !action
+                            && self.dotted_of(r).as_deref()
+                                == Some("rest_framework.permissions.SAFE_METHODS") =>
+                    {
+                        ["GET", "HEAD", "OPTIONS"].map(String::from).to_vec()
+                    }
+                    _ => return None,
+                };
+                if !action {
+                    for n in &mut names {
+                        *n = n.to_ascii_uppercase();
+                    }
+                }
+                Some(RawPermTest {
+                    action,
+                    names,
+                    holds,
+                })
+            }
+            _ => None,
+        }
+    }
+
     pub(crate) fn class_list(&self, e: Option<&Expr>) -> Vec<RawRef> {
         e.and_then(elements)
             .map(|els| {
@@ -1508,6 +1795,7 @@ impl<'t> Lowerer<'t> {
                     let m = f.name.as_str();
                     if m == "get_permissions" {
                         sym.drf_permissions_unread = Some(crate::raw::GET_PERMISSIONS.into());
+                        sym.drf_permission_cases = self.permission_cases(f);
                     }
                     if HANDLER_METHODS.contains(&m) {
                         sym.methods.push(m.to_ascii_uppercase());

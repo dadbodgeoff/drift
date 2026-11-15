@@ -28,6 +28,27 @@ pub struct RawRef {
     pub member: String,
 }
 
+/// One way a view's `get_permissions` answers
+/// ([`RawSymbol::drf_permission_cases`]): for the requests every test holds for,
+/// and none of an earlier case, these classes.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct RawPermCase {
+    pub tests: Vec<RawPermTest>,
+    /// The classes returned; `None` for `super().get_permissions()`, which is the
+    /// view's `permission_classes`.
+    pub classes: Option<Vec<RawRef>>,
+}
+
+/// A test of a [`RawPermCase`]: the request's method (`self.request.method in
+/// SAFE_METHODS`), or the view's action (`self.action == "list"`), is one of
+/// `names` (`holds`), or none of them.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct RawPermTest {
+    pub action: bool,
+    pub names: Vec<String>,
+    pub holds: bool,
+}
+
 /// By what a statement reads the rows of a model ([`RawSymbol::rows`]).
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum RawRows {
@@ -270,6 +291,12 @@ pub struct RawSymbol {
     /// [`Self::drf_permissions`] and the wraps stay what they were.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub drf_permissions_unread: Option<String>,
+    /// What the `get_permissions` the class defines returns, by the request's
+    /// method and the view's action, where its body is read to the end
+    /// ([`RawPermCase`]): the linker picks the case of each handler, in place of
+    /// saying that the permissions were not read.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub drf_permission_cases: Option<Vec<RawPermCase>>,
     /// DRF `authentication_classes`, likewise.
     #[serde(default)]
     pub drf_authentication: Option<Vec<RawRef>>,
@@ -1368,6 +1395,7 @@ impl RawSymbol {
             traits: vec![],
             drf_permissions: None,
             drf_permissions_unread: None,
+            drf_permission_cases: None,
             drf_authentication: None,
             meta: vec![],
             decorator_args: vec![],

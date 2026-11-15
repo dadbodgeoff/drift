@@ -1171,8 +1171,10 @@ urlpatterns = [
 
 /// [STRICT] The permission classes of a DRF view that are no list of classes
 /// written in place: a tuple built by concatenation (`BASE + (IsAdminUser,)`), a
-/// name, classes combined with `|`, a `get_permissions` the view defines, an
-/// action's own (`@action(permission_classes=[AllowAny])`). None was read: the view
+/// name, classes combined with `|`, a `get_permissions` that tests anything but the
+/// request's method or the view's action (one that tests only those is read handler
+/// by handler: `drf_get_permissions.rs`), an action's own
+/// (`@action(permission_classes=[AllowAny])`). None was read: the view
 /// got the settings' default (`known config:permissions.IsAuthenticated`), the
 /// class's list where `get_permissions` or the action replaces it, or, for the
 /// combined classes, an empty list ("no guard"). Each is unknown; a view that binds
@@ -1224,7 +1226,7 @@ class DynamicViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_permissions(self):
-        if self.action == "list":
+        if self.action == "list" and self.request.query_params.get("preview"):
             return [permissions.AllowAny()]
         return super().get_permissions()
 

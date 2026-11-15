@@ -4610,9 +4610,32 @@ impl<'r> Linker<'r> {
                 }
                 let pre = extra.config.get(&s.name).into_iter().flatten();
                 let pre = pre.chain(extra.wraps.get(&s.name).into_iter().flatten());
+                // The permission classes the view declares that its
+                // `get_permissions` does not return for this handler
+                // ([`config::REPLACES`]).
+                // On the view class too, for a class one of whose handlers does not
+                // run it: each handler carries its own, and a reader that asks the
+                // class would be told of a guard that handler does not have.
+                let of_class = format!("{}.", s.name);
+                let replaced: Vec<&str> = extra
+                    .wraps
+                    .iter()
+                    .filter(|(symbol, _)| {
+                        **symbol == s.name
+                            || (s.kind == drift_core::SymbolKind::Class
+                                && symbol.starts_with(&of_class))
+                    })
+                    .flat_map(|(_, ws)| ws)
+                    .filter_map(|w| w.wrapper.strip_prefix(config::REPLACES))
+                    .collect();
                 let mut all: Vec<Wrap> = Vec::new();
                 let mut app_middleware: Vec<String> = Vec::new();
                 for mut w in pre.cloned().chain(wraps) {
+                    if w.wrapper.starts_with(config::REPLACES)
+                        || (w.kind == WrapKind::Call && replaced.contains(&w.wrapper.as_str()))
+                    {
+                        continue;
+                    }
                     // Application middleware is no wrap of the route.
                     if let Some(m) = middleware_of(&w.wrapper) {
                         app_middleware.push(m);
