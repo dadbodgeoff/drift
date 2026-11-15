@@ -243,6 +243,54 @@ def person_or_preview(
     return seat
 
 
+@app.get("/seats")
+def seats(user: Caller = Depends(current_user), db: Session = Depends(get_db)):
+    if user.is_admin:
+        return db.query(Seat).all()
+    return db.query(Seat).filter(Seat.holder_id == user.id).all()
+
+
+@app.get("/seats-else")
+def seats_else(user: Caller = Depends(current_user), db: Session = Depends(get_db)):
+    if not user.is_admin:
+        rows = db.query(Seat).filter(Seat.holder_id == user.id).all()
+    else:
+        rows = db.query(Seat).all()
+    return rows
+
+
+@app.get("/seats-flag")
+def seats_flag(
+    everything: bool = False,
+    user: Caller = Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    if everything:
+        return db.query(Seat).all()
+    return db.query(Seat).filter(Seat.holder_id == user.id).all()
+
+
+@app.get("/seats-key")
+def seats_key(user: Caller = Depends(current_user), db: Session = Depends(get_db)):
+    if user.id:
+        return db.query(Seat).all()
+    return db.query(Seat).filter(Seat.holder_id == user.id).all()
+
+
+@app.get("/seats-active")
+def seats_active(user: Caller = Depends(current_user), db: Session = Depends(get_db)):
+    if user.is_active:
+        return db.query(Seat).all()
+    return db.query(Seat).filter(Seat.holder_id == user.id).all()
+
+
+@app.get("/seats-after")
+def seats_after(user: Caller = Depends(current_user), db: Session = Depends(get_db)):
+    if user.is_admin:
+        count = db.query(Seat).count()
+    return db.query(Note).all()
+
+
 @app.get("/me")
 def me(user: Caller = Depends(current_user)):
     return user
@@ -345,4 +393,94 @@ fn a_handler_that_hands_back_who_calls_and_touches_nothing_else_serves_the_calle
     assert_eq!(got["/me"], "known own_record", "{got:?}");
     // It reads rows too: what it does with them is not the caller's own record.
     assert!(!got["/me-and-all"].starts_with("known"), "{got:?}");
+}
+
+#[test]
+fn rows_read_whole_in_a_branch_taken_on_the_callers_role_are_the_callers_own_or_a_role() {
+    let got = repo();
+    // Every row for the callers a role lets through, the caller's own otherwise.
+    assert_eq!(got["/seats"], "known owner_filter", "{got:?}");
+    // The same written the other way round: the `else` of a test of no role.
+    assert_eq!(got["/seats-else"], "known owner_filter", "{got:?}");
+    // The branch is taken on what the request sent: anyone asks for every row.
+    assert!(!got["/seats-flag"].starts_with("known"), "{got:?}");
+    // On the key of the caller's record, which every caller has.
+    assert!(!got["/seats-key"].starts_with("known"), "{got:?}");
+    // On what says only that the caller is signed in.
+    assert!(!got["/seats-active"].starts_with("known"), "{got:?}");
+    // Other rows read whole outside the branch: no filter of the route's.
+    assert!(!got["/seats-after"].starts_with("known"), "{got:?}");
+}
+
+const SCHEMAS: &str = r#"from sqlmodel import Field, SQLModel
+
+
+class ThingBase(SQLModel):
+    title: str
+
+
+class Thing(ThingBase, table=True):
+    id: int = Field(primary_key=True)
+    owner_id: int
+
+
+class ThingPublic(ThingBase):
+    id: int
+"#;
+
+const SCHEMA_ROUTES: &str = r#"from fastapi import Depends, FastAPI, HTTPException
+from fastapi.security import OAuth2PasswordBearer
+from sqlmodel import Session, select
+
+from app.models import Thing, ThingPublic
+
+app = FastAPI()
+oauth2 = OAuth2PasswordBearer(tokenUrl="token")
+
+
+class Caller:
+    def __init__(self, id):
+        self.id = id
+
+
+def get_db():
+    yield Session()
+
+
+def current_user(token: str = Depends(oauth2)) -> Caller:
+    if not token:
+        raise HTTPException(status_code=401)
+    return Caller(1)
+
+
+@app.get("/things")
+def things(user: Caller = Depends(current_user), db: Session = Depends(get_db)):
+    rows = db.exec(select(Thing).where(Thing.owner_id == user.id)).all()
+    return [ThingPublic.model_validate(row) for row in rows]
+
+
+@app.get("/things-all")
+def things_all(user: Caller = Depends(current_user), db: Session = Depends(get_db)):
+    rows = db.exec(select(Thing)).all()
+    return [ThingPublic.model_validate(row) for row in rows]
+"#;
+
+#[test]
+fn a_class_built_on_the_data_library_that_is_no_table_reads_no_rows() {
+    let dir = tempfile::tempdir().unwrap();
+    for (rel, text) in [
+        ("requirements.txt", "fastapi\nsqlmodel\n"),
+        ("app/__init__.py", ""),
+        ("app/models.py", SCHEMAS),
+        ("app/main.py", SCHEMA_ROUTES),
+    ] {
+        let p = dir.path().join(rel);
+        std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+        std::fs::write(p, text).unwrap();
+    }
+    let got = authz(dir.path());
+    // The response is validated into a schema of the same library: no read of rows.
+    assert_eq!(got["/things"], "known owner_filter", "{got:?}");
+    // The table itself read whole is what it was.
+    assert!(!got["/things-all"].starts_with("known"), "{got:?}");
 }

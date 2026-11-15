@@ -611,9 +611,10 @@ pub(super) struct Flow {
     locals: HashMap<SymbolId, Taint>,
     /// The parameters of the function the walk started on.
     own_params: HashSet<SymbolId>,
-    /// Each of them by its name and its position in the function's parameters (a
-    /// name bound by a pattern has the pattern's position).
-    pub(super) own_at: HashMap<SymbolId, (String, u32)>,
+    /// Each of them by its name and where a call gives it: its position in the
+    /// function's parameters (`#0`), and for a name bound by a pattern the keys it
+    /// is read under (`#0.userId` of `({ userId })`).
+    pub(super) own_at: HashMap<SymbolId, (String, String)>,
     /// Parameters decorated to receive the caller.
     caller_params: HashSet<SymbolId>,
     /// The parameters of a method whose body is walked by itself
@@ -675,6 +676,38 @@ impl<'l, 's> Collector<'l, 's> {
                 }
             }
         }
+        // Each name a pattern binds, with the keys it is read under: a key that
+        // cannot be written in a side (computed, not an identifier), an item of a
+        // list and the rest of an object are read under what holds them.
+        fn paths(p: &BindingPattern, at: String, out: &mut Vec<(SymbolId, String)>) {
+            match p {
+                BindingPattern::BindingIdentifier(b) => {
+                    out.extend(b.symbol_id.get().map(|s| (s, at)));
+                }
+                BindingPattern::AssignmentPattern(a) => paths(&a.left, at, out),
+                BindingPattern::ObjectPattern(o) => {
+                    for prop in &o.properties {
+                        let key = (!prop.computed)
+                            .then(|| super::key_name(&prop.key))
+                            .flatten()
+                            .filter(|k| super::side_key(k));
+                        let under = match key {
+                            Some(k) => format!("{at}.{k}"),
+                            None => at.clone(),
+                        };
+                        paths(&prop.value, under, out);
+                    }
+                    if let Some(r) = &o.rest {
+                        paths(&r.argument, at, out);
+                    }
+                }
+                BindingPattern::ArrayPattern(a) => {
+                    for el in a.elements.iter().flatten() {
+                        paths(el, at.clone(), out);
+                    }
+                }
+            }
+        }
         let own = self.fn_depth == 1;
         // `(...args)`: a parameter as any other.
         if own
@@ -689,9 +722,11 @@ impl<'l, 's> Collector<'l, 's> {
             let mut found = Vec::new();
             names(&item.pattern, &mut found);
             if own {
-                for s in &found {
-                    let name = self.l.scoping.symbol_name(*s).to_string();
-                    self.flow.own_at.insert(*s, (name, at as u32));
+                let mut under = Vec::new();
+                paths(&item.pattern, format!("#{at}"), &mut under);
+                for (s, token) in under {
+                    let name = self.l.scoping.symbol_name(s).to_string();
+                    self.flow.own_at.insert(s, (name, token));
                 }
             }
             let decorated = item.decorators.iter().any(|d| {

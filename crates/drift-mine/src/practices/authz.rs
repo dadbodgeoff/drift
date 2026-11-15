@@ -3826,7 +3826,9 @@ fn origin<'a>(
 type Given = Vec<(String, Origin)>;
 
 /// What a body is passed for its parameter `side` (`param <name>` or `param
-/// <name> #<position>`, [`drift_core::controls::SIDES`]) by the calls of the reach
+/// <name> #<position>`, the position with the keys the value is read under where
+/// it is read off an object: `#0.userId`; [`drift_core::controls::SIDES`]) by the
+/// calls of the reach
 /// (`calls`, [`passed`]): one origin where every call passes a value of that
 /// origin, a resource whatever its kind where every call passes one. Not read
 /// where no call of the reach is seen, and where one passes nothing for it (its
@@ -3838,11 +3840,23 @@ fn passed_for(side: &str, calls: &[Given]) -> Origin {
     let given: Vec<Origin> = calls
         .iter()
         .map(|call| {
-            call.iter()
+            if let Some((key, o)) = call
+                .iter()
                 .find(|(key, _)| key == name || Some(key.as_str()) == position || key == "*")
-                .map_or(Origin::Unread, |(key, o)| {
-                    if key == "*" { Origin::Unread } else { *o }
-                })
+            {
+                return if key == "*" { Origin::Unread } else { *o };
+            }
+            // Read under keys of what the position holds (`#0.userId` of `opts
+            // .userId`, of `({ userId })`), and the call wrote no such key in place:
+            // a member of the value it gave, which is of that value's origin.
+            let mut at = position;
+            while let Some((holder, _)) = at.and_then(|p| p.rsplit_once('.')) {
+                if let Some((_, o)) = call.iter().find(|(key, _)| key == holder) {
+                    return *o;
+                }
+                at = Some(holder);
+            }
+            Origin::Unread
         })
         .collect();
     let resource = |o: &Origin| matches!(o, Origin::Row | Origin::Request | Origin::Handed);
@@ -4606,18 +4620,24 @@ fn filters<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
             Node::Sym(s) => &s.controls,
             Node::Member(m) => &m.unread,
         };
-        for (_, by) in row_census(cx, facts) {
+        let census = row_census(cx, facts);
+        for (model, by) in &census {
             // (Under a key named for a tenant the filter is the tenant's, read
             // above by where its value comes from.)
             if let RowsBy::Own(key, side, _) = by
                 && side_is_caller_self(cx, side)
                 && !names_tenant(key)
             {
-                ev.add(
-                    "owner_filter",
-                    &format!("{key} (session)"),
-                    VariantSource::Usage,
-                );
+                // The same rows read whole in a branch taken on the caller's role:
+                // the filter is "the caller's own, or a role", and says so.
+                let or_a_role = census.iter().any(|(m, other)| {
+                    m == model && matches!(other, RowsBy::ByRole(role) if side_is_callers(cx, role))
+                });
+                let label = match or_a_role {
+                    true => format!("{key} (session){OR_A_ROLE}"),
+                    false => format!("{key} (session)"),
+                };
+                ev.add("owner_filter", &label, VariantSource::Usage);
             }
         }
     }
@@ -4691,11 +4711,47 @@ fn query_rows<'c>(cx: &Cx<'_>, callee: &'c str) -> Option<&'c str> {
     let (rows, method) = callee.rsplit_once('.')?;
     let (module, path) = rows.split_once('#')?;
     let model = path.split('.').next()?;
+    let class = format!("{module}#{model}");
     (!path.contains('(')
         && !method.contains('(')
         && !common::external(callee)
-        && data_call(cx, &format!("{module}#{model}")))
+        && data_call(cx, &class)
+        && !schema_only(cx, &class))
     .then_some(rows)
+}
+
+/// `class` is built on a data library and holds no rows: the facts list the tables
+/// of its library ([`drift_core::RepoFacts::models`]: SQLModel's `table=True`), and
+/// neither it nor a class it is built on is one (`class ItemPublic(ItemBase)`, the
+/// shape a response is validated into). A class built on a listed table reads that
+/// table's rows (a Django proxy, a mapped subclass), and where the facts list no
+/// table of the library nothing says which class is one.
+fn schema_only(cx: &Cx<'_>, class: &str) -> bool {
+    use super::libraries::data_library;
+    let ctx = cx.context();
+    let listed = |c: &str| {
+        c.split_once('#').is_some_and(|(m, n)| {
+            cx.facts
+                .models
+                .iter()
+                .any(|model| model.path == m && model.name == n)
+        })
+    };
+    let ancestors = ctx.ancestors(class);
+    if listed(class) || ancestors.iter().any(|a| listed(a)) {
+        return false;
+    }
+    // A table of the same library is listed: the adapter reads which are.
+    let libraries: Vec<&String> = ancestors
+        .iter()
+        .filter(|a| data_library(a).is_some())
+        .collect();
+    !libraries.is_empty()
+        && cx.facts.models.iter().any(|model| {
+            ctx.ancestors(&format!("{}#{}", model.path, model.name))
+                .iter()
+                .any(|a| libraries.contains(&a))
+        })
 }
 
 /// By what a statement of a body reads the rows of a model
@@ -4707,6 +4763,9 @@ enum RowsBy<'a> {
     Own(&'a str, &'a str, bool),
     /// By a value read off what these gave.
     From(Vec<&'a str>),
+    /// By nothing of the caller, in a branch taken where a member of this side is
+    /// set or is a literal: for the callers a role lets through.
+    ByRole(&'a str),
     Any,
 }
 
@@ -4736,6 +4795,10 @@ fn row_census<'a>(cx: &Cx<'_>, facts: &'a [String]) -> Vec<(&'a str, RowsBy<'a>)
                     parts.next() == Some(drift_core::controls::ROWS_ASKED),
                 ),
                 "from" => RowsBy::From(parts.collect()),
+                "any" => match (parts.next(), parts.next()) {
+                    (Some("role"), Some(side)) => RowsBy::ByRole(side),
+                    _ => RowsBy::Any,
+                },
                 _ => RowsBy::Any,
             };
             is_model(cx, model).then_some((model, by))
@@ -4875,6 +4938,8 @@ fn reads_unscoped<'a>(cx: &Cx<'a>, r: &Reached<'a>, around: &[String], passed: &
         !by_call(model)
             && match by {
                 RowsBy::Own(_, side, _) => !side_is_caller_self(cx, side),
+                // Read whole for the callers whose own role lets them through.
+                RowsBy::ByRole(side) => !side_is_callers(cx, side),
                 RowsBy::From(givers) => !givers.iter().all(|g| {
                     census.iter().any(|(m, _)| {
                         (g == m || g.strip_prefix(m).is_some_and(|x| x.starts_with('.'))) && own(m)

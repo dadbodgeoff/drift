@@ -222,3 +222,102 @@ export class NotesController {
         "{got:?}"
     );
 }
+
+#[test]
+fn a_value_of_the_caller_handed_inside_an_object_written_in_place_is_followed_by_its_key() {
+    let dir = write(&[
+        (
+            "package.json",
+            "{ \"name\": \"api\", \"dependencies\": { \"express\": \"4.19.0\", \"@prisma/client\": \"5.20.0\" } }\n",
+        ),
+        ("src/db.ts", DB),
+        (
+            "src/auth.ts",
+            "export function requireAuth(req: any, res: any, next: any) {\n  if (!req.user) {\n    return res.status(401).json({ error: \"unauthorized\" });\n  }\n  next();\n}\n",
+        ),
+        (
+            "src/notes.ts",
+            r#"import { prisma } from "./db";
+
+// Read off the options by a member.
+export function listNotes(opts: { userId: string; take?: number }) {
+  return prisma.note.findMany({ where: { userId: opts.userId }, take: opts.take });
+}
+
+// Read where the parameter is declared.
+export function pinned({ userId, pinned }: { userId: string; pinned: boolean }) {
+  return prisma.note.findMany({ where: { userId, pinned } });
+}
+
+// Read in the body.
+export function drafts(opts: { userId: string }) {
+  const { userId } = opts;
+  return prisma.note.findMany({ where: { userId, draft: true } });
+}
+
+// Handed on, object to object.
+export function recent(opts: { userId: string }) {
+  return listNotes({ userId: opts.userId, take: 5 });
+}
+"#,
+        ),
+        (
+            "src/server.ts",
+            r#"import express from "express";
+import { requireAuth } from "./auth";
+import { drafts, listNotes, pinned, recent } from "./notes";
+
+const app = express();
+
+app.get("/notes", requireAuth, async (req: any, res) => {
+  res.json(await listNotes({ userId: req.user.id, take: 20 }));
+});
+
+app.get("/pinned", requireAuth, async (req: any, res) => {
+  res.json(await pinned({ userId: req.user.id, pinned: true }));
+});
+
+app.get("/drafts", requireAuth, async (req: any, res) => {
+  const userId = req.user.id;
+  res.json(await drafts({ userId }));
+});
+
+app.get("/recent", requireAuth, async (req: any, res) => {
+  res.json(await recent({ userId: req.user.id }));
+});
+
+app.get("/as/:userId", requireAuth, async (req: any, res) => {
+  res.json(await listNotes({ userId: req.params.userId }));
+});
+
+app.get("/spread", requireAuth, async (req: any, res) => {
+  res.json(await listNotes({ userId: req.user.id, ...req.query }));
+});
+
+app.get("/other-key", requireAuth, async (req: any, res) => {
+  res.json(await pinned({ userId: req.query.owner, pinned: req.user.id }));
+});
+
+app.get("/twice", requireAuth, async (req: any, res) => {
+  res.json(await listNotes({ userId: req.user.id, userId: req.query.owner }));
+});
+
+export default app;
+"#,
+        ),
+    ]);
+    let got = authz(dir.path());
+    assert_eq!(got["GET /notes"], "known owner_filter", "{got:?}");
+    assert_eq!(got["GET /pinned"], "known owner_filter", "{got:?}");
+    assert_eq!(got["GET /drafts"], "known owner_filter", "{got:?}");
+    // Two hops, an object written in place at each.
+    assert_eq!(got["GET /recent"], "known owner_filter", "{got:?}");
+    // Under the same key, what the request chose.
+    assert!(got["GET /as/:userId"].starts_with("unknown"), "{got:?}");
+    // A spread after the key may put anything under it.
+    assert!(got["GET /spread"].starts_with("unknown"), "{got:?}");
+    // The caller's value under another key than the one the query filters by.
+    assert!(got["GET /other-key"].starts_with("unknown"), "{got:?}");
+    // The key written twice holds what was written last.
+    assert!(got["GET /twice"].starts_with("unknown"), "{got:?}");
+}

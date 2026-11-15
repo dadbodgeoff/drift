@@ -2274,20 +2274,8 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 }
                 return Ok(ExitCode::SUCCESS);
             }
-            // What the baseline holds of the repository as it is now: the findings
-            // of the inventory, and the entry points the practice map reads as
-            // checking nothing of a signed-in caller.
-            let baseline_findings = || -> anyhow::Result<drift_mine::ratchet::Findings> {
-                let mut found = drift_mine::ratchet::findings(&inv);
-                let scope = practices::checked_scope(&facts, Some("authz"), None, None)?;
-                let report = practices::report_with(root, &facts, scope, true)?;
-                for c in report.concerns.iter().filter(|c| c.id == "authz") {
-                    drift_mine::ratchet::add_unauthorized(&mut found, &c.units);
-                }
-                Ok(found)
-            };
             if *write_baseline {
-                let found = baseline_findings()?;
+                let found = baseline_findings(root, &facts, &inv)?;
                 let path = root.join(drift_mine::ratchet::SECURITY_LOCK);
                 if let Some(dir) = path.parent() {
                     std::fs::create_dir_all(dir)
@@ -2310,7 +2298,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         .join(", ")
                 );
                 println!(
-                    "Commit it. `drift security --ratchet` exits 1 when a finding that is not in it appears."
+                    "Commit it. `drift security --ratchet` exits 1 when a finding that is not in it appears, and so does `drift check` where the project has conventions."
                 );
                 return Ok(ExitCode::SUCCESS);
             }
@@ -2323,7 +2311,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         drift_mine::ratchet::SECURITY_LOCK
                     );
                 };
-                let found = baseline_findings()?;
+                let found = baseline_findings(root, &facts, &inv)?;
                 let result = drift_mine::ratchet::compare(&found, &baseline);
                 if *json {
                     println!("{}", serde_json::to_string_pretty(&result)?);
@@ -3637,6 +3625,13 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 }
                 None => (full, 0, None),
             };
+            // The security baseline, where the repository committed one: a finding
+            // that is not in it fails the check as a blocking violation does. The
+            // baseline is the rule; writing it is what a person accepted.
+            let security = check_security(cli, root, &facts, only.is_some())?;
+            let insecure = security
+                .as_ref()
+                .is_some_and(|s| s.added.values().any(|rows| !rows.is_empty()));
             // Wiring advice never fails, not even with `--strict`.
             let failing = report.new_violations().filter(|v| v.fails(*strict)).count();
             // Decided on what is reported (after the diff filter) and before any
@@ -3646,7 +3641,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             // merge base); by default that fails open, with the files named.
             let base_unchecked = scope.as_ref().map_or(&[][..], |s| s.base_unchecked());
             let unread = !report.unchecked.is_empty() || !base_unchecked.is_empty();
-            let code = u8::from(failing > 0 || (*strict && unread));
+            let code = u8::from(failing > 0 || (*strict && unread) || insecure);
             PIPE_EXIT.store(code, Ordering::Relaxed);
             // What the practice map says of the files looked at: the files named, the
             // files the diff added or changed, or every file. Facts, not rules: listed
@@ -3690,6 +3685,9 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                             if let Some(p) = &practices {
                                 v["practices"] = serde_json::to_value(p)?;
                             }
+                            if let Some(sec) = &security {
+                                v["security"] = serde_json::to_value(sec)?;
+                            }
                             serde_json::to_writer_pretty(&mut stdout, &v)?;
                         }
                         None => serde_json::to_writer_pretty(
@@ -3698,6 +3696,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                                 report: &report,
                                 conventions,
                                 practices,
+                                security: security.as_ref(),
                             },
                         )?,
                     }
@@ -3760,6 +3759,20 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                             "locations": at(&format!("{prefix}{}", d.path), d.units.first().map_or(1, |u| u.line)),
                         }));
                     }
+                    // What the security baseline does not hold fails the check; it is
+                    // a notification here, as a fact of the run and no convention's
+                    // result.
+                    for (kind, rows) in security.iter().flat_map(|s| &s.added) {
+                        for a in rows {
+                            let (path, line) =
+                                a.at.rsplit_once(':').unwrap_or((a.at.as_str(), "1"));
+                            notes.push(serde_json::json!({
+                                "level": "error",
+                                "message": { "text": format!("Security [{kind}]: {} is not in the security baseline ({}).", a.key, drift_mine::ratchet::SECURITY_LOCK) },
+                                "locations": at(&format!("{prefix}{path}"), line.parse().unwrap_or(1)),
+                            }));
+                        }
+                    }
                     if !notes.is_empty() {
                         log["runs"][0]["invocations"] = serde_json::json!([{
                             "executionSuccessful": true,
@@ -3789,6 +3802,9 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     }
                     print!("{}", drift_mine::practices::added_text(&added));
                     print!("{}", drift_mine::practices::departures_text(&departures));
+                    if let Some(sec) = security.as_ref().filter(|_| insecure) {
+                        print!("\n{}", drift_mine::ratchet::render(sec, 20));
+                    }
                 }
                 Format::Github => {
                     // Annotations name files from the git top level ([`project::at_git_top`]).
@@ -3802,12 +3818,67 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         &departures,
                         &added,
                     )?;
+                    for (kind, rows) in security.iter().flat_map(|s| &s.added) {
+                        for a in rows {
+                            let (path, line) =
+                                a.at.rsplit_once(':').unwrap_or((a.at.as_str(), "1"));
+                            println!(
+                                "::error file={prefix}{path},line={line},title=drift security [{kind}]::{} is not in the security baseline ({})",
+                                a.key,
+                                drift_mine::ratchet::SECURITY_LOCK
+                            );
+                        }
+                    }
                 }
             }
             return Ok(ExitCode::from(code));
         }
     }
     Ok(ExitCode::SUCCESS)
+}
+
+/// What the security baseline holds of the repository as it is now: the findings
+/// of the inventory, and the entry points the practice map reads as checking
+/// nothing of a signed-in caller.
+fn baseline_findings(
+    root: &Path,
+    facts: &RepoFacts,
+    inv: &drift_mine::security::Inventory,
+) -> anyhow::Result<drift_mine::ratchet::Findings> {
+    let mut found = drift_mine::ratchet::findings(inv);
+    let scope = practices::checked_scope(facts, Some("authz"), None, None)?;
+    let report = practices::report_with(root, facts, scope, true)?;
+    for c in report.concerns.iter().filter(|c| c.id == "authz") {
+        drift_mine::ratchet::add_unauthorized(&mut found, &c.units);
+    }
+    Ok(found)
+}
+
+/// `drift check`: what the repository's security baseline does not hold
+/// ([`drift_mine::ratchet`]), where the repository has one and the check is of the
+/// whole tree or of a diff. `None` with no baseline, and where files are named (an
+/// editor's or an agent's check of one file reads no inventory).
+fn check_security(
+    cli: &Cli,
+    root: &Path,
+    facts: &RepoFacts,
+    files_named: bool,
+) -> anyhow::Result<Option<drift_mine::ratchet::Ratchet>> {
+    if files_named {
+        return Ok(None);
+    }
+    let Some(baseline) = drift_mine::ratchet::load(root)
+        .with_context(|| format!("reading {}", drift_mine::ratchet::SECURITY_LOCK))?
+    else {
+        return Ok(None);
+    };
+    let mut inv = drift_mine::security::inventory_with(
+        facts,
+        drift_mine::security::Boundaries::load(&cli.root),
+    );
+    inv.workflows = drift_mine::workflows::read(root);
+    let found = baseline_findings(root, facts, &inv)?;
+    Ok(Some(drift_mine::ratchet::compare(&found, &baseline)))
 }
 
 /// `drift check --format json`: the report's fields as before (`violations`, `fixed`),
@@ -3820,6 +3891,10 @@ struct CheckJson<'a> {
     /// Omitted when nothing departs.
     #[serde(skip_serializing_if = "Option::is_none")]
     practices: Option<CheckPractices<'a>>,
+    /// What the security baseline does not hold ([`check_security`]). Omitted where
+    /// the repository has no baseline, and where files are named.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    security: Option<&'a drift_mine::ratchet::Ratchet>,
 }
 
 /// `drift check --format json` `practices`: what the practice map says of the files

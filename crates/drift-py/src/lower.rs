@@ -2596,6 +2596,9 @@ pub(crate) struct Collector<'l, 't> {
     held: BTreeSet<(RawHeld, Vec<RawRef>)>,
     /// [`RawSymbol::rows`].
     rows: BTreeSet<(RawRef, RawRows)>,
+    /// What each enclosing branch that is taken on a role tests it of
+    /// ([`practice::role_branch`]), innermost last.
+    role_branches: Vec<RawSide>,
     /// A rejection that counts was a response the body returns, and one that was
     /// raised or made by a call (`abort(401)`), for
     /// [`drift_core::controls::RETURNS_REJECTION`].
@@ -2718,6 +2721,7 @@ impl<'l, 't> Collector<'l, 't> {
             returns_else: false,
             held: BTreeSet::new(),
             rows: BTreeSet::new(),
+            role_branches: Vec::new(),
             rejects_by_return: false,
             rejects_otherwise: false,
             returns_401: false,
@@ -4351,9 +4355,13 @@ impl<'a> Collector<'_, 'a> {
                 let before = self.continued;
                 let test = practice::words(&i.test);
                 self.conds.push((UNDER_BRANCH, format!("only when {test}")));
+                let on_role = self.role_branch(&i.test, true);
+                let depth = self.role_branches.len();
+                self.role_branches.extend(on_role);
                 for s in &i.body {
                     self.visit_stmt(s);
                 }
+                self.role_branches.truncate(depth);
                 self.conds.pop();
                 // A branch that returns without refusing leaves what follows undone
                 // for the requests that took it.
@@ -4385,9 +4393,19 @@ impl<'a> Collector<'_, 'a> {
                     if branch {
                         self.conds.push((UNDER_BRANCH, words.clone()));
                     }
+                    // An `else` of one test that holds where a role is not held
+                    // (`if not user.is_admin: ... else: ...`) is taken on the role.
+                    let on_role = match &c.test {
+                        Some(t) => self.role_branch(t, true),
+                        None if i.elif_else_clauses.len() == 1 => self.role_branch(&i.test, false),
+                        None => None,
+                    };
+                    let depth = self.role_branches.len();
+                    self.role_branches.extend(on_role);
                     for s in &c.body {
                         self.visit_stmt(s);
                     }
+                    self.role_branches.truncate(depth);
                     if branch {
                         self.conds.pop();
                     }

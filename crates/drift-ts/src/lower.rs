@@ -1995,6 +1995,15 @@ fn key_name(k: &PropertyKey) -> Option<String> {
     k.static_name().and_then(|n| n.as_str().map(String::from))
 }
 
+/// A key that can be written in the side of a value (`param opts #0.userId`,
+/// [`Collector::param_root`]): an identifier, so that no side holds a space, a tab
+/// or a dot of a key's own.
+fn side_key(k: &str) -> bool {
+    !k.is_empty()
+        && k.chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '$')
+}
+
 fn starts_upper(s: &str) -> bool {
     s.chars().next().is_some_and(|c| c.is_ascii_uppercase())
 }
@@ -4811,7 +4820,7 @@ struct Collector<'l, 's> {
     param_keys: BTreeSet<(RawRef, String, String)>,
     /// The locals bound to a value read off one parameter of the walk's own
     /// function, by that parameter.
-    param_locals: HashMap<SymbolId, (String, u32)>,
+    param_locals: HashMap<SymbolId, (String, String)>,
     order: Vec<RawRef>,
     /// The callees whose call's value the body returns, outside any callback.
     returns_calls: BTreeSet<RawRef>,
@@ -6008,64 +6017,150 @@ impl Collector<'_, '_> {
 
     /// The parameter of the walk's own function a value is read off: the parameter
     /// itself, a member or an item of it (`user.id`, `req.params.id`), or a local
-    /// bound to one. Its name and its position. None for a call's result, a
-    /// literal, or anything built from more than one value.
-    fn param_root(&self, e: &Expression) -> Option<(String, u32)> {
+    /// bound to one. Its name, and where a call gives the value: the parameter's
+    /// position and the keys read on the way (`#0` of `userId`, `#0.userId` of
+    /// `opts.userId` and of `({ userId })`). A member that cannot be named (an item,
+    /// a computed key) and what is read above it stand for what holds them. None
+    /// for a call's result, a literal, or anything built from more than one value.
+    fn param_root(&self, e: &Expression) -> Option<(String, String)> {
         let mut at = peel(e);
+        // The members read on the way down, outermost first.
+        let mut keys: Vec<&str> = Vec::new();
         loop {
             at = match at {
                 Expression::AwaitExpression(a) => peel(&a.argument),
-                Expression::StaticMemberExpression(m) => peel(&m.object),
-                Expression::ComputedMemberExpression(m) => peel(&m.object),
+                Expression::StaticMemberExpression(m) => {
+                    match side_key(m.property.name.as_str()) {
+                        true => keys.push(m.property.name.as_str()),
+                        false => keys.clear(),
+                    }
+                    peel(&m.object)
+                }
+                Expression::ComputedMemberExpression(m) => {
+                    keys.clear();
+                    peel(&m.object)
+                }
                 Expression::ChainExpression(c) => match &c.expression {
-                    ChainElement::StaticMemberExpression(m) => peel(&m.object),
-                    ChainElement::ComputedMemberExpression(m) => peel(&m.object),
+                    ChainElement::StaticMemberExpression(m) => {
+                        match side_key(m.property.name.as_str()) {
+                            true => keys.push(m.property.name.as_str()),
+                            false => keys.clear(),
+                        }
+                        peel(&m.object)
+                    }
+                    ChainElement::ComputedMemberExpression(m) => {
+                        keys.clear();
+                        peel(&m.object)
+                    }
                     _ => return None,
                 },
                 Expression::Identifier(id) => {
                     let s = self.symbol_of(id)?;
-                    return self
+                    let (name, mut token) = self
                         .flow
                         .own_at
                         .get(&s)
                         .or_else(|| self.param_locals.get(&s))
-                        .cloned();
+                        .cloned()?;
+                    for k in keys.iter().rev().take(MAX_KEY_DEPTH) {
+                        token.push('.');
+                        token.push_str(k);
+                    }
+                    return Some((name, token));
                 }
                 _ => return None,
             };
         }
     }
 
+    /// What one value handed to a call is ([`RawSymbol::arg_sides`]): a value of
+    /// the caller by its own source, a value read off a parameter of the function,
+    /// a literal, or what is not read.
+    fn arg_side(&self, e: &Expression) -> String {
+        if self.taint(e).callers_own() {
+            return "caller".to_string();
+        }
+        match self.param_root(e) {
+            Some((name, at)) => format!("param {name} {at}"),
+            None if literal_text(peel(e)).is_some()
+                || matches!(
+                    peel(e),
+                    Expression::NumericLiteral(_)
+                        | Expression::BooleanLiteral(_)
+                        | Expression::NullLiteral(_)
+                ) =>
+            {
+                "literal".to_string()
+            }
+            None => "unread".to_string(),
+        }
+    }
+
+    /// What an object written in place hands a call under each of its keys
+    /// (`list({ userId: user.id, take })`), `under` the argument's position
+    /// (`#0.userId`). Nothing of an object a spread or a computed key is written
+    /// in: either may put any value under any key.
+    fn object_sides(
+        &self,
+        e: &Expression,
+        under: &str,
+        depth: usize,
+        out: &mut Vec<(String, String)>,
+    ) {
+        let Expression::ObjectExpression(o) = peel(e) else {
+            return;
+        };
+        let mut found: Vec<(String, String)> = Vec::new();
+        for p in &o.properties {
+            let ObjectPropertyKind::ObjectProperty(p) = p else {
+                return;
+            };
+            let Some(k) = (!p.computed)
+                .then(|| key_name(&p.key))
+                .flatten()
+                .filter(|k| side_key(k))
+            else {
+                return;
+            };
+            let key = format!("{under}.{k}");
+            // A key written twice holds what was written last.
+            found.retain(|(x, _)| *x != key && !x.starts_with(&format!("{key}.")));
+            if matches!(peel(&p.value), Expression::ObjectExpression(_)) {
+                if depth + 1 < MAX_KEY_DEPTH {
+                    self.object_sides(&p.value, &key, depth + 1, &mut found);
+                }
+            } else {
+                found.push((key, self.arg_side(&p.value)));
+            }
+        }
+        out.extend(found);
+    }
+
     /// What a call hands its callee, argument by argument
     /// ([`RawSymbol::arg_sides`]): a value of the caller by its own source, a value
     /// read off a parameter of the function, a literal, or what is not read.
     fn note_arg_sides(&mut self, callee: &RawRef, it: &CallExpression) {
-        let given: Vec<(String, String)> = it
+        let mut given: Vec<(String, String)> = it
             .arguments
             .iter()
             .enumerate()
             .map(|(i, a)| {
                 let side = match a.as_expression() {
                     None => "unread".to_string(),
-                    Some(e) if self.taint(e).callers_own() => "caller".to_string(),
-                    Some(e) => match self.param_root(e) {
-                        Some((name, at)) => format!("param {name} #{at}"),
-                        None if literal_text(peel(e)).is_some()
-                            || matches!(
-                                peel(e),
-                                Expression::NumericLiteral(_)
-                                    | Expression::BooleanLiteral(_)
-                                    | Expression::NullLiteral(_)
-                            ) =>
-                        {
-                            "literal".to_string()
-                        }
-                        None => "unread".to_string(),
-                    },
+                    Some(e) => self.arg_side(e),
                 };
                 (format!("#{i}"), side)
             })
             .collect();
+        // An object written in place hands on what each of its keys holds.
+        let mut keyed = Vec::new();
+        for (i, a) in it.arguments.iter().enumerate() {
+            if let Some(e) = a.as_expression() {
+                self.object_sides(e, &format!("#{i}"), 0, &mut keyed);
+            }
+        }
+        let by_key = !keyed.is_empty();
+        given.extend(keyed);
         // A call given nothing but objects, lists and functions written in place
         // hands on no value by position: what it is given is read by its keys.
         let written_in_place = it.arguments.iter().all(|a| {
@@ -6079,7 +6174,10 @@ impl Collector<'_, '_> {
                 )
             )
         });
-        if !given.is_empty() && !written_in_place && self.arg_sides.len() < MAX_ORDER * 4 {
+        if !given.is_empty()
+            && (!written_in_place || by_key)
+            && self.arg_sides.len() < MAX_ORDER * 4
+        {
             self.arg_sides.insert((callee.clone(), given));
         }
     }
@@ -6110,7 +6208,7 @@ impl Collector<'_, '_> {
                     self.caller_keys.insert((callee.clone(), key));
                 } else if let Some((name, at)) = self.param_root(&p.value) {
                     self.param_keys
-                        .insert((callee.clone(), key, format!("param {name} #{at}")));
+                        .insert((callee.clone(), key, format!("param {name} {at}")));
                 }
             }
         }
@@ -12392,6 +12490,29 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             }
             if let Some(of) = self.param_root(init) {
                 self.param_locals.insert(sym, of);
+            }
+        }
+        // `const { userId } = opts`: each name is the parameter's value under its key.
+        if let (BindingPattern::ObjectPattern(o), Some(init)) = (&it.id, &it.init)
+            && let Some((name, token)) = self.param_root(init)
+        {
+            for prop in &o.properties {
+                let target = match &prop.value {
+                    BindingPattern::BindingIdentifier(b) => b.symbol_id.get(),
+                    BindingPattern::AssignmentPattern(a) => match &a.left {
+                        BindingPattern::BindingIdentifier(b) => b.symbol_id.get(),
+                        _ => None,
+                    },
+                    _ => None,
+                };
+                let key = (!prop.computed)
+                    .then(|| key_name(&prop.key))
+                    .flatten()
+                    .filter(|k| side_key(k));
+                if let (Some(sym), Some(k)) = (target, key) {
+                    self.param_locals
+                        .insert(sym, (name.clone(), format!("{token}.{k}")));
+                }
             }
         }
         if let Some(init) = &it.init {

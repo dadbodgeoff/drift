@@ -66,13 +66,29 @@ pub const TEST_ROLES_FEATURE: &str = "test_roles";
 /// The experimental feature that forms and mines kind roles ([`crate::shapes`]).
 pub const KIND_ROLES_FEATURE: &str = "kind_roles";
 
+/// The experimental feature that mines and checks over every entry point Drift
+/// lists ([`drift_core::RepoFacts::listed`]), where mining reads those of the last
+/// measured build: the routes `drift security` and the practice map read become
+/// members of the roles conventions are mined for and checked in. The precision
+/// of what mining proposes over them was not measured.
+pub const LISTED_ENTRY_POINTS_FEATURE: &str = "listed_entry_points";
+
 /// Experimental features Drift knows.
 pub const KNOWN_FEATURES: &[&str] = &[
     WIRING_FEATURE,
     INTRA_PACKAGE_LAYERING_FEATURE,
     TEST_ROLES_FEATURE,
     KIND_ROLES_FEATURE,
+    LISTED_ENTRY_POINTS_FEATURE,
 ];
+
+/// Whether every command reads the listed entry points of the repository at `root`
+/// ([`LISTED_ENTRY_POINTS_FEATURE`]): in the config's `experimental` list or in
+/// [`EXPERIMENTAL_ENV`]. Off by default, and off when the config cannot be read
+/// [STRICT].
+pub fn listed_entry_points(root: &Path) -> bool {
+    DriftConfig::load(root).is_ok_and(|c| c.enabled(LISTED_ENTRY_POINTS_FEATURE))
+}
 
 /// The experimental feature that mines and checks layering between areas inside one
 /// workspace package ([`crate::workspace::intra_package_layering`]). Off by default: on the

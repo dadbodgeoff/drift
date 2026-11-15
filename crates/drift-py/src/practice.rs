@@ -3710,6 +3710,20 @@ impl<'t> Collector<'_, 't> {
         }
     }
 
+    /// What a branch taken on a role tests it of: the side of the member a test
+    /// asks to be set or to be a literal (`if current_user.is_superuser:`, `if
+    /// user.role == "admin":`), read as a refusing condition reads one
+    /// ([`role_test`]); `held`: the branch is the one taken where the test holds
+    /// (false for the `else` of `if not user.is_admin:`). None for any other test,
+    /// for the key of the caller's own record (every caller has one) and for what
+    /// says only that a caller is signed in ([`super::verdict::says_status`]).
+    pub(crate) fn role_branch(&self, test: &Expr, held: bool) -> Option<RawSide> {
+        let member = role_test(test, held)?;
+        let status =
+            matches!(member, Expr::Attribute(a) if super::verdict::says_status(a.attr.as_str()));
+        (!status && !self.caller_self(member)).then(|| self.side(member))
+    }
+
     /// The rows one expression reads, by the classes it names, and by what.
     fn rows_of(&self, e: &Expr) -> Vec<(RawRef, RawRows)> {
         let mut read = RowsRead {
@@ -3725,10 +3739,11 @@ impl<'t> Collector<'_, 't> {
         models
             .into_iter()
             .map(|model| {
-                let by = match (&own, from.is_empty()) {
-                    (Some((key, side)), _) => RawRows::Own(key.clone(), side.clone(), asked),
-                    (None, false) => RawRows::From(from.clone()),
-                    (None, true) => RawRows::Any,
+                let by = match (&own, from.is_empty(), self.role_branches.last()) {
+                    (Some((key, side)), _, _) => RawRows::Own(key.clone(), side.clone(), asked),
+                    (None, false, _) => RawRows::From(from.clone()),
+                    (None, true, Some(role)) => RawRows::ByRole(role.clone()),
+                    (None, true, None) => RawRows::Any,
                 };
                 (model, by)
             })

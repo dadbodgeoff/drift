@@ -58,6 +58,10 @@ pub enum RawRows {
     Own(String, RawSide, bool),
     /// Filtered by a value read off what these gave.
     From(Vec<RawRef>),
+    /// Filtered by nothing of the caller, in a branch taken where a member of
+    /// this value is set or is a literal (`if current_user.is_superuser:`): read
+    /// for the callers a role lets through.
+    ByRole(RawSide),
     Any,
 }
 

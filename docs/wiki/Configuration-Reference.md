@@ -38,6 +38,7 @@ A list of feature names. A name Drift does not know is a warning that lists the 
 | `intra_package_layering` | Mines and checks layering between areas inside one workspace package. Off by default: on the build set its cards were not accepted under the fold rule. |
 | `test_roles` | Forms and mines roles of test code (selector version 4). |
 | `kind_roles` | Forms and mines roles of one structural kind across the repository: components, hooks, pydantic models, routers and so on (selector version 4). |
+| `listed_entry_points` | Every command reads every entry point Drift lists, where mining and `check` read those of the last measured build: the routes `drift security` and the practice map read (registered in a function, by a file-convention router, by an unpacked `urlpatterns`) become members of the roles conventions are mined for and checked in. `drift census --listed` previews the same without the feature. The precision of what mining proposes over these entry points was not measured. |
 
 ```yaml
 experimental: [wiring]

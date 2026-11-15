@@ -1135,6 +1135,8 @@ export interface CheckReport {
   diff?: DiffInfo;
   /** What the practice map says of the files the check looked at (newer drift; omitted when nothing departs). Facts, not rules: never a violation, never part of the exit code. */
   practices?: CheckPractices;
+  /** What the repository's security baseline (`.drift/security.lock`) does not hold (newer drift; absent with no baseline, and where files are named). A finding in `added` fails the check. */
+  security?: SecurityRatchet;
 }
 
 /** `check --format json` `practices` (crates/drift-cli/src/main.rs `CheckPractices`). */

@@ -1225,6 +1225,7 @@ impl<'r> Linker<'r> {
                             .collect::<Vec<_>>()
                             .join("\t")
                     ),
+                    RawRows::ByRole(side) => format!("any\trole\t{}", self.side(fi, side)),
                     RawRows::Any => "any".to_string(),
                 };
                 Some(format!("{}{model}\t{by}", drift_core::controls::ROWS))

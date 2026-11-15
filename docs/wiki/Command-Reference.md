@@ -46,7 +46,7 @@ The full list of files and when each is written is in [Files Drift Writes](Files
 | Code | Meaning |
 | --- | --- |
 | 0 | Success. For `security`, `practices`, `map`, `card`, `census` and `hook`, always 0 unless there is an error. |
-| 1 | `drift check`: a new violation that fails (see [`check`](#drift-check)). `drift setup`: one of several answers in a run could not be applied. |
+| 1 | `drift check`: a new violation that fails, or a security finding that is not in the committed baseline (see [`check`](#drift-check)). `drift setup`: one of several answers in a run could not be applied. |
 | 2 | Error: a message beginning `drift:` on standard error. Also a command-line usage error (an unknown subcommand or flag, a missing argument). |
 
 Reading from a pipe that closes early (`drift census | head`) is not an error: Drift exits quietly with the code it had decided (for `check`, the check's).
@@ -521,6 +521,8 @@ Shows only what agents are shown: accepted conventions of the default tier, sugg
 ## drift check
 
 Checks the code against accepted conventions and reports new violations. Legacy violations baselined in `drift.lock` never fail.
+
+Where the repository committed a security baseline (`.drift/security.lock`, written by `drift security --write-baseline`), a check of the whole tree or of a diff also lists the security findings that are not in it and exits 1 on any (text: a `Security baseline` section; `--format json`: `security`; `--format github`: one `::error` annotation each; SARIF: a notification each). A check of named files reads no inventory. See [Security Inventory](Security-Inventory#the-baseline-what-is-there-is-accepted-what-is-added-is-seen).
 
 ```text
 drift check [OPTIONS] [FILES]...

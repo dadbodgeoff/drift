@@ -236,6 +236,12 @@ fn both(each: &[Option<Asks>]) -> Option<Asks> {
     }
 }
 
+/// A member of the user that says a caller is signed in and nothing of what they
+/// may do, in the closed set [`asks_of_expr`] reads.
+pub(crate) fn says_status(member: &str) -> bool {
+    matches!(member, "is_authenticated" | "is_active" | "is_anonymous")
+}
+
 /// The closed set of what a test of the user says: `<user>.is_staff`,
 /// `is_superuser`, `has_perm(...)`, `has_perms(...)`, `has_module_perms(...)` and
 /// `groups.filter(...).exists()` ask a role; `is_authenticated`, `is_active`, `not

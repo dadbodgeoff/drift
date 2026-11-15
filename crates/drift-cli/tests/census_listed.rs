@@ -38,8 +38,9 @@ fn proposed(v: &Value) -> String {
     serde_json::to_string(&v["proposals"]).unwrap()
 }
 
-#[test]
-fn routes_listed_since_the_measured_build_are_mined_only_when_asked() {
+/// A repository whose forty guarded routes, and one open one, are registered in a
+/// function: listed since the measured build.
+fn repo() -> tempfile::TempDir {
     let dir = tempfile::tempdir().unwrap();
     let mut server = String::from(
         "import express from \"express\";\nimport { requireAuth } from \"./auth\";\n\nexport function configure(app: express.Express) {\n",
@@ -76,6 +77,12 @@ fn routes_listed_since_the_measured_build_are_mined_only_when_asked() {
         std::fs::create_dir_all(p.parent().unwrap()).unwrap();
         std::fs::write(p, text).unwrap();
     }
+    dir
+}
+
+#[test]
+fn routes_listed_since_the_measured_build_are_mined_only_when_asked() {
+    let dir = repo();
     let measured = census(dir.path(), &[]);
     assert!(
         !proposed(&measured).contains("requireAuth"),
@@ -87,5 +94,79 @@ fn routes_listed_since_the_measured_build_are_mined_only_when_asked() {
         proposed(&listed).contains("requireAuth"),
         "{}",
         serde_json::to_string_pretty(&listed).unwrap()
+    );
+}
+
+fn run(root: &Path, args: &[&str]) -> (i32, String) {
+    let out = Command::new(&*BIN)
+        .arg("--no-cache")
+        .args(args)
+        .current_dir(root)
+        .env_remove("DRIFT_CACHE_DIR")
+        .env_remove("DRIFT_EXPERIMENTAL")
+        .output()
+        .unwrap();
+    (
+        out.status.code().unwrap_or(-1),
+        format!(
+            "{}{}",
+            String::from_utf8_lossy(&out.stdout),
+            String::from_utf8_lossy(&out.stderr)
+        ),
+    )
+}
+
+#[test]
+fn the_experimental_feature_makes_every_command_mine_and_check_the_listed_routes() {
+    let dir = repo();
+    let root = dir.path();
+    std::fs::create_dir_all(root.join(".drift")).unwrap();
+    std::fs::write(
+        root.join(".drift/config.yaml"),
+        "experimental: [listed_entry_points]\n",
+    )
+    .unwrap();
+    // The census with no flag is the listed one.
+    let mined = census(root, &[]);
+    assert!(
+        proposed(&mined).contains("requireAuth"),
+        "{}",
+        proposed(&mined)
+    );
+    let id = mined["proposals"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|p| serde_json::to_string(p).unwrap().contains("requireAuth"))
+        .and_then(|p| p["id"].as_str())
+        .unwrap()
+        .to_string();
+    // `init` writes it, and its one outlier is baselined.
+    let (code, out) = run(root, &["init"]);
+    assert_eq!(code, 0, "{out}");
+    let policy = std::fs::read_to_string(root.join(".drift/conventions.yaml")).unwrap();
+    assert!(policy.contains(&id), "{policy}");
+    // Accepted in block mode, a route added without the guard fails the check.
+    let accepted = policy.replacen("status: proposed", "status: accepted", usize::MAX);
+    std::fs::write(root.join(".drift/conventions.yaml"), accepted).unwrap();
+    let server = std::fs::read_to_string(root.join("src/server.ts")).unwrap();
+    std::fs::write(
+        root.join("src/server.ts"),
+        server.replacen(
+            "  app.get(\"/open\"",
+            "  app.get(\"/added\", (req, res) => { res.json({ added: true }); });\n  app.get(\"/open\"",
+            1,
+        ),
+    )
+    .unwrap();
+    let (_, out) = run(root, &["check", "--strict"]);
+    assert!(out.contains(&id), "{out}");
+    // With the feature off the same check reads the measured build's routes, where
+    // these are no entry points: the convention has no members to depart.
+    std::fs::write(root.join(".drift/config.yaml"), "").unwrap();
+    let (_, out) = run(root, &["check", "--strict"]);
+    assert!(
+        !out.contains("/added") && out.contains("no new violations"),
+        "{out}"
     );
 }

@@ -185,3 +185,54 @@ fn a_workflow_that_runs_what_an_outsider_wrote_is_a_finding() {
     assert!(said.contains("untrusted_checkout"), "{said}");
     assert!(said.contains("script_injection"), "{said}");
 }
+
+#[test]
+fn drift_check_fails_on_what_the_committed_baseline_does_not_hold() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    write(root, &format!("{HEAD}{BEFORE}"));
+    assert!(drift(root, &["init"]).status.success());
+    // No baseline: the check is of the conventions alone.
+    let plain = drift(root, &["check", "--format", "json"]);
+    assert!(plain.status.success());
+    let v: serde_json::Value = serde_json::from_slice(&plain.stdout).unwrap();
+    assert!(v.get("security").is_none(), "{v}");
+
+    assert!(
+        drift(root, &["security", "--write-baseline"])
+            .status
+            .success()
+    );
+    // With one, and nothing added: exit 0, and the baseline is said to hold.
+    let same = drift(root, &["check", "--format", "json"]);
+    assert!(same.status.success());
+    let v: serde_json::Value = serde_json::from_slice(&same.stdout).unwrap();
+    assert_eq!(v["security"]["added"], serde_json::json!({}), "{v}");
+    assert!(v["security"]["kept"].as_u64().unwrap() > 0, "{v}");
+
+    // A route with no guard that builds SQL from its path fails the check, in
+    // every format, with no convention accepted.
+    write(root, &format!("{HEAD}{BEFORE}{ADDED}"));
+    let text = drift(root, &["check"]);
+    let said = String::from_utf8_lossy(&text.stdout);
+    assert_eq!(text.status.code(), Some(1), "{said}");
+    assert!(
+        said.contains("app/main.py#search GET /search/{term}"),
+        "{said}"
+    );
+    let json = drift(root, &["check", "--format", "json"]);
+    assert_eq!(json.status.code(), Some(1));
+    let v: serde_json::Value = serde_json::from_slice(&json.stdout).unwrap();
+    assert!(v["security"]["added"]["risky"].is_array(), "{v}");
+    let github = drift(root, &["check", "--format", "github"]);
+    assert_eq!(github.status.code(), Some(1));
+    assert!(
+        String::from_utf8_lossy(&github.stdout).contains("::error file=app/main.py,line="),
+        "{}",
+        String::from_utf8_lossy(&github.stdout)
+    );
+    // A check of named files reads no inventory: an editor's check stays quick.
+    let named = drift(root, &["check", "app/main.py"]);
+    assert!(named.status.success());
+    assert!(!String::from_utf8_lossy(&named.stdout).contains("Security baseline"));
+}
