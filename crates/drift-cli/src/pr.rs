@@ -289,6 +289,8 @@ impl DiffScope {
                 .filter(|e| self.files.contains_key(&e.path))
                 .cloned()
                 .collect(),
+            stale_practices: report.stale_practices.clone(),
+            practices_not_checked: report.practices_not_checked.clone(),
         }
     }
 

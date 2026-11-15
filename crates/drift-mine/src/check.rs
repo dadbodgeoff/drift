@@ -339,6 +339,15 @@ pub struct CheckReport {
     /// `suppressed_neighbour`. Omitted when there are none.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub suppressed_neighbour: Vec<NeighbourHold>,
+    /// Promoted practices none of whose ways any unit of their place uses any more
+    /// ([`crate::practices::promote::Stale`]): they fire on nothing until a person
+    /// looks at them. Omitted when there are none.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub stale_practices: Vec<crate::practices::promote::Stale>,
+    /// Per promoted practice, the units of its place the practice map cannot tell:
+    /// not checked, never reported. Omitted when there are none.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub practices_not_checked: Vec<crate::practices::promote::NotChecked>,
 }
 
 /// A warning the neighbour gate held back ([`CheckReport::suppressed_neighbour`]).
@@ -386,6 +395,17 @@ impl Exemption {
 }
 
 impl CheckReport {
+    /// Adds what the promoted practices say ([`crate::practices::promote::check`], of
+    /// the same policy, lock, scope and paths as this report): [`check`] leaves them
+    /// out, since they are read from the practice map and not from a role's members.
+    pub fn add_practices(&mut self, checked: crate::practices::promote::Checked) {
+        self.violations.extend(checked.violations);
+        self.violations.sort();
+        self.fixed.extend(checked.fixed);
+        self.stale_practices = checked.stale;
+        self.practices_not_checked = checked.not_checked;
+    }
+
     pub fn new_violations(&self) -> impl Iterator<Item = &Violation> {
         self.violations
             .iter()
@@ -582,7 +602,12 @@ pub fn check_gated(
             .chain(reviewed)
             .chain(set_apart)
             .collect();
-        let in_scope: BTreeSet<&str> = conventions.iter().map(|c| c.id.as_str()).collect();
+        // A promoted practice's entries are the practice map's to call fixed.
+        let in_scope: BTreeSet<&str> = conventions
+            .iter()
+            .filter(|c| !c.rule.is_practice())
+            .map(|c| c.id.as_str())
+            .collect();
         report.fixed = lock
             .entries
             .iter()
@@ -615,8 +640,12 @@ fn classify(
     every: &[Convention],
     contexts: &Contexts,
 ) -> Option<Verdict> {
-    // Wiring rules are checked against other files than the unit's own, apart.
-    if c.rule.is_wiring() || !u.in_convention_role(&c.role, c.selector_version) {
+    // Wiring rules are checked against other files than the unit's own, apart; a
+    // promoted practice against the practice map ([`CheckReport::add_practices`]).
+    if c.rule.is_wiring()
+        || c.rule.is_practice()
+        || !u.in_convention_role(&c.role, c.selector_version)
+    {
         return None;
     }
     // Its exemptions look up the members its frozen selector holds.
@@ -1320,6 +1349,13 @@ pub fn needs_full_scan(repo: &RepoFacts, policy: &ConventionsFile) -> bool {
 pub fn effective_mode(c: &crate::policy::Convention) -> &'static str {
     // Experimental wiring rules never block (also enforced when the policy loads).
     if c.rule.is_wiring() {
+        return "advise";
+    }
+    // A practice promoted below the share a place needs, on a person's word, advises.
+    if c.rule.is_practice()
+        && (c.evidence.holders as f64)
+            < crate::practices::promote::BLOCK_SHARE * c.evidence.total as f64
+    {
         return "advise";
     }
     match c.mode {

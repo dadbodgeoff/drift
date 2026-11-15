@@ -55,6 +55,7 @@ mod dupes;
 mod engine;
 pub mod libraries;
 mod matcher;
+pub mod promote;
 mod py_authz;
 mod render;
 

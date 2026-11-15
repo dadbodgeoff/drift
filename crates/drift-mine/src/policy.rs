@@ -767,6 +767,12 @@ pub struct Convention {
     /// part of the id.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub promoted_from_hidden: bool,
+    /// A person promoted this convention from the practice map (`drift practices
+    /// promote`, [`crate::practices::promote`]): the id of the variant it was promoted
+    /// from (`P-…`). Its rule is a [`Rule::Practice`]. Absent for every other
+    /// convention, so they are written as before. Not part of the id.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub promoted_from_practice: Option<String>,
 }
 
 /// A file a person set apart from its convention as a different kind of thing
@@ -1128,6 +1134,7 @@ impl ConventionsFile {
                             // apart was set apart from the card they saw.
                             different_kind: Vec::new(),
                             promoted_from_hidden: false,
+                            promoted_from_practice: None,
                         },
                     );
                 }
@@ -1226,6 +1233,7 @@ impl Convention {
             exceptions: Vec::new(),
             different_kind: Vec::new(),
             promoted_from_hidden: false,
+            promoted_from_practice: None,
         }
     }
 }

@@ -5397,6 +5397,7 @@ mod tests {
             exceptions: Vec::new(),
             different_kind: Vec::new(),
             promoted_from_hidden: false,
+            promoted_from_practice: None,
         }
     }
 
