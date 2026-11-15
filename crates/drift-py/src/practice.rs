@@ -1815,6 +1815,16 @@ impl<'t> Collector<'_, 't> {
             }
             return;
         }
+        // An attribute of what a call handed back, written by what is not the
+        // caller itself ([`drift_core::controls::ROW_SET`]).
+        for t in &a.targets {
+            if let Expr::Attribute(x) = t
+                && let RawSide::Call(r) = self.side(&x.value)
+                && !self.caller_self(&a.value)
+            {
+                self.row_sets.insert((r, x.attr.to_string()));
+            }
+        }
         // A value written on an object of the module (`_local.tenant_id = tenant`,
         // `CURRENT[key] = org`): kept past the request
         // ([`drift_core::controls::KEEPS_VALUE`]).
@@ -2791,26 +2801,63 @@ impl<'t> Collector<'_, 't> {
             .filter_map(|k| k.arg.as_ref().map(|a| (a.to_string(), &k.value)));
         // Every call, also one given nothing: a reader says what a parameter of
         // the callee was handed by every call of it.
-        let mut given: Vec<(String, RawSide)> = positional
-            .chain(keywords)
-            .map(|(key, value)| {
-                let side = self.side(value);
-                // The caller itself, or the key of the caller's record: said
-                // apart from what is read off the caller.
-                let own = matches!(
-                    side,
-                    RawSide::Caller | RawSide::Gives(_) | RawSide::Annotated(..)
-                ) && self.caller_self(value);
-                (
-                    key,
-                    if own {
-                        RawSide::Own(Box::new(side))
+        let one = |c: &Self, key: String, value: &Expr| {
+            let side = c.side(value);
+            // The caller itself, or the key of the caller's record: said
+            // apart from what is read off the caller.
+            let own = matches!(
+                side,
+                RawSide::Caller | RawSide::Gives(_) | RawSide::Annotated(..)
+            ) && c.caller_self(value);
+            // A bare name the file imports: the caller where it is no class of
+            // the repository, which the linker says (`current_user` of
+            // flask_login; not `User` of `app/models.py`).
+            let imported = match value {
+                Expr::Name(n)
+                    if own
+                        && !c.caller_locals.contains_key(n.id.as_str())
+                        && matches!(c.resolve(n.id.as_str()), Some(RawBase::Import { .. })) =>
+                {
+                    c.canon(value)
+                }
+                _ => None,
+            };
+            (
+                key,
+                match (own, imported) {
+                    (true, Some(r)) => RawSide::Own(Box::new(RawSide::Value(r))),
+                    (true, None) => RawSide::Own(Box::new(side)),
+                    (false, _) => side,
+                },
+            )
+        };
+        let mut given: Vec<(String, RawSide)> = Vec::new();
+        for (key, value) in positional.chain(keywords) {
+            // A dict written in place, every key a literal and nothing unpacked
+            // into it: each of its values, under `<argument>.<key>`
+            // (`Item.model_validate(item_in, update={"owner_id": user.id})`).
+            if let Expr::Dict(d) = value
+                && !d.items.is_empty()
+                && d.items
+                    .iter()
+                    .all(|i| matches!(&i.key, Some(Expr::StringLiteral(_))))
+            {
+                let mut written = BTreeSet::new();
+                for i in &d.items {
+                    let Some(Expr::StringLiteral(k)) = &i.key else {
+                        continue;
+                    };
+                    let k = k.value.to_str();
+                    // A key written twice holds the last value: not read.
+                    if written.insert(k.to_string()) {
+                        given.push(one(self, format!("{key}.{k}"), &i.value));
                     } else {
-                        side
-                    },
-                )
-            })
-            .collect();
+                        given.retain(|(x, _)| *x != format!("{key}.{k}"));
+                    }
+                }
+            }
+            given.push(one(self, key, value));
+        }
         let unpacked = c
             .arguments
             .args

@@ -213,6 +213,71 @@ class Gate(BasePermission):
 }
 
 #[test]
+fn a_query_on_what_the_lookup_found_narrows_it_and_is_read_with_it() {
+    // The rows found by the caller in what the request names, narrowed again.
+    assert_eq!(
+        said(
+            r#"
+
+class Gate(BasePermission):
+    def has_permission(self, request, view):
+        if request.user.is_anonymous:
+            return False
+        seats = Seat.objects.filter(holder=request.user, space__slug=view.kwargs["slug"])
+        if seats.filter(level=20).exists():
+            return True
+        return seats.exists() and view.kwargs["slug"] != "archive"
+"#
+        ),
+        "known membership_guard"
+    );
+    // The caller given in the second link of the chain.
+    assert_eq!(
+        said(
+            r#"
+
+class Gate(BasePermission):
+    def has_permission(self, request, view):
+        if request.user.is_anonymous:
+            return False
+        return Seat.objects.filter(space__slug=view.kwargs["slug"]).filter(holder=request.user).exists()
+"#
+        ),
+        "known membership_guard"
+    );
+    // No link of the chain is given the caller.
+    let no_caller = said(
+        r#"
+
+class Gate(BasePermission):
+    def has_permission(self, request, view):
+        if request.user.is_anonymous:
+            return False
+        return Seat.objects.filter(space__slug=view.kwargs["slug"]).filter(level=20).exists()
+"#,
+    );
+    assert!(
+        no_caller.starts_with("unknown check_not_proven"),
+        "{no_caller}"
+    );
+    // The caller is what the second link leaves out.
+    let left_out = said(
+        r#"
+
+class Gate(BasePermission):
+    def has_permission(self, request, view):
+        if request.user.is_anonymous:
+            return False
+        return Seat.objects.filter(space__slug=view.kwargs["slug"]).exclude(holder=request.user).exists()
+"#,
+    );
+    assert!(
+        left_out.starts_with("unknown check_not_proven"),
+        "{left_out}"
+    );
+}
+
+#[test]
 fn a_body_that_lets_some_request_in_without_the_lookup_proves_nothing() {
     // `True` for some requests.
     let open_for_reads = said(

@@ -408,6 +408,15 @@ pub struct RawSymbol {
     /// (`*` for an unpacking) and side.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub arg_sides: Vec<(RawRef, Vec<(String, RawSide)>)>,
+    /// Attributes of what a call handed back that the body writes after it, by a
+    /// value that is not the caller itself ([`drift_core::controls::ROW_SET`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub row_sets: Vec<(RawRef, String)>,
+    /// The calls made on a value whose class an annotation names (`db.add(row)`
+    /// with `db: Session`): of [`RawSymbol::arg_sides`], those a package's class
+    /// may be the receiver of ([`drift_core::controls::PKG_ARG_VALUE`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub typed_calls: Vec<RawRef>,
     /// For a class: the parameter of `__init__` each attribute of `self` is bound
     /// from, with its position ([`drift_core::controls::ATTR_PARAM`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -821,6 +830,15 @@ pub struct RawMember {
     pub filter_values: Vec<RawFilterValue>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub arg_sides: Vec<(RawRef, Vec<(String, RawSide)>)>,
+    /// Attributes of what a call handed back that the body writes after it, by a
+    /// value that is not the caller itself ([`drift_core::controls::ROW_SET`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub row_sets: Vec<(RawRef, String)>,
+    /// The calls made on a value whose class an annotation names (`db.add(row)`
+    /// with `db: Session`): of [`RawSymbol::arg_sides`], those a package's class
+    /// may be the receiver of ([`drift_core::controls::PKG_ARG_VALUE`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub typed_calls: Vec<RawRef>,
     /// What the method's own body does that no other fact records
     /// ([`drift_core::Member::unread`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1428,6 +1446,8 @@ impl RawSymbol {
             check_sides: vec![],
             filter_values: vec![],
             arg_sides: vec![],
+            row_sets: vec![],
+            typed_calls: vec![],
             attr_params: vec![],
             shapes: vec![],
             since_wraps: vec![],

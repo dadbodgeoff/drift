@@ -1273,6 +1273,15 @@ impl<'r> Linker<'r> {
         match s {
             RawSide::Caller => "caller".into(),
             RawSide::Own(inner) => {
+                // A name the file imports that says the caller: a class of the
+                // repository is the class, whatever it is called; anything else
+                // is the caller's, as the name says.
+                if let RawSide::Value(r) = inner.as_ref() {
+                    return match self.is_repo_class(&self.canon(fi, r)) {
+                        true => self.side(fi, inner),
+                        false => format!("{}caller", drift_core::controls::OWN_SIDE),
+                    };
+                }
                 // Said only of what reads as a value of the caller here: a
                 // parameter whose annotation names no dependency is the parameter.
                 let side = self.side(fi, inner);
@@ -1335,6 +1344,7 @@ impl<'r> Linker<'r> {
         sides: &[RawCheckSides],
         values: &[RawFilterValue],
         args: &[(RawRef, Vec<(String, RawSide)>)],
+        typed: &[RawRef],
     ) -> Vec<String> {
         let mut out: Vec<String> = sides
             .iter()
@@ -1361,21 +1371,45 @@ impl<'r> Linker<'r> {
                     self.side(fi, &v.value)
                 )
             }))
-            .chain(args.iter().filter_map(|(callee, given)| {
-                let callee = self.canon(fi, callee);
-                // A package's or a built-in's call is no body a reader follows.
-                (!callee.starts_with("global#") && !callee.starts_with("pkg:")).then(|| {
-                    let mut out = format!("{}{callee}", drift_core::controls::ARG_VALUE);
-                    for (key, side) in given {
-                        out.push_str(&format!("\t{key}\t{}", self.side(fi, side)));
+            .chain(args.iter().filter_map(|(raw, given)| {
+                let callee = self.canon(fi, raw);
+                // A package's or a built-in's call is no body a reader follows:
+                // a package's is said apart, where it is made on a value an
+                // annotation types and is handed anything.
+                let prefix = match callee.as_str() {
+                    c if c.starts_with("global#") => return None,
+                    c if c.starts_with("pkg:") => {
+                        if given.is_empty() || !typed.contains(raw) {
+                            return None;
+                        }
+                        drift_core::controls::PKG_ARG_VALUE
                     }
-                    out
-                })
+                    _ => drift_core::controls::ARG_VALUE,
+                };
+                let mut out = format!("{prefix}{callee}");
+                for (key, side) in given {
+                    out.push_str(&format!("\t{key}\t{}", self.side(fi, side)));
+                }
+                Some(out)
             }))
             .collect();
         out.sort();
         out.dedup();
         out
+    }
+
+    /// [`drift_core::controls::ROW_SET`]: what each written attribute is read
+    /// off, as a side names what a call handed back.
+    fn row_sets(&self, fi: usize, sets: &[(RawRef, String)]) -> Vec<String> {
+        sets.iter()
+            .map(|(r, attr)| {
+                format!(
+                    "{}{}\t{attr}",
+                    drift_core::controls::ROW_SET,
+                    self.canon(fi, r)
+                )
+            })
+            .collect()
     }
 
     /// [`drift_core::Symbol::caller_args`]: canonical, sorted, the built-ins left
@@ -4831,7 +4865,14 @@ impl<'r> Linker<'r> {
                         c.extend(verifies.into_iter().map(|callee| {
                             format!("{}{callee}", drift_core::controls::VERIFIES_SIGNATURE)
                         }));
-                        c.extend(self.origins(fi, &s.check_sides, &s.filter_values, &s.arg_sides));
+                        c.extend(self.origins(
+                            fi,
+                            &s.check_sides,
+                            &s.filter_values,
+                            &s.arg_sides,
+                            &s.typed_calls,
+                        ));
+                        c.extend(self.row_sets(fi, &s.row_sets));
                         c.extend(
                             s.fed_sinks
                                 .iter()
@@ -5037,7 +5078,9 @@ impl<'r> Linker<'r> {
                                     &m.check_sides,
                                     &m.filter_values,
                                     &m.arg_sides,
+                                    &m.typed_calls,
                                 ));
+                                unread.extend(self.row_sets(fi, &m.row_sets));
                                 unread
                             },
                             is_async: m.is_async,

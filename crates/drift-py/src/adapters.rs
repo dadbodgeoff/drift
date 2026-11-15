@@ -2219,6 +2219,8 @@ impl<'t> Lowerer<'t> {
                 check_sides: tmp.check_sides,
                 filter_values: tmp.filter_values,
                 arg_sides: tmp.arg_sides,
+                row_sets: tmp.row_sets,
+                typed_calls: tmp.typed_calls,
                 unread: tmp
                     .controls
                     .iter()

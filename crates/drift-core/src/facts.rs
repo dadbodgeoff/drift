@@ -2023,6 +2023,16 @@ pub mod controls {
     /// that is itself under a condition (`where: flag ? undefined : { ... }`) is
     /// not one. TypeScript lowering 81; mining never proposes it.
     pub const FILTER_EVERY: &str = "filter_every:";
+    /// Python: an attribute of what a call handed back is written after the call,
+    /// by a value that is not the caller itself (`item = Item(owner_id=
+    /// current_user.id); item.owner_id = body.owner_id`): `<callee>\t<attribute>`.
+    /// What the call was given for that attribute is no longer what the row holds.
+    pub const ROW_SET: &str = "row_set:";
+    /// Python: a call of a package's code that is handed something, with what
+    /// each argument is, written as [`ARG_VALUE`] is (which holds the calls of
+    /// the repository's own code only): `session.add(current_user)` on a session
+    /// a parameter types as the package's. A call handed nothing is not recorded.
+    pub const PKG_ARG_VALUE: &str = "pkg_arg_value:";
     /// What starts the control of a body that leaves by a refusal (a `throw`, an
     /// answer that turns the caller away) for every request for which what one
     /// call of it handed back is absent (`const user = await db.user.findFirst({

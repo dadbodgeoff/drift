@@ -20,7 +20,7 @@ use crate::raw::*;
 use crate::stdlib;
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 69;
+pub const LOWERING_VERSION: u32 = 70;
 
 /// Functions of libraries, by their last name, whose call in a body is a guard or
 /// not by its arguments (`verify_jwt_in_request(optional=True)`): each call of a
@@ -585,6 +585,10 @@ impl<'t> Lowerer<'t> {
             s.filter_values.dedup();
             s.arg_sides.sort();
             s.arg_sides.dedup();
+            s.row_sets.sort();
+            s.row_sets.dedup();
+            s.typed_calls.sort();
+            s.typed_calls.dedup();
             s.responses.sort();
             s.responses.dedup();
             s.log_calls.sort();
@@ -1260,6 +1264,8 @@ impl<'t> Lowerer<'t> {
         m.check_sides.extend(part.check_sides);
         m.filter_values.extend(part.filter_values);
         m.arg_sides.extend(part.arg_sides);
+        m.row_sets.extend(part.row_sets);
+        m.typed_calls.extend(part.typed_calls);
         for r in part.order {
             if !m.order.contains(&r) && m.order.len() < MAX_ORDER {
                 m.order.push(r);
@@ -2506,6 +2512,12 @@ pub(crate) struct Collector<'l, 't> {
     /// The calls of the repository's code, with what each argument is
     /// ([`drift_core::controls::ARG_VALUE`]).
     arg_sides: BTreeSet<(RawRef, Vec<(String, RawSide)>)>,
+    /// Attributes of what a call handed back, written after it by what is not
+    /// the caller itself ([`drift_core::controls::ROW_SET`]).
+    pub(crate) row_sets: BTreeSet<(RawRef, String)>,
+    /// The calls made on a value whose class an annotation names
+    /// ([`Collector::typed_receiver`]).
+    typed_calls: BTreeSet<RawRef>,
     /// Locals by where the value they are bound to comes from
     /// ([`Collector::side`]).
     pub(crate) side_locals: BTreeMap<String, RawSide>,
@@ -2694,6 +2706,8 @@ impl<'l, 't> Collector<'l, 't> {
             check_sides: BTreeSet::new(),
             filter_values: BTreeSet::new(),
             arg_sides: BTreeSet::new(),
+            row_sets: BTreeSet::new(),
+            typed_calls: BTreeSet::new(),
             side_locals: BTreeMap::new(),
             either_locals: BTreeSet::new(),
             returns_request: None,
@@ -2843,6 +2857,8 @@ impl<'l, 't> Collector<'l, 't> {
         sym.check_sides.extend(self.check_sides);
         sym.filter_values.extend(self.filter_values);
         sym.arg_sides.extend(self.arg_sides);
+        sym.row_sets.extend(self.row_sets);
+        sym.typed_calls.extend(self.typed_calls);
         sym.shapes.extend(self.call_shapes);
         for r in self.order {
             if !sym.order.contains(&r) && sym.order.len() < MAX_ORDER {
@@ -3565,6 +3581,7 @@ impl<'l, 't> Collector<'l, 't> {
         } else if let Some(r) = self.typed_receiver(&c.func) {
             self.note_dominance(&r);
             self.note_arg_sides(&r, c);
+            self.typed_calls.insert(r.clone());
             self.caller_args
                 .extend(caller.into_iter().map(|d| (r.clone(), d)));
             if !self.order.contains(&r) && self.order.len() < MAX_ORDER {

@@ -27,7 +27,7 @@ There is no separate changelog file; what changed in a release is in its release
 | --- | --- | --- | --- |
 | Drift version | `drift --version`, `engine:` in `.drift/conventions.yaml`, `tool.driver.version` in SARIF | `0.1.0-dev` | The release. `engine` records which Drift mined the conventions. |
 | Facts schema | `schema_version` in `drift scan --json`, `facts_schema` in `drift practices --json`, the cache directory name `facts-v11` | 11 | Bumped whenever the shape or meaning of the facts Drift records changes. Part of every fact-cache key. |
-| Lowering version | The parser tag of the cache (`ts-l76-0.1.0-dev`, `py-l69-0.1.0-dev`) | TypeScript/JavaScript 76, Python 69 | Bumped when the way a language is turned into facts changes. Part of the cache key. |
+| Lowering version | The parser tag of the cache (`ts-l81-0.1.0-dev`, `py-l70-0.1.0-dev`) | TypeScript/JavaScript 81, Python 70 | Bumped when the way a language is turned into facts changes. Part of the cache key. |
 | Index versions | `index-v11-1/`, `index-py-v11-5/` in the cache | 1 (TS/JS), 5 (Python) | The version of the file-stamp index that lets later scans read only changed files. |
 | Policy format | `version:` in `.drift/conventions.yaml` | 1 or 2 (reads up to 2) | See below. |
 | Selector version | `selector_version:` on a convention | up to 3 (4 for test and kind roles) | How a convention's role selector is read. |

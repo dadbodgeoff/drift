@@ -231,6 +231,8 @@ fn facts_of(s: &drift_core::Symbol) -> usize {
                     && !c.starts_with(drift_core::controls::CALLED_LEAVING)
                     && !c.starts_with(drift_core::controls::CALLER_FROM)
                     && !c.starts_with(drift_core::controls::FILTER_OWN)
+                    && !c.starts_with(drift_core::controls::ROW_SET)
+                    && !c.starts_with(drift_core::controls::PKG_ARG_VALUE)
                     && !c.starts_with(drift_core::controls::FILTER_EVERY)
                     && !c.starts_with(drift_core::controls::FILTER_VALUE)
                     && !c.starts_with(drift_core::controls::ARG_VALUE)

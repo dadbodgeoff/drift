@@ -789,6 +789,19 @@ fn read_unit<'a>(
         }
         ev.cond = None;
         ev.dominant = true;
+        // Python: the rows the unit hands its data session are the caller's own
+        // record, or rows it builds as the caller's ([`kept_rows`]).
+        // Said of a unit every body of which was read: one that was not may hand
+        // the session anything.
+        if ev.uses.is_empty()
+            && ev.python
+            && cx.context().since_measured()
+            && reach.opaque.is_none()
+            && reach.partly.is_none()
+            && !unlinked
+        {
+            kept_rows(cx, &reach, &mut ev);
+        }
         // Nothing proven, and a check found: the unit is unknown, and what was found
         // is said with it. One read where it is says more than one read by its name.
         if ev.uses.is_empty() && !ev.found.is_empty() {
@@ -3017,7 +3030,8 @@ fn permission_class(cx: &Cx<'_>, w: &str, object_checked: bool, ev: &mut Evidenc
 /// .exists(): return Response(status=403)` before a wrapper calls the view.
 ///
 /// Nothing names the keys, the model or the guard: the shape of the query and the
-/// paths of the body decide. A site nothing held at (`return True` for some
+/// paths of the body decide. A query made on the result of such a lookup only
+/// narrows it, and is read with it. A site nothing held at (`return True` for some
 /// requests, the view called under no test) is no such body, nor is one whose
 /// query the caller is no part of, or that names nothing of the request (any row
 /// of the caller's anywhere).
@@ -3060,26 +3074,66 @@ fn passes_by(cx: &Cx<'_>, facts: &[String], prefix: &str, fixed: bool) -> bool {
                     matches!(by, RowsBy::Own(_, side, true) if side_is_caller_self(cx, side))
                 });
         }
+        let narrows = |q: &str| {
+            let method = q.rsplit('.').next().unwrap_or_default();
+            QUERY_METHODS.contains(&method)
+                && method != "exclude"
+                && result
+                    .strip_prefix(q)
+                    .is_some_and(|rest| rest.is_empty() || rest == "()" || rest.starts_with("()."))
+        };
+        // A query made on what another of them handed back (`members.filter(
+        // role=ADMIN)` on `members = Member.objects.filter(member=request.user,
+        // ...)`) narrows the rows the first found: the result is selected by
+        // what both are given. What such a link adds is counted where every
+        // call of it gives it.
+        let continues = |q: &str| {
+            queries.iter().any(|(first, _)| {
+                narrows(first)
+                    && q.strip_prefix(first)
+                        .is_some_and(|rest| rest.starts_with("()."))
+            })
+        };
+        let links: Vec<&str> = {
+            let mut links: Vec<&str> = queries
+                .iter()
+                .map(|(q, _)| *q)
+                .filter(|q| narrows(q) && continues(q))
+                .collect();
+            links.sort_unstable();
+            links.dedup();
+            links
+        };
+        type Is<'f> = &'f dyn Fn(&str) -> bool;
+        let by_a_link = |is: Is<'_>| {
+            links.iter().any(|link| {
+                queries
+                    .iter()
+                    .filter(|(q, _)| q == link)
+                    .all(|(_, given)| given.iter().any(|(_, side)| is(side)))
+            })
+        };
+        let any_link = |is: Is<'_>| {
+            queries
+                .iter()
+                .filter(|(q, _)| links.contains(q))
+                .any(|(_, given)| given.iter().any(|(_, side)| is(side)))
+        };
         let mut of = queries
             .iter()
-            .filter(|(q, _)| {
-                let method = q.rsplit('.').next().unwrap_or_default();
-                QUERY_METHODS.contains(&method)
-                    && method != "exclude"
-                    && result
-                        .strip_prefix(q)
-                        .is_some_and(|rest| rest.is_empty() || rest == "()" || rest.starts_with("()."))
-            })
+            .filter(|(q, _)| narrows(q) && !continues(q))
             .map(|(_, given)| given)
             .peekable();
         of.peek().is_some()
             && of.all(|given| {
-                given.iter().any(|(_, side)| side_is_callers(cx, side))
+                let has = |is: Is<'_>| given.iter().any(|(_, side)| is(side)) || by_a_link(is);
+                has(&|side| side_is_callers(cx, side))
                     && match fixed {
-                        false => given.iter().any(|(_, side)| requested(side)),
+                        false => has(&requested),
                         true => {
-                            given.iter().any(|(_, side)| *side == "literal")
+                            has(&|side| side == "literal")
                                 && !given.iter().any(|(_, side)| requested(side))
+                                && !any_link(&requested)
                         }
                     }
             })
@@ -3598,6 +3652,215 @@ fn serves_own<'a>(cx: &Cx<'a>, s: &Symbol, reach: &Reach<'a>) -> Option<String> 
                 || (c.starts_with("pkg:") && super::libraries::data_library(&c).is_none())
         });
     (alone && harmless && s.sinks.is_empty()).then_some(giver)
+}
+
+/// Python: what the unit's own bodies hand a data session, where every such
+/// call is handed rows that are the caller's.
+///
+/// - The caller's own record: every value handed is the caller itself
+///   ([`side_is_caller_self`]: `session.add(current_user)`, `session.refresh(
+///   current_user)`), read as `own_record`.
+/// - A row the body builds as the caller's: what a call of a model of the
+///   repository handed back ([`drift_core::RepoFacts::models`]), every build of
+///   which in the body gives one field of the model the caller itself
+///   ([`stamped`]), read as `owner_stamp:<field> (session)`. The row's owner is
+///   who calls, whatever the field is called and whatever else the request sent.
+///
+/// A call handed nothing picks no rows (`session.commit()`). Proven where no
+/// other call of a data session is handed anything else and no body of the
+/// unit reads rows by nothing of the caller ([`reads_unscoped`]); beside one,
+/// found. A field given through a method of the model that was not read
+/// (`Item.model_validate(item_in, update={"owner_id": current_user.id})`: what
+/// the method does with the dict is the package's to say) is found, not proven.
+fn kept_rows<'a>(cx: &Cx<'a>, reach: &Reach<'a>, ev: &mut Evidence) {
+    let mut own: Option<String> = None;
+    // Field, and the method of the model the value went through where it is
+    // not the model's own constructor.
+    let mut built: std::collections::BTreeMap<String, Option<String>> = Default::default();
+    let mut other: Option<String> = None;
+    for r in reach.nodes.iter().filter(|r| !r.quiet) {
+        let facts: &[String] = match r.node {
+            Node::Sym(s) => &s.controls,
+            Node::Member(m) => &m.unread,
+        };
+        for (callee, given) in arg_calls_own(facts.iter()).chain(pkg_arg_calls(facts)) {
+            if given.is_empty() || !on_session(cx, callee) {
+                continue;
+            }
+            if given.iter().all(|(_, side)| side_is_caller_self(cx, side)) {
+                let giver = given[0]
+                    .1
+                    .strip_prefix(drift_core::controls::OWN_SIDE)
+                    .unwrap_or_default();
+                let giver = giver
+                    .rsplit_once("via ")
+                    .map_or("the caller", |(_, dep)| dep)
+                    .to_string();
+                if own.as_ref().is_none_or(|x| giver < *x) {
+                    own = Some(giver);
+                }
+                continue;
+            }
+            let rows: Option<Vec<(String, Option<String>)>> = given
+                .iter()
+                .map(|(_, side)| {
+                    side.strip_prefix("call ")
+                        .and_then(|from| model_of(cx, from))
+                        .and_then(|model| stamped(cx, facts, model))
+                })
+                .collect();
+            match rows {
+                Some(rows) => built.extend(rows),
+                None => {
+                    let c = crate::mine::norm_ref(callee).into_owned();
+                    if other.as_ref().is_none_or(|x| c < *x) {
+                        other = Some(c);
+                    }
+                }
+            }
+        }
+    }
+    if own.is_none() && built.is_empty() {
+        return;
+    }
+    let beside = other.is_some() || ev.reads_unscoped;
+    let when = other
+        .as_deref()
+        .map(|c| common::short(c).replace("()", ""))
+        .unwrap_or_default();
+    if let Some(giver) = own {
+        match beside {
+            true => ev.find(
+                "own_record",
+                &giver,
+                obligation::OTHER_READ_UNSCOPED,
+                &when,
+                false,
+            ),
+            false => ev.add("own_record", &giver, VariantSource::Usage),
+        }
+    }
+    for (field, through) in built {
+        let instrument = format!("{field} (session)");
+        match (beside, through.as_deref()) {
+            (true, _) => ev.find(
+                "owner_stamp",
+                &instrument,
+                obligation::OTHER_READ_UNSCOPED,
+                &when,
+                false,
+            ),
+            (false, Some(method)) => ev.find(
+                "owner_stamp",
+                &instrument,
+                obligation::CALLEE_UNREAD,
+                &common::short(method).replace("()", ""),
+                true,
+            ),
+            (false, None) => ev.add("owner_stamp", &instrument, VariantSource::Usage),
+        }
+    }
+}
+
+/// The calls of a package's code the body makes that are handed something
+/// ([`drift_core::controls::PKG_ARG_VALUE`]), each side as written.
+fn pkg_arg_calls(facts: &[String]) -> impl Iterator<Item = (&str, Vec<(&str, &str)>)> {
+    facts.iter().filter_map(|f| {
+        let rest = f.strip_prefix(drift_core::controls::PKG_ARG_VALUE)?;
+        let mut parts = rest.split('\t');
+        let callee = parts.next()?;
+        let mut given = Vec::new();
+        while let (Some(key), Some(side)) = (parts.next(), parts.next()) {
+            given.push((key, side));
+        }
+        Some((callee, given))
+    })
+}
+
+/// Python: `callee` is a call on a session or a client of a data library, not
+/// on a model: a data library's own call (`pkg:sqlmodel#Session.add` on a
+/// parameter the package types), a call on a name of the repository annotated
+/// as one (`SessionDep = Annotated[Session, Depends(get_db)]`:
+/// [`Symbol::alias_of`]), or on a binding built from one ([`data_call`]). What
+/// it is handed is what it keeps, reads or drops.
+fn on_session(cx: &Cx<'_>, callee: &str) -> bool {
+    use super::libraries::data_library;
+    if model_of(cx, callee).is_some() {
+        return false;
+    }
+    if common::external(callee) {
+        return data_library(callee).is_some();
+    }
+    match cx.context().definition(callee) {
+        Some(d) if !d.alias_of.is_empty() => data_library(&d.alias_of).is_some(),
+        Some(d) => {
+            matches!(d.kind, SymbolKind::Const | SymbolKind::Variable) && data_call(cx, callee)
+        }
+        None => false,
+    }
+}
+
+/// The model of the repository `callee` is, or is called on
+/// ([`drift_core::RepoFacts::models`]): `app/models.py#Item` of
+/// `app/models.py#Item` and of `app/models.py#Item.model_validate`.
+fn model_of<'c>(cx: &Cx<'_>, callee: &'c str) -> Option<&'c str> {
+    let (module, path) = callee.split_once('#')?;
+    let name = path.split(['.', '(']).next()?;
+    cx.facts
+        .models
+        .iter()
+        .any(|m| m.path == module && m.name == name)
+        .then(|| &callee[..module.len() + 1 + name.len()])
+}
+
+/// Python: the field of `model` every build of it in the body gives the caller
+/// itself, and the method the value went through where one build is no call of
+/// the model's own constructor. A build is a call of the model or of a method on
+/// it ([`drift_core::controls::ARG_VALUE`]): the constructor's keyword
+/// (`Item(owner_id=current_user.id)`), or a key of a dict written in place and
+/// handed to a method (`update.owner_id`). None where there is no build, where
+/// one build gives the field anything else or nothing, and where the body
+/// writes the field afterwards by what is not the caller itself
+/// ([`drift_core::controls::ROW_SET`]).
+fn stamped(cx: &Cx<'_>, facts: &[String], model: &str) -> Option<(String, Option<String>)> {
+    let (module, name) = model.split_once('#')?;
+    let fields = &cx
+        .facts
+        .models
+        .iter()
+        .find(|m| m.path == module && m.name == name)?
+        .fields;
+    let builds: Vec<(&str, Vec<(&str, &str)>)> = arg_calls_own(facts.iter())
+        .filter(|(c, _)| model_of(cx, c) == Some(model))
+        .collect();
+    if builds.is_empty() {
+        return None;
+    }
+    let set_after = |field: &str| {
+        facts.iter().any(|f| {
+            f.strip_prefix(drift_core::controls::ROW_SET)
+                .and_then(|rest| rest.split_once('\t'))
+                .is_some_and(|(of, attr)| model_of(cx, of) == Some(model) && attr == field)
+        })
+    };
+    fields.iter().find_map(|field| {
+        let mut through: Option<String> = None;
+        let every = builds.iter().all(|(callee, given)| {
+            let constructor = *callee == model;
+            let gives = given.iter().any(|(key, side)| {
+                let named = match constructor {
+                    true => key == field,
+                    false => key.split_once('.').is_some_and(|(_, k)| k == field),
+                };
+                named && side_is_caller_self(cx, side)
+            });
+            if gives && !constructor && through.is_none() {
+                through = Some(crate::mine::norm_ref(callee).into_owned());
+            }
+            gives
+        });
+        (every && !set_after(field)).then(|| (field.clone(), through))
+    })
 }
 
 /// What the instrument of a check ends with where the body serves the caller's
