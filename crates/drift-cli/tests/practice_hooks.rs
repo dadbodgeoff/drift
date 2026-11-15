@@ -109,9 +109,13 @@ fn service() -> tempfile::TempDir {
     }
     write(r, "svc/app/api/legacy.py", UNGUARDED);
     let init = drift(r, &["init"], None);
-    // `init` proposes nothing here and says what is known all the same.
+    // `init` proposes nothing here and leads with what is known all the same.
     assert!(
-        init.contains("Known with nothing accepted (the practice map: facts, not rules): how 1 kind(s) of entry point in 1 package(s) do authn"),
+        init.contains("What the code does (read from the code: facts, not rules)\n  24 http entry points in svc\n    sign-in:     dependency security.OAuth2PasswordBearer + dependency get_current_user in 22; nothing found in 2 (of 24)\n"),
+        "{init}"
+    );
+    assert!(
+        init.contains("Worth a look first\n  1. sign-in in svc: no guard found in what Drift read, in 2 places (e.g. svc/app/api/legacy.py:11 drop_widgets)\n"),
         "{init}"
     );
     let policy = std::fs::read_to_string(r.join(".drift/conventions.yaml")).unwrap();

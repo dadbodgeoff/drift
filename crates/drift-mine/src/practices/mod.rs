@@ -713,7 +713,8 @@ pub use engine::{
 pub(crate) use engine::{TAIL, declared_on_every_path};
 pub(crate) use libraries::{NOT_AUTH_GUARD_LIBRARIES, authn_callee};
 pub use render::{
-    AGENT_CHARS, agent_recipe, agent_recipe_preview, render, render_agent, render_recipes,
+    AGENT_CHARS, agent_recipe, agent_recipe_preview, render, render_agent, render_first_run,
+    render_recipes,
 };
 
 // ---------- `drift practices --json` version 1 (PLAN-R13 §0.3) ----------

@@ -67,6 +67,7 @@ fn nothing_to_learn_says_why() {
     for out in [drift(r, &["census"]), drift(r, &["init"])] {
         let reason = out
             .lines()
+            .map(str::trim_start)
             .find(|l| l.starts_with("No conventions found:"))
             .unwrap_or_else(|| panic!("no reason in:\n{out}"));
         assert!(reason.contains("roughly 20+"), "{reason}");
@@ -76,6 +77,78 @@ fn nothing_to_learn_says_why() {
         );
         assert!(!out.contains("Next: `drift review`"), "{out}");
     }
+}
+
+/// A repository with nothing to do next says so by saying nothing: no map, no `Next`
+/// heading over an empty list, and the policy's own account only when asked for.
+#[test]
+fn a_first_run_with_nothing_to_do_next_has_no_next_block() {
+    let dir = tiny_repo();
+    let r = dir.path();
+    let out = drift(r, &["init"]);
+    assert!(
+        out.starts_with(
+            "Drift read 3 files of TypeScript and JavaScript. Nothing left this machine.\n\nConventions\n  No conventions found:"
+        ),
+        "{out}"
+    );
+    assert!(!out.contains("\nNext\n"), "{out}");
+    assert!(!out.contains("What the code does"), "{out}");
+    assert!(!out.contains("\nExplained\n"), "{out}");
+    assert!(
+        out.trim_end()
+            .ends_with("so branches never conflict on the lock."),
+        "{out}"
+    );
+}
+
+/// The first run in order: what was read, what the code does, what to look at first,
+/// the conventions as one section, what was written, one block of next steps. What the
+/// show policy did and why is behind `--explain`, after everything else.
+#[test]
+fn the_first_run_leads_with_the_code_and_ends_with_one_next_block() {
+    let dir = blocking_repo(false);
+    let r = dir.path();
+    std::fs::remove_file(r.join(".drift/conventions.yaml")).unwrap();
+    std::fs::remove_file(r.join("drift.lock")).unwrap();
+    let out = drift(r, &["init"]);
+    let at = |needle: &str| {
+        out.find(needle)
+            .unwrap_or_else(|| panic!("no {needle:?} in:\n{out}"))
+    };
+    let order = [
+        at("Drift read 71 files of TypeScript and JavaScript. Nothing left this machine.\n"),
+        at("\nWhat the code does (read from the code: facts, not rules)\n  40 http entry points\n"),
+        at("\nWorth a look first\n  1. "),
+        at("\nConventions\n  1 proposed (1 default tier, 0 suggestions)."),
+        at("\n 1. [D-"),
+        at(
+            "\nWrote .drift/conventions.yaml and drift.lock (3 existing violations recorded, so only new ones are reported).\n",
+        ),
+        at("\nNext\n  drift review               accept or reject the 1 proposal\n"),
+        at("  drift practices            the whole map, with a file to copy for each way\n"),
+        at(
+            "  drift security             entry points, their guards and the risky operations they reach\n",
+        ),
+        at("\nTip: add `drift.lock merge=union`"),
+    ];
+    assert!(order.windows(2).all(|w| w[0] < w[1]), "{order:?}\n{out}");
+    assert_eq!(order[0], 0, "{out}");
+    assert_eq!(out.matches("\nNext\n").count(), 1, "{out}");
+    assert!(!out.contains("\nExplained\n"), "{out}");
+    assert!(!out.contains("drift init --explain"), "{out}");
+    // The same run, explained: the same screen, then the account of it.
+    std::fs::remove_file(r.join(".drift/conventions.yaml")).unwrap();
+    std::fs::remove_file(r.join("drift.lock")).unwrap();
+    let explained = drift(r, &["init", "--explain"]);
+    let (screen, account) = explained
+        .split_once("\nExplained\n")
+        .unwrap_or_else(|| panic!("{explained}"));
+    assert_eq!(screen, out, "{explained}");
+    assert!(
+        account.contains("Known with nothing accepted (the practice map: facts, not rules)"),
+        "{explained}"
+    );
 }
 
 const GUARDED: &str = "import { withAuth } from \"@/lib/auth\";\n\nexport const GET = withAuth(async (req: Request) => {\n  return Response.json({ ok: true });\n});\n";
@@ -130,10 +203,12 @@ fn reinit_says_decisions_are_kept() {
     let r = dir.path();
     let out = drift(r, &["init"]);
     assert!(
-        out.contains("(1 earlier decision(s) kept; the rest are proposed"),
+        out.contains("1 earlier decision kept as you left it; nothing new to decide."),
         "{out}"
     );
-    assert!(!out.contains("(all proposed"), "{out}");
+    assert!(out.contains("; 1 earlier decision kept)."), "{out}");
+    // Nothing is left to review, so no step sends the person to it.
+    assert!(!out.contains("accept or reject"), "{out}");
     let policy = std::fs::read_to_string(r.join(".drift/conventions.yaml")).unwrap();
     assert!(policy.contains("status: accepted"), "{policy}");
 }
@@ -696,7 +771,11 @@ fn first_run_texts_name_the_next_step() {
     std::fs::remove_file(r.join("drift.lock")).unwrap();
     let init = drift(r, &["init"]);
     assert!(
-        init.contains("(all proposed: none is checked until you accept it with `drift review`; accepted conventions advise unless set to block)"),
+        init.contains("1 proposed (1 default tier, 0 suggestions). Nothing is checked and no agent is told of one until you decide (`drift review`); an accepted convention advises unless you set it to block."),
+        "{init}"
+    );
+    assert!(
+        init.contains("  drift review               accept or reject the 1 proposal\n"),
         "{init}"
     );
     assert!(!init.contains("only advise until"), "{init}");
@@ -715,7 +794,7 @@ fn first_run_texts_name_the_next_step() {
     assert!(blocked.starts_with("1 accepted (1 block), "), "{blocked}");
     let reinit = drift(r, &["init"]);
     assert!(
-        reinit.contains("the rest are proposed: none is checked until you accept it"),
+        reinit.contains("1 earlier decision kept as you left it; nothing new to decide."),
         "{reinit}"
     );
     // The re-init baselined app/api/new: a newer route is new.

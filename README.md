@@ -165,10 +165,21 @@ On a small synthetic Next.js-style repository with 40 route handlers, 38 of them
 wrapped in `withAuth()` (the one `npm/dry-run.sh` builds), `drift init` prints:
 
 ```
-Learned 1 conventions from 143 symbols (1 default tier, 0 suggestions).
-1 default-tier proposal(s) are block candidates: not shown to agents until you accept them (`drift review --accept <id>`, or the Studio). People see them first.
-Wrote .drift/conventions.yaml (all proposed: none is checked until you accept it with `drift review`; accepted conventions advise unless set to block)
-Wrote drift.lock (2 legacy violations baselined)
+Drift read 71 files of TypeScript and JavaScript. Nothing left this machine.
+
+What the code does (read from the code: facts, not rules)
+  40 http entry points
+    sign-in:     wrap withAuth in 38; nothing found in 2 (of 40)
+    permissions: nothing found in 38 (of 38)
+    errors:      left to the framework in 40 (of 40)
+    responses:   built with Response.json in 40 (of 40)
+
+Worth a look first
+  1. sign-in: no guard found in what Drift read, in 2 places (e.g. app/api/r38/route.ts:1 GET)
+  `drift security` lists every entry point with its guard and what it reaches.
+
+Conventions
+  1 proposed (1 default tier, 0 suggestions). Nothing is checked and no agent is told of one until you decide (`drift review`); an accepted convention advises unless you set it to block.
 
 Default tier: block candidates, each reaches agents once you accept it, and may block once accepted (`drift review`, b)
 
@@ -180,9 +191,23 @@ Default tier: block candidates, each reaches agents once you accept it, and may 
     outlier:  app/api/r38/route.ts:1 GET
     outlier:  app/api/r39/route.ts:1 GET
 
-Next: `drift review` to accept or reject them.
+Wrote .drift/conventions.yaml and drift.lock (2 existing violations recorded, so only new ones are reported).
+
+Next
+  drift review               accept or reject the 1 proposal
+  drift practices            the whole map, with a file to copy for each way
+  drift security             entry points, their guards and the risky operations they reach
+
 Tip: add `drift.lock merge=union` to .gitattributes so branches never conflict on the lock.
 ```
+
+The first part is what Drift read in the code, whether or not it has anything to
+propose: each kind of entry point, how its members sign a caller in, check
+permissions, handle errors and answer, and the few things most worth a look.
+These are facts, not rules: nothing checks them. `Conventions` is what Drift
+proposes to check from now on, and `Next` lists only the commands that have
+something to do here. `drift init --explain` adds the long account: what the
+show policy held back and why, package by package.
 
 Everything starts as a proposal, and a proposal is not checked at all. Read each
 card's outliers: if they are mistakes, accept the convention; if they are a
@@ -190,7 +215,7 @@ legitimate, different kind of member (a test helper, a config file), reject it
 or set those members apart. Small or uniform repositories often get no
 proposals, and `drift init` then says why.
 
-If `drift init` says it withheld cards, list them first (`drift review --hidden`; see **No proposals?** below): interactive review then says so and stops.
+If `drift init` says weaker candidates were kept back, list them first (`drift review --hidden`; see **No proposals?** below): interactive review then says so and stops.
 
 ```sh
 drift review     # interactive, needs a terminal: y accept (advise), b accept and block, a accept and show to agents, n reject, s skip, q quit
@@ -201,7 +226,9 @@ drift check      # new violations of accepted conventions; exit 1 only for those
 ```
 
 With `D-37416b` accepted in advise mode, a new route without the wrapper is
-reported and the exit code is 0:
+reported and the exit code is 0 (after these lines `drift check` lists, as facts
+that never fail it, the files that sign a caller in another way than the entry
+points around them):
 
 ```
 drift: 1 new violation(s) (2 legacy, baselined)
@@ -222,9 +249,9 @@ counted so reviewers see them.
 `drift review --accept <id>` (`--list` prints the cards). Accepting a suggestion
 does not show it to agents: run `drift review --show-to-agents <id>` for that.
 
-**No proposals?** If `drift init` says `Learned 0 conventions` and names
-withheld cards, the show policy held back every card it mined (on one
-5,858-file monorepo, all 12). They are not conventions yet: nothing checks them
+**No proposals?** If `drift init` says `No conventions shown` and that it found
+candidates with no track record strong enough to propose, the show policy held
+back every card it mined (on one 5,858-file monorepo, all 12). They are not conventions yet: nothing checks them
 and no agent is told them. List them with their evidence, promote the ones that
 are right, and show them to agents:
 

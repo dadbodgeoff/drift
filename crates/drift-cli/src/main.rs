@@ -129,6 +129,11 @@ enum Command {
         /// files their roles cover may change.
         #[arg(long)]
         refresh_kinds: bool,
+        /// Also say what was kept back and why: the candidates not proposed, each
+        /// package's count or the reason it has none, and where agents meet what is
+        /// known.
+        #[arg(long)]
+        explain: bool,
         #[command(flatten)]
         cap: CapArgs,
     },
@@ -2534,6 +2539,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
         Command::Init {
             max,
             refresh_kinds,
+            explain,
             cap,
         } => {
             let mut facts = load_facts(cli, 0)?;
@@ -2641,41 +2647,18 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             lock.save(root)?;
             let ordered = tiered(&mined);
             let (d, s) = tier_counts(ordered.iter().map(|c| c.tier()));
+            // What was read, then what the code does and what to look at first: known
+            // whatever was mined, so a repository with no convention to propose still
+            // opens with something of its own.
             println!(
-                "Learned {} conventions from {} symbols ({d} default tier, {s} suggestions).",
-                mined.candidates.len(),
-                mined.units
+                "{}",
+                read_line(&facts, packages.as_ref().map(|(_, rows)| rows.len()))
             );
-            for note in agents_notes(&ordered) {
-                println!("{note}");
+            let map = practices::first_run(root, &facts);
+            if !map.text.is_empty() {
+                println!("\n{}", map.text.trim_end());
             }
-            if withheld > 0 {
-                println!("{}", python_off_note(withheld));
-            }
-            if let Some(n) = withheld_note(&mined.withheld) {
-                println!("{n}");
-            }
-            if let Some((_, rows)) = &packages {
-                println!("{}", workspace::lines(rows).join("\n"));
-            }
-            // On a re-run the decisions already in the file are kept: say so, rather
-            // than "all proposed".
-            let decided = policy
-                .conventions
-                .iter()
-                .filter(|c| c.status != Status::Proposed)
-                .count();
-            if had && decided > 0 {
-                println!(
-                    "Wrote {CONVENTIONS_FILE} ({decided} earlier decision(s) kept; the rest are proposed: {NOT_CHECKED_UNTIL_ACCEPTED})"
-                );
-            } else {
-                println!("Wrote {CONVENTIONS_FILE} (all proposed: {NOT_CHECKED_UNTIL_ACCEPTED})");
-            }
-            println!(
-                "Wrote {LOCK_FILE} ({} legacy violations baselined)\n",
-                lock.entries.len()
-            );
+            println!("\nConventions");
             // The default tier in full, then the best suggestions (`drift_mine::rank`).
             let placed = rank::place(&ordered, cap.resolve(policy.suggestion_cap).0);
             let top: Vec<(usize, &Candidate)> = placed
@@ -2683,26 +2666,173 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 .filter(|p| p.shown)
                 .map(|p| (p.rank, *p.item))
                 .collect();
-            print_tiered(&top, false);
-            if let Some(n) = capped_note(&placed, "census") {
-                println!("{n}\n");
-            }
-            if mined.candidates.is_empty() {
-                println!("{}", empty_reason(&facts, &mined));
+            let kept_back = mined.withheld.len();
+            // On a re-run the decisions already in the file are kept: say so, and
+            // count as proposals only what is still to decide.
+            let decided = if had {
+                policy
+                    .conventions
+                    .iter()
+                    .filter(|c| c.status != Status::Proposed)
+                    .count()
             } else {
-                println!("Next: `drift review` to accept or reject them.");
+                0
+            };
+            let to_review = review_queue(&policy, cap.resolve(policy.suggestion_cap).0)
+                .0
+                .len();
+            if mined.candidates.is_empty() {
+                println!("  {}", empty_reason(&facts, &mined));
+            } else {
+                if decided == 0 {
+                    println!(
+                        "  {} proposed ({d} default tier, {}). Nothing is checked and no agent is told of one until you decide (`drift review`); an accepted convention advises unless you set it to block.",
+                        mined.candidates.len(),
+                        count(s, "suggestion")
+                    );
+                } else {
+                    println!(
+                        "  {} found ({d} default tier, {}). {} kept as you left {}; {}.",
+                        mined.candidates.len(),
+                        count(s, "suggestion"),
+                        count(decided, "earlier decision"),
+                        if decided == 1 { "it" } else { "them" },
+                        if to_review == 0 {
+                            "nothing new to decide".to_string()
+                        } else {
+                            format!(
+                                "{to_review} still to decide, and nothing of those is checked and no agent is told of one until you do (`drift review`)"
+                            )
+                        }
+                    );
+                }
+                if kept_back > 0 {
+                    println!(
+                        "  {} kept back from the list: `drift review --hidden` shows {} with the evidence.",
+                        match kept_back {
+                            1 => "1 weaker candidate was".to_string(),
+                            n => format!("{n} weaker candidates were"),
+                        },
+                        if kept_back == 1 { "it" } else { "them" }
+                    );
+                }
+                if let Some((_, rows)) = &packages {
+                    let with = rows.iter().filter(|r| r.silent.is_none()).count();
+                    if with < rows.len() {
+                        println!(
+                            "  They are in {with} of {} packages; `drift init --explain` says why each of the others has none.",
+                            rows.len()
+                        );
+                    }
+                }
+                println!();
+                print_tiered(&top, false);
+                if let Some(n) = capped_note(&placed, "census") {
+                    println!("{n}\n");
+                }
             }
-            if let Some(note) = practices::init_note(root, &facts) {
-                println!("{note}");
+            if withheld > 0 {
+                println!("  {}", python_off_note(withheld));
+            }
+            let kept = if decided > 0 {
+                format!("; {} kept", count(decided, "earlier decision"))
+            } else {
+                String::new()
+            };
+            println!(
+                "{}Wrote {CONVENTIONS_FILE} and {LOCK_FILE} ({}{kept}).",
+                if mined.candidates.is_empty() {
+                    "\n"
+                } else {
+                    ""
+                },
+                match lock.entries.len() {
+                    0 => "no existing violation to record".to_string(),
+                    n => format!(
+                        "{} recorded, so only new ones are reported",
+                        count(n, "existing violation")
+                    ),
+                }
+            );
+            // One block of what to run next, each with what it is for; nothing where
+            // there is nothing to do.
+            let mut steps: Vec<String> = Vec::new();
+            let mut next =
+                |command: &str, what: String| steps.push(format!("  {command:<26} {what}"));
+            if to_review > 0 {
+                next(
+                    "drift review",
+                    format!("accept or reject the {}", count(to_review, "proposal")),
+                );
+            }
+            if kept_back > 0 {
+                next(
+                    "drift review --hidden",
+                    format!(
+                        "the {}, with the evidence",
+                        count(kept_back, "weaker candidate")
+                    ),
+                );
+            }
+            match setup::open_questions(root, &facts) {
+                0 => {}
+                1 => next("drift setup", "1 question only you can answer".into()),
+                n => next("drift setup", format!("{n} questions only you can answer")),
+            }
+            if let Some((units, names)) = map.hints {
+                next(
+                    "drift practices --hints",
+                    format!(
+                        "the config lines for {} Drift cannot classify alone ({} of the map)",
+                        count(names, "name"),
+                        count(units, "unit")
+                    ),
+                );
+            }
+            if map.known {
+                next(
+                    "drift practices",
+                    "the whole map, with a file to copy for each way".into(),
+                );
+                next(
+                    "drift security",
+                    "entry points, their guards and the risky operations they reach".into(),
+                );
+            }
+            if !*explain && (kept_back > 0 || packages.is_some()) {
+                next(
+                    "drift init --explain",
+                    match (kept_back > 0, packages.is_some()) {
+                        (true, true) => "what was kept back and why, package by package",
+                        (true, false) => "what was kept back and why",
+                        _ => "what each package has, and why some have nothing proposed",
+                    }
+                    .into(),
+                );
+            }
+            if !steps.is_empty() {
+                println!("\nNext\n{}", steps.join("\n"));
             }
             println!(
-                "Tip: add `drift.lock merge=union` to .gitattributes so branches never conflict on the lock."
+                "\nTip: add `drift.lock merge=union` to .gitattributes so branches never conflict on the lock."
             );
-            if let Some(line) = setup::init_line(root, &facts) {
-                println!("{line}");
-            }
-            if let Some(n) = withheld_next(&mined.withheld) {
-                println!("{n}");
+            if *explain {
+                println!("\nExplained");
+                for note in agents_notes(&ordered) {
+                    println!("{note}");
+                }
+                if let Some(n) = withheld_note(&mined.withheld) {
+                    println!("{n}");
+                }
+                if let Some((_, rows)) = &packages {
+                    println!("{}", workspace::lines(rows).join("\n"));
+                }
+                if let Some(note) = practices::init_note(root, &facts) {
+                    println!("{note}");
+                }
+                if let Some(n) = withheld_next(&mined.withheld) {
+                    println!("{n}");
+                }
             }
         }
         Command::Setup {
@@ -4028,10 +4158,6 @@ fn hidden_note(hidden: usize) -> String {
     )
 }
 
-/// What `drift init` says about the proposals it wrote: they are not checked at all
-/// until accepted, and accepted ones advise unless a person sets them to block.
-const NOT_CHECKED_UNTIL_ACCEPTED: &str = "none is checked until you accept it with `drift review`; accepted conventions advise unless set to block";
-
 /// The census's last line: it wrote nothing, and what writes the proposals.
 const CENSUS_NEXT: &str = "Preview only: nothing was written. Next: `drift init` writes these to .drift/conventions.yaml as proposals (keeping decisions already made), then `drift review` decides them.";
 
@@ -4530,10 +4656,40 @@ fn empty_reason(facts: &RepoFacts, mined: &Mined) -> String {
         no_conventions_reason(facts, mined)
     } else {
         format!(
-            "No conventions shown: mining found {} card(s), and every one was withheld (above). The show policy keeps cards with a weak track record from agents; `drift review --hidden` lists them for you to review.",
-            mined.withheld.len()
+            "No conventions shown: Drift found {} and none has a track record strong enough to propose. `drift review --hidden` shows {} with the evidence, for you to decide.",
+            count(mined.withheld.len(), "candidate"),
+            if mined.withheld.len() == 1 {
+                "it"
+            } else {
+                "them"
+            }
         )
     }
+}
+
+/// `1 file`, `3 files`.
+fn count(n: usize, what: &str) -> String {
+    format!("{n} {what}{}", if n == 1 { "" } else { "s" })
+}
+
+/// The first line of `drift init`: what was read.
+fn read_line(facts: &RepoFacts, packages: Option<usize>) -> String {
+    let python = facts.files.iter().filter(|f| f.lang == "py").count();
+    let other = facts.files.len() - python;
+    let of = match (python, other) {
+        (0, 0) => String::new(),
+        (_, 0) => " of Python".to_string(),
+        (0, _) => " of TypeScript and JavaScript".to_string(),
+        _ => format!(" ({other} of TypeScript and JavaScript, {python} of Python)"),
+    };
+    let packages = match packages {
+        Some(n) if n > 1 => format!(" in {n} packages"),
+        _ => String::new(),
+    };
+    format!(
+        "Drift read {}{of}{packages}. Nothing left this machine.",
+        count(facts.files.len(), "file")
+    )
 }
 
 /// Leave out of `mined.withheld` the cards a person already decided (in `policy`, e.g. one

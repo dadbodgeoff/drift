@@ -44,7 +44,7 @@ No conventions found: roles need roughly 20+ similar symbols where one pattern c
 - If you expected a rule, check the evidence by hand: do at least 8 members share it, with the share's 95% lower bound at least 0.75 (0.9 for layering)?
 - Check that Python proposals are not turned off (`proposals: {python: off}` in `.drift/config.yaml`), and that your code is not in a directory Drift treats as non-production (tests, stories, fixtures, `examples/`, `demo/`, `playground/`). `drift review --hidden` lists cards mining found and withheld, with the reason.
 - In a monorepo, run `drift init` at the root so packages are mined in their own scope; `drift census` lists each package with its cards, or why it is silent.
-- If `drift init` said `No conventions shown: mining found N card(s), and every one was withheld`, the cards exist: `drift review --hidden` lists them, and `drift review --hidden --answer <id>=same` promotes one. A promoted suggestion reaches agents only after `drift review --show-to-agents <id>`. See [Getting Started](Getting-Started).
+- If `drift init` said `No conventions shown: Drift found N candidate(s) and none has a track record strong enough to propose`, the cards exist: `drift review --hidden` lists them, and `drift review --hidden --answer <id>=same` promotes one. A promoted suggestion reaches agents only after `drift review --show-to-agents <id>`. See [Getting Started](Getting-Started).
 
 ## A route is not listed
 

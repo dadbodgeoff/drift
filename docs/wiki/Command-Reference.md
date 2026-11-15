@@ -147,6 +147,7 @@ drift init [OPTIONS]
 | `--refresh-kinds` | Relearn the file-kind vocabulary frozen in the conventions file (to adopt new kinds after an upgrade). Existing conventions keep their ids, but the files their roles cover may change |  |
 | `--suggestions <N>` | Suggestions to list, best first (default 5, or `suggestion_cap` in .drift/conventions.yaml). The default tier is always listed in full |  |
 | `--all` | List every suggestion |  |
+| `--explain` | After the summary, print the long account: what the show policy kept back and why, a line per package in a monorepo, and what the practice map offers agents |  |
 
 **Examples**
 
@@ -154,12 +155,25 @@ drift init [OPTIONS]
 drift init
 ```
 ```bash
+drift init --explain
+```
+```bash
 drift init --max 30
 ```
 
 **Output**
 
-A summary on standard output: how many conventions were learned and in which tier, notes about proposals withheld by the show policy, per-package lines in a monorepo, the files written (`Wrote .drift/conventions.yaml`, `Wrote drift.lock (N legacy violations baselined)`), the default tier in full and the best suggestions, and a pointer to `drift review`. It ends with a tip to add `drift.lock merge=union` to `.gitattributes` (it does not edit that file) and, where the practice map knows recipes, a note about them. In a repository with nothing to learn it says why (`No conventions found: ...`) and still writes both files.
+One screen on standard output, in this order:
+
+1. What was read (`Drift read N files of ... in N packages. Nothing left this machine.`).
+2. `What the code does`: the practice map's three largest kinds of entry point, each with how its members sign a caller in, check permissions, handle errors, answer and validate, as counts that add up to the total. Printed whether or not anything is proposed; left out where the map knows no entry point.
+3. `Worth a look first`: at most five of the map's findings, the costliest first, and how many more `drift practices` has.
+4. `Conventions`: how many are proposed and in which tier, how many weaker candidates were kept back, in a monorepo how many packages they are in, then the default tier in full and the best suggestions. With nothing to propose it says why (`No conventions found: ...`, or `No conventions shown: ...` when every candidate was kept back). On a re-run it says how many earlier decisions were kept and how many proposals are still to decide.
+5. The files written: `Wrote .drift/conventions.yaml and drift.lock (N existing violations recorded, so only new ones are reported)`.
+6. `Next`: one line per command that has something to do here (`drift review`, `drift review --hidden`, `drift setup`, `drift practices --hints`, `drift practices`, `drift security`, `drift init --explain`), each with what it is for. Left out when there is nothing to do.
+7. A tip to add `drift.lock merge=union` to `.gitattributes` (it does not edit that file).
+
+`--explain` prints the same screen and then, under `Explained`, the long account: which default-tier proposals wait for a person before agents see them, which mined cards the show policy withheld and why, a line per package in a monorepo, what the practice map offers agents, and the steps to promote a withheld card.
 
 On a re-run, decisions already in the file (accepted, rejected, mode, `agents: show`, exceptions) are kept. New proposals get their current violations baselined; existing lock entries are kept.
 

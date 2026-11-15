@@ -96,13 +96,14 @@ mkdir -p "$project"
 export PATH="$project/node_modules/.bin:$PATH"
 [ "$(command -v drift)" = "$project/node_modules/.bin/drift" ] || { echo "error: drift on PATH is $(command -v drift)"; exit 1; }
 
-# 4. A synthetic repository: 40 routes (38 wrapped in withAuth, 2 legacy) and 30 helpers.
+# 4. A synthetic repository: 40 routes (38 wrapped in withAuth, which turns away a
+# request with no authorization header; 2 legacy) and 30 helpers.
 demo="$work/demo"
 mkdir -p "$demo/lib"
 export DRIFT_CACHE_DIR="$work/cache"
 echo '{ "name": "demo" }' > "$demo/package.json"
 echo '{ "compilerOptions": { "baseUrl": ".", "paths": { "@/*": ["./*"] } } }' > "$demo/tsconfig.json"
-printf 'export function withAuth<T>(h: T): T {\n  return h;\n}\n' > "$demo/lib/auth.ts"
+printf 'type Handler = (req: Request) => Promise<Response>;\n\nexport function withAuth(h: Handler): Handler {\n  return async (req) => {\n    if (!req.headers.get("authorization")) {\n      return new Response("Unauthorized", { status: 401 });\n    }\n    return h(req);\n  };\n}\n' > "$demo/lib/auth.ts"
 guarded='import { withAuth } from "@/lib/auth";\n\nexport const GET = withAuth(async (req: Request) => {\n  return Response.json({ ok: true });\n});\n'
 unguarded='export async function GET(req: Request) {\n  return Response.json({ ok: true });\n}\n'
 for i in $(seq -w 0 39); do

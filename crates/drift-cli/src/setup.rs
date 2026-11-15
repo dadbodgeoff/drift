@@ -2922,16 +2922,11 @@ Every answer is something Drift cannot prove, and you can be wrong in the same w
 4. When you are done, tell the person how many of your answers wait for them (`waiting` in `drift setup --json`; `drift setup --list` shows them first), and that `drift setup --review` shows each with your reason so they can confirm or reject it.
 "#;
 
-/// `drift init`'s line, when there is a question open.
-pub fn init_line(root: &Path, facts: &RepoFacts) -> Option<String> {
-    let setup = Setup::new(root, facts).ok()?;
-    let n = setup.questions(false).len();
-    (n > 0).then(|| {
-        format!(
-            "{n} question{} only you can answer would make these answers sharper: run `drift setup`.",
-            if n == 1 { "" } else { "s" }
-        )
-    })
+/// How many questions only a person can answer are open, for `drift init`.
+pub fn open_questions(root: &Path, facts: &RepoFacts) -> usize {
+    Setup::new(root, facts)
+        .map(|s| s.questions(false).len())
+        .unwrap_or(0)
 }
 
 #[cfg(test)]

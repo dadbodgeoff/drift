@@ -70,10 +70,21 @@ drift init
 This writes the proposals to `.drift/conventions.yaml` and baselines today's violations in `drift.lock`. On a small repository with 42 route files, 38 of them wrapped in `withAuth()` (and 60 unrelated helper functions), the output is:
 
 ```
-Learned 1 conventions from 209 symbols (1 default tier, 0 suggestions).
-1 default-tier proposal(s) are block candidates: not shown to agents until you accept them (`drift review --accept <id>`, or the Studio). People see them first.
-Wrote .drift/conventions.yaml (all proposed: none is checked until you accept it with `drift review`; accepted conventions advise unless set to block)
-Wrote drift.lock (4 legacy violations baselined)
+Drift read 103 files of TypeScript and JavaScript. Nothing left this machine.
+
+What the code does (read from the code: facts, not rules)
+  42 http entry points
+    sign-in:     wrap withAuth in 38; other ways in 1; nothing found in 3 (of 42)
+    permissions: nothing found in 38 (of 38)
+    errors:      left to the framework in 42 (of 42)
+    responses:   built with Response.json in 42 (of 42)
+
+Worth a look first
+  1. sign-in: no guard found in what Drift read, in 3 places (e.g. app/api/r38/route.ts:1 GET)
+  `drift security` lists every entry point with its guard and what it reaches.
+
+Conventions
+  1 proposed (1 default tier, 0 suggestions). Nothing is checked and no agent is told of one until you decide (`drift review`); an accepted convention advises unless you set it to block.
 
 Default tier: block candidates, each reaches agents once you accept it, and may block once accepted (`drift review`, b)
 
@@ -87,8 +98,24 @@ Default tier: block candidates, each reaches agents once you accept it, and may 
     outlier:  app/api/r39/route.ts:1 GET
     ... 1 more outliers
 
-Next: `drift review` to accept or reject them.
+Wrote .drift/conventions.yaml and drift.lock (4 existing violations recorded, so only new ones are reported).
+
+Next
+  drift review               accept or reject the 1 proposal
+  drift practices            the whole map, with a file to copy for each way
+  drift security             entry points, their guards and the risky operations they reach
+
+Tip: add `drift.lock merge=union` to .gitattributes so branches never conflict on the lock.
 ```
+
+Read it top to bottom:
+
+- **`What the code does`** is read from the code and is there whether or not Drift proposes anything: each kind of entry point, how many of them sign a caller in and how, check permissions, handle errors and answer. Each line adds up to its total: `nothing found` is what Drift read to the end and found no guard in, `could not tell` is what it could not read. Facts, not rules: nothing checks them. See [Practices Map](Practices-Map).
+- **`Worth a look first`** is at most five things from that map, the costliest first: a signed-in caller reaching what is not theirs, entry points with no sign-in, input nothing validates, two ways of doing one thing side by side.
+- **`Conventions`** is what Drift proposes to check from now on. On many repositories this is short or empty, and the two sections above are the first result.
+- **`Next`** lists only the commands that have something to do in this repository.
+
+`drift init --explain` prints the same screen and then the long account: what the show policy kept back and why, and a line per package in a monorepo.
 
 Read the card like this:
 
@@ -105,17 +132,33 @@ If Drift proposes nothing, it says why and names the largest role it saw:
 No conventions found: roles need roughly 20+ similar symbols where one pattern clearly dominates and is rarer elsewhere; the largest role here has 42 members (HTTP handlers in app/api/** (route files)).
 ```
 
-That is normal on small or uniform repositories. The same run still prints what the practice map knows; see [Practices Map](Practices-Map).
+That is normal on small or uniform repositories. The same run still leads with what the practice map knows; see [Practices Map](Practices-Map).
 
-### If `drift init` says "Learned 0 conventions" but also names withheld cards
+### If `drift init` says "No conventions shown" and that candidates were kept back
 
-Mining can find a card and still not propose it: the show policy withholds cards whose kind has a weak track record or that have more than one outlier. When every card found is withheld, `drift init` says so, and `drift review` has nothing to show. The last line of `drift init` and `drift census` then says how many were withheld and what to run: `drift review --hidden` lists them, `drift review --hidden --answer <id>=same` promotes one, and a promoted card whose rule family is below the admission bar reaches agents only after `drift review --show-to-agents <id>`:
+Mining can find a card and still not propose it: the show policy withholds cards whose kind has a weak track record or that have more than one outlier. When every card found is withheld, `drift init` says so, and `drift review` has nothing to show. Its `Next` block then names `drift review --hidden`, which lists them; `drift review --hidden --answer <id>=same` promotes one, and a promoted card whose rule family is below the admission bar reaches agents only after `drift review --show-to-agents <id>`:
 
 ```
-Learned 0 conventions from 201 symbols (0 default tier, 0 suggestions).
+Drift read 100 files of TypeScript and JavaScript. Nothing left this machine.
+
+Conventions
+  No conventions shown: Drift found 1 candidate and none has a track record strong enough to propose. `drift review --hidden` shows it with the evidence, for you to decide.
+
+Wrote .drift/conventions.yaml and drift.lock (no existing violation to record).
+
+Next
+  drift review --hidden      the 1 weaker candidate, with the evidence
+  drift init --explain       what was kept back and why
+
+Tip: add `drift.lock merge=union` to .gitattributes so branches never conflict on the lock.
+```
+
+`drift init --explain` adds which cards were withheld and why (`drift census` prints the same two lines):
+
+```
+Explained
 1 mined card(s) withheld by the show policy (not proposed; not shown as conventions to agents, hooks, MCP, exports or SARIF; `drift card <file>` states the strong ones as facts, not rules): TypeScript naming 1 (too many outliers (more than 1)). `drift review --hidden` lists them for people, with their evidence; a person can promote one.
-...
-No conventions shown: mining found 1 card(s), and every one was withheld (above). The show policy keeps cards with a weak track record from agents; `drift review --hidden` lists them for you to review.
+Next for the 1 withheld card(s): `drift review --hidden` lists them with their evidence, and `drift review --hidden --answer <id>=same` promotes one. A promoted card whose rule family is below the admission bar reaches agents only after `drift review --show-to-agents <id>`.
 ```
 
 On one 5,858-file monorepo this was the whole first result: 12 mined cards, all withheld. A withheld card is not a convention: nothing checks it and no agent is told it. You can still decide on it yourself, in three steps. The example is a repository with 40 files in `src/workers/`, 38 of them exporting a function named `*Worker`.

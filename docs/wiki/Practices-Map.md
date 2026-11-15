@@ -187,7 +187,7 @@ The recipe is followed by findings, in rank order:
 - **`drift card <file>`** has a "Practices here" section.
 - **Agents** get the recipe once before they write a new entry-point file, and are told after an edit when a file's entry points do a concern another way than at least 80% of those around them. See [Using Drift with Agents](Using-Drift-with-Agents).
 - **`drift check`** prints, under its own heading and after the exit code is decided, the concerns the checked files do differently from their neighbours, for the files it looked at (every file, the files named, or with `--diff-base` the files the diff added or changed). A route that does all its neighbours do and more is not one, a health probe is compared in no concern, and a one-off route is said with what it does itself. These never change the exit code: `practices.departures` in `--format json`, notices and a job-summary section in `--format github`, run notifications (not results) in `--format sarif`.
-- **`drift init`** prints a line about what the map knows even when no conventions were proposed.
+- **`drift init`** leads with the map, whether or not any convention is proposed: the three largest kinds of entry point with their counts, and at most five findings under `Worth a look first`.
 
 ## Other readings that decide a state
 

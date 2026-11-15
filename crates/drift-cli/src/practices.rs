@@ -46,8 +46,36 @@ pub fn config_warnings(root: &Path, facts: &RepoFacts) -> Vec<String> {
     out
 }
 
-/// What `drift init` says about the practice map: it is known whatever is accepted, and
-/// where it reaches people and agents. `None` when no recipe is known (nothing to point
+/// What `drift init` leads with ([`first_run`]).
+pub struct FirstRun {
+    /// What the code does at its entry points and what to look at first
+    /// ([`practices::render_first_run`]); empty when the map knows neither.
+    pub text: String,
+    /// Some recipe is known: `drift practices` and `drift security` have more to show.
+    pub known: bool,
+    /// The parts of the map that are unknown behind names a person can classify, and
+    /// how many names: what `drift practices --hints` settles. `None` when there are
+    /// none.
+    pub hints: Option<(usize, usize)>,
+}
+
+/// The practice map as `drift init` opens with it: read from the code, whatever
+/// conventions were mined.
+pub fn first_run(root: &Path, facts: &RepoFacts) -> FirstRun {
+    let mut r = practices::practices(facts, &options(root, facts, Scope::default()));
+    let text = practices::render_first_run(&r);
+    let known = !r.recipes.is_empty();
+    without_answered(root, &mut r);
+    let (units, names) = practices::config_hint_counts(&r);
+    FirstRun {
+        text,
+        known,
+        hints: (names > 0).then_some((units, names)),
+    }
+}
+
+/// What `drift init --explain` says about the practice map: it is known whatever is
+/// accepted, and where it reaches people and agents. `None` when no recipe is known (nothing to point
 /// at).
 pub fn init_note(root: &Path, facts: &RepoFacts) -> Option<String> {
     let r = practices::practices(facts, &options(root, facts, Scope::default()));

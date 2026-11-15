@@ -510,6 +510,249 @@ pub fn render_recipes(r: &PracticesReport) -> String {
     out
 }
 
+/// How many kinds of entry point the first run shows before "and N more".
+const FIRST_RUN_RECIPES: usize = 3;
+/// How many findings the first run shows.
+const FIRST_RUN_FINDINGS: usize = 5;
+
+/// A concern as the first run names it: the word a newcomer would use.
+fn plain_concern(id: &str) -> &str {
+    match id {
+        AUTHN => "sign-in",
+        AUTHZ => "permissions",
+        ERRORS => "errors",
+        API => "responses",
+        VALIDATION => "validation",
+        DATA_ACCESS => "data access",
+        CONFIG => "configuration",
+        other => other,
+    }
+}
+
+/// A variant's label as the first run words it. A label is its uses joined by ` + `,
+/// each a mechanism of Drift's own vocabulary and the instrument read from the code;
+/// only the mechanism words a newcomer would not know are reworded, and the
+/// instrument is kept as the code names it.
+fn plain_way(label: &str) -> String {
+    label
+        .split(" + ")
+        .map(|part| {
+            if part == "bubble framework_default" {
+                "left to the framework".to_string()
+            } else if part == "builder return_value" {
+                "the value returned".to_string()
+            } else if part == "manual body_check" {
+                "checked by hand".to_string()
+            } else if let Some(i) = part.strip_prefix("builder ") {
+                format!("built with {i}")
+            } else if let Some(i) = part.strip_prefix("body call ") {
+                format!("calls {i}")
+            } else if let Some(i) = part.strip_prefix("body check ") {
+                format!("checks {i}")
+            } else {
+                part.to_string()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" + ")
+}
+
+/// Where a first-run finding ranks: what a signed-in caller can reach that is not
+/// theirs, then entry points nothing signs a caller in to or validates, then two
+/// ways side by side in what an entry point does, then in the rest, then copies.
+fn first_run_rank(f: &Finding) -> u8 {
+    match (f.kind, f.concern.as_str()) {
+        (FindingKind::UnscopedKey, _) => 0,
+        (FindingKind::None, AUTHN) => 1,
+        (FindingKind::None, _) => 2,
+        (FindingKind::UnexplainedSplit, c) if PRIMARY.contains(&c) => 3,
+        (FindingKind::UnexplainedSplit, _) => 4,
+        _ => 5,
+    }
+}
+
+/// One recipe concern for the first run: each way with the number that do it, then
+/// what nothing was found for and what could not be told. Counts only: where to copy
+/// from is `drift practices`.
+fn first_run_concern(c: &RecipeConcern) -> Option<String> {
+    let mut parts: Vec<String> = c
+        .variants
+        .iter()
+        .map(|v| format!("{} in {}", plain_way(&sanitize(&v.label, 80)), v.members))
+        .collect();
+    // The recipe names its two largest ways: the units of the others are counted, so
+    // the line adds up to its total.
+    let named: usize = c.variants.iter().map(|v| v.members).sum();
+    let other = c
+        .total
+        .saturating_sub(named + c.identified + c.none + c.unknown);
+    if other > 0 {
+        parts.push(format!("other ways in {other}"));
+    }
+    if c.identified > 0 {
+        parts.push(format!(
+            "caller known, no one turned away in {}",
+            c.identified
+        ));
+    }
+    if c.none > 0 {
+        parts.push(format!("nothing found in {}", c.none));
+    }
+    if c.unknown > 0 {
+        parts.push(format!("could not tell in {}", c.unknown));
+    }
+    if parts.is_empty() {
+        return None;
+    }
+    Some(format!(
+        "{:<12} {} (of {})",
+        format!("{}:", plain_concern(&c.concern)),
+        parts.join("; "),
+        c.total
+    ))
+}
+
+/// One finding for the first run, in a newcomer's words. `None` for what a person
+/// settles in `.drift/config.yaml` (an unknown instrument): the first run points at
+/// `drift practices --hints` for those.
+fn first_run_finding(r: &PracticesReport, f: &Finding) -> Option<String> {
+    let label = |vid: &str| {
+        r.concerns
+            .iter()
+            .find(|c| c.id == f.concern)
+            .and_then(|c| c.variants.iter().find(|v| v.id == vid))
+            .map(|v| plain_way(&sanitize(&v.label, 100)))
+            .unwrap_or_default()
+    };
+    let pkg = match f.package.as_deref() {
+        Some("") | None => String::new(),
+        Some(p) => format!(" in {}", sanitize(p, 80)),
+    };
+    let eg = f
+        .examples
+        .first()
+        .map(|e| format!(" (e.g. {})", at(e)))
+        .unwrap_or_default();
+    let places = |n: usize| if n == 1 { "place" } else { "places" };
+    Some(match f.kind {
+        FindingKind::UnscopedKey => {
+            let key = sanitize(f.key.as_deref().unwrap_or_default(), 80);
+            format!(
+                "{} signed-in entry point(s){pkg} take `{key}` from the request and nothing read checks it is the caller's own, so a signed-in caller can name any {key}{eg}",
+                f.members
+            )
+        }
+        FindingKind::UnexplainedSplit => format!(
+            "{}{pkg}: two ways side by side, {} and {} ({} {}), and nothing sets them apart{eg}",
+            plain_concern(&f.concern),
+            label(&f.variants[0]),
+            label(&f.variants[1]),
+            f.members,
+            places(f.members),
+        ),
+        FindingKind::None => format!(
+            "{}{pkg}: {}, in {} {}{eg}",
+            plain_concern(&f.concern),
+            label(&f.variants[0]),
+            f.members,
+            places(f.members),
+        ),
+        FindingKind::DuplicateHelper => {
+            let name = sanitize(f.key.as_deref().unwrap_or_default(), 80);
+            let at: Vec<String> = f
+                .copies
+                .iter()
+                .take(2)
+                .map(|c| format!("{}:{}", sanitize(&c.path, 160), c.line))
+                .collect();
+            format!(
+                "`{name}` is written {} times and the copies make the same calls ({})",
+                f.members,
+                at.join("; ")
+            )
+        }
+        FindingKind::Unknown => return None,
+    })
+}
+
+/// What `drift init` leads with: what the code does at its entry points, by kind, and
+/// what to look at first. Facts read from the code, whatever conventions were mined
+/// or accepted. Empty when the map knows no entry point and has no finding.
+pub fn render_first_run(r: &PracticesReport) -> String {
+    let mut out = String::new();
+    let recipes: Vec<(&Recipe, Vec<String>)> = r
+        .recipes
+        .iter()
+        .map(|rc| {
+            (
+                rc,
+                rc.concerns
+                    .iter()
+                    .filter_map(first_run_concern)
+                    .collect::<Vec<_>>(),
+            )
+        })
+        .filter(|(_, lines)| !lines.is_empty())
+        .collect();
+    if !recipes.is_empty() {
+        let _ = writeln!(
+            out,
+            "What the code does (read from the code: facts, not rules)"
+        );
+        for (rc, lines) in recipes.iter().take(FIRST_RUN_RECIPES) {
+            // `http entry points in .` is the root package's: said without the dot.
+            let label = match rc.package.is_empty() {
+                true => rc.label.strip_suffix(" in .").unwrap_or(&rc.label),
+                false => &rc.label,
+            };
+            let _ = writeln!(out, "  {} {}", rc.population, sanitize(label, 160));
+            for l in lines {
+                let _ = writeln!(out, "    {l}");
+            }
+        }
+        if recipes.len() > FIRST_RUN_RECIPES {
+            let _ = writeln!(
+                out,
+                "  ... and {} more kind(s) of entry point: `drift practices`",
+                recipes.len() - FIRST_RUN_RECIPES
+            );
+        }
+    }
+    let mut ranked: Vec<&Finding> = r.findings.iter().collect();
+    ranked.sort_by_key(|f| first_run_rank(f));
+    // No more than two of a kind before the others have had their turn: a
+    // repository of many packages would list one thing five times.
+    let mut seen: std::collections::BTreeMap<u8, usize> = std::collections::BTreeMap::new();
+    let (first, later): (Vec<&Finding>, Vec<&Finding>) = ranked.into_iter().partition(|f| {
+        let n = seen.entry(first_run_rank(f)).or_default();
+        *n += 1;
+        *n <= 2
+    });
+    let findings: Vec<String> = first
+        .into_iter()
+        .chain(later)
+        .filter_map(|f| first_run_finding(r, f))
+        .collect();
+    if !findings.is_empty() {
+        if !out.is_empty() {
+            out.push('\n');
+        }
+        let _ = writeln!(out, "Worth a look first");
+        for (i, f) in findings.iter().take(FIRST_RUN_FINDINGS).enumerate() {
+            let _ = writeln!(out, "  {}. {f}", i + 1);
+        }
+        let more = match findings.len().saturating_sub(FIRST_RUN_FINDINGS) {
+            0 => String::new(),
+            n => format!("{n} more in `drift practices`. "),
+        };
+        let _ = writeln!(
+            out,
+            "  {more}`drift security` lists every entry point with its guard and what it reaches."
+        );
+    }
+    out
+}
+
 /// One recipe concern for an agent: known variants only, each with a member to copy.
 /// `None` when nothing is known.
 fn agent_concern(c: &RecipeConcern) -> Option<String> {
@@ -681,4 +924,191 @@ pub(super) fn package_line_of(r: &PracticesReport, package: &str) -> Option<Stri
             parts.join("; ")
         )
     })
+}
+
+#[cfg(test)]
+mod first_run_tests {
+    use super::*;
+
+    fn variant(id: &str, label: &str) -> Variant {
+        Variant {
+            id: id.into(),
+            label: label.into(),
+            kind: VariantKind::Known,
+            ..Default::default()
+        }
+    }
+
+    fn finding(kind: FindingKind, concern: &str, package: &str, variants: &[&str]) -> Finding {
+        Finding {
+            kind,
+            concern: concern.into(),
+            package: Some(package.into()),
+            variants: variants.iter().map(|v| v.to_string()).collect(),
+            members: 2,
+            examples: vec![Example {
+                path: format!("{package}/a.ts"),
+                symbol: "GET".into(),
+                line: 3,
+            }],
+            ..Default::default()
+        }
+    }
+
+    fn recipe(package: &str, population: usize) -> Recipe {
+        Recipe {
+            package: package.into(),
+            role: "http".into(),
+            label: format!(
+                "http entry points in {}",
+                if package.is_empty() { "." } else { package }
+            ),
+            population,
+            concerns: vec![
+                RecipeConcern {
+                    concern: AUTHN.into(),
+                    total: population,
+                    variants: vec![RecipeVariant {
+                        id: "P-a".into(),
+                        label: "body call requireUser".into(),
+                        members: population - 4,
+                        share: 0.0,
+                    }],
+                    none: 2,
+                    unknown: 1,
+                    ..Default::default()
+                },
+                RecipeConcern {
+                    concern: ERRORS.into(),
+                    total: population,
+                    variants: vec![RecipeVariant {
+                        id: "P-b".into(),
+                        label: "bubble framework_default".into(),
+                        members: population,
+                        share: 1.0,
+                    }],
+                    ..Default::default()
+                },
+            ],
+            ..Default::default()
+        }
+    }
+
+    /// Nothing known: nothing printed, so `drift init` goes straight to conventions.
+    #[test]
+    fn an_empty_map_prints_nothing() {
+        assert_eq!(render_first_run(&PracticesReport::default()), "");
+    }
+
+    /// The recipes in a newcomer's words, the root package without its dot, and no
+    /// more than [`FIRST_RUN_RECIPES`] of them.
+    #[test]
+    fn the_map_is_counts_in_plain_words() {
+        let r = PracticesReport {
+            recipes: vec![
+                recipe("", 10),
+                recipe("apps/a", 9),
+                recipe("apps/b", 8),
+                recipe("apps/c", 7),
+                recipe("apps/d", 6),
+            ],
+            ..Default::default()
+        };
+        let out = render_first_run(&r);
+        assert!(
+            out.starts_with(
+                "What the code does (read from the code: facts, not rules)\n  10 http entry points\n    sign-in:     calls requireUser in 6; other ways in 1; nothing found in 2; could not tell in 1 (of 10)\n    errors:      left to the framework in 10 (of 10)\n  9 http entry points in apps/a\n"
+            ),
+            "{out}"
+        );
+        assert!(
+            out.ends_with("  ... and 2 more kind(s) of entry point: `drift practices`\n"),
+            "{out}"
+        );
+        assert!(!out.contains("apps/c"), "{out}");
+        assert!(!out.contains("Worth a look first"), "{out}");
+    }
+
+    /// What a signed-in caller can reach first, then entry points with no sign-in,
+    /// then the rest; at most two of a kind before another kind has had its turn; an
+    /// unknown instrument is `drift practices --hints`', never listed here.
+    #[test]
+    fn findings_are_ranked_by_what_they_cost_and_capped() {
+        let split = |p: &str| {
+            finding(
+                FindingKind::UnexplainedSplit,
+                DATA_ACCESS,
+                p,
+                &["P-x", "P-y"],
+            )
+        };
+        let none = |c: &str, p: &str| finding(FindingKind::None, c, p, &["P-n"]);
+        let mut key = finding(FindingKind::UnscopedKey, AUTHZ, "api", &[]);
+        key.key = Some("orgId".into());
+        let r = PracticesReport {
+            concerns: vec![
+                ConcernReport {
+                    id: DATA_ACCESS.into(),
+                    variants: vec![
+                        variant("P-x", "service pg"),
+                        variant("P-y", "entry direct pg"),
+                    ],
+                    ..Default::default()
+                },
+                ConcernReport {
+                    id: AUTHN.into(),
+                    variants: vec![variant("P-n", basis::AUTHN_NONE)],
+                    ..Default::default()
+                },
+                ConcernReport {
+                    id: VALIDATION.into(),
+                    variants: vec![variant("P-n", "reads input, nothing validates it")],
+                    ..Default::default()
+                },
+            ],
+            findings: vec![
+                finding(FindingKind::Unknown, AUTHN, "p0", &[]),
+                split("p1"),
+                none(AUTHN, "p2"),
+                none(AUTHN, "p3"),
+                none(AUTHN, "p4"),
+                none(VALIDATION, "p5"),
+                key,
+                split("p6"),
+            ],
+            ..Default::default()
+        };
+        let out = render_first_run(&r);
+        let lines: Vec<&str> = out.lines().collect();
+        assert_eq!(lines[0], "Worth a look first", "{out}");
+        assert!(
+            lines[1].starts_with(
+                "  1. 2 signed-in entry point(s) in api take `orgId` from the request"
+            ),
+            "{out}"
+        );
+        assert_eq!(
+            lines[2],
+            "  2. sign-in in p2: no guard found in what Drift read, in 2 places (e.g. p2/a.ts:3 GET)",
+            "{out}"
+        );
+        assert!(lines[3].starts_with("  3. sign-in in p3:"), "{out}");
+        // The third entry point without sign-in waits for the other kinds.
+        assert!(
+            lines[4].starts_with("  4. validation in p5: reads input, nothing validates it"),
+            "{out}"
+        );
+        assert_eq!(
+            lines[5],
+            "  5. data access in p1: two ways side by side, service pg and entry direct pg (2 places), and nothing sets them apart (e.g. p1/a.ts:3 GET)",
+            "{out}"
+        );
+        assert_eq!(
+            lines[6],
+            "  2 more in `drift practices`. `drift security` lists every entry point with its guard and what it reaches.",
+            "{out}"
+        );
+        assert_eq!(lines.len(), 7, "{out}");
+        assert!(!out.contains("p0"), "{out}");
+    }
 }

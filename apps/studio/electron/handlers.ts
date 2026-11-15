@@ -41,6 +41,21 @@ const MAX_POLICY = 16 * 1024 * 1024;
 /** What the Studio says when the binary predates `drift practices` (round 13). */
 export const NO_PRACTICES = "this drift binary has no `practices` command: the practice map needs a Drift from round 13 or newer (choose one in Settings)";
 
+/**
+ * What the toast shows of `drift init`, as Drift printed it: what was read, the first
+ * line of its `Conventions` section and what was written. The screen leads with the
+ * practice map, which the Practices view shows in full. Output of another shape (an
+ * older binary) is shown by its first three lines, as before.
+ */
+export function initSummary(stdout: string): string {
+  const lines = stdout.trim().split("\n");
+  const heading = lines.indexOf("Conventions");
+  const picked = [lines[0], heading >= 0 ? lines[heading + 1] : undefined, lines.find((l) => l.startsWith("Wrote "))]
+    .map((l) => l?.trim())
+    .filter((l): l is string => !!l);
+  return heading >= 0 && picked.length > 1 ? picked.join("\n") : lines.slice(0, 3).join("\n");
+}
+
 export class StudioMain {
   private aborts = new Map<string, AbortController>();
   private scanned = new Map<string, Set<string>>();
@@ -369,7 +384,7 @@ export class StudioMain {
   async init(r: RepoRef) {
     const root = this.repo(r);
     const res = await this.run(root, { op: "init" });
-    return res.stdout.trim().split("\n").slice(0, 3).join("\n");
+    return initSummary(res.stdout);
   }
 
   // ---------- reads ----------

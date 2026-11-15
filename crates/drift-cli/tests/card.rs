@@ -251,7 +251,9 @@ fn the_card_states_the_strong_regularities_of_code_that_is_no_entry_point() {
             let (ok, out, err) = drift(r, &["--no-cache", "init"]);
             assert!(ok, "{err}");
             assert!(
-                out.contains("1 mined card(s) withheld by the show policy"),
+                out.contains(
+                    "Drift found 1 candidate and none has a track record strong enough to propose"
+                ),
                 "{out}"
             );
             let yaml = std::fs::read_to_string(r.join(".drift/conventions.yaml")).unwrap();
