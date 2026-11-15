@@ -16,15 +16,28 @@
 //! repository that returns the whole of what such a call gave stands for that
 //! call, with what it withholds on the way.
 //!
+//! In Python the fields are chosen by a class beside the body, and that class is
+//! what is read ([`classes`]):
+//!
+//! - a class over a model (`class Meta: model = User`, a serializer, a form, a
+//!   filter set) that takes the whole of it (`fields = "__all__"`, or `exclude`
+//!   and so everything else), where another class of the same kind over the same
+//!   model withholds a field (`exclude`, a field declared `write_only`);
+//! - a route whose declared response is the class the rows are read of
+//!   (`response_model=User`, `-> User`), where the declared response of another
+//!   route is that class with fields left out (`UserPublic`: every field it has
+//!   is one of `User`'s, and it shares a base with it or is declared where rows
+//!   of `User` are read).
+//!
 //! A fact for a person to read: the field may be withheld elsewhere for a reason
-//! that does not hold here (another caller, another purpose). TypeScript and
-//! JavaScript only; a serializer or a response model that chooses the fields
-//! outside the body is not read.
+//! that does not hold here (another caller, another purpose). A serializer or a
+//! schema of TypeScript that chooses the fields outside the body is not read, nor
+//! a Python route that declares no response and returns the row itself.
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use drift_core::RepoFacts;
-use drift_core::controls::{ARG_VALUE, RETURNS_WHOLE, SENDS_WHOLE, WITHHOLDS};
+use drift_core::controls::{ARG_VALUE, RETURNS_WHOLE, ROWS, SENDS_WHOLE, WITHHOLDS};
+use drift_core::{RepoFacts, ResponseVia, Symbol, SymbolKind, WrapKind};
 use serde::Serialize;
 
 /// How many functions a whole row is followed through.
@@ -38,9 +51,11 @@ pub struct WholeRow {
     pub path: String,
     pub line: u32,
     pub symbol: String,
-    /// The rows, by the name the code reads them under (`user`).
+    /// The rows, by the name the code reads them under (`user`), or by the class
+    /// they are read of (`app/models.py#User`).
     pub rows: String,
-    /// The call that handed them back, as the body writes it.
+    /// The call that handed them back, as the body writes it, or what makes the
+    /// class the whole of the rows (`fields = "__all__"`, `response_model`).
     pub from: String,
     /// The fields other code withholds of these rows and this body does not.
     pub fields: Vec<String>,
@@ -132,6 +147,15 @@ fn rows_of(callee: &str) -> Option<String> {
 /// `entries` are the entry points (path, symbol): what one of them returns is
 /// what the caller is sent.
 pub fn read(repo: &RepoFacts, entries: &BTreeSet<(String, String)>) -> Vec<WholeRow> {
+    let mut out = bodies(repo, entries);
+    out.extend(classes(repo, entries));
+    out.sort();
+    out
+}
+
+/// What the bodies say: one sends whole what a call handed back, another
+/// withholds a field of the same rows.
+fn bodies(repo: &RepoFacts, entries: &BTreeSet<(String, String)>) -> Vec<WholeRow> {
     let mut bodies: BTreeMap<String, Body> = BTreeMap::new();
     for f in &repo.files {
         if crate::roles::is_test_path(&f.path) {
@@ -303,6 +327,292 @@ pub fn read(repo: &RepoFacts, entries: &BTreeSet<(String, String)>) -> Vec<Whole
             row
         })
         .collect()
+}
+
+/// How many bases a class is followed through.
+const MAX_BASES: usize = 8;
+
+/// A class of the repository, with what its bases give it.
+struct Class<'a> {
+    path: &'a str,
+    sym: &'a Symbol,
+    /// The classes of the repository it extends, nearest first, itself not among
+    /// them.
+    bases: Vec<String>,
+    /// What it extends that is no class of the repository (`pkg:rest_framework#
+    /// serializers.ModelSerializer`): what kind of class it is.
+    roots: BTreeSet<String>,
+}
+
+fn meta<'a>(sym: &'a Symbol, key: &'a str) -> impl Iterator<Item = &'a str> {
+    sym.meta
+        .iter()
+        .filter_map(move |m| m.strip_prefix(key)?.strip_prefix('='))
+}
+
+/// The fields a class body declares: what it binds that is no method.
+fn declared(sym: &Symbol) -> impl Iterator<Item = &str> {
+    sym.declares
+        .iter()
+        .filter_map(|d| d.split_once('=').map(|(name, _)| name))
+        .filter(|name| !name.is_empty() && !sym.members.iter().any(|m| m.name == *name))
+}
+
+/// What the classes say (Python): a class over a model that takes the whole of
+/// it where another of its kind withholds a field, and a route whose declared
+/// response is the class its rows are read of where another route's is that
+/// class with fields left out.
+fn classes(repo: &RepoFacts, entries: &BTreeSet<(String, String)>) -> Vec<WholeRow> {
+    let symbols: BTreeMap<String, (&str, &Symbol)> = repo
+        .files
+        .iter()
+        .filter(|f| !crate::roles::is_test_path(&f.path))
+        .flat_map(|f| {
+            f.symbols
+                .iter()
+                .filter(|s| s.kind == SymbolKind::Class)
+                .map(move |s| (format!("{}#{}", f.path, s.name), (f.path.as_str(), s)))
+        })
+        .collect();
+    let classes: BTreeMap<&str, Class> = symbols
+        .iter()
+        .map(|(key, (path, sym))| {
+            let (mut bases, mut roots) = (Vec::new(), BTreeSet::new());
+            let mut next: Vec<&Symbol> = vec![sym];
+            while let Some(s) = next.pop() {
+                for w in s.wraps.iter().filter(|w| w.kind == WrapKind::Extends) {
+                    match symbols.get(&w.wrapper) {
+                        Some((_, base)) => {
+                            if w.wrapper != *key
+                                && !bases.contains(&w.wrapper)
+                                && bases.len() < MAX_BASES
+                            {
+                                bases.push(w.wrapper.clone());
+                                next.push(base);
+                            }
+                        }
+                        None => {
+                            roots.insert(w.wrapper.clone());
+                        }
+                    }
+                }
+            }
+            (
+                key.as_str(),
+                Class {
+                    path,
+                    sym,
+                    bases,
+                    roots,
+                },
+            )
+        })
+        .collect();
+    // A class with the classes it extends, itself first.
+    let line = |key: &str| -> Vec<&Class> {
+        classes
+            .get(key)
+            .into_iter()
+            .flat_map(|c| {
+                std::iter::once(c).chain(c.bases.iter().filter_map(|b| classes.get(b.as_str())))
+            })
+            .collect()
+    };
+    // What a class never gives back of its fields, by how they are declared.
+    let hidden = |key: &str| -> BTreeSet<&str> {
+        line(key)
+            .into_iter()
+            .flat_map(|c| meta(c.sym, "hidden"))
+            .collect()
+    };
+    let mut out: Vec<WholeRow> = Vec::new();
+    let mut list = |c: &Class,
+                    line_no: u32,
+                    symbol: &str,
+                    rows: &str,
+                    from: &str,
+                    missing: BTreeMap<&str, BTreeSet<String>>| {
+        if missing.is_empty() {
+            return;
+        }
+        let at: BTreeSet<&String> = missing.values().flatten().collect();
+        out.push(WholeRow {
+            path: c.path.to_string(),
+            line: line_no,
+            symbol: symbol.to_string(),
+            rows: rows.to_string(),
+            from: from.to_string(),
+            fields: missing.keys().map(|f| f.to_string()).collect(),
+            withheld_at: at.iter().take(SHOWN).map(|s| s.to_string()).collect(),
+            withheld_count: at.len(),
+        });
+    };
+
+    // A class over a model. Model -> the classes over it.
+    let mut over: BTreeMap<&str, Vec<(&str, &Class)>> = BTreeMap::new();
+    for (key, c) in &classes {
+        if let Some(model) = meta(c.sym, "model").next() {
+            over.entry(model).or_default().push((key, c));
+        }
+    }
+    for (model, group) in &over {
+        // What each class of the group withholds of the model: what `exclude`
+        // names, and a field of the model it declares as never given back (a
+        // field of its own that takes input says nothing of the model).
+        let of_model: BTreeSet<&str> = line(model)
+            .into_iter()
+            .flat_map(|c| declared(c.sym))
+            .collect();
+        let left: Vec<BTreeSet<&str>> = group
+            .iter()
+            .map(|(key, c)| {
+                meta(c.sym, "exclude")
+                    .chain(hidden(key).into_iter().filter(|f| of_model.contains(f)))
+                    .collect()
+            })
+            .collect();
+        for (i, (_, c)) in group.iter().enumerate() {
+            let all = meta(c.sym, "fields").any(|f| f == "*");
+            if !all && meta(c.sym, "exclude").next().is_none() {
+                continue;
+            }
+            let mut missing: BTreeMap<&str, BTreeSet<String>> = BTreeMap::new();
+            for (j, (other, o)) in group.iter().enumerate() {
+                // Of the same kind: a form says nothing of what a serializer gives.
+                let kin = c.roots.is_empty() && o.roots.is_empty()
+                    || c.roots.intersection(&o.roots).next().is_some();
+                if i == j || !kin {
+                    continue;
+                }
+                for f in left[j].difference(&left[i]) {
+                    missing.entry(f).or_default().insert(other.to_string());
+                }
+            }
+            let from = match all {
+                true => "fields = \"__all__\"",
+                false => "exclude",
+            };
+            list(c, c.sym.line, &c.sym.name, model, from, missing);
+        }
+    }
+
+    // The classes rows are read of, with their fields: a model's own, and what
+    // its bases declare.
+    let tables: BTreeMap<String, BTreeSet<&str>> = repo
+        .models
+        .iter()
+        .filter_map(|m| {
+            let key = format!("{}#{}", m.path, m.name);
+            let c = classes.get(key.as_str())?;
+            let fields = m
+                .fields
+                .iter()
+                .map(String::as_str)
+                .chain(
+                    c.bases
+                        .iter()
+                        .filter_map(|b| classes.get(b.as_str()))
+                        .flat_map(|b| declared(b.sym)),
+                )
+                .collect();
+            Some((key, fields))
+        })
+        .collect();
+    if tables.is_empty() {
+        return out;
+    }
+    // The responses routes declare: the class, and the classes the declaring
+    // bodies read rows of.
+    let mut declared_by: BTreeMap<&str, BTreeSet<&str>> = BTreeMap::new();
+    let mut senders: Vec<(&str, &Symbol, &str, &str)> = Vec::new();
+    for f in &repo.files {
+        if crate::roles::is_test_path(&f.path) {
+            continue;
+        }
+        for s in &f.symbols {
+            let mut said = false;
+            for r in &s.responses {
+                if r.via != ResponseVia::Declared || r.model.is_empty() {
+                    continue;
+                }
+                said = true;
+                if tables.contains_key(&r.model) {
+                    senders.push((&f.path, s, &r.model, "response_model"));
+                    continue;
+                }
+                let reads = declared_by.entry(&r.model).or_default();
+                reads.extend(s.controls.iter().filter_map(|c| {
+                    c.strip_prefix(ROWS)
+                        .map(|rows| rows.split('\t').next().unwrap_or(rows))
+                }));
+            }
+            // What a route with no declared response is annotated to return is
+            // its response.
+            if !said
+                && tables.contains_key(&s.returns_type)
+                && entries.contains(&(f.path.clone(), s.name.clone()))
+            {
+                senders.push((&f.path, s, &s.returns_type, "the return annotation"));
+            }
+        }
+    }
+    // Table -> field -> the declared responses that are the table with the field
+    // left out.
+    let mut withheld: BTreeMap<&str, BTreeMap<&str, BTreeSet<String>>> = BTreeMap::new();
+    for (response, reads) in &declared_by {
+        let Some(r) = classes.get(response) else {
+            continue;
+        };
+        let kept: BTreeSet<&str> = line(response)
+            .into_iter()
+            .flat_map(|c| declared(c.sym))
+            .collect::<BTreeSet<_>>()
+            .difference(&hidden(response))
+            .copied()
+            .collect();
+        if kept.is_empty() {
+            continue;
+        }
+        for (table, fields) in &tables {
+            let t = &classes[table.as_str()];
+            // The same thing with fields left out: every field is the table's,
+            // and the two share a base or the response is declared where the
+            // table's rows are read.
+            let related = r.bases.iter().any(|b| t.bases.contains(b))
+                || r.bases.contains(table)
+                || reads.contains(table.as_str());
+            if !related || !kept.is_subset(fields) {
+                continue;
+            }
+            for f in fields.difference(&kept) {
+                withheld
+                    .entry(table)
+                    .or_default()
+                    .entry(f)
+                    .or_default()
+                    .insert(response.to_string());
+            }
+        }
+    }
+    for (path, s, table, from) in senders {
+        let Some(fields) = withheld.get(table) else {
+            continue;
+        };
+        let kept_back = hidden(table);
+        let missing: BTreeMap<&str, BTreeSet<String>> = fields
+            .iter()
+            .filter(|(f, _)| !kept_back.contains(*f))
+            .map(|(f, at)| (*f, at.clone()))
+            .collect();
+        let c = Class {
+            path,
+            sym: s,
+            bases: Vec::new(),
+            roots: BTreeSet::new(),
+        };
+        list(&c, s.line, &s.name, table, from, missing);
+    }
+    out
 }
 
 #[cfg(test)]

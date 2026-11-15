@@ -247,7 +247,7 @@ They are listed under "CI workflows that run what an outsider wrote" (`workflows
 
 ### Rows sent back whole
 
-No field is sensitive by its name. What a repository does not send back is what its own code takes out before it answers, and `drift security` reads that from the bodies (TypeScript and JavaScript):
+No field is sensitive by its name. What a repository does not send back is what its own code takes out before it answers. In TypeScript and JavaScript `drift security` reads that from the bodies:
 
 - a query told to leave a field out (`findUnique({ where, omit: { passwordHash: true } })`, `select: { passwordHash: false }`);
 - a field taken apart from the rest and never read (`const { passwordHash, ...safe } = user`);
@@ -263,7 +263,18 @@ Rows sent back whole where other code withholds a field of them
 
 The rows are named by where they are read: the name before the method of the call (`user` of `prisma.user.findUnique`, of `ctx.db.user.findMany` and of `tx.user.update`), where that name is a member of something or a module's binding. A function of the repository that returns the whole of what such a call gave stands for that call. A query that chooses its fields (`select`), a response built from parts (`{ id: user.id }`) and what a sanitising function gave are not whole. They are `whole_rows` in `--json` and a kind of the baseline (`whole-row`).
 
-A fact for a person to read: a field may be withheld in one place for a reason that does not hold in another (another caller, another purpose). A repository that withholds nothing anywhere lists nothing, and a serializer or a response schema that chooses the fields outside the body is not read, so a framework that strips fields by a schema may be listed for rows it never sends whole. Python is not read for this yet.
+In Python the fields are chosen by a class beside the body, and the class is what is read:
+
+- **A class over a model that takes the whole of it.** A class whose `Meta` names a model (a serializer, a form, a filter set) and says `fields = "__all__"`, or `exclude` and so everything else, is listed where another class of the same kind over the same model withholds a field: by `exclude`, or by declaring a field of the model as never given back (`password = serializers.CharField(write_only=True)`, `extra_kwargs = {"password": {"write_only": True}}`). Two classes are of a kind where they extend the same class outside the repository, so a form says nothing of what a serializer gives. A class that names its fields is not whole, and a field a serializer declares for input that is none of the model's is not counted.
+- **A route whose declared response is the class its rows are read of.** `response_model=User`, or `-> User` on a route that declares no response, where `User` is a table of the repository and the declared response of another route is that class with fields left out (`UserPublic`): every field it has is one of `User`'s, and it shares a base class with `User` or is declared on a route that reads rows of `User`. A field the table itself never gives back (`hashed_password: str = Field(exclude=True)`) is not listed.
+
+```
+Rows sent back whole where other code withholds a field of them
+  shop/serializers.py:22  AccountAdminSerializer sends shop/models.py#Account rows whole (from fields = "__all__"); withheld elsewhere: api_key, password (by shop/serializers.py#AccountExportSerializer, shop/serializers.py#AccountPublicSerializer, shop/serializers.py#AccountSignupSerializer)
+  app/main.py:24  read_user_raw sends app/models.py#User rows whole (from response_model); withheld elsewhere: hashed_password, reset_token (by app/models.py#UserPublic)
+```
+
+A fact for a person to read: a field may be withheld in one place for a reason that does not hold in another (another caller, another purpose; a serializer that takes a relation as input and never gives it back withholds it all the same). A repository that withholds nothing anywhere lists nothing. Not read: a TypeScript serializer or response schema that chooses the fields outside the body (so a framework that strips fields by a schema may be listed for rows it never sends whole), a `Meta` inherited from a base class, and a Python route that declares no response and returns the row itself.
 
 ### Dependencies nothing fixes
 

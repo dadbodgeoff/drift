@@ -8950,7 +8950,7 @@ pub fn render_at(
                 sanitize(&w.path, 160),
                 w.line,
                 sanitize(&w.symbol, 100),
-                sanitize(&w.rows, 60),
+                sanitize(&w.rows, 160),
                 sanitize(&w.from, 120),
                 sanitize(&w.fields.join(", "), 160),
                 sanitize(&w.withheld_at.join(", "), 240)

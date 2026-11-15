@@ -960,7 +960,12 @@ pub struct Symbol {
     /// Classes only: what the class's own inner `class Meta:` sets (Django models,
     /// forms, filtersets, serializers, graphene types): `model=<canonical class>` for
     /// `model = Site`, and `abstract` / `proxy` for `abstract = True` / `proxy = True`.
-    /// A `Meta` inherited from a base is not recorded. Sorted; recorded by Python only.
+    /// A `Meta` inherited from a base is not recorded. Since Python lowering 72 also
+    /// what the class gives of its fields: `fields=*` for `fields = "__all__"`,
+    /// `exclude=<field>` for each field `exclude` names, and `hidden=<field>` for a
+    /// field declared as never given back (`write_only=True`, by the field or by
+    /// `extra_kwargs`; `Field(exclude=True)`, read with or without a `Meta`).
+    /// Recorded by Python only.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub meta: Vec<String>,
     /// Python classes: the reference each class decorator is called with as its first

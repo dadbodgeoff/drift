@@ -2279,13 +2279,41 @@ impl<'t> Lowerer<'t> {
 
     /// What a class's own `class Meta:` sets: `model` (a reference), and the
     /// `abstract` / `proxy` flags when `True`. The last `Meta` and assignment win, as
-    /// in Python.
+    /// in Python. With them, what the class gives of its fields (lowering 72):
+    /// `fields=*` for `fields = "__all__"`, `exclude=<field>` for each field `exclude`
+    /// names, and `hidden=<field>` for a field declared as never given back
+    /// (`password = CharField(write_only=True)`, `extra_kwargs = {"password":
+    /// {"write_only": True}}`, `hashed_password: str = Field(exclude=True)`; the
+    /// last two are read with or without a `Meta`).
     fn class_meta(&self, body: &[Stmt]) -> Vec<(String, Option<RawRef>)> {
+        // What the class leaves out of what it gives of its fields, read where a
+        // field is declared: `password = CharField(write_only=True)`,
+        // `hashed_password: str = Field(exclude=True)`.
+        let set = |c: &ast::ExprCall, k: &str| matches!(keyword(c, k), Some(Expr::BooleanLiteral(b)) if b.value);
+        let mut left_out: BTreeSet<String> = BTreeSet::new();
+        for s in body {
+            let (target, value) = match s {
+                Stmt::Assign(a) => match a.targets.as_slice() {
+                    [Expr::Name(t)] => (t.id.as_str(), Some(a.value.as_ref())),
+                    _ => continue,
+                },
+                Stmt::AnnAssign(a) => match a.target.as_ref() {
+                    Expr::Name(t) => (t.id.as_str(), a.value.as_deref()),
+                    _ => continue,
+                },
+                _ => continue,
+            };
+            if let Some(Expr::Call(c)) = value
+                && (set(c, "write_only") || set(c, "exclude"))
+            {
+                left_out.insert(format!("hidden={target}"));
+            }
+        }
         let Some(meta) = body.iter().rev().find_map(|s| match s {
             Stmt::ClassDef(m) if m.name.as_str() == "Meta" => Some(m),
             _ => None,
         }) else {
-            return vec![];
+            return left_out.into_iter().map(|k| (k, None)).collect();
         };
         let mut model = None;
         let mut flags = std::collections::BTreeMap::new();
@@ -2295,6 +2323,36 @@ impl<'t> Lowerer<'t> {
                 continue;
             };
             match t.id.as_str() {
+                // The whole of the model, or the whole but what is named.
+                "fields" if string_value(&a.value).as_deref() == Some("__all__") => {
+                    left_out.insert("fields=*".into());
+                }
+                "exclude" => left_out.extend(
+                    elements(&a.value)
+                        .into_iter()
+                        .flatten()
+                        .filter_map(string_value)
+                        .map(|f| format!("exclude={f}")),
+                ),
+                // `extra_kwargs = {"password": {"write_only": True}}`.
+                "extra_kwargs" => {
+                    if let Expr::Dict(d) = a.value.as_ref() {
+                        for item in &d.items {
+                            let (Some(field), Expr::Dict(opts)) =
+                                (item.key.as_ref().and_then(string_value), &item.value)
+                            else {
+                                continue;
+                            };
+                            if opts.items.iter().any(|o| {
+                                o.key.as_ref().and_then(string_value).as_deref()
+                                    == Some("write_only")
+                                    && matches!(&o.value, Expr::BooleanLiteral(b) if b.value)
+                            }) {
+                                left_out.insert(format!("hidden={field}"));
+                            }
+                        }
+                    }
+                }
                 "model" => {
                     model = match a.value.as_ref() {
                         v @ (Expr::Name(_) | Expr::Attribute(_)) => self.canon(v),
@@ -2316,6 +2374,7 @@ impl<'t> Lowerer<'t> {
         if let Some(m) = model {
             out.push(("model".into(), Some(m)));
         }
+        out.extend(left_out.into_iter().map(|k| (k, None)));
         out
     }
 
