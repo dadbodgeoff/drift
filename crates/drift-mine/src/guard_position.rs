@@ -811,6 +811,21 @@ pub fn reads_to_nothing(
     seen: &mut BTreeSet<String>,
     depth: usize,
 ) -> bool {
+    body_reads_to_nothing(cx, value, false, seen, depth)
+}
+
+/// [`reads_to_nothing`] of a function, or (`held`) of a binding that holds a plain
+/// value ([`drift_core::traits::PLAIN_VALUE`]: an object, a list, a map written in
+/// the module), a method of which is called: what runs is a built-in's method or
+/// a function written in the binding's own value, and the binding's facts are
+/// those of every function written in it.
+fn body_reads_to_nothing(
+    cx: &Cx<'_>,
+    value: &str,
+    held: bool,
+    seen: &mut BTreeSet<String>,
+    depth: usize,
+) -> bool {
     use drift_core::CheckOutcome::{Forbidden, SignInRedirect, Unauthenticated};
     use drift_core::controls;
     let ctx = cx.context();
@@ -826,7 +841,17 @@ pub fn reads_to_nothing(
         return false;
     };
     let short = v.rsplit_once('#').map_or(v.as_str(), |(_, n)| n);
-    if d.kind != SymbolKind::Function || d.name != short {
+    let read = match held {
+        false => d.kind == SymbolKind::Function,
+        true => {
+            matches!(d.kind, SymbolKind::Const | SymbolKind::Variable)
+                && d.traits
+                    .iter()
+                    .any(|t| t == drift_core::traits::PLAIN_VALUE)
+                && d.members.is_empty()
+        }
+    };
+    if !read || d.name != short {
         return false;
     }
     let refuses = d
@@ -885,6 +910,11 @@ fn harmless_call(
                 ))
     };
     if verifies {
+        // Called only where the request carries a credential: a request that
+        // carries none runs past it, whatever it refuses.
+        if recorded.is_some_and(|r| r.given_credential.iter().any(|x| x == callee)) {
+            return true;
+        }
         let swallowed = !body.catches.is_empty()
             && body.catches.iter().all(|k| {
                 k.does
@@ -920,6 +950,18 @@ fn harmless_call(
             (format!("{file}#{name}"), path.len() > name.len())
         })
         .filter(|(_, member)| *member);
+    // A method of a plain value the module holds (`const seen = []`, `const cache =
+    // { get(k) { ... }, put(k, v) { ... } }`; then `seen.forEach(...)`, `cache
+    // .get(token)`): read by what is written in the value.
+    if let Some((binding, _)) = &binding
+        && cx.context().definition(binding).is_some_and(|d| {
+            d.traits
+                .iter()
+                .any(|t| t == drift_core::traits::PLAIN_VALUE)
+        })
+    {
+        return body_reads_to_nothing(cx, binding, true, seen, depth + 1);
+    }
     if let Some((binding, _)) = binding
         && cx.context().definition(&binding).is_some_and(|d| {
             matches!(d.kind, SymbolKind::Const | SymbolKind::Variable)

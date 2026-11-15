@@ -356,6 +356,9 @@ pub struct RawSymbol {
     pub caught: Vec<RawRef>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub caught_params: Vec<String>,
+    /// [`drift_core::SymbolCalls::given_credential`].
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub given_credential: Vec<RawRef>,
     /// [`drift_core::SymbolCalls::verifies`].
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub verifies: Vec<String>,
@@ -1222,6 +1225,9 @@ struct Lowerer<'s> {
     /// ([`drift_core::traits::SCHEMA_VALUE`]): a chain on one (`Base.extend({...})`) is a
     /// schema too.
     schema_values: BTreeSet<String>,
+    /// The bindings of the file that hold a plain value
+    /// ([`drift_core::traits::PLAIN_VALUE`]), by name, as they are declared.
+    plain_values: BTreeSet<String>,
     /// Top-level `const NAME = "TEXT"` bindings whose text could name an environment
     /// variable ([`env_name`]), for `process.env[NAME]`; and the properties of top-level
     /// object literals of such texts, as `DICT.key`, for `process.env[DICT.key]`.
@@ -2049,6 +2055,7 @@ impl<'s> Lowerer<'s> {
             type_imports: BTreeMap::new(),
             typescript: false,
             schema_values: BTreeSet::new(),
+            plain_values: BTreeSet::new(),
             env_consts: BTreeMap::new(),
             env_helpers: BTreeMap::new(),
             env_bound: BTreeSet::new(),
@@ -4117,6 +4124,7 @@ impl<'s> Lowerer<'s> {
                 self.schema_values.insert(name.to_string());
             } else if self.plain_value(init, 0) {
                 sym.traits.push(drift_core::traits::PLAIN_VALUE.to_string());
+                self.plain_values.insert(name.to_string());
             }
             sym.traits.sort();
         }
@@ -4723,6 +4731,7 @@ impl RawSymbol {
             hands_on: false,
             returns_function: false,
             caught: vec![],
+            given_credential: vec![],
             caught_params: vec![],
             verifies: vec![],
             caller_args: vec![],
@@ -4925,6 +4934,12 @@ struct Collector<'l, 's> {
     /// in one and outside any ([`drift_core::SymbolCalls::caught`]), as the facts
     /// write a call (`param:request.jwtVerify` for one through a parameter).
     in_try: u32,
+    /// How many enclosing branches are taken only where a credential the request
+    /// carries is present ([`Collector::credential_present`]), and what is called
+    /// in one and outside any ([`drift_core::SymbolCalls::given_credential`]).
+    cred_present: u32,
+    called_with_credential: BTreeSet<RawRef>,
+    called_without_credential: BTreeSet<RawRef>,
     called_in_try: BTreeSet<RawRef>,
     called_outside: BTreeSet<RawRef>,
     params_in_try: BTreeSet<String>,
@@ -4990,6 +5005,17 @@ struct Collector<'l, 's> {
     /// How many functions with a `this` of their own (a `function`, a class) enclose
     /// the node being walked, below the one the collector was started on.
     own_this: u32,
+    /// The functions written as a property of an object in place, by where each
+    /// starts, with the keys of that object that hold a function; and, for each
+    /// enclosing `function`, those keys where it is one of them (`cache = { get(k) {
+    /// ... }, put(k, v) { this.get(k) } }`: `this.get` is a method written in the
+    /// same value, read with it).
+    object_fns: HashMap<u32, std::rc::Rc<HashSet<String>>>,
+    value_methods: Vec<Option<std::rc::Rc<HashSet<String>>>>,
+    /// Locals bound to a value reached from a parameter by its own members and
+    /// their methods (`const path = req.url.split("?")[0].toLowerCase()`), by the
+    /// parameter's name: a method of one is a method of a value of the parameter.
+    param_values: HashMap<SymbolId, String>,
     /// The functions written inside a function's body under a name of their own
     /// (`function check() {...}`, `const check = () => {...}`), by where they start.
     /// One runs where the body calls it, not where it is written
@@ -5185,6 +5211,9 @@ impl<'l, 's> Collector<'l, 's> {
             continuation_names: Vec::new(),
             hands_on: false,
             in_try: 0,
+            cred_present: 0,
+            called_with_credential: BTreeSet::new(),
+            called_without_credential: BTreeSet::new(),
             called_in_try: BTreeSet::new(),
             called_outside: BTreeSet::new(),
             params_in_try: BTreeSet::new(),
@@ -5207,6 +5236,9 @@ impl<'l, 's> Collector<'l, 's> {
             fn_depth: 0,
             this_methods: None,
             own_this: 0,
+            object_fns: HashMap::new(),
+            value_methods: Vec::new(),
+            param_values: HashMap::new(),
             named_fns: HashMap::new(),
             async_fns: HashSet::new(),
             local_fns: Vec::new(),
@@ -5856,6 +5888,18 @@ impl<'l, 's> Collector<'l, 's> {
                 .next()
                 .is_some_and(|m| drift_core::guard_lists::VERIFIER_MEMBERS.contains(&m))
         };
+        // Of what is called only where a credential is present, what verifies.
+        let without = std::mem::take(&mut self.called_without_credential);
+        sym.given_credential.extend(
+            std::mem::take(&mut self.called_with_credential)
+                .into_iter()
+                .filter(|r| !without.contains(r))
+                .filter(|r| {
+                    matches!(&r.base, RawBase::Import { spec, .. }
+                        if drift_core::guard_lists::verifying_package(spec)
+                            || drift_core::guard_lists::shaped(spec))
+                }),
+        );
         let outside = std::mem::take(&mut self.called_outside);
         sym.caught.extend(
             std::mem::take(&mut self.called_in_try)
@@ -8688,6 +8732,121 @@ impl Collector<'_, '_> {
         reads.found
     }
 
+    /// The parameter a value is reached from by its own members and their methods
+    /// alone (`req.url.split("?")[0].toLowerCase()`, `await req.json()`), or a
+    /// local bound to such a value. None of what another function made of a
+    /// parameter (`makeService(req)`), which is that function's.
+    fn param_chain(&self, e: &Expression) -> Option<String> {
+        let mut at = unwrap_expr(e);
+        loop {
+            at = match at {
+                Expression::AwaitExpression(a) => unwrap_expr(&a.argument),
+                Expression::StaticMemberExpression(m) => unwrap_expr(&m.object),
+                Expression::ComputedMemberExpression(m) => unwrap_expr(&m.object),
+                Expression::CallExpression(c) => match unwrap_expr(&c.callee) {
+                    Expression::StaticMemberExpression(m) => unwrap_expr(&m.object),
+                    _ => return None,
+                },
+                Expression::Identifier(id) => {
+                    let s = self.symbol_of(id)?;
+                    return self
+                        .l
+                        .params
+                        .get(&s)
+                        .map(|(name, _)| name.clone())
+                        .or_else(|| self.param_values.get(&s).cloned());
+                }
+                _ => return None,
+            };
+        }
+    }
+
+    /// A function written in place and given to a method of a value that is data
+    /// (`seen.forEach((fragment) => ...)` on a plain value the file holds,
+    /// `req.body.items.map((item) => ...)` on a value of a parameter): what it is
+    /// called with are members of that data, not the request, the response or a
+    /// continuation. Its parameters are recorded as values of the data
+    /// ([`Collector::param_values`]).
+    fn note_data_callbacks(&mut self, it: &CallExpression) {
+        let Expression::StaticMemberExpression(m) = unwrap_expr(&it.callee) else {
+            return;
+        };
+        let of = self.param_chain(&m.object).or_else(|| {
+            let mut root = unwrap_expr(&m.object);
+            while let Expression::StaticMemberExpression(inner) = root {
+                root = unwrap_expr(&inner.object);
+            }
+            match root {
+                Expression::Identifier(id) => match self.l.resolve_ident(id) {
+                    Some(RawBase::Local(name)) if self.l.plain_values.contains(&name) => Some(name),
+                    _ => None,
+                },
+                _ => None,
+            }
+        });
+        let Some(of) = of else {
+            return;
+        };
+        fn names(p: &BindingPattern, out: &mut Vec<SymbolId>) {
+            match p {
+                BindingPattern::BindingIdentifier(b) => out.extend(b.symbol_id.get()),
+                BindingPattern::AssignmentPattern(a) => names(&a.left, out),
+                BindingPattern::ObjectPattern(o) => {
+                    for prop in &o.properties {
+                        names(&prop.value, out);
+                    }
+                }
+                BindingPattern::ArrayPattern(a) => {
+                    for el in a.elements.iter().flatten() {
+                        names(el, out);
+                    }
+                }
+            }
+        }
+        let mut found = Vec::new();
+        for a in &it.arguments {
+            let params = match a.as_expression().map(unwrap_expr) {
+                Some(Expression::ArrowFunctionExpression(f)) => &f.params,
+                Some(Expression::FunctionExpression(f)) => &f.params,
+                _ => continue,
+            };
+            for item in &params.items {
+                names(&item.pattern, &mut found);
+            }
+        }
+        for s in found {
+            self.param_values.insert(s, of.clone());
+        }
+    }
+
+    /// The test holds only where a credential the request carries is present: it
+    /// is a read of one and nothing else (`if (token)`, `if
+    /// (req.headers.authorization)`), or an `and` one operand of which is (`if
+    /// (token && cache.get(token) === undefined)`). A call given one, a negation
+    /// and an `or` say nothing of the kind.
+    fn credential_present(&self, test: &Expression) -> bool {
+        match peel(test) {
+            Expression::LogicalExpression(l) if l.operator == LogicalOperator::And => {
+                self.credential_present(&l.left) || self.credential_present(&l.right)
+            }
+            e => {
+                let mut at = e;
+                loop {
+                    at = match at {
+                        Expression::StaticMemberExpression(m) => peel(&m.object),
+                        Expression::ComputedMemberExpression(m)
+                            if matches!(peel(&m.expression), Expression::StringLiteral(_)) =>
+                        {
+                            peel(&m.object)
+                        }
+                        Expression::Identifier(_) => break self.credential_read(e),
+                        _ => break false,
+                    };
+                }
+            }
+        }
+    }
+
     /// `e` is what a call or a lookup made of a credential the request carries: a
     /// call given one, or given what another such call made (`await
     /// store.getSession(request.headers.get("cookie"))`, then `await
@@ -11224,6 +11383,7 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             // `require("x")` is an import, not a call worth recording.
             return walk::walk_call_expression(self, it);
         }
+        self.note_data_callbacks(it);
         let kinds = self.l.call_sinks(it);
         // The call is given a value read off a parameter of the function: an
         // operation fed by it ([`drift_core::controls::SINK_FED`]), a callee it is
@@ -11440,6 +11600,11 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             } else {
                 self.called_outside.insert(r.clone());
             }
+            if self.cred_present > 0 {
+                self.called_with_credential.insert(r.clone());
+            } else {
+                self.called_without_credential.insert(r.clone());
+            }
             self.calls.insert(r);
         } else {
             // A member of a parameter (`request.jwtVerify()`), in a `try` or not.
@@ -11454,7 +11619,12 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
                     && !members.is_empty()
                     && members.len() <= MAX_MEMBER_DEPTH
                     && let Some(s) = self.symbol_of(id)
-                    && let Some((name, _)) = self.l.params.get(&s)
+                    && let Some(name) = self
+                        .l
+                        .params
+                        .get(&s)
+                        .map(|(name, _)| name)
+                        .or_else(|| self.param_values.get(&s))
                 {
                     members.reverse();
                     let path: String = members.iter().map(|m| format!(".{m}")).collect();
@@ -11483,11 +11653,18 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
                     self.symbol_of(id)
                         .is_some_and(|s| self.l.params.contains_key(&s))
                 };
+                // The request, the response, the continuation: not what a
+                // callback over data is called with ([`Collector::param_values`]).
+                let handed = |id: &IdentifierReference| {
+                    self.symbol_of(id).is_some_and(|s| {
+                        self.l.params.contains_key(&s) && !self.param_values.contains_key(&s)
+                    })
+                };
                 let given_param = it.arguments.iter().any(|a| match a {
                     Argument::SpreadElement(_) => true,
                     other => matches!(
                         other.as_expression().map(unwrap_expr),
-                        Some(Expression::Identifier(id)) if param(id)
+                        Some(Expression::Identifier(id)) if handed(id)
                     ),
                 });
                 let mut root = unwrap_expr(&it.callee);
@@ -11496,11 +11673,25 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
                     root = unwrap_expr(&m.object);
                     member = true;
                 }
+                // A local that holds a value of a parameter is no service: its
+                // method is a method of that value, as one written on the
+                // parameter's member is.
                 let of_local = member
                     && hands_value_on(it)
                     && matches!(root, Expression::Identifier(id)
-                        if self.symbol_of(id).is_some() && !param(id));
-                if given_param || of_local {
+                        if self.symbol_of(id).is_some_and(|s| !self.param_values.contains_key(&s))
+                            && !param(id));
+                // A method written in the same object as the function that calls
+                // it through `this`: read with the value it is written in.
+                let own_method = matches!(
+                    unwrap_expr(&it.callee),
+                    Expression::StaticMemberExpression(m)
+                        if matches!(unwrap_expr(&m.object), Expression::ThisExpression(_))
+                            && self.value_methods.last().is_some_and(|keys| {
+                                keys.as_ref().is_some_and(|k| k.contains(m.property.name.as_str()))
+                            })
+                );
+                if (given_param && !own_method) || of_local {
                     self.hands_on = true;
                 }
             }
@@ -11747,11 +11938,14 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         // receives.
         let outer = self.enter_fn(it.span.start, later);
         self.own_this += 1;
+        let of_value = self.object_fns.remove(&it.span.start);
+        self.value_methods.push(of_value);
         self.continuation_names
             .push(continuation_params(&it.params));
         self.note_params(&it.params);
         walk::walk_function(self, it, flags);
         self.continuation_names.pop();
+        self.value_methods.pop();
         self.own_this -= 1;
         self.leave_fn(outer);
     }
@@ -11941,7 +12135,10 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         let answers = free && std::ptr::eq(refusing.unwrap(), &it.consequent);
         let (n0, k0) = (self.unauth_notes, self.free_refusal);
         self.free_refusal += u32::from(answers);
+        let present = u32::from(self.credential_present(&it.test));
+        self.cred_present += present;
         self.visit_statement(&it.consequent);
+        self.cred_present -= present;
         self.free_refusal = k0;
         if answers {
             self.unauth_goes_on += self.unauth_notes - n0;
@@ -12183,6 +12380,26 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
 
     fn visit_object_expression(&mut self, it: &ObjectExpression<'a>) {
         self.orm_filter |= self.l.orm_registration(it);
+        // The functions written as its properties, and the keys that hold one.
+        let fns: Vec<(u32, String)> = it
+            .properties
+            .iter()
+            .filter_map(|p| match p {
+                ObjectPropertyKind::ObjectProperty(p) if !p.computed => {
+                    match (unwrap_expr(&p.value), key_name(&p.key)) {
+                        (Expression::FunctionExpression(f), Some(k)) => Some((f.span.start, k)),
+                        _ => None,
+                    }
+                }
+                _ => None,
+            })
+            .collect();
+        if !fns.is_empty() {
+            let keys = std::rc::Rc::new(fns.iter().map(|(_, k)| k.clone()).collect::<HashSet<_>>());
+            for (start, _) in &fns {
+                self.object_fns.insert(*start, keys.clone());
+            }
+        }
         walk::walk_object_expression(self, it);
     }
 
@@ -12482,6 +12699,9 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             }
             if self.reads_own_param(init) {
                 self.own_locals.insert(sym);
+            }
+            if let Some(of) = self.param_chain(init) {
+                self.param_values.insert(sym, of);
             }
             if self.credential_identity(init) {
                 self.cred_locals.insert(sym);

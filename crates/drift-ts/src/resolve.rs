@@ -3204,6 +3204,13 @@ impl<'r> Linker<'r> {
                     .collect();
                 caught.sort();
                 caught.dedup();
+                let mut given_credential: Vec<String> = s
+                    .given_credential
+                    .iter()
+                    .map(|r| self.canon(rel, r))
+                    .collect();
+                given_credential.sort();
+                given_credential.dedup();
                 let mut verifies = s.verifies.clone();
                 verifies.sort();
                 verifies.dedup();
@@ -3214,6 +3221,7 @@ impl<'r> Linker<'r> {
                     hands_on: s.hands_on,
                     returns_function: s.returns_function,
                     caught,
+                    given_credential,
                     verifies,
                     param_flows: s.param_flows,
                 }

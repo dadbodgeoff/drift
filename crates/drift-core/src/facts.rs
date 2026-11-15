@@ -1275,6 +1275,14 @@ pub struct SymbolCalls {
     /// when empty.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub caught: Vec<String>,
+    /// The callees every call of which stands in a branch taken only where a
+    /// credential the request carries was read and is present (`const token =
+    /// req.cookies.token; if (token && ...) { jwt.verify(token, key) }`), as
+    /// [`Symbol::calls`] writes them: a request that carries no credential runs
+    /// none of them, so whatever they refuse, they refuse no one for carrying
+    /// none. Sorted; omitted when empty. TypeScript lowering 76.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub given_credential: Vec<String>,
     /// The calls of a verifying member of a parameter
     /// ([`crate::guard_lists::VERIFIER_MEMBERS`]: `request.jwtVerify()`) outside
     /// any `try`, as `param:<parameter>.<member>`: what it throws leaves the
