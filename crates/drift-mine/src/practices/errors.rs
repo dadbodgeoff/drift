@@ -436,13 +436,16 @@ fn override_answering(
                 }
             }
             Mro::Repo(cid, d) => {
-                if d.declares
-                    .iter()
-                    .any(|x| x.split_once('=').map_or(x.as_str(), |(n, _)| n) == name)
-                {
-                    return Err(unknown(UnknownReason::NotFollowed, &format!("{cid}.{name}")));
-                }
+                // `declares` holds every name the body binds, a `def` too: only a
+                // name bound with no method of it (`dispatch = guard(...)`) is
+                // unread, as `security::lookup` reads it.
                 let Some(m) = d.members.iter().find(|m| m.name == name) else {
+                    if d.declares
+                        .iter()
+                        .any(|x| x.split_once('=').map_or(x.as_str(), |(n, _)| n) == name)
+                    {
+                        return Err(unknown(UnknownReason::NotFollowed, &format!("{cid}.{name}")));
+                    }
                     continue;
                 };
                 let body = own && at == 0;
