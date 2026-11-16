@@ -17,10 +17,20 @@ use crate::roles::{FileKinds, RoleSelector};
 /// still written as version 1, byte for byte. A version-1 file needs no migration: it
 /// reads as a policy without `packages` (each convention's scope is its role's
 /// `package`, as it always was), and the next `drift init` in a workspace writes
-/// version 2.
-pub const POLICY_VERSION: u32 = 2;
+/// version 2. 3: a convention holds a form a Drift that reads up to 2 would read as a
+/// narrower or wider rule than it is, and check wrongly ([`misread_before_forms`]: a
+/// promoted practice that accepts a mechanism whole or any enforcing way). Written only
+/// when one is there ([`written_version`]), so every other file is written as before,
+/// byte for byte; such a Drift refuses a version-3 file instead of checking it wrong.
+pub const POLICY_VERSION: u32 = 3;
 /// The format of a policy without [`ConventionsFile::packages`].
 pub const POLICY_VERSION_SINGLE: u32 = 1;
+/// The format of a policy with [`ConventionsFile::packages`] and no form of
+/// [`POLICY_VERSION_FORMS`].
+pub const POLICY_VERSION_PACKAGES: u32 = 2;
+/// The format of a policy holding a form an older Drift would misread
+/// ([`misread_before_forms`]), with or without packages.
+pub const POLICY_VERSION_FORMS: u32 = 3;
 
 /// How a convention's role selector is read ([`Convention::selector_version`]).
 /// 1: as written before reserved exports had roles of their own: a selector without
@@ -1069,6 +1079,117 @@ fn read_policy_file(p: &Path) -> anyhow::Result<Option<String>> {
     }
 }
 
+/// The one field read before the rest of a policy ([`ConventionsFile::load`]).
+#[derive(Deserialize)]
+struct VersionOnly {
+    version: u32,
+}
+
+/// A policy written in a format newer than this Drift reads ([`POLICY_VERSION`]): the
+/// error [`ConventionsFile::load`] returns for it, so a caller that hides other
+/// policy errors from agents (they can quote the file) can still say this one.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NewerPolicy {
+    /// The policy file, as the error names it.
+    pub path: String,
+    /// The format it says it is in.
+    pub version: u32,
+}
+
+impl NewerPolicy {
+    /// The error as an agent's hook or tool says it: no path (the hook's message is
+    /// cut at 200 characters), no text of the file.
+    pub fn for_agents(&self) -> String {
+        format!(
+            "{CONVENTIONS_FILE} was written by a newer Drift (format {}): upgrade Drift (`drift --version` shows this one); no convention is shown to agents until then",
+            self.version
+        )
+    }
+}
+
+impl std::fmt::Display for NewerPolicy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} was written by a newer Drift (policy format {}; this Drift reads up to {POLICY_VERSION}). Upgrade Drift to the version that wrote it (`drift --version` shows the one installed here; every machine and CI that reads this repository needs it), or restore the file from before that change",
+            self.path, self.version
+        )
+    }
+}
+
+impl std::error::Error for NewerPolicy {}
+
+/// The format `f` is written in: the oldest that holds everything in it, so a file
+/// with none of a newer format's forms is written as before, byte for byte, and stays
+/// readable by every Drift that read it. Without packages, version 1 (a file a person
+/// hand-wrote as 0 keeps it, as it always did); with packages, 2; with a form of
+/// version 3 ([`misread_before_forms`]), 3 either way. Decided from the content on
+/// every write, as the selector version is per convention
+/// ([`selector_version_of`]): a file whose last such form is removed goes back down.
+pub fn written_version(f: &ConventionsFile) -> u32 {
+    let base = if f.packages.is_empty() {
+        f.version.min(POLICY_VERSION_SINGLE)
+    } else {
+        POLICY_VERSION_PACKAGES
+    };
+    if f.conventions.iter().any(misread_before_forms) {
+        base.max(POLICY_VERSION_FORMS)
+    } else {
+        base
+    }
+}
+
+/// Whether a Drift that reads up to [`POLICY_VERSION_PACKAGES`] would read `c` as a
+/// different rule than it is: serde skips a field it does not know, so such a Drift
+/// would parse the file, check the rule without the field, and (when it writes the
+/// file back, `drift init`, `drift review`) drop it. Whatever the status: a proposal or
+/// a rejection read wrong is rewritten wrong too.
+///
+/// Raising the version (the file is refused, "written by a newer Drift"):
+/// - a practice's `any_mechanism`: without it the rule is its `any_of` alone, often
+///   empty, so every unit of the place that uses the mechanism by another instrument
+///   is reported as a violation;
+/// - a practice's `any_enforcing`: the same, for every enforcing way not named;
+/// - a practice's place of a kind other than a package or a directory
+///   ([`place_of_a_new_kind`]): read as the whole directory, a wider place.
+///
+/// Not raising it, because a Drift that skips them checks exactly the same rules:
+/// - [`Convention::from_map`]: says where a proposal came from. A proposal is checked
+///   by nobody until a person accepts it; an accepted one is checked by its rule
+///   (layering is `Rule::Avoids`, which every such Drift knows). Such a Drift has no
+///   staleness to exempt it from ([`crate::check`]'s `settle` reads it only for that).
+///   Rewritten by it, the label is lost: the proposal reads as mined, and an accepted
+///   one can later be called stale, which only ever moves it to advise.
+/// - [`Convention::accepted_evidence`]: a record of what a person saw, read by
+///   nothing that decides a violation. Rewritten by such a Drift, it is lost and the
+///   next `drift init` freezes the evidence of that day instead.
+pub fn misread_before_forms(c: &Convention) -> bool {
+    match &c.rule {
+        Rule::Practice {
+            any_mechanism,
+            any_enforcing,
+            ..
+        } => !any_mechanism.is_empty() || *any_enforcing || place_of_a_new_kind(c),
+        _ => false,
+    }
+}
+
+/// Whether the promoted practice `c` holds in a place of a kind a Drift that reads up
+/// to [`POLICY_VERSION_PACKAGES`] does not know: anything but a package or one
+/// directory of it. Such a Drift reads a practice's place from its role's package and
+/// directory only ([`crate::practices::promote::place_of`]), so it would check one
+/// file's or one route prefix's practice over the whole directory.
+//
+// PLACE STREAM HOOK: when `crate::practices::promote::Place` gains a kind (one file, a
+// route prefix), return true here for a place of that kind, read with
+// `crate::practices::promote::place_of(c)`, e.g.
+// `crate::practices::promote::place_of(c).is_some_and(|p| p.file.is_some())`. Nothing
+// else is needed: `written_version` and its tests (`tests/s18_versions.rs`) take it
+// from here.
+fn place_of_a_new_kind(_c: &Convention) -> bool {
+    false
+}
+
 impl ConventionsFile {
     pub fn load(root: &Path) -> anyhow::Result<Option<Self>> {
         let p = root.join(CONVENTIONS_FILE);
@@ -1078,13 +1199,25 @@ impl ConventionsFile {
         let Some(text) = read_policy_file(&p)? else {
             return Ok(None);
         };
+        // The version first, read alone: a newer Drift's file can hold a rule type or a
+        // shape this one cannot parse, and the person needs to hear "upgrade", not a
+        // parse error. Where even the version cannot be read, the full parse says why.
+        if let Ok(v) = serde_saphyr::from_str::<VersionOnly>(&text)
+            && v.version > POLICY_VERSION
+        {
+            return Err(anyhow::Error::new(NewerPolicy {
+                path: p.display().to_string(),
+                version: v.version,
+            }));
+        }
         let f: Self =
             serde_saphyr::from_str(&text).with_context(|| format!("parsing {}", p.display()))?;
-        anyhow::ensure!(
-            f.version <= POLICY_VERSION,
-            "{} was written by a newer Drift",
-            p.display()
-        );
+        if f.version > POLICY_VERSION {
+            return Err(anyhow::Error::new(NewerPolicy {
+                path: p.display().to_string(),
+                version: f.version,
+            }));
+        }
         let mut f = f;
         // Wiring rules are experimental suggestions: they advise, whatever the file
         // says, until they have been blind-labelled.
@@ -1117,11 +1250,7 @@ impl ConventionsFile {
 
     pub fn save(&self, root: &Path) -> anyhow::Result<()> {
         let mut this = std::borrow::Cow::Borrowed(self);
-        let version = if self.packages.is_empty() {
-            self.version.min(POLICY_VERSION_SINGLE)
-        } else {
-            POLICY_VERSION
-        };
+        let version = written_version(self);
         if version != self.version {
             this.to_mut().version = version;
         }
