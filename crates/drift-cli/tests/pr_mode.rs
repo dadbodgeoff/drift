@@ -770,7 +770,9 @@ fn cross_file_causes_compare_with_the_merge_base() {
         );
         if case == "delete the wrapper" {
             assert!(
-                out.contains("it is wrapped in withAuth, which does not resolve to code Drift read"),
+                out.contains(
+                    "it is wrapped in withAuth, which does not resolve to code Drift read"
+                ),
                 "{case}: {out}"
             );
         }

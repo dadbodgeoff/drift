@@ -681,17 +681,15 @@ fn scan_file_inner(
         let modules: BTreeSet<&str> = copies
             .into_iter()
             .flat_map(|facts| {
-                facts
-                    .imports
-                    .iter()
-                    .map(|i| i.module.as_str())
-                    .chain(facts.symbols.iter().flat_map(|s| {
+                facts.imports.iter().map(|i| i.module.as_str()).chain(
+                    facts.symbols.iter().flat_map(|s| {
                         s.wraps
                             .iter()
                             .map(|w| w.wrapper.as_str())
                             .chain(s.calls.iter().map(String::as_str))
                             .chain(s.throws.iter().map(String::as_str))
-                    }))
+                    }),
+                )
             })
             .map(|r| r.split_once('#').map_or(r, |(m, _)| m))
             .filter(|m| *m != rel)

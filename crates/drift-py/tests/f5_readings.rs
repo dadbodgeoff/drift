@@ -257,10 +257,6 @@ urlpatterns = [
     );
     // The measured build lists no `SignOut.post`: the class itself is the entry
     // point and carries the permission wrap (checked against commit a0779066).
-    assert!(
-        call_wraps(&mined, v, "SignOut")
-            .iter()
-            .any(|w| w == PERM)
-    );
+    assert!(call_wraps(&mined, v, "SignOut").iter().any(|w| w == PERM));
     none_listed_only(&mined);
 }

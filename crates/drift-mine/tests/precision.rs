@@ -3890,7 +3890,11 @@ fn a_sibling_weaker_on_security_never_joins_the_rule() {
     for pkg in [
         "bare", "maybe", "mixed", "public", "admin", "session", "non", "same", "floor",
     ] {
-        for module in ["src/trpc.ts", "src/auth/workspace.ts", "src/auth/session.ts"] {
+        for module in [
+            "src/trpc.ts",
+            "src/auth/workspace.ts",
+            "src/auth/session.ts",
+        ] {
             r.context_files
                 .push(file_with(&format!("{pkg}/{module}"), pkg, Vec::new()));
         }

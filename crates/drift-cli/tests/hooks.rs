@@ -1237,7 +1237,10 @@ fn tiers_order_census_and_guard_review() {
         4,
         "init never blocks: {yaml}"
     );
-    assert!(!yaml.contains("\n  mode: block\n"), "init never blocks: {yaml}");
+    assert!(
+        !yaml.contains("\n  mode: block\n"),
+        "init never blocks: {yaml}"
+    );
 
     let props = census_ids(r);
     let kinds: Vec<(&str, &str)> = props

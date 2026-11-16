@@ -485,7 +485,10 @@ fn drift_check_lists_the_departures_of_the_files_it_looked_at_and_never_fails_on
         ],
         "{all_notes:#?}"
     );
-    assert!(all_notes.iter().all(|n| n["level"] == "note"), "{all_notes:#?}");
+    assert!(
+        all_notes.iter().all(|n| n["level"] == "note"),
+        "{all_notes:#?}"
+    );
     let notes: Vec<&Value> = all_notes
         .iter()
         .filter(|n| {
