@@ -169,6 +169,15 @@ the known fake secrets of the redaction test data.
 ```sh
 npm install --prefix "$RUNNER_TEMP/yaml" --no-save --no-audit --no-fund --ignore-scripts yaml@2.9.1
 node npm/ci-check.mjs "$RUNNER_TEMP/yaml"
+node --test npm/set-version.test.mjs
+```
+
+`release-rehearsal` (pull requests that touch `release.yml`, `npm/`, `Cargo.toml`,
+`Cargo.lock` or the plugin manifests; nightly; on demand):
+
+```sh
+sudo apt-get install -y musl-tools && rustup target add x86_64-unknown-linux-musl
+npm/dry-run.sh
 ```
 
 `studio`:

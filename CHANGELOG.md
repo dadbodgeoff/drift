@@ -173,6 +173,14 @@ main branch.
   `harness` job runs the Python harness tests (`eval/scoreboard`,
   `eval/benchmark`) and `scripts/snapshot-test.sh`. For contributors; nothing
   changes in the `drift` binary.
+- **Release rehearsal:** the release workflow can be run by hand (`gh workflow
+  run release.yml`, `dry_run` on by default): it builds the five targets, the
+  archives and `SHA256SUMS`, packs the npm packages and installs them on Linux
+  x64 and arm64, macOS and Windows, keeps all of it as workflow artifacts, and
+  publishes nothing. Only a pushed `vX.Y.Z` tag releases. npm now publishes the
+  exact tarballs that were install-tested. `node npm/set-version.mjs --check`
+  lists every file whose version disagrees. Archive, checksum and package names
+  are unchanged. For maintainers; nothing in the `drift` binary changed.
 
 ### Changed: the files Drift writes
 

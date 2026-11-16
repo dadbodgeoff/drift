@@ -1,42 +1,85 @@
 name: Release
 
 # Releases are built and published only from CI, never from a laptop.
-# Tag `vX.Y.Z` -> cross-platform binaries -> checksums + build provenance ->
-# GitHub Release -> (after manual approval) npm packages via trusted publishing.
+# Tag `vX.Y.Z` -> cross-platform binaries -> archives, SHA256SUMS -> npm tarballs,
+# installed and run on each OS -> GitHub Release with build provenance -> (after
+# manual approval) npm packages via trusted publishing.
+#
+# Rehearsal: run this workflow by hand (Actions > Release > Run workflow, or
+# `gh workflow run release.yml --ref <branch>`). It runs every job a release runs
+# up to the publish line, at the version in Cargo.toml, and keeps what it built as
+# workflow artifacts (release-archives, npm-tarballs, bin-<target>). It creates no
+# tag, no GitHub Release, no attestation and publishes nothing to npm: the
+# `release` and `npm` jobs run only for a pushed version tag, and a manual run
+# with dry_run unticked is refused.
 
 on:
   push:
     tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Rehearse the release: build, archive, pack and install-test everything, publish nothing. A real release runs only from a pushed vX.Y.Z tag."
+        type: boolean
+        default: true
 
 permissions:
   contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  # The tag, Cargo.toml and the plugin must agree, or npm would publish 0.1.0
-  # wrapping a binary that reports another version (the release job also checks
-  # the built binary's `drift --version`).
+  # The tag, Cargo.toml, Cargo.lock and the plugin must agree, or npm would publish
+  # 0.1.0 wrapping a binary that reports another version (the package job also
+  # checks the built binary's `drift --version`). Also decides whether this run
+  # publishes: only a pushed `v*` tag does.
   verify:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      publish: ${{ steps.version.outputs.publish }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
-      - name: Tag matches the workspace and plugin versions
+      - name: Version and mode
+        id: version
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
         run: |
-          tag="${GITHUB_REF_NAME#v}"
-          cargo_version=$(sed -n '/^\[workspace.package\]/,/^\[/s/^version = "\(.*\)"/\1/p' Cargo.toml)
-          plugin_version=$(node -p 'require("./integrations/claude-code/.claude-plugin/plugin.json").version')
-          echo "tag $tag, Cargo.toml $cargo_version, plugin.json $plugin_version"
-          [ "$tag" = "$cargo_version" ] || { echo "::error::tag v$tag does not match Cargo.toml version $cargo_version"; exit 1; }
-          [ "$tag" = "$plugin_version" ] || { echo "::error::tag v$tag does not match plugin.json version $plugin_version"; exit 1; }
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            case "$GITHUB_REF" in
+              refs/tags/v*) ;;
+              *) echo "::error::a release runs only from a vX.Y.Z tag, not $GITHUB_REF"; exit 1 ;;
+            esac
+            version="${GITHUB_REF_NAME#v}"
+            publish=true
+          elif [ "$DRY_RUN" = true ]; then
+            version=$(node npm/set-version.mjs --print)
+            publish=false
+          else
+            echo "::error::a manual run is always a rehearsal: a real release runs only from a pushed tag (git tag vX.Y.Z && git push origin vX.Y.Z)"
+            exit 1
+          fi
+          node npm/set-version.mjs --check "$version"
+          echo "version $version, tag v$version, publish $publish"
+          {
+            echo "version=$version"
+            echo "tag=v$version"
+            echo "publish=$publish"
+          } >> "$GITHUB_OUTPUT"
 
   build:
     needs: verify
     strategy:
-      fail-fast: true
+      # A rehearsal should show every target that fails, not only the first.
+      fail-fast: false
       matrix:
         include:
           - { target: x86_64-unknown-linux-musl, os: ubuntu-latest, exe: drift }
@@ -46,6 +89,14 @@ jobs:
           - { target: aarch64-apple-darwin, os: macos-latest, exe: drift }
           - { target: x86_64-pc-windows-msvc, os: windows-latest, exe: drift.exe }
     runs-on: ${{ matrix.os }}
+    env:
+      # `census --json` and the review log name the commit a binary was built from.
+      DRIFT_BUILD_COMMIT: ${{ github.sha }}
+      # blake3 compiles C (NEON) for aarch64. For aarch64-unknown-linux-musl the cc
+      # crate asks for `aarch64-linux-musl-gcc`, which Ubuntu's musl-tools does not
+      # ship; its `musl-gcc` is that compiler on an arm64 runner. (x86_64 musl finds
+      # `musl-gcc` by itself.) Ignored by every other target.
+      CC_aarch64_unknown_linux_musl: musl-gcc
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
@@ -67,15 +118,20 @@ jobs:
           name: bin-${{ matrix.target }}
           path: dist/
           if-no-files-found: error
+          retention-days: ${{ needs.verify.outputs.publish == 'true' && 90 || 14 }}
 
-  release:
-    needs: build
+  # Archives, SHA256SUMS and the npm tarballs, from the five binaries. Writes
+  # nothing outside this run: everything goes up as workflow artifacts.
+  package:
+    needs: [verify, build]
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      id-token: write
-      attestations: write
+    env:
+      RELEASE_TAG: ${{ needs.verify.outputs.tag }}
+      VERSION: ${{ needs.verify.outputs.version }}
     steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: bin-*
@@ -85,17 +141,76 @@ jobs:
         run: |
           chmod +x dist/x86_64-unknown-linux-musl/drift
           said=$(dist/x86_64-unknown-linux-musl/drift --version)
-          [ "$said" = "drift ${GITHUB_REF_NAME#v}" ] || { echo "::error::the binary says '$said', the tag is $GITHUB_REF_NAME"; exit 1; }
+          [ "$said" = "drift ${RELEASE_TAG#v}" ] || { echo "::error::the binary says '$said', the tag is $RELEASE_TAG"; exit 1; }
       - name: Archive and checksum
+        run: bash npm/archive.sh "$RELEASE_TAG" dist out
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+      - name: Build and pack the npm packages
         run: |
-          mkdir -p out
-          # Artifacts lose the executable bit between jobs; restore it before archiving.
-          find dist -type f -exec chmod +x {} +
-          for dir in dist/*/; do
-            target=$(basename "$dir")
-            tar -C "$dir" -czf "out/drift-${GITHUB_REF_NAME}-${target}.tar.gz" .
-          done
-          (cd out && sha256sum *.tar.gz > SHA256SUMS)
+          node npm/build.mjs "$VERSION" dist npm-out
+          bash npm/pack.sh npm-out npm-tarballs
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-archives
+          path: out/
+          if-no-files-found: error
+          retention-days: ${{ needs.verify.outputs.publish == 'true' && 90 || 14 }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: npm-tarballs
+          path: npm-tarballs/
+          if-no-files-found: error
+          retention-days: ${{ needs.verify.outputs.publish == 'true' && 90 || 14 }}
+
+  # The packed tarballs, installed offline into a fresh project and run through the
+  # npm launcher on each OS there is a runner for (darwin-x64 has none: it is
+  # cross-compiled and not run).
+  install-test:
+    needs: [verify, package]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      VERSION: ${{ needs.verify.outputs.version }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: npm-tarballs
+          path: npm-tarballs
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+      - name: Install from the tarballs and run the launcher
+        run: bash npm/install-test.sh npm-tarballs "$VERSION" "$RUNNER_TEMP/install-test"
+
+  # Everything below publishes. It runs only for a pushed version tag.
+  release:
+    needs: [verify, package, install-test]
+    if: needs.verify.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      RELEASE_TAG: ${{ needs.verify.outputs.tag }}
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-archives
+          path: out
+      - name: Checksums still match
+        run: cd out && sha256sum -c SHA256SUMS
       - name: Attest build provenance (SLSA)
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
@@ -106,52 +221,63 @@ jobs:
         run: |
           pre=""
           # A `-` before any `+build` metadata marks a semver prerelease.
-          case "${GITHUB_REF_NAME%%+*}" in *-*) pre="--prerelease" ;; esac
-          gh release create "$GITHUB_REF_NAME" out/* --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes --verify-tag $pre
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: release-binaries
-          path: dist/
+          case "${RELEASE_TAG%%+*}" in *-*) pre="--prerelease" ;; esac
+          gh release create "$RELEASE_TAG" out/* --repo "$GITHUB_REPOSITORY" --title "$RELEASE_TAG" --generate-notes --verify-tag $pre
 
   npm:
-    needs: release
+    needs: [verify, release]
+    if: needs.verify.outputs.publish == 'true'
     runs-on: ubuntu-latest
     # A person approves every npm publish (Settings > Environments > npm).
     environment: npm
     permissions:
       contents: read
       id-token: write
+    env:
+      RELEASE_TAG: ${{ needs.verify.outputs.tag }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: release-binaries
-          path: dist
+          name: npm-tarballs
+          path: npm-tarballs
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
-      - name: Build packages
-        run: node npm/build.mjs "${GITHUB_REF_NAME#v}" dist npm-out
+      - name: npm is new enough for trusted publishing
+        # Trusted publishing (OIDC, no token) needs npm 11.5.1 or later.
+        run: |
+          v=$(npm --version)
+          node -e 'const [a, b, c] = process.argv[1].split(".").map(Number); process.exit(a > 11 || (a === 11 && (b > 5 || (b === 5 && c >= 1))) ? 0 : 1)' "$v" \
+            || { echo "::error::npm $v is older than 11.5.1, which trusted publishing needs"; exit 1; }
+          echo "npm $v"
       - name: Publish (trusted publishing, provenance; platform packages first)
+        # The tarballs the install-test job installed and ran, byte for byte.
         # npm refuses a prerelease (v0.1.0-beta.1) without an explicit dist-tag.
         # A version already on the registry is skipped, so a re-run after a partial
         # publish finishes the rest instead of failing on the first package.
         run: |
           tag=latest
-          case "${GITHUB_REF_NAME%%+*}" in *-*) tag=next ;; esac
+          case "${RELEASE_TAG%%+*}" in *-*) tag=next ;; esac
+          main_name=$(node -p 'require("./npm/config.json").name')
+          id_of() { tar -xzOf "$1" package/package.json | node -e 'const p = JSON.parse(require("fs").readFileSync(0, "utf8")); console.log(p.name + "@" + p.version)'; }
           publish() {
-            id=$(node -p 'const p = require(process.argv[1]); p.name + "@" + p.version' "$PWD/$1/package.json")
+            id=$(id_of "$1")
             if npm view "$id" version >/dev/null 2>&1; then
               echo "$id is already published: skipped"
             else
               npm publish "$1" --provenance --access public --tag "$tag"
             fi
           }
-          for dir in npm-out/*/; do
-            [ "$(basename "$dir")" = main ] && continue
-            publish "${dir%/}"
+          main=""
+          # `./`: npm reads the argument as a file, never as a registry or git name.
+          for f in ./npm-tarballs/*.tgz; do
+            id=$(id_of "$f")
+            if [ "${id%@*}" = "$main_name" ]; then main=$f; continue; fi
+            publish "$f"
           done
-          publish npm-out/main
+          [ -n "$main" ] || { echo "::error::no tarball of $main_name in npm-tarballs"; exit 1; }
+          publish "$main"

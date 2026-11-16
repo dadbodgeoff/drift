@@ -6,10 +6,10 @@ How Drift versions its releases and its formats, what happens to the files in `.
 
 Drift uses semantic version numbers (`X.Y.Z`). `drift --version` prints `drift <version>`; this wiki describes `drift 0.1.0-dev`.
 
-- Between releases, the main branch carries the next version with `-dev` (`0.1.0-dev`). The version in `Cargo.toml`, `Cargo.lock` and the Claude Code plugin manifest (`integrations/claude-code/.claude-plugin/plugin.json`) is always the same; the project's CI fails when they disagree.
+- Between releases, the main branch carries the next version with `-dev` (`0.1.0-dev`). The version in `Cargo.toml`, `Cargo.lock` and the Claude Code plugin manifest (`integrations/claude-code/.claude-plugin/plugin.json`) is always the same; `node npm/set-version.mjs X.Y.Z` sets all of them, `node npm/set-version.mjs --check` lists any that disagree, and the project's CI fails when they do.
 - A prerelease tag such as `v0.2.0-beta.1` becomes a GitHub prerelease and is published to npm under the `next` dist-tag, not `latest`. Install it with `npm install -g @dadbodgeoff/drift@next`.
 - The first beta had not been published when this page was written; its notes are a draft in the repository (`docs/RELEASE-NOTES-beta.md`), and the version, date and publishing repository are open decisions there. Until a release exists, build from source (`cargo install --locked --path crates/drift-cli`, Rust 1.97).
-- Releases are built and published only by the project's release workflow: one archive per platform (`x86_64-unknown-linux-musl`, `aarch64-unknown-linux-musl`, `x86_64-apple-darwin`, `aarch64-apple-darwin`, `x86_64-pc-windows-msvc`), a `SHA256SUMS` file and SLSA build provenance, and npm packages published behind a manual approval. The binaries are not code-signed or notarised; verify them with:
+- Releases are built and published only by the project's release workflow: one archive per platform (`x86_64-unknown-linux-musl`, `aarch64-unknown-linux-musl`, `x86_64-apple-darwin`, `aarch64-apple-darwin`, `x86_64-pc-windows-msvc`), a `SHA256SUMS` file and SLSA build provenance, and npm packages published behind a manual approval. Before a tag is pushed, the same workflow can be run by hand as a rehearsal: it builds, archives, packs and install-tests everything on Linux, macOS and Windows and publishes nothing. The binaries are not code-signed or notarised; verify them with:
 
 ```bash
 sha256sum -c SHA256SUMS --ignore-missing
