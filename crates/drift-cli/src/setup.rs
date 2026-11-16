@@ -141,6 +141,8 @@ pub enum Kind {
     Deployment,
     /// The Terraform target group that sends requests to a code directory.
     Terraform,
+    /// Which application a platform's file deploys, where the file does not say.
+    Platform,
     /// A helper Drift found a check in.
     Check,
     /// Something `drift investigate` lists: an instrument Drift did not read, a check it
@@ -361,6 +363,11 @@ enum Write {
         group: String,
         code: String,
     },
+    /// `security.platforms`: what a platform's file deploys runs this code.
+    Platform {
+        file: String,
+        code: String,
+    },
     Practice {
         concern: String,
         symbol: String,
@@ -379,6 +386,7 @@ impl Write {
             Write::Internal(_) => vec!["security", "internal"],
             Write::Public(_) => vec!["security", "public"],
             Write::Tie { .. } => vec!["security", "terraform"],
+            Write::Platform { .. } => vec!["security", "platforms"],
             Write::Practice { concern, .. } => vec!["practices", concern.as_str()],
         }
     }
@@ -397,6 +405,9 @@ impl Write {
                 quoted(&format!("{module}#aws_lb_target_group.{group}")),
                 quoted(code)
             ),
+            Write::Platform { file, code } => {
+                format!("- {{file: {}, code: {}}}", quoted(file), quoted(code))
+            }
             Write::Practice { symbol, label, .. } => {
                 format!("{}: {}", quoted(symbol), quoted(label))
             }
@@ -412,6 +423,10 @@ impl Write {
                 code,
             } => Entry::Item(json!({
                 "target": format!("{module}#aws_lb_target_group.{group}"),
+                "code": code,
+            })),
+            Write::Platform { file, code } => Entry::Item(json!({
+                "file": file,
                 "code": code,
             })),
             Write::Practice { symbol, label, .. } => Entry::Pair(symbol.clone(), json!(label)),
@@ -437,6 +452,14 @@ impl Write {
                     group: Some(group.clone()),
                     code: code.clone(),
                 }),
+            Write::Platform { file, code } => {
+                cfg.security
+                    .platforms
+                    .push(drift_mine::policy::PlatformTie {
+                        file: file.clone(),
+                        code: code.clone(),
+                    })
+            }
             Write::Practice {
                 concern,
                 symbol,
@@ -478,6 +501,15 @@ fn config_text(cfg: &DriftConfig) -> String {
         j(json!(sec.public)),
         j(json!(ties))
     );
+    if !sec.platforms.is_empty() {
+        out = out.replace(
+            "  not_deployed:\n",
+            &format!(
+                "  platforms: {}\n  not_deployed:\n",
+                j(json!(sec.platforms))
+            ),
+        );
+    }
     for p in &sec.not_deployed {
         if sec.on_agents_word.contains(p) {
             out.push_str(&format!(
@@ -737,6 +769,10 @@ fn ours<'a>(
                     .get("code")
                     .and_then(Value::as_str)
                     .is_some_and(|c| id_of("terraform", c) == id),
+                (["security", "platforms"], Entry::Item(v)) => v
+                    .get("file")
+                    .and_then(Value::as_str)
+                    .is_some_and(|f| id_of("platform", f) == id),
                 (["security", "internal"], Entry::Item(Value::String(d))) => {
                     all_inside && inside.contains(d)
                 }
@@ -991,6 +1027,7 @@ impl<'a> Setup<'a> {
         let mut out = Vec::new();
         out.extend(self.deployments(&records, &ids));
         out.extend(self.terraform(&records));
+        out.extend(self.platforms(&records));
         out.extend(self.checks(&records));
         let (proposed, rejected) = (proposals(&self.text), rejections(&self.text));
         for q in &mut out {
@@ -1522,6 +1559,115 @@ impl<'a> Setup<'a> {
         out
     }
 
+    /// Which application a platform's file deploys, where it deploys a directory whose
+    /// entry points are all in packages below it and does not say which
+    /// ([`drift_mine::security::platforms::Unit::candidates`]): one question per file
+    /// (or per service of it), one choice per application. An answer writes
+    /// `security.platforms`, and is a proposal from an agent: the file may say the
+    /// code is reached only from inside.
+    fn platforms(&self, records: &BTreeMap<String, Record>) -> Vec<Question> {
+        // The boundary with every answer but the ties: a question stays listed once
+        // answered, and what it would move is counted from there.
+        let tied: Vec<&str> = records
+            .iter()
+            .filter(|(_, r)| r.answer.starts_with("tie-") || r.answer == "none")
+            .map(|(id, _)| id.as_str())
+            .collect();
+        let base = without(&self.text, &tied);
+        let inv = self.inventory(&base);
+        let mut out = Vec::new();
+        for u in inv
+            .boundaries
+            .platforms
+            .iter()
+            .filter(|u| !u.candidates.is_empty())
+        {
+            let target = u.target();
+            let id = id_of("platform", &target);
+            let here = without(&self.text, &[&id]);
+            let held = inv
+                .entry_points
+                .iter()
+                .filter(|e| {
+                    e.exposure == Exposure::Unknown
+                        && !e.local
+                        && u.candidates.iter().any(|c| under(&e.path, c))
+                })
+                .count();
+            let apps: Vec<&str> = u.candidates.iter().map(|c| shown(c)).collect();
+            let mut text = vec![format!(
+                "{held} route{} of {} read{} as unknown: {}, and {}.",
+                if held == 1 { "" } else { "s" },
+                names(&apps),
+                if held == 1 { "s" } else { "" },
+                u.says,
+                u.untied
+                    .as_deref()
+                    .unwrap_or("the file does not say which application it deploys")
+            )];
+            text.push(format!(
+                "Drift will take your word for which application `{target}` deploys, and will read the file for how that application is reached."
+            ));
+            let mut choices: Vec<Choice> = u
+                .candidates
+                .iter()
+                .enumerate()
+                .map(|(k, dir)| {
+                    let write = Write::Platform {
+                        file: target.clone(),
+                        code: dir.clone(),
+                    };
+                    Choice {
+                        answer: format!("tie-{}", k + 1),
+                        label: format!("It deploys `{dir}`"),
+                        effect: String::new(),
+                        writes: Some(write.line()),
+                        writes_under: Some(write.path().join(".")),
+                        moves: 0,
+                        needs_person: true,
+                        write: vec![write],
+                        uncounted: true,
+                    }
+                })
+                .collect();
+            choices.push(plain_choice(
+                "none",
+                "It deploys none of these",
+                "Nothing changes: Drift notes your answer and the routes stay unknown.",
+            ));
+            choices.push(skip_choice());
+            let mut evidence: Vec<&str> = vec![target.as_str(), u.says.as_str()];
+            evidence.extend(u.candidates.iter().map(String::as_str));
+            out.push(Question {
+                command: format!("drift setup --answer {id}=<answer>"),
+                id,
+                kind: Kind::Platform,
+                status: Status::Open,
+                answered: None,
+                answered_by: None,
+                proposal: None,
+                rejected: None,
+                text,
+                note: None,
+                question: format!("Which application does `{target}` deploy?"),
+                choices,
+                default: SKIP,
+                evidence: digest(&evidence),
+                how_to_decide: evidence::how_to_decide(Kind::Platform, false),
+                context: None,
+                subject: Subject::Platform {
+                    file: u.file.clone(),
+                    dirs: u.candidates.clone(),
+                },
+                weight: held,
+                asked: format!("which application `{target}` deploys"),
+                base: here,
+            });
+        }
+        out.sort_by(|a, b| b.weight.cmp(&a.weight).then(a.id.cmp(&b.id)));
+        out
+    }
+
     fn checks(&self, records: &BTreeMap<String, Record>) -> Vec<Question> {
         let ours: Vec<&str> = records
             .iter()
@@ -1757,10 +1903,16 @@ impl<'a> Setup<'a> {
         let records = records(&self.text);
         let ids: Vec<&str> = records.keys().map(String::as_str).collect();
         let mut open: Vec<String> = Vec::new();
-        for kind in [Kind::Deployment, Kind::Terraform, Kind::Check] {
+        for kind in [
+            Kind::Deployment,
+            Kind::Terraform,
+            Kind::Platform,
+            Kind::Check,
+        ] {
             let qs = match kind {
                 Kind::Deployment => self.deployments(&records, &ids),
                 Kind::Terraform => self.terraform(&records),
+                Kind::Platform => self.platforms(&records),
                 Kind::Check => self.checks(&records),
                 Kind::Investigate => Vec::new(),
             };

@@ -2232,12 +2232,14 @@ fn every_description_of_a_deployment_counts_and_the_most_exposed_decides() {
     service(r);
     write(r, "web/vercel.json", "{}\n");
     assert_eq!(exposures(r)[CLAIM].0, "internal");
-    write(r, "services/api/fly.toml", "app = \"api\"\n");
+    // A Procfile with no app.json is not read as a Heroku app (a `fly.toml` with no
+    // service is read since, and keeps the code internal: `gap_platform_exposure.rs`).
+    write(r, "services/api/Procfile", "web: uvicorn app.main:app\n");
     let got = exposures(r);
     assert_eq!(got[CLAIM].0, "unknown", "{got:#?}");
     assert!(
         got[CLAIM].1.ends_with(
-            "; but Fly.io (services/api/fly.toml) in the repository is not read and may route to it"
+            "; but Procfile (services/api/Procfile) in the repository is not read and may route to it"
         ),
         "{got:#?}"
     );
@@ -2255,12 +2257,13 @@ fn every_description_of_a_deployment_counts_and_the_most_exposed_decides() {
 /// definition, an AWS Copilot manifest, a Cloudflare Worker, App Engine's dispatch,
 /// an Azure Developer CLI project, Kamal, and a platform's file that routes
 /// elsewhere: Vercel rewrites to another host, Netlify proxy redirects, Firebase
-/// rewrites to a service, a Render Blueprint with a `rootDir`, a `fly.toml` that
-/// builds another directory) by every place it may be (beside the services, at the
+/// rewrites to a service, a `fly.toml` that builds another directory) by every place
+/// it may be (beside the services, at the
 /// root, deep in an infrastructure tree). A file that only looks related (a
 /// `package.json` with no infrastructure library, a `vercel.json` that rewrites
 /// within its application, an OpenAPI document with no gateway extension, a JSON
-/// configuration) and a platform's file of another directory change nothing.
+/// configuration) and a platform's file of another directory change nothing. (A
+/// Render Blueprint is read since: `gap_platform_exposure.rs` pins what it says.)
 #[test]
 fn every_description_drift_does_not_read_keeps_a_service_from_being_internal() {
     const CLAIM: &str = "POST /internal/v1/jobs/lease";
@@ -2408,11 +2411,6 @@ fn every_description_drift_does_not_read_keeps_a_service_from_being_internal() {
             "firebase.json",
             "{\"hosting\": {\"rewrites\": [{\"source\": \"/internal/**\", \"run\": {\"serviceId\": \"api\"}}]}}\n",
             "Firebase rewrites",
-        ),
-        (
-            "render.yaml",
-            "services:\n  - type: web\n    name: api\n    rootDir: services/api\n",
-            "Render Blueprint",
         ),
         (
             "fly.toml",

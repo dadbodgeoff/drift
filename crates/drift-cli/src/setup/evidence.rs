@@ -119,6 +119,8 @@ pub enum Subject {
         others: Vec<TargetGroup>,
         routes: Vec<String>,
     },
+    /// A platform's file and the applications it may deploy.
+    Platform { file: String, dirs: Vec<String> },
     /// Code directories no target group looks like.
     Reach {
         dirs: Vec<String>,
@@ -148,6 +150,9 @@ pub fn how_to_decide(kind: super::Kind, reach: bool) -> &'static str {
         }
         super::Kind::Terraform => {
             "The tie is right when this target group's port and health check are the service's, its listener rules carry the service's routes, and no other target group of this Terraform sends requests to the same service. A name that looks alike is not enough. If two target groups could be it, or you cannot find what runs behind it, answer skip."
+        }
+        super::Kind::Platform => {
+            "The answer is the application the platform builds and runs from this file: its build or start command in the platform's settings, the project's root directory there, or a deploy script that names it. A folder name or the framework alone is not enough. If the file deploys more than one of them, or you cannot tell, answer skip."
         }
         super::Kind::Investigate => super::investigate::HOW_TO_DECIDE,
         super::Kind::Check => {
@@ -589,6 +594,7 @@ pub fn context(r: &Reading<'_>, subject: &Subject) -> Context {
     match subject {
         Subject::None => {}
         Subject::Deployment { file, dirs } => deployment(r, file, dirs, &mut ctx),
+        Subject::Platform { file, dirs } => platform(r, file, dirs, &mut ctx),
         Subject::Tie {
             dir,
             ranked,
@@ -610,6 +616,26 @@ pub fn context(r: &Reading<'_>, subject: &Subject) -> Context {
         } => check(r, instrument, kind, units, why, obligation, when, &mut ctx),
     }
     ctx
+}
+
+/// The platform's file, and what Drift read of each application it may deploy.
+fn platform(r: &Reading<'_>, file: &str, dirs: &[String], ctx: &mut Context) {
+    for u in r.inv.boundaries.platforms.iter().filter(|u| u.file == file) {
+        ctx.fact(u.says.clone());
+    }
+    for d in dirs {
+        let n = r
+            .inv
+            .entry_points
+            .iter()
+            .filter(|e| under(&e.path, d))
+            .count();
+        ctx.fact(format!(
+            "{} has {n} entry point{} Drift read.",
+            super::shown(d),
+            if n == 1 { "" } else { "s" }
+        ));
+    }
 }
 
 fn deployment(r: &Reading<'_>, file: &str, dirs: &[String], ctx: &mut Context) {

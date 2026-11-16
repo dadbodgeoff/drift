@@ -423,6 +423,7 @@ fn setup_of(questions: &[Question], kind: ItemKind, about: &str) -> Option<Strin
             (Subject::Check { instrument, .. }, ItemKind::Check) => instrument == about,
             (Subject::Tie { dir, .. }, ItemKind::Exposure) => dir == about,
             (Subject::Reach { dirs, .. }, ItemKind::Exposure) => dirs.iter().any(|d| d == about),
+            (Subject::Platform { dirs, .. }, ItemKind::Exposure) => dirs.iter().any(|d| d == about),
             _ => false,
         };
         hit.then(|| q.id.clone())

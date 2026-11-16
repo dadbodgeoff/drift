@@ -406,6 +406,9 @@ pub struct SecuritySettings {
     /// What a person says of the repository's Terraform ([`TerraformTie`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub terraform: Vec<TerraformTie>,
+    /// What a person says a platform's file deploys ([`PlatformTie`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub platforms: Vec<PlatformTie>,
     /// The entries of `not_deployed` that rest only on an agent's answer to `drift
     /// setup` that no person confirmed ([`agents_word`]): they count only where they
     /// make Drift more cautious, judged each time the boundary is read
@@ -510,6 +513,20 @@ pub struct TerraformTie {
     pub code: String,
 }
 
+/// One entry of `security.platforms`: `{file: <platform file>[#<service>], code: <dir>}`.
+/// A person's statement that what the platform's file deploys (the service, process
+/// or function it names after `#`, or the one thing the file deploys) runs the code
+/// in `code`: where the file does not say it (a monorepo root with several
+/// applications, a Cloud Run service that names only an image), Drift then reads the
+/// file's own word on how that code is reached ([`crate::security::platforms`]).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlatformTie {
+    /// The platform's file, repo-relative, with `#<name>` for one unit of it.
+    pub file: String,
+    /// The code directory, repo-relative; "" is the whole repository.
+    pub code: String,
+}
+
 /// A path of the config as Drift compares it: no `./`, no `/` at the end, `.` the root.
 fn config_dir(d: &str) -> Option<String> {
     let d = d.trim().trim_start_matches("./").trim_end_matches('/');
@@ -533,6 +550,10 @@ impl SecuritySettings {
         for (k, v) in map {
             if k == "terraform" {
                 out.terraform = Self::ties(v, warnings);
+                continue;
+            }
+            if k == "platforms" {
+                out.platforms = Self::platform_ties(v, warnings);
                 continue;
             }
             let list = match k.as_str() {
@@ -573,6 +594,44 @@ impl SecuritySettings {
 }
 
 impl SecuritySettings {
+    /// Reads `security.platforms`; an entry that is not `{file, code}` is a warning.
+    fn platform_ties(v: &serde_json::Value, warnings: &mut Vec<String>) -> Vec<PlatformTie> {
+        let shape = format!(
+            "{CONFIG_FILE}: `security.platforms` must be a list of `{{file: <platform file>[#<service>], code: <dir>}}`"
+        );
+        let Some(items) = v.as_array() else {
+            warnings.push(format!("{shape} (ignored)"));
+            return Vec::new();
+        };
+        let mut out = Vec::new();
+        for item in items {
+            let text = |key: &str| item.get(key).and_then(|v| v.as_str());
+            let known = item
+                .as_object()
+                .is_some_and(|o| o.keys().all(|k| k == "file" || k == "code"));
+            let (Some(file), Some(code), true) = (text("file"), text("code"), known) else {
+                warnings.push(format!("{shape} (an entry is ignored)"));
+                continue;
+            };
+            let (path, unit) = match file.split_once('#') {
+                Some((p, u)) => (p, Some(u.trim())),
+                None => (file, None),
+            };
+            let (Some(path), Some(code)) = (config_dir(path), config_dir(code)) else {
+                warnings.push(format!("{shape} (an entry is ignored)"));
+                continue;
+            };
+            out.push(PlatformTie {
+                file: match unit {
+                    Some(u) if !u.is_empty() => format!("{path}#{u}"),
+                    _ => path,
+                },
+                code,
+            });
+        }
+        out
+    }
+
     /// Reads `security.terraform`; an entry that is not `{target, code}` is a warning.
     fn ties(v: &serde_json::Value, warnings: &mut Vec<String>) -> Vec<TerraformTie> {
         let mut out = Vec::new();
