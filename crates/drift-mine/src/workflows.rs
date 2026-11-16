@@ -81,7 +81,8 @@ fn is_false(b: &bool) -> bool {
 /// comment on a pull request anyone can post: a workflow that then fetches the
 /// pull request's head (`/ok-to-test`, then `git fetch origin pull/<number>/head`)
 /// runs the outsider's code with the secrets.
-const PRIVILEGED_EVENTS: &[&str] = &["pull_request_target", "workflow_run", "issue_comment"];
+pub(crate) const PRIVILEGED_EVENTS: &[&str] =
+    &["pull_request_target", "workflow_run", "issue_comment"];
 
 /// The last member of an event expression that no one writes as text: a number
 /// or an id the platform assigns.
@@ -120,7 +121,7 @@ pub fn read(root: &Path) -> Vec<WorkflowFinding> {
 }
 
 /// The events a workflow runs on: a name, a list of names, or a map by name.
-fn events(doc: &Value) -> Vec<String> {
+pub(crate) fn events(doc: &Value) -> Vec<String> {
     // YAML 1.1 reads the key `on` as `true`.
     let on = doc
         .get("on")
@@ -138,7 +139,7 @@ fn events(doc: &Value) -> Vec<String> {
 }
 
 /// The `${{ ... }}` expressions of a text, trimmed.
-fn expressions(text: &str) -> Vec<&str> {
+pub(crate) fn expressions(text: &str) -> Vec<&str> {
     let mut out = Vec::new();
     let mut rest = text;
     while let Some(start) = rest.find("${{") {
@@ -468,7 +469,7 @@ fn line_of(text: &str, needle: &str) -> u32 {
 
 /// The 0-based index of the first line of `text`, at `from` or after it, that
 /// holds the first line of `needle`.
-fn line_from(text: &str, from: usize, needle: &str) -> Option<usize> {
+pub(crate) fn line_from(text: &str, from: usize, needle: &str) -> Option<usize> {
     let needle = needle.lines().next().unwrap_or(needle).trim();
     if needle.is_empty() {
         return None;
@@ -482,7 +483,7 @@ fn line_from(text: &str, from: usize, needle: &str) -> Option<usize> {
 
 /// The 0-based index of the line that opens the job `job` under `jobs:`: a key
 /// at the indentation of the first job. The `jobs:` line where it is not found.
-fn job_line(text: &str, job: &str) -> usize {
+pub(crate) fn job_line(text: &str, job: &str) -> usize {
     let lines: Vec<&str> = text.lines().collect();
     let Some(jobs) = lines.iter().position(|l| l.starts_with("jobs:")) else {
         return 0;

@@ -102,6 +102,19 @@ main branch.
   adapter for. Each `unlisted` entry now has a `reason` (TypeScript's are
   `receiver_not_read`). Reporting only; mining is unchanged. Python lowering 75.
 
+- **What a CI workflow or a deployed image leaves open.** `drift security`
+  lists a workflow an outsider can start (`pull_request_target`,
+  `workflow_run`, `issue_comment`) whose job states no `permissions:`, graded by
+  what the job does with the outsider's input; a job on an event a fork can
+  start that runs on a `self-hosted` runner (labels, groups and matrix values
+  read; an expression is not checked); the final stage of an image a compose
+  service builds that runs as root (no `USER` over a base image is not checked,
+  never root); and a secret a workflow or a compose file hands to a build
+  argument that the Dockerfile writes into `ENV` or a `RUN`. JSON:
+  `workflow_hardening`, `image_hardening`, `hardening_not_checked`. They are the
+  baseline kinds `workflow-hardening` and `image-hardening`, which advise until
+  set to fail (`--fail-on`); the baseline stamp is now `# inventory: 3`, and a
+  baseline an older Drift wrote does not start failing.
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise

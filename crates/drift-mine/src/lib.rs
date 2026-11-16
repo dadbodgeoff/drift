@@ -16,6 +16,7 @@ pub mod funnel;
 pub mod gate_candidates;
 pub mod gateway;
 pub mod guard_position;
+pub mod hardening;
 pub mod image;
 pub mod introduced;
 pub mod keytypes;

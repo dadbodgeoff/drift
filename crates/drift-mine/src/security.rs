@@ -4068,6 +4068,20 @@ pub struct Inventory {
     /// when empty.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub workflows: Vec<crate::workflows::WorkflowFinding>,
+    /// What the CI workflows an outsider can start leave unstated: the token's
+    /// permissions, a self-hosted runner ([`crate::hardening`]). Filled by the
+    /// caller. Not serialised when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub workflow_hardening: Vec<crate::hardening::WorkflowHardening>,
+    /// What the images the repository builds to deploy hold: a final stage that
+    /// runs as root, a secret written into a layer ([`crate::hardening`]). Filled by
+    /// the caller. Not serialised when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub image_hardening: Vec<crate::hardening::ImageHardening>,
+    /// What those two readings could not tell: unknown, never a finding. Not
+    /// serialised when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub hardening_not_checked: Vec<crate::hardening::NotChecked>,
     /// What the repository's manifests install that nothing fixes
     /// ([`crate::dependencies`]): a repository named by a branch, an archive at a
     /// URL with no digest, a source over plain HTTP, a second package index, a
@@ -9557,6 +9571,7 @@ pub fn render_at(
             let _ = writeln!(out, "  ... and {} more", workflows.len() - max_rows);
         }
     }
+    crate::hardening::render(&mut out, inv, only, max_rows);
     let dependencies: Vec<&crate::dependencies::DependencyFinding> = inv
         .dependencies
         .iter()
