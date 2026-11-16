@@ -35,6 +35,7 @@ use serde_json::json;
 use crate::declared::{Note, unread_paths};
 use crate::from_map::{MAX_OFFERED, MinedRule};
 use crate::mine::Rule;
+use crate::report::{MAX_PATH, sanitize};
 use crate::roles::{FileKinds, RoleSelector};
 use crate::wiring::{EXPORTS_SLOT, family_of};
 
@@ -209,14 +210,14 @@ pub fn notes(infos: &[WiringInfo]) -> Vec<Note> {
         let mut lines = vec![format!(
             "  [{}] {} (wiring, from the map): {} of {} member(s) registered in {}{}; {} registration site(s) could not be read (never reported)",
             w.id,
-            w.summary,
+            sanitize(&w.summary, 240),
             w.registered,
             w.members,
-            w.label,
+            sanitize(&w.label, MAX_PATH),
             if w.registry.is_empty() {
                 String::new()
             } else {
-                format!(" ({})", w.registry)
+                format!(" ({})", sanitize(&w.registry, MAX_PATH))
             },
             w.not_read
         )];
@@ -227,7 +228,7 @@ pub fn notes(infos: &[WiringInfo]) -> Vec<Note> {
                 w.unregistered
                     .iter()
                     .take(MAX_NAMED)
-                    .cloned()
+                    .map(|u| sanitize(u, MAX_PATH))
                     .collect::<Vec<_>>()
                     .join(", "),
                 if more > 0 {
@@ -241,7 +242,11 @@ pub fn notes(infos: &[WiringInfo]) -> Vec<Note> {
             lines.push(format!(
                 "    {} member(s) not found in a list may be registered in a file Drift could not read ({}): unknown, not unregistered",
                 w.unknown,
-                w.not_read_files.join(", ")
+                w.not_read_files
+                    .iter()
+                    .map(|u| sanitize(u, MAX_PATH))
+                    .collect::<Vec<_>>()
+                    .join(", ")
             ));
         }
         lines.push(match &w.same_as_mined {

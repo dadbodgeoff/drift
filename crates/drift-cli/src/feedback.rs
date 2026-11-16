@@ -257,7 +257,7 @@ pub struct ConventionRow {
     /// How it was proposed: `mined`, `promoted_hidden` (a person promoted a card mining
     /// withheld), `promoted_practice` (`drift practices promote`), or `from_map`.
     pub proposed_by: &'static str,
-    /// For `from_map`: which map (`practice`, `layering`, `manifest`; anything else is
+    /// For `from_map`: which map (`practice`, `layering`, `manifest`, `declared`; anything else is
     /// `other`). Null otherwise.
     pub map: Option<&'static str>,
     /// `default` or `suggestion`.
@@ -737,6 +737,7 @@ fn proposed_by(c: &Convention) -> (&'static str, Option<&'static str>) {
             "practice" => "practice",
             "layering" => "layering",
             "manifest" => "manifest",
+            "declared" => "declared",
             _ => "other",
         };
         ("from_map", Some(map))

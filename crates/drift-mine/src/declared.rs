@@ -12,8 +12,10 @@
 //! proposes and `drift check` evaluates) is checked against the code and offered as a
 //! proposal labelled "declared in `<file>`", with how many files follow it, how many
 //! break it today and how many Drift could not read. A declared rule the code breaks in
-//! many places is still offered, with that count: it is the team's rule, and the count
-//! is the news.
+//! many places is still made, with that count: it is the team's rule, and the count is
+//! the news. Whether it is offered is then decided as for every proposal from the map
+//! (the show policy: a suggestion-tier one with more outliers than the policy shows is
+//! held, with why, since the conventions file would not keep it).
 //!
 //! What it never does:
 //!
@@ -50,8 +52,28 @@ use crate::context::RepoContext;
 use crate::from_map::{self, MinedRule};
 use crate::mine::{Evidence, Rule, r3, wilson_lower_bound};
 use crate::policy::{Convention, Mode, Status};
-use crate::roles::{FILE_UNIT, FileKinds, PACKAGE_WIDE, RoleSelector, View};
+use crate::report::{MAX_PATH, sanitize};
+use crate::roles::{FILE_UNIT, FileKinds, PACKAGE_WIDE, RoleSelector, View, is_test_path};
 use crate::unchecked::Unchecked;
+
+/// Repository text (a configuration's path, an option as written, a folder) as it is
+/// put in a line people or, once accepted, agents read: [`sanitize`]d.
+fn safe(s: &str) -> String {
+    sanitize(s, MAX_PATH)
+}
+
+/// [`safe`] of each of `items`, joined by `sep`.
+fn safe_list(items: &[String], sep: &str) -> String {
+    items
+        .iter()
+        .map(String::as_str)
+        .map(safe)
+        .collect::<Vec<_>>()
+        .join(sep)
+}
+
+/// What cannot be expressed, by (configuration, folder, why, words).
+type NotKey = (String, String, &'static str, String);
 
 /// [`Convention::from_map`] of a rule the repository declares ([`declared`]).
 pub const DECLARED: &str = "declared";
@@ -100,8 +122,10 @@ pub struct DeclaredEvidence {
     /// Members of the role the rule is checked on (the files of `scope` Drift's role
     /// holds).
     pub in_scope: usize,
-    /// Production files under `scope` that the role does not hold (those of a nested
-    /// workspace package): the declaration covers them, the proposed rule does not.
+    /// Production files under `scope` that the role does not hold: those of a nested
+    /// workspace package, and, for a folder's role (`file: "*"`), the files of a kind of
+    /// their own there (`*.service`, `route`), which are in their kind's roles only. The
+    /// declaration covers them, the proposed rule does not.
     pub outside_role: usize,
     /// Members Drift read that follow the rule.
     pub follows: usize,
@@ -109,8 +133,10 @@ pub struct DeclaredEvidence {
     pub breaks: usize,
     /// The first [`MAX_NAMED`] members that break it, sorted.
     pub breaking: Vec<String>,
-    /// Files under `scope` Drift could not read to the end ([`unread_paths`]): neither
-    /// follows nor breaks.
+    /// Production files under `scope` Drift cannot vouch for, counted as a layering
+    /// proposal counts them (`from_map::LayeringEvidence::not_read`): one that failed to
+    /// parse, one whose imports were cut short or include one Drift could not resolve,
+    /// and one the scan skipped whole. Neither follows nor breaks.
     pub not_read: usize,
     /// Members that follow the rule and still import the target in a way it does not
     /// count (type-only, by workspace-package name, a declared dependency): the
@@ -237,8 +263,7 @@ pub fn declared(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
 
     // Restrictions, grouped by (folder, layer); what cannot be expressed, by what it is.
     let mut groups: BTreeMap<(String, String), Group> = BTreeMap::new();
-    let mut not: BTreeMap<(String, String, &'static str, String), BTreeSet<String>> =
-        BTreeMap::new();
+    let mut not: BTreeMap<NotKey, BTreeSet<String>> = BTreeMap::new();
     for e in &entries {
         if e.options.iter().any(|o| o.starts_with('!')) {
             let words = "it allows only the modules it lists and forbids the rest (an allow-list): Drift has no rule kind for \"imports only these\"".to_string();
@@ -277,7 +302,7 @@ pub fn declared(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
     // The file role that holds the files of each folder (the whole package where the
     // folder is a package), with its members.
     let roles = scope_roles(&units);
-    let unread = unread_paths(repo);
+    let unread = import_unread(repo, &files);
     let by_name: BTreeMap<&str, &str> = repo
         .packages
         .iter()
@@ -300,7 +325,10 @@ pub fn declared(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
         let Some((role, members)) = roles.get(&scope) else {
             held(
                 "no_role",
-                format!("no role of Drift's holds the files of `{scope}` as one place, so no rule can be written for them"),
+                format!(
+                    "no role of Drift's holds the files of `{}` as one place, so no rule can be written for them",
+                    safe(&scope)
+                ),
             );
             continue;
         };
@@ -314,14 +342,21 @@ pub fn declared(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
         {
             held(
                 "own_layer",
-                format!("`{target}` is the restricted files' own layer or package, where an import is no layer edge Drift checks"),
+                format!(
+                    "`{}` is the restricted files' own layer or package, where an import is no layer edge Drift checks",
+                    safe(&target)
+                ),
             );
             continue;
         }
         if let Some(name) = declared_in(repo, &ctx, &role.package, &target) {
             held(
                 "declared_dependency",
-                format!("`{}` declares `{name}` as a dependency, and Drift's layering rule never counts an import of a declared dependency, so it could not check this", role.package),
+                format!(
+                    "`{}` declares `{}` as a dependency, and Drift's layering rule never counts an import of a declared dependency, so it could not check this",
+                    safe(&role.package),
+                    safe(&name)
+                ),
             );
             continue;
         }
@@ -335,7 +370,7 @@ pub fn declared(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
         let mut unseen = 0usize;
         let mut example = String::new();
         for &f in members {
-            if unread.contains(&f.path) {
+            if unread.contains(f.path.as_str()) {
                 continue;
             }
             if rule.holds_in(Some(role), &View::File(f), &ctx) {
@@ -356,12 +391,25 @@ pub fn declared(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
         if read == 0 {
             held(
                 "nothing_read",
-                format!("Drift read none of the files of `{scope}` to the end, so it cannot say whether the code follows it"),
+                format!(
+                    "Drift read none of the files of `{}` to the end, so it cannot say whether the code follows it",
+                    safe(&scope)
+                ),
             );
             continue;
         }
+        // Not read, as a layering proposal counts it: production files of the place
+        // Drift cannot vouch for, and the production paths the scan skipped whole.
         let prefix = format!("{scope}/");
-        let not_read = unread.iter().filter(|p| p.starts_with(&prefix)).count();
+        let not_read = files
+            .iter()
+            .filter(|f| f.path.starts_with(&prefix) && unread.contains(f.path.as_str()))
+            .count()
+            + repo
+                .skipped
+                .iter()
+                .filter(|s| s.path.starts_with(&prefix) && !is_test_path(&s.path))
+                .count();
         let under = files.iter().filter(|f| f.path.starts_with(&prefix)).count();
         let evidence = DeclaredEvidence {
             configs: configs.clone(),
@@ -473,9 +521,12 @@ pub fn declared(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
 /// The id of a declared proposal: `D-` and 6 hex digits of what it is about (the role's
 /// place and the layer it must not import), never of its counts or of the file that
 /// declares it, so it is the same however many files break it and wherever the
-/// declaration moves. Its input starts with `declared`, as [`from_map::layering_id`]'s
-/// starts with `layering`, so it is apart from every mined id's input (a serialised role
-/// and rule) and from a layering proposal of the same place.
+/// declaration moves. Its input is repository-relative text only (no absolute path, no
+/// map order), so it is the same on every machine. It starts with `declared`, so it is
+/// apart from every mined id's input (`crate::mine::convention_id`, a serialised role
+/// and rule, which a layering proposal also takes): the two `D-` spaces meet only by a
+/// collision of 6 hex digits, and then [`ConventionsFile`](crate::policy::ConventionsFile)
+/// keeps the convention already there (a proposal is never written over an id in use).
 pub fn declared_id(role: &RoleSelector, target: &str) -> String {
     let h = blake3::hash(
         format!(
@@ -496,21 +547,26 @@ fn declared_summary(
     breaks: usize,
     read: usize,
 ) -> String {
-    let scope = scope_of(role);
+    let scope = safe(&scope_of(role));
     let what = if role.dir == "." {
         format!("Files at the top of {scope}")
     } else if role.file == "*" {
         format!("Code in {scope}")
     } else {
-        format!("{} files in {scope}", role.file)
+        format!("{} files in {scope}", safe(&role.file))
     };
-    let by = configs.first().map_or("a lint configuration", String::as_str);
+    let by = configs
+        .first()
+        .map_or_else(|| "a lint configuration".to_string(), |c| safe(c));
     let today = if breaks == 0 {
         format!("none of {read} files do")
     } else {
         format!("{breaks} of {read} files do today")
     };
-    format!("{what} does not import {target}, as {by} declares ({today})")
+    format!(
+        "{what} does not import {}, as {by} declares ({today})",
+        safe(target)
+    )
 }
 
 /// The scoped import restrictions of every linter configuration, one per folder.
@@ -569,7 +625,10 @@ fn target_of(
         return if specifier {
             Target::Not(
                 "pattern",
-                format!("`{option}` is a pattern over many modules, and Drift's layering rule names one layer"),
+                format!(
+                    "`{}` is a pattern over many modules, and Drift's layering rule names one layer",
+                    safe(option)
+                ),
             )
         } else {
             Target::Ignore
@@ -581,7 +640,11 @@ fn target_of(
             _ => {
                 return Target::Not(
                     "outside",
-                    format!("read from `{dir}`, `{option}` names a place outside this repository"),
+                    format!(
+                        "read from `{}`, `{}` names a place outside this repository",
+                        safe(dir),
+                        safe(option)
+                    ),
                 );
             }
         }
@@ -590,7 +653,10 @@ fn target_of(
     } else if specifier {
         return Target::Not(
             "package",
-            format!("`{option}` names a package outside this repository, or an alias Drift does not place, and Drift's layering rule is about this repository's own code"),
+            format!(
+                "`{}` names a package outside this repository, or an alias Drift does not place, and Drift's layering rule is about this repository's own code",
+                safe(option)
+            ),
         );
     } else {
         return Target::Ignore;
@@ -603,12 +669,21 @@ fn target_of(
     if files.iter().any(|f| f.path.starts_with(&prefix)) {
         return Target::Not(
             "not_a_layer",
-            format!("`{option}` names `{path}`, which is not one layer as Drift counts layers (the first two folders), and Drift's layering rule names whole layers"),
+            format!(
+                "`{}` names `{}`, which is not one layer as Drift counts layers (the first two folders), and Drift's layering rule names whole layers",
+                safe(option),
+                safe(&path)
+            ),
         );
     }
     Target::Not(
         "no_folder",
-        format!("read from `{dir}`, `{option}` names `{path}`, where Drift found no source file"),
+        format!(
+            "read from `{}`, `{}` names `{}`, where Drift found no source file",
+            safe(dir),
+            safe(option),
+            safe(&path)
+        ),
     )
 }
 
@@ -710,6 +785,27 @@ fn touches(f: &FileFacts, target: &str, by_name: &BTreeMap<&str, &str>) -> bool 
     })
 }
 
+/// The production files of `files` Drift cannot say an import is absent from, read as
+/// the layering proposals read them (`crate::from_map`'s `Graph::unread`): one that
+/// failed to parse, one whose imports were cut short, one with an import Drift could not
+/// resolve (it may land in any layer); and, reading less rather than more, one whose
+/// facts depend on a file skipped for lack of stack ([`Unchecked::uncertain`]). Neither
+/// follows nor breaks a declared rule. The paths the scan skipped whole have no facts,
+/// so they are no member; [`declared`] counts them apart.
+fn import_unread<'r>(repo: &RepoFacts, files: &[&'r FileFacts]) -> BTreeSet<&'r str> {
+    let unchecked = Unchecked::of(repo);
+    files
+        .iter()
+        .filter(|f| {
+            !f.parse_ok
+                || f.truncated.iter().any(|t| t == "imports")
+                || f.imports.iter().any(|i| i.module.starts_with("unresolved:"))
+                || unchecked.uncertain(&f.path)
+        })
+        .map(|&f| f.path.as_str())
+        .collect()
+}
+
 /// Repository files Drift could not read to the end: a file whose parse failed, one
 /// skipped for its size or a parser limit, and one whose facts depend on a file skipped
 /// for lack of stack ([`Unchecked::uncertain`]). What they hold is unknown, not absent.
@@ -751,10 +847,10 @@ pub fn proposal_lines(c: &Convention, e: &DeclaredEvidence) -> Vec<String> {
         "  [{}] {}: declared in {} ({}, `{}` for {}); of the {} files there Drift read, {} follow it, {} {} it today; {} could not be read (never reported)",
         c.id,
         c.summary,
-        e.configs.join(", "),
+        safe_list(&e.configs, ", "),
         e.level,
-        e.written.join("`, `"),
-        e.scope,
+        safe_list(&e.written, "`, `"),
+        safe(&e.scope),
         read,
         e.follows,
         e.breaks,
@@ -766,7 +862,7 @@ pub fn proposal_lines(c: &Convention, e: &DeclaredEvidence) -> Vec<String> {
         out.push(format!(
             "    the team's own rule, broken in {} file(s) today: {}{}. Accepting it records those as they are and reports only a new import against it",
             e.breaks,
-            e.breaking.join(", "),
+            safe_list(&e.breaking, ", "),
             if more > 0 {
                 format!(", and {more} more")
             } else {
@@ -777,13 +873,15 @@ pub fn proposal_lines(c: &Convention, e: &DeclaredEvidence) -> Vec<String> {
     if e.unseen > 0 {
         out.push(format!(
             "    {} of the files that follow it import {} in a way Drift's rule does not count (type-only, by package name, or a declared dependency): the linter may see those, this rule does not",
-            e.unseen, e.target
+            e.unseen,
+            safe(&e.target)
         ));
     }
     if e.outside_role > 0 {
         out.push(format!(
-            "    {} file(s) under {} belong to nested packages: the declaration covers them, this rule does not",
-            e.outside_role, e.scope
+            "    {} file(s) under {} are in no part of this rule (a nested package's files, or files of a kind of their own there): the declaration covers them, this rule does not",
+            e.outside_role,
+            safe(&e.scope)
         ));
     }
     out
@@ -824,10 +922,10 @@ pub fn notes(d: &Declared) -> Vec<Note> {
             lines: vec![format!(
                 "  [{}] also declared in {}: {} must not import {} (`{}`); not proposed again, {} already says it",
                 a.id,
-                a.configs.join(", "),
-                a.scope,
-                a.target,
-                a.written.join("`, `"),
+                safe_list(&a.configs, ", "),
+                safe(&a.scope),
+                safe(&a.target),
+                safe_list(&a.written, "`, `"),
                 by
             )],
             json: json!({
@@ -849,9 +947,9 @@ pub fn notes(d: &Declared) -> Vec<Note> {
             kind: DECLARED,
             lines: vec![format!(
                 "  {}: {} restricts `{}`; not proposed: {}",
-                n.config,
-                n.scope,
-                n.written.join("`, `"),
+                safe(&n.config),
+                safe(&n.scope),
+                safe_list(&n.written, "`, `"),
                 n.words
             )],
             json: json!({
@@ -891,9 +989,12 @@ pub fn instruction_notes(root: &Path, proposed: &[&Convention]) -> Vec<Note> {
             continue;
         };
         let block = if meta.is_file() {
-            std::fs::read_to_string(root.join(name))
-                .ok()
-                .map(|t| t.contains(EXPORT_MARK))
+            drift_core::fsutil::read_regular_to_string(
+                &root.join(name),
+                drift_core::fsutil::MAX_CONFIG_BYTES,
+            )
+            .ok()
+            .map(|t| t.contains(EXPORT_MARK))
         } else {
             None
         };
@@ -1022,7 +1123,10 @@ mod tests {
         };
         let id = declared_id(&role, "packages/features");
         assert!(id.starts_with("D-") && id.len() == 8, "{id}");
-        assert_ne!(id, from_map::layering_id(&role, "packages/features"));
+        let rule = Rule::Avoids {
+            signal: "import:packages/features".into(),
+        };
+        assert_ne!(id, crate::mine::convention_id(&role, &rule));
         assert_eq!(id, declared_id(&role, "packages/features"));
     }
 }

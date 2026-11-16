@@ -4,7 +4,9 @@
 //! "declared in `<file>`", with the files that follow it, break it and were not read.
 //! Every name is invented.
 
-use drift_core::{FileFacts, Import, LintConfig, LintRule, RepoFacts, ScopedLintRules};
+use drift_core::{
+    FileFacts, Import, LintConfig, LintRule, RepoFacts, ScopedLintRules, SkipReason, Skipped,
+};
 use drift_mine::check::{Scope, check};
 use drift_mine::declared::{DECLARED, declared, declared_id, proposal_lines};
 use drift_mine::from_map::{LAYERING, MinedRule, layering};
@@ -207,6 +209,27 @@ fn a_file_not_read_is_neither_a_follower_nor_a_break() {
     let d = declared(&r, &FileKinds::learn(&r), &[]);
     let e = &d.proposals[0].declared;
     assert_eq!((e.follows, e.breaks, e.not_read), (20, 0, 1), "{e:?}");
+}
+
+/// Pins that "not read" is counted as a layering proposal counts it: a file with an
+/// import Drift could not resolve (it may land in the screens) is not read, never a
+/// follower; and a production file the scan skipped whole (here a generated one) is not
+/// read either. Before, the first counted as following and the second was left out.
+#[test]
+fn an_unresolved_import_or_a_skipped_file_is_not_read() {
+    let open = file("core/c20.ts", &["unresolved:@/screens/s2".to_string()]);
+    let mut r = layered(20, vec![open], vec![biome("core", SCREENS)]);
+    r.skipped.push(Skipped {
+        path: "core/schema.ts".into(),
+        reason: SkipReason::Generated,
+    });
+    let d = declared(&r, &FileKinds::learn(&r), &[]);
+    let e = &d.proposals[0].declared;
+    assert_eq!(
+        (e.in_scope, e.follows, e.breaks, e.not_read),
+        (21, 20, 0, 2),
+        "{e:?}"
+    );
 }
 
 /// Pins that a configuration Drift could not read to the end gives nothing, never a
