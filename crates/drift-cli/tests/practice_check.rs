@@ -2,8 +2,8 @@
 //! wherever code is checked: `drift check` reports a new unit of its place that breaks
 //! it as a violation of that convention (advice in advise mode), baselines the
 //! exceptions recorded at promotion, honours `drift-ignore`, lists a recorded exception
-//! that was fixed, says when the convention is stale (its way is used by no unit any
-//! more) instead of firing on every unit, and keeps all of it across a `drift init`
+//! that was fixed, never goes stale because a change broke its units (those block), and
+//! keeps all of it across a `drift init`
 //! re-run. End to end on the TypeScript repository of the promote brief: 40 route files
 //! in `app/api`, 38 wrapped in `withAuth`, 2 not.
 
@@ -269,8 +269,16 @@ fn drift_ignore_with_a_reason_suppresses_it() {
     assert_eq!(at[0]["suppressed"], true, "{report:#}");
 }
 
+/// Every route rewrapped in another guard: before, the practice went stale (no unit did
+/// it an accepted way) and fired on nothing, so a change that rewraps every route (an
+/// agent's, or a rename) passed the check unread. Units that break a practice anew (not
+/// in `drift.lock`) are the gate's to stop, never a reason to stop gating: they count as
+/// following it for staleness and for the share it blocks at, so the 38 rewrapped routes
+/// are new violations, in the practice's own mode (advise here, as promoted: in block
+/// mode they would fail the check), until a person promotes the new way or rejects the
+/// practice. Review fix v1, item 1.
 #[test]
-fn a_renamed_guard_makes_it_stale_not_forty_violations() {
+fn a_renamed_guard_is_not_a_reason_to_stop_gating() {
     let (dir, id) = promoted();
     let r = dir.path();
     write(r, "lib/guard.ts", GUARD);
@@ -281,31 +289,37 @@ fn a_renamed_guard_makes_it_stale_not_forty_violations() {
     assert_eq!(
         code,
         Some(0),
-        "stale never changes the exit code:\n{out}\n{err}"
+        "advise mode never fails a check:\n{out}\n{err}"
     );
-    assert!(out.contains("drift: no new violations"), "{out}");
-    let stale = out
-        .lines()
-        .find(|l| l.contains(&format!("[{id}]")) && l.contains("stale"))
-        .unwrap_or_else(|| panic!("no stale line for {id}:\n{out}"));
-    assert!(stale.contains("drift practices promote"), "{stale}");
-    assert!(stale.contains("--in app/api"), "{stale}");
+    assert!(out.contains("drift: 38 new violation(s)"), "{out}");
     assert!(
-        stale.contains(&format!("drift review --reject {id}")),
-        "{stale}"
+        !out
+            .lines()
+            .any(|l| l.contains(&format!("[{id}]")) && l.contains("stale")),
+        "{out}"
     );
     let report = check_json(r);
     assert!(
         report["stale_practices"]
             .as_array()
-            .is_some_and(|s| s.iter().any(|s| s["id"] == id.as_str())),
+            .is_none_or(|s| s.iter().all(|s| s["id"] != id.as_str())),
         "{report:#}"
     );
-    assert!(
-        of(&report, &id).iter().all(|v| v["baselined"] == true),
-        "a stale convention fires on nothing: {report:#}"
+    let new: Vec<&Value> = of(&report, &id)
+        .into_iter()
+        .filter(|v| v["baselined"] == false)
+        .collect();
+    assert_eq!(new.len(), 38, "{report:#}");
+    assert!(new.iter().all(|v| v["mode"] == "advise"), "{report:#}");
+    // The two recorded exceptions stay legacy, and are not "fixed".
+    assert_eq!(
+        of(&report, &id)
+            .iter()
+            .filter(|v| v["baselined"] == true)
+            .count(),
+        2,
+        "{report:#}"
     );
-    // Its lock entries are not "fixed": nothing was checked.
     assert!(
         report["fixed"]
             .as_array()

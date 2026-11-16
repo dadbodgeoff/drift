@@ -238,7 +238,8 @@ fn a_wrapper_a_factory_builds_is_not_checked() {
 }
 
 /// The cal.com shape (`packages/trpc`: 156 of 171 procedures use `authedProcedure`; the
-/// 15 others are public, and the practice map cannot tell their sign-in). The rule's
+/// 15 others are public, and the practice map cannot tell their sign-in), with the
+/// public procedure from a package Drift does not read. The rule's
 /// target is built on `requireMember`, which the map's sign-in concern classifies: an
 /// entry point the map marks unknown there is not checked. One the map reads as having
 /// no guard at all stays a violation.
@@ -247,17 +248,18 @@ const OPEN: &str = "core/src/procedures/open.ts#openProcedure";
 const REQUIRE: &str = "core/src/middlewares/session.ts#requireMember";
 
 fn procedures() -> RepoFacts {
+    procedures_with(OPEN)
+}
+
+/// [`procedures`], with the public procedure wrapped in `public`.
+fn procedures_with(public: &str) -> RepoFacts {
     let mut files = Vec::new();
     for i in 0..30 {
         let dir = ["bookings", "teams", "viewer"][i % 3];
         files.push(file(
             &format!("trpc/server/routers/{dir}/r{i}.ts"),
             "trpc",
-            // Functions, as the TypeScript lowering reads `export const proc =
-            // memberProcedure(() => ...)`: lift is counted per symbol kind over a
-            // background of functions, so a role of `Const` symbols had a lift of 1.06
-            // and nothing was mined.
-            vec![sym(&format!("proc{i}"), SymbolKind::Function, |s| {
+            vec![sym(&format!("proc{i}"), SymbolKind::Const, |s| {
                 s.wraps.push(call(MEMBER))
             })],
         ));
@@ -266,15 +268,15 @@ fn procedures() -> RepoFacts {
     files.push(file(
         "trpc/server/routers/viewer/public.ts",
         "trpc",
-        vec![sym("slots", SymbolKind::Function, |s| {
-            s.wraps.push(call(OPEN))
+        vec![sym("slots", SymbolKind::Const, |s| {
+            s.wraps.push(call(public))
         })],
     ));
     // Forgot its procedure: the map found no guard at all.
     files.push(file(
         "trpc/server/routers/viewer/forgot.ts",
         "trpc",
-        vec![sym("leak", SymbolKind::Function, |_| {})],
+        vec![sym("leak", SymbolKind::Const, |_| {})],
     ));
     files.push(file(
         "core/src/procedures/member.ts",
@@ -327,9 +329,34 @@ fn map(instrument: &str) -> PracticesReport {
     }
 }
 
+/// A public procedure of a package Drift does not read (its body is not in the facts).
+const PACKAGED: &str = "pkg:@acme/trpc-open#openProcedure";
+
+/// Review fix v1 (mixed sets): the map's "unknown" sets a member aside only where the
+/// fact the rule decides on leads to code Drift did not read. A public procedure built
+/// on a binding Drift read (`openProcedure` in the repository) answers the rule's own
+/// question, "built by one of the set?": no. It breaks the rule and stays a violation,
+/// whatever the map can tell of how it signs a caller in.
+#[test]
+fn a_public_procedure_built_on_code_drift_read_stays_a_violation() {
+    let r = procedures();
+    let c = candidate(&r, MEMBER);
+    let p = accepted(&c, Mode::Block);
+    let mut report = check(&r, &p, &Lock::default(), Scope::Accepted, None);
+    report.set_aside_untold(&r, &p, &map(REQUIRE));
+    assert_eq!(
+        paths(&report),
+        [
+            "trpc/server/routers/viewer/forgot.ts",
+            "trpc/server/routers/viewer/public.ts"
+        ]
+    );
+    assert_eq!(report.standing[0].not_checked, 0, "{:?}", report.standing[0]);
+}
+
 #[test]
 fn a_public_procedure_the_map_cannot_tell_is_not_checked() {
-    let r = procedures();
+    let r = procedures_with(PACKAGED);
     let c = candidate(&r, MEMBER);
     let p = accepted(&c, Mode::Block);
     let mut report = check(&r, &p, &Lock::default(), Scope::Accepted, None);
@@ -362,7 +389,8 @@ fn a_public_procedure_the_map_cannot_tell_is_not_checked() {
 }
 
 /// Pins: a rule whose holders fell under the share that made it a rule is stale and
-/// advises (it fails no check and is said), and one whose role emptied is stale too.
+/// advises for its legacy violations (it is said), and one whose role emptied is stale
+/// too; a violation not in the lock blocks either way.
 #[test]
 fn a_stale_rule_advises_and_says_why() {
     let mined_on = jobs(45, 1, vec![]);
@@ -380,12 +408,7 @@ fn a_stale_rule_advises_and_says_why() {
     assert_eq!(fresh.standing[0].stale, None, "{:?}", fresh.standing[0]);
     assert_eq!(fresh.standing[0].mode, "block");
     assert!(!fresh.violations.is_empty());
-    assert!(
-        fresh
-            .violations
-            .iter()
-            .all(|v| v.mode == "block" && !v.baselined)
-    );
+    assert!(fresh.violations.iter().all(|v| v.mode == "block" && !v.baselined));
     assert!(fresh.blocking().count() > 0);
     // Once they are legacy (in the lock: the code the lock knows no longer bears the rule
     // out), it is stale.
@@ -407,7 +430,31 @@ fn a_stale_rule_advises_and_says_why() {
     assert!(report.violations.iter().all(|v| v.mode == "advise"));
     assert_eq!(report.blocking().count(), 0);
 
-    // The role emptied below the minimum role size.
+    // Review fix v1, item 1: staleness never demotes a violation the change adds. A
+    // job added without the wrapper to the stale rule's role is not in the lock: it
+    // blocks, and the note says advice is for the lock's violations only.
+    let grown = jobs(25, 22, vec![]);
+    let report = check(&grown, &p, &lock, Scope::Accepted, None);
+    let s = &report.standing[0];
+    assert!(s.stale.is_some(), "{s:?}");
+    assert!(
+        s.mode_note
+            .as_deref()
+            .is_some_and(|n| n.ends_with("a violation not in drift.lock still blocks")),
+        "{s:?}"
+    );
+    let blocking: Vec<&str> = report.blocking().map(|v| v.path.as_str()).collect();
+    assert_eq!(blocking, ["worker/src/jobs/sync/bare-21.ts"]);
+    assert!(
+        report
+            .violations
+            .iter()
+            .filter(|v| v.baselined)
+            .all(|v| v.mode == "advise")
+    );
+
+    // The role emptied below the minimum role size: stale. Its legacy violation advises;
+    // one not in the lock still blocks.
     let emptied = jobs(4, 1, vec![]);
     let report = check(&emptied, &p, &Lock::default(), Scope::Accepted, None);
     let s = &report.standing[0];
@@ -417,6 +464,9 @@ fn a_stale_rule_advises_and_says_why() {
             .is_some_and(|w| w.contains("under the 8 a mined rule needs")),
         "{s:?}"
     );
+    assert_eq!(report.blocking().count(), 1);
+    let lock = drift_mine::check::baseline(&emptied, &p);
+    let report = check(&emptied, &p, &lock, Scope::Accepted, None);
     assert_eq!(report.blocking().count(), 0);
 }
 

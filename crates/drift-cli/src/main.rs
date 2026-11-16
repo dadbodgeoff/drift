@@ -2997,6 +2997,23 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     // coming back, it is not baselined again.
                     .chain(lock.entries.iter().map(|(id, _)| id.as_str()))
                     .collect();
+                // Legacy debt that moved and is held by its fingerprint only: its lines
+                // name where it is now, so a later edit of it keeps it legacy.
+                let moved = drift_mine::check::check_gated(
+                    &facts,
+                    &policy,
+                    &lock,
+                    Scope::Accepted,
+                    None,
+                    false,
+                )
+                .moved;
+                let followed = lock.follow_moves(&moved);
+                if followed > 0 {
+                    eprintln!(
+                        "drift: {followed} legacy violation(s) moved with their files; their {LOCK_FILE} lines now name where they are"
+                    );
+                }
                 let add: Vec<_> = fresh
                     .entries
                     .iter()
@@ -5137,6 +5154,20 @@ fn print_report(r: &CheckReport, hidden: &BTreeSet<&str>, practice: &BTreeMap<&s
             r.fixed.len()
         );
     }
+    // Moved legacy debt is held by its fingerprint only: the next edit of it would make
+    // it new. `drift check` writes nothing; `drift init` rewrites the lines.
+    if !r.moved.is_empty() {
+        println!(
+            "drift: {} legacy violation(s) moved and are held by their {LOCK_FILE} fingerprint only (an edit of one would make it new): `drift init` rewrites their lines to where they are now",
+            r.moved.len()
+        );
+        for m in r.moved.iter().take(MAX_EXEMPT_LISTED) {
+            println!("  moved [{}] {} -> {}", m.id, m.from, m.to);
+        }
+        if r.moved.len() > MAX_EXEMPT_LISTED {
+            println!("  +{} more", r.moved.len() - MAX_EXEMPT_LISTED);
+        }
+    }
     let unsure: Vec<_> = r.unsure().collect();
     if !unsure.is_empty() {
         println!(
@@ -5180,7 +5211,7 @@ fn print_report(r: &CheckReport, hidden: &BTreeSet<&str>, practice: &BTreeMap<&s
         }
         if let Some(stale) = &s.stale {
             println!(
-                "drift: [{}] mined rule is stale: {stale}, so it advises until a person looks: `drift review --advise {}` keeps it as advice, `drift review --reject {}` drops it",
+                "drift: [{}] mined rule is stale: {stale}, so its violations in drift.lock advise until a person looks (a violation not in drift.lock is checked as before): `drift review --advise {}` keeps it as advice, `drift review --reject {}` drops it",
                 s.id, s.id, s.id
             );
         }
