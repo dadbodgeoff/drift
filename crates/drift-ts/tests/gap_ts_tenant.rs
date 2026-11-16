@@ -63,6 +63,9 @@ app.get("/and/:orgId", requireUser, async (req, res) => {
 app.get("/or", requireUser, async (req, res) => {
   res.json(await prisma.project.findMany({ where: { OR: [{ orgId: req.user.orgId }, { public: true }] } }));
 });
+app.get("/held", requireUser, async (req, res) => {
+  res.json(await prisma.project.findMany({ where: { orgId: req.depot } }));
+});
 app.get("/by-id/:id", requireUser, async (req, res) => {
   res.json(await prisma.project.findUnique({ where: { id: req.params.id } }));
 });
@@ -153,7 +156,9 @@ fn has_control(r: &RepoFacts, symbol: &str, control: &str) -> bool {
 
 /// Pins the Prisma cases: the tenant the request names (a path parameter, a
 /// header), the caller's (a claim the verified token gives, through a relation
-/// filter), and an `AND` list; and their twins: a key under `OR`, a key named for
+/// filter), and an `AND` list; and their twins: a key under `OR`, a value
+/// something the facts do not see put on the request (neither proven the caller's nor what the request
+/// named: no scoped query, the filter stays found, not proven), a key named for
 /// no tenant (a lookup by id: no tenant query, whatever else it is), the data a row
 /// is created with, and a filter only some requests run.
 #[test]
@@ -182,6 +187,7 @@ fn prisma_filters_under_a_tenant_key_are_scoped_queries() {
     );
     for twin in [
         "GET /or",
+        "GET /held",
         "GET /by-id/:id",
         "POST /create/:orgId",
         "GET /branch/:orgId",

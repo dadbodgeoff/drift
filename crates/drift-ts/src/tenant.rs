@@ -95,7 +95,7 @@ pub fn scoped_queries(controls: &[String]) -> Vec<ScopedQuery> {
             Some(ScopedQuery {
                 callee: callee.to_string(),
                 key: key.to_string(),
-                source: source(side),
+                source: source(side)?,
                 condition: String::new(),
             })
         })
@@ -131,21 +131,41 @@ fn tenant_path(key: &str) -> bool {
 /// from: the caller's own by the lowering's closed list of sources; a parameter
 /// of the function (what the request sent, in a handler; whatever the caller
 /// passed, below it), a header where it is read off one; anything else not known.
-fn source(side: &str) -> ScopeSource {
+///
+/// A value read off a parameter is what the request sent only where it is the
+/// parameter itself (a decorated `@Query("org") org`, a server action's argument)
+/// or is read through what carries input ([`request_input`]). Any other member of
+/// it (`req.depot`, tRPC's `ctx.depot`, Hono's `c.var.depot`) is what a middleware
+/// or a hook put there, likely from the caller's own claims: it is neither proven
+/// the caller's nor what the request named, so no scoped query is written (None)
+/// and the filter stays found, not proven, as the measured reading reads it.
+fn source(side: &str) -> Option<ScopeSource> {
     if side == "caller" {
-        return ScopeSource::Session;
+        return Some(ScopeSource::Session);
     }
     if side == "literal" {
-        return ScopeSource::Literal;
+        return Some(ScopeSource::Literal);
     }
     if let Some(rest) = side.strip_prefix("param ") {
         let path = rest.split_once(' ').map_or("", |(_, at)| at);
-        return match path.split('.').any(|s| s == "headers") {
-            true => ScopeSource::Header,
-            false => ScopeSource::Param,
+        // The first member read off the parameter (after its `#<position>`).
+        let first = path.split('.').nth(1);
+        return match first {
+            Some("headers") => Some(ScopeSource::Header),
+            None => Some(ScopeSource::Param),
+            Some(m) if request_input(m) => Some(ScopeSource::Param),
+            Some(_) => None,
         };
     }
-    ScopeSource::Unknown
+    Some(ScopeSource::Unknown)
+}
+
+/// A member of a request, or a key of a handler's parameter, that carries what
+/// the request sent: the vocabulary the reading of input already uses
+/// ([`crate::lower::input::REQUEST_INPUT_MEMBERS`], [`crate::lower::input::INPUT_KEYS`]).
+fn request_input(member: &str) -> bool {
+    crate::lower::input::REQUEST_INPUT_MEMBERS.contains(&member)
+        || crate::lower::input::INPUT_KEYS.contains(&member)
 }
 
 #[cfg(test)]
@@ -194,7 +214,8 @@ mod tests {
     }
 
     /// Pins the source of each side the lowering writes, and that a control with
-    /// no tenant key gives no scoped query.
+    /// no tenant key gives no scoped query, nor one whose value is a member a
+    /// middleware set on the handler's parameter.
     #[test]
     fn each_side_has_its_source() {
         let c = vec![
@@ -219,6 +240,28 @@ mod tests {
                 "where.id",
                 "param req #0.params.id",
             ),
+            // What a middleware put on the request: no scoped query.
+            fv(
+                "src/db.ts#prisma.label.findMany",
+                "where.orgId",
+                "param req #0.depot",
+            ),
+            fv(
+                "src/db.ts#prisma.label.findMany",
+                "where.orgId",
+                "param ctx #0.ctx.orgId",
+            ),
+            // A decorated parameter, and tRPC's input.
+            fv(
+                "src/db.ts#prisma.site.findMany",
+                "where.orgId",
+                "param org #1",
+            ),
+            fv(
+                "src/db.ts#prisma.site.findMany",
+                "where.teamId",
+                "param input #0.input.teamId",
+            ),
         ];
         let got: Vec<(String, ScopeSource)> = scoped_queries(&c)
             .into_iter()
@@ -238,6 +281,14 @@ mod tests {
                 (
                     "src/db.ts#prisma.project.findMany".to_string(),
                     ScopeSource::Session
+                ),
+                (
+                    "src/db.ts#prisma.site.findMany".to_string(),
+                    ScopeSource::Param
+                ),
+                (
+                    "src/db.ts#prisma.site.findMany".to_string(),
+                    ScopeSource::Param
                 ),
                 (
                     "src/db.ts#prisma.tag.findMany".to_string(),
