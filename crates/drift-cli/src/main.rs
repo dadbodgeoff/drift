@@ -4230,6 +4230,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 },
                 scope.is_some().then_some(&adds as practices::Adds<'_>),
                 &reported,
+                &policy,
             );
             // With no security baseline, what the change adds that the baseline would
             // hold: advice under its own heading, decided after the exit code and never

@@ -685,7 +685,7 @@ pub fn command(c: &Candidate) -> String {
 
 /// `w` as one shell word: as it is when it holds only characters no shell reads
 /// specially, else in single quotes.
-fn shell_word(w: &str) -> String {
+pub fn shell_word(w: &str) -> String {
     let plain = !w.is_empty()
         && w.chars()
             .all(|c| c.is_ascii_alphanumeric() || "-_./@+:,=".contains(c));
