@@ -23,7 +23,7 @@ TypeScript, JavaScript and Python. See [Languages and Frameworks](Languages-and-
 For most commands, no: they read the working tree (a repository without git works, with the hooks taking every current violation as the baseline). Pull-request mode (`--diff-base`) needs a git work tree and the merge base in the local history. See [Drift in CI](Drift-in-CI).
 
 **Does it read git history?**
-Not for conventions, the practice map or the security inventory: those read the working tree. It reads git for `--diff-base`, for the hooks' baseline, and (only for the experimental `wiring` rules) for which files change together. See [Security and Privacy](Security-and-Privacy).
+Not for conventions, the practice map or the security inventory: those read the working tree. It reads git for `--diff-base`, for the hooks' baseline, (only for the experimental `wiring` rules) for which files change together, and (only for `drift practices promote --block`) for when each file of a place was first committed. See [Security and Privacy](Security-and-Privacy).
 
 **What state is it in?**
 Beta. The development version reads `0.1.0-dev`; no release has been published yet, and the Studio is not packaged. See [Getting Started](Getting-Started) and [Versioning and Upgrades](Versioning-and-Upgrades).
@@ -70,6 +70,9 @@ No. It checks what your code already does, and it reports security facts for a p
 
 **How is a convention different from a lint rule?**
 A lint rule is something you write and the tool enforces. A convention is something Drift found your code already does, which you may accept; it advises by default and blocks only if you say so. If your linter already enforces the equivalent, Drift does not propose it.
+
+**Can I make the practice map's answer a rule?**
+Yes, one practice in one place: `drift practices promote <P-id> --in <place>` writes an accepted convention, and `drift check` then reports new code there that does it another way or not at all. Code that already differs is recorded in `drift.lock`, and a unit Drift cannot read is never reported. See [Practices Map](Practices-Map#promoting-a-practice-to-a-convention).
 
 **How do I turn blocking off again?**
 `drift review --advise <id>` returns an accepted convention to advise mode. `drift review --reject <id>` rejects it.

@@ -837,17 +837,15 @@ fn no_question_uses_internal_words() {
     }
 }
 
-/// `drift init` ends with one line where there are questions open, and with none once
-/// they are answered.
+/// `drift init` lists `drift setup` among its next steps where there are questions open,
+/// and not once they are answered.
 #[test]
 fn init_ends_with_the_open_questions() {
     let dir = deploy_repo();
     let r = dir.path();
     let out = drift(r, &["init"]);
     assert!(
-        out.ends_with(
-            "1 question only you can answer would make these answers sharper: run `drift setup`.\n"
-        ),
+        out.contains("\nNext\n  drift setup                1 question only you can answer\n"),
         "{out}"
     );
     let id = questions(r, false)[0]["id"].as_str().unwrap().to_string();

@@ -172,7 +172,7 @@ Not built yet: answers in `.drift/config.yaml` that go stale when the evidence t
 
 ## `.drift/conventions.yaml`
 
-Written by `drift init` and edited by `drift review`. Its header says what it is:
+Written by `drift init` and edited by `drift review` and `drift practices promote`. Its header says what it is:
 
 ```yaml
 # Drift conventions: mined from this codebase, approved by people.
@@ -239,8 +239,9 @@ conventions:
 | `exceptions` | list of `{member, reason}` | Outliers a reviewer marked as legitimate. `member` is `path#symbol`; `reason` is one line of at most 120 characters. `drift check` lists such a member as exempt (code `reviewed`). |
 | `different_kind` | list of `{path, entry_points}` | Files a person set apart as a different kind of thing (`drift review --answer ID=different --set-apart PATH`). `entry_points` lists entry points under an authentication or validation rule that the person confirmed one by one. |
 | `promoted_from_hidden` | `true` | The card was promoted by a person from the ones mining withheld. Absent when false. |
+| `promoted_from_practice` | text | The practice-map variant (`P-` and six hex digits) a person promoted this convention from with `drift practices promote`. Absent for a mined convention. Its place is the role's `package` and `dir`. |
 
-Rule types: `wrapped_by` (`kind`, `any_of`), `passes_key` (`callee`, `index`, `key`), `calls` (`callee`), `renders` (`component`), `directive` (`value`), `control` (`value`), `throws` (`class`), `named` (`pattern`), `before` (`first`, `then`), `avoids` (`signal`), `has_test`, `prefers_library` (`group`, `preferred`), `model_has` (`field`), `package_has` (`item`), `dependency_version` (`name`, optional `range`), `imports_from` (`name`, `source`, `instead_of`), and the experimental `registered_in` and `mirrors_keys`.
+Rule types: `wrapped_by` (`kind`, `any_of`), `passes_key` (`callee`, `index`, `key`), `calls` (`callee`), `renders` (`component`), `directive` (`value`), `control` (`value`), `throws` (`class`), `named` (`pattern`), `before` (`first`, `then`), `avoids` (`signal`), `has_test`, `prefers_library` (`group`, `preferred`), `model_has` (`field`), `package_has` (`item`), `dependency_version` (`name`, optional `range`), `imports_from` (`name`, `source`, `instead_of`), `practice` (`concern`, `any_of`: the practice-map variant keys accepted as ways, such as `wrap:lib/auth.ts#withAuth`; written only by promoting a practice, and checked by the practice map's classifier), and the experimental `registered_in` and `mirrors_keys`. A Drift from before promotion cannot read a file that holds a `practice` rule ([Versioning and Upgrades](Versioning-and-Upgrades#promoted-practices-and-older-drift)).
 
 Edit `status` and `mode` by hand or with `drift review`; agents must not (the hooks deny writes under `.drift/`). Only `drift.lock` has a recommended merge setting (below). A conflict in this file is an ordinary YAML conflict: keep each side's decisions and run `drift check` afterwards.
 
@@ -253,7 +254,7 @@ Baselined violations: legacy violations that never fail `drift check`. One entry
 D-e0a68b app/api/events/route.ts#GET
 ```
 
-`drift init` baselines the current violations on the first run and, on later runs, the current violations of newly mined conventions; existing entries are kept. People add lines; fixing the code removes them. Because each line stands alone and the file is sorted, adding `drift.lock merge=union` to `.gitattributes` lets parallel branches merge it without conflicts:
+`drift init` baselines the current violations on the first run and, on later runs, the current violations of newly mined conventions; existing entries are kept. `drift practices promote` adds one line per unit that differs from the promoted practice today. People add lines; fixing the code removes them. Because each line stands alone and the file is sorted, adding `drift.lock merge=union` to `.gitattributes` lets parallel branches merge it without conflicts:
 
 ```bash
 echo "drift.lock merge=union" >> .gitattributes

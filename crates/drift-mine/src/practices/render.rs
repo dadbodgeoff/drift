@@ -261,6 +261,42 @@ fn variant_line(out: &mut String, lead: &str, v: &Variant) {
     if let Some(e) = v.examples.first() {
         let _ = writeln!(out, "      e.g. {}", at(e));
     }
+    if let Some(cmd) = promote_command(v) {
+        let _ = writeln!(out, "      make it the rule for new code: {cmd}");
+    }
+}
+
+/// The command that makes `v` a convention, where the map says it may be promoted as
+/// the code stands ([`Variant::promotable`]): `--in` its place, or none when the
+/// command finds the place itself.
+fn promote_command(v: &Variant) -> Option<String> {
+    let p = v.promotable.as_ref()?;
+    Some(match &p.place {
+        Some(place) => format!(
+            "drift practices promote {} --in {}",
+            sanitize(&v.id, 40),
+            sanitize(place, 160)
+        ),
+        None => format!("drift practices promote {}", sanitize(&v.id, 40)),
+    })
+}
+
+/// A variant of `concern` by id, a folded policy's alternatives included.
+fn find_variant<'r>(r: &'r PracticesReport, concern: &str, id: &str) -> Option<&'r Variant> {
+    r.concerns
+        .iter()
+        .filter(|c| c.id == concern)
+        .flat_map(|c| c.variants.iter())
+        .flat_map(|v| std::iter::once(v).chain(v.alternatives.iter()))
+        .find(|v| v.id == id)
+}
+
+/// Whether any variant of the report may be promoted now.
+fn any_promotable(r: &PracticesReport) -> bool {
+    r.concerns
+        .iter()
+        .flat_map(|c| c.variants.iter())
+        .any(|v| v.promotable.is_some() || v.alternatives.iter().any(|a| a.promotable.is_some()))
 }
 
 /// Message consumers shown at most in the text.
@@ -483,6 +519,20 @@ pub fn render_recipes(r: &PracticesReport) -> String {
             let _ = writeln!(out, "  {} ({}):", sanitize(&rc.label, 160), rc.population);
             for c in &rc.concerns {
                 let _ = writeln!(out, "    {}", recipe_concern_line(c));
+                // The ways the line names (the first with its copy, the second where it
+                // differs), each with its command where it may be promoted.
+                let first = c.variants.first().filter(|_| c.copy.is_some());
+                let second = c.variants.get(1).filter(|_| c.differs.is_some());
+                for v in first.into_iter().chain(second) {
+                    if let Some(cmd) = find_variant(r, &c.concern, &v.id).and_then(promote_command)
+                    {
+                        let _ = writeln!(
+                            out,
+                            "      make {} the rule for new code: {cmd}",
+                            sanitize(&v.label, 100)
+                        );
+                    }
+                }
             }
             for p in &rc.preview {
                 let _ = writeln!(out, "    {}", preview_clause(p));
@@ -507,6 +557,460 @@ pub fn render_recipes(r: &PracticesReport) -> String {
         "\n`drift practices --all` has every concern's variant table; --json all of it."
     );
     not_covered(&mut out, r);
+    out
+}
+
+/// How many kinds of entry point the first run shows before "and N more".
+const FIRST_RUN_RECIPES: usize = 3;
+/// How many findings the first run shows.
+const FIRST_RUN_FINDINGS: usize = 5;
+
+/// A concern as the first run names it: the word a newcomer would use.
+pub fn plain_concern(id: &str) -> &str {
+    match id {
+        AUTHN => "sign-in",
+        AUTHZ => "permissions",
+        ERRORS => "errors",
+        API => "responses",
+        VALIDATION => "validation",
+        DATA_ACCESS => "data access",
+        CONFIG => "configuration",
+        other => other,
+    }
+}
+
+/// The mechanisms of the concern classifiers, as their labels write them (a use's
+/// mechanism with `_` as a space, then its instrument), and how the first run says
+/// each to a newcomer: `{}` is the instrument, kept as the code names it. A row with
+/// no `{}` is a whole use whose instrument is Drift's own word too
+/// (`bubble framework_default`). Drift's closed vocabulary, read from the classifiers:
+/// authn (`authn.rs`: wrap, decorator, dependency, base, config, app_hook, app_guard,
+/// middleware, body_call, body_check, opens, identifies, service_auth), authz
+/// (`authz.rs`), errors, api, validation, config, data access, logging (whose labels
+/// are `message logs via <logger>`) and testing. A mechanism not listed is left as
+/// it is.
+const PLAIN_USES: &[(&str, &str)] = &[
+    // authn
+    ("wrap", "wrapped in {}"),
+    ("decorator", "decorated with {}"),
+    ("dependency", "depends on {}"),
+    ("base", "inherits from {}"),
+    ("config", "configured with {}"),
+    ("app hook", "run through the app hook {}"),
+    ("app guard", "behind the app-wide guard {}"),
+    ("middleware", "behind the middleware {}"),
+    ("body call", "calls {}"),
+    ("body check", "checks {}"),
+    ("opens probe", "public on purpose: a health probe"),
+    ("opens", "public on purpose through {}"),
+    ("identifies", "identifies the caller with {}"),
+    ("service auth", "checks the sender with {}"),
+    // authz
+    ("role guard", "behind the role guard {}"),
+    ("membership guard", "behind the membership guard {}"),
+    ("tenancy guard", "behind the tenant guard {}"),
+    ("permission", "behind the permission class {}"),
+    ("role check", "checks the caller's role in {}"),
+    ("tenancy check", "checks the caller's tenant in {}"),
+    ("owner check", "checks the caller owns the record in {}"),
+    (
+        "tenancy filter",
+        "queries scoped to the caller's tenant by {}",
+    ),
+    ("owner filter", "queries scoped to the caller by {}"),
+    (
+        "tenancy requested",
+        "queries scoped to the tenant the request names by {}",
+    ),
+    ("tenancy literal", "queries scoped to a fixed tenant by {}"),
+    ("own record", "acts on the caller's own record from {}"),
+    ("owner stamp", "records the caller as owner with {}"),
+    ("policy", "checked by the policy {}"),
+    // errors
+    ("mapped by wrapper", "turned into responses by {}"),
+    ("in body try return", "caught in the handler, which returns"),
+    ("in body try swallow", "caught in the handler and dropped"),
+    (
+        "in body try respond",
+        "caught in the handler and answered there",
+    ),
+    ("in body try", "caught in the handler and answered with {}"),
+    ("app handler", "handled app-wide by {}"),
+    ("throw", "throws {}"),
+    ("bubble framework default", "left to the framework"),
+    ("bubble", "left to {}"),
+    // api
+    ("builder return value", "the value returned"),
+    ("builder", "built with {}"),
+    ("model declared", "a declared response model"),
+    ("model", "the response model {}"),
+    ("envelope", "in the shape {}"),
+    // validation
+    (
+        "typed model unchecked",
+        "typed with {}, not checked when a request comes in",
+    ),
+    ("typed model", "parsed into a typed model by {}"),
+    (
+        "schema repo schema",
+        "checked against a schema of the repository",
+    ),
+    ("schema", "checked against a {} schema"),
+    ("manual body check", "checked by hand"),
+    // config
+    ("config module", "read through the module {}"),
+    ("in place", "read in place from {}"),
+    ("env flag", "an environment flag {}"),
+    ("secret client", "secrets fetched with {}"),
+    ("env schema", "the environment checked with {}"),
+    ("flag sdk", "flags from {}"),
+    // data access
+    ("entry direct", "the handler queries {} itself"),
+    ("repository", "through a repository with {}"),
+    ("service", "through a service with {}"),
+    ("script", "in a script with {}"),
+    // logging
+    (
+        "message logs via repo logger",
+        "logs messages with the repository's logger {}",
+    ),
+    (
+        "structured logs via repo logger",
+        "logs structured records with the repository's logger {}",
+    ),
+    ("message logs via", "logs messages with {}"),
+    ("structured logs via", "logs structured records with {}"),
+    // testing
+    ("tested none asserted", "tested with {}, no status asserted"),
+    (
+        "tested all required",
+        "tested with {}, every case it needs asserted",
+    ),
+    (
+        "tested some",
+        "tested with {}, some cases it needs asserted",
+    ),
+];
+
+/// One use as the first run words it ([`PLAIN_USES`]): the longest mechanism phrase
+/// the use starts with, so `body call` is never read as `body`. A label writes a
+/// mechanism with `_` as a space and the engine's relabelled uses keep the `_`
+/// (`body_call auth`): both read the same. Anything else is left as it is.
+fn plain_use(part: &str) -> String {
+    let mut rows: Vec<&(&str, &str)> = PLAIN_USES.iter().collect();
+    rows.sort_by_key(|(phrase, _)| std::cmp::Reverse(phrase.len()));
+    for (phrase, plain) in rows {
+        let Some(head) = part.get(..phrase.len()) else {
+            continue;
+        };
+        if head.replace('_', " ") != *phrase {
+            continue;
+        }
+        let rest = &part[phrase.len()..];
+        let templated = plain.contains("{}");
+        if rest.is_empty() && !templated {
+            return plain.to_string();
+        }
+        if templated
+            && let Some(instrument) = rest.strip_prefix(' ')
+            && !instrument.is_empty()
+        {
+            return plain.replacen("{}", instrument, 1);
+        }
+    }
+    part.to_string()
+}
+
+/// A variant's label as the first run words it. A label is its uses joined by ` + `
+/// (a folded policy, its alternatives joined by `, or `), each a mechanism of Drift's
+/// own vocabulary and the instrument read from the code; the mechanism words are
+/// reworded ([`plain_use`]), and the instrument is kept as the code names it.
+pub fn plain_way(label: &str) -> String {
+    label
+        .split(", or ")
+        .map(|alt| {
+            alt.split(" + ")
+                .map(plain_use)
+                .collect::<Vec<_>>()
+                .join(" + ")
+        })
+        .collect::<Vec<_>>()
+        .join(", or ")
+}
+
+/// Where a first-run finding ranks: what a signed-in caller can reach that is not
+/// theirs, then entry points nothing signs a caller in to or validates, then two
+/// ways side by side in what an entry point does, then in the rest, then copies.
+fn first_run_rank(f: &Finding) -> u8 {
+    match (f.kind, f.concern.as_str()) {
+        (FindingKind::UnscopedKey, _) => 0,
+        (FindingKind::None, AUTHN) => 1,
+        (FindingKind::None, _) => 2,
+        (FindingKind::UnexplainedSplit, c) if PRIMARY.contains(&c) => 3,
+        (FindingKind::UnexplainedSplit, _) => 4,
+        _ => 5,
+    }
+}
+
+/// One recipe concern for the first run: each way with the number that do it, then
+/// what nothing was found for and what could not be told. Counts only: where to copy
+/// from is `drift practices`.
+fn first_run_concern(r: &PracticesReport, rc: &Recipe, c: &RecipeConcern) -> Option<String> {
+    let mut parts: Vec<String> = c
+        .variants
+        .iter()
+        .map(|v| format!("{} in {}", plain_way(&sanitize(&v.label, 80)), v.members))
+        .collect();
+    // The recipe names its two largest ways: the units of the others are counted, so
+    // the line adds up to its total.
+    let named: usize = c.variants.iter().map(|v| v.members).sum();
+    let other = c
+        .total
+        .saturating_sub(named + c.identified + c.none + c.unknown);
+    if other > 0 {
+        parts.push(format!("other ways in {other}"));
+    }
+    if c.identified > 0 {
+        parts.push(format!(
+            "caller known, no one turned away in {}",
+            c.identified
+        ));
+    }
+    if c.none > 0 {
+        parts.push(format!("nothing found in {}", c.none));
+    }
+    if c.unknown > 0 {
+        parts.push(format!("could not tell in {}", c.unknown));
+    }
+    if parts.is_empty() {
+        return None;
+    }
+    Some(format!(
+        "{:<12} {} ({})",
+        format!("{}:", plain_concern(&c.concern)),
+        parts.join("; "),
+        of_total(r, rc, c)
+    ))
+}
+
+/// What a first-run concern line counts, said where it is not the heading's count of
+/// entry points. The heading counts distinct entry points (path, symbol and method)
+/// across the recipe's concerns; a concern counts its own units, one per entry point
+/// and route it is mounted on (`Placed::ident`), and only of the entry points it
+/// applies to (authz: where a caller is or may be signed in; validation: where input
+/// may be read). More units than entry points is a handler mounted on more than one
+/// route; fewer, entry points the concern does not count.
+fn of_total(r: &PracticesReport, rc: &Recipe, c: &RecipeConcern) -> String {
+    let n = c.total;
+    if n == rc.population {
+        return format!("of {n}");
+    }
+    let unit = r
+        .concerns
+        .iter()
+        .find(|x| x.id == c.concern)
+        .map(|x| x.unit.as_str());
+    match unit {
+        Some("entry_point") if n > rc.population => format!("of {n} route mounts"),
+        Some("entry_point") => match c.concern.as_str() {
+            AUTHZ => format!("of {n} where a caller is or may be signed in"),
+            VALIDATION => format!("of {n} that may read input"),
+            _ => format!("of {n} entry points it applies to"),
+        },
+        Some(u) if !u.is_empty() => format!("of {n} {}s", u.replace('_', " ")),
+        _ => format!("of {n} units"),
+    }
+}
+
+/// One finding for the first run, in a newcomer's words. `None` for what a person
+/// settles in `.drift/config.yaml` (an unknown instrument): the first run points at
+/// `drift practices --hints` for those.
+fn first_run_finding(r: &PracticesReport, f: &Finding) -> Option<String> {
+    // The way a finding names, by position; `None` where it names fewer, so a finding
+    // built short is left out rather than panicking the first run.
+    let label = |i: usize| {
+        let vid = f.variants.get(i)?;
+        Some(
+            r.concerns
+                .iter()
+                .find(|c| c.id == f.concern)
+                .and_then(|c| c.variants.iter().find(|v| &v.id == vid))
+                .map(|v| plain_way(&sanitize(&v.label, 100)))
+                .unwrap_or_default(),
+        )
+    };
+    let pkg = match f.package.as_deref() {
+        Some("") | None => String::new(),
+        Some(p) => format!(" in {}", sanitize(p, 80)),
+    };
+    let eg = f
+        .examples
+        .first()
+        .map(|e| format!(" (e.g. {})", at(e)))
+        .unwrap_or_default();
+    let places = |n: usize| if n == 1 { "place" } else { "places" };
+    let line = match f.kind {
+        FindingKind::UnscopedKey => {
+            let key = sanitize(f.key.as_deref().unwrap_or_default(), 80);
+            format!(
+                "{} signed-in entry point(s){pkg} take `{key}` from the request and nothing read checks it is the caller's own, so a signed-in caller can name any {key}{eg}",
+                f.members
+            )
+        }
+        FindingKind::UnexplainedSplit => format!(
+            "{}{pkg}: two ways side by side, {} and {} ({} {}), and nothing sets them apart{eg}",
+            plain_concern(&f.concern),
+            label(0)?,
+            label(1)?,
+            f.members,
+            places(f.members),
+        ),
+        FindingKind::None => format!(
+            "{}{pkg}: {}, in {} {}{eg}",
+            plain_concern(&f.concern),
+            label(0)?,
+            f.members,
+            places(f.members),
+        ),
+        FindingKind::DuplicateHelper => {
+            let name = sanitize(f.key.as_deref().unwrap_or_default(), 80);
+            let at: Vec<String> = f
+                .copies
+                .iter()
+                .take(2)
+                .map(|c| format!("{}:{}", sanitize(&c.path, 160), c.line))
+                .collect();
+            format!(
+                "`{name}` is written {} times and the copies make the same calls ({})",
+                f.members,
+                at.join("; ")
+            )
+        }
+        FindingKind::Unknown => return None,
+    };
+    Some(format!("{line}{}", promotion_clause(r, f)))
+}
+
+/// The known variant most of `package`'s units of the concern use, by its row in the
+/// package's profile (fewest id on a tie).
+fn leading_in<'r>(c: &'r ConcernReport, package: &str) -> Option<&'r Variant> {
+    let profile = c.by_package.iter().find(|p| p.package == package)?;
+    profile
+        .variants
+        .iter()
+        .filter_map(|pv| {
+            c.variants
+                .iter()
+                .find(|v| v.id == pv.id && v.kind == VariantKind::Known)
+                .map(|v| (pv.members, v))
+        })
+        .max_by(|a, b| a.0.cmp(&b.0).then(b.1.id.cmp(&a.1.id)))
+        .map(|(_, v)| v)
+}
+
+/// `; make the usual way the rule for new code: <command>` where the way most of the
+/// finding's package does its concern may be promoted; nothing otherwise. Only for
+/// units nothing was found for: there the usual way is the answer. Never for an
+/// unexplained split (the code has not chosen between its two ways), nor for a key
+/// nothing scopes or a copied helper, which no way of the map settles.
+fn promotion_clause(r: &PracticesReport, f: &Finding) -> String {
+    if f.kind != FindingKind::None {
+        return String::new();
+    }
+    let Some(package) = f.package.as_deref() else {
+        return String::new();
+    };
+    r.concerns
+        .iter()
+        .find(|c| c.id == f.concern)
+        .and_then(|c| leading_in(c, package))
+        .and_then(promote_command)
+        .map(|cmd| format!("; make the usual way the rule for new code: {cmd}"))
+        .unwrap_or_default()
+}
+
+/// What `drift init` leads with: what the code does at its entry points, by kind, and
+/// what to look at first. Facts read from the code, whatever conventions were mined
+/// or accepted. Empty when the map knows no entry point and has no finding.
+pub fn render_first_run(r: &PracticesReport) -> String {
+    let mut out = String::new();
+    let recipes: Vec<(&Recipe, Vec<String>)> = r
+        .recipes
+        .iter()
+        .map(|rc| {
+            (
+                rc,
+                rc.concerns
+                    .iter()
+                    .filter_map(|c| first_run_concern(r, rc, c))
+                    .collect::<Vec<_>>(),
+            )
+        })
+        .filter(|(_, lines)| !lines.is_empty())
+        .collect();
+    if !recipes.is_empty() {
+        let _ = writeln!(
+            out,
+            "What the code does (read from the code: facts, not rules)"
+        );
+        for (rc, lines) in recipes.iter().take(FIRST_RUN_RECIPES) {
+            // `http entry points in .` is the root package's: said without the dot.
+            let label = match rc.package.is_empty() {
+                true => rc.label.strip_suffix(" in .").unwrap_or(&rc.label),
+                false => &rc.label,
+            };
+            let _ = writeln!(out, "  {} {}", rc.population, sanitize(label, 160));
+            for l in lines {
+                let _ = writeln!(out, "    {l}");
+            }
+        }
+        if recipes.len() > FIRST_RUN_RECIPES {
+            let _ = writeln!(
+                out,
+                "  ... and {} more kind(s) of entry point: `drift practices`",
+                recipes.len() - FIRST_RUN_RECIPES
+            );
+        }
+    }
+    // Only what the first run says counts toward a rank's turn: an unknown instrument
+    // it leaves to `--hints` must not take the place of a copy.
+    let mut ranked: Vec<(u8, String)> = r
+        .findings
+        .iter()
+        .filter_map(|f| Some((first_run_rank(f), first_run_finding(r, f)?)))
+        .collect();
+    ranked.sort_by_key(|(rank, _)| *rank);
+    // No more than two of a kind before the others have had their turn: a
+    // repository of many packages would list one thing five times.
+    let mut seen: std::collections::BTreeMap<u8, usize> = std::collections::BTreeMap::new();
+    let (first, later): (Vec<_>, Vec<_>) = ranked.into_iter().partition(|(rank, _)| {
+        let n = seen.entry(*rank).or_default();
+        *n += 1;
+        *n <= 2
+    });
+    let findings: Vec<String> = first.into_iter().chain(later).map(|(_, f)| f).collect();
+    if !findings.is_empty() {
+        if !out.is_empty() {
+            out.push('\n');
+        }
+        let _ = writeln!(out, "Worth a look first");
+        for (i, f) in findings.iter().take(FIRST_RUN_FINDINGS).enumerate() {
+            let _ = writeln!(out, "  {}. {f}", i + 1);
+        }
+        let more = match findings.len().saturating_sub(FIRST_RUN_FINDINGS) {
+            0 => String::new(),
+            n => format!("{n} more in `drift practices`. "),
+        };
+        let promote = if any_promotable(r) {
+            " `drift practices promote --list` lists the practices you can make a rule for new code."
+        } else {
+            ""
+        };
+        let _ = writeln!(
+            out,
+            "  {more}`drift security` lists every entry point with its guard and what it reaches.{promote}"
+        );
+    }
     out
 }
 
@@ -681,4 +1185,657 @@ pub(super) fn package_line_of(r: &PracticesReport, package: &str) -> Option<Stri
             parts.join("; ")
         )
     })
+}
+
+#[cfg(test)]
+mod first_run_tests {
+    use super::*;
+
+    fn variant(id: &str, label: &str) -> Variant {
+        Variant {
+            id: id.into(),
+            label: label.into(),
+            kind: VariantKind::Known,
+            ..Default::default()
+        }
+    }
+
+    fn finding(kind: FindingKind, concern: &str, package: &str, variants: &[&str]) -> Finding {
+        Finding {
+            kind,
+            concern: concern.into(),
+            package: Some(package.into()),
+            variants: variants.iter().map(|v| v.to_string()).collect(),
+            members: 2,
+            examples: vec![Example {
+                path: format!("{package}/a.ts"),
+                symbol: "GET".into(),
+                line: 3,
+            }],
+            ..Default::default()
+        }
+    }
+
+    fn recipe(package: &str, population: usize) -> Recipe {
+        Recipe {
+            package: package.into(),
+            role: "http".into(),
+            label: format!(
+                "http entry points in {}",
+                if package.is_empty() { "." } else { package }
+            ),
+            population,
+            concerns: vec![
+                RecipeConcern {
+                    concern: AUTHN.into(),
+                    total: population,
+                    variants: vec![RecipeVariant {
+                        id: "P-a".into(),
+                        label: "body call requireUser".into(),
+                        members: population - 4,
+                        share: 0.0,
+                    }],
+                    none: 2,
+                    unknown: 1,
+                    ..Default::default()
+                },
+                RecipeConcern {
+                    concern: ERRORS.into(),
+                    total: population,
+                    variants: vec![RecipeVariant {
+                        id: "P-b".into(),
+                        label: "bubble framework_default".into(),
+                        members: population,
+                        share: 1.0,
+                    }],
+                    ..Default::default()
+                },
+            ],
+            ..Default::default()
+        }
+    }
+
+    /// Nothing known: nothing printed, so `drift init` goes straight to conventions.
+    #[test]
+    fn an_empty_map_prints_nothing() {
+        assert_eq!(render_first_run(&PracticesReport::default()), "");
+    }
+
+    /// The recipes in a newcomer's words, the root package without its dot, and no
+    /// more than [`FIRST_RUN_RECIPES`] of them.
+    #[test]
+    fn the_map_is_counts_in_plain_words() {
+        let r = PracticesReport {
+            recipes: vec![
+                recipe("", 10),
+                recipe("apps/a", 9),
+                recipe("apps/b", 8),
+                recipe("apps/c", 7),
+                recipe("apps/d", 6),
+            ],
+            ..Default::default()
+        };
+        let out = render_first_run(&r);
+        assert!(
+            out.starts_with(
+                "What the code does (read from the code: facts, not rules)\n  10 http entry points\n    sign-in:     calls requireUser in 6; other ways in 1; nothing found in 2; could not tell in 1 (of 10)\n    errors:      left to the framework in 10 (of 10)\n  9 http entry points in apps/a\n"
+            ),
+            "{out}"
+        );
+        assert!(
+            out.ends_with("  ... and 2 more kind(s) of entry point: `drift practices`\n"),
+            "{out}"
+        );
+        assert!(!out.contains("apps/c"), "{out}");
+        assert!(!out.contains("Worth a look first"), "{out}");
+    }
+
+    /// A finding naming fewer ways than its kind needs is left out of the first run,
+    /// not a panic; findings the first run leaves to `--hints` take no copy's turn.
+    #[test]
+    fn short_findings_are_skipped_and_unknowns_take_no_turn() {
+        let dup = |p: &str| {
+            let mut f = finding(FindingKind::DuplicateHelper, DATA_ACCESS, p, &[]);
+            f.key = Some(format!("helper_{p}"));
+            f
+        };
+        let r = PracticesReport {
+            findings: vec![
+                finding(FindingKind::UnexplainedSplit, DATA_ACCESS, "a", &["P-x"]),
+                finding(FindingKind::None, AUTHN, "b", &[]),
+                finding(FindingKind::Unknown, AUTHN, "c", &[]),
+                finding(FindingKind::Unknown, AUTHN, "d", &[]),
+                dup("e"),
+                dup("f"),
+            ],
+            ..Default::default()
+        };
+        let out = render_first_run(&r);
+        assert!(out.contains("`helper_e`"), "{out}");
+        assert!(out.contains("`helper_f`"), "{out}");
+        assert!(!out.contains("two ways side by side"), "{out}");
+        assert_eq!(out.matches(". ").count(), 2, "{out}");
+    }
+
+    /// What a signed-in caller can reach first, then entry points with no sign-in,
+    /// then the rest; at most two of a kind before another kind has had its turn; an
+    /// unknown instrument is `drift practices --hints`', never listed here.
+    #[test]
+    fn findings_are_ranked_by_what_they_cost_and_capped() {
+        let split = |p: &str| {
+            finding(
+                FindingKind::UnexplainedSplit,
+                DATA_ACCESS,
+                p,
+                &["P-x", "P-y"],
+            )
+        };
+        let none = |c: &str, p: &str| finding(FindingKind::None, c, p, &["P-n"]);
+        let mut key = finding(FindingKind::UnscopedKey, AUTHZ, "api", &[]);
+        key.key = Some("orgId".into());
+        let r = PracticesReport {
+            concerns: vec![
+                ConcernReport {
+                    id: DATA_ACCESS.into(),
+                    variants: vec![
+                        variant("P-x", "service pg"),
+                        variant("P-y", "entry direct pg"),
+                    ],
+                    ..Default::default()
+                },
+                ConcernReport {
+                    id: AUTHN.into(),
+                    variants: vec![variant("P-n", basis::AUTHN_NONE)],
+                    ..Default::default()
+                },
+                ConcernReport {
+                    id: VALIDATION.into(),
+                    variants: vec![variant("P-n", "reads input, nothing validates it")],
+                    ..Default::default()
+                },
+            ],
+            findings: vec![
+                finding(FindingKind::Unknown, AUTHN, "p0", &[]),
+                split("p1"),
+                none(AUTHN, "p2"),
+                none(AUTHN, "p3"),
+                none(AUTHN, "p4"),
+                none(VALIDATION, "p5"),
+                key,
+                split("p6"),
+            ],
+            ..Default::default()
+        };
+        let out = render_first_run(&r);
+        let lines: Vec<&str> = out.lines().collect();
+        assert_eq!(lines[0], "Worth a look first", "{out}");
+        assert!(
+            lines[1].starts_with(
+                "  1. 2 signed-in entry point(s) in api take `orgId` from the request"
+            ),
+            "{out}"
+        );
+        assert_eq!(
+            lines[2],
+            "  2. sign-in in p2: no guard found in what Drift read, in 2 places (e.g. p2/a.ts:3 GET)",
+            "{out}"
+        );
+        assert!(lines[3].starts_with("  3. sign-in in p3:"), "{out}");
+        // The third entry point without sign-in waits for the other kinds.
+        assert!(
+            lines[4].starts_with("  4. validation in p5: reads input, nothing validates it"),
+            "{out}"
+        );
+        assert_eq!(
+            lines[5],
+            "  5. data access in p1: two ways side by side, through a service with pg and the handler queries pg itself (2 places), and nothing sets them apart (e.g. p1/a.ts:3 GET)",
+            "{out}"
+        );
+        assert_eq!(
+            lines[6],
+            "  2 more in `drift practices`. `drift security` lists every entry point with its guard and what it reaches.",
+            "{out}"
+        );
+        assert_eq!(lines.len(), 7, "{out}");
+        assert!(!out.contains("p0"), "{out}");
+    }
+
+    /// Every mechanism phrase of [`PLAIN_USES`] in plain words, the instrument kept as
+    /// the code names it; the engine's relabelled form (`body_call`) reads the same.
+    #[test]
+    fn every_mechanism_phrase_reads_as_plain_words() {
+        let cases: &[(&str, &str)] = &[
+            ("wrap withAuth", "wrapped in withAuth"),
+            ("decorator login_required", "decorated with login_required"),
+            ("dependency get_current_user", "depends on get_current_user"),
+            (
+                "base LoginRequiredMixin",
+                "inherits from LoginRequiredMixin",
+            ),
+            (
+                "config SessionMiddleware",
+                "configured with SessionMiddleware",
+            ),
+            (
+                "app hook before_request",
+                "run through the app hook before_request",
+            ),
+            ("app guard AuthGuard", "behind the app-wide guard AuthGuard"),
+            (
+                "middleware clerkMiddleware",
+                "behind the middleware clerkMiddleware",
+            ),
+            ("body call requireUser", "calls requireUser"),
+            ("body_call auth", "calls auth"),
+            ("body check verifyToken", "checks verifyToken"),
+            ("opens probe", "public on purpose: a health probe"),
+            ("opens AllowAny", "public on purpose through AllowAny"),
+            (
+                "identifies SessionAuthentication",
+                "identifies the caller with SessionAuthentication",
+            ),
+            (
+                "service auth constructEvent",
+                "checks the sender with constructEvent",
+            ),
+            ("role guard RolesGuard", "behind the role guard RolesGuard"),
+            (
+                "membership guard requireMember",
+                "behind the membership guard requireMember",
+            ),
+            (
+                "tenancy guard require_tenant",
+                "behind the tenant guard require_tenant",
+            ),
+            ("permission IsOwner", "behind the permission class IsOwner"),
+            ("role check isAdmin", "checks the caller's role in isAdmin"),
+            (
+                "tenancy check ensureOrg",
+                "checks the caller's tenant in ensureOrg",
+            ),
+            (
+                "owner check ensureOwner",
+                "checks the caller owns the record in ensureOwner",
+            ),
+            (
+                "tenancy filter orgId (session)",
+                "queries scoped to the caller's tenant by orgId (session)",
+            ),
+            (
+                "owner filter where.userId (session)",
+                "queries scoped to the caller by where.userId (session)",
+            ),
+            (
+                "tenancy requested orgId (param)",
+                "queries scoped to the tenant the request names by orgId (param)",
+            ),
+            (
+                "tenancy literal orgId (literal)",
+                "queries scoped to a fixed tenant by orgId (literal)",
+            ),
+            (
+                "own record getUser",
+                "acts on the caller's own record from getUser",
+            ),
+            (
+                "owner stamp createdBy",
+                "records the caller as owner with createdBy",
+            ),
+            ("policy can", "checked by the policy can"),
+            (
+                "mapped by wrapper withErrors",
+                "turned into responses by withErrors",
+            ),
+            ("in body try return", "caught in the handler, which returns"),
+            ("in body try swallow", "caught in the handler and dropped"),
+            (
+                "in body try respond",
+                "caught in the handler and answered there",
+            ),
+            (
+                "in body try NextResponse.json",
+                "caught in the handler and answered with NextResponse.json",
+            ),
+            (
+                "app handler auth_exception_handler",
+                "handled app-wide by auth_exception_handler",
+            ),
+            ("throw HTTPException", "throws HTTPException"),
+            ("bubble framework_default", "left to the framework"),
+            ("bubble onError", "left to onError"),
+            ("builder return_value", "the value returned"),
+            ("builder Response.json", "built with Response.json"),
+            ("model declared", "a declared response model"),
+            ("model UserOut", "the response model UserOut"),
+            ("envelope {error}", "in the shape {error}"),
+            (
+                "typed model unchecked class-validator",
+                "typed with class-validator, not checked when a request comes in",
+            ),
+            (
+                "typed model rest_framework",
+                "parsed into a typed model by rest_framework",
+            ),
+            (
+                "schema repo_schema",
+                "checked against a schema of the repository",
+            ),
+            ("schema zod", "checked against a zod schema"),
+            ("manual body_check", "checked by hand"),
+            (
+                "config module lib/env.ts",
+                "read through the module lib/env.ts",
+            ),
+            ("in place process.env", "read in place from process.env"),
+            ("env flag FEATURE_X", "an environment flag FEATURE_X"),
+            (
+                "secret client SecretManager",
+                "secrets fetched with SecretManager",
+            ),
+            ("env schema config", "the environment checked with config"),
+            ("flag sdk launchdarkly", "flags from launchdarkly"),
+            ("entry direct pg", "the handler queries pg itself"),
+            ("repository pg", "through a repository with pg"),
+            ("service pg", "through a service with pg"),
+            ("script pg", "in a script with pg"),
+            (
+                "message logs via repo logger lib/log.ts#logger (pino)",
+                "logs messages with the repository's logger lib/log.ts#logger (pino)",
+            ),
+            (
+                "structured logs via repo logger lib/log.ts#logger (pino)",
+                "logs structured records with the repository's logger lib/log.ts#logger (pino)",
+            ),
+            ("message logs via print", "logs messages with print"),
+            (
+                "structured logs via tslog",
+                "logs structured records with tslog",
+            ),
+            (
+                "tested none asserted vitest",
+                "tested with vitest, no status asserted",
+            ),
+            (
+                "tested all required vitest",
+                "tested with vitest, every case it needs asserted",
+            ),
+            (
+                "tested some pytest",
+                "tested with pytest, some cases it needs asserted",
+            ),
+        ];
+        for (label, plain) in cases {
+            assert_eq!(plain_way(label), *plain, "{label}");
+        }
+        // Every row of the table is read by at least one case.
+        for (phrase, _) in PLAIN_USES {
+            assert!(
+                cases.iter().any(|(label, _)| {
+                    label
+                        .get(..phrase.len())
+                        .is_some_and(|h| h.replace('_', " ") == *phrase)
+                }),
+                "no case for {phrase}"
+            );
+        }
+    }
+
+    /// A phrase Drift's vocabulary does not have, a mechanism with no instrument and a
+    /// person's own words are left as they are.
+    #[test]
+    fn an_unknown_phrase_is_left_unchanged() {
+        for label in [
+            "frobnicate withThing",
+            "wrap",
+            "wrapper withAuth",
+            "rule access (declared in .drift/config.yaml: RuleBook._ensure_access)",
+        ] {
+            assert_eq!(plain_way(label), label);
+        }
+    }
+
+    /// Each use of a compound label is reworded on its own, and so is each side of a
+    /// folded policy.
+    #[test]
+    fn compound_labels_and_policies_are_reworded_use_by_use() {
+        assert_eq!(
+            plain_way("manual body_check + typed model rest_framework"),
+            "checked by hand + parsed into a typed model by rest_framework"
+        );
+        assert_eq!(
+            plain_way("wrap withAuth + body call audit, or dependency get_user"),
+            "wrapped in withAuth + calls audit, or depends on get_user"
+        );
+        assert_eq!(
+            plain_way("frobnicate x + wrap withAuth"),
+            "frobnicate x + wrapped in withAuth"
+        );
+    }
+
+    fn concern(id: &str, unit: &str) -> ConcernReport {
+        ConcernReport {
+            id: id.into(),
+            unit: unit.into(),
+            ..Default::default()
+        }
+    }
+
+    /// A line whose total is the heading's says nothing more; one that counts more says
+    /// it counts route mounts, and one that counts fewer says which entry points.
+    #[test]
+    fn a_line_says_what_it_counts_where_the_heading_counts_otherwise() {
+        let mut rc = recipe("apps/api", 10);
+        rc.concerns[0].total = 14;
+        rc.concerns[0].variants[0].members = 10;
+        rc.concerns.push(RecipeConcern {
+            concern: VALIDATION.into(),
+            total: 6,
+            variants: vec![RecipeVariant {
+                id: "P-v".into(),
+                label: "schema zod".into(),
+                members: 6,
+                share: 1.0,
+            }],
+            ..Default::default()
+        });
+        rc.concerns.push(RecipeConcern {
+            concern: AUTHZ.into(),
+            total: 7,
+            none: 7,
+            ..Default::default()
+        });
+        let r = PracticesReport {
+            concerns: vec![
+                concern(AUTHN, "entry_point"),
+                concern(AUTHZ, "entry_point"),
+                concern(ERRORS, "entry_point"),
+                concern(VALIDATION, "entry_point"),
+            ],
+            recipes: vec![rc],
+            ..Default::default()
+        };
+        let out = render_first_run(&r);
+        assert!(
+            out.contains(
+                "  10 http entry points in apps/api\n    sign-in:     calls requireUser in 10; other ways in 1; nothing found in 2; could not tell in 1 (of 14 route mounts)\n"
+            ),
+            "{out}"
+        );
+        assert!(
+            out.contains("    errors:      left to the framework in 10 (of 10)\n"),
+            "{out}"
+        );
+        assert!(
+            out.contains(
+                "    validation:  checked against a zod schema in 6 (of 6 that may read input)\n"
+            ),
+            "{out}"
+        );
+        assert!(
+            out.contains(
+                "    permissions: nothing found in 7 (of 7 where a caller is or may be signed in)\n"
+            ),
+            "{out}"
+        );
+        assert_eq!(out.matches("route mounts").count(), 1, "{out}");
+    }
+
+    /// The report of a package `p2` whose sign-in is mostly `P-a`, promotable when
+    /// `place` is given.
+    fn promotable_report(
+        promotable: Option<Promotable>,
+        findings: Vec<Finding>,
+    ) -> PracticesReport {
+        let mut lead = variant("P-a", "wrap withAuth");
+        lead.promotable = promotable;
+        let mut other = variant("P-b", "body call requireUser");
+        other.members = 1;
+        let mut none = variant("P-n", basis::AUTHN_NONE);
+        none.kind = VariantKind::None;
+        PracticesReport {
+            concerns: vec![ConcernReport {
+                id: AUTHN.into(),
+                unit: "entry_point".into(),
+                variants: vec![lead, other, none],
+                by_package: vec![PackageProfile {
+                    package: "p2".into(),
+                    total: 12,
+                    variants: vec![
+                        PackageVariant {
+                            id: "P-n".into(),
+                            members: 2,
+                            share: 0.0,
+                        },
+                        PackageVariant {
+                            id: "P-a".into(),
+                            members: 9,
+                            share: 0.0,
+                        },
+                        PackageVariant {
+                            id: "P-b".into(),
+                            members: 1,
+                            share: 0.0,
+                        },
+                    ],
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+            findings,
+            ..Default::default()
+        }
+    }
+
+    fn place(p: Option<&str>) -> Option<Promotable> {
+        Some(Promotable {
+            rule: "practice".into(),
+            role: String::new(),
+            place: p.map(str::to_string),
+        })
+    }
+
+    const SECURITY: &str =
+        "`drift security` lists every entry point with its guard and what it reaches.";
+    const LIST: &str =
+        "`drift practices promote --list` lists the practices you can make a rule for new code.";
+
+    /// A `none` finding in a package whose usual way may be promoted ends with the
+    /// command, once; the closing line points at `--list` beside `drift security`.
+    #[test]
+    fn a_none_finding_points_at_promoting_the_usual_way() {
+        let r = promotable_report(
+            place(Some("p2/app")),
+            vec![finding(FindingKind::None, AUTHN, "p2", &["P-n"])],
+        );
+        let out = render_first_run(&r);
+        let lines: Vec<&str> = out.lines().collect();
+        assert_eq!(
+            lines[1],
+            "  1. sign-in in p2: no guard found in what Drift read, in 2 places (e.g. p2/a.ts:3 GET); make the usual way the rule for new code: drift practices promote P-a --in p2/app",
+            "{out}"
+        );
+        assert_eq!(
+            out.matches("drift practices promote P-").count(),
+            1,
+            "{out}"
+        );
+        assert_eq!(lines[2], format!("  {SECURITY} {LIST}"), "{out}");
+        // No place: the command finds it.
+        let r = promotable_report(
+            place(None),
+            vec![finding(FindingKind::None, AUTHN, "p2", &["P-n"])],
+        );
+        let out = render_first_run(&r);
+        assert!(
+            out.contains("(e.g. p2/a.ts:3 GET); make the usual way the rule for new code: drift practices promote P-a\n"),
+            "{out}"
+        );
+    }
+
+    /// An unexplained split gets no command: the code has not chosen. Nothing
+    /// promotable: no command and no `--list`.
+    #[test]
+    fn no_promotion_on_a_split_or_when_nothing_is_promotable() {
+        let split = finding(FindingKind::UnexplainedSplit, AUTHN, "p2", &["P-a", "P-b"]);
+        let r = promotable_report(place(Some("p2")), vec![split.clone()]);
+        let out = render_first_run(&r);
+        assert!(!out.contains("make the usual way"), "{out}");
+        assert!(out.ends_with(&format!("  {SECURITY} {LIST}\n")), "{out}");
+        let r = promotable_report(
+            None,
+            vec![finding(FindingKind::None, AUTHN, "p2", &["P-n"]), split],
+        );
+        let out = render_first_run(&r);
+        assert!(!out.contains("drift practices promote"), "{out}");
+        assert!(out.ends_with(&format!("  {SECURITY}\n")), "{out}");
+    }
+
+    /// `drift practices` and `--all` give the command under a promotable variant,
+    /// leaving the lines around it as they were.
+    #[test]
+    fn practices_text_gives_the_command_under_a_promotable_variant() {
+        let mut r = promotable_report(place(Some("p2")), Vec::new());
+        r.concerns[0].variants[0].members = 9;
+        r.recipes = vec![Recipe {
+            package: "p2".into(),
+            role: "http".into(),
+            label: "http entry points in p2".into(),
+            population: 12,
+            concerns: vec![RecipeConcern {
+                concern: AUTHN.into(),
+                total: 12,
+                variants: vec![RecipeVariant {
+                    id: "P-a".into(),
+                    label: "wrap withAuth".into(),
+                    members: 9,
+                    share: 0.75,
+                }],
+                copy: Some(Example {
+                    path: "p2/a.ts".into(),
+                    symbol: "GET".into(),
+                    line: 3,
+                }),
+                none: 2,
+                unknown: 1,
+                ..Default::default()
+            }],
+            ..Default::default()
+        }];
+        let out = render_recipes(&r);
+        assert!(
+            out.contains(
+                "    authn: wrap withAuth 9/12 (copy p2/a.ts:3 GET); none 2/12 (nothing found in what Drift read); 1 unknown (not counted)\n      make wrap withAuth the rule for new code: drift practices promote P-a --in p2\n"
+            ),
+            "{out}"
+        );
+        let all = render(&r, true);
+        assert_eq!(
+            all.matches(
+                "      make it the rule for new code: drift practices promote P-a --in p2\n"
+            )
+            .count(),
+            1,
+            "{all}"
+        );
+    }
 }

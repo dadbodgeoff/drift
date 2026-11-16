@@ -212,7 +212,16 @@ fn mentions(text: &str, id: &str, pattern: &str) -> bool {
 fn init_census_and_review_count_the_withheld_cards() {
     let dir = repo(true);
     let r = dir.path();
+    // The first run says how many were kept back and what shows them; the policy's
+    // own account of it is behind `--explain`.
     let init = ok(r, &["init"]);
+    assert!(
+        init.contains("2 weaker candidates were kept back from the list: `drift review --hidden` shows them with the evidence.")
+            && init.contains("  drift review --hidden      the 2 weaker candidates, with the evidence\n")
+            && !init.contains("withheld by the show policy"),
+        "{init}"
+    );
+    let init = ok(r, &["init", "--explain"]);
     let note = "2 mined card(s) withheld by the show policy (not proposed; not shown as conventions to agents, hooks, MCP, exports or SARIF; `drift card <file>` states the strong ones as facts, not rules): TypeScript jsx_wrapper 1 (family not admitted (below the show bar on the dev labels)), TypeScript naming 1 (too many outliers (more than 1)). `drift review --hidden` lists them for people, with their evidence; a person can promote one.";
     assert!(init.contains(note), "{init}");
     let census = ok(r, &["census", "--all"]);
@@ -256,7 +265,7 @@ fn an_empty_result_says_why_it_is_empty() {
     assert!(
         census.contains("0 conventions from")
             && census.contains(
-                "No conventions shown: mining found 2 card(s), and every one was withheld (above)."
+                "No conventions shown: Drift found 2 candidates and none has a track record strong enough to propose."
             )
             && census.contains("`drift review --hidden` lists them"),
         "{census}"
@@ -264,7 +273,7 @@ fn an_empty_result_says_why_it_is_empty() {
     assert!(!census.contains("roles need roughly 20+"), "{census}");
     let init = ok(r, &["init"]);
     assert!(
-        init.contains("No conventions shown: mining found 2 card(s)"),
+        init.contains("No conventions shown: Drift found 2 candidates"),
         "{init}"
     );
     let list = ok(r, &["review", "--list"]);
@@ -294,7 +303,7 @@ fn init_and_census_close_with_the_next_step_for_withheld_cards() {
     for routes in [true, false] {
         let dir = repo(routes);
         let r = dir.path();
-        for args in [vec!["census"], vec!["init"], vec!["census"]] {
+        for args in [vec!["census"], vec!["init", "--explain"], vec!["census"]] {
             let out = ok(r, &args);
             assert_eq!(out.lines().last(), Some(next), "{args:?} {routes}: {out}");
             assert_eq!(out.matches("Next for the").count(), 1, "{out}");

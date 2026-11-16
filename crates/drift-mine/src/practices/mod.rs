@@ -42,8 +42,9 @@
 //!   absence, or [`Assignment::Unknown`] with a reason. A unit with any unparsed file
 //!   or opaque instrument is `Unknown`, even if other instruments are known [STRICT];
 //!   no unknown unit is ever `None`.
-//! - [`Concern::promotable`] maps a variant key to an existing [`Rule`] (the default
-//!   says none: descriptive only); the engine picks the role.
+//! - Nothing in a classifier says what may be promoted to a rule: a person promotes a
+//!   variant in a place where the counts allow it ([`promote`]), and the rule is
+//!   checked by the classifier itself, never mapped to a name-matching rule.
 //! - Vocabularies go in `libraries.rs` as `*_LIBRARIES` / `*_CALLEES` consts (the vocab
 //!   test forbids `const *_WORDS` outside `vocab.rs`); auth decisions go through
 //!   `security::authenticates` / `security::callee_is_guard`, never `grant::`.
@@ -55,6 +56,7 @@ mod dupes;
 mod engine;
 pub mod libraries;
 mod matcher;
+pub mod promote;
 mod py_authz;
 mod render;
 
@@ -63,8 +65,6 @@ use std::sync::OnceLock;
 
 use drift_core::{EntryPoint, FileFacts, RepoFacts, Symbol};
 use serde::{Deserialize, Serialize};
-
-use crate::mine::Rule;
 
 /// Declares each concern classifier's module and registers it, in one line per
 /// concern (`authn::Authn,`). The engine orders concerns by [`CONCERNS`], not by
@@ -637,11 +637,6 @@ pub trait Concern: Sync {
     ) -> Option<basis::Basis> {
         backing.basis.clone()
     }
-    /// The existing rule that expresses a variant, when one does (PLAN-R13 §4.5);
-    /// the engine picks the role. `None`: descriptive only.
-    fn promotable(&self, _key: &VariantKey) -> Option<Rule> {
-        None
-    }
     /// A tenant or owner key of the request that the unit takes and neither checks
     /// nor scopes, when the facts prove it ([`FindingKind::UnscopedKey`]; authz only,
     /// the default says none). `uses` are the unit's known uses after the engine's
@@ -677,6 +672,11 @@ pub struct Options {
     /// every symbol and call of the repository that a caller reading no findings (a
     /// card's lines, a hook's departures, `drift check`) should not pay on each edit.
     pub skip_duplicates: bool,
+    /// Fill each variant's [`Variant::promotable`]: a reading of every unit of every
+    /// place that only a report people read (`drift practices`, MCP
+    /// `drift_practices`, Studio, the first run of `drift init`) shows. A card, a hook
+    /// and `drift check` leave it out; `drift practices promote` reads the units itself.
+    pub promotable: bool,
 }
 
 /// The practice map of a repository with the registered classifiers.
@@ -708,12 +708,13 @@ pub use depart::{
 pub use dupes::{DuplicateHelper, FileDuplicate, HelperCopy, duplicate_helpers, duplicates_in};
 pub use engine::{
     NOT_COVERED, PRIMARY, card_lines, card_lines_with, config_hint, config_hint_counts,
-    config_hints, declared_warnings, link_conventions, package_line, package_line_with,
+    config_hints, declared_warnings, link_conventions, package_line, package_line_with, rule_names,
 };
 pub(crate) use engine::{TAIL, declared_on_every_path};
 pub(crate) use libraries::{NOT_AUTH_GUARD_LIBRARIES, authn_callee};
 pub use render::{
-    AGENT_CHARS, agent_recipe, agent_recipe_preview, render, render_agent, render_recipes,
+    AGENT_CHARS, agent_recipe, agent_recipe_preview, plain_concern, plain_way, render,
+    render_agent, render_first_run, render_recipes,
 };
 
 // ---------- `drift practices --json` version 1 (PLAN-R13 §0.3) ----------
@@ -1323,13 +1324,20 @@ pub struct ConventionLink {
     pub mode: String,
 }
 
-/// How `drift practices promote` would turn the variant into a convention.
+/// How `drift practices promote` would turn the variant into a convention: set where
+/// the variant may be promoted as the code stands ([`promote::candidates`]).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Promotable {
-    /// The rule's type (`wrapped_by`, `calls`, `throws`, ...).
+    /// The rule's type: `practice` ([`crate::mine::Rule::Practice`]).
     pub rule: String,
-    /// The role it would apply to (`R-…`).
+    /// The role it would apply to (`R-…`): empty for a `practice` rule, which holds in
+    /// a place and not in a role (kept for readers of v1).
     pub role: String,
+    /// The broadest place it may be promoted in, as [`promote::Place::shown`] names it
+    /// (`apps/api/views`, `.` the root package): what `drift practices promote <id>`
+    /// takes without `--in` (additive to v1).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub place: Option<String>,
 }
 
 /// A concern's unknown units.

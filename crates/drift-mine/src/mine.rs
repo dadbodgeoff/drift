@@ -181,9 +181,25 @@ pub enum Rule {
         source: String,
         instead_of: Vec<String>,
     },
+    /// Every unit of `concern` in the convention's place (its role's package and
+    /// directory) does the concern one of these ways: the keys of practice-map
+    /// variants ([`crate::practices::VariantKey::key`]), never names. Written only by a
+    /// person promoting a practice ([`crate::practices::promote`]), never mined, and
+    /// checked by the classifier that draws the map, apart from the role's members
+    /// ([`Rule::is_practice`]): a unit the classifier cannot tell is never a violation.
+    Practice {
+        concern: String,
+        any_of: Vec<String>,
+    },
 }
 
 impl Rule {
+    /// A promoted practice ([`Rule::Practice`]): checked against the practice map, so
+    /// `check` evaluates it apart ([`crate::practices::promote::check`]).
+    pub fn is_practice(&self) -> bool {
+        matches!(self, Rule::Practice { .. })
+    }
+
     /// A wiring rule ([`Rule::RegisteredIn`], [`Rule::MirrorsKeys`]): checked
     /// against other files than the unit's own, so `check` evaluates it apart.
     pub fn is_wiring(&self) -> bool {
@@ -2162,7 +2178,8 @@ impl Rule {
             | Rule::DependencyVersion { .. }
             | Rule::RegisteredIn { .. }
             | Rule::MirrorsKeys { .. }
-            | Rule::ImportsFrom { .. } => return false,
+            | Rule::ImportsFrom { .. }
+            | Rule::Practice { .. } => return false,
         };
         let callee = matches!(
             self,
@@ -3062,6 +3079,11 @@ impl Rule {
                     others.join(" or ")
                 )
             }
+            // The words a person reads are the convention's summary, written from the
+            // map's labels when it is promoted; this is the rule as the file holds it.
+            Rule::Practice { concern, any_of } => {
+                format!("do {concern} one of these ways: {}", any_of.join(" or "))
+            }
         }
     }
 
@@ -3102,6 +3124,7 @@ impl Rule {
             Rule::HasTest | Rule::ModelHas { .. } | Rule::PackageHas { .. } => 4,
             Rule::Named { .. } => 6,
             Rule::RegisteredIn { .. } | Rule::MirrorsKeys { .. } => 2,
+            Rule::Practice { .. } => 0,
         }
     }
 
@@ -3131,7 +3154,9 @@ impl Rule {
             Rule::ImportsFrom { source, .. } => source,
             Rule::HasTest | Rule::ModelHas { .. } | Rule::PackageHas { .. } => return 0.6,
             Rule::Named { .. } => return 0.5,
-            Rule::RegisteredIn { .. } | Rule::MirrorsKeys { .. } => return 1.0,
+            Rule::RegisteredIn { .. } | Rule::MirrorsKeys { .. } | Rule::Practice { .. } => {
+                return 1.0;
+            }
         };
         let external = target.starts_with("pkg:") || target.starts_with("unresolved:");
         match self {
@@ -5239,7 +5264,8 @@ fn narrowable_targets(rule: &Rule) -> Option<Vec<&str>> {
         // say where a name comes from, not where its users sit.
         | Rule::RegisteredIn { .. }
         | Rule::MirrorsKeys { .. }
-        | Rule::ImportsFrom { .. } => return None,
+        | Rule::ImportsFrom { .. }
+        | Rule::Practice { .. } => return None,
     })
 }
 

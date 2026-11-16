@@ -581,10 +581,17 @@ fn session_start(p: &Project, input: &Value, state_path: &Path) -> anyhow::Resul
                     // The inventory and the conventions check beside the practice map:
                     // none of the three reads what another finds.
                     let kept = derived(p, facts);
-                    let ((security, report), practices) = crate::card::beside(
-                        || (security_keys(p, facts, kept.as_ref()), p.check(facts, None)),
+                    let ((security, mut report), practices) = crate::card::beside(
+                        || {
+                            (
+                                security_keys(p, facts, kept.as_ref()),
+                                p.check_conventions(facts, None),
+                            )
+                        },
                         || practice_report(p, facts, kept.as_ref()),
                     );
+                    // What the promoted practices say, read from the map just built.
+                    p.add_practices(&mut report, facts, None, || &practices);
                     state.recipes = hook_recipes(facts, &practices);
                     state.practice_baseline = Some(
                         drift_mine::practices::departures(&practices, None)
@@ -1001,7 +1008,15 @@ fn pre_tool_use(p: &Project, input: &Value, state_path: &Path) -> anyhow::Result
             .collect(),
     };
     let grouped = lines.iter().any(|(w, _)| w.is_some());
-    let lines: Vec<_> = lines.into_iter().filter(|(_, c)| fresh(c)).collect();
+    // Without what the file declares, a promoted practice of entry points is said for a
+    // file of an entry-point kind only, read from the session's recipes as the recipe
+    // line below is (no scan here); where none was recorded, it is said.
+    let entry_file = new_file_of_recipe_kind(&state, &rel);
+    let lines: Vec<_> = lines
+        .into_iter()
+        .filter(|(when, c)| when.is_none() || kept_for_new_file(c, entry_file))
+        .filter(|(_, c)| fresh(c))
+        .collect();
     // The recipe of the new file's kind, from the session's state: no scan here.
     let practice = new_file_recipe(&mut state, &rel);
     if lines.is_empty() {
@@ -1106,11 +1121,11 @@ fn dir_pattern(rel: &str) -> Option<String> {
     })
 }
 
-/// The directories of `package` whose files are entry points of `kind`, as
-/// [`dir_pattern`]s: at least [`ENTRY_DIR_FILES`] of the directory's files of an
-/// extension hold one, and they are most of its files of that extension (tests and
+/// The directories of `package` whose files are entry points of `kind` (`None`: of any
+/// kind), as [`dir_pattern`]s: at least [`ENTRY_DIR_FILES`] of the directory's files of
+/// an extension hold one, and they are most of its files of that extension (tests and
 /// `__init__` aside). Sorted; at most [`RECIPE_DIRS`].
-fn entry_dirs(facts: &drift_core::RepoFacts, package: &str, kind: &str) -> Vec<String> {
+fn entry_dirs(facts: &drift_core::RepoFacts, package: &str, kind: Option<&str>) -> Vec<String> {
     // pattern -> (files with an entry point of the kind, files)
     let mut seen: BTreeMap<String, (usize, usize)> = BTreeMap::new();
     for f in facts.files.iter().filter(|f| {
@@ -1123,7 +1138,7 @@ fn entry_dirs(facts: &drift_core::RepoFacts, package: &str, kind: &str) -> Vec<S
         };
         let n = seen.entry(pattern).or_default();
         n.1 += 1;
-        if f.listed_entry_points().iter().any(|e| e.kind == kind) {
+        if f.listed_entry_points().iter().any(|e| is_kind(e, kind)) {
             n.0 += 1;
         }
     }
@@ -1132,6 +1147,88 @@ fn entry_dirs(facts: &drift_core::RepoFacts, package: &str, kind: &str) -> Vec<S
         .map(|(pattern, _)| pattern)
         .take(RECIPE_DIRS)
         .collect()
+}
+
+/// Whether `e` is an entry point of `kind` (`None`: of any kind).
+fn is_kind(e: &drift_core::EntryPoint, kind: Option<&str>) -> bool {
+    kind.is_none_or(|k| e.kind == k)
+}
+
+/// The file stems of `package`'s files that declare an entry point of `kind` (`None`: of
+/// any kind), sorted (`route`, `page`): a new file with one of them is of that kind.
+fn entry_stems(facts: &drift_core::RepoFacts, package: &str, kind: Option<&str>) -> Vec<String> {
+    facts
+        .files
+        .iter()
+        .filter(|f| {
+            f.package == package && f.listed_entry_points().iter().any(|e| is_kind(e, kind))
+        })
+        .filter_map(|f| {
+            f.path
+                .rsplit('/')
+                .next()?
+                .split('.')
+                .next()
+                .map(str::to_string)
+        })
+        .collect::<BTreeSet<String>>()
+        .into_iter()
+        .collect()
+}
+
+/// Whether a new file at `rel` is of the kind whose files have one of `stems` or are
+/// written in one of `dirs` ([`dir_pattern`]s): what makes a new file one of a recipe's
+/// kind ([`new_file_recipe`]), and one that will declare entry points
+/// ([`new_entry_file`]). Never a test file.
+fn of_entry_kind(stems: &[String], dirs: &[String], rel: &str) -> bool {
+    if drift_mine::roles::is_test_path(rel) {
+        return false;
+    }
+    let Some(stem) = rel.rsplit('/').next().and_then(|n| n.split('.').next()) else {
+        return false;
+    };
+    let pattern = dir_pattern(rel).filter(|_| stem != "__init__");
+    stems.iter().any(|s| s == stem) || pattern.is_some_and(|p| dirs.contains(&p))
+}
+
+/// Whether a file not written yet at `rel` (of `package`) will declare entry points, as
+/// the facts of the files around it say, by the rule the PreToolUse hook reads a new
+/// file's recipe kind with ([`of_entry_kind`]): it is named as the package's entry-point
+/// files are (`route.ts`), or written where files of any name are entry points. What
+/// `drift card` reads for a promoted practice of entry points when the content is not
+/// known.
+pub(crate) fn new_entry_file(facts: &drift_core::RepoFacts, package: &str, rel: &str) -> bool {
+    of_entry_kind(
+        &entry_stems(facts, package, None),
+        &entry_dirs(facts, package, None),
+        rel,
+    )
+}
+
+/// Whether convention `c`, listed for a new file whose content is unknown, stays: a
+/// promoted practice of entry points only where the file will declare them, when that
+/// can be told (`entry_file`: [`new_entry_file`], [`new_file_of_recipe_kind`]); every
+/// other convention always.
+pub(crate) fn kept_for_new_file(c: &Convention, entry_file: Option<bool>) -> bool {
+    match &c.rule {
+        drift_mine::mine::Rule::Practice { concern, .. } => {
+            drift_mine::practices::promote::unit_of(concern) != Some("entry_point")
+                || entry_file != Some(false)
+        }
+        _ => true,
+    }
+}
+
+/// Whether the session's recipes say a new file at `rel` is of an entry-point kind of
+/// its package (the rule [`new_file_recipe`] reads); `None` when no recipe is known (no
+/// SessionStart scan recorded one), and nothing can be told without a scan.
+fn new_file_of_recipe_kind(state: &SessionState, rel: &str) -> Option<bool> {
+    if state.recipes.is_empty() {
+        return None;
+    }
+    let pkg = recipe_package(&state.recipes, rel);
+    let of_kind = |r: &HookRecipe| r.package == pkg && of_entry_kind(&r.stems, &r.dirs, rel);
+    Some(state.recipes.iter().any(of_kind))
 }
 
 /// The recipes agents may be told (lead decision, round 13): the report's recipes with
@@ -1144,31 +1241,14 @@ fn hook_recipes(
         .iter()
         .filter_map(|rc| {
             let text = drift_mine::practices::agent_recipe(rc)?;
-            let mut stems: Vec<String> = facts
-                .files
-                .iter()
-                .filter(|f| {
-                    f.package == rc.package
-                        && f.listed_entry_points().iter().any(|e| e.kind == rc.role)
-                })
-                .filter_map(|f| {
-                    f.path
-                        .rsplit('/')
-                        .next()?
-                        .split('.')
-                        .next()
-                        .map(str::to_string)
-                })
-                .collect::<BTreeSet<String>>()
-                .into_iter()
-                .collect();
+            let mut stems = entry_stems(facts, &rc.package, Some(rc.role.as_str()));
             stems.truncate(RECIPE_STEMS);
             Some(HookRecipe {
                 id: rc.id.clone(),
                 package: rc.package.clone(),
                 text,
                 stems,
-                dirs: entry_dirs(facts, &rc.package, &rc.role),
+                dirs: entry_dirs(facts, &rc.package, Some(rc.role.as_str())),
                 preview: drift_mine::practices::agent_recipe_preview(rc).unwrap_or_default(),
             })
         })
@@ -1222,17 +1302,8 @@ fn session_brief(state: &mut SessionState, cwd_rel: &str) -> Option<String> {
 /// recipe's kind (docs, styles, config), a recipe already given, or where nothing is
 /// known.
 fn new_file_recipe(state: &mut SessionState, rel: &str) -> Option<String> {
-    if drift_mine::roles::is_test_path(rel) {
-        return None;
-    }
     let pkg = recipe_package(&state.recipes, rel);
-    let stem = rel.rsplit('/').next()?.split('.').next()?;
-    let pattern = dir_pattern(rel).filter(|_| stem != "__init__");
-    let of_kind = |r: &&HookRecipe| {
-        r.package == pkg
-            && (r.stems.iter().any(|s| s == stem)
-                || pattern.as_ref().is_some_and(|p| r.dirs.contains(p)))
-    };
+    let of_kind = |r: &&HookRecipe| r.package == pkg && of_entry_kind(&r.stems, &r.dirs, rel);
     let r = state.recipes.iter().find(of_kind)?;
     let key = recipe_key(&r.id);
     if state.primed.contains(&key) {
@@ -1487,6 +1558,17 @@ fn edit_facts<'f>(
                 .iter()
                 .all(|k| baseline.contains(k) || state.practice_advised.contains(k))
             {
+                continue;
+            }
+            // A person made this concern a rule here (a promoted practice): the check
+            // of the edit reports the unit under that convention, with what to do. The
+            // same unit is not said a second time as a fact.
+            if p.policy.conventions.iter().any(|c| {
+                c.status == drift_mine::policy::Status::Accepted
+                    && drift_mine::admission::shown_to_agents(c)
+                    && matches!(&c.rule, drift_mine::mine::Rule::Practice { concern, .. } if *concern == d.concern)
+                    && drift_mine::practices::promote::covers_file(c, file)
+            }) {
                 continue;
             }
             state.practice_advised.extend(keys);
@@ -2855,6 +2937,10 @@ fn drift_policy(args: &[&str], pty: bool) -> Option<String> {
     match sub {
         "init" => Some("drift init".into()),
         "review" => flag(REVIEW_DECISIONS),
+        // Promoting a practice writes an accepted convention: a person's decision. A
+        // dry run and the list of what may be promoted only read.
+        "practices" => (opts.contains(&"promote") && !has(&["dry-run", "list"]))
+            .then(|| "drift practices promote".into()),
         "setup" => flag(SETUP_DECISIONS).or_else(|| setup_writes().then(by_person).flatten()),
         "investigate" => has(&["record", "answers"]).then(by_person).flatten(),
         // Only a person asks for a branch with an agent's patch, or replaces a file.
@@ -3555,6 +3641,15 @@ mod tests {
                 "drift review --show-to-agents",
             ),
             ("drift review --accept=D-x,D-y", "drift review --accept"),
+            ("drift practices promote P-x", "drift practices promote"),
+            (
+                "drift practices promote P-x --in app/api --block",
+                "drift practices promote",
+            ),
+            (
+                "drift practices --json promote P-x",
+                "drift practices promote",
+            ),
             ("drift review --block D-x --force", "drift review --block"),
             ("drift review --advise D-x", "drift review --advise"),
             (
@@ -3921,6 +4016,8 @@ mod tests {
             "drift investigate --json",
             "drift investigate --record I-x=not-a-check --reason r --evidence a.py:3",
             "drift practices --hints",
+            "drift practices promote --list",
+            "drift practices promote P-x --dry-run",
             "drift census --json --max 15",
             "drift findings --json",
             "drift findings",

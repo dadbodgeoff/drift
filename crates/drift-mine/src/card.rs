@@ -173,9 +173,10 @@ pub fn strong(e: &Evidence) -> bool {
 
 /// Whether a mined card with this evidence and rule is one the card of a file in its
 /// role states: a [`strong`] one about what the role's members do. A wiring rule is
-/// about a registry, not about what a member does, and is never stated.
+/// about a registry, not about what a member does, and is never stated; nor is a
+/// promoted practice, whose role is only its place and has no members to count.
 pub fn stated(evidence: &Evidence, rule: &crate::mine::Rule) -> bool {
-    strong(evidence) && !rule.is_wiring()
+    strong(evidence) && !rule.is_wiring() && !rule.is_practice()
 }
 
 /// The regularities to state for `rel` among `cards` (every card mining found, shown or

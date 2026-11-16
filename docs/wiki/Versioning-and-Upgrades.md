@@ -43,7 +43,7 @@ I found no code that deletes old fact-cache entries when they stop being used. A
 
 | File | After an upgrade |
 | --- | --- |
-| `.drift/conventions.yaml` | Read as written. Version 1 files need no migration. A file with a `version` higher than the running Drift knows (above 2 in this build) is refused with `was written by a newer Drift` (exit 2): upgrade the binary. Version 2 appears when `drift init` runs in a repository of several packages, so a team that mixes Drift versions can hit this: a Drift that does not know version 2 cannot read the file. Selectors are frozen when a convention is written, so a new Drift keeps checking the members the convention was written for; a new Drift mines again only when you run `drift init`. |
+| `.drift/conventions.yaml` | Read as written. Version 1 files need no migration. A file with a `version` higher than the running Drift knows (above 2 in this build) is refused with `was written by a newer Drift` (exit 2): upgrade the binary. Version 2 appears when `drift init` runs in a repository of several packages, so a team that mixes Drift versions can hit this: a Drift that does not know version 2 cannot read the file. Selectors are frozen when a convention is written, so a new Drift keeps checking the members the convention was written for; a new Drift mines again only when you run `drift init`. A file that holds a promoted practice cannot be read by a Drift from before promotion (below). |
 | `drift.lock` | Read as written; a plain list of lines, with no version. |
 | `.drift/config.yaml` | Read as written. A key the running Drift does not know is a warning, never an error, so a file written for a newer Drift is harmless to an older one (it ignores what it does not know). |
 | Session state, review log | Local. A session state that cannot be read is replaced; a review log is append-only with its own event version. |
@@ -51,6 +51,20 @@ I found no code that deletes old fact-cache entries when they stop being used. A
 What an upgrade can change without touching any of your files is **what `drift check` finds**, because the facts and the readings of guards and exposure improve between versions: a violation can appear that was invisible before, a baselined violation can disappear (it is then listed as `fixed`), and a practice or security answer can move between `known`, `none` and `unknown`. This is why the upgrade steps below start with a check on your main branch.
 
 `drift init --refresh-kinds` relearns the file-kind vocabulary frozen in `.drift/conventions.yaml`, to adopt new kinds after an upgrade. Existing conventions keep their ids, but the files their roles cover may change, so run `drift check` afterwards and review new violations of accepted conventions (they are not baselined).
+
+## Promoted practices and older Drift
+
+`drift practices promote` writes a convention whose rule type is `practice`. A Drift from before promotion does not know that rule type, and it cannot read a `.drift/conventions.yaml` that holds one **at all**: every command that reads the policy (`drift check`, `drift review`, the hooks, CI) stops with a parse error that names the rule type, exit 2. It does not skip the one convention and go on.
+
+The file's `version:` number does not change when a practice is promoted, so an older Drift does not say `was written by a newer Drift`; the parse error is what you see. A file with no promoted practice is unchanged and reads as before.
+
+So, before anyone promotes the first practice in a repository:
+
+1. Upgrade Drift on every machine that runs it: each teammate's, and the Claude Code plugin's `drift` on the `PATH`.
+2. Upgrade CI: pin the Action's `drift-ref` (or your pipeline's Drift) to the same version.
+3. Then promote, and commit `.drift/conventions.yaml` and `drift.lock`.
+
+A machine left on the older Drift fails open in the hooks (the agent is told the policy could not be read) and fails `drift check` with exit 2: never a pass. To go back to an older Drift after a practice was promoted, restore `.drift/conventions.yaml` from before the promotion, or delete the promoted practice's entry from the file by hand. Rejecting it is not enough: a rejected convention stays in the file, with its rule type.
 
 ## Upgrading
 
@@ -83,7 +97,7 @@ drift init
 5. **Move the team and CI together.** Pin the version everywhere: the same Drift version on every machine, and in CI a pinned Drift (the GitHub Action takes a `drift-ref` input, default `main`; pin a tag or a full commit SHA for reproducible CI). Machines on different versions can disagree about what `drift check` finds until all have upgraded.
 6. **Update the Claude Code plugin with the binary.** The plugin's hooks call `drift` from the `PATH`, and the plugin and the binary are released with the same version number.
 
-To go back to an older Drift, reinstall the older binary; the cache rebuilds again. An older Drift refuses a `.drift/conventions.yaml` whose format version it does not know (see above), so a downgrade after `drift init` wrote version 2 needs that file restored from git. Downgrades are not tested by the project.
+To go back to an older Drift, reinstall the older binary; the cache rebuilds again. An older Drift refuses a `.drift/conventions.yaml` whose format version it does not know (see above), so a downgrade after `drift init` wrote version 2 needs that file restored from git; the same holds after a practice was promoted ([above](#promoted-practices-and-older-drift)). Downgrades are not tested by the project.
 
 Not built yet: answers in `.drift/config.yaml` that go stale when the evidence they rested on changes (see [Setup Questions](Setup-Questions) and [Drift in CI](Drift-in-CI)). Check the release notes of the version you upgrade to.
 

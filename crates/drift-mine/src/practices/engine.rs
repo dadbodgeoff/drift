@@ -13,8 +13,9 @@
 //!   authentication and authorization only where the unit runs it on every path
 //!   ([`short_of_every_path`]), else the unit is unknown with the declaration as a
 //!   check found and not proven. A declared unit is counted apart
-//!   ([`Population::declared`]) and is never a recipe, a promotable rule, a way to
-//!   copy or what another unit departs from.
+//!   ([`Population::declared`]) and is never a recipe, a way to copy or what another
+//!   unit departs from. A person may still promote it ([`super::promote`]): a way they
+//!   declared and units use is held to like any other.
 //! - **Unparsed** ([`Guards::unparsed`]): a unit in a file whose parse failed or that
 //!   was skipped for lack of stack, or one whose instrument is defined in such a file,
 //!   is unknown (`unparsed`).
@@ -49,8 +50,8 @@ use drift_core::{FileFacts, RepoFacts, Symbol, WrapKind};
 
 use super::matcher::{self, Tri};
 use super::*;
-use crate::mine::{MIN_ROLE_SIZE, norm_ref, r3};
-use crate::roles::{NonProduction, RoleSelector, is_test_path};
+use crate::mine::{MIN_ROLE_SIZE, Rule, norm_ref, r3};
+use crate::roles::{NonProduction, is_test_path};
 
 /// What next round's concerns will describe (PLAN-R13 §8): not in this map yet.
 pub const NOT_COVERED: &[&str] = &[
@@ -1722,14 +1723,19 @@ pub(super) fn run(
     // Each concern's report is of its own units: side by side too.
     let reports = side_by_side(assigned.len(), |i| {
         let (id, title, unit, placed, left_out) = &assigned[i];
-        let classifier = classifiers
-            .iter()
-            .find(|c| c.id() == *id)
-            .map(|c| c.as_ref());
-        let (mut report, of_unit) =
-            concern_report(id, title, unit, placed, left_out.clone(), &env, classifier);
-        if opts.units {
+        let (mut report, of_unit) = concern_report(id, title, unit, placed, left_out.clone());
+        // What may be promoted is read from every unit, whether the report lists them
+        // or not (`drift practices` does not by default): one reading, the one
+        // `drift practices promote` makes ([`super::promote::fill_promotable`]). Only
+        // for a caller that shows it ([`super::Options::promotable`]).
+        if opts.units || opts.promotable {
             report.units = unit_rows(&report, placed, &of_unit);
+        }
+        if opts.promotable {
+            super::promote::fill_promotable(&mut report);
+        }
+        if !opts.units {
+            report.units = Vec::new();
         }
         (report, of_unit)
     });
@@ -1822,7 +1828,6 @@ pub(super) fn run(
 }
 
 /// Build one variant entry from its members.
-#[allow(clippy::too_many_arguments)]
 fn variant_entry(
     concern: &str,
     placed: &[Placed],
@@ -1830,8 +1835,6 @@ fn variant_entry(
     compare: &[usize],
     of_unit: &[String],
     package_total: &BTreeMap<&str, usize>,
-    env: &Env,
-    classifier: Option<&dyn Concern>,
 ) -> Variant {
     let members: Vec<&Placed> = g.members.iter().map(|&i| &placed[i]).collect();
     let n = members.len();
@@ -1869,23 +1872,6 @@ fn variant_entry(
         (Vec::new(), 0)
     };
     let key = &g.key;
-    // What a person declared is not proven: never promoted to a rule.
-    let rules = classifier
-        .filter(|_| !g.sources.contains_key(&VariantSource::Declared))
-        .and_then(|c| promotable_rules(c, key, g.kind));
-    let promotable = rules.and_then(|rules| {
-        let role = promotion_role(&env.map, placed, &g.members)?;
-        Some(Promotable {
-            rule: rules
-                .iter()
-                .map(rule_type)
-                .collect::<BTreeSet<_>>()
-                .into_iter()
-                .collect::<Vec<_>>()
-                .join("+"),
-            role: crate::map::role_id(&role),
-        })
-    });
     let mut mechanisms: Vec<String> = key.uses.iter().map(|u| u.mechanism.clone()).collect();
     mechanisms.sort();
     mechanisms.dedup();
@@ -1906,7 +1892,9 @@ fn variant_entry(
         exceptions,
         exceptions_more,
         conventions: Vec::new(),
-        promotable,
+        // Filled once every variant of the concern is known
+        // ([`super::promote::fill_promotable`]).
+        promotable: None,
         alternatives: Vec::new(),
         not_read: if g.kind == VariantKind::None {
             super::basis::Basis::union(
@@ -2020,8 +2008,6 @@ fn concern_report(
     unit: &str,
     placed: &[Placed],
     left_out: LeftOut,
-    env: &Env,
-    classifier: Option<&dyn Concern>,
 ) -> (ConcernReport, Vec<String>) {
     let total = placed.len();
     // Group.
@@ -2134,8 +2120,6 @@ fn concern_report(
             &compare_of(gi, &groups[gi].members),
             of_unit,
             &package_total,
-            env,
-            classifier,
         )
     };
     let mut variants: Vec<Variant> = (0..groups.len()).map(|gi| entry(gi, &of_unit)).collect();
@@ -2203,16 +2187,7 @@ fn concern_report(
                 } else {
                     parts[0].members.clone()
                 };
-                let mut a = variant_entry(
-                    id,
-                    placed,
-                    part,
-                    &compare,
-                    &own_of_unit,
-                    &package_total,
-                    env,
-                    classifier,
-                );
+                let mut a = variant_entry(id, placed, part, &compare, &own_of_unit, &package_total);
                 a.share = r3(ratio(a.members, total));
                 alts.push(a);
             }
@@ -2240,8 +2215,6 @@ fn concern_report(
                 &outside(&fold.members),
                 &of_unit,
                 &package_total,
-                env,
-                None,
             );
             alts.sort_by(|x, y| x.key.cmp(&y.key));
             v.alternatives = alts;
@@ -2263,8 +2236,6 @@ fn concern_report(
                         &compare_of(gi, &rest.members),
                         &of_unit,
                         &package_total,
-                        env,
-                        classifier,
                     ));
                 }
                 continue;
@@ -2974,55 +2945,6 @@ fn exceptions_of(
     let more = out.len().saturating_sub(caps::EXCEPTIONS);
     out.truncate(caps::EXCEPTIONS);
     (out, more)
-}
-
-/// The existing rules a known variant would promote to: the classifier's for the whole
-/// key, or (a split policy) one per use, all of which must map. `None`: descriptive
-/// only. Promotion itself is deferred (lead decision, round 13): this only fills
-/// `promotable`.
-fn promotable_rules(c: &dyn Concern, key: &VariantKey, kind: VariantKind) -> Option<Vec<Rule>> {
-    if kind != VariantKind::Known || key.key == TAIL || key.uses.is_empty() {
-        return None;
-    }
-    if let Some(r) = c.promotable(key) {
-        return Some(vec![r]);
-    }
-    if key.uses.len() < 2 {
-        return None;
-    }
-    key.uses
-        .iter()
-        .map(|u| c.promotable(&VariantKey::new(std::slice::from_ref(u))))
-        .collect()
-}
-
-/// The rule's type as conventions.yaml writes it (`wrapped_by`).
-fn rule_type(r: &Rule) -> String {
-    serde_json::to_value(r)
-        .ok()
-        .and_then(|v| v.get("type").and_then(|t| t.as_str()).map(str::to_string))
-        .unwrap_or_default()
-}
-
-/// The role a variant would be promoted in: of the map's roles holding its members'
-/// files, the one holding most of them, then the smallest, then by id.
-fn promotion_role(
-    map: &crate::map::RepoMap,
-    placed: &[Placed],
-    members: &[usize],
-) -> Option<RoleSelector> {
-    let mut held: BTreeMap<String, usize> = BTreeMap::new();
-    for &i in members {
-        for r in &placed[i].roles {
-            *held.entry(r.clone()).or_default() += 1;
-        }
-    }
-    let rid = held
-        .into_iter()
-        .filter_map(|(r, k)| map.role(&r).map(|role| (r, k, role.members)))
-        .min_by(|a, b| b.1.cmp(&a.1).then(a.2.cmp(&b.2)).then(a.0.cmp(&b.0)))?
-        .0;
-    Some(map.role(&rid)?.selector.clone())
 }
 
 /// Every unit with its assignment (`--units`), sorted.
@@ -3933,7 +3855,7 @@ pub fn package_line_with(
 
 /// Whether `rule` names `instrument`: a `wrapped_by` alternative, the callee of
 /// `calls`, the class of `throws`, or what `avoids` avoids.
-fn rule_names(rule: &Rule, instrument: &str) -> bool {
+pub fn rule_names(rule: &Rule, instrument: &str) -> bool {
     let i = norm_ref(instrument);
     let same = |r: &str| norm_ref(r) == i;
     match rule {

@@ -185,6 +185,7 @@ pub fn rule_kind(rule: &Rule) -> &'static str {
         Rule::RegisteredIn { .. } => "registered_in",
         Rule::MirrorsKeys { .. } => "mirrors_keys",
         Rule::ImportsFrom { .. } => "imports_from",
+        Rule::Practice { .. } => "practice",
     }
 }
 
@@ -224,7 +225,8 @@ pub fn names_package(rule: &Rule) -> bool {
         | Rule::PackageHas { .. }
         | Rule::DependencyVersion { .. }
         | Rule::RegisteredIn { .. }
-        | Rule::MirrorsKeys { .. } => false,
+        | Rule::MirrorsKeys { .. }
+        | Rule::Practice { .. } => false,
     }
 }
 
@@ -764,6 +766,10 @@ mod tests {
                 | Rule::RegisteredIn { .. }
                 | Rule::MirrorsKeys { .. }
                 | Rule::ImportsFrom { .. } => {}
+                // Never mined (a person promotes it from the practice map), so the
+                // study's tier fixture has no case for it: no sample here. Its kind is
+                // not in the default tier's allowlist, so it is a suggestion.
+                Rule::Practice { .. } => {}
             }
         }
         out

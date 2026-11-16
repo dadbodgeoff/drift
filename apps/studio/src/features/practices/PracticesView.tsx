@@ -1,5 +1,6 @@
-// `drift practices`: what the codebase does for each cross-cutting concern (eval/study/PLAN-R13.md §3, §4, §9). Read-only:
-// facts, not rules, and nothing here is enforced (promotion to a rule comes in a later round). The default view is
+// `drift practices`: what the codebase does for each cross-cutting concern (eval/study/PLAN-R13.md §3, §4, §9). Facts,
+// not rules: nothing here is enforced. The one write is a person's "Make this a convention" on a variant Drift marks
+// `promotable` (PromoteDialog: `drift practices promote`, docs/v2/PROMOTE-A-PRACTICE.md), after a dry run. The default view is
 // the recipe per package and kind of entry point, then the findings Drift ranks; every concern's variant table is
 // the drill-down. Drift decides every count, split and config line; the Studio derives none of them.
 import { useMemo, useState } from "react";
@@ -43,6 +44,8 @@ import {
   variantLabel,
   variantName,
 } from "./model/practices";
+import { promotablePlace } from "./model/promote";
+import { PromoteDialog } from "./PromoteDialog";
 
 const KNOWN = seriesColor("accent");
 const NONE = seriesColor("muted");
@@ -108,7 +111,7 @@ function Header({ report, summary, packages, pkg, setPkg }: { report: PracticesR
   return (
     <header className="pr-head">
       <div className="sc-verdict">
-        <div className="dui-overline">drift practices · read-only: what the code does, facts not rules</div>
+        <div className="dui-overline">drift practices · what the code does, facts not rules</div>
         <div className="sc-verdict__line">
           <span className="sc-verdict__num">
             {num(summary.atTarget)}
@@ -735,6 +738,8 @@ function VariantDetail({ c, v, pkg }: { c: PracticeConcern; v: PracticeVariant; 
   const d = dominantOf(c);
   const ex = examplesIn(v.examples, pkg);
   const exc = examplesIn(v.exceptions, pkg);
+  const place = promotablePlace(v);
+  const [promoting, setPromoting] = useState<string | null>(null);
   return (
     <div className="st-pad st-stack">
       <div>
@@ -757,6 +762,19 @@ function VariantDetail({ c, v, pkg }: { c: PracticeConcern; v: PracticeVariant; 
         </p>
         {v.key && <code className="st-cmd pr-key">{v.key}</code>}
       </div>
+      {place !== null && (
+        <Panel title="Make it a rule" subtitle={`Drift says ${place === "." ? "the root package" : place} may hold new code to this way`}>
+          <div className="st-row st-wrap pr-promote__action">
+            <Button variant="primary" size="sm" icon="check" onClick={() => setPromoting(v.id)}>
+              Make this a convention
+            </Button>
+            <span className="t-caption t-muted">
+              Shows what drift practices promote would write in <span className="dui-mono">{place}</span>; nothing is written until you confirm.
+            </span>
+          </div>
+        </Panel>
+      )}
+      {place !== null && promoting === v.id && <PromoteDialog c={c} v={v} place={place} onClose={() => setPromoting(null)} />}
       {v.alternatives?.length ? (
         <Panel title="A split policy" subtitle="Any of these, counted as one way; each alternative's own share">
           <ul className="st-plainlist t-body-sm">
@@ -807,7 +825,7 @@ function VariantDetail({ c, v, pkg }: { c: PracticeConcern; v: PracticeVariant; 
         </Panel>
       )}
       {v.conventions.length > 0 && (
-        <Panel title="Conventions that say the same" subtitle="Review decides what is a rule; this view changes nothing">
+        <Panel title="Conventions that say the same" subtitle="Review decides what is a rule">
           <ul className="st-plainlist t-body-sm">
             {v.conventions.map((x) => (
               <li key={x.id}>

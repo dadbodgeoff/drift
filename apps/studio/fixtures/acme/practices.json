@@ -216,7 +216,11 @@
        "mode": "block"
       }
      ],
-     "promotable": null,
+     "promotable": {
+      "rule": "practice",
+      "role": "",
+      "place": "apps/api"
+     },
      "alternatives": [
       {
        "id": "P-5c347c",
@@ -764,7 +768,11 @@
        "mode": "block"
       }
      ],
-     "promotable": null
+     "promotable": {
+      "rule": "practice",
+      "role": "",
+      "place": "apps/web/app/api/admin"
+     }
     },
     {
      "id": "P-f245bd",
@@ -902,7 +910,11 @@
        "mode": "advise"
       }
      ],
-     "promotable": null
+     "promotable": {
+      "rule": "practice",
+      "role": "",
+      "place": "apps/web/lib/actions"
+     }
     },
     {
      "id": "P-68fb99",
@@ -3721,7 +3733,11 @@
      ],
      "exceptions_more": 0,
      "conventions": [],
-     "promotable": null
+     "promotable": {
+      "rule": "practice",
+      "role": "",
+      "place": "apps/web"
+     }
     },
     {
      "id": "P-288461",

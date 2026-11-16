@@ -637,7 +637,14 @@ export type Rule =
    */
   | { type: "registered_in"; slot: string; path?: string; named?: string; reach?: boolean }
   /** Every key of `from` is also in `to` (co-change mined from git history). */
-  | { type: "mirrors_keys"; from: string; to: string };
+  | { type: "mirrors_keys"; from: string; to: string }
+  /**
+   * A practice a person promoted from the practice map (`drift practices promote`, docs/v2/PROMOTE-A-PRACTICE.md):
+   * a unit of `concern` in the convention's place follows it when the map says it does the concern one of the ways in
+   * `any_of` (practice-map variant keys, never names). Checked by the classifier that draws the map: a unit it cannot
+   * tell is never a violation. Always a suggestion.
+   */
+  | { type: "practice"; concern: string; any_of: string[] };
 
 /**
  * Where a wiring fix goes (crates/drift-mine/src/check.rs `WireHint`): `register` a symbol in a
@@ -936,6 +943,8 @@ export interface Convention {
   exceptions?: PolicyException[];
   /** Files a person set apart as a different kind (the one question, `drift review --answer ID=different`); absent when none. */
   different_kind?: PolicyDifferentKind[];
+  /** A person promoted it from the practice map (`drift practices promote`): the variant id (`P-…`) it came from. Its rule is a `practice` rule. Absent for every other convention. */
+  promoted_from_practice?: string;
 }
 
 /**
@@ -1137,6 +1146,26 @@ export interface CheckReport {
   practices?: CheckPractices;
   /** What the repository's security baseline (`.drift/security.lock`) does not hold (newer drift; absent with no baseline, and where files are named). A finding in `added` fails the check. */
   security?: SecurityRatchet;
+  /** Promoted practices none of whose ways any unit of their place uses any more (the guard was renamed or replaced): they fire on nothing until a person promotes them again or rejects them (newer drift; omitted when empty). Never a failure. */
+  stale_practices?: StalePractice[];
+  /** Per promoted practice, the units of its place the practice map cannot tell: not checked, never reported (newer drift; omitted when empty). Never a failure. */
+  practices_not_checked?: PracticeNotChecked[];
+}
+
+/** One of `CheckReport.stale_practices` (crates/drift-mine/src/practices/promote.rs `Stale`). */
+export interface StalePractice {
+  /** The convention's id (`D-…`). */
+  id: string;
+  summary: string;
+  /** The units of the concern in its place now. */
+  units: number;
+}
+
+/** One of `CheckReport.practices_not_checked` (promote.rs `NotChecked`). */
+export interface PracticeNotChecked {
+  /** The convention's id (`D-…`). */
+  id: string;
+  units: number;
 }
 
 /** `check --format json` `practices` (crates/drift-cli/src/main.rs `CheckPractices`). */
@@ -1704,8 +1733,12 @@ export interface PracticeVariant {
   exceptions: (PracticeExample & { variant: string })[];
   exceptions_more: number;
   conventions: { id: string; status: string; mode: string }[];
-  /** Null when no existing rule expresses the variant (descriptive only; promotion is deferred). */
-  promotable: { rule: string; role: string } | null;
+  /**
+   * Null when the variant cannot be made a convention. For one that can (`drift practices promote`): `rule` is
+   * `practice`, `role` is empty (a practice holds in a place, not a role) and `place` the broadest place it qualifies
+   * in, as Drift names it (`apps/api`, `.` the root package): what `drift practices promote <id>` takes without `--in`.
+   */
+  promotable: { rule: string; role: string; place?: string } | null;
   /** A folded split authn policy (`any_of(A|B)`): its alternatives, each with its own where and sets_apart. Absent otherwise. */
   alternatives?: PracticeVariant[];
   /** Of a `none` variant of authn or authz: what its members' bases list as seen and not read, together (newer drift; absent when empty). */
@@ -1937,6 +1970,88 @@ export interface PracticeFinding {
    */
   not_read?: AnswerNotRead[];
 }
+
+// ---------- drift practices promote --json (crates/drift-mine/src/practices/promote.rs) ----------
+
+/** Where a promoted practice holds (`promote::Place`): a package ("" the root package), or one directory of it ("" the whole package). */
+export interface PromotePlace {
+  package: string;
+  dir: string;
+}
+
+/** One way of doing a concern in a place (`promote::Way`): a known variant of the map, with the units of the place that do it. */
+export interface PromoteWay {
+  id: string;
+  /** The variant's key: what the rule stores. */
+  key: string;
+  label: string;
+  members: number;
+}
+
+/** What promoting a practice in a place records (`promote::Candidate`). */
+export interface PromoteCandidate {
+  concern: string;
+  /** What one unit of the concern is (`entry_point`, ...). */
+  unit: string;
+  place: PromotePlace;
+  /** The accepted ways: the variant promoted first, then the ones added with it (`--with`). */
+  ways: PromoteWay[];
+  /** The other known ways units of the place use, each one a person can add (`--with`); none is ever added silently. */
+  other_ways: PromoteWay[];
+  /** Units of the place that do it one of the accepted ways. */
+  follows: number;
+  /** Every unit of the place that does it another known way or not at all: recorded in drift.lock as they are. */
+  exceptions: PracticeExample[];
+  /** Units of the place the map cannot tell: never reported. */
+  unknown: number;
+  /** `follows + exceptions.length + unknown`. */
+  total: number;
+  /** A unit that follows, to copy from. */
+  example: PracticeExample | null;
+  /** Promoted below the 80% share on a person's word (`--force`): advise only. */
+  forced: boolean;
+}
+
+/**
+ * `drift practices promote <P-id> --json` on success (exit 0). With `--dry-run` nothing is written: `written` is false
+ * and `baselined` counts the lock entries that would be added.
+ */
+export interface PromoteResult {
+  written: boolean;
+  /** The place as Drift names it (`app/api`, `.` the root package). */
+  place: string;
+  convention: { id: string; summary: string; status: Status; mode: Mode; promoted_from_practice: string };
+  candidate: PromoteCandidate;
+  /** drift.lock entries added (with `--dry-run`: that would be added), one per exception. */
+  baselined: number;
+  /** With `--block`: of the `recent` units most recently added to the place that the map can tell, how many follow the practice as they stand. Null otherwise. */
+  replay: { recent: number; followed: number } | null;
+  /** The mined conventions (proposed or accepted) whose rule requires the same of code in the same package: with both accepted, new code that breaks them is reported under each. Absent from an older Drift. */
+  same_way?: string[];
+  /** The text `drift practices promote` prints before it writes. */
+  preview: string;
+}
+
+/** Why a practice cannot be promoted (`promote::Refusal`, serde-tagged by `code`). */
+export type PromoteRefusal =
+  | { code: "unknown_variant"; id: string }
+  | { code: "not_a_way"; id: string; why: string }
+  | { code: "other_concern"; id: string; concern: string }
+  | { code: "no_such_place"; place: string }
+  | { code: "no_place"; id: string; nearest: PromoteRefusal | null }
+  | { code: "too_small"; place: string; units: number; min: number }
+  | { code: "below_share"; place: string; follows: number; read: number }
+  | { code: "too_unknown"; place: string; unknown: number; total: number };
+
+/** `drift practices promote --json` when it refuses (exit 2, nothing written): the refusal and the sentence a person reads. */
+export interface PromoteRefused {
+  /** Typed by the codes this Studio knows; another code (block refused for want of a replay, ...) still has its `message`. */
+  refused: PromoteRefusal | { code: string };
+  message: string;
+}
+
+/** What one `drift practices promote --json` run gives: what it records (or would), or why it refuses. */
+export type PromoteOutcome = PromoteResult | PromoteRefused;
 
 /**
  * `drift setup --json` (schema `drift-setup-questions`, version 1): the questions only a person can answer, in the

@@ -165,10 +165,21 @@ On a small synthetic Next.js-style repository with 40 route handlers, 38 of them
 wrapped in `withAuth()` (the one `npm/dry-run.sh` builds), `drift init` prints:
 
 ```
-Learned 1 conventions from 143 symbols (1 default tier, 0 suggestions).
-1 default-tier proposal(s) are block candidates: not shown to agents until you accept them (`drift review --accept <id>`, or the Studio). People see them first.
-Wrote .drift/conventions.yaml (all proposed: none is checked until you accept it with `drift review`; accepted conventions advise unless set to block)
-Wrote drift.lock (2 legacy violations baselined)
+Drift read 71 files of TypeScript and JavaScript. Nothing left this machine.
+
+What the code does (read from the code: facts, not rules)
+  40 http entry points
+    sign-in:     wrapped in withAuth in 38; nothing found in 2 (of 40)
+    permissions: nothing found in 38 (of 38 where a caller is or may be signed in)
+    errors:      left to the framework in 40 (of 40)
+    responses:   built with Response.json in 40 (of 40)
+
+Worth a look first
+  1. sign-in: no guard found in what Drift read, in 2 places (e.g. app/api/r38/route.ts:1 GET); make the usual way the rule for new code: drift practices promote P-0f0acb --in .
+  `drift security` lists every entry point with its guard and what it reaches. `drift practices promote --list` lists the practices you can make a rule for new code.
+
+Conventions
+  1 proposed (1 default tier, 0 suggestions). Nothing is checked and no agent is told of one until you decide (`drift review`); an accepted convention advises unless you set it to block.
 
 Default tier: block candidates, each reaches agents once you accept it, and may block once accepted (`drift review`, b)
 
@@ -180,9 +191,24 @@ Default tier: block candidates, each reaches agents once you accept it, and may 
     outlier:  app/api/r38/route.ts:1 GET
     outlier:  app/api/r39/route.ts:1 GET
 
-Next: `drift review` to accept or reject them.
+Wrote .drift/conventions.yaml and drift.lock (2 existing violations recorded, so only new ones are reported).
+
+Next
+  drift review               accept or reject the 1 proposal
+  drift practices            the whole map, with a file to copy for each way
+  drift security             entry points, their guards and the risky operations they reach
+
 Tip: add `drift.lock merge=union` to .gitattributes so branches never conflict on the lock.
 ```
+
+The first part is what Drift read in the code, whether or not it has anything to
+propose: each kind of entry point, how its members sign a caller in, check
+permissions, handle errors and answer, and the few things most worth a look.
+These are facts, not rules: nothing checks them until a person promotes one
+(below). `Conventions` is what Drift
+proposes to check from now on, and `Next` lists only the commands that have
+something to do here. `drift init --explain` adds the long account: what the
+show policy held back and why, package by package.
 
 Everything starts as a proposal, and a proposal is not checked at all. Read each
 card's outliers: if they are mistakes, accept the convention; if they are a
@@ -190,7 +216,7 @@ legitimate, different kind of member (a test helper, a config file), reject it
 or set those members apart. Small or uniform repositories often get no
 proposals, and `drift init` then says why.
 
-If `drift init` says it withheld cards, list them first (`drift review --hidden`; see **No proposals?** below): interactive review then says so and stops.
+If `drift init` says weaker candidates were kept back, list them first (`drift review --hidden`; see **No proposals?** below): interactive review then says so and stops.
 
 ```sh
 drift review     # interactive, needs a terminal: y accept (advise), b accept and block, a accept and show to agents, n reject, s skip, q quit
@@ -201,7 +227,9 @@ drift check      # new violations of accepted conventions; exit 1 only for those
 ```
 
 With `D-37416b` accepted in advise mode, a new route without the wrapper is
-reported and the exit code is 0:
+reported and the exit code is 0 (after these lines `drift check` lists, as facts
+that never fail it, the files that sign a caller in another way than the entry
+points around them):
 
 ```
 drift: 1 new violation(s) (2 legacy, baselined)
@@ -217,14 +245,38 @@ intentional exception, put `// drift-ignore D-37416b: <reason>` (`#` in Python)
 directly above the declaration; a reason is required and suppressions are
 counted so reviewers see them.
 
+**Make a practice the rule.** The practice map at the top of `drift init` is
+facts: nothing checks them. When one is the rule you want for new code, promote
+it in one step. On the sample repository, sign-in in `app/api` (38 of 40 routes
+use `withAuth`, variant `P-0f0acb`):
+
+```sh
+drift practices promote P-0f0acb --in app/api --dry-run   # the preview; writes nothing
+```
+
+```sh
+drift practices promote P-0f0acb --in app/api             # write it
+```
+
+It writes one accepted convention in advise mode, shown to agents, and records
+the 2 routes that differ today in `drift.lock`, so `drift check` reports only a
+new route there that signs the caller in another way or not at all. A route
+Drift cannot read is never reported. It qualifies only where one way holds at
+least 80% of at least 8 units Drift could read, with at most 20% unknown;
+`drift practices promote --list` lists what qualifies now. Block mode
+(`--block`) is allowed only when at least 80% of the 15 routes most recently
+added there follow it, which needs git history. Upgrade every machine and CI first: an older Drift
+cannot read the policy file once it holds a promoted practice. See
+[Practices map](docs/wiki/Practices-Map.md#promoting-a-practice-to-a-convention).
+
 `drift review` with no flags needs a terminal: without one it prints
 `drift review needs a terminal` and exits 2. In a script, pass ids:
 `drift review --accept <id>` (`--list` prints the cards). Accepting a suggestion
 does not show it to agents: run `drift review --show-to-agents <id>` for that.
 
-**No proposals?** If `drift init` says `Learned 0 conventions` and names
-withheld cards, the show policy held back every card it mined (on one
-5,858-file monorepo, all 12). They are not conventions yet: nothing checks them
+**No proposals?** If `drift init` says `No conventions shown` and that it found
+candidates with no track record strong enough to propose, the show policy held
+back every card it mined (on one 5,858-file monorepo, all 12). They are not conventions yet: nothing checks them
 and no agent is told them. List them with their evidence, promote the ones that
 are right, and show them to agents:
 
@@ -242,7 +294,7 @@ drift review --show-to-agents D-59eaf5
 
 The answers are `ID=same` (accept), `ID=different --set-apart PATHS` (accept,
 those files exempt as a different kind) and `ID=not-a-convention` (reject). See
-[Getting started](docs/wiki/Getting-Started.md#if-drift-init-says-learned-0-conventions-but-also-names-withheld-cards).
+[Getting started](docs/wiki/Getting-Started.md#if-drift-init-says-no-conventions-shown-and-that-candidates-were-kept-back).
 
 On a repository of several thousand files each command reads the repository and
 takes tens of seconds (5,858 files: `init` 24.7 s, `check` 8.7 s, `setup --list`
@@ -325,11 +377,14 @@ checked against the code and run on a scratch repository.
   never touched). The agent hooks ask which files changed since `HEAD` or are
   untracked. Drift runs `git ls-files` once to check that no one committed the
   fact cache. None of these fetches from a remote.
-- **History is read in one case only:** the experimental wiring rules
+- **History is read in two cases only:** the experimental wiring rules
   (`experimental: [wiring]` in `.drift/config.yaml`) read the newest commits of
   `HEAD` to learn which files change together. History is off by default, bounded
   in time and size, and never fetched; a shallow or partial clone gives no
-  history rules and says why.
+  history rules and says why. And `drift practices promote --block` reads when
+  each file of the place was first committed, to pick the units most recently
+  added there; without that history block mode is refused, and advise mode
+  needs none.
 - **Drift does not commit, stage, stash, push or fetch, and it creates a branch
   only when a person asks.** It runs no `git` write command (`commit`, `add`,
   `checkout`, `reset`, `stash`, `push`, `fetch`) on your working tree or index. A
@@ -343,8 +398,8 @@ checked against the code and run on a scratch repository.
 
 | Path | Written by | Commit it? |
 | --- | --- | --- |
-| `.drift/conventions.yaml` | `drift init`, `drift review` | **Yes.** The policy: proposals, decisions, modes, exceptions. CI, the Action, pre-commit and your teammates' hooks all read it. |
-| `drift.lock` | `drift init`; `drift review` when it promotes a withheld card | **Yes.** Legacy violations that never block, one `<id> <path>#<symbol>` per line. Fix the code to shrink it. |
+| `.drift/conventions.yaml` | `drift init`, `drift review`, `drift practices promote` | **Yes.** The policy: proposals, decisions, modes, exceptions. CI, the Action, pre-commit and your teammates' hooks all read it. |
+| `drift.lock` | `drift init`; `drift review` when it promotes a withheld card or a practice; `drift practices promote` | **Yes.** Legacy violations that never block, one `<id> <path>#<symbol>` per line. Fix the code to shrink it. |
 | `.drift/config.yaml` | you, `drift setup` | **Yes**, so teammates and CI get the same answers (compose files that deploy nothing, Terraform ties, declared practices). |
 | `.drift/cache/` | every command | **No.** The fact cache and the agent session state (`.drift/cache/sessions/`). Drift writes a `.gitignore` of `*` there; a cache that git tracks is not used. |
 | `.drift/review-log/` | `drift review --set-log on` (opt-in) | **No.** Local only; holds its own `.gitignore` of `*`. |
@@ -542,11 +597,12 @@ codes is in the [command reference](docs/wiki/Command-Reference.md).
 | --- | --- | --- |
 | `drift census` | Previews the conventions Drift would propose, with evidence; `--coverage` says how much of the repository Drift maps | nothing |
 | `drift init` | Learns conventions, writes them as proposals, baselines legacy violations | `.drift/conventions.yaml`, `drift.lock` |
-| `drift review` | Accepts, blocks, sets to advise, rejects or marks exceptions; interactive without flags | `.drift/conventions.yaml` |
+| `drift review` | Accepts, blocks, sets to advise, rejects or marks exceptions; interactive without flags, where it also offers the practices that may be promoted | `.drift/conventions.yaml`, `drift.lock` when it promotes |
 | `drift check` | New violations of accepted conventions; `--strict`, `--diff-base`, `--format text\|json\|sarif\|github` | nothing |
 | `drift example FILE` | The existing file to copy from when writing new code like `FILE` | nothing |
 | `drift card PATH` | One file's place: entry points, guards, exposure, siblings, rules, what is not known | nothing |
 | `drift practices` | What the code does per concern (authn, authz, errors, logging, API, validation, config, data access, testing); `--hints` | nothing |
+| `drift practices promote P-ID` | Makes one practice the rule for new code in a place: an accepted convention, today's exceptions baselined; `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--list`, `--json` | `.drift/conventions.yaml`, `drift.lock` (nothing with `--dry-run` or `--list`) |
 | `drift security` | Entry points, guards, exposure, risky operations, client leaks, env reads; `--diff-base` for a change | nothing |
 | `drift map` | Packages, layers, dependency graph, entry points, roles | nothing |
 | `drift setup` | The few questions only a person can answer; `--list`, `--json`, `--agent-brief` for agents | `.drift/config.yaml` |
@@ -706,7 +762,8 @@ More: [Accuracy and Limits](docs/wiki/Accuracy-and-Limits.md),
 
 The Studio is a desktop app over the same CLI: it lists the proposals (block
 candidates first, with their outliers), lets you accept, block or reject them
-through `drift review`, and shows violations, agent sessions, the codebase's
+through `drift review`, lets you make a practice from the practice map a
+convention (with the same preview as `drift practices promote`), and shows violations, agent sessions, the codebase's
 shape and its security inventory. It is not packaged yet: run it from a checkout
 of this repository, with `drift` on your `PATH` (or chosen in its Settings):
 

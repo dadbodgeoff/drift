@@ -2734,13 +2734,6 @@ mod tests {
         assert_eq!(matches_any(&p(&["/dash"]), "/api/x"), Tri::No);
     }
 
-    #[test]
-    fn promotion_is_deferred() {
-        // PLAN-R13 §9.6: no variant maps to a rule this round.
-        let key = super::super::VariantKey::new(&[use_of("wrap", "lib/a.ts#withAuth")]);
-        assert_eq!(Authn.promotable(&key), None);
-    }
-
     /// The Studio acme shape (fix round, FALSE_NONE gate): `@UseGuards(AuthGuard)`
     /// where `canActivate` returns `Boolean(headers.authorization)`: through the shared
     /// guard proof (Nest's contract) it is that guard. With the guard classes not

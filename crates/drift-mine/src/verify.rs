@@ -244,6 +244,10 @@ pub fn ineligible(c: &Convention) -> Option<&'static str> {
         Some("only accepted conventions are checked, so only they can be verified")
     } else if c.rule.is_wiring() {
         Some("experimental wiring rules are not verified")
+    } else if c.rule.is_practice() {
+        Some(
+            "a promoted practice is checked by the classifier that draws the practice map, not from a role's members, and is not verified",
+        )
     } else {
         None
     }
@@ -918,6 +922,7 @@ mod tests {
             exceptions: Vec::new(),
             different_kind: Vec::new(),
             promoted_from_hidden: false,
+            promoted_from_practice: None,
         }
     }
 

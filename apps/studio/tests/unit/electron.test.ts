@@ -4,10 +4,11 @@ import { dirname, join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import { exeBehindShim, resolveDrift } from "../../electron/drift";
 import { gitInfo } from "../../electron/git";
-import { NO_PRACTICES, StudioMain } from "../../electron/handlers";
-import { InvalidArgument, assertConventionIds, assertGitRef, assertMember, assertReason, assertRelPath, driftArgs, driftEnv, exemptFlags, isInside, reviewFlags } from "../../electron/ops";
+import { NO_PRACTICES, NO_PROMOTE, StudioMain } from "../../electron/handlers";
+import { InvalidArgument, acceptableExit, assertConventionIds, assertGitRef, assertMember, assertReason, assertRelPath, driftArgs, driftEnv, exemptFlags, isInside, promoteFlags, reviewFlags, writesRepository } from "../../electron/ops";
+import { promoteFlags as shownPromoteFlags } from "../../src/shared/lib/promote";
 import { exemptCommand, reviewFlags as shownFlags } from "../../src/shared/lib/review";
-import { ExceptionReason, MemberKey, channels } from "../../src/shared/ipc/contract";
+import { ExceptionReason, MemberKey, PromoteRequest, channels } from "../../src/shared/ipc/contract";
 import { listSessionFiles, sessionTitle } from "../../electron/sessions";
 import { Store } from "../../electron/store";
 import { readRuns } from "../../src/entities/study/runs";
@@ -304,15 +305,19 @@ describe("a reviewer's exception (fine because…, workstream F)", () => {
 });
 
 describe("the practice map (drift practices, PLAN-R13 §4)", () => {
-  it("runs practices --json only: read-only, no promote channel (deferred)", () => {
+  it("runs practices --json; the only practices write is its own channel, promote, apart from the dry run", () => {
     expect(driftArgs("/r", { op: "practices" })).toEqual(["--root", "/r", "practices", "--json"]);
     expect(driftArgs("/r", { op: "map" })).toEqual(["--root", "/r", "map", "--json"]);
     expect(channels.map.res.safeParse({ data: { schema: 1, packages: [] }, at: 1, cached: false, provenance: { commit: null, branch: null, driftVersion: null } }).success).toBe(true);
-    expect(Object.keys(channels).filter((c) => /promote/i.test(c))).toEqual([]);
+    expect(Object.keys(channels).filter((c) => /promote/i.test(c)).sort()).toEqual(["promote", "promotePreview"]);
+    expect(writesRepository("practices")).toBe(false);
+    expect(writesRepository("promotePreview")).toBe(false);
+    expect(writesRepository("promote")).toBe(true);
   });
 
-  // A stand-in drift: `--version` and `census --help` answer; practices answers as the script's mode says.
-  function fakeDrift(dir: string, practices: string): string {
+  // A stand-in drift: `--version` and `census --help` answer; practices and practices promote answer as the script's
+  // modes say, and every promote argv is appended to argv.log beside the binary.
+  function fakeDrift(dir: string, practices: string, promote = "exit 3"): string {
     const bin = join(dir, "drift");
     writeFileSync(
       bin,
@@ -320,6 +325,7 @@ describe("the practice map (drift practices, PLAN-R13 §4)", () => {
 case "$*" in
   --version) echo "drift 0.1.0-test" ;;
   "census --help") echo "--json" ;;
+  *"practices promote"*) echo "$*" >> "${join(dir, "argv.log")}"; ${promote} ;;
   *"practices --json"*) ${practices} ;;
   *) exit 3 ;;
 esac
@@ -329,12 +335,12 @@ esac
     return bin;
   }
 
-  function setup(practices: string) {
+  function setup(practices: string, promote?: string) {
     const tmp = mkdtempSync(join(tmpdir(), "studio-practices-"));
     const repo = join(tmp, "repo");
     mkdirSync(repo);
     const store = new Store(join(tmp, "data"));
-    store.update({ driftPath: fakeDrift(tmp, practices) });
+    store.update({ driftPath: fakeDrift(tmp, practices, promote) });
     const main = new StudioMain({ store, projectsDir: join(tmp, "projects"), user: "tester", appVersion: "0", platform: "linux", dialogs: { chooseDirectory: async () => repo, chooseFile: async () => null, chooseSavePath: async () => null } });
     return { tmp, repo, store, main, ref: { path: repo, name: "repo" } };
   }
@@ -350,4 +356,75 @@ esac
     await expect(old.main.practices(old.ref)).rejects.toThrow(NO_PRACTICES);
   });
 
+  const PROMOTED = JSON.stringify({
+    written: true,
+    place: "app/api",
+    convention: { id: "D-4c1e07", summary: "authn in app/api: wrap withAuth", status: "accepted", mode: "advise", promoted_from_practice: "P-0f0acb" },
+    candidate: { concern: "authn", unit: "entry_point", place: { package: "", dir: "app/api" }, ways: [{ id: "P-0f0acb", key: "wrap:lib/auth.ts#withAuth", label: "wrap withAuth", members: 38 }], other_ways: [], follows: 38, exceptions: [{ path: "app/api/r38/route.ts", symbol: "GET", line: 1 }, { path: "app/api/r39/route.ts", symbol: "GET", line: 1 }], unknown: 0, total: 40, example: { path: "app/api/r00/route.ts", symbol: "GET", line: 3 }, forced: false },
+    baselined: 2,
+    replay: null,
+    preview: "authn in app/api: 38 of 40 entry points use wrap withAuth.",
+  });
+
+  it("builds practices promote argv: the place, each other way once, block when asked; the preview always --dry-run", () => {
+    const req = { id: "P-0f0acb", place: "app/api", with: ["P-111111", "P-0f0acb", "P-111111", "P-222222"], block: false };
+    expect(driftArgs("/r", { op: "promotePreview", promote: req })).toEqual(["--root", "/r", "practices", "promote", "P-0f0acb", "--in", "app/api", "--with", "P-111111", "--with", "P-222222", "--dry-run", "--json"]);
+    expect(driftArgs("/r", { op: "promote", promote: { ...req, block: true } })).toEqual(["--root", "/r", "practices", "promote", "P-0f0acb", "--in", "app/api", "--with", "P-111111", "--with", "P-222222", "--block", "--json"]);
+    expect(driftArgs("/r", { op: "promote", promote: { id: "P-0f0acb", place: ".", with: [], block: false } })).toEqual(["--root", "/r", "practices", "promote", "P-0f0acb", "--in", ".", "--json"]);
+    // What the Studio shows is exactly what it runs.
+    for (const dry of [true, false]) expect(shownPromoteFlags(req, dry)).toEqual(promoteFlags(req, dry));
+    expect(acceptableExit("promote", 2)).toBe(true);
+    expect(acceptableExit("promotePreview", 2)).toBe(true);
+    expect(acceptableExit("practices", 2)).toBe(false);
+    expect(acceptableExit("promote", 1)).toBe(false);
+  });
+
+  it("refuses a malformed variant id or place, in the main process and in the channel schema", () => {
+    const ok = { id: "P-0f0acb", place: "apps/web/app/api", with: [], block: false };
+    expect(PromoteRequest.safeParse(ok).success).toBe(true);
+    expect(PromoteRequest.safeParse({ ...ok, place: "." }).success).toBe(true);
+    for (const place of ["", "/etc", "../x", "a/../b", "a//b", "a/./b", "-x", "--force", "a\\b", "a\nb", "a/"]) {
+      expect(PromoteRequest.safeParse({ ...ok, place }).success, place).toBe(false);
+      expect(() => driftArgs("/r", { op: "promotePreview", promote: { ...ok, place } }), place).toThrow(InvalidArgument);
+    }
+    for (const id of ["D-0f0acb", "P-0F0ACB", "P-0f0ac", "--force", ""]) {
+      expect(PromoteRequest.safeParse({ ...ok, id }).success, id).toBe(false);
+      expect(PromoteRequest.safeParse({ ...ok, with: [id] }).success, id).toBe(false);
+      expect(() => driftArgs("/r", { op: "promote", promote: { ...ok, id } }), id).toThrow(InvalidArgument);
+    }
+    expect(PromoteRequest.safeParse({ ...ok, block: "yes" }).success).toBe(false);
+  });
+
+  it("previews with --dry-run, writes and audits only on promote, and shows a refusal (exit 2) as Drift's message", async () => {
+    const ok = setup(`exit 3`, `echo '${PROMOTED}'`);
+    await ok.main.openRepo();
+    const req = { id: "P-0f0acb", place: "app/api", with: [], block: false };
+    const preview = await ok.main.promotePreview(ok.ref, req);
+    expect(channels.promotePreview.res.safeParse(preview).success).toBe(true);
+    expect(ok.main.history(ok.ref).audit.filter((a) => a.decision === "promote")).toEqual([]);
+    const written = await ok.main.promote(ok.ref, req);
+    expect((written as { convention: { id: string } }).convention.id).toBe("D-4c1e07");
+    const audit = ok.main.history(ok.ref).audit.filter((a) => a.decision === "promote");
+    expect(audit.map((a) => [a.ids, a.ok])).toEqual([[["D-4c1e07"], true]]);
+    expect(audit[0]?.command).toContain("practices promote P-0f0acb --in app/api --json");
+    const argv = readFileSync(join(ok.tmp, "argv.log"), "utf8").trim().split("\n");
+    expect(argv.map((l) => l.split(" ").slice(2).join(" "))).toEqual(["practices promote P-0f0acb --in app/api --dry-run --json", "practices promote P-0f0acb --in app/api --json"]);
+
+    const refusal = JSON.stringify({ refused: { code: "too_small", place: "app/api", units: 3, min: 8 }, message: "app/api has 3 entry points of authn Drift could read; a convention needs at least 8." });
+    const no = setup(`exit 3`, `echo '${refusal}'; echo 'refused' >&2; exit 2`);
+    await no.main.openRepo();
+    const r = await no.main.promote(no.ref, req);
+    expect(channels.promote.res.safeParse(r).success).toBe(true);
+    expect((r as { message: string }).message).toContain("needs at least 8");
+    expect(no.main.history(no.ref).audit.filter((a) => a.decision === "promote")).toEqual([]);
+  });
+
+  it("says plainly when the binary predates practices promote, and shows Drift's error for bad arguments", async () => {
+    const old = setup(`exit 3`, `echo "error: unexpected argument 'promote' found" >&2; exit 2`);
+    await old.main.openRepo();
+    await expect(old.main.promotePreview(old.ref, { id: "P-0f0acb", place: ".", with: [], block: false })).rejects.toThrow(NO_PROMOTE);
+    const bad = setup(`exit 3`, `echo "error: --block and --force cannot be used together" >&2; exit 2`);
+    await bad.main.openRepo();
+    await expect(bad.main.promotePreview(bad.ref, { id: "P-0f0acb", place: ".", with: [], block: true })).rejects.toThrow(/drift practices promote failed/);
+  });
 });

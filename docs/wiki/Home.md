@@ -11,7 +11,7 @@ Drift is a Rust program (the binary is `drift`) with an optional desktop app, th
 | Job | Commands | Page |
 | --- | --- | --- |
 | Mines the conventions the code follows and proposes them as rules, which a person accepts, rejects or sets to block | `drift init`, `drift census`, `drift review`, `drift check` | [Conventions and Review](Conventions-and-Review) |
-| Maps what the code does per route for each cross-cutting concern: authentication, authorization, error handling, logging, validation and more | `drift practices` | [Practices Map](Practices-Map) |
+| Maps what the code does per route for each cross-cutting concern: authentication, authorization, error handling, logging, validation and more; a person can make one practice the rule for new code in a place | `drift practices`, `drift practices promote` | [Practices Map](Practices-Map) |
 | Inventories entry points with their guards, the risky operations they reach, and who can reach them (internet-facing, internal, unknown) | `drift security` | [Security Inventory](Security-Inventory) |
 | Gives an agent a file's card and the accepted rules before it writes | `drift card`, `drift mcp`, the Claude Code hooks, `drift export` | [Using Drift with Agents](Using-Drift-with-Agents) |
 | Asks the few questions only a person (or an agent, with a person confirming) can answer, and hands an agent each route Drift could not settle, with the code to read | `drift setup`, `drift investigate`, `drift findings` | [Setup Questions](Setup-Questions), [Using Drift with Agents](Using-Drift-with-Agents#investigating-open-routes) |

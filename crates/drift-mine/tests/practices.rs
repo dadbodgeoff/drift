@@ -136,7 +136,6 @@ fn fixtures_exercise_every_new_field() {
 // here so the engine runs end to end on the fixtures. It is registered nowhere.
 
 use drift_core::{EntryPoint, FileFacts, Symbol, WrapKind};
-use drift_mine::mine::Rule;
 use drift_mine::practices::{
     AUTHN, Assignment, Concern, Cx, PracticesReport, UnitRef, UnknownReason, Use, VariantKey,
     VariantSource,
@@ -266,20 +265,6 @@ impl Concern for StubAuthn {
             uses,
             source: VariantSource::Vocab,
         }
-    }
-    fn promotable(&self, key: &VariantKey) -> Option<Rule> {
-        let [u] = key.uses.as_slice() else {
-            return None;
-        };
-        let kind = match u.mechanism.as_str() {
-            "wrap" => WrapKind::Call,
-            "decorator" => WrapKind::Decorator,
-            _ => return None,
-        };
-        Some(Rule::WrappedBy {
-            kind,
-            any_of: vec![u.instrument.clone()],
-        })
     }
 }
 
@@ -601,22 +586,37 @@ fn a_wrapper_variant_is_promotable_and_its_exceptions_are_listed() {
         ..FileFacts::default()
     });
     let facts = repo(files);
-    let r = run(&facts);
+    // Read only for a report that shows it (`Options::promotable`).
+    assert!(
+        concern(&run(&facts), AUTHN)
+            .variants
+            .iter()
+            .all(|v| v.promotable.is_none())
+    );
+    let opts = Options {
+        promotable: true,
+        ..Options::default()
+    };
+    let r = practices::practices_with(&facts, &opts, &stub());
     let c = concern(&r, AUTHN);
     let top = &c.variants[0];
     assert_eq!(
         (top.members, top.key.as_str()),
         (10, "wrap:lib/auth.ts#withAuth")
     );
+    // 10 of the 12 routes of the root package (and of `app`) follow it: promotable
+    // there, the broadest place, though the report lists no unit.
+    assert!(c.units.is_empty());
     let p = top.promotable.as_ref().expect("promotable");
-    assert_eq!(p.rule, "wrapped_by");
+    assert_eq!(p.rule, "practice");
+    assert_eq!(p.role, "");
+    assert_eq!(p.place.as_deref(), Some("."));
     let none = c
         .variants
         .iter()
         .find(|v| v.kind == practices::VariantKind::None)
         .unwrap();
     assert!(none.promotable.is_none());
-    assert!(p.role.starts_with("R-"), "{p:?}");
     // The two unguarded routes are the exceptions in withAuth's place.
     assert_eq!(top.exceptions.len(), 2, "{:#?}", top.exceptions);
     assert!(top.exceptions.iter().all(|e| e.variant == none.id));

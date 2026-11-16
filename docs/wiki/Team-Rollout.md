@@ -26,7 +26,7 @@ The plan is conservative on purpose. Drift's mined conventions were about half r
 
 1. **Choose one owner** for the Drift policy (see "Ownership" below) and one repository to start with.
 2. **Agree the rules of use:** advise-first, nothing blocks until a named person sets it to block, and review is never done in bulk.
-3. **Install the same Drift version** for everyone and for CI, and record it. The policy file records the engine version that wrote it (`engine:` at the top of `.drift/conventions.yaml`). Pin the Action's `drift-ref` to a tag or commit. See [Versioning and Upgrades](Versioning-and-Upgrades).
+3. **Install the same Drift version** for everyone and for CI, and record it. The policy file records the engine version that wrote it (`engine:` at the top of `.drift/conventions.yaml`). Pin the Action's `drift-ref` to a tag or commit. This matters most before the first promoted practice: a Drift from before promotion cannot read the policy file once one is in it. See [Versioning and Upgrades](Versioning-and-Upgrades#promoted-practices-and-older-drift).
 
 ### Week 1: one person runs `drift init`
 
@@ -85,6 +85,19 @@ Add the Action (or run `drift check` in your pipeline); see [Drift in CI](Drift-
 
 Install the plugin and register the MCP server for those who use Claude Code, and add the generated agents block to `AGENTS.md` (`drift export agents-md --write AGENTS.md`), then commit it. Agents hear only about conventions a person accepted, and about an accepted suggestion only if its rule family is admitted or a person ran `drift review --show-to-agents <id>` (every Python convention is a suggestion). See [Using Drift with Agents](Using-Drift-with-Agents).
 
+### Week 2 onward: make a practice the rule, where you agree with it
+
+`drift practices` shows what the code does for sign-in, permissions, validation, errors and responses, and agents are already told these practices as facts (the recipe before a new entry-point file, a note after an edit that departs from its neighbours). A fact does not hold anyone to anything: nothing checks it, and CI never reports it.
+
+Promoting a practice is what turns one into a rule. It writes an accepted convention for one place, and from then on `drift check`, CI and the pre-commit hook hold new code there to it, while the code that already differed is recorded in `drift.lock`. Because a person promoted it, it is also shown to agents as a rule, not only as a fact.
+
+- **List what qualifies:** `drift practices promote --list` (or interactive `drift review`, which offers each after the proposals). Only places where one way holds at least 80% of at least 8 readable units, with at most 20% unknown, qualify.
+- **Decide as you would on a mined card.** Read the units the preview says differ (`--dry-run`). Promote the ones you would tell a new teammate; answer `n` in `drift review` to the ones you would not, and it is not offered again.
+- **Advise first**, as for every convention. Each promotion is a pull request to `.drift/conventions.yaml` and `drift.lock`, reviewed by the policy owner.
+- **Upgrade everyone and CI first** (Week 0, point 3).
+
+Details: [Practices Map](Practices-Map#promoting-a-practice-to-a-convention).
+
 ### Later: turn on blocking, deliberately
 
 Set a convention to block only when you would reject the same violation in code review, its outliers have been reviewed, and it has been quiet in advice mode for long enough that you trust it:
@@ -93,7 +106,7 @@ Set a convention to block only when you would reject the same violation in code 
 drift review --block D-37416b
 ```
 
-Only default-tier conventions in roles of 15 or more members can be set to block without `--force`, and a block-mode convention in a smaller role is treated as advise. Each blocking decision is a pull request to `.drift/conventions.yaml`. `drift review --advise <id>` is the way back.
+Only default-tier conventions in roles of 15 or more members can be set to block without `--force`, and a block-mode convention in a smaller role is treated as advise. A promoted practice is set to block with `drift practices promote <P-id> --in <place> --block`, which Drift allows only when, of the 15 units most recently added to the place, at least 80% follow it; it needs git history, and a Python place advises only. Each blocking decision is a pull request to `.drift/conventions.yaml`. `drift review --advise <id>` is the way back.
 
 ## Ownership
 
@@ -101,7 +114,7 @@ Treat `.drift/conventions.yaml`, `drift.lock` and `.drift/config.yaml` as policy
 
 - **Name an owner** (a person or a small group), and require their review of changes to these files, for example with a `CODEOWNERS` entry. Drift does not enforce this; your repository host does.
 - **Agents cannot edit these files.** The hooks deny edits to `.drift/` and `drift.lock`, including shell commands that write there, best effort. `drift setup` lets an agent propose, never decide, any answer that would make Drift say more.
-- **Review `drift.lock` changes.** Lines are added by people (at `init`) and removed by fixing code. A pull request that adds lock lines is baselining new violations and deserves the same scrutiny as a new `drift-ignore`.
+- **Review `drift.lock` changes.** Lines are added by people (at `init`, and when a person promotes a practice) and removed by fixing code. A pull request that adds lock lines is baselining new violations and deserves the same scrutiny as a new `drift-ignore`.
 - **Count suppressions.** `drift check` counts `drift-ignore` comments, and the pull-request summary lists the ones a change adds.
 
 If two branches change `.drift/conventions.yaml` at once, Drift has no merge tool for it: resolve it like any YAML file (keep both sides' decisions; ids are stable), then run `drift review --list` or `drift check` to confirm the file still parses. A file that does not parse stops the commands that read it with exit 2. `drift.lock` needs no resolution when you use `merge=union`, because lines are only added by people and removed by fixing code.

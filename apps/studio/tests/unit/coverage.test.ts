@@ -8,7 +8,7 @@ import { RULE_KIND_FAMILY, ruleFamily } from "@/entities/convention";
 import { SKIP_REASON, failsClosed, overview } from "@/entities/facts";
 import { DRIFT_OPENINGS, NO_STACK, classifyDrift, splitDriftMessages } from "@/entities/session";
 import { COMMANDS, MCP_TOOLS, RULE_KINDS_ALLOWED, SKIP_REASONS_ALLOWED } from "@/shared/contract/coverage";
-import type { CheckExemption, Rule } from "@/shared/contract/drift";
+import type { CheckExemption, PracticeNotChecked, PromoteCandidate, PromotePlace, PromoteRefusal, PromoteResult, PromoteWay, Rule, StalePractice } from "@/shared/contract/drift";
 
 const src = (p: string) => readFileSync(new URL(`../../../../${p}`, import.meta.url), "utf8");
 const kebab = (s: string) => s.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
@@ -127,6 +127,42 @@ describe("the Studio handles every Drift surface", () => {
     expect(Object.keys(required).filter((f) => !fields.includes(f))).toEqual([]);
     const report = rs.slice(rs.indexOf("pub struct CheckReport {"));
     expect(report.slice(0, report.indexOf("\n}\n"))).toMatch(/skip_serializing_if = "Vec::is_empty"\)\]\n {4}pub exempt: Vec<Exemption>/);
+  });
+
+  it("a promoted practice (practices/promote.rs) has the fields and refusal codes Drift serialises", () => {
+    const rs = src("crates/drift-mine/src/practices/promote.rs");
+    const fields = (name: string) => {
+      const start = rs.indexOf(`pub struct ${name} {`);
+      expect(start, `struct ${name}`).toBeGreaterThan(-1);
+      // A field marked `#[serde(skip)]` is never written, so the Studio has no type for it.
+      const body = rs.slice(start, rs.indexOf("\n}\n", start)).replace(/^ {4}#\[serde\(skip\)\]\n {4}pub \w+:.*$/gm, "");
+      return [...body.matchAll(/^ {4}pub (\w+):/gm)].map((m) => m[1]).sort();
+    };
+    // Object literals of the TypeScript types: the compiler rejects a field the type lacks.
+    const place: PromotePlace = { package: "", dir: "" };
+    const way: PromoteWay = { id: "", key: "", label: "", members: 0 };
+    const candidate: PromoteCandidate = { concern: "", unit: "", place, ways: [], other_ways: [], follows: 0, exceptions: [], unknown: 0, total: 0, example: null, forced: false };
+    const stale: StalePractice = { id: "", summary: "", units: 0 };
+    const notChecked: PracticeNotChecked = { id: "", units: 0 };
+    const replay: NonNullable<PromoteResult["replay"]> = { recent: 0, followed: 0 };
+    expect(fields("Place")).toEqual(Object.keys(place).sort());
+    expect(fields("Way")).toEqual(Object.keys(way).sort());
+    expect(fields("Candidate")).toEqual(Object.keys(candidate).sort());
+    expect(fields("Stale")).toEqual(Object.keys(stale).sort());
+    expect(fields("NotChecked")).toEqual(Object.keys(notChecked).sort());
+    expect(fields("Replay")).toEqual(Object.keys(replay).sort());
+    // Refusal is serde-tagged by `code`, snake_case: every variant is a code the Studio types.
+    const codes: PromoteRefusal["code"][] = ["unknown_variant", "not_a_way", "other_concern", "no_such_place", "no_place", "too_small", "below_share", "too_unknown"];
+    expect(rs).toMatch(/#\[serde\(tag = "code", rename_all = "snake_case"\)\]\npub enum Refusal/);
+    // serde's snake_case splits before every capital: `NotAWay` -> `not_a_way`.
+    const serdeSnake = (s: string) => s.replace(/[A-Z]/g, (m: string, i: number) => (i ? `_${m}` : m)).toLowerCase();
+    expect(variants(rs, "Refusal").map((v) => serdeSnake(v.name)).sort()).toEqual([...codes].sort());
+    // check.rs: the report fields the Check view reads as notes, omitted when empty.
+    const check = src("crates/drift-mine/src/check.rs");
+    const report = check.slice(check.indexOf("pub struct CheckReport {"));
+    const body = report.slice(0, report.indexOf("\n}\n"));
+    expect(body).toMatch(/pub stale_practices: Vec</);
+    expect(body).toMatch(/pub practices_not_checked: Vec</);
   });
 
   it("what PostToolUse says an edit introduced (agent.rs `edit_facts`) is its own message, after any advice and practice departures", () => {

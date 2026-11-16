@@ -45,10 +45,11 @@ Do not ignore `.drift/` as a whole: that would drop the policy teammates and CI 
 | `drift setup` | `.drift/config.yaml`, only when an answer, `--forget`, `--confirm` or `--reject` changes it. Listing, asking and `--json` write nothing; the repository is read without the cache unless `DRIFT_CACHE_DIR` is set. |
 | `drift investigate` | Listing, `--json` and `--agent-brief` write nothing (the cache is used as for `drift security`). `--record` and `--answers` write `.drift/config.yaml` (a record under `setup:`, or an agent's proposal under `setup.proposed`; `reachable` also adds a `security.public` entry), and for a finding `.drift/findings/`, for a gap report `.drift/gap-reports/`. |
 | `drift findings` | Nothing, except: `--issue ID --write FILE` writes FILE, and `--branch ID` creates a local git branch `drift/<id>` (a commit object and a branch ref; `HEAD`, the index and the working tree are not touched). |
-| `drift review` | `.drift/conventions.yaml` on every decision; `drift.lock` when a card is promoted from the withheld ones (its current outliers are baselined); `.drift/review-log/` when the log is on (`--set-log on`) or `--log` is given; the file named by `--export-log`. |
+| `drift review` | `.drift/conventions.yaml` on every decision; `drift.lock` when a card is promoted from the withheld ones (its current outliers are baselined) or a practice is promoted (its units that differ are baselined); `.drift/review-log/` when the log is on (`--set-log on`) or `--log` is given; the file named by `--export-log`. |
 | `drift example`, `drift check`, `drift security` | The cache. (`example` and `check` need `.drift/conventions.yaml`.) |
 | `drift card` | The cache and the derived-results directory, but only when the repository has `.drift/conventions.yaml` (or `DRIFT_CACHE_DIR` is set); otherwise nothing. |
 | `drift map`, `drift practices` | Nothing, unless `DRIFT_CACHE_DIR` is set. |
+| `drift practices promote` | `.drift/conventions.yaml` (one accepted convention added, or updated under the same id when promoted again) and `drift.lock` (one line per unit that differs today). With `--dry-run` or `--list`, or when it refuses: nothing. |
 | `drift hook claude ...` | Session state under `.drift/cache/sessions/` and the cache, only in a repository that has `.drift/conventions.yaml`. In one without, SessionStart builds a brief and writes nothing. |
 | `drift mcp` | The cache. `drift_setup_answer` and `drift_investigate_record` write `.drift/config.yaml` (the second also `.drift/findings/` and `.drift/gap-reports/`); `drift_verify_card` (experimental) writes `.drift/verify-cache.json`. |
 | `drift export agents-md --write FILE` | FILE: created, or only the text between the `drift:start` and `drift:end` markers replaced. Without `--write`, nothing. |
@@ -137,7 +138,7 @@ Written only with `agents.verify: on` in `.drift/conventions.yaml` (experimental
 
 ## `drift.lock`
 
-Written by `drift init` and by promoting a withheld card in `drift review`. Never by agents: the hooks deny writes to it, and `drift check` only reads it. Entries that no longer apply are listed as `fixed` in `drift check --format json` and can be removed by hand. See [Configuration Reference](Configuration-Reference) for the format.
+Written by `drift init`, by promoting a withheld card in `drift review`, and by promoting a practice (`drift practices promote`, or the practices step of `drift review`). Never by agents: the hooks deny writes to it, and `drift check` only reads it. Entries that no longer apply are listed as `fixed` in `drift check --format json` and can be removed by hand. See [Configuration Reference](Configuration-Reference) for the format.
 
 ## Branches and merges
 

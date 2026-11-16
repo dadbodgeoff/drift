@@ -8,15 +8,18 @@
 // - source reads are limited to files the last scan listed, inside the repo;
 // - transcripts are read only from Claude Code's projects directory, by the
 //   session ids the last listing returned;
-// - the only writes to a repository are `drift review` and `drift init`.
+// - the only writes to a repository are `drift review`, `drift init` and
+//   `drift practices promote` (the `promote` channel; `promotePreview` always
+//   runs it with `--dry-run`). ops.ts `writesRepository` is the list; a new
+//   write is added there, and here, on purpose.
 import { existsSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { RepoFacts } from "../src/shared/contract/drift";
 import { slimFacts } from "../src/shared/contract/slim";
-import type { AuditEntry, Decision, LogEntry, Provenance, RepoRef, Snapshot } from "../src/shared/ipc/contract";
+import type { AuditEntry, Decision, LogEntry, PromoteRequest, Provenance, RepoRef, Snapshot } from "../src/shared/ipc/contract";
 import { DriftError, resolveDrift, runDrift } from "./drift";
 import { gitInfo } from "./git";
-import { InvalidArgument, neighbourGate, answerFlags, assertAnswer, assertConventionIds, assertDecision, assertGitRef, assertRelPath, assertSessionId, exemptFlags, isInside, reviewFlags } from "./ops";
+import { InvalidArgument, neighbourGate, answerFlags, assertAnswer, assertConventionIds, assertDecision, assertGitRef, assertRelPath, assertSessionId, driftErrorLine, exemptFlags, isInside, promoteFlags, reviewFlags, writesRepository } from "./ops";
 import { listSessionFiles, sessionTitle } from "./sessions";
 import type { Store } from "./store";
 
@@ -40,6 +43,24 @@ const MAX_TRANSCRIPT = 200 * 1024 * 1024;
 const MAX_POLICY = 16 * 1024 * 1024;
 /** What the Studio says when the binary predates `drift practices` (round 13). */
 export const NO_PRACTICES = "this drift binary has no `practices` command: the practice map needs a Drift from round 13 or newer (choose one in Settings)";
+
+/** What the Studio says when the binary predates `drift practices promote`. */
+export const NO_PROMOTE = "this drift binary cannot make a practice a convention: `drift practices promote` needs a newer Drift (choose one in Settings)";
+
+/**
+ * What the toast shows of `drift init`, as Drift printed it: what was read, the first
+ * line of its `Conventions` section and what was written. The screen leads with the
+ * practice map, which the Practices view shows in full. Output of another shape (an
+ * older binary) is shown by its first three lines, as before.
+ */
+export function initSummary(stdout: string): string {
+  const lines = stdout.trim().split("\n");
+  const heading = lines.indexOf("Conventions");
+  const picked = [lines[0], heading >= 0 ? lines[heading + 1] : undefined, lines.find((l) => l.startsWith("Wrote "))]
+    .map((l) => l?.trim())
+    .filter((l): l is string => !!l);
+  return heading >= 0 && picked.length > 1 ? picked.join("\n") : lines.slice(0, 3).join("\n");
+}
 
 export class StudioMain {
   private aborts = new Map<string, AbortController>();
@@ -149,7 +170,7 @@ export class StudioMain {
     try {
       if (!this.infoCache) await this.driftInfo();
       const r = await runDrift(this.bin(), root, op, { cacheDir: join(this.repoDir(root), "drift-cache"), signal: ac.signal });
-      this.log("info", `drift ${op.op}`, { root, ms: r.ms, code: r.code });
+      this.log("info", `drift ${op.op}`, { root, ms: r.ms, code: r.code, ...(writesRepository(op.op) ? { writes: true } : {}) });
       return r;
     } catch (e) {
       this.log("error", `drift ${op.op} failed`, { root, error: (e as Error).message });
@@ -369,7 +390,44 @@ export class StudioMain {
   async init(r: RepoRef) {
     const root = this.repo(r);
     const res = await this.run(root, { op: "init" });
-    return res.stdout.trim().split("\n").slice(0, 3).join("\n");
+    return initSummary(res.stdout);
+  }
+
+  /**
+   * `drift practices promote` with `--json`: what it records (or, with `--dry-run`, would), or why it refuses. A
+   * refusal exits 2 with the refusal on stdout, and is returned as data for the person to read, not thrown; exit 2
+   * with nothing on stdout is a bad argument (or a binary without the command), thrown with what Drift said.
+   */
+  private async promoteJson(root: string, op: "promotePreview" | "promote", req: PromoteRequest, requestId?: string): Promise<unknown> {
+    const res = await this.run(root, op === "promote" ? { op: "promote", promote: req } : { op: "promotePreview", promote: req }, requestId);
+    try {
+      return JSON.parse(res.stdout) as unknown;
+    } catch {
+      if (/unrecognized subcommand|unexpected argument 'promote'/.test(res.stderr)) throw new DriftError(NO_PROMOTE, res);
+      throw new DriftError(`drift practices promote failed: ${driftErrorLine(res.stderr) ?? "it printed no JSON"}`, res);
+    }
+  }
+
+  /** What promoting a practice would record: always `--dry-run`, so it writes nothing. */
+  async promotePreview(r: RepoRef, req: PromoteRequest, requestId?: string): Promise<unknown> {
+    return this.promoteJson(this.repo(r), "promotePreview", req, requestId);
+  }
+
+  /** A practice made a convention (`drift practices promote`, no `--dry-run`): an explicit write, audited like a decision when it is written. */
+  async promote(r: RepoRef, req: PromoteRequest): Promise<unknown> {
+    const root = this.repo(r);
+    const command = `drift --root ${root} practices promote ${promoteFlags(req, false).join(" ")}`;
+    const out = await this.promoteJson(root, "promote", req);
+    const conv = out && typeof out === "object" ? (out as { written?: unknown; convention?: { id?: unknown } }) : null;
+    const id = conv?.written === true && typeof conv.convention?.id === "string" ? conv.convention.id : null;
+    if (id && /^D-[0-9a-f]{6}$/.test(id)) {
+      const preview = (out as { preview?: unknown }).preview;
+      const entry: AuditEntry = { at: Date.now(), user: this.d.user, decision: "promote", ids: [id], command, ok: true, output: (typeof preview === "string" ? preview : "").trim().slice(0, 4000) };
+      const dir = this.repoDir(root);
+      const h = this.d.store.history(dir);
+      this.d.store.saveHistory(dir, { ...h, audit: [...h.audit, entry] });
+    }
+    return out;
   }
 
   // ---------- reads ----------

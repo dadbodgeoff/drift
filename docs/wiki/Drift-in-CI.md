@@ -19,6 +19,8 @@ An unknown flag is also an error (exit 2, from the argument parser). In pull-req
 
 Violations of conventions that are only *proposed*, legacy violations in `drift.lock`, and violations suppressed with `drift-ignore` or marked fine never fail. The practice departures that `drift check` also prints are facts, computed after the exit code is decided; they never change it.
 
+A practice a person promoted from the practice map is a convention, not a departure: its new violations are reported and fail exactly as any other convention's do, by its mode. Its two extra lines, a promoted practice that has gone stale and the units of its place that were not checked because the map cannot tell what they do, never fail a check. See [Practices Map](Practices-Map#promoting-a-practice-to-a-convention).
+
 ## What blocks and what never blocks
 
 | Thing | Can it fail the build? |
@@ -28,12 +30,17 @@ Violations of conventions that are only *proposed*, legacy violations in `drift.
 | A proposed or rejected convention | Never; not checked |
 | A legacy violation in `drift.lock` | Never |
 | Practice departures (`drift check`'s second section) | Never |
+| A new violation of a promoted practice | As any convention: exit 1 in block mode, otherwise only with `--strict` |
+| A stale promoted practice, or units of a promoted practice not checked | Never |
+| A promoted practice forced below the 80% share (`--force`) | Never; it advises only |
 | `drift security` and `drift security --diff-base` | Never; always exit 0 |
 | Suggestions | Only if a person forced one to block (`drift review --block --force`) |
 | Wiring rules (experimental) | Never, even with `--strict` |
 | A convention in a role under 15 members set to block | Never; treated as advise |
 
 Only a person puts a convention in block mode, so a fresh `drift init` cannot break your CI.
+
+Upgrade the Drift that CI runs before anyone promotes a practice: a Drift from before promotion cannot read a `.drift/conventions.yaml` that holds one, and stops with exit 2 (see [Versioning and Upgrades](Versioning-and-Upgrades#promoted-practices-and-older-drift)).
 
 ## The GitHub Action
 
