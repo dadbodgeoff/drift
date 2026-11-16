@@ -4185,6 +4185,15 @@ fn mine_families(
     for c in &mined.candidates {
         crate::funnel::card(c, "proposed");
     }
+    // S21 (off by default, [`crate::gate_candidates`]): the proposals only a gate
+    // candidate made, counted under its name.
+    if crate::gate_candidates::any() {
+        for c in &mined.candidates {
+            if let Some(g) = crate::gate_candidates::marked(&c.id) {
+                crate::funnel::card(c, g.stage());
+            }
+        }
+    }
     mined
 }
 
@@ -4769,6 +4778,34 @@ fn mine_units_traced<'a>(
     for d in &mut drafts {
         d.origin = convention_id(&d.role, &d.rule);
     }
+    // S21 gate candidate `cap-after-narrow` (study use, off by default:
+    // [`crate::gate_candidates`]): the caps run after narrowing and merging, on the cards
+    // ([`caps_after_narrow`]). Off, the function goes on from the next line as it was.
+    if crate::gate_candidates::on(crate::gate_candidates::GateCandidate::CapAfterNarrow) {
+        return caps_after_narrow(
+            drafts,
+            Tail {
+                repo,
+                opts,
+                units: &units,
+                ctx: &ctx,
+                keep,
+                hidden,
+                unsplit_pass,
+                count,
+                rec,
+            },
+            Mined {
+                candidates: Vec::new(),
+                kinds,
+                units: total_units,
+                roles_considered,
+                withheld: Vec::new(),
+                roles_by_package,
+                hidden_by_package: BTreeMap::new(),
+            },
+        );
+    }
 
     // Cap per role, then per repo, by score (ties broken by id for determinism). An
     // accepted convention past a cap is kept too (hysteresis), and takes no other
@@ -4789,10 +4826,17 @@ fn mine_units_traced<'a>(
                 .then_with(|| a.rule.cmp(&b.rule))
         });
         let before = count.then(|| tally(&ds, &units));
-        if rec {
-            record_truncated(&ds, &units, MAX_PER_ROLE, "cap_role");
+        // S21 gate candidate `cap-show-aware` (study use, off by default:
+        // [`crate::gate_candidates`]): the per-role cap counts only drafts the show policy
+        // shows (WS-H(a)). Off, the `else` branch is the cap as it was.
+        if crate::gate_candidates::on(crate::gate_candidates::GateCandidate::CapShowAware) {
+            truncate_shown(&mut ds, MAX_PER_ROLE, hidden, &units, rec, true);
+        } else {
+            if rec {
+                record_truncated(&ds, &units, MAX_PER_ROLE, "cap_role");
+            }
+            truncate_keeping(&mut ds, MAX_PER_ROLE);
         }
-        truncate_keeping(&mut ds, MAX_PER_ROLE);
         if let Some(b) = before {
             dropped(&b, &ds, &units, "cap_role");
         }
@@ -4822,7 +4866,14 @@ fn mine_units_traced<'a>(
         if place {
             // Show before the caps ([`cap_shown`]) applies to place roles only; kind roles
             // (opt-in) keep cap-before-show below: the combination is unmeasured.
-            let drops = cap_shown(&mut kept, opts.max_per_repo, hidden);
+            // S21 gate candidate `avoid-cap-own` (study use, off by default:
+            // [`crate::gate_candidates`]): the layering share cuts no default-tier rule.
+            // Off, the `else` branch is the cap as it was.
+            let drops = if crate::gate_candidates::on(crate::gate_candidates::GateCandidate::AvoidCapOwn) {
+                cap_shown_own(&mut kept, opts.max_per_repo, hidden, &units, true)
+            } else {
+                cap_shown(&mut kept, opts.max_per_repo, hidden)
+            };
             if rec {
                 for (d, cap) in &drops {
                     let (gate, limit) = match cap {
@@ -4851,6 +4902,11 @@ fn mine_units_traced<'a>(
             if matches!(d.rule, Rule::Avoids { .. }) {
                 avoids += 1;
                 let stays = avoids <= max_avoid || d.accepted;
+                // S21 gate candidate `avoid-cap-own` (off by default): nor in kind roles.
+                // Off, `stays` is what the line above made it.
+                let stays = stays
+                    || (crate::gate_candidates::on(crate::gate_candidates::GateCandidate::AvoidCapOwn)
+                        && own_tier_saved(d, &units, true));
                 if rec && !stays {
                     record_draft(
                         d,
@@ -4917,6 +4973,11 @@ fn mine_units_traced<'a>(
         }
         stage.is_none()
     });
+    // S21 gate candidate `narrow-recheck` (off by default): count what its re-check
+    // dropped (they are `narrowed_out` above too).
+    if crate::gate_candidates::on(crate::gate_candidates::GateCandidate::NarrowRecheck) {
+        count_rechecked(count);
+    }
     // A rule whose holders all sit in one subtree of the role, with its outliers in
     // folders of their own elsewhere, is a convention of that subtree (F10).
     let mut taken: BTreeSet<(RoleSelector, Rule)> = kept
@@ -4986,6 +5047,11 @@ fn mine_units_traced<'a>(
             (c.id.clone(), o)
         })
         .collect();
+    // S21 (off by default, [`crate::gate_candidates`]): a card made from a draft only a
+    // gate candidate made carries its mark.
+    if crate::gate_candidates::any() {
+        crate::gate_candidates::carry(&origins);
+    }
     (
         Mined {
             candidates,
@@ -5555,6 +5621,14 @@ fn narrow(d: &mut Draft, units: &[Unit], ctx: &RepoContext) -> bool {
     d.derived.retain(|(m, ..)| applies.contains(m));
     d.n = population.len();
     d.lb = wilson_lower_bound(d.holders.len(), d.n);
+    // S21 gate candidate `narrow-recheck` (study use, off by default:
+    // [`crate::gate_candidates`]): the recounted bound is checked again (WS-H(c)). Off,
+    // the function goes on from the next line as it was.
+    if crate::gate_candidates::on(crate::gate_candidates::GateCandidate::NarrowRecheck)
+        && rechecked_out(d, units)
+    {
+        return false;
+    }
     d.members = population;
     if d.n != role_n {
         d.role_n = Some(role_n);
@@ -5992,6 +6066,11 @@ fn draft_over(
         .collect();
     let k = holders.len();
     if k >= n {
+        // S21 gate candidate `universal` (study use, off by default:
+        // [`crate::gate_candidates`]). Off, the line after it is the gate as it was.
+        if crate::gate_candidates::on(crate::gate_candidates::GateCandidate::Universal) {
+            return universal_over(role, rule, holders, population, contrast, split);
+        }
         return None;
     }
     let lb = wilson_lower_bound(k, n);
@@ -7480,6 +7559,32 @@ fn consider(
     split: Vec<(String, usize)>,
 ) -> Option<Draft> {
     if holders.len() >= members.len() {
+        // S21 gate candidates `universal` and `small-roles` (study use, off by default:
+        // [`crate::gate_candidates`]). Off, the line after them is the gate as it was.
+        if crate::gate_candidates::on(crate::gate_candidates::GateCandidate::Universal) {
+            return universal_draft(
+                role,
+                rule,
+                holders,
+                members,
+                global_count,
+                total_units,
+                units,
+                split,
+            );
+        }
+        if crate::gate_candidates::on(crate::gate_candidates::GateCandidate::SmallRoles) {
+            return small_role_draft(
+                role,
+                &rule,
+                &holders,
+                members,
+                (global_count, total_units),
+                units,
+                &split,
+                true,
+            );
+        }
         return None; // universal in the role: documentation, not a check
     }
     draft_of(
@@ -7507,6 +7612,23 @@ fn draft_of(
     units: &[Unit],
     split: Vec<(String, usize)>,
 ) -> Option<Draft> {
+    // S21 gate candidate `small-roles` (study use, off by default:
+    // [`crate::gate_candidates`]): only a rule the lower bound below drops. Off, the
+    // function is what it was from the next line on.
+    if crate::gate_candidates::on(crate::gate_candidates::GateCandidate::SmallRoles)
+        && let Some(d) = small_role_draft(
+            role,
+            &rule,
+            &holders,
+            members,
+            (global_count, total_units),
+            units,
+            &split,
+            false,
+        )
+    {
+        return Some(d);
+    }
     let n = members.len();
     let k = holders.len();
     let lb = wilson_lower_bound(k, n);
@@ -8404,6 +8526,786 @@ fn finish(d: &Draft, all: &[Draft], units: &[Unit], ctx: &RepoContext) -> Candid
             v
         },
     }
+}
+
+// ---------------------------------------------------------------------------------------
+// S21: candidate changes to mining's gates, each behind a switch that is off
+// ([`crate::gate_candidates`], `drift census --gate-candidate <name>`, study use). Nothing
+// below runs while no switch is on: each is reached only from an
+// `if crate::gate_candidates::on(..)` at the gate it changes, whose other branch is the
+// gate as it was.
+// ---------------------------------------------------------------------------------------
+
+use crate::gate_candidates::GateCandidate;
+
+/// The largest role `small-roles` admits: with one outlier the lower bound first reaches
+/// [`MIN_LOWER_BOUND`] at 18 of 19, so a role of 19 or more needs no candidate.
+const SMALL_ROLE_MAX: usize = 18;
+/// `small-roles`: the share of the role that must hold the rule (audit 7 G2(b): 90%).
+const SMALL_ROLE_SHARE_PERCENT: usize = 90;
+/// `small-roles`: the files the holders must span (audit 7 G2(b): 3).
+const SMALL_ROLE_MIN_FILES: usize = 3;
+
+/// `universal` ([`consider`]): the draft of a rule every member of the role holds, on the
+/// evidence and lift [`draft_of`] requires of any rule. Marked `universal` when it clears
+/// the shipped lower bound; below it, only `small-roles` can draft it (and marks it).
+#[allow(clippy::too_many_arguments)]
+fn universal_draft(
+    role: &RoleSelector,
+    rule: Rule,
+    holders: BTreeSet<usize>,
+    members: &[usize],
+    global_count: usize,
+    total_units: usize,
+    units: &[Unit],
+    split: Vec<(String, usize)>,
+) -> Option<Draft> {
+    let d = draft_of(
+        role,
+        rule,
+        holders,
+        members,
+        global_count,
+        total_units,
+        units,
+        split,
+    )?;
+    if d.lb >= MIN_LOWER_BOUND {
+        crate::gate_candidates::mark(&convention_id(&d.role, &d.rule), GateCandidate::Universal);
+    }
+    Some(d)
+}
+
+/// `universal` ([`draft_over`]): the draft of an order, preference or import rule every
+/// member of the population holds, with the lower bound [`draft_over`] requires.
+fn universal_over(
+    role: &RoleSelector,
+    rule: Rule,
+    holders: BTreeSet<usize>,
+    population: Vec<usize>,
+    contrast: f64,
+    split: Vec<(String, usize)>,
+) -> Option<Draft> {
+    let n = population.len();
+    let lb = wilson_lower_bound(holders.len(), n);
+    if lb < MIN_LOWER_BOUND {
+        return None;
+    }
+    let score = lb * size_weight(n) * contrast.min(5.0) * rule.specificity();
+    crate::gate_candidates::mark(&convention_id(role, &rule), GateCandidate::Universal);
+    Some(Draft {
+        role: role.clone(),
+        rule,
+        holders,
+        n,
+        lb,
+        lift: contrast,
+        split,
+        score,
+        members: population,
+        exempt: vec![],
+        inherited: vec![],
+        derived: vec![],
+        role_n: None,
+        base: None,
+        accepted: false,
+        origin: String::new(),
+    })
+}
+
+/// `small-roles`: the alternative audit 7 G2(b) proposes, exactly. In a role of
+/// [`MIN_ROLE_SIZE`] to [`SMALL_ROLE_MAX`] members, a rule held by at least
+/// [`SMALL_ROLE_SHARE_PERCENT`]% of them (every one included) whose target the repository
+/// defines ([`crate::funnel::target_of`]), with lift of at least [`MIN_LIFT`] and holders
+/// in at least [`SMALL_ROLE_MIN_FILES`] files, is drafted with its own lower bound; its
+/// card advises only ([`crate::gate_candidates::advise_only`]). Only where a shipped gate
+/// drops the rule: the outlier rule (`universal`, called from [`consider`]) or the lower
+/// bound (otherwise, from [`draft_of`]); `None` for a rule those gates let through, so
+/// what mining drafts without the switch is drafted exactly as before.
+#[allow(clippy::too_many_arguments)]
+fn small_role_draft(
+    role: &RoleSelector,
+    rule: &Rule,
+    holders: &BTreeSet<usize>,
+    members: &[usize],
+    (global_count, total_units): (usize, usize),
+    units: &[Unit],
+    split: &[(String, usize)],
+    universal: bool,
+) -> Option<Draft> {
+    let n = members.len();
+    let k = holders.len();
+    if !(MIN_ROLE_SIZE..=SMALL_ROLE_MAX).contains(&n) || k * 100 < n * SMALL_ROLE_SHARE_PERCENT
+    {
+        return None;
+    }
+    let lb = wilson_lower_bound(k, n);
+    if !universal && lb >= MIN_LOWER_BOUND {
+        return None;
+    }
+    if crate::funnel::target_of(rule) != "repository" {
+        return None;
+    }
+    let files: BTreeSet<String> = holders.iter().map(|&m| units[m].path()).collect();
+    if files.len() < SMALL_ROLE_MIN_FILES {
+        return None;
+    }
+    let p_role = k as f64 / n as f64;
+    let p_global = global_count as f64 / total_units.max(1) as f64;
+    let lift = if p_global > 0.0 {
+        p_role / p_global
+    } else {
+        0.0
+    };
+    if lift < MIN_LIFT {
+        return None;
+    }
+    // Scored as [`draft_of`] scores any rule.
+    let entry = units[members[0]].entry != "-";
+    let risk = if entry
+        && matches!(
+            rule,
+            Rule::WrappedBy {
+                kind: WrapKind::Call | WrapKind::Decorator,
+                ..
+            }
+        ) {
+        1.5
+    } else {
+        1.0
+    };
+    let score = lb * size_weight(n) * lift.min(5.0) * rule.specificity() * risk;
+    crate::gate_candidates::mark(&convention_id(role, rule), GateCandidate::SmallRoles);
+    Some(Draft {
+        role: role.clone(),
+        rule: rule.clone(),
+        holders: holders.clone(),
+        n,
+        lb,
+        lift,
+        split: split.to_vec(),
+        score,
+        members: members.to_vec(),
+        exempt: vec![],
+        inherited: vec![],
+        derived: vec![],
+        role_n: None,
+        base: Some(p_global),
+        accepted: false,
+        origin: String::new(),
+    })
+}
+
+/// `narrow-recheck` ([`narrow`]): the recounted bound is under [`MIN_LOWER_BOUND`] and no
+/// person accepted the draft, so it is dropped (noted for the funnel, [`count_rechecked`]).
+/// A `small-roles` draft is exempt: it was drafted under the bound on purpose.
+///
+/// Every exemption `narrow` gives sets aside a member that does not hold the rule (a
+/// shared part, a framework root file, a factory, a documented exception... each tests
+/// that first), and the holders it adds (inherited, derived) only raise the share, so the
+/// recount can lower the bound only where a holder is set aside; on the code as it stands
+/// that is rare, which is why `narrowed_out` measured 0 (audit 7 section 2.2).
+fn rechecked_out(d: &Draft, units: &[Unit]) -> bool {
+    if d.lb >= MIN_LOWER_BOUND
+        || d.accepted
+        || crate::gate_candidates::marked(&d.origin) == Some(GateCandidate::SmallRoles)
+    {
+        return false;
+    }
+    crate::gate_candidates::note_rechecked(
+        crate::funnel::family(&d.rule),
+        crate::funnel::keying(&d.role),
+        units_lang(&d.members, units),
+    );
+    true
+}
+
+/// Count, in the pass that ran `narrow`, the drafts `narrow-recheck` dropped there.
+fn count_rechecked(count: bool) {
+    let rows = crate::gate_candidates::take_rechecked();
+    if count {
+        for (family, keying, lang) in rows {
+            crate::funnel::add(
+                &family,
+                keying,
+                lang,
+                GateCandidate::NarrowRecheck.stage(),
+                1,
+            );
+        }
+    }
+}
+
+/// `cap-show-aware`: [`truncate_keeping`] at `cap`, counting only the drafts whose card
+/// the show policy shows (origin not in `hidden`), as [`cap_shown`] does per repository.
+/// A hidden draft is kept exactly when the cap without `hidden` keeps it. With `mark`,
+/// a draft kept only because of that is marked `cap-show-aware`; with `rec`, the drafts
+/// dropped are recorded at `cap_role`.
+fn truncate_shown(
+    ds: &mut Vec<Draft>,
+    cap: usize,
+    hidden: Option<&BTreeSet<String>>,
+    units: &[Unit],
+    rec: bool,
+    mark: bool,
+) {
+    let (mut all, mut shown) = (0usize, 0usize);
+    // (kept by the shipped cap, kept here, rank counted here)
+    let verdicts: Vec<(bool, bool, usize)> = ds
+        .iter()
+        .map(|d| {
+            all += 1;
+            let before = all <= cap || d.accepted;
+            if hidden.is_some_and(|h| h.contains(&d.origin)) {
+                (before, before, all)
+            } else {
+                shown += 1;
+                (before, shown <= cap || d.accepted, shown)
+            }
+        })
+        .collect();
+    let mut v = verdicts.into_iter();
+    ds.retain(|d| {
+        let (before, keeps, rank) = v.next().unwrap_or((true, true, 0));
+        if rec && !keeps {
+            record_draft(
+                d,
+                units,
+                "cap_role",
+                (
+                    Some(rank as f64),
+                    Some(cap as f64),
+                    format!("ranked {rank} of its role's drafts the show policy shows, the cap is {cap}"),
+                ),
+            );
+        }
+        if mark && keeps && !before {
+            crate::gate_candidates::mark(&d.origin, GateCandidate::CapShowAware);
+        }
+        keeps
+    });
+}
+
+/// `avoid-cap-own`: a draft the layering share does not cut, being in the default tier
+/// ([`default_tier_draft`]) and not made advise-only by another candidate.
+fn own_tier(d: &Draft, units: &[Unit]) -> bool {
+    default_tier_draft(d, units) && !crate::gate_candidates::advise_only(&d.origin)
+}
+
+/// [`own_tier`], marking the draft `avoid-cap-own` (with `mark`) when it is: called only
+/// where the layering share would cut it.
+fn own_tier_saved(d: &Draft, units: &[Unit], mark: bool) -> bool {
+    let own = own_tier(d, units);
+    if own && mark {
+        crate::gate_candidates::mark(&d.origin, GateCandidate::AvoidCapOwn);
+    }
+    own
+}
+
+/// `avoid-cap-own`: [`cap_shown`], except that the layering share does not cut a
+/// default-tier draft ([`own_tier`]), which still takes a per-repository slot. With
+/// `mark`, a draft kept only because of that is marked `avoid-cap-own`.
+fn cap_shown_own(
+    kept: &mut Vec<Draft>,
+    max: usize,
+    hidden: Option<&BTreeSet<String>>,
+    units: &[Unit],
+    mark: bool,
+) -> Vec<(Draft, CapDrop)> {
+    let max_avoid = ((max as f64 * AVOID_MAX_SHARE).ceil() as usize).max(1);
+    let protected: Vec<bool> = kept.iter().map(|d| own_tier(d, units)).collect();
+    // Per draft: (verdict, kept past the layering share only because it is protected).
+    type Verdict = Option<(Result<(), CapDrop>, bool)>;
+    let caps = |counted: &dyn Fn(&Draft) -> bool| -> Vec<Verdict> {
+        let (mut avoids, mut n) = (0usize, 0usize);
+        kept.iter()
+            .zip(&protected)
+            .map(|(d, &own)| {
+                if !counted(d) {
+                    return None;
+                }
+                let mut saved = false;
+                if matches!(d.rule, Rule::Avoids { .. }) {
+                    avoids += 1;
+                    if avoids > max_avoid && !d.accepted {
+                        if !own {
+                            return Some((Err(CapDrop::Avoid), false));
+                        }
+                        saved = true;
+                    }
+                }
+                n += 1;
+                Some(if n <= max || d.accepted {
+                    (Ok(()), saved)
+                } else {
+                    (Err(CapDrop::Repo), false)
+                })
+            })
+            .collect()
+    };
+    let all = caps(&|_| true);
+    let verdicts: Vec<(Result<(), CapDrop>, bool)> = match hidden {
+        None => all
+            .iter()
+            .map(|k| k.unwrap_or((Err(CapDrop::Repo), false)))
+            .collect(),
+        Some(h) => {
+            let shown = caps(&|d| !h.contains(&d.origin));
+            all.iter()
+                .zip(&shown)
+                .map(|(a, s)| s.unwrap_or(a.unwrap_or((Err(CapDrop::Repo), false))))
+                .collect()
+        }
+    };
+    let mut out = Vec::with_capacity(kept.len());
+    let mut drops = Vec::new();
+    for (d, (v, saved)) in std::mem::take(kept).into_iter().zip(verdicts) {
+        match v {
+            Ok(()) => {
+                if saved && mark {
+                    crate::gate_candidates::mark(&d.origin, GateCandidate::AvoidCapOwn);
+                }
+                out.push(d)
+            }
+            Err(cap) => drops.push((d, cap)),
+        }
+    }
+    *kept = out;
+    drops
+}
+
+/// What [`caps_after_narrow`] reads of the pass it finishes.
+struct Tail<'t, 'u, 'c> {
+    repo: &'t RepoFacts,
+    opts: &'t MineOptions,
+    units: &'t [Unit<'u>],
+    ctx: &'t RepoContext<'c>,
+    keep: &'t Keep,
+    hidden: Option<&'t BTreeSet<String>>,
+    unsplit_pass: bool,
+    count: bool,
+    rec: bool,
+}
+
+/// A copy of a draft ([`Draft`] is not `Clone`; [`caps_after_narrow`] needs the caps'
+/// verdict in the shipped order beside its own).
+fn copy_draft(d: &Draft) -> Draft {
+    Draft {
+        role: d.role.clone(),
+        rule: d.rule.clone(),
+        holders: d.holders.clone(),
+        n: d.n,
+        lb: d.lb,
+        lift: d.lift,
+        split: d.split.clone(),
+        score: d.score,
+        members: d.members.clone(),
+        exempt: d.exempt.clone(),
+        inherited: d.inherited.clone(),
+        derived: d.derived.clone(),
+        role_n: d.role_n,
+        base: d.base,
+        accepted: d.accepted,
+        origin: d.origin.clone(),
+    }
+}
+
+/// The origins of the drafts the caps keep where they run in the shipped order (before
+/// [`narrow`] and [`merge_siblings`]), the other candidates on: what
+/// [`caps_after_narrow`] compares with to mark what only its order keeps. Records and
+/// marks nothing.
+fn caps_as_before(
+    drafts: Vec<Draft>,
+    max: usize,
+    hidden: Option<&BTreeSet<String>>,
+    units: &[Unit],
+) -> BTreeSet<String> {
+    let mut by_role: BTreeMap<RoleSelector, Vec<Draft>> = BTreeMap::new();
+    for d in drafts {
+        by_role.entry(d.role.clone()).or_default().push(d);
+    }
+    let mut kept: Vec<Draft> = Vec::new();
+    for (_, mut ds) in by_role {
+        ds.sort_by(|a, b| {
+            workspace_draft(a)
+                .cmp(&workspace_draft(b))
+                .then(b.score.total_cmp(&a.score))
+                .then_with(|| a.rule.cmp(&b.rule))
+        });
+        if crate::gate_candidates::on(GateCandidate::CapShowAware) {
+            truncate_shown(&mut ds, MAX_PER_ROLE, hidden, units, false, false);
+        } else {
+            truncate_keeping(&mut ds, MAX_PER_ROLE);
+        }
+        kept.extend(ds);
+    }
+    kept.sort_by(|a, b| {
+        workspace_draft(a)
+            .cmp(&workspace_draft(b))
+            .then(b.score.total_cmp(&a.score))
+            .then_with(|| convention_id(&a.role, &a.rule).cmp(&convention_id(&b.role, &b.rule)))
+    });
+    let max_avoid = ((max as f64 * AVOID_MAX_SHARE).ceil() as usize).max(1);
+    let own = crate::gate_candidates::on(GateCandidate::AvoidCapOwn);
+    let (kind_kept, place_kept): (Vec<Draft>, Vec<Draft>) = kept
+        .into_iter()
+        .partition(|d| d.role.shape.is_some() && !crate::shapes::is_test_role(&d.role));
+    let mut out = BTreeSet::new();
+    for (place, mut kept) in [(true, place_kept), (false, kind_kept)] {
+        if place {
+            if own {
+                cap_shown_own(&mut kept, max, hidden, units, false);
+            } else {
+                cap_shown(&mut kept, max, hidden);
+            }
+        } else {
+            let mut avoids = 0;
+            kept.retain(|d| {
+                if matches!(d.rule, Rule::Avoids { .. }) {
+                    avoids += 1;
+                    avoids <= max_avoid || d.accepted || (own && own_tier(d, units))
+                } else {
+                    true
+                }
+            });
+            truncate_keeping(&mut kept, max);
+        }
+        out.extend(kept.iter().map(|d| d.origin.clone()));
+    }
+    out
+}
+
+/// `cap-after-narrow`: the rest of [`mine_units_traced`] from the caps on, with the caps
+/// last. Narrowing and the compiler check run on every draft, then subtrees, the shared
+/// role exemptions and the merge of sibling roles, exactly as they do after the caps;
+/// then the caps ([`cap_cards`]) run on the cards, so a draft narrowed away holds no
+/// slot and a merged card takes one. A card only this order keeps is marked
+/// `cap-after-narrow`. `mined` is the pass's result with no candidates yet.
+fn caps_after_narrow(
+    mut drafts: Vec<Draft>,
+    t: Tail<'_, '_, '_>,
+    mut mined: Mined,
+) -> (Mined, BTreeMap<String, Vec<String>>) {
+    let (units, ctx) = (t.units, t.ctx);
+    let before = caps_as_before(
+        drafts.iter().map(copy_draft).collect(),
+        t.opts.max_per_repo,
+        t.hidden,
+        units,
+    );
+    let workspace: BTreeSet<String> = drafts
+        .iter()
+        .filter(|d| workspace_draft(d))
+        .map(|d| d.origin.clone())
+        .collect();
+    drafts.sort_by(|a, b| {
+        b.score
+            .total_cmp(&a.score)
+            .then_with(|| convention_id(&a.role, &a.rule).cmp(&convention_id(&b.role, &b.rule)))
+    });
+    // As in [`mine_units_traced`] after the caps.
+    drafts.retain_mut(|d| {
+        let stage = if !(d.accepted || join_siblings(d, units, ctx)) || !narrow(d, units, ctx) {
+            Some("narrowed_out")
+        } else if compiler_enforced(d, t.repo) {
+            Some("compiler")
+        } else {
+            None
+        };
+        if t.count && let Some(stage) = stage {
+            crate::funnel::rule(&d.role, &d.rule, units_lang(&d.members, units), stage);
+        }
+        if t.rec && let Some(stage) = stage {
+            let detail = if stage == "compiler" {
+                "the compiler already checks it".to_string()
+            } else {
+                format!(
+                    "{} of {} once the members it is not about are set aside",
+                    d.holders.len(),
+                    d.n
+                )
+            };
+            record_draft(d, units, stage, (Some(d.lb), None, detail));
+        }
+        stage.is_none()
+    });
+    if crate::gate_candidates::on(GateCandidate::NarrowRecheck) {
+        count_rechecked(t.count);
+    }
+    let mut taken: BTreeSet<(RoleSelector, Rule)> = drafts
+        .iter()
+        .map(|d| (d.role.clone(), d.rule.clone()))
+        .collect();
+    for d in &mut drafts {
+        if d.accepted || !d.role.also.is_empty() {
+            continue;
+        }
+        if let Some(role) = subtree(d, units, ctx, &taken) {
+            taken.insert((role, d.rule.clone()));
+        }
+    }
+    share_role_exemptions(&mut drafts, units, ctx);
+    let candidates: Vec<Candidate> = if t.unsplit_pass {
+        drafts
+            .iter()
+            .map(|d| finish(d, &drafts, units, ctx))
+            .collect()
+    } else {
+        merge_siblings(&drafts, units, ctx, t.keep)
+    };
+    let card_key = |c: &Candidate| {
+        (
+            crate::funnel::family(&c.rule),
+            crate::funnel::keying(&c.role),
+            crate::tier::language_code(c.language()),
+        )
+    };
+    if t.count {
+        let mut out: Tally = BTreeMap::new();
+        for c in &candidates {
+            *out.entry(card_key(c)).or_default() += 1;
+        }
+        for (key, n) in tally(&drafts, units) {
+            let left = out.get(&key).copied().unwrap_or(0);
+            crate::funnel::add(&key.0, key.1, key.2, "merged", n.saturating_sub(left));
+        }
+    }
+    let by_shape: BTreeMap<(&RoleSelector, &Rule), &str> = drafts
+        .iter()
+        .map(|d| ((&d.role, &d.rule), d.origin.as_str()))
+        .collect();
+    let origins: BTreeMap<String, Vec<String>> = candidates
+        .iter()
+        .map(|c| {
+            let parts = if c.role.also.is_empty() {
+                vec![c.role.clone()]
+            } else {
+                c.role.parts()
+            };
+            let o = parts
+                .iter()
+                .filter_map(|p| by_shape.get(&(p, &c.rule)).map(|o| o.to_string()))
+                .collect();
+            (c.id.clone(), o)
+        })
+        .collect();
+    // The other candidates' marks first: an advise-only card is no default-tier card at
+    // the caps.
+    crate::gate_candidates::carry(&origins);
+    let kept = cap_cards(candidates, &origins, &workspace, &t);
+    if t.count {
+        let mut out: Tally = BTreeMap::new();
+        for c in &kept {
+            *out.entry(card_key(c)).or_default() += 1;
+        }
+        for ((family, keying, lang), n) in out {
+            crate::funnel::add(&family, keying, lang, "mined", n);
+        }
+    }
+    // Not in the uncapped pass that only learns what the show policy hides.
+    if t.opts.max_per_repo != UNCAPPED {
+        for c in &kept {
+            let os = origins.get(&c.id).map(Vec::as_slice).unwrap_or(&[]);
+            if os.iter().any(|o| !before.contains(o)) {
+                crate::gate_candidates::mark(&c.id, GateCandidate::CapAfterNarrow);
+            }
+        }
+    }
+    mined.candidates = kept;
+    (mined, origins)
+}
+
+/// The caps of [`mine_units_traced`], on cards ([`caps_after_narrow`]): per role
+/// ([`MAX_PER_ROLE`], counting only shown cards with `cap-show-aware`), then the
+/// layering share and `--max` per repository, counting only the cards the show policy
+/// shows (a card is hidden when every draft it was made from is in `hidden`), with
+/// kind roles capped on their own, as [`cap_shown`] and the kind-role branch do. A card a
+/// person accepted is kept past every cap. With `avoid-cap-own`, the layering share
+/// cuts no default-tier card. Returns the cards kept, in the order given.
+fn cap_cards(
+    cards: Vec<Candidate>,
+    origins: &BTreeMap<String, Vec<String>>,
+    workspace: &BTreeSet<String>,
+    t: &Tail<'_, '_, '_>,
+) -> Vec<Candidate> {
+    let max = t.opts.max_per_repo;
+    let max_avoid = ((max as f64 * AVOID_MAX_SHARE).ceil() as usize).max(1);
+    // Per card: made from a workspace-only draft; hidden by the show policy.
+    let empty: Vec<String> = Vec::new();
+    let of = |i: usize| origins.get(&cards[i].id).unwrap_or(&empty);
+    let ws_of: Vec<bool> = (0..cards.len())
+        .map(|i| of(i).iter().any(|o| workspace.contains(o)))
+        .collect();
+    let hidden_of: Vec<bool> = (0..cards.len())
+        .map(|i| {
+            t.hidden.is_some_and(|h| {
+                let os = of(i);
+                !os.is_empty() && os.iter().all(|o| h.contains(o))
+            })
+        })
+        .collect();
+    let accepted = |c: &Candidate| t.keep.accepted_card(c);
+    let own = crate::gate_candidates::on(GateCandidate::AvoidCapOwn);
+    let protected = |c: &Candidate| own && c.tier() == crate::tier::Tier::Default;
+    let mut alive = vec![true; cards.len()];
+    // (card, gate, rank or limit, detail)
+    let mut dropped: Vec<(usize, &'static str, Why)> = Vec::new();
+    let mut marks: Vec<(usize, GateCandidate)> = Vec::new();
+
+    // Per role.
+    let show_aware = crate::gate_candidates::on(GateCandidate::CapShowAware);
+    let mut by_role: BTreeMap<&RoleSelector, Vec<usize>> = BTreeMap::new();
+    for (i, c) in cards.iter().enumerate() {
+        by_role.entry(&c.role).or_default().push(i);
+    }
+    for (_, mut ix) in by_role {
+        ix.sort_by(|&a, &b| {
+            ws_of[a]
+                .cmp(&ws_of[b])
+                .then(cards[b].score.total_cmp(&cards[a].score))
+                .then_with(|| cards[a].rule.cmp(&cards[b].rule))
+        });
+        let (mut all, mut shown) = (0usize, 0usize);
+        for i in ix {
+            let c = &cards[i];
+            all += 1;
+            let before = all <= MAX_PER_ROLE;
+            let (keeps, rank) = if show_aware && !hidden_of[i] {
+                shown += 1;
+                (shown <= MAX_PER_ROLE, shown)
+            } else {
+                (before, all)
+            };
+            if !(keeps || accepted(c)) {
+                alive[i] = false;
+                dropped.push((
+                    i,
+                    "cap_role",
+                    (
+                        Some(rank as f64),
+                        Some(MAX_PER_ROLE as f64),
+                        format!("ranked {rank} of its role's cards, the cap is {MAX_PER_ROLE}"),
+                    ),
+                ));
+            } else if keeps && !before && !accepted(c) {
+                marks.push((i, GateCandidate::CapShowAware));
+            }
+        }
+    }
+
+    // Per repository, by score.
+    let mut order: Vec<usize> = (0..cards.len()).filter(|&i| alive[i]).collect();
+    order.sort_by(|&a, &b| {
+        ws_of[a]
+            .cmp(&ws_of[b])
+            .then(cards[b].score.total_cmp(&cards[a].score))
+            .then_with(|| cards[a].id.cmp(&cards[b].id))
+    });
+    let (kind, place): (Vec<usize>, Vec<usize>) = order.into_iter().partition(|&i| {
+        cards[i].role.shape.is_some() && !crate::shapes::is_test_role(&cards[i].role)
+    });
+    // Place roles: show before the caps, as [`cap_shown`].
+    type Verdicts = BTreeMap<usize, (Result<(), &'static str>, bool)>;
+    let verdicts = |counted: &dyn Fn(usize) -> bool| -> Verdicts {
+        let (mut avoids, mut n) = (0usize, 0usize);
+        let mut v = BTreeMap::new();
+        for &i in &place {
+            let c = &cards[i];
+            if !counted(i) {
+                continue;
+            }
+            let mut saved = false;
+            if matches!(c.rule, Rule::Avoids { .. }) {
+                avoids += 1;
+                if avoids > max_avoid && !accepted(c) {
+                    if !protected(c) {
+                        v.insert(i, (Err("cap_avoid"), false));
+                        continue;
+                    }
+                    saved = true;
+                }
+            }
+            n += 1;
+            v.insert(
+                i,
+                if n <= max || accepted(c) {
+                    (Ok(()), saved)
+                } else {
+                    (Err("cap_repo"), false)
+                },
+            );
+        }
+        v
+    };
+    let all_v = verdicts(&|_| true);
+    let shown_v = t.hidden.map(|_| verdicts(&|i| !hidden_of[i]));
+    for &i in &place {
+        let fallback = all_v.get(&i).copied().unwrap_or((Err("cap_repo"), false));
+        let (v, saved) = match &shown_v {
+            None => fallback,
+            Some(s) => s.get(&i).copied().unwrap_or(fallback),
+        };
+        match v {
+            Ok(()) if saved => marks.push((i, GateCandidate::AvoidCapOwn)),
+            Ok(()) => {}
+            Err(gate) => {
+                alive[i] = false;
+                let limit = if gate == "cap_avoid" { max_avoid } else { max };
+                dropped.push((i, gate, capped_why(gate, limit, max)));
+            }
+        }
+    }
+    // Kind roles: on their own, the layering share, then `--max`.
+    let (mut avoids, mut n) = (0usize, 0usize);
+    for &i in &kind {
+        let c = &cards[i];
+        if matches!(c.rule, Rule::Avoids { .. }) {
+            avoids += 1;
+            if avoids > max_avoid && !accepted(c) {
+                if !protected(c) {
+                    alive[i] = false;
+                    dropped.push((i, "cap_avoid", capped_why("cap_avoid", max_avoid, max)));
+                    continue;
+                }
+                marks.push((i, GateCandidate::AvoidCapOwn));
+            }
+        }
+        n += 1;
+        if n > max && !accepted(c) {
+            alive[i] = false;
+            dropped.push((i, "cap_repo", capped_why("cap_repo", max, max)));
+        }
+    }
+
+    for (i, gate, (value, threshold, detail)) in dropped {
+        let c = &cards[i];
+        if t.count {
+            crate::funnel::card(c, gate);
+        }
+        if t.rec && crate::funnel::wants(gate) {
+            crate::funnel::note(
+                crate::funnel::Dropped::new(
+                    gate,
+                    &c.role,
+                    &c.rule,
+                    (c.evidence.holders, c.evidence.total),
+                    crate::tier::language_code(c.language()),
+                    c.tier() == crate::tier::Tier::Default,
+                )
+                .measured(value, threshold, detail),
+            );
+        }
+    }
+    for (i, g) in marks {
+        if alive[i] && max != UNCAPPED {
+            crate::gate_candidates::mark(&cards[i].id, g);
+        }
+    }
+    cards
+        .into_iter()
+        .zip(alive)
+        .filter_map(|(c, a)| a.then_some(c))
+        .collect()
 }
 
 #[cfg(test)]

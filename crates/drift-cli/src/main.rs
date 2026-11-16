@@ -204,6 +204,13 @@ enum Command {
             conflicts_with = "coverage"
         )]
         why: Option<String>,
+        /// Study use (stream S21): also run a candidate change to one of mining's gates,
+        /// for this census only (repeatable): `universal`, `small-roles`,
+        /// `cap-show-aware`, `cap-after-narrow`, `narrow-recheck`, `avoid-cap-own`. Each
+        /// proposal only a candidate makes carries its name (`gate_candidate`) and
+        /// advises only where it adds a rule. Nothing is written; no other command reads it.
+        #[arg(long, value_enum, hide = true, value_name = "NAME")]
+        gate_candidate: Vec<GateCandidateArg>,
         #[command(flatten)]
         cap: CapArgs,
     },
@@ -915,6 +922,38 @@ enum CandidateTier {
     D8,
 }
 
+/// A candidate change to a gate of mining, `census --gate-candidate` (study use, stream
+/// S21): [`drift_mine::gate_candidates::GateCandidate`], one to one.
+#[derive(Clone, Copy, PartialEq, Eq, ValueEnum)]
+enum GateCandidateArg {
+    /// A rule every member holds (no outlier) is proposed, advise only.
+    Universal,
+    /// Roles of 8 to 18 members: at least 90% held, in-repo target, lift 1.5, 3 files.
+    SmallRoles,
+    /// The per-role cap counts only drafts the show policy shows.
+    CapShowAware,
+    /// The caps run after narrowing and merging.
+    CapAfterNarrow,
+    /// The lower bound is checked again after narrowing recounts.
+    NarrowRecheck,
+    /// The layering share does not cut a default-tier rule.
+    AvoidCapOwn,
+}
+
+impl GateCandidateArg {
+    fn candidate(self) -> drift_mine::gate_candidates::GateCandidate {
+        use drift_mine::gate_candidates::GateCandidate as G;
+        match self {
+            GateCandidateArg::Universal => G::Universal,
+            GateCandidateArg::SmallRoles => G::SmallRoles,
+            GateCandidateArg::CapShowAware => G::CapShowAware,
+            GateCandidateArg::CapAfterNarrow => G::CapAfterNarrow,
+            GateCandidateArg::NarrowRecheck => G::NarrowRecheck,
+            GateCandidateArg::AvoidCapOwn => G::AvoidCapOwn,
+        }
+    }
+}
+
 #[derive(Clone, Copy, ValueEnum)]
 enum Agent {
     Claude,
@@ -1127,6 +1166,10 @@ fn print_candidate(rank: usize, c: &Candidate, all_outliers: bool) {
         }
     );
     println!("    tier:     {}", c.describe_tier());
+    // Study use only (`census --gate-candidate`, stream S21); never printed otherwise.
+    if let Some(note) = drift_mine::gate_candidates::note_for(&c.id) {
+        println!("    study:    {note}");
+    }
     let agents = drift_mine::admission::candidate_view(c);
     if !agents.shown {
         println!("    agents:   {}", agents.text);
@@ -1404,6 +1447,11 @@ fn census_json(
         // Wiring rules only (experimental): the registry and a registered sibling.
         if let Some(w) = &c.wiring {
             p["wiring"] = serde_json::to_value(w)?;
+        }
+        // Study use only (`--gate-candidate`, stream S21): the candidate change to a gate
+        // without which this proposal would not exist. Absent with no switch on.
+        if let Some(g) = drift_mine::gate_candidates::marked(&c.id) {
+            p["gate_candidate"] = json!(g.name());
         }
         proposals.push(p);
     }
@@ -2502,8 +2550,17 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             coverage,
             listed,
             why,
+            gate_candidate,
             cap,
         } => {
+            // Study use only (`--gate-candidate`, stream S21): the one place the switches
+            // are set; empty, every gate of mining is as it was.
+            drift_mine::gate_candidates::set(
+                &gate_candidate
+                    .iter()
+                    .map(|g| g.candidate())
+                    .collect::<Vec<_>>(),
+            );
             let tests = drift_mine::policy::test_roles(root, *test_roles);
             let kind_roles = drift_mine::policy::kind_roles(root, *kind_roles);
             let shapes = (tests, kind_roles);

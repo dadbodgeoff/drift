@@ -178,7 +178,12 @@ pub fn add(family: &str, keying: &str, lang: &str, stage: &str, n: usize) {
     if n == 0 {
         return;
     }
-    debug_assert!(STAGES.contains(&stage), "unknown funnel stage {stage}");
+    // S21: the study candidates' stages ([`crate::gate_candidates`]) are counted only
+    // while a switch is on, and are never in `STAGES`.
+    debug_assert!(
+        STAGES.contains(&stage) || crate::gate_candidates::is_stage(stage),
+        "unknown funnel stage {stage}"
+    );
     COUNTS.with(|c| {
         if let Some(m) = c.borrow_mut().as_mut() {
             *m.entry((
