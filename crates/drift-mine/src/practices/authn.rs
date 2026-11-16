@@ -353,7 +353,20 @@ impl Concern for Authn {
 }
 
 /// How an entry unit authenticates (the unit must be readable: [`unreadable`]).
+/// Read once per unit for the run ([`Cx::authn_reading`]).
 pub fn read<'a>(cx: &Cx<'a>, unit: &UnitRef<'a>) -> Reading {
+    match *unit {
+        UnitRef::Entry {
+            file,
+            entry,
+            symbol,
+        } => cx.authn_reading((file, entry, symbol), || read_entry(cx, unit)),
+        _ => read_entry(cx, unit),
+    }
+}
+
+/// [`read`], read.
+fn read_entry<'a>(cx: &Cx<'a>, unit: &UnitRef<'a>) -> Reading {
     let mut r = Reading::default();
     let (UnitRef::Entry { file, entry, .. }, Some((sfile, s))) = (*unit, unit_symbol(cx, unit))
     else {
