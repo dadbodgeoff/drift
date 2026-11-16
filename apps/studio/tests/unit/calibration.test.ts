@@ -172,6 +172,35 @@ describe("fixture mode", () => {
       restore();
     }
   });
+
+  it("previews a promotion without recording it, records one in the tab only, and refuses block (no replay)", async () => {
+    const api = new FixtureApi("/", 0);
+    const restore = serveFixtures();
+    try {
+      const repo = { path: "/work/acme", name: "acme" };
+      const req = { id: "P-1587e5", place: "apps/web/app/api/admin", with: [], block: false };
+      const before = parseConventions((await api.policy(repo)).conventions!).conventions.length;
+      const preview = await api.promotePreview(repo, req);
+      expect(channels.promotePreview.res.safeParse(preview).success).toBe(true);
+      expect("refused" in preview).toBe(false);
+      expect(parseConventions((await api.policy(repo)).conventions!).conventions).toHaveLength(before);
+      const blocked = await api.promote(repo, { ...req, block: true });
+      expect("refused" in blocked && blocked.message).toMatch(/Block mode needs a replay/);
+      expect(parseConventions((await api.policy(repo)).conventions!).conventions).toHaveLength(before);
+      const out = await api.promote(repo, req);
+      if ("refused" in out) throw new Error(out.message);
+      expect(out.written).toBe(true);
+      expect(out.preview).toMatch(/no file was written/);
+      const after = parseConventions((await api.policy(repo)).conventions!).conventions;
+      expect(after).toHaveLength(before + 1);
+      expect(after.find((c) => c.id === out.convention.id)).toMatchObject({ status: "accepted", mode: "advise", promoted_from_practice: "P-1587e5", rule: { type: "practice", concern: "authn" } });
+      // Promoting the same practice in the same place again updates that convention: still one.
+      await api.promote(repo, req);
+      expect(parseConventions((await api.policy(repo)).conventions!).conventions).toHaveLength(before + 1);
+    } finally {
+      restore();
+    }
+  });
 });
 
 describe("the review log's answers (maintainer-log.mjs calibration)", () => {

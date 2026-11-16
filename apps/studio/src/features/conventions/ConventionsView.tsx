@@ -29,7 +29,7 @@ import {
 import { useRepo } from "@/entities/repo";
 import { keys, useCheck, useFacts, useQuestions } from "@/entities/drift";
 import { VIOLATION_STATUS, statusOf } from "@/entities/check";
-import { type ConventionRow, type FineOutlier, MIN_BLOCK_ROLE_SIZE, RECORD_MIN_CARDS, blockDecision, capSuggestions, forceBlockIsDanger, memberKey, reviewCounts, reviewOrder, splitOutliers, suggestionRecord, trackRecord, undecided, blocksInNameOnly, describeDecision, exemptionKind, exemptionKinds, importSource, keyTypeText, languageText, layeringTarget, ruleTargets, shortRef, tierReasonText, uncheckedFilesText, uncheckedMembersText, useConventions, WIRING_FLAG_HELP, wireAt, agentsHiddenText, verifyText, BLOCK_CANDIDATE_TEXT, isBlockCandidate, type PythonProposalsState, pythonProposalsText, QUESTION, answerPlan, needsTick, ACCURACY, REVIEW_FIRST_TEXT, pctOf } from "@/entities/convention";
+import { type ConventionRow, type FineOutlier, MIN_BLOCK_ROLE_SIZE, RECORD_MIN_CARDS, blockDecision, capSuggestions, forceBlockIsDanger, memberKey, reviewCounts, reviewOrder, splitOutliers, suggestionRecord, trackRecord, undecided, blocksInNameOnly, describeDecision, exemptionKind, exemptionKinds, importSource, keyTypeText, languageText, layeringTarget, ruleTargets, practiceText, shortRef, tierReasonText, uncheckedFilesText, uncheckedMembersText, useConventions, WIRING_FLAG_HELP, wireAt, agentsHiddenText, verifyText, BLOCK_CANDIDATE_TEXT, isBlockCandidate, type PythonProposalsState, pythonProposalsText, QUESTION, answerPlan, needsTick, ACCURACY, REVIEW_FIRST_TEXT, pctOf } from "@/entities/convention";
 import { symbolLine, useFactsIndex } from "@/entities/facts";
 import { useHistory } from "@/entities/history";
 import { type Answer, type AuditEntry, type Decision, useApi } from "@/shared/api";
@@ -647,6 +647,11 @@ function Detail({
               experimental · never blocks
             </Badge>
           )}
+          {row.promotedFromPractice && (
+            <Badge variant="outline" icon="layers" className="cv-promoted" title="A person made this practice a convention from the practice map (drift practices promote); the id is the variant it came from">
+              promoted from the practice map · {row.promotedFromPractice}
+            </Badge>
+          )}
           {row.rank && <span className="t-caption t-muted">rank {row.rank}</span>}
           <span className="st-grow" />
           <Button size="sm" variant="ghost" icon="copy" onClick={onCopy}>
@@ -889,6 +894,14 @@ function Detail({
               <Tag key={x}>{x}</Tag>
             ))}
           </div>
+          {row.rule.type === "practice" && (
+            <p className="t-body-sm t-secondary cv-practice-rule" style={{ marginBottom: 10 }}>
+              {practiceText(row.rule)}: drift check reports a new unit of this place that does {row.rule.concern} another way, or not at all, as the practice map reads it. Units it cannot read are never reported, and the units that did it another way when it was promoted are recorded in drift.lock as they are.{" "}
+              <button type="button" className="st-link" onClick={() => navigate("practices", "concerns", { concern: row.rule.type === "practice" ? row.rule.concern : "" })}>
+                Open the practice map
+              </button>
+            </p>
+          )}
           {row.namesPackage && (
             <p className="t-body-sm t-secondary" style={{ marginBottom: 10 }}>
               Names a package&apos;s symbol, not the repository&apos;s own: under decision D5 such a rule is a suggestion, because a library&apos;s API is not a team convention to enforce.

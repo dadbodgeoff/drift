@@ -1,11 +1,12 @@
 // Fixture data adapter: the renderer in a plain browser, against data that
 // scripts/make-fixtures.mjs produced by running the real drift binary on the
 // synthetic "acme" repository (and, locally, scripts/make-local-fixtures.mjs
-// on large public repos for performance work). Writes (review, init) change
-// only this tab's memory; history lives in localStorage.
+// on large public repos for performance work). Writes (review, init, a practice
+// made a convention) change only this tab's memory; history lives in localStorage.
 import { parseDocument } from "yaml";
-import type { AbRow, Census, CheckReport, Inventory, MapPackage, PracticesReport, RepoFacts, ReviewQuestion, ReviewQuestions, SecurityDiff, SessionState } from "@/shared/contract/drift";
-import type { History, LogEntry, RepoRef, SessionSummary, Snapshot } from "@/shared/ipc/contract";
+import type { AbRow, Census, CheckReport, Convention, Inventory, MapPackage, PracticesReport, PromoteOutcome, RepoFacts, ReviewQuestion, ReviewQuestions, SecurityDiff, SessionState } from "@/shared/contract/drift";
+import type { History, LogEntry, PromoteRequest, RepoRef, SessionSummary, Snapshot } from "@/shared/ipc/contract";
+import { fixtureConvention, fixturePromote, isRefused, promoteCommand } from "@/shared/lib/promote";
 import { answerCommand, exemptCommand, reviewCommand } from "@/shared/lib/review";
 import { answerPlan } from "@/shared/lib/questions";
 import type { Answer } from "@/shared/ipc/contract";
@@ -33,6 +34,8 @@ export class FixtureApi implements StudioApi {
   private logged = new Map<string, number>();
   /** This tab's files set apart per repo: convention id -> paths (`drift review --answer ID=different`). */
   private setApart = new Map<string, Map<string, Map<string, string[]>>>();
+  /** This tab's practices made conventions per repo: convention id -> the convention (`drift practices promote`). */
+  private promoted = new Map<string, Map<string, Convention>>();
   private idx: Promise<Index> | null = null;
   private logBuf: LogEntry[] = [];
 
@@ -194,13 +197,19 @@ export class FixtureApi implements StudioApi {
     const fine = this.exceptions.get(repo.path);
     const logSetting = this.reviewLog.get(repo.path);
     const apart = this.setApart.get(repo.path);
-    if (!over?.size && !fine?.size && !apart?.size && logSetting === undefined) return { conventions: yaml, lock };
+    const promoted = this.promoted.get(repo.path);
+    if (!over?.size && !fine?.size && !apart?.size && !promoted?.size && logSetting === undefined) return { conventions: yaml, lock };
     // Apply this tab's decisions the way `drift review` records them.
     const doc = parseDocument(yaml);
     // `review_log: on`, absent when off (as Drift writes it).
     if (logSetting) doc.set("review_log", "on");
     else if (logSetting === false) doc.delete("review_log");
     const list = doc.get("conventions") as { items: { get(k: string): unknown; set(k: string, v: unknown): void }[] };
+    // A practice made a convention in this tab: added as `drift practices promote` writes it (promoting again replaces it).
+    if (promoted?.size) {
+      list.items = list.items.filter((item) => !promoted.has(String(item.get("id"))));
+      for (const c of promoted.values()) (list as unknown as { add(v: unknown): void }).add(doc.createNode(c));
+    }
     for (const item of list.items) {
       const marks = fine?.get(String(item.get("id")));
       if (marks?.size) {
@@ -339,6 +348,35 @@ export class FixtureApi implements StudioApi {
   }
   async init() {
     return this.wait("fixture mode: the fixture repository is already initialised");
+  }
+
+  /** What promoting would record, worked out from this fixture's practice map (`practices.json`): nothing is written. */
+  async promotePreview(repo: RepoRef, req: PromoteRequest): Promise<PromoteOutcome> {
+    const report = (await this.practices(repo)).data;
+    return this.wait(fixturePromote(report, req, false));
+  }
+
+  /** The same, recorded in this tab only (the Conventions view shows the convention); no file is written. */
+  async promote(repo: RepoRef, req: PromoteRequest): Promise<PromoteOutcome> {
+    const report = (await this.practices(repo)).data;
+    const out = fixturePromote(report, req, true);
+    if (isRefused(out)) return this.wait(out);
+    const byId = this.promoted.get(repo.path) ?? new Map<string, Convention>();
+    byId.set(out.convention.id, fixtureConvention(out));
+    this.promoted.set(repo.path, byId);
+    this.count(repo, 1);
+    const entry = {
+      at: Date.now(),
+      user: "you (fixture)",
+      decision: "promote" as const,
+      ids: [out.convention.id],
+      command: promoteCommand(repo.path, req, false),
+      ok: true,
+      output: "fixture mode: recorded in this tab only; no file was written",
+    };
+    const h = await this.history(repo);
+    this.saveHistory(repo, retain({ ...h, audit: [...h.audit, entry] }));
+    return this.wait({ ...out, preview: `${out.preview}\nfixture mode: recorded in this tab only; no file was written` });
   }
 
   async readSource(repo: RepoRef, path: string): Promise<string | null> {

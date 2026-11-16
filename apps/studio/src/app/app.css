@@ -3535,3 +3535,31 @@ button.ss-tick.is-exempt {
   border-color: var(--color-border-strong);
   background: var(--color-raised);
 }
+
+/* "Make this a convention" (features/practices/PromoteDialog): Drift's dry run, the choices, a refusal in place. */
+.pr-promote__action {
+  gap: 10px;
+  align-items: center;
+}
+.pr-promote__preview {
+  transition: opacity 120ms ease;
+}
+.pr-promote__preview.is-stale {
+  opacity: 0.6;
+}
+.pr-promote__place {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.pr-promote__refused .dui-icon {
+  color: var(--color-danger);
+  margin-top: 2px;
+}
+.pr-promote__cmd {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.pr-promote .st-raw pre {
+  white-space: pre-wrap;
+}

@@ -255,7 +255,7 @@ await test("code drawer: what drift card says about a file (entry points, siblin
   await page.waitForSelector(".st-card");
   const t = await page.textContent(".st-card");
   // As `drift card apps/web/app/api/workspaces/[id]/archive-all/route.ts` prints it for acme.
-  expect(t.includes("no wrapper or decorator") && t.includes("exposure unknown"), `entry point: ${t}`);
+  expect(t.includes("no guard found in what Drift read") && t.includes("exposure unknown"), `entry point: ${t}`);
   expect(t.includes("74 http entry points in apps/web/app/api/workspaces/[id]/ carry withWorkspace 70/74") && t.includes("apps/web/app/api/workspaces/[id]/alerts/route.ts:5 GET"), `siblings: ${t}`);
   expect(t.includes("D-b0d245") && t.includes("this file is an outlier") && t.includes("drift card apps/web/app/api/workspaces/[id]/archive-all/route.ts"), `conventions: ${t}`);
   expect(t.includes("Not known") && t.includes("checks inside handler bodies other than sign-in checks"), `not known: ${t}`);
@@ -1453,7 +1453,7 @@ await test("real dev-clone output (fixtures/local --policy, when generated): eve
   metrics.realMadeBy = madeBy;
 });
 
-await test("practices: the recipe first, then the findings, then every concern by shared instrument and by variant; read-only", async () => {
+await test("practices: the recipe first, then the findings, then every concern by shared instrument and by variant; nothing written unasked", async () => {
   const report = JSON.parse(readFileSync(join(app, "fixtures", "acme", "practices.json"), "utf8"));
   const page = await newPage({ permissions: ["clipboard-read", "clipboard-write"] });
   // The copy flow needs a finding with a config line; acme's unknowns are unresolved (no line classifies them), so
@@ -1475,7 +1475,8 @@ await test("practices: the recipe first, then the findings, then every concern b
   const api = await page.textContent(".pr-recipe >> nth=1");
   expect(api.includes("http entry points in apps/api") && api.includes("96% · 47"), `apps/api recipe: ${api}`);
   expect((await page.textContent(".pr-head")).includes(`${report.summary.concerns_at_target}/9concerns at the 90% coverage target`), "header");
-  expect((await page.locator("text=Promote").count()) === 0, "read-only: no promote");
+  // Nothing is written from the Practices view unless a person asks: no dialog is open on arrival.
+  expect((await page.locator(".dui-dialog").count()) === 0, "no promotion dialog open");
   await axe(page, "practices recipe");
   // The file to copy opens in the code drawer.
   await page.click(".pr-recipe >> nth=0 >> .pr-copy >> nth=0");
@@ -1501,7 +1502,7 @@ await test("practices: the recipe first, then the findings, then every concern b
   const preview = await page.locator(".pr-concern:has(.dui-tag:has-text('preview')) .pr-concern__title").allTextContents();
   expect(JSON.stringify(preview) === JSON.stringify(["Logging and observabilitypreview", "Config, secrets, feature flagspreview", "Data accesspreview", "Testing practicepreview"]), `preview: ${preview}`);
   const meter = await page.getAttribute(".pr-variants .pr-meter", "aria-label");
-  expect(meter.includes("154 known, 11 none, 0 unknown of 165") && meter.includes("reached"), `meter: ${meter}`);
+  expect(meter.includes("154 known, 11 none in what Drift read, 0 unknown of 165") && meter.includes("reached"), `meter: ${meter}`);
   const groups = await page.locator(".pr-group .pr-variant__label").allTextContents();
   expect(groups.length === 5 && groups[1].startsWith("decorator AuthGuard") && groups[1].includes("user"), `authn groups: ${groups}`);
   await page.click(".pr-group:has-text('decorator AuthGuard') .pr-group__head");
@@ -1539,7 +1540,7 @@ await test("practices: the recipe first, then the findings, then every concern b
   await page.click(".pr-concern:has-text('API design')");
   await page.waitForSelector(".pr-compare tr.is-divergent");
   expect((await page.textContent(".pr-compare tr.is-divergent")).includes("apps/api"), "apps/api builds responses another way");
-  expect((await page.locator("text=Promote").count()) === 0, "read-only: no promote");
+  expect((await page.locator(".dui-dialog").count()) === 0, "no promotion dialog open");
   await axe(page, "practices concerns");
   // One package: the recipe, the findings and the concerns narrow to it (Drift groups the whole repository only).
   await page.click(".pr-concern:has-text('Authentication')");
@@ -1551,6 +1552,78 @@ await test("practices: the recipe first, then the findings, then every concern b
   expect((await page.locator(".pr-recipe").count()) === 1 && (await page.textContent(".pr-recipe")).includes("http entry points in apps/api"), "apps/api's recipe");
   expect(page.problems.length === 0, `console problems:\n${page.problems.join("\n")}`);
   await page.context().close();
+});
+
+await test("practices: make a practice a convention (dry run, other ways, block refused in place, advise written) and its notes in Check", async () => {
+  const page = await newPage();
+  await open(page, "practices");
+  await page.click("[role=tab]:has-text('All concerns')");
+  await page.waitForSelector(".pr-concern");
+  const variantRow = async (concern, label) => {
+    await page.click(`.pr-concern:has-text('${concern}')`);
+    await page.click(".dui-segmented button:has-text('Every variant')");
+    await page.click(`.pr-stack .pr-variant:not(.pr-group__head):has-text('${label}')`);
+    await page.waitForSelector(".pr-detail button:has-text('Make this a convention')");
+  };
+  // Other ways to tick: data access in apps/web; ticking one runs the dry run again with it accepted.
+  await variantRow("Data access", "entry direct @prisma/client");
+  await page.click(".pr-detail button:has-text('Make this a convention')");
+  await page.waitForSelector(".dui-dialog .pr-promote__preview");
+  expect((await page.textContent(".dui-dialog")).includes("92 of the 94 symbols in apps/web"), "before ticking");
+  await page.click(".dui-dialog .pr-promote__ways label:has-text('service @prisma/client')");
+  await page.waitForFunction(() => document.querySelector(".dui-dialog")?.textContent?.includes("93 of the 94 symbols in apps/web use one of the 2 accepted ways"));
+  expect((await page.textContent(".dui-dialog")).includes("--with P-288461"), "the command carries the tick");
+  await page.click(".dui-dialog button:has-text('Cancel')");
+  expect((await page.locator(".dui-dialog").count()) === 0, "cancel writes nothing");
+  // authn's withAdmin, promotable in apps/web/app/api/admin: the dry run's counts, as the practice map has them.
+  await variantRow("Authentication", "wrap withAdmin");
+  expect((await page.textContent(".pr-detail")).includes("apps/web/app/api/admin"), "the place Drift names");
+  await page.click(".pr-detail button:has-text('Make this a convention')");
+  await page.waitForSelector(".dui-dialog .pr-promote__preview");
+  const d = await page.textContent(".dui-dialog");
+  expect(d.includes("19 of the 20 entry points in apps/web/app/api/admin use wrap withAdmin") && d.includes("apps/web/app/api/admin/health/route.ts:3 GET") && d.includes("Drift could read every entry point here"), `preview: ${d.slice(0, 800)}`);
+  expect(d.includes("practices promote P-1587e5 --in apps/web/app/api/admin --json"), "the command it would run");
+  await axe(page, "promote dialog");
+  // Block: refused (no replay in fixture mode), shown in the dialog, which stays open and cannot write.
+  await page.click(".dui-dialog label:has-text('Block')");
+  await page.waitForSelector(".dui-dialog .pr-promote__refused:has-text('Block mode needs a replay')");
+  expect(await page.locator(".dui-dialog button:has-text('Make it a blocking convention')").isDisabled(), "nothing to write while refused");
+  expect((await page.locator(".dui-dialog .pr-promote__preview").count()) === 1, "the last preview stays on screen");
+  // Advise: written (in this tab), a toast with the convention, and the queries read again.
+  await page.click(".dui-dialog label:has-text('Advise')");
+  await page.waitForFunction(() => !document.querySelector(".dui-dialog .pr-promote__refused") && !document.querySelector(".dui-dialog .pr-promote__preview.is-stale"));
+  await page.click(".dui-dialog button:has-text('Make it a convention')");
+  await page.waitForSelector(".dui-toast:has-text('Convention D-')");
+  expect((await page.locator(".dui-dialog").count()) === 0, "the dialog closes once written");
+  const toast = await page.textContent(".dui-toast:has-text('Convention D-')");
+  expect(toast.includes("wrap withAdmin"), `toast: ${toast}`);
+  const id = /Convention (D-[0-9a-f]{6})/.exec(toast)[1];
+  // The convention in Conventions, labelled with the variant it came from.
+  await page.click(`.dui-toast:has-text('Convention ${id}') button:has-text('Open')`);
+  await page.waitForSelector(".cv-promoted");
+  const badge = await page.textContent(".cv-promoted");
+  expect(badge.includes("promoted from the practice map") && badge.includes("P-1587e5"), `badge: ${badge}`);
+  expect((await page.textContent(".cv-practice-rule")).includes("authn done one of 1 accepted way"), "the rule in words");
+  expect(page.problems.length === 0, `console problems:\n${page.problems.join("\n")}`);
+  await page.context().close();
+
+  // Check: a stale promoted practice and units not checked are notes, never failures.
+  const ck = await newPage();
+  await ck.route("**/acme/check.json", async (r) => {
+    const c = await (await r.fetch()).json();
+    c.stale_practices = [{ id: "D-0000aa", summary: "authn in apps/api: wrap withAuth", units: 12 }];
+    c.practices_not_checked = [{ id: "D-0000bb", units: 3 }];
+    await r.fulfill({ json: c });
+  });
+  await open(ck, "check");
+  await ck.waitForSelector(".ck-stale-practices");
+  const stale = await ck.textContent(".ck-stale-practices");
+  expect(stale.includes("Promoted practices that check nothing") && stale.includes("D-0000aa") && stale.includes("drift review --reject D-0000aa") && stale.includes("Not a failure"), `stale: ${stale}`);
+  const nc = await ck.textContent(".ck-practices-not-checked");
+  expect(nc.includes("D-0000bb") && nc.includes("3 units not checked"), `not checked: ${nc}`);
+  await axe(ck, "check promoted practices");
+  expect(ck.problems.length === 0, `console problems:\n${ck.problems.join("\n")}`);
+  await ck.context().close();
 });
 
 await test("map: a package's dependencies from drift map, production and test apart (round 13 S)", async () => {

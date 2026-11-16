@@ -70,6 +70,7 @@ export type RuleFamily =
   | "Guards"
   | "Wiring"
   | "Import sources"
+  | "Practices"
   | "Other";
 
 const WRAP_FAMILY: Record<string, RuleFamily> = {
@@ -123,6 +124,8 @@ export function ruleFamily(rule: Rule): RuleFamily {
       return "Wiring";
     case "imports_from":
       return "Import sources";
+    case "practice":
+      return "Practices";
     default:
       // A rule kind newer than this Studio: shown as data (CI fails until it is handled).
       return "Other";
@@ -158,6 +161,16 @@ export function sourceModule(ref: string): string {
 /** An import-source rule in words: "imports `TypedDict` from typing_extensions (not typing)"; null for other kinds. */
 export function importSource(rule: Rule): { name: string; from: string; not: string[] } | null {
   return rule.type === "imports_from" ? { name: rule.name, from: sourceModule(rule.source), not: (rule.instead_of ?? []).map(sourceModule) } : null;
+}
+
+/**
+ * A promoted practice in words, as a chip: "authn done one of 2 accepted ways" (its ways are practice-map variant
+ * keys, which the convention's summary names in the map's labels). Null for other kinds.
+ */
+export function practiceText(rule: Rule): string | null {
+  if (rule.type !== "practice") return null;
+  const n = rule.any_of.length;
+  return `${rule.concern} done one of ${n} accepted ${n === 1 ? "way" : "ways"}`;
 }
 
 /** `import:<area>` signals (not `import:pkg:`) are layering rules. */
@@ -208,6 +221,8 @@ export function ruleTargets(rule: Rule): string[] {
       const s = importSource(rule)!;
       return [`imports ${s.name} from ${s.from}${s.not.length ? ` (not ${s.not.join(" or ")})` : ""}`];
     }
+    case "practice":
+      return [practiceText(rule)!];
     case "has_test":
       return [];
     default:

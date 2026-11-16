@@ -27,6 +27,8 @@ export const CHANNEL_NAMES = [
   "reviewQuestions",
   "answer",
   "init",
+  "promotePreview",
+  "promote",
   "readSource",
   "listSessions",
   "readTranscript",

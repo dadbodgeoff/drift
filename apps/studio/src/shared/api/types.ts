@@ -1,10 +1,10 @@
 // The renderer's only way to get data: a named-operation API over the IPC
 // contract (shared/ipc/contract.ts). In Electron it is backed by the preload
 // bridge; in a plain browser by fixtures that the real drift binary produced.
-import type { AbRow, Census, CheckReport, Inventory, MapPackage, PracticesReport, RepoFacts, ReviewQuestions, SecurityDiff, SessionState } from "@/shared/contract/drift";
-import type { Answer, AuditEntry, Decision, DriftInfo, History, LogEntry, PolicyFiles, Provenance, RepoChange, RepoRef, SessionSummary, Snapshot } from "@/shared/ipc/contract";
+import type { AbRow, Census, CheckReport, Inventory, MapPackage, PracticesReport, PromoteOutcome, RepoFacts, ReviewQuestions, SecurityDiff, SessionState } from "@/shared/contract/drift";
+import type { Answer, AuditEntry, Decision, DriftInfo, History, LogEntry, PolicyFiles, PromoteRequest, Provenance, RepoChange, RepoRef, SessionSummary, Snapshot } from "@/shared/ipc/contract";
 
-export type { Answer, AuditEntry, Decision, DriftInfo, History, LogEntry, PolicyFiles, Provenance, RepoChange, RepoRef, SessionSummary, Snapshot };
+export type { Answer, AuditEntry, Decision, DriftInfo, History, LogEntry, PolicyFiles, PromoteRequest, Provenance, RepoChange, RepoRef, SessionSummary, Snapshot };
 
 export interface Loaded<T> {
   data: T;
@@ -84,6 +84,13 @@ export interface StudioApi {
   answer(repo: RepoRef, id: string, answer: Answer, setApart: string[], confirmEntry: string[]): Promise<AuditEntry>;
   /** `drift init`: an explicit write. */
   init(repo: RepoRef): Promise<string>;
+  /**
+   * What making a practice a convention would record: `drift practices promote <id> --in <place> [--with <id>]...
+   * [--block] --dry-run --json`. Writes nothing. A refusal (exit 2) is returned, with the sentence to show.
+   */
+  promotePreview(repo: RepoRef, req: PromoteRequest, opts?: RunOpts): Promise<PromoteOutcome>;
+  /** The same without `--dry-run`: an explicit write (one accepted convention, a drift.lock entry per exception). A refusal writes nothing and is returned. */
+  promote(repo: RepoRef, req: PromoteRequest): Promise<PromoteOutcome>;
   /** A source file Drift scanned, as text (null when unavailable). */
   readSource(repo: RepoRef, path: string): Promise<string | null>;
   listSessions(repo: RepoRef, opts: { all: boolean }): Promise<SessionSummary[]>;

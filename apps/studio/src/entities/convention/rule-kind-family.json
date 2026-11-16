@@ -26,5 +26,6 @@
  "dependency_version": "Dependency versions",
  "registered_in": "Wiring",
  "mirrors_keys": "Wiring",
- "imports_from": "Import sources"
+ "imports_from": "Import sources",
+ "practice": "Practices"
 }

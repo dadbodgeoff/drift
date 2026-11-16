@@ -81,6 +81,8 @@ export interface ConventionRow {
   exceptions: PolicyException[];
   /** Files a person set apart as a different kind, answering the one question (conventions.yaml `different_kind`); empty when none. */
   differentKind: PolicyDifferentKind[];
+  /** A practice a person promoted from the practice map (conventions.yaml `promoted_from_practice`): the variant id it came from; null for every other convention. */
+  promotedFromPractice: string | null;
 }
 
 /** `path#symbol`: how drift.lock and conventions.yaml `exceptions` name a member. */
@@ -386,6 +388,7 @@ export function conventionRows(policy: ConventionsFile | null, census: Census | 
       verify: verifyView(k?.verify),
       exceptions: c.exceptions ?? [],
       differentKind: c.different_kind ?? [],
+      promotedFromPractice: c.promoted_from_practice ?? null,
     });
     seen.add(c.id);
   }
@@ -424,6 +427,7 @@ export function conventionRows(policy: ConventionsFile | null, census: Census | 
       verify: null,
       exceptions: [],
       differentKind: [],
+      promotedFromPractice: null,
     });
   }
   return rows;
