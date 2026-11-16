@@ -47,7 +47,10 @@ fn call_wraps(repo: &RepoFacts, path: &str, name: &str) -> Vec<String> {
 }
 
 fn has_control(repo: &RepoFacts, path: &str, name: &str, control: &str) -> bool {
-    symbol(repo, path, name).controls.iter().any(|c| c == control)
+    symbol(repo, path, name)
+        .controls
+        .iter()
+        .any(|c| c == control)
 }
 
 fn django_project(r: &Path, apps: &str) {
@@ -127,7 +130,9 @@ urlpatterns = [
     const PERM: &str = "pkg:rest_framework#permissions.IsAuthenticated";
     let v = "depot/views.py";
     assert!(
-        !call_wraps(&listed, v, "SignOut.post").iter().any(|w| w == PERM),
+        !call_wraps(&listed, v, "SignOut.post")
+            .iter()
+            .any(|w| w == PERM),
         "{:?}",
         call_wraps(&listed, v, "SignOut.post")
     );
@@ -141,7 +146,11 @@ urlpatterns = [
         "{other:?}"
     );
     // What mining reads: as the measured build gave it.
-    assert!(call_wraps(&mined, v, "SignOut.post").iter().any(|w| w == PERM));
+    assert!(
+        call_wraps(&mined, v, "SignOut.post")
+            .iter()
+            .any(|w| w == PERM)
+    );
 }
 
 /// Fix 3, withdrawn (review R5, row 2): reading a `raise` in an `except` handler as
@@ -236,9 +245,19 @@ def search(q: str):
     let mined = scanned(r);
     let listed = mined.listed();
     let m = "api/main.py";
-    assert!(has_control(&listed, m, "delete_item", controls::INPUT_TYPED));
+    assert!(has_control(
+        &listed,
+        m,
+        "delete_item",
+        controls::INPUT_TYPED
+    ));
     assert!(!has_control(&listed, m, "search", controls::INPUT_TYPED));
-    assert!(!has_control(&mined, m, "delete_item", controls::INPUT_TYPED));
+    assert!(!has_control(
+        &mined,
+        m,
+        "delete_item",
+        controls::INPUT_TYPED
+    ));
 
     let dir = tempfile::tempdir().unwrap();
     let r = dir.path();
@@ -313,6 +332,11 @@ def typed() -> Message:
     let listed = mined.listed();
     let m = "api/main.py";
     assert!(has_control(&listed, m, "raw", controls::NO_RESPONSE_MODEL));
-    assert!(!has_control(&listed, m, "typed", controls::NO_RESPONSE_MODEL));
+    assert!(!has_control(
+        &listed,
+        m,
+        "typed",
+        controls::NO_RESPONSE_MODEL
+    ));
     assert!(!has_control(&mined, m, "raw", controls::NO_RESPONSE_MODEL));
 }

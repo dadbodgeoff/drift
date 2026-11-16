@@ -94,7 +94,10 @@ fn no_guard_found_with_something_unread_is_worded_as_not_read_and_ranked_after_g
         text.contains("no guard found in what Drift read, and some of the way was not read"),
         "{text}"
     );
-    assert!(text.contains("1 thing(s) on the way a guard may be in"), "{text}");
+    assert!(
+        text.contains("1 thing(s) on the way a guard may be in"),
+        "{text}"
+    );
 }
 
 /// A schema the inventory saw in the body, with no reading of the practice map, is

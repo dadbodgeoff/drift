@@ -48,11 +48,24 @@ fn block_mode_violations_are_listed_before_the_cap() {
     let vs = mixed();
     let refs: Vec<&Violation> = vs.iter().collect();
     let msg = agent_message(&refs, AgentAt::Edit);
-    assert_eq!(msg.matches("  at   ").count(), MAX_AGENT_VIOLATIONS, "{msg}");
+    assert_eq!(
+        msg.matches("  at   ").count(),
+        MAX_AGENT_VIOLATIONS,
+        "{msg}"
+    );
     // Both block-mode ones are listed, first.
-    let at = |needle: &str| msg.find(needle).unwrap_or_else(|| panic!("{needle} in {msg}"));
-    assert!(at("app/api/z1/route.ts") < at("app/api/a0/route.ts"), "{msg}");
-    assert!(at("app/api/z2/route.ts") < at("app/api/a0/route.ts"), "{msg}");
+    let at = |needle: &str| {
+        msg.find(needle)
+            .unwrap_or_else(|| panic!("{needle} in {msg}"))
+    };
+    assert!(
+        at("app/api/z1/route.ts") < at("app/api/a0/route.ts"),
+        "{msg}"
+    );
+    assert!(
+        at("app/api/z2/route.ts") < at("app/api/a0/route.ts"),
+        "{msg}"
+    );
     // The advice cut off is counted as advice; no block-mode one was cut.
     assert!(
         msg.contains("+4 more (4 advice): run `drift check` to see all\n"),

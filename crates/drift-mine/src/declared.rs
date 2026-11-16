@@ -273,7 +273,9 @@ pub fn declared(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
             continue;
         }
         if e.options.iter().any(|o| PARTIAL_KEYS.contains(&o.as_str())) {
-            let words = "it restricts only some names of a module, and Drift's rule is about whole layers".to_string();
+            let words =
+                "it restricts only some names of a module, and Drift's rule is about whole layers"
+                    .to_string();
             not.entry((e.config.to_string(), e.dir.to_string(), "partial", words))
                 .or_default()
                 .extend(specifiers(e.options));
@@ -428,7 +430,8 @@ pub fn declared(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
         };
 
         // Said already: by a mined convention, or by a layering proposal from the map.
-        let same = |r: &Rule, role: &RoleSelector| *r == rule && layer_of_scope(&scope_of(role)) == layer;
+        let same =
+            |r: &Rule, role: &RoleSelector| *r == rule && layer_of_scope(&scope_of(role)) == layer;
         let also = |id: &str, by: &'static str| AlsoDeclared {
             id: id.to_string(),
             by,
@@ -597,7 +600,9 @@ fn specifiers(options: &[String]) -> impl Iterator<Item = String> + '_ {
     options
         .iter()
         .filter(|o| !o.is_empty() && !o.chars().any(char::is_whitespace))
-        .filter(|o| o.starts_with('.') || o.starts_with('@') || o.starts_with('!') || o.contains('/'))
+        .filter(|o| {
+            o.starts_with('.') || o.starts_with('@') || o.starts_with('!') || o.contains('/')
+        })
         .cloned()
 }
 
@@ -799,7 +804,9 @@ fn import_unread<'r>(repo: &RepoFacts, files: &[&'r FileFacts]) -> BTreeSet<&'r 
         .filter(|f| {
             !f.parse_ok
                 || f.truncated.iter().any(|t| t == "imports")
-                || f.imports.iter().any(|i| i.module.starts_with("unresolved:"))
+                || f.imports
+                    .iter()
+                    .any(|i| i.module.starts_with("unresolved:"))
                 || unchecked.uncertain(&f.path)
         })
         .map(|&f| f.path.as_str())
@@ -1104,7 +1111,10 @@ mod tests {
     fn layers_are_mining_layers() {
         assert_eq!(area("packages/features/x"), "packages/features");
         assert_eq!(area("routes/x"), "routes");
-        assert_eq!(layer_of_scope("packages/platform/atoms"), "packages/platform");
+        assert_eq!(
+            layer_of_scope("packages/platform/atoms"),
+            "packages/platform"
+        );
     }
 
     #[test]

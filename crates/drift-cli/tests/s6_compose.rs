@@ -27,7 +27,10 @@ fn a_deploy_overlay_does_not_load_the_dev_override() {
     write(
         r,
         &[
-            ("docker-compose.yml", "services:\n  api:\n    build: ./api\n"),
+            (
+                "docker-compose.yml",
+                "services:\n  api:\n    build: ./api\n",
+            ),
             (
                 "docker-compose.override.yml",
                 "services:\n  api:\n    ports: [\"8000:8000\"]\n",

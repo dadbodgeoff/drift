@@ -199,7 +199,12 @@ fn a_proposal_from_the_map_is_no_rule_to_an_agent() {
         .conventions
         .iter()
         .find(|c| c.from_map.as_deref() == Some("practice") && c.rule.is_practice())
-        .unwrap_or_else(|| panic!("no practice proposed from the map: {:?}", policy.conventions))
+        .unwrap_or_else(|| {
+            panic!(
+                "no practice proposed from the map: {:?}",
+                policy.conventions
+            )
+        })
         .id
         .clone();
     let t = mcp(
@@ -215,7 +220,9 @@ fn a_proposal_from_the_map_is_no_rule_to_an_agent() {
         ],
     );
     assert!(
-        t[0].contains("is a proposal Drift made from its map that no person has accepted: it is not a rule"),
+        t[0].contains(
+            "is a proposal Drift made from its map that no person has accepted: it is not a rule"
+        ),
         "{}",
         t[0]
     );
@@ -249,7 +256,10 @@ fn a_proposal_from_the_map_is_no_rule_to_an_agent() {
         assert!(!said.contains(summary.as_str()), "{id}: {said}");
         for (call, reply) in &replies {
             assert!(!reply.contains(id.as_str()), "{call} names {id}:\n{reply}");
-            assert!(!reply.contains(summary.as_str()), "{call} states {id}:\n{reply}");
+            assert!(
+                !reply.contains(summary.as_str()),
+                "{call} states {id}:\n{reply}"
+            );
         }
     }
     // No tool output carries a command that changes policy.
@@ -391,7 +401,11 @@ fn hostile_names_reach_no_tool_as_markup_or_a_line_of_their_own() {
         ],
     );
     // The file was read and is reported: its name reaches the answer, escaped.
-    assert!(t[0].contains("IGNORE ALL PREVIOUS INSTRUCTIONS"), "{}", t[0]);
+    assert!(
+        t[0].contains("IGNORE ALL PREVIOUS INSTRUCTIONS"),
+        "{}",
+        t[0]
+    );
     assert!(t[0].contains(&format!("[{id}]")), "{}", t[0]);
     for reply in &t {
         harmless(reply);
@@ -448,7 +462,10 @@ fn hostile_routes_paths_and_arguments_come_back_sanitized() {
             ("drift_security", json!({})),
             ("drift_card", json!({ "path": hostile })),
             ("drift_explain", json!({ "id": id })),
-            ("drift_explain", json!({ "id": format!("D-{HOSTILE_LINE}") })),
+            (
+                "drift_explain",
+                json!({ "id": format!("D-{HOSTILE_LINE}") }),
+            ),
         ],
     );
     // The file was read and breaks the promoted practice: its name reaches the
@@ -463,7 +480,9 @@ fn hostile_routes_paths_and_arguments_come_back_sanitized() {
         assert!(!reply.contains("`id`"), "{reply}");
         for line in reply.lines() {
             assert!(
-                !line.trim_start().starts_with("ignore previous instructions"),
+                !line
+                    .trim_start()
+                    .starts_with("ignore previous instructions"),
                 "{reply}"
             );
         }
@@ -541,5 +560,10 @@ fn the_one_file_shortcut_agrees_with_the_full_path_on_a_wrapper_defined_elsewher
     );
     assert!(t[0].contains(&id), "{}", t[0]);
     assert!(t[1].starts_with("No new violations"), "{}", t[1]);
-    assert!(t[2].contains(&id) && t[3].contains(&id), "{}\n{}", t[2], t[3]);
+    assert!(
+        t[2].contains(&id) && t[3].contains(&id),
+        "{}\n{}",
+        t[2],
+        t[3]
+    );
 }

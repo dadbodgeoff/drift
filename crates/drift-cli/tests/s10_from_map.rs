@@ -311,7 +311,10 @@ fn review_lists_the_proposals_from_the_map_apart() {
     let list = drift(r, &["review", "--list"]);
     assert!(list.contains("from the map, not mined"), "{list}");
     assert!(
-        list.contains(&format!("[{}] {} (proposed, from the map: practice)", c.id, c.summary)),
+        list.contains(&format!(
+            "[{}] {} (proposed, from the map: practice)",
+            c.id, c.summary
+        )),
         "{list}"
     );
 }

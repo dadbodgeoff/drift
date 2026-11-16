@@ -51,10 +51,13 @@ fn file<'a>(r: &'a RepoFacts, path: &str) -> &'a FileFacts {
 }
 
 fn symbol<'a>(f: &'a FileFacts, name: &str) -> &'a Symbol {
-    f.symbols.iter().find(|s| s.name == name).unwrap_or_else(|| {
-        let names: Vec<&str> = f.symbols.iter().map(|s| s.name.as_str()).collect();
-        panic!("{name} not in {}: {names:?}", f.path)
-    })
+    f.symbols
+        .iter()
+        .find(|s| s.name == name)
+        .unwrap_or_else(|| {
+            let names: Vec<&str> = f.symbols.iter().map(|s| s.name.as_str()).collect();
+            panic!("{name} not in {}: {names:?}", f.path)
+        })
 }
 
 fn has(s: &Symbol, control: &str) -> bool {

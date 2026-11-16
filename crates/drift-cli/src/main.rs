@@ -3144,11 +3144,9 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             // or whose inventory cannot be read, is told nothing.
             let security_offer: Option<drift_mine::ratchet::Findings> =
                 match drift_mine::ratchet::load_baseline(root) {
-                    Ok(None) => {
-                        baseline_findings(root, &facts, &inv)
-                            .ok()
-                            .filter(|f| !f.is_empty())
-                    }
+                    Ok(None) => baseline_findings(root, &facts, &inv)
+                        .ok()
+                        .filter(|f| !f.is_empty()),
                     _ => None,
                 };
             if let Some(found) = &security_offer {
@@ -4342,13 +4340,14 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             // file the change touched lists an entry point: every row of the advice
             // is one, so with none there is nothing to advise and the merge base is
             // not scanned here (what the change adds reads it lazily, as before).
-            let advice_base: Option<drift_mine::security::Inventory> =
-                match (&scope, &security) {
-                    (Some(s), None)
-                        if only.is_none()
-                            && facts.files.iter().any(|f| {
-                                s.touches(&f.path) && !f.listed_entry_points().is_empty()
-                            }) =>
+            let advice_base: Option<drift_mine::security::Inventory> = match (&scope, &security) {
+                (Some(s), None)
+                    if only.is_none()
+                        && facts
+                            .files
+                            .iter()
+                            .any(|f| s.touches(&f.path) && !f.listed_entry_points().is_empty()) =>
+                {
                     match s.base_inventory(root) {
                         Ok(inv) => Some(inv),
                         Err(e) => {
@@ -4357,9 +4356,10 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                             );
                             None
                         }
-                    },
-                    _ => None,
-                };
+                    }
+                }
+                _ => None,
+            };
             if let Some(inv) = &advice_base {
                 let keys: pr::BaseEntries = inv
                     .entry_points
@@ -4520,8 +4520,9 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     }
                     // Findings of readings newer than the baseline: said once, never
                     // results ([`drift_mine::ratchet::Ratchet::new_in_drift`]).
-                    if let Some(line) =
-                        security.as_ref().and_then(drift_mine::ratchet::newer_readings_line)
+                    if let Some(line) = security
+                        .as_ref()
+                        .and_then(drift_mine::ratchet::newer_readings_line)
                     {
                         notes.push(serde_json::json!({
                             "level": "note",
@@ -4597,7 +4598,9 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     print!("{}", drift_mine::ratchet::render_advice(&advice));
                     // After an upgrade (findings held as new in this Drift, or a policy
                     // another Drift's `drift init` wrote): where to read what changed.
-                    if security.as_ref().is_some_and(|s| !s.new_in_drift.is_empty())
+                    if security
+                        .as_ref()
+                        .is_some_and(|s| !s.new_in_drift.is_empty())
                         || (!policy.engine.is_empty() && policy.engine != engine())
                     {
                         println!(
@@ -4641,8 +4644,9 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     }
                     // Findings of readings newer than the baseline fail nothing and
                     // are no annotations: said once, in the log.
-                    if let Some(line) =
-                        security.as_ref().and_then(drift_mine::ratchet::newer_readings_line)
+                    if let Some(line) = security
+                        .as_ref()
+                        .and_then(drift_mine::ratchet::newer_readings_line)
                     {
                         println!("drift security: {line}");
                     }
@@ -4692,7 +4696,11 @@ fn baseline_findings(
 
 /// The security inventory of the repository as `drift security` reads it, with its
 /// CI workflows, dependencies and Kubernetes manifests.
-fn security_inventory(cli: &Cli, root: &Path, facts: &RepoFacts) -> drift_mine::security::Inventory {
+fn security_inventory(
+    cli: &Cli,
+    root: &Path,
+    facts: &RepoFacts,
+) -> drift_mine::security::Inventory {
     let mut inv = drift_mine::security::inventory_with(
         facts,
         drift_mine::security::Boundaries::load(&cli.root),
@@ -4777,13 +4785,9 @@ fn check_security_advice(
         eprintln!("drift: security advice: the practice map could not be read ({e:#}); unscoped keys are not said");
         Vec::new()
     });
-    drift_mine::ratchet::advise(
-        base,
-        &head,
-        &units,
-        &|p| scope.touches(p),
-        &|p| scope.old_path(p).to_string(),
-    )
+    drift_mine::ratchet::advise(base, &head, &units, &|p| scope.touches(p), &|p| {
+        scope.old_path(p).to_string()
+    })
 }
 
 /// `drift check --format json`: the report's fields as before (`violations`, `fixed`),
@@ -5331,7 +5335,10 @@ fn census_why(
         && drift_mine::funnel::gate(g).is_none()
     {
         let names: Vec<&str> = drift_mine::funnel::GATES.iter().map(|g| g.name).collect();
-        bail!("no gate is named `{g}`; the gates are: {}", names.join(", "));
+        bail!(
+            "no gate is named `{g}`; the gates are: {}",
+            names.join(", ")
+        );
     }
     let mut facts = load_facts(cli, 0)?;
     if listed {
@@ -5711,9 +5718,7 @@ fn review_interactive(
     let blocking = policy
         .conventions
         .iter()
-        .filter(|c| {
-            c.status == Status::Accepted && drift_mine::check::effective_mode(c) == "block"
-        })
+        .filter(|c| c.status == Status::Accepted && drift_mine::check::effective_mode(c) == "block")
         .count();
     if blocking > 0 {
         println!(

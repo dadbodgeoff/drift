@@ -54,8 +54,16 @@ fn an_older_baseline_fails_nothing_a_wider_reading_finds_in_a_whole_tree_check()
             "server.ts#GET /s GET /s -> sql_string_interpolation",
             "server.ts:9",
         ),
-        ("risky", "nosql_injection in lib/dao.ts#byThreshold", "lib/dao.ts:2"),
-        ("guard-gap", "routes/x.ts#GET /x GET /x lacks auth", "routes/x.ts:4"),
+        (
+            "risky",
+            "nosql_injection in lib/dao.ts#byThreshold",
+            "lib/dao.ts:2",
+        ),
+        (
+            "guard-gap",
+            "routes/x.ts#GET /x GET /x lacks auth",
+            "routes/x.ts:4",
+        ),
         (
             "workflow",
             "unpinned_action in .github/workflows/ci.yml job a: someone/x@v1",
@@ -68,7 +76,11 @@ fn an_older_baseline_fails_nothing_a_wider_reading_finds_in_a_whole_tree_check()
         let r = compare_with(&now, &b, None);
         assert_eq!(r.kept, 1);
         for kind in ["unguarded-reaching", "risky", "guard-gap"] {
-            assert_eq!(r.new_in_drift.get(kind).map(Vec::len), Some(1), "{kind}: {r:?}");
+            assert_eq!(
+                r.new_in_drift.get(kind).map(Vec::len),
+                Some(1),
+                "{kind}: {r:?}"
+            );
             assert!(!r.added.contains_key(kind), "{kind}: {r:?}");
         }
         // A kind read as before still fails on what is not in the baseline.
@@ -76,8 +88,15 @@ fn an_older_baseline_fails_nothing_a_wider_reading_finds_in_a_whole_tree_check()
         let line = newer_readings_line(&r).unwrap();
         assert!(line.starts_with("3 finding(s) come from readings newer than this baseline; they are listed and do not fail the check; write the baseline again to start checking them"), "{line}");
         let text = render(&r, 20);
-        assert_eq!(text.matches("readings newer than this baseline").count(), 1, "{text}");
-        assert!(text.contains("  server.ts#GET /s GET /s -> sql_string_interpolation  (server.ts:9)\n"), "{text}");
+        assert_eq!(
+            text.matches("readings newer than this baseline").count(),
+            1,
+            "{text}"
+        );
+        assert!(
+            text.contains("  server.ts#GET /s GET /s -> sql_string_interpolation  (server.ts:9)\n"),
+            "{text}"
+        );
     }
 }
 
@@ -103,8 +122,16 @@ fn a_baseline_written_now_fails_on_a_new_finding() {
 fn a_scope_gap_outside_the_change_fails_nothing() {
     let b = parse_baseline(&render_lock(&Findings::new()));
     let now = found(&[
-        ("scope-gap", "a.ts#f GET /a reads note without userId", "a.ts:3"),
-        ("scope-gap", "b.ts#g GET /b reads note without userId", "b.ts:4"),
+        (
+            "scope-gap",
+            "a.ts#f GET /a reads note without userId",
+            "a.ts:3",
+        ),
+        (
+            "scope-gap",
+            "b.ts#g GET /b reads note without userId",
+            "b.ts:4",
+        ),
     ]);
     let touched = |p: &str| p == "b.ts";
     let r = compare_with(&now, &b, Some(&touched as &dyn Fn(&str) -> bool));
@@ -124,7 +151,11 @@ fn against_a_diff_a_new_unguarded_route_fails_an_unstamped_baseline() {
     let now = found(&[
         ("no-guard", "server.ts#GET /a GET /a", "server.ts:3"),
         ("no-guard", "routes/new.ts#GET /n GET /n", "routes/new.ts:2"),
-        ("risky", "nosql_injection in lib/dao.ts#byThreshold", "lib/dao.ts:2"),
+        (
+            "risky",
+            "nosql_injection in lib/dao.ts#byThreshold",
+            "lib/dao.ts:2",
+        ),
     ]);
     let touched = |p: &str| p == "routes/new.ts";
     let r = compare_with(&now, &b, Some(&touched as &dyn Fn(&str) -> bool));
@@ -142,7 +173,11 @@ fn against_a_diff_an_old_finding_in_an_untouched_file_fails_nothing() {
     let b = parse_baseline(OLDER);
     let now = found(&[
         ("no-guard", "server.ts#GET /a GET /a", "server.ts:3"),
-        ("risky", "nosql_injection in lib/dao.ts#byThreshold", "lib/dao.ts:2"),
+        (
+            "risky",
+            "nosql_injection in lib/dao.ts#byThreshold",
+            "lib/dao.ts:2",
+        ),
     ]);
     let touched = |p: &str| p == "routes/new.ts";
     let r = compare_with(&now, &b, Some(&touched as &dyn Fn(&str) -> bool));

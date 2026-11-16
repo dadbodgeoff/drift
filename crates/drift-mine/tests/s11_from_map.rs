@@ -98,7 +98,11 @@ fn a_clean_one_way_pair_is_proposed() {
         ),
         (40, 0, 12)
     );
-    assert!(p.layering.example.starts_with("core/c"), "{}", p.layering.example);
+    assert!(
+        p.layering.example.starts_with("core/c"),
+        "{}",
+        p.layering.example
+    );
     assert_eq!(p.same_as_mined, None);
 }
 
@@ -240,7 +244,9 @@ fn a_declared_dependency_is_evidence_and_never_restated() {
     assert!(ps[0].layering.reverse_declared);
     assert_eq!(
         c.summary,
-        format!("Code in packages/core never imports apps/web (40 files, none do; {CHECKED_CLAUSE})")
+        format!(
+            "Code in packages/core never imports apps/web (40 files, none do; {CHECKED_CLAUSE})"
+        )
     );
     assert!(propose(&workspace(true)).is_empty());
 }
@@ -296,14 +302,17 @@ fn a_repository_is_offered_a_few_and_told_how_many_more() {
     let r = repo(files, vec![]);
     let ps = propose(&r);
     assert_eq!(ps.len(), 7, "{ps:#?}");
-    assert!(
-        ps.iter()
-            .all(|p| p.convention.rule == Rule::Avoids { signal: "import:top/x".into() })
-    );
+    assert!(ps.iter().all(|p| p.convention.rule
+        == Rule::Avoids {
+            signal: "import:top/x".into()
+        }));
     let (shown, more) = offered(&ps);
     assert_eq!((shown.len(), more), (MAX_OFFERED, 2));
     // Deterministic: the same facts, the same order.
-    let again: Vec<String> = propose(&r).iter().map(|p| p.convention.id.clone()).collect();
+    let again: Vec<String> = propose(&r)
+        .iter()
+        .map(|p| p.convention.id.clone())
+        .collect();
     let ids: Vec<String> = ps.iter().map(|p| p.convention.id.clone()).collect();
     assert_eq!(ids, again);
 }
@@ -341,9 +350,15 @@ fn a_file_that_failed_to_parse_is_not_read_not_clean() {
     assert_eq!(p.convention.evidence.total, 40);
     assert_eq!(
         p.convention.summary,
-        format!("Code in core never imports ui/screens (40 files, none do; 1 file of core not read; {CHECKED_CLAUSE})")
+        format!(
+            "Code in core never imports ui/screens (40 files, none do; 1 file of core not read; {CHECKED_CLAUSE})"
+        )
     );
-    assert!(!p.layering.example.starts_with("core/u"), "{}", p.layering.example);
+    assert!(
+        !p.layering.example.starts_with("core/u"),
+        "{}",
+        p.layering.example
+    );
 }
 
 /// Pins that an import Drift could not resolve makes its file unknown: `@/x` joined to

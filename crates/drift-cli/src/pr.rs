@@ -482,7 +482,10 @@ impl DiffScope {
         // Scanned already by the check of the merge base: the same commit, read the same
         // way, so the same facts and boundary.
         if let Some((facts, boundaries)) = self.base_scan.get() {
-            return Ok(drift_mine::security::inventory_with(facts, boundaries.clone()));
+            return Ok(drift_mine::security::inventory_with(
+                facts,
+                boundaries.clone(),
+            ));
         }
         let prefix = git(root, &["rev-parse", "--show-prefix"])?.required("git rev-parse")?;
         let prefix = String::from_utf8_lossy(&prefix).trim_end().to_string();

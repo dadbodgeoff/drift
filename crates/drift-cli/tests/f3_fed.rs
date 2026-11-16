@@ -124,7 +124,10 @@ app.listen(3000);
 "#,
         ),
     ]);
-    assert_eq!(reaches(&inv, "GET /go"), [("dynamic_fetch".to_string(), true)]);
+    assert_eq!(
+        reaches(&inv, "GET /go"),
+        [("dynamic_fetch".to_string(), true)]
+    );
     // Reached through `call` only where the reading follows it there; where it
     // does, the answer is the whole call's.
     let through = reaches(&inv, "GET /through");

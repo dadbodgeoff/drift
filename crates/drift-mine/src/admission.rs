@@ -363,9 +363,7 @@ pub fn decide_convention(adm: &dyn Admission, c: &Convention) -> Decision {
     // A proposal from a map ([`Convention::from_map`]) went through none of mining's
     // gates, so no family's track record speaks for it: while it is proposed only a
     // person's `agents: show` shows it, whatever the family table admits.
-    if c.from_map.is_some()
-        && c.status != Status::Accepted
-        && c.agents != Some(AgentsChoice::Show)
+    if c.from_map.is_some() && c.status != Status::Accepted && c.agents != Some(AgentsChoice::Show)
     {
         return candidate();
     }

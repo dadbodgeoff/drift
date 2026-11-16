@@ -587,9 +587,7 @@ pub fn compare_with(
         // fails as its kind did before the reading widened: held apart, a baseline an
         // older Drift wrote (unstamped) would let a change's own unguarded route
         // through. Only what lies in untouched files, or a check of no diff, is held.
-        let to = if found_since(kind, key) > baseline.version
-            && !touched.is_some_and(|t| t(path))
-        {
+        let to = if found_since(kind, key) > baseline.version && !touched.is_some_and(|t| t(path)) {
             &mut out.new_in_drift
         } else if relative && touched.is_some_and(|t| !t(path)) {
             &mut out.outside_change
@@ -672,7 +670,11 @@ pub fn render(r: &Ratchet, max: usize) -> String {
         let Some(rows) = r.outside_change.get(*kind) else {
             continue;
         };
-        let gained = if *kind == "scope-gap" { "the scope" } else { "the guard" };
+        let gained = if *kind == "scope-gap" {
+            "the scope"
+        } else {
+            "the guard"
+        };
         out.push_str(&format!(
             "\n{} {what} [{kind}] in files this change did not touch: other entry points gained {gained}, so these are not this change's; they fail nothing\n",
             rows.len()
@@ -798,7 +800,8 @@ pub fn advise(
 }
 
 /// The heading [`render_advice`] puts over the advice.
-pub const ADVICE_HEADING: &str = "Security advice: what this change adds (no security baseline; this does not fail the check)";
+pub const ADVICE_HEADING: &str =
+    "Security advice: what this change adds (no security baseline; this does not fail the check)";
 
 /// Plain text of [`advise`]'s rows, under their own heading; nothing when there are
 /// none.
@@ -813,7 +816,10 @@ pub fn render_advice(advice: &[Advice]) -> String {
             "unguarded-reaching",
             "New entry points where Drift found no guard, reaching an operation fed by the request",
         ),
-        ("no-guard", "New request entry points where Drift found no guard"),
+        (
+            "no-guard",
+            "New request entry points where Drift found no guard",
+        ),
         (
             "unscoped-key",
             "New entry points that take a tenant or owner key nothing checks",

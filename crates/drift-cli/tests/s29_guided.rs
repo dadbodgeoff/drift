@@ -177,14 +177,26 @@ fn scripted_answers_accept_what_they_name_and_check_reports_nothing_new() {
     let yes = format!("{mined},{practice},baseline");
     let out = person(
         r,
-        &["setup", "--by", "person", "--yes-to", &yes, "--no-to", "agents-md"],
+        &[
+            "setup",
+            "--by",
+            "person",
+            "--yes-to",
+            &yes,
+            "--no-to",
+            "agents-md",
+        ],
         None,
     );
     let policy = ConventionsFile::load(r).unwrap().expect("a policy");
     for id in [&mined, &practice] {
         let c = policy.conventions.iter().find(|c| &c.id == id).unwrap();
         assert_eq!(c.status, Status::Accepted, "{id}\n{out}");
-        assert_eq!(c.mode, Mode::Advise, "{id}: every rule accepted here advises");
+        assert_eq!(
+            c.mode,
+            Mode::Advise,
+            "{id}: every rule accepted here advises"
+        );
     }
     // Nothing else was accepted.
     assert_eq!(
@@ -209,8 +221,14 @@ fn scripted_answers_accept_what_they_name_and_check_reports_nothing_new() {
         "{out}"
     );
     assert!(!r.join("AGENTS.md").exists(), "{out}");
-    assert!(read(r, ".drift/config.yaml").contains("answer: \"declined\""), "{out}");
-    assert!(out.contains("In CI: drift check --diff-base origin/main"), "{out}");
+    assert!(
+        read(r, ".drift/config.yaml").contains("answer: \"declined\""),
+        "{out}"
+    );
+    assert!(
+        out.contains("In CI: drift check --diff-base origin/main"),
+        "{out}"
+    );
     // `drift check` reports nothing new.
     let (code, check, err) = run(r, &["check"], None, false);
     assert_eq!(code, 0, "{check}\n{err}");
@@ -322,7 +340,9 @@ fn an_unknown_or_doubled_key_is_refused_and_nothing_is_written() {
     assert_eq!(snapshot(r), before, "{out}");
     let (code, out, err) = run(
         r,
-        &["setup", "--by", "person", "--yes-to", "baseline", "--no-to", "basline"],
+        &[
+            "setup", "--by", "person", "--yes-to", "baseline", "--no-to", "basline",
+        ],
         None,
         true,
     );
@@ -331,7 +351,9 @@ fn an_unknown_or_doubled_key_is_refused_and_nothing_is_written() {
     assert_eq!(snapshot(r), before, "{out}");
     let (code, out, err) = run(
         r,
-        &["setup", "--by", "person", "--yes-to", "baseline", "--no-to", "baseline"],
+        &[
+            "setup", "--by", "person", "--yes-to", "baseline", "--no-to", "baseline",
+        ],
         None,
         true,
     );
@@ -390,7 +412,11 @@ fn forget_undoes_a_recorded_no() {
     let dir = repo();
     let r = dir.path();
     drift(r, &["init"]);
-    let out = person(r, &["setup", "--by", "person", "--no-to", "agents-md"], None);
+    let out = person(
+        r,
+        &["setup", "--by", "person", "--no-to", "agents-md"],
+        None,
+    );
     let id = out
         .split("recorded as ")
         .nth(1)
@@ -402,7 +428,10 @@ fn forget_undoes_a_recorded_no() {
     person(r, &["setup", "--by", "person", "--forget", &id], None);
     let again = drift(r, &["setup"]);
     assert!(again.contains("--yes-to agents-md"), "{again}");
-    assert!(!read(r, ".drift/config.yaml").contains("declined"), "{again}");
+    assert!(
+        !read(r, ".drift/config.yaml").contains("declined"),
+        "{again}"
+    );
 }
 
 #[test]
@@ -416,20 +445,39 @@ fn a_rerun_asks_nothing_already_decided() {
     let yes = format!("{mined},{practice},baseline");
     person(
         r,
-        &["setup", "--by", "person", "--yes-to", &yes, "--no-to", "agents-md"],
+        &[
+            "setup",
+            "--by",
+            "person",
+            "--yes-to",
+            &yes,
+            "--no-to",
+            "agents-md",
+        ],
         None,
     );
     let before = snapshot(r);
     let again = drift(r, &["setup"]);
     let asked: Vec<String> = cards(&again).into_iter().map(|(id, _)| id).collect();
-    assert!(!asked.contains(&mined) && !asked.contains(&practice), "{again}");
+    assert!(
+        !asked.contains(&mined) && !asked.contains(&practice),
+        "{again}"
+    );
     assert!(!again.contains("--yes-to baseline"), "{again}");
     assert!(!again.contains("--yes-to agents-md"), "{again}");
     assert!(again.contains("you said no earlier"), "{again}");
     // The same answers again: none is asked, so none is used, and nothing changes.
     let out = person(
         r,
-        &["setup", "--by", "person", "--yes-to", &yes, "--no-to", "agents-md"],
+        &[
+            "setup",
+            "--by",
+            "person",
+            "--yes-to",
+            &yes,
+            "--no-to",
+            "agents-md",
+        ],
         None,
     );
     assert!(out.contains("Not asked, so not used:"), "{out}");

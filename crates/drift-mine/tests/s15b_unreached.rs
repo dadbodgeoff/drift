@@ -74,7 +74,12 @@ fn files_nothing_reaches_are_listed_apart_not_as_production() {
     );
     snippet.unlisted_routes = vec![3];
     let r = repo(vec![
-        file("app/main.ts", true, &["lib/run.ts"], vec![sym("main", |_| {})]),
+        file(
+            "app/main.ts",
+            true,
+            &["lib/run.ts"],
+            vec![sym("main", |_| {})],
+        ),
         file("lib/run.ts", true, &[], vec![sym("run", with_sink("eval"))]),
         snippet,
         file(
@@ -92,7 +97,10 @@ fn files_nothing_reaches_are_listed_apart_not_as_production() {
     let apart: Vec<&str> = inv.unreached.iter().map(|u| u.path.as_str()).collect();
     assert_eq!(
         apart,
-        ["data/static/codefixes/fix_1.ts", "example-apps/demo/index.ts"]
+        [
+            "data/static/codefixes/fix_1.ts",
+            "example-apps/demo/index.ts"
+        ]
     );
     let (snippet, demo) = (&inv.unreached[0], &inv.unreached[1]);
     assert!(!snippet.parsed && demo.parsed);
@@ -112,9 +120,24 @@ fn files_nothing_reaches_are_listed_apart_not_as_production() {
 #[test]
 fn a_file_beside_or_above_what_is_reached_stays_production() {
     let r = repo(vec![
-        file("app/main.ts", true, &["pkg/core/impl.ts"], vec![sym("main", |_| {})]),
-        file("pkg/core/impl.ts", true, &["pkg:zod"], vec![sym("impl", |_| {})]),
-        file("pkg/index.ts", true, &[], vec![sym("init", with_sink("eval"))]),
+        file(
+            "app/main.ts",
+            true,
+            &["pkg/core/impl.ts"],
+            vec![sym("main", |_| {})],
+        ),
+        file(
+            "pkg/core/impl.ts",
+            true,
+            &["pkg:zod"],
+            vec![sym("impl", |_| {})],
+        ),
+        file(
+            "pkg/index.ts",
+            true,
+            &[],
+            vec![sym("init", with_sink("eval"))],
+        ),
     ]);
     let inv = drift_mine::security::inventory(&r);
     assert!(inv.unreached.is_empty(), "{:?}", inv.unreached);

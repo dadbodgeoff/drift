@@ -2093,7 +2093,11 @@ mod tests {
         );
         // What the admin module offers outside its site stays as it was.
         assert_eq!(
-            lib(Position::Decorator, "pkg:django#contrib.admin.register", "(?)"),
+            lib(
+                Position::Decorator,
+                "pkg:django#contrib.admin.register",
+                "(?)"
+            ),
             Verdict::Nothing
         );
     }

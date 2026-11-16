@@ -72,7 +72,10 @@ fn an_origin_compared_with_an_environment_value_is_not_service_auth() {
     for header in ["origin", "host", "authorization"] {
         let facts = route(vec![format!("{}{header}", controls::REFUSES_SECRET)]);
         let (assignment, key) = authn(&facts);
-        assert!(!key.contains("service_auth"), "{header}: {assignment} {key}");
+        assert!(
+            !key.contains("service_auth"),
+            "{header}: {assignment} {key}"
+        );
         assert_eq!(assignment, "unknown", "{header}: {key}");
     }
 }

@@ -103,7 +103,10 @@ export class SchedulesController {
 
 #[test]
 fn a_pipe_on_a_parameter_decorator_is_listed() {
-    let r = repo(&[("package.json", PACKAGE), ("src/schedules.controller.ts", PIPED)]);
+    let r = repo(&[
+        ("package.json", PACKAGE),
+        ("src/schedules.controller.ts", PIPED),
+    ]);
     let path = "src/schedules.controller.ts";
     let prefix = drift_core::controls::PIPES_INPUT;
     assert!(controls(&r, path, prefix).is_empty());

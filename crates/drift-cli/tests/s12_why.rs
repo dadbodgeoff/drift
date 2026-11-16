@@ -173,14 +173,22 @@ fn the_cap_note_is_said_under_why_only() {
         .lines()
         .find(|l| l.contains("cut by mining's caps"))
         .unwrap_or_else(|| panic!("no cap note under --why: {why}"));
-    assert!(note.contains("by the layering share of 1 per repository"), "{note}");
-    assert!(note.ends_with("this counts drafts, not proposals."), "{note}");
+    assert!(
+        note.contains("by the layering share of 1 per repository"),
+        "{note}"
+    );
+    assert!(
+        note.ends_with("this counts drafts, not proposals."),
+        "{note}"
+    );
     assert!(!why.contains("a larger --max"), "{why}");
 
     let v: Value =
         serde_json::from_str(&drift(r, &["census", "--why", "--max", "4", "--json"])).unwrap();
     assert!(
-        v["cap_note"].as_str().is_some_and(|n| n.contains("cut by mining's caps")),
+        v["cap_note"]
+            .as_str()
+            .is_some_and(|n| n.contains("cut by mining's caps")),
         "{v:#}"
     );
     assert!(!rows(&v, "cap_avoid").is_empty(), "{v:#}");

@@ -628,7 +628,10 @@ const PLAIN_USES: &[(&str, &str)] = &[
     ("policy", "checked by the policy {}"),
     // errors
     ("mapped by wrapper", "turned into responses by {}"),
-    ("base handler", "turned into responses by the base view's {}"),
+    (
+        "base handler",
+        "turned into responses by the base view's {}",
+    ),
     ("in body try return", "caught in the handler, which returns"),
     ("in body try swallow", "caught in the handler and dropped"),
     (
@@ -652,7 +655,10 @@ const PLAIN_USES: &[(&str, &str)] = &[
         "typed with {}, not checked when a request comes in",
     ),
     ("typed model", "parsed into a typed model by {}"),
-    ("typed param", "parameters parsed by their declared types by {}"),
+    (
+        "typed param",
+        "parameters parsed by their declared types by {}",
+    ),
     (
         "schema repo schema",
         "checked against a schema of the repository",

@@ -13,9 +13,7 @@ use drift_mine::practices::promote::{
     self, Candidate, Place, Refusal, Request, candidate, candidate_for, candidates, convention,
     convention_id, place_of,
 };
-use drift_mine::practices::{
-    AUTHN, ConcernReport, PracticesReport, UnitRow, Variant, VariantKind,
-};
+use drift_mine::practices::{AUTHN, ConcernReport, PracticesReport, UnitRow, Variant, VariantKind};
 use drift_mine::roles::FileKinds;
 
 const AUTH: &str = "wrap:lib/auth.ts#withAuth";
@@ -34,7 +32,12 @@ fn variant(id: &str, key: &str, label: &str, kind: VariantKind) -> Variant {
 fn variants() -> Vec<Variant> {
     vec![
         variant("P-auth", AUTH, "wrap withAuth", VariantKind::Known),
-        variant("P-member", MEMBER, "dependency require_member", VariantKind::Known),
+        variant(
+            "P-member",
+            MEMBER,
+            "dependency require_member",
+            VariantKind::Known,
+        ),
         variant("P-none", "none", "no guard found", VariantKind::None),
     ]
 }
@@ -128,7 +131,10 @@ fn a_file_is_offered_only_when_it_adds_something_over_its_directory() {
         .filter(|c| c.place.file.is_some())
         .map(|c| (first_way(c).to_string(), c.place.shown()))
         .collect();
-    assert_eq!(files, [("P-member".to_string(), "app/items.py".to_string())]);
+    assert_eq!(
+        files,
+        [("P-member".to_string(), "app/items.py".to_string())]
+    );
     // `--in` with the file's path names the file.
     let p = Place::parse("app/items.py", &r).unwrap();
     assert_eq!(p.file.as_deref(), Some("app/items.py"));
@@ -139,7 +145,11 @@ fn a_file_is_offered_only_when_it_adds_something_over_its_directory() {
     let small = Place::parse("app/small.py", &r).unwrap();
     assert!(matches!(
         candidate(&r, "P-member", Some(&small), &[], false),
-        Err(Refusal::TooSmall { units: 5, min: 8, .. })
+        Err(Refusal::TooSmall {
+            units: 5,
+            min: 8,
+            ..
+        })
     ));
     // A file place holds that file only.
     assert!(p.holds("", "app/items.py"));
@@ -151,7 +161,11 @@ fn a_file_is_offered_only_when_it_adds_something_over_its_directory() {
 fn tenant_units() -> Vec<UnitRow> {
     let mut units: Vec<UnitRow> = (0..10)
         .map(|i| {
-            let id = if i % 2 == 0 { "<uuid:project_id>" } else { ":projectId" };
+            let id = if i % 2 == 0 {
+                "<uuid:project_id>"
+            } else {
+                ":projectId"
+            };
             let at = format!("/api/workspaces/<str:slug>/projects/{id}/t{i}");
             unit(&format!("views/p{i:02}.py"), "P-member", Some(&at))
         })
@@ -178,7 +192,10 @@ fn a_route_prefix_matches_by_segments_with_parameters() {
         routes,
         [
             ("P-auth".to_string(), ".:/api/users".to_string()),
-            ("P-member".to_string(), ".:/api/workspaces/[*]/projects/[*]".to_string()),
+            (
+                "P-member".to_string(),
+                ".:/api/workspaces/[*]/projects/[*]".to_string()
+            ),
         ]
     );
     // The place as `--in` reads it back, whatever the parameter's spelling.
@@ -227,7 +244,13 @@ fn a_unit_with_an_unread_route_is_not_a_member_and_is_counted_as_not_read() {
     let r = report(units.clone());
     let c = candidate(&r, "P-member", Some(&p), &[], false).unwrap();
     assert_eq!(
-        (c.follows, c.exceptions.len(), c.unknown, c.unread_routes, c.total),
+        (
+            c.follows,
+            c.exceptions.len(),
+            c.unknown,
+            c.unread_routes,
+            c.total
+        ),
         (10, 0, 2, 2, 12)
     );
     assert!(
@@ -272,7 +295,10 @@ fn a_directory_place_keeps_its_id_and_its_yaml() {
         serde_json::to_string(&conv.role).unwrap(),
         r#"{"package":"","dir":"app/api","file":"(practice)","entry":"-","kind":"module"}"#
     );
-    assert_eq!(serde_json::to_string(&c.place).unwrap(), r#"{"package":"","dir":"app/api"}"#);
+    assert_eq!(
+        serde_json::to_string(&c.place).unwrap(),
+        r#"{"package":"","dir":"app/api"}"#
+    );
     assert_eq!(place_of(&conv), Some(dir("", "app/api")));
     // A file and a route place are told apart from it, and read back.
     let file = Place::file_of("", "app/api/r00/route.ts").unwrap();
@@ -307,7 +333,11 @@ fn a_route_prefix_practice_reports_a_new_route_under_it_and_not_outside() {
         "{}",
         conv.summary
     );
-    assert!(serde_saphyr::to_string(&conv).unwrap().contains("under_route:"));
+    assert!(
+        serde_saphyr::to_string(&conv)
+            .unwrap()
+            .contains("under_route:")
+    );
     let mut units = tenant_units();
     units.push(unit(
         "views/new_under.py",
@@ -315,7 +345,11 @@ fn a_route_prefix_practice_reports_a_new_route_under_it_and_not_outside() {
         Some("/api/workspaces/<slug>/projects/<id>/new"),
     ));
     units.push(unit("views/new_outside.py", "P-none", Some("/api/health")));
-    units.push(unit("views/new_unread.py", "P-none", Some("/api/workspaces/?/x")));
+    units.push(unit(
+        "views/new_unread.py",
+        "P-none",
+        Some("/api/workspaces/?/x"),
+    ));
     let now = promote::check(
         &drift_core::RepoFacts::default(),
         &report(units),
@@ -332,7 +366,9 @@ fn a_route_prefix_practice_reports_a_new_route_under_it_and_not_outside() {
     // What the hooks read: any file of the package that may serve such a route.
     assert_eq!(
         promote::condition(&conv).as_deref(),
-        Some("for its entry points that take a request and are served under /api/workspaces/[*]/projects/[*]")
+        Some(
+            "for its entry points that take a request and are served under /api/workspaces/[*]/projects/[*]"
+        )
     );
     let file = drift_core::FileFacts {
         path: "anywhere/router.py".into(),

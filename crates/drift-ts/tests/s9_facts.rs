@@ -281,7 +281,11 @@ fn a_thrown_class_refuses_by_the_status_its_definition_sets() {
     let listed = facts.listed();
     let f = file(&listed, "guard.ts");
     let outcomes = |name: &str| -> Vec<CheckOutcome> {
-        symbol(f, name).body_checks.iter().map(|c| c.outcome).collect()
+        symbol(f, name)
+            .body_checks
+            .iter()
+            .map(|c| c.outcome)
+            .collect()
     };
     assert_eq!(outcomes("requireAdmin"), [CheckOutcome::Forbidden]);
     assert_eq!(outcomes("requireUser"), [CheckOutcome::Unauthenticated]);

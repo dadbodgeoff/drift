@@ -250,9 +250,9 @@ pub fn notes(infos: &[WiringInfo]) -> Vec<Note> {
             ));
         }
         lines.push(match &w.same_as_mined {
-            Some(id) => format!(
-                "    the wiring feature is on: the miner proposes this itself as {id}"
-            ),
+            Some(id) => {
+                format!("    the wiring feature is on: the miner proposes this itself as {id}")
+            }
             None => format!("    {NEEDS}; listed only, never written"),
         });
         out.push(Note {

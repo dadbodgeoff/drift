@@ -47,7 +47,10 @@ fn call_wraps(repo: &RepoFacts, path: &str, name: &str) -> Vec<String> {
 }
 
 fn has_control(repo: &RepoFacts, path: &str, name: &str, control: &str) -> bool {
-    symbol(repo, path, name).controls.iter().any(|c| c == control)
+    symbol(repo, path, name)
+        .controls
+        .iter()
+        .any(|c| c == control)
 }
 
 /// The controls only the listed reading has: none of them may be in what mining
@@ -252,6 +255,10 @@ urlpatterns = [
             .any(|w| w.starts_with("unresolved:permission_classes, run only if")),
         "{wraps:?}"
     );
-    assert!(call_wraps(&mined, v, "SignOut.post").iter().any(|w| w == PERM));
+    assert!(
+        call_wraps(&mined, v, "SignOut.post")
+            .iter()
+            .any(|w| w == PERM)
+    );
     none_listed_only(&mined);
 }

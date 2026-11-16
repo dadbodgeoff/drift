@@ -139,8 +139,14 @@ fn universal_proposes_a_rule_with_no_outlier_advise_only() {
     let dir = routes();
     let r = dir.path();
     let off = census(r, &[], true);
-    assert!(find(&off, "withSession", "app/nests/**").is_empty(), "{off:#}");
-    assert!(find(&off, "withRoost", "app/roosts/**").is_empty(), "{off:#}");
+    assert!(
+        find(&off, "withSession", "app/nests/**").is_empty(),
+        "{off:#}"
+    );
+    assert!(
+        find(&off, "withRoost", "app/roosts/**").is_empty(),
+        "{off:#}"
+    );
 
     let on = census(r, &["--gate-candidate", "universal"], true);
     let nest = find(&on, "withSession", "app/nests/**");
@@ -181,7 +187,10 @@ fn small_roles_proposes_a_rule_held_by_nine_in_ten_of_a_role_under_19() {
     let dir = routes();
     let r = dir.path();
     let off = census(r, &[], true);
-    assert!(find(&off, "withBadge", "app/perches/**").is_empty(), "{off:#}");
+    assert!(
+        find(&off, "withBadge", "app/perches/**").is_empty(),
+        "{off:#}"
+    );
 
     let on = census(r, &["--gate-candidate", "small-roles"], true);
     let perch = find(&on, "withBadge", "app/perches/**");
@@ -203,13 +212,69 @@ fn small_roles_proposes_a_rule_held_by_nine_in_ten_of_a_role_under_19() {
 }
 
 const WORDS: &[&str] = &[
-    "Alder", "Birch", "Cedar", "Dogwood", "Elm", "Fir", "Ginkgo", "Hazel", "Ivy", "Juniper",
-    "Kapok", "Larch", "Maple", "Neem", "Oak", "Pine", "Quince", "Rowan", "Spruce", "Teak",
-    "Ulmo", "Vine", "Willow", "Yew", "Zelkova", "Acacia", "Banyan", "Cypress", "Date",
-    "Ebony", "Fig", "Gum", "Holly", "Iroko", "Jacaranda", "Kauri", "Lime", "Mango", "Nutmeg",
-    "Olive", "Poplar", "Quassia", "Redwood", "Sumac", "Tamarind", "Umbrella", "Walnut",
-    "Xylosma", "Yucca", "Ziziphus", "Almond", "Beech", "Cherry", "Douglas", "Eucalyptus",
-    "Filbert", "Guava", "Hickory", "Ironwood", "Jujube", "Kumquat", "Laurel", "Mulberry",
+    "Alder",
+    "Birch",
+    "Cedar",
+    "Dogwood",
+    "Elm",
+    "Fir",
+    "Ginkgo",
+    "Hazel",
+    "Ivy",
+    "Juniper",
+    "Kapok",
+    "Larch",
+    "Maple",
+    "Neem",
+    "Oak",
+    "Pine",
+    "Quince",
+    "Rowan",
+    "Spruce",
+    "Teak",
+    "Ulmo",
+    "Vine",
+    "Willow",
+    "Yew",
+    "Zelkova",
+    "Acacia",
+    "Banyan",
+    "Cypress",
+    "Date",
+    "Ebony",
+    "Fig",
+    "Gum",
+    "Holly",
+    "Iroko",
+    "Jacaranda",
+    "Kauri",
+    "Lime",
+    "Mango",
+    "Nutmeg",
+    "Olive",
+    "Poplar",
+    "Quassia",
+    "Redwood",
+    "Sumac",
+    "Tamarind",
+    "Umbrella",
+    "Walnut",
+    "Xylosma",
+    "Yucca",
+    "Ziziphus",
+    "Almond",
+    "Beech",
+    "Cherry",
+    "Douglas",
+    "Eucalyptus",
+    "Filbert",
+    "Guava",
+    "Hickory",
+    "Ironwood",
+    "Jujube",
+    "Kumquat",
+    "Laurel",
+    "Mulberry",
     "Nectarine",
 ];
 
@@ -330,12 +395,18 @@ fn cap_after_narrow_caps_the_merged_card_not_its_parts() {
     let panel = find(&off, "Panel", "components/");
     assert_eq!(panel.len(), 1, "{off:#}");
     assert!(
-        panel[0]["role"].get("also").is_none_or(|a| a.as_array().is_some_and(|a| a.is_empty())),
+        panel[0]["role"]
+            .get("also")
+            .is_none_or(|a| a.as_array().is_some_and(|a| a.is_empty())),
         "without the switch the cap leaves one folder: {off:#}"
     );
     assert_eq!(panel[0]["evidence"]["holders"], 19);
 
-    let on = census(r, &["--max", "1", "--gate-candidate", "cap-after-narrow"], true);
+    let on = census(
+        r,
+        &["--max", "1", "--gate-candidate", "cap-after-narrow"],
+        true,
+    );
     let panel = find(&on, "Panel", "components/");
     assert_eq!(panel.len(), 1, "{on:#}");
     assert_eq!(panel[0]["gate_candidate"], "cap-after-narrow");
@@ -410,7 +481,11 @@ fn avoid_cap_own_keeps_default_tier_layering_past_the_share() {
     assert_eq!(off.len(), 1, "{off:#?}");
     assert_eq!(off[0]["tier"], "default");
 
-    let on = layering(&census(r, &["--max", "4", "--gate-candidate", "avoid-cap-own"], false));
+    let on = layering(&census(
+        r,
+        &["--max", "4", "--gate-candidate", "avoid-cap-own"],
+        false,
+    ));
     assert_eq!(on.len(), 2, "{on:#?}");
     assert!(on.iter().all(|p| p["tier"] == "default"));
     let marked: Vec<&Value> = on

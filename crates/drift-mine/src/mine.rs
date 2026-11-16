@@ -148,7 +148,9 @@ const LISTED_ONLY_CONTROL_PREFIXES: &[&str] = &[
 /// Whether a control is one of the listed reading's only ([`LISTED_ONLY_CONTROLS`]).
 fn listed_only_control(c: &str) -> bool {
     LISTED_ONLY_CONTROLS.contains(&c)
-        || LISTED_ONLY_CONTROL_PREFIXES.iter().any(|p| c.starts_with(*p))
+        || LISTED_ONLY_CONTROL_PREFIXES
+            .iter()
+            .any(|p| c.starts_with(*p))
 }
 /// Rules in one role whose holder sets overlap this much are reported once.
 const NEAR_DUPLICATE: f64 = 0.9;
@@ -4777,7 +4779,10 @@ fn mine_units_traced<'a>(
                     // direction is its evidence, and `lift` holds the threshold
                     // (`AVOID_MIN_CONTRAST`). Said as such, never as a measured value.
                     if matches!(&d.rule, Rule::Avoids { signal } if signal.starts_with("import:")) {
-                        format!("lower bound {:.2} (a layering rule: no lift is measured)", d.lb)
+                        format!(
+                            "lower bound {:.2} (a layering rule: no lift is measured)",
+                            d.lb
+                        )
                     } else {
                         format!("lower bound {:.2}, lift {:.2}", d.lb, d.lift)
                     },
@@ -4934,11 +4939,12 @@ fn mine_units_traced<'a>(
             // S21 gate candidate `avoid-cap-own` (study use, off by default:
             // [`crate::gate_candidates`]): the layering share cuts no default-tier rule.
             // Off, the `else` branch is the cap as it was.
-            let drops = if crate::gate_candidates::on(crate::gate_candidates::GateCandidate::AvoidCapOwn) {
-                cap_shown_own(&mut kept, opts.max_per_repo, hidden, &units, true)
-            } else {
-                cap_shown(&mut kept, opts.max_per_repo, hidden)
-            };
+            let drops =
+                if crate::gate_candidates::on(crate::gate_candidates::GateCandidate::AvoidCapOwn) {
+                    cap_shown_own(&mut kept, opts.max_per_repo, hidden, &units, true)
+                } else {
+                    cap_shown(&mut kept, opts.max_per_repo, hidden)
+                };
             if rec {
                 for (d, cap) in &drops {
                     let (gate, limit) = match cap {
@@ -4970,8 +4976,9 @@ fn mine_units_traced<'a>(
                 // S21 gate candidate `avoid-cap-own` (off by default): nor in kind roles.
                 // Off, `stays` is what the line above made it.
                 let stays = stays
-                    || (crate::gate_candidates::on(crate::gate_candidates::GateCandidate::AvoidCapOwn)
-                        && own_tier_saved(d, &units, true));
+                    || (crate::gate_candidates::on(
+                        crate::gate_candidates::GateCandidate::AvoidCapOwn,
+                    ) && own_tier_saved(d, &units, true));
                 if rec && !stays {
                     record_draft(
                         d,
@@ -5295,7 +5302,12 @@ fn record_rule(
 }
 
 /// A draft a gate dropped, as the record holds it.
-fn dropped_draft(d: &Draft, units: &[Unit], gate: &'static str, why: Why) -> crate::funnel::Dropped {
+fn dropped_draft(
+    d: &Draft,
+    units: &[Unit],
+    gate: &'static str,
+    why: Why,
+) -> crate::funnel::Dropped {
     let (value, threshold, detail) = why;
     crate::funnel::Dropped::new(
         gate,
@@ -5327,7 +5339,10 @@ fn record_truncated(ds: &[Draft], units: &[Unit], cap: usize, gate: &'static str
             let detail = if gate == "cap_role" {
                 format!("ranked {} of its role's drafts, the cap is {cap}", i + 1)
             } else {
-                format!("ranked {} of the repository's drafts, the cap is {cap}", i + 1)
+                format!(
+                    "ranked {} of the repository's drafts, the cap is {cap}",
+                    i + 1
+                )
             };
             record_draft(
                 d,
@@ -8700,8 +8715,7 @@ fn small_role_draft(
 ) -> Option<Draft> {
     let n = members.len();
     let k = holders.len();
-    if !(MIN_ROLE_SIZE..=SMALL_ROLE_MAX).contains(&n) || k * 100 < n * SMALL_ROLE_SHARE_PERCENT
-    {
+    if !(MIN_ROLE_SIZE..=SMALL_ROLE_MAX).contains(&n) || k * 100 < n * SMALL_ROLE_SHARE_PERCENT {
         return None;
     }
     let lb = wilson_lower_bound(k, n);
@@ -8840,7 +8854,9 @@ fn truncate_shown(
                 (
                     Some(rank as f64),
                     Some(cap as f64),
-                    format!("ranked {rank} of its role's drafts the show policy shows, the cap is {cap}"),
+                    format!(
+                        "ranked {rank} of its role's drafts the show policy shows, the cap is {cap}"
+                    ),
                 ),
             );
         }
@@ -9077,10 +9093,14 @@ fn caps_after_narrow(
         } else {
             None
         };
-        if t.count && let Some(stage) = stage {
+        if t.count
+            && let Some(stage) = stage
+        {
             crate::funnel::rule(&d.role, &d.rule, units_lang(&d.members, units), stage);
         }
-        if t.rec && let Some(stage) = stage {
+        if t.rec
+            && let Some(stage) = stage
+        {
             let detail = if stage == "compiler" {
                 "the compiler already checks it".to_string()
             } else {

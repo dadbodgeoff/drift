@@ -181,12 +181,26 @@ fn an_edit_whose_rules_were_all_given_says_nothing_and_scans_nothing() {
     let (dir, wrap) = routes();
     let r = dir.path();
     let trace = r.join("trace.jsonl");
-    hook(r, &trace, "s1", "SessionStart", json!({ "source": "startup" }));
+    hook(
+        r,
+        &trace,
+        "s1",
+        "SessionStart",
+        json!({ "source": "startup" }),
+    );
 
-    let (first, path) = hook(r, &trace, "s1", "PreToolUse", edit_tool(r, "app/api/r05/route.ts"));
+    let (first, path) = hook(
+        r,
+        &trace,
+        "s1",
+        "PreToolUse",
+        edit_tool(r, "app/api/r05/route.ts"),
+    );
     assert_eq!(path, "single_file", "the first edit reads the file's facts");
     let v: Value = serde_json::from_str(&first).expect("rules said");
-    let said = v["hookSpecificOutput"]["additionalContext"].as_str().unwrap();
+    let said = v["hookSpecificOutput"]["additionalContext"]
+        .as_str()
+        .unwrap();
     assert!(
         said.starts_with("drift: conventions for app/api/r05/route.ts before this edit"),
         "{said}"
@@ -201,8 +215,20 @@ fn an_edit_whose_rules_were_all_given_says_nothing_and_scans_nothing() {
     }
 
     // Another session: nothing given yet, so the scan and the rules, as before.
-    hook(r, &trace, "s2", "SessionStart", json!({ "source": "startup" }));
-    let (out, path) = hook(r, &trace, "s2", "PreToolUse", edit_tool(r, "app/api/r06/route.ts"));
+    hook(
+        r,
+        &trace,
+        "s2",
+        "SessionStart",
+        json!({ "source": "startup" }),
+    );
+    let (out, path) = hook(
+        r,
+        &trace,
+        "s2",
+        "PreToolUse",
+        edit_tool(r, "app/api/r06/route.ts"),
+    );
     assert_eq!(path, "single_file");
     assert!(
         out.contains("drift: conventions for app/api/r06/route.ts before this edit"),

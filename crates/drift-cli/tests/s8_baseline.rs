@@ -65,8 +65,7 @@ fn blocking_repo() -> (tempfile::TempDir, String) {
         write(r, &format!("lib/h{i:02}.ts"), &body);
     }
     drift(r, &["init"]);
-    let census: serde_json::Value =
-        serde_json::from_str(&drift(r, &["census", "--json"])).unwrap();
+    let census: serde_json::Value = serde_json::from_str(&drift(r, &["census", "--json"])).unwrap();
     let id = census["proposals"]
         .as_array()
         .unwrap()
@@ -93,8 +92,9 @@ fn a_moved_file_keeps_its_baseline() {
     let r = dir.path();
     let text = lock(r);
     assert!(
-        text.lines()
-            .any(|l| l.starts_with(&format!("#~ {id} ")) && l.ends_with(" app/api/r39/route.ts#GET")),
+        text.lines().any(
+            |l| l.starts_with(&format!("#~ {id} ")) && l.ends_with(" app/api/r39/route.ts#GET")
+        ),
         "the first init writes the fingerprint line, as a comment (F2):\n{text}"
     );
     assert_eq!(run(r, &["check"]).0, Some(0));
@@ -182,13 +182,18 @@ fn an_old_lock_gains_fingerprints_at_the_next_init() {
         .collect();
     std::fs::write(r.join("drift.lock"), &old).unwrap();
     assert_eq!(run(r, &["check"]).0, Some(0), "an old lock works unchanged");
-    let members = |t: &str| t.lines().filter(|l| l.starts_with(&format!("{id} "))).count();
+    let members = |t: &str| {
+        t.lines()
+            .filter(|l| l.starts_with(&format!("{id} ")))
+            .count()
+    };
     drift(r, &["init"]);
     let text = lock(r);
     assert_eq!(members(&text), members(&old), "{text}");
     assert!(
-        text.lines()
-            .any(|l| l.starts_with(&format!("#~ {id} ")) && l.ends_with(" app/api/r38/route.ts#GET")),
+        text.lines().any(
+            |l| l.starts_with(&format!("#~ {id} ")) && l.ends_with(" app/api/r38/route.ts#GET")
+        ),
         "{text}"
     );
     std::fs::create_dir_all(r.join("app/api/elsewhere")).unwrap();

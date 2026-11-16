@@ -125,8 +125,14 @@ fn a_baseline_with_no_stamp_is_the_first_inventory_and_fails_as_it_did() {
     write(r, "app/api/u9/route.ts", UNGUARDED);
     let (code, out, _) = drift(r, &["security", "--ratchet"]);
     assert_eq!(code, 0, "{out}");
-    assert!(out.contains("1 finding(s) come from readings newer than this baseline"), "{out}");
-    assert!(out.contains("  app/api/u9/route.ts#GET GET /api/u9  (app/api/u9/route.ts:1)\n"), "{out}");
+    assert!(
+        out.contains("1 finding(s) come from readings newer than this baseline"),
+        "{out}"
+    );
+    assert!(
+        out.contains("  app/api/u9/route.ts#GET GET /api/u9  (app/api/u9/route.ts:1)\n"),
+        "{out}"
+    );
     // Written again, the baseline is of this inventory, and a new one fails.
     std::fs::remove_file(r.join("app/api/u9/route.ts")).unwrap();
     let (code, _, err) = drift(r, &["security", "--write-baseline"]);
@@ -134,7 +140,12 @@ fn a_baseline_with_no_stamp_is_the_first_inventory_and_fails_as_it_did() {
     write(r, "app/api/u9/route.ts", UNGUARDED);
     let (code, out, _) = drift(r, &["security", "--ratchet"]);
     assert_eq!(code, 1, "{out}");
-    assert!(out.contains("[no-guard]\n  app/api/u9/route.ts#GET GET /api/u9  (app/api/u9/route.ts:1)\n"), "{out}");
+    assert!(
+        out.contains(
+            "[no-guard]\n  app/api/u9/route.ts#GET GET /api/u9  (app/api/u9/route.ts:1)\n"
+        ),
+        "{out}"
+    );
     assert!(!out.contains("readings newer than this baseline"), "{out}");
 }
 

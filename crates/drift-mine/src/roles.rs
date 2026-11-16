@@ -462,9 +462,8 @@ fn ignore_in(line: &str, in_block: bool) -> Option<String> {
     let (id, reason) = rest.split_once(':')?;
     let id = id.trim();
     let reason = reason.trim().trim_end_matches("*/").trim();
-    let valid = id.len() == 8
-        && id.starts_with("D-")
-        && id[2..].bytes().all(|b| b.is_ascii_hexdigit());
+    let valid =
+        id.len() == 8 && id.starts_with("D-") && id[2..].bytes().all(|b| b.is_ascii_hexdigit());
     (valid && !reason.is_empty()).then(|| id.to_string())
 }
 
@@ -521,10 +520,7 @@ pub fn suppressions_at(text: &str, line: u32) -> Vec<String> {
     let text = text.strip_prefix('\u{feff}').unwrap_or(text);
     let lines: Vec<&str> = text.lines().collect();
     let mut out = Vec::new();
-    let Some(i) = (line as usize)
-        .checked_sub(1)
-        .filter(|i| *i < lines.len())
-    else {
+    let Some(i) = (line as usize).checked_sub(1).filter(|i| *i < lines.len()) else {
         return out;
     };
     out.extend(ignore_in(lines[i], false));

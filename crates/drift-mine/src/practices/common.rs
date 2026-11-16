@@ -44,8 +44,7 @@ pub fn split_uses(key: &str) -> Vec<&str> {
         let rest = &key[i + 1..];
         let new_use = rest.split_once(':').is_some_and(|(m, _)| {
             m.bytes().next().is_some_and(|b| b.is_ascii_lowercase())
-                && m
-                    .bytes()
+                && m.bytes()
                     .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_')
         });
         if new_use {

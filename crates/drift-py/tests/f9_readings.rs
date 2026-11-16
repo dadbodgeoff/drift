@@ -62,10 +62,10 @@ fn error_ways(repo: &RepoFacts, prefix: &str) -> Vec<String> {
         .filter(|u| u.symbol.starts_with(prefix))
         .map(|u| {
             u.key.clone().unwrap_or_else(|| {
-                c.variants
-                    .iter()
-                    .find(|v| v.id == u.variant)
-                    .map_or_else(|| format!("{}:{:?}", u.assignment, u.reason), |v| v.key.clone())
+                c.variants.iter().find(|v| v.id == u.variant).map_or_else(
+                    || format!("{}:{:?}", u.assignment, u.reason),
+                    |v| v.key.clone(),
+                )
             })
         })
         .collect()
@@ -123,7 +123,10 @@ class Fixed(AppError):
             .collect::<Vec<_>>()
     };
     assert!(status("Denied").is_empty(), "{:?}", status("Denied"));
-    assert_eq!(status("Fixed"), vec![format!("{}401", controls::REFUSAL_STATUS)]);
+    assert_eq!(
+        status("Fixed"),
+        vec![format!("{}401", controls::REFUSAL_STATUS)]
+    );
 }
 
 /// Pins: S15c made a view unknown wherever a base of its class is not read

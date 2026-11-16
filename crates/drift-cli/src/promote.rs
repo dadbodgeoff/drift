@@ -486,7 +486,12 @@ fn mechanisms_read(report: &PracticesReport, concern: &str) -> Vec<(String, usiz
         let key = u
             .key
             .as_deref()
-            .or_else(|| c.variants.iter().find(|v| v.id == u.variant).map(|v| v.key.as_str()))
+            .or_else(|| {
+                c.variants
+                    .iter()
+                    .find(|v| v.id == u.variant)
+                    .map(|v| v.key.as_str())
+            })
             .unwrap_or("");
         let uses: Vec<&str> = if !u.uses.is_empty() {
             u.uses.iter().map(String::as_str).collect()
@@ -642,10 +647,7 @@ pub fn drop_decided(report: &mut PracticesReport, policy: &ConventionsFile) {
 /// The promoted practice of `policy`, accepted, of the candidate's concern, whose
 /// place overlaps the candidate's. One only proposed (`drift init`'s, from the map) is
 /// no decision: a person has not promoted it.
-pub(crate) fn covering<'a>(
-    policy: &'a ConventionsFile,
-    c: &Candidate,
-) -> Option<&'a Convention> {
+pub(crate) fn covering<'a>(policy: &'a ConventionsFile, c: &Candidate) -> Option<&'a Convention> {
     policy.conventions.iter().find(|x| {
         x.status == Status::Accepted
             && matches!(&x.rule, Rule::Practice { concern, .. } if *concern == c.concern)
@@ -678,7 +680,11 @@ pub fn command(c: &Candidate) -> String {
     }
     // A place that starts with `-` would be read by the command line as a flag.
     let place = c.place.shown();
-    s.push_str(if place.starts_with('-') { " --in=" } else { " --in " });
+    s.push_str(if place.starts_with('-') {
+        " --in="
+    } else {
+        " --in "
+    });
     s.push_str(&shell_word(&place));
     for w in c.ways.iter().skip(1) {
         s.push_str(" --with ");
@@ -1532,7 +1538,11 @@ mod tests {
         let argv = std::iter::once("promote".to_string()).chain(words[3..].iter().cloned());
         let parsed = <PromoteOnly as clap::Parser>::try_parse_from(argv)
             .unwrap_or_else(|e| panic!("{got}: {e}"));
-        assert_eq!(parsed.args.place.as_deref(), Some(c.place.shown().as_str()), "{got}");
+        assert_eq!(
+            parsed.args.place.as_deref(),
+            Some(c.place.shown().as_str()),
+            "{got}"
+        );
         let r = request(&parsed.args).unwrap_or_else(|(code, m)| panic!("{got}: {code}: {m}"));
         if c.ways.is_empty() {
             assert_eq!(r.concern, c.concern, "{got}");
@@ -1609,9 +1619,19 @@ mod tests {
             m.contains("The mechanisms Drift read for it here: membership_guard (2 units), dependency (1 unit)"),
             "{m}"
         );
-        let m = refusal_message(&report, &Refusal::UnknownConcern { concern: "auth".into() });
+        let m = refusal_message(
+            &report,
+            &Refusal::UnknownConcern {
+                concern: "auth".into(),
+            },
+        );
         assert!(m.contains("The concerns Drift read here: authz."), "{m}");
-        let m = refusal_message(&report, &Refusal::NoEnforcing { concern: "errors".into() });
+        let m = refusal_message(
+            &report,
+            &Refusal::NoEnforcing {
+                concern: "errors".into(),
+            },
+        );
         assert!(m.contains("authn, authz"), "{m}");
         let m = refusal_message(&report, &Refusal::NothingAccepted);
         assert!(m.contains("--any-enforcing"), "{m}");

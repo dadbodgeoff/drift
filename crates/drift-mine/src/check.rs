@@ -1659,8 +1659,7 @@ pub fn mode_now(
     stale: Option<&str>,
 ) -> (&'static str, Option<String>) {
     let advise = |why: String| {
-        let note =
-            (c.mode == Mode::Block).then(|| format!("was block, now advise because {why}"));
+        let note = (c.mode == Mode::Block).then(|| format!("was block, now advise because {why}"));
         ("advise", note)
     };
     // Experimental wiring rules never block (also enforced when the policy loads).
@@ -1737,7 +1736,10 @@ pub fn reads_practice_map(report: &CheckReport, policy: &ConventionsFile) -> boo
         .map(|c| c.id.as_str())
         .collect();
     !ids.is_empty()
-        && (report.violations.iter().any(|v| ids.contains(v.id.as_str()))
+        && (report
+            .violations
+            .iter()
+            .any(|v| ids.contains(v.id.as_str()))
             || report
                 .standing
                 .iter()
@@ -1839,8 +1841,7 @@ fn target_concerns<'m>(
         Rule::Before { first, .. } => vec![first.as_str()],
         _ => return BTreeSet::new(),
     };
-    let bare =
-        |r: &str| crate::mine::norm_ref(r.strip_suffix("(ref)").unwrap_or(r)).into_owned();
+    let bare = |r: &str| crate::mine::norm_ref(r.strip_suffix("(ref)").unwrap_or(r)).into_owned();
     let mut refs: BTreeSet<String> = BTreeSet::new();
     for t in targets {
         let mut cur = Some(bare(t));

@@ -158,8 +158,14 @@ mod tests {
         let b = format!("{START}\nnew\n{END}");
         let old = format!("# Agents\r\n\r\n{START}\r\nold\r\n{END}\r\n\r\nmore\r\n");
         let got = splice(&old, &b);
-        assert_eq!(got, format!("# Agents\n\n{b}\n\nmore\n").replace('\n', "\r\n"));
+        assert_eq!(
+            got,
+            format!("# Agents\n\n{b}\n\nmore\n").replace('\n', "\r\n")
+        );
         assert!(!got.replace("\r\n", "").contains('\n'), "{got:?}");
-        assert_eq!(splice("# Agents\r\n", &b), format!("# Agents\n\n{b}\n").replace('\n', "\r\n"));
+        assert_eq!(
+            splice("# Agents\r\n", &b),
+            format!("# Agents\n\n{b}\n").replace('\n', "\r\n")
+        );
     }
 }

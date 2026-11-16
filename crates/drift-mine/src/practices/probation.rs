@@ -177,9 +177,7 @@ pub fn observe(
             } else {
                 judge(u)
             };
-            let e = by
-                .entry(format!("{}#{}", u.path, u.symbol))
-                .or_insert(obs);
+            let e = by.entry(format!("{}#{}", u.path, u.symbol)).or_insert(obs);
             if obs > *e {
                 *e = obs;
             }

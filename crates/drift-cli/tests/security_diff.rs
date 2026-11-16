@@ -299,7 +299,9 @@ fn a_new_route_with_no_sign_in_check_is_a_notice_whatever_its_siblings_do() {
     assert!(
         // The one whose guard Drift cannot read is said apart: unknown is never a
         // finding.
-        out.contains(", 2 new entry point(s) where Drift found no guard (1 more whose guard is unknown), "),
+        out.contains(
+            ", 2 new entry point(s) where Drift found no guard (1 more whose guard is unknown), "
+        ),
         "{out}"
     );
 

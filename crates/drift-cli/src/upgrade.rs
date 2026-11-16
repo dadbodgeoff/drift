@@ -337,7 +337,9 @@ pub(crate) fn run(cli: &crate::Cli, args: &UpgradeArgs) -> anyhow::Result<ExitCo
             let new: Vec<Violation> = report.new_violations().cloned().collect();
             let sorted = classify(root, &checked, &lock, &new);
             for (v, base) in &sorted.reading {
-                violations.reading_only.push(row(v, Some(short(base).to_string()), None));
+                violations
+                    .reading_only
+                    .push(row(v, Some(short(base).to_string()), None));
                 reading.push(v.clone());
             }
             for v in &sorted.changed {
@@ -487,8 +489,7 @@ pub(crate) fn run(cli: &crate::Cli, args: &UpgradeArgs) -> anyhow::Result<ExitCo
             // Only ever adds: every finding it held is in `next`, and the kinds that
             // fail are the ones it said (or, unsaid, the ones it failed).
             let kept = ratchet::parse_baseline(&next);
-            let safe = b.findings.is_subset(&kept.findings)
-                && kept.fail_kinds() == b.fail_kinds();
+            let safe = b.findings.is_subset(&kept.findings) && kept.fail_kinds() == b.fail_kinds();
             if !safe {
                 failed = Some(format!(
                     "{SECURITY_LOCK} was not written: the baseline written again would not hold every finding and fail kind it holds"
@@ -642,7 +643,10 @@ fn lock_problems(text: &str) -> Vec<String> {
 /// order does not matter to [`Lock::load`].
 fn lock_with(existing: Option<&str>, lock: &Lock, add: &Lock) -> Option<(String, usize)> {
     let mut out = existing.map_or_else(
-        || "# drift.lock: legacy violations that never block. Fix code to remove lines.\n".to_string(),
+        || {
+            "# drift.lock: legacy violations that never block. Fix code to remove lines.\n"
+                .to_string()
+        },
         str::to_string,
     );
     if !out.is_empty() && !out.ends_with('\n') {
@@ -811,7 +815,8 @@ fn lock_row(lock: &Lock, present: bool) -> FileRow {
             .entries
             .iter()
             .filter(|(id, k)| {
-                Lock::split_fingerprint(k).is_none() && !with_fp.contains(&(id.as_str(), k.as_str()))
+                Lock::split_fingerprint(k).is_none()
+                    && !with_fp.contains(&(id.as_str(), k.as_str()))
             })
             .count();
         notes.push(format!(
@@ -874,7 +879,9 @@ fn config_row(root: &Path, config: Option<&DriftConfig>) -> FileRow {
         records: "no Drift version and no format version; an answer `drift setup` recorded carries the day it was given.",
         written_by: None,
         format: None,
-        this_drift: present.then(|| "reads it as written; a key it does not know is a warning, never an error".to_string()),
+        this_drift: present.then(|| {
+            "reads it as written; a key it does not know is a warning, never an error".to_string()
+        }),
         // A warning names the repository's own keys.
         notes: config
             .map(|c| c.warnings.iter().map(|w| sanitize(w, 300)).collect())
@@ -1131,8 +1138,8 @@ fn classify(root: &Path, policy: &ConventionsFile, lock: &Lock, new: &[Violation
         let at = short(&base).to_string();
         // The lock written with the convention ([`convention_base`] checked that the
         // commit wrote it). Unreadable there: nothing is known of what it held.
-        let Some(old_lock) = git_text(root, &["show", &format!("{base}:./{LOCK_FILE}")])
-            .map(|t| lock_entries(&t))
+        let Some(old_lock) =
+            git_text(root, &["show", &format!("{base}:./{LOCK_FILE}")]).map(|t| lock_entries(&t))
         else {
             let why = format!("{LOCK_FILE} at commit {at} could not be read");
             out.unknown
@@ -1191,7 +1198,9 @@ fn classify(root: &Path, policy: &ConventionsFile, lock: &Lock, new: &[Violation
                 Some(_) => {
                     out.unknown.push((
                         v.clone(),
-                        format!("a line for it was in {LOCK_FILE} after commit {at} and was taken out"),
+                        format!(
+                            "a line for it was in {LOCK_FILE} after commit {at} and was taken out"
+                        ),
                     ));
                     continue;
                 }
@@ -1255,7 +1264,14 @@ fn convention_base(root: &Path, current: &ConventionsFile, id: &str) -> Result<S
     let needle = format!("-Sid: {id}");
     let log = git_text(
         root,
-        &["log", "--reverse", "--format=%H", &needle, "--", CONVENTIONS_FILE],
+        &[
+            "log",
+            "--reverse",
+            "--format=%H",
+            &needle,
+            "--",
+            CONVENTIONS_FILE,
+        ],
     )
     .ok_or_else(|| "git log could not be read".to_string())?;
     let Some(base) = log
@@ -1269,8 +1285,8 @@ fn convention_base(root: &Path, current: &ConventionsFile, id: &str) -> Result<S
         ));
     };
     let at = short(&base).to_string();
-    let touched = git_text(root, &["log", "-1", "--format=%H", &base, "--", LOCK_FILE])
-        .unwrap_or_default();
+    let touched =
+        git_text(root, &["log", "-1", "--format=%H", &base, "--", LOCK_FILE]).unwrap_or_default();
     if touched.trim() != base {
         return Err(format!(
             "commit {at} added {id} without writing {LOCK_FILE}, so what was baselined for it then is not known"
@@ -1500,12 +1516,10 @@ fn integrations(
             a == allow && d == deny
         });
         let merged = crate::lookup::merge_settings(&text, &entries).and_then(|m| {
-            serde_json::to_string_pretty(&m)
-                .ok()
-                .map(|mut t| {
-                    t.push('\n');
-                    t.into_bytes()
-                })
+            serde_json::to_string_pretty(&m).ok().map(|mut t| {
+                t.push('\n');
+                t.into_bytes()
+            })
         });
         match (older, merged) {
             (true, Some(bytes)) => {
@@ -1608,9 +1622,8 @@ fn render(r: &Report) -> String {
                     "    when accepted: {} of {} follow it, {} in its role\n",
                     a.holders, a.total, a.role_size
                 )),
-                None => out.push_str(
-                    "    when accepted: not recorded (accepted before Drift kept it)\n",
-                ),
+                None => out
+                    .push_str("    when accepted: not recorded (accepted before Drift kept it)\n"),
             }
             let n = &c.now;
             if let Some(u) = &n.unchecked {
@@ -1635,7 +1648,9 @@ fn render(r: &Report) -> String {
                 let text = match *class {
                     "stale" => format!(
                         "now stale: {}",
-                        n.stale.as_deref().unwrap_or("the code no longer bears it out")
+                        n.stale
+                            .as_deref()
+                            .unwrap_or("the code no longer bears it out")
                     ),
                     "newly_violated_by_unchanged_code" => format!(
                         "newly violated by code that did not change: {}",
@@ -1727,7 +1742,10 @@ fn render(r: &Report) -> String {
         ));
     }
     for i in &r.integrations {
-        out.push_str(&format!("  {} ({}): {}: {}\n", i.path, i.kind, i.state, i.note));
+        out.push_str(&format!(
+            "  {} ({}): {}: {}\n",
+            i.path, i.kind, i.state, i.note
+        ));
     }
     if !r.done.is_empty() {
         out.push_str("\nDone\n");
@@ -1847,4 +1865,3 @@ mod tests {
         );
     }
 }
-

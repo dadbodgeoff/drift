@@ -85,7 +85,10 @@ fn yaml(r: &Path) -> String {
 }
 
 fn conventions(r: &Path) -> Vec<Convention> {
-    ConventionsFile::load(r).unwrap().expect("a policy").conventions
+    ConventionsFile::load(r)
+        .unwrap()
+        .expect("a policy")
+        .conventions
 }
 
 fn mined(r: &Path) -> Vec<Convention> {
@@ -106,8 +109,16 @@ fn the_variable_writes_what_the_flag_writes() {
 
     let by_env = repo();
     let out = init(by_env.path(), &[], Some("1"));
-    assert!(!yaml(by_env.path()).contains("from_map:"), "{}", yaml(by_env.path()));
-    assert!(conventions(by_env.path()).iter().all(|c| c.from_map.is_none()));
+    assert!(
+        !yaml(by_env.path()).contains("from_map:"),
+        "{}",
+        yaml(by_env.path())
+    );
+    assert!(
+        conventions(by_env.path())
+            .iter()
+            .all(|c| c.from_map.is_none())
+    );
     assert!(!out.contains("From the map"), "{out}");
 
     let by_flag = repo();

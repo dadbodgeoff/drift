@@ -540,7 +540,13 @@ fn proposals(
     let mut stop = false;
     let of = cards.len();
     for (k, card) in cards.iter().enumerate() {
-        writeln!(out, "\n  [{} of {of}] {} ({})", k + 1, shown(&card.id), card.from)?;
+        writeln!(
+            out,
+            "\n  [{} of {of}] {} ({})",
+            k + 1,
+            shown(&card.id),
+            card.from
+        )?;
         for l in &card.lines {
             writeln!(out, "    {l}")?;
         }
@@ -565,7 +571,8 @@ fn proposals(
         }
     }
     if skipped > 0 {
-        sum.skipped.push(format!("{skipped} proposal{}", s(skipped)));
+        sum.skipped
+            .push(format!("{skipped} proposal{}", s(skipped)));
     }
     if ask.how == How::Dry || (accept.is_empty() && decline.is_empty()) {
         return Ok(());
@@ -775,8 +782,9 @@ fn practice_card(c: &Convention, map: &drift_mine::practices::PracticesReport) -
     ];
     Some(Card {
         id: c.id.clone(),
-        from: "from the map, not mined: a practice; it did not go through the miner's measured gates"
-            .to_string(),
+        from:
+            "from the map, not mined: a practice; it did not go through the miner's measured gates"
+                .to_string(),
         lines,
         practice: true,
         promote: Some(crate::promote::command(&cand)),
@@ -787,7 +795,10 @@ fn practice_card(c: &Convention, map: &drift_mine::practices::PracticesReport) -
 /// what could not be read as `drift check` reports them now.
 fn layering_card(c: &Convention, report: &drift_mine::check::CheckReport) -> Card {
     let (differ, unread) = checked(c, report);
-    let kind = c.from_map.as_deref().unwrap_or(drift_mine::from_map::LAYERING);
+    let kind = c
+        .from_map
+        .as_deref()
+        .unwrap_or(drift_mine::from_map::LAYERING);
     Card {
         id: c.id.clone(),
         from: format!(
@@ -819,7 +830,8 @@ fn disagreeing(inv: &Inventory) -> Vec<(String, Exposure, usize)> {
             continue;
         };
         if e.descriptions.iter().any(|d| d.exposure != first.exposure) {
-            *by.entry((first.compose.clone(), first.exposure)).or_default() += 1;
+            *by.entry((first.compose.clone(), first.exposure))
+                .or_default() += 1;
         }
     }
     by.into_iter().map(|((f, x), n)| (f, x, n)).collect()
@@ -922,7 +934,8 @@ fn deployment(
             Answer::Yes => "tests-only",
             Answer::No => "deploys",
             Answer::Skip | Answer::Stop => {
-                sum.skipped.push(format!("whether {} deploys", shown(&file)));
+                sum.skipped
+                    .push(format!("whether {} deploys", shown(&file)));
                 continue;
             }
         };
@@ -976,7 +989,10 @@ fn baseline(
                 "  {} is there: `drift check` reports a finding that is not in it. Not asked.",
                 ratchet::SECURITY_LOCK
             )?;
-            sum.kept.push(format!("the security baseline ({})", ratchet::SECURITY_LOCK));
+            sum.kept.push(format!(
+                "the security baseline ({})",
+                ratchet::SECURITY_LOCK
+            ));
             return Ok(());
         }
         Ok(None) if config.declined(BASELINE) => {
@@ -984,7 +1000,8 @@ fn baseline(
                 out,
                 "  You said no earlier (recorded as {id}): not asked. `drift setup --forget {id}` asks again."
             )?;
-            sum.kept.push(format!("no security baseline (said no earlier, {id})"));
+            sum.kept
+                .push(format!("no security baseline (said no earlier, {id})"));
             return Ok(());
         }
         Ok(None) => {}
@@ -1010,7 +1027,11 @@ fn baseline(
         if found.is_empty() {
             "no finding; with a baseline, any later one is reported".to_string()
         } else {
-            format!("{} ({})", crate::count(found.len(), "finding"), kinds.join(", "))
+            format!(
+                "{} ({})",
+                crate::count(found.len(), "finding"),
+                kinds.join(", ")
+            )
         }
     )?;
     let answer = ask.ask(
@@ -1144,7 +1165,11 @@ fn agents(
                 };
                 match wrote {
                     Ok(()) => {
-                        let file = if key == AGENTS_MD { AGENTS_FILE } else { SETTINGS_FILE };
+                        let file = if key == AGENTS_MD {
+                            AGENTS_FILE
+                        } else {
+                            SETTINGS_FILE
+                        };
                         writeln!(out, "  -> wrote {file}.")?;
                         sum.written.insert(file.to_string());
                         sum.decided.push(if key == AGENTS_MD {
@@ -1248,7 +1273,12 @@ fn done(
         }
     } else {
         let files: Vec<&str> = sum.written.iter().map(String::as_str).collect();
-        writeln!(out, "  Written: {}. Commit them: git add {}", files.join(", "), files.join(" "))?;
+        writeln!(
+            out,
+            "  Written: {}. Commit them: git add {}",
+            files.join(", "),
+            files.join(" ")
+        )?;
     }
     writeln!(
         out,

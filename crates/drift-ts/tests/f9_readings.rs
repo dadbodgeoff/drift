@@ -16,7 +16,8 @@ use std::path::Path;
 use drift_core::{FileFacts, RepoFacts, Symbol, controls};
 use drift_ts::{ScanOptions, scan};
 
-const PACKAGE: &str = r#"{ "name": "api", "dependencies": { "express": "4.19.2", "left-pad": "1.3.0" } }"#;
+const PACKAGE: &str =
+    r#"{ "name": "api", "dependencies": { "express": "4.19.2", "left-pad": "1.3.0" } }"#;
 
 fn repo(files: &[(&str, &str)]) -> RepoFacts {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -44,10 +45,13 @@ fn file<'a>(r: &'a RepoFacts, path: &str) -> &'a FileFacts {
 }
 
 fn symbol<'a>(f: &'a FileFacts, name: &str) -> &'a Symbol {
-    f.symbols.iter().find(|s| s.name == name).unwrap_or_else(|| {
-        let names: Vec<&str> = f.symbols.iter().map(|s| s.name.as_str()).collect();
-        panic!("{name} not in {}: {names:?}", f.path)
-    })
+    f.symbols
+        .iter()
+        .find(|s| s.name == name)
+        .unwrap_or_else(|| {
+            let names: Vec<&str> = f.symbols.iter().map(|s| s.name.as_str()).collect();
+            panic!("{name} not in {}: {names:?}", f.path)
+        })
 }
 
 fn has(s: &Symbol, control: &str) -> bool {
@@ -108,7 +112,11 @@ fn a_secret_branch_that_serves_refuses_no_one() {
     let secret = format!("{}x-preview-key", controls::REFUSES_SECRET);
     for name in ["serves", "caught"] {
         let s = symbol(f, name);
-        assert!(!has_prefix(s, controls::REFUSES_SECRET), "{name}: {:?}", s.controls);
+        assert!(
+            !has_prefix(s, controls::REFUSES_SECRET),
+            "{name}: {:?}",
+            s.controls
+        );
     }
     for name in ["thrown", "refuses"] {
         let s = symbol(f, name);
@@ -162,7 +170,9 @@ fn input_handed_by_a_spread_is_handed() {
 /// A body under the cap does not say so.
 #[test]
 fn input_handed_past_the_cap_is_unread() {
-    let mut text = String::from("import * as lp from \"left-pad\";\n\nexport function many(req: any, res: any) {\n");
+    let mut text = String::from(
+        "import * as lp from \"left-pad\";\n\nexport function many(req: any, res: any) {\n",
+    );
     for i in 0..20 {
         text.push_str(&format!("  lp.f{i}(req.body);\n"));
     }

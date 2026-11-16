@@ -222,7 +222,8 @@ fn each_surface_says_what_a_failed_check_rests_on() {
         format!("[{id}] "),
         format!("  source       {source}\n"),
         format!("  evidence     {accepted}; {now}\n"),
-        "  not checked  1 member(s) Drift could not read, never reported: it is wrapped in ".to_string(),
+        "  not checked  1 member(s) Drift could not read, never reported: it is wrapped in "
+            .to_string(),
         format!("  here         {here}\n"),
         format!("    holds near it  {near}"),
         format!("    exception  add `{comment}` above the declaration\n"),
@@ -246,7 +247,12 @@ fn each_surface_says_what_a_failed_check_rests_on() {
     assert_eq!(code, 1, "{out}{err}");
     let line = out
         .lines()
-        .find(|l| l.starts_with(&format!("::error file={},line=1,title=drift {id}::", b.violator)))
+        .find(|l| {
+            l.starts_with(&format!(
+                "::error file={},line=1,title=drift {id}::",
+                b.violator
+            ))
+        })
         .unwrap_or_else(|| panic!("{out}"));
     for want in [
         "does not follow it.%0ACopy ".to_string(),

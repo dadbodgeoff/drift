@@ -71,7 +71,8 @@ fn before_conventions(out: &str) -> &str {
 
 /// The security baseline offer, if init made one.
 fn offer(out: &str) -> Option<&str> {
-    out.lines().find(|l| l.starts_with("Security baseline: none yet."))
+    out.lines()
+        .find(|l| l.starts_with("Security baseline: none yet."))
 }
 
 /// Pins: the first run, the security summary and the baseline offer are the same with

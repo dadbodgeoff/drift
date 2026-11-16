@@ -112,7 +112,10 @@ fn a_declared_restriction_the_code_follows_is_proposed_with_its_counts() {
     assert_eq!((c.role.package.as_str(), c.role.dir.as_str()), ("", "core"));
     assert_eq!(c.from_map.as_deref(), Some(DECLARED));
     assert_eq!((c.status, c.mode), (Status::Proposed, Mode::Advise));
-    assert_eq!(c.agents, None, "nothing reaches an agent until a person accepts it");
+    assert_eq!(
+        c.agents, None,
+        "nothing reaches an agent until a person accepts it"
+    );
     assert_eq!(c.id, declared_id(&c.role, "ui/screens"));
     assert_eq!(
         c.summary,
@@ -129,7 +132,10 @@ fn a_declared_restriction_the_code_follows_is_proposed_with_its_counts() {
     assert_eq!((c.evidence.holders, c.evidence.total), (20, 20));
     let lines = proposal_lines(c, e);
     assert!(lines[0].contains("declared in biome.json"), "{lines:?}");
-    assert!(lines[0].contains("could not be read (never reported)"), "{lines:?}");
+    assert!(
+        lines[0].contains("could not be read (never reported)"),
+        "{lines:?}"
+    );
 }
 
 /// Pins that `drift check` reads an accepted declared proposal with no change: it holds
@@ -144,7 +150,11 @@ fn the_checker_evaluates_an_accepted_declared_rule() {
     let mut policy = ConventionsFile::merge(None, "test", kinds, &[]);
     policy.conventions.push(accepted);
     let today = check(&r, &policy, &Lock::default(), Scope::Accepted, None);
-    assert!(!today.violations.iter().any(|v| v.id == id), "{:?}", today.violations);
+    assert!(
+        !today.violations.iter().any(|v| v.id == id),
+        "{:?}",
+        today.violations
+    );
     let after = layered(
         20,
         vec![file("core/c20.ts", &["ui/screens/s2.tsx".to_string()])],
@@ -166,12 +176,7 @@ fn the_checker_evaluates_an_accepted_declared_rule() {
 #[test]
 fn a_declared_restriction_the_code_breaks_is_shown_with_the_breaks() {
     let breaking: Vec<FileFacts> = (20..23)
-        .map(|i| {
-            file(
-                &format!("core/c{i}.ts"),
-                &["ui/screens/s2.tsx".to_string()],
-            )
-        })
+        .map(|i| file(&format!("core/c{i}.ts"), &["ui/screens/s2.tsx".to_string()]))
         .collect();
     let r = layered(20, breaking, vec![biome("core", SCREENS)]);
     let d = declared(&r, &FileKinds::learn(&r), &[]);
@@ -249,7 +254,10 @@ fn an_unreadable_configuration_yields_nothing() {
         "{d:#?}"
     );
 
-    let partial = biome("core", &["../ui/screens/**", "importNames", "Screen", "paths", "name"]);
+    let partial = biome(
+        "core",
+        &["../ui/screens/**", "importNames", "Screen", "paths", "name"],
+    );
     let r = layered(20, vec![], vec![partial]);
     let d = declared(&r, &FileKinds::learn(&r), &[]);
     assert!(d.proposals.is_empty(), "{d:#?}");
@@ -310,8 +318,5 @@ fn a_restriction_equal_to_a_layering_proposal_is_attached() {
     }];
     let d = declared(&r, &kinds, &mined);
     assert!(d.proposals.is_empty(), "{d:#?}");
-    assert_eq!(
-        (d.also[0].id.as_str(), d.also[0].by),
-        ("D-000001", "mined")
-    );
+    assert_eq!((d.also[0].id.as_str(), d.also[0].by), ("D-000001", "mined"));
 }

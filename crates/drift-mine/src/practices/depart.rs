@@ -242,7 +242,11 @@ pub fn check_text(deps: &[Departure]) -> String {
         files(deps)
     );
     for d in deps.iter().take(CHECK_LISTED) {
-        out.push_str(&format!("  {}: {}\n", sanitize(&d.path, 160), d.line_with_promote()));
+        out.push_str(&format!(
+            "  {}: {}\n",
+            sanitize(&d.path, 160),
+            d.line_with_promote()
+        ));
     }
     if deps.len() > CHECK_LISTED {
         out.push_str(&format!(
@@ -555,7 +559,10 @@ fn follows(own: &str, dominant: &str) -> bool {
 /// alternative of a fold is, or the key's own uses are. A key that names no use (the
 /// tail) is not.
 fn passive_key(k: &dyn Concern, key: &str) -> bool {
-    let alternatives: Vec<&str> = match key.strip_prefix("any_of(").and_then(|k| k.strip_suffix(')')) {
+    let alternatives: Vec<&str> = match key
+        .strip_prefix("any_of(")
+        .and_then(|k| k.strip_suffix(')'))
+    {
         Some(inner) => inner.split('|').collect(),
         None => vec![key],
     };
@@ -1217,7 +1224,11 @@ mod tests {
         let d = departures(&errors(units), None);
         assert_eq!(d.len(), 1, "{d:?}");
         assert_eq!(d[0].variant, "P-wrapped");
-        assert!(d[0].example.as_ref().is_some_and(|e| e.path != "svc/api/new.py"));
+        assert!(
+            d[0].example
+                .as_ref()
+                .is_some_and(|e| e.path != "svc/api/new.py")
+        );
     }
 
     /// Pins S17 item 5 and 3: a departure says how to make its place's way the rule,

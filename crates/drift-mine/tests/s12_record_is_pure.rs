@@ -90,7 +90,11 @@ fn recording_every_gate_changes_nothing_mining_proposes() {
     let rows = funnel::take_dropped();
     let _ = funnel::finish();
 
-    assert_eq!(plain, proposals(&recorded), "the record changed what mining returns");
+    assert_eq!(
+        plain,
+        proposals(&recorded),
+        "the record changed what mining returns"
+    );
     assert!(
         rows.iter().any(|d| d.gate == "cap_avoid"),
         "no cap_avoid row: {:#?}",

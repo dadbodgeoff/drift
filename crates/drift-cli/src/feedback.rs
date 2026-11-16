@@ -470,7 +470,11 @@ fn mark(root: &Path, a: &MarkArgs) -> anyhow::Result<()> {
     } else {
         format!("{} {}", m.id, m.member)
     };
-    let verb = if replaced { "Replaced the mark" } else { "Marked" };
+    let verb = if replaced {
+        "Replaced the mark"
+    } else {
+        "Marked"
+    };
     println!("{verb}: {what} is {verdict}. Kept in {DIR}/{MARKS}, on this machine only.");
     println!(
         "This changes no verdict: Drift reports it as before. `drift feedback export` counts it."
@@ -653,7 +657,11 @@ pub fn build(
     let mut marks_by_kind: BTreeMap<String, Verdicts> = BTreeMap::new();
     for m in marks {
         let finding = m.report == "finding";
-        let verdict = if m.verdict == "wrong" { "wrong" } else { "true" };
+        let verdict = if m.verdict == "wrong" {
+            "wrong"
+        } else {
+            "true"
+        };
         let kind = mark_kind(&m.kind);
         let new_code = (!finding).then_some(!m.baselined);
         let t = marks_by_kind.entry(kind.clone()).or_default();
@@ -787,8 +795,7 @@ fn mark_kind(k: &str) -> String {
 fn token(s: &str, max: usize) -> Option<&str> {
     (!s.is_empty()
         && s.len() <= max
-        && s
-            .bytes()
+        && s.bytes()
             .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_' || b == b':'))
     .then_some(s)
 }

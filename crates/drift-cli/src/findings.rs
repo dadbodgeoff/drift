@@ -213,7 +213,10 @@ pub fn write_issue(root: &Path, file: &Path, text: &str, force: bool) -> anyhow:
             file.display()
         );
     }
-    let roots = [std::path::absolute(root)?, drift_core::fsutil::canonical(root)?];
+    let roots = [
+        std::path::absolute(root)?,
+        drift_core::fsutil::canonical(root)?,
+    ];
     if let Some(link) = std::iter::once(abs.as_path())
         .chain(
             abs.ancestors()

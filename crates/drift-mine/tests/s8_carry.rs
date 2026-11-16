@@ -105,7 +105,8 @@ fn a_rule_that_gains_an_alternative_is_a_proposal_beside_the_accepted_one() {
     assert_eq!(c.agents, None);
     assert!(c.accepted_evidence.is_none());
     assert_eq!(
-        c.exception("app/health/route.ts#GET").map(|e| e.reason.as_str()),
+        c.exception("app/health/route.ts#GET")
+            .map(|e| e.reason.as_str()),
         Some("public health check")
     );
 
@@ -134,10 +135,16 @@ fn a_rule_that_gains_an_alternative_is_a_proposal_beside_the_accepted_one() {
 
 #[test]
 fn only_an_added_alternative_carries_a_decision() {
-    assert!(gains_alternatives(&wrapped(&[AUTH]), &wrapped(&[AUTH, ADMIN])));
+    assert!(gains_alternatives(
+        &wrapped(&[AUTH]),
+        &wrapped(&[AUTH, ADMIN])
+    ));
     // The same rule, one dropped, one swapped, another kind: a new decision.
     assert!(!gains_alternatives(&wrapped(&[AUTH]), &wrapped(&[AUTH])));
-    assert!(!gains_alternatives(&wrapped(&[AUTH, ADMIN]), &wrapped(&[AUTH])));
+    assert!(!gains_alternatives(
+        &wrapped(&[AUTH, ADMIN]),
+        &wrapped(&[AUTH])
+    ));
     assert!(!gains_alternatives(&wrapped(&[AUTH]), &wrapped(&[ADMIN])));
     assert!(!gains_alternatives(
         &wrapped(&[AUTH]),
@@ -163,7 +170,12 @@ fn only_an_added_alternative_carries_a_decision() {
     );
     assert_eq!(carried, [("D-aaaaaa".to_string(), "D-bbbbbb".to_string())]);
     assert_eq!(again.conventions.len(), 2);
-    assert!(again.conventions.iter().all(|c| c.status == Status::Proposed));
+    assert!(
+        again
+            .conventions
+            .iter()
+            .all(|c| c.status == Status::Proposed)
+    );
     let mut accepted = first;
     accepted.get_mut("D-aaaaaa").unwrap().status = Status::Accepted;
     let (_, carried) = ConventionsFile::merge_carrying(
@@ -188,7 +200,14 @@ fn decided_conventions_are_ordered_by_id_not_by_strength() {
         FileKinds::default(),
         &[
             cand("D-aaaaaa", wrapped(&[AUTH]), 17, 0.7),
-            cand("D-bbbbbb", Rule::Calls { callee: "lib/log.ts#log".into() }, 19, 0.9),
+            cand(
+                "D-bbbbbb",
+                Rule::Calls {
+                    callee: "lib/log.ts#log".into(),
+                },
+                19,
+                0.9,
+            ),
         ],
     );
     for c in &mut p.conventions {
@@ -204,7 +223,14 @@ fn decided_conventions_are_ordered_by_id_not_by_strength() {
         FileKinds::default(),
         &[
             cand("D-aaaaaa", wrapped(&[AUTH]), 19, 0.95),
-            cand("D-bbbbbb", Rule::Calls { callee: "lib/log.ts#log".into() }, 19, 0.6),
+            cand(
+                "D-bbbbbb",
+                Rule::Calls {
+                    callee: "lib/log.ts#log".into(),
+                },
+                19,
+                0.6,
+            ),
         ],
     );
     assert_eq!(ids(&again), ["D-aaaaaa", "D-bbbbbb"]);
@@ -214,7 +240,14 @@ fn decided_conventions_are_ordered_by_id_not_by_strength() {
         FileKinds::default(),
         &[
             cand("D-aaaaaa", wrapped(&[AUTH]), 15, 0.5),
-            cand("D-bbbbbb", Rule::Calls { callee: "lib/log.ts#log".into() }, 19, 0.99),
+            cand(
+                "D-bbbbbb",
+                Rule::Calls {
+                    callee: "lib/log.ts#log".into(),
+                },
+                19,
+                0.99,
+            ),
         ],
     );
     assert_eq!(ids(&again), ["D-aaaaaa", "D-bbbbbb"]);

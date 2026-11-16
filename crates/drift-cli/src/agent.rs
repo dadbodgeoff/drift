@@ -38,7 +38,11 @@ trait PrimeStrength {
 
 impl PrimeStrength for (Option<String>, &Convention) {
     fn strength(&self) -> (bool, f64, &str) {
-        (blocks(self.1), self.1.evidence.lower_bound, self.1.id.as_str())
+        (
+            blocks(self.1),
+            self.1.evidence.lower_bound,
+            self.1.id.as_str(),
+        )
     }
 }
 
@@ -774,7 +778,11 @@ fn brief_without_policy(cwd: &Path) -> Option<Value> {
         .to_path_buf();
     // Native Windows sets no `HOME`; its home directory is `USERPROFILE`.
     let home = std::env::var_os("HOME")
-        .or_else(|| cfg!(windows).then(|| std::env::var_os("USERPROFILE")).flatten())
+        .or_else(|| {
+            cfg!(windows)
+                .then(|| std::env::var_os("USERPROFILE"))
+                .flatten()
+        })
         .map(PathBuf::from);
     if home.is_some_and(|h| h == root) || !brief_on(&root) {
         return None;
@@ -1222,9 +1230,7 @@ fn says_same(mined: &Convention, practice: &Convention) -> bool {
         .filter_map(|u| u.split_once(':').map(|(_, instrument)| instrument))
         .map(|i| norm_ref(i).into_owned())
         .collect();
-    targets
-        .iter()
-        .all(|t| instruments.contains(&*norm_ref(t)))
+    targets.iter().all(|t| instruments.contains(&*norm_ref(t)))
 }
 
 /// A rule's line before an edit ([`rule_line`]): for a promoted practice, the accepted

@@ -8,7 +8,12 @@ use drift_mine::from_map::{AreaEdge, OneWayPair, area_graph};
 use drift_mine::roles::FileKinds;
 
 fn file(path: &str, imports: &[&str]) -> FileFacts {
-    let name = path.rsplit('/').next().unwrap().trim_end_matches(".ts").to_string();
+    let name = path
+        .rsplit('/')
+        .next()
+        .unwrap()
+        .trim_end_matches(".ts")
+        .to_string();
     FileFacts {
         path: path.into(),
         lang: "ts".into(),

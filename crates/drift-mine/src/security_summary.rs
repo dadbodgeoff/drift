@@ -26,7 +26,9 @@ use serde::Serialize;
 
 use crate::practices::{PracticesReport, UnitRow, VALIDATION};
 use crate::report::sanitize;
-use crate::security::{EntryRow, Exposure, Inventory, Reach, queue_kind, reads_only, signature_words};
+use crate::security::{
+    EntryRow, Exposure, Inventory, Reach, queue_kind, reads_only, signature_words,
+};
 
 // ---------- what a caller can do, by the operation's kind ----------
 
@@ -63,13 +65,19 @@ pub const OTHER: u8 = 9;
 pub fn consequence(kind: &str) -> Option<(u8, &'static str)> {
     Some(match kind {
         "eval" => (CODE_EXECUTION, "send text the server runs as code"),
-        "shell_exec" => (CODE_EXECUTION, "send text that becomes part of a shell command"),
+        "shell_exec" => (
+            CODE_EXECUTION,
+            "send text that becomes part of a shell command",
+        ),
         "unsafe_deserialize" => (
             CODE_EXECUTION,
             "send data the server loads with an unsafe deserialiser",
         ),
         "template_injection" => (CODE_EXECUTION, "send text the server renders as a template"),
-        "raw_sql" => (QUERY_INJECTION, "send a value that goes into a raw SQL query"),
+        "raw_sql" => (
+            QUERY_INJECTION,
+            "send a value that goes into a raw SQL query",
+        ),
         "sql_string_interpolation" => (
             QUERY_INJECTION,
             "send a value that is written into the text of an SQL query",
@@ -94,7 +102,10 @@ pub fn consequence(kind: &str) -> Option<(u8, &'static str)> {
             OUTGOING_REQUEST,
             "send a value that becomes part of the address of a request the server makes",
         ),
-        "raw_html" => (PAGE_CONTENT, "send text the server writes into a page as raw HTML"),
+        "raw_html" => (
+            PAGE_CONTENT,
+            "send text the server writes into a page as raw HTML",
+        ),
         "mass_assignment" => (
             DATA_WRITE,
             "send fields that are written to a row from the whole request body",
@@ -111,8 +122,12 @@ pub fn consequence(kind: &str) -> Option<(u8, &'static str)> {
             REDIRECT,
             "send a value that becomes part of the address a redirect sends the browser to",
         ),
-        "weak_hash" | "cookie_without_httponly" | "cors_any_origin" | "hardcoded_secret"
-        | "debug_enabled" | "tls_verify_disabled" => return None,
+        "weak_hash"
+        | "cookie_without_httponly"
+        | "cors_any_origin"
+        | "hardcoded_secret"
+        | "debug_enabled"
+        | "tls_verify_disabled" => return None,
         _ => (OTHER, "send a value that reaches a risky operation"),
     })
 }
@@ -606,7 +621,8 @@ pub const PLACES_NAMED: usize = 3;
 /// The heading of `drift security --top`.
 pub const HEADING: &str = "Security findings to look at first (from the security inventory: what Drift read, in order; nothing here fails a check)";
 /// The heading of the first run's part.
-pub const FIRST_RUN_HEADING: &str = "From the security inventory (what Drift read; not conventions, and nothing here is checked)";
+pub const FIRST_RUN_HEADING: &str =
+    "From the security inventory (what Drift read; not conventions, and nothing here is checked)";
 
 /// `GET /a (server.ts:12)`.
 fn where_of(p: &Place) -> String {
@@ -627,11 +643,7 @@ fn where_of(p: &Place) -> String {
 fn sink_at(r: &Ranked) -> String {
     let (path, symbol) = split_node(&r.sink);
     match r.sink_line {
-        Some(line) => format!(
-            "{}:{line} ({})",
-            sanitize(path, 160),
-            sanitize(symbol, 80)
-        ),
+        Some(line) => format!("{}:{line} ({})", sanitize(path, 160), sanitize(symbol, 80)),
         None => sanitize(&r.sink, 200),
     }
 }
@@ -649,7 +661,8 @@ fn caller_words(c: Caller) -> &'static str {
 /// The two or three lines of one ranked finding: what a caller can do and where;
 /// what Drift read that makes it say so; what it could not read.
 pub fn finding_lines(r: &Ranked) -> Vec<String> {
-    let what = consequence(&r.kind).map_or("send a value that reaches a risky operation", |(_, w)| w);
+    let what =
+        consequence(&r.kind).map_or("send a value that reaches a risky operation", |(_, w)| w);
     let kind = sanitize(&r.kind, 40);
     let Some(first) = r.places.first() else {
         return Vec::new();
@@ -727,9 +740,8 @@ pub fn finding_lines(r: &Ranked) -> Vec<String> {
         Validation::Found if r.places.iter().all(|p| p.schema_in_body) => {
             read.push("a schema is read in the body".to_string())
         }
-        Validation::Found if r.places.iter().any(|p| p.schema_in_body) => read.push(
-            "the input is validated on the way, or a schema is read in the body".to_string(),
-        ),
+        Validation::Found if r.places.iter().any(|p| p.schema_in_body) => read
+            .push("the input is validated on the way, or a schema is read in the body".to_string()),
         Validation::Found => read.push("the input is validated on the way".to_string()),
         Validation::NotRead => {}
     }
@@ -846,9 +858,9 @@ pub fn render_first_run(s: &Summary) -> String {
         (0, 0) => String::new(),
         (0, n) => format!("`drift security --top` says why {n} more are not ranked; "),
         (m, 0) => format!("{m} more ranked in `drift security --top`; "),
-        (m, n) => format!(
-            "{m} more ranked in `drift security --top`, which also says why {n} are not; "
-        ),
+        (m, n) => {
+            format!("{m} more ranked in `drift security --top`, which also says why {n} are not; ")
+        }
     };
     let _ = writeln!(
         out,

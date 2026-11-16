@@ -103,8 +103,7 @@ fn write(files: &[(&str, &str)]) -> tempfile::TempDir {
     dir
 }
 
-const ROUTER_PACKAGE: &str =
-    "{ \"name\": \"web\", \"dependencies\": { \"react-router\": \"7.1.0\", \"zod\": \"3.23.8\" } }\n";
+const ROUTER_PACKAGE: &str = "{ \"name\": \"web\", \"dependencies\": { \"react-router\": \"7.1.0\", \"zod\": \"3.23.8\" } }\n";
 
 /// Pins: epic's loaders and actions read unknown `unclassified` for API because
 /// the adapter is on no list; now the facts say the router sends what they
@@ -232,7 +231,10 @@ export const appRouter = router({
     let authn = readings(dir.path(), "authn");
     let mine = of(&authn, &["src/router.ts", "mine"]).unwrap_or_default();
     let owned = of(&authn, &["src/router.ts", "owned"]).unwrap_or_default();
-    assert!(mine.starts_with("known") && mine.contains("isAuthed"), "{authn:?}");
+    assert!(
+        mine.starts_with("known") && mine.contains("isAuthed"),
+        "{authn:?}"
+    );
     // The derived procedure carries the base's guard, so it follows the same
     // practice (the uses add up).
     assert!(owned.contains("isAuthed"), "{authn:?}");
@@ -276,11 +278,7 @@ export const appRouter = router({ myStats, padded });
         ),
     ]);
     let validation = readings(dir.path(), "validation");
-    assert_eq!(
-        of(&validation, &["myStats"]),
-        None,
-        "{validation:?}"
-    );
+    assert_eq!(of(&validation, &["myStats"]), None, "{validation:?}");
     let padded = of(&validation, &["padded"]).unwrap_or_default();
     assert_eq!(padded, "unknown unclassified", "{validation:?}");
 }

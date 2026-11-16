@@ -13,9 +13,7 @@ use std::path::Path;
 use drift_core::{SymbolKind, WrapKind};
 use drift_mine::check::{Extent, Violation};
 use drift_mine::mine::{Candidate, Evidence, Rule};
-use drift_mine::policy::{
-    Convention, ConventionsFile, LOCK_FILE, Lock, carry_moved_exceptions,
-};
+use drift_mine::policy::{Convention, ConventionsFile, LOCK_FILE, Lock, carry_moved_exceptions};
 use drift_mine::roles::{FileKinds, RoleSelector};
 use drift_mine::tier::Tier;
 
@@ -64,7 +62,12 @@ fn lock_of(members: &[&str]) -> Lock {
 /// Every violation with the fingerprint [`FP`].
 fn prints(vs: &[Violation]) -> BTreeMap<(String, String), String> {
     vs.iter()
-        .map(|v| ((v.id.clone(), format!("{}#{}", v.path, v.symbol)), FP.to_string()))
+        .map(|v| {
+            (
+                (v.id.clone(), format!("{}#{}", v.path, v.symbol)),
+                FP.to_string(),
+            )
+        })
         .collect()
 }
 
@@ -163,7 +166,11 @@ fn what_cannot_be_told_to_have_moved_is_new() {
     let files = lock_of(&["app/a/page.tsx#(file)"]);
     let mut vs = vec![v("app/x/layout.tsx", "(file)")];
     let fps = prints(&vs);
-    assert!(files.baseline_moved(&mut vs, &fps, &present(&[])).is_empty());
+    assert!(
+        files
+            .baseline_moved(&mut vs, &fps, &present(&[]))
+            .is_empty()
+    );
     let mut vs = vec![v("app/x/page.tsx", "(file)")];
     let fps = prints(&vs);
     assert_eq!(files.baseline_moved(&mut vs, &fps, &present(&[])).len(), 1);
@@ -174,7 +181,11 @@ fn what_cannot_be_told_to_have_moved_is_new() {
         .remove(&(ID.to_string(), "app/a/route.ts#GET".to_string()));
     let mut vs = vec![v("app/c/route.ts", "GET")];
     let fps = prints(&vs);
-    assert!(orphan.baseline_moved(&mut vs, &fps, &present(&[])).is_empty());
+    assert!(
+        orphan
+            .baseline_moved(&mut vs, &fps, &present(&[]))
+            .is_empty()
+    );
     assert!(!vs[0].baselined);
 }
 
@@ -235,7 +246,9 @@ fn an_exception_follows_exactly_the_move() {
     let gained = carry_moved_exceptions(&[&c], &moved);
     assert_eq!(gained.len(), 1);
     assert_eq!(
-        gained[0].exception("app/new/route.ts#GET").map(|e| e.reason.as_str()),
+        gained[0]
+            .exception("app/new/route.ts#GET")
+            .map(|e| e.reason.as_str()),
         Some("public on purpose")
     );
     assert_eq!(gained[0].exceptions.len(), 2);

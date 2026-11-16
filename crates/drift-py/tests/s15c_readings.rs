@@ -39,7 +39,10 @@ fn symbol<'a>(repo: &'a RepoFacts, path: &str, name: &str) -> &'a Symbol {
 }
 
 fn has_control(repo: &RepoFacts, path: &str, name: &str, control: &str) -> bool {
-    symbol(repo, path, name).controls.iter().any(|c| c == control)
+    symbol(repo, path, name)
+        .controls
+        .iter()
+        .any(|c| c == control)
 }
 
 /// No reading's marker is left in either copy of the facts: the lowering's
@@ -48,9 +51,21 @@ fn no_marker_left(repo: &RepoFacts) {
     for f in &repo.files {
         for s in &f.symbols {
             let mark = |c: &String| c.starts_with("since:") || c.starts_with("measured:");
-            assert!(!s.controls.iter().any(mark), "{}#{}: {:?}", f.path, s.name, s.controls);
+            assert!(
+                !s.controls.iter().any(mark),
+                "{}#{}: {:?}",
+                f.path,
+                s.name,
+                s.controls
+            );
             for m in &s.members {
-                assert!(!m.unread.iter().any(mark), "{}#{}.{}", f.path, s.name, m.name);
+                assert!(
+                    !m.unread.iter().any(mark),
+                    "{}#{}.{}",
+                    f.path,
+                    s.name,
+                    m.name
+                );
             }
         }
     }
@@ -74,10 +89,10 @@ fn error_ways(repo: &RepoFacts, prefix: &str) -> Vec<String> {
         .filter(|u| u.symbol.starts_with(prefix))
         .map(|u| {
             u.key.clone().unwrap_or_else(|| {
-                c.variants
-                    .iter()
-                    .find(|v| v.id == u.variant)
-                    .map_or_else(|| format!("{}:{:?}", u.assignment, u.reason), |v| v.key.clone())
+                c.variants.iter().find(|v| v.id == u.variant).map_or_else(
+                    || format!("{}:{:?}", u.assignment, u.reason),
+                    |v| v.key.clone(),
+                )
             })
         })
         .collect()
@@ -166,10 +181,7 @@ def read_n(n=Depends(parsed_body)):
         "{me:?}"
     );
     let n = error_ways(&mined, "read_n");
-    assert!(
-        n.iter().any(|k| k.contains("mapped_by_wrapper")),
-        "{n:?}"
-    );
+    assert!(n.iter().any(|k| k.contains("mapped_by_wrapper")), "{n:?}");
     // No fact was added: the dependency's catches read as the measured build read them.
     let d = "app/deps.py";
     assert_eq!(
@@ -257,10 +269,7 @@ urlpatterns = [
     assert!(!responds(&mined, "BaseAPIView"));
     assert!(!responds(&mined, "Quiet"));
     let item = error_ways(&mined, "ItemView");
-    assert!(
-        item.iter().any(|k| k.contains("base_handler")),
-        "{item:?}"
-    );
+    assert!(item.iter().any(|k| k.contains("base_handler")), "{item:?}");
     let quiet = error_ways(&mined, "QuietView");
     assert!(
         !quiet.iter().any(|k| k.contains("base_handler")),

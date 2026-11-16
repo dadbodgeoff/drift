@@ -467,7 +467,8 @@ pub fn read_text_of(rel: &str, text: &str, owner: Option<&str>) -> Vec<WorkflowF
                 None => cursor,
             };
             let line_of = |text: &str, needle: &str| -> u32 {
-                line_from(text, from, needle).map_or_else(|| line_of(text, needle), |i| i as u32 + 1)
+                line_from(text, from, needle)
+                    .map_or_else(|| line_of(text, needle), |i| i as u32 + 1)
             };
             if let Some(run) = step.get("run").and_then(Value::as_str)
                 && let Some(command) = piped_download(run)
@@ -817,11 +818,26 @@ jobs:
     #[test]
     fn a_remote_names_an_owner_only_on_github_itself() {
         let origin = |url: &str| origin_owner(&format!("[remote \"origin\"]\n\turl = {url}\n"));
-        assert_eq!(origin("git@github.com:acme/app.git"), Some("acme".to_string()));
-        assert_eq!(origin("https://github.com/makeplane/plane"), Some("makeplane".to_string()));
-        assert_eq!(origin("ssh://git@github.com/acme/app"), Some("acme".to_string()));
-        assert_eq!(origin("ssh://git@github.com:22/acme/app.git"), Some("acme".to_string()));
-        assert_eq!(origin("https://user@GitHub.com/acme/app"), Some("acme".to_string()));
+        assert_eq!(
+            origin("git@github.com:acme/app.git"),
+            Some("acme".to_string())
+        );
+        assert_eq!(
+            origin("https://github.com/makeplane/plane"),
+            Some("makeplane".to_string())
+        );
+        assert_eq!(
+            origin("ssh://git@github.com/acme/app"),
+            Some("acme".to_string())
+        );
+        assert_eq!(
+            origin("ssh://git@github.com:22/acme/app.git"),
+            Some("acme".to_string())
+        );
+        assert_eq!(
+            origin("https://user@GitHub.com/acme/app"),
+            Some("acme".to_string())
+        );
         assert_eq!(origin("https://notgithub.com/x/y"), None);
         assert_eq!(origin("git@notgithub.com:x/y"), None);
         assert_eq!(origin("https://github.example.com/x/y"), None);

@@ -20,7 +20,10 @@ fn a_header_ignore_after_a_byte_order_mark_still_covers_the_file() {
     assert_eq!(header_suppressions(&with_bom), header_suppressions(plain));
     // A `#` header (Python), the same.
     let py = "# drift-ignore D-0a1b2c: vendored\nx = 1\n";
-    assert_eq!(header_suppressions(&format!("{BOM}{py}")), vec!["D-0a1b2c".to_string()]);
+    assert_eq!(
+        header_suppressions(&format!("{BOM}{py}")),
+        vec!["D-0a1b2c".to_string()]
+    );
 }
 
 /// Pins the line form: the comment above line 2 is on line 1, after the BOM; line

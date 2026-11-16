@@ -1626,7 +1626,8 @@ impl Lock {
             // Drift that knows no fingerprint skips it ([`Lock`]).
             if let Some(rest) = line.strip_prefix("#~") {
                 let mut parts = rest.trim().splitn(3, ' ');
-                if let (Some(id), Some(fp), Some(member)) = (parts.next(), parts.next(), parts.next())
+                if let (Some(id), Some(fp), Some(member)) =
+                    (parts.next(), parts.next(), parts.next())
                 {
                     let key = Self::fingerprint_key(fp, member.trim());
                     if !id.is_empty() && Self::split_fingerprint(&key).is_some() {
@@ -1670,7 +1671,11 @@ impl Lock {
             out.push(' ');
             out.push_str(key);
             out.push('\n');
-            for fp in prints.get(&(id.as_str(), key.as_str())).into_iter().flatten() {
+            for fp in prints
+                .get(&(id.as_str(), key.as_str()))
+                .into_iter()
+                .flatten()
+            {
                 out.push_str(&format!("#~ {id} {fp} {key}\n"));
             }
         }

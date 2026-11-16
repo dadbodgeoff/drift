@@ -68,8 +68,7 @@ pub const MAX_NOT_READ_SHARE: f64 = crate::practices::promote::MAX_UNKNOWN_SHARE
 /// (`crate::mine`'s `layer_signals`), while the evidence here counts every kind of
 /// import. So the proposal says that an import by package name, or of types only, is
 /// not what it checks.
-pub const CHECKED_CLAUSE: &str =
-    "checked on imports by path that load code, not on type-only imports or imports by package name";
+pub const CHECKED_CLAUSE: &str = "checked on imports by path that load code, not on type-only imports or imports by package name";
 
 /// Proposals one repository is offered at once ([`offered`]); the rest are counted. As
 /// many as the suggestions `drift review` and `drift init` show by default
@@ -494,7 +493,12 @@ pub fn manifest(_repo: &RepoFacts, _kinds: &FileKinds, _mined: &[MinedRule<'_>])
 /// could not vouch for some files of the layer ([`LayeringEvidence::not_read`]): the
 /// count is of files Drift read, and the summary says what `check` reads
 /// ([`CHECKED_CLAUSE`]).
-fn layering_summary(role: &RoleSelector, target: &str, importing: usize, not_read: usize) -> String {
+fn layering_summary(
+    role: &RoleSelector,
+    target: &str,
+    importing: usize,
+    not_read: usize,
+) -> String {
     let scope = scope_of(role);
     let what = if role.dir == "." {
         format!("Files at the top of {scope}")
@@ -692,12 +696,17 @@ impl<'a> Graph<'a> {
             *layer_files.entry(a.clone()).or_default() += 1;
             if !f.parse_ok
                 || f.truncated.iter().any(|t| t == "imports")
-                || f.imports.iter().any(|i| i.module.starts_with("unresolved:"))
+                || f.imports
+                    .iter()
+                    .any(|i| i.module.starts_with("unresolved:"))
             {
                 unread.insert(f.path.as_str());
                 *not_read.entry(a.clone()).or_default() += 1;
             }
-            packages.entry(a.clone()).or_default().insert(f.package.as_str());
+            packages
+                .entry(a.clone())
+                .or_default()
+                .insert(f.package.as_str());
             package_areas
                 .entry(f.package.as_str())
                 .or_default()
@@ -824,9 +833,7 @@ impl<'a> Graph<'a> {
 
     /// Some file of the layer `area` is in the package at `package`.
     fn has_package_in(&self, area: &str, package: &str) -> bool {
-        self.packages
-            .get(area)
-            .is_some_and(|p| p.contains(package))
+        self.packages.get(area).is_some_and(|p| p.contains(package))
     }
 }
 
@@ -859,7 +866,9 @@ mod tests {
         assert_eq!(layer_of_scope("packages/ui/src/hooks"), "packages/ui");
         assert_eq!(
             layering_summary(&role, "apps/web", 779, 0),
-            format!("Code in packages/ui never imports apps/web (779 files, none do; {CHECKED_CLAUSE})")
+            format!(
+                "Code in packages/ui never imports apps/web (779 files, none do; {CHECKED_CLAUSE})"
+            )
         );
         // Files Drift did not read are named apart, never counted as files that do not
         // import (rule 2: unknown is never "none do").

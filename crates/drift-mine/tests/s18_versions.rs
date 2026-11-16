@@ -117,7 +117,10 @@ fn a_version_1_file_loads_and_round_trips_byte_for_byte() {
 /// directory. Nothing pinned it before.
 #[test]
 fn a_file_or_route_practice_raises_the_version() {
-    for extra in ["    in_file: app/api/a/route.ts\n", "    under_route: /api/a\n"] {
+    for extra in [
+        "    in_file: app/api/a/route.ts\n",
+        "    under_route: /api/a\n",
+    ] {
         let dir = tempfile::tempdir().unwrap();
         let r = dir.path();
         write(r, CONVENTIONS_FILE, &with_rule_lines(extra));
@@ -135,7 +138,11 @@ fn a_file_or_route_practice_raises_the_version() {
 fn a_mechanism_wide_practice_is_written_with_the_raised_version() {
     let dir = tempfile::tempdir().unwrap();
     let r = dir.path();
-    write(r, CONVENTIONS_FILE, &with_rule_lines("    any_mechanism:\n    - permission\n"));
+    write(
+        r,
+        CONVENTIONS_FILE,
+        &with_rule_lines("    any_mechanism:\n    - permission\n"),
+    );
     let f = load(r);
     assert!(matches!(
         &f.conventions[0].rule,
@@ -155,7 +162,11 @@ fn a_mechanism_wide_practice_is_written_with_the_raised_version() {
 fn an_any_enforcing_practice_is_written_with_the_raised_version() {
     let dir = tempfile::tempdir().unwrap();
     let r = dir.path();
-    write(r, CONVENTIONS_FILE, &with_rule_lines("    any_enforcing: true\n"));
+    write(
+        r,
+        CONVENTIONS_FILE,
+        &with_rule_lines("    any_enforcing: true\n"),
+    );
     let f = load(r);
     assert_eq!(written_version(&f), POLICY_VERSION_FORMS);
     assert!(saved(r, &f).contains("\nversion: 3\n"));
@@ -217,7 +228,9 @@ fn a_future_version_is_refused_with_what_to_do() {
         .replace("type: practice", "type: a_rule_of_the_future");
     write(r, CONVENTIONS_FILE, &text);
     let e = ConventionsFile::load(r).expect_err("refused");
-    let newer = e.downcast_ref::<NewerPolicy>().expect("a NewerPolicy error");
+    let newer = e
+        .downcast_ref::<NewerPolicy>()
+        .expect("a NewerPolicy error");
     assert_eq!(newer.version, future);
     let msg = format!("{e:#}");
     assert!(msg.contains("was written by a newer Drift"), "{msg}");
@@ -263,7 +276,11 @@ fn an_old_lock_and_a_fingerprinted_one_load() {
     let new = format!("{old}#~ D-aaaaaa 0123456789abcdef app/api/a/route.ts#GET\n");
     write(r, LOCK_FILE, &new);
     let lock = Lock::load(r).unwrap();
-    assert_eq!(lock.members(), 2, "a fingerprint line is no second violation");
+    assert_eq!(
+        lock.members(),
+        2,
+        "a fingerprint line is no second violation"
+    );
     assert!(lock.has_fingerprints());
     assert!(lock.contains("D-aaaaaa", "app/api/a/route.ts#GET"));
 }
@@ -278,7 +295,12 @@ const OLD_BASELINE: &str = "# drift security baseline: what `drift security` fou
 
 fn found(rows: &[(&str, &str)]) -> Findings {
     rows.iter()
-        .map(|(k, key)| ((k.to_string(), key.to_string()), "app/api/x/route.ts:1".to_string()))
+        .map(|(k, key)| {
+            (
+                (k.to_string(), key.to_string()),
+                "app/api/x/route.ts:1".to_string(),
+            )
+        })
         .collect()
 }
 
@@ -299,13 +321,19 @@ fn an_old_security_baseline_keeps_working() {
                 "no-guard".to_string(),
                 "app/api/a/route.ts#GET GET /api/a".to_string()
             ),
-            ("risky".to_string(), "raw_sql in lib/db.ts#query".to_string()),
+            (
+                "risky".to_string(),
+                "raw_sql in lib/db.ts#query".to_string()
+            ),
         ])
     );
     let now = found(&[
         ("no-guard", "app/api/a/route.ts#GET GET /api/a"),
         ("risky", "raw_sql in lib/db.ts#query"),
-        ("unscoped-key", "app/api/c/route.ts#GET GET /api/c takes orgId"),
+        (
+            "unscoped-key",
+            "app/api/c/route.ts#GET GET /api/c takes orgId",
+        ),
         ("no-guard", "app/api/d/route.ts#GET GET /api/d"),
         (
             "workflow",

@@ -78,7 +78,10 @@ fn an_older_baseline_lists_what_a_wider_reading_finds_and_fails_nothing() {
     let (code, _, err) = drift(r, &["security", "--write-baseline"]);
     assert_eq!(code, 0, "{err}");
     let lock = fs::read_to_string(r.join(".drift/security.lock")).unwrap();
-    assert!(lock.contains("no-guard\tserver.ts#GET /open GET /open\n"), "{lock}");
+    assert!(
+        lock.contains("no-guard\tserver.ts#GET /open GET /open\n"),
+        "{lock}"
+    );
 
     // The day of the upgrade: the committed baseline is the older release's, which
     // did not find this row; the code did not change.
@@ -93,9 +96,16 @@ fn an_older_baseline_lists_what_a_wider_reading_finds_and_fails_nothing() {
         out.contains("finding(s) come from readings newer than this baseline; they are listed and do not fail the check; write the baseline again to start checking them: `drift security --write-baseline`"),
         "{out}"
     );
-    assert!(out.contains("  server.ts#GET /open GET /open  (server.ts:"), "{out}");
+    assert!(
+        out.contains("  server.ts#GET /open GET /open  (server.ts:"),
+        "{out}"
+    );
     // Said once.
-    assert_eq!(out.matches("readings newer than this baseline").count(), 1, "{out}");
+    assert_eq!(
+        out.matches("readings newer than this baseline").count(),
+        1,
+        "{out}"
+    );
     // F10 (review R10 F-6): and where to read what changed. Before, nothing in
     // `drift check` named `drift upgrade`.
     assert!(out.contains("drift: `drift upgrade` shows what this Drift reads differently from the one that wrote these files; it changes nothing by itself"), "{out}");
@@ -104,7 +114,10 @@ fn an_older_baseline_lists_what_a_wider_reading_finds_and_fails_nothing() {
     let (code, json, _) = drift(r, &["check", "--format", "json"]);
     assert_eq!(code, 0, "{json}");
     let v: serde_json::Value = serde_json::from_str(&json).unwrap();
-    assert!(v["security"]["new_in_drift"]["no-guard"].is_array(), "{v:#}");
+    assert!(
+        v["security"]["new_in_drift"]["no-guard"].is_array(),
+        "{v:#}"
+    );
     assert_eq!(v["security"]["added"], serde_json::json!({}), "{v:#}");
 }
 
@@ -128,7 +141,10 @@ fn a_baseline_written_now_fails_on_a_new_finding() {
     );
     let (code, out, _) = drift(r, &["check"]);
     assert_eq!(code, 1, "{out}");
-    assert!(out.contains("[no-guard]\n  server.ts#GET /more GET /more  (server.ts:"), "{out}");
+    assert!(
+        out.contains("[no-guard]\n  server.ts#GET /more GET /more  (server.ts:"),
+        "{out}"
+    );
     assert!(!out.contains("readings newer than this baseline"), "{out}");
     assert!(!out.contains("`drift upgrade` shows"), "{out}");
 }
@@ -152,9 +168,7 @@ fn a_factory_used_under_a_parameterised_prefix_is_a_mount_not_a_route() {
     write(
         r,
         "server.ts",
-        &server(
-            "import { loadOrg } from \"./lib/org\";\napp.use(\"/orgs/:id\", loadOrg());\n",
-        ),
+        &server("import { loadOrg } from \"./lib/org\";\napp.use(\"/orgs/:id\", loadOrg());\n"),
     );
     let (facts, _) = drift_ts::scan(
         r,
@@ -167,12 +181,18 @@ fn a_factory_used_under_a_parameterised_prefix_is_a_mount_not_a_route() {
     let inv = drift_mine::security::inventory(&facts);
     let names: Vec<&str> = inv.entry_points.iter().map(|e| e.symbol.as_str()).collect();
     assert!(names.contains(&"GET /open"), "{names:?}");
-    assert!(!names.iter().any(|n| n.starts_with("ALL /orgs")), "{names:?}");
+    assert!(
+        !names.iter().any(|n| n.starts_with("ALL /orgs")),
+        "{names:?}"
+    );
     // Nor in the copy mining reads.
     let measured: Vec<&str> = facts
         .files
         .iter()
         .flat_map(|f| f.entry_points.iter().map(|e| e.symbol.as_str()))
         .collect();
-    assert!(!measured.iter().any(|n| n.starts_with("ALL ")), "{measured:?}");
+    assert!(
+        !measured.iter().any(|n| n.starts_with("ALL ")),
+        "{measured:?}"
+    );
 }

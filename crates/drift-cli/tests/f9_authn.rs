@@ -100,8 +100,7 @@ fn write(files: &[(&str, &str)]) -> tempfile::TempDir {
     dir
 }
 
-const NEXT_PACKAGE: &str =
-    "{ \"name\": \"web\", \"dependencies\": { \"next\": \"14.2.3\" } }\n";
+const NEXT_PACKAGE: &str = "{ \"name\": \"web\", \"dependencies\": { \"next\": \"14.2.3\" } }\n";
 
 /// Pins: an `Origin` check against the app's URL read `known
 /// service_auth:header:origin` after S15a, so a route no credential guards counted
@@ -126,7 +125,8 @@ fn an_origin_compared_with_an_environment_value_is_not_service_auth() {
     assert!(!post.contains("service_auth"), "{authn:?}");
 }
 
-const TRPC_PACKAGE: &str = "{ \"name\": \"api\", \"dependencies\": { \"@trpc/server\": \"10.45.0\" } }\n";
+const TRPC_PACKAGE: &str =
+    "{ \"name\": \"api\", \"dependencies\": { \"@trpc/server\": \"10.45.0\" } }\n";
 
 /// Pins: `const base = makeProcedure()` (a function of the repository, which may
 /// add the guard), `publicProcedure = base`, `adminProcedure =

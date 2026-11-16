@@ -4054,7 +4054,9 @@ impl<'r> Linker<'r> {
                             s.param_passes_at
                                 .iter()
                                 .map(|(callee, arg, at)| (self.canon(rel, callee), arg, at))
-                                .filter(|(c, _, _)| !c.starts_with("global#") && !c.starts_with("pkg:"))
+                                .filter(|(c, _, _)| {
+                                    !c.starts_with("global#") && !c.starts_with("pkg:")
+                                })
                                 .map(|(c, arg, at)| {
                                     format!("{}{c}\t{arg}\t{at}", drift_core::controls::PASSES_AT)
                                 }),
@@ -4063,7 +4065,9 @@ impl<'r> Linker<'r> {
                             s.made_passes_at
                                 .iter()
                                 .map(|(callee, arg)| (self.canon(rel, callee), arg))
-                                .filter(|(c, _)| !c.starts_with("global#") && !c.starts_with("pkg:"))
+                                .filter(|(c, _)| {
+                                    !c.starts_with("global#") && !c.starts_with("pkg:")
+                                })
                                 .map(|(c, arg)| {
                                     format!("{}{c}\t{arg}", drift_core::controls::PASSES_MADE_AT)
                                 }),

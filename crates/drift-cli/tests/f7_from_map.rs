@@ -149,7 +149,10 @@ fn the_mined_part_does_not_depend_on_the_proposals() {
     if raised {
         assert_eq!(version_line(&with), "version: 3", "{with}");
         assert!(out.contains("is now policy format 3 because"), "{out}");
-        assert!(out.contains("`drift init --no-from-map` writes none of them"), "{out}");
+        assert!(
+            out.contains("`drift init --no-from-map` writes none of them"),
+            "{out}"
+        );
     } else {
         assert_eq!(version_line(&with), version_line(&plain), "{with}");
         assert!(!out.contains("is now policy format"), "{out}");
@@ -175,7 +178,10 @@ fn a_proposal_accepted_by_hand_is_baselined_once() {
             })
             .expect("the sign-in proposal");
         assert_eq!(c.status, Status::Proposed);
-        assert!(lock_lines(r, &c.id).is_empty(), "a proposal is not baselined");
+        assert!(
+            lock_lines(r, &c.id).is_empty(),
+            "a proposal is not baselined"
+        );
         c.status = Status::Accepted;
         c.id.clone()
     };

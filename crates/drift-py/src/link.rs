@@ -5075,11 +5075,7 @@ impl<'r> Linker<'r> {
                             &s.typed_calls,
                         ));
                         c.extend(self.row_sets(fi, &s.row_sets));
-                        c.extend(
-                            s.fed_sinks
-                                .iter()
-                                .map(|k| fed_control(k)),
-                        );
+                        c.extend(s.fed_sinks.iter().map(|k| fed_control(k)));
                         // Handed on to code of the repository: what a built-in or a
                         // package does with it is not followed.
                         c.extend(
@@ -5506,9 +5502,7 @@ impl<'r> Linker<'r> {
             .zip(&u.typed)
             .filter(|(p, _)| match p {
                 RawParamKind::Input => true,
-                RawParamKind::Alias(r) => {
-                    self.dep_items(fi, &RawDep::Alias(r.clone())).is_empty()
-                }
+                RawParamKind::Alias(r) => self.dep_items(fi, &RawDep::Alias(r.clone())).is_empty(),
                 RawParamKind::Dep | RawParamKind::Other => false,
             })
             .map(|(_, t)| t)

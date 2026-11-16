@@ -164,7 +164,11 @@ fn repo(older_reading: bool) -> tempfile::TempDir {
     let (code, out, err) = drift(r, &["review", "--accept", &ids.join(",")]);
     assert_eq!(code, 0, "{out}{err}");
     let yaml = read(r, ".drift/conventions.yaml");
-    write(r, ".drift/conventions.yaml", &without_accepted_evidence(&yaml));
+    write(
+        r,
+        ".drift/conventions.yaml",
+        &without_accepted_evidence(&yaml),
+    );
     let lock = read(r, "drift.lock");
     assert!(lock.contains("app/api/r39/route.ts#GET"), "{lock}");
     if older_reading {
@@ -199,12 +203,18 @@ fn the_dry_run_reports_and_changes_no_byte() {
         "{out}"
     );
     assert!(out.contains("app/api/r39/route.ts#GET (line "), "{out}");
-    assert!(out.contains("newly violated by code that did not change: "), "{out}");
+    assert!(
+        out.contains("newly violated by code that did not change: "),
+        "{out}"
+    );
     assert!(
         out.contains("when accepted: not recorded (accepted before Drift kept it)"),
         "{out}"
     );
-    assert!(out.contains("  drift.lock: records no Drift version"), "{out}");
+    assert!(
+        out.contains("  drift.lock: records no Drift version"),
+        "{out}"
+    );
     assert!(out.contains("Nothing was changed."), "{out}");
     assert!(
         out.contains("(drift upgrade --apply does it): drift upgrade --apply"),
@@ -230,17 +240,29 @@ fn apply_baselines_only_what_the_reading_added_and_twice_is_once() {
         "{out}{err}\n{lock}"
     );
     assert!(
-        lock.lines().any(|l| (l.starts_with("#~ ") || l.contains(" ~"))
-            && l.ends_with(" app/api/r39/route.ts#GET")),
+        lock.lines()
+            .any(|l| (l.starts_with("#~ ") || l.contains(" ~"))
+                && l.ends_with(" app/api/r39/route.ts#GET")),
         "{lock}"
     );
-    assert!(!lock.contains("r40"), "a change's violation was baselined:\n{lock}");
-    assert_eq!(read(r, ".drift/conventions.yaml"), policy, "a decision changed");
+    assert!(
+        !lock.contains("r40"),
+        "a change's violation was baselined:\n{lock}"
+    );
+    assert_eq!(
+        read(r, ".drift/conventions.yaml"),
+        policy,
+        "a decision changed"
+    );
     assert!(out.contains("Done\n  - baselined "), "{out}");
 
     let after = snapshot(r);
     let (_, out, err) = drift(r, &["upgrade", "--apply"]);
-    assert_eq!(after, snapshot(r), "a second --apply changed a file: {out}{err}");
+    assert_eq!(
+        after,
+        snapshot(r),
+        "a second --apply changed a file: {out}{err}"
+    );
     let (_, out, _) = drift(r, &["upgrade"]);
     assert!(
         out.contains("0 appear only because this Drift reads the code differently"),
@@ -298,7 +320,10 @@ fn a_half_written_lock_is_named_with_its_line() {
     let before = snapshot(r);
     let (code, out, _) = drift(r, &["upgrade", "--apply"]);
     assert_eq!(code, 2, "{out}");
-    assert!(out.contains(&format!("drift.lock line {n}: `D-abc`")), "{out}");
+    assert!(
+        out.contains(&format!("drift.lock line {n}: `D-abc`")),
+        "{out}"
+    );
     assert_eq!(before, snapshot(r));
 }
 
@@ -347,8 +372,14 @@ fn older_settings_are_refreshed_and_edited_ones_left() {
     write(r, ".claude/settings.local.json", &edited);
     let (code, out, _) = drift(r, &["upgrade"]);
     assert_eq!(code, 3, "{out}");
-    assert!(out.contains(".claude/settings.json (claude-settings): older"), "{out}");
-    assert!(out.contains(".claude/settings.local.json (claude-settings): edited"), "{out}");
+    assert!(
+        out.contains(".claude/settings.json (claude-settings): older"),
+        "{out}"
+    );
+    assert!(
+        out.contains(".claude/settings.local.json (claude-settings): edited"),
+        "{out}"
+    );
 
     let (code, out, _) = drift(r, &["upgrade", "--apply"]);
     // What is left is the edited file, for a person.
@@ -371,7 +402,10 @@ fn older_settings_are_refreshed_and_edited_ones_left() {
     // Refreshed once: the next run finds it current and writes nothing.
     let after = snapshot(r);
     let (_, out, _) = drift(r, &["upgrade", "--apply"]);
-    assert!(out.contains(".claude/settings.json (claude-settings): current"), "{out}");
+    assert!(
+        out.contains(".claude/settings.json (claude-settings): current"),
+        "{out}"
+    );
     assert_eq!(after, snapshot(r));
 }
 
@@ -427,10 +461,17 @@ fn the_json_report_is_deterministic() {
     let reading = v["violations"]["reading_only"].as_array().unwrap();
     assert!(!reading.is_empty(), "{v}");
     assert!(
-        reading.iter().all(|r| r["member"] == "app/api/r39/route.ts#GET"),
+        reading
+            .iter()
+            .all(|r| r["member"] == "app/api/r39/route.ts#GET"),
         "{v}"
     );
-    assert!(v["violations"]["changed_code"].as_array().unwrap().is_empty());
+    assert!(
+        v["violations"]["changed_code"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
     let lock = v["files"]
         .as_array()
         .unwrap()
@@ -463,10 +504,17 @@ fn without_git_nothing_is_baselined() {
     let (code, out, err) = drift_with(r, &["--no-cache"], &["upgrade", "--apply"], &env);
     assert_eq!(code, 3, "{out}{err}");
     assert!(out.contains("\n  0 appear only because"), "{out}");
-    assert!(out.contains("there is no git history to compare with"), "{out}");
+    assert!(
+        out.contains("there is no git history to compare with"),
+        "{out}"
+    );
     assert!(out.contains("app/api/r39/route.ts#GET (line "), "{out}");
     assert!(!out.contains("\nDone\n"), "{out}");
-    assert_eq!(read(r, "drift.lock"), lock, "a violation Drift cannot tell about was baselined");
+    assert_eq!(
+        read(r, "drift.lock"),
+        lock,
+        "a violation Drift cannot tell about was baselined"
+    );
 }
 
 /// Pins: in a shallow clone, the commit that baselined a convention may be missing, so
@@ -488,7 +536,11 @@ fn a_shallow_clone_baselines_nothing() {
     assert_eq!(code, 3, "{out}{err}");
     assert!(out.contains("the clone is shallow"), "{out}");
     assert!(out.contains("\n  0 appear only because"), "{out}");
-    assert_eq!(read(&c, "drift.lock"), lock, "a shallow clone's violation was baselined");
+    assert_eq!(
+        read(&c, "drift.lock"),
+        lock,
+        "a shallow clone's violation was baselined"
+    );
 }
 
 /// Pins: a line a person took out of `drift.lock` (here, only in the working copy) is

@@ -141,9 +141,14 @@ app.listen(3000);
         reaches(&inv, "GET /rest/products/search")
     );
     assert!(
-        !inv.entry_points.iter().any(|e| e.symbol.starts_with("ALL /ftp")),
+        !inv.entry_points
+            .iter()
+            .any(|e| e.symbol.starts_with("ALL /ftp")),
         "{:?}",
-        inv.entry_points.iter().map(|e| &e.symbol).collect::<Vec<_>>()
+        inv.entry_points
+            .iter()
+            .map(|e| &e.symbol)
+            .collect::<Vec<_>>()
     );
     let left = unlisted(&inv);
     assert!(!left.contains(&"searchProducts".to_string()), "{left:?}");
@@ -168,9 +173,14 @@ app.listen(3000);
         ),
     ]);
     assert!(
-        !inv.entry_points.iter().any(|e| e.symbol.starts_with("ALL /ftp")),
+        !inv.entry_points
+            .iter()
+            .any(|e| e.symbol.starts_with("ALL /ftp")),
         "{:?}",
-        inv.entry_points.iter().map(|e| &e.symbol).collect::<Vec<_>>()
+        inv.entry_points
+            .iter()
+            .map(|e| &e.symbol)
+            .collect::<Vec<_>>()
     );
 }
 

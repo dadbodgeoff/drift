@@ -46,10 +46,13 @@ fn file<'a>(r: &'a RepoFacts, path: &str) -> &'a FileFacts {
 }
 
 fn symbol<'a>(f: &'a FileFacts, name: &str) -> &'a Symbol {
-    f.symbols.iter().find(|s| s.name == name).unwrap_or_else(|| {
-        let names: Vec<&str> = f.symbols.iter().map(|s| s.name.as_str()).collect();
-        panic!("{name} not in {}: {names:?}", f.path)
-    })
+    f.symbols
+        .iter()
+        .find(|s| s.name == name)
+        .unwrap_or_else(|| {
+            let names: Vec<&str> = f.symbols.iter().map(|s| s.name.as_str()).collect();
+            panic!("{name} not in {}: {names:?}", f.path)
+        })
 }
 
 fn has(s: &Symbol, control: &str) -> bool {
@@ -89,12 +92,23 @@ export async function action() {
     ]);
     let measured = file(&r, "app/routes/notes.ts");
     assert!(!has(symbol(measured, "loader"), controls::RETURNS_VALUE));
-    assert!(!has(symbol(measured, "loader"), controls::ANSWERS_BY_RETURN));
+    assert!(!has(
+        symbol(measured, "loader"),
+        controls::ANSWERS_BY_RETURN
+    ));
     let listed = r.listed();
     let f = file(&listed, "app/routes/notes.ts");
     let loader = symbol(f, "loader");
-    assert!(has(loader, controls::RETURNS_VALUE), "{:?}", loader.controls);
-    assert!(has(loader, controls::ANSWERS_BY_RETURN), "{:?}", loader.controls);
+    assert!(
+        has(loader, controls::RETURNS_VALUE),
+        "{:?}",
+        loader.controls
+    );
+    assert!(
+        has(loader, controls::ANSWERS_BY_RETURN),
+        "{:?}",
+        loader.controls
+    );
     // Returns nothing: sends nothing Drift read.
     assert!(!has(symbol(f, "action"), controls::ANSWERS_BY_RETURN));
     // No route file: nothing reads what it returns.
@@ -161,7 +175,11 @@ export async function action({ request }: { request: Request }) {
     assert!(!has(measured, &unread));
     let listed = r.listed();
     let action = symbol(file(&listed, "app/routes/admin.cache.ts"), "action");
-    assert!(!has_prefix(action, controls::REFUSES_SECRET), "{:?}", action.controls);
+    assert!(
+        !has_prefix(action, controls::REFUSES_SECRET),
+        "{:?}",
+        action.controls
+    );
     assert!(has(action, &unread), "{:?}", action.controls);
     let literal = symbol(file(&listed, "app/routes/admin.literal.ts"), "action");
     assert!(!has_prefix(literal, controls::REFUSES_SECRET));
@@ -170,8 +188,7 @@ export async function action({ request }: { request: Request }) {
     assert!(!has_prefix(nested, controls::REFUSES_SECRET));
 }
 
-const TRPC_PACKAGE: &str =
-    r#"{ "name": "api", "dependencies": { "@trpc/server": "10.45.0", "zod": "3.23.8", "left-pad": "1.3.0" } }"#;
+const TRPC_PACKAGE: &str = r#"{ "name": "api", "dependencies": { "@trpc/server": "10.45.0", "zod": "3.23.8", "left-pad": "1.3.0" } }"#;
 
 const TRPC: &str = r#"import { initTRPC, TRPCError } from "@trpc/server";
 
@@ -320,6 +337,10 @@ export function goesOn(req: any, res: any, next: any) {
     assert!(!refuses(measured));
     let listed = r.listed();
     let f = file(&listed, "src/history.ts");
-    assert!(refuses(symbol(f, "history")), "{:?}", symbol(f, "history").body_checks);
+    assert!(
+        refuses(symbol(f, "history")),
+        "{:?}",
+        symbol(f, "history").body_checks
+    );
     assert!(!refuses(symbol(f, "goesOn")));
 }

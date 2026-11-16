@@ -271,7 +271,11 @@ fn practices_into(
         departures
             .iter()
             .filter(|d| d.concern == c.concern && c.place.holds(&d.package, &d.path))
-            .flat_map(|d| d.units.iter().map(move |u| (d.path.as_str(), u.symbol.as_str())))
+            .flat_map(|d| {
+                d.units
+                    .iter()
+                    .map(move |u| (d.path.as_str(), u.symbol.as_str()))
+            })
             .filter(|(path, symbol)| {
                 c.exceptions
                     .iter()
@@ -364,7 +368,9 @@ pub fn choose(
             .iter()
             .find(|o| o.concern == c.concern && places_overlap(&o.place, &c.place))
         {
-            Some(Reason::Overlaps(promote::convention_id(&o.place, &o.concern)))
+            Some(Reason::Overlaps(promote::convention_id(
+                &o.place, &o.concern,
+            )))
         } else if chosen.len() >= MAX_PRACTICES {
             Some(Reason::OverCap)
         } else {
@@ -604,8 +610,7 @@ fn census_notes(
         })
         .collect();
     let wiring = drift_mine::wiring_proposals::wiring(repo, kinds, &rules);
-    c.notes
-        .extend(drift_mine::wiring_proposals::notes(&wiring));
+    c.notes.extend(drift_mine::wiring_proposals::notes(&wiring));
     let proposed: Vec<&Convention> = c.proposals.iter().map(|p| &p.convention).collect();
     let instructions = drift_mine::declared::instruction_notes(root, &proposed);
     c.notes.extend(instructions);
@@ -686,7 +691,10 @@ fn proposal_lines(p: &FromMap) -> Vec<String> {
             if *settles > 0 {
                 line.push_str(&format!(" ({settles} named as departures today)"));
             }
-            line.push_str(&format!("; {} could not be read (never reported)", candidate.unknown));
+            line.push_str(&format!(
+                "; {} could not be read (never reported)",
+                candidate.unknown
+            ));
             out.push(line);
         }
         Basis::Layering { evidence, unknown } => {
@@ -910,7 +918,14 @@ pub fn for_init_with<'m>(
     } else {
         let report = map();
         let known = known(Some(&*policy), &[]);
-        collect(repo, report, &policy.file_kinds, &known, Some(&*policy), python_on)
+        collect(
+            repo,
+            report,
+            &policy.file_kinds,
+            &known,
+            Some(&*policy),
+            python_on,
+        )
     };
     write(policy, &c);
     c.raised_by = raised_by(policy);
@@ -1106,7 +1121,8 @@ fn card(report: &PracticesReport, known: &[Known<'_>], c: &Convention) -> Option
                 c.evidence.holders, c.evidence.total
             ));
             out.push(
-                "  y accepts it, as a mined layering convention is accepted (advise mode)".to_string(),
+                "  y accepts it, as a mined layering convention is accepted (advise mode)"
+                    .to_string(),
             );
         }
     }
@@ -1236,14 +1252,11 @@ pub fn accept_ids(
         .iter()
         .flat_map(|l| l.iter())
         .filter(|id| {
-            policy
-                .conventions
-                .iter()
-                .any(|c| {
-                    &c.id == *id
-                        && undecided(c)
-                        && (c.rule.is_practice() || c.from_map.as_deref() == Some(DECLARED))
-                })
+            policy.conventions.iter().any(|c| {
+                &c.id == *id
+                    && undecided(c)
+                    && (c.rule.is_practice() || c.from_map.as_deref() == Some(DECLARED))
+            })
         })
         .cloned()
         .collect();
@@ -1479,7 +1492,8 @@ mod tests {
             raised_by: 1,
         });
         assert!(
-            said.iter().any(|l| l.contains("is now policy format 3 because 1 proposal(s) from the map")
+            said.iter().any(|l| l
+                .contains("is now policy format 3 because 1 proposal(s) from the map")
                 && l.contains("`drift init --no-from-map` writes none of them")),
             "{said:?}"
         );

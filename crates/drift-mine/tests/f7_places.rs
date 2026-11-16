@@ -45,7 +45,12 @@ fn report(units: Vec<UnitRow>) -> PracticesReport {
             unit: "entry_point".into(),
             variants: vec![
                 variant("P-auth", AUTH, "wrap withAuth", VariantKind::Known),
-                variant("P-member", MEMBER, "dependency require_member", VariantKind::Known),
+                variant(
+                    "P-member",
+                    MEMBER,
+                    "dependency require_member",
+                    VariantKind::Known,
+                ),
                 variant("P-none", "none", "no guard found", VariantKind::None),
             ],
             units,
@@ -104,13 +109,27 @@ fn a_route_place_overlaps_the_directories_and_files_of_its_package() {
 #[test]
 fn a_catch_all_route_is_counted_as_not_read() {
     let mut units = tenant_units();
-    units.push(unit("views/c1.py", "P-none", Some("/api/workspaces/[...slug]")));
-    units.push(unit("views/c2.py", "P-none", Some("/api/workspaces/<path:rest>")));
+    units.push(unit(
+        "views/c1.py",
+        "P-none",
+        Some("/api/workspaces/[...slug]"),
+    ));
+    units.push(unit(
+        "views/c2.py",
+        "P-none",
+        Some("/api/workspaces/<path:rest>"),
+    ));
     let r = report(units);
     let p = route("/api/workspaces/[*]/projects/[*]");
     let c = candidate(&r, "P-member", Some(&p), &[], false).unwrap();
     assert_eq!(
-        (c.follows, c.exceptions.len(), c.unknown, c.unread_routes, c.total),
+        (
+            c.follows,
+            c.exceptions.len(),
+            c.unknown,
+            c.unread_routes,
+            c.total
+        ),
         (10, 0, 2, 2, 12)
     );
     assert_eq!(Place::parse(".:/api/[...slug]", &r), None);

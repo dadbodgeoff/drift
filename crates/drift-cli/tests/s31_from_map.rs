@@ -99,14 +99,18 @@ fn layered(biome: &str) -> tempfile::TempDir {
         write(
             r,
             &format!("core/{n}.ts"),
-            &format!("import {{ {next} }} from \"./{next}\";\n\nexport function {n}() {{\n  return {next}();\n}}\n"),
+            &format!(
+                "import {{ {next} }} from \"./{next}\";\n\nexport function {n}() {{\n  return {next}();\n}}\n"
+            ),
         );
     }
     for n in ["home", "list", "detail"] {
         write(
             r,
             &format!("ui/{n}.ts"),
-            &format!("import {{ part0 }} from \"../core/part0\";\n\nexport function {n}() {{\n  return part0();\n}}\n"),
+            &format!(
+                "import {{ part0 }} from \"../core/part0\";\n\nexport function {n}() {{\n  return part0();\n}}\n"
+            ),
         );
     }
     write(r, "biome.json", biome);
@@ -183,7 +187,8 @@ fn accepting_a_declared_rule_records_its_breaks() {
     drift(r, &["--no-cache", "review", "--accept", &id]);
     let lock = std::fs::read_to_string(r.join("drift.lock")).unwrap_or_default();
     assert!(
-        lock.lines().any(|l| l.starts_with(&format!("{id} core/bad.ts#"))),
+        lock.lines()
+            .any(|l| l.starts_with(&format!("{id} core/bad.ts#"))),
         "the break existing at acceptance is recorded:\n{lock}"
     );
     let out = drift(r, &["--no-cache", "check", "--format", "json"]);
@@ -206,15 +211,21 @@ fn an_unreadable_configuration_yields_nothing() {
     let cut = &BIOME[..BIOME.find("\"level\"").unwrap()];
     let dir = layered(cut);
     let entries = from_map(dir.path());
-    assert!(
-        of_kind(&entries, "declared").is_empty(),
-        "{entries:#?}"
-    );
+    assert!(of_kind(&entries, "declared").is_empty(), "{entries:#?}");
 }
 
 const SERVICES: &[&str] = &[
-    "users", "billing", "orders", "invoices", "payments", "reports", "refunds", "coupons",
-    "taxes", "ledgers", "shipments",
+    "users",
+    "billing",
+    "orders",
+    "invoices",
+    "payments",
+    "reports",
+    "refunds",
+    "coupons",
+    "taxes",
+    "ledgers",
+    "shipments",
 ];
 
 fn cap(s: &str) -> String {
@@ -275,10 +286,7 @@ fn nest(unread: bool) -> tempfile::TempDir {
 fn wiring_note(r: &Path) -> Value {
     let entries = from_map(r);
     let notes = of_kind(&entries, "wiring");
-    let found: Vec<&Value> = notes
-        .iter()
-        .filter(|n| n["note"] == "wiring")
-        .collect();
+    let found: Vec<&Value> = notes.iter().filter(|n| n["note"] == "wiring").collect();
     assert_eq!(found.len(), 1, "{entries:#?}");
     found[0].clone()
 }
@@ -300,8 +308,7 @@ fn a_wiring_regularity_is_listed_and_never_written() {
     assert_eq!(w["not_read"], 0, "{w:#}");
     assert_eq!(w["unknown"], 0, "{w:#}");
     assert_eq!(
-        w["unregistered"][0],
-        "src/shipments/shipments.service.ts#ShipmentsService",
+        w["unregistered"][0], "src/shipments/shipments.service.ts#ShipmentsService",
         "{w:#}"
     );
     let text = drift(r, &["--no-cache", "census", "--from-map"]);

@@ -2263,7 +2263,9 @@ impl<'t> Lowerer<'t> {
                         tmp.catches
                             .iter()
                             .any(|c| c.does.iter().any(|d| matches!(d, RawDoes::Respond(_))))
-                            .then(|| format!("{}{}", crate::raw::SINCE, drift_core::CATCH_RESPONDS)),
+                            .then(|| {
+                                format!("{}{}", crate::raw::SINCE, drift_core::CATCH_RESPONDS)
+                            }),
                     )
                     // A 403 the method answers outside any `except`, as a function's
                     // `responses` hold it.

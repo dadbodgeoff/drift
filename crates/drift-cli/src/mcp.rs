@@ -470,8 +470,7 @@ fn call(project: &Project, no_cache: bool, name: &str, args: &Value) -> anyhow::
             // new file without content, and say why.
             let unparsed = facts.stack_unavailable().contains(&rel.as_str());
             // (condition, convention); the condition is set for a new file without content.
-            let mut rules: Vec<(Option<String>, &Convention)> = if let Some(convs) = by_content
-            {
+            let mut rules: Vec<(Option<String>, &Convention)> = if let Some(convs) = by_content {
                 convs.into_iter().map(|c| (None, c)).collect()
             } else {
                 match facts.files.iter().find(|f| f.path == rel) {
@@ -551,9 +550,8 @@ fn call(project: &Project, no_cache: bool, name: &str, args: &Value) -> anyhow::
                 let mut seen: Vec<(Option<String>, &str, Vec<String>)> = Vec::new();
                 // A file that avoids an import is no model to copy for one that has it
                 // ([`crate::project::copy_hint`]): a layering rule names no example.
-                let layering = |c: &Convention| {
-                    drift_mine::tier::rule_kind(&c.rule) == "avoids:import"
-                };
+                let layering =
+                    |c: &Convention| drift_mine::tier::rule_kind(&c.rule) == "avoids:import";
                 for (when, c) in rules.iter().filter(|(_, c)| !layering(c)) {
                     let line = format!("[{}] {}", sanitize(&c.id, 16), sanitize(&c.summary, 240));
                     match seen
@@ -1017,8 +1015,11 @@ fn call(project: &Project, no_cache: bool, name: &str, args: &Value) -> anyhow::
                         crate::project::cache_dir(&project.root, no_cache),
                         &facts,
                     );
-                    let map =
-                        crate::practices::report_units_kept(&project.root, &facts, derived.as_ref());
+                    let map = crate::practices::report_units_kept(
+                        &project.root,
+                        &facts,
+                        derived.as_ref(),
+                    );
                     let mut one = project.policy.clone();
                     one.conventions.retain(|x| x.id == c.id);
                     let checked = drift_mine::practices::promote::check(
@@ -1390,7 +1391,9 @@ fn not_told_lines(r: &drift_mine::practices::PracticesReport, roles: &[String]) 
     if out.len() > MAX_NOT_TOLD {
         let more = out.len() - MAX_NOT_TOLD;
         out.truncate(MAX_NOT_TOLD);
-        out.push(format!("+{more} more recipes with units not read: `drift practices`"));
+        out.push(format!(
+            "+{more} more recipes with units not read: `drift practices`"
+        ));
     }
     out
 }
@@ -1413,15 +1416,11 @@ fn check_status_lines(
 ) -> Vec<String> {
     use drift_mine::practices::promote;
     let conv = |id: &str| {
-        project
-            .policy
-            .conventions
-            .iter()
-            .find(|c| {
-                c.id == id
-                    && c.status == drift_mine::policy::Status::Accepted
-                    && crate::practices::is_promoted(c)
-            })
+        project.policy.conventions.iter().find(|c| {
+            c.id == id
+                && c.status == drift_mine::policy::Status::Accepted
+                && crate::practices::is_promoted(c)
+        })
     };
     let concern_of = |c: &Convention| match &c.rule {
         drift_mine::mine::Rule::Practice { concern, .. } => concern.clone(),
@@ -2266,7 +2265,10 @@ mod tests {
         );
         assert!(!out.contains("a new violation blocks"), "{out}");
         // Nothing an agent may not do: no command that changes policy.
-        for out in [explain_text(&c, &[], &now), explain_text(&file, &[], &stale)] {
+        for out in [
+            explain_text(&c, &[], &now),
+            explain_text(&file, &[], &stale),
+        ] {
             assert!(!out.contains("drift review"), "{out}");
             assert!(!out.contains("drift practices promote"), "{out}");
         }
@@ -2360,7 +2362,10 @@ mod tests {
         // an agent as advice, with why (it was given as "blocks").
         c.evidence.role_members = Some(40);
         assert!(rule_notes(&c, None).is_empty());
-        let notes = rule_notes(&c, Some("12 of the 40 members Drift can tell follow it now"));
+        let notes = rule_notes(
+            &c,
+            Some("12 of the 40 members Drift can tell follow it now"),
+        );
         assert_eq!(notes.len(), 1, "{notes:?}");
         assert_eq!(
             notes[0],
@@ -2429,7 +2434,9 @@ mod tests {
         let lines = not_told_lines(&r, &[]);
         assert_eq!(lines.len(), 1, "{lines:?}");
         assert!(
-            lines[0].contains(": authn 9 of 52 (Drift could not tell how these do it: unknown, not a pass)"),
+            lines[0].contains(
+                ": authn 9 of 52 (Drift could not tell how these do it: unknown, not a pass)"
+            ),
             "{lines:?}"
         );
         harmless(&lines[0]);

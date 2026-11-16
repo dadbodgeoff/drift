@@ -1415,8 +1415,7 @@ impl Lowerer<'_> {
                     ..
                 }) => {
                     let top = spec.split('.').next().unwrap_or_default();
-                    crate::stdlib::is_stdlib(top)
-                        && !matches!(top, "typing" | "typing_extensions")
+                    crate::stdlib::is_stdlib(top) && !matches!(top, "typing" | "typing_extensions")
                 }
                 // A class of a package or of the repository: not read here.
                 Some(_) | None => false,

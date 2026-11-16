@@ -20,7 +20,7 @@ use crate::raw::*;
 use crate::stdlib;
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 72;
+pub const LOWERING_VERSION: u32 = 73;
 
 /// Functions of libraries, by their last name, whose call in a body is a guard or
 /// not by its arguments (`verify_jwt_in_request(optional=True)`): each call of a
@@ -691,7 +691,9 @@ impl<'t> Lowerer<'t> {
                     self.bind(f.name.as_str(), RawBinding::Local, ctx);
                 }
                 Stmt::ClassDef(c) => {
-                    self.class_defs.entry(c.name.as_str().to_string()).or_insert(c);
+                    self.class_defs
+                        .entry(c.name.as_str().to_string())
+                        .or_insert(c);
                     self.bind(c.name.as_str(), RawBinding::Local, ctx)
                 }
                 Stmt::Assign(a) => {
@@ -1688,7 +1690,11 @@ impl Lowerer<'_> {
                                     Some(s) => {
                                         found.insert(s);
                                     }
-                                    None if !matches!(a, Expr::StringLiteral(_) | Expr::FString(_)) => {
+                                    None if !matches!(
+                                        a,
+                                        Expr::StringLiteral(_) | Expr::FString(_)
+                                    ) =>
+                                    {
                                         *unread = true;
                                     }
                                     None => {}
@@ -1749,7 +1755,9 @@ impl Lowerer<'_> {
             return Some(s);
         }
         match c.arguments.as_deref().and_then(|a| a.args.first()) {
-            Some(Expr::Name(b)) if b.id.as_str() != name => self.class_status_at(b.id.as_str(), depth + 1),
+            Some(Expr::Name(b)) if b.id.as_str() != name => {
+                self.class_status_at(b.id.as_str(), depth + 1)
+            }
             _ => None,
         }
     }

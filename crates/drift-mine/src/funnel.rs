@@ -722,7 +722,9 @@ pub fn dropped_card(c: &Candidate, reason: crate::show::Withheld) -> Dropped {
         Withheld::FamilyNotAdmitted => (
             None,
             None,
-            format!("family {family_name} is not admitted in {lang} (below the show bar on the dev labels)"),
+            format!(
+                "family {family_name} is not admitted in {lang} (below the show bar on the dev labels)"
+            ),
         ),
         other => (None, None, other.text()),
     };
@@ -896,7 +898,14 @@ pub fn why_text(
         "What mining dropped, gate by gate. Observation only: nothing listed here is proposed, checked or shown to agents, and mining proposes exactly what it proposes for `drift census`. Wiring proposals pass none of these gates and are not counted here.\n",
     );
     let total = |s: &str| stage_total(counts, s).map(|n| thousands(n as usize));
-    if let (Some(roles), Some(mined_roles), Some(observed), Some(drafted), Some(mined), Some(proposed)) = (
+    if let (
+        Some(roles),
+        Some(mined_roles),
+        Some(observed),
+        Some(drafted),
+        Some(mined),
+        Some(proposed),
+    ) = (
         total("roles"),
         total("role_mined"),
         total("observed"),
@@ -997,9 +1006,10 @@ pub const CAP_GATES: &[&str] = &["cap_role", "cap_avoid", "cap_repo"];
 pub fn cap_note(rows: &[Dropped], rejected: &BTreeSet<String>) -> Option<String> {
     // Cap (its index in `CAP_GATES`) -> (its limit, the ids it cut).
     let mut by: BTreeMap<usize, (Option<f64>, BTreeSet<&str>)> = BTreeMap::new();
-    for d in rows.iter().filter(|d| {
-        d.default_tier && !d.family.starts_with("test:") && !rejected.contains(&d.id)
-    }) {
+    for d in rows
+        .iter()
+        .filter(|d| d.default_tier && !d.family.starts_with("test:") && !rejected.contains(&d.id))
+    {
         if let Some(i) = CAP_GATES.iter().position(|g| *g == d.gate) {
             let e = by.entry(i).or_insert((None, BTreeSet::new()));
             e.0 = e.0.or(d.threshold);
@@ -1113,13 +1123,13 @@ mod tests {
             any_of: any_of.iter().map(|s| s.to_string()).collect(),
         };
         assert_eq!(target_of(&wrapped(&["lib/auth.ts#withAuth"])), "repository");
-        assert_eq!(target_of(&wrapped(&["pkg:@nestjs/common#Injectable"])), "dependency");
+        assert_eq!(
+            target_of(&wrapped(&["pkg:@nestjs/common#Injectable"])),
+            "dependency"
+        );
         assert_eq!(target_of(&wrapped(&["global#fetch"])), "built_in");
         assert_eq!(target_of(&wrapped(&["unresolved:x#y"])), "unresolved");
-        assert_eq!(
-            target_of(&wrapped(&["lib/auth.ts#a", "pkg:p#b"])),
-            "mixed"
-        );
+        assert_eq!(target_of(&wrapped(&["lib/auth.ts#a", "pkg:p#b"])), "mixed");
         assert_eq!(
             target_of(&Rule::Named {
                 pattern: "use*".to_string()
@@ -1153,8 +1163,10 @@ mod tests {
         note(row("universal", 8, 8, false));
         note(row("wilson", 9, 10, false));
         let rows = take_dropped();
-        let got: Vec<(&str, usize, usize)> =
-            rows.iter().map(|d| (d.gate, d.holders, d.members)).collect();
+        let got: Vec<(&str, usize, usize)> = rows
+            .iter()
+            .map(|d| (d.gate, d.holders, d.members))
+            .collect();
         assert_eq!(
             got,
             vec![
@@ -1199,11 +1211,16 @@ mod tests {
 
     #[test]
     fn why_text_caps_each_gate() {
-        let rows: Vec<Dropped> = (0..12).map(|i| row("universal", 20 - i, 20 - i, false)).collect();
+        let rows: Vec<Dropped> = (0..12)
+            .map(|i| row("universal", 20 - i, 20 - i, false))
+            .collect();
         let text = why_text(None, &rows, None, 10);
         assert!(text.contains("\nuniversal: 12 dropped."), "{text}");
         assert!(text.contains("  20 of 20  "), "{text}");
         assert!(!text.contains("  9 of 9  "), "{text}");
-        assert!(text.contains("  and 2 more (`drift census --why universal --json`"), "{text}");
+        assert!(
+            text.contains("  and 2 more (`drift census --why universal --json`"),
+            "{text}"
+        );
     }
 }

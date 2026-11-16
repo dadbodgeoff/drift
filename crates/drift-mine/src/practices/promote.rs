@@ -440,10 +440,11 @@ impl Place {
             .filter(|p| p.is_empty() || path == *p || path.starts_with(&format!("{p}/")))
             .max_by_key(|p| p.len())
             .unwrap_or("");
-        let is_file = report
-            .concerns
-            .iter()
-            .any(|c| c.units.iter().any(|u| u.path == path && u.package == package));
+        let is_file = report.concerns.iter().any(|c| {
+            c.units
+                .iter()
+                .any(|u| u.path == path && u.package == package)
+        });
         if is_file && let Some(p) = Place::file_of(package, &path) {
             return Some(p);
         }
@@ -1149,8 +1150,7 @@ impl<'a> Reading<'a> {
             .zip(&uses)
             .map(|(u, uses)| {
                 u.assignment == "known"
-                    && u
-                        .enforces
+                    && u.enforces
                         .unwrap_or_else(|| traits.enforces(uses).unwrap_or(false))
             })
             .collect();
@@ -1916,9 +1916,7 @@ pub fn candidate_for(
         Some(id) => match find(report, id) {
             Some((c, _)) => c,
             None => {
-                return Err(Refusal::UnknownVariant {
-                    id: (*id).clone(),
-                });
+                return Err(Refusal::UnknownVariant { id: (*id).clone() });
             }
         },
         None if req.concern.is_empty() => return Err(Refusal::NothingAccepted),
@@ -2664,8 +2662,7 @@ pub fn replay(
         return Replay::default();
     };
     let r = Reading::new(cr);
-    let accepted =
-        Accepts::of_rule(any_of, any_mechanism, *any_enforcing).with_folds(&cr.variants);
+    let accepted = Accepts::of_rule(any_of, any_mechanism, *any_enforcing).with_folds(&cr.variants);
     let judged = r.judged(&place, &r.verdicts(&accepted));
     let mut dated: Vec<(i64, &Judged<'_>)> = judged
         .iter()
@@ -3580,7 +3577,12 @@ mod tests {
     // ---------- what counts as following (stream S1) ----------
 
     /// A report of one concern with these variants and units.
-    fn report_of(concern: &str, unit: &str, vs: Vec<Variant>, units: Vec<UnitRow>) -> PracticesReport {
+    fn report_of(
+        concern: &str,
+        unit: &str,
+        vs: Vec<Variant>,
+        units: Vec<UnitRow>,
+    ) -> PracticesReport {
         PracticesReport {
             concerns: vec![ConcernReport {
                 id: concern.into(),
@@ -3604,7 +3606,10 @@ mod tests {
     /// its alternatives are `A` and `B`, so it would hold every unit of either wrapper
     /// and be the one way offered where these tests need no single way to qualify.
     fn signin_variants() -> Vec<Variant> {
-        let mut vs: Vec<Variant> = variants().into_iter().filter(|v| v.id != "P-fold").collect();
+        let mut vs: Vec<Variant> = variants()
+            .into_iter()
+            .filter(|v| v.id != "P-fold")
+            .collect();
         vs.extend([
             variant("P-a", A, "wrap a", VariantKind::Known),
             variant("P-b", B, "wrap b", VariantKind::Known),
@@ -3821,7 +3826,12 @@ mod tests {
         let errors = report_of(
             crate::practices::ERRORS,
             "entry_point",
-            vec![variant("P-err", "throw:HTTPException", "throw", VariantKind::Known)],
+            vec![variant(
+                "P-err",
+                "throw:HTTPException",
+                "throw",
+                VariantKind::Known,
+            )],
             routes("app/api", 0, 8, "P-err"),
         );
         let ask = Request {
@@ -3847,7 +3857,11 @@ mod tests {
             .collect();
         units.extend(routes("pub", 10, 1, "P-auth"));
         let all = candidates(&signin(units));
-        assert!(all.iter().all(|c| !c.mechanisms.contains(&"opens".to_string())), "{all:?}");
+        assert!(
+            all.iter()
+                .all(|c| !c.mechanisms.contains(&"opens".to_string())),
+            "{all:?}"
+        );
     }
 
     /// Pins the entry kind: a background job takes no request, so the 5 jobs with no
@@ -3863,7 +3877,10 @@ mod tests {
         units.extend((0..5).map(job));
         let r = signin(units);
         let c = candidate(&r, "P-auth", Some(&at("", "app")), &[], false).unwrap();
-        assert_eq!((c.follows, c.exceptions.len(), c.total, c.jobs), (10, 0, 10, 5));
+        assert_eq!(
+            (c.follows, c.exceptions.len(), c.total, c.jobs),
+            (10, 0, 10, 5)
+        );
         assert!(preview(&c, &convention(&c)).contains("5 background jobs take no request"));
         let conv = convention(&c);
         let mut units = r.concerns[0].units.clone();
@@ -3873,7 +3890,12 @@ mod tests {
         let errors = report_of(
             crate::practices::ERRORS,
             "entry_point",
-            vec![variant("P-err", "throw:HTTPException", "throw", VariantKind::Known)],
+            vec![variant(
+                "P-err",
+                "throw:HTTPException",
+                "throw",
+                VariantKind::Known,
+            )],
             (0..10)
                 .map(|i| UnitRow {
                     kind: Some("job".into()),
@@ -3912,7 +3934,11 @@ mod tests {
         let c = candidate(&errors, "P-bubble", None, &[], false).unwrap();
         assert!(c.passive);
         assert!(preview(&c, &convention(&c)).contains("by doing nothing"));
-        assert!(!candidate(&errors, "P-err", None, &[], false).unwrap().passive);
+        assert!(
+            !candidate(&errors, "P-err", None, &[], false)
+                .unwrap()
+                .passive
+        );
         // Still listed, marked.
         let listed = candidates(&errors);
         assert!(listed.iter().any(|c| c.passive), "{listed:?}");
@@ -3928,7 +3954,11 @@ mod tests {
             )],
             routes("lib", 0, 8, "P-console"),
         );
-        assert!(!candidate(&logging, "P-console", None, &[], false).unwrap().passive);
+        assert!(
+            !candidate(&logging, "P-console", None, &[], false)
+                .unwrap()
+                .passive
+        );
     }
 
     /// Pins stale detection for each form of the rule: a practice nothing in its place
@@ -3967,7 +3997,9 @@ mod tests {
         assert!(gone.violations.is_empty());
         assert_eq!(gone.stale.len(), 1);
         // The replay reads the same rule.
-        let back = replay(&signin(routes("app/api", 0, 15, "P-auth")), &conv, &|_| Some(1));
+        let back = replay(&signin(routes("app/api", 0, 15, "P-auth")), &conv, &|_| {
+            Some(1)
+        });
         assert_eq!(back.followed, 15);
     }
 
@@ -3984,8 +4016,14 @@ mod tests {
         let mut units = routes("backend/app/api/routes", 0, 10, "P-auth");
         units.extend((0..3).map(unread));
         let r = signin(units.clone());
-        let refused = candidate(&r, "P-auth", Some(&at("", "backend/app/api/routes")), &[], false)
-            .unwrap_err();
+        let refused = candidate(
+            &r,
+            "P-auth",
+            Some(&at("", "backend/app/api/routes")),
+            &[],
+            false,
+        )
+        .unwrap_err();
         let Refusal::TooUnknown {
             unknown: 3,
             total: 13,
@@ -3995,16 +4033,31 @@ mod tests {
         else {
             panic!("{refused:?}");
         };
-        assert_eq!((cause.reason, cause.units), (UnknownReason::BodyUnreadable, 3));
-        assert!(refused.to_string().contains("one cause outside them"), "{refused}");
+        assert_eq!(
+            (cause.reason, cause.units),
+            (UnknownReason::BodyUnreadable, 3)
+        );
+        assert!(
+            refused.to_string().contains("one cause outside them"),
+            "{refused}"
+        );
         assert!(!refused.to_string().contains("--hints"), "{refused}");
         // Two causes: none is shared, the refusal is as before.
         let mut other = unread(3);
         other.instrument = "lib/x.ts#helper".into();
         units.push(other);
-        let refused = candidate(&signin(units), "P-auth", Some(&at("", "backend/app/api/routes")), &[], false)
-            .unwrap_err();
-        assert!(matches!(refused, Refusal::TooUnknown { cause: None, .. }), "{refused:?}");
+        let refused = candidate(
+            &signin(units),
+            "P-auth",
+            Some(&at("", "backend/app/api/routes")),
+            &[],
+            false,
+        )
+        .unwrap_err();
+        assert!(
+            matches!(refused, Refusal::TooUnknown { cause: None, .. }),
+            "{refused:?}"
+        );
         assert!(refused.to_string().contains("--hints"), "{refused}");
     }
 
@@ -4031,7 +4084,10 @@ mod tests {
         let layout = "wrap:src/routes/+layout.server.ts#handle";
         let key = format!("{layout}+body_check:event.locals.user");
         assert_eq!(use_keys(&key), [layout, "body_check:event.locals.user"]);
-        assert_eq!(use_keys("matcher:/a/:p++wrap:x"), ["matcher:/a/:p+", "wrap:x"]);
+        assert_eq!(
+            use_keys("matcher:/a/:p++wrap:x"),
+            ["matcher:/a/:p+", "wrap:x"]
+        );
         assert_eq!(use_keys(layout), [layout]);
         let mut uses = use_keys(&key);
         uses.sort_unstable();

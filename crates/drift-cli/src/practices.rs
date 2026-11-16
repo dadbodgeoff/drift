@@ -301,9 +301,7 @@ pub fn add_practices<'m>(
             policy.conventions.iter().any(|c| {
                 c.rule.is_practice()
                     && match scope {
-                        dcheck::Scope::Accepted => {
-                            c.status == drift_mine::policy::Status::Accepted
-                        }
+                        dcheck::Scope::Accepted => c.status == drift_mine::policy::Status::Accepted,
                         dcheck::Scope::All => c.status != drift_mine::policy::Status::Rejected,
                     }
                     && facts
@@ -333,7 +331,8 @@ pub fn baseline_with_practices(root: &Path, facts: &RepoFacts, policy: &Conventi
     let promoted = promoted_only(policy);
     if promote::any(&promoted, dcheck::Scope::All) {
         let map = report_units_kept(root, facts, None);
-        lock.entries.extend(promote::baseline(facts, &map, &promoted));
+        lock.entries
+            .extend(promote::baseline(facts, &map, &promoted));
     }
     lock
 }

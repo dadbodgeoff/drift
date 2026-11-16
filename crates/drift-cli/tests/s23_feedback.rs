@@ -422,7 +422,12 @@ fn a_mark_changes_no_verdict() {
     // Neither --true nor --wrong, or an unknown convention: refused, nothing recorded.
     let out = run(
         r,
-        &["feedback", "mark", &repo.auth, "app/api/okapi00/route.ts#GET"],
+        &[
+            "feedback",
+            "mark",
+            &repo.auth,
+            "app/api/okapi00/route.ts#GET",
+        ],
     );
     assert_eq!(out.status.code(), Some(2), "{out:?}");
     let out = run(r, &["feedback", "mark", "D-000000", "app/a.ts#x", "--true"]);

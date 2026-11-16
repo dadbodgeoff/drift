@@ -237,7 +237,9 @@ mod tests {
             "con.d is the console device"
         );
         assert!(plain_disk_spelling(b'C', &["a", "com10", "nul-ish"]).is_some());
-        let odd_names = ["CON", "nul.txt", "Aux", "COM1", "lpt9.log", "COM¹", "x.", "x "];
+        let odd_names = [
+            "CON", "nul.txt", "Aux", "COM1", "lpt9.log", "COM¹", "x.", "x ",
+        ];
         for odd in odd_names.into_iter().chain(["a/b", "a:b"]) {
             assert_eq!(plain_disk_spelling(b'C', &["r", odd]), None, "{odd}");
         }
@@ -252,7 +254,10 @@ mod tests {
         let p = dir.path().join("a");
         fs::create_dir(&p).unwrap();
         let dotted = dir.path().join("a/../a/.");
-        assert_eq!(canonical(&dotted).unwrap(), fs::canonicalize(&dotted).unwrap());
+        assert_eq!(
+            canonical(&dotted).unwrap(),
+            fs::canonicalize(&dotted).unwrap()
+        );
         assert_eq!(plain_disk(&fs::canonicalize(&p).unwrap()), None);
         assert!(canonical(&dir.path().join("missing")).is_err());
     }
@@ -268,8 +273,15 @@ mod tests {
         assert_eq!(plain_disk(Path::new(r"C:\Users\me")), None);
         let dir = tempfile::tempdir().unwrap();
         let got = canonical(dir.path()).unwrap();
-        assert!(!got.to_string_lossy().starts_with(r"\\?\"), "{}", got.display());
-        assert_eq!(fs::canonicalize(&got).unwrap(), fs::canonicalize(dir.path()).unwrap());
+        assert!(
+            !got.to_string_lossy().starts_with(r"\\?\"),
+            "{}",
+            got.display()
+        );
+        assert_eq!(
+            fs::canonicalize(&got).unwrap(),
+            fs::canonicalize(dir.path()).unwrap()
+        );
     }
 
     /// A FIFO or a link to a device would block or never end: refused at once.

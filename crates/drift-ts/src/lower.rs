@@ -15,7 +15,7 @@ use oxc_span::{GetSpan, SourceType};
 use serde::{Deserialize, Serialize};
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 84;
+pub const LOWERING_VERSION: u32 = 85;
 
 /// What an options object gives a Fastify route: for each hook it names
 /// (`onRequest`, `preHandler`), what that hook runs.
@@ -3661,10 +3661,8 @@ impl<'s> Lowerer<'s> {
             && !routes::unmeasured_listing()
         {
             sym.refusal_status = Some(outcome);
-            sym.listed_controls.push(format!(
-                "{}{status}",
-                drift_core::controls::REFUSAL_STATUS
-            ));
+            sym.listed_controls
+                .push(format!("{}{status}", drift_core::controls::REFUSAL_STATUS));
         }
         sym.attr_types = self
             .this_types
@@ -5532,10 +5530,7 @@ impl MemberWrites {
     /// A member `key` of what `name` holds may be given another value than the
     /// one written where `name` is bound.
     fn written(&self, name: &str, key: &str) -> bool {
-        self.whole.contains(name)
-            || self
-                .named
-                .contains(&(name.to_string(), key.to_string()))
+        self.whole.contains(name) || self.named.contains(&(name.to_string(), key.to_string()))
     }
 }
 
@@ -6776,9 +6771,13 @@ impl<'l, 's> Collector<'l, 's> {
         sym.catches.extend(p.catches);
         sym.headers.extend(p.headers);
         sym.inputs.extend(p.inputs);
-        sym.listed_refs.extend(p.parsed.into_iter().map(|(callee, given)| {
-            (drift_core::controls::PARSES_INPUT.to_string(), vec![callee, given])
-        }));
+        sym.listed_refs
+            .extend(p.parsed.into_iter().map(|(callee, given)| {
+                (
+                    drift_core::controls::PARSES_INPUT.to_string(),
+                    vec![callee, given],
+                )
+            }));
         for callee in p.handed {
             let entry = (drift_core::controls::INPUT_HANDED.to_string(), vec![callee]);
             if !sym.listed_refs.contains(&entry) {
@@ -7299,7 +7298,9 @@ impl Collector<'_, '_> {
                     continue;
                 };
                 if !p.computed
-                    && p.key.static_name().is_some_and(|k| k.as_str() == Some("$where"))
+                    && p.key
+                        .static_name()
+                        .is_some_and(|k| k.as_str() == Some("$where"))
                     && self.l.sql.builds_text(self.l.scoping, &p.value)
                 {
                     found = true;
@@ -10631,11 +10632,11 @@ impl Collector<'_, '_> {
             Statement::ReturnStatement(r) => self.continuation_handed(r.argument.as_ref()?),
             Statement::ExpressionStatement(e) if at_end => self.continuation_handed(&e.expression),
             Statement::BlockStatement(b) => match b.body.as_slice() {
-                [.., Statement::ExpressionStatement(e), Statement::ReturnStatement(r)]
-                    if r.argument.is_none() =>
-                {
-                    self.continuation_handed(&e.expression)
-                }
+                [
+                    ..,
+                    Statement::ExpressionStatement(e),
+                    Statement::ReturnStatement(r),
+                ] if r.argument.is_none() => self.continuation_handed(&e.expression),
                 [.., last] => self.continuation_exit(last, at_end),
                 [] => None,
             },
@@ -13749,9 +13750,12 @@ impl TestFinder<'_, '_> {
                 _ => match literal(arg(0))
                     .filter(|m| HTTP_VERBS.contains(&m.to_ascii_uppercase().as_str()))
                 {
-                    Some(method) => {
-                        self.request(&method, arg(1).and_then(url_path), None, non_literal(arg(1)))
-                    }
+                    Some(method) => self.request(
+                        &method,
+                        arg(1).and_then(url_path),
+                        None,
+                        non_literal(arg(1)),
+                    ),
                     None => {
                         self.request("GET", arg(0).and_then(url_path), None, non_literal(arg(0)))
                     }
@@ -14143,11 +14147,14 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
                 // whole call was before positions were read.
                 let args: Vec<&Argument> = it.arguments.iter().collect();
                 let operand_at = args.iter().position(|a| {
-                    argument(a).is_some_and(|e| !matches!(unwrap_expr(e), Expression::NumericLiteral(_)))
+                    argument(a)
+                        .is_some_and(|e| !matches!(unwrap_expr(e), Expression::NumericLiteral(_)))
                 });
                 let unplaced = calls_through_receiver(&it.callee)
                     || operand_at.is_some_and(|i| {
-                        args[..=i].iter().any(|a| matches!(a, Argument::SpreadElement(_)))
+                        args[..=i]
+                            .iter()
+                            .any(|a| matches!(a, Argument::SpreadElement(_)))
                     });
                 for k in &kinds {
                     let mut at: BTreeSet<String> = BTreeSet::new();
@@ -14813,8 +14820,7 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         self.value_methods.push(of_value);
         self.continuation_names
             .push(continuation_params(&it.params));
-        self.continuations
-            .push(positional_continuation(&it.params));
+        self.continuations.push(positional_continuation(&it.params));
         self.note_params(&it.params);
         walk::walk_function(self, it, flags);
         self.continuations.pop();
@@ -14859,8 +14865,7 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         let outer = self.enter_fn(it.span.start, later);
         self.continuation_names
             .push(continuation_params(&it.params));
-        self.continuations
-            .push(positional_continuation(&it.params));
+        self.continuations.push(positional_continuation(&it.params));
         self.note_params(&it.params);
         if self.fn_depth == 1
             && let Some(body) = it.body.as_expression()

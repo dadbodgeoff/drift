@@ -130,7 +130,10 @@ pub fn dispute_commands(
                 "keeps it as advice, so it no longer fails the check",
             ));
         }
-        wrong_rule.push((format!("drift review --reject {}", shell_word(id)), "drops it"));
+        wrong_rule.push((
+            format!("drift review --reject {}", shell_word(id)),
+            "drops it",
+        ));
     }
     (mark_fine, mark_by_hand, wrong_rule)
 }
@@ -1011,12 +1014,8 @@ pub fn origin(c: &Convention) -> &'static str {
             "proposed by Drift from the package manifests (not mined), accepted by a person"
         }
         Some(_) => "proposed by Drift from a map (not mined), accepted by a person",
-        None if c.promoted_from_practice.is_some() => {
-            "promoted from the practice map by a person"
-        }
-        None if c.promoted_from_hidden => {
-            "mined, withheld from review, promoted by a person"
-        }
+        None if c.promoted_from_practice.is_some() => "promoted from the practice map by a person",
+        None if c.promoted_from_hidden => "mined, withheld from review, promoted by a person",
         None => "mined from the code, accepted by a person",
     }
 }
@@ -1095,11 +1094,7 @@ impl<'a> Basis<'a> {
                 .iter()
                 .map(|c| (c.id.as_str(), c))
                 .collect(),
-            standing: report
-                .standing
-                .iter()
-                .map(|s| (s.id.as_str(), s))
-                .collect(),
+            standing: report.standing.iter().map(|s| (s.id.as_str(), s)).collect(),
             practice_not_checked: report
                 .practices_not_checked
                 .iter()
@@ -1366,7 +1361,10 @@ impl<'a> Basis<'a> {
             return Vec::new();
         };
         let example = self.example.get(id);
-        let dir = |p: &str| p.rsplit_once('/').map_or(String::new(), |(d, _)| d.to_string());
+        let dir = |p: &str| {
+            p.rsplit_once('/')
+                .map_or(String::new(), |(d, _)| d.to_string())
+        };
         let here = dir(rel);
         let package = self.packages.get(rel);
         let mut ranked: Vec<&Held> = all
@@ -1546,8 +1544,7 @@ pub fn trust_text(new: &[&Violation], basis: &Basis) -> String {
     if groups.is_empty() {
         return String::new();
     }
-    let mut out =
-        String::from("drift: what each rule that reported a new violation rests on:\n");
+    let mut out = String::from("drift: what each rule that reported a new violation rests on:\n");
     for group in groups.iter().take(MAX_TRUST_RULES) {
         let Some(first) = basis.trust(group[0], "") else {
             continue;
@@ -1597,7 +1594,10 @@ pub fn trust_text(new: &[&Violation], basis: &Basis) -> String {
                 ));
             }
         }
-        out.push_str(&format!("  wrong rule   {}\n", wrong_words(&first.wrong_rule)));
+        out.push_str(&format!(
+            "  wrong rule   {}\n",
+            wrong_words(&first.wrong_rule)
+        ));
     }
     if groups.len() > MAX_TRUST_RULES {
         out.push_str(&format!(
@@ -1664,19 +1664,31 @@ pub fn trust_summary(new: &[&Violation], basis: &Basis, prefix: &str) -> String 
                     line.push_str(&format!(". Holds near it: {}", held.join(", ")));
                 }
                 if let Some((comment, place)) = &t.comment {
-                    line.push_str(&format!(". Exception: add {} {}", md_code(comment), md(place)));
+                    line.push_str(&format!(
+                        ". Exception: add {} {}",
+                        md_code(comment),
+                        md(place)
+                    ));
                 }
                 if let Some(cmd) = &t.mark_fine {
                     line.push_str(&format!(
                         "{} a person runs {}",
-                        if t.comment.is_some() { ", or" } else { ". Exception:" },
+                        if t.comment.is_some() {
+                            ", or"
+                        } else {
+                            ". Exception:"
+                        },
                         md_code(cmd)
                     ));
                 }
                 if t.mark_by_hand {
                     line.push_str(&format!(
                         "{} {}",
-                        if t.comment.is_some() { "; or" } else { ". Exception:" },
+                        if t.comment.is_some() {
+                            "; or"
+                        } else {
+                            ". Exception:"
+                        },
                         md(MARK_BY_HAND)
                     ));
                 }
@@ -2062,7 +2074,9 @@ mod tests {
         f.extent = Extent::File;
         let msg = agent_message(&[&f], AgentAt::EndOfTurn);
         assert!(
-            msg.contains("if intentional: add `// drift-ignore D-abc123: <reason>` at the top of the file"),
+            msg.contains(
+                "if intentional: add `// drift-ignore D-abc123: <reason>` at the top of the file"
+            ),
             "{msg}"
         );
         f.import = Some(crate::check::ImportHit {
@@ -2071,7 +2085,10 @@ mod tests {
             line: 3,
         });
         let msg = agent_message(&[&f], AgentAt::EndOfTurn);
-        assert!(msg.contains("on the import's line, or at the top of the file"), "{msg}");
+        assert!(
+            msg.contains("on the import's line, or at the top of the file"),
+            "{msg}"
+        );
         let mut p = v("t", "package.json");
         p.extent = Extent::File;
         let msg = agent_message(&[&p], AgentAt::EndOfTurn);
@@ -2176,8 +2193,14 @@ mod f8_shell_words {
         }
         // An id from a hand-edited policy: quoted, or no command at all.
         let (fine, _, wrong) = dispute_commands("x;sh", "a.ts", "f", true, false);
-        assert_eq!(fine.as_deref(), Some("drift review --exempt 'x;sh' --member 'a.ts#f' --reason '<why>'"));
-        assert_eq!(wrong, [("drift review --reject 'x;sh'".to_string(), "drops it")]);
+        assert_eq!(
+            fine.as_deref(),
+            Some("drift review --exempt 'x;sh' --member 'a.ts#f' --reason '<why>'")
+        );
+        assert_eq!(
+            wrong,
+            [("drift review --reject 'x;sh'".to_string(), "drops it")]
+        );
         let (fine, by_hand, wrong) = dispute_commands("x;sh<y", "a.ts", "f", true, true);
         assert_eq!(fine, None);
         assert!(by_hand && wrong.is_empty());

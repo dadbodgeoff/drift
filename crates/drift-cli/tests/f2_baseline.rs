@@ -174,7 +174,10 @@ fn a_fingerprint_line_without_its_member_line_baselines_nothing() {
         .filter(|l| *l != member)
         .map(|l| format!("{l}\n"))
         .collect();
-    assert!(kept.contains(" app/api/r39/route.ts#GET"), "the #~ line stays: {kept}");
+    assert!(
+        kept.contains(" app/api/r39/route.ts#GET"),
+        "the #~ line stays: {kept}"
+    );
     std::fs::write(r.join("drift.lock"), kept).unwrap();
     std::fs::remove_dir_all(r.join("app/api/r39")).unwrap();
     write(r, "app/api/new/route.ts", UNGUARDED);

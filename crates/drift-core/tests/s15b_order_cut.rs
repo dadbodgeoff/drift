@@ -29,11 +29,17 @@ fn repo(order_len: usize) -> RepoFacts {
 fn an_order_at_its_cap_is_marked_cut_in_the_listed_reading_only() {
     let facts = repo(caps::ORDER);
     let listed = facts.listed();
-    assert_eq!(listed.files[0].symbols[0].truncated, vec!["order".to_string()]);
+    assert_eq!(
+        listed.files[0].symbols[0].truncated,
+        vec!["order".to_string()]
+    );
     // What mining reads is unchanged.
     assert!(facts.files[0].symbols[0].truncated.is_empty());
     let owned = facts.clone().into_listed();
-    assert_eq!(owned.files[0].symbols[0].truncated, vec!["order".to_string()]);
+    assert_eq!(
+        owned.files[0].symbols[0].truncated,
+        vec!["order".to_string()]
+    );
 }
 
 /// Under the cap nothing was cut, and nothing is said.

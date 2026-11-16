@@ -63,8 +63,22 @@ fn candidates() -> Vec<Candidate> {
             15,
             0.6,
         ),
-        cand("D-bbbbbb", Rule::Calls { callee: "lib/log.ts#log".into() }, 19, 0.9),
-        cand("D-cccccc", Rule::Calls { callee: "lib/audit.ts#audit".into() }, 17, 0.8),
+        cand(
+            "D-bbbbbb",
+            Rule::Calls {
+                callee: "lib/log.ts#log".into(),
+            },
+            19,
+            0.9,
+        ),
+        cand(
+            "D-cccccc",
+            Rule::Calls {
+                callee: "lib/audit.ts#audit".into(),
+            },
+            17,
+            0.8,
+        ),
     ]
 }
 

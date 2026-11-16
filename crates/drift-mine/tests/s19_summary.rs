@@ -64,7 +64,10 @@ fn inv(entries: Vec<EntryRow>) -> Inventory {
 }
 
 fn ranked_kinds(s: &Summary) -> Vec<(String, Caller)> {
-    s.ranked.iter().map(|r| (r.kind.clone(), r.caller)).collect()
+    s.ranked
+        .iter()
+        .map(|r| (r.kind.clone(), r.caller))
+        .collect()
 }
 
 /// A request value reaching an operation of an entry point with no guard ranks
@@ -102,7 +105,10 @@ fn fed_and_unguarded_ranks_above_unfed() {
     assert_eq!(s.not_ranked.not_fed, 1);
     let text = render(&s, 10);
     let first = text.lines().position(|l| l.contains("/login")).unwrap();
-    let second = text.lines().position(|l| l.contains("/contributions")).unwrap();
+    let second = text
+        .lines()
+        .position(|l| l.contains("/contributions"))
+        .unwrap();
     assert!(first < second, "{text}");
     assert!(!text.contains("GET /about"), "{text}");
     assert!(
@@ -115,9 +121,24 @@ fn fed_and_unguarded_ranks_above_unfed() {
 /// execution, then query injection, and a redirect last.
 #[test]
 fn consequence_orders_code_execution_before_queries_before_redirects() {
-    let a = with(entry("a.ts", "GET", "/r", 1), "dynamic_redirect", &["a.ts#go"], true);
-    let b = with(entry("b.ts", "GET", "/q", 1), "nosql_injection", &["b.ts#find"], true);
-    let c = with(entry("c.ts", "GET", "/x", 1), "shell_exec", &["c.ts#run"], true);
+    let a = with(
+        entry("a.ts", "GET", "/r", 1),
+        "dynamic_redirect",
+        &["a.ts#go"],
+        true,
+    );
+    let b = with(
+        entry("b.ts", "GET", "/q", 1),
+        "nosql_injection",
+        &["b.ts#find"],
+        true,
+    );
+    let c = with(
+        entry("c.ts", "GET", "/x", 1),
+        "shell_exec",
+        &["c.ts#run"],
+        true,
+    );
     let s = summarize(&inv(vec![a, b, c]), &Readings::default());
     let kinds: Vec<&str> = s.ranked.iter().map(|r| r.kind.as_str()).collect();
     assert_eq!(kinds, ["shell_exec", "nosql_injection", "dynamic_redirect"]);
@@ -127,14 +148,22 @@ fn consequence_orders_code_execution_before_queries_before_redirects() {
 /// under "could not read", and the text says nothing ranks.
 #[test]
 fn an_unknown_guard_is_never_ranked() {
-    let mut e = with(entry("server.ts", "POST", "/upload", 5), "eval", &["lib/x.ts#run"], true);
+    let mut e = with(
+        entry("server.ts", "POST", "/upload", 5),
+        "eval",
+        &["lib/x.ts#run"],
+        true,
+    );
     e.opaque = vec!["uploadMiddleware".to_string()];
     let s = summarize(&inv(vec![e]), &Readings::default());
     assert!(s.ranked.is_empty(), "{:?}", s.ranked);
     assert_eq!(s.not_ranked.guard_unknown, 1);
     let text = render(&s, 10);
     assert!(text.contains("nothing ranks"), "{text}");
-    assert!(text.contains("1 where Drift could not read the guard"), "{text}");
+    assert!(
+        text.contains("1 where Drift could not read the guard"),
+        "{text}"
+    );
     assert!(!text.contains("1. "), "{text}");
     let first = render_first_run(&s);
     assert_eq!(first.lines().count(), 1, "{first}");
@@ -163,7 +192,10 @@ fn repeats_through_one_operation_are_one_line() {
     assert_eq!(s.ranked[0].places.len(), 20);
     let text = render(&s, 10);
     let line = text.lines().find(|l| l.starts_with("  1. ")).unwrap();
-    assert!(line.contains("at 20 entry points through lib/files.ts#serve"), "{line}");
+    assert!(
+        line.contains("at 20 entry points through lib/files.ts#serve"),
+        "{line}"
+    );
     assert!(line.contains("GET /files/00 (server.ts:100)"), "{line}");
     assert!(line.contains("GET /files/02 (server.ts:102)"), "{line}");
     assert!(!line.contains("/files/03"), "{line}");
@@ -199,7 +231,10 @@ fn the_cap_line_counts_the_rest() {
     let first = render_first_run(&s);
     assert!(first.contains("\n  3. "), "{first}");
     assert!(!first.contains("\n  4. "), "{first}");
-    assert!(first.contains("9 more ranked in `drift security --top`"), "{first}");
+    assert!(
+        first.contains("9 more ranked in `drift security --top`"),
+        "{first}"
+    );
 }
 
 /// The same inventory in any order gives the same summary and the same text.
@@ -279,17 +314,42 @@ fn validation_found_ranks_after_none_found() {
 /// or a schedule starts, and test code are counted, not ranked.
 #[test]
 fn settings_local_scheduled_and_test_code_are_not_ranked() {
-    let cookie = with(entry("a.py", "GET", "/c", 1), "cookie_without_httponly", &[], true);
-    let mut local = with(entry("cli.py", "GET", "/l", 1), "shell_exec", &["cli.py#run"], true);
+    let cookie = with(
+        entry("a.py", "GET", "/c", 1),
+        "cookie_without_httponly",
+        &[],
+        true,
+    );
+    let mut local = with(
+        entry("cli.py", "GET", "/l", 1),
+        "shell_exec",
+        &["cli.py#run"],
+        true,
+    );
     local.local = true;
-    let mut job = with(entry("jobs.py", "GET", "/j", 1), "dynamic_fetch", &["jobs.py#sync"], true);
+    let mut job = with(
+        entry("jobs.py", "GET", "/j", 1),
+        "dynamic_fetch",
+        &["jobs.py#sync"],
+        true,
+    );
     job.kind = "job".to_string();
-    let test = with(entry("api.test.ts", "GET", "/t", 1), "eval", &["api.test.ts#x"], true);
+    let test = with(
+        entry("api.test.ts", "GET", "/t", 1),
+        "eval",
+        &["api.test.ts#x"],
+        true,
+    );
     let s = summarize(&inv(vec![cookie, local, job, test]), &Readings::default());
     assert!(s.ranked.is_empty(), "{:?}", s.ranked);
     let n = s.not_ranked;
     assert_eq!(
-        (n.settings, n.no_remote_caller, n.no_caller, n.test_or_example),
+        (
+            n.settings,
+            n.no_remote_caller,
+            n.no_caller,
+            n.test_or_example
+        ),
         (1, 1, 1, 1)
     );
 }

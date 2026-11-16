@@ -162,11 +162,11 @@ pub fn unreached_files(repo: &RepoFacts, non_production: &NonProduction) -> BTre
     for f in &repo.files {
         named.extend(f.imports.iter().map(|i| i.module.as_str()));
         for r in &f.registries {
-            named.extend(
-                r.items
-                    .iter()
-                    .map(|i| i.target.split_once('#').map_or(i.target.as_str(), |(m, _)| m)),
-            );
+            named.extend(r.items.iter().map(|i| {
+                i.target
+                    .split_once('#')
+                    .map_or(i.target.as_str(), |(m, _)| m)
+            }));
         }
     }
     for p in &repo.packages {
@@ -7716,8 +7716,11 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
         }
         // Nothing Drift read reaches it: what it holds is listed apart.
         if unreached.contains(&f.path) {
-            let mut sinks: Vec<String> =
-                f.symbols.iter().flat_map(|s| s.sinks.iter().cloned()).collect();
+            let mut sinks: Vec<String> = f
+                .symbols
+                .iter()
+                .flat_map(|s| s.sinks.iter().cloned())
+                .collect();
             sinks.sort();
             sinks.dedup();
             inv.unreached.push(UnreachedFile {
@@ -8869,7 +8872,14 @@ pub fn guard_gaps_with(
 /// hook)`, ...): the name of what it calls.
 fn guard_name(guard: &str) -> &str {
     let mut g = guard;
-    for suffix in [BODY_CALL, BODY_CHECK, MIDDLEWARE, APP_HOOK, BASE, " (settings)"] {
+    for suffix in [
+        BODY_CALL,
+        BODY_CHECK,
+        MIDDLEWARE,
+        APP_HOOK,
+        BASE,
+        " (settings)",
+    ] {
         g = g.strip_suffix(suffix).unwrap_or(g);
     }
     g
@@ -8919,7 +8929,10 @@ fn rests_on(ctx: &crate::context::RepoContext, own: &str, target: &str) -> bool 
             next(&s.derives_from, called);
         }
         for w in &s.wraps {
-            if matches!(w.kind, WrapKind::Call | WrapKind::Decorator | WrapKind::Extends) {
+            if matches!(
+                w.kind,
+                WrapKind::Call | WrapKind::Decorator | WrapKind::Extends
+            ) {
                 next(&w.wrapper, called);
             }
         }

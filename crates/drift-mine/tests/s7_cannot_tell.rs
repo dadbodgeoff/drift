@@ -190,8 +190,14 @@ fn a_wrapper_a_factory_builds_is_not_checked() {
     let c = candidate(&r, DEFINE);
     // Mining is unchanged: both are outliers of the mined rule.
     let outliers: Vec<&str> = c.outliers.iter().map(|o| o.path.as_str()).collect();
-    assert!(outliers.contains(&"worker/src/jobs/sync/made.ts"), "{outliers:?}");
-    assert!(outliers.contains(&"worker/src/jobs/sync/elsewhere.ts"), "{outliers:?}");
+    assert!(
+        outliers.contains(&"worker/src/jobs/sync/made.ts"),
+        "{outliers:?}"
+    );
+    assert!(
+        outliers.contains(&"worker/src/jobs/sync/elsewhere.ts"),
+        "{outliers:?}"
+    );
 
     let p = accepted(&c, Mode::Block);
     let report = check(&r, &p, &Lock::default(), Scope::Accepted, None);
@@ -204,7 +210,9 @@ fn a_wrapper_a_factory_builds_is_not_checked() {
     assert_eq!((s.holders, s.not_checked), (45, 2), "{s:?}");
     assert_eq!(s.members, 48, "{s:?}");
     assert!(
-        s.not_checked_why.keys().any(|w| w.contains("makeWrapper()")),
+        s.not_checked_why
+            .keys()
+            .any(|w| w.contains("makeWrapper()")),
         "{:?}",
         s.not_checked_why
     );
@@ -254,7 +262,9 @@ fn procedures() -> RepoFacts {
     files.push(file(
         "trpc/server/routers/viewer/public.ts",
         "trpc",
-        vec![sym("slots", SymbolKind::Const, |s| s.wraps.push(call(OPEN)))],
+        vec![sym("slots", SymbolKind::Const, |s| {
+            s.wraps.push(call(OPEN))
+        })],
     ));
     // Forgot its procedure: the map found no guard at all.
     files.push(file(
@@ -343,11 +353,7 @@ fn a_public_procedure_the_map_cannot_tell_is_not_checked() {
     // classifier found them: a map whose sign-in is done by something else says
     // nothing of this rule, and the public procedure stays a violation.
     let mut other = check(&r, &p, &Lock::default(), Scope::Accepted, None);
-    other.set_aside_untold(
-        &r,
-        &p,
-        &map("core/src/middlewares/apikey.ts#requireKey"),
-    );
+    other.set_aside_untold(&r, &p, &map("core/src/middlewares/apikey.ts#requireKey"));
     assert_eq!(other.violations.len(), 2, "{:?}", paths(&other));
 }
 
@@ -417,5 +423,8 @@ fn the_mode_says_was_block_now_advise() {
 
     // A convention the file sets to advise has nothing to explain.
     p.conventions[0].mode = Mode::Advise;
-    assert_eq!(mode_now(&p.conventions[0], Some("anything")), ("advise", None));
+    assert_eq!(
+        mode_now(&p.conventions[0], Some("anything")),
+        ("advise", None)
+    );
 }

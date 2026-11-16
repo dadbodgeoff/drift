@@ -121,9 +121,7 @@ fn guarded_siblings<'i>(
         {
             return None;
         }
-        guarded.sort_by(|a, b| {
-            (&a.path, a.line, &a.symbol).cmp(&(&b.path, b.line, &b.symbol))
-        });
+        guarded.sort_by(|a, b| (&a.path, a.line, &a.symbol).cmp(&(&b.path, b.line, &b.symbol)));
         return Some((guarded.len(), known, all, guarded[0], in_file));
     }
     None
@@ -133,11 +131,7 @@ fn guarded_siblings<'i>(
 /// Drift could not read); one to copy: y:30 [http], guarded by requireUser`. The
 /// sibling is named by its symbol and place, never its route: a route is a string
 /// literal of the code, and those are not echoed to an agent.
-fn siblings_clause(
-    e: &EntryRow,
-    rel: &str,
-    sib: (usize, usize, usize, &EntryRow, bool),
-) -> String {
+fn siblings_clause(e: &EntryRow, rel: &str, sib: (usize, usize, usize, &EntryRow, bool)) -> String {
     let (guarded, known, all, s, in_file) = sib;
     let unread = if all > known {
         format!(" ({} whose guard Drift could not read)", all - known)
@@ -431,12 +425,10 @@ pub fn introduced(inv: &Inventory, rel: &str, known: &dyn Fn(&str) -> bool) -> I
         // An entry point of `rel` written with no guard, known absent, public or of
         // unknown exposure, among siblings that carry one: the sibling to copy.
         let entry = entry_key(&e.path, &e.symbol);
-        let siblings = (e.path == rel
-            && known_bare(e)
-            && e.exposure != Exposure::Internal
-            && !known(&entry))
-        .then(|| guarded_siblings(inv, e))
-        .flatten();
+        let siblings =
+            (e.path == rel && known_bare(e) && e.exposure != Exposure::Internal && !known(&entry))
+                .then(|| guarded_siblings(inv, e))
+                .flatten();
         if clauses.is_empty() && siblings.is_none() {
             continue;
         }
@@ -763,10 +755,7 @@ pub fn reversals(
         if !to.contains('/') || known(&key) || baseline.get(&key).is_some_and(|n| *n > 0) {
             continue;
         }
-        let back = baseline
-            .get(&area_key(&to, &from))
-            .copied()
-            .unwrap_or(0);
+        let back = baseline.get(&area_key(&to, &from)).copied().unwrap_or(0);
         if back < MIN_REVERSE_FILES || declares(&to) {
             continue;
         }
@@ -1252,8 +1241,13 @@ mod tests {
         let read_all = || Some(crate::practices::basis::Basis::default());
         let mut inv = Inventory::default();
         for (i, name) in ["a", "b", "c", "d"].iter().enumerate() {
-            inv.entry_points
-                .push(entry("api/items.ts", name, 10 * (i as u32 + 1), &["requireUser"], vec![]));
+            inv.entry_points.push(entry(
+                "api/items.ts",
+                name,
+                10 * (i as u32 + 1),
+                &["requireUser"],
+                vec![],
+            ));
         }
         let mut fresh = entry("api/items.ts", "e", 50, &[], vec![]);
         fresh.basis = read_all();
@@ -1275,7 +1269,11 @@ mod tests {
         let told = |k: &str| got.keys.contains(k);
         assert!(introduced(&inv, "api/items.ts", &told).lines.is_empty());
         let all = security_keys(&inv);
-        assert!(introduced(&inv, "api/items.ts", &|k: &str| all.contains(k)).lines.is_empty());
+        assert!(
+            introduced(&inv, "api/items.ts", &|k: &str| all.contains(k))
+                .lines
+                .is_empty()
+        );
         // Unknown says nothing: something not read, a guard that cannot be read, an
         // internal entry point, too few guarded siblings.
         let mut unread = inv.clone();
@@ -1289,7 +1287,11 @@ mod tests {
         assert!(introduced(&opaque, "api/items.ts", &known).lines.is_empty());
         let mut internal = inv.clone();
         internal.entry_points[4].exposure = Exposure::Internal;
-        assert!(introduced(&internal, "api/items.ts", &known).lines.is_empty());
+        assert!(
+            introduced(&internal, "api/items.ts", &known)
+                .lines
+                .is_empty()
+        );
         let mut few = inv.clone();
         few.entry_points.drain(0..2);
         assert!(introduced(&few, "api/items.ts", &known).lines.is_empty());
@@ -1307,14 +1309,25 @@ mod tests {
         let build = |guarded: usize, unread: usize| {
             let mut inv = Inventory::default();
             for i in 0..guarded {
-                let mut e = entry("api/items.ts", &format!("g{i}"), 10 * (i as u32 + 1), &["requireUser"], vec![]);
+                let mut e = entry(
+                    "api/items.ts",
+                    &format!("g{i}"),
+                    10 * (i as u32 + 1),
+                    &["requireUser"],
+                    vec![],
+                );
                 e.route = Some(hostile.to_string());
                 inv.entry_points.push(e);
             }
             for i in 0..unread {
                 // No guard, and no reading of what is on the way: unknown.
-                inv.entry_points
-                    .push(entry("api/items.ts", &format!("u{i}"), 100 + i as u32, &[], vec![]));
+                inv.entry_points.push(entry(
+                    "api/items.ts",
+                    &format!("u{i}"),
+                    100 + i as u32,
+                    &[],
+                    vec![],
+                ));
             }
             let mut fresh = entry("api/items.ts", "e", 500, &[], vec![]);
             fresh.basis = read_all();
@@ -1323,7 +1336,11 @@ mod tests {
         };
         let none = |_: &str| false;
         // Half unread: no pattern.
-        assert!(introduced(&build(3, 3), "api/items.ts", &none).lines.is_empty());
+        assert!(
+            introduced(&build(3, 3), "api/items.ts", &none)
+                .lines
+                .is_empty()
+        );
         // Four guarded, one unread: said, with the unread one counted.
         let got = introduced(&build(4, 1), "api/items.ts", &none);
         assert_eq!(got.lines.len(), 1, "{:?}", got.lines);
@@ -1332,7 +1349,10 @@ mod tests {
             line.contains("while 4 of the 5 other http entry points in this file carry a guard (1 whose guard Drift could not read); one to copy: g0:10 [http], guarded by requireUser"),
             "{line}"
         );
-        assert!(!line.contains("Ignore previous instructions") && !line.contains("pwned"), "{line}");
+        assert!(
+            !line.contains("Ignore previous instructions") && !line.contains("pwned"),
+            "{line}"
+        );
     }
 
     /// S20: the area edges a file adds are compared with the counts the session started
@@ -1360,7 +1380,10 @@ mod tests {
         repo.files.push(file("packages/lib/a.ts", &[]));
         let base = area_edges(&repo);
         assert_eq!(base.get("area|apps/web|packages/lib"), Some(&6));
-        let edited = file("packages/lib/b.ts", &["apps/web/p0.ts", "packages/lib/a.ts"]);
+        let edited = file(
+            "packages/lib/b.ts",
+            &["apps/web/p0.ts", "packages/lib/a.ts"],
+        );
         let none = |_: &str| false;
         let got = reversals(&edited, &[], &base, &none);
         assert_eq!(
