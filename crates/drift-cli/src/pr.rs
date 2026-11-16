@@ -33,7 +33,7 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 
 use anyhow::{Context, bail};
-use drift_mine::check::{CheckReport, Scope, Violation, check};
+use drift_mine::check::{CheckReport, Scope, Violation};
 use drift_mine::policy::{CONVENTIONS_FILE, ConventionsFile, LOCK_FILE, Lock};
 use drift_mine::report::{
     GithubSummary, github_annotations, github_summary, github_unchecked_annotations,
@@ -315,7 +315,17 @@ impl DiffScope {
         let (mut facts, _) = crate::scan::scan(&base_root, &opts)
             .with_context(|| format!("scanning the merge base {}", short(&self.merge_base)))?;
         crate::history::attach_key_files(&base_root, policy, &mut facts);
-        let report = check(&facts, policy, lock, Scope::Accepted, None);
+        // The promoted practices too: a unit that broke one at the merge base was not
+        // introduced by the change. Their map is of the base's own facts and config.
+        let report = crate::practices::check_with_practices(
+            &base_root,
+            &facts,
+            policy,
+            lock,
+            Scope::Accepted,
+            None,
+            None,
+        );
         drop(tree);
         let unchecked = drift_mine::unchecked::Unchecked::of(&facts);
         self.base_unchecked = unchecked.files.iter().cloned().collect();
@@ -549,6 +559,30 @@ pub fn github_output(
     stdout.write_all(drift_mine::practices::departures_notices(departures, prefix).as_bytes())?;
     let exempt: Vec<_> = report.exempt.iter().collect();
     stdout.write_all(drift_mine::report::github_exempt_notices(&exempt).as_bytes())?;
+    // What the promoted practices could not say: a stale one fires on nothing, and units
+    // Drift could not read are not checked. Notices of the run, never a failure.
+    for s in &report.stale_practices {
+        writeln!(
+            stdout,
+            "::notice title={}::{}",
+            drift_mine::report::github_escape_property(&format!("drift [{}] stale", s.id)),
+            drift_mine::report::github_escape_data(&format!(
+                "Promoted practice {} is stale: no unit of its place does it an accepted way any more, so it reports nothing until a person promotes the way the code uses now or rejects it.",
+                s.id
+            ))
+        )?;
+    }
+    for n in &report.practices_not_checked {
+        writeln!(
+            stdout,
+            "::notice title={}::{}",
+            drift_mine::report::github_escape_property(&format!("drift [{}] not checked", n.id)),
+            drift_mine::report::github_escape_data(&format!(
+                "{} unit(s) of promoted practice {} were not checked: Drift could not read how they do it (`drift practices --hints` settles them).",
+                n.units, n.id
+            ))
+        )?;
+    }
     writeln!(
         stdout,
         "drift: {} new violation(s){}, {} in block mode{}",
@@ -954,6 +988,7 @@ rename to y.ts\n";
             extent,
             wire: None,
             import: None,
+            practice: None,
         }
     }
 

@@ -111,11 +111,11 @@ fn service() -> tempfile::TempDir {
     let init = drift(r, &["init"], None);
     // `init` proposes nothing here and leads with what is known all the same.
     assert!(
-        init.contains("What the code does (read from the code: facts, not rules)\n  24 http entry points in svc\n    sign-in:     dependency security.OAuth2PasswordBearer + dependency get_current_user in 22; nothing found in 2 (of 24)\n"),
+        init.contains("What the code does (read from the code: facts, not rules)\n  24 http entry points in svc\n    sign-in:     depends on security.OAuth2PasswordBearer + depends on get_current_user in 22; nothing found in 2 (of 24)\n"),
         "{init}"
     );
     assert!(
-        init.contains("Worth a look first\n  1. sign-in in svc: no guard found in what Drift read, in 2 places (e.g. svc/app/api/legacy.py:11 drop_widgets)\n"),
+        init.contains("Worth a look first\n  1. sign-in in svc: no guard found in what Drift read, in 2 places (e.g. svc/app/api/legacy.py:11 drop_widgets); make the usual way the rule for new code: drift practices promote P-f654cf --in svc\n"),
         "{init}"
     );
     let policy = std::fs::read_to_string(r.join(".drift/conventions.yaml")).unwrap();

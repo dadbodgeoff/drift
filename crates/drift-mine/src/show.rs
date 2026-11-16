@@ -240,13 +240,15 @@ pub fn candidate_shown(c: &Candidate) -> bool {
 }
 
 /// Whether a convention read from `.drift/conventions.yaml` stays in the policy: one a
-/// person decided (accepted, rejected, `agents: show`) or a wiring rule always; a proposal
-/// when the policy shows it ([`shown`]).
+/// person decided (accepted, rejected, `agents: show`), a wiring rule or a promoted
+/// practice (a person wrote it; mining never proposes one) always; a proposal when the
+/// policy shows it ([`shown`]).
 pub fn convention_kept(c: &Convention) -> bool {
     !enforced()
         || c.status != Status::Proposed
         || c.agents.is_some()
         || c.rule.is_wiring()
+        || c.rule.is_practice()
         || shown(&c.rule, c.tier(), c.language(), outliers(&c.evidence))
 }
 

@@ -42,8 +42,9 @@
 //!   absence, or [`Assignment::Unknown`] with a reason. A unit with any unparsed file
 //!   or opaque instrument is `Unknown`, even if other instruments are known [STRICT];
 //!   no unknown unit is ever `None`.
-//! - [`Concern::promotable`] maps a variant key to an existing [`Rule`] (the default
-//!   says none: descriptive only); the engine picks the role.
+//! - Nothing in a classifier says what may be promoted to a rule: a person promotes a
+//!   variant in a place where the counts allow it ([`promote`]), and the rule is
+//!   checked by the classifier itself, never mapped to a name-matching rule.
 //! - Vocabularies go in `libraries.rs` as `*_LIBRARIES` / `*_CALLEES` consts (the vocab
 //!   test forbids `const *_WORDS` outside `vocab.rs`); auth decisions go through
 //!   `security::authenticates` / `security::callee_is_guard`, never `grant::`.
@@ -64,8 +65,6 @@ use std::sync::OnceLock;
 
 use drift_core::{EntryPoint, FileFacts, RepoFacts, Symbol};
 use serde::{Deserialize, Serialize};
-
-use crate::mine::Rule;
 
 /// Declares each concern classifier's module and registers it, in one line per
 /// concern (`authn::Authn,`). The engine orders concerns by [`CONCERNS`], not by
@@ -638,11 +637,6 @@ pub trait Concern: Sync {
     ) -> Option<basis::Basis> {
         backing.basis.clone()
     }
-    /// The existing rule that expresses a variant, when one does (PLAN-R13 §4.5);
-    /// the engine picks the role. `None`: descriptive only.
-    fn promotable(&self, _key: &VariantKey) -> Option<Rule> {
-        None
-    }
     /// A tenant or owner key of the request that the unit takes and neither checks
     /// nor scopes, when the facts prove it ([`FindingKind::UnscopedKey`]; authz only,
     /// the default says none). `uses` are the unit's known uses after the engine's
@@ -709,13 +703,13 @@ pub use depart::{
 pub use dupes::{DuplicateHelper, FileDuplicate, HelperCopy, duplicate_helpers, duplicates_in};
 pub use engine::{
     NOT_COVERED, PRIMARY, card_lines, card_lines_with, config_hint, config_hint_counts,
-    config_hints, declared_warnings, link_conventions, package_line, package_line_with,
+    config_hints, declared_warnings, link_conventions, package_line, package_line_with, rule_names,
 };
 pub(crate) use engine::{TAIL, declared_on_every_path};
 pub(crate) use libraries::{NOT_AUTH_GUARD_LIBRARIES, authn_callee};
 pub use render::{
-    AGENT_CHARS, agent_recipe, agent_recipe_preview, render, render_agent, render_first_run,
-    render_recipes,
+    AGENT_CHARS, agent_recipe, agent_recipe_preview, plain_concern, plain_way, render,
+    render_agent, render_first_run, render_recipes,
 };
 
 // ---------- `drift practices --json` version 1 (PLAN-R13 §0.3) ----------

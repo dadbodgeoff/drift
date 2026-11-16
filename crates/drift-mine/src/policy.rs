@@ -1107,6 +1107,10 @@ impl ConventionsFile {
         for cand in candidates {
             let summary = cand.summary();
             match by_id.get_mut(&cand.id) {
+                // A promoted practice is a person's, written from the practice map:
+                // mining never proposes one (its id cannot be a mined one's), and its
+                // summary is never rewritten from the rule. Kept as it is.
+                Some(c) if c.rule.is_practice() => {}
                 Some(c) => {
                     // Refresh evidence; never touch status, mode or how the frozen
                     // selector is read.
@@ -1162,11 +1166,12 @@ impl ConventionsFile {
     }
 
     /// The `(role, rule)` of every accepted convention: what hysteresis keeps when
-    /// `drift init` mines again ([`crate::mine::mine_keeping`]).
+    /// `drift init` mines again ([`crate::mine::mine_keeping`]). Not a promoted practice:
+    /// mining never drafts one, so there is nothing to keep, and its role is only a place.
     pub fn accepted_rules(&self) -> Vec<(RoleSelector, Rule)> {
         self.conventions
             .iter()
-            .filter(|c| c.status == Status::Accepted)
+            .filter(|c| c.status == Status::Accepted && !c.rule.is_practice())
             .map(|c| (c.role.clone(), c.rule.clone()))
             .collect()
     }

@@ -52,6 +52,11 @@ pub struct Violation {
     /// Layering rules only: the import that breaks the rule. Not serialised when absent.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub import: Option<ImportHit>,
+    /// Promoted practices only ([`crate::practices::promote`]): the concern the unit
+    /// breaks, so every text that lists the violation can say what to do ("handle
+    /// sign-in the way ... does") without the policy at hand. Not serialised.
+    #[serde(skip)]
+    pub practice: Option<String>,
 }
 
 /// The import a layering violation is about ([`Violation::import`]): its module, and
@@ -551,6 +556,7 @@ pub fn check_gated(
                                 specifier: String::new(),
                                 line: 0,
                             }),
+                        practice: None,
                     });
                     continue;
                 }
@@ -922,6 +928,7 @@ fn sibling_exemption(
                 && a.role == c.role
                 && a.selector_version == c.selector_version
                 && !a.rule.is_wiring()
+                && !a.rule.is_practice()
         })
         .collect();
     siblings.sort_by(|a, b| a.id.cmp(&b.id));
@@ -1061,6 +1068,7 @@ fn wiring_violations(
                 }),
                 ..m.hint
             }),
+            practice: None,
         };
         if !once || v.baselined || v.suppressed {
             report.violations.push(v);
@@ -1145,13 +1153,14 @@ fn wiring_violations(
                         line: *line,
                     }),
                 }),
+                practice: None,
             });
         }
     }
 }
 
 /// Sorted, distinct declaration lines (symbols other than `(module)`, and models) per file.
-fn declaration_starts(repo: &RepoFacts) -> BTreeMap<&str, Vec<u32>> {
+pub(crate) fn declaration_starts(repo: &RepoFacts) -> BTreeMap<&str, Vec<u32>> {
     let mut out: BTreeMap<&str, BTreeSet<u32>> = BTreeMap::new();
     for f in &repo.files {
         let lines = out.entry(f.path.as_str()).or_default();
@@ -1170,21 +1179,24 @@ fn declaration_starts(repo: &RepoFacts) -> BTreeMap<&str, Vec<u32>> {
         .collect()
 }
 
+/// The lines of the declaration that starts at `start` in `path`: up to the line before
+/// the next declaration there ([`declaration_starts`]), or to the end of the file.
+pub(crate) fn span(starts: &BTreeMap<&str, Vec<u32>>, path: &str, start: u32) -> (u32, u32) {
+    let end = starts
+        .get(path)
+        .and_then(|l| l.get(l.partition_point(|&n| n <= start)))
+        .map_or(u32::MAX, |n| n - 1);
+    (start, end)
+}
+
 fn extent(view: &View, starts: &BTreeMap<&str, Vec<u32>>) -> Extent {
-    let span = |path: &str, start: u32| {
-        let end = starts
-            .get(path)
-            .and_then(|l| l.get(l.partition_point(|&n| n <= start)))
-            .map_or(u32::MAX, |n| n - 1);
-        (start, end)
-    };
     match view {
         View::Symbol(f, s) if s.kind != SymbolKind::Module => {
-            let (start, end) = span(&f.path, s.line);
+            let (start, end) = span(starts, &f.path, s.line);
             Extent::Symbol { start, end }
         }
         View::Model(m) => {
-            let (start, end) = span(&m.path, m.line);
+            let (start, end) = span(starts, &m.path, m.line);
             Extent::Model { start, end }
         }
         View::Symbol(..) | View::File(_) | View::Package(_) => Extent::File,
@@ -1211,10 +1223,17 @@ fn extent(view: &View, starts: &BTreeMap<&str, Vec<u32>>) -> Extent {
 ///   about members, in a role without entry points, guarding nothing), broken by a
 ///   symbol that may be a part of the role ([`crate::parts::may_be_part`]), when the
 ///   facts hold no other file of the role: who uses it is known only from the other
-///   files.
+///   files;
+/// - an accepted promoted practice ([`crate::practices::promote::check`]): its verdicts
+///   are read from the practice map, which is of the whole repository (whether a place
+///   still uses one of its ways, a unit's guard defined in another file, its lock
+///   entries).
 ///
 /// Hooks then scan the repo. Units and context are built once for all.
 pub fn needs_full_scan(repo: &RepoFacts, policy: &ConventionsFile) -> bool {
+    if crate::practices::promote::any(policy, Scope::Accepted) {
+        return true;
+    }
     let parts = policy.by_part();
     let policy: &ConventionsFile = &parts;
     // Conventions whose exemptions may be undecided: wrapper rules, and key rules (a
