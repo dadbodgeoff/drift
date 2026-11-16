@@ -27,9 +27,17 @@ test("spec: 40 blind (amendment 2; 18, then 30) and no build half, apps11's crit
   assert.notEqual(SPEC.seed_public, APPS11.seed_public);
   const commit = SPEC.seed_public.split(":").at(-1);
   assert.match(commit, /^[0-9a-f]{40}$/);
-  assert.equal(spawnSync("git", ["-C", here, "cat-file", "-e", `${commit}^{commit}`]).status, 0, "the public seed names a Drift commit");
   assert.deepEqual(SPEC.outputs, { blind_hashes: "eval/apps13-blind-hashes.json" });
   assert.ok(SPEC.never.includes("polar") && SPEC.never.includes("ctfd"));
+});
+
+// The seed's commit is from the history before the public snapshot (Drift 0.1.0-dev: first public snapshot), which
+// squashed it away, so a clone of the public repository may not have it: checked where it is present, skipped (and
+// shown as skipped) where it is not, as select-holdout.test.mjs does for its recorded refs.
+const seedCommit = SPEC.seed_public.split(":").at(-1);
+const seedPresent = spawnSync("git", ["-C", here, "cat-file", "-e", `${seedCommit}^{commit}`]).status === 0;
+test("spec: the apps13 public seed's Drift commit is in this clone", { skip: !seedPresent && `seed commit ${seedCommit} not in this clone (pre-snapshot history)` }, () => {
+  assert.equal(spawnSync("git", ["-C", here, "cat-file", "-t", seedCommit], { encoding: "utf8" }).stdout.trim(), "commit", "the public seed names a Drift commit");
 });
 
 const it = (x = {}) => ({ full_name: "acme/shop", archived: false, fork: false, is_template: false, license: { spdx_id: "MIT" }, topics: [], stargazers_count: 500, pushed_at: "2026-10-01T00:00:00Z", ...x });

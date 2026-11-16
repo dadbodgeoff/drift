@@ -1134,7 +1134,12 @@ mod tests {
         write(&r, "inside/e.ts", "export const e = 1;\n");
         write(&r, "shared.gitignore", "*.gen.ts\n");
         std::os::unix::fs::symlink("/dev/zero", r.join("zero/.gitignore")).unwrap();
-        std::os::unix::fs::symlink("/etc/hostname", r.join("linked/.ignore")).unwrap();
+        // A link to a regular file outside the repository. Not a system file such as
+        // `/etc/hostname`: macOS has none, and a dangling link is (rightly) read as no file.
+        let outside = tempfile::tempdir().unwrap();
+        let target = outside.path().join("ignore");
+        fs::write(&target, "*.gen.ts\n").unwrap();
+        std::os::unix::fs::symlink(&target, r.join("linked/.ignore")).unwrap();
         // A link to a regular file inside the repository is read as before.
         std::os::unix::fs::symlink("../shared.gitignore", r.join("inside/.gitignore")).unwrap();
         let fifo = mkfifo(&r.join("fifo/.gitignore"));

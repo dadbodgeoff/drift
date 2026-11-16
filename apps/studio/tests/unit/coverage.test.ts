@@ -140,7 +140,7 @@ describe("the Studio handles every Drift surface", () => {
     };
     // Object literals of the TypeScript types: the compiler rejects a field the type lacks.
     const place: PromotePlace = { package: "", dir: "" };
-    const way: PromoteWay = { id: "", key: "", label: "", members: 0 };
+    const way: PromoteWay = { id: "", key: "", label: "", members: 0, alternatives: [] };
     const candidate: PromoteCandidate = { concern: "", unit: "", place, ways: [], other_ways: [], follows: 0, exceptions: [], unknown: 0, total: 0, example: null, forced: false };
     const stale: StalePractice = { id: "", summary: "", units: 0 };
     const notChecked: PracticeNotChecked = { id: "", units: 0 };
