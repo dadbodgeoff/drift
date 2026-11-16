@@ -1777,6 +1777,9 @@ impl Boundaries {
                 .collect();
             let fronts = !mounts.is_empty()
                 || built.as_ref().is_some_and(|b| !b.copies.is_empty())
+                // Another gateway's configuration copied in ([`config_gateway`]).
+                || (proxy.is_some_and(|p| p != "nginx")
+                    && built.as_ref().is_some_and(|b| !b.files.is_empty()))
                 || !strings(def.get("depends_on")).is_empty()
                 || !strings(def.get("links")).is_empty();
             // Every name another container reaches it by.
@@ -1787,6 +1790,7 @@ impl Boundaries {
                 names.extend(nets.values().flat_map(|n| strings(n.get("aliases"))));
             }
             let said: String = def.iter().map(|(k, v)| format!("{k} {v}\n")).collect();
+            let (command, env) = command_and_env(def);
             let volumes: Vec<(Option<String>, String)> = volumes
                 .into_iter()
                 .map(|(h, t)| {
@@ -1869,6 +1873,8 @@ impl Boundaries {
                 unread_start,
                 absent_env,
                 said: said.to_lowercase(),
+                command,
+                env,
                 built: built.zip(context),
                 names: names.iter().map(|n| n.to_lowercase()).collect(),
                 links: strings(def.get("links"))
@@ -1996,11 +2002,13 @@ impl Boundaries {
             read = gateways
                 .iter()
                 .map(|g| {
+                    let one = |got: Result<Option<Gateway>, String>| got.map(|g| g.map(|g| vec![g]));
                     let (kind, got) = match g.proxy {
-                        Some("nginx") => ("nginx configuration", nginx_gateway(root, g, &svcs)),
-                        Some("traefik") => ("Traefik labels", Ok(Some(traefik_gateway(name, g, &svcs)))),
-                        Some("caddy") => ("a Caddyfile", caddy_gateway(root, g, &svcs)),
-                        _ => ("", Ok(None)),
+                        Some("nginx") => ("nginx configuration", one(nginx_gateway(root, g, &svcs))),
+                        Some("traefik") => ("Traefik labels", Ok(Some(vec![traefik_gateway(root, name, g, &svcs)]))),
+                        Some("caddy") => ("a Caddyfile", one(caddy_gateway(root, g, &svcs))),
+                        Some(p) => (config_kind(p), config_gateway(root, g, &svcs)),
+                        None => ("", Ok(None)),
                     };
                     got.unwrap_or_else(|e| {
                         self.warnings.push(format!(
@@ -2010,7 +2018,8 @@ impl Boundaries {
                         None
                     })
                 })
-                .collect();
+                .collect::<Option<Vec<Vec<Gateway>>>>()
+                .map(|all| all.into_iter().flatten().collect());
         }
         if let (Some(read), Some(root)) = (read, root) {
             for g in read.iter().filter(|g| !g.unread.is_empty()) {
@@ -2597,7 +2606,16 @@ impl Boundaries {
 
 /// Reverse-proxy images ([`Boundaries::read_compose_at`]): a service running one that
 /// publishes ports fronts the services it routes to.
-pub const GATEWAY_IMAGES: &[&str] = &["nginx", "traefik", "caddy", "haproxy", "envoy"];
+pub const GATEWAY_IMAGES: &[&str] = &[
+    "nginx",
+    "traefik",
+    "caddy",
+    "haproxy",
+    "envoy",
+    "httpd",
+    "kong",
+    "kong-gateway",
+];
 
 /// What stands for the adapter of an entry point whose handler may also be served at
 /// paths that are not read ([`drift_core::MountFacts::elsewhere`]).
@@ -2695,6 +2713,10 @@ struct Svc {
     absent_env: Vec<String>,
     /// Its definition as text, lower case: what its command and environment say.
     said: String,
+    /// Its `command`, word by word, as written; none when it has none.
+    command: Option<Vec<String>>,
+    /// Its `environment`, as written.
+    env: BTreeMap<String, String>,
 }
 
 /// Images that serve data, not other services' HTTP: one that publishes ports is no
@@ -3230,7 +3252,7 @@ const STOCK_CADDY: &[&str] = &[
 /// file's services ([`crate::proxies::traefik`]). What may add routers that are not
 /// on the labels is recorded as unread: a configuration file it mounts, another
 /// provider, an image that is not the stock one.
-fn traefik_gateway(file: &str, g: &Svc, svcs: &[Svc]) -> Gateway {
+fn traefik_gateway(root: &Path, file: &str, g: &Svc, svcs: &[Svc]) -> Gateway {
     let services: Vec<crate::proxies::Labelled> = svcs
         .iter()
         .map(|s| crate::proxies::Labelled {
@@ -3238,8 +3260,15 @@ fn traefik_gateway(file: &str, g: &Svc, svcs: &[Svc]) -> Gateway {
             labels: &s.labels,
         })
         .collect();
+    // The file provider: the file or the directory its command or environment names.
+    let provider = traefik_provider(g);
+    let of_provider = |t: &str| {
+        provider.as_ref().is_some_and(|(path, _)| {
+            t == path || t.starts_with(&format!("{}/", path.trim_end_matches('/')))
+        })
+    };
     // Anything mounted that may be configuration: not the docker socket, not
-    // certificates or logs.
+    // certificates or logs, not what the file provider reads.
     let config: Vec<String> = g
         .volumes
         .iter()
@@ -3251,15 +3280,216 @@ fn traefik_gateway(file: &str, g: &Svc, svcs: &[Svc]) -> Gateway {
                 || t.ends_with(".toml")
                 || t.starts_with("/etc/traefik")
         })
+        .filter(|t| !of_provider(t))
         .collect();
-    crate::proxies::traefik(
+    let (mut rules, mut unread) = crate::proxies::traefik_rules(
         &g.name,
-        file,
         &g.said,
         &config,
         STOCK_TRAEFIK.contains(&image_repository(&g.image)),
         &services,
-    )
+    );
+    let mut files = vec![file.to_string()];
+    if let Some((path, directory)) = &provider {
+        let fs = crate::gateway_configs::Fs::read(root, &g.volumes, &[]);
+        let resolve = |host: &str| resolve_host(g, svcs, host);
+        match crate::gateway_configs::traefik_file_at(&fs, path, *directory, &resolve) {
+            Some(Ok((more, why, read))) => {
+                let not_read = format!("gateway {}: its `file` provider is not read", g.name);
+                unread.retain(|u| *u != not_read);
+                rules.extend(more);
+                unread.extend(
+                    why.into_iter()
+                        .map(|w| format!("gateway {}: {w} is not read", g.name)),
+                );
+                files.extend(read);
+            }
+            Some(Err(e)) => unread.push(format!(
+                "gateway {}: its file provider ({e}) is not read",
+                g.name
+            )),
+            None => {}
+        }
+    }
+    Gateway::of_rules(&g.name, files, "router", rules, unread)
+}
+
+/// Where the Traefik gateway `g` reads its file provider: the file
+/// (`--providers.file.filename`, `TRAEFIK_PROVIDERS_FILE_FILENAME`), or the
+/// directory (`directory`, true) its command or its environment names. None when it
+/// names neither, or names it with a variable.
+fn traefik_provider(g: &Svc) -> Option<(String, bool)> {
+    let words = g.command.clone().unwrap_or_default();
+    for (key, directory) in [("filename", false), ("directory", true)] {
+        let flag = format!("--providers.file.{key}");
+        for (i, w) in words.iter().enumerate() {
+            let lower = w.to_lowercase();
+            let value = if lower.starts_with(&format!("{flag}=")) {
+                Some(w[flag.len() + 1..].to_string())
+            } else if lower == flag {
+                words.get(i + 1).cloned()
+            } else {
+                None
+            };
+            if let Some(v) = value.filter(|v| !v.contains('$')) {
+                return Some((v, directory));
+            }
+        }
+        let var = format!("TRAEFIK_PROVIDERS_FILE_{}", key.to_uppercase());
+        if let Some(v) = g.env.get(&var).filter(|v| !v.contains('$')) {
+            return Some((v.clone(), directory));
+        }
+    }
+    None
+}
+
+/// What the configuration of the gateway image `proxy` is called, for a warning.
+fn config_kind(proxy: &str) -> &'static str {
+    match proxy {
+        "haproxy" => "HAProxy configuration",
+        "envoy" => "Envoy configuration",
+        "httpd" => "httpd configuration",
+        "kong" | "kong-gateway" => "a Kong declarative configuration",
+        _ => "gateway configuration",
+    }
+}
+
+/// The stock HAProxy, Envoy, httpd and Kong images: what they hold routes nothing
+/// by itself.
+const STOCK_HAPROXY: &[&str] = &[
+    "haproxy",
+    "library/haproxy",
+    "docker.io/haproxy",
+    "docker.io/library/haproxy",
+];
+const STOCK_ENVOY: &[&str] = &["envoyproxy/envoy", "docker.io/envoyproxy/envoy"];
+const STOCK_HTTPD: &[&str] = &[
+    "httpd",
+    "library/httpd",
+    "docker.io/httpd",
+    "docker.io/library/httpd",
+];
+const STOCK_KONG: &[&str] = &[
+    "kong",
+    "library/kong",
+    "docker.io/kong",
+    "docker.io/library/kong",
+    "kong/kong-gateway",
+    "docker.io/kong/kong-gateway",
+];
+
+/// The gateway `g` that runs HAProxy, Envoy, httpd or Kong, read from the
+/// configuration its container has from the repository ([`crate::gateway_configs`]):
+/// what it mounts and what its Dockerfile copies, at the path the gateway reads.
+/// None when the repository puts none there; an error when a file is not
+/// configuration Drift reads. What may configure it otherwise is recorded as unread:
+/// an image that is not the stock one, a Dockerfile step other than a copy, an
+/// `entrypoint`, a `command` Drift does not read.
+fn config_gateway(root: &Path, g: &Svc, svcs: &[Svc]) -> Result<Option<Vec<Gateway>>, String> {
+    use crate::gateway_configs as configs;
+    let copies: Vec<(Option<String>, String)> = g
+        .built
+        .iter()
+        .flat_map(|(built, context)| {
+            built
+                .files
+                .iter()
+                .map(|(source, target)| (join_dir(context, source), target.clone()))
+        })
+        .collect();
+    let fs = configs::Fs::read(root, &g.volumes, &copies);
+    let resolve = |host: &str| resolve_host(g, svcs, host);
+    let words = g.command.as_deref();
+    let (stock, got, reads_command) = match g.proxy {
+        Some("haproxy") => (
+            STOCK_HAPROXY,
+            configs::haproxy_at(&g.name, &fs, words, &resolve)?,
+            true,
+        ),
+        Some("envoy") => (
+            STOCK_ENVOY,
+            configs::envoy_at(&g.name, &fs, words, &resolve)?,
+            true,
+        ),
+        Some("httpd") => (
+            STOCK_HTTPD,
+            configs::httpd(
+                &g.name,
+                &fs,
+                "/usr/local/apache2/conf/httpd.conf",
+                "/usr/local/apache2",
+                &resolve,
+            )?
+            .map(|g| vec![g]),
+            false,
+        ),
+        Some("kong" | "kong-gateway") => (
+            STOCK_KONG,
+            configs::kong_at(&g.name, &fs, &g.env, words, &resolve)?,
+            true,
+        ),
+        _ => return Ok(None),
+    };
+    let Some(mut got) = got.filter(|g| !g.is_empty()) else {
+        return Ok(None);
+    };
+    let mut unread: Vec<String> = Vec::new();
+    if !stock.contains(&image_repository(&g.image)) {
+        unread.push(format!("what the image {} holds", g.image));
+    }
+    if let Some((built, _)) = &g.built {
+        unread.extend(
+            built
+                .unread
+                .as_ref()
+                .map(|step| format!("a step of its Dockerfile (`{step}`)")),
+        );
+    }
+    unread.extend(
+        g.rewired
+            .iter()
+            .filter(|k| !(reads_command && **k == "command"))
+            .map(|k| format!("what its `{k}` does")),
+    );
+    got[0].unread.splice(
+        0..0,
+        unread
+            .into_iter()
+            .map(|what| format!("gateway {}: {what} is not read", g.name)),
+    );
+    Ok(Some(got))
+}
+
+/// A compose service's `command`, word by word (a string is split at spaces; one
+/// with quotes is one word, which no reader takes), and its `environment` (a mapping
+/// or a list of `NAME=value`).
+fn command_and_env(
+    def: &serde_json::Map<String, serde_json::Value>,
+) -> (Option<Vec<String>>, BTreeMap<String, String>) {
+    use serde_json::Value;
+    let text = |v: &Value| v.as_str().map_or_else(|| v.to_string(), str::to_string);
+    let command = match def.get("command") {
+        Some(Value::String(s)) if s.contains(['"', '\'', '\\']) => Some(vec![s.clone()]),
+        Some(Value::String(s)) => Some(s.split_whitespace().map(str::to_string).collect()),
+        Some(Value::Array(a)) => Some(a.iter().map(text).collect()),
+        Some(other) => Some(vec![other.to_string()]),
+        None => None,
+    };
+    let env = match def.get("environment") {
+        Some(Value::Object(m)) => m
+            .iter()
+            .filter(|(_, v)| !v.is_null())
+            .map(|(k, v)| (k.clone(), text(v)))
+            .collect(),
+        Some(Value::Array(a)) => a
+            .iter()
+            .filter_map(Value::as_str)
+            .filter_map(|e| e.split_once('='))
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect(),
+        _ => BTreeMap::new(),
+    };
+    (command, env)
 }
 
 /// The Caddy gateway `g` read from the Caddyfile it mounts from the repository
