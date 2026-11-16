@@ -372,8 +372,9 @@ pub fn read<'a>(cx: &Cx<'a>, unit: &UnitRef<'a>) -> Reading {
         .collect();
     let py = sfile.lang == "py";
     // FastAPI runs every dependency of a route before its handler, and one that
-    // answers refuses: none can serve the request before another has run.
-    let dependencies = py && entry.adapter == "fastapi";
+    // answers refuses: none can serve the request before another has run. So does
+    // Litestar, with its guards.
+    let dependencies = py && matches!(entry.adapter.as_str(), "fastapi" | "litestar");
     // What the unit's own mount adds could not be read [STRICT]: never another
     // mount's guards, never none. What a FastAPI mount adds are dependencies: beside
     // a proven guard they change nothing.

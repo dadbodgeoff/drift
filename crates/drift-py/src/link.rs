@@ -22,6 +22,8 @@ use crate::resolve::Resolver;
 
 #[path = "config.rs"]
 pub(crate) mod config;
+#[path = "framework_links.rs"]
+mod framework_links;
 
 /// Maximum hops followed through re-exports (guards cycles).
 const MAX_HOPS: usize = 32;
@@ -381,6 +383,8 @@ struct RouterInfo {
     /// An application (`FastAPI()`, `Flask()`), which serves its routes at their own
     /// paths, not a router or blueprint, which serves nothing until it is mounted.
     root: bool,
+    /// The framework of [`framework_links`] it is of, if any (listed reading only).
+    framework: Option<&'static framework_links::Framework>,
 }
 
 impl RouterInfo {
@@ -417,6 +421,9 @@ struct Extra {
     /// routes it is served on, and the hooks and guards it gave the symbol
     /// ([`Linker::split_routes`]).
     routed: Vec<(String, bool, Vec<String>, Vec<Wrap>)>,
+    /// symbol -> the decorators that registered it as a route, not wraps of it
+    /// (a Litestar handler's `@get`: [`framework_links`]).
+    dropped: BTreeMap<String, BTreeSet<String>>,
 }
 
 /// The link of this symbol itself reads what the measured build did not
@@ -752,6 +759,8 @@ pub struct Linker<'r> {
     /// every reading that build made since the measured build is made, and none
     /// made after it ([`Linker::since_frozen`]).
     compat: bool,
+    /// What the readings of [`framework_links`] add to the tables.
+    frameworks: framework_links::Tables,
     /// A listing made since was met ([`Linker::lists_unmeasured`]).
     unmeasured: std::sync::atomic::AtomicBool,
     /// Entry points declared outside Python code (console scripts, `langgraph.json`),
@@ -1008,7 +1017,7 @@ impl<'r> Linker<'r> {
         let handed = (!self.handed_given && !self.handed_differs)
             .then(|| (self.handed_on.clone(), self.mounts_unseen.clone()));
         Some(
-            Self::with_tables(self.res, self.files, track, true, tables, handed)
+            Self::with_tables(self.res, self.files, track, (true, false), tables, handed)
                 .with_declared(self.declared.clone()),
         )
     }
@@ -1030,10 +1039,15 @@ impl<'r> Linker<'r> {
             self.specs.clone(),
             self.bindings.clone(),
         );
-        let mut l = Self::with_tables(self.res, self.files, track, self.measured, tables, None)
-            .with_declared(self.declared.clone());
-        l.compat = true;
-        l
+        Self::with_tables(
+            self.res,
+            self.files,
+            track,
+            (self.measured, true),
+            tables,
+            None,
+        )
+        .with_declared(self.declared.clone())
     }
 
     /// Whether `measured` ([`Linker::measured`]) may link file `fi` differently from
@@ -1256,7 +1270,14 @@ impl<'r> Linker<'r> {
             .iter()
             .map(|f| f.raw.bindings.iter().cloned().collect())
             .collect();
-        Self::with_tables(res, files, track, measured, (index, specs, bindings), None)
+        Self::with_tables(
+            res,
+            files,
+            track,
+            (measured, false),
+            (index, specs, bindings),
+            None,
+        )
     }
 
     /// A linker over tables that are the same however the repository's listings are
@@ -1267,7 +1288,7 @@ impl<'r> Linker<'r> {
         res: &'r Resolver,
         files: &'r [LoweredFile],
         track: Option<Track>,
-        measured: bool,
+        (measured, compat): (bool, bool),
         (index, specs, bindings): (
             BTreeMap<String, usize>,
             Vec<BTreeMap<String, String>>,
@@ -1315,9 +1336,10 @@ impl<'r> Linker<'r> {
             mounts_unseen,
             handles: BTreeMap::new(),
             measured,
-            compat: false,
+            compat,
             unmeasured: std::sync::atomic::AtomicBool::new(false),
             declared: BTreeMap::new(),
+            frameworks: framework_links::Tables::default(),
         };
         l.build_adapter_tables();
         l.build_handles();
@@ -2893,20 +2915,25 @@ impl<'r> Linker<'r> {
                     }
                     None => continue,
                 };
-                let prefix = match adapter {
-                    "fastapi" => r.prefix.clone(),
-                    "flask" => r.url_prefix.clone(),
-                    "flask_restx" if class.ends_with("#Namespace") || r.path.is_some() => r
+                let framework = self.framework_of(&class);
+                let prefix = match (adapter, framework) {
+                    (_, Some(f)) => self.framework_prefix(f, r),
+                    ("fastapi", _) => r.prefix.clone(),
+                    ("flask", _) => r.url_prefix.clone(),
+                    ("flask_restx", _) if class.ends_with("#Namespace") || r.path.is_some() => r
                         .path
                         .clone()
                         .or_else(|| r.first.as_ref().map(|n| format!("/{n}"))),
                     _ => None,
                 };
-                let deps = r
-                    .deps
-                    .iter()
-                    .flat_map(|d| self.dep_canon(fi, d, false))
-                    .collect();
+                let deps = match framework {
+                    Some(_) => self.framework_guards(fi, &r.name),
+                    None => r
+                        .deps
+                        .iter()
+                        .flat_map(|d| self.dep_canon(fi, d, false))
+                        .collect(),
+                };
                 // A class of the repository built on the library's that writes its own
                 // constructor (`class VersionedRouter(APIRouter): def __init__ ...`)
                 // may give itself a prefix there: what it is built with is then not
@@ -2986,6 +3013,7 @@ impl<'r> Linker<'r> {
                         app: adapter == "flask" && self.is_app_class(&class, 0),
                         root: self.is_app_class(&class, 0)
                             || STARLETTE_APPS.contains(&class.as_str()),
+                        framework,
                     },
                 );
             }
@@ -3077,6 +3105,7 @@ impl<'r> Linker<'r> {
                                 && !APP_ATTRIBUTES.contains(&attr)
                                 && !NO_GUARD_ATTRIBUTES.contains(&attr)
                                 && (!rest.is_empty() || (elsewhere && !explained()))
+                                && !self.framework_explains(&node, fi, r, attr, line)
                             {
                                 unread.push((node.clone(), format!("{how} ({at}:{line})")));
                             }
@@ -3292,6 +3321,7 @@ impl<'r> Linker<'r> {
                 self.app_hooks.entry(root).or_default().push(hook.clone());
             }
         }
+        self.framework_tables();
         self.read_passes();
         for v in self.hooks.values_mut().chain(self.app_hooks.values_mut()) {
             v.sort();
@@ -3317,6 +3347,7 @@ impl<'r> Linker<'r> {
                 }
                 self.registration(fi, g, &mut extra);
             }
+            self.framework_registrations(fi, &mut extra);
         }
         for (fi, parent, prefix) in admin_mounts {
             self.admin_entry(fi, &parent, &prefix, &mut extra);
@@ -3580,6 +3611,9 @@ impl<'r> Linker<'r> {
 
     /// Adapter of a router class: a known class, an in-repo subclass of one, or a known name.
     fn router_adapter(&self, class: &str, depth: usize) -> Option<&'static str> {
+        if let Some(f) = self.framework_of(class) {
+            return Some(f.model);
+        }
         if let Some((_, a)) = ROUTER_CLASSES.iter().find(|(c, _)| *c == class) {
             return Some(a);
         }
@@ -3711,7 +3745,7 @@ impl<'r> Linker<'r> {
             info.is_some_and(|i| !i.root && matches!(adapter, "fastapi" | "flask" | "flask_restx"));
         let module = node.split_once('#').map_or(node, |(m, _)| m);
         if router
-            && (self.handed_on.contains_key(node)
+            && ((self.handed_on.contains_key(node) && !self.framework_handed_read(node))
                 || self.handed_on.contains_key(module)
                 || self.under_unseen_mounts(node))
             && self.since_measured()
@@ -3874,6 +3908,9 @@ impl<'r> Linker<'r> {
         if APPS.contains(&class) {
             return true;
         }
+        if let Some(f) = self.framework_of(class) {
+            return f.app;
+        }
         if depth > 8 {
             return false;
         }
@@ -3908,7 +3945,12 @@ impl<'r> Linker<'r> {
 
     fn route(&self, fi: usize, rt: &RawRoute, extra: &mut Extra) {
         let node = self.node_of(fi, &rt.receiver);
-        let adapter = self.router_info(&node).map(|r| r.adapter.as_str());
+        let framework = self.router_info(&node).and_then(|r| r.framework);
+        // A Litestar layer has no route decorators: its routes are its handlers.
+        let adapter = self
+            .router_info(&node)
+            .map(|r| r.adapter.as_str())
+            .filter(|_| framework.is_none_or(|f| f.name != "litestar"));
         let sym = self.files[fi]
             .raw
             .symbols
@@ -3932,6 +3974,9 @@ impl<'r> Linker<'r> {
             ),
             (Some("fastapi"), "websocket") => {
                 ("websocket", vec![], "pkg:fastapi#APIRouter.api_route")
+            }
+            (Some("flask"), "websocket") if framework.is_some() => {
+                ("websocket", vec![], "pkg:flask#Flask.route")
             }
             (Some("flask"), v) if HTTP_VERBS.contains(&v) => (
                 "http",
@@ -3969,7 +4014,15 @@ impl<'r> Linker<'r> {
                 return;
             }
         };
-        let adapter = adapter.unwrap_or_default().to_string();
+        let adapter = match framework {
+            Some(f) => f.adapter,
+            None => adapter.unwrap_or_default(),
+        }
+        .to_string();
+        // A django-ninja API no live URLconf includes serves nothing.
+        if framework.is_some_and(|f| f.name == "ninja") && self.framework_unserved(&node, 0) {
+            return;
+        }
         // A router mounted more than once answers on each mount: one entry point
         // each, with the guards of its own mount. A task is not mounted.
         let mut chains = self.chains(&node, 0);
@@ -4006,6 +4059,9 @@ impl<'r> Linker<'r> {
         if let Some(s) = sym {
             wraps.extend(s.deps.iter().flat_map(|d| self.dep_canon(fi, d, false)));
         }
+        if framework.is_some() {
+            wraps.extend(self.framework_route_guards(fi, rt, &node));
+        }
         {
             // Of every chain, not only what all of them share: a reader that finds
             // one dependency written in two ways on a symbol trusts neither.
@@ -4031,7 +4087,7 @@ impl<'r> Linker<'r> {
         }
         let args = extra.args.entry(rt.symbol.clone()).or_default();
         for k in &rt.keywords {
-            if !matches!(k.as_str(), "methods" | "name") {
+            if !matches!(k.as_str(), "methods" | "name") && !(framework.is_some() && k == "auth") {
                 args.push(format!("{callee}@{KWARG_INDEX}:{k}"));
             }
         }
@@ -4729,6 +4785,14 @@ impl<'r> Linker<'r> {
                     } else {
                         self.canon(fi, r)
                     };
+                    if *k == WrapKind::Decorator
+                        && extra
+                            .dropped
+                            .get(&s.name)
+                            .is_some_and(|d| d.contains(&wrapper))
+                    {
+                        continue;
+                    }
                     let w = Wrap { wrapper, kind: *k };
                     if !wraps.contains(&w) {
                         wraps.push(w);
@@ -5475,6 +5539,8 @@ impl<'r> Linker<'r> {
             })
             .collect();
 
+        // Route handlers no entry point lists (listed reading only).
+        let unlisted_routes = self.framework_unlisted(fi, &entry_points);
         let mut facts = FileFacts {
             path: f.rel_path.clone(),
             hash: f.hash.clone(),
@@ -5495,7 +5561,7 @@ impl<'r> Linker<'r> {
                 .filter_map(|l| self.registry(fi, l))
                 .collect(),
             truncated: vec![],
-            unlisted_routes: vec![],
+            unlisted_routes,
             discovers: raw.discovers.clone(),
             outgoing: if test_file {
                 vec![]
@@ -5565,7 +5631,8 @@ impl<'r> Linker<'r> {
         entries.iter().all(|e| {
             let converters = route_converters(e.route.as_deref().unwrap_or_default());
             bound.iter().all(|(name, typed)| match e.adapter.as_str() {
-                "fastapi" => *typed,
+                // Annotated parameters are parsed before the handler runs.
+                "fastapi" | "litestar" | "ninja" => *typed,
                 "django" | "drf" | "flask" | "flask_restx" => converters
                     .iter()
                     .any(|(n, conv)| n == name && converter_parses(&e.adapter, conv)),

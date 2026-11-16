@@ -7,6 +7,10 @@
 use drift_core::{SymbolKind, WrapKind};
 use serde::{Deserialize, Serialize};
 
+#[path = "raw_frameworks.rs"]
+mod frameworks;
+pub use frameworks::*;
+
 /// Where a reference points before module resolution.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum RawBase {
@@ -1377,6 +1381,10 @@ pub struct RawFile {
     /// `app.add_exception_handler(X, handler)`: what the handler handles, and the handler.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub error_handlers: Vec<(RawHandles, RawRef)>,
+    /// What the django-ninja, Litestar and Sanic readings know of the file, for the
+    /// listed link only. Lowering 75.
+    #[serde(default, skip_serializing_if = "RawFrameworks::is_empty")]
+    pub frameworks: RawFrameworks,
 }
 
 /// One entry of a [`RawRefList`].

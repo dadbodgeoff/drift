@@ -81,6 +81,10 @@ pub enum Position {
     /// "no guard". Decided by the entry's adapter, not by a name of what stands
     /// there (review R5, row 9).
     Admin,
+    /// django-ninja's `auth=`: the callable's answer lets the caller in, and a false
+    /// one turns them away, which neither the decorator's reading nor the
+    /// dependency's follows. What stands there is named, and unknown.
+    Unread,
 }
 
 impl Position {
@@ -99,6 +103,11 @@ impl Position {
             // The admin's one entry point: `AdminSite.admin_view` wraps its views as
             // a decorator does, and what the site lets in is not read.
             WrapKind::Call if adapter == "django_admin" => Some(Position::Admin),
+            // Sanic: a request hook's answer, if any, is the response, as Flask's.
+            WrapKind::Call if adapter == "sanic" => Some(Position::Hook),
+            // Litestar: a guard and a dependency refuse only by raising.
+            WrapKind::Call if adapter == "litestar" => Some(Position::Dependency),
+            WrapKind::Call if adapter == "ninja" => Some(Position::Unread),
             // A base, a setting: read where they are.
             _ => None,
         }
@@ -321,7 +330,7 @@ fn read_at(
     holders: &[&Symbol],
     authz: bool,
 ) -> Verdict {
-    if at == Position::Admin {
+    if matches!(at, Position::Admin | Position::Unread) {
         return UNCLASSIFIED;
     }
     let w = crate::mine::norm_ref(wrapper);

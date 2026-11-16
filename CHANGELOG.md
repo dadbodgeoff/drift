@@ -33,6 +33,12 @@ main branch.
 
 ### Added
 
+- **Python: Quart, django-ninja, Litestar and Sanic routes are listed** by
+  `drift security`, with their prefixes and guards: Quart as Flask; django-ninja
+  routers under the Django URLconf that mounts them, with `auth=` (nearest layer)
+  as the guard, read as unknown; Litestar `route_handlers=`, controllers and
+  `guards=` of every layer; Sanic blueprints, groups, `add_route` and request
+  hooks. Listed reading only: what mining reads does not change.
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise

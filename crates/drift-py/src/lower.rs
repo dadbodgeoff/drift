@@ -20,7 +20,7 @@ use crate::raw::*;
 use crate::stdlib;
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 74;
+pub const LOWERING_VERSION: u32 = 75;
 
 /// Functions of libraries, by their last name, whose call in a body is a guard or
 /// not by its arguments (`verify_jwt_in_request(optional=True)`): each call of a
@@ -115,6 +115,7 @@ pub fn lower_file(_rel_path: &str, text: &str) -> RawFile {
     l.collect_module_lists(&module.body);
     l.lower_body(&module.body);
     l.lower_adapters_anywhere(&module.body);
+    l.lower_frameworks(&module.body);
     l.lower_settings(&module.body);
     l.lower_error_handlers(&module.body);
     l.lower_main_guard(&module.body);
@@ -191,6 +192,9 @@ pub(crate) struct Lowerer<'t> {
     /// The expressions a read mount took as its target (by address): not references
     /// that hand a router on elsewhere ([`RawFile::router_uses`]).
     pub(crate) read_targets: BTreeSet<usize>,
+    /// The expressions a mount of [`RawFile::frameworks`] took as an argument (by
+    /// address): listed reading only ([`RawFrameworks::reads`]).
+    pub(crate) framework_reads: BTreeSet<usize>,
     /// The `Mount(path, app=...)` calls of the route tables that were read (by
     /// address), each with the application the table is of, its full prefix there
     /// and the middleware on the way ([`RawMount::table`]).
@@ -502,6 +506,7 @@ impl<'t> Lowerer<'t> {
             lists: HashMap::new(),
             dicts: HashMap::new(),
             read_targets: BTreeSet::new(),
+            framework_reads: BTreeSet::new(),
             table_mounts: HashMap::new(),
             unread_urlpatterns: false,
             unplaced: BTreeSet::new(),
