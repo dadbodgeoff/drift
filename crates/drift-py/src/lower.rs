@@ -20,7 +20,7 @@ use crate::raw::*;
 use crate::stdlib;
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 75;
+pub const LOWERING_VERSION: u32 = 76;
 
 /// Functions of libraries, by their last name, whose call in a body is a guard or
 /// not by its arguments (`verify_jwt_in_request(optional=True)`): each call of a
@@ -57,6 +57,8 @@ pub const KWARG_INDEX: u32 = 99;
 
 #[path = "adapters.rs"]
 pub(crate) mod adapters;
+#[path = "consumers.rs"]
+pub(crate) mod consumers;
 #[path = "env_libs.rs"]
 pub(crate) mod env_libs;
 #[path = "graphql.rs"]
@@ -124,6 +126,8 @@ pub fn lower_file(_rel_path: &str, text: &str) -> RawFile {
     l.lower_adapters_anywhere(&module.body);
     l.lower_frameworks(&module.body);
     l.lower_servers(&module.body);
+    // After the servers: its consumers are routes of the same table.
+    l.lower_consumers(&module.body);
     l.lower_graphql(&module.body);
     l.lower_settings(&module.body);
     l.lower_error_handlers(&module.body);

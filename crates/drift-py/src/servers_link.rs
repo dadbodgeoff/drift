@@ -383,7 +383,8 @@ impl Linker<'_> {
         }
         let drop = r.decorator.as_ref().map(|(_, d)| self.canon(fi, d));
         let served = out.entry(module.to_string()).or_default();
-        if matches!(r.kind.as_str(), "job" | "cron") {
+        // A message consumer (`lower::consumers`) is placed as a job is.
+        if matches!(r.kind.as_str(), "job" | "cron" | "consumer") {
             served.entries.push(EntryPoint {
                 symbol: name.to_string(),
                 kind: r.kind.clone(),

@@ -34,6 +34,19 @@ main branch.
 
 ### Added
 
+- **More message consumers in `drift security` and the practice map** (the
+  listed reading; mining is unchanged). TypeScript: a Bull or Bee-Queue
+  `process` handler bound to its instance (`this.handle.bind(this)`, read
+  through the method), `sqs-consumer` `Consumer.create({ handleMessage })` by its
+  queue URL, a `nats` `subscribe(subject, { callback })` by its subject, and
+  `process` of a `@nestjs/bullmq` `WorkerHost` as a `job`. Python: kombu
+  `Consumer(..., callbacks=[...])` by its queue, aio_pika `queue.consume(handler)`
+  by the queue `declare_queue` names, pika `basic_consume`, and a faust
+  `@app.agent(topic)`; the handler is listed in the file that defines it. A Bull
+  processor file path, a `nats` subscription read with `for await`, and a
+  handler that is a lambda, a parameter or a subscript are named under
+  `unlisted` (`handler_not_read`) instead of being dropped. TypeScript
+  `LOWERING_VERSION` 88, Python 76.
 - **Drift Studio packages:** `apps/studio/scripts/package.mjs` builds an AppImage and a
   deb (Linux), a dmg and a zip (macOS arm64 and x64) and an NSIS installer (Windows),
   each carrying its platform's `drift`, which a packaged Studio runs unless Settings
@@ -495,6 +508,16 @@ main branch.
   mined.
 
 ### Changed: behaviour an existing user will notice
+
+- **A Python class only its name says is a message consumer is no longer listed.**
+  `drift security` and the practice map listed a subclass of an in-repo base named
+  for a consumer (`BaseQueueConsumer`, `BaseRabbitMQConsumer`) as a `consumer`
+  with adapter `queue`. They now list a consumer only where it resolves to a
+  messaging library through imports (kombu's `ConsumerMixin`, a base whose body
+  calls aio_pika, pika, kombu, a Kafka or NATS client, or a call of the library
+  that registers the handler), and name a class that only looks like one under
+  `unlisted` with the new reason `named_only`. Mining still reads it as the last
+  measured build did.
 
 - **Breaking: the GitHub Action runs the Drift of its own ref, and installs a
   release binary when there is one.** `drift-ref` now defaults to empty, which

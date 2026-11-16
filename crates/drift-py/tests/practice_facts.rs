@@ -2122,9 +2122,10 @@ async def plain(org_id: str, names: list[str], other):
 }
 
 /// A message consumer is an entry point of its own kind: a subclass of an in-repo base
-/// that defines `consume` and is named for one, an acronym being a word of its own
-/// (`BaseRabbitMQConsumer`), or that uses a messaging library in its body. A class
-/// that only shares the method name is none.
+/// that defines `consume` and uses a messaging library in its body. A base only named
+/// for one (`BaseRabbitMQConsumer`, an acronym being a word of its own) is not listed
+/// in the listed reading: it is said, with its line, as named only. A class that only
+/// shares the method name is none.
 #[test]
 fn a_subclass_of_a_queue_consumer_base_is_a_consumer_entry_point() {
     let dir = tempfile::tempdir().unwrap();
@@ -2187,9 +2188,8 @@ if __name__ == "__main__":
 "#,
     );
     let repo = scan_at(r, 1);
-    // Both are listings made since the measured build (a base named with an acronym,
-    // a base that uses a library): `drift security` reads them, mining does not yet
-    // ([`drift_core::Listed`]).
+    // A base that uses a library is a listing made since the measured build:
+    // `drift security` reads it, mining does not yet ([`drift_core::Listed`]).
     let consumer = file(&repo, "app/consumer.py");
     assert!(consumer.entry_points.is_empty());
     let entries: Vec<String> = consumer
@@ -2197,9 +2197,13 @@ if __name__ == "__main__":
         .iter()
         .map(|e| format!("{} {} {}", e.symbol, e.kind, e.adapter))
         .collect();
+    assert_eq!(entries, ["OrderIntake consumer aio_pika"]);
     assert_eq!(
-        entries,
-        ["AbConsumer consumer queue", "OrderIntake consumer aio_pika"]
+        consumer.unlisted(),
+        [drift_core::UnlistedRoute {
+            line: 6,
+            reason: drift_core::UnlistedReason::NamedOnly
+        }]
     );
 }
 

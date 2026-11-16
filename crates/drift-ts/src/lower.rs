@@ -15,7 +15,7 @@ use oxc_span::{GetSpan, SourceType};
 use serde::{Deserialize, Serialize};
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 87;
+pub const LOWERING_VERSION: u32 = 88;
 
 /// What an options object gives a Fastify route: for each hook it names
 /// (`onRequest`, `preHandler`), what that hook runs.
@@ -861,6 +861,12 @@ pub struct RawFile {
     /// not list ([`drift_core::FileFacts::unlisted_routes`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub unlisted_routes: Vec<u32>,
+    /// Registrations the lowering did not list, with why, where the reason is
+    /// more than a receiver it does not read: a message consumer whose handler is
+    /// a file path (`queue.process("./worker.js")`). The listed reading only
+    /// ([`drift_core::FileFacts::unlisted_reasons`]). Lowering 88.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unlisted_reasons: Vec<drift_core::UnlistedRoute>,
     /// The file as the last measured build listed it, where this lowering lists
     /// what that build did not (a router with a base path, a registration at
     /// several paths): linked beside this one, it is what mining reads, and this
@@ -2909,6 +2915,9 @@ impl<'s> Lowerer<'s> {
         }
         self.lower_node_listeners(program);
         self.lower_rpc_and_jobs_anywhere(program);
+        // Message consumers read since the last measured build, named after the
+        // ones that build listed.
+        self.lower_consumers_since(program);
         self.lower_trpc_routers(program);
         self.lower_graphql(program);
         let mut tests = TestFinder {

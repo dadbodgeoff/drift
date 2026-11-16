@@ -282,6 +282,7 @@ impl Linker<'_> {
                     reason: u.reason,
                 }),
         );
+        out.extend(self.consumers_named_only(fi));
         out.extend(raw.mounts.iter().filter_map(|m| {
             self.mount_unlisted(fi, m, &raw.mounts)
                 .map(|reason| UnlistedRoute {
