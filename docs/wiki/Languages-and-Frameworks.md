@@ -42,7 +42,8 @@ Conventions are mined from any parsed code, whatever the framework. What follows
 | Django | Python | `urlpatterns` reachable from `ROOT_URLCONF` (`path`, `re_path`, `include`, `decorator_include`, and other pattern lists unpacked in place: `[*cycle_urls, *module_urls]`), the admin as one entry point | run |
 | Django REST framework | Python | `APIView`, `ViewSet` and `@api_view` handlers, with their `permission_classes` | run (`APIView`) |
 | Starlette | Python | `Route` tables, with the middleware of mounts and routes | run |
-| Celery, Dramatiq, rq | Python | Tasks, as `job`; Celery beat schedules as `cron` | run (Celery, Dramatiq) |
+| Celery, Dramatiq | Python | Tasks, as `job`; Celery beat schedules as `cron` | run |
+| rq | Python | Functions decorated with `@job` (`rq.decorators.job`, `django_rq.job`), as `consumer` | source |
 | Message consumers (aio_pika, kombu) | Python | `consumer` entry points | source |
 | LangGraph | Python | `agent_graph` entry points | source |
 
@@ -125,12 +126,13 @@ Readings worth knowing, one sentence each:
 - **Python: typed parameters and return annotations.** A handler whose every input arrives through a parameter the framework parses by its declared type (a FastAPI parameter annotated `uuid.UUID`, `EmailStr` or a model; a Django or Flask converter such as `<uuid:pk>`), and whose body reads no other input, validates its input: a value the type does not take is answered with an error. A FastAPI handler's return annotation is read as its response model; `response_model=None` makes none.
 - **Python: Django and DRF.** `admin.site.urls` is one entry point guarded by `AdminSite.admin_view` (active staff users); `admin_view` in decorator position is read and is `unknown`. `permission_classes` on a base that is not DRF's is not credited. A class that serves routes (`AnalyticsEndpoint.as_view()` in `urlpatterns`) is a handler, never a database client. A `raise` in an `except` turns away only the requests whose `try` failed, so the code after it is no longer read as skipped. Checks two helper methods deep in a permission class are not read.
 - **Unscoped keys and learned scope keys.** An entry point that signs the caller in and takes a tenant or owner key from the request, which nothing it runs, read to the end, checks or filters a query by, is the finding `unscoped_key` (`unscoped` on its unit in `drift practices --json --units`). Which keys tie rows to a caller is learned from the repository's own code: a key counts when at least 3 bodies of production code filter by it with a value of the caller, over at least 3 different query targets. The lists of names are only a fallback.
-- **Lowering versions in this build:** Python 72, TypeScript 84 (see [Versioning and Upgrades](Versioning-and-Upgrades)).
+- **Lowering versions in this build:** Python 74, TypeScript 86 (see [Versioning and Upgrades](Versioning-and-Upgrades)).
 
 ### Known gaps stated in the project's documents
 
 - Django: views registered by a custom decorator that stores them in a registry are not listed; settings are read as literals only (`DJANGO_SETTINGS_MODULE` from `manage.py`, `wsgi.py` or `asgi.py`, not from the environment); a `ModelAdmin`'s permissions are not modelled.
-- DRF: `get_permissions()` and `get_authenticators()` overrides are not read (the defaults are assumed), nor are `permission_classes` set by third-party base classes.
+- DRF: a `get_permissions()` override is read handler by handler only where its body does nothing but test the request's method or the view's action and return lists of classes ([Practices Map](Practices-Map)); any other body leaves the handler's permissions unknown. `get_authenticators()` overrides are not read (the defaults are assumed), nor are `permission_classes` set by third-party base classes.
+- Django: an access mixin (`LoginRequiredMixin`, `PermissionRequiredMixin`, `UserPassesTestMixin`, or a mixin of the repository whose `dispatch` refuses) is a guard where it comes before the view class in the order Python looks methods up (`class V(LoginRequiredMixin, ListView)`); after it (`class V(ListView, LoginRequiredMixin)`) it never runs and is no guard, and where what comes before it is not read, the guard is unknown ([Security Inventory](Security-Inventory)).
 - Flask: hooks registered through extensions (`init_app`) of installed packages are not seen. A blueprint built in a factory that takes its guard as a parameter is not yet read.
 - FastAPI: ASGI middleware is not a guard; a prefix that is not a literal shows as `?`. A router mounted under several parents gets the routes and dependencies of one parent only.
 - NestJS: a guard whose body reads the request through a local is unknown; an `APP_GUARD` provided by a factory or a condition is not read.

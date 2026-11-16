@@ -122,6 +122,7 @@ drift --version
 returns 404 and no archive exists):
 
 ```sh
+# Not yet: returns 404 until the first release is published.
 npm install -g @dadbodgeoff/drift     # prebuilt binary, no install scripts
 ```
 

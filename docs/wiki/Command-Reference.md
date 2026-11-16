@@ -25,7 +25,7 @@ drift [--root <ROOT>] [--no-cache] <command> [options]
 | [`facts`](#drift-facts) | Print the facts for one file | cache |
 | [`init`](#drift-init) | Learn conventions; write proposals and the baseline | `.drift/conventions.yaml`, `drift.lock`, cache |
 | [`census`](#drift-census) | Preview what `init` would propose, with evidence | cache (text mode) |
-| [`setup`](#drift-setup) | Answer the questions only a person can answer | `.drift/config.yaml` |
+| [`setup`](#drift-setup) | The guided first run (each proposal, the deployed compose file, the security baseline, the agent integrations, each asked once); the questions only a person can answer | `.drift/config.yaml`; in the guided flow, what a person says yes to (`.drift/conventions.yaml`, `drift.lock`, `.drift/security.lock`, the AGENTS.md block, `.claude/settings.json`) |
 | [`investigate`](#drift-investigate) | Every route Drift could not settle, with the evidence; record outcomes | `.drift/config.yaml`, `.drift/findings/`, `.drift/gap-reports/` (only with `--record` or `--answers`) |
 | [`findings`](#drift-findings) | What an agent found: local findings and gap reports; an issue draft or a local branch | `--write FILE`; a local branch `drift/<id>` (`--branch`) |
 | [`review`](#drift-review) | Accept, block, advise, reject; exceptions; promote a practice; review log | `.drift/conventions.yaml`, `drift.lock` (when it promotes), `.drift/review-log/` |
@@ -40,6 +40,7 @@ drift [--root <ROOT>] [--no-cache] <command> [options]
 | [`hook`](#drift-hook) | Agent hook handler (run by Claude Code) | session state |
 | [`mcp`](#drift-mcp) | MCP server over standard input and output | cache; `drift_setup_answer` and `drift_investigate_record` write `.drift/config.yaml`, `.drift/findings/` and `.drift/gap-reports/` (and the experimental `drift_verify_card`, `.drift/verify-cache.json`) |
 | [`export`](#drift-export) | Agents block, Claude Code permissions | the file you name |
+| [`upgrade`](#drift-upgrade) | After installing a newer Drift: what it reads differently in the files an older one wrote; with `--apply`, only what changes no decision a person made | nothing; with `--apply`, `drift.lock`, `.claude/settings.json`, and `.drift/security.lock` with `--security-baseline` |
 
 The full list of files and when each is written is in [Files Drift Writes](Files-Drift-Writes).
 
@@ -47,11 +48,11 @@ The full list of files and when each is written is in [Files Drift Writes](Files
 
 | Code | Meaning |
 | --- | --- |
-| 0 | Success. For `security`, `practices`, `map`, `card`, `census` and `hook`, always 0 unless there is an error. |
-| 1 | `drift check`: a new violation that fails, or a security finding that is not in the committed baseline (see [`check`](#drift-check)). `drift setup`: one of several answers in a run could not be applied. |
+| 0 | Success. For `practices`, `map`, `card`, `census` and `hook`, always 0 unless there is an error; for `security`, unless `--fail-on` or `--ratchet` fails it. |
+| 1 | `drift check`: a new violation that fails, or a security finding that is not in the committed baseline (see [`check`](#drift-check)). `drift security`: with `--diff-base` and `--fail-on`, the change introduces a kind named; with `--ratchet`, a finding was added (see [`security`](#drift-security)). `drift setup` and `drift investigate`: one of several answers or outcomes in a run could not be applied. `drift upgrade --apply`: a write failed. |
 | 2 | Error: a message beginning `drift:` on standard error. Also a command-line usage error (an unknown subcommand or flag, a missing argument). `drift practices promote` also exits 2 when it refuses, with the reason on standard error and nothing written. |
-
-Reading from a pipe that closes early (`drift census | head`) is not an error: Drift exits quietly with the code it had decided (for `check`, the check's).
+| 3 | Something still needs doing. `drift upgrade`: the newer Drift reads something differently and the report lists what to do (see [`upgrade`](#drift-upgrade)). `drift setup --yes-to`/`--no-to` (the guided flow from a script): an answer it was given was not recorded, so a script does not take the run for done. |
+| 141 | Standard output was a pipe that closed early (`drift census \| head`). Not an error: Drift stops quietly with 141 (128 + SIGPIPE, as a shell reports for `yes \| head`), so `set -o pipefail` sees it. `drift check` decides its code before it writes anything and exits with that instead, so blocking violations still fail when the reader goes away. |
 
 ## Standard output and standard error
 
@@ -276,7 +277,9 @@ Text mode (without `--json` or `--coverage`) reads and fills the fact cache like
 
 ## drift setup
 
-Asks the few questions only a person can answer (which compose files are test stacks, which Terraform target group sends requests to a service, whether a helper is your check) and writes the answers to `.drift/config.yaml`. Without a terminal it lists the questions with the command that answers each.
+Two things. `drift setup` alone is the **guided flow** for a person's first run: what Drift read, then each decision asked once, in this order: the proposals one at a time (mined conventions as `drift review` asks them, then the practices and layering from the map), which compose file is deployed (only where the compose files of one service disagree about how exposed its routes are), the security baseline, and the agent integrations Drift writes itself (the AGENTS.md block and the Claude Code permission entries). Nothing is accepted or written without a yes; Enter skips and writes nothing; a no is recorded so it is not asked again, and every rule accepted here advises. It ends with what was decided and written, the command that changes each decision later, and the command to run in CI. Without a terminal and without `--yes-to`/`--no-to`, or in an agent's run, it prints every question with the flag that answers it and changes nothing.
+
+With any other flag it works on the **questions only a person can answer** (which compose files are test stacks, which Terraform target group sends requests to a service, whether a helper is your check) and writes the answers to `.drift/config.yaml`: one at a time with `--interactive`, listed with `--list`. `--yes-to`, `--no-to` and `--guided` do not combine with those flags (exit 2, nothing changed).
 
 ```text
 drift setup [OPTIONS]
@@ -300,11 +303,21 @@ drift setup [OPTIONS]
 | `--confirm <ID>` | For a person: confirm the agent's answer to ID (repeat for more) |  |
 | `--reject <ID>` | For a person: reject the agent's answer to ID; it is not asked again on the same evidence (repeat for more) |  |
 | `--agent-brief` | Print the instructions an agent follows to answer the questions (Markdown), and change nothing |  |
+| `--yes-to <KEYS>` | The guided flow, from a script: say yes to KEYS (comma-separated or repeated): a proposal's id, a compose question's id (yes: only for tests), `baseline`, `agents-md` or `claude-settings`. A person's run (`--by person`, and `DRIFT_SETUP_PERSON=1` without a terminal) |  |
+| `--no-to <KEYS>` | The guided flow, from a script: say no to KEYS (recorded, not asked again). What neither `--yes-to` nor `--no-to` names is skipped. A key in both is refused |  |
+| `--guided` | The guided flow, asking on standard input even when it is not a terminal (a person's run: with `--by person` and `DRIFT_SETUP_PERSON=1`) |  |
+| `--no-from-map` | The guided flow asks about no proposal from the map, and the `drift init` it runs writes none, as `drift init --no-from-map`. Setting the environment variable `DRIFT_NO_FROM_MAP` to anything but empty or `0` does the same |  |
 
 **Examples**
 
 ```bash
 drift setup
+```
+```bash
+drift setup --by person --yes-to D-1a2b3c,baseline --no-to agents-md
+```
+```bash
+drift setup --interactive
 ```
 ```bash
 drift setup --list
@@ -318,7 +331,9 @@ drift setup --forget S-abf5
 
 **Output**
 
-- In a terminal, one question at a time; Enter skips. Skip is always the default and writes nothing.
+- `drift setup` in a terminal (or with `--guided`): the guided flow, one decision at a time; Enter skips. Skip is always the default and writes nothing. Without a terminal, or in an agent's run: each decision with the flag that answers it, and nothing written.
+- `--yes-to`, `--no-to`: the same flow answered from the keys given; a key that is asked about nothing now is listed as not used, and an answer that could not be recorded is listed with why.
+- `--interactive`: the questions only a person can answer, one at a time.
 - `--list`: the open questions, each with its choices and the command that answers it; `Nothing to ask: Drift has no question only you can answer.` when there are none.
 - `--json`: the same as JSON (schema `drift-setup-questions`, version 1; see [Output and JSON Reference](Output-and-JSON-Reference)). With `--evidence`, each question also carries the excerpts a careful reader looks at.
 - `--answer`, `--answers`, `--forget`: one line per question (`S-abf5: ...`).
@@ -329,11 +344,13 @@ An answer by an agent (`--by agent`, which is the default when standard input is
 
 **Exit codes**
 
-0 on success. With several answers in one run (`--answer` repeated, or `--answers FILE`), 1 if any of them failed (each failure is printed on standard error as `drift: ID: not answered: ...`); the others are still applied. 2 on any other error, including a single answer that cannot be applied, `--review`, `--confirm`, `--reject` or an interactive run with `--by agent`, and an answer by an agent to a question a person already answered.
+0 on success. The guided flow from a script (`--yes-to`, `--no-to`): 3 when an answer it was given was not recorded (the run says which and why), so a script does not take it for done. With several answers in one run (`--answer` repeated, or `--answers FILE`), 1 if any of them failed (each failure is printed on standard error as `drift: ID: not answered: ...`); the others are still applied. 2 on any other error, including a single answer that cannot be applied, `--review`, `--confirm`, `--reject` or an interactive run with `--by agent`, and an answer by an agent to a question a person already answered.
 
 **Notes**
 
-`drift setup` reads the repository without filling the fact cache. It writes only `.drift/config.yaml`; each answer adds a line under `security.not_deployed`, `security.terraform`, `security.internal` or `practices.<concern>`, and a record under `setup:` (see [Configuration Reference](Configuration-Reference)).
+The guided flow records each decision with the code the single commands use: `drift init` (run first where there is no `.drift/conventions.yaml`), `drift review`'s accept and reject, the answers of `drift setup --answer`, `drift security --write-baseline` and `drift export`. It is for a person: an agent's run (`CLAUDECODE` set, or `DRIFT_AGENT=1`) asks nothing and writes nothing.
+
+The questions (every flag but the guided flow's) read the repository without filling the fact cache. They write only `.drift/config.yaml`; each answer adds a line under `security.not_deployed`, `security.terraform`, `security.internal` or `practices.<concern>`, and a record under `setup:` (see [Configuration Reference](Configuration-Reference)).
 
 ## drift investigate
 
@@ -354,9 +371,10 @@ drift investigate [OPTIONS]
 | `--item <ID>` | Only these items (with `--json`; repeat for more) |  |
 | `--record <ID=OUTCOME>...` | Record an outcome: ID=OUTCOME, as `--list` prints them (several: repeat it) |  |
 | `--answers <FILE>` | Record several outcomes in one run from a JSON file (`-` for standard input): a list of `{"id", "outcome", "reason", "evidence": ["file:line"], ...}` |  |
-| `--by <person\|agent>` | Who records: `person` (the default when standard input is a terminal) or `agent` (the default otherwise) |  |
+| `--by <person\|agent>` | Who records: `person` (the default when standard input is a terminal, unless `CLAUDECODE` is set or `DRIFT_AGENT=1`) or `agent` (the default otherwise) |  |
 | `--reason <REASON>` | Why, naming what was read: required of an agent (for a finding: why it is a gap; for a skip: the note the person reads) |  |
 | `--evidence [<FILE:LINE>...]` | With `--record`: `file:line` of each place read (repeat for more). With `--json`: give each item the excerpts a careful reader looks at |  |
+| `--routes [<ROUTE>...]` | With `--record` of a finding: the routes it is about, of the item's (a part of the route or its handler's `file:line`; repeat for more). Without it, the routes whose files `--evidence` names; with neither, all the item's |  |
 | `--title <TITLE>` | A finding's title |  |
 | `--fix <FIX>` | A finding's suggested fix, in words |  |
 | `--patch <FILE>` | A finding's patch: a unified diff file the agent wrote (not applied) |  |
@@ -1034,6 +1052,8 @@ drift feedback export [--out <FILE>] [--dry-run] [--include-reasons]
 | `--dry-run` | Print the document that would be written, and write nothing |  |
 | `--include-reasons` | Also include the text of each mark's `--why`. Free text can hold anything: read it before you share the file |  |
 
+`drift feedback`, `drift feedback mark` and `drift feedback export` also take the global `--root <ROOT>` and `--no-cache`.
+
 **Exit codes**
 
 0 on success, 2 on error.
@@ -1155,6 +1175,46 @@ drift export claude-settings --write .claude/settings.json
 **Notes**
 
 Re-run `agents-md` after `drift review`; only the text between the markers changes. `agents-md` shows what agents are shown.
+
+## drift upgrade
+
+After installing a newer Drift: what it reads differently in the files an older one wrote, said in one place, and with `--apply` only what changes no decision a person made. The whole report, what `--apply` does and never does, and the JSON are on [Versioning and Upgrades](Versioning-and-Upgrades#what-drift-upgrade-reports).
+
+```text
+drift upgrade [OPTIONS]
+```
+
+| Option | Meaning | Default |
+| --- | --- | --- |
+| `--apply` | Do what cannot change a decision a person made: baseline the violations that appear only because this Drift reads the code differently, and refresh agent settings an older Drift wrote that nobody edited |  |
+| `--root <ROOT>` | Repository root | `.` |
+| `--no-cache` | Disable the on-disk fact cache |  |
+| `--security-baseline` | With `--apply`: also add to `.drift/security.lock` the findings of kinds and detectors this Drift has and the Drift that wrote it did not (nothing else) |  |
+| `--json` | Print the report as JSON (schema `drift-upgrade`, version 1) |  |
+
+**Examples**
+
+```bash
+drift upgrade
+```
+```bash
+drift upgrade --apply
+```
+```bash
+drift upgrade --apply --security-baseline
+```
+
+**Output**
+
+Per file under `.drift/` and `drift.lock`, what it records of the Drift that wrote it and of its format; per accepted convention, its evidence when accepted against what this Drift reads now; the new violations that appear only because the reading changed, apart from those in code that changed and those Drift cannot tell about; the security baseline against this Drift's inventory; the agent integrations that differ from what this Drift would install; then what is left to do, each with its command.
+
+**Exit codes**
+
+0: nothing needs doing (after `--apply`: nothing is left). 3: something needs doing, by `--apply` or by a person. 1: a write of `--apply` failed; the report lists what was written before it, and nothing after it was. 2: refused with nothing changed, because a file was written by a newer Drift or does not parse (the file and line are named).
+
+**Notes**
+
+Without `--apply` nothing is written but the fact cache (`--no-cache`: nothing at all). `--apply` never accepts, rejects, promotes or demotes a convention, never changes a mode and never deletes a line; a file that needs no change keeps its bytes.
 
 ## Commands not in the list
 
