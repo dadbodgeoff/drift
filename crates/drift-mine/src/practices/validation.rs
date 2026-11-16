@@ -39,6 +39,12 @@ impl Concern for Validation {
         "entry_point"
     }
 
+    /// Input parsed with the accepted schema and checked by hand as well is still
+    /// parsed with that schema: the checks add up.
+    fn additive(&self) -> bool {
+        true
+    }
+
     fn population<'a>(&self, cx: &Cx<'a>) -> Vec<UnitRef<'a>> {
         common::entries(cx, REQUEST_KINDS)
             .into_iter()

@@ -25,6 +25,14 @@
 //! handler mounted on several routes is one row per mount and one unit here: it
 //! follows when every mount does, and breaks when one does.
 //!
+//! What follows is the classifier's to say ([`Concern`]): where a concern's uses add
+//! up ([`Concern::additive`]: sign-in, permissions, validation, responses), a unit that
+//! does an accepted way and more follows it; a practice may accept a mechanism whole
+//! ("any membership guard") or any way the classifier says enforces the concern ("any
+//! way that turns an unsigned caller away"), and a way that opens a route on purpose
+//! is accepted only when a person names it. A background job takes no request: it is
+//! no unit of a concern about the caller ([`Concern::needs_a_caller`]).
+//!
 //! Deterministic: everything is read in report order and sorted.
 
 use std::cmp::Reverse;
@@ -34,10 +42,11 @@ use drift_core::ingest::Lang;
 use drift_core::{FileFacts, RepoFacts, SymbolKind};
 use serde::{Deserialize, Serialize};
 
+use super::common::{JOB, use_from_key, use_keys};
 use super::depart::PLACE_SHARE;
 use super::{
-    CONCERNS, Concern, ConcernReport, Example, PracticesReport, Promotable, TAIL, UnitRow, Variant,
-    VariantKind, plain_concern, plain_way,
+    CONCERNS, Concern, ConcernReport, Example, PracticesReport, Promotable, TAIL, UnitRow,
+    UnknownReason, Use, Variant, VariantKind, mechanism_of, plain_concern, plain_way,
 };
 use crate::check::{Extent, Scope, Violation};
 use crate::mine::{Evidence, MIN_ROLE_SIZE, Rule, r3, wilson_lower_bound};
@@ -122,6 +131,74 @@ pub struct Candidate {
     /// In process only, never serialised.
     #[serde(skip)]
     pub python: usize,
+    /// Mechanisms accepted whole, sorted ([`Rule::Practice`] `any_mechanism`): a unit
+    /// that does the concern by one of them follows, whichever instrument it names
+    /// ("a membership check, by any of our permission classes"). Empty for a practice
+    /// of named ways.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub mechanisms: Vec<String>,
+    /// Any way the classifier says enforces the concern follows ([`Rule::Practice`]
+    /// `any_enforcing`, [`Concern::enforces`]): "every entry point here signs the
+    /// caller in, however". A way that opens a route on purpose is not one: it is
+    /// accepted only when a person names it.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub any_enforcing: bool,
+    /// What it accepts is what code does by doing nothing ([`Concern::passive`]: errors
+    /// left to the framework, logs to the language's own output): new code follows it
+    /// without trying, so as a rule it holds code to little. Still a candidate; a list
+    /// shows it apart.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub passive: bool,
+    /// Units of the place not counted because they take no request (background jobs),
+    /// for a concern about the caller ([`Concern::needs_a_caller`]).
+    #[serde(default, skip_serializing_if = "zero")]
+    pub jobs: usize,
+    /// The one cause, outside the units themselves, that every unit of the place Drift
+    /// could not read shares (an unread app-level call), when they all share one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unknown_cause: Option<UnknownCause>,
+}
+
+/// What a person asks to promote ([`candidate_for`]): the arguments of `drift
+/// practices promote` as one value. At least one of `ways`, `with`, `mechanisms` or
+/// `any_enforcing` says what follows.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Request {
+    /// The concern (`authn`, ...). May be "" when a way is named: the concern is the
+    /// way's. Needed when only `mechanisms` or `any_enforcing` are asked for.
+    pub concern: String,
+    /// Variant ids (`P-…`) accepted as ways; the first is the convention's
+    /// [`Convention::promoted_from_practice`].
+    pub ways: Vec<String>,
+    /// More variant ids of the same concern accepted with them (`--with`).
+    pub with: Vec<String>,
+    /// Mechanisms accepted whole, in the classifier's vocabulary ([`super::mechanism_of`]:
+    /// `dependency`, `membership_guard`, ...).
+    pub mechanisms: Vec<String>,
+    /// Any way the classifier says enforces the concern.
+    pub any_enforcing: bool,
+    /// Promote below [`PLACE_SHARE`], advise only.
+    pub force: bool,
+}
+
+/// Every unit of a place that Drift could not read, unread for one cause that is not
+/// in any of them ([`Candidate::unknown_cause`]): one call of the application that was
+/// not read makes all its routes unknown. Settling that one cause settles them all.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UnknownCause {
+    pub reason: UnknownReason,
+    /// What was not read, as the unknown units name it.
+    pub instrument: String,
+    /// The units unknown for it.
+    pub units: usize,
+    /// The `.drift/config.yaml` line that would let Drift read it ([`super::config_hint`]),
+    /// when a line can.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hint: Option<String>,
+}
+
+fn zero(n: &usize) -> bool {
+    *n == 0
 }
 
 /// Why a practice cannot be promoted. `Display` is the sentence a person reads.
@@ -157,12 +234,24 @@ pub enum Refusal {
         follows: usize,
         read: usize,
     },
-    /// More than [`MAX_UNKNOWN_SHARE`] of the place is unknown. Never forced.
+    /// More than [`MAX_UNKNOWN_SHARE`] of the place is unknown. Never forced. `cause`:
+    /// the one cause outside the units that every unknown unit shares, when they do,
+    /// with the line that would settle it.
     TooUnknown {
         place: String,
         unknown: usize,
         total: usize,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        cause: Option<UnknownCause>,
     },
+    /// Nothing was asked to be accepted: no way, no mechanism, not any enforcing way.
+    NothingAccepted,
+    /// The concern named is not one of the report's.
+    UnknownConcern { concern: String },
+    /// No unit Drift read does the concern by this mechanism.
+    NotAMechanism { concern: String, mechanism: String },
+    /// The concern has no notion of a way that enforces it ([`Concern::enforces`]).
+    NoEnforcing { concern: String },
 }
 
 /// A promoted practice none of whose ways any unit of its place uses any more: the
@@ -409,14 +498,86 @@ impl std::fmt::Display for Refusal {
                 place,
                 unknown,
                 total,
-            } => write!(
+                cause,
+            } => {
+                write!(
+                    f,
+                    "In {}, Drift cannot tell how {unknown} of the {total} do it ({}%, more than {}%): it cannot hold code to what it cannot read.",
+                    sanitize(place, 160),
+                    pct(*unknown, *total),
+                    share_pct(MAX_UNKNOWN_SHARE)
+                )?;
+                match cause {
+                    Some(c) => write!(f, " {}", cause_sentence(c)),
+                    None => write!(
+                        f,
+                        " `drift practices --hints` prints the .drift/config.yaml lines that would let Drift read them."
+                    ),
+                }
+            }
+            Refusal::NothingAccepted => write!(
                 f,
-                "In {}, Drift cannot tell how {unknown} of the {total} do it ({}%, more than {}%): it cannot hold code to what it cannot read. `drift practices --hints` prints the .drift/config.yaml lines that would let Drift read them.",
-                sanitize(place, 160),
-                pct(*unknown, *total),
-                share_pct(MAX_UNKNOWN_SHARE)
+                "Nothing to promote: name a way (a variant id), a mechanism, or any way that enforces the concern."
+            ),
+            Refusal::UnknownConcern { concern } => write!(
+                f,
+                "The practice map has no concern {}: `drift practices --json` lists them (`concerns[].id`).",
+                sanitize(concern, 40)
+            ),
+            Refusal::NotAMechanism { concern, mechanism } => write!(
+                f,
+                "No unit of {} Drift read does it by {}: a mechanism is promoted only where code uses it.",
+                sanitize(plain_concern(concern), 40),
+                sanitize(mechanism, 60)
+            ),
+            Refusal::NoEnforcing { concern } => write!(
+                f,
+                "Drift has no reading of which ways enforce {}: name its ways instead.",
+                sanitize(plain_concern(concern), 40)
             ),
         }
+    }
+}
+
+/// A shared cause of the unknown units in a sentence, with what would settle it.
+fn cause_sentence(c: &UnknownCause) -> String {
+    let what = format!(
+        "All {} are unknown for one cause outside them: {} (`{}`).",
+        c.units,
+        reason_words(c.reason),
+        sanitize(&c.instrument, 160)
+    );
+    match &c.hint {
+        Some(h) => format!(
+            "{what} This line in .drift/config.yaml would let Drift read it: `{}`.",
+            sanitize(h, 240)
+        ),
+        None => format!(
+            "{what} No .drift/config.yaml line names it: once Drift reads that call, they can be told."
+        ),
+    }
+}
+
+/// The reasons a unit is unknown for something outside it: code it runs that was not
+/// read. Any other reason is the unit's own (a check found and not proven, a value not
+/// followed, dynamic code) and is no shared cause.
+const OUTSIDE_REASONS: &[UnknownReason] = &[
+    UnknownReason::BodyUnreadable,
+    UnknownReason::OpaqueWrapper,
+    UnknownReason::Unresolved,
+    UnknownReason::PartlyRead,
+    UnknownReason::Unparsed,
+];
+
+/// Why a unit is unknown, for one of [`OUTSIDE_REASONS`], in a few words.
+fn reason_words(reason: UnknownReason) -> &'static str {
+    match reason {
+        UnknownReason::BodyUnreadable => "a call whose body Drift cannot read",
+        UnknownReason::OpaqueWrapper => "a wrapper Drift cannot see into",
+        UnknownReason::Unresolved => "a name that does not resolve",
+        UnknownReason::PartlyRead => "a method of a value whose type Drift does not know",
+        UnknownReason::Unparsed => "a file that was not parsed",
+        _ => "code Drift could not read",
     }
 }
 
@@ -427,28 +588,157 @@ impl Refusal {
     }
 }
 
-/// The keys a way accepts: a folded policy's (`any_of(A|B)`) are its alternatives'
-/// keys, `A` and `B`; any other way's is its own key.
+/// The keys a way accepts: a folded policy's (`any_of(A|B)`, or of more alternatives)
+/// are its alternatives' keys; any other way's is its own key.
 fn way_keys(key: &str) -> Vec<String> {
     if let Some(inner) = key
         .strip_prefix("any_of(")
         .and_then(|k| k.strip_suffix(')'))
-        && let Some((a, b)) = inner.split_once('|')
-        && !b.contains('|')
+        && inner.contains('|')
     {
-        return vec![a.to_string(), b.to_string()];
+        return inner.split('|').map(str::to_string).collect();
     }
     vec![key.to_string()]
-}
-
-/// Whether `k` is one of `keys`.
-fn in_keys(keys: &[String], k: &str) -> bool {
-    keys.iter().any(|x| x == k)
 }
 
 /// Every key the ways accept.
 fn accepted_keys(ways: &[&Variant]) -> BTreeSet<String> {
     ways.iter().flat_map(|v| way_keys(&v.key)).collect()
+}
+
+/// Whether the sorted uses `uses` include every use the way `key` names. A key that
+/// names no use of its own (the tail, a fold) is included in nothing.
+fn includes(uses: &[&str], key: &str) -> bool {
+    let need = use_keys(key);
+    !need.is_empty() && need.iter().all(|k| uses.binary_search(k).is_ok())
+}
+
+/// Of a broader candidate (a mechanism whole, any enforcing way), the share of its
+/// place's units it must hold beyond the best narrower candidate around it to be
+/// offered as well: the more specific rule is offered first, and the broader one only
+/// when it covers materially more of the code.
+pub const MATERIAL_SHARE: f64 = 0.1;
+
+/// What the concern's classifier says of ways, for promotion ([`Concern::additive`],
+/// [`Concern::enforces`], [`Concern::passive`], [`Concern::needs_a_caller`]). A concern
+/// no classifier is registered for reads strictly: whole keys, no notion of enforcing,
+/// nothing passive, every unit counted.
+struct Traits {
+    classifier: Option<Box<dyn Concern>>,
+}
+
+impl Traits {
+    fn of(concern: &str) -> Self {
+        Traits {
+            classifier: super::registry().into_iter().find(|c| c.id() == concern),
+        }
+    }
+
+    fn additive(&self) -> bool {
+        self.classifier.as_ref().is_some_and(|c| c.additive())
+    }
+
+    fn needs_a_caller(&self) -> bool {
+        self.classifier.as_ref().is_some_and(|c| c.needs_a_caller())
+    }
+
+    /// Whether the uses (one key each) enforce the concern; `None` where the concern
+    /// has no such notion.
+    fn enforces(&self, uses: &[&str]) -> Option<bool> {
+        let c = self.classifier.as_ref()?;
+        let uses: Vec<Use> = uses.iter().map(|k| use_from_key(k)).collect();
+        c.enforces(&uses)
+    }
+
+    /// Whether the concern has a notion of a way that enforces it.
+    fn has_enforcing(&self) -> bool {
+        self.enforces(&[]).is_some()
+    }
+
+    /// Whether a use of the mechanism `m` may enforce the concern: a mechanism that
+    /// cannot (one that opens a route, one that only identifies the caller) is never
+    /// offered whole. It is accepted only when a person names it.
+    fn mechanism_enforces(&self, m: &str) -> bool {
+        let key = format!("{m}:");
+        self.enforces(&[key.as_str()]).unwrap_or(true)
+    }
+
+    fn passive(&self, uses: &[&str]) -> bool {
+        let Some(c) = self.classifier.as_ref() else {
+            return false;
+        };
+        let uses: Vec<Use> = uses.iter().map(|k| use_from_key(k)).collect();
+        c.passive(&uses)
+    }
+}
+
+/// What a promoted practice accepts, its three forms together ([`Rule::Practice`]):
+/// named ways (by key), mechanisms whole, and any way that enforces the concern.
+#[derive(Debug, Clone, Default)]
+struct Accepts {
+    keys: BTreeSet<String>,
+    mechanisms: BTreeSet<String>,
+    enforcing: bool,
+}
+
+impl Accepts {
+    fn of_ways(ways: &[&Variant]) -> Self {
+        Accepts {
+            keys: accepted_keys(ways),
+            ..Accepts::default()
+        }
+    }
+
+    fn of_rule(any_of: &[String], any_mechanism: &[String], any_enforcing: bool) -> Self {
+        Accepts {
+            keys: any_of.iter().cloned().collect(),
+            mechanisms: any_mechanism.iter().cloned().collect(),
+            enforcing: any_enforcing,
+        }
+    }
+}
+
+/// What is being promoted: the variants accepted as ways, the mechanisms accepted
+/// whole, and whether any way that enforces the concern is.
+#[derive(Debug, Clone, Default)]
+struct Asked<'a> {
+    ways: Vec<&'a Variant>,
+    mechanisms: Vec<String>,
+    enforcing: bool,
+}
+
+impl Asked<'_> {
+    fn accepts(&self) -> Accepts {
+        Accepts {
+            mechanisms: self.mechanisms.iter().cloned().collect(),
+            enforcing: self.enforcing,
+            ..Accepts::of_ways(&self.ways)
+        }
+    }
+
+    /// What it is called where no place takes it ([`Refusal::NoPlace`]): its first
+    /// way's id, else what it accepts.
+    fn name(&self) -> String {
+        if let Some(v) = self.ways.first() {
+            v.id.clone()
+        } else if !self.mechanisms.is_empty() {
+            format!("mechanism {}", self.mechanisms.join(", "))
+        } else {
+            "any enforcing way".to_string()
+        }
+    }
+}
+
+/// How broad a candidate is: named ways (0), a mechanism whole (1), any way that
+/// enforces the concern (2). The more specific is listed first.
+fn breadth(c: &Candidate) -> u8 {
+    if c.any_enforcing {
+        2
+    } else if !c.mechanisms.is_empty() {
+        1
+    } else {
+        0
+    }
 }
 
 /// How one unit stands against the accepted ways. Ordered so that the worst of a
@@ -471,6 +761,8 @@ struct Judged<'a> {
     verdict: Verdict,
     /// The key of its own way (of the mount that decided), when the map knows one.
     own: Option<&'a str>,
+    /// The row of the mount that decided.
+    row: usize,
 }
 
 impl Judged<'_> {
@@ -488,18 +780,33 @@ impl Judged<'_> {
     }
 }
 
-/// One concern of a report read for promotion: each row's own way and each place's
-/// rows.
+/// One concern of a report read for promotion: each row's own way and uses, and each
+/// place's rows.
 struct Reading<'a> {
     c: &'a ConcernReport,
+    traits: Traits,
+    /// [`Concern::additive`] of the concern.
+    additive: bool,
     /// Each row's own way's key; `None` for a row the map gives no known way.
     own: Vec<Option<&'a str>>,
-    /// The rows of each place a row is in.
+    /// Each known row's uses, one key per use, sorted: [`UnitRow::uses`], else read
+    /// from its own way's key. Empty for a row that is not known.
+    uses: Vec<Vec<&'a str>>,
+    /// Each known row: whether its uses enforce the concern ([`UnitRow::enforces`],
+    /// else the classifier asked).
+    enforces: Vec<bool>,
+    /// Whether the row is counted at all: not a background job of a concern about the
+    /// caller ([`Concern::needs_a_caller`]).
+    counted: Vec<bool>,
+    /// The counted rows of each place a row is in.
     places: BTreeMap<Place, Vec<usize>>,
+    /// The units of each place left out as background jobs (path, symbol).
+    jobs: BTreeMap<Place, BTreeSet<(&'a str, &'a str)>>,
 }
 
 impl<'a> Reading<'a> {
     fn new(c: &'a ConcernReport) -> Self {
+        let traits = Traits::of(&c.id);
         let keys: BTreeMap<&'a str, &'a str> = c
             .variants
             .iter()
@@ -507,7 +814,7 @@ impl<'a> Reading<'a> {
             .collect();
         // A unit's own uses, where its variant stands for several ways; the variant's
         // key otherwise.
-        let own = c
+        let own: Vec<Option<&'a str>> = c
             .units
             .iter()
             .map(|u| {
@@ -519,13 +826,66 @@ impl<'a> Reading<'a> {
                     .or_else(|| keys.get(u.variant.as_str()).copied())
             })
             .collect();
+        let uses: Vec<Vec<&'a str>> = c
+            .units
+            .iter()
+            .zip(&own)
+            .map(|(u, own)| {
+                if u.assignment != "known" {
+                    return Vec::new();
+                }
+                let mut v: Vec<&'a str> = if u.uses.is_empty() {
+                    (*own).map(use_keys).unwrap_or_default()
+                } else {
+                    u.uses.iter().map(String::as_str).collect()
+                };
+                v.sort_unstable();
+                v.dedup();
+                v
+            })
+            .collect();
+        let enforces: Vec<bool> = c
+            .units
+            .iter()
+            .zip(&uses)
+            .map(|(u, uses)| {
+                u.assignment == "known"
+                    && u
+                        .enforces
+                        .unwrap_or_else(|| traits.enforces(uses).unwrap_or(false))
+            })
+            .collect();
+        let caller = traits.needs_a_caller();
+        let counted: Vec<bool> = c
+            .units
+            .iter()
+            .map(|u| !(caller && u.kind.as_deref() == Some(JOB)))
+            .collect();
         let mut places: BTreeMap<Place, Vec<usize>> = BTreeMap::new();
+        let mut jobs: BTreeMap<Place, BTreeSet<(&'a str, &'a str)>> = BTreeMap::new();
         for (i, u) in c.units.iter().enumerate() {
             for p in places_of(&u.package, &u.path) {
-                places.entry(p).or_default().push(i);
+                if counted[i] {
+                    places.entry(p).or_default().push(i);
+                } else {
+                    jobs.entry(p)
+                        .or_default()
+                        .insert((u.path.as_str(), u.symbol.as_str()));
+                }
             }
         }
-        Reading { c, own, places }
+        let additive = traits.additive();
+        Reading {
+            c,
+            traits,
+            additive,
+            own,
+            uses,
+            enforces,
+            counted,
+            places,
+            jobs,
+        }
     }
 
     /// The variant `id` names: a top-level one, else an alternative of a fold.
@@ -550,29 +910,64 @@ impl<'a> Reading<'a> {
         })
     }
 
-    /// Whether row `i` is known to do it one of `keys`.
-    fn uses(&self, i: usize, keys: &[String]) -> bool {
-        self.c.units[i].assignment == "known" && self.own[i].is_some_and(|k| in_keys(keys, k))
+    /// Whether row `i`, of a known way, does it a way `acc` accepts:
+    /// - its own way's key is an accepted one;
+    /// - for a concern whose uses add up ([`Concern::additive`]), its uses include
+    ///   every use of an accepted way: doing more is still doing it. Elsewhere the
+    ///   extra use is the departure, and only the whole key follows;
+    /// - one of its uses is of an accepted mechanism (every one of them, where the
+    ///   uses do not add up);
+    /// - any enforcing way is accepted and its uses enforce the concern.
+    fn follows(&self, i: usize, acc: &Accepts) -> bool {
+        let Some(own) = self.own[i] else {
+            return false;
+        };
+        if acc.keys.contains(own) {
+            return true;
+        }
+        let uses = &self.uses[i];
+        if uses.is_empty() {
+            return false;
+        }
+        if self.additive && acc.keys.iter().any(|k| includes(uses, k)) {
+            return true;
+        }
+        if !acc.mechanisms.is_empty() {
+            let of = |u: &str| acc.mechanisms.contains(mechanism_of(u));
+            let by_mechanism = if self.additive {
+                uses.iter().any(|u| of(*u))
+            } else {
+                uses.iter().all(|u| of(*u))
+            };
+            if by_mechanism {
+                return true;
+            }
+        }
+        acc.enforcing && self.enforces[i]
     }
 
-    /// Each row's verdict against `accepted`.
-    fn verdicts(&self, accepted: &BTreeSet<String>) -> Vec<Verdict> {
-        self.c
-            .units
-            .iter()
-            .zip(&self.own)
-            .map(|(u, own)| match (u.assignment.as_str(), own) {
-                ("unknown", _) => Verdict::Unknown,
-                ("known", Some(k)) if accepted.contains(*k) => Verdict::Follows,
-                ("known", Some(_)) => Verdict::Breaks,
-                ("known", None) => Verdict::Unknown,
-                _ => Verdict::Breaks,
-            })
+    /// Whether row `i` is counted and known to do it a way `acc` accepts.
+    fn known_follows(&self, i: usize, acc: &Accepts) -> bool {
+        self.counted[i] && self.c.units[i].assignment == "known" && self.follows(i, acc)
+    }
+
+    /// Each row's verdict against `acc`.
+    fn verdicts(&self, acc: &Accepts) -> Vec<Verdict> {
+        (0..self.c.units.len())
+            .map(
+                |i| match (self.c.units[i].assignment.as_str(), self.own[i]) {
+                    ("unknown", _) => Verdict::Unknown,
+                    ("known", None) => Verdict::Unknown,
+                    ("known", Some(_)) if self.follows(i, acc) => Verdict::Follows,
+                    _ => Verdict::Breaks,
+                },
+            )
             .collect()
     }
 
     /// The units of `place` with their verdicts, each unit once (its mounts together),
-    /// sorted by path, line and symbol.
+    /// sorted by path, line and symbol. A background job of a concern about the caller
+    /// is none of them.
     fn judged(&self, place: &Place, verdicts: &[Verdict]) -> Vec<Judged<'a>> {
         let c = self.c;
         let rows = self.places.get(place).map_or(&[][..], Vec::as_slice);
@@ -588,16 +983,58 @@ impl<'a> Reading<'a> {
                     line: u.line,
                     verdict,
                     own,
+                    row: i,
                 });
             j.line = j.line.min(u.line);
             if verdict > j.verdict {
                 j.verdict = verdict;
                 j.own = own;
+                j.row = i;
             }
         }
         let mut out: Vec<Judged<'a>> = by.into_values().collect();
         out.sort_by(|a, b| (a.path, a.line, a.symbol).cmp(&(b.path, b.line, b.symbol)));
         out
+    }
+
+    /// The mechanisms the counted known rows use, sorted.
+    fn mechanisms(&self) -> BTreeSet<&'a str> {
+        (0..self.c.units.len())
+            .filter(|&i| self.counted[i])
+            .flat_map(|i| self.uses[i].iter().map(|k| mechanism_of(*k)))
+            .collect()
+    }
+
+    /// The one cause that every unknown unit of `judged` shares, when it is outside
+    /// them ([`UnknownCause`]): the same reason, one of [`OUTSIDE_REASONS`], and the
+    /// same instrument, which no unit's own file holds, for at least two units. A unit
+    /// unknown for another reason, or for something in its own file, is its own.
+    fn unknown_cause(&self, judged: &[Judged<'_>]) -> Option<UnknownCause> {
+        let mut cause: Option<(UnknownReason, &str)> = None;
+        let mut units = 0;
+        for j in judged.iter().filter(|j| j.verdict == Verdict::Unknown) {
+            let u = &self.c.units[j.row];
+            let reason = u.reason.filter(|r| OUTSIDE_REASONS.contains(r))?;
+            if u.instrument.is_empty() || u.instrument.contains(u.path.as_str()) {
+                return None;
+            }
+            let this = (reason, u.instrument.as_str());
+            if cause.is_some_and(|c| c != this) {
+                return None;
+            }
+            cause = Some(this);
+            units += 1;
+        }
+        let (reason, instrument) = cause?;
+        if units < 2 {
+            return None;
+        }
+        Some(UnknownCause {
+            reason,
+            instrument: instrument.to_string(),
+            units,
+            hint: super::config_hint(&self.c.id, instrument),
+        })
     }
 }
 
@@ -624,8 +1061,8 @@ fn is_way(r: &Reading<'_>, v: &Variant) -> Result<(), String> {
     if v.key == TAIL {
         return Err("it stands for the ways one unit each uses, not for one way".to_string());
     }
-    let keys = way_keys(&v.key);
-    if !(0..r.c.units.len()).any(|i| r.uses(i, &keys)) {
+    let acc = Accepts::of_ways(&[v]);
+    if !(0..r.c.units.len()).any(|i| r.known_follows(i, &acc)) {
         return Err(
             "no unit Drift read is known to do it this way (a way declared in .drift/config.yaml is one once a unit uses it)"
                 .to_string(),
@@ -634,25 +1071,30 @@ fn is_way(r: &Reading<'_>, v: &Variant) -> Result<(), String> {
     Ok(())
 }
 
-/// Whether `v` may qualify anywhere: a way, used by enough units that some place could
-/// hold [`PLACE_SHARE`] of [`MIN_ROLE_SIZE`] of them. Saves reading every place of a
-/// variant of two units.
-fn may_qualify(r: &Reading<'_>, v: &Variant) -> bool {
-    if is_way(r, v).is_err() {
-        return false;
-    }
-    let keys = way_keys(&v.key);
-    let rows = (0..r.c.units.len()).filter(|&i| r.uses(i, &keys)).count();
+/// Whether what `acc` accepts may qualify anywhere: enough units follow it that some
+/// place could hold [`PLACE_SHARE`] of [`MIN_ROLE_SIZE`] of them. Saves reading every
+/// place of a variant of two units.
+fn may_qualify(r: &Reading<'_>, acc: &Accepts) -> bool {
+    let rows = (0..r.c.units.len())
+        .filter(|&i| r.known_follows(i, acc))
+        .count();
     rows as f64 >= PLACE_SHARE * MIN_ROLE_SIZE as f64
 }
 
+/// [`may_qualify`] of the variant `v` as the one accepted way, when it is a way.
+fn may_qualify_way(r: &Reading<'_>, v: &Variant) -> bool {
+    is_way(r, v).is_ok() && may_qualify(r, &Accepts::of_ways(&[v]))
+}
+
 /// Whether a place with these counts may be promoted in: `Ok(true)` when only `force`
-/// lets it (below the share).
+/// lets it (below the share). `cause`: the one cause outside the units that the
+/// unknown ones share, said with a refusal for too many unknowns.
 fn eligible(
     place: &Place,
     follows: usize,
     breaks: usize,
     unknown: usize,
+    cause: Option<UnknownCause>,
     force: bool,
 ) -> Result<bool, Refusal> {
     let total = follows + breaks + unknown;
@@ -665,6 +1107,7 @@ fn eligible(
             place: shown,
             unknown,
             total,
+            cause,
         });
     }
     let read = follows + breaks;
@@ -688,12 +1131,39 @@ fn eligible(
     Ok(below)
 }
 
-/// The candidate of `ways` in `place`, from its units' verdicts (`judged`).
-fn build_from(
-    r: &Reading<'_>,
-    ways: &[&Variant],
+/// Whether what `asked` accepts is what code does by doing nothing
+/// ([`Concern::passive`]): every way and mechanism it names is, and it names one. Any
+/// enforcing way never is.
+fn passive(r: &Reading<'_>, asked: &Asked<'_>) -> bool {
+    if asked.enforcing {
+        return false;
+    }
+    let mut parts = 0;
+    for v in &asked.ways {
+        for k in way_keys(&v.key) {
+            let uses = use_keys(&k);
+            if uses.is_empty() || !r.traits.passive(&uses) {
+                return false;
+            }
+            parts += 1;
+        }
+    }
+    for m in &asked.mechanisms {
+        let k = format!("{m}:");
+        if !r.traits.passive(&[k.as_str()]) {
+            return false;
+        }
+        parts += 1;
+    }
+    parts > 0
+}
+
+/// The candidate of `asked` in `place`, from its units' verdicts (`judged`).
+fn build_from<'a>(
+    r: &Reading<'a>,
+    asked: &Asked<'_>,
     place: &Place,
-    judged: &[Judged<'_>],
+    judged: &[Judged<'a>],
     force: bool,
 ) -> Result<Candidate, Refusal> {
     let count = |v: Verdict| judged.iter().filter(|j| j.verdict == v).count();
@@ -702,23 +1172,26 @@ fn build_from(
         count(Verdict::Breaks),
         count(Verdict::Unknown),
     );
-    let forced = eligible(place, follows, breaks, unknown, force)?;
+    let cause = if unknown > 0 {
+        r.unknown_cause(judged)
+    } else {
+        None
+    };
+    let forced = eligible(place, follows, breaks, unknown, cause.clone(), force)?;
     let way_of = |v: &Variant| -> Way {
-        let keys = way_keys(&v.key);
+        let acc = Accepts::of_ways(&[v]);
         Way {
             id: v.id.clone(),
             key: v.key.clone(),
             label: v.label.clone(),
             members: judged
                 .iter()
-                .filter(|j| {
-                    j.verdict == Verdict::Follows && j.own.is_some_and(|k| in_keys(&keys, k))
-                })
+                .filter(|j| j.verdict == Verdict::Follows && r.follows(j.row, &acc))
                 .count(),
         }
     };
     // The ways the units that break it use, by the variant of their own way.
-    let taken: BTreeSet<&str> = ways.iter().map(|v| v.id.as_str()).collect();
+    let taken: BTreeSet<&str> = asked.ways.iter().map(|v| v.id.as_str()).collect();
     let mut others: BTreeMap<String, Way> = BTreeMap::new();
     for j in judged.iter().filter(|j| j.verdict == Verdict::Breaks) {
         let Some(v) = j.own.and_then(|k| r.by_key(k)) else {
@@ -739,11 +1212,14 @@ fn build_from(
     }
     let mut other_ways: Vec<Way> = others.into_values().collect();
     other_ways.sort_by(|a, b| b.members.cmp(&a.members).then(a.id.cmp(&b.id)));
+    let mut mechanisms = asked.mechanisms.clone();
+    mechanisms.sort();
+    mechanisms.dedup();
     Ok(Candidate {
         concern: r.c.id.clone(),
         unit: r.c.unit.clone(),
         place: place.clone(),
-        ways: ways.iter().map(|&v| way_of(v)).collect(),
+        ways: asked.ways.iter().map(|&v| way_of(v)).collect(),
         other_ways,
         follows,
         exceptions: judged
@@ -762,35 +1238,39 @@ fn build_from(
             .iter()
             .filter(|j| crate::tier::language_of(j.path) == Lang::Python)
             .count(),
+        mechanisms,
+        any_enforcing: asked.enforcing,
+        passive: passive(r, asked),
+        jobs: r.jobs.get(place).map_or(0, BTreeSet::len),
+        unknown_cause: cause,
     })
 }
 
-/// The places `ways` may be promoted in, broadest first (a whole package before a
+/// The places `asked` may be promoted in, broadest first (a whole package before a
 /// directory, then more units that follow, then by place), and, when there is none,
 /// why the nearest does not qualify (the place where most units follow, broadest
 /// first). Only places where some unit follows are read.
 fn qualifying(
     r: &Reading<'_>,
-    ways: &[&Variant],
+    asked: &Asked<'_>,
     force: bool,
 ) -> (Vec<Candidate>, Option<Refusal>) {
-    let verdicts = r.verdicts(&accepted_keys(ways));
-    let places: BTreeSet<Place> =
-        r.c.units
-            .iter()
-            .zip(&verdicts)
-            .filter(|(_, v)| **v == Verdict::Follows)
-            .flat_map(|(u, _)| places_of(&u.package, &u.path))
-            .collect();
+    let verdicts = r.verdicts(&asked.accepts());
+    let places: Vec<&Place> = r
+        .places
+        .iter()
+        .filter(|(_, rows)| rows.iter().any(|&i| verdicts[i] == Verdict::Follows))
+        .map(|(p, _)| p)
+        .collect();
     let mut ok: Vec<Candidate> = Vec::new();
     let mut nearest: Option<(usize, usize, Refusal)> = None;
-    for place in &places {
+    for place in places {
         let judged = r.judged(place, &verdicts);
         let follows = judged
             .iter()
             .filter(|j| j.verdict == Verdict::Follows)
             .count();
-        match build_from(r, ways, place, &judged, force) {
+        match build_from(r, asked, place, &judged, force) {
             Ok(c) => ok.push(c),
             Err(e) => {
                 let depth = place.depth();
@@ -813,35 +1293,98 @@ fn qualifying(
     (ok, nearest.map(|(_, _, e)| e))
 }
 
-/// The candidates of one concern ([`candidates`]).
+/// Of the qualifying places of one candidate, those around which no other qualifies:
+/// a directory only where no place around it qualifies.
+fn broadest(ok: Vec<Candidate>) -> Vec<Candidate> {
+    let places: Vec<Place> = ok.iter().map(|c| c.place.clone()).collect();
+    ok.into_iter()
+        .filter(|c| !places.iter().any(|p| *p != c.place && p.contains(&c.place)))
+        .collect()
+}
+
+/// Whether a broader candidate `b` is offered beside the narrower ones already offered
+/// of its concern: where none of them holds in a place that holds or is held by its
+/// own, or where it covers materially more units than the best of them
+/// ([`MATERIAL_SHARE`] of its place's units).
+fn broader_offered(b: &Candidate, narrower: &[Candidate]) -> bool {
+    let best = narrower
+        .iter()
+        .filter(|n| {
+            n.concern == b.concern && (b.place.contains(&n.place) || n.place.contains(&b.place))
+        })
+        .map(|n| n.follows)
+        .max();
+    let material = ((MATERIAL_SHARE * b.total as f64).ceil() as usize).max(1);
+    best.is_none_or(|f| b.follows >= f + material)
+}
+
+/// The candidates of one concern ([`candidates`]): each way in its broadest qualifying
+/// places; then each mechanism whole that may enforce the concern; then any enforcing
+/// way. A broader candidate is offered only where it covers materially more than the
+/// narrower ones ([`broader_offered`]).
 fn concern_candidates(c: &ConcernReport) -> Vec<Candidate> {
     let r = Reading::new(c);
-    let mut out = Vec::new();
-    for v in c.variants.iter().filter(|v| may_qualify(&r, v)) {
-        let (ok, _) = qualifying(&r, &[v], false);
-        let places: Vec<Place> = ok.iter().map(|c| c.place.clone()).collect();
-        // A directory only where no place around it qualifies.
-        out.extend(
-            ok.into_iter()
-                .filter(|c| !places.iter().any(|p| *p != c.place && p.contains(&c.place))),
+    let mut out: Vec<Candidate> = Vec::new();
+    for v in c.variants.iter().filter(|v| may_qualify_way(&r, v)) {
+        let asked = Asked {
+            ways: vec![v],
+            ..Asked::default()
+        };
+        out.extend(broadest(qualifying(&r, &asked, false).0));
+    }
+    let mut by_mechanism: Vec<Candidate> = Vec::new();
+    for m in r.mechanisms() {
+        if !r.traits.mechanism_enforces(m) {
+            continue;
+        }
+        let asked = Asked {
+            mechanisms: vec![m.to_string()],
+            ..Asked::default()
+        };
+        if !may_qualify(&r, &asked.accepts()) {
+            continue;
+        }
+        by_mechanism.extend(
+            broadest(qualifying(&r, &asked, false).0)
+                .into_iter()
+                .filter(|b| broader_offered(b, &out)),
         );
+    }
+    out.extend(by_mechanism);
+    if r.traits.has_enforcing() {
+        let asked = Asked {
+            enforcing: true,
+            ..Asked::default()
+        };
+        if may_qualify(&r, &asked.accepts()) {
+            let enforcing: Vec<Candidate> = broadest(qualifying(&r, &asked, false).0)
+                .into_iter()
+                .filter(|b| broader_offered(b, &out))
+                .collect();
+            out.extend(enforcing);
+        }
     }
     out
 }
 
 /// Fills each variant's [`Variant::promotable`] of a concern whose report lists every
 /// unit (the engine, before it drops the rows a report does not list): set exactly for
-/// the variants [`candidates`] lists, with the broadest place [`candidate`] picks
-/// without `--in`. An alternative of a fold is promoted with its fold (or by its own
-/// id): it carries none.
+/// the variants [`candidates`] lists as named ways, with the broadest place
+/// [`candidate`] picks without `--in`. An alternative of a fold is promoted with its
+/// fold (or by its own id): it carries none. A mechanism or any enforcing way is no
+/// variant's: [`candidates`] lists it.
 pub(super) fn fill_promotable(c: &mut ConcernReport) {
     let places: BTreeMap<String, String> = {
         let r = Reading::new(c);
         c.variants
             .iter()
-            .filter(|v| may_qualify(&r, v))
+            .filter(|v| may_qualify_way(&r, v))
             .filter_map(|v| {
-                qualifying(&r, &[v], false)
+                let asked = Asked {
+                    ways: vec![v],
+                    ..Asked::default()
+                };
+                qualifying(&r, &asked, false)
                     .0
                     .into_iter()
                     .next()
@@ -863,8 +1406,12 @@ pub(super) fn fill_promotable(c: &mut ConcernReport) {
 
 /// Every practice that may be promoted as the code stands, without `force`: for each
 /// known variant, its broadest qualifying place (a directory is listed only where its
-/// package does not qualify). Sorted by concern (in [`super::CONCERNS`] order), place
-/// and variant id. `report` must list its units ([`super::Options::units`]).
+/// package does not qualify); for each mechanism and for any enforcing way, the same,
+/// where they cover materially more than the ways do. Sorted by concern (in
+/// [`super::CONCERNS`] order), place, breadth (ways, mechanism, any enforcing way),
+/// first way id and mechanisms. A passive one ([`Candidate::passive`]) is listed like
+/// any other: a list shows it apart. `report` must list its units
+/// ([`super::Options::units`]).
 pub fn candidates(report: &PracticesReport) -> Vec<Candidate> {
     let mut out: Vec<Candidate> = report
         .concerns
@@ -878,7 +1425,15 @@ pub fn candidates(report: &PracticesReport) -> Vec<Candidate> {
             .unwrap_or(CONCERNS.len())
     };
     let first = |c: &Candidate| c.ways.first().map_or(String::new(), |w| w.id.clone());
-    out.sort_by(|a, b| (rank(a), &a.place, first(a)).cmp(&(rank(b), &b.place, first(b))));
+    out.sort_by(|a, b| {
+        (rank(a), &a.place, breadth(a), first(a), &a.mechanisms).cmp(&(
+            rank(b),
+            &b.place,
+            breadth(b),
+            first(b),
+            &b.mechanisms,
+        ))
+    });
     out
 }
 
@@ -901,6 +1456,7 @@ fn find<'r>(report: &'r PracticesReport, id: &str) -> Option<(&'r ConcernReport,
 /// What promoting the variant `id` would record. `place`: where (`None`: its broadest
 /// qualifying place). `with`: other variants of the same concern accepted as ways with
 /// it. `force`: promote below [`PLACE_SHARE`]. `report` must list its units.
+/// [`candidate_for`] with `id` as the one way.
 pub fn candidate(
     report: &PracticesReport,
     id: &str,
@@ -908,44 +1464,117 @@ pub fn candidate(
     with: &[String],
     force: bool,
 ) -> Result<Candidate, Refusal> {
-    let Some((c, first)) = find(report, id) else {
-        return Err(Refusal::UnknownVariant { id: id.to_string() });
+    candidate_for(
+        report,
+        place,
+        &Request {
+            ways: vec![id.to_string()],
+            with: with.to_vec(),
+            force,
+            ..Request::default()
+        },
+    )
+}
+
+/// What promoting `req` would record: its ways (`ways`, then `with`, all of one
+/// concern), the mechanisms it accepts whole, and whether any way that enforces the
+/// concern follows. `place`: where (`None`: the broadest place it qualifies in).
+/// `report` must list its units. A way is refused as [`candidate`] refuses it; a
+/// mechanism no unit uses, or any enforcing way of a concern with no such notion, is
+/// refused too; a request that accepts nothing is [`Refusal::NothingAccepted`].
+pub fn candidate_for(
+    report: &PracticesReport,
+    place: Option<&Place>,
+    req: &Request,
+) -> Result<Candidate, Refusal> {
+    let named: Vec<&String> = req.ways.iter().chain(req.with.iter()).collect();
+    let c: &ConcernReport = match named.first() {
+        Some(id) => match find(report, id) {
+            Some((c, _)) => c,
+            None => {
+                return Err(Refusal::UnknownVariant {
+                    id: (*id).clone(),
+                });
+            }
+        },
+        None if req.concern.is_empty() => return Err(Refusal::NothingAccepted),
+        None => report
+            .concerns
+            .iter()
+            .find(|c| c.id == req.concern)
+            .ok_or_else(|| Refusal::UnknownConcern {
+                concern: req.concern.clone(),
+            })?,
     };
+    if !req.concern.is_empty()
+        && req.concern != c.id
+        && let Some(id) = named.first()
+    {
+        return Err(Refusal::OtherConcern {
+            id: (*id).clone(),
+            concern: c.id.clone(),
+        });
+    }
     let r = Reading::new(c);
-    is_way(&r, first).map_err(|why| Refusal::NotAWay {
-        id: id.to_string(),
-        why,
-    })?;
-    let mut ways: Vec<&Variant> = vec![first];
-    for w in with {
-        if ways.iter().any(|v| v.id == *w) {
+    let mut ways: Vec<&Variant> = Vec::new();
+    for w in &named {
+        if ways.iter().any(|v| v.id == **w) {
             continue;
         }
         let v = match find(report, w) {
-            None => return Err(Refusal::UnknownVariant { id: w.clone() }),
+            None => return Err(Refusal::UnknownVariant { id: (*w).clone() }),
             Some((other, _)) if other.id != c.id => {
                 return Err(Refusal::OtherConcern {
-                    id: w.clone(),
+                    id: (*w).clone(),
                     concern: other.id.clone(),
                 });
             }
             Some(_) => r
                 .variant(w)
-                .ok_or_else(|| Refusal::UnknownVariant { id: w.clone() })?,
+                .ok_or_else(|| Refusal::UnknownVariant { id: (*w).clone() })?,
         };
-        is_way(&r, v).map_err(|why| Refusal::NotAWay { id: w.clone(), why })?;
+        is_way(&r, v).map_err(|why| Refusal::NotAWay {
+            id: (*w).clone(),
+            why,
+        })?;
         ways.push(v);
     }
+    let used = r.mechanisms();
+    let mut mechanisms: Vec<String> = Vec::new();
+    for m in &req.mechanisms {
+        if !used.contains(m.as_str()) {
+            return Err(Refusal::NotAMechanism {
+                concern: c.id.clone(),
+                mechanism: m.clone(),
+            });
+        }
+        if !mechanisms.contains(m) {
+            mechanisms.push(m.clone());
+        }
+    }
+    if req.any_enforcing && !r.traits.has_enforcing() {
+        return Err(Refusal::NoEnforcing {
+            concern: c.id.clone(),
+        });
+    }
+    if ways.is_empty() && mechanisms.is_empty() && !req.any_enforcing {
+        return Err(Refusal::NothingAccepted);
+    }
+    let asked = Asked {
+        ways,
+        mechanisms,
+        enforcing: req.any_enforcing,
+    };
     match place {
         Some(p) => {
-            let verdicts = r.verdicts(&accepted_keys(&ways));
+            let verdicts = r.verdicts(&asked.accepts());
             let judged = r.judged(p, &verdicts);
-            build_from(&r, &ways, p, &judged, force)
+            build_from(&r, &asked, p, &judged, req.force)
         }
         None => {
-            let (ok, nearest) = qualifying(&r, &ways, force);
+            let (ok, nearest) = qualifying(&r, &asked, req.force);
             ok.into_iter().next().ok_or_else(|| Refusal::NoPlace {
-                id: id.to_string(),
+                id: asked.name(),
                 nearest: nearest.map(Box::new),
             })
         }
@@ -959,6 +1588,31 @@ fn labels(ways: &[Way]) -> String {
         .map(|w| sanitize(&plain_way(&w.label), 160))
         .collect::<Vec<_>>()
         .join(", or ")
+}
+
+/// What "any way that enforces it" means for a concern, in words.
+fn enforcing_words(concern: &str) -> &'static str {
+    match concern {
+        super::AUTHN => "any way that turns an unsigned caller away",
+        super::AUTHZ => "any check Drift proved compares the caller with what is asked for",
+        _ => "any way Drift reads as enforcing it",
+    }
+}
+
+/// What a candidate accepts, as a person reads it: its ways ([`labels`]), each
+/// mechanism whole ("by any dependency"), and any enforcing way, joined with ", or ".
+fn accepted_words(c: &Candidate) -> String {
+    let mut parts: Vec<String> = Vec::new();
+    if !c.ways.is_empty() {
+        parts.push(labels(&c.ways));
+    }
+    for m in &c.mechanisms {
+        parts.push(format!("by any {}", sanitize(&m.replace('_', " "), 60)));
+    }
+    if c.any_enforcing {
+        parts.push(enforcing_words(&c.concern).to_string());
+    }
+    parts.join(", or ")
 }
 
 /// The concern as a line opens with it: the first run's word ([`plain_concern`]),
@@ -998,11 +1652,16 @@ fn role_of(place: &Place) -> RoleSelector {
 /// agents on their word ([`crate::policy::AgentsChoice::Show`]),
 /// [`Convention::promoted_from_practice`] the first way's id. Its id is of the place and
 /// the concern only ([`convention_id`]), so adding a way later keeps the id and its
-/// lock entries.
+/// lock entries. A mechanism accepted whole and any enforcing way are written as the
+/// rule's `any_mechanism` and `any_enforcing`; the summary says them in words ("Sign-in
+/// in app/api: any way that turns an unsigned caller away").
 pub fn convention(c: &Candidate) -> Convention {
     let mut any_of: Vec<String> = c.ways.iter().flat_map(|w| way_keys(&w.key)).collect();
     any_of.sort();
     any_of.dedup();
+    let mut any_mechanism = c.mechanisms.clone();
+    any_mechanism.sort();
+    any_mechanism.dedup();
     let holders = c.follows;
     let total = c.follows + c.exceptions.len();
     Convention {
@@ -1013,14 +1672,14 @@ pub fn convention(c: &Candidate) -> Convention {
             "{} in {}: {}",
             concern_heading(&c.concern),
             c.place.words(),
-            labels(&c.ways)
+            accepted_words(c)
         ),
         role: role_of(&c.place),
         rule: Rule::Practice {
             concern: c.concern.clone(),
             any_of,
-            any_mechanism: Vec::new(),
-            any_enforcing: false,
+            any_mechanism,
+            any_enforcing: c.any_enforcing,
         },
         evidence: Evidence {
             holders,
@@ -1116,19 +1775,47 @@ pub fn covers(
 }
 
 /// [`covers`] for a file whose facts are known: read from the repository, or lowered in
-/// memory from the content an agent is about to write.
+/// memory from the content an agent is about to write. For a concern about the caller
+/// ([`Concern::needs_a_caller`]), a file whose only entry points are background jobs
+/// declares no unit of it: a job takes no request.
 pub fn covers_file(c: &Convention, f: &FileFacts) -> bool {
-    covers(c, &f.package, &f.path, |unit| declares_unit(unit, f))
+    let caller = match &c.rule {
+        Rule::Practice { concern, .. } => needs_a_caller(concern),
+        _ => false,
+    };
+    covers(c, &f.package, &f.path, |unit| {
+        if caller && unit == "entry_point" {
+            f.listed_entry_points().iter().any(|e| e.kind != JOB)
+        } else {
+            declares_unit(unit, f)
+        }
+    })
+}
+
+/// Whether the registered classifier of `concern` is about the caller of a request
+/// ([`Concern::needs_a_caller`]).
+fn needs_a_caller(concern: &str) -> bool {
+    super::registry()
+        .iter()
+        .find(|c| c.id() == concern)
+        .is_some_and(|c| c.needs_a_caller())
 }
 
 /// What a promoted practice applies to in a file whose content is not known yet, said
 /// before its rule ("for its entry points"); `None` for any other convention. A file of
-/// the place that declares none is not held to it.
+/// the place that declares none is not held to it, and for a concern about the caller
+/// neither is a background job ("for its entry points that take a request").
 pub fn condition(c: &Convention) -> Option<String> {
     let Rule::Practice { concern, .. } = &c.rule else {
         return None;
     };
-    Some(format!("for its {}", units_word(unit_of(concern)?, 2)))
+    let unit = unit_of(concern)?;
+    let request = if unit == "entry_point" && needs_a_caller(concern) {
+        " that take a request"
+    } else {
+        ""
+    };
+    Some(format!("for its {}{request}", units_word(unit, 2)))
 }
 
 /// What one unit of a concern is called, `n` of them (`entry_point`: "entry points").
@@ -1152,7 +1839,7 @@ pub fn preview(c: &Candidate, convention: &Convention) -> String {
         "{} in {}: {} in {} of {} {}.\n",
         concern_heading(&c.concern),
         c.place.words(),
-        labels(&c.ways),
+        accepted_words(c),
         c.follows,
         c.total,
         units_word(&c.unit, c.total)
@@ -1191,17 +1878,38 @@ pub fn preview(c: &Candidate, convention: &Convention) -> String {
         "  {} could not be read; those are never reported.\n",
         c.unknown
     ));
+    if let Some(cause) = &c.unknown_cause {
+        out.push_str(&format!("  {}\n", cause_sentence(cause)));
+    }
+    if c.jobs > 0 {
+        out.push_str(&format!(
+            "  {} background {} take no request and {} not counted.\n",
+            c.jobs,
+            if c.jobs == 1 { "job" } else { "jobs" },
+            if c.jobs == 1 { "is" } else { "are" }
+        ));
+    }
     out.push_str(&format!(
         "From now on `drift check` reports a new {} here that does it another way, or not at all.\n",
         units_word(&c.unit, 1)
     ));
-    let first = c.ways.first().map_or("", |w| w.id.as_str());
-    let block = format!(
-        "`drift practices promote {} --in {place} --block` makes it fail one, when the {} {} added here most recently follow it",
-        sanitize(first, 40),
-        REPLAY_UNITS,
-        units_word(&c.unit, REPLAY_UNITS)
-    );
+    if c.passive {
+        out.push_str("This is what code here does by doing nothing: new code follows it without trying, so the rule reports only code that does something else.\n");
+    }
+    let block = match c.ways.first() {
+        Some(w) => format!(
+            "`drift practices promote {} --in {place} --block` makes it fail one, when the {} {} added here most recently follow it",
+            sanitize(&w.id, 40),
+            REPLAY_UNITS,
+            units_word(&c.unit, REPLAY_UNITS)
+        ),
+        None => format!(
+            "`drift review --block {}` makes it fail one, when the {} {} added here most recently follow it",
+            sanitize(&convention.id, 40),
+            REPLAY_UNITS,
+            units_word(&c.unit, REPLAY_UNITS)
+        ),
+    };
     let mode = if c.forced {
         format!(
             "Mode: advise (it never fails a check). It is promoted below the usual share on your word ({}% of what Drift could read, where {}% is needed), so it never blocks.\n",
@@ -1273,7 +1981,10 @@ fn suppressed(repo: &RepoFacts, j: &Judged<'_>, id: &str) -> bool {
 /// `only_paths` restricts which files are reported.
 ///
 /// Whether a practice is stale is read over its whole place, whatever `only_paths`
-/// says; a practice of a concern `report` does not have is not read at all.
+/// says; a practice of a concern `report` does not have is not read at all. A practice
+/// is stale when no unit of its place follows it in any of its forms: none does it one
+/// of its ways, none uses one of its mechanisms, and (for any enforcing way) none
+/// enforces the concern any more.
 pub fn check(
     repo: &RepoFacts,
     report: &PracticesReport,
@@ -1295,16 +2006,24 @@ pub fn check(
     let starts = crate::check::declaration_starts(repo);
     let listed = |path: &str| only_paths.is_none_or(|o| o.contains(path));
     for c in conventions {
-        let (Rule::Practice {
-            concern, any_of, ..
-        }, Some(place)) = (&c.rule, place_of(c)) else {
+        let (
+            Rule::Practice {
+                concern,
+                any_of,
+                any_mechanism,
+                any_enforcing,
+                ..
+            },
+            Some(place),
+        ) = (&c.rule, place_of(c))
+        else {
             continue;
         };
         let Some(cr) = report.concerns.iter().find(|x| x.id == *concern) else {
             continue;
         };
         let r = Reading::new(cr);
-        let accepted: BTreeSet<String> = any_of.iter().cloned().collect();
+        let accepted = Accepts::of_rule(any_of, any_mechanism, *any_enforcing);
         let judged = r.judged(&place, &r.verdicts(&accepted));
         if !judged.iter().any(|j| j.verdict == Verdict::Follows) {
             out.stale.push(Stale {
@@ -1415,16 +2134,24 @@ pub fn replay(
     c: &Convention,
     added: &dyn Fn(&str) -> Option<i64>,
 ) -> Replay {
-    let (Rule::Practice {
-            concern, any_of, ..
-        }, Some(place)) = (&c.rule, place_of(c)) else {
+    let (
+        Rule::Practice {
+            concern,
+            any_of,
+            any_mechanism,
+            any_enforcing,
+            ..
+        },
+        Some(place),
+    ) = (&c.rule, place_of(c))
+    else {
         return Replay::default();
     };
     let Some(cr) = report.concerns.iter().find(|x| x.id == *concern) else {
         return Replay::default();
     };
     let r = Reading::new(cr);
-    let accepted: BTreeSet<String> = any_of.iter().cloned().collect();
+    let accepted = Accepts::of_rule(any_of, any_mechanism, *any_enforcing);
     let judged = r.judged(&place, &r.verdicts(&accepted));
     let mut dated: Vec<(i64, &Judged<'_>)> = judged
         .iter()
@@ -1856,15 +2583,25 @@ mod tests {
         let c = candidate(&r, "P-auth", None, &[], false).unwrap();
         // `app` and `app/api` hold the same units: the broader is taken.
         assert_eq!(c.place, at("", "app"));
-        let listed: Vec<(String, String)> = candidates(&r)
+        let listed: Vec<(String, String, bool)> = candidates(&r)
             .iter()
-            .map(|c| (c.ways[0].id.clone(), c.place.shown()))
+            .map(|c| {
+                (
+                    c.ways.first().map_or(String::new(), |w| w.id.clone()),
+                    c.place.shown(),
+                    c.any_enforcing,
+                )
+            })
             .collect();
+        // Every unit of the root signs its caller in, one way or the other: the
+        // practice "any way that turns an unsigned caller away" holds all 20, twice
+        // what either way holds, so it is offered beside them.
         assert_eq!(
             listed,
             [
-                ("P-auth".to_string(), "app".to_string()),
-                ("P-user".to_string(), "lib".to_string())
+                (String::new(), ".".to_string(), true),
+                ("P-auth".to_string(), "app".to_string(), false),
+                ("P-user".to_string(), "lib".to_string(), false)
             ]
         );
         // The root refuses, with the share.
@@ -2280,7 +3017,11 @@ mod tests {
         // Outside the place, or of another package.
         assert!(!covers(&conv, "", "app/admin/route.ts", |_| true));
         assert!(!covers(&conv, "web", "web/app/api/r40/route.ts", |_| true));
-        assert_eq!(condition(&conv).as_deref(), Some("for its entry points"));
+        // Sign-in is of a caller: a background job is no unit of it.
+        assert_eq!(
+            condition(&conv).as_deref(),
+            Some("for its entry points that take a request")
+        );
         // A file's facts: an entry point is a unit, a helper's symbols are not.
         let helper = FileFacts {
             path: "app/api/util.ts".into(),
@@ -2304,5 +3045,451 @@ mod tests {
             ..FileFacts::default()
         };
         assert!(covers_file(&conv, &route));
+        // A file whose only entry point is a background job takes no request.
+        let job = FileFacts {
+            path: "app/api/r41/task.py".into(),
+            entry_points: vec![drift_core::EntryPoint {
+                symbol: "cleanup".into(),
+                kind: "job".into(),
+                method: None,
+                route: None,
+                adapter: String::new(),
+            }],
+            ..FileFacts::default()
+        };
+        assert!(!covers_file(&conv, &job));
+    }
+
+    // ---------- what counts as following (stream S1) ----------
+
+    /// A report of one concern with these variants and units.
+    fn report_of(concern: &str, unit: &str, vs: Vec<Variant>, units: Vec<UnitRow>) -> PracticesReport {
+        PracticesReport {
+            concerns: vec![ConcernReport {
+                id: concern.into(),
+                title: concern.into(),
+                unit: unit.into(),
+                variants: vs,
+                units,
+                ..ConcernReport::default()
+            }],
+            ..PracticesReport::default()
+        }
+    }
+
+    const A: &str = "wrap:lib/a.ts#a";
+    const B: &str = "wrap:lib/b.ts#b";
+    const OPEN: &str = "opens:pkg:x#AllowAny";
+
+    /// Sign-in ways for the mechanism and enforcing tests: two wrappers, a dependency,
+    /// a way that opens a route on purpose, one that only identifies the caller, and
+    /// one that does `withAuth` and checks more besides.
+    fn signin_variants() -> Vec<Variant> {
+        let mut vs = variants();
+        vs.extend([
+            variant("P-a", A, "wrap a", VariantKind::Known),
+            variant("P-b", B, "wrap b", VariantKind::Known),
+            variant("P-open", OPEN, "opens AllowAny", VariantKind::Known),
+            variant(
+                "P-id",
+                "identifies:pkg:x#Session",
+                "identifies Session",
+                VariantKind::Identified,
+            ),
+            variant(
+                "P-more",
+                "body_check:req.user+wrap:lib/auth.ts#withAuth",
+                "body check req.user + wrap withAuth",
+                VariantKind::Known,
+            ),
+        ]);
+        vs
+    }
+
+    fn signin(units: Vec<UnitRow>) -> PracticesReport {
+        report_of(AUTHN, "entry_point", signin_variants(), units)
+    }
+
+    fn checked(r: &PracticesReport, conv: &Convention) -> Checked {
+        check(
+            &RepoFacts::default(),
+            r,
+            &policy(vec![conv.clone()]),
+            &Lock::default(),
+            Scope::Accepted,
+            None,
+        )
+    }
+
+    fn violating(c: &Checked) -> Vec<&str> {
+        c.violations.iter().map(|v| v.path.as_str()).collect()
+    }
+
+    /// Pins inclusion: before, a unit that signs in with `withAuth` and checks more
+    /// besides was an exception of the `withAuth` practice; now it follows it.
+    #[test]
+    fn a_unit_that_does_the_way_and_more_follows_it() {
+        let mut units = routes("app/api", 0, 7, "P-auth");
+        units.extend(routes("app/api", 7, 2, "P-more"));
+        units.extend(routes("app/api", 9, 1, "P-user"));
+        let r = signin(units);
+        let c = candidate(&r, "P-auth", None, &[], false).unwrap();
+        assert_eq!((c.follows, c.exceptions.len()), (9, 1));
+        assert_eq!(c.ways[0].members, 9);
+        assert_eq!(c.exceptions[0].path, "app/api/r09/route.ts");
+        // The unit's own uses, as the engine fills them, say the same.
+        let mut units = routes("app/api", 0, 8, "P-auth");
+        let mut tail = row("app/api/r08/route.ts", "GET", 1, "P-tail");
+        tail.uses = vec![AUTH.into(), "body_check:req.user".into()];
+        tail.uses.sort();
+        units.push(tail);
+        let c = candidate(&signin(units), "P-auth", None, &[], false).unwrap();
+        assert_eq!((c.follows, c.exceptions.len()), (9, 0));
+        // Checked the same way: a new unit that does more follows.
+        let conv = convention(&c);
+        let mut units = routes("app/api", 0, 8, "P-auth");
+        units.extend(routes("app/api", 8, 1, "P-more"));
+        units.extend(routes("app/api", 9, 1, "P-none"));
+        units.extend(routes("app/api", 10, 1, ""));
+        let now = checked(&signin(units), &conv);
+        assert_eq!(violating(&now), ["app/api/r09/route.ts"]);
+        assert_eq!(now.not_checked[0].units, 1);
+    }
+
+    /// Pins that inclusion is the concern's to allow: where the extra instrument is
+    /// the departure (configuration), the whole key must be accepted, as before.
+    #[test]
+    fn where_the_extra_use_is_the_departure_the_whole_key_is_needed() {
+        let vs = vec![
+            variant(
+                "P-mod",
+                "config_module:lib/config.ts",
+                "config module",
+                VariantKind::Known,
+            ),
+            variant(
+                "P-mix",
+                "config_module:lib/config.ts+in_place:process.env",
+                "config module + in place",
+                VariantKind::Known,
+            ),
+        ];
+        let mut units = routes("lib", 0, 8, "P-mod");
+        units.extend(routes("lib", 8, 2, "P-mix"));
+        let r = report_of(crate::practices::CONFIG, "symbol", vs, units);
+        let c = candidate(&r, "P-mod", None, &[], false).unwrap();
+        assert_eq!((c.follows, c.exceptions.len()), (8, 2));
+    }
+
+    /// Pins a mechanism accepted whole: two wrappers that hold half each qualify as
+    /// "by any wrap", and `candidates` offers it where no single way qualifies.
+    #[test]
+    fn a_mechanism_accepted_whole() {
+        let mut units = routes("app/api", 0, 5, "P-a");
+        units.extend(routes("app/api", 5, 5, "P-b"));
+        units.extend(routes("app/api", 10, 1, "P-user"));
+        let r = signin(units);
+        let req = Request {
+            concern: AUTHN.into(),
+            mechanisms: vec!["wrap".into()],
+            ..Request::default()
+        };
+        let c = candidate_for(&r, None, &req).unwrap();
+        assert_eq!((c.follows, c.exceptions.len()), (10, 1));
+        assert_eq!(c.mechanisms, ["wrap"]);
+        assert!(c.ways.is_empty() && !c.passive);
+        let conv = convention(&c);
+        assert_eq!(
+            conv.rule,
+            Rule::Practice {
+                concern: AUTHN.into(),
+                any_of: Vec::new(),
+                any_mechanism: vec!["wrap".into()],
+                any_enforcing: false,
+            }
+        );
+        assert_eq!(conv.summary, "Sign-in in the root package: by any wrap");
+        assert_eq!(conv.promoted_from_practice, None);
+        assert!(preview(&c, &conv).contains(&format!("`drift review --block {}`", conv.id)));
+        // Offered by the list: no way holds 80% alone. Any enforcing way holds 11,
+        // only one more than the mechanism: not offered beside it.
+        let all = candidates(&r);
+        assert_eq!(all.len(), 1, "{all:?}");
+        assert_eq!(all[0].mechanisms, ["wrap"]);
+        // Checked: a new wrapper of the same mechanism follows; a dependency breaks.
+        let mut units = r.concerns[0].units.clone();
+        units.push(UnitRow {
+            key: Some("wrap:lib/c.ts#c".into()),
+            ..row("app/api/r20/route.ts", "GET", 1, "P-tail")
+        });
+        units.extend(routes("app/api", 21, 1, "P-user"));
+        let now = checked(&signin(units), &conv);
+        assert_eq!(
+            violating(&now),
+            ["app/api/r10/route.ts", "app/api/r21/route.ts"]
+        );
+        // Refused: a mechanism nothing uses, or nothing at all.
+        let none_uses = Request {
+            mechanisms: vec!["decorator".into()],
+            ..req.clone()
+        };
+        assert!(matches!(
+            candidate_for(&r, None, &none_uses),
+            Err(Refusal::NotAMechanism { .. })
+        ));
+        assert_eq!(
+            candidate_for(&r, None, &Request::default()),
+            Err(Refusal::NothingAccepted)
+        );
+        assert_eq!(mechanism_of(A), "wrap");
+        assert_eq!(mechanism_of("none"), "none");
+    }
+
+    /// Pins any enforcing way: whatever guard signs the caller in follows; a way that
+    /// opens the route breaks it unless a person names it; one that only identifies
+    /// the caller, or nothing found, breaks it; unknown is never reported.
+    #[test]
+    fn any_way_that_enforces_the_concern() {
+        let mut units = routes("app/api", 0, 6, "P-auth");
+        units.extend(routes("app/api", 6, 4, "P-user"));
+        units.extend(routes("app/api", 10, 1, "P-open"));
+        let r = signin(units);
+        let req = Request {
+            concern: AUTHN.into(),
+            any_enforcing: true,
+            ..Request::default()
+        };
+        let c = candidate_for(&r, None, &req).unwrap();
+        assert_eq!((c.follows, c.exceptions.len()), (10, 1));
+        assert_eq!(c.other_ways[0].id, "P-open");
+        let conv = convention(&c);
+        assert_eq!(
+            conv.summary,
+            "Sign-in in the root package: any way that turns an unsigned caller away"
+        );
+        assert!(matches!(
+            &conv.rule,
+            Rule::Practice { any_enforcing: true, any_of, .. } if any_of.is_empty()
+        ));
+        // Named, the open way follows too.
+        let named = Request {
+            ways: vec!["P-open".into()],
+            ..req.clone()
+        };
+        let c2 = candidate_for(&r, None, &named).unwrap();
+        assert_eq!((c2.follows, c2.exceptions.len()), (11, 0));
+        // Checked: identified and none break, unknown is not checked.
+        let mut units = r.concerns[0].units.clone();
+        let mut id = row("app/api/r20/route.ts", "GET", 1, "P-id");
+        id.assignment = "identified".into();
+        units.push(id);
+        units.extend(routes("app/api", 21, 1, "P-none"));
+        units.extend(routes("app/api", 22, 1, ""));
+        units.extend(routes("app/api", 23, 1, "P-a"));
+        let now = checked(&signin(units), &conv);
+        assert_eq!(
+            violating(&now),
+            [
+                "app/api/r10/route.ts",
+                "app/api/r20/route.ts",
+                "app/api/r21/route.ts"
+            ]
+        );
+        assert_eq!(now.not_checked[0].units, 1);
+        // A concern with no notion of enforcing refuses it.
+        let errors = report_of(
+            crate::practices::ERRORS,
+            "entry_point",
+            vec![variant("P-err", "throw:HTTPException", "throw", VariantKind::Known)],
+            routes("app/api", 0, 8, "P-err"),
+        );
+        let ask = Request {
+            concern: crate::practices::ERRORS.into(),
+            any_enforcing: true,
+            ..Request::default()
+        };
+        assert!(matches!(
+            candidate_for(&errors, None, &ask),
+            Err(Refusal::NoEnforcing { .. })
+        ));
+    }
+
+    /// Pins that a mechanism that opens routes is never offered whole: the list offers
+    /// "by any wrap" and never "by any opens".
+    #[test]
+    fn a_mechanism_that_opens_routes_is_never_offered() {
+        let mut units: Vec<UnitRow> = (0..10)
+            .map(|i| UnitRow {
+                key: Some(format!("opens:pkg:x#Open{i}")),
+                ..row(&format!("pub/r{i:02}/route.ts"), "GET", 1, "P-tail")
+            })
+            .collect();
+        units.extend(routes("pub", 10, 1, "P-auth"));
+        let all = candidates(&signin(units));
+        assert!(all.iter().all(|c| !c.mechanisms.contains(&"opens".to_string())), "{all:?}");
+    }
+
+    /// Pins the entry kind: a background job takes no request, so the 5 jobs with no
+    /// sign-in no longer hold the place below the share, and a new job is never
+    /// reported.
+    #[test]
+    fn a_background_job_is_no_unit_of_sign_in() {
+        let job = |i: usize| UnitRow {
+            kind: Some("job".into()),
+            ..row(&format!("app/tasks/t{i:02}.py"), "run", 1, "P-none")
+        };
+        let mut units = routes("app/api", 0, 10, "P-auth");
+        units.extend((0..5).map(job));
+        let r = signin(units);
+        let c = candidate(&r, "P-auth", Some(&at("", "app")), &[], false).unwrap();
+        assert_eq!((c.follows, c.exceptions.len(), c.total, c.jobs), (10, 0, 10, 5));
+        assert!(preview(&c, &convention(&c)).contains("5 background jobs take no request"));
+        let conv = convention(&c);
+        let mut units = r.concerns[0].units.clone();
+        units.push(job(9));
+        assert!(checked(&signin(units), &conv).violations.is_empty());
+        // The same units of a concern that does not need a caller are counted.
+        let errors = report_of(
+            crate::practices::ERRORS,
+            "entry_point",
+            vec![variant("P-err", "throw:HTTPException", "throw", VariantKind::Known)],
+            (0..10)
+                .map(|i| UnitRow {
+                    kind: Some("job".into()),
+                    ..row(&format!("app/tasks/t{i:02}.py"), "run", 1, "P-err")
+                })
+                .collect(),
+        );
+        let c = candidate(&errors, "P-err", None, &[], false).unwrap();
+        assert_eq!((c.follows, c.jobs), (10, 0));
+    }
+
+    /// Pins passive ways: errors left to the framework and logs to the console are what
+    /// code does by doing nothing; a way someone chose is not.
+    #[test]
+    fn a_way_of_doing_nothing_is_passive() {
+        let errors = report_of(
+            crate::practices::ERRORS,
+            "entry_point",
+            vec![
+                variant(
+                    "P-bubble",
+                    "bubble:framework_default",
+                    "bubble framework_default",
+                    VariantKind::Known,
+                ),
+                variant("P-err", "throw:HTTPException", "throw", VariantKind::Known),
+            ],
+            {
+                let mut u = routes("app/api", 0, 9, "P-bubble");
+                u.extend(routes("lib", 0, 9, "P-err"));
+                u
+            },
+        );
+        let c = candidate(&errors, "P-bubble", None, &[], false).unwrap();
+        assert!(c.passive);
+        assert!(preview(&c, &convention(&c)).contains("by doing nothing"));
+        assert!(!candidate(&errors, "P-err", None, &[], false).unwrap().passive);
+        // Still listed, marked.
+        let listed = candidates(&errors);
+        assert!(listed.iter().any(|c| c.passive), "{listed:?}");
+        assert!(listed.iter().any(|c| !c.passive), "{listed:?}");
+        let logging = report_of(
+            crate::practices::LOGGING,
+            "symbol",
+            vec![variant(
+                "P-console",
+                "message:console",
+                "message logs via console",
+                VariantKind::Known,
+            )],
+            routes("lib", 0, 8, "P-console"),
+        );
+        assert!(candidate(&logging, "P-console", None, &[], false).unwrap().passive);
+    }
+
+    /// Pins stale detection for each form of the rule: a practice nothing in its place
+    /// follows any more fires on nothing.
+    #[test]
+    fn each_form_of_a_practice_goes_stale() {
+        // A mechanism: every wrapper replaced by a dependency.
+        let mut units = routes("app/api", 0, 5, "P-a");
+        units.extend(routes("app/api", 5, 5, "P-b"));
+        let r = signin(units);
+        let mech = Request {
+            concern: AUTHN.into(),
+            mechanisms: vec!["wrap".into()],
+            ..Request::default()
+        };
+        let conv = convention(&candidate_for(&r, None, &mech).unwrap());
+        let replaced = checked(&signin(routes("app/api", 0, 10, "P-user")), &conv);
+        assert!(replaced.violations.is_empty());
+        assert_eq!(replaced.stale.len(), 1);
+        // Still used by one unit: not stale, the rest break.
+        let mut units = routes("app/api", 0, 9, "P-user");
+        units.extend(routes("app/api", 9, 1, "P-a"));
+        let kept = checked(&signin(units), &conv);
+        assert!(kept.stale.is_empty());
+        assert_eq!(kept.violations.len(), 9);
+        // Any enforcing way: nothing turns a caller away any more.
+        let enf = Request {
+            concern: AUTHN.into(),
+            any_enforcing: true,
+            ..Request::default()
+        };
+        let conv = convention(&candidate_for(&r, None, &enf).unwrap());
+        let mut units = routes("app/api", 0, 9, "P-none");
+        units.extend(routes("app/api", 9, 1, "P-open"));
+        let gone = checked(&signin(units), &conv);
+        assert!(gone.violations.is_empty());
+        assert_eq!(gone.stale.len(), 1);
+        // The replay reads the same rule.
+        let back = replay(&signin(routes("app/api", 0, 15, "P-auth")), &conv, &|_| Some(1));
+        assert_eq!(back.followed, 15);
+    }
+
+    /// Pins the unknown share's refusal: when every unknown unit is unknown for one
+    /// call outside them, the refusal says so, still refuses (the 20% is not moved),
+    /// and names what would settle it.
+    #[test]
+    fn unknown_units_of_one_outside_cause_are_said_so() {
+        let unread = |i: usize| UnitRow {
+            reason: Some(UnknownReason::BodyUnreadable),
+            instrument: "unread:`app.frontend(...)` (backend/app/main.py:36)".into(),
+            ..row(&format!("backend/app/api/routes/u{i}.py"), "h", 1, "")
+        };
+        let mut units = routes("backend/app/api/routes", 0, 10, "P-auth");
+        units.extend((0..3).map(unread));
+        let r = signin(units.clone());
+        let refused = candidate(&r, "P-auth", Some(&at("", "backend/app/api/routes")), &[], false)
+            .unwrap_err();
+        let Refusal::TooUnknown {
+            unknown: 3,
+            total: 13,
+            cause: Some(cause),
+            ..
+        } = &refused
+        else {
+            panic!("{refused:?}");
+        };
+        assert_eq!((cause.reason, cause.units), (UnknownReason::BodyUnreadable, 3));
+        assert!(refused.to_string().contains("one cause outside them"), "{refused}");
+        assert!(!refused.to_string().contains("--hints"), "{refused}");
+        // Two causes: none is shared, the refusal is as before.
+        let mut other = unread(3);
+        other.instrument = "lib/x.ts#helper".into();
+        units.push(other);
+        let refused = candidate(&signin(units), "P-auth", Some(&at("", "backend/app/api/routes")), &[], false)
+            .unwrap_err();
+        assert!(matches!(refused, Refusal::TooUnknown { cause: None, .. }), "{refused:?}");
+        assert!(refused.to_string().contains("--hints"), "{refused}");
+    }
+
+    /// Pins that a fold of more than two alternatives accepts each of them.
+    #[test]
+    fn a_fold_of_three_accepts_each() {
+        assert_eq!(way_keys("any_of(a:x|b:y|c:z)"), ["a:x", "b:y", "c:z"]);
+        assert_eq!(way_keys("any_of(a:x|b:y)"), ["a:x", "b:y"]);
+        assert_eq!(way_keys(A), [A]);
     }
 }
