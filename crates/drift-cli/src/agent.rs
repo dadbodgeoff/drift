@@ -1168,19 +1168,22 @@ fn primed_order(c: &Convention, broken: bool) -> (bool, bool) {
     (!blocks(c), broken)
 }
 
+/// Rule lines with the convention each is for ([`worst_first`]).
+type Lines<'c, W> = Vec<(W, &'c Convention)>;
+
 /// `lines` in [`primed_order`] (then by evidence, then id), each rule said once: of a
 /// mined rule and a promoted practice that say the same thing ([`says_same`]) and that
 /// the file breaks alike, the first in that order. Returns the lines kept and, for each left out, `(its id, the id of the
 /// rule that says it)`. The caps are [`pick_primed`]'s, after this.
 fn worst_first<'c, W>(
-    mut lines: Vec<(W, &'c Convention)>,
+    mut lines: Lines<'c, W>,
     broken: &dyn Fn(&Convention) -> bool,
-) -> (Vec<(W, &'c Convention)>, Vec<(String, String)>) {
+) -> (Lines<'c, W>, Vec<(String, String)>) {
     // Ties by evidence, then id: what the agent hears, and which of two rules that say
     // the same keeps its words, never depends on the order of `conventions.yaml`.
     lines.sort_by(|(_, a), (_, b)| {
-        primed_order(a, broken(*a))
-            .cmp(&primed_order(b, broken(*b)))
+        primed_order(a, broken(a))
+            .cmp(&primed_order(b, broken(b)))
             .then(b.evidence.lower_bound.total_cmp(&a.evidence.lower_bound))
             .then(a.id.cmp(&b.id))
     });
@@ -1191,7 +1194,7 @@ fn worst_first<'c, W>(
         // already breaks it" would be lost.
         if let Some((_, by)) = kept
             .iter()
-            .find(|(_, k)| (says_same(k, c) || says_same(c, k)) && broken(*k) == broken(c))
+            .find(|(_, k)| (says_same(k, c) || says_same(c, k)) && broken(k) == broken(c))
         {
             same.push((c.id.clone(), by.id.clone()));
             continue;

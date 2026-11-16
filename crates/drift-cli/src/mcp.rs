@@ -596,10 +596,10 @@ fn call(project: &Project, no_cache: bool, name: &str, args: &Value) -> anyhow::
                     c.evidence.holders,
                     c.evidence.total,
                     c.tier(),
-                    if blocks_now(*c) { "blocks" } else { "advises" },
+                    if blocks_now(c) { "blocks" } else { "advises" },
                     crate::project::copy_hint(c)
                 ));
-                for note in rule_notes(c, stale_of(*c)) {
+                for note in rule_notes(c, stale_of(c)) {
                     out.push_str(&format!("  {note}\n"));
                 }
             }
@@ -607,7 +607,7 @@ fn call(project: &Project, no_cache: bool, name: &str, args: &Value) -> anyhow::
                 let ids: Vec<String> = old
                     .iter()
                     .map(|(_, c)| {
-                        let marker = if blocks_now(*c) { " (blocks)" } else { "" };
+                        let marker = if blocks_now(c) { " (blocks)" } else { "" };
                         format!("[{}]{marker}", sanitize(&c.id, 16))
                     })
                     .collect::<BTreeSet<_>>()
@@ -1332,7 +1332,7 @@ fn order_rules(
     blocks_now: &dyn Fn(&Convention) -> bool,
 ) {
     rules.sort_by(|(wa, a), (wb, b)| {
-        (a.tier(), !blocks_now(*a), &a.id, wa).cmp(&(b.tier(), !blocks_now(*b), &b.id, wb))
+        (a.tier(), !blocks_now(a), &a.id, wa).cmp(&(b.tier(), !blocks_now(b), &b.id, wb))
     });
 }
 

@@ -40,7 +40,7 @@ fn every_kind_a_reading_widened_is_found_since_the_widening() {
     for kind in ["workflow", "dependency", "kubernetes", "leak"] {
         assert_eq!(found_since(kind, "x"), 1, "{kind}");
     }
-    assert!(INVENTORY_VERSION >= 2);
+    const { assert!(INVENTORY_VERSION >= 2) };
 }
 
 #[test]

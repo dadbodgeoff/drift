@@ -154,7 +154,7 @@ fn a_mechanism_wide_practice_is_written_with_the_raised_version() {
     assert!(text.contains("any_mechanism:"), "{text}");
     // This Drift reads what it wrote.
     assert_eq!(load(r).conventions, f.conventions);
-    assert!(POLICY_VERSION_FORMS <= POLICY_VERSION);
+    const { assert!(POLICY_VERSION_FORMS <= POLICY_VERSION) };
 }
 
 /// Pins: "any way that enforces" raises the version the same way.

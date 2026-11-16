@@ -299,7 +299,7 @@ pub fn layering(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
             // What `drift check` would say today: every member holds.
             if !members
                 .iter()
-                .all(|f| rule.holds_in(Some(role), &View::File(*f), &ctx))
+                .all(|f| rule.holds_in(Some(role), &View::File(f), &ctx))
             {
                 continue;
             }

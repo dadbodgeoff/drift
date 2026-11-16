@@ -3023,7 +3023,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 &mut policy,
                 python.on(),
                 no_from_map,
-                &units_map_of,
+                units_map_of,
             );
             policy.save(root)?;
             // The inventory, read once for the summary and the baseline offered below.

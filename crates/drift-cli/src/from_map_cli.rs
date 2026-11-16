@@ -122,7 +122,7 @@ pub struct Twin {
 #[derive(Debug, Clone)]
 pub enum Basis {
     Practice {
-        candidate: Candidate,
+        candidate: Box<Candidate>,
         /// Units the departures name (`drift_mine::practices::departures`) that it
         /// would settle: those it records as differing today.
         settles: usize,
@@ -300,7 +300,7 @@ fn practices_into(
         out.proposals.push(FromMap {
             convention,
             basis: Basis::Practice {
-                candidate: c,
+                candidate: Box::new(c),
                 settles,
             },
             twins,
@@ -1482,7 +1482,7 @@ mod tests {
             proposals: vec![FromMap {
                 convention: p,
                 basis: Basis::Practice {
-                    candidate: c,
+                    candidate: Box::new(c),
                     settles: 0,
                 },
                 twins: Vec::new(),
@@ -1505,7 +1505,7 @@ mod tests {
         let p = FromMap {
             convention: proposed(&c),
             basis: Basis::Practice {
-                candidate: c,
+                candidate: Box::new(c),
                 settles: 0,
             },
             twins: Vec::new(),

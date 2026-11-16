@@ -6604,7 +6604,7 @@ fn learn_scope_keys(cx: &Cx<'_>) -> std::collections::BTreeSet<String> {
                         if let [callee, key, side] = parts.as_slice()
                             && side_is_callers(cx, side)
                         {
-                            note(f.package.as_str(), *key, *callee, body.as_str());
+                            note(f.package.as_str(), key, callee, body.as_str());
                         }
                     }
                 }

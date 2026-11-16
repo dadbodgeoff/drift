@@ -136,7 +136,7 @@ fn route_segments(route: Option<&str>) -> (Vec<String>, bool) {
             || seg.starts_with("[[")
             || (seg.starts_with('{') && seg.ends_with(":path}"))
             || seg.starts_with("<path:")
-            || (seg.starts_with(':') && seg.contains(|ch: char| matches!(ch, '*' | '+' | '(')));
+            || (seg.starts_with(':') && seg.contains(['*', '+', '(']));
         if catch_all {
             return (out, false);
         }
@@ -1264,9 +1264,9 @@ impl<'a> Reading<'a> {
         if !acc.mechanisms.is_empty() {
             let of = |u: &str| acc.mechanisms.contains(mechanism_of(u));
             let by_mechanism = if self.additive {
-                uses.iter().any(|u| of(*u))
+                uses.iter().any(|u| of(u))
             } else {
-                uses.iter().all(|u| of(*u))
+                uses.iter().all(|u| of(u))
             };
             if by_mechanism {
                 return true;
@@ -1338,7 +1338,7 @@ impl<'a> Reading<'a> {
     fn mechanisms(&self) -> BTreeSet<&'a str> {
         (0..self.c.units.len())
             .filter(|&i| self.counted[i])
-            .flat_map(|i| self.uses[i].iter().map(|k| mechanism_of(*k)))
+            .flat_map(|i| self.uses[i].iter().map(|k| mechanism_of(k)))
             .collect()
     }
 

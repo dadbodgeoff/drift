@@ -105,12 +105,10 @@ impl Concern for Validation {
                     uses.push(use_of(mechanism, &lib));
                     sources.push(source);
                 }
-                Some(Err(instrument)) => {
-                    if unproven.as_ref().is_none_or(|u| instrument < *u) {
-                        unproven = Some(instrument);
-                    }
+                Some(Err(instrument)) if unproven.as_ref().is_none_or(|u| instrument < *u) => {
+                    unproven = Some(instrument);
                 }
-                None => {}
+                Some(Err(_)) | None => {}
             }
         }
         if inputs.is_empty() {

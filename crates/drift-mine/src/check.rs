@@ -1909,7 +1909,7 @@ fn definition_in<'r>(repo: &'r RepoFacts, r: &str) -> Option<&'r drift_core::Sym
         let name = segs[..k].join(".");
         f.symbols
             .iter()
-            .find(|s| s.name == name || s.exported_as.iter().any(|e| *e == name))
+            .find(|s| s.name == name || s.exported_as.contains(&name))
     })
 }
 

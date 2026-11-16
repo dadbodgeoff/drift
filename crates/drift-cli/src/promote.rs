@@ -517,7 +517,6 @@ fn mechanisms_read(report: &PracticesReport, concern: &str) -> Vec<(String, usiz
 /// The concerns whose classifier has a reading of which ways enforce them
 /// ([`drift_mine::practices::Concern::enforces`]), in the map's concern order.
 fn enforcing_concerns() -> Vec<&'static str> {
-    use drift_mine::practices::Concern;
     let registered = drift_mine::practices::registry();
     drift_mine::practices::CONCERNS
         .iter()

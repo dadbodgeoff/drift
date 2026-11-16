@@ -313,7 +313,7 @@ fn cards() -> tempfile::TempDir {
             &format!("export function {p}() {{\n  return <span />;\n}}\n"),
         );
     }
-    for i in 0..20 {
+    for (i, word) in WORDS.iter().enumerate().take(20) {
         let imports: String = PARTS
             .iter()
             .map(|p| format!("import {{ {p} }} from \"../ui/{p}\";\n"))
@@ -327,7 +327,7 @@ fn cards() -> tempfile::TempDir {
         let name = if i == 19 {
             "Lonely".to_string()
         } else {
-            format!("{}Card", WORDS[i])
+            format!("{word}Card")
         };
         write(
             r,

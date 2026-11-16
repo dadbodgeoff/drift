@@ -183,13 +183,13 @@ pub fn unreached_files(repo: &RepoFacts, non_production: &NonProduction) -> BTre
     let reached: BTreeSet<&str> = repo
         .files
         .iter()
-        .filter(|f| serves(*f) || named.contains(f.path.as_str()))
+        .filter(|f| serves(f) || named.contains(f.path.as_str()))
         .map(|f| dir(&f.path))
         .collect();
     let routers: BTreeSet<&str> = repo
         .files
         .iter()
-        .filter(|f| serves(*f) && dir(&f.path) != f.package)
+        .filter(|f| serves(f) && dir(&f.path) != f.package)
         .map(|f| dir(&f.path))
         .collect();
     repo.files
@@ -199,7 +199,7 @@ pub fn unreached_files(repo: &RepoFacts, non_production: &NonProduction) -> BTre
             !is_test_path(&f.path)
                 && non_production.dir_of(&f.path, &f.package).is_none()
                 && (!f.parse_ok || f.imports.is_empty())
-                && !serves(*f)
+                && !serves(f)
                 && !named.contains(f.path.as_str())
                 && !discovered.iter().any(|g| f.path.starts_with(g))
                 && !reached.iter().any(|r| under(r, d))
@@ -9012,7 +9012,7 @@ fn guard_gaps_built_on(
     guard_gaps_with(entries, &|e, guard, with| {
         let targets: BTreeSet<String> = with
             .iter()
-            .flat_map(|w| named(*w, guard_name(guard)))
+            .flat_map(|w| named(w, guard_name(guard)))
             .collect();
         !targets.is_empty()
             && e.guards

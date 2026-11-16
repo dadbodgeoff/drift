@@ -363,7 +363,7 @@ fn base_handler<'a>(
     let calls_base = |m: &drift_core::Member| {
         let global = format!("global#super().{}", m.name);
         let local = format!("local:super().{}", m.name);
-        m.calls.iter().any(|c| *c == global) || m.receiver_calls.iter().any(|c| *c == local)
+        m.calls.contains(&global) || m.receiver_calls.contains(&local)
     };
     let answers = |m: &drift_core::Member| {
         calls_base(m) && m.unread.iter().any(|u| u == drift_core::CATCH_RESPONDS)
@@ -372,13 +372,13 @@ fn base_handler<'a>(
     let own = s.name.split_once('.').map(|(_, m)| m);
     let mut found: Vec<(usize, String)> = methods
         .iter()
-        .filter(|(depth, _, m)| answers(*m) && !(*depth == 0 && Some(m.name.as_str()) == own))
+        .filter(|(depth, _, m)| answers(m) && !(*depth == 0 && Some(m.name.as_str()) == own))
         // Not where a class nearer the view defines the method again and does
         // not hand on to its base's: that one runs instead.
         .filter(|(depth, _, m)| {
             !methods
                 .iter()
-                .any(|(d, _, o)| d < depth && o.name == m.name && !calls_base(*o))
+                .any(|(d, _, o)| d < depth && o.name == m.name && !calls_base(o))
         })
         .map(|(depth, id, m)| (*depth, format!("{id}.{}", m.name)))
         .collect();
