@@ -1354,12 +1354,14 @@ fn convention_base(root: &Path, current: &ConventionsFile, id: &str) -> Result<S
             "{id} was rejected at commit {at}, so nothing was baselined for it then"
         ));
     }
-    // Undecided then, accepted since: the acceptance is a person's decision made after
-    // that commit, and what it breaks comes with that decision, not with a change in how
-    // Drift reads the code (a proposal from the map had no lock line written at all).
-    if was.status == Status::Proposed {
+    // A proposal from the map, undecided then and accepted since: `drift init` writes no
+    // lock line for one until a person accepts it, so the lock at that commit says
+    // nothing about what it broke then, and what it breaks comes with the acceptance,
+    // not with a change in how Drift reads the code. (A mined proposal is baselined by
+    // the init that drafts it, so its lock at that commit is that Drift's reading.)
+    if was.status == Status::Proposed && was.from_map.is_some() {
         return Err(format!(
-            "{id} was an undecided proposal at commit {at} and was accepted since, so what it breaks comes with that decision, not with a new reading"
+            "{id} was an undecided proposal from the map at commit {at} and was accepted since, so what it breaks comes with that decision, not with a new reading"
         ));
     }
     if was.role != now.role || was.rule != now.rule || was.selector_version != now.selector_version

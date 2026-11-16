@@ -111,13 +111,14 @@ fn app() -> tempfile::TempDir {
     dir
 }
 
-/// The ids of the proposals in the policy.
+/// The ids of the proposals from the map in the policy (`drift init` writes no lock line
+/// for one until a person accepts it).
 fn proposed(root: &Path) -> String {
     let yaml = read(root, ".drift/conventions.yaml");
     let ids: Vec<&str> = yaml
         .split("- id: ")
         .skip(1)
-        .filter(|b| b.contains("status: proposed"))
+        .filter(|b| b.contains("status: proposed") && b.contains("from_map:"))
         .map(|b| &b[..8])
         .collect();
     assert!(!ids.is_empty(), "{yaml}");
@@ -205,7 +206,7 @@ fn a_proposal_accepted_later_is_not_a_reading_change() {
     let (code, out) = drift(r, &["upgrade", "--apply"]);
     assert_eq!(code, 3, "{out}");
     assert!(out.contains("\n  0 appear only because"), "{out}");
-    assert!(out.contains("was an undecided proposal at commit"), "{out}");
+    assert!(out.contains("was an undecided proposal from the map at commit"), "{out}");
     assert_eq!(read(r, "drift.lock"), lock, "an accepted proposal's break was baselined");
 }
 
