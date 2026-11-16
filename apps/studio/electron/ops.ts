@@ -31,6 +31,10 @@ export type DriftOp =
   | { op: "promote"; promote: PromoteArgs }
   /** The structural map (`drift map --json`): packages with production and test dependencies apart. */
   | { op: "map" }
+  /** What mining dropped, gate by gate (`drift census --why --json`): observation only, read-only. */
+  | { op: "funnel" }
+  /** Every practice that may be promoted now (`drift practices promote --list --json`): writes nothing. */
+  | { op: "promoteList" }
   | { op: "version" }
   | { op: "censusHelp" };
 
@@ -202,6 +206,10 @@ export function driftArgs(root: string, op: DriftOp): string[] {
       return ["--root", root, "practices", "--json"];
     case "map":
       return ["--root", root, "map", "--json"];
+    case "funnel":
+      return ["--root", root, "census", "--why", "--json"];
+    case "promoteList":
+      return ["--root", root, "practices", "promote", "--list", "--json"];
     case "promotePreview":
       return ["--root", root, "practices", "promote", ...promoteFlags(op.promote, true)];
     case "promote":

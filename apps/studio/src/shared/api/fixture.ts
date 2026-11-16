@@ -4,9 +4,9 @@
 // on large public repos for performance work). Writes (review, init, a practice
 // made a convention) change only this tab's memory; history lives in localStorage.
 import { parseDocument } from "yaml";
-import type { AbRow, Census, CheckReport, Convention, Inventory, MapPackage, PracticesReport, PromoteOutcome, RepoFacts, ReviewQuestion, ReviewQuestions, SecurityDiff, SessionState } from "@/shared/contract/drift";
+import type { AbRow, Census, CensusWhy, CheckReport, Convention, Inventory, MapPackage, PracticesReport, PromoteList, PromoteOutcome, RepoFacts, ReviewQuestion, ReviewQuestions, SecurityDiff, SessionState } from "@/shared/contract/drift";
 import type { History, LogEntry, PromoteRequest, RepoRef, SessionSummary, Snapshot } from "@/shared/ipc/contract";
-import { fixtureConvention, fixturePromote, isRefused, promoteCommand } from "@/shared/lib/promote";
+import { fixtureConvention, fixtureListOpen, fixturePromote, isRefused, promoteCommand } from "@/shared/lib/promote";
 import { answerCommand, exemptCommand, reviewCommand } from "@/shared/lib/review";
 import { answerPlan } from "@/shared/lib/questions";
 import type { Answer } from "@/shared/ipc/contract";
@@ -16,8 +16,9 @@ interface Index {
   /**
    * `errors`: the repository has errors.json, what drift printed when it refused to run there (make-round11-fixtures.mjs).
    * `practices`: the repository has practices.json (`drift practices --json`); `map`: map.json (`drift map --json`).
+   * `funnel`: funnel.json (`drift census --why --json`); `promoteList`: promote-list.json (`drift practices promote --list --json`).
    */
-  repos: { id: string; path: string; name: string; local?: boolean; errors?: boolean; practices?: boolean; map?: boolean }[];
+  repos: { id: string; path: string; name: string; local?: boolean; errors?: boolean; practices?: boolean; map?: boolean; funnel?: boolean; promoteList?: boolean }[];
   sessions: { id: string; project: string; title: string; bytes: number; modified: number; hasState: boolean }[];
   studies: { census: string[]; ab: string[]; runs?: string[]; variants?: { path: string; variant: string }[] };
 }
@@ -181,6 +182,24 @@ export class FixtureApi implements StudioApi {
     const r = (await this.index()).repos.find((x) => x.path === repo.path);
     if (!r?.map) throw new Error(`drift map failed: fixture mode has no map.json for ${repo.name}`);
     return this.wait(this.loaded(await this.json<{ schema: number; packages: MapPackage[] }>(`${await this.dir(repo)}/map.json`), false));
+  }
+
+  /** `drift census --why --json` for this fixture (funnel.json); a repository without one fails as a run would. */
+  async funnel(repo: RepoRef): Promise<Loaded<CensusWhy>> {
+    const r = (await this.index()).repos.find((x) => x.path === repo.path);
+    if (!r?.funnel) throw new Error(`drift census --why failed: fixture mode has no funnel.json for ${repo.name}`);
+    return this.wait(this.loaded(await this.json<CensusWhy>(`${await this.dir(repo)}/funnel.json`), false), this.delay * 2);
+  }
+
+  /**
+   * `drift practices promote --list --json` for this fixture (promote-list.json), less what this tab promoted: as Drift
+   * leaves out a candidate a convention already covers, and names that convention under `promoted`.
+   */
+  async promoteList(repo: RepoRef): Promise<Loaded<PromoteList>> {
+    const r = (await this.index()).repos.find((x) => x.path === repo.path);
+    if (!r?.promoteList) throw new Error(`drift practices promote --list failed: fixture mode has no promote-list.json for ${repo.name}`);
+    const list = await this.json<PromoteList>(`${await this.dir(repo)}/promote-list.json`);
+    return this.wait(this.loaded(fixtureListOpen(list, [...(this.promoted.get(repo.path)?.keys() ?? [])]), false));
   }
 
   async policy(repo: RepoRef) {

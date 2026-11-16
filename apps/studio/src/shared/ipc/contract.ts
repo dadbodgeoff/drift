@@ -88,6 +88,11 @@ export const PracticesEnvelope = z
 /** `drift map --json` (map.rs `overview`, schema 1); packages are checked where read (features/map). */
 export const MapEnvelope = z.object({ schema: z.number(), packages: z.array(z.any()) }).passthrough();
 
+/** `drift census --why --json` (funnel.rs `why_json`, schema 1): gates and dropped candidates are checked where read (features/funnel). */
+export const FunnelEnvelope = z
+  .object({ schema: z.number(), observation_only: z.boolean(), gate: z.string().nullable(), reached: z.record(z.string(), z.number()), gates: z.array(z.any()), dropped: z.array(z.any()) })
+  .passthrough();
+
 export const PolicyFiles = z.object({ conventions: z.string().nullable(), lock: z.string().nullable() });
 export type PolicyFiles = z.infer<typeof PolicyFiles>;
 
@@ -245,6 +250,15 @@ export const PromoteRefusedEnvelope = z.object({ refused: z.object({ code: z.str
 
 export const PromoteEnvelope = z.union([PromoteRefusedEnvelope, PromoteResultEnvelope]);
 
+/** `drift practices promote --list --json` (drift-cli promote.rs `list`, exit 0): each candidate is checked where read (features/practices). */
+export const PromoteListEnvelope = z
+  .object({
+    candidates: z.array(z.object({ place: z.string(), command: z.string(), candidate: z.object({ concern: z.string(), ways: z.array(PromoteWayEnvelope) }).passthrough() }).passthrough()),
+    declined: z.number(),
+    promoted: z.array(z.string()),
+  })
+  .passthrough();
+
 /** One decision made through the Studio (Drift itself keeps no history). */
 export const AuditEntry = z.object({
   at: z.number(),
@@ -302,6 +316,10 @@ export const channels = {
   practices: { req: z.tuple([RepoRef]), res: loaded(PracticesEnvelope) },
   /** `drift map --json`: the structural map (read-only); the Map view reads each package's dependencies. */
   map: { req: z.tuple([RepoRef]), res: loaded(MapEnvelope) },
+  /** `drift census --why --json`: what mining dropped, gate by gate (observation only, read-only). */
+  funnel: { req: z.tuple([RepoRef]), res: loaded(FunnelEnvelope) },
+  /** `drift practices promote --list --json`: every practice that may be promoted now. Writes nothing. */
+  promoteList: { req: z.tuple([RepoRef]), res: loaded(PromoteListEnvelope) },
   policy: { req: z.tuple([RepoRef]), res: PolicyFiles },
   review: { req: z.tuple([RepoRef, Decision, z.array(convId).min(1).max(200)]), res: AuditEntry },
   /** `drift review --exempt <id> --member <m> --reason <r>`, or with a null reason `--unexempt <id> --member <m>`. */

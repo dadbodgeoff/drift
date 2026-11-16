@@ -29,7 +29,7 @@ import {
 import { useRepo } from "@/entities/repo";
 import { keys, useCheck, useFacts, useQuestions } from "@/entities/drift";
 import { VIOLATION_STATUS, statusOf } from "@/entities/check";
-import { type ConventionRow, type FineOutlier, MIN_BLOCK_ROLE_SIZE, RECORD_MIN_CARDS, blockDecision, capSuggestions, forceBlockIsDanger, memberKey, reviewCounts, reviewOrder, splitOutliers, suggestionRecord, trackRecord, undecided, blocksInNameOnly, describeDecision, exemptionKind, exemptionKinds, importSource, keyTypeText, languageText, layeringTarget, ruleTargets, practiceText, shortRef, tierReasonText, uncheckedFilesText, uncheckedMembersText, useConventions, WIRING_FLAG_HELP, wireAt, agentsHiddenText, verifyText, BLOCK_CANDIDATE_TEXT, isBlockCandidate, type PythonProposalsState, pythonProposalsText, QUESTION, answerPlan, needsTick, ACCURACY, REVIEW_FIRST_TEXT, pctOf } from "@/entities/convention";
+import { type ConventionRow, type FineOutlier, MIN_BLOCK_ROLE_SIZE, RECORD_MIN_CARDS, blockDecision, capSuggestions, forceBlockIsDanger, memberKey, reviewCounts, reviewOrder, splitOutliers, suggestionRecord, trackRecord, undecided, blocksInNameOnly, describeDecision, exemptionKind, exemptionKinds, importSource, keyTypeText, languageText, layeringTarget, ruleTargets, practiceText, shortRef, tierReasonText, uncheckedFilesText, uncheckedMembersText, useConventions, WIRING_FLAG_HELP, wireAt, agentsHiddenText, verifyText, BLOCK_CANDIDATE_TEXT, isBlockCandidate, type PythonProposalsState, pythonProposalsText, QUESTION, answerPlan, needsTick, ACCURACY, REVIEW_FIRST_TEXT, pctOf, type SourceFilter, hasFromMap, passesSource } from "@/entities/convention";
 import { symbolLine, useFactsIndex } from "@/entities/facts";
 import { useHistory } from "@/entities/history";
 import { type Answer, type AuditEntry, type Decision, useApi } from "@/shared/api";
@@ -42,6 +42,7 @@ import { navigate } from "@/shared/lib/router";
 import { answerCommand, exemptCommand, reviewCommand } from "@/shared/lib/review";
 import { useOpenCode } from "@/shared/ui/code";
 import { Loading } from "@/shared/ui/QueryState";
+import { FromMapBadge, FromMapNote } from "./FromMap";
 
 type Filter = "review" | "accepted" | "rejected" | "all";
 type TierFilter = "all" | "default" | "suggestion";
@@ -73,6 +74,8 @@ export function ConventionsView({ selectedId }: { selectedId: string | null }) {
   const questions = useQuestions(repo, !!conv.rows?.some(isBlockCandidate));
   const [filter, setFilter] = useState<Filter>("review");
   const [tierFilter, setTierFilter] = useState<TierFilter>("all");
+  // Mined proposals or those from Drift's map of the code (newer drift): offered only when some row is from the map.
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
   const [q, setQ] = useState("");
   // Every suggestion to review, not only the best few census lists (`drift review --all`).
   const [allSuggestions, setAllSuggestions] = useState(false);
@@ -93,9 +96,9 @@ export function ConventionsView({ selectedId }: { selectedId: string | null }) {
     return (r: ConventionRow) => {
       const okStatus = filter === "all" || (filter === "review" ? undecided(r) : r.status === filter);
       const okTier = tierFilter === "all" || r.tier === tierFilter;
-      return okStatus && okTier && (!needle || r.summary.toLowerCase().includes(needle) || r.id.includes(needle) || r.family.toLowerCase().includes(needle));
+      return okStatus && okTier && passesSource(r, sourceFilter) && (!needle || r.summary.toLowerCase().includes(needle) || r.id.includes(needle) || r.family.toLowerCase().includes(needle));
     };
-  }, [filter, tierFilter, q]);
+  }, [filter, tierFilter, sourceFilter, q]);
   const uncapped = allSuggestions || q.trim() !== "";
   const shown = useMemo(() => (uncapped ? ordered : capped.listed).filter(passes), [uncapped, ordered, capped, passes]);
   const hiddenHere = capped.hidden.filter(passes).length;
@@ -106,10 +109,10 @@ export function ConventionsView({ selectedId }: { selectedId: string | null }) {
 
   // A filter the person picks stays picked: the selection moves into the filtered list. Only a
   // convention opened from elsewhere (a link, the palette) widens the filters to show it.
-  const filtersRef = useRef(`${filter}|${tierFilter}|${q}|${allSuggestions}`);
+  const filtersRef = useRef(`${filter}|${tierFilter}|${sourceFilter}|${q}|${allSuggestions}`);
   useEffect(() => {
     if (conv.loading) return;
-    const filters = `${filter}|${tierFilter}|${q}|${allSuggestions}`;
+    const filters = `${filter}|${tierFilter}|${sourceFilter}|${q}|${allSuggestions}`;
     const filtersChanged = filters !== filtersRef.current;
     filtersRef.current = filters;
     const hidden = !!selectedId && rows.some((r) => r.id === selectedId) && !shown.some((r) => r.id === selectedId);
@@ -117,13 +120,14 @@ export function ConventionsView({ selectedId }: { selectedId: string | null }) {
     else if (hidden && filtersChanged) {
       if (shown[0]) navigate("conventions", shown[0].id);
     } else if (hidden) {
-      if (filter !== "all" || tierFilter !== "all") {
+      if (filter !== "all" || tierFilter !== "all" || sourceFilter !== "all") {
         setFilter("all");
         setTierFilter("all");
+        setSourceFilter("all");
       }
       if (capped.hidden.some((r) => r.id === selectedId)) setAllSuggestions(true);
     }
-  }, [selectedId, shown, rows, filter, tierFilter, q, allSuggestions, capped, conv.loading]);
+  }, [selectedId, shown, rows, filter, tierFilter, sourceFilter, q, allSuggestions, capped, conv.loading]);
   useEffect(() => setAllOutliers(false), [selected?.id]);
   // The opt-in review log: a card the person opens is recorded as shown (`drift review --shown`), once per
   // card while this view is open, and only when the log is on (Drift records nothing otherwise).
@@ -378,6 +382,19 @@ export function ConventionsView({ selectedId }: { selectedId: string | null }) {
                 ]}
               />
             )}
+            {hasFromMap(rows) && (
+              <SegmentedControl<SourceFilter>
+                label={t("conventions.source.label")}
+                size="sm"
+                value={sourceFilter}
+                onValueChange={setSourceFilter}
+                items={[
+                  { value: "all", label: t("conventions.source.all") },
+                  { value: "mined", label: t("conventions.source.mined"), count: rows.filter((r) => passesSource(r, "mined")).length },
+                  { value: "map", label: t("conventions.source.map"), count: rows.filter((r) => passesSource(r, "map")).length },
+                ]}
+              />
+            )}
             <SearchInput size="sm" value={q} onValueChange={setQ} placeholder="Filter by rule, id or family" label="Filter conventions" />
             {!conv.censusAvailable && (
               <p className="st-note">
@@ -425,6 +442,11 @@ export function ConventionsView({ selectedId }: { selectedId: string | null }) {
                     <EvidenceChip compact holders={r.evidence.holders} total={r.evidence.total} lowerBound={r.evidence.lower_bound} />
                     {r.tier && <TierBadge compact tier={r.tier} reason={tierReasonText(r, conv.params?.tier?.min_members)} />}
                     {r.experimental && <span className="st-qitem__fam">experimental</span>}
+                    {r.fromMap && (
+                      <span className="st-qitem__fam cv-qfrommap" title={t("conventions.fromMap.queueTitle")}>
+                        {t("conventions.fromMap.badge")}
+                      </span>
+                    )}
                     {isBlockCandidate(r) ? (
                       <span className="st-qitem__fam cv-qcandidate t-warning" title={`Drift: ${BLOCK_CANDIDATE_TEXT}`}>
                         block candidate
@@ -652,6 +674,7 @@ function Detail({
               promoted from the practice map · {row.promotedFromPractice}
             </Badge>
           )}
+          {row.fromMap && <FromMapBadge fromMap={row.fromMap} />}
           {row.rank && <span className="t-caption t-muted">rank {row.rank}</span>}
           <span className="st-grow" />
           <Button size="sm" variant="ghost" icon="copy" onClick={onCopy}>
@@ -659,6 +682,7 @@ function Detail({
           </Button>
         </div>
         <h2 className="t-h1 st-detail__title">{row.summary}</h2>
+        {row.fromMap && <FromMapNote fromMap={row.fromMap} />}
         {row.status === "accepted" && (
           <div className="st-row st-wrap cv-violations">
             {violations.length === 0 ? (

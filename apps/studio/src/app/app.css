@@ -3563,3 +3563,70 @@ button.ss-tick.is-exempt {
 .pr-promote .st-raw pre {
   white-space: pre-wrap;
 }
+
+/* ---------- What mining dropped (drift census --why) ---------- */
+.fn-head {
+  border-bottom: 1px solid var(--color-border);
+}
+.fn-stages__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+.fn-stages__num {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.fn-table tr.is-selected th,
+.fn-table tr.is-selected td {
+  background: var(--color-raised);
+}
+.fn-table tr.is-selected th {
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+.fn-table td {
+  vertical-align: top;
+}
+.fn-detail__facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 0 0 12px;
+}
+.fn-detail__facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.fn-dropped__num {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* ---------- Practices that may be promoted (drift practices promote --list) ---------- */
+.pr-candidates {
+  max-width: 1080px;
+}
+.pr-cand {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pr-cand__head {
+  gap: 8px;
+  align-items: baseline;
+}
+.pr-cand__cmd {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.pr-cand__cause .dui-icon {
+  margin-top: 2px;
+}
+.pr-cand__cause .st-cmd,
+.pr-promote__cause .st-cmd {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

@@ -1,0 +1,348 @@
+{
+  "schema": 1,
+  "observation_only": true,
+  "gate": null,
+  "reached": {
+    "roles": 42,
+    "role_mined": 17,
+    "observed": 214,
+    "drafted": 61,
+    "mined": 21,
+    "proposed": 14
+  },
+  "gates": [
+    {
+      "name": "indirect_base",
+      "constant": "more than half of the holders extend the base directly",
+      "passes": "a base class most holders extend themselves, not only through another base",
+      "origin": "engineering, rationale written but not measured",
+      "source": "mine.rs comment (an ancestor the team's base brings along is no convention)",
+      "dropped": 0
+    },
+    {
+      "name": "refines_base",
+      "constant": "Python: the outliers extend the general team base the rule's base refines",
+      "passes": "a base that is no refinement the outliers chose against",
+      "origin": "engineering, rationale written but not measured",
+      "source": "mine.rs `refines_team_base`",
+      "dropped": 0
+    },
+    {
+      "name": "optional_key",
+      "constant": "most holders also call the callee without the key",
+      "passes": "a key passed on every call of the callee",
+      "origin": "engineering, rationale written but not measured",
+      "source": "mine.rs `optional_key`",
+      "dropped": 0
+    },
+    {
+      "name": "universal",
+      "constant": "at least one outlier (holders < members)",
+      "passes": "a rule some member of the role does not follow; a rule that holds for every member is never proposed",
+      "origin": "engineering, no study",
+      "source": "docs/v2/PLAN.md:148 (\"shown as documentation, not as a check\"; the documentation was never built)",
+      "dropped": 2
+    },
+    {
+      "name": "wilson",
+      "constant": "MIN_LOWER_BOUND = 0.75 (95% Wilson lower bound of holders / members)",
+      "passes": "a lower bound of at least 0.75: with one outlier, a role of 19 or more members",
+      "origin": "engineering, no study",
+      "source": "docs/v2/PLAN.md:148; TIER-ADMISSION.md finds the bound does not predict precision",
+      "dropped": 2
+    },
+    {
+      "name": "lift",
+      "constant": "MIN_LIFT = 1.5; MIN_LIFT_EXTERNAL_CALL = 3.0 for calls into packages and built-ins, and directives",
+      "passes": "a rule the role follows at least 1.5 times (3 times) as often as all units of its kind",
+      "origin": "engineering, no study",
+      "source": "docs/v2/PLAN.md:150; the 3.0 from one labelled round, docs/v2/EVAL-2026-11-05.md:70",
+      "dropped": 1
+    },
+    {
+      "name": "mandated",
+      "constant": "frameworks::MANDATES (a list of framework names)",
+      "passes": "a rule no framework the repository uses mandates",
+      "origin": "engineering, no study",
+      "source": "mine.rs `unproposable` (a name list)",
+      "dropped": 0
+    },
+    {
+      "name": "tautology",
+      "constant": "the target is named after the role's folder or file kind",
+      "passes": "a rule that does not restate the role's name",
+      "origin": "engineering, no study",
+      "source": "mine.rs `is_tautology`",
+      "dropped": 0
+    },
+    {
+      "name": "python_family_hidden",
+      "constant": "Python order rules, os.environ avoidance, calls on HTTP handlers",
+      "passes": "a Python rule of another family",
+      "origin": "study",
+      "source": "relabel3: 0 of 3, 0 of 3, 0 of 7 accepted (mine.rs `hidden_python_family`)",
+      "dropped": 0
+    },
+    {
+      "name": "holders_one_file",
+      "constant": "ROLE_MIN_FILES = 3",
+      "passes": "holders in at least 3 files",
+      "origin": "study",
+      "source": "docs/v2/PYTHON.md:669 (one labelled failure: 20 tasks in two files)",
+      "dropped": 0
+    },
+    {
+      "name": "how_built",
+      "constant": "class-name helpers in components; the calls an exported value is built with",
+      "passes": "a call that is no part of how the code is built",
+      "origin": "engineering, no study",
+      "source": "mine.rs `describes_how_built`",
+      "dropped": 0
+    },
+    {
+      "name": "file_local",
+      "constant": "HOLDER_MIN_FILES = 3, HOLDER_FILE_DENSITY = 10",
+      "passes": "holders spread over enough files of the role",
+      "origin": "engineering, rationale written but not measured",
+      "source": "mine.rs `file_local`",
+      "dropped": 0
+    },
+    {
+      "name": "path_params",
+      "constant": "the rule follows the handlers' path parameters",
+      "passes": "a rule that is not the route's shape",
+      "origin": "engineering, no study",
+      "source": "mine.rs `follows_path_params`",
+      "dropped": 0
+    },
+    {
+      "name": "key_structure",
+      "constant": "the rule follows the tables' primary keys",
+      "passes": "a rule that is not the table's key structure",
+      "origin": "engineering, no study",
+      "source": "mine.rs `follows_key_structure`",
+      "dropped": 0
+    },
+    {
+      "name": "input",
+      "constant": "the rule follows whether the handlers take input",
+      "passes": "a validation rule whose outliers do take input",
+      "origin": "engineering, no study",
+      "source": "mine.rs `follows_input`",
+      "dropped": 0
+    },
+    {
+      "name": "other_kind_outliers",
+      "constant": "FIELD_FRAMEWORK_SHARE = 0.9",
+      "passes": "a rule some outlier of which is of the role's own kind",
+      "origin": "engineering, no study",
+      "source": "mine.rs `outliers_of_another_kind`",
+      "dropped": 0
+    },
+    {
+      "name": "lint_layering",
+      "constant": "the linter's import restrictions",
+      "passes": "a layering rule not against the direction the linter states",
+      "origin": "engineering, no study",
+      "source": "mine.rs `against_lint_layering`",
+      "dropped": 0
+    },
+    {
+      "name": "lint",
+      "constant": "the linter enforces the rule (error), or the team turned it off",
+      "passes": "a rule the linter does not decide",
+      "origin": "engineering, no study",
+      "source": "mine.rs `unproposable`",
+      "dropped": 0
+    },
+    {
+      "name": "uncorroborated",
+      "constant": "absence of console.*, bare Error, process.env, typing.Any",
+      "passes": "an avoidance something else in the repository corroborates",
+      "origin": "engineering, no study",
+      "source": "mine.rs `corroborated`",
+      "dropped": 0
+    },
+    {
+      "name": "call_family_hidden",
+      "constant": "TypeScript calls rules whose callee is no guard",
+      "passes": "a calls rule on a guard, or a Python one",
+      "origin": "study",
+      "source": "dev relabel3: 2 of 14 accepted (mine.rs `hidden_call_rule`)",
+      "dropped": 0
+    },
+    {
+      "name": "duplicate",
+      "constant": "same holders; a variant set over its members; CHILD_MARGIN = 0.05 across depths; NEAR_DUPLICATE = 0.9 outlier Jaccard",
+      "passes": "a rule no stronger rule of its role (or a nested role) already says",
+      "origin": "engineering, no study",
+      "source": "mine.rs `dedupe`",
+      "dropped": 0
+    },
+    {
+      "name": "cap_role",
+      "constant": "MAX_PER_ROLE = 5 (counts drafts the show policy will hide)",
+      "passes": "one of the 5 best-scored drafts of its role",
+      "origin": "engineering, no study",
+      "source": "mine.rs; not show-aware (PLAN-R14 WS-H(a))",
+      "dropped": 0
+    },
+    {
+      "name": "cap_avoid",
+      "constant": "AVOID_MAX_SHARE = 0.25 of --max (4 of 15): layering rules per repository",
+      "passes": "one of the best-scored layering rules within a quarter of --max; default-tier ones are cut too",
+      "origin": "engineering, no study",
+      "source": "mine.rs `cap_shown`",
+      "dropped": 0
+    },
+    {
+      "name": "cap_repo",
+      "constant": "--max (DEFAULT_MAX_PER_REPO = 15) shown drafts per repository",
+      "passes": "one of the --max best-scored drafts the show policy shows",
+      "origin": "engineering, no study",
+      "source": "mine.rs `cap_shown`",
+      "dropped": 0
+    },
+    {
+      "name": "narrowed_out",
+      "constant": "recounted over the members the rule is about: no holder left, or every member holds it",
+      "passes": "a rule still held, and broken, once exempt members are set aside (the bound is not checked again)",
+      "origin": "engineering, rationale written but not measured",
+      "source": "mine.rs `narrow`, `join_siblings`; no re-check after recount (PLAN-R14 WS-H(c))",
+      "dropped": 0
+    },
+    {
+      "name": "compiler",
+      "constant": "the compiler already enforces the rule",
+      "passes": "a rule the compiler does not check",
+      "origin": "engineering, rationale written but not measured",
+      "source": "mine.rs `compiler_enforced`",
+      "dropped": 0
+    },
+    {
+      "name": "no_table",
+      "constant": "a valid show table in the build",
+      "passes": "any suggestion, when the table parses",
+      "origin": "engineering, no study",
+      "source": "show.rs [STRICT]",
+      "dropped": 0
+    },
+    {
+      "name": "no_family",
+      "constant": "the show table maps the rule kind to a family",
+      "passes": "a suggestion of a rule kind the table maps",
+      "origin": "study",
+      "source": "data/show-policy.json (run dev-v3-relabel6-2026-11-10)",
+      "dropped": 0
+    },
+    {
+      "name": "hidden_family",
+      "constant": "data/show-policy.json `hidden` (TS calls, ordering, renders; Python ordering, repo)",
+      "passes": "a suggestion of a family shown in its language",
+      "origin": "study",
+      "source": "PLAN-R10 §4, run dev-v3-relabel6-2026-11-10; the owner's decision",
+      "dropped": 0
+    },
+    {
+      "name": "not_admitted",
+      "constant": "leave-one-repo-out accept at least 60% of at least 5 labelled cards",
+      "passes": "a suggestion of a family admitted for its language",
+      "origin": "study",
+      "source": "PLAN-R10 §4, run dev-v3-relabel6-2026-11-10; the owner's decision",
+      "dropped": 0
+    },
+    {
+      "name": "max_outliers",
+      "constant": "data/show-policy.json `max_outliers` = 1",
+      "passes": "a suggestion with at most 1 outlier",
+      "origin": "study",
+      "source": "PLAN-R10 §4: TS 85.7% (48 of 56) in sample",
+      "dropped": 0
+    },
+    {
+      "name": "python_off",
+      "constant": "`proposals: {python: off}` in .drift/config.yaml",
+      "passes": "any card while Python proposals are on (the default)",
+      "origin": "study",
+      "source": "decision D13-py (eval/study/README.md)",
+      "dropped": 0
+    }
+  ],
+  "dropped": [
+    {
+      "gate": "universal",
+      "id": "D-3a91c4",
+      "role": "apps/web: HTTP handlers in app/api/admin/** (route files)",
+      "rule": "call requireAdmin()",
+      "family": "calls",
+      "lang": "ts",
+      "holders": 20,
+      "members": 20,
+      "value": 1.0,
+      "threshold": null,
+      "detail": "holds for all 20 of 20: no outlier",
+      "target": "repository",
+      "default_tier": false
+    },
+    {
+      "gate": "universal",
+      "id": "D-7c0e12",
+      "role": "apps/web: server actions in lib/actions/**",
+      "rule": "declare \"use server\"",
+      "family": "directive",
+      "lang": "ts",
+      "holders": 16,
+      "members": 16,
+      "value": 1.0,
+      "threshold": null,
+      "detail": "holds for all 16 of 16: no outlier",
+      "target": "none",
+      "default_tier": false
+    },
+    {
+      "gate": "wilson",
+      "id": "D-c4d7a9",
+      "role": "apps/api: functions in src/jobs/**",
+      "rule": "are wrapped in withRetry()",
+      "family": "wrapped_by:call",
+      "lang": "ts",
+      "holders": 9,
+      "members": 10,
+      "value": 0.596,
+      "threshold": 0.75,
+      "detail": "lower bound 0.60 under 0.75",
+      "target": "repository",
+      "default_tier": true
+    },
+    {
+      "gate": "wilson",
+      "id": "D-b52f08",
+      "role": "apps/web: functions in lib/**",
+      "rule": "are named `get*`",
+      "family": "named",
+      "lang": "ts",
+      "holders": 15,
+      "members": 19,
+      "value": 0.567,
+      "threshold": 0.75,
+      "detail": "lower bound 0.57 under 0.75",
+      "target": "none",
+      "default_tier": false
+    },
+    {
+      "gate": "lift",
+      "id": "D-0e6b3d",
+      "role": "packages/ui: functions in src/**",
+      "rule": "call cn()",
+      "family": "calls",
+      "lang": "ts",
+      "holders": 30,
+      "members": 38,
+      "value": 1.214,
+      "threshold": 3.0,
+      "detail": "lift 1.21 under 3.0",
+      "target": "dependency",
+      "default_tier": false
+    }
+  ]
+}

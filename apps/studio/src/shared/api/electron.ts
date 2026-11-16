@@ -1,6 +1,6 @@
 // StudioApi over the preload bridge. Every response is validated against the
 // IPC contract before it reaches a view; cancellation aborts the drift process.
-import type { Census, CheckReport, Inventory, MapPackage, PracticesReport, PromoteOutcome, RepoFacts, ReviewQuestions, SecurityDiff, SessionState } from "@/shared/contract/drift";
+import type { Census, CensusWhy, CheckReport, Inventory, MapPackage, PracticesReport, PromoteList, PromoteOutcome, RepoFacts, ReviewQuestions, SecurityDiff, SessionState } from "@/shared/contract/drift";
 import { type Bridge, type Channel, IPC_VERSION, IpcError, type Res, RepoChange, channels } from "@/shared/ipc/contract";
 import type { Answer, Decision, Loaded, PromoteRequest, RepoRef, StudiesData, StudioApi } from "./types";
 
@@ -69,6 +69,12 @@ export class ElectronApi implements StudioApi {
   }
   async map(repo: RepoRef, opts?: { signal?: AbortSignal }) {
     return (await this.call("map", [repo], opts?.signal)) as unknown as Loaded<{ schema: number; packages: MapPackage[] }>;
+  }
+  async funnel(repo: RepoRef, opts?: { signal?: AbortSignal }) {
+    return (await this.call("funnel", [repo], opts?.signal)) as unknown as Loaded<CensusWhy>;
+  }
+  async promoteList(repo: RepoRef, opts?: { signal?: AbortSignal }) {
+    return (await this.call("promoteList", [repo], opts?.signal)) as unknown as Loaded<PromoteList>;
   }
   policy(repo: RepoRef) {
     return this.call("policy", [repo]);
