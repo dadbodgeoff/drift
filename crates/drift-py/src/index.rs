@@ -88,6 +88,7 @@ pub(crate) fn is_global(rel: &str, raw: &RawFile) -> bool {
             .drf
             .as_ref()
             .is_some_and(|d| d.exception_handler.is_some())
+        || raw.servers.reaches_other_files()
         || is_entry_script(rel)
         || is_settings_file(rel)
 }

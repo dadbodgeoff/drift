@@ -43,6 +43,13 @@ Conventions are mined from any parsed code, whatever the framework. What follows
 | Django REST framework | Python | `APIView`, `ViewSet` and `@api_view` handlers, with their `permission_classes` | run (`APIView`) |
 | Starlette | Python | `Route` tables, with the middleware of mounts and routes | run |
 | Celery, Dramatiq, rq | Python | Tasks, as `job`; Celery beat schedules as `cron` | run (Celery, Dramatiq) |
+| aiohttp | Python | Routes of `web.Application`: `router.add_get` / `add_post` / `add_route` / `add_view`, `add_routes([web.get(...)])`, `RouteTableDef` decorators and `web.View` classes, under the prefix of `add_subapp`; the `middlewares=` of the application and of each one it is mounted in run before its routes. Listed since the last measured build | source |
+| Tornado | Python | `Application([...])` rules (tuples, `url()`, `add_handlers`), the path kept as the regex written; each verb method of a `RequestHandler`, with `prepare` (its own or a base's) as a hook and `@tornado.web.authenticated` as a guard. Listed since | source |
+| Falcon | Python | `App` / `API` `add_route` of a resource, its `on_<verb>` responders (`on_<verb>_<suffix>` with `suffix=`); the `process_request` and `process_resource` of `middleware=` and `@falcon.before` hooks run before it. Listed since | source |
+| Django management commands | Python | `management/commands/<name>.py`, as a `cli` entry point named `<name>` at `Command.handle`. Listed since | source |
+| Django Channels | Python | `ProtocolTypeRouter` `"websocket"` routes through `URLRouter` (nested routers keep their prefix), as `websocket` entry points; `AuthMiddlewareStack` on the way says the caller is identified, which is no guard. Listed since | source |
+| Huey | Python | `@huey.task` as `job`, `@huey.periodic_task` as `job` and `cron` (also `huey.contrib.djhuey`). Listed since | source |
+| arq | Python | `WorkerSettings.functions` as `job`, `cron_jobs` as `cron`. Listed since | source |
 | Message consumers (aio_pika, kombu) | Python | `consumer` entry points | source |
 | LangGraph | Python | `agent_graph` entry points | source |
 
@@ -54,7 +61,7 @@ A route registered in a way Drift cannot read (a loop it cannot unroll, `getattr
 
 ## Frameworks not listed
 
-These were tried on a small repository and their routes did not appear (**run**): Hapi, Restify, Astro, Sanic, Tornado, aiohttp, Litestar, Bottle and Quart. (Koa, Remix and React Router, SvelteKit and Nuxt are listed since the last measured build; see the table above. Their routes are listed with their guard unknown unless one is found in the handler's own body, because what runs before them is not read.) The same holds, unverified, for any framework not in the table above. For such a repository:
+These were tried on a small repository and their routes did not appear (**run**): Hapi, Restify, Astro, Sanic, Litestar, Bottle and Quart. (Koa, Remix and React Router, SvelteKit and Nuxt are listed since the last measured build; see the table above. Their routes are listed with their guard unknown unless one is found in the handler's own body, because what runs before them is not read.) The same holds, unverified, for any framework not in the table above. For such a repository:
 
 - `drift security` lists none of its routes, `drift practices` has no recipe for them, and a card says it knows no entry point for the file.
 - Convention mining, `drift check`, the review flow and the hooks' rule priming still work on the code as code.

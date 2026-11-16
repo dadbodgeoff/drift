@@ -22,6 +22,8 @@ use crate::resolve::Resolver;
 
 #[path = "config.rs"]
 pub(crate) mod config;
+#[path = "servers_link.rs"]
+mod servers;
 
 /// Maximum hops followed through re-exports (guards cycles).
 const MAX_HOPS: usize = 32;
@@ -757,6 +759,9 @@ pub struct Linker<'r> {
     /// Entry points declared outside Python code (console scripts, `langgraph.json`),
     /// by file ([`Linker::with_declared`]).
     declared: BTreeMap<String, Vec<EntryPoint>>,
+    /// What the servers and queues of `lower::servers` give each file, in the
+    /// listed reading only ([`servers::Served`]); not built for what mining reads.
+    servers: BTreeMap<String, servers::Served>,
     track: Option<Track>,
 }
 
@@ -1318,9 +1323,17 @@ impl<'r> Linker<'r> {
             compat: false,
             unmeasured: std::sync::atomic::AtomicBool::new(false),
             declared: BTreeMap::new(),
+            servers: BTreeMap::new(),
         };
         l.build_adapter_tables();
         l.build_handles();
+        if !measured {
+            l.servers = l.build_servers();
+            if !l.servers.is_empty() {
+                // A listing made since: the measured link is built beside.
+                l.since_measured();
+            }
+        }
         l
     }
 
@@ -4568,7 +4581,13 @@ impl<'r> Linker<'r> {
             }
         }
 
-        let extra = self.extra.get(rel).cloned().unwrap_or_default();
+        let mut extra = self.extra.get(rel).cloned().unwrap_or_default();
+        // The servers and queues of `lower::servers`, made after the build
+        // `a0779066`: the listed reading only.
+        let served = self.servers.get(rel).filter(|_| self.since_frozen());
+        if let Some(s) = served {
+            s.merge_into(&mut extra);
+        }
         let mut entry_points: Vec<EntryPoint> = raw
             .entry_points
             .iter()
@@ -4605,7 +4624,11 @@ impl<'r> Linker<'r> {
             .iter()
             // A handler method of a class no view base is read for is a symbol where
             // an entry point names it ([`RawSymbol::late`]).
-            .filter(|s| !s.late || entry_points.iter().any(|e| e.symbol == s.name))
+            .filter(|s| {
+                !s.late
+                    || entry_points.iter().any(|e| e.symbol == s.name)
+                    || served.is_some_and(|v| v.keep.contains(&s.name))
+            })
             .map(|s| {
                 let mut wraps: Vec<Wrap> = Vec::new();
                 // A decorator written above the route decorator of a Flask or
@@ -4921,6 +4944,10 @@ impl<'r> Linker<'r> {
                     }
                 }
                 wraps = all;
+                // A decorator that registers the symbol is no wrap of it.
+                if let Some(gone) = served.and_then(|v| v.dropped(&s.name)) {
+                    wraps.retain(|w| !gone.contains(&w.wrapper));
+                }
                 let mut args: Vec<String> = s
                     .args
                     .iter()

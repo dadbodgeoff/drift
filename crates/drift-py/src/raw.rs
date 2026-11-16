@@ -1377,6 +1377,13 @@ pub struct RawFile {
     /// `app.add_exception_handler(X, handler)`: what the handler handles, and the handler.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub error_handlers: Vec<(RawHandles, RawRef)>,
+    /// aiohttp, Tornado, Falcon, Channels, management commands, Huey and arq
+    /// ([`crate::lower::servers`]): listed since the measured build (lowering 75).
+    #[serde(
+        default,
+        skip_serializing_if = "crate::lower::servers::RawServers::is_empty"
+    )]
+    pub servers: crate::lower::servers::RawServers,
 }
 
 /// One entry of a [`RawRefList`].

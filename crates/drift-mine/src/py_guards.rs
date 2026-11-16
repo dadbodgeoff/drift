@@ -1101,6 +1101,11 @@ const LIBRARY: &[Entry] = &[
     ),
     never_entry("flask_login", "current_user"),
     never_entry("flask_login", "login_user"),
+    // --- Tornado ----------------------------------------------------------------
+    // `tornado.web.authenticated(method)`: a `RequestHandler` method whose
+    // `self.current_user` is falsy redirects to `login_url` (`GET`, `HEAD`) or
+    // raises `HTTPError(403)`. It takes the method and nothing else.
+    guard("tornado", "authenticated", Form::Bare, &[VIEW], &[], &[]),
     never_entry("flask_login", "logout_user"),
     never_entry("flask_login", "confirm_login"),
     never_entry("flask_login", "login_fresh"),
