@@ -894,21 +894,22 @@ pub fn proposal_lines(c: &Convention, e: &DeclaredEvidence) -> Vec<String> {
     out
 }
 
-/// The lines of `drift review`'s card for a proposed declared convention (the counts as
-/// they were when it was proposed; `drift init` proposes it again from the code as it
-/// stands).
-pub fn card_lines(c: &Convention) -> Vec<String> {
-    let breaks = c.evidence.total.saturating_sub(c.evidence.holders);
+/// The lines of `drift review`'s card for a proposed declared convention. `breaks` and
+/// `unread`: the files that break it and those Drift could not read to the end, as the
+/// caller checked them just now, because accepting records what breaks it at that
+/// moment, not what broke it when it was proposed (the counts kept in `c`, said as
+/// such).
+pub fn card_lines(c: &Convention, breaks: usize, unread: usize) -> Vec<String> {
     let mut out = vec![format!(
-        "  declared by the repository: of the {} files there Drift read, {} follow it, {} break it",
-        c.evidence.total, c.evidence.holders, breaks
+        "  declared by the repository: {breaks} file(s) break it today, {unread} could not be read (never reported); when it was proposed, {} of the {} files there Drift read followed it",
+        c.evidence.holders, c.evidence.total
     )];
     out.push(if breaks > 0 {
         format!(
             "  y accepts it (advise mode; the {breaks} file(s) that break it today recorded in drift.lock, so only a new import against it is reported)"
         )
     } else {
-        "  y accepts it, as a mined layering convention is accepted (advise mode)".to_string()
+        "  y accepts it (advise mode; nothing breaks it today, so any import against it from now on is reported)".to_string()
     });
     out
 }

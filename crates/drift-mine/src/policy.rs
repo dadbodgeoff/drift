@@ -1340,6 +1340,19 @@ impl ConventionsFile {
                 // summary is never rewritten from the rule. Kept as it is.
                 Some(c) if c.rule.is_practice() => {}
                 Some(c) => {
+                    // A proposal from the map nobody decided, of the id mining drafts
+                    // now (a layering proposal's id is mining's for its role and rule):
+                    // it is mining's proposal from here on. Left marked from the map,
+                    // the from-map step that replaces undecided proposals would drop it
+                    // from the file, and the draft mining printed would be in no file,
+                    // offered by no review and recorded in no lock.
+                    // Nobody decided it, so it is taken whole as mining drafts it.
+                    if c.status == Status::Proposed && c.from_map.is_some() {
+                        c.from_map = None;
+                        c.role = cand.role.clone();
+                        c.rule = cand.rule.clone();
+                        c.selector_version = selector_version_of(&cand.role);
+                    }
                     // Refresh evidence; never touch status, mode or how the frozen
                     // selector is read. What the person accepted stays beside it: the
                     // evidence as the file had it, the first time a run meets it
