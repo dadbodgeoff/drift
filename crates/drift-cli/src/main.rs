@@ -2632,11 +2632,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     entries(&facts)
                 );
             }
-            // Only the caps are recorded (`drift_mine::funnel`), to say when they cut a
-            // default-tier rule; recording changes nothing mining proposes.
-            drift_mine::funnel::record(Some(drift_mine::funnel::CAP_GATES));
             let (mut mined, accepted) = census_mine(root, &facts, *max, shapes);
-            let cut = drift_mine::funnel::take_dropped();
             let wired = wiring::extend(root, &mut facts, &mut mined)?;
             let python_before = workspace::python_by_package(&mined);
             let withheld = withhold_python(python, &mut mined, &accepted);
@@ -2676,13 +2672,6 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             print_tiered(&shown, *all_outliers);
             if filter.keeps(Tier::Suggestion)
                 && let Some(n) = capped_note(&placed, "census")
-            {
-                println!("{n}\n");
-            }
-            // Mining's caps can drop a default-tier rule (the `--suggestions` cap never
-            // does): say so, only when they did.
-            if filter.keeps(Tier::Default)
-                && let Some(n) = drift_mine::funnel::cap_note(&cut, *max)
             {
                 println!("{n}\n");
             }
@@ -5064,8 +5053,26 @@ fn census_why(
             .map(|w| drift_mine::funnel::dropped_card(&w.candidate, w.reason)),
     );
     drift_mine::funnel::sort(&mut rows);
+    // When mining's caps cut default-tier drafts, how many (less those a person
+    // rejected): said here only, never in the plain `census`, whose text stays as it was.
+    let rejected: BTreeSet<String> = ConventionsFile::load(root)
+        .ok()
+        .flatten()
+        .map(|p| {
+            p.conventions
+                .into_iter()
+                .filter(|c| c.status == Status::Rejected)
+                .map(|c| c.id)
+                .collect()
+        })
+        .unwrap_or_default();
+    let cap_note = only
+        .is_none_or(|g| drift_mine::funnel::CAP_GATES.contains(&g))
+        .then(|| drift_mine::funnel::cap_note(&rows, &rejected))
+        .flatten();
     if json {
-        let v = drift_mine::funnel::why_json(counts.as_ref(), &rows, only);
+        let mut v = drift_mine::funnel::why_json(counts.as_ref(), &rows, only);
+        v["cap_note"] = serde_json::json!(cap_note);
         println!("{}", serde_json::to_string_pretty(&v)?);
     } else {
         let per_gate = if only.is_some() { 50 } else { 10 };
@@ -5073,6 +5080,9 @@ fn census_why(
             "{}",
             drift_mine::funnel::why_text(counts.as_ref(), &rows, only, per_gate)
         );
+        if let Some(n) = &cap_note {
+            println!("\n{n}");
+        }
     }
     Ok(ExitCode::SUCCESS)
 }

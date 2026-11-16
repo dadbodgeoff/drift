@@ -23,7 +23,7 @@ use drift_core::{FileFacts, RepoFacts, SymbolKind};
 use serde::Serialize;
 
 use crate::context::RepoContext;
-use crate::mine::{Candidate, Evidence, Rule, r3, wilson_lower_bound};
+use crate::mine::{Candidate, Evidence, Rule, convention_id, r3, wilson_lower_bound};
 use crate::policy::{Convention, Mode, Status};
 use crate::roles::{FILE_UNIT, FileKinds, PACKAGE_WIDE, RoleSelector, View};
 
@@ -51,6 +51,20 @@ pub const MIN_TARGET_FILES: usize = crate::mine::MIN_ROLE_SIZE;
 /// chain through a third layer, see [`layering`]) two folders that never import each other
 /// are unrelated, not layered. A starting value, to be measured.
 pub const MIN_REVERSE_FILES: usize = 5;
+
+/// The largest share of a layer's files Drift may have failed to read for "no file of
+/// it imports the target" to be said: the bound promoted practices use for the same
+/// question ([`crate::practices::promote::MAX_UNKNOWN_SHARE`], "Drift cannot hold code
+/// to what it cannot read"), not a new one.
+pub const MAX_NOT_READ_SHARE: f64 = crate::practices::promote::MAX_UNKNOWN_SHARE;
+
+/// What `drift check` reads of an accepted layering proposal, said in its summary: the
+/// rule is mining's `avoids import:<area>`, whose signal is a value import by path
+/// (`crate::mine`'s `layer_signals`), while the evidence here counts every kind of
+/// import. So the proposal says that an import by package name, or of types only, is
+/// not what it checks.
+pub const CHECKED_CLAUSE: &str =
+    "checked on imports by path that load code, not on type-only imports or imports by package name";
 
 /// Proposals one repository is offered at once ([`offered`]); the rest are counted. As
 /// many as the suggestions `drift review` and `drift init` show by default
@@ -105,13 +119,21 @@ pub struct LayeringEvidence {
     pub layer: String,
     /// The layer it never imports (`apps/web`).
     pub target: String,
-    /// Members of the role that import in-repo code: the population of the rule.
+    /// Members of the role that import in-repo code and that Drift read to the end, every
+    /// import resolved ([`Graph::unread`]): the population of the rule.
     pub importing: usize,
     /// Members of the role, importing or not.
     pub members: usize,
     /// Files of the role's whole layer that import the target, type-only and deferred
     /// imports included: always 0 (a pair with one is mining's case, not this one's).
+    /// Said only of the files Drift read ([`LayeringEvidence::not_read`] are apart).
     pub importing_target: usize,
+    /// Files of the role's layer Drift cannot vouch for: one that failed to parse, one
+    /// skipped whole (`RepoFacts::skipped`), or one with an import Drift could not
+    /// resolve ([`Graph::unread`]). Whether they import the target is unknown, so they
+    /// count toward no threshold, the summary names them, and a layer with more than
+    /// [`MAX_NOT_READ_SHARE`] of its files not read is not proposed.
+    pub not_read: usize,
     /// Production files of the target layer.
     pub target_files: usize,
     /// Files of the target layer that import the role's layer.
@@ -122,9 +144,6 @@ pub struct LayeringEvidence {
     /// the role's layer, each in at least [`MIN_REVERSE_FILES`] files.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub through: Option<String>,
-    /// The repository's linter already forbids this import for the role's files
-    /// (`no-restricted-imports` at error): the caller may say so.
-    pub lint_forbids: bool,
     /// A member that imports in-repo code, `path#(file)`.
     pub example: String,
 }
@@ -148,7 +167,13 @@ pub struct LayeringEvidence {
 ///   intended and is no layering signal ([`crate::mine::signals`]), so such a rule would
 ///   restate the manifest backwards, and could never fire;
 /// - the linter does not forbid T to import A (then A importing T is the intended
-///   direction, as mining's lint veto reads it).
+///   direction, as mining's lint veto reads it), nor already forbid A to import T at
+///   error (the linter decides that rule, so Drift does not restate it, as mining's
+///   `lint` gate drops a rule the linter decides);
+/// - Drift read A: "no file of A imports T" is said only of files Drift read to the end
+///   with every import resolved ([`Graph::unread`]); the others are counted apart
+///   ([`LayeringEvidence::not_read`]), count toward no threshold, and more than
+///   [`MAX_NOT_READ_SHARE`] of A's files not read leaves the pair unproposed.
 ///
 /// Layers are counted between packages and in the root package, as mining counts them;
 /// inside one workspace package an import is no layer edge (intra-package layering is off,
@@ -171,6 +196,10 @@ pub fn layering(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
         })
         .collect();
     let graph = Graph::new(repo, &files);
+    // What Drift read: only these files can be said not to import a layer.
+    let read = |f: &FileFacts| -> bool {
+        graph.importing.contains(f.path.as_str()) && !graph.unread.contains(f.path.as_str())
+    };
 
     // File roles that lie wholly in one layer, with their members.
     let mut by_role: BTreeMap<&RoleSelector, Vec<&FileFacts>> = BTreeMap::new();
@@ -190,10 +219,7 @@ pub fn layering(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
         if areas.len() != 1 {
             continue;
         }
-        let importing = members
-            .iter()
-            .filter(|f| graph.importing.contains(f.path.as_str()))
-            .count();
+        let importing = members.iter().filter(|&&f| read(f)).count();
         if importing < MIN_IMPORTING_MEMBERS {
             continue;
         }
@@ -207,6 +233,13 @@ pub fn layering(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
 
     let mut out: Vec<(u8, Proposal)> = Vec::new();
     for (layer, roles) in &layer_roles {
+        // Files of the layer Drift could not vouch for: too many, and "none of its files
+        // import" would rest on what Drift did not read.
+        let not_read = graph.not_read_in(layer);
+        let layer_files = graph.files_in(layer);
+        if not_read as f64 > MAX_NOT_READ_SHARE * layer_files as f64 {
+            continue;
+        }
         for (target, &target_files) in &graph.targetable {
             if target == layer
                 || target_files < MIN_TARGET_FILES
@@ -236,6 +269,11 @@ pub fn layering(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
                     || target.starts_with(&format!("{scope}/"))
                     || scope.starts_with(&format!("{target}/"))
                 {
+                    continue;
+                }
+                // The linter already forbids this import for the role's files at error: it
+                // decides the rule, so it is not proposed again (mining's `lint` gate).
+                if ctx.import_restriction(&scope, target).decides() {
                     continue;
                 }
                 // An import of the role's own package is no layer edge: it never shows.
@@ -278,7 +316,7 @@ pub fn layering(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
             let direct = reverse_files >= MIN_REVERSE_FILES || declared_back;
             let example = members
                 .iter()
-                .find(|f| graph.importing.contains(f.path.as_str()))
+                .find(|&&f| read(f))
                 .map_or(String::new(), |f| format!("{}#{FILE_UNIT}", f.path));
             let python = members.iter().filter(|f| f.lang == "py").count();
             let evidence = LayeringEvidence {
@@ -287,18 +325,21 @@ pub fn layering(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
                 importing,
                 members: members.len(),
                 importing_target: 0,
+                not_read,
                 target_files,
                 reverse_files,
                 reverse_declared: declared_back,
                 through: if direct { None } else { through.clone() },
-                lint_forbids: ctx.import_restriction(&scope_of(role), target).decides(),
                 example: example.clone(),
             };
             let convention = Convention {
-                id: layering_id(role, target),
+                // The id mining gives the same role and rule: accepted, it is the rule
+                // mining keeps (`Keep`, by role and rule), and `ConventionsFile::merge`
+                // finds it under the same id instead of adding a second copy.
+                id: convention_id(role, &rule),
                 status: Status::Proposed,
                 mode: Mode::Advise,
-                summary: layering_summary(role, target, importing),
+                summary: layering_summary(role, target, importing, not_read),
                 role: role.clone(),
                 rule: rule.clone(),
                 evidence: Evidence {
@@ -319,6 +360,7 @@ pub fn layering(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
                 promoted_from_hidden: false,
                 promoted_from_practice: None,
                 from_map: Some(LAYERING.to_string()),
+                accepted_evidence: None,
             };
             let same_as_mined = mined
                 .iter()
@@ -368,23 +410,12 @@ pub fn manifest(_repo: &RepoFacts, _kinds: &FileKinds, _mined: &[MinedRule<'_>])
     Vec::new()
 }
 
-/// The id of a layering proposal: `D-` and 6 hex digits of what it is about (the role's
-/// place and the target layer), never of its counts, so it is the same however many
-/// files there are. The prefix keeps it apart from every mined id's input (a role and a
-/// rule) and from promoted practices' (`practice`).
-pub fn layering_id(role: &RoleSelector, target: &str) -> String {
-    let h = blake3::hash(
-        format!(
-            "layering\0{}\0{}\0{}\0{target}",
-            role.package, role.dir, role.file
-        )
-        .as_bytes(),
-    );
-    format!("D-{}", &h.to_hex()[..6])
-}
-
-/// "Code in packages/features never imports apps/web (779 files, none do)".
-fn layering_summary(role: &RoleSelector, target: &str, importing: usize) -> String {
+/// "Code in packages/features never imports apps/web (779 files, none do; checked on
+/// ...)", with "; 3 files of packages/features not read" before the clause when Drift
+/// could not vouch for some files of the layer ([`LayeringEvidence::not_read`]): the
+/// count is of files Drift read, and the summary says what `check` reads
+/// ([`CHECKED_CLAUSE`]).
+fn layering_summary(role: &RoleSelector, target: &str, importing: usize, not_read: usize) -> String {
     let scope = scope_of(role);
     let what = if role.dir == "." {
         format!("Files at the top of {scope}")
@@ -393,7 +424,12 @@ fn layering_summary(role: &RoleSelector, target: &str, importing: usize) -> Stri
     } else {
         format!("{} files in {scope}", role.file)
     };
-    format!("{what} never imports {target} ({importing} files, none do)")
+    let unread = match not_read {
+        0 => String::new(),
+        1 => format!("; 1 file of {} not read", layer_of_scope(&scope)),
+        n => format!("; {n} files of {} not read", layer_of_scope(&scope)),
+    };
+    format!("{what} never imports {target} ({importing} files, none do{unread}; {CHECKED_CLAUSE})")
 }
 
 /// Strongest first ([`layering`]): `class` 0 (a direct or declared reverse edge) before
@@ -503,7 +539,8 @@ fn declared_by(repo: &RepoFacts, ctx: &RepoContext, target: &str, package: &str)
 struct LayerRole<'r> {
     role: &'r RoleSelector,
     members: Vec<&'r FileFacts>,
-    /// Members that import in-repo code ([`Graph::importing`]).
+    /// Members that import in-repo code ([`Graph::importing`]) and that Drift read
+    /// ([`Graph::unread`] apart).
     importing: usize,
 }
 
@@ -522,21 +559,65 @@ struct Graph<'a> {
     touches: BTreeMap<(String, String), usize>,
     /// Packages of each layer's files.
     packages: BTreeMap<String, BTreeSet<&'a str>>,
+    /// Files Drift cannot say anything is absent from: one that failed to parse (its
+    /// imports are best-effort), one whose imports were cut short (`truncated` names
+    /// `imports`), or one with an import Drift could not resolve. An unresolved import
+    /// keeps its specifier, but both resolvers record a third-party package they cannot
+    /// find as `pkg:` (read as such below, and never a layer); what stays `unresolved:`
+    /// is a relative or aliased specifier (TypeScript, joined to the importer's folder,
+    /// so an alias such as `@/x` no longer says where it points) or an in-repo Python
+    /// package missing a submodule. Any of those may land in any layer, so the file is
+    /// not read for every target, not only for one.
+    unread: BTreeSet<&'a str>,
+    /// Files of each layer, production files of `files` and skipped ones alike: the
+    /// whole of what "no file of the layer imports" is said of.
+    layer_files: BTreeMap<String, usize>,
+    /// Files of each layer Drift cannot vouch for: [`Graph::unread`] ones, and the
+    /// production paths the scan skipped whole (`RepoFacts::skipped`: no facts at all).
+    not_read: BTreeMap<String, usize>,
 }
 
 impl<'a> Graph<'a> {
     fn new(repo: &'a RepoFacts, files: &[&'a FileFacts]) -> Self {
-        let by_name: BTreeMap<&str, &str> = repo
+        // (a Python package, its name) -> its directory: an import by name lands only in
+        // a package of the importer's own ecosystem (`import emails` in Python is not the
+        // npm workspace package `emails`), as `crate::map`'s `Targets::by_name`.
+        let by_name: BTreeMap<(bool, &str), &str> = repo
             .packages
             .iter()
             .filter(|p| !p.name.is_empty())
-            .map(|p| (p.name.as_str(), p.path.as_str()))
+            .map(|p| {
+                (
+                    (crate::roles::is_python_package(p), p.name.as_str()),
+                    p.path.as_str(),
+                )
+            })
             .collect();
         let mut packages: BTreeMap<String, BTreeSet<&'a str>> = BTreeMap::new();
         let mut package_areas: BTreeMap<&str, BTreeSet<String>> = BTreeMap::new();
         let mut targetable: BTreeMap<String, usize> = BTreeMap::new();
+        let mut unread: BTreeSet<&'a str> = BTreeSet::new();
+        let mut layer_files: BTreeMap<String, usize> = BTreeMap::new();
+        let mut not_read: BTreeMap<String, usize> = BTreeMap::new();
+        for s in repo
+            .skipped
+            .iter()
+            .filter(|s| !crate::roles::is_test_path(&s.path))
+        {
+            let a = area(&s.path);
+            *layer_files.entry(a.clone()).or_default() += 1;
+            *not_read.entry(a).or_default() += 1;
+        }
         for &f in files {
             let a = area(&f.path);
+            *layer_files.entry(a.clone()).or_default() += 1;
+            if !f.parse_ok
+                || f.truncated.iter().any(|t| t == "imports")
+                || f.imports.iter().any(|i| i.module.starts_with("unresolved:"))
+            {
+                unread.insert(f.path.as_str());
+                *not_read.entry(a.clone()).or_default() += 1;
+            }
             packages.entry(a.clone()).or_default().insert(f.package.as_str());
             package_areas
                 .entry(f.package.as_str())
@@ -559,7 +640,7 @@ impl<'a> Graph<'a> {
                     continue;
                 }
                 if let Some(name) = crate::map::imported_package_name(m) {
-                    let Some(&path) = by_name.get(name.as_str()) else {
+                    let Some(&path) = by_name.get(&(f.lang == "py", name.as_str())) else {
                         continue;
                     };
                     if !i.type_only {
@@ -598,7 +679,20 @@ impl<'a> Graph<'a> {
             edges,
             touches,
             packages,
+            unread,
+            layer_files,
+            not_read,
         }
+    }
+
+    /// Files of the layer `area` Drift cannot vouch for ([`Graph::not_read`]).
+    fn not_read_in(&self, area: &str) -> usize {
+        self.not_read.get(area).copied().unwrap_or(0)
+    }
+
+    /// Files of the layer `area`, read or not ([`Graph::layer_files`]).
+    fn files_in(&self, area: &str) -> usize {
+        self.layer_files.get(area).copied().unwrap_or(0)
     }
 
     fn edges(&self, from: &str, to: &str) -> usize {
@@ -662,8 +756,16 @@ mod tests {
         assert_eq!(scope_of(&role), "packages/ui");
         assert_eq!(layer_of_scope("packages/ui/src/hooks"), "packages/ui");
         assert_eq!(
-            layering_summary(&role, "apps/web", 779),
-            "Code in packages/ui never imports apps/web (779 files, none do)"
+            layering_summary(&role, "apps/web", 779, 0),
+            format!("Code in packages/ui never imports apps/web (779 files, none do; {CHECKED_CLAUSE})")
+        );
+        // Files Drift did not read are named apart, never counted as files that do not
+        // import (rule 2: unknown is never "none do").
+        assert_eq!(
+            layering_summary(&role, "apps/web", 779, 3),
+            format!(
+                "Code in packages/ui never imports apps/web (779 files, none do; 3 files of packages/ui not read; {CHECKED_CLAUSE})"
+            )
         );
     }
 }
