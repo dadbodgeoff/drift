@@ -3032,6 +3032,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             // conventions, and nothing checks them ([`drift_mine::security_summary`]).
             {
                 let text = drift_mine::security_summary::render_first_run(&security_summary_of(
+                    &facts,
                     &inv,
                     units_map_of(),
                 ));
@@ -4726,18 +4727,21 @@ fn security_summary(
         ..practices::options(root, facts, drift_mine::practices::Scope::default())
     };
     let map = drift_mine::practices::practices(facts, &opts);
-    security_summary_of(inv, &map)
+    security_summary_of(facts, inv, &map)
 }
 
 /// [`security_summary`] from the practice map with its units already built
-/// ([`practices::report_units_kept`] of the same facts is that map).
+/// ([`practices::report_units_kept`] of the same facts is that map), and what the
+/// facts say of the hooks the whole app runs that guard an entry point
+/// ([`drift_mine::security_summary::Readings::with_hooks`]).
 fn security_summary_of(
+    facts: &RepoFacts,
     inv: &drift_mine::security::Inventory,
     map: &drift_mine::practices::PracticesReport,
 ) -> drift_mine::security_summary::Summary {
     drift_mine::security_summary::summarize(
         inv,
-        &drift_mine::security_summary::Readings::from_practices(map),
+        &drift_mine::security_summary::Readings::from_practices(map).with_hooks(facts, inv),
     )
 }
 

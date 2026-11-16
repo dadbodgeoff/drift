@@ -11,7 +11,10 @@
 //!   ([`Reach::fed`], which follows the argument that carries it), a remote caller
 //!   reaches the entry point, and Drift read what guards it, whether there is one or
 //!   not. A guard Drift could not read ([`EntryRow::opaque`]) is never presented as a
-//!   hole: it is counted apart, as "could not read".
+//!   hole: it is counted apart, as "could not read". Guards that are only hooks the
+//!   whole app runs, each read to turn callers away as not allowed and none as not
+//!   signed in ([`Readings::with_hooks`]), are not read as a guard of the caller: the
+//!   finding ranks with those that have none, and its line says so.
 //! - Repeats through the same operation are one line with a count and the first places.
 //! - The order is one documented function ([`order_key`]) of named constants, with a
 //!   full tie-break, so the same inventory always reads the same.
@@ -27,7 +30,7 @@ use serde::Serialize;
 use crate::practices::{PracticesReport, UnitRow, VALIDATION};
 use crate::report::sanitize;
 use crate::security::{
-    EntryRow, Exposure, Inventory, Reach, queue_kind, reads_only, signature_words,
+    APP_HOOK, EntryRow, Exposure, Inventory, Reach, queue_kind, reads_only, signature_words,
 };
 
 // ---------- what a caller can do, by the operation's kind ----------
@@ -146,6 +149,13 @@ pub const SCHEDULED_KINDS: &[&str] = &["cron", "job"];
 pub enum Caller {
     /// No guard found in what Drift read (and nothing whose guard is unread).
     Anyone,
+    /// Its only guards are hooks the whole app runs, and what Drift read of each is
+    /// that it turns some callers away as not allowed (a 403), never as not signed in
+    /// ([`Readings::with_hooks`]): a check that holds for every request (a CSRF token,
+    /// a feature switch) refuses so too, so whether it identifies or authorises the
+    /// caller is not read. Ranked with [`Caller::Anyone`] ([`order_key`]): what it
+    /// rests on is no guard Drift read.
+    HookNotRead,
     /// A guard Drift read turns some callers away; a caller who passes it can do this.
     PassesGuard,
     /// The body verifies a webhook's signature: a caller whose signature checks out.
@@ -175,6 +185,9 @@ pub enum Validation {
 #[derive(Debug, Clone, Default)]
 pub struct Readings {
     pub validation: BTreeMap<(String, String), Validation>,
+    /// The entry points, by (path, symbol), whose guards are all hooks the whole app
+    /// runs that Drift read to refuse only as not allowed ([`Readings::with_hooks`]).
+    pub hooks_not_proven: std::collections::BTreeSet<(String, String)>,
 }
 
 impl Readings {
@@ -209,7 +222,59 @@ impl Readings {
                 })
                 .or_insert(v);
         }
-        Self { validation }
+        Self {
+            validation,
+            ..Self::default()
+        }
+    }
+
+    /// The entry points of `inv` whose guards ([`EntryRow::guards`]) are all hooks the
+    /// whole app runs ([`EntryRow::only_app_hooks`]) where what proves each hook a
+    /// guard ([`crate::security::authenticating_root`]) is a body of the repository
+    /// whose every refusal is "not allowed" ([`drift_core::CheckOutcome::Forbidden`])
+    /// and none says "not signed in" (no 401 answered outside a `catch`, no
+    /// refusal in an `except` handler, no condition that raises an error class).
+    ///
+    /// Why: the inventory takes such a body for a guard (a 403 in a body that reads a
+    /// session value), and Drift's own reading calls a 403 weaker evidence of one
+    /// ([`drift_core::controls::Rejection::Forbidden`]). A hook every request passes
+    /// through that refuses so may check a CSRF token or a switch, and say nothing of
+    /// who the caller is. What the hook's body does decides, never its name. A hook
+    /// Drift does not find among the entry point's own wraps, a library's, and one
+    /// proven by a 401 keep the inventory's reading.
+    pub fn with_hooks(mut self, facts: &drift_core::RepoFacts, inv: &Inventory) -> Self {
+        let ctx = crate::context::RepoContext::new(facts, &[]).reading_since_measured();
+        for e in inv.entry_points.iter().filter(|e| e.only_app_hooks()) {
+            let Some(s) = facts
+                .files
+                .iter()
+                .filter(|f| f.path == e.path)
+                .flat_map(|f| f.symbols.iter())
+                .find(|s| s.name == e.symbol)
+            else {
+                continue;
+            };
+            let hooks: Vec<&str> = s
+                .wraps
+                .iter()
+                .filter(|w| w.kind == drift_core::WrapKind::AppHook)
+                .map(|w| w.wrapper.as_str())
+                .collect();
+            let not_proven = e.guards.iter().all(|g| {
+                let name = g.strip_suffix(APP_HOOK).unwrap_or(g);
+                let named: Vec<&str> = hooks
+                    .iter()
+                    .copied()
+                    .filter(|h| h.rsplit_once('#').map_or(*h, |(_, n)| n) == name)
+                    .collect();
+                !named.is_empty() && named.iter().all(|h| refuses_only_as_not_allowed(&ctx, h))
+            });
+            if not_proven {
+                self.hooks_not_proven
+                    .insert((e.path.clone(), e.symbol.clone()));
+            }
+        }
+        self
     }
 
     /// The entry point's validation: the practice map's reading where it has the
@@ -386,6 +451,31 @@ enum Reason {
     GuardUnknown,
 }
 
+/// What proves `hook` a guard is a body of the repository whose every refusal is
+/// "not allowed" and none "not signed in" ([`Readings::with_hooks`]). False where
+/// nothing proves it, the proof is a library's or by name (no body), or the body has
+/// no recorded check.
+fn refuses_only_as_not_allowed(ctx: &crate::context::RepoContext, hook: &str) -> bool {
+    use drift_core::CheckOutcome::Forbidden;
+    let Some(root) = crate::security::authenticating_root(ctx, hook) else {
+        return false;
+    };
+    let Some(body) = ctx.definition(&root) else {
+        return false;
+    };
+    !body.body_checks.is_empty()
+        && body.body_checks.iter().all(|c| c.outcome == Forbidden)
+        && !body.responses.iter().any(|r| r.status == 401 && !r.in_catch)
+        && body.raise_checks.is_empty()
+        // A refusal of every request for which what gives the caller gave nothing
+        // is a check of who calls, whatever status it answers.
+        && crate::security::refuses_without_identity(ctx, body).is_none()
+        && !body
+            .controls
+            .iter()
+            .any(|c| c == drift_core::controls::HANDLER_REJECTS)
+}
+
 /// `path#Symbol` -> (`path`, `Symbol`).
 fn split_node(node: &str) -> (&str, &str) {
     node.rsplit_once('#').unwrap_or((node, ""))
@@ -394,7 +484,7 @@ fn split_node(node: &str) -> (&str, &str) {
 /// Whether one finding (an entry point reaching an operation) is ranked, and with
 /// which caller; else why not. Unknown is never a hole: a guard Drift could not read
 /// is [`Reason::GuardUnknown`], whatever the rest says.
-fn classify(e: &EntryRow, r: &Reach) -> Result<Caller, Reason> {
+fn classify(e: &EntryRow, r: &Reach, readings: &Readings) -> Result<Caller, Reason> {
     use crate::roles::{is_demo_path, is_test_path};
     if e.local {
         return Err(Reason::NoRemoteCaller);
@@ -413,6 +503,14 @@ fn classify(e: &EntryRow, r: &Reach) -> Result<Caller, Reason> {
         return Err(Reason::NotFed);
     }
     if !e.guards.is_empty() {
+        // Guards that are only hooks read to refuse as not allowed: no guard of the
+        // caller Drift read ([`Caller::HookNotRead`]).
+        if readings
+            .hooks_not_proven
+            .contains(&(e.path.clone(), e.symbol.clone()))
+        {
+            return Ok(Caller::HookNotRead);
+        }
         return Ok(Caller::PassesGuard);
     }
     if !e.opaque.is_empty() {
@@ -441,6 +539,10 @@ fn place(e: &EntryRow, r: &Reach, caller: Caller) -> Place {
                 .map(|g| sanitize(g, 80))
                 .collect::<Vec<_>>()
                 .join(" > ")
+        ),
+        Caller::HookNotRead => format!(
+            "guard not read: only hooks the whole app runs stand in front of it ({}), read to turn some callers away as not allowed, not that they identify or authorise the caller",
+            sanitize(&e.guards.join(", "), 160)
         ),
         Caller::Service => signature_words(&e.verifies_signature),
         Caller::Anyone if !e.opens.is_empty() => format!(
@@ -489,7 +591,7 @@ pub fn summarize(inv: &Inventory, readings: &Readings) -> Summary {
     let mut not = NotRanked::default();
     for e in &inv.entry_points {
         for r in &e.reaches {
-            match classify(e, r) {
+            match classify(e, r, readings) {
                 Err(reason) => {
                     let n = match reason {
                         Reason::NoRemoteCaller => &mut not.no_remote_caller,
@@ -548,7 +650,7 @@ pub fn summarize(inv: &Inventory, readings: &Readings) -> Summary {
 
 /// What [`order_key`] returns; lower first.
 pub type OrderKey = (
-    Caller,
+    u8,
     u8,
     Exposure,
     Validation,
@@ -558,14 +660,17 @@ pub type OrderKey = (
     String,
     String,
     u32,
+    Caller,
 );
 
 /// The order ranked findings are read in, lower first. A stable order, not a
 /// severity score: it says which fact to look at first and judges none.
 ///
-/// 1. Who can do it ([`Caller`]): a caller Drift found no guard for, then one who
-///    passes a guard Drift read, then a service whose signature checks out, then one
-///    whose guard may be in something Drift did not read ([`Caller::Unread`]).
+/// 1. Who can do it ([`Caller`]): a caller Drift found no guard for, and one whose only
+///    guards are hooks not read to identify or authorise them ([`Caller::HookNotRead`]),
+///    then one who passes a guard Drift read, then a service whose signature checks
+///    out, then one whose guard may be in something Drift did not read
+///    ([`Caller::Unread`]).
 /// 2. What the operation does with the value ([`consequence`]): code execution, then
 ///    query injection, files, identity, outgoing requests, page content, writes,
 ///    patterns, and redirects last.
@@ -575,8 +680,8 @@ pub type OrderKey = (
 /// 5. Whether a request writes ([`WRITES`], [`MAY_WRITE`], [`READS_ONLY`]; the best of
 ///    the line's places).
 /// 6. Then the full tie-break: more places first, then the kind, the operation, and
-///    the first place's path and line. Two lines never compare equal: a line is one
-///    (kind, operation, caller, validation).
+///    the first place's path and line, and the caller. Two lines never compare equal:
+///    a line is one (kind, operation, caller, validation).
 pub fn order_key(r: &Ranked) -> OrderKey {
     let consequence = consequence(&r.kind).map_or(OTHER, |(c, _)| c);
     let exposure = r
@@ -595,8 +700,14 @@ pub fn order_key(r: &Ranked) -> OrderKey {
         .places
         .first()
         .map_or((String::new(), 0), |p| (p.path.clone(), p.line));
+    let caller = match r.caller {
+        Caller::Anyone | Caller::HookNotRead => 0,
+        Caller::PassesGuard => 1,
+        Caller::Service => 2,
+        Caller::Unread => 3,
+    };
     (
-        r.caller,
+        caller,
         consequence,
         exposure,
         r.validation,
@@ -606,6 +717,7 @@ pub fn order_key(r: &Ranked) -> OrderKey {
         r.sink.clone(),
         path,
         line,
+        r.caller,
     )
 }
 
@@ -652,6 +764,7 @@ fn sink_at(r: &Ranked) -> String {
 fn caller_words(c: Caller) -> &'static str {
     match c {
         Caller::Anyone => "A caller Drift found no guard for can",
+        Caller::HookNotRead => "A caller, unless a hook the whole app runs turns them away, can",
         Caller::PassesGuard => "A caller who passes its guard can",
         Caller::Service => "A caller whose signature checks out can",
         Caller::Unread => "A caller, unless something Drift did not read turns them away, can",
@@ -766,6 +879,11 @@ pub fn finding_lines(r: &Ranked) -> Vec<String> {
     }
     if exposure == Exposure::Unknown {
         not_read.push("where the entry point can be reached from".to_string());
+    }
+    if r.caller == Caller::HookNotRead {
+        not_read.push(
+            "whether the hooks the whole app runs identify or authorise the caller".to_string(),
+        );
     }
     // The most any one place left unread: the first place may have read everything.
     let guard_not_read = r.places.iter().map(|p| p.guard_not_read).max().unwrap_or(0);
