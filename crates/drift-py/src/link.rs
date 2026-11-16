@@ -903,6 +903,44 @@ pub fn join_path(parts: &[&str]) -> String {
     format!("/{}", segs.join("/"))
 }
 
+/// The parameters a route template names, each with its converter, as the template
+/// writes them: `<uuid:pk>` and Flask's `<int:id>` (`<id>` takes the default,
+/// `string`), Starlette's `{id:int}` (`{id}`: `str`). A regex group
+/// (`(?P<pk>\d+)`) is no converter: not listed.
+fn route_converters(route: &str) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    for (open, close, default) in [('<', '>', "string"), ('{', '}', "str")] {
+        let mut rest = route;
+        while let Some(i) = rest.find(open) {
+            let after = &rest[i + open.len_utf8()..];
+            let Some(j) = after.find(close) else { break };
+            let inner = &after[..j];
+            // `(?P<pk>...)`: the group's name, not a converter.
+            let regex = open == '<' && rest[..i].ends_with("?P");
+            if !regex && !inner.is_empty() {
+                let (name, conv) = match (open, inner.split_once(':')) {
+                    ('<', Some((conv, name))) => (name, conv),
+                    ('{', Some((name, conv))) => (name, conv),
+                    _ => (inner, default),
+                };
+                out.push((name.trim().to_string(), conv.trim().to_string()));
+            }
+            rest = &after[j + close.len_utf8()..];
+        }
+    }
+    out
+}
+
+/// A route converter that parses its segment rather than taking any text of it:
+/// every one but the converters whose pattern is any text of a segment or of the
+/// rest of the path (Django's `str` and `path`, Flask's `string` and `path`,
+/// Starlette's `str` and `path`), a converter's arguments aside (`string(length=2)`
+/// still takes any text).
+fn converter_parses(conv: &str) -> bool {
+    let name = conv.split('(').next().unwrap_or_default().trim();
+    !name.is_empty() && !matches!(name, "str" | "string" | "path")
+}
+
 impl<'r> Linker<'r> {
     pub fn new(res: &'r Resolver, files: &'r [LoweredFile]) -> Self {
         Self::build(res, files, None, false)
@@ -4482,6 +4520,51 @@ impl<'r> Linker<'r> {
                             .and_then(|h| h.drf_permissions.as_ref())
                             .is_some_and(|own| own.contains(r))
                 };
+                // The DRF class attributes of a class served as a view that is no DRF
+                // view (`class SignOut(View): permission_classes = [...]`): Django's
+                // `View` never runs them, so they are no guard of its handlers; where
+                // a base is not read, whether one runs them is not known
+                // ([`config::Linker::drf_attrs`]). Since the measured build.
+                let attrs = holder
+                    .filter(|h| {
+                        h.kind == drift_core::SymbolKind::Class
+                            && (h.drf_permissions.is_some()
+                                || h.drf_authentication.is_some()
+                                || h.drf_reassigned.is_some())
+                    })
+                    .filter(|h| {
+                        let method = format!("{}.", h.name);
+                        let served: Vec<&EntryPoint> = entry_points
+                            .iter()
+                            .filter(|e| {
+                                e.kind == "http"
+                                    && (e.symbol == h.name || e.symbol.starts_with(&method))
+                            })
+                            .collect();
+                        !served.is_empty() && served.iter().all(|e| e.adapter != "drf")
+                    })
+                    .filter(|_| self.since_measured())
+                    .map_or(config::DrfAttrs::Read, |h| self.drf_attrs(rel, &h.name));
+                let class_attr = |r: &RawRef, k: WrapKind| {
+                    attrs != config::DrfAttrs::Read
+                        && holder.is_some_and(|h| match k {
+                            WrapKind::Call => {
+                                h.drf_permissions.as_ref().is_some_and(|l| l.contains(r))
+                            }
+                            WrapKind::Authenticates => {
+                                h.drf_authentication.as_ref().is_some_and(|l| l.contains(r))
+                            }
+                            _ => false,
+                        })
+                };
+                if let config::DrfAttrs::Unread(base) = &attrs {
+                    wraps.push(Wrap {
+                        wrapper: format!(
+                            "unresolved:permission_classes, run only if {base} reads them"
+                        ),
+                        kind: WrapKind::Call,
+                    });
+                }
                 // A decorator of the class that applies to one method only
                 // ([`RawSymbol::wraps_only`]): no wrap of another method, nor of the
                 // class, since the measured build.
@@ -4499,7 +4582,7 @@ impl<'r> Linker<'r> {
                     .and_then(|_| s.name.rsplit_once('.'))
                     .map(|(_, m)| m);
                 for (r, k) in s.wraps.iter().skip(skip) {
-                    if replaced(r, *k) {
+                    if replaced(r, *k) || class_attr(r, *k) {
                         continue;
                     }
                     let only: Vec<&Option<String>> = if only_live && *k == WrapKind::Decorator {
@@ -4582,7 +4665,7 @@ impl<'r> Linker<'r> {
                 // A decorator that is no name: kept by its words, since the measured
                 // build ([`RawSymbol::unread_wraps`]). Last first, so that each
                 // lands where it was written.
-                if let Some(now) = reassigned {
+                if let Some(now) = reassigned.filter(|_| attrs == config::DrfAttrs::Read) {
                     let given: Vec<String> = match &now.unread {
                         Some(words) => vec![format!("unresolved:{words}")],
                         None => now
@@ -4773,6 +4856,11 @@ impl<'r> Linker<'r> {
                     controls: {
                         let mut c = s.controls.clone();
                         self.measured_exits(&mut c);
+                        // `response_model=None`: read since the measured build.
+                        let no_model = drift_core::controls::NO_RESPONSE_MODEL;
+                        if c.iter().any(|x| x == no_model) && !self.since_measured() {
+                            c.retain(|x| x != no_model);
+                        }
                         // A dependency the repository replaces, since the measured
                         // build.
                         if !self.overridden.is_empty()
@@ -4787,6 +4875,22 @@ impl<'r> Linker<'r> {
                             && let Some(x) = self.input_control(fi, u)
                         {
                             c.push(x.to_string());
+                        }
+                        // Every input it takes is parsed by its declared type before
+                        // the body runs, since the measured build.
+                        if http_entries.contains(&s.name)
+                            && let Some(u) = &s.input_use
+                            && self.input_typed(
+                                fi,
+                                u,
+                                &entry_points
+                                    .iter()
+                                    .filter(|e| e.kind == "http" && e.symbol == s.name)
+                                    .collect::<Vec<_>>(),
+                            )
+                            && self.since_measured()
+                        {
+                            c.push(drift_core::controls::INPUT_TYPED.to_string());
                         }
                         // How what stands at its guard positions is written: its
                         // own calls (a decorator, the call a variable's value is),
@@ -5317,6 +5421,51 @@ impl<'r> Linker<'r> {
     /// provably reads none ([`drift_core::controls::NO_INPUT`]) when it does neither,
     /// takes no `*args` / `**kwargs`, and never hands the request on whole or calls a
     /// method of `self`. Otherwise not known: no control.
+    /// [`drift_core::controls::INPUT_TYPED`]: the body reads no request input of its
+    /// own, never hands the request on and takes no `*args` / `**kwargs`, and every
+    /// parameter request input arrives through (one at least) is parsed by its
+    /// declared type, on every route `entries` serves it at: FastAPI parses a
+    /// parameter into its annotation ([`RawInputUse::typed`]); Django, DRF and Flask
+    /// pass route kwargs as text, parsed only by the route's converter for that
+    /// parameter (`<uuid:project_id>`), never by an annotation. Any parameter that is
+    /// not, any other adapter, an annotation not read: no.
+    fn input_typed(&self, fi: usize, u: &RawInputUse, entries: &[&EntryPoint]) -> bool {
+        if u.reads
+            || u.escapes
+            || u.variadic
+            || entries.is_empty()
+            || u.typed.len() != u.params.len()
+        {
+            return false;
+        }
+        let bound: Vec<&(String, bool)> = u
+            .params
+            .iter()
+            .zip(&u.typed)
+            .filter(|(p, _)| match p {
+                RawParamKind::Input => true,
+                RawParamKind::Alias(r) => {
+                    self.dep_items(fi, &RawDep::Alias(r.clone())).is_empty()
+                }
+                RawParamKind::Dep | RawParamKind::Other => false,
+            })
+            .map(|(_, t)| t)
+            .collect();
+        if bound.is_empty() {
+            return false;
+        }
+        entries.iter().all(|e| {
+            let converters = route_converters(e.route.as_deref().unwrap_or_default());
+            bound.iter().all(|(name, typed)| match e.adapter.as_str() {
+                "fastapi" => *typed,
+                "django" | "drf" | "flask" | "flask_restx" => converters
+                    .iter()
+                    .any(|(n, conv)| n == name && converter_parses(conv)),
+                _ => false,
+            })
+        })
+    }
+
     fn input_control(&self, fi: usize, u: &RawInputUse) -> Option<&'static str> {
         let param = u.params.iter().any(|p| match p {
             RawParamKind::Input => true,

@@ -89,6 +89,9 @@ impl Position {
             // A DRF permission class is listed as a function called with the
             // view is: bare, by its own entry.
             WrapKind::Call if matches!(adapter, "django" | "drf") => Some(Position::Decorator),
+            // The admin's one entry point: `AdminSite.admin_view` wraps its views as
+            // a decorator does, and what the site lets in is read by its entry.
+            WrapKind::Call if adapter == "django_admin" => Some(Position::Decorator),
             // A base, a setting: read where they are.
             _ => None,
         }
@@ -1485,6 +1488,12 @@ const FRAMEWORKS: &[(&str, &[&str])] = &[
             "contrib.auth.mixins",
             "contrib.auth.middleware",
             "contrib.admin.views.decorators",
+            // `AdminSite`: its `admin_view` lets in whom the site's `has_permission`
+            // answers yes for (Django's: an active staff user), which a site of the
+            // repository may answer otherwise, and the one admin entry point also
+            // serves the site's own sign-in page to anyone. No entry: unknown, never
+            // "no guard".
+            "contrib.admin.sites",
         ],
     ),
     (
@@ -2055,5 +2064,29 @@ mod tests {
             Verdict::Nothing
         );
         assert_eq!(member("pkg:company_sso#SSO", "protect", ""), UNCLASSIFIED);
+    }
+
+    /// S3: the Django admin's one entry point is wrapped in `AdminSite.admin_view`,
+    /// which lets in only staff that signed in. The list holds no entry for it, so
+    /// its reading is unknown, never "no guard" (pygoat `pygoat/urls.py` `/admin`).
+    #[test]
+    fn the_admin_view_is_read_and_unknown_not_nothing() {
+        assert_eq!(
+            Position::of(WrapKind::Call, "django_admin"),
+            Some(Position::Decorator)
+        );
+        assert_eq!(
+            lib(
+                Position::Decorator,
+                "pkg:django#contrib.admin.sites.AdminSite.admin_view",
+                ""
+            ),
+            UNCLASSIFIED
+        );
+        // What the admin module offers outside its site stays as it was.
+        assert_eq!(
+            lib(Position::Decorator, "pkg:django#contrib.admin.register", "(?)"),
+            Verdict::Nothing
+        );
     }
 }

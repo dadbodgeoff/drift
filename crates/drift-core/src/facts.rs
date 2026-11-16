@@ -1503,6 +1503,17 @@ pub mod controls {
     /// parameters that carry none (`({ ctx }) => ...`). A handler with neither fact
     /// may or may not read input.
     pub const NO_INPUT: &str = "no_input";
+    /// A Python handler whose every request input arrives through a parameter the
+    /// framework binds and parses by its declared type before the body runs (a
+    /// FastAPI parameter annotated `uuid.UUID`, `EmailStr` or a model; a Django or
+    /// Flask URL converter such as `<uuid:pk>`), and whose body reads no other
+    /// input: a value the type does not take is answered with an error, not served.
+    /// In the listed reading only (the practice map's validation concern).
+    pub const INPUT_TYPED: &str = "input_typed";
+    /// A FastAPI route decorator given `response_model=None`: the return annotation
+    /// is no response model. In the listed reading only (the practice map's API
+    /// concern).
+    pub const NO_RESPONSE_MODEL: &str = "no_response_model";
     /// The body turns a caller away as not signed in or not allowed, before it hands
     /// control on: it throws, raises or returns an error or response that says so
     /// (`code: "UNAUTHORIZED"`, `status.HTTP_401_UNAUTHORIZED`, `"Unauthorized: login
