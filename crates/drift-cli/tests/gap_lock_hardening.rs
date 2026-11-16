@@ -14,6 +14,10 @@
 //! - every command Drift prints that names a convention id or a path from the
 //!   repository is one shell word per argument: run through a real `sh`, it executes
 //!   nothing and hands Drift the id and the path exactly.
+//!
+//! Every pin here needs a symbolic link or a real `sh`, so the file is Unix only; on
+//! Windows it compiles to nothing rather than to helpers no test uses.
+#![cfg(unix)]
 
 use std::path::Path;
 use std::process::Command;
@@ -99,7 +103,6 @@ fn repo() -> tempfile::TempDir {
     dir
 }
 
-#[cfg(unix)]
 mod links {
     use super::*;
     use std::os::unix::fs::symlink;
@@ -285,7 +288,6 @@ fn placeholder(cmd: &str) -> String {
 
 /// Every command Drift prints with a repository's id or path in it is one shell word
 /// per argument: `sh` runs nothing in it and hands over the id and path exactly.
-#[cfg(unix)]
 #[test]
 fn printed_commands_quote_what_the_repository_wrote() {
     let dir = repo();
