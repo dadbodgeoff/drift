@@ -254,7 +254,10 @@ fn a_proposal_accepted_later_is_not_a_reading_change() {
     );
     drop_lines_of(r, &ids);
     git(r, &["add", "-A"]);
-    git(r, &["commit", "-qm", "accept, as an older Drift left the lock"]);
+    git(
+        r,
+        &["commit", "-qm", "accept, as an older Drift left the lock"],
+    );
     let lock = read(r, "drift.lock");
     let (code, out) = drift(r, &["upgrade", "--apply"]);
     assert_eq!(code, 3, "{out}");
