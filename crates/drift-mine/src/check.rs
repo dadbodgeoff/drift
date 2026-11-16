@@ -635,6 +635,14 @@ pub fn check_gated(
                     untold.push((c.id.clone(), u.key()));
                     continue;
                 }
+                // [STRICT] A file the parser reported errors in holds what could be
+                // read of it, no more: what it seems to break may be what was not read.
+                // An accepted rule is never reported broken there; the member is not
+                // checked and its lock entry stays.
+                Verdict::Breaks if tell && unparsed(&u.view) => {
+                    untold.push((c.id.clone(), u.key()));
+                    continue;
+                }
                 Verdict::Exempt(why) => {
                     if why.code == DIFFERENT_KIND {
                         set_apart.push((c.id.clone(), format!("{path}#{}", u.name())));
@@ -827,6 +835,12 @@ fn stale_reason(s: &Standing) -> Option<String> {
             MIN_LOWER_BOUND * 100.0
         )
     })
+}
+
+/// The unit is in a file the parser reported errors in (`parse_ok` false): its facts
+/// are best-effort, so a break read from them is not known to be one.
+fn unparsed(view: &View<'_>) -> bool {
+    matches!(view, View::Symbol(f, _) | View::File(f) if !f.parse_ok)
 }
 
 /// What one convention says of one unit ([`classify`]).

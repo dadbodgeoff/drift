@@ -1046,12 +1046,20 @@ fn pre_tool_use(p: &Project, input: &Value, state_path: &Path) -> anyhow::Result
         }
     };
     text.push_str(&header);
+    // Under the cap, what blocks comes first: rules that block go ahead of those that
+    // advise (a stable sort, so each group keeps its order; `pick_primed` then puts
+    // suggestions, which never block, last), and the cut line says how many of the
+    // rules left out block.
+    let mut lines = lines;
+    lines.sort_by_key(|(_, c)| !blocks(c));
+    let blocking_all = lines.iter().filter(|(_, c)| blocks(c)).count();
     let (picked, left) = pick_primed(
         lines
             .into_iter()
             .map(|(when, c)| (is_suggestion(c), (when, c)))
             .collect(),
     );
+    let blocking_left = blocking_all - picked.iter().filter(|(_, c)| blocks(c)).count();
     text.push_str(&rules_note(
         &picked.iter().map(|(_, c)| *c).collect::<Vec<_>>(),
     ));
@@ -1061,7 +1069,10 @@ fn pre_tool_use(p: &Project, input: &Value, state_path: &Path) -> anyhow::Result
         shown.push(c.id.clone());
     }
     if left > 0 {
-        text.push_str(&format!("+{left} more: run `drift example {shown_rel}`\n"));
+        text.push_str(&format!(
+            "+{left} more{}: run `drift example {shown_rel}`\n",
+            drift_mine::report::cut_note(blocking_left, left - blocking_left)
+        ));
     }
     if let Some(line) = practice {
         text.push_str(&format!("{line}\n"));

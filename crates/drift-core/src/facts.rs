@@ -1232,7 +1232,8 @@ pub struct Symbol {
     /// The capped practice fields of this symbol that lost entries to their cap, by
     /// JSON name (`body_checks`, `responses`, `responses.keys` for a response's own
     /// keys, `log_calls`, `catches`, `headers`, `inputs`, `handles_errors`,
-    /// `scoped_queries`, `raise_checks`): what such
+    /// `scoped_queries`, `raise_checks`, and `order` in the listed reading only,
+    /// [`RepoFacts::listed`]): what such
     /// a field holds is not all there is, so a reader answers unknown, never none,
     /// from it. [`FileFacts::normalize`] adds each field it cuts; a lowering that caps
     /// a field itself adds its name. Sorted; omitted when empty.
@@ -2809,8 +2810,17 @@ impl RepoFacts {
     /// The facts with every listing of entry points ([`Listed`]): what `drift
     /// security` and the practice map read. The facts themselves when no file has a
     /// second reading.
+    ///
+    /// It also says where a symbol's [`Symbol::order`] may have been cut short: a
+    /// list as long as its cap ([`caps::ORDER`]) is marked `order` in
+    /// [`Symbol::truncated`], so a reader answers unknown from it, never "not called".
+    /// Only this reading: mining's copy of the facts is left byte for byte.
     pub fn listed(&self) -> std::borrow::Cow<'_, RepoFacts> {
-        let listed = |files: &[FileFacts]| files.iter().any(|f| f.listed.is_some());
+        let listed = |files: &[FileFacts]| {
+            files
+                .iter()
+                .any(|f| f.listed.is_some() || f.symbols.iter().any(order_may_be_cut))
+        };
         if !listed(&self.files) && !listed(&self.context_files) {
             return std::borrow::Cow::Borrowed(self);
         }
@@ -2821,6 +2831,9 @@ impl RepoFacts {
     pub fn into_listed(mut self) -> RepoFacts {
         for f in self.files.iter_mut().chain(&mut self.context_files) {
             f.take_listed();
+            for s in f.symbols.iter_mut().filter(|s| order_may_be_cut(s)) {
+                add_truncated(&mut s.truncated, vec!["order"]);
+            }
         }
         self
     }
@@ -3207,6 +3220,12 @@ fn sort_cap<T: Ord>(v: &mut Vec<T>, cap: usize) -> bool {
     let cut = v.len() > cap;
     v.truncate(cap);
     cut
+}
+
+/// Whether a symbol's [`Symbol::order`] reached its cap ([`caps::ORDER`]): the
+/// lowerings stop adding callees there without saying so, so more may have followed.
+fn order_may_be_cut(s: &Symbol) -> bool {
+    s.order.len() >= caps::ORDER
 }
 
 /// Add the names of the fields a cap cut to `truncated`, sorted and de-duplicated

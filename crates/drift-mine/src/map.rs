@@ -552,6 +552,7 @@ pub fn overview(
             "entry_points": entries.iter().map(|(k, v)| json!({
                 "kind": k, "count": v.len(), "examples": spread(v, 3)
             })).collect::<Vec<_>>(),
+            "entry_points_listed": fs.iter().map(|f| f.listed_entry_points().len()).sum::<usize>(),
             "depends_on": deps.iter().take(10).map(|(p, n)| json!({"package": p, "files": n})).collect::<Vec<_>>(),
             "dependencies_test": deps_test.iter().take(10).map(|(p, n)| json!({"package": p, "files": n})).collect::<Vec<_>>(),
             "depended_on_by": dependents,
@@ -581,11 +582,22 @@ pub fn overview(
         .iter()
         .filter(|f| map.file_roles.contains_key(&f.path))
         .count();
+    // Two readings of the entry points ([`drift_core::Listed`]): each package's
+    // `entry_points` are the measured build's listings, which mining reads; `drift
+    // security` and the practice map read every listing. Both figures, said for what
+    // they count, so neither is taken for the other.
+    let measured: usize = files.iter().map(|f| f.entry_points.len()).sum();
+    let listed: usize = files.iter().map(|f| f.listed_entry_points().len()).sum();
     json!({
         "schema": 1,
         "scope": package.map_or("repo".to_string(), |p| format!("package {p}")),
         "files": files.len(),
         "files_in_a_role": in_role,
+        "entry_point_counts": {
+            "measured": measured,
+            "listed": listed,
+            "counts": ENTRY_POINT_COUNTS,
+        },
         "test_roles": map.tests,
         "packages": packages,
         "roles": {
@@ -595,6 +607,9 @@ pub fn overview(
         },
     })
 }
+
+/// What the two entry-point figures of the map count (`entry_point_counts`).
+pub const ENTRY_POINT_COUNTS: &str = "measured: the entry points of the measured build's listings, the ones mining reads (each package's entry_points; entry_points_listed beside it); listed: every listing Drift makes, the ones drift security and the practice map read. Both count every file in scope, tests and non-production code included, which the security inventory leaves out";
 
 /// The map of one file: its package, layer, roles (most specific first: fewest
 /// members) and up to [`TYPICAL`] peers from its most specific role.
@@ -792,6 +807,16 @@ pub fn render(v: &Value) -> String {
         v["files"],
         v["files_in_a_role"]
     );
+    // Said only where the readings differ, so a map whose listings agree reads as
+    // before.
+    let counts = &v["entry_point_counts"];
+    if counts["measured"] != counts["listed"] {
+        let _ = writeln!(
+            out,
+            "entry points: {} as mining reads them, {} with every listing Drift makes (what `drift security` reads, tests and non-production code included here)",
+            counts["measured"], counts["listed"]
+        );
+    }
     for p in v["packages"].as_array().into_iter().flatten() {
         let name = p["name"]
             .as_str()

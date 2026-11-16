@@ -1447,6 +1447,22 @@ impl ConventionsFile {
         self.conventions.iter_mut().find(|c| c.id == id)
     }
 
+    /// For a command where a person accepts (`drift review`, just before it writes the
+    /// file): keep, beside each accepted convention that has no record yet, the evidence
+    /// as the file has it now, which is what the person was shown when they accepted it
+    /// ([`Convention::accepted_evidence`]). The same record [`ConventionsFile::merge`]
+    /// keeps the first time a run meets it accepted, made at the moment of acceptance
+    /// instead, so a `drift init` that refreshes the evidence first cannot change what
+    /// the person saw. A record already kept is never replaced; promoted practices are
+    /// left as `merge` leaves them.
+    pub fn freeze_accepted_now(&mut self) {
+        for c in &mut self.conventions {
+            if c.status == Status::Accepted && !c.rule.is_practice() {
+                c.freeze_accepted_evidence();
+            }
+        }
+    }
+
     /// Add `c`, a card a person promoted from the withheld ones (`drift review --hidden`):
     /// marked [`Convention::promoted_from_hidden`], placed after the conventions of its
     /// status (the file's order is otherwise unchanged). A convention of that id already

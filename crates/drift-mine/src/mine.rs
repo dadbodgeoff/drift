@@ -4727,7 +4727,14 @@ fn mine_units_traced<'a>(
                 (
                     Some(d.lb),
                     None,
-                    format!("lower bound {:.2}, lift {:.2}", d.lb, d.lift),
+                    // A layering rule's lift is no measurement: the dependency
+                    // direction is its evidence, and `lift` holds the threshold
+                    // (`AVOID_MIN_CONTRAST`). Said as such, never as a measured value.
+                    if matches!(&d.rule, Rule::Avoids { signal } if signal.starts_with("import:")) {
+                        format!("lower bound {:.2} (a layering rule: no lift is measured)", d.lb)
+                    } else {
+                        format!("lower bound {:.2}, lift {:.2}", d.lb, d.lift)
+                    },
                 ),
             );
         }

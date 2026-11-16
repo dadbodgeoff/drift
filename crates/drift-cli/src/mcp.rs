@@ -951,25 +951,14 @@ pub fn concern_words(concern: &str) -> String {
 
 /// A convention's mode as checked once accepted, and why when the policy says
 /// otherwise: `blocks` (a new violation fails `drift check`), `advises`, or `advises`
-/// with the reason a rule set to block does not.
+/// with the reason a rule set to block does not. Read from
+/// [`drift_mine::check::mode_now`], the one place `drift check` decides the mode, so the
+/// agent is never told a different mode, or a different reason, than CI applies.
 fn mode_text(c: &Convention) -> String {
-    if blocks(c) {
-        "blocks (a new violation fails `drift check`)".to_string()
-    } else if c.mode != drift_mine::policy::Mode::Block {
-        "advises (a new violation is only reported)".to_string()
-    } else if c.rule.is_wiring() {
-        "advises (set to block, but experimental wiring rules only advise)".to_string()
-    } else if c.rule.is_practice()
-        && (c.evidence.holders as f64)
-            < drift_mine::practices::promote::BLOCK_SHARE * c.evidence.total as f64
-    {
-        "advises (set to block, but it was promoted below the share of its place a practice needs to block)".to_string()
-    } else {
-        format!(
-            "advises (set to block, but its role has {} members, under the {} needed to block)",
-            c.evidence.role_size(),
-            drift_mine::mine::MIN_BLOCK_ROLE_SIZE
-        )
+    match drift_mine::check::mode_now(c, None) {
+        ("block", _) => "blocks (a new violation fails `drift check`)".to_string(),
+        (_, Some(note)) => format!("advises ({note})"),
+        (_, None) => "advises (a new violation is only reported)".to_string(),
     }
 }
 
