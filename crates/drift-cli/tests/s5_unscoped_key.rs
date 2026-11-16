@@ -77,10 +77,13 @@ fn an_unscoped_key_advises_until_the_person_sets_it_to_fail() {
     );
     assert_eq!(code, 0, "{err}");
     assert!(fail_line(r).iter().any(|k| k == "unscoped-key"));
-    assert!(
-        out.contains("exit 1 when a finding that is not in it appears.\n"),
-        "{out}"
-    );
+    // The kinds that still advise are named; this one is no longer among them.
+    let advising = out
+        .split("appears")
+        .nth(1)
+        .and_then(|rest| rest.lines().next())
+        .unwrap_or_default();
+    assert!(!advising.contains("unscoped-key"), "{out}");
 
     // Written again with no `--fail-on`: the choice is kept.
     let (code, _, err) = drift(r, &["security", "--write-baseline"]);
