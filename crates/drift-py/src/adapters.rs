@@ -1674,6 +1674,16 @@ impl<'t> Lowerer<'t> {
     pub(crate) fn lower_class(&mut self, c: &'t ast::StmtClassDef) {
         let name = c.name.as_str();
         let mut sym = RawSymbol::empty(name, SymbolKind::Class, self.line(c));
+        // An error class that refuses the caller by the status its own definition
+        // sets ([`drift_core::controls::REFUSAL_STATUS`]), read since the measured
+        // build (S15c): as the TypeScript lowering writes it.
+        if let Some(status) = self.class_status(name).filter(|s| matches!(*s, 401 | 403)) {
+            sym.controls.push(format!(
+                "{}{}{status}",
+                crate::raw::SINCE,
+                drift_core::controls::REFUSAL_STATUS
+            ));
+        }
         // What the class's decorators apply to every method (`name="dispatch"`, or
         // a decorator that is no `method_decorator`).
         let mut wide: Vec<RawRef> = Vec::new();
@@ -2239,9 +2249,22 @@ impl<'t> Lowerer<'t> {
                             PARAM_FLOWS,
                             REJECTS_SOME,
                         ]
-                        .contains(&c.as_str())
+                        // (One the lowering wrote for one reading only, too.)
+                        .contains(
+                            &c.strip_prefix(crate::raw::SINCE)
+                                .or_else(|| c.strip_prefix(crate::raw::MEASURED))
+                                .unwrap_or(c.as_str()),
+                        )
                     })
                     .cloned()
+                    // An `except` handler of its own that answers with a response,
+                    // read since the measured build (S15c).
+                    .chain(
+                        tmp.catches
+                            .iter()
+                            .any(|c| c.does.iter().any(|d| matches!(d, RawDoes::Respond(_))))
+                            .then(|| format!("{}{}", crate::raw::SINCE, drift_core::CATCH_RESPONDS)),
+                    )
                     // A 403 the method answers outside any `except`, as a function's
                     // `responses` hold it.
                     .chain(

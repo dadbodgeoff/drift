@@ -436,6 +436,29 @@ fn symbol_unmeasured(s: &RawSymbol) -> bool {
         || s.members
             .iter()
             .any(|m| m.unread.iter().any(|c| c == UNREAD_EXIT_MEASURED))
+        || s.controls.iter().any(|c| marked_by_reading(c))
+        || s.fed_sinks.iter().any(|c| marked_by_reading(c))
+        || s.members.iter().any(|m| {
+            m.unread.iter().any(|c| marked_by_reading(c))
+                || m.fed_sinks.iter().any(|c| marked_by_reading(c))
+        })
+}
+
+/// A fact the lowering wrote for one of the two readings only
+/// ([`crate::raw::SINCE`], [`crate::raw::MEASURED`]).
+fn marked_by_reading(fact: &str) -> bool {
+    fact.starts_with(crate::raw::SINCE) || fact.starts_with(crate::raw::MEASURED)
+}
+
+/// The kind of a body's [`RawSymbol::fed_sinks`] entry as a
+/// [`drift_core::controls::SINK_FED`] control, its reading's mark kept in front
+/// ([`Linker::since_marked`] reads it off).
+fn fed_control(kind: &str) -> String {
+    let sink_fed = drift_core::controls::SINK_FED;
+    match kind.strip_prefix(crate::raw::SINCE) {
+        Some(k) => format!("{}{sink_fed}{k}", crate::raw::SINCE),
+        None => format!("{sink_fed}{kind}"),
+    }
 }
 
 /// Packages whose view classes apply the list `decorators` (Flask's `View`) or
@@ -1036,6 +1059,33 @@ impl<'r> Linker<'r> {
             }
             false => controls[i] = unread.to_string(),
         }
+    }
+
+    /// The facts the lowering wrote for one reading only: what follows
+    /// [`crate::raw::SINCE`] is kept for the listed reading and dropped from what
+    /// mining reads, what follows [`crate::raw::MEASURED`] the other way round. The
+    /// measured copy is then what the measured build wrote. Nothing is asked of the
+    /// linker where no fact is marked.
+    fn since_marked(&self, facts: &mut Vec<String>) {
+        if !facts.iter().any(|f| marked_by_reading(f)) {
+            return;
+        }
+        let since = self.since_measured();
+        let mut out = Vec::with_capacity(facts.len());
+        for f in facts.drain(..) {
+            if let Some(rest) = f.strip_prefix(crate::raw::SINCE) {
+                if since {
+                    out.push(rest.to_string());
+                }
+            } else if let Some(rest) = f.strip_prefix(crate::raw::MEASURED) {
+                if !since {
+                    out.push(rest.to_string());
+                }
+            } else {
+                out.push(f);
+            }
+        }
+        *facts = out;
     }
 
     /// Whether the link so far met a listing the measured build did not make.
@@ -5016,7 +5066,7 @@ impl<'r> Linker<'r> {
                         c.extend(
                             s.fed_sinks
                                 .iter()
-                                .map(|k| format!("{}{k}", drift_core::controls::SINK_FED)),
+                                .map(|k| fed_control(k)),
                         );
                         // Handed on to code of the repository: what a built-in or a
                         // package does with it is not followed.
@@ -5045,6 +5095,8 @@ impl<'r> Linker<'r> {
                         c.extend(s.attr_params.iter().map(|(attr, param, i)| {
                             format!("{}{attr}\t{param}\t{i}", drift_core::controls::ATTR_PARAM)
                         }));
+                        // What the lowering read for one reading only.
+                        self.since_marked(&mut c);
                         c.sort();
                         c.dedup();
                         c
@@ -5197,11 +5249,7 @@ impl<'r> Linker<'r> {
                             unread: {
                                 let mut unread = m.unread.clone();
                                 self.measured_exits(&mut unread);
-                                unread.extend(
-                                    m.fed_sinks
-                                        .iter()
-                                        .map(|k| format!("{}{k}", drift_core::controls::SINK_FED)),
-                                );
+                                unread.extend(m.fed_sinks.iter().map(|k| fed_control(k)));
                                 unread.extend(
                                     m.param_passes
                                         .iter()
@@ -5223,6 +5271,8 @@ impl<'r> Linker<'r> {
                                     &m.typed_calls,
                                 ));
                                 unread.extend(self.row_sets(fi, &m.row_sets));
+                                // What the lowering read for one reading only.
+                                self.since_marked(&mut unread);
                                 unread
                             },
                             is_async: m.is_async,

@@ -2465,6 +2465,7 @@ fn decisive_tiers(concern: &str) -> &'static [(&'static str, &'static [&'static 
             "",
             &[
                 "app_handler",
+                "base_handler",
                 "mapped_by_wrapper",
                 "in_body_try",
                 "throw",

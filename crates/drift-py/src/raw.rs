@@ -687,6 +687,17 @@ pub struct RawBodyCheck {
 /// dropped otherwise.
 pub(crate) const UNREAD_EXIT_MEASURED: &str = "unread_exit:measured";
 
+/// In front of a fact the lowering writes in a function's controls, a method's
+/// [`RawMember::unread`] or a body's [`RawSymbol::fed_sinks`]: a reading made since
+/// the measured build. The linker keeps what follows for the listed reading and
+/// drops it from what mining reads (`Linker::since_marked`), so the measured copy
+/// stays as the measured build wrote it (stream S15c).
+pub(crate) const SINCE: &str = "since:";
+
+/// In front of a fact the measured build wrote and the reading made since does
+/// not: kept, without it, for what mining reads only ([`SINCE`]'s other half).
+pub(crate) const MEASURED: &str = "measured:";
+
 /// A condition whose first exit raises an error class ([`drift_core::RaiseCheck`]).
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct RawRaiseCheck {

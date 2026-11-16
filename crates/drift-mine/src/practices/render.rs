@@ -628,6 +628,7 @@ const PLAIN_USES: &[(&str, &str)] = &[
     ("policy", "checked by the policy {}"),
     // errors
     ("mapped by wrapper", "turned into responses by {}"),
+    ("base handler", "turned into responses by the base view's {}"),
     ("in body try return", "caught in the handler, which returns"),
     ("in body try swallow", "caught in the handler and dropped"),
     (

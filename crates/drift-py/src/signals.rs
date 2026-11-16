@@ -472,30 +472,22 @@ impl Lowerer<'_> {
         out
     }
 
-    /// Sinks one call reaches that the measured build did not read
-    /// ([`crate::raw::RawSymbol::since_sinks`]): a query given a name the body bound
-    /// to SQL built from a part that is no literal ([`Collector::sql_built`]), or a
-    /// chain of `+` written where the query is ([`concatenated_sql`]); a file at a
-    /// path built from a part that is no constant; template text that is not written
-    /// out; a MongoDB `$where` built from a part that is no literal; an XML parser
-    /// set to resolve external entities; a signing key written in the code; a server
-    /// started in debug mode; a request that does not verify the certificate.
-    pub(crate) fn call_sinks_since(&self, col: &Collector, c: &ast::ExprCall) -> Vec<&'static str> {
-        let mut out = Vec::new();
-        let first = c.arguments.args.first();
-        let through_name = matches!(first, Some(Expr::Name(n)) if col.sql_built.contains(n.id.as_str()))
-            || first.is_some_and(concatenated_sql);
-        let name = callee_name(&c.func);
-        if matches!(
-            name,
-            Some("execute" | "executemany" | "executescript" | "text" | "raw" | "exec_driver_sql")
-        ) && through_name
-        {
-            out.push(kind::SQL_INTERP);
-        }
+    /// The call opens, sends or removes the file at the path its first argument
+    /// gives: the built-in `open`, or one of [`FILE_FNS`].
+    pub(crate) fn opens_path(&self, col: &Collector, c: &ast::ExprCall) -> bool {
         let r = col.canon(&c.func);
-        let d = r.as_ref().and_then(dotted);
-        let d = d.as_deref();
+        let global_open = matches!(&r, Some(RawRef { base: RawBase::Global(g), member })
+            if member.is_empty() && g == "open");
+        global_open
+            || r.as_ref()
+                .and_then(dotted)
+                .is_some_and(|d| FILE_FNS.contains(&d.as_str()))
+    }
+
+    /// A path joined or built from a part that is no constant: `os.path.join(base,
+    /// name)` with a part that is not where the code is or written out, or text
+    /// built with an interpolation.
+    pub(crate) fn built_path(&self, col: &Collector, e: &Expr) -> bool {
         let dotted_of = |e: &Expr| col.canon(e).as_ref().and_then(dotted);
         // A value that is where the code is, or written out: no request decides it.
         fn fixed(e: &Expr, dotted_of: &dyn Fn(&Expr) -> Option<String>, depth: usize) -> bool {
@@ -514,19 +506,42 @@ impl Lowerer<'_> {
                 _ => false,
             }
         }
-        // A path joined or built from a part that is no constant.
-        let built_path = |e: &Expr| match e {
+        match e {
             Expr::Call(j) => {
                 dotted_of(&j.func).as_deref() == Some("os.path.join")
                     && j.arguments.args.iter().any(|a| !fixed(a, &dotted_of, 0))
             }
             e => interpolates(e),
-        };
-        let global_open = matches!(&r, Some(RawRef { base: RawBase::Global(g), member })
-            if member.is_empty() && g == "open");
-        if (global_open || d.is_some_and(|d| FILE_FNS.contains(&d)))
-            && first.is_some_and(built_path)
+        }
+    }
+
+    /// Sinks one call reaches that the measured build did not read
+    /// ([`crate::raw::RawSymbol::since_sinks`]): a query given a name the body bound
+    /// to SQL built from a part that is no literal ([`Collector::sql_built`]), or a
+    /// chain of `+` written where the query is ([`concatenated_sql`]); a file at a
+    /// path built from a part that is no constant; template text that is not written
+    /// out; a MongoDB `$where` built from a part that is no literal; an XML parser
+    /// set to resolve external entities; a signing key written in the code; a server
+    /// started in debug mode; a request that does not verify the certificate. (A
+    /// file at a path the body bound to such a path is read where the call is
+    /// recorded: `Collector::note_path_sink`.)
+    pub(crate) fn call_sinks_since(&self, col: &Collector, c: &ast::ExprCall) -> Vec<&'static str> {
+        let mut out = Vec::new();
+        let first = c.arguments.args.first();
+        let through_name = matches!(first, Some(Expr::Name(n)) if col.sql_built.contains(n.id.as_str()))
+            || first.is_some_and(concatenated_sql);
+        let name = callee_name(&c.func);
+        if matches!(
+            name,
+            Some("execute" | "executemany" | "executescript" | "text" | "raw" | "exec_driver_sql")
+        ) && through_name
         {
+            out.push(kind::SQL_INTERP);
+        }
+        let r = col.canon(&c.func);
+        let d = r.as_ref().and_then(dotted);
+        let d = d.as_deref();
+        if self.opens_path(col, c) && first.is_some_and(|e| self.built_path(col, e)) {
             out.push(kind::PATH);
         }
         if d.is_some_and(|d| TEMPLATE_FNS.contains(&d))

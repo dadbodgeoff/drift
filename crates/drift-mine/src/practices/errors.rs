@@ -71,6 +71,13 @@ impl Concern for Errors {
             return unknown(UnknownReason::NotFollowed, &m);
         }
         let mut uses: Vec<Use> = Vec::new();
+        // Python: the override of the framework's method on the view's own class or
+        // an in-repo base that answers what that method raised (S15c).
+        match base_handler(cx, sfile, s) {
+            Err(a) => return a,
+            Ok(Some(h)) => uses.push(use_of("base_handler", &h)),
+            Ok(None) => {}
+        }
         for w in &s.wraps {
             if !matches!(w.kind, WrapKind::Call | WrapKind::Decorator) {
                 continue;
@@ -90,6 +97,11 @@ impl Concern for Errors {
                 Some(_)
                     if crate::security::authenticates(ctx, r)
                         || super::authn::class_guard(cx, r) => {}
+                // Python: nor is a dependency's catch whose every answer turns the
+                // caller away, where the sign-in reading says the dependency may
+                // (S15c): `get_current_user` mapping a bad token to 403 refuses the
+                // caller; it maps none of the route's errors.
+                Some(d) if refuses_in_catch(ctx, r, d) => {}
                 Some(d) if responds_in_catch(d) => uses.push(use_of("mapped_by_wrapper", r)),
                 Some(_) => {}
             }
@@ -242,6 +254,128 @@ fn responds_in_catch(d: &Symbol) -> bool {
     d.catches
         .iter()
         .any(|c| c.does.iter().any(|x| x.starts_with("respond:")))
+}
+
+/// [Python] The wrapper `r` (defined as `d`) answers in its catches only by
+/// turning the caller away (every `respond:` of its catches is a 401 or a 403, and
+/// there is one), and the sign-in reading says it may turn callers away
+/// ([`crate::security::may_authenticate`]: a refusal in an `except` handler, or a
+/// body that rejects). That catch is a refusal of the caller, as a guard's is: the
+/// FastAPI template's `get_current_user` mapping a token that does not decode to
+/// 403. It is not how the route's errors become responses. Read from the statuses
+/// and the sign-in reading, never from the wrapper's name; a wrapper that also
+/// answers some other status in a catch still maps errors (S15c).
+fn refuses_in_catch(ctx: &crate::context::RepoContext, r: &str, d: &Symbol) -> bool {
+    let python = crate::mine::norm_ref(r)
+        .split_once('#')
+        .is_some_and(|(m, _)| m.ends_with(".py"));
+    if !python {
+        return false;
+    }
+    let mut statuses = d
+        .catches
+        .iter()
+        .flat_map(|c| &c.does)
+        .filter_map(|x| x.strip_prefix("respond:"))
+        .peekable();
+    statuses.peek().is_some()
+        && statuses.all(|s| matches!(s, "401" | "403"))
+        && crate::security::may_authenticate(ctx, r)
+}
+
+/// How many in-repo bases up from a view [`base_handler`] reads.
+const BASE_DEPTH: usize = 8;
+
+/// [Python] The method, on the entry's own class or an in-repo class it is built
+/// on, that overrides the framework's method of the same name (its body calls
+/// `super().<name>(...)`) and answers in its own `except` handler with a response
+/// ([`drift_core::CATCH_RESPONDS`]): plane's `BaseAPIView.handle_exception`, which
+/// turns what DRF's own handling raised (`IntegrityError`, `ObjectDoesNotExist`)
+/// into a 400 or a 404. What the framework's method raised for the view is
+/// answered there: that is how the view's errors become responses. The nearest
+/// such override, canonical (`app/views/base.py#BaseAPIView.handle_exception`);
+/// none where a class nearer the view defines the method again without calling
+/// its base's. Unknown where an in-repo base on the way is not read (no
+/// definition, a module not parsed), or is written as nothing a reference stands
+/// for or does not resolve: it may hold the override. A package's base is the
+/// framework's and is not read. Read from what the bodies do, never from what a
+/// method or a class is called (S15c).
+fn base_handler<'a>(
+    cx: &Cx<'a>,
+    sfile: &'a FileFacts,
+    s: &'a Symbol,
+) -> Result<Option<String>, Assignment> {
+    use std::collections::VecDeque;
+    if sfile.lang != "py" {
+        return Ok(None);
+    }
+    let ctx = cx.context();
+    let mut queue: VecDeque<(String, &'a Symbol, usize)> = VecDeque::new();
+    if s.kind == drift_core::SymbolKind::Class {
+        queue.push_back((format!("{}#{}", sfile.path, s.name), s, 0));
+    }
+    for c in common::owning_classes(sfile, s) {
+        queue.push_back((format!("{}#{}", sfile.path, c.name), c, 0));
+    }
+    let unknown_base = format!("global#{}", drift_core::UNKNOWN_BASE_NAME);
+    // Every method of the classes read, with the class's distance from the view.
+    let mut methods: Vec<(usize, String, &'a drift_core::Member)> = Vec::new();
+    let mut seen: BTreeSet<String> = BTreeSet::new();
+    while let Some((id, class, depth)) = queue.pop_front() {
+        if !seen.insert(id.clone()) {
+            continue;
+        }
+        for m in &class.members {
+            methods.push((depth, id.clone(), m));
+        }
+        if depth >= BASE_DEPTH {
+            continue;
+        }
+        for w in class.wraps.iter().filter(|w| w.kind == WrapKind::Extends) {
+            let b = crate::mine::norm_ref(&w.wrapper).into_owned();
+            if b.starts_with("unresolved:") {
+                return Err(unknown(UnknownReason::Unresolved, &b));
+            }
+            if b == unknown_base {
+                return Err(unknown(UnknownReason::NotFollowed, &b));
+            }
+            if external(&b) {
+                continue;
+            }
+            match ctx.definition(&b) {
+                Some(d) if d.kind == drift_core::SymbolKind::Class => {
+                    queue.push_back((b, d, depth + 1));
+                }
+                Some(_) => return Err(unknown(UnknownReason::NotFollowed, &b)),
+                None if in_skipped(cx, &b) => return Err(unknown(UnknownReason::Unparsed, &b)),
+                None => return Err(unknown(UnknownReason::NotFollowed, &b)),
+            }
+        }
+    }
+    let calls_base = |m: &drift_core::Member| {
+        let global = format!("global#super().{}", m.name);
+        let local = format!("local:super().{}", m.name);
+        m.calls.iter().any(|c| *c == global) || m.receiver_calls.iter().any(|c| *c == local)
+    };
+    let answers = |m: &drift_core::Member| {
+        calls_base(m) && m.unread.iter().any(|u| u == drift_core::CATCH_RESPONDS)
+    };
+    // The entry's own method is read as the handler's body, not as an override.
+    let own = s.name.split_once('.').map(|(_, m)| m);
+    let mut found: Vec<(usize, String)> = methods
+        .iter()
+        .filter(|(depth, _, m)| answers(*m) && !(*depth == 0 && Some(m.name.as_str()) == own))
+        // Not where a class nearer the view defines the method again and does
+        // not hand on to its base's: that one runs instead.
+        .filter(|(depth, _, m)| {
+            !methods
+                .iter()
+                .any(|(d, _, o)| d < depth && o.name == m.name && !calls_base(*o))
+        })
+        .map(|(depth, id, m)| (*depth, format!("{id}.{}", m.name)))
+        .collect();
+    found.sort();
+    Ok(found.into_iter().next().map(|(_, h)| h))
 }
 
 /// What the handler throws: `throws`, and the classes of responses it throws or aborts
