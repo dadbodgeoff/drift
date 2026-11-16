@@ -57,7 +57,8 @@ Do these in order; PREREG-DRAFT.md §9 is the authority.
    Commit them.
 6. **Check the plan**: `harness.py plan --config CONFIG` prints the seeded run order.
 7. **Run**: `harness.py run --config CONFIG`. It runs one at a time, resumes where it stopped
-   (finished runs are skipped), and writes `RUNS_ROOT/manifest.json` (versions, hashes, seed, order,
+   (finished runs are skipped; an attempt directory left by an interrupted run is moved aside to
+   `a1.stale-1` and the attempt starts empty, so its transcript and cost are never reused), and writes `RUNS_ROOT/manifest.json` (versions, hashes, seed, order,
    status counts) and `RUNS_ROOT/runs/<run id>/` per run (`result.json`, `agent.diff`, `full.diff`,
    `setup.diff`, `transcript.jsonl`, `arm.log`, agent stdout and stderr, test output).
    `--limit N` stops after N runs, for the headroom check.

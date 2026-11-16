@@ -30,6 +30,15 @@ export const keys = {
   studies: ["studies"] as const,
 };
 
+/**
+ * The queries a review decision (accept, reject, block, advise, exempt, answer) makes stale:
+ * the policy, check and history, and also the promote list and the funnel, which say what
+ * was declined or promoted and which are never refetched on their own (`staleTime: Infinity`).
+ */
+export function reviewDecisionKeys(r: RepoRef) {
+  return [keys.policy(r), keys.check(r), keys.history(r), keys.promoteList(r), keys.funnel(r)];
+}
+
 export function useDriftInfo() {
   const api = useApi();
   return useQuery({ queryKey: keys.info, queryFn: () => api.driftInfo(), staleTime: Infinity });

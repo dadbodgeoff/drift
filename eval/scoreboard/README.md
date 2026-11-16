@@ -34,7 +34,6 @@ the global `--root <repo>` comes first.
 | `census.json`, `funnel.json` | `census --json` with `DRIFT_FUNNEL=<repo>/funnel.json` | |
 | `census-why.json` | `census --why --json` | optional |
 | `census-from-map.json` | `census --from-map --json` | optional |
-| `census-no-from-map.txt` | `census --no-from-map` | optional |
 | `practices-units.json` | `practices --json --units` | |
 | `promote-list.json` | `practices promote --list --json` | |
 | `security.json` | `security --json` | |
@@ -43,6 +42,15 @@ the global `--root <repo>` comes first.
 Optional commands are detected by trying them. When the build rejects one (exit 2 with
 "unexpected argument" or a similar message), `run.json` records `available: false` and "not
 available in this build", and `score` prints `n/a` for its numbers.
+
+Before a repository runs, every file a step writes in `<out>/<repo>/` (outputs, `.gz`, `.err`,
+`funnel.json`, `run.json`) is removed, so a step that fails, times out or is skipped leaves nothing
+from an earlier collect for `score` to read. `funnel.json` is kept only when `census --json` exited
+0 in time.
+
+Plain `drift census` never lists the proposals from the map (only `census --from-map` does), so
+its hash is the census without them. `--no-from-map` is a flag of `drift init` only; `census`
+does not take it.
 
 Each `<repo>/run.json` records the argv, exit code, wall time, user and system time, and peak
 memory. Peak memory is `ru_maxrss` from `os.wait4`, the same figure `resource` reports. It also
@@ -110,7 +118,7 @@ place, or "yes-ish"), `trivial`, `trivial_or_wrong` and `wrong`; census proposal
 | `units.unknown_reason.*` | unknown rows by reason | audit 1 §2.2 | |
 | `cand.count`, `cand.<concern>`, `.exceptions`, `.covered` | promote candidates | audits 3 and 6 | 77; exceptions: errors 168, config 33, logging 31, data_access 22, api 14 |
 | `cand.preview` / `small` / `zero_exceptions` / `python` / `bubble` | | audit 3 §0; audit 6 §2.2 | 42 / 30 / 32 / 26 / 10 |
-| `cand.passive` / `mechanism` / `any_enforcing` | new build only | S1 | n/a |
+| `cand.passive` / `mechanism` / `any_enforcing` | new build only. `promote --list --json` lists passive candidates apart (`passive`); every `cand.*` number, `units.*.in_candidate_place` and the truth keys count them too, and `cand.passive` counts them alone (`None` for a list with no `passive` key) | S1 | n/a |
 | `cand.signin_covered` | units under a promotable sign-in or permission candidate (sum of totals) | audit 2 §2.2 | 645 |
 | `cand.py_signin_exceptions` | scoreboard 4's denominator | audit 9 §3 | 58 |
 | `census.conventions` / `default` / `suggestion` / `withheld` | from `census.txt` | audit 6 §2.1 | 13 / 7 / 6 / 25 |
@@ -127,17 +135,33 @@ gives each number's label, good direction (`up`, `down`, `same`, `info`), guard 
 
 1. `census.text_sha256` must stay the same in each repository: plain `drift census` is
    byte-identical between builds. When it moves, compare the two `census.txt` files with
-   `diff -u`. A build that has `census --no-from-map` also records that text's hash.
+   `diff -u`.
 2. `cand.exceptions_unknown` and `census.outliers_unknown` must not rise. These count units
    reported as an exception, or as a mined outlier, whose assignment is unknown.
    `sec.guard_gap_exceptions_unknown` must not rise either.
-3. Unknown must not rise without a matching fall. Per repository and concern, the rise in
+3. A guard with no value after fails, in any repository both sides have: its command crashed, timed
+   out or was not collected, so the run cannot say the guard held. `diff` prints `GUARD MISSING`
+   with the repository and the command (from `score`'s `failed`, which reads `run.json`) and exits 1.
+4. Unknown must not rise without a matching fall. Per repository and concern, the rise in
    `unknown` must be no more than the fall in `none` plus the fall in known (`known` plus
    `identified`).
 
+When one side's promote list has a `passive` list and the other's has none (a build from before
+the split), the candidate numbers of that repository (`cand.*`, `units.*.in_candidate_place`) are
+marked `not comparable (older build)` (`?`), not judged better or worse, and a line names the
+repositories.
+
+## Tests
+
+```
+python3 -I -m unittest discover -s eval/scoreboard/tests
+```
+
 ## Baseline
 
-`baseline/score.json` is `score` run on the audit outputs. These are `audit/data/<repo>/` plus
+`baseline/score.json` is `score` run on the audit outputs. Its promote lists have no `passive`
+list (`cand.passive: null`), so against a current build its candidate numbers are not comparable
+until it is regenerated. These are `audit/data/<repo>/` plus
 `audit/5-scratch/<repo>.census.json` and `<repo>.funnel.json`, all written by the audit binary.
 Timing comes from `collect` on NodeGoat and pygoat only. A fresh `collect` with the same binary
 on those two gives every number unchanged, including the census hash.
