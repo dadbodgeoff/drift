@@ -2022,8 +2022,8 @@ async def list_members(org_id: str, token: str = Depends(authenticate)):
 /// answers 403 when the organisation is not the caller's active one or the role is
 /// not the required one. The dependency's `__call__` is read: it is the route's
 /// tenant guard (the role comparison is conditional on how the instance was built,
-/// and is not proven). A route under the same path with no such dependency
-/// stays unknown (the tenant in the route, and nothing read enforces it).
+/// and is not proven). A route under the same path with no such dependency, every
+/// body of which was read, is a recorded absence with the tenant unscoped (S4).
 ///
 /// A dependency is also where a service comes from: a route that calls a method of
 /// what an untyped dependency injects (`service=Depends(get_rule_book)`, then
@@ -2069,10 +2069,14 @@ fn a_dependency_that_checks_the_tenant_in_the_route_is_the_routes_guard() {
             "tenancy_guard:svc/app/deps.py#Authorize"
         );
     }
+    // Since S4 (unscoped keys): every body this request runs (`authenticate`,
+    // `resolve`) was read to the end and nothing checks or scopes the organisation the
+    // route names, so the unit is a recorded absence with `org_id` unscoped, no longer
+    // unknown (`not_followed`, "a callee may enforce it").
     let open = unit(&authz, routes, "list_members");
     assert_eq!(
-        (&open["assignment"], &open["reason"]),
-        (&Value::from("unknown"), &Value::from("not_followed")),
+        (&open["assignment"], &open["reason"], &open["unscoped"]),
+        (&Value::from("none"), &Value::Null, &Value::from("org_id")),
         "{open:#}"
     );
 

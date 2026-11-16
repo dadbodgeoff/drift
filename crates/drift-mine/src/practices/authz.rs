@@ -7929,9 +7929,17 @@ mod tests {
     /// Pins (review R5, row 3): a guard ties the route's value only by a parameter of
     /// the same name. One that filters by `param workspace`, which the route
     /// `/workspaces/{slug}` does not name (a FastAPI dependency's query or body
-    /// value), ties nothing: the unit stays a check found and not proven. Before, a
-    /// guard parameter the route does not name was taken as the URL's. A guard with
-    /// a way through where nothing held ties nothing either (sibling case).
+    /// value), ties nothing: no `tenancy_filter` of the handler's own is made the
+    /// caller's through it. Before, a guard parameter the route does not name was
+    /// taken as the URL's. A guard with a way through where nothing held ties nothing
+    /// either (sibling case), and that unit stays a check found and not proven.
+    ///
+    /// The first guard is still read as a membership guard by its own body (it lets
+    /// the request through only after a lookup of the caller in what the request
+    /// names, [`membership_guard`], unchanged since before the sprint and read the
+    /// same by the pre-sprint binary on the same FastAPI code): that unit is known by
+    /// that guard alone, not by a tie. (Fix wave 1: the test first said `unknown`
+    /// here, which the code never did.)
     #[test]
     fn a_guard_tied_by_a_value_beside_the_url_ties_nothing() {
         const MEMBERS: &str = "svc/models.py#Member.objects.filter";
@@ -7981,7 +7989,11 @@ mod tests {
                 handler("ws_branch"),
             ),
         ]);
-        assert_eq!(authz_of(&r, "ws_query"), "unknown");
+        assert_eq!(authz_of(&r, "ws_query"), "known");
+        assert_eq!(
+            unit_row(&r, "ws_query").key.as_deref(),
+            Some("membership_guard:svc/perm.py#by_query")
+        );
         assert_eq!(authz_of(&r, "ws_branch"), "unknown");
     }
 
@@ -9131,12 +9143,12 @@ mod tests {
                     "known".into(),
                     "tenancy_guard:svc/guards.py#check_scope".into()
                 ),
-                // The tenant in the route, and nothing read enforces it.
-                (
-                    "by_name".into(),
-                    "unknown:NotFollowed".into(),
-                    "param:org_id".into()
-                ),
+                // The tenant in the route, and nothing read enforces it. Since S4 every
+                // body this request runs was read to the end (`unscoped`), so it is a
+                // recorded absence with `org_id` unscoped, no longer `NotFollowed` ("a
+                // callee may enforce it"): S4's own pin is
+                // `a_tenant_route_param_read_to_the_end_is_an_unscoped_key`.
+                ("by_name".into(), "none".into(), String::new()),
             ]
         );
     }

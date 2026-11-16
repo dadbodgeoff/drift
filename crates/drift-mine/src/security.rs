@@ -10511,9 +10511,18 @@ mod tests {
             wrapper: "lib/auth.ts#withAuth".into(),
             kind: WrapKind::Call,
         });
+        // `lib/a.ts` imports what it calls, as real facts say: a file nothing imports,
+        // registers or lists is set apart since S15b (`unreached_files`), and its sink
+        // is then listed under `unreached`, not in `sinks`.
         let a = FileFacts {
             path: "lib/a.ts".into(),
             symbols: vec![sym("load", &["lib/b.ts#db.run"], &[])],
+            imports: vec![drift_core::Import {
+                module: "lib/b.ts".into(),
+                names: vec!["db".into()],
+                type_only: false,
+                load: Default::default(),
+            }],
             ..Default::default()
         };
         let b = FileFacts {
@@ -10547,6 +10556,7 @@ mod tests {
             ["app/api/x/route.ts#GET", "lib/a.ts#load", "lib/b.ts#db"]
         );
         assert_eq!(inv.sinks.len(), 1);
+        assert!(inv.unreached.is_empty(), "{:?}", inv.unreached);
         assert_eq!(inv.unguarded().count(), 0);
     }
 

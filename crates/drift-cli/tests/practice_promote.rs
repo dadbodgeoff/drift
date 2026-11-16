@@ -433,7 +433,10 @@ fn a_place_with_seven_routes_is_too_small() {
 fn below_the_share_only_force_promotes_and_never_to_block() {
     let dir = repo(40, |i| i < 24);
     let r = dir.path();
-    drift(r, &["init"]);
+    // Without the proposals from the map, as `sample()`: since S10 a plain `init` also
+    // writes the map's own proposal for this practice, which `practices(r)` would count
+    // beside the promoted one.
+    drift(r, &["init", "--no-from-map"]);
     let id = with_auth(r);
     let before = snapshot(r);
     let (code, v) = json(

@@ -535,7 +535,10 @@ fn every_switch_is_inert_where_it_has_nothing_to_change() {
     let text = drift(r, &["census"], false);
     let v: Value = serde_json::from_str(&json).unwrap();
     assert!(
-        !find(&v, "withSession", "app/hives/**").is_empty(),
+        // The role is `app/**` (route files): the only route files are under `app/hives`,
+        // so the rule is said of the shallower role (fix wave 1: the test first looked
+        // for `app/hives/**`, which mining never names here).
+        !find(&v, "withSession", "HTTP handlers in app/** (route files)").is_empty(),
         "the 19 of 20 is proposed: {v:#}"
     );
     for name in [

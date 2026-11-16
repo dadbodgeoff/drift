@@ -5483,10 +5483,15 @@ fn serve_when_the_compare_matches_and_refuse_otherwise_is_unknown() {
                 format!("  return {test} ? {ok} : {refuse};\n"),
                 "unknown",
             ),
+            // F9 (R9): an equality of a header with a value of the environment, refused
+            // where they differ (`refuses_secret:`), is a check found and not proven:
+            // nothing shows the value is a secret (an `Origin` compared with the app's
+            // public URL reads the same). Unknown on both surfaces; the constant-time
+            // compares stay a service's check.
             (
                 "refused in the branch when it fails",
                 format!("  if (!({test})) {{\n    return {refuse};\n  }}\n  return {ok};\n"),
-                "none",
+                if i == 0 { "unknown" } else { "none" },
             ),
         ];
         for (j, (form, body, reads)) in forms.into_iter().enumerate() {
@@ -5777,11 +5782,14 @@ fn a_check_refusing_where_the_secret_matches_or_read_through_a_reassigned_local_
         ));
         want.push((route, reads, name));
     };
-    for (how, fails, holds) in compares {
+    for (k, (how, fails, holds)) in compares.iter().enumerate() {
         add(
             format!("{how}, refused where it fails"),
             format!("  if ({fails}) {{\n    return {refuse};\n  }}\n  return {ok};\n"),
-            "none",
+            // F9 (R9): the equality on a header with a value of the environment
+            // (`refuses_secret:`) is a check found and not proven, unknown: nothing
+            // shows the value is a secret. The constant-time compare stays a service's.
+            if k == 0 { "unknown" } else { "none" },
         );
         add(
             format!("{how}, refused where it holds"),

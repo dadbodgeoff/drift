@@ -98,6 +98,15 @@ fn repo(refreshed: bool) -> Built {
         "lib/auth.ts",
         "export function withAuth<T>(h: T): T {\n  return h;\n}\n",
     );
+    // Background functions: a wrapper is learned only where it is rare among functions at
+    // large (lift is counted per kind), so with nothing but routes no rule was mined.
+    for i in 0..30 {
+        write(
+            r,
+            &format!("lib/h{i:02}.ts"),
+            &format!("export function h{i:02}() {{\n  return {i};\n}}\n"),
+        );
+    }
     for i in 0..40 {
         write(
             r,
@@ -125,6 +134,23 @@ fn repo(refreshed: bool) -> Built {
         assert_eq!(code, 0, "{err}");
         assert!(policy().contains("accepted_evidence"), "{}", policy());
     } else {
+        // `drift review` now keeps the accepted evidence itself (S15b, "evidence frozen at
+        // review"), so the policy an older Drift wrote is made by taking that record out.
+        let mut older = String::new();
+        let mut inside = false;
+        for l in policy().lines() {
+            if l == "  accepted_evidence:" {
+                inside = true;
+                continue;
+            }
+            if inside && l.starts_with("    ") {
+                continue;
+            }
+            inside = false;
+            older.push_str(l);
+            older.push('\n');
+        }
+        std::fs::write(r.join(".drift/conventions.yaml"), older).unwrap();
         assert!(!policy().contains("accepted_evidence"), "{}", policy());
     }
     // The example to copy is named apart: the neighbour is another route.
