@@ -39,6 +39,7 @@ pub mod roles;
 pub mod security;
 pub mod security_diff;
 pub mod security_summary;
+pub mod serverless;
 pub mod shapes;
 pub mod show;
 pub mod start;

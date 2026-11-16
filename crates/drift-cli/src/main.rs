@@ -2403,6 +2403,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             inv.dependencies = drift_mine::dependencies::read(root);
             inv.cluster = drift_mine::kubernetes::read(root);
             drift_mine::hardening::fill(&mut inv, root);
+            drift_mine::serverless::add_unlisted(&mut inv, root, &facts);
             // Each shared guard, linked to the convention that says the same (accepted
             // or proposed), when the project has conventions. A policy that cannot be
             // read only loses the links: the inventory is the repository's, not the
@@ -4734,6 +4735,7 @@ fn security_inventory(
     inv.dependencies = drift_mine::dependencies::read(root);
     inv.cluster = drift_mine::kubernetes::read(root);
     drift_mine::hardening::fill(&mut inv, root);
+    drift_mine::serverless::add_unlisted(&mut inv, root, facts);
     inv
 }
 

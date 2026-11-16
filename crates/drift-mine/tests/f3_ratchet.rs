@@ -39,20 +39,22 @@ const OLDER: &str = "# drift security baseline: what `drift security` found when
 
 #[test]
 fn every_kind_a_reading_widened_is_found_since_the_widening() {
-    for kind in ["risky", "whole-row"] {
-        assert_eq!(found_since(kind, "x"), 2, "{kind}");
-    }
-    // Widened again by 3: a tRPC procedure keyed by its dotted path.
+    // Widened by version 3: a tRPC procedure keyed by its dotted path, and the entry
+    // points a deployment file names (more entry points, so more of every kind read
+    // off one).
     for kind in [
         "guard-gap",
         "no-authorization",
         "no-guard",
+        "risky",
         "scope-gap",
         "unguarded-reaching",
+        "unscoped-key",
+        "whole-row",
     ] {
         assert_eq!(found_since(kind, "x"), 3, "{kind}");
     }
-    // Widened again by 3: the pipelines of CI systems other than GitHub Actions.
+    // Widened by version 3: the pipelines of CI systems other than GitHub Actions.
     assert_eq!(found_since("workflow", "x"), 3);
     // Read as before.
     for kind in ["dependency", "kubernetes", "leak"] {

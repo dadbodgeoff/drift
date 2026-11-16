@@ -45,7 +45,8 @@ pub const SECURITY_LOCK: &str = ".drift/security.lock";
 /// readings of [`READ_SINCE`]. (No build stamped 2 before those readings: the stamp
 /// and they ship together.) 3: tRPC procedures keyed by their dotted path;
 /// `workflow-hardening` and `image-hardening` ([`crate::hardening`]); `workflow`
-/// findings of CI systems other than GitHub Actions ([`crate::ci`]).
+/// findings of CI systems other than GitHub Actions ([`crate::ci`]); the entry
+/// points a deployment file names ([`crate::serverless`]).
 pub const INVENTORY_VERSION: u32 = 3;
 
 /// The version of a baseline written before baselines were stamped.
@@ -112,14 +113,19 @@ const DETECTOR_SINCE: &[(&str, u32)] = &[];
 /// path it is mounted at, where 2 keyed it by its key alone: `no-guard`,
 /// `unguarded-reaching`, `guard-gap`, `scope-gap` and `no-authorization` of a
 /// procedure key it anew.
+///
+/// 3: the entry points a Serverless Framework, SAM, Wrangler, Netlify or Vercel
+/// deployment names ([`crate::serverless`]): more entry points, so more findings of
+/// every kind read off an entry point.
 const READ_SINCE: &[(&str, u32)] = &[
     ("guard-gap", 3),
     ("no-authorization", 3),
     ("no-guard", 3),
-    ("risky", 2),
+    ("risky", 3),
     ("scope-gap", 3),
     ("unguarded-reaching", 3),
-    ("whole-row", 2),
+    ("unscoped-key", 3),
+    ("whole-row", 3),
     ("workflow", 3),
 ];
 
