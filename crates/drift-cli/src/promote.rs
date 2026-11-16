@@ -81,8 +81,10 @@ pub struct PromoteArgs {
     #[arg(long)]
     pub any_enforcing: bool,
     /// The place: a path from the repository root, a package directory or a directory
-    /// inside one (`.` the root package). Default: the variant's broadest place that
-    /// qualifies.
+    /// inside one (`.` the root package); `<package>:/<prefix>` for the routes under a
+    /// literal prefix (`.:/api/v2`), and `<package>:/<keys>.` for the tRPC procedures
+    /// whose path starts with those keys (`.:/user.`). Default: the variant's
+    /// broadest place that qualifies.
     #[arg(long = "in", value_name = "PATH")]
     pub place: Option<String>,
     /// Another variant of the same concern accepted as a way with the first

@@ -15,7 +15,7 @@ use oxc_span::{GetSpan, SourceType};
 use serde::{Deserialize, Serialize};
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 86;
+pub const LOWERING_VERSION: u32 = 87;
 
 /// What an options object gives a Fastify route: for each hook it names
 /// (`onRequest`, `preHandler`), what that hook runs.
@@ -998,6 +998,10 @@ pub struct RawTrpc {
     /// is written with a name ending in "procedure": a procedure only when its builder
     /// (`base`) is proven to be one; otherwise nothing (inline) or `replaces` stays.
     pub candidates: Vec<RawCandidate>,
+    /// The routers of the file and what each is composed of, for the linker to build
+    /// each procedure's dotted path ([`trpc_paths`]). Lowering 87.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub routers: Vec<trpc_paths::RawRouter>,
 }
 
 /// A function that may return a procedure builder (see [`RawTrpc::factories`]).
@@ -1107,6 +1111,8 @@ pub(crate) mod routes;
 mod rows;
 #[path = "signals.rs"]
 pub(crate) mod signals;
+#[path = "trpc_paths.rs"]
+pub(crate) mod trpc_paths;
 
 /// Most callees kept in a symbol's call order.
 const MAX_ORDER: usize = 32;
@@ -2842,6 +2848,7 @@ impl<'s> Lowerer<'s> {
         }
         self.lower_node_listeners(program);
         self.lower_rpc_and_jobs_anywhere(program);
+        self.lower_trpc_routers(program);
         let mut tests = TestFinder {
             l: self,
             tests: self.test_file,
