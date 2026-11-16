@@ -3541,7 +3541,12 @@ mod tests {
         );
         assert!(fresh.stale.is_empty(), "{:?}", fresh.stale);
         assert_eq!(fresh.violations.len(), 40);
-        assert!(fresh.violations.iter().all(|v| v.mode == "block" && !v.baselined));
+        assert!(
+            fresh
+                .violations
+                .iter()
+                .all(|v| v.mode == "block" && !v.baselined)
+        );
         // Once those units are legacy (in the lock), no unit follows it and none breaks
         // it anew: it is stale and fires on nothing.
         let lock = Lock {
