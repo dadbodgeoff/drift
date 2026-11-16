@@ -4,21 +4,26 @@
 //! Two things are read, each by what the workflow itself says:
 //!
 //! - **A workflow that runs for a pull request with the base repository's secrets
-//!   and checks out the pull request's code** (`on: pull_request_target`, or
-//!   `workflow_run`, with a checkout whose `ref` is read off the pull request's
-//!   head). The code that then builds or tests is whoever opened the pull
+//!   and checks out the pull request's code** (`on: pull_request_target`,
+//!   `workflow_run` or `issue_comment`, with a checkout whose `ref` is read off the
+//!   pull request's head or number). The code that then builds or tests is whoever opened the pull
 //!   request's, and runs with the repository's token and secrets.
 //! - **Text of the event interpolated into a shell step** (`run: echo "${{
 //!   github.event.pull_request.title }}"`). The expression is replaced before the
 //!   shell reads the line: whoever wrote the title wrote part of the script.
 //!   Numbers and commit ids of the event are not text anyone chooses, and an
-//!   expression handed through `env:` is a value, not script.
+//!   expression handed through `env:` is a value, not script. The expression is
+//!   read as the platform reads it: `github.event['pull_request']['title']` is
+//!   `github.event.pull_request.title`, and the whole event handed to a function
+//!   (`toJSON(github.event)`) holds every text of it.
 //!
 //! - **An action of another owner named by a tag or a branch, in a job that holds
 //!   secrets or may write** (`uses: someone/deploy@v2` beside `${{ secrets.TOKEN
 //!   }}`, or under `permissions: contents: write`). A tag is whatever its owner
 //!   points it at next: the code that runs with the job's secrets is not the code
-//!   that was reviewed. An action named by a full commit, one of the repository
+//!   that was reviewed. A reusable workflow a job calls (`jobs.<id>.uses`, given
+//!   `secrets: inherit` or secrets by name) is read as a step's action is. An
+//!   action named by a full commit, one of the repository
 //!   itself (`./`) and the platform's own (`actions/`, `github/`) are not listed.
 //!   One of the repository's own owner (`acme/actions/build@v1` in a clone whose
 //!   `origin` is `github.com/acme/app`) is listed and said to be the owner's own
@@ -31,6 +36,11 @@
 //!
 //! Nothing is run and nothing outside the repository is read. A workflow that does
 //! not parse is skipped.
+//!
+//! The same finding written more than once in one job (two steps interpolating the
+//! same expression) is one finding each: from the second on, its detail ends in
+//! ` (occurrence N in the job)`, so a baseline keyed by the detail holds each,
+//! while the first keeps the detail an older Drift wrote ([`number_repeats`]).
 
 use std::path::Path;
 
@@ -66,8 +76,12 @@ fn is_false(b: &bool) -> bool {
 }
 
 /// Events whose workflow runs in the base repository, with its secrets, for
-/// something an outsider sent.
-const PRIVILEGED_EVENTS: &[&str] = &["pull_request_target", "workflow_run"];
+/// something an outsider sent. These are GitHub's own event names (its workflow
+/// schema), not names of the repository's code. `issue_comment` runs so for a
+/// comment on a pull request anyone can post: a workflow that then fetches the
+/// pull request's head (`/ok-to-test`, then `git fetch origin pull/<number>/head`)
+/// runs the outsider's code with the secrets.
+const PRIVILEGED_EVENTS: &[&str] = &["pull_request_target", "workflow_run", "issue_comment"];
 
 /// The last member of an event expression that no one writes as text: a number
 /// or an id the platform assigns.
@@ -136,11 +150,94 @@ fn expressions(text: &str) -> Vec<&str> {
     out
 }
 
-/// The part of an expression that is text someone outside wrote: a path read off
-/// the event (`github.event.issue.title`) or the pull request's branch name
-/// (`github.head_ref`), where its last member is no number or id the platform
-/// assigns.
-fn outsiders_text(expression: &str) -> Option<&str> {
+/// The part of an expression that is text someone outside wrote, and what to find
+/// its line by: [`dotted_outsiders_text`] as the expression is written, else as the
+/// platform reads it ([`dotted`]: `github.event['issue']['title']` is
+/// `github.event.issue.title`), else the whole event or context handed to a function
+/// (`toJSON(github.event)`, which writes every text of the event). The first is the
+/// detail an older Drift wrote, kept as it was so a baseline's keys still match.
+fn outsiders_text(expression: &str) -> Option<(String, &str)> {
+    if let Some(p) = dotted_outsiders_text(expression) {
+        return Some((p.to_string(), p));
+    }
+    let read = dotted(expression);
+    if let Some(p) = dotted_outsiders_text(&read) {
+        return Some((p.to_string(), expression));
+    }
+    whole_context_given(&read).map(|p| (p, expression))
+}
+
+/// The expression with each member named in brackets by a quoted name
+/// (`['title']`, `["title"]`) or `[*]` written as a dotted member (`.title`, `.*`),
+/// as GitHub's expression syntax reads both. An index of anything else (`[0]`,
+/// `[matrix.x]`) is left as written.
+fn dotted(expression: &str) -> String {
+    let mut out = String::with_capacity(expression.len());
+    let mut rest = expression;
+    while let Some(open) = rest.find('[') {
+        out.push_str(&rest[..open]);
+        let after = &rest[open + 1..];
+        let member = after.find(']').and_then(|close| {
+            let inner = after[..close].trim();
+            let name = if inner == "*" {
+                Some(inner)
+            } else {
+                ['\'', '"'].iter().find_map(|q| {
+                    inner
+                        .strip_prefix(*q)
+                        .and_then(|x| x.strip_suffix(*q))
+                        .filter(|x| {
+                            !x.is_empty()
+                                && x.chars()
+                                    .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-'))
+                        })
+                })
+            };
+            name.map(|n| (n, close))
+        });
+        match member {
+            Some((name, close)) => {
+                out.push('.');
+                out.push_str(name);
+                rest = &after[close + 1..];
+            }
+            None => {
+                out.push('[');
+                rest = after;
+            }
+        }
+    }
+    out.push_str(rest);
+    out
+}
+
+/// The whole event (`github.event`), or the whole `github` context, given as an
+/// argument of a function (`toJSON(github.event)`, `format('{0}', github)`): what
+/// the function writes holds every text of the event. (Interpolated alone, an
+/// object is written as `Object`.)
+fn whole_context_given(expression: &str) -> Option<String> {
+    for (at, _) in expression.match_indices("github") {
+        let before = expression[..at].trim_end();
+        if !(before.ends_with('(') || before.ends_with(',')) {
+            continue;
+        }
+        let rest = &expression[at..];
+        let end = rest
+            .find(|c: char| !(c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-')))
+            .unwrap_or(rest.len());
+        let p = &rest[..end];
+        if p == "github" || p == "github.event" {
+            return Some(p.to_string());
+        }
+    }
+    None
+}
+
+/// The part of an expression, as written with dotted members, that is text someone
+/// outside wrote: a path read off the event (`github.event.issue.title`) or the
+/// pull request's branch name (`github.head_ref`), where its last member is no
+/// number or id the platform assigns.
+fn dotted_outsiders_text(expression: &str) -> Option<&str> {
     let path = |start: usize| {
         let rest = &expression[start..];
         let end = rest
@@ -455,6 +552,25 @@ pub fn read_text_of(rel: &str, text: &str, owner: Option<&str>) -> Vec<WorkflowF
         // that may write (its own permissions, else the workflow's).
         let holds = reads_secret(body)
             || grants_write(body.get("permissions").or_else(|| doc.get("permissions")));
+        // A reusable workflow the job calls (`jobs.<id>.uses`) runs with what the
+        // job hands it: `secrets: inherit`, or secrets by name. (`secrets` and
+        // `uses` on a job are GitHub's workflow schema.)
+        let holds = holds || body.get("secrets").is_some_and(|v| !v.is_null());
+        if holds
+            && let Some(uses) = body.get("uses").and_then(Value::as_str)
+            && unpinned(uses)
+        {
+            let at = job_line(text, job);
+            out.push(WorkflowFinding {
+                kind: "unpinned_action".into(),
+                path: rel.to_string(),
+                line: line_from(text, at, uses)
+                    .map_or_else(|| line_of(text, uses), |i| i as u32 + 1),
+                job: job.clone(),
+                detail: uses.to_string(),
+                own_owner: of_owner(uses, owner),
+            });
+        }
         // Where the steps of the job are read from, one after the other: each
         // from its own line, the next after it.
         let mut cursor = job_line(text, job);
@@ -506,13 +622,13 @@ pub fn read_text_of(rel: &str, text: &str, owner: Option<&str>) -> Vec<WorkflowF
             });
             if let Some(run) = script {
                 for e in expressions(run) {
-                    if let Some(written) = outsiders_text(e) {
+                    if let Some((written, anchor)) = outsiders_text(e) {
                         out.push(WorkflowFinding {
                             kind: "script_injection".into(),
                             path: rel.to_string(),
-                            line: line_of(text, written),
+                            line: line_of(text, anchor),
                             job: job.clone(),
-                            detail: written.to_string(),
+                            detail: written,
                             own_owner: false,
                         });
                     }
@@ -562,18 +678,47 @@ pub fn read_text_of(rel: &str, text: &str, owner: Option<&str>) -> Vec<WorkflowF
     }
     out.sort();
     out.dedup();
+    number_repeats(&mut out);
+    out.sort();
     out
+}
+
+/// Numbers the repeats of one finding in one job (the same kind and detail, at
+/// another line), in the order of their lines: the first keeps its detail, the
+/// second and later end in ` (occurrence N in the job)`. A baseline keys a
+/// workflow finding by kind, file, job and detail (no line), so without this two
+/// steps interpolating the same expression were one key, and a third added beside
+/// a baselined one passed. The first's detail is the one an older Drift wrote, so
+/// the keys a `security.lock` already holds still match. `out` is sorted (by
+/// kind, path, line).
+fn number_repeats(out: &mut [WorkflowFinding]) {
+    let mut seen: std::collections::BTreeMap<(String, String, String, String), usize> =
+        std::collections::BTreeMap::new();
+    for f in out.iter_mut() {
+        let n = seen
+            .entry((f.kind.clone(), f.path.clone(), f.job.clone(), f.detail.clone()))
+            .or_insert(0);
+        *n += 1;
+        if *n > 1 {
+            f.detail = format!("{} (occurrence {n} in the job)", f.detail);
+        }
+    }
 }
 
 /// An expression names the pull request's code: its head (`pull_request.head.sha`,
 /// `github.head_ref`, `workflow_run.head_sha`), or its number, which names it as
-/// `refs/pull/<number>/head` or `/merge`.
+/// `refs/pull/<number>/head` or `/merge`. On `issue_comment` the pull request's
+/// number is `github.event.issue.number` (GitHub's event payload: a pull request is
+/// an issue there), and it is read only where the expression is fetched or checked
+/// out as one. Read as the platform reads it ([`dotted`]).
 fn pull_request_code(e: &str) -> bool {
+    let e = dotted(e);
     e.contains("pull_request.head")
         || e.contains("github.head_ref")
         || e.contains("workflow_run.head")
         || e.contains("pull_request.number")
         || e.contains("github.event.number")
+        || e.contains("github.event.issue.number")
 }
 
 #[cfg(test)]
@@ -852,6 +997,146 @@ jobs:
         assert_eq!(
             origin_owner("[remote \"upstream\"]\n\turl = https://github.com/x/y\n"),
             None
+        );
+    }
+
+    /// Pins review area 7 item 8 (a): `issue_comment` runs with the base
+    /// repository's secrets for a comment anyone can post on a pull request; before,
+    /// a workflow that then checked out or fetched that pull request's head by
+    /// `github.event.issue.number` was not found.
+    #[test]
+    fn a_comment_triggered_checkout_of_the_pull_requests_head_is_found() {
+        let text = "on:
+  issue_comment:
+    types: [created]
+jobs:
+  test:
+    if: contains(github.event.comment.body, '/test')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.issue.number }}/head
+      - run: git fetch origin pull/${{ github.event.issue.number }}/head:pr
+";
+        let found: Vec<(String, u32)> = read_text(".github/workflows/x.yml", text)
+            .into_iter()
+            .map(|f| (f.kind, f.line))
+            .collect();
+        assert_eq!(
+            found,
+            [
+                ("untrusted_checkout".to_string(), 10),
+                ("untrusted_checkout".to_string(), 11)
+            ]
+        );
+        // The same steps on `issues` run for no pull request's code.
+        assert!(kinds(&text.replace("issue_comment", "issues")).is_empty());
+    }
+
+    /// Pins review area 7 item 8 (b): before, an expression written with brackets
+    /// (`github.event['pull_request']['title']`) or the whole event handed to
+    /// `toJSON` was not found; both are read as the platform reads them.
+    #[test]
+    fn bracket_members_and_the_whole_event_in_a_shell_step_are_found() {
+        let text = "on: pull_request
+jobs:
+  a:
+    steps:
+      - run: echo \"${{ github.event['pull_request']['title'] }}\"
+      - run: echo '${{ toJSON(github.event) }}' > event.json
+      - run: echo \"${{ github.event[\"issue\"].number }} ${{ github['head_ref'] }}\"
+      - run: echo '${{ toJSON(github.event.pull_request.number) }}'
+";
+        let found: Vec<(String, u32)> = read_text(".github/workflows/x.yml", text)
+            .into_iter()
+            .map(|f| (f.detail, f.line))
+            .collect();
+        assert_eq!(
+            found,
+            [
+                ("github.event.pull_request.title".to_string(), 5),
+                ("github.event".to_string(), 6),
+                ("github.head_ref".to_string(), 7),
+            ]
+        );
+        assert_eq!(
+            dotted("github.event['a'][\"b\"][*].c[0]"),
+            "github.event.a.b.*.c[0]"
+        );
+    }
+
+    /// Pins review area 7 item 8 (c): before, a reusable workflow a job calls with
+    /// the job's secrets was never read for what names it.
+    #[test]
+    fn a_reusable_workflow_named_by_a_branch_with_secrets_is_found() {
+        let found: Vec<(String, u32)> = read_text(
+            ".github/workflows/x.yml",
+            "on: push
+jobs:
+  call:
+    uses: someone/workflows/.github/workflows/z.yml@main
+    secrets: inherit
+  open:
+    uses: someone/workflows/.github/workflows/y.yml@v1
+  local:
+    uses: ./.github/workflows/local.yml
+    secrets: inherit
+  pinned:
+    uses: someone/w/.github/workflows/z.yml@0123456789abcdef0123456789abcdef01234567
+    secrets:
+      token: ${{ secrets.T }}
+  named:
+    uses: someone/w/.github/workflows/n.yml@v2
+    secrets:
+      token: ${{ secrets.T }}
+",
+        )
+        .into_iter()
+        .map(|f| (f.detail, f.line))
+        .collect();
+        assert_eq!(
+            found,
+            [
+                (
+                    "someone/workflows/.github/workflows/z.yml@main".to_string(),
+                    4
+                ),
+                ("someone/w/.github/workflows/n.yml@v2".to_string(), 16),
+            ]
+        );
+    }
+
+    /// Pins review area 7 item 8 (d): before, two steps of one job interpolating the
+    /// same expression were one baseline key (kind, file, job, detail), so a second
+    /// passed beside a baselined first. The first keeps the detail an older Drift
+    /// wrote, so a `security.lock` it wrote still holds it.
+    #[test]
+    fn the_same_expression_in_two_steps_of_a_job_is_two_findings() {
+        let text = "on: issues
+jobs:
+  a:
+    steps:
+      - run: echo \"${{ github.event.issue.title }}\"
+      - run: echo \"${{ github.event.issue.title }}\" again
+  b:
+    steps:
+      - run: echo \"${{ github.event.issue.title }}\"
+";
+        let found: Vec<(String, String, u32)> = read_text(".github/workflows/x.yml", text)
+            .into_iter()
+            .map(|f| (f.job, f.detail, f.line))
+            .collect();
+        assert_eq!(
+            found,
+            [
+                ("a".to_string(), "github.event.issue.title".to_string(), 5),
+                (
+                    "a".to_string(),
+                    "github.event.issue.title (occurrence 2 in the job)".to_string(),
+                    6
+                ),
+                ("b".to_string(), "github.event.issue.title".to_string(), 9),
+            ]
         );
     }
 
