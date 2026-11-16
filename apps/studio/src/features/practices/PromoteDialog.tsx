@@ -14,7 +14,9 @@ import { num } from "@/shared/lib/format";
 import { log } from "@/shared/lib/log";
 import { isRefused, promoteCommand } from "@/shared/lib/promote";
 import { navigate } from "@/shared/lib/router";
+import { t } from "@/shared/i18n";
 import { exceptionsShown, followsText, promoteRequest, replayText, toggleWay, unitAt, unitsWord, wayChoices } from "./model/promote";
+import { jobsLine, notCheckedLine, refusalCause, unknownCauseText } from "./model/candidates";
 
 type Mode = "advise" | "block";
 
@@ -48,6 +50,8 @@ export function PromoteDialog({ c, v, place, onClose }: { c: PracticeConcern; v:
 
   const current = q.data && !isRefused(q.data) && !q.isPlaceholderData ? q.data : null;
   const refusal = q.data && isRefused(q.data) && !q.isPlaceholderData ? q.data.message : null;
+  // A refusal for units Drift could not read names the one cause they share when it can: its config line, to copy.
+  const refusalHint = q.data && isRefused(q.data) && !q.isPlaceholderData ? (refusalCause(q.data.refused)?.hint ?? null) : null;
   const shown = current ?? lastOk;
   const canWrite = !!repo && !!current && !q.isFetching && !writing;
 
@@ -71,7 +75,7 @@ export function PromoteDialog({ c, v, place, onClose }: { c: PracticeConcern; v:
         return;
       }
       log("info", `practices promote ${v.id}`, { command, output: out.preview });
-      await Promise.all([keys.policy(repo), keys.check(repo), keys.practices(repo), keys.history(repo), keys.census(repo)].map((queryKey) => qc.invalidateQueries({ queryKey })));
+      await Promise.all([keys.policy(repo), keys.check(repo), keys.practices(repo), keys.history(repo), keys.census(repo), keys.promoteList(repo)].map((queryKey) => qc.invalidateQueries({ queryKey })));
       const id = out.convention.id;
       toast.show({ title: `Convention ${id}`, body: out.convention.summary, tone: "success", duration: 6000, action: { label: "Open", onClick: () => navigate("conventions", id) } });
       onClose();
@@ -138,6 +142,11 @@ export function PromoteDialog({ c, v, place, onClose }: { c: PracticeConcern; v:
             </span>
           </p>
         )}
+        {refusal && !writeRefusal && refusalHint && (
+          <p className="t-caption t-muted pr-promote__cause">
+            {t("practices.candidates.causeHint")} <code className="st-cmd">{refusalHint}</code>
+          </p>
+        )}
         {writeError && (
           <p className="ck-note pr-promote__refused" role="alert">
             <Icon name="attention" size={14} />
@@ -194,15 +203,32 @@ function Preview({ res, stale }: { res: PromoteResult; stale: boolean }) {
         )}
       </div>
       <p className="t-caption t-muted">
-        {c.unknown === 0 ? `Drift could read every ${unitsWord(c.unit, 1)} here.` : `${num(c.unknown)} ${unitsWord(c.unit, c.unknown)} Drift could not read; those are never reported.`}
+        {notCheckedLine(c)}
         {c.forced ? " Below the 80% share on a person's word: advise only." : ""}
       </p>
+      {c.unknown_cause && <CauseNote text={unknownCauseText(c.unknown_cause)} />}
+      {jobsLine(c) && <p className="t-caption t-muted pr-promote__jobs">{jobsLine(c)}</p>}
       {res.same_way && res.same_way.length > 0 && (
         <p className="t-caption t-muted pr-promote__same">
           <span className="dui-mono">{res.same_way.join(", ")}</span> {res.same_way.length === 1 ? "names" : "name"} the same way for code of this package. With both accepted, new code that breaks them is reported under each; reject one in Conventions if you want a single rule.
         </p>
       )}
     </div>
+  );
+}
+
+/** The one cause every unit Drift could not read here shares, and the config line that would let it read them. */
+function CauseNote({ text }: { text: ReturnType<typeof unknownCauseText> }) {
+  return (
+    <p className="t-caption t-muted pr-promote__cause">
+      {text.what} {text.after}
+      {text.hint && (
+        <>
+          {" "}
+          <code className="st-cmd">{text.hint}</code>
+        </>
+      )}
+    </p>
   );
 }
 

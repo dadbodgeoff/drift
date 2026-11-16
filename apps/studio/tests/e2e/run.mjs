@@ -86,6 +86,7 @@ const VIEWS = [
   ["map", ".mp-node"],
   ["security", ".dui-table__row"],
   ["practices", ".pr-recipe"],
+  ["funnel", ".fn-gates"],
   ["sessions", ".dui-tl"],
   ["studies", ".sd-precision"],
   ["logs", ".dui-table"],
@@ -1656,6 +1657,164 @@ await test("practices: loading, empty (no concern described) and error (no pract
   expect((await page.locator(".dui-error button:has-text('Try again')").count()) === 1, "retry");
   expect(page.problems.length === 0, `console problems:\n${page.problems.join("\n")}`);
   await page.context().close();
+});
+
+// ---------- S16: proposals from the map, what may be promoted, what mining dropped ----------
+
+// One proposal from Drift's structure map, as policy.rs writes it (`from_map`), appended to acme's conventions.yaml.
+const FROM_MAP_YAML = `
+- id: D-5e0a71
+  status: proposed
+  mode: advise
+  summary: Code in packages/ui never imports apps/api (61 files, none do)
+  role:
+    package: packages/ui
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:apps/api
+  evidence:
+    holders: 61
+    total: 61
+    lower_bound: 0.941
+    lift: 0.0
+  example: packages/ui/src/alert.tsx#(file)
+  selector_version: 3
+  from_map: layering
+`;
+
+// A fixture file the fixture API reads as missing without an HTTP error (an HTML page is "not available").
+const unavailable = (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>x</title>" });
+
+await test("conventions: a proposal from Drift's map of the code says so, and a filter shows mined or from-the-map proposals; axe in both themes", async () => {
+  for (const scheme of ["dark", "light"]) {
+    const page = await newPage({ colorScheme: scheme });
+    await page.route("**/acme/conventions.yaml", async (r) => {
+      const body = await (await r.fetch()).text();
+      await r.fulfill({ status: 200, contentType: "text/plain; charset=utf-8", body: body.trimEnd() + FROM_MAP_YAML });
+    });
+    await page.goto(`${url}?delay=0#/attention`);
+    await page.evaluate((s) => localStorage.setItem("drift-studio:theme", s), scheme);
+    await open(page, "conventions");
+    await page.waitForSelector(".st-qitem");
+    // The queue marks it; the source filter is offered because one row is from the map.
+    expect((await page.textContent(".st-qitem[data-id='D-5e0a71']")).includes("from the map"), "the queue item is marked");
+    await page.click(".dui-segmented button:has-text('From the map')");
+    await page.waitForSelector(".st-detail__title:has-text('never imports apps/api')");
+    const ids = await page.locator(".st-qitem").evaluateAll((xs) => xs.map((x) => x.getAttribute("data-id")));
+    expect(JSON.stringify(ids) === JSON.stringify(["D-5e0a71"]), `only the proposal from the map: ${ids}`);
+    const note = await page.textContent(".cv-frommap-note");
+    expect(note.includes("Proposed from Drift's map of the code (the layers of the structure map), not mined: it did not pass through the miner's measured gates."), `note: ${note}`);
+    expect((await page.textContent(".cv-head .cv-frommap")).includes("from the map · layering"), "the badge in the header");
+    await axe(page, `conventions from the map ${scheme}`);
+    // Mined: every other proposal, and not this one.
+    await page.click(".dui-segmented button:has-text('Mined')");
+    await page.waitForFunction(() => !document.querySelector(".st-qitem[data-id='D-5e0a71']") && document.querySelectorAll(".st-qitem").length > 0);
+    expect((await page.locator(".cv-frommap-note").count()) === 0, "a mined proposal carries no from-the-map note");
+    expect(page.problems.length === 0, `console problems:\n${page.problems.join("\n")}`);
+    await page.context().close();
+  }
+  // Without a proposal from the map (acme as it is), no source filter is offered.
+  const plain = await newPage();
+  await open(plain, "conventions");
+  await plain.waitForSelector(".st-qitem");
+  expect((await plain.locator(".dui-segmented button:has-text('From the map')").count()) === 0, "no source filter without one");
+  await plain.context().close();
+});
+
+await test("practices: what may be promoted, worded by kind, passive candidates apart and last, unread units not checked with their shared cause; read-only", async () => {
+  const list = JSON.parse(readFileSync(join(app, "fixtures", "acme", "promote-list.json"), "utf8"));
+  for (const scheme of ["dark", "light"]) {
+    const page = await newPage({ colorScheme: scheme });
+    await page.goto(`${url}?delay=0#/attention`);
+    await page.evaluate((s) => localStorage.setItem("drift-studio:theme", s), scheme);
+    await open(page, "practices/candidates");
+    await page.waitForSelector(".pr-cand");
+    expect((await page.locator(".pr-cand").count()) === list.candidates.length, "every candidate Drift listed");
+    const titles = await page.locator(".pr-cand__title").allTextContents();
+    expect(titles[0] === "Authentication in apps/api" && titles[titles.length - 1] === "Error handling in apps/api", `order, passive last: ${titles}`);
+    expect((await page.locator("[data-testid='candidates-passive'] .pr-cand").count()) === 1, "the passive one apart");
+    expect((await page.textContent("[data-testid='candidates-passive']")).includes("Followed by doing nothing"), "and said why");
+    const mech = await page.textContent(".pr-cand[data-kind='mechanism']");
+    expect(mech.includes("Accepts mechanism wrap whole") && mech.includes("whichever instrument it names") && mech.includes("Drift prints no command for this one"), `mechanism: ${mech}`);
+    const enf = await page.textContent(".pr-cand[data-kind='enforcing']");
+    expect(enf.includes("Accepts any way that enforces it") && enf.includes("70 of the 74 entry points in apps/web/app/api/workspaces/[id] follow it"), `any enforcing: ${enf}`);
+    const data = await page.textContent(".pr-cand:has-text('Data access in apps/web')");
+    expect(data.includes("2 symbols not checked: Drift could not read them, so they are never reported") && data.includes("All 2 not checked share one cause outside them: a call whose body Drift cannot read (pkg:@acme/edge-db#connect)"), `not checked and the cause: ${data}`);
+    expect((await page.textContent(".pr-cand:has-text('Data access in apps/web') [data-testid='cause-hint']")).trim() === list.candidates[6].candidate.unknown_cause.hint, "the config line as Drift wrote it");
+    expect((await page.textContent(".pr-cand >> nth=0")).includes("3 background jobs not counted"), "jobs");
+    expect((await page.textContent(".pr-cand >> nth=1")).includes("drift practices promote P-1587e5 --in apps/web/app/api/admin"), "the command Drift prints");
+    expect((await page.textContent(".pr-candidates__declined")).includes("1 declined earlier in drift review"), "declined");
+    // Read-only: no dialog, and no write channel runs from here.
+    expect((await page.locator(".dui-dialog").count()) === 0, "no promotion dialog open");
+    await axe(page, `practices candidates ${scheme}`);
+    // One package narrows the list.
+    await page.selectOption("select[aria-label='Package']", "pkg:apps/api");
+    await page.waitForFunction(() => document.querySelectorAll(".pr-cand").length === 2);
+    expect(page.problems.length === 0, `console problems:\n${page.problems.join("\n")}`);
+    await page.context().close();
+  }
+  // Loading and error states, like the other views.
+  const slow = await newPage();
+  await slow.goto(`${url}?delay=1500#/practices/candidates`);
+  await slow.waitForSelector(".st-loading[aria-label='Running drift practices promote --list']", { timeout: 15000 });
+  await slow.waitForSelector(".pr-cand", { timeout: 15000 });
+  await slow.context().close();
+  const broken = await newPage();
+  await broken.route("**/acme/promote-list.json", unavailable);
+  await open(broken, "practices/candidates");
+  await broken.waitForSelector(".dui-error:has-text('drift practices promote --list failed')");
+  expect((await broken.locator(".dui-error button:has-text('Try again')").count()) === 1, "retry");
+  expect(broken.problems.length === 0, `console problems:\n${broken.problems.join("\n")}`);
+  await broken.context().close();
+});
+
+await test("funnel: what mining dropped, gate by gate, with each gate's origin and the dropped candidates of the gate chosen; loading, empty and error; read-only", async () => {
+  const doc = JSON.parse(readFileSync(join(app, "fixtures", "acme", "funnel.json"), "utf8"));
+  const slow = await newPage();
+  await slow.goto(`${url}?delay=1500#/funnel`);
+  await slow.waitForSelector(".st-loading[aria-label='Running drift census --why']", { timeout: 15000 });
+  await slow.waitForSelector(".fn-gates", { timeout: 15000 });
+  await slow.context().close();
+  for (const scheme of ["dark", "light"]) {
+    const page = await newPage({ colorScheme: scheme });
+    await page.goto(`${url}?delay=0#/attention`);
+    await page.evaluate((s) => localStorage.setItem("drift-studio:theme", s), scheme);
+    await open(page, "funnel");
+    await page.waitForSelector(".fn-gates");
+    expect((await page.textContent(".fn-head")).includes("Observation only: nothing listed here is proposed, checked or shown to agents"), "observation only");
+    const stages = await page.locator(".fn-stages__list li").allTextContents();
+    expect(stages.length === 6 && stages[0].includes("42") && stages[5].includes(String(doc.reached.proposed)), `stages: ${stages}`);
+    const gates = await page.locator(".fn-gates tbody tr").evaluateAll((xs) => xs.map((x) => x.getAttribute("data-gate")));
+    expect(JSON.stringify(gates) === JSON.stringify(doc.gates.filter((g) => g.dropped > 0).map((g) => g.name)), `gates that dropped, in Drift's order: ${gates}`);
+    expect((await page.textContent(".fn-gates tr[data-gate='wilson']")).includes("not from the study") && (await page.textContent(".fn-gates tr[data-gate='wilson']")).includes("engineering choice, no study"), "the origin");
+    // The first gate that dropped is chosen; another one by click (the address keeps it).
+    expect((await page.textContent(".fn-detail")).includes("Dropped at universal (2)"), "universal first");
+    await page.click(".fn-gates button:has-text('wilson')");
+    await page.waitForSelector(".fn-detail:has-text('Dropped at wilson (2)')");
+    expect(page.url().endsWith("#/funnel/wilson"), `address: ${page.url()}`);
+    const d = await page.textContent(".fn-detail");
+    expect(d.includes("9 of 10 apps/api: functions in src/jobs/**: are wrapped in withRetry()") && d.includes("lower bound 0.60 under 0.75") && d.includes("default tier") && d.includes("MIN_LOWER_BOUND = 0.75"), `wilson: ${d}`);
+    expect((await page.getAttribute(".fn-gates button:has-text('wilson')", "aria-pressed")) === "true", "pressed");
+    await page.click(".fn-quiet summary");
+    expect((await page.textContent(".fn-quiet")).includes("python_family_hidden") && (await page.textContent(".fn-quiet tr[data-gate='python_family_hidden']")).includes("from the study"), "a gate from the study");
+    await axe(page, `funnel ${scheme}`);
+    expect(page.problems.length === 0, `console problems:\n${page.problems.join("\n")}`);
+    await page.context().close();
+  }
+  const quiet = await newPage();
+  await open(quiet, "funnel", REPO("quiet"));
+  await quiet.waitForSelector(".dui-empty:has-text('No candidate was dropped')");
+  await axe(quiet, "funnel empty");
+  await open(quiet, "funnel", REPO("beacon"));
+  await quiet.waitForSelector(".dui-error:has-text('drift census --why failed')");
+  expect((await quiet.textContent(".dui-error")).includes("no funnel.json for beacon"), "the error as the run gave it");
+  expect((await quiet.locator(".dui-error button:has-text('Try again')").count()) === 1, "retry");
+  expect(quiet.problems.length === 0, `console problems:\n${quiet.problems.join("\n")}`);
+  await quiet.context().close();
 });
 
 if (SCREENS) {

@@ -309,9 +309,10 @@ describe("the practice map (drift practices, PLAN-R13 §4)", () => {
     expect(driftArgs("/r", { op: "practices" })).toEqual(["--root", "/r", "practices", "--json"]);
     expect(driftArgs("/r", { op: "map" })).toEqual(["--root", "/r", "map", "--json"]);
     expect(channels.map.res.safeParse({ data: { schema: 1, packages: [] }, at: 1, cached: false, provenance: { commit: null, branch: null, driftVersion: null } }).success).toBe(true);
-    expect(Object.keys(channels).filter((c) => /promote/i.test(c)).sort()).toEqual(["promote", "promotePreview"]);
+    expect(Object.keys(channels).filter((c) => /promote/i.test(c)).sort()).toEqual(["promote", "promoteList", "promotePreview"]);
     expect(writesRepository("practices")).toBe(false);
     expect(writesRepository("promotePreview")).toBe(false);
+    expect(writesRepository("promoteList")).toBe(false);
     expect(writesRepository("promote")).toBe(true);
   });
 

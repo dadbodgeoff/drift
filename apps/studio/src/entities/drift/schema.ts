@@ -1,6 +1,6 @@
 // Version handshake with the CLI's JSON. The Studio renders only shapes it
 // understands; anything else degrades to a clear message.
-import { type Census, type PracticesReport, type RepoFacts, SUPPORTED_PRACTICES } from "@/shared/contract/drift";
+import { type Census, type CensusWhy, type PracticesReport, type RepoFacts, SUPPORTED_PRACTICES } from "@/shared/contract/drift";
 import { t } from "@/shared/i18n";
 
 /**
@@ -43,6 +43,15 @@ export function checkPractices(p: PracticesReport, version: string | null): Prac
   if (!SUPPORTED_PRACTICES.includes(p.version))
     throw new SchemaError(t("shell.schemaMismatch", { version: version ?? "unknown", what: "practices", want: SUPPORTED_PRACTICES.join("/") }) + ` (got ${p.version})`);
   return p;
+}
+
+/** `census --why --json` `schema` values this Studio reads (crates/drift-mine/src/funnel.rs `why_json`). */
+export const SUPPORTED_FUNNEL = [1];
+
+export function checkFunnel(f: CensusWhy, version: string | null): CensusWhy {
+  if (!SUPPORTED_FUNNEL.includes(f.schema))
+    throw new SchemaError(t("shell.schemaMismatch", { version: version ?? "unknown", what: "census --why", want: SUPPORTED_FUNNEL.join("/") }) + ` (got ${String(f.schema)})`);
+  return f;
 }
 
 /** `drift 0.1.0-dev` -> `0.1.0-dev`. */

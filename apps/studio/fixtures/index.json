@@ -5,7 +5,9 @@
    "path": "/work/acme",
    "name": "acme",
    "practices": true,
-   "map": true
+   "map": true,
+   "funnel": true,
+   "promoteList": true
   },
   {
    "id": "beacon",
@@ -16,7 +18,8 @@
    "id": "quiet",
    "path": "/work/quiet",
    "name": "quiet",
-   "practices": true
+   "practices": true,
+   "funnel": true
   },
   {
    "id": "broken",

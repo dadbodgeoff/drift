@@ -17,6 +17,8 @@ export const CHANNEL_NAMES = [
   "security",
   "practices",
   "map",
+  "funnel",
+  "promoteList",
   "policy",
   "review",
   "exempt",

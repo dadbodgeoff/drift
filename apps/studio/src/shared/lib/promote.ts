@@ -2,7 +2,7 @@
 // fixture API needs it. The main process builds the real argv (electron/ops.ts `promoteFlags`); a unit test keeps the
 // two equal. In the desktop app every count comes from Drift; only fixture mode, which has no binary, makes a stand-in
 // result (`fixturePromote`), from the fixture's own practice map and never by reading code.
-import type { Convention, PracticeConcern, PracticeExample, PracticeVariant, PracticesReport, PromoteCandidate, PromoteOutcome, PromotePlace, PromoteRefused, PromoteResult, PromoteWay } from "@/shared/contract/drift";
+import type { Convention, PracticeConcern, PracticeExample, PracticeVariant, PracticesReport, PromoteCandidate, PromoteList, PromoteOutcome, PromotePlace, PromoteRefused, PromoteResult, PromoteWay } from "@/shared/contract/drift";
 import type { PromoteRequest } from "@/shared/ipc/contract";
 
 /** `drift practices promote` arguments after the subcommand, as electron/ops.ts `promoteFlags` builds them. */
@@ -157,4 +157,21 @@ export function fixtureConvention(res: PromoteResult): Convention {
     agents: "show",
     promoted_from_practice: res.convention.promoted_from_practice,
   };
+}
+
+/**
+ * A fixture's `drift practices promote --list --json` less what this tab promoted (`promoted`: the conventions'
+ * ids): a candidate in a place this tab promoted the same concern in is left out, and the convention is named under
+ * `promoted`, as Drift does for a promoted practice that covers one.
+ */
+export function fixtureListOpen(list: PromoteList, promoted: readonly string[]): PromoteList {
+  const ids = new Set(promoted);
+  const covered = new Set<string>();
+  const candidates = list.candidates.filter((x) => {
+    const id = fixtureId(x.candidate.concern, x.place);
+    if (!ids.has(id)) return true;
+    covered.add(id);
+    return false;
+  });
+  return { ...list, candidates, promoted: [...new Set([...list.promoted, ...covered])].sort() };
 }

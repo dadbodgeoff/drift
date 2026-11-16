@@ -11,7 +11,7 @@ export const COMMANDS: Record<string, Coverage> = {
   scan: { studio: "drift scan --out: facts for Attention, Map, Security and the code drawer" },
   facts: { allow: "one file's facts, for agents and debugging; the Studio reads the full scan" },
   init: { studio: "Conventions: Run drift init (confirmed)" },
-  census: { studio: "Conventions and Attention: census --json (proposals, tiers, evidence, outliers)" },
+  census: { studio: "Conventions and Attention: census --json (proposals, tiers, evidence, outliers; a proposal from Drift's map of the code labelled as such); What mining dropped: census --why --json (stage counts, drops per gate with each gate's origin, the dropped candidates of a gate), read-only" },
   review: { studio: "Conventions: accept, reject, block, block --force (suggestions) and advise; a block candidate's one question (--json, --answer)" },
   example: { allow: "what agents copy; the Studio shows the same example from census and check JSON" },
   check: { studio: "Check: --format json, and --diff-base for pull requests" },
@@ -24,7 +24,7 @@ export const COMMANDS: Record<string, Coverage> = {
   setup: { allow: "the questions only a person can answer (test stacks, Terraform ties, checks to confirm), written to .drift/config.yaml; setup --json (schema drift-setup-questions, contract DriftSetupQuestions) is ready for a Setup screen, not built yet" },
   investigate: { allow: "every route Drift could not settle, grouped by what would settle it, with evidence, and the outcomes an agent or a person records (fact-making ones wait for setup --review); investigate --json (schema drift-investigate, contract DriftInvestigate; with --limit one page in short, schema drift-investigate-page, contract DriftInvestigatePage) is ready for a screen, not built yet" },
   findings: { allow: "local findings and gap reports an agent wrote while investigating (.drift/findings, .drift/gap-reports, git-ignored, never posted); an issue draft or a local fix branch on a person's request; findings --json (schema drift-findings, contract DriftFindings) is ready for a screen, not built yet" },
-  practices: { studio: "Practices: practices --json, the recipe per package and kind of entry point, the findings, and every concern's variants by share, where, what sets each apart and unknown with its config line; --units is for measurement, not shown. A promotable variant's \"Make this a convention\" runs practices promote <P-id> --in <place> [--with <P-id>]... [--block] --dry-run --json, then the same without --dry-run on confirm (Conventions labels the result, Check shows stale_practices and practices_not_checked as notes); promote --list and --force are not offered" },
+  practices: { studio: "Practices: practices --json, the recipe per package and kind of entry point, the findings, and every concern's variants by share, where, what sets each apart and unknown with its config line; --units is for measurement, not shown. A promotable variant's \"Make this a convention\" runs practices promote <P-id> --in <place> [--with <P-id>]... [--block] --dry-run --json, then the same without --dry-run on confirm (Conventions labels the result, Check shows stale_practices and practices_not_checked as notes); the May be promoted tab reads promote --list --json (read-only: named ways, a mechanism whole, any enforcing way, passive candidates apart); --force is not offered" },
 };
 
 /** MCP tools (crates/drift-cli/src/mcp.rs, every `"name": "drift_…"`): what the Studio shows of each, or why it need not. */

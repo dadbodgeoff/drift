@@ -5,7 +5,8 @@ import { useIsFetching, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type RepoRef, useApi } from "@/shared/api";
 import { log } from "@/shared/lib/log";
-import { checkCensus, checkFacts, checkPractices } from "./schema";
+import { readCensusWhy, readPromoteList } from "@/shared/contract/read";
+import { checkCensus, checkFacts, checkFunnel, checkPractices } from "./schema";
 
 export const keys = {
   info: ["driftInfo"] as const,
@@ -17,6 +18,8 @@ export const keys = {
   security: (r: RepoRef, base?: string) => (base === undefined ? (["security", r.path] as const) : (["security", r.path, "diff", base] as const)),
   practices: (r: RepoRef) => ["practices", r.path] as const,
   map: (r: RepoRef) => ["map", r.path] as const,
+  funnel: (r: RepoRef) => ["funnel", r.path] as const,
+  promoteList: (r: RepoRef) => ["promoteList", r.path] as const,
   policy: (r: RepoRef) => ["policy", r.path] as const,
   questions: (r: RepoRef) => ["questions", r.path] as const,
   reviewLog: (r: RepoRef) => ["reviewLog", r.path] as const,
@@ -162,6 +165,37 @@ export function useDriftMap(repo: RepoRef | null, enabled = true) {
   });
 }
 
+/** `drift census --why --json`: what mining dropped, gate by gate (observation only). Run when the Funnel view asks for it. */
+export function useFunnel(repo: RepoRef | null) {
+  const api = useApi();
+  const info = useDriftInfo();
+  return useQuery({
+    queryKey: repo ? keys.funnel(repo) : ["funnel", "none"],
+    enabled: !!repo,
+    staleTime: Infinity,
+    retry: false,
+    queryFn: async ({ signal }) => {
+      const r = await timed("funnel", api.funnel(repo!, { signal }));
+      return { ...r, data: checkFunnel(readCensusWhy(r.data), info.data?.version ?? null) };
+    },
+  });
+}
+
+/** `drift practices promote --list --json`: every practice that may be promoted now. Writes nothing; run only when `enabled`. */
+export function usePromoteList(repo: RepoRef | null, enabled = true) {
+  const api = useApi();
+  return useQuery({
+    queryKey: repo ? keys.promoteList(repo) : ["promoteList", "none"],
+    enabled: !!repo && enabled,
+    staleTime: Infinity,
+    retry: false,
+    queryFn: async ({ signal }) => {
+      const r = await timed("promote list", api.promoteList(repo!, { signal }));
+      return { ...r, data: readPromoteList(r.data) };
+    },
+  });
+}
+
 export function usePolicyFiles(repo: RepoRef | null) {
   const api = useApi();
   return useQuery({ queryKey: repo ? keys.policy(repo) : ["policy", "none"], enabled: !!repo, staleTime: Infinity, queryFn: () => api.policy(repo!) });
@@ -197,6 +231,8 @@ export function useRescan(repo: RepoRef | null, refreshFacts: () => Promise<void
       qc.invalidateQueries({ queryKey: keys.security(repo) }),
       qc.invalidateQueries({ queryKey: keys.practices(repo) }),
       qc.invalidateQueries({ queryKey: keys.map(repo) }),
+      qc.invalidateQueries({ queryKey: keys.funnel(repo) }),
+      qc.invalidateQueries({ queryKey: keys.promoteList(repo) }),
       qc.invalidateQueries({ queryKey: keys.policy(repo) }),
     ]);
   }, [qc, repo, refreshFacts]);

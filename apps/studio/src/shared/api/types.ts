@@ -1,7 +1,7 @@
 // The renderer's only way to get data: a named-operation API over the IPC
 // contract (shared/ipc/contract.ts). In Electron it is backed by the preload
 // bridge; in a plain browser by fixtures that the real drift binary produced.
-import type { AbRow, Census, CheckReport, Inventory, MapPackage, PracticesReport, PromoteOutcome, RepoFacts, ReviewQuestions, SecurityDiff, SessionState } from "@/shared/contract/drift";
+import type { AbRow, Census, CensusWhy, CheckReport, Inventory, MapPackage, PracticesReport, PromoteList, PromoteOutcome, RepoFacts, ReviewQuestions, SecurityDiff, SessionState } from "@/shared/contract/drift";
 import type { Answer, AuditEntry, Decision, DriftInfo, History, LogEntry, PolicyFiles, PromoteRequest, Provenance, RepoChange, RepoRef, SessionSummary, Snapshot } from "@/shared/ipc/contract";
 
 export type { Answer, AuditEntry, Decision, DriftInfo, History, LogEntry, PolicyFiles, PromoteRequest, Provenance, RepoChange, RepoRef, SessionSummary, Snapshot };
@@ -65,6 +65,10 @@ export interface StudioApi {
   practices(repo: RepoRef, opts?: RunOpts): Promise<Loaded<PracticesReport>>;
   /** `drift map --json`: packages with production and test dependencies apart (the Map view draws its graph from `drift scan`). */
   map(repo: RepoRef, opts?: RunOpts): Promise<Loaded<{ schema: number; packages: MapPackage[] }>>;
+  /** `drift census --why --json`: what mining dropped, gate by gate. Observation only; read-only. */
+  funnel(repo: RepoRef, opts?: RunOpts): Promise<Loaded<CensusWhy>>;
+  /** `drift practices promote --list --json`: every practice that may be promoted now, with its command. Writes nothing. */
+  promoteList(repo: RepoRef, opts?: RunOpts): Promise<Loaded<PromoteList>>;
   policy(repo: RepoRef): Promise<PolicyFiles>;
   /** `drift review --accept|--reject|--block <ids>`: an explicit write; returns the audit entry. */
   review(repo: RepoRef, decision: Decision, ids: string[]): Promise<AuditEntry>;

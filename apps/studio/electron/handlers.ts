@@ -43,6 +43,16 @@ const MAX_TRANSCRIPT = 200 * 1024 * 1024;
 const MAX_POLICY = 16 * 1024 * 1024;
 /** What the Studio says when the binary predates `drift practices` (round 13). */
 export const NO_PRACTICES = "this drift binary has no `practices` command: the practice map needs a Drift from round 13 or newer (choose one in Settings)";
+/** A Drift from before the miner's funnel has no `census --why`. */
+export const NO_FUNNEL = "this drift binary has no `census --why`: what mining dropped needs a newer Drift (choose one in Settings)";
+/** A Drift from before the promote list has no `practices promote --list` (or no `practices` at all). */
+export const NO_PROMOTE_LIST = "this drift binary has no `practices promote --list`: the list of practices that may be promoted needs a newer Drift (choose one in Settings)";
+
+/** Read-only drift commands that print one JSON document on stdout. */
+type JsonOp = "census" | "check" | "security" | "practices" | "map" | "funnel" | "promoteList";
+
+/** What clap prints for a subcommand or flag this binary does not have. */
+const OLD_BINARY = /unrecognized subcommand|unexpected argument/;
 
 /** What the Studio says when the binary predates `drift practices promote`. */
 export const NO_PROMOTE = "this drift binary cannot make a practice a convention: `drift practices promote` needs a newer Drift (choose one in Settings)";
@@ -210,14 +220,17 @@ export class StudioMain {
     return { data, at: Date.now(), cached: false, ms: res.ms, provenance: this.provenance(root) };
   }
 
-  private async json(r: RepoRef, op: "census" | "check" | "security" | "practices" | "map", requestId?: string, base: string | null = null) {
+  private async json(r: RepoRef, op: JsonOp, requestId?: string, base: string | null = null) {
     const root = this.repo(r);
     let res: Awaited<ReturnType<StudioMain["run"]>>;
     try {
-      res = await this.run(root, op === "census" || op === "practices" || op === "map" ? { op } : { op, base: base ? assertGitRef(base) : null }, requestId);
+      res = await this.run(root, op === "check" || op === "security" ? { op, base: base ? assertGitRef(base) : null } : { op }, requestId);
     } catch (e) {
       // A Drift from before the practice map (round 13) has no `practices` subcommand: say so, not clap's last line.
       if (op === "practices" && e instanceof DriftError && /unrecognized subcommand/.test(e.result?.stderr ?? "")) throw new DriftError(NO_PRACTICES);
+      // The same for a Drift from before the miner's funnel or the promote list.
+      if (op === "funnel" && e instanceof DriftError && OLD_BINARY.test(e.result?.stderr ?? "")) throw new DriftError(NO_FUNNEL);
+      if (op === "promoteList" && e instanceof DriftError && OLD_BINARY.test(e.result?.stderr ?? "")) throw new DriftError(NO_PROMOTE_LIST);
       throw e;
     }
     let data: unknown;
@@ -249,6 +262,16 @@ export class StudioMain {
   /** `drift map --json`: packages with their production (`depends_on`) and test (`dependencies_test`) dependencies. Read-only. */
   map(r: RepoRef, id?: string) {
     return this.json(r, "map", id);
+  }
+
+  /** `drift census --why --json`: what mining dropped, gate by gate. Observation only; exit 0; read-only. */
+  funnel(r: RepoRef, id?: string) {
+    return this.json(r, "funnel", id);
+  }
+
+  /** `drift practices promote --list --json`: every practice that may be promoted now, with its command. Writes nothing. */
+  promoteList(r: RepoRef, id?: string) {
+    return this.json(r, "promoteList", id);
   }
 
   policy(r: RepoRef) {

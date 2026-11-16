@@ -644,7 +644,15 @@ export type Rule =
    * `any_of` (practice-map variant keys, never names). Checked by the classifier that draws the map: a unit it cannot
    * tell is never a violation. Always a suggestion.
    */
-  | { type: "practice"; concern: string; any_of: string[] };
+  | {
+      type: "practice";
+      concern: string;
+      any_of: string[];
+      /** Mechanisms accepted whole (`membership`, ...): a unit doing the concern by one of them follows, whichever instrument it names. Absent when none (newer drift). */
+      any_mechanism?: string[];
+      /** Any way the classifier says enforces the concern follows ("every entry point here signs the caller in, however"). Absent when not set (newer drift). */
+      any_enforcing?: boolean;
+    };
 
 /**
  * Where a wiring fix goes (crates/drift-mine/src/check.rs `WireHint`): `register` a symbol in a
@@ -751,8 +759,17 @@ export interface Exempt extends Outlier {
 
 // ---------- drift census --json (crates/drift-cli/src/main.rs, schema 1) ----------
 
+/**
+ * Where a convention proposed from Drift's map of the code comes from (`policy::Convention::from_map`): `layering`
+ * (crates/drift-mine/src/from_map.rs `layering`), `manifest`, or `practice`. Such a proposal did not pass through the
+ * miner's measured gates. Absent on everything the miner proposed.
+ */
+export type FromMap = "practice" | "layering" | "manifest";
+
 export interface CensusProposal {
   id: string;
+  /** Proposed from Drift's map of the code, not mined (newer drift; absent on a mined proposal). */
+  from_map?: FromMap;
   /** Position in the human views: the default tier first, then suggestions best first (newer drift: `drift_mine::rank`; older drift: mining order). */
   rank: number;
   /** False for a suggestion past `suggestion_cap`: listed only with `--all` (newer drift; absent before W4). The cap never hides it from check or agents (what agents see is `agents`, W0). */
@@ -945,6 +962,8 @@ export interface Convention {
   different_kind?: PolicyDifferentKind[];
   /** A person promoted it from the practice map (`drift practices promote`): the variant id (`P-…`) it came from. Its rule is a `practice` rule. Absent for every other convention. */
   promoted_from_practice?: string;
+  /** Proposed from Drift's map of the code, not by the miner: it did not pass through the miner's measured gates. Absent on every mined convention (newer drift). */
+  from_map?: FromMap;
 }
 
 /**
@@ -1839,7 +1858,7 @@ export interface PracticeConcern {
    */
   groups?: PracticeGroup[];
   /** With `--units` only: every unit with its assignment, sorted by package, variant, path, symbol, line. */
-  units?: { package: string; variant: string; path: string; symbol: string; line: number; method?: string; assignment: "known" | "identified" | "none" | "unknown"; reason?: PracticeUnknownReason; /** What the unit itself does, where its variant stands for several ways (the tail, a folded policy); absent when the variant's label is the unit's. */ does?: string; /** The key of the unit's own uses, with `does`. */ key?: string; /** The entry point's route, when it has one: a handler mounted more than once is a unit for each mount (newer drift; absent before). */ route?: string; /** Of a unit known by a person's word, not by proof: its label with the symbols declared ("rule access (declared in .drift/config.yaml: RuleBook._ensure_access)"); newer drift. */ declared?: string; /** Of a unit unknown as `check_not_proven`: the check found and what is not proven of it. */ not_proven?: PracticeNotProven; /** Of a `none` unit of authn or authz: what was read and what was seen and not read (newer drift). */ basis?: AnswerBasis }[];
+  units?: { package: string; variant: string; path: string; symbol: string; line: number; method?: string; assignment: "known" | "identified" | "none" | "unknown"; reason?: PracticeUnknownReason; /** What the unit itself does, where its variant stands for several ways (the tail, a folded policy); absent when the variant's label is the unit's. */ does?: string; /** The key of the unit's own uses, with `does`. */ key?: string; /** The entry point's route, when it has one: a handler mounted more than once is a unit for each mount (newer drift; absent before). */ route?: string; /** Of a unit known by a person's word, not by proof: its label with the symbols declared ("rule access (declared in .drift/config.yaml: RuleBook._ensure_access)"); newer drift. */ declared?: string; /** Of a unit unknown as `check_not_proven`: the check found and what is not proven of it. */ not_proven?: PracticeNotProven; /** Of a `none` unit of authn or authz: what was read and what was seen and not read (newer drift). */ basis?: AnswerBasis; /** The variant's kind (`known`, `none`, ...; newer drift). */ kind?: string; /** The mechanisms the unit's own uses go through (newer drift; absent when none). */ uses?: string[]; /** Whether the classifier says what the unit does enforces the concern (newer drift). */ enforces?: boolean; /** Of an entry point: the key it takes and leaves unscoped (newer drift). */ unscoped?: string }[];
 }
 
 /** Variants sharing their decisive instrument, or one `none` variant (practices/mod.rs `VariantGroup`). */
@@ -2010,6 +2029,45 @@ export interface PromoteCandidate {
   example: PracticeExample | null;
   /** Promoted below the 80% share on a person's word (`--force`): advise only. */
   forced: boolean;
+  /** Mechanisms accepted whole, sorted (`any_mechanism`): absent for a practice of named ways (newer drift). */
+  mechanisms?: string[];
+  /** Any way the classifier says enforces the concern follows (`any_enforcing`); absent when not (newer drift). */
+  any_enforcing?: boolean;
+  /** What it accepts is what code does by doing nothing (errors left to the framework, ...): new code follows it without trying. Absent when not (newer drift). */
+  passive?: boolean;
+  /** Units of the place not counted because they take no request (background jobs); absent when 0 (newer drift). */
+  jobs?: number;
+  /** The one cause outside the units that every unit Drift could not read shares, when they all share one (newer drift). */
+  unknown_cause?: PromoteUnknownCause;
+}
+
+/** Why every unknown unit of a place is unknown, when one cause outside them explains all of them (`promote::UnknownCause`). */
+export interface PromoteUnknownCause {
+  /** One of the reasons outside a unit: `body_unreadable`, `opaque_wrapper`, `unresolved`, `partly_read`, `unparsed`. */
+  reason: PracticeUnknownReason;
+  /** What was not read, as the unknown units name it. */
+  instrument: string;
+  /** The units unknown for it. */
+  units: number;
+  /** The `.drift/config.yaml` line that would let Drift read it, when a line can. */
+  hint?: string;
+}
+
+/** `drift practices promote --list --json` (drift-cli promote.rs `list`, exit 0): every practice that may be promoted now. */
+export interface PromoteList {
+  candidates: PromoteListItem[];
+  /** Candidates left out because a person declined them (their convention is rejected). */
+  declined: number;
+  /** The promoted conventions that left candidates out, sorted. */
+  promoted: string[];
+}
+
+export interface PromoteListItem {
+  /** The place as Drift names it (`app/api`, `.` the root package). */
+  place: string;
+  /** The command that promotes it. */
+  command: string;
+  candidate: PromoteCandidate;
 }
 
 /**
@@ -2041,7 +2099,11 @@ export type PromoteRefusal =
   | { code: "no_place"; id: string; nearest: PromoteRefusal | null }
   | { code: "too_small"; place: string; units: number; min: number }
   | { code: "below_share"; place: string; follows: number; read: number }
-  | { code: "too_unknown"; place: string; unknown: number; total: number };
+  | { code: "too_unknown"; place: string; unknown: number; total: number; cause?: PromoteUnknownCause }
+  | { code: "nothing_accepted" }
+  | { code: "unknown_concern"; concern: string }
+  | { code: "not_a_mechanism"; concern: string; mechanism: string }
+  | { code: "no_enforcing"; concern: string };
 
 /** `drift practices promote --json` when it refuses (exit 2, nothing written): the refusal and the sentence a person reads. */
 export interface PromoteRefused {
@@ -2371,3 +2433,64 @@ export interface DriftSetupChoice {
    */
   needs_person: boolean;
 }
+
+// ---------- drift census --why --json (crates/drift-mine/src/funnel.rs `why_json`, schema 1) ----------
+
+/** Where a gate's constant comes from (funnel.rs `Origin`): only `study` was measured by a study. */
+export type FunnelOrigin = "study" | "pre-registered" | "engineering, no study" | "engineering, rationale written but not measured";
+
+/** One gate of the miner (funnel.rs `GATES`), with how many candidates it dropped in this repository. */
+export interface FunnelGate {
+  name: string;
+  /** The constant it tests against, as the source names it ("" for a gate without one). */
+  constant: string;
+  /** What a candidate must be to pass it. */
+  passes: string;
+  origin: FunnelOrigin | (string & {});
+  /** Where the gate is decided (a study, a document, a source file). */
+  source: string;
+  dropped: number;
+}
+
+/** Where a dropped candidate's target is defined (funnel.rs `Target`). */
+export type FunnelTarget = "repository" | "dependency" | "built_in" | "unresolved" | "mixed" | "none";
+
+/** A candidate a gate dropped. */
+export interface FunnelDropped {
+  gate: string;
+  id: string;
+  role: string;
+  rule: string;
+  family: string;
+  lang: "ts" | "py";
+  holders: number;
+  members: number;
+  /** The measured value the gate tested (rounded to 3 places); null when the gate measures none. */
+  value: number | null;
+  threshold: number | null;
+  detail: string;
+  target: FunnelTarget | (string & {});
+  /** Whether the rule would be in the default tier had it passed. */
+  default_tier: boolean;
+}
+
+/**
+ * `drift census --why [GATE] --json`. Observation only: nothing here is proposed, checked or shown to agents, and the
+ * proposals are exactly those of `drift census`.
+ */
+export interface CensusWhy {
+  /** 1 (a newer schema is refused by the Studio's version check). */
+  schema: number;
+  /** Always true: nothing listed is proposed, checked or shown to agents. */
+  observation_only: boolean;
+  /** The gate asked for (`--why GATE`); null for every gate. */
+  gate: string | null;
+  /** Candidates that reached each stage (`roles`, `role_mined`, `observed`, `drafted`, `mined`, `proposed`); may be empty. */
+  reached: Partial<Record<FunnelStage, number>>;
+  gates: FunnelGate[];
+  dropped: FunnelDropped[];
+}
+
+/** The funnel's stages, in order (funnel.rs `REACHED`). */
+export const FUNNEL_STAGES = ["roles", "role_mined", "observed", "drafted", "mined", "proposed"] as const;
+export type FunnelStage = (typeof FUNNEL_STAGES)[number];

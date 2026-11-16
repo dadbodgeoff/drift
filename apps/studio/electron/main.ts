@@ -97,6 +97,10 @@ function dispatch(c: Channel, args: unknown[], requestId: string | undefined): u
       return s.practices(args[0] as never, requestId);
     case "map":
       return s.map(args[0] as never, requestId);
+    case "funnel":
+      return s.funnel(args[0] as never, requestId);
+    case "promoteList":
+      return s.promoteList(args[0] as never, requestId);
     case "policy":
       return s.policy(args[0] as never);
     case "review":

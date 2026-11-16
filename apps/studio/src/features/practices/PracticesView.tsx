@@ -46,13 +46,15 @@ import {
 } from "./model/practices";
 import { promotablePlace } from "./model/promote";
 import { PromoteDialog } from "./PromoteDialog";
+import { CandidatesTab } from "./Candidates";
+import { t } from "@/shared/i18n";
 
 const KNOWN = seriesColor("accent");
 const NONE = seriesColor("muted");
 const IDENTIFIED = seriesColor("warning");
 
-type Tab = "recipe" | "findings" | "concerns";
-const TABS: Tab[] = ["recipe", "findings", "concerns"];
+type Tab = "recipe" | "findings" | "concerns" | "candidates";
+const TABS: Tab[] = ["recipe", "findings", "concerns", "candidates"];
 
 export function PracticesView({ tab, concern }: { tab: string | null; concern: string | null }) {
   const { repo } = useRepo();
@@ -96,12 +98,15 @@ function Practices({ report, tab, concernParam, pkg: pkgState, setPkg }: { repor
           { value: "recipe", label: "Recipe", count: recipes.length },
           { value: "findings", label: "Findings", count: findings.length },
           { value: "concerns", label: "All concerns", count: rows.length },
+          // Drift's list of what may be promoted now: run only when this tab is open.
+          { value: "candidates", label: t("practices.candidates.tab") },
         ]}
       />
       <TabPanel idBase="pr" value={tab} className="st-tabfill">
         {tab === "recipe" && <Recipes report={report} recipes={recipes} pkg={pkg} />}
         {tab === "findings" && <Findings report={report} findings={findings} pkg={pkg} />}
         {tab === "concerns" && <Concerns report={report} rows={rows} pkg={pkg} concernParam={concernParam} />}
+        {tab === "candidates" && <CandidatesTab pkg={pkg} titleOf={(id) => concernTitle(report, id)} />}
       </TabPanel>
     </div>
   );

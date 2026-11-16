@@ -2,9 +2,9 @@
 // set of static files (served from a custom protocol in Electron).
 import { useCallback, useEffect, useState } from "react";
 
-export type ViewId = "attention" | "conventions" | "check" | "map" | "security" | "practices" | "sessions" | "studies" | "logs" | "settings" | "gallery";
+export type ViewId = "attention" | "conventions" | "check" | "map" | "security" | "practices" | "funnel" | "sessions" | "studies" | "logs" | "settings" | "gallery";
 
-export const VIEWS: ViewId[] = ["attention", "conventions", "check", "map", "security", "practices", "sessions", "studies", "logs", "settings", "gallery"];
+export const VIEWS: ViewId[] = ["attention", "conventions", "check", "map", "security", "practices", "funnel", "sessions", "studies", "logs", "settings", "gallery"];
 
 export interface Route {
   view: ViewId;
