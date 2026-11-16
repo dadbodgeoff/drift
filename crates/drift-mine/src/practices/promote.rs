@@ -79,14 +79,97 @@ const NAMED: usize = 3;
 /// for the mined rules).
 const CONFIRM_BY_NAME: &[&str] = &[super::AUTHN, super::AUTHZ, super::VALIDATION];
 
-/// Where a promoted practice holds: a package, or one directory of it.
+/// Where a promoted practice holds: a package, one directory of it, one file of it, or
+/// the routes of it under a literal route prefix. At most one of `file` and `route` is
+/// set; with neither, the place is the directory (and serialises as it always did).
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct Place {
     /// The package directory ("" the root package).
     pub package: String,
     /// The directory below the package ("" the whole package), without a trailing
     /// slash: a unit is in the place when its file is in this directory or below it.
+    /// Of a file place, the file's directory; of a route place, "".
     pub dir: String,
+    /// One file (repo-relative path): a unit is in the place when its file is exactly
+    /// this one. "Every route in this router signs the caller in this way."
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file: Option<String>,
+    /// A literal route prefix, by segment, each parameter as
+    /// [`drift_core::practice::ANY_SEGMENT`] (`/api/workspaces/[*]/projects/[*]`): a
+    /// unit is in the place when a route Drift read to the end as a literal has these
+    /// first segments. A unit whose route was not read so is never in it, and is
+    /// counted as not read wherever it could be under the prefix.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub route: Option<String>,
+}
+
+/// The kind of a [`Place`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Kind {
+    Dir,
+    File,
+    Route,
+}
+
+/// Where a place is in a `--in` argument: a route prefix follows its package and this
+/// separator (`apps/api:/api/v2`, `.:/api/workspaces/<slug>` for the root package).
+pub const ROUTE_SEPARATOR: &str = ":/";
+
+/// The segments of a route as the facts record it that Drift read as literals, each
+/// parameter (`:id`, `[id]`, `{id}`, `<int:id>`) as
+/// [`drift_core::practice::ANY_SEGMENT`], and whether the whole route was read so.
+/// Reading stops at the first segment that is not a literal: one the adapter could not
+/// read (`?`), a pattern (`*`, a regex). A route that does not start with `/` (no
+/// route, a procedure or command name) is read to no segment.
+fn route_segments(route: Option<&str>) -> (Vec<String>, bool) {
+    let Some(raw) = route.map(str::trim).filter(|r| r.starts_with('/')) else {
+        return (Vec::new(), false);
+    };
+    let mut out: Vec<String> = Vec::new();
+    for seg in raw.split('/').filter(|s| !s.is_empty()) {
+        let param = !seg.contains('?')
+            && seg.len() > 1
+            && (seg.starts_with(':')
+                || (seg.starts_with('[') && seg.ends_with(']'))
+                || (seg.starts_with('{') && seg.ends_with('}'))
+                || (seg.starts_with('<') && seg.ends_with('>')));
+        if param {
+            out.push(drift_core::practice::ANY_SEGMENT.to_string());
+        } else if seg
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'~' | b'@'))
+        {
+            out.push(seg.to_string());
+        } else {
+            return (out, false);
+        }
+    }
+    (out, true)
+}
+
+/// The segments of a stored route prefix.
+fn prefix_segments(prefix: &str) -> Vec<&str> {
+    prefix.split('/').filter(|s| !s.is_empty()).collect()
+}
+
+/// Whether one list of segments starts with the other, either way: a route read up
+/// to `a` may be under the prefix `b`.
+fn compatible<A: AsRef<str>, B: AsRef<str>>(a: &[A], b: &[B]) -> bool {
+    a.iter().zip(b).all(|(x, y)| x.as_ref() == y.as_ref())
+}
+
+/// The packages of the report's units and profiles.
+fn packages(report: &PracticesReport) -> BTreeSet<&str> {
+    report
+        .concerns
+        .iter()
+        .flat_map(|c| {
+            c.units
+                .iter()
+                .map(|u| u.package.as_str())
+                .chain(c.by_package.iter().map(|p| p.package.as_str()))
+        })
+        .collect()
 }
 
 /// One way of doing a concern in a place: a known variant of the map.
@@ -157,6 +240,11 @@ pub struct Candidate {
     /// could not read shares (an unread app-level call), when they all share one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unknown_cause: Option<UnknownCause>,
+    /// Of a route place: the units of `unknown` that are there because Drift did not
+    /// read their route as a literal to the end, so whether they are under the prefix
+    /// is not known. Never members, never reported.
+    #[serde(default, skip_serializing_if = "zero")]
+    pub unread_routes: usize,
 }
 
 /// What a person asks to promote ([`candidate_for`]): the arguments of `drift
@@ -301,35 +389,33 @@ impl Place {
     /// against the packages of `report` (the longest package that holds it wins; the
     /// rest is the directory). `.` or "" is the root package. `None` when the path has
     /// a `..` segment or is absolute.
+    ///
+    /// A path that is the file of a unit of `report` is that one file. A package, then
+    /// [`ROUTE_SEPARATOR`] and a route prefix (`apps/api:/api/workspaces/<slug>`, `.:/x`
+    /// for the root package) is the routes of that package under the prefix, each
+    /// parameter matching any parameter; `None` when the package is not one of the
+    /// report's or the prefix is not a literal of at least one segment.
     pub fn parse(text: &str, report: &PracticesReport) -> Option<Place> {
         let text = text.trim();
+        if let Some((package, prefix)) = text.split_once(ROUTE_SEPARATOR) {
+            return Self::parse_route(package, prefix, report);
+        }
         if text.starts_with('/') || std::path::Path::new(text).is_absolute() {
             return None;
         }
-        let mut segs: Vec<&str> = Vec::new();
-        for s in text.split('/') {
-            match s {
-                "" | "." => {}
-                ".." => return None,
-                s => segs.push(s),
-            }
-        }
-        let path = segs.join("/");
-        let packages: BTreeSet<&str> = report
-            .concerns
-            .iter()
-            .flat_map(|c| {
-                c.units
-                    .iter()
-                    .map(|u| u.package.as_str())
-                    .chain(c.by_package.iter().map(|p| p.package.as_str()))
-            })
-            .collect();
-        let package = packages
+        let path = clean_path(text)?;
+        let package = packages(report)
             .into_iter()
             .filter(|p| p.is_empty() || path == *p || path.starts_with(&format!("{p}/")))
             .max_by_key(|p| p.len())
             .unwrap_or("");
+        let is_file = report
+            .concerns
+            .iter()
+            .any(|c| c.units.iter().any(|u| u.path == path && u.package == package));
+        if is_file && let Some(p) = Place::file_of(package, &path) {
+            return Some(p);
+        }
         let dir = path
             .strip_prefix(package)
             .unwrap_or(&path)
@@ -338,12 +424,98 @@ impl Place {
         Some(Place {
             package: package.to_string(),
             dir,
+            ..Place::default()
         })
     }
 
+    /// [`Place::parse`] of `<package>:/<prefix>`.
+    fn parse_route(package: &str, prefix: &str, report: &PracticesReport) -> Option<Place> {
+        let package = match package.trim() {
+            "" | "." => String::new(),
+            p => clean_path(p)?,
+        };
+        if !package.is_empty() && !packages(report).contains(package.as_str()) {
+            return None;
+        }
+        let text = format!("/{prefix}");
+        let (segs, whole) = route_segments(Some(text.as_str()));
+        if !whole || segs.is_empty() {
+            return None;
+        }
+        Some(Place::route_in(&package, &segs))
+    }
+
+    /// The place of the one file at `path` of `package`; `None` when the file is not
+    /// under the package.
+    pub fn file_of(package: &str, path: &str) -> Option<Place> {
+        let dir = dir_below(package, path)?;
+        Some(Place {
+            package: package.to_string(),
+            dir: dir.to_string(),
+            file: Some(path.to_string()),
+            route: None,
+        })
+    }
+
+    /// The place of the routes of `package` under the prefix `segs` (as
+    /// [`route_segments`] reads them).
+    fn route_in(package: &str, segs: &[String]) -> Place {
+        Place {
+            package: package.to_string(),
+            dir: String::new(),
+            file: None,
+            route: Some(format!("/{}", segs.join("/"))),
+        }
+    }
+
+    fn kind(&self) -> Kind {
+        if self.route.is_some() {
+            Kind::Route
+        } else if self.file.is_some() {
+            Kind::File
+        } else {
+            Kind::Dir
+        }
+    }
+
+    /// The place as a `--in` argument for a shell: [`Place::shown`], in single quotes
+    /// when a file or route place has a character a shell reads (`[*]`). A directory
+    /// is printed as it always was.
+    pub fn command_arg(&self) -> String {
+        let s = self.shown();
+        let plain = s
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'/'));
+        if self.kind() == Kind::Dir || plain {
+            s
+        } else {
+            format!("'{}'", s.replace('\'', "'\\''"))
+        }
+    }
+
+    /// Whether the two places share units for certain, as a promoted practice and a
+    /// candidate of the same concern would: of one package, and a directory that holds
+    /// the other (directory or file), the same file, one route prefix of the other, or
+    /// a route place and its whole package. Otherwise no.
+    pub fn overlaps(&self, other: &Place) -> bool {
+        self.contains(other) || other.contains(self)
+    }
+
     /// The place as output names it: the path from the repository root (`apps/api/views`),
-    /// `.` for the root package.
+    /// `.` for the root package; a file's path; `<package>:<prefix>` for a route place
+    /// (`.:/api/x` in the root package), as [`Place::parse`] reads it back.
     pub fn shown(&self) -> String {
+        if let Some(r) = &self.route {
+            let package = if self.package.is_empty() {
+                "."
+            } else {
+                self.package.as_str()
+            };
+            return format!("{package}:{r}");
+        }
+        if let Some(f) = &self.file {
+            return f.clone();
+        }
         match (self.package.is_empty(), self.dir.is_empty()) {
             (true, true) => ".".to_string(),
             (true, false) => self.dir.clone(),
@@ -354,28 +526,77 @@ impl Place {
 
     /// Whether the file at the repo-relative `path` (of the package `package`) is in
     /// the place.
+    ///
+    /// A file place holds that file only. A route place holds every file of its
+    /// package: a file's path cannot rule out that it registers or mounts a route under
+    /// the prefix (a router's paths are relative to where it is mounted).
     pub fn holds(&self, package: &str, path: &str) -> bool {
-        package == self.package
-            && (self.dir.is_empty()
-                || dir_below(package, path).is_some_and(|d| within(d, &self.dir)))
-    }
-
-    /// How deep the place is below its package: 0 for the whole package.
-    fn depth(&self) -> usize {
-        if self.dir.is_empty() {
-            0
-        } else {
-            self.dir.split('/').count()
+        if package != self.package {
+            return false;
+        }
+        match self.kind() {
+            Kind::Route => true,
+            Kind::File => self.file.as_deref() == Some(path),
+            Kind::Dir => {
+                self.dir.is_empty()
+                    || dir_below(package, path).is_some_and(|d| within(d, &self.dir))
+            }
         }
     }
 
-    /// Whether `other` is this place or a directory inside it.
-    fn contains(&self, other: &Place) -> bool {
-        self.package == other.package && (self.dir.is_empty() || within(&other.dir, &self.dir))
+    /// How deep the place is below its package: 0 for the whole package; a file one
+    /// below its directory; a route place its prefix's segments.
+    fn depth(&self) -> usize {
+        let dir = if self.dir.is_empty() {
+            0
+        } else {
+            self.dir.split('/').count()
+        };
+        match (&self.file, &self.route) {
+            (_, Some(r)) => prefix_segments(r).len(),
+            (Some(_), None) => dir + 1,
+            (None, None) => dir,
+        }
     }
 
-    /// The place in a sentence: its path, or "the root package".
+    /// Whether `other` is this place or inside it: a directory inside a directory, a
+    /// file inside a directory, the same file, a longer route prefix inside a shorter
+    /// one, a route place inside its whole package.
+    fn contains(&self, other: &Place) -> bool {
+        if self.package != other.package {
+            return false;
+        }
+        match (self.kind(), other.kind()) {
+            (Kind::Dir, Kind::Dir | Kind::File) => {
+                self.dir.is_empty() || within(&other.dir, &self.dir)
+            }
+            (Kind::Dir, Kind::Route) => self.dir.is_empty(),
+            (Kind::File, Kind::File) => self.file == other.file,
+            (Kind::Route, Kind::Route) => {
+                let (a, b) = (
+                    prefix_segments(self.route.as_deref().unwrap_or("")),
+                    prefix_segments(other.route.as_deref().unwrap_or("")),
+                );
+                a.len() <= b.len() && compatible(&a, &b)
+            }
+            _ => false,
+        }
+    }
+
+    /// The place in a sentence: its path, or "the root package"; "the routes under
+    /// `/api/x` of apps/api" for a route place.
     fn words(&self) -> String {
+        if let Some(r) = &self.route {
+            return if self.package.is_empty() {
+                format!("the routes under {}", sanitize(r, 160))
+            } else {
+                format!(
+                    "the routes under {} of {}",
+                    sanitize(r, 160),
+                    sanitize(&self.package, 160)
+                )
+            };
+        }
         if self.package.is_empty() && self.dir.is_empty() {
             "the root package".to_string()
         } else {
@@ -410,6 +631,7 @@ fn places_of(package: &str, path: &str) -> Vec<Place> {
     let mut out = vec![Place {
         package: package.to_string(),
         dir: String::new(),
+        ..Place::default()
     }];
     let Some(dir) = dir_below(package, path).filter(|d| !d.is_empty()) else {
         return out;
@@ -423,9 +645,24 @@ fn places_of(package: &str, path: &str) -> Vec<Place> {
         out.push(Place {
             package: package.to_string(),
             dir: acc.clone(),
+            ..Place::default()
         });
     }
     out
+}
+
+/// A repo-relative path as a person writes it, without `.` segments or slashes at
+/// either end; `None` with a `..` segment.
+fn clean_path(text: &str) -> Option<String> {
+    let mut segs: Vec<&str> = Vec::new();
+    for s in text.split('/') {
+        match s {
+            "" | "." => {}
+            ".." => return None,
+            s => segs.push(s),
+        }
+    }
+    Some(segs.join("/"))
 }
 
 /// `k` of `n` as a whole percentage, rounded down: a share just under a bar never
@@ -763,6 +1000,9 @@ struct Judged<'a> {
     own: Option<&'a str>,
     /// The row of the mount that decided.
     row: usize,
+    /// The mount that decided is in a route place only as a route Drift did not read
+    /// to the end ([`Reading::unread`]).
+    unread: bool,
 }
 
 impl Judged<'_> {
@@ -798,8 +1038,14 @@ struct Reading<'a> {
     /// Whether the row is counted at all: not a background job of a concern about the
     /// caller ([`Concern::needs_a_caller`]).
     counted: Vec<bool>,
-    /// The counted rows of each place a row is in.
+    /// The counted rows of each place a row is in: its package and directories, its
+    /// file, and (of a concern of entry points) every prefix of a route Drift read to
+    /// the end as a literal. The one reading of membership that `candidate_for`,
+    /// `candidates`, `check`, `baseline` and `replay` all go through.
     places: BTreeMap<Place, Vec<usize>>,
+    /// Of each route place, the counted rows whose route Drift did not read to the
+    /// end and could be under its prefix: never members, each counted as not read.
+    unread: BTreeMap<Place, Vec<usize>>,
     /// The units of each place left out as background jobs (path, symbol).
     jobs: BTreeMap<Place, BTreeSet<(&'a str, &'a str)>>,
 }
@@ -863,14 +1109,43 @@ impl<'a> Reading<'a> {
             .collect();
         let mut places: BTreeMap<Place, Vec<usize>> = BTreeMap::new();
         let mut jobs: BTreeMap<Place, BTreeSet<(&'a str, &'a str)>> = BTreeMap::new();
+        // Rows whose route was not read to the end, with what was read of it.
+        let mut pending: Vec<(usize, Vec<String>)> = Vec::new();
+        let entries = c.unit == "entry_point";
         for (i, u) in c.units.iter().enumerate() {
-            for p in places_of(&u.package, &u.path) {
+            let mut of = places_of(&u.package, &u.path);
+            of.extend(Place::file_of(&u.package, &u.path));
+            // A background job is served at no route: it is in no route place.
+            if entries && counted[i] && u.kind.as_deref() != Some(JOB) {
+                let (segs, whole) = route_segments(u.route.as_deref());
+                if whole {
+                    of.extend((1..=segs.len()).map(|k| Place::route_in(&u.package, &segs[..k])));
+                } else {
+                    pending.push((i, segs));
+                }
+            }
+            for p in of {
                 if counted[i] {
                     places.entry(p).or_default().push(i);
                 } else {
                     jobs.entry(p)
                         .or_default()
                         .insert((u.path.as_str(), u.symbol.as_str()));
+                }
+            }
+        }
+        let mut unread: BTreeMap<Place, Vec<usize>> = BTreeMap::new();
+        if !pending.is_empty() {
+            let routes: Vec<(&Place, Vec<&str>)> = places
+                .keys()
+                .filter_map(|p| p.route.as_deref().map(|r| (p, prefix_segments(r))))
+                .collect();
+            for (i, read) in &pending {
+                let package = c.units[*i].package.as_str();
+                for (p, segs) in &routes {
+                    if p.package == package && compatible(read, segs) {
+                        unread.entry((*p).clone()).or_default().push(*i);
+                    }
                 }
             }
         }
@@ -884,6 +1159,7 @@ impl<'a> Reading<'a> {
             enforces,
             counted,
             places,
+            unread,
             jobs,
         }
     }
@@ -971,10 +1247,16 @@ impl<'a> Reading<'a> {
     fn judged(&self, place: &Place, verdicts: &[Verdict]) -> Vec<Judged<'a>> {
         let c = self.c;
         let rows = self.places.get(place).map_or(&[][..], Vec::as_slice);
+        let unread = self.unread.get(place).map_or(&[][..], Vec::as_slice);
         let mut by: BTreeMap<(&'a str, &'a str), Judged<'a>> = BTreeMap::new();
-        for &i in rows {
+        // A row of a route not read to the end is no member: it is not read, whatever
+        // the map says of the unit.
+        let all = rows
+            .iter()
+            .map(|&i| (i, verdicts[i], self.own[i], false))
+            .chain(unread.iter().map(|&i| (i, Verdict::Unknown, None, true)));
+        for (i, verdict, own, not_read) in all {
             let u: &'a UnitRow = &c.units[i];
-            let (verdict, own) = (verdicts[i], self.own[i]);
             let j = by
                 .entry((u.path.as_str(), u.symbol.as_str()))
                 .or_insert(Judged {
@@ -984,12 +1266,14 @@ impl<'a> Reading<'a> {
                     verdict,
                     own,
                     row: i,
+                    unread: not_read,
                 });
             j.line = j.line.min(u.line);
             if verdict > j.verdict {
                 j.verdict = verdict;
                 j.own = own;
                 j.row = i;
+                j.unread = not_read;
             }
         }
         let mut out: Vec<Judged<'a>> = by.into_values().collect();
@@ -1243,6 +1527,7 @@ fn build_from<'a>(
         passive: passive(r, asked),
         jobs: r.jobs.get(place).map_or(0, BTreeSet::len),
         unknown_cause: cause,
+        unread_routes: judged.iter().filter(|j| j.unread).count(),
     })
 }
 
@@ -1255,10 +1540,21 @@ fn qualifying(
     asked: &Asked<'_>,
     force: bool,
 ) -> (Vec<Candidate>, Option<Refusal>) {
+    qualifying_in(r, asked, force, Kind::Dir)
+}
+
+/// [`qualifying`] among the places of one kind.
+fn qualifying_in(
+    r: &Reading<'_>,
+    asked: &Asked<'_>,
+    force: bool,
+    kind: Kind,
+) -> (Vec<Candidate>, Option<Refusal>) {
     let verdicts = r.verdicts(&asked.accepts());
     let places: Vec<&Place> = r
         .places
         .iter()
+        .filter(|(p, _)| p.kind() == kind)
         .filter(|(_, rows)| rows.iter().any(|&i| verdicts[i] == Verdict::Follows))
         .map(|(p, _)| p)
         .collect();
@@ -1318,19 +1614,92 @@ fn broader_offered(b: &Candidate, narrower: &[Candidate]) -> bool {
     best.is_none_or(|f| b.follows >= f + material)
 }
 
+/// The qualifying places of `kind` that `asked` is offered in:
+/// - directories: the broadest ([`broadest`]);
+/// - one file: only where no directory around it qualifies for the same thing (the
+///   file's rule would restate its directory's);
+/// - a route prefix: of each chain of prefixes, the longest that holds the same units
+///   as the shortest that qualifies ([`longest`]), and only where no directory that
+///   holds all of its units qualifies for the same thing.
+fn pick(r: &Reading<'_>, asked: &Asked<'_>, kind: Kind) -> Vec<Candidate> {
+    let ok = qualifying_in(r, asked, false, kind).0;
+    if kind == Kind::Dir || ok.is_empty() {
+        return broadest(ok);
+    }
+    let dirs = qualifying_in(r, asked, false, Kind::Dir).0;
+    match kind {
+        Kind::File => ok
+            .into_iter()
+            .filter(|c| !dirs.iter().any(|d| d.place.contains(&c.place)))
+            .collect(),
+        _ => {
+            let verdicts = r.verdicts(&asked.accepts());
+            longest(ok)
+                .into_iter()
+                .filter(|c| {
+                    let judged = r.judged(&c.place, &verdicts);
+                    !dirs.iter().any(|d| {
+                        judged
+                            .iter()
+                            .all(|j| d.place.holds(&r.c.units[j.row].package, j.path))
+                    })
+                })
+                .collect()
+        }
+    }
+}
+
+/// Of the qualifying route places of one candidate, one per chain: a prefix around
+/// which every qualifying prefix holds the same units, and inside which none does
+/// (so `/a/[*]/b` is offered when every route under `/a` is under it, and one rule is
+/// not offered at five depths). A prefix inside a qualifying one that holds more is
+/// a part of that rule, not one of its own. The units of a prefix are those of every
+/// prefix around it or fewer, so the same count is the same units.
+fn longest(ok: Vec<Candidate>) -> Vec<Candidate> {
+    let places: Vec<(Place, usize)> = ok.iter().map(|c| (c.place.clone(), c.total)).collect();
+    ok.into_iter()
+        .filter(|c| {
+            let around_same = places
+                .iter()
+                .filter(|(p, _)| *p != c.place && p.contains(&c.place))
+                .all(|(_, t)| *t == c.total);
+            let inside_same = places
+                .iter()
+                .any(|(p, t)| *p != c.place && c.place.contains(p) && *t == c.total);
+            around_same && !inside_same
+        })
+        .collect()
+}
+
 /// The candidates of one concern ([`candidates`]): each way in its broadest qualifying
 /// places; then each mechanism whole that may enforce the concern; then any enforcing
 /// way. A broader candidate is offered only where it covers materially more than the
 /// narrower ones ([`broader_offered`]).
+///
+/// Directories first. Then, for a concern of entry points, one file and a route
+/// prefix ([`pick`]): each only where it adds something over the directories.
+/// A file of symbols is its directory's business: a file place is offered for entry
+/// points only (it may still be asked for with `--in`).
 fn concern_candidates(c: &ConcernReport) -> Vec<Candidate> {
     let r = Reading::new(c);
+    let mut out = offered(&r, Kind::Dir);
+    if c.unit == "entry_point" {
+        out.extend(offered(&r, Kind::File));
+        out.extend(offered(&r, Kind::Route));
+    }
+    out
+}
+
+/// The candidates of places of one kind, as [`pick`] keeps them.
+fn offered(r: &Reading<'_>, kind: Kind) -> Vec<Candidate> {
+    let c = r.c;
     let mut out: Vec<Candidate> = Vec::new();
-    for v in c.variants.iter().filter(|v| may_qualify_way(&r, v)) {
+    for v in c.variants.iter().filter(|v| may_qualify_way(r, v)) {
         let asked = Asked {
             ways: vec![v],
             ..Asked::default()
         };
-        out.extend(broadest(qualifying(&r, &asked, false).0));
+        out.extend(pick(r, &asked, kind));
     }
     let mut by_mechanism: Vec<Candidate> = Vec::new();
     for m in r.mechanisms() {
@@ -1341,11 +1710,11 @@ fn concern_candidates(c: &ConcernReport) -> Vec<Candidate> {
             mechanisms: vec![m.to_string()],
             ..Asked::default()
         };
-        if !may_qualify(&r, &asked.accepts()) {
+        if !may_qualify(r, &asked.accepts()) {
             continue;
         }
         by_mechanism.extend(
-            broadest(qualifying(&r, &asked, false).0)
+            pick(r, &asked, kind)
                 .into_iter()
                 .filter(|b| broader_offered(b, &out)),
         );
@@ -1356,8 +1725,8 @@ fn concern_candidates(c: &ConcernReport) -> Vec<Candidate> {
             enforcing: true,
             ..Asked::default()
         };
-        if may_qualify(&r, &asked.accepts()) {
-            let enforcing: Vec<Candidate> = broadest(qualifying(&r, &asked, false).0)
+        if may_qualify(r, &asked.accepts()) {
+            let enforcing: Vec<Candidate> = pick(r, &asked, kind)
                 .into_iter()
                 .filter(|b| broader_offered(b, &out))
                 .collect();
@@ -1680,6 +2049,8 @@ pub fn convention(c: &Candidate) -> Convention {
             any_of,
             any_mechanism,
             any_enforcing: c.any_enforcing,
+            in_file: c.place.file.clone(),
+            under_route: c.place.route.clone(),
         },
         evidence: Evidence {
             holders,
@@ -1708,18 +2079,34 @@ pub fn convention(c: &Candidate) -> Convention {
 pub fn convention_id(place: &Place, concern: &str) -> String {
     // The prefix keeps it apart from every mined convention's id input (a role and a
     // rule), so mining never proposes, refreshes or replaces one.
-    let h =
-        blake3::hash(format!("practice\0{}\0{}\0{concern}", place.package, place.dir).as_bytes());
+    let mut text = format!("practice\0{}\0{}\0{concern}", place.package, place.dir);
+    // A file or a route place adds its kind and value; a directory adds nothing, so
+    // its id is what it always was.
+    if let Some(f) = &place.file {
+        text.push_str(&format!("\0file\0{f}"));
+    }
+    if let Some(r) = &place.route {
+        text.push_str(&format!("\0route\0{r}"));
+    }
+    let h = blake3::hash(text.as_bytes());
     format!("D-{}", &h.to_hex()[..6])
 }
 
 /// The place a promoted practice holds in (its role's package and directory); `None`
 /// for any other convention.
+///
+/// A file or route place is read from the rule ([`Rule::Practice`] `in_file`,
+/// `under_route`); a route place is of the whole package whatever the role says.
 pub fn place_of(c: &Convention) -> Option<Place> {
-    if !c.rule.is_practice() {
+    let Rule::Practice {
+        in_file,
+        under_route,
+        ..
+    } = &c.rule
+    else {
         return None;
-    }
-    let dir = if c.role.dir == PACKAGE_WIDE || c.role.dir == "." {
+    };
+    let dir = if under_route.is_some() || c.role.dir == PACKAGE_WIDE || c.role.dir == "." {
         String::new()
     } else {
         c.role.dir.trim_end_matches('/').to_string()
@@ -1727,6 +2114,12 @@ pub fn place_of(c: &Convention) -> Option<Place> {
     Some(Place {
         package: c.role.package.clone(),
         dir,
+        file: if under_route.is_some() {
+            None
+        } else {
+            in_file.clone()
+        },
+        route: under_route.clone(),
     })
 }
 
@@ -1778,6 +2171,15 @@ pub fn covers(
 /// memory from the content an agent is about to write. For a concern about the caller
 /// ([`Concern::needs_a_caller`]), a file whose only entry points are background jobs
 /// declares no unit of it: a job takes no request.
+///
+/// By kind of place (cheap: it reads the file's facts alone):
+/// - a directory: a file of the package in the directory or below it;
+/// - one file: that file only;
+/// - a route prefix: every file of its package that declares a unit of the concern.
+///   A file's own facts cannot rule one out: the routes a router file records are
+///   relative to where it is mounted, which the file alone does not show, so a file
+///   that registers or mounts a route under the prefix, and one Drift cannot rule out,
+///   are both covered.
 pub fn covers_file(c: &Convention, f: &FileFacts) -> bool {
     let caller = match &c.rule {
         Rule::Practice { concern, .. } => needs_a_caller(concern),
@@ -1815,7 +2217,18 @@ pub fn condition(c: &Convention) -> Option<String> {
     } else {
         ""
     };
-    Some(format!("for its {}{request}", units_word(unit, 2)))
+    let units = units_word(unit, 2);
+    // A route place holds the entry points served under its prefix, wherever their
+    // file is.
+    if let Some(route) = place_of(c).and_then(|p| p.route) {
+        let route = sanitize(&route, 160);
+        return Some(if request.is_empty() {
+            format!("for its {units} served under {route}")
+        } else {
+            format!("for its {units}{request} and are served under {route}")
+        });
+    }
+    Some(format!("for its {units}{request}"))
 }
 
 /// What one unit of a concern is called, `n` of them (`entry_point`: "entry points").
@@ -1834,7 +2247,7 @@ fn units_word(unit: &str, n: usize) -> String {
 /// not be read, what `drift check` reports from now on, the mode and how to change it,
 /// and the other ways that could be added. Ends with a newline.
 pub fn preview(c: &Candidate, convention: &Convention) -> String {
-    let place = sanitize(&c.place.shown(), 160);
+    let place = sanitize(&c.place.command_arg(), 160);
     let mut out = format!(
         "{} in {}: {} in {} of {} {}.\n",
         concern_heading(&c.concern),
@@ -1880,6 +2293,15 @@ pub fn preview(c: &Candidate, convention: &Convention) -> String {
     ));
     if let Some(cause) = &c.unknown_cause {
         out.push_str(&format!("  {}\n", cause_sentence(cause)));
+    }
+    if c.unread_routes > 0 {
+        out.push_str(&format!(
+            "  Of those, {} {} a route Drift did not read to the end, so whether {} under {} is not known.\n",
+            c.unread_routes,
+            if c.unread_routes == 1 { "has" } else { "have" },
+            if c.unread_routes == 1 { "it is" } else { "they are" },
+            sanitize(c.place.route.as_deref().unwrap_or(""), 160)
+        ));
     }
     if c.jobs > 0 {
         out.push_str(&format!(
@@ -2311,6 +2733,7 @@ mod tests {
         Place {
             package: package.into(),
             dir: dir.into(),
+            ..Place::default()
         }
     }
 
@@ -2499,6 +2922,8 @@ mod tests {
                 any_of: vec!["wrap:lib/a.ts#a".into(), "wrap:lib/b.ts#b".into()],
                 any_mechanism: Vec::new(),
                 any_enforcing: false,
+                in_file: None,
+                under_route: None,
             }
         );
         assert_eq!(conv.promoted_from_practice.as_deref(), Some("P-fold"));
@@ -3206,6 +3631,8 @@ mod tests {
                 any_of: Vec::new(),
                 any_mechanism: vec!["wrap".into()],
                 any_enforcing: false,
+                in_file: None,
+                under_route: None,
             }
         );
         assert_eq!(conv.summary, "Sign-in in the root package: by any wrap");
