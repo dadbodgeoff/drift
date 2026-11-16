@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/dadbodgeoff/drift/security/advisories/new
+    about: Report privately, as SECURITY.md says. Do not open a public issue.

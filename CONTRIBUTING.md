@@ -58,6 +58,86 @@ gate. `cargo deny check` is not part of it; run it separately.
 
 `scripts/snapshot.sh OUTDIR` exports the tracked tree at one commit, with no history, for a public copy. It fails, writing nothing, if a name in the private `scripts/snapshot-deny.txt` appears in a file (binary files included), a file or directory name or a link target, or if a string shaped like a secret remains outside the files listed in `scripts/snapshot-fake-secrets.txt` (exact paths); `scripts/snapshot-exclude.txt` takes shell globs. A deny list with no names fails. After changing `scripts/snapshot.sh`, run `scripts/snapshot-test.sh`.
 
+### Every CI job, command by command
+
+These are the commands of `.github/workflows/ci.yml`, job by job, as CI runs
+them. Every job runs with `RUSTFLAGS=-D warnings` set. The Node jobs use Node 22.
+Where CI writes to `$RUNNER_TEMP`, set it to a scratch directory first:
+
+```sh
+export RUSTFLAGS="-D warnings"
+export RUNNER_TEMP="$(mktemp -d)"
+```
+
+`lint`:
+
+```sh
+cargo fmt --all --check
+cargo clippy --all-targets --locked -- -D warnings
+```
+
+`test` (and `test-macos`, the same on macOS, on `main`, nightly and on demand,
+not on pull requests):
+
+```sh
+INSTA_UPDATE=no cargo test --all --locked
+```
+
+`stack-bound` (the parse stack of the release profile):
+
+```sh
+cargo test --release --locked -p drift-ts -p drift-py --test stack_bound
+```
+
+`deny` (CI runs it through `cargo-deny-action`):
+
+```sh
+cargo deny check advisories bans licenses sources
+```
+
+`study` (needs full git history: CI checks out with `fetch-depth: 0`):
+
+```sh
+for f in eval/study/*.test.mjs; do node --test "$f" || exit 1; done
+```
+
+`oracle`:
+
+```sh
+cargo build --locked -p drift-cli
+npm install --prefix "$RUNNER_TEMP/ts" --no-save --no-audit --no-fund --ignore-scripts typescript@5.9.3
+TS_PATH="$RUNNER_TEMP/ts/node_modules/typescript" node eval/oracle/fixtures.mjs --drift target/debug/drift
+```
+
+`packaging`:
+
+```sh
+npm install --prefix "$RUNNER_TEMP/yaml" --no-save --no-audit --no-fund --ignore-scripts yaml@2.9.1
+node npm/ci-check.mjs "$RUNNER_TEMP/yaml"
+```
+
+`studio`:
+
+```sh
+export ELECTRON_SKIP_BINARY_DOWNLOAD=1
+npm ci --ignore-scripts
+npm run typecheck --workspaces
+npx eslint .
+npm test --workspaces
+npm run build -w drift-studio
+npm run build:fixture -w drift-studio
+npx playwright install --with-deps chromium
+node apps/studio/tests/e2e/run.mjs
+```
+
+## Changelog
+
+A pull request that changes what a user sees (a command, a flag, an output, a
+file Drift writes, or how Drift behaves for an existing user) adds one line
+under `Unreleased` in [CHANGELOG.md](CHANGELOG.md), in the same pull request.
+Before 1.0, a breaking change starts with **Breaking:** and says what to do.
+The rule is stated at the top of the changelog.
+
 ## Studio
 
 Drift Studio (`apps/studio`) must stay up to date with every addition to Drift.
