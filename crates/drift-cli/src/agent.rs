@@ -1840,6 +1840,9 @@ fn edit_facts<'f>(
                     && drift_mine::admission::shown_to_agents(c)
                     && matches!(&c.rule, drift_mine::mine::Rule::Practice { concern, .. } if *concern == d.concern)
                     && drift_mine::practices::promote::covers_file(c, file)
+                    && d.units.iter().all(|u| {
+                        drift_mine::practices::promote::covers_unit(c, file, &u.symbol)
+                    })
             }) {
                 continue;
             }
@@ -3294,6 +3297,8 @@ fn drift_policy(args: &[&str], pty: bool) -> Option<String> {
         "findings" => flag(&["branch", "force"]),
         // Writing the permission entries changes what an agent may run unprompted.
         "export" if opts.contains(&"claude-settings") => flag(&["write"]),
+        // Applying an upgrade baselines violations and security findings: a person's.
+        "upgrade" => flag(&["apply", "security-baseline"]),
         _ => None,
     }
 }
