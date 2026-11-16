@@ -109,10 +109,10 @@ Treat both as "nothing found in what Drift read". On code Drift was not tuned on
 
 **Fix.**
 
-- Measure first. Set `DRIFT_HOOK_TRACE=<file>` and each hook appends one JSON line with the event, the path it took (`single_file`, `full_scan:<reason>`, `skipped:<reason>`), whether it answered, and how long it took in milliseconds:
+- Measure first. Set `DRIFT_HOOK_TRACE=<file>` and each hook appends one JSON line with the event, the path it took (`single_file`, `full_scan:<reason>`, `skipped:<reason>`), whether it answered, how long it took in milliseconds, and the work it did (`work`: walks, files read and parsed, scans, config and policy reads):
 
   ```
-  {"event":"SessionStart","path":"none","answered":true,"ms":294}
+  {"event":"SessionStart","path":"full_scan:session_start","answered":true,"ms":294,"work":{"walks":1,"source_reads":0,"parses":0,"full_scans":1,"file_scans":0,"config_loads":1,"policy_loads":1}}
   ```
 
   It changes no output and is off by default.

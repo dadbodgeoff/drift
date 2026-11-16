@@ -1096,7 +1096,7 @@ JSON on standard output (`hookSpecificOutput`, `systemMessage` or, at the end of
 
 **Notes**
 
-The agent argument is `claude`. An event name Drift does not handle gets no output. With `DRIFT_HOOK_TRACE=<file>` set, each hook appends one JSON line (event, path taken, whether it answered, milliseconds).
+The agent argument is `claude`. An event name Drift does not handle gets no output. With `DRIFT_HOOK_TRACE=<file>` set, each hook appends one JSON line (event, path taken, whether it answered, milliseconds, and counts of the work it did).
 
 ## drift mcp
 

@@ -137,6 +137,54 @@ pub fn test_roles(root: &Path, flag: bool) -> bool {
     flag || DriftConfig::load(root).is_ok_and(|c| c.enabled(TEST_ROLES_FEATURE))
 }
 
+/// Files of one kind this process has read, by canonical path, once [`remember_configs`]
+/// turned that on: `None` while off.
+type Remembered<T> = std::sync::Mutex<Option<std::collections::BTreeMap<std::path::PathBuf, T>>>;
+
+static REMEMBERED_CONFIGS: Remembered<DriftConfig> = std::sync::Mutex::new(None);
+static REMEMBERED_POLICIES: Remembered<ConventionsFile> = std::sync::Mutex::new(None);
+
+/// From now on, [`DriftConfig::load`] and [`ConventionsFile::load`] read each
+/// `.drift/config.yaml` and `.drift/conventions.yaml` once in this process and answer
+/// later loads from that reading. For a short process that never writes them and asks
+/// for them from many places (an agent hook: the scan, the workspace, the listed entry
+/// points, the practice map and the brief each load the config, the practice map the
+/// policy again); a long one (the MCP server) or one that writes them must not turn it
+/// on. A file that cannot be read or parsed is not remembered: each load says why, as
+/// before.
+pub fn remember_configs() {
+    if let Ok(mut m) = REMEMBERED_CONFIGS.lock() {
+        m.get_or_insert_with(Default::default);
+    }
+    if let Ok(mut m) = REMEMBERED_POLICIES.lock() {
+        m.get_or_insert_with(Default::default);
+    }
+}
+
+/// The key of a remembered file: its path with the directory canonical, so the
+/// spellings of one root (a symbolic link, the session's `cwd`) share one reading.
+fn remembered_key(path: &Path) -> std::path::PathBuf {
+    match (path.parent(), path.file_name()) {
+        (Some(dir), Some(name)) => drift_core::fsutil::canonical(dir)
+            .map(|d| d.join(name))
+            .unwrap_or_else(|_| path.to_path_buf()),
+        _ => path.to_path_buf(),
+    }
+}
+
+fn remembered<T: Clone>(kept: &Remembered<T>, path: &Path) -> Option<T> {
+    let m = kept.lock().ok()?;
+    m.as_ref()?.get(&remembered_key(path)).cloned()
+}
+
+fn remember<T: Clone>(kept: &Remembered<T>, path: &Path, value: &T) {
+    if let Ok(mut m) = kept.lock()
+        && let Some(m) = m.as_mut()
+    {
+        m.insert(remembered_key(path), value.clone());
+    }
+}
+
 /// `.drift/config.yaml`: settings people choose. Every field is optional.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DriftConfig {
@@ -181,10 +229,16 @@ impl DriftConfig {
     /// or an `experimental` that is not a list of names, is an error.
     pub fn load(root: &Path) -> anyhow::Result<Self> {
         let p = root.join(CONFIG_FILE);
+        if let Some(kept) = remembered(&REMEMBERED_CONFIGS, &p) {
+            return Ok(kept);
+        }
         let Some(text) = read_policy_file(&p)? else {
             return Ok(Self::default());
         };
-        Self::parse(&text, &p.display().to_string())
+        drift_core::work::note(drift_core::work::Work::ConfigLoad);
+        let cfg = Self::parse(&text, &p.display().to_string())?;
+        remember(&REMEMBERED_CONFIGS, &p, &cfg);
+        Ok(cfg)
     }
 
     /// The config written as `text` ([`Self::load`] reads the file and parses it so);
@@ -1224,14 +1278,28 @@ fn place_of_a_new_kind(c: &Convention) -> bool {
 }
 
 impl ConventionsFile {
+    /// The policy at `root`, `None` without one. Read once in a process that asked for
+    /// it ([`remember_configs`]).
     pub fn load(root: &Path) -> anyhow::Result<Option<Self>> {
         let p = root.join(CONVENTIONS_FILE);
+        if let Some(kept) = remembered(&REMEMBERED_POLICIES, &p) {
+            return Ok(Some(kept));
+        }
+        let read = Self::read(root, &p)?;
+        if let Some(f) = &read {
+            remember(&REMEMBERED_POLICIES, &p, f);
+        }
+        Ok(read)
+    }
+
+    fn read(root: &Path, p: &Path) -> anyhow::Result<Option<Self>> {
         if !p.exists() {
             return Ok(None);
         }
-        let Some(text) = read_policy_file(&p)? else {
+        let Some(text) = read_policy_file(p)? else {
             return Ok(None);
         };
+        drift_core::work::note(drift_core::work::Work::PolicyLoad);
         // The version first, read alone: a newer Drift's file can hold a rule type or a
         // shape this one cannot parse, and the person needs to hear "upgrade", not a
         // parse error. Where even the version cannot be read, the full parse says why.

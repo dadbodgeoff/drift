@@ -134,6 +134,7 @@ thread_local! {
 /// [`Unavailable`] when that thread cannot be started with [`HEADROOM_BYTES`]
 /// to spare; a panic in `f` is passed on.
 pub fn with_stack_for<T: Send>(len: usize, f: impl FnOnce() -> T + Send) -> Result<T, Unavailable> {
+    crate::work::note(crate::work::Work::Parse);
     if len <= COVERS.get() {
         return Ok(f());
     }

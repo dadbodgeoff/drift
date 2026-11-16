@@ -12,6 +12,7 @@ pub mod practice;
 pub mod speculation;
 pub mod stack;
 pub mod unlisted;
+pub mod work;
 
 pub use facts::*;
 pub use unlisted::{UnlistedReason, UnlistedRoute};

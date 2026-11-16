@@ -370,28 +370,45 @@ fn write_json<T: Serialize>(path: &Path, value: &T) {
 /// file). Under [`StateLock`], the file is read again and what this hook changed since
 /// its read ([`merged`]: entries it added or removed, fields it set) is laid over it;
 /// everything else stays as the other hook saved it. Then written atomically.
+///
+/// A hook never waits long for the lock: when another holds it past [`LOCK_TRIES`],
+/// this one saves without it, then reads the file back and, when a save made meanwhile
+/// left out what this hook changed, merges and writes again ([`UNLOCKED_TRIES`] times
+/// at most). Best effort there, as a hook fails open; under the lock, exact.
 fn save_state(path: &Path, s: &SessionState) {
     if link_under_drift(path).is_some() {
         return;
     }
-    let _held = StateLock::take(path);
+    let held = StateLock::take(path);
     let Ok(mine) = serde_json::to_value(s) else {
         return;
     };
-    let out = match load_state(path).and_then(|now| serde_json::to_value(&now).ok()) {
-        Some(now) => {
-            let base = s
-                .read_as
-                .clone()
-                .or_else(|| serde_json::to_value(SessionState::default()).ok());
-            merged(base.as_ref(), Some(&mine), Some(&now))
+    let base = s
+        .read_as
+        .clone()
+        .or_else(|| serde_json::to_value(SessionState::default()).ok());
+    let now = || load_state(path).and_then(|now| serde_json::to_value(&now).ok());
+    let tries = if held.held() { 1 } else { UNLOCKED_TRIES };
+    for _ in 0..tries {
+        let out = match now() {
+            Some(now) => merged(base.as_ref(), Some(&mine), Some(&now))
                 // A merge that does not read back as a state: this hook's, as before.
                 .filter(|v| serde_json::from_value::<SessionState>(v.clone()).is_ok())
-                .unwrap_or(mine)
+                .unwrap_or_else(|| mine.clone()),
+            None => mine.clone(),
+        };
+        write_json(path, &out);
+        if held.held() {
+            return;
         }
-        None => mine,
-    };
-    write_json(path, &out);
+        // Without the lock: done when what this hook changed is in the file as it is
+        // now (laying it over again would change nothing).
+        if now().is_some_and(|back| {
+            merged(base.as_ref(), Some(&mine), Some(&back)).as_ref() == Some(&back)
+        }) {
+            return;
+        }
+    }
 }
 
 /// What a field of the session state is once this hook's change is laid over another's:
@@ -443,57 +460,78 @@ fn merged(base: Option<&Value>, mine: Option<&Value>, now: Option<&Value>) -> Op
 }
 
 /// Tries to take a session state's lock before giving up and saving without it: a hook
-/// never waits long on another.
+/// never waits long on another (half a second at most; a save holds the lock for a few
+/// milliseconds).
 const LOCK_TRIES: u32 = 50;
 const LOCK_WAIT_MS: u64 = 10;
-/// A lock older than this was left by a hook that died holding it.
-const LOCK_STALE_SECS: u64 = 10;
+/// Writes a save made without the lock makes at most ([`save_state`]).
+const UNLOCKED_TRIES: u32 = 3;
 
 /// Held while [`save_state`] reads, merges and writes a session's state: one hook at a
-/// time. The lock is a file beside the state (`.<id>.json.lock`) made with `create_new`,
-/// removed when this is dropped; one left by a hook that died is taken over once old.
-struct StateLock(Option<PathBuf>);
+/// time. The lock is the operating system's, on a file beside the state
+/// (`.<id>.json.flock`) that is kept: it ends with the handle, so a hook that dies
+/// holding it (a hook past its timeout is killed) leaves nothing to wait out or take
+/// over. A lock left as a file that its holder removed (`.<id>.json.lock`, written by an
+/// earlier Drift) could be taken over after 10 s while its holder still lived, or removed
+/// by a hook that had seen it stale under the one that had just taken it: two hooks then
+/// saved at once and one's entries were lost.
+struct StateLock(Option<std::fs::File>);
 
 impl StateLock {
     fn take(path: &Path) -> Self {
         let Some(name) = path.file_name() else {
             return Self(None);
         };
-        let lock = path.with_file_name(format!(".{}.lock", name.to_string_lossy()));
+        let lock = path.with_file_name(format!(".{}.flock", name.to_string_lossy()));
         if let Some(dir) = lock.parent() {
             let _ = std::fs::create_dir_all(dir);
         }
+        // Never through a link a repository could plant (see [`write_json`]).
+        if std::fs::symlink_metadata(&lock).is_ok_and(|m| !m.is_file()) {
+            return Self(None);
+        }
         for _ in 0..LOCK_TRIES {
-            match std::fs::OpenOptions::new()
+            let Ok(f) = std::fs::OpenOptions::new()
                 .write(true)
-                .create_new(true)
+                .create(true)
+                .truncate(false)
                 .open(&lock)
-            {
-                Ok(_) => return Self(Some(lock)),
-                Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
-                    let stale = std::fs::symlink_metadata(&lock)
-                        .and_then(|m| m.modified())
-                        .ok()
-                        .and_then(|t| t.elapsed().ok())
-                        .is_some_and(|age| age.as_secs() >= LOCK_STALE_SECS);
-                    if stale {
-                        let _ = std::fs::remove_file(&lock);
-                    } else {
-                        std::thread::sleep(std::time::Duration::from_millis(LOCK_WAIT_MS));
-                    }
+            else {
+                return Self(None);
+            };
+            match f.try_lock() {
+                // A lock on a file removed meanwhile (pruned) keeps no one out: again.
+                Ok(()) if same_file(&f, &lock) => return Self(Some(f)),
+                Ok(()) => continue,
+                Err(std::fs::TryLockError::WouldBlock) => {
+                    std::thread::sleep(std::time::Duration::from_millis(LOCK_WAIT_MS));
                 }
-                Err(_) => return Self(None),
+                Err(std::fs::TryLockError::Error(_)) => return Self(None),
             }
         }
         Self(None)
     }
+
+    fn held(&self) -> bool {
+        self.0.is_some()
+    }
 }
 
-impl Drop for StateLock {
-    fn drop(&mut self) {
-        if let Some(lock) = &self.0 {
-            let _ = std::fs::remove_file(lock);
+/// Whether the open file `f` is still the file at `path`.
+fn same_file(f: &std::fs::File, path: &Path) -> bool {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        match (f.metadata(), std::fs::symlink_metadata(path)) {
+            (Ok(a), Ok(b)) => a.dev() == b.dev() && a.ino() == b.ino(),
+            _ => false,
         }
+    }
+    // Elsewhere an open file cannot be removed.
+    #[cfg(not(unix))]
+    {
+        let _ = (f, path);
+        true
     }
 }
 
@@ -533,10 +571,20 @@ fn prune_sessions(dir: &Path) {
             .map_or(0, |d| d.as_secs());
         let path = e.path();
         let ext = path.extension().and_then(|x| x.to_str()).unwrap_or("");
-        // Old state files, and temp and lock files left by a writer killed before its
-        // rename.
+        // Old state files; the lock file of one ([`StateLock`]) once the state is gone,
+        // since removing a lock in use would let two hooks hold it; and temp files left
+        // by a writer killed before its rename, and lock files an earlier Drift left.
         let stale = match ext {
             "json" => age > SESSION_MAX_AGE_SECS,
+            "flock" => {
+                let name = e.file_name().to_string_lossy().into_owned();
+                let state = name
+                    .strip_prefix('.')
+                    .and_then(|n| n.strip_suffix(".flock"))
+                    .unwrap_or_default()
+                    .to_string();
+                age > SESSION_MAX_AGE_SECS && !dir.join(state).exists()
+            }
             "tmp" | "lock" => age > TMP_MAX_AGE_SECS,
             _ => false,
         };
@@ -572,8 +620,10 @@ pub fn handle(event: &str) -> Option<Value> {
 /// The hook path log (PLAN-R14 D1): with `DRIFT_HOOK_TRACE=<file>` set, each hook
 /// appends one JSON line with the event, the path it took (`single_file`,
 /// `full_scan:<reason>`, `skipped:<reason>`, `none` when it scanned nothing), whether it
-/// answered, and how long it took. Off by default; it changes no behaviour, and a file
-/// that cannot be written is ignored. For the perf record and the daemon decision.
+/// answered, how long it took, and the work it did by count (`work`: tree walks, source
+/// files read, parses, full and one-file scans, config and policy loads). Off by
+/// default; it changes no behaviour, and a file that cannot be written is ignored. For
+/// the perf record, the daemon decision and the tests that pin what each hook costs.
 pub mod trace {
     use std::cell::RefCell;
     use std::time::Duration;
@@ -602,11 +652,18 @@ pub mod trace {
         let path = PATH
             .with(|p| p.borrow().clone())
             .unwrap_or_else(|| "none".to_string());
+        // What the hook did, by count ([`drift_core::work`]): what a test pins, since
+        // counts do not vary between machines as `ms` does.
+        let work: serde_json::Map<String, serde_json::Value> = drift_core::work::counts()
+            .into_iter()
+            .map(|(k, n)| (k.to_string(), n.into()))
+            .collect();
         let line = serde_json::json!({
             "event": event,
             "path": path,
             "answered": answered,
             "ms": took_time.as_millis() as u64,
+            "work": work,
         });
         if let Ok(mut f) = std::fs::OpenOptions::new()
             .create(true)
@@ -620,6 +677,11 @@ pub mod trace {
 }
 
 fn handle_event(event: &str, input: &Value) -> anyhow::Result<Option<Value>> {
+    // A hook is a short process that never writes the config and loads it from many
+    // places: read once.
+    drift_mine::policy::remember_configs();
+    // ... and needs the whole repository at most once: one full scan, shared.
+    crate::project::keep_repository_facts();
     let cwd = input
         .get("cwd")
         .and_then(Value::as_str)
@@ -700,17 +762,20 @@ fn handle_event(event: &str, input: &Value) -> anyhow::Result<Option<Value>> {
     {
         return Ok(out);
     }
-    let project = Project::open_for_agents(&root)?;
+    // With the facts of its one full scan, when it makes one: left for the exit to free
+    // (see [`edit_facts`]).
+    let project = std::mem::ManuallyDrop::new(Project::open_for_agents(&root)?);
+    let project: &Project = &project;
 
     match event {
-        "SessionStart" => session_start(&project, input, &state_path),
+        "SessionStart" => session_start(project, input, &state_path),
         "SessionEnd" => {
-            session_end(&project, input, &state_path);
+            session_end(project, input, &state_path);
             Ok(None)
         }
-        "PreToolUse" => pre_tool_use(&project, input, &state_path),
-        "PostToolUse" => post_tool_use(&project, input, &state_path),
-        "Stop" => stop(&project, input, &state_path),
+        "PreToolUse" => pre_tool_use(project, input, &state_path),
+        "PostToolUse" => post_tool_use(project, input, &state_path),
+        "Stop" => stop(project, input, &state_path),
         "UserPromptSubmit" => Ok(user_prompt_submit(&state_path)),
         // Subagents get advice through PostToolUse; blocking them risks nested loops.
         _ => Ok(None),
@@ -768,8 +833,8 @@ fn session_start(p: &Project, input: &Value, state_path: &Path) -> anyhow::Resul
         .unwrap_or("startup");
     let dir = sessions_dir(&p.root);
     let mut note = None;
-    // The facts, when it scans: left for the exit to free (see [`edit_facts`]).
-    let mut scanned = std::mem::ManuallyDrop::new(None::<drift_core::RepoFacts>);
+    // The facts, when it scans ([`Project::repository_facts`]: one scan for everything).
+    let mut scanned = None::<&drift_core::RepoFacts>;
     // Without a session id every session shares one state file: a new one starts fresh.
     let anonymous = input.get("session_id").and_then(Value::as_str).is_none();
     let existing = load_state(state_path).filter(|_| !(anonymous && source == "startup"));
@@ -812,7 +877,9 @@ fn session_start(p: &Project, input: &Value, state_path: &Path) -> anyhow::Resul
                     h.baseline
                 }
                 None => {
-                    let facts: &drift_core::RepoFacts = scanned.insert(p.scan(false)?);
+                    trace::took("full_scan:session_start");
+                    let facts = p.repository_facts()?;
+                    scanned = Some(facts);
                     // The inventory and the conventions check beside the practice map:
                     // none of the three reads what another finds.
                     let kept = derived(p, facts);
@@ -878,12 +945,11 @@ fn session_start(p: &Project, input: &Value, state_path: &Path) -> anyhow::Resul
         write_json(&dir.join(crate::lookup::INDEX_FILE), &index);
         index
     };
-    let index = match &*scanned {
+    let index = match scanned {
         Some(facts) => Some(built(facts)),
         None => crate::lookup::HintIndex::load(&dir).or_else(|| {
-            p.scan(false)
-                .ok()
-                .map(|facts| built(&std::mem::ManuallyDrop::new(facts)))
+            trace::took("full_scan:hint_index");
+            p.repository_facts().ok().map(built)
         }),
     };
     // One brief, one cap (PLAN-R14 C2), both parts behind `agents.brief`: the practices
@@ -2052,9 +2118,11 @@ fn security_keys(
 /// (made once, shared with the conventions check): the repository is scanned only when
 /// it shows something to look up (an entry point, or a risky operation, client leak or
 /// import of another package not yet known), so an edit of any other file costs no more
-/// than that one-file scan. When `own`'s scan was of the whole repository already (its
-/// flag), those are the facts read: the repository is not scanned twice, and the
-/// practice map built of them is left in `map` for the conventions' check.
+/// than that one-file scan. The repository's facts are those of the hook's one full scan
+/// ([`Project::repository_facts`]), whoever asked for it first: `own`'s, when it was of
+/// the repository (its flag), or the conventions' check's after this, so the repository
+/// is never scanned twice. The practice map built of them is left in `map`, for the
+/// conventions' check of the same facts.
 fn edit_facts<'f>(
     p: &Project,
     rel: &str,
@@ -2108,16 +2176,12 @@ fn edit_facts<'f>(
     if !(practices || security || !own_edges.is_empty()) {
         return None;
     }
-    // The repository's facts: the scan already made, when it was of the repository.
-    // A scan made here is left for the exit to free: a hook is a process that ends
-    // with its answer, and freeing the facts of a large repository takes tens of
-    // milliseconds nobody waits on otherwise.
-    let scanned;
+    // The repository's facts: the scan already made, when it was of the repository;
+    // else the one the conventions' check reads too, when it needs the repository.
     let facts: &drift_core::RepoFacts = if whole {
         own
     } else {
-        scanned = std::mem::ManuallyDrop::new(p.scan(false).ok()?);
-        &scanned
+        p.repository_facts().ok()?
     };
     // The inventory beside the practice map: neither reads what the other finds.
     // Both read every listing of the facts: one copy for the two.
@@ -2132,13 +2196,9 @@ fn edit_facts<'f>(
                 let build = || {
                     crate::practices::report_units_kept_of(&p.root, facts, &listed, kept.as_ref())
                 };
-                // Of the facts the conventions' check reads (`own`'s, of the repository):
-                // left in `map` for it ([`Project::check_keeping`]).
-                if whole {
-                    drift_mine::practices::departures(map.get_or_init(build), Some(rel))
-                } else {
-                    drift_mine::practices::departures(&build(), Some(rel))
-                }
+                // Of the repository's facts, which the conventions' check reads when it
+                // reads the repository: left in `map` for it ([`Project::check_keeping`]).
+                drift_mine::practices::departures(map.get_or_init(build), Some(rel))
             });
             (kept, departures)
         },
@@ -2423,33 +2483,32 @@ fn post_tool_use(p: &Project, input: &Value, state_path: &Path) -> anyhow::Resul
     };
     // One scan for both, made when the first of them needs it: what the file's own
     // facts say is worth looking up in the whole repository, and the conventions check.
-    // Of the file alone, unless the repository is sure to be scanned for it anyway
-    // ([`scans_repository`]): then of the repository at once, and never twice. The
-    // facts are left for the exit to free (see [`edit_facts`]).
+    // Of the file alone (`Some`), unless one file is not enough or the repository is
+    // sure to be scanned for it anyway ([`scans_repository`]): then (`None`) the
+    // repository's facts at once, from the hook's one full scan
+    // ([`Project::repository_facts`]), which everything after reads too. The facts are
+    // left for the exit to free (see [`edit_facts`]).
     let own = std::mem::ManuallyDrop::new(std::cell::OnceCell::new());
-    let scan = || {
+    let one_file = || {
         own.get_or_init(|| {
             if scans_repository(p, &rel, state_path) {
                 trace::took("full_scan:entry_points");
-                p.scan(false).map(|facts| (facts, true))
+                None
             } else {
-                p.scan_for_file(&rel)
+                p.scan_one_file(&rel)
             }
         })
+        .as_ref()
+    };
+    let scan = || match one_file() {
+        Some(facts) => Some((facts, false)),
+        None => p.repository_facts().ok().map(|facts| (facts, true)),
     };
     // The practice map `edit_facts` builds of the repository's facts, read again by the
     // conventions' check of the same facts below.
     let map = std::cell::OnceCell::new();
-    let practices = edit_facts(
-        p,
-        &rel,
-        state_path,
-        &|| scan().as_ref().ok().map(|(facts, whole)| (facts, *whole)),
-        &map,
-    );
-    let areas = area_facts(&rel, state_path, &|| {
-        scan().as_ref().ok().map(|(facts, whole)| (facts, *whole))
-    });
+    let practices = edit_facts(p, &rel, state_path, &scan, &map);
+    let areas = area_facts(&rel, state_path, &scan);
     let practices = match (practices, areas) {
         (Some(mut a), Some(b)) => {
             a.push_str(&b);
@@ -2467,24 +2526,30 @@ fn post_tool_use(p: &Project, input: &Value, state_path: &Path) -> anyhow::Resul
             save_state(state_path, &state);
         }
     }
-    scan();
-    let (facts, whole) = std::mem::ManuallyDrop::into_inner(own)
-        .into_inner()
-        .expect("scanned above")?;
     // [FIX1-G1] One file's facts settle its check only when it finds nothing the rest
     // of the repository could change (`drift_check`'s rule, [`crate::mcp::alone_is_enough`]):
     // a guard rule sets aside the entry points the practice map cannot tell, and a map of
     // one file's facts cannot follow a guard or dependency defined in another, so a new
-    // unguarded route was set aside and never said (nor did Stop block on it).
-    let facts = if whole || crate::mcp::alone_is_enough(p, &facts, &rel) {
-        facts
-    } else {
-        trace::took("full_scan:not_alone");
-        p.scan(false)?
+    // unguarded route was set aside and never said (nor did Stop block on it). The
+    // repository's facts are the ones the lines above read, when they read them: the
+    // repository is scanned once at most.
+    let (facts, of_repository) = match one_file() {
+        Some(facts) if crate::mcp::alone_is_enough(p, facts, &rel) => (facts, false),
+        Some(_) => {
+            trace::took("full_scan:not_alone");
+            (p.repository_facts()?, true)
+        }
+        None => (p.repository_facts()?, true),
     };
-    let facts = std::mem::ManuallyDrop::new(facts);
     let only: BTreeSet<String> = [rel.clone()].into();
-    let report = p.check_keeping(&facts, Some(&only), &map);
+    // The map of the repository's facts is the one `edit_facts` built; one file's facts
+    // have a map of their own.
+    let of_file = std::cell::OnceCell::new();
+    let report = p.check_keeping(
+        facts,
+        Some(&only),
+        if of_repository { &map } else { &of_file },
+    );
     let shown_rel = sanitize(&rel, 160);
     // Not parsed: say so, to the agent and the person. Silence would read as clean.
     if report.unchecked.contains(&rel) {
@@ -2527,7 +2592,7 @@ fn post_tool_use(p: &Project, input: &Value, state_path: &Path) -> anyhow::Resul
         ));
     }
     if !unsure.is_empty() {
-        let u = drift_mine::unchecked::Unchecked::of(&facts);
+        let u = drift_mine::unchecked::Unchecked::of(facts);
         let on: Vec<&str> = u
             .dependents
             .get(&rel)
@@ -2634,7 +2699,7 @@ fn told_since_last_stop(state: &SessionState) -> bool {
 fn still_standing(
     p: &Project,
     state_path: &Path,
-    facts: Option<drift_core::RepoFacts>,
+    facts: Option<&drift_core::RepoFacts>,
     map: Option<&drift_mine::practices::PracticesReport>,
 ) -> Option<String> {
     use drift_mine::introduced as intro;
@@ -2643,11 +2708,11 @@ fn still_standing(
     }
     // A map is of the facts given, never of a scan made here.
     let built = map.filter(|_| facts.is_some());
-    // Left for the exit to free (see [`edit_facts`]).
-    let facts = std::mem::ManuallyDrop::new(match facts {
+    // The hook's one full scan ([`Project::repository_facts`]).
+    let facts: &drift_core::RepoFacts = match facts {
         Some(f) => f,
-        None => p.scan(false).ok()?,
-    });
+        None => p.repository_facts().ok()?,
+    };
     // Read again after the scan, as PostToolUse does.
     let mut state = load_state(state_path)?;
     let mut parts = Vec::new();
@@ -2656,17 +2721,17 @@ fn still_standing(
     // inventory beside the practice map, neither reading what the other finds.
     // Digested only when something reads it: the map built already is not read back.
     let kept = (!state.security_advised.is_empty() || built.is_none())
-        .then(|| derived(p, &facts))
+        .then(|| derived(p, facts))
         .flatten();
     let (security_now, practices_now) = crate::card::beside(
-        || (!state.security_advised.is_empty()).then(|| security_keys(p, &facts, kept.as_ref())),
+        || (!state.security_advised.is_empty()).then(|| security_keys(p, facts, kept.as_ref())),
         || {
             (!state.practice_advised.is_empty()).then(|| {
                 let owned;
                 let report = match built {
                     Some(m) => m,
                     None => {
-                        owned = practice_report(p, &facts, kept.as_ref());
+                        owned = practice_report(p, facts, kept.as_ref());
                         &owned
                     }
                 };
@@ -2717,7 +2782,7 @@ fn still_standing(
         }
     }
     if !state.edge_advised.is_empty() {
-        let now = intro::edge_keys(&drift_mine::map::package_graph(&facts));
+        let now = intro::edge_keys(&drift_mine::map::package_graph(facts));
         let standing: Vec<&String> = state
             .edge_advised
             .iter()
@@ -2772,8 +2837,8 @@ fn stop(p: &Project, input: &Value, state_path: &Path) -> anyhow::Result<Option<
     if told {
         trace::took("full_scan:told_facts");
     }
-    // The facts, when it scans: left for the exit to free (see [`edit_facts`]).
-    let mut scanned = std::mem::ManuallyDrop::new(None);
+    // The facts, when it scans ([`Project::repository_facts`]).
+    let mut scanned = None;
     // The practice map the conventions' check built of those facts, if it built one:
     // what still stands is read from the same map (see [`Project::check_keeping`]).
     let map = std::cell::OnceCell::new();
@@ -2782,7 +2847,6 @@ fn stop(p: &Project, input: &Value, state_path: &Path) -> anyhow::Result<Option<
     if !told || out.as_ref().is_some_and(|o| o.get("decision").is_some()) {
         return Ok(out);
     }
-    let scanned = std::mem::ManuallyDrop::into_inner(scanned);
     let Some(line) = still_standing(p, state_path, scanned, map.get()) else {
         return Ok(out);
     };
@@ -2797,11 +2861,11 @@ fn stop(p: &Project, input: &Value, state_path: &Path) -> anyhow::Result<Option<
 
 /// The conventions' part of Stop. `scanned` receives the facts when it scans, and `map`
 /// the practice map of those facts when its check builds one.
-fn stop_conventions(
-    p: &Project,
+fn stop_conventions<'p>(
+    p: &'p Project,
     input: &Value,
     state_path: &Path,
-    scanned: &mut Option<drift_core::RepoFacts>,
+    scanned: &mut Option<&'p drift_core::RepoFacts>,
     map: &std::cell::OnceCell<drift_mine::practices::PracticesReport>,
 ) -> anyhow::Result<Option<Value>> {
     // Wiring rules (experimental) need the whole repository, so they are judged here,
@@ -2846,7 +2910,8 @@ fn stop_conventions(
     } else {
         "full_scan:wiring_edits"
     });
-    let facts: &drift_core::RepoFacts = scanned.insert(p.scan(false)?);
+    let facts = p.repository_facts()?;
+    *scanned = Some(facts);
     // Without blocking rules only the edited files matter.
     let only = (!has_block).then(|| edited.clone());
     let report = p.check_keeping(facts, only.as_ref(), map);
@@ -5186,5 +5251,117 @@ mod tests {
         );
         // No lock is left behind.
         assert!(!dir.path().join("sessions").join(".s.json.lock").exists());
+    }
+
+    /// Every file under `dir` made to look `secs` old.
+    fn backdate(dir: &Path, secs: u64) {
+        let then = std::time::SystemTime::now() - std::time::Duration::from_secs(secs);
+        for e in std::fs::read_dir(dir).unwrap().flatten() {
+            if let Ok(f) = std::fs::OpenOptions::new().write(true).open(e.path()) {
+                f.set_modified(then).unwrap();
+            }
+        }
+    }
+
+    /// Pins the session-state lock (gap: hook speed, session state). A lock older than
+    /// 10 s was taken over as left by a dead hook, though its holder could still be
+    /// saving: two hooks then merged into the file at once and one's entries were lost.
+    /// A lock held is now held however old its file looks, and the save that waits for
+    /// it reads what the holder wrote.
+    #[test]
+    fn a_held_lock_is_never_taken_over_and_the_waiting_save_keeps_both_changes() {
+        let dir = tempfile::tempdir().unwrap();
+        let sessions = dir.path().join("sessions");
+        let path = sessions.join("s.json");
+        let start = SessionState {
+            has_baseline: true,
+            ..SessionState::default()
+        };
+        save_state(&path, &start);
+        let mut mine = load_state(&path).unwrap();
+        mine.edited.insert("app/mine.ts".into());
+        let held = StateLock::take(&path);
+        assert!(held.held());
+        backdate(&sessions, 60);
+        // Another hook's save, while the lock is held: it waits.
+        let waiting = {
+            let path = path.clone();
+            std::thread::spawn(move || save_state(&path, &mine))
+        };
+        // The holder's save, made under its lock while the other waits.
+        let mut theirs = load_state(&path).unwrap();
+        theirs.edited.insert("app/theirs.ts".into());
+        write_json(&path, &theirs);
+        std::thread::sleep(std::time::Duration::from_millis(100));
+        drop(held);
+        waiting.join().unwrap();
+        let now = load_state(&path).unwrap();
+        assert_eq!(
+            now.edited,
+            BTreeSet::from(["app/mine.ts".to_string(), "app/theirs.ts".to_string()]),
+            "{now:?}"
+        );
+        // While held, however old the lock's file is, no other hook takes it.
+        let held = StateLock::take(&path);
+        backdate(&sessions, 60);
+        let other = {
+            let path = path.clone();
+            std::thread::spawn(move || StateLock::take(&path).held())
+        };
+        assert!(!other.join().unwrap(), "a held lock was taken over");
+        drop(held);
+        assert!(StateLock::take(&path).held());
+    }
+
+    /// Pins that a lock left behind holds nothing up: the file of a hook that died
+    /// holding the lock (killed past its timeout), or the lock file an earlier Drift
+    /// left, which made every hook for the next 10 s wait half a second and then save
+    /// without the lock.
+    #[test]
+    fn a_lock_left_behind_does_not_hold_up_a_save() {
+        let dir = tempfile::tempdir().unwrap();
+        let sessions = dir.path().join("sessions");
+        let path = sessions.join("s.json");
+        std::fs::create_dir_all(&sessions).unwrap();
+        std::fs::write(sessions.join(".s.json.lock"), "").unwrap();
+        // A hook that dies holding the lock: its handle closes, the lock ends.
+        drop(StateLock::take(&path));
+        assert!(sessions.join(".s.json.flock").exists());
+        let taken = StateLock::take(&path);
+        assert!(taken.held());
+        drop(taken);
+        let s = SessionState {
+            has_baseline: true,
+            primed: ["D-aaaaaa".to_string()].into(),
+            ..SessionState::default()
+        };
+        save_state(&path, &s);
+        assert!(load_state(&path).unwrap().primed.contains("D-aaaaaa"));
+    }
+
+    /// Pins that a save never waits on a lock held past its wait (hooks fail open): it
+    /// saves without it, its own change in the file, within a second or so.
+    #[test]
+    fn a_save_gives_up_waiting_and_still_saves_its_change() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("sessions").join("s.json");
+        let start = SessionState {
+            has_baseline: true,
+            advised: ["old".to_string()].into(),
+            ..SessionState::default()
+        };
+        save_state(&path, &start);
+        let mut mine = load_state(&path).unwrap();
+        mine.advised.insert("new".into());
+        let held = StateLock::take(&path);
+        let started = std::time::Instant::now();
+        save_state(&path, &mine);
+        // Generous: the wait is half a second.
+        assert!(started.elapsed() < std::time::Duration::from_secs(5));
+        drop(held);
+        assert_eq!(
+            load_state(&path).unwrap().advised,
+            BTreeSet::from(["new".to_string(), "old".to_string()])
+        );
     }
 }
