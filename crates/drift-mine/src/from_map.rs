@@ -163,13 +163,7 @@ pub struct LayeringEvidence {
 pub fn layering(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) -> Vec<Proposal> {
     let units = crate::roles::units(repo, kinds);
     let ctx = RepoContext::new(repo, &units);
-    let files: Vec<&FileFacts> = units
-        .iter()
-        .filter_map(|u| match u.view {
-            View::File(f) => Some(f),
-            _ => None,
-        })
-        .collect();
+    let files = file_units(&units);
     let graph = Graph::new(repo, &files);
 
     // File roles that lie wholly in one layer, with their members.
@@ -208,17 +202,9 @@ pub fn layering(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
     let mut out: Vec<(u8, Proposal)> = Vec::new();
     for (layer, roles) in &layer_roles {
         for (target, &target_files) in &graph.targetable {
-            if target == layer
-                || target_files < MIN_TARGET_FILES
-                || graph.touches(layer, target) > 0
-            {
+            let Some((reverse_files, through)) = graph.one_way_to(layer, target, target_files)
+            else {
                 continue;
-            }
-            let reverse_files = graph.edges(target, layer);
-            let through = if reverse_files < MIN_REVERSE_FILES {
-                graph.through(target, layer)
-            } else {
-                None
             };
             // The linter says the target must not import this layer: this layer
             // importing the target is the intended direction.
@@ -319,6 +305,7 @@ pub fn layering(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
                 promoted_from_hidden: false,
                 promoted_from_practice: None,
                 from_map: Some(LAYERING.to_string()),
+                accepted_evidence: None,
             };
             let same_as_mined = mined
                 .iter()
@@ -335,6 +322,94 @@ pub fn layering(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
         }
     }
     rank(out)
+}
+
+/// The file units of mining's units: what the layering graph is built from.
+fn file_units<'r>(units: &[crate::roles::Unit<'r>]) -> Vec<&'r FileFacts> {
+    units
+        .iter()
+        .filter_map(|u| match u.view {
+            View::File(f) => Some(f),
+            _ => None,
+        })
+        .collect()
+}
+
+/// The graph of layers (areas) that [`layering`] reads, for `drift map --json`: what
+/// a layering proposal rests on, from the same facts and the same functions.
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct AreaGraph {
+    /// Each pair of layers where production files of the first import the second
+    /// (non-type-only path imports between packages or in the root package, as mining
+    /// counts layer edges), with how many files. Sorted by `from`, then `to`.
+    pub edges: Vec<AreaEdge>,
+    /// The one-way pairs: `layer` never touches `never_imports` in any way (type-only,
+    /// deferred and by workspace-package name included), `never_imports` has at least
+    /// [`MIN_TARGET_FILES`] production files, and it imports `layer` in at least
+    /// [`MIN_REVERSE_FILES`] files, or through a third layer. What a layering proposal
+    /// starts from, before what [`layering`] asks of a role (its importing members, its
+    /// package's manifest, the linter). Sorted by `layer`, then `never_imports`.
+    pub one_way: Vec<OneWayPair>,
+}
+
+/// One edge of the [`AreaGraph`].
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+pub struct AreaEdge {
+    pub from: String,
+    pub to: String,
+    pub files: usize,
+}
+
+/// One one-way pair of the [`AreaGraph`].
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+pub struct OneWayPair {
+    pub layer: String,
+    pub never_imports: String,
+    /// Production files of `never_imports`.
+    pub target_files: usize,
+    /// Files of `never_imports` that import `layer`.
+    pub reverse_files: usize,
+    /// The third layer `never_imports` reaches `layer` through, where fewer than
+    /// [`MIN_REVERSE_FILES`] files import it directly. Not serialised when none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub through: Option<String>,
+}
+
+/// The [`AreaGraph`] of `repo`: built as [`layering`] builds its graph, and its one-way
+/// pairs found with the test [`layering`] applies first (`Graph::one_way_to`).
+pub fn area_graph(repo: &RepoFacts, kinds: &FileKinds) -> AreaGraph {
+    let units = crate::roles::units(repo, kinds);
+    let files = file_units(&units);
+    let graph = Graph::new(repo, &files);
+    let edges = graph
+        .edges
+        .iter()
+        .map(|((from, to), &files)| AreaEdge {
+            from: from.clone(),
+            to: to.clone(),
+            files,
+        })
+        .collect();
+    let mut one_way = Vec::new();
+    for layer in graph.packages.keys() {
+        for (target, &target_files) in &graph.targetable {
+            let Some((reverse_files, through)) = graph.one_way_to(layer, target, target_files)
+            else {
+                continue;
+            };
+            if reverse_files < MIN_REVERSE_FILES && through.is_none() {
+                continue;
+            }
+            one_way.push(OneWayPair {
+                layer: layer.clone(),
+                never_imports: target.clone(),
+                target_files,
+                reverse_files,
+                through,
+            });
+        }
+    }
+    AreaGraph { edges, one_way }
 }
 
 /// The proposals to offer a repository now (at most [`MAX_OFFERED`], in [`layering`]'s
@@ -606,6 +681,29 @@ impl<'a> Graph<'a> {
             .get(&(from.to_string(), to.to_string()))
             .copied()
             .unwrap_or(0)
+    }
+
+    /// `layer` never touches `target` ([`Graph::touches`]), a layer of at least
+    /// [`MIN_TARGET_FILES`] production files: the files of `target` that import `layer`,
+    /// and, where fewer than [`MIN_REVERSE_FILES`] do, the third layer `target` reaches
+    /// it through ([`Graph::through`]). `None` for any other pair. The first test of
+    /// [`layering`], and the one-way pairs of [`area_graph`].
+    fn one_way_to(
+        &self,
+        layer: &str,
+        target: &str,
+        target_files: usize,
+    ) -> Option<(usize, Option<String>)> {
+        if target == layer || target_files < MIN_TARGET_FILES || self.touches(layer, target) > 0 {
+            return None;
+        }
+        let reverse_files = self.edges(target, layer);
+        let through = if reverse_files < MIN_REVERSE_FILES {
+            self.through(target, layer)
+        } else {
+            None
+        };
+        Some((reverse_files, through))
     }
 
     fn touches(&self, from: &str, to: &str) -> usize {

@@ -60,10 +60,15 @@ pub fn block(p: &Project) -> String {
             sanitize(&c.example, 160)
         ));
     }
+    // The cut line says how many of the rules left out block (the sort above puts
+    // them first, so only more than MAX_RULES blocking rules leave any out), in the
+    // words of every other capped list (`drift_mine::report::cut_note`).
     if accepted.len() > MAX_RULES {
+        let left = accepted.len() - MAX_RULES;
+        let blocking_left = blocking.saturating_sub(MAX_RULES);
         out.push_str(&format!(
-            "- …and {} more: run `drift check` before finishing.\n",
-            accepted.len() - MAX_RULES
+            "- …and {left} more{}: run `drift check` before finishing.\n",
+            drift_mine::report::cut_note(blocking_left, left - blocking_left)
         ));
     }
     out.push_str(

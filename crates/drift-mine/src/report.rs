@@ -281,7 +281,13 @@ fn worst_first<'a>(violations: &[&'a Violation]) -> Vec<&'a Violation> {
 /// them has is not named, so a list of advice never speaks of blocking.
 fn cut_counts(cut: &[&Violation]) -> String {
     let blocks = cut.iter().filter(|v| v.mode == "block").count();
-    let advice = cut.len() - blocks;
+    cut_note(blocks, cut.len() - blocks)
+}
+
+/// `cut_counts` from the counts: ` (2 that block, 3 advice)`, for any capped list
+/// whose items are not violations (rules primed before a write, rules exported), so
+/// every cut line in the product says the same thing the same way.
+pub fn cut_note(blocks: usize, advice: usize) -> String {
     let mut parts = Vec::new();
     if blocks > 0 {
         parts.push(format!("{blocks} that block"));

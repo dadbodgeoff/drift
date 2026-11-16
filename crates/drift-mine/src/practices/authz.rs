@@ -753,8 +753,9 @@ fn read_unit<'a>(
             // name (`require_feature` answering 403 unless the caller's plan has the
             // feature) refuses as the handler's own body would: read for it too.
             if !explained
-                && let Some(what) =
-                    refusal(r.node, r.quiet).or_else(|| caller_refusal(cx, r, &ev))
+                && let Some(what) = refusal(r.node, r.quiet)
+                    .or_else(|| cut_short(r.node))
+                    .or_else(|| caller_refusal(cx, r, &ev))
             {
                 let at = if r.depth == 0 { what } else { r.callee.clone() };
                 if refused.as_ref().is_none_or(|x| at < *x) {
@@ -4221,6 +4222,21 @@ fn refusal(n: Node<'_>, around: bool) -> Option<String> {
     }
 }
 
+/// A body whose checks, raises or responses were cut short ([`Symbol::truncated`]):
+/// what refuses may be among those not kept, so it is never read as a body that
+/// refuses no one; the unit is unknown, not "none". The field, named as
+/// [`common::truncated`] names it. Not a proof of anything: only the unknown path
+/// reads it.
+fn cut_short(n: Node<'_>) -> Option<String> {
+    let Node::Sym(s) = n else {
+        return None;
+    };
+    ["body_checks", "raise_checks", "responses"]
+        .into_iter()
+        .find(|f| common::symbol_truncated(s, f))
+        .map(|f| format!("truncated:{f}"))
+}
+
 /// [STRICT] Python: a raise of any class on a comparison one side of which is a
 /// value of the caller, by where the lowering says each side comes from
 /// ([`drift_core::controls::SIDES`], [`origin`]): `if row.estate_id != value: raise
@@ -6443,6 +6459,14 @@ fn rejects_signed_in(n: Node<'_>) -> bool {
     let Node::Sym(s) = n else {
         return false;
     };
+    // Checks or responses cut short (`truncated`): a 403 may be among those not
+    // kept, so it may turn a caller away; never read as one that does not.
+    if s.truncated
+        .iter()
+        .any(|t| t == "body_checks" || t == "responses")
+    {
+        return true;
+    }
     let signs_in = checks.iter().any(|c| {
         matches!(
             c.outcome,

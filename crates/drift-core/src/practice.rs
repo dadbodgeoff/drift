@@ -196,6 +196,11 @@ pub mod caps {
     pub const MATCHERS: usize = 8;
     /// [`crate::facts::RouteMatcher::patterns`].
     pub const MATCHER_PATTERNS: usize = 64;
+    /// [`crate::facts::Symbol::order`]: where both lowerings stop adding callees
+    /// (their `MAX_ORDER`). They record no `truncated` entry for it, so a list this
+    /// long may have been cut: the listed reading marks it so
+    /// ([`crate::facts::RepoFacts::listed`]); what mining reads is left as it is.
+    pub const ORDER: usize = 32;
 }
 
 /// Longest route pattern echoed ([`valid_route`]).

@@ -65,7 +65,7 @@ fn init_offers_the_baseline_and_writes_none() {
     let (code, out, err) = drift(r, &["security", "--write-baseline"]);
     assert_eq!(code, 0, "{err}");
     assert!(
-        out.contains("\nCommit it. `drift check` and `drift security --ratchet` exit 1 when a finding that is not in it appears, except of unscoped-key, which advise (`--write-baseline --fail-on <kind>` sets a kind to fail).\n"),
+        out.contains("\nCommit it. While it exists, `drift check` (every run over the repository, with or without accepted conventions; not a run given files to check) and `drift security --ratchet` exit 1 when a finding that is not in it appears, except of unscoped-key, which advise (`--write-baseline --fail-on <kind>` sets a kind to fail).\n"),
         "{out}"
     );
     assert!(!out.contains("where the project has conventions"), "{out}");

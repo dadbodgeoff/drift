@@ -1140,7 +1140,7 @@ fn agent_texts_count_what_blocks_by_the_mode_as_checked() {
         .collect();
     let t = |i: usize| replies[i]["result"]["content"][0]["text"].as_str().unwrap();
     assert!(
-        t(0).contains("mode: advises (set to block, but its role has 10 members, under the 15 needed to block)"),
+        t(0).contains("mode: advises (was block, now advise because its role had 10 members when it was mined, under the 15 needed to block)"),
         "{}",
         t(0)
     );

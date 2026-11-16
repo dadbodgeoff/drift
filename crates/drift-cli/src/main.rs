@@ -62,12 +62,14 @@ struct Cli {
     command: Command,
 }
 
-/// How many suggestion-tier conventions a human view lists (`drift_mine::rank`). The
-/// default tier is always listed in full; nothing is hidden from `check` or agents.
+/// How many suggestion-tier conventions a human view lists (`drift_mine::rank`). This
+/// cap never cuts the default tier (mining's own caps can, and a note then says so);
+/// nothing is hidden from `check` or agents.
 #[derive(clap::Args, Debug, Clone, Copy, Default)]
 struct CapArgs {
     /// Suggestions to list, best first (default 5, or `suggestion_cap` in
-    /// .drift/conventions.yaml). The default tier is always listed in full.
+    /// .drift/conventions.yaml). This cap never cuts the default tier; where mining's
+    /// own caps cut a default-tier rule, a note says so (`drift census --why`).
     #[arg(long, value_name = "N", conflicts_with = "all")]
     suggestions: Option<usize>,
     /// List every suggestion.
@@ -2052,13 +2054,20 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         "no package `{p}` (the overview lists them)"
                     );
                 }
-                drift_mine::map::overview(
+                let mut v = drift_mine::map::overview(
                     &facts,
                     &map,
                     p,
                     tests_mined,
                     drift_mine::map::Limits { roles: *max },
-                )
+                );
+                // What layering rests on, for the whole repository: the area graph and
+                // its one-way pairs, from the function the layering proposals use.
+                if *json {
+                    v["areas"] =
+                        serde_json::to_value(drift_mine::from_map::area_graph(&facts, &kinds))?;
+                }
+                v
             };
             let mut stdout = std::io::stdout().lock();
             if *json || *files {
@@ -2418,7 +2427,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     .filter(|k| !fail.contains(*k))
                     .collect();
                 println!(
-                    "Commit it. `drift check` and `drift security --ratchet` exit 1 when a finding that is not in it appears{}.",
+                    "Commit it. While it exists, `drift check` (every run over the repository, with or without accepted conventions; not a run given files to check) and `drift security --ratchet` exit 1 when a finding that is not in it appears{}.",
                     if advising.is_empty() {
                         String::new()
                     } else {
@@ -3594,6 +3603,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     "accept"
                 };
                 rlog.answered(&before, c, &q, kind.name(), decision, diff.as_ref());
+                policy.freeze_accepted_now();
                 policy.save(root)?;
                 rlog.flush();
                 println!("{}", review_summary(&policy));
@@ -3830,6 +3840,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     }
                 }
             }
+            policy.freeze_accepted_now();
             policy.save(root)?;
             rlog.flush();
             println!("{}", review_summary(&policy));
@@ -5723,6 +5734,7 @@ fn review_hidden(
     rlog.mark_hidden(w, promoted);
     let agents = drift_mine::admission::convention_view(&c);
     policy.add_promoted(c);
+    policy.freeze_accepted_now();
     policy.save(root)?;
     if promoted {
         lock.save(root)?;

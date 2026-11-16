@@ -121,6 +121,94 @@ pub struct Unlisted {
     pub symbol: String,
 }
 
+/// A production file that nothing Drift read reaches ([`Inventory::unreached`],
+/// [`unreached_files`]): listed under its own heading, with what it holds, instead
+/// of as production code or not at all.
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+pub struct UnreachedFile {
+    pub path: String,
+    /// False where the parser reported errors in it: its facts are best-effort.
+    pub parsed: bool,
+    /// The kinds of risky operation its code holds, sorted. Not serialised when empty.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub sinks: Vec<String>,
+    /// Lines of registrations written as a route ([`drift_core::FileFacts::unlisted_routes`]).
+    /// Not serialised when empty.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unlisted: Vec<u32>,
+}
+
+/// Production files (tests and non-production directories apart) that nothing Drift
+/// read reaches, by what the facts say and never by a name: no file of the repository
+/// imports the file or registers what it defines, no manifest names it as an entry
+/// ([`drift_core::PackageFacts::entries`]), no glob a file loads at run time
+/// ([`drift_core::FileFacts::discovers`]) covers it, it lists no entry point and no
+/// mount, and it either did not parse or imports nothing itself. Code that names
+/// nothing and that nothing names cannot run unless something Drift did not read
+/// names it (snippets kept as text and shown to users, a script started by a path).
+///
+/// A file stays reached where its directory holds, at any depth below, a file that is
+/// imported, an entry or lists an entry point (a package's initialiser, a barrel), or
+/// sits at any depth below a directory, other than its package's own, that holds a
+/// file with listed entry points (a file router's page that lists none of its own).
+pub fn unreached_files(repo: &RepoFacts, non_production: &NonProduction) -> BTreeSet<String> {
+    fn dir(p: &str) -> &str {
+        p.rsplit_once('/').map_or("", |(d, _)| d)
+    }
+    fn under(d: &str, top: &str) -> bool {
+        top.is_empty() || d == top || d.strip_prefix(top).is_some_and(|r| r.starts_with('/'))
+    }
+    let mut named: BTreeSet<&str> = BTreeSet::new();
+    for f in &repo.files {
+        named.extend(f.imports.iter().map(|i| i.module.as_str()));
+        for r in &f.registries {
+            named.extend(
+                r.items
+                    .iter()
+                    .map(|i| i.target.split_once('#').map_or(i.target.as_str(), |(m, _)| m)),
+            );
+        }
+    }
+    for p in &repo.packages {
+        named.extend(p.entries.iter().map(String::as_str));
+    }
+    let discovered: Vec<&str> = repo
+        .files
+        .iter()
+        .flat_map(|f| &f.discovers)
+        .filter(|g| g.contains('/') || g.contains('*'))
+        .map(|g| g.split('*').next().unwrap_or_default())
+        .collect();
+    let serves = |f: &FileFacts| !f.listed_entry_points().is_empty() || !f.mounts.is_empty();
+    let reached: BTreeSet<&str> = repo
+        .files
+        .iter()
+        .filter(|f| serves(*f) || named.contains(f.path.as_str()))
+        .map(|f| dir(&f.path))
+        .collect();
+    let routers: BTreeSet<&str> = repo
+        .files
+        .iter()
+        .filter(|f| serves(*f) && dir(&f.path) != f.package)
+        .map(|f| dir(&f.path))
+        .collect();
+    repo.files
+        .iter()
+        .filter(|f| {
+            let d = dir(&f.path);
+            !is_test_path(&f.path)
+                && non_production.dir_of(&f.path, &f.package).is_none()
+                && (!f.parse_ok || f.imports.is_empty())
+                && !serves(*f)
+                && !named.contains(f.path.as_str())
+                && !discovered.iter().any(|g| f.path.starts_with(g))
+                && !reached.iter().any(|r| under(r, d))
+                && !routers.iter().any(|r| under(d, r))
+        })
+        .map(|f| f.path.clone())
+        .collect()
+}
+
 /// The share of the entry points that query one thing and filter it by a value of
 /// the caller, from which the ones that filter it by none are listed ([`ScopeGap`]).
 pub const SCOPE_GAP_SHARE: f64 = 0.7;
@@ -346,6 +434,7 @@ fn unreached_handlers(
     repo: &RepoFacts,
     index: &Index<'_>,
     non_production: &NonProduction,
+    unreached: &BTreeSet<String>,
 ) -> Vec<Unlisted> {
     use drift_core::controls::READS_INPUT;
     let shaped = |s: &Symbol| {
@@ -354,7 +443,9 @@ fn unreached_handlers(
             && s.controls.iter().any(|c| c == READS_INPUT)
     };
     let production = |f: &FileFacts| {
-        !is_test_path(&f.path) && non_production.dir_of(&f.path, &f.package).is_none()
+        !is_test_path(&f.path)
+            && non_production.dir_of(&f.path, &f.package).is_none()
+            && !unreached.contains(&f.path)
     };
     if !repo
         .files
@@ -3917,6 +4008,11 @@ pub struct Inventory {
     pub env: BTreeMap<String, Vec<String>>,
     /// Non-production files left out of the inventory (tests are not counted).
     pub left_out: LeftOut,
+    /// Production files nothing Drift read reaches ([`unreached_files`]): their risky
+    /// operations and route-like registrations are listed here, under their own
+    /// heading, not as production code. Sorted; not serialised when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub unreached: Vec<UnreachedFile>,
     /// Files not parsed for lack of stack ([`crate::unchecked`]), sorted: their entry
     /// points, risky operations and env reads are unknown, and so are client leaks
     /// reached through them. Not serialised when empty.
@@ -4719,9 +4815,13 @@ pub(crate) fn after_work(ctx: &crate::context::RepoContext, body: &Symbol, calle
         return false;
     }
     let at = body.order.iter().position(|c| c == callee);
-    // Past the cap on the order kept ([`drift_core::AFTER_MORE`]): as many calls
-    // came before it as the list holds.
-    if at.is_none() && body.order.iter().any(|c| c == drift_core::AFTER_MORE) {
+    // Past the cap on the order kept ([`drift_core::AFTER_MORE`], or `order` in
+    // the listed reading's `truncated`): as many calls came before it as the list
+    // holds.
+    if at.is_none()
+        && (body.order.iter().any(|c| c == drift_core::AFTER_MORE)
+            || body.truncated.iter().any(|t| t == "order"))
+    {
         return true;
     }
     work_among(body, &body.order[..at.unwrap_or(body.order.len())])
@@ -6138,12 +6238,17 @@ pub fn hook_for_some_requests(ctx: &crate::context::RepoContext, hook: &str) -> 
     signs_in.peek().is_some() && signs_in.all(|c| c.conditional)
 }
 
-/// The body has a check that answers "not signed in" (a 401, a sign-in redirect).
+/// The body has a check that answers "not signed in" (a 401, a sign-in redirect),
+/// or may have one: its checks were cut short (`body_checks` in
+/// [`Symbol::truncated`]), so such a check may be among those not kept. Every caller
+/// reads true as "may turn callers away" (not readable, opaque), never as a proof, so
+/// a list cut short is unknown here, never "no check".
 pub(crate) fn answers_not_signed_in(d: &Symbol) -> bool {
     use drift_core::CheckOutcome::{SignInRedirect, Unauthenticated};
     d.body_checks
         .iter()
         .any(|c| matches!(c.outcome, Unauthenticated | SignInRedirect))
+        || d.truncated.iter().any(|t| t == "body_checks")
 }
 
 /// What a hook the whole application runs before its requests (Flask
@@ -6806,6 +6911,11 @@ fn body_guards(
             }
             out.push(format!("{what}{BODY_CHECK}"));
         }
+        // Its checks were cut short (`truncated`): the one that turns a caller away
+        // may be among those not kept. Found, not proven; never "no check".
+        if b.truncated.iter().any(|t| t == "body_checks") {
+            unproven.push(format!("checks cut short{BODY_CHECK}"));
+        }
         // TypeScript: the body throws where what gives the caller gave nothing.
         if !python
             && ctx.since_measured()
@@ -6884,11 +6994,22 @@ fn body_guards(
 /// ([`drift_core::Symbol::body_checks`]): `if session.get("user_id"): return ...`
 /// and then `abort(401)`. A refusal was found and what it is for was not read: the
 /// body is never one that turns no one away.
+///
+/// A list cut short (`responses` or `body_checks` in [`Symbol::truncated`]) proves
+/// neither that no 401 is answered nor that a check records it: read as found.
 pub(crate) fn answers_401_unrecorded(body: &Symbol) -> bool {
-    body.responses
+    use drift_core::CheckOutcome::{SignInRedirect, Unauthenticated};
+    let cut = |field: &str| body.truncated.iter().any(|t| t == field);
+    (body
+        .responses
         .iter()
         .any(|r| r.status == 401 && !r.in_catch)
-        && !answers_not_signed_in(body)
+        || cut("responses"))
+        && (cut("body_checks")
+            || !body
+                .body_checks
+                .iter()
+                .any(|c| matches!(c.outcome, Unauthenticated | SignInRedirect)))
 }
 
 /// A call of `body` that [`body_guards`] does not read as a body call: one made only
@@ -7515,6 +7636,7 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
     let cx = crate::practices::Cx::new(repo, &declared);
     let app_guards = app_guards(repo);
     let non_production = NonProduction::learn(repo);
+    let unreached = unreached_files(repo, &non_production);
     let mut inv = Inventory {
         boundaries,
         unchecked: repo
@@ -7547,7 +7669,9 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
             .files
             .iter()
             .filter(|f| {
-                !is_test_path(&f.path) && non_production.dir_of(&f.path, &f.package).is_none()
+                !is_test_path(&f.path)
+                    && non_production.dir_of(&f.path, &f.package).is_none()
+                    && !unreached.contains(&f.path)
             })
             .flat_map(|f| {
                 f.unlisted_routes.iter().map(|line| Unlisted {
@@ -7573,6 +7697,20 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
         if let Some(dir) = non_production.dir_of(&f.path, &f.package) {
             inv.left_out.files += 1;
             left_out.insert(dir);
+            continue;
+        }
+        // Nothing Drift read reaches it: what it holds is listed apart.
+        if unreached.contains(&f.path) {
+            let mut sinks: Vec<String> =
+                f.symbols.iter().flat_map(|s| s.sinks.iter().cloned()).collect();
+            sinks.sort();
+            sinks.dedup();
+            inv.unreached.push(UnreachedFile {
+                path: f.path.clone(),
+                parsed: f.parse_ok,
+                sinks,
+                unlisted: f.unlisted_routes.clone(),
+            });
             continue;
         }
         for l in &f.client_leaks {
@@ -7748,8 +7886,8 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
             .map(|e| (e.path.clone(), e.symbol.clone()))
             .collect(),
     );
-    let unreached = unreached_handlers(repo, &index, &non_production);
-    inv.unlisted.extend(unreached);
+    let handlers = unreached_handlers(repo, &index, &non_production, &unreached);
+    inv.unlisted.extend(handlers);
     inv.unlisted.sort();
     inv.unlisted.dedup();
     // A property written under a key read off a parameter is a risk where a
@@ -8929,6 +9067,24 @@ pub fn render_at(
             "{} files in non-production paths ({}{more}) left out",
             inv.left_out.files,
             shown.join(", ")
+        );
+    }
+    if !inv.unreached.is_empty() {
+        let shown: Vec<String> = inv
+            .unreached
+            .iter()
+            .take(3)
+            .map(|u| sanitize(&u.path, 160))
+            .collect();
+        let unparsed = inv.unreached.iter().filter(|u| !u.parsed).count();
+        let sinks: usize = inv.unreached.iter().map(|u| u.sinks.len()).sum();
+        let unlisted: usize = inv.unreached.iter().map(|u| u.unlisted.len()).sum();
+        let _ = writeln!(
+            out,
+            "{} files not reached by anything Drift read ({}{}): nothing imports or registers them, no manifest names them, they list no entry point, and they import nothing or did not parse ({unparsed} did not); their {sinks} kind(s) of risky operation and {unlisted} route-like registration(s) are not counted as production code",
+            inv.unreached.len(),
+            shown.join(", "),
+            if inv.unreached.len() > 3 { ", ..." } else { "" }
         );
     }
     let unchecked: Vec<&String> = inv.unchecked.iter().filter(|p| keep(p)).collect();
