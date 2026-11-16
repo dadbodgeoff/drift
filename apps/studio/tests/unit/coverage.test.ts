@@ -163,7 +163,7 @@ describe("the Studio handles every Drift surface", () => {
     };
     const stale: StalePractice = { id: "", summary: "", units: 0 };
     const notChecked: PracticeNotChecked = { id: "", units: 0 };
-    const replay: NonNullable<PromoteResult["replay"]> = { recent: 0, followed: 0 };
+    const replay: NonNullable<PromoteResult["replay"]> = { recent: 0, followed: 0, readable: 0, by_line: false };
     expect(fields("Place")).toEqual(Object.keys(place).sort());
     expect(fields("Way")).toEqual(Object.keys(way).sort());
     expect(fields("Candidate")).toEqual(Object.keys(candidate).sort());

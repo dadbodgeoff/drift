@@ -2251,7 +2251,8 @@ export interface PromoteResult {
   /** drift.lock entries added (with `--dry-run`: that would be added), one per exception. */
   baselined: number;
   /** With `--block`: of the `recent` units most recently added to the place that the map can tell, how many follow the practice as they stand. Null otherwise. */
-  replay: { recent: number; followed: number } | null;
+  /** `readable`: the units of the place the map can tell, dated or not (fewer than the replay reads means the place cannot block). `by_line`: of a file place, each unit was dated by the last commit that changed its declaring line. Both absent from an older Drift. */
+  replay: { recent: number; followed: number; readable?: number; by_line?: boolean } | null;
   /** The mined conventions (proposed or accepted) whose rule requires the same of code in the same package: with both accepted, new code that breaks them is reported under each. Absent from an older Drift. */
   same_way?: string[];
   /** The text `drift practices promote` prints before it writes. */
