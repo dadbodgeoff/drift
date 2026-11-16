@@ -131,6 +131,7 @@ const LISTED_ONLY_CONTROLS: &[&str] = &[
     drift_core::controls::RETURNS_VALUE,
     drift_core::controls::ANSWERS_BY_RETURN,
     drift_core::controls::INPUT_UNREAD,
+    drift_core::controls::UNREAD_RESPONDS,
     // A `Member::unread` value; listed here in case one is ever written as a control.
     drift_core::CATCH_RESPONDS,
 ];
@@ -9902,6 +9903,7 @@ mod tests {
             c::RETURNS_VALUE.to_string(),
             c::ANSWERS_BY_RETURN.to_string(),
             c::INPUT_UNREAD.to_string(),
+            c::UNREAD_RESPONDS.to_string(),
             drift_core::CATCH_RESPONDS.to_string(),
             format!("{}403", c::REFUSAL_STATUS),
             format!("{}pkg:zod#parse\tsrc/schema.ts#Login", c::PARSES_INPUT),

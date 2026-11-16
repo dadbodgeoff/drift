@@ -1359,7 +1359,7 @@ impl<'l, 's> Collector<'l, 's> {
     /// The call writes to the response: `res.json(x)`, `res.status(200).send(x)`,
     /// `reply.code(200).send(x)`, `c.json(x)`, `Response.json(x)`,
     /// `NextResponse.json(x)`.
-    fn flow_response(&self, callee: &Expression) -> bool {
+    pub(super) fn flow_response(&self, callee: &Expression) -> bool {
         let Some((mut object, name)) = Self::method(callee) else {
             return false;
         };

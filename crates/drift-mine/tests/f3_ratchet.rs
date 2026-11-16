@@ -41,15 +41,17 @@ const OLDER: &str = "# drift security baseline: what `drift security` found when
 fn every_kind_a_reading_widened_is_found_since_the_widening() {
     for kind in [
         "guard-gap",
-        "no-authorization",
         "no-guard",
         "risky",
-        "scope-gap",
         "unguarded-reaching",
         "whole-row",
         "workflow",
     ] {
         assert_eq!(found_since(kind, "x"), 2, "{kind}");
+    }
+    // Widened again by the TypeScript tenant reading (inventory 3).
+    for kind in ["no-authorization", "scope-gap", "unscoped-key"] {
+        assert_eq!(found_since(kind, "x"), 3, "{kind}");
     }
     // Read as before.
     for kind in ["dependency", "kubernetes", "leak"] {

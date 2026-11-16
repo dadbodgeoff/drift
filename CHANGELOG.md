@@ -33,6 +33,19 @@ main branch.
 
 ### Added
 
+- **Tenant scoping read in TypeScript as in Python:** a Prisma or Drizzle query
+  filtered under a key named for a tenant now records where the value comes from
+  (`scoped_queries` on the listed reading's symbols): the caller's (`orgId:
+  req.user.orgId`, a claim of the verified token), what the request sent
+  (`orgId: req.params.orgId`, a header), through a relation filter or an `AND`
+  list, and Drizzle's `eq` / `and` in a `.where(...)` or a relational `where`.
+  A route whose only authorization is a filter by the tenant the request names,
+  and whose bodies were read to the end, now gets the `unscoped-key` finding
+  (advice first); an Express handler whose only unrecorded calls write the
+  response (`res.json(rows)`) is read to the end. TypeScript lowering 87; the
+  security inventory is stamped 3, and findings these readings add to an
+  unchanged repository are held as new in Drift. Mining is unchanged.
+
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise

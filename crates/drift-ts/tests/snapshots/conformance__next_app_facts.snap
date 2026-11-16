@@ -1524,7 +1524,51 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "route": "/api/health",
           "adapter": "nextjs"
         }
-      ]
+      ],
+      "listed": {
+        "entry_points": [
+          {
+            "symbol": "default",
+            "kind": "http",
+            "method": "ANY",
+            "route": "/api/health",
+            "adapter": "nextjs"
+          }
+        ],
+        "symbols": [
+          {
+            "name": "handler",
+            "kind": "function",
+            "exported_as": [
+              "default"
+            ],
+            "line": 1,
+            "wraps": [],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "arg_value:param:res.json\t#0\tunread\t#0.ok\tliteral",
+              "no_input",
+              "unread_call",
+              "unread_responds"
+            ],
+            "string_literals": 0,
+            "responses": [
+              {
+                "status": 200,
+                "via": "setter",
+                "builder": "",
+                "model": "",
+                "keys": [
+                  "ok"
+                ],
+                "in_catch": false
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "path": "services/base.ts",

@@ -12,6 +12,7 @@ pub mod lower;
 pub mod nextjs;
 pub mod repo;
 pub mod resolve;
+mod tenant;
 mod typeres;
 mod types;
 

@@ -43,8 +43,10 @@ pub const SECURITY_LOCK: &str = ".drift/security.lock";
 ///
 /// 1: every kind, detector and reading before the stamp. 2: `unscoped-key`, and the
 /// readings of [`READ_SINCE`]. (No build stamped 2 before those readings: the stamp
-/// and they ship together.)
-pub const INVENTORY_VERSION: u32 = 2;
+/// and they ship together.) 3: TypeScript queries filtered under a tenant's key read
+/// as Python's are (the tenant the request names, the caller's), and bodies whose
+/// only unrecorded calls write the response read to the end.
+pub const INVENTORY_VERSION: u32 = 3;
 
 /// The version of a baseline written before baselines were stamped.
 const UNSTAMPED: u32 = 1;
@@ -91,13 +93,21 @@ const DETECTOR_SINCE: &[(&str, u32)] = &[];
 ///
 /// `dependency`, `kubernetes` and `leak` read as before. Every later
 /// change to what a reading finds adds its kinds here with the new version.
+///
+/// 3:
+/// - `unscoped-key`, `no-authorization`: TypeScript routes whose query is filtered
+///   under a tenant's key by what the request names (`where: { orgId:
+///   req.params.orgId }`), and handlers whose only unrecorded calls write the
+///   response (`res.json(rows)`), read to the end;
+/// - `scope-gap`: TypeScript filters in an `AND` list read by their keys.
 const READ_SINCE: &[(&str, u32)] = &[
     ("guard-gap", 2),
-    ("no-authorization", 2),
+    ("no-authorization", 3),
     ("no-guard", 2),
     ("risky", 2),
-    ("scope-gap", 2),
+    ("scope-gap", 3),
     ("unguarded-reaching", 2),
+    ("unscoped-key", 3),
     ("whole-row", 2),
     ("workflow", 2),
 ];

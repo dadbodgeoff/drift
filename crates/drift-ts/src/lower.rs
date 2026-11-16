@@ -15,7 +15,7 @@ use oxc_span::{GetSpan, SourceType};
 use serde::{Deserialize, Serialize};
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 86;
+pub const LOWERING_VERSION: u32 = 87;
 
 /// What an options object gives a Fastify route: for each hook it names
 /// (`onRequest`, `preHandler`), what that hook runs.
@@ -5605,6 +5605,9 @@ struct Collector<'l, 's> {
     sinks: BTreeSet<String>,
     /// [`RawSymbol::caller_keys`].
     caller_keys: BTreeSet<(RawRef, String)>,
+    /// A call the facts do not record was handed a value and writes no response
+    /// ([`drift_core::controls::UNREAD_RESPONDS`]).
+    unread_elsewhere: bool,
     /// [`RawSymbol::fed_sinks`].
     fed_sinks: BTreeSet<String>,
     /// [`RawSymbol::param_passes`].
@@ -6091,6 +6094,7 @@ impl<'l, 's> Collector<'l, 's> {
             throws: BTreeSet::new(),
             sinks: BTreeSet::new(),
             caller_keys: BTreeSet::new(),
+            unread_elsewhere: false,
             fed_sinks: BTreeSet::new(),
             param_passes: BTreeSet::new(),
             made_fed_sinks: BTreeSet::new(),
@@ -7066,6 +7070,18 @@ impl<'l, 's> Collector<'l, 's> {
         for (r, key) in &self.result_returned {
             sym.result_uses.push((r.clone(), format!("return:{key}")));
         }
+        // Every call the facts do not record that the body hands a value to writes
+        // the response: the listed reading says so.
+        if !self.unread_elsewhere
+            && self.controls.contains(drift_core::controls::UNREAD_CALL)
+            && !sym
+                .listed_controls
+                .iter()
+                .any(|c| c == drift_core::controls::UNREAD_RESPONDS)
+        {
+            sym.listed_controls
+                .push(drift_core::controls::UNREAD_RESPONDS.to_string());
+        }
         let (calls, renders, args, controls, strings) = self.into_parts();
         sym.calls.extend(calls);
         sym.renders.extend(renders);
@@ -7787,21 +7803,118 @@ impl Collector<'_, '_> {
                 } else {
                     format!("{prefix}.{k}")
                 };
+                // The items of an `AND` list of objects each narrow the rows (Prisma's
+                // `where: { AND: [{ orgId }, { archived: false }] }`): their keys by
+                // position (`where.AND.0.orgId`), as the sides of the call write
+                // them. The listed reading only; what the list was read as before
+                // stays beside them.
+                if k == "AND"
+                    && depth + 1 < MAX_SIDE_DEPTH
+                    && let Expression::ArrayExpression(list) = unwrap_expr(&p.value)
+                    && list.elements.iter().any(|item| {
+                        item.as_expression().is_some_and(|e| {
+                            matches!(unwrap_expr(e), Expression::ObjectExpression(_))
+                        })
+                    })
+                    && !routes::unmeasured_listing()
+                {
+                    for (i, item) in list.elements.iter().enumerate() {
+                        if let Some(e) = item.as_expression() {
+                            self.caller_keys_at(callee, e, &format!("{key}.{i}"), depth + 1);
+                        }
+                    }
+                }
+                // A Drizzle condition given as a relational query's filter
+                // (`db.query.projects.findMany({ where: eq(projects.orgId, x) })`):
+                // its columns under the key ([`Collector::drizzle_keys`]).
+                if self.drizzle_condition(&p.value) && !routes::unmeasured_listing() {
+                    self.drizzle_keys(callee, &p.value, &key, depth);
+                }
                 if matches!(unwrap_expr(&p.value), Expression::ObjectExpression(_)) {
                     if depth + 1 < MAX_KEY_DEPTH {
                         self.caller_keys_at(callee, &p.value, &key, depth + 1);
                     }
-                } else if self.taint(&p.value).proven_own() {
-                    self.caller_keys.insert((callee.clone(), key));
-                } else if let Some((name, at)) = self.param_root(&p.value) {
-                    self.param_keys
-                        .insert((callee.clone(), key, format!("param {name} {at}")));
-                } else if let Some(given) = self.row_root(&p.value) {
-                    // Read off what a call of the body handed back: the caller's
-                    // where linking says the callee gives the caller.
-                    self.param_keys.insert((callee.clone(), key, given));
+                } else {
+                    self.key_value(callee, key, &p.value);
                 }
             }
+        }
+    }
+
+    /// Records where the value `value` a call gives under `key` comes from: a value
+    /// of the caller by its own source ([`RawSymbol::caller_keys`]), one read off a
+    /// parameter of the function, or off what a call of the body handed back
+    /// ([`RawSymbol::param_keys`]). Nothing for any other.
+    fn key_value(&mut self, callee: &RawRef, key: String, value: &Expression) {
+        if self.taint(value).proven_own() {
+            self.caller_keys.insert((callee.clone(), key));
+        } else if let Some((name, at)) = self.param_root(value) {
+            self.param_keys
+                .insert((callee.clone(), key, format!("param {name} {at}")));
+        } else if let Some(given) = self.row_root(value) {
+            // Read off what a call of the body handed back: the caller's
+            // where linking says the callee gives the caller.
+            self.param_keys.insert((callee.clone(), key, given));
+        }
+    }
+
+    /// A Drizzle condition: a call of `eq` or `and` as `drizzle-orm` exports them
+    /// (`import { and, eq } from "drizzle-orm"`), its documented operators of
+    /// equality and conjunction.
+    fn drizzle_condition(&self, e: &Expression) -> bool {
+        let Expression::CallExpression(c) = unwrap_expr(e) else {
+            return false;
+        };
+        matches!(
+            self.l.canon_callee(&c.callee),
+            Some(RawRef { base: RawBase::Import { spec, name }, member })
+                if spec == "drizzle-orm" && member.is_empty() && matches!(name.as_str(), "eq" | "and")
+        )
+    }
+
+    /// The columns a Drizzle condition narrows the rows of `callee` by, under
+    /// `prefix` (`where`): `eq(projects.orgId, value)` gives `where.orgId` the value
+    /// ([`Collector::key_value`]), and `and(...)` each of its conditions. Any other
+    /// operator (`or`, `not`, `ne`, `inArray`, a `sql` template) narrows nothing to
+    /// one value and is not read, nor is an `eq` whose first argument is no column
+    /// of a table binding (`table.column`). The listed reading only.
+    fn drizzle_keys(&mut self, callee: &RawRef, e: &Expression, prefix: &str, depth: usize) {
+        let Expression::CallExpression(c) = unwrap_expr(e) else {
+            return;
+        };
+        if !self.drizzle_condition(e) || depth >= MAX_SIDE_DEPTH {
+            return;
+        }
+        let Some(RawRef {
+            base: RawBase::Import { name, .. },
+            ..
+        }) = self.l.canon_callee(&c.callee)
+        else {
+            return;
+        };
+        let args: Vec<&Expression> = c
+            .arguments
+            .iter()
+            .filter_map(|a| a.as_expression())
+            .collect();
+        if args.len() != c.arguments.len() {
+            return;
+        }
+        match (name.as_str(), args.as_slice()) {
+            ("and", conditions) => {
+                for cond in conditions {
+                    self.drizzle_keys(callee, cond, prefix, depth + 1);
+                }
+            }
+            ("eq", [column, value]) => {
+                if let Expression::StaticMemberExpression(m) = unwrap_expr(column)
+                    && matches!(unwrap_expr(&m.object), Expression::Identifier(_))
+                {
+                    let key = format!("{prefix}.{}", m.property.name);
+                    self.key_value(callee, key, value);
+                }
+            }
+            _ => {}
         }
     }
 
@@ -14427,6 +14540,15 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
                     // branch scopes the requests that take it.
                     if self.counting() && self.branches == 0 && !self.served {
                         self.caller_keys_at(&r, e, "", 0);
+                        // A Drizzle query builder's filter (`db.select().from(t)
+                        // .where(eq(t.orgId, x))`): its columns under `where`.
+                        if i == 0
+                            && r.member.ends_with(".where")
+                            && self.drizzle_condition(e)
+                            && !routes::unmeasured_listing()
+                        {
+                            self.drizzle_keys(&r, e, "where", 0);
+                        }
                     }
                 }
             }
@@ -14542,6 +14664,11 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             if named.is_none() && hands_value_on(it) {
                 self.controls
                     .insert(drift_core::controls::UNREAD_CALL.into());
+                // A response written with the value (`res.json(rows)`) hands it to
+                // the framework, which sends it ([`drift_core::controls::UNREAD_RESPONDS`]).
+                if !self.flow_response(&it.callee) {
+                    self.unread_elsewhere = true;
+                }
             }
             // Given a parameter itself (the request, the response, the
             // continuation), or a method of a local given a value: what runs then
