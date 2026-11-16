@@ -4062,6 +4062,12 @@ pub struct Inventory {
     /// when empty.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub workflows: Vec<crate::workflows::WorkflowFinding>,
+    /// CI files that were not read, or were read only in part, with why
+    /// ([`crate::ci::NotRead`]): what their jobs run is not in `workflows`, and is
+    /// unknown, not nothing. Filled with `workflows` ([`crate::ci::fill`]). Sorted;
+    /// not serialised when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub ci_not_read: Vec<crate::ci::NotRead>,
     /// What the repository's manifests install that nothing fixes
     /// ([`crate::dependencies`]): a repository named by a branch, an archive at a
     /// URL with no digest, a source over plain HTTP, a second package index, a
@@ -9513,7 +9519,16 @@ pub fn render_at(
     if !workflows.is_empty() {
         let _ = writeln!(out, "\nCI workflows that run what an outsider wrote");
         for w in workflows.iter().take(max_rows) {
+            // GitHub's wording names GitHub's terms; another system's pipeline is
+            // said in its own ([`crate::ci`]).
+            let github = w.path.starts_with(".github/");
             let what = match w.kind.as_str() {
+                "unpinned_action" if !github => {
+                    "runs another owner's include, orb or pipe by a name its owner can move, where the pipeline's variables are"
+                }
+                "script_injection" if !github => {
+                    "puts text a commit's or a merge request's author writes into a shell step as code"
+                }
                 "untrusted_checkout" => {
                     "checks out the pull request's code where the repository's secrets are"
                 }
@@ -9540,6 +9555,24 @@ pub fn render_at(
         if workflows.len() > max_rows {
             let _ = writeln!(out, "  ... and {} more", workflows.len() - max_rows);
         }
+    }
+    let ci_not_read: Vec<&crate::ci::NotRead> =
+        inv.ci_not_read.iter().filter(|n| keep(&n.path)).collect();
+    if !ci_not_read.is_empty() {
+        let shown: Vec<String> = ci_not_read
+            .iter()
+            .take(5)
+            // The reason is Drift's own words around repository text it sanitised
+            // ([`crate::ci::NotRead`]).
+            .map(|n| format!("{} ({})", sanitize(&n.path, 160), n.why))
+            .collect();
+        let _ = writeln!(
+            out,
+            "\n{} CI file(s) NOT READ in full, so what their jobs run is unknown: {}{}",
+            ci_not_read.len(),
+            shown.join("; "),
+            if ci_not_read.len() > 5 { "; ..." } else { "" }
+        );
     }
     let dependencies: Vec<&crate::dependencies::DependencyFinding> = inv
         .dependencies

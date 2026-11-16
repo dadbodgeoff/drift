@@ -43,8 +43,9 @@ pub const SECURITY_LOCK: &str = ".drift/security.lock";
 ///
 /// 1: every kind, detector and reading before the stamp. 2: `unscoped-key`, and the
 /// readings of [`READ_SINCE`]. (No build stamped 2 before those readings: the stamp
-/// and they ship together.)
-pub const INVENTORY_VERSION: u32 = 2;
+/// and they ship together.) 3: `workflow` findings of CI systems other than GitHub
+/// Actions ([`crate::ci`]).
+pub const INVENTORY_VERSION: u32 = 3;
 
 /// The version of a baseline written before baselines were stamped.
 const UNSTAMPED: u32 = 1;
@@ -89,6 +90,12 @@ const DETECTOR_SINCE: &[(&str, u32)] = &[];
 ///   workflows a job calls, and a second step of a job with the same expression
 ///   keyed apart (` (occurrence N in the job)`).
 ///
+/// 3:
+/// - `workflow`: the pipelines of GitLab CI, CircleCI, Azure Pipelines, Bitbucket
+///   Pipelines and a `Jenkinsfile` ([`crate::ci`]). A baseline stamped 2 holds none
+///   of them, and a repository with one must not start failing because Drift learned
+///   to read its CI.
+///
 /// `dependency`, `kubernetes` and `leak` read as before. Every later
 /// change to what a reading finds adds its kinds here with the new version.
 const READ_SINCE: &[(&str, u32)] = &[
@@ -99,7 +106,7 @@ const READ_SINCE: &[(&str, u32)] = &[
     ("scope-gap", 2),
     ("unguarded-reaching", 2),
     ("whole-row", 2),
-    ("workflow", 2),
+    ("workflow", 3),
 ];
 
 /// Kinds that advise in `drift check` until a person sets them to fail

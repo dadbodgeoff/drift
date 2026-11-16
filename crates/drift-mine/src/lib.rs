@@ -4,6 +4,7 @@ pub mod admission;
 pub mod calibrate;
 pub mod card;
 pub mod check;
+pub mod ci;
 pub mod cochange;
 pub mod compose;
 pub mod context;

@@ -2385,7 +2385,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 &facts,
                 drift_mine::security::Boundaries::load(&cli.root),
             );
-            inv.workflows = drift_mine::workflows::read(root);
+            drift_mine::ci::fill(&mut inv, root);
             inv.dependencies = drift_mine::dependencies::read(root);
             inv.cluster = drift_mine::kubernetes::read(root);
             // Each shared guard, linked to the convention that says the same (accepted
@@ -4809,7 +4809,7 @@ fn security_inventory(
         facts,
         drift_mine::security::Boundaries::load(&cli.root),
     );
-    inv.workflows = drift_mine::workflows::read(root);
+    drift_mine::ci::fill(&mut inv, root);
     inv.dependencies = drift_mine::dependencies::read(root);
     inv.cluster = drift_mine::kubernetes::read(root);
     inv
@@ -5007,7 +5007,7 @@ fn security_compare(
                 base_facts,
                 drift_mine::security::Boundaries::load(base_root),
             );
-            base_inv.workflows = drift_mine::workflows::read(base_root);
+            drift_mine::ci::fill(&mut base_inv, base_root);
             base_inv.dependencies = drift_mine::dependencies::read(base_root);
             base_inv.cluster = drift_mine::kubernetes::read(base_root);
             baseline_findings(base_root, base_facts, &base_inv).map(|f| (f, base_inv))

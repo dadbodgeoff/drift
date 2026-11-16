@@ -47,10 +47,11 @@ fn every_kind_a_reading_widened_is_found_since_the_widening() {
         "scope-gap",
         "unguarded-reaching",
         "whole-row",
-        "workflow",
     ] {
         assert_eq!(found_since(kind, "x"), 2, "{kind}");
     }
+    // Widened again by 3: the pipelines of CI systems other than GitHub Actions.
+    assert_eq!(found_since("workflow", "x"), 3);
     // Read as before.
     for kind in ["dependency", "kubernetes", "leak"] {
         assert_eq!(found_since(kind, "x"), 1, "{kind}");
