@@ -41,6 +41,18 @@ Entry points where Drift found no guard
 Not covered: checks inside handler bodies other than sign-in checks (a 401, a sign-in redirect, a call of a proven guard), whether the caller may act on the record it asks for, rate limits, and anything applied outside this repository (gateways, proxies, platform settings). A shared guard is what this repository does, not a verdict on its exceptions.
 ```
 
+### The findings to look at first: `--top`
+
+```bash
+drift security --top
+```
+
+`--top [N]` prints only the findings to look at first (10 unless you give N; 0 for all), under `Security findings to look at first (from the security inventory: what Drift read, in order; nothing here fails a check)`. It ranks what the inventory already holds and decides nothing from a name. A finding is one entry point reaching one risky operation, and it is ranked only when all three hold: a value the request sent reaches the operation (`fed`), a remote caller reaches the entry point, and Drift read what guards it, whether there is a guard or not. Entry points that reach the same operation in the same way are one finding, with the first places named.
+
+Each finding is three lines: what a caller can do and where (`A caller Drift found no guard for can ...`, `A caller who passes its guard can ...`, or `A caller whose signature checks out can ...`), then `Read: ...` (the guard, the path the value takes to the operation, the validation and exposure Drift read), then `Not read: ...`, which always includes whether the value is checked before the operation. After them it says how many more are ranked and, under `Not ranked: ...`, how many were left out and why: where Drift could not read the guard, where it read no request value reaching the operation, settings written in the code (a cookie flag, a weak hash, a secret in the code), started by a queue or a schedule, run locally, or in test or example code. A guard Drift could not read is never ranked as a hole: it is counted as not ranked. The order is fixed by what Drift read, so the same inventory always reads the same. With `--json`, the inventory gains `top` ([Output and JSON Reference](Output-and-JSON-Reference#drift-security---json)). It changes no exit code and does not go with `--diff-base`, `--ratchet` or `--write-baseline`.
+
+`drift init` shows the first few the same way, under `From the security inventory (what Drift read; not conventions, and nothing here is checked)`, with the command for the rest.
+
 ## What it lists
 
 - **Entry points:** HTTP routes, jobs, queue consumers, commands, with their guards and wrappers. A router, blueprint or URLconf mounted more than once is one entry point per mount, each with that mount's guards and exposure. A route table registered in a loop is listed under an unknown prefix (`?`), so a route that is served is in the inventory though its path is not known; behind a gateway it is unknown, never internal.

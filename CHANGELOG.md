@@ -72,25 +72,121 @@ main branch.
   the file. For a layering violation the comment may also go on the line of the
   import, or directly above it; for a model, directly above its declaration. A
   manifest that cannot hold a comment (`package.json`) is never offered one.
+- **Proposals from the map.** `drift init` now also proposes rules that the
+  practice map and the structure map show but that did not go through the
+  miner's measured gates: a practice most units of a place follow, and a layer
+  that never imports another (`<layer> never imports <target> (...; checked on
+  imports by path that load code, not on type-only imports or imports by
+  package name)`). Each is written `status: proposed`, `mode: advise`, labelled
+  `from_map:` in `.drift/conventions.yaml`, and listed apart under `From the map
+  (not mined: these did not go through the miner's measured gates; each advises
+  only once you accept it)`, with how many units Drift could read follow it,
+  how many differ, and how many it could not read (never reported). Nothing from
+  the map is checked, baselined in `drift.lock` or shown to an agent until a
+  person accepts it in `drift review`, which asks about these apart and says
+  where each came from; accepted, it advises unless a person sets it to block. `drift init --no-from-map`
+  writes none and removes the ones nobody decided.
+  `drift census --from-map` lists the same, and what qualified but is not
+  proposed, with why (JSON: `from_map`). It writes nothing.
+- **Layering proposals count what Drift could not read.** A file of the layer
+  that failed to parse, was skipped, or has an import Drift could not resolve
+  counts toward no threshold, and the summary names how many (`N files of X not
+  read`). A layer with too large a share of such files is not proposed.
+- **Promote by mechanism, by any enforcing way, in a file or under a route.**
+  `drift practices promote` gains `--concern <ID>`, `--mechanism <NAME>` (a
+  mechanism accepted whole, whichever instrument a unit names) and
+  `--any-enforcing` (any way Drift reads as enforcing the concern; a route opened
+  on purpose is not one); the variant id is then optional. `--in` also takes a
+  unit's file (`in_file` in the policy) or a package and a route prefix,
+  `<package>:/<prefix>` (`under_route`), each parameter matching any parameter;
+  a unit whose route Drift did not read to the end is counted as not read,
+  never as in or out. `--list --concern <ID>` lists one concern. New refusal
+  codes: `nothing_accepted`, `unknown_concern`, `not_a_mechanism`,
+  `no_enforcing`, `no_concern`. The JSON `candidate` gains `mechanisms`,
+  `any_enforcing`, `unread_routes`, and `place.file` or `place.route`.
+- **The command that promotes a departure.** Where `drift practices promote`
+  would take a place's way as the code stands, a practice departure in
+  `drift check` text, its GitHub notice and the job summary ends with `; to make
+  it the rule for new code there: `drift practices promote <id> --in <place>``
+  (JSON: `practices.departures[].promote`). Agents are not given it.
+- **What each rule rests on.** After its new violations, `drift check` prints
+  `drift: what each rule that reported a new violation rests on:`, with each
+  rule's `source` (mined, promoted, or proposed from a map and accepted by a
+  person), `evidence` (what the person saw when they accepted it beside what
+  this check read), `changed`, `not checked`, and for a rule that blocks where
+  it holds near the violation, how to record an exception and how to demote or
+  reject it. The GitHub annotations carry the same as `Source:`, `Evidence:`,
+  `Changed:` and `Not checked:` lines (and `Here:`, `Holds near it:`,
+  `Exception:`, `Wrong rule:` for one that blocks), and the job summary under
+  `### What each rule rests on`. `drift card` adds `Violations here (new: not in
+  drift.lock, no drift-ignore), and what each rule rests on:` for the file. None
+  of this changes a verdict or the exit code.
+- **The security findings to look at first.** `drift security --top [N]`
+  (default 10, 0 for all) ranks the findings where a request value reaches a
+  risky operation, a remote caller reaches the entry point and Drift read what
+  guards it; each says what a caller can do, what Drift read and what it did not
+  read. A guard Drift could not read is never ranked; what is not ranked is
+  counted, with why. JSON: `top`. `drift init` shows the first few under `From
+  the security inventory (what Drift read; not conventions, and nothing here is
+  checked)`. Neither changes an exit code.
+- **Beta feedback:** `drift feedback mark <ID> [PATH#SYMBOL] --true|--wrong
+  [--why]` records your verdict on a report in `.drift/feedback/marks.json`, and
+  `drift feedback export [--out FILE] [--dry-run] [--include-reasons]` writes a
+  file of counts and Drift's own words, with ids replaced by keyed hashes, that
+  you can read before you choose to share it. A mark changes no verdict. It
+  sends nothing. See [Beta feedback](docs/wiki/Beta-Feedback.md).
+- **Hooks: the rules before an edit of an existing file.** Before an agent
+  edits a file that exists, once the session has its baseline, the PreToolUse
+  hook says the accepted rules for that file it has not said yet, those that
+  block first, each marked where the file already breaks it. It reads the
+  policy and the file's own facts and never scans the repository.
+- **Hooks: two more facts after an edit.** PostToolUse says when an edit adds an
+  entry point with no guard found while most of the other entry points of its
+  kind around it carry one (with one to copy), and when an import makes the
+  file's area depend on an area that imports it while it did not at session
+  start. A departure that an accepted promoted practice shown to agents already
+  covers is no longer said twice. Each message ends with what to do if the
+  change is intended.
+- **`drift census --gate-candidate <NAME>`** (hidden, for the study): runs a
+  candidate change to one of mining's gates for that census only. A proposal
+  only a candidate makes carries `gate_candidate` and advises only. Nothing is
+  written, and no other command reads it.
+- **`eval/scoreboard/`:** `scoreboard.py collect`, `score` and `diff` recompute
+  the roadmap's scoreboard and the audit counts from saved outputs, and `diff`
+  exits 1 when a guard regresses (plain `drift census` must stay byte-identical,
+  and unknown must not rise without a matching fall). For contributors; it is
+  not part of the `drift` binary.
 
 ### Changed: the files Drift writes
 
 - **Breaking: a promoted practice is a new rule type in
   `.drift/conventions.yaml`.** A Drift from before promotion cannot read a file
   that holds one at all: every command that reads the policy stops with a parse
-  error, exit 2. The file's `version:` does not change. Upgrade every machine
-  and CI before the first promotion; see
+  error, exit 2. A practice of named ways in a package or a directory leaves the
+  file's `version:` as it was. Upgrade every machine and CI before the first
+  promotion; see
   [Versioning and upgrades](docs/wiki/Versioning-and-Upgrades.md#promoted-practices-and-older-drift).
-- **`drift.lock` gains a second line per violation it baselines:**
-  `<convention id> ~<fingerprint> <path#symbol>`, where the fingerprint is 16
-  hexadecimal characters computed from what the member is (its kind, wrappers,
-  calls and other facts), not from where it is. A lock written before has no
-  such lines and works as before. Both kinds of line are plain lines of one
-  sorted set, so `drift.lock merge=union` stays safe.
-  **Breaking:** a Drift from before this change reads each fingerprint line as
-  one more entry that matches nothing, so its `drift check --format json` lists
-  those lines as `fixed`. Do not remove them; upgrade every machine and CI
-  together.
+- **Breaking: `.drift/conventions.yaml` version 3.** A promoted practice that
+  accepts a mechanism whole (`any_mechanism`), any enforcing way
+  (`any_enforcing`), or holds in one file (`in_file`) or under a route prefix
+  (`under_route`) makes the file `version: 3`. A Drift that reads up to version
+  2 would check such a rule as a narrower or wider one, so it refuses the file
+  (`was written by a newer Drift`) instead. Any other file is written as
+  before, byte for byte, and goes back down when the last such practice is
+  removed. `from_map` and `accepted_evidence` do not raise the version. This
+  Drift reads versions 1 to 3; it reads the version before the rest of the
+  file, so a newer file gets `<file> was written by a newer Drift (policy format
+  N; this Drift reads up to 3). Upgrade Drift ...`, not a parse error, and the
+  hooks tell an agent `no convention is shown to agents until then`. Upgrade
+  every machine and CI before promoting one of these forms.
+- **`drift.lock` gains a fingerprint line per violation it baselines,** right
+  below its member line: `#~ <convention id> <fingerprint> <path#symbol>`, where
+  the fingerprint is 16 hexadecimal characters computed from what the member is
+  (its kind, wrappers, calls and other facts), not from where it is. It is a
+  comment, so a Drift from before this change skips it and reads the lock as
+  before. A lock written before has no such lines and works as before. A line
+  in the earlier form `<convention id> ~<fingerprint> <path#symbol>` is still
+  read, and never written.
 - **`.drift/conventions.yaml`: a new field `accepted_evidence`** on an accepted
   convention (`role_size`, `holders`, `total`, `lower_bound`): the evidence the
   file held when `drift init` first ran over the convention as accepted. It is
@@ -112,6 +208,13 @@ main branch.
   inventory 1, its kinds fail as they did, and a finding of a kind newer than
   it is reported as new in this version of Drift and fails nothing until the
   baseline is written again.
+- **`.drift/feedback/`** is new, written only by `drift feedback`: the marks,
+  the key that hashes ids, and the exported file. It is created with its own
+  `.gitignore` of `*`; commit none of it.
+- **`.drift/conventions.yaml`: a new field `from_map`** (`practice`,
+  `layering` or `manifest`) on a convention proposed from a map. An older Drift
+  ignores it and drops it if it rewrites the file; the proposal then reads as
+  mined.
 
 ### Changed: behaviour an existing user will notice
 
@@ -161,6 +264,9 @@ main branch.
   the gate no longer allows it, it advises and says so.
 - **The hook's one-file check stays one file** for an edit outside every
   promoted practice's place.
+- **The `drift init` screen** shows, after what the code does, the security
+  findings to look at first, and, after the conventions, the proposals from the
+  map.
 - **`drift init` counts violations, not lock lines**, in
   `(N existing violations recorded, ...)`.
 - **The practice map and the security inventory read more of the code.** These

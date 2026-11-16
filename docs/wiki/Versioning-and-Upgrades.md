@@ -19,7 +19,7 @@ sha256sum -c SHA256SUMS --ignore-missing
 gh attestation verify drift-vX.Y.Z-<target>.tar.gz --repo dadbodgeoff/drift
 ```
 
-There is no separate changelog file; what changed in a release is in its release notes. A project-level compatibility policy beyond what is stated below is not published: this is a pre-release (`0.x`), and anything may change between versions.
+Every change a user can see is recorded in `CHANGELOG.md` at the repository root, with each breaking change marked **Breaking:**; what changed in a release is also in its release notes. A project-level compatibility policy beyond what is stated below is not published: this is a pre-release (`0.x`), and anything may change between versions.
 
 ## The numbers inside Drift
 
@@ -29,7 +29,7 @@ There is no separate changelog file; what changed in a release is in its release
 | Facts schema | `schema_version` in `drift scan --json`, `facts_schema` in `drift practices --json`, the cache directory name `facts-v11` | 11 | Bumped whenever the shape or meaning of the facts Drift records changes. Part of every fact-cache key. |
 | Lowering version | The parser tag of the cache (`ts-l84-0.1.0-dev`, `py-l72-0.1.0-dev`) | TypeScript/JavaScript 84, Python 72 | Bumped when the way a language is turned into facts changes. Part of the cache key. |
 | Index versions | `index-v11-1/`, `index-py-v11-5/` in the cache | 1 (TS/JS), 5 (Python) | The version of the file-stamp index that lets later scans read only changed files. |
-| Policy format | `version:` in `.drift/conventions.yaml` | 1 or 2 (reads up to 2) | See below. |
+| Policy format | `version:` in `.drift/conventions.yaml` | 1, 2 or 3 (reads up to 3) | See below. |
 | Selector version | `selector_version:` on a convention | up to 3 (4 for test and kind roles) | How a convention's role selector is read. |
 | Inventory version | `# inventory:` in `.drift/security.lock` | 2 | The version of what the security inventory finds, stamped in the baseline it writes. See below. |
 | JSON schema versions | `schema`, `version` in the JSON outputs | see [Output and JSON Reference](Output-and-JSON-Reference) | The output formats. |
@@ -44,8 +44,8 @@ I found no code that deletes old fact-cache entries when they stop being used. A
 
 | File | After an upgrade |
 | --- | --- |
-| `.drift/conventions.yaml` | Read as written. Version 1 files need no migration. A file with a `version` higher than the running Drift knows (above 2 in this build) is refused with `was written by a newer Drift` (exit 2): upgrade the binary. Version 2 appears when `drift init` runs in a repository of several packages, so a team that mixes Drift versions can hit this: a Drift that does not know version 2 cannot read the file. Selectors are frozen when a convention is written, so a new Drift keeps checking the members the convention was written for; a new Drift mines again only when you run `drift init`. A file that holds a promoted practice cannot be read by a Drift from before promotion (below). |
-| `drift.lock` | Read as written; a plain list of lines, with no version. A lock without fingerprint lines works as before; the next `drift init` adds them. An older Drift reads the plain lines and ignores the fingerprint lines (they name no member it can see). |
+| `.drift/conventions.yaml` | Read as written. Version 1 files need no migration. A file with a `version` higher than the running Drift knows (above 3 in this build) is refused with `was written by a newer Drift` (exit 2): upgrade the binary. Version 2 appears when `drift init` runs in a repository of several packages, and version 3 when the file holds a promoted practice of a newer form (below), so a team that mixes Drift versions can hit this: a Drift that does not know the version cannot read the file. The version is decided from the content on every write, so a file with none of a newer format's forms is written as before, byte for byte, and a file whose last such form is removed goes back down. Selectors are frozen when a convention is written, so a new Drift keeps checking the members the convention was written for; a new Drift mines again only when you run `drift init`. A file that holds a promoted practice cannot be read by a Drift from before promotion (below). |
+| `drift.lock` | Read as written; a plain list of lines, with no version. A lock without fingerprint lines works as before; the next `drift init` adds them. Fingerprint lines are written as comments (`#~ <id> <fingerprint> <path#symbol>`), so an older Drift, which skips comments, reads only the member lines. A fingerprint line in the earlier form `<id> ~<fingerprint> <path#symbol>` is still read, and never written. |
 | `.drift/security.lock` | Read as written. Its `# inventory:` line says which inventory wrote it (below). |
 | `.drift/config.yaml` | Read as written. A key the running Drift does not know is a warning, never an error, so a file written for a newer Drift is harmless to an older one (it ignores what it does not know). |
 | Session state, review log | Local. A session state that cannot be read is replaced; a review log is append-only with its own event version. |
@@ -64,7 +64,11 @@ After an upgrade, a finding of a kind newer than the baseline's version is not t
 
 `drift practices promote` writes a convention whose rule type is `practice`. A Drift from before promotion does not know that rule type, and it cannot read a `.drift/conventions.yaml` that holds one **at all**: every command that reads the policy (`drift check`, `drift review`, the hooks, CI) stops with a parse error that names the rule type, exit 2. It does not skip the one convention and go on.
 
-The file's `version:` number does not change when a practice is promoted, so an older Drift does not say `was written by a newer Drift`; the parse error is what you see. A file with no promoted practice is unchanged and reads as before.
+A practice promoted by named ways in a package or a directory leaves the file's `version:` as it was, so a Drift from before promotion does not say `was written by a newer Drift`; the parse error is what you see. A file with no promoted practice is unchanged and reads as before.
+
+Three forms of a promoted practice make the file version 3: one that accepts a mechanism whole (`--mechanism`), one that accepts any enforcing way (`--any-enforcing`), and one that holds in one file or under a route prefix (`--in` with a file or `<package>:/<prefix>`). A Drift that reads up to version 2 would read each of these as a narrower or wider rule than it is (without the mechanism, every unit that uses it by another instrument would be a violation; a file or a route place would be read as its whole directory), so the version is raised and such a Drift refuses the file instead of checking it wrongly. Two newer fields do not raise it, because a Drift that skips them checks the same rules: `from_map` (where a proposal came from; rewritten by such a Drift, the label is lost) and `accepted_evidence` (lost the same way, and frozen again at the next `drift init`).
+
+What a Drift says when the file is newer than it reads: on the command line, `<file> was written by a newer Drift (policy format N; this Drift reads up to 3). Upgrade Drift to the version that wrote it (`drift --version` shows the one installed here; every machine and CI that reads this repository needs it), or restore the file from before that change` (exit 2); to an agent, through the hooks, `.drift/conventions.yaml was written by a newer Drift (format N): upgrade Drift (`drift --version` shows this one); no convention is shown to agents until then`. This build reads the version alone before the rest of the file, so it gives that message even when it could not parse the rest.
 
 So, before anyone promotes the first practice in a repository:
 
@@ -154,7 +158,7 @@ No hook and no `drift check` says an upgrade report is pending: the plan does no
 
 `drift upgrade --json` prints the same report as one object, deterministic (every list sorted, no time): `schema` `drift-upgrade`, `version` 1, `drift` (this Drift's version), `apply`, `files` (`path`, `present`, `records`, `written_by`, `format`, `this_drift`, `notes`), `conventions` (`id`, `summary`, `rule` `mined`, `practice` or `wiring`, `accepted`, `now` with `role`, `members`, `holders`, `not_checked`, `stale`, `mode`, `unchecked`; `classes`, `reading_only`, `changed_code`, `cannot_tell`), `violations` (`reading_only`, `changed_code`, `cannot_tell`: each `id`, `member`, `line`, and `base` or `why`), `security` (`present`, `inventory`, `stamped`, `this_inventory`, `new_in_drift` by kind, `new_in_drift_total`, `failing_not_in_baseline`), `integrations` (`path`, `kind` `agents-md` or `claude-settings`, `state` `current`, `older`, `edited` or `differs`, `note`), `done`, `failed` (only when a write failed), `left` (`what`, `command`, `by` `apply`, `security_baseline` or `person`) and `pending`. A refusal is `{"schema", "version", "drift", "refused": true, "newer": [...], "unreadable": [...]}`, exit 2.
 
-To go back to an older Drift, reinstall the older binary; the cache rebuilds again. An older Drift refuses a `.drift/conventions.yaml` whose format version it does not know (see above), so a downgrade after `drift init` wrote version 2 needs that file restored from git; the same holds after a practice was promoted ([above](#promoted-practices-and-older-drift)). Downgrades are not tested by the project.
+To go back to an older Drift, reinstall the older binary; the cache rebuilds again. An older Drift refuses a `.drift/conventions.yaml` whose format version it does not know (see above), so a downgrade after `drift init` wrote version 2, or after a practice of a version-3 form was promoted, needs that file restored from git; the same holds after a practice was promoted ([above](#promoted-practices-and-older-drift)). Downgrades are not tested by the project.
 
 Not built yet: answers in `.drift/config.yaml` that go stale when the evidence they rested on changes (see [Setup Questions](Setup-Questions) and [Drift in CI](Drift-in-CI)). Check the release notes of the version you upgrade to.
 

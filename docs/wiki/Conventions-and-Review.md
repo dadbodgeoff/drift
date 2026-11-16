@@ -125,7 +125,7 @@ Only `off` (or `false`) turns them off, and `on` (or `true`) says the default. A
 drift review
 ```
 
-Interactive review shows the mined proposals, the default tier first, then the 5 best suggestions (`drift review --all` for every one), and after them the practices that may be promoted ([below](#practices-that-may-be-promoted)).
+Interactive review shows the mined proposals, the default tier first, then the 5 best suggestions (`drift review --all` for every one), then the proposals from the map ([below](#proposals-from-the-map)), and after them the practices that may be promoted ([below](#practices-that-may-be-promoted)).
 
 | Key | Meaning |
 | --- | --- |
@@ -159,6 +159,14 @@ drift review --show-to-agents D-04385a
 ```
 
 Each card's `agents:` line says whether agents are shown it. Each run ends with the counts, for example `4 accepted (2 block), 10 proposed, 1 rejected`, and how many accepted conventions agents are not shown, when there are any; interactive review ends by saying how many accepted conventions block. `--advise` is the way back from block mode and keeps the convention accepted. `--block` on a suggestion is refused unless you add `--force`. `drift review --list` prints the cards interactive review would ask about, and `drift review --show D-37416b` prints one card of any status, with its outliers (the first 5; `--all-outliers` for all). To change your mind later, use the flags above or edit `status` and `mode` in `.drift/conventions.yaml`. Re-running `drift init` keeps every decision and id and adds new proposals.
+
+### Proposals from the map
+
+Besides what it mines, `drift init` proposes rules that Drift's maps show: a practice that most units of a place follow (from the [practice map](Practices-Map)), and a layer whose files never import another layer that depends on it (from the structure map; checked on imports by path that load code, not on type-only imports or imports by package name). These did not go through the miner's measured gates, and every surface says so: `drift init` lists them apart under `From the map (not mined: these did not go through the miner's measured gates; each advises only once you accept it)`, the card in review says `(from the map, not mined: it did not go through the miner's measured gates)`, `.drift/conventions.yaml` marks each with `from_map:`, and once accepted, `drift check` gives its source as `proposed by Drift from the practice map (not mined), accepted by a person` (or the structure map).
+
+Each line says how many units Drift could read there follow it, how many differ, and how many it could not read. A unit Drift could not read is not checked and is never reported as a violation. Where a mined rule says the same, the line names it (`the same rule read two ways: ...`); accepting both reports one departure twice.
+
+Until a person accepts one, a proposal from the map is checked by nothing, is not baselined in `drift.lock`, and is shown to no agent. Interactive review asks about them apart, after the mined proposals: `y` accepts it in advise mode, `n` declines it (not asked again), `s` skips, `q` quits. Accepting a practice from the map writes it as `drift practices promote` would, with the units that differ today recorded in `drift.lock`; one that no longer qualifies as the code stands is left as proposed. The flags work too (`drift review --accept <id>`); a Python practice cannot be set to block. `drift init --no-from-map` writes none, and `drift census --from-map` lists them, with what qualified but was not proposed and why.
 
 ### Practices that may be promoted
 
@@ -244,7 +252,7 @@ drift review --answer D-37416b=different --set-apart lib/seed.ts,test/fixtures/a
 | GitHub Action | nothing | code scanning warning | code scanning error, **job fails** |
 | pre-commit `drift-check` | nothing | nothing | **commit fails** |
 
-Only a person puts a convention in block mode. In the beta only a default-tier convention that a person set to block can block, unless a person forced a suggestion with `--force`. Wiring rules (experimental) never block.
+Only a person puts a convention in block mode. Every new kind of rule starts as advice: an accepted convention advises unless a person sets it to block, and that holds for promoted practices and for proposals from the map. In the beta only a default-tier convention that a person set to block can block, unless a person forced a suggestion with `--force`. Wiring rules (experimental) never block.
 
 A convention set to block still advises when one of these holds, and `drift check` says why on a line of its own (`drift: [<id>] was block, now advise because ...`):
 
@@ -286,7 +294,7 @@ A stale rule advises until a person looks: `drift: [<id>] mined rule is stale: <
 
 ## `drift.lock`
 
-`drift.lock` lists the legacy violations Drift found when you ran `init`, or when a person promoted a practice: the outliers that already existed, one `<convention id> <path#symbol>` per line, sorted. Below each, a comment line `#~ <convention id> <fingerprint> <path#symbol>` records a fingerprint of the member's code ([Files Drift Writes](Files-Drift-Writes#driftlock)). Legacy code never fails a check; only new violations do. To shrink the lock, fix the code. Drift only ever removes lines; people add them, which is what makes `drift.lock merge=union` in `.gitattributes` safe for parallel branches. The lock covers every proposal, while `drift check` counts the legacy violations of accepted conventions only, so its legacy count is smaller until you accept them all.
+`drift.lock` lists the legacy violations Drift found when you ran `init`, or when a person promoted a practice: the outliers that already existed, one `<convention id> <path#symbol>` per line, sorted. Below each, a comment line `#~ <convention id> <fingerprint> <path#symbol>` records a fingerprint of the member's code ([Files Drift Writes](Files-Drift-Writes#driftlock)). Legacy code never fails a check; only new violations do. To shrink the lock, fix the code. Drift only ever removes lines; people add them, which is what makes `drift.lock merge=union` in `.gitattributes` safe for parallel branches. The lock covers every mined proposal (a proposal from the map is baselined only once a person accepts it), while `drift check` counts the legacy violations of accepted conventions only, so its legacy count is smaller until you accept them all.
 
 **Moved code.** When a legacy member moves to another file with its name and code unchanged, its fingerprint still matches. On a check of the whole repository, a violation whose own `path#symbol` is not in the lock is baselined when its fingerprint and name match a fingerprint line of the same convention whose member is gone from the code, and only when that is one gone member for one new violation: a copy of baselined code next to the original is new, and so is a new violation beside a deleted one that reads the same. A check of one file never concludes a move. A lock written before fingerprints works as before: a moved member no longer matches its key, so a plain `drift check` reports it, while pull-request mode keeps it quiet. See [Drift in CI](Drift-in-CI).
 

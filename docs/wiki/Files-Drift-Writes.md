@@ -17,10 +17,11 @@ Drift reads the working tree and writes only under `.drift/`, to `drift.lock`, a
 | `.drift/review-log/` | **Ignore** | The opt-in local review log. It ignores itself. |
 | `.drift/findings/` | **Ignore** | What an agent found while investigating (`drift investigate`): local findings. It ignores itself (its own `.gitignore` of `*`), and nothing posts or shares it. |
 | `.drift/gap-reports/` | **Ignore** | Local reports of constructs Drift does not read, as minimal examples with the repository's names replaced. It ignores itself, and nothing sends it. |
+| `.drift/feedback/` | **Ignore** | Your beta feedback marks, the key that hashes ids, and the exported file (`drift feedback`). It ignores itself (its own `.gitignore` of `*`), and nothing sends it. |
 | `.drift/verify-cache.json` | **Ignore** | Verdicts of the experimental agent verifier, written only when `agents.verify: on` is set in `.drift/conventions.yaml`. It does not ignore itself, and Drift reads it whether or not git tracks it, so a committed copy would carry one machine's agent verdicts to every other. |
 | `AGENTS.md`, `CLAUDE.md`, `.claude/settings.json` | Your choice | Only if you run `drift export ... --write` on them; they are ordinary project files. |
 
-A suggested block for a repository's `.gitignore`. The four directories are already covered by the `.gitignore` files Drift creates inside them, so listing them is optional; `.drift/verify-cache.json` is needed only if you turn the verifier on, and nothing ignores it for you. The README carries the same block.
+A suggested block for a repository's `.gitignore`. The directories are already covered by the `.gitignore` files Drift creates inside them, so listing them is optional; `.drift/verify-cache.json` is needed only if you turn the verifier on, and nothing ignores it for you. The README carries the same block.
 
 ```text
 # Drift: local state. Commit .drift/conventions.yaml, .drift/config.yaml and drift.lock.
@@ -29,6 +30,7 @@ A suggested block for a repository's `.gitignore`. The four directories are alre
 .drift/verify-cache.json
 .drift/findings/
 .drift/gap-reports/
+.drift/feedback/
 ```
 
 Do not ignore `.drift/` as a whole: that would drop the policy teammates and CI need.
@@ -41,16 +43,18 @@ Do not ignore `.drift/` as a whole: that would drop the policy teammates and CI 
 | --- | --- |
 | `drift scan` | The cache. `--out FILE` writes the fact index to FILE. |
 | `drift facts` | The cache. |
-| `drift init` | `.drift/conventions.yaml` (created, or merged keeping every decision), `drift.lock` (baseline on first run; later, a baseline only for conventions new to the policy, and fingerprint lines for existing entries), the cache. It never writes `.drift/security.lock`: where there is none, it says what one would hold. |
+| `drift init` | `.drift/conventions.yaml` (created, or merged keeping every decision; it also holds the proposals from the map, as `proposed`, unless `--no-from-map` is given), `drift.lock` (baseline on first run; later, a baseline only for conventions new to the policy, and fingerprint lines for existing entries), the cache. It never writes `.drift/security.lock`: where there is none, it says what one would hold. |
 | `drift census` | The cache in text mode. With `--json` or `--coverage`: nothing, unless `DRIFT_CACHE_DIR` is set. |
 | `drift setup` | `.drift/config.yaml`, only when an answer, `--forget`, `--confirm` or `--reject` changes it. Listing, asking and `--json` write nothing; the repository is read without the cache unless `DRIFT_CACHE_DIR` is set. |
 | `drift investigate` | Listing, `--json` and `--agent-brief` write nothing (the cache is used as for `drift security`). `--record` and `--answers` write `.drift/config.yaml` (a record under `setup:`, or an agent's proposal under `setup.proposed`; `reachable` also adds a `security.public` entry), and for a finding `.drift/findings/`, for a gap report `.drift/gap-reports/`. |
 | `drift findings` | Nothing, except: `--issue ID --write FILE` writes FILE, and `--branch ID` creates a local git branch `drift/<id>` (a commit object and a branch ref; `HEAD`, the index and the working tree are not touched). |
-| `drift review` | `.drift/conventions.yaml` on every decision; `drift.lock` when a card is promoted from the withheld ones (its current outliers are baselined) or a practice is promoted (its units that differ are baselined); `.drift/review-log/` when the log is on (`--set-log on`) or `--log` is given; the file named by `--export-log`. |
+| `drift review` | `.drift/conventions.yaml` on every decision; `drift.lock` when a card is promoted from the withheld ones (its current outliers are baselined) or a practice is promoted or a practice proposed from the map is accepted (its units that differ are baselined); `.drift/review-log/` when the log is on (`--set-log on`) or `--log` is given; the file named by `--export-log`. |
 | `drift example`, `drift check`, `drift security` | The cache. (`example` and `check` need `.drift/conventions.yaml`.) `drift security --write-baseline` also writes `.drift/security.lock`. |
 | `drift card` | The cache and the derived-results directory, but only when the repository has `.drift/conventions.yaml` (or `DRIFT_CACHE_DIR` is set); otherwise nothing. |
 | `drift map`, `drift practices` | Nothing, unless `DRIFT_CACHE_DIR` is set. |
 | `drift practices promote` | `.drift/conventions.yaml` (one accepted convention added, or updated under the same id when promoted again) and `drift.lock` (one line per unit that differs today). With `--dry-run` or `--list`, or when it refuses: nothing. |
+| `drift feedback mark` | `.drift/feedback/marks.json`, and on the first mark `.drift/feedback/key` and the directory's `.gitignore`. |
+| `drift feedback export` | `.drift/feedback/drift-feedback.json`, or the file named by `--out` (refused under `.drift/` outside `.drift/feedback/`, and for `drift.lock`). With `--dry-run`: nothing. |
 | `drift hook claude ...` | Session state under `.drift/cache/sessions/` and the cache, only in a repository that has `.drift/conventions.yaml`. In one without, SessionStart builds a brief and writes nothing. |
 | `drift mcp` | The cache. `drift_setup_answer` and `drift_investigate_record` write `.drift/config.yaml` (the second also `.drift/findings/` and `.drift/gap-reports/`); `drift_verify_card` (experimental) writes `.drift/verify-cache.json`. |
 | `drift export agents-md --write FILE` | FILE: created, or only the text between the `drift:start` and `drift:end` markers replaced. Without `--write`, nothing. |
@@ -88,6 +92,11 @@ Do not ignore `.drift/` as a whole: that would drop the policy teammates and CI 
     log.1.jsonl
     salt
     lock
+  feedback/               ignore (has its own .gitignore of *)
+    .gitignore
+    marks.json
+    key
+    drift-feedback.json
   verify-cache.json       ignore (experimental verifier only)
 ```
 
@@ -133,6 +142,18 @@ Written by `drift investigate` (and the MCP tool `drift_investigate_record`) whe
 | `.drift/gap-reports/G-<id>/gap.json` | The record: `drift_said`, `expect`, `why`, `files`, `says` (what this Drift says of the fixture now), the Drift version, `by`, `on`. Schema `drift-gap-report`, version 1. |
 
 The id is `F-` or `G-` and the six hex digits of the item (`I-...`), so recording again for the same item replaces the files. `drift findings` lists them; `drift findings --issue ID` prints an issue draft and `drift findings --branch ID` makes a local branch. Neither the agent nor Drift posts anything. Delete a finding by deleting its two files.
+
+### `.drift/feedback/`
+
+Written only by `drift feedback`, which a person runs. The directory is created with its own `.gitignore` (`# Created by drift: feedback marks and their key stay on this machine.` and `*`), a symbolic link in its place is refused, and nothing sends it.
+
+| File | Holds |
+| --- | --- |
+| `marks.json` | Your marks: which report, verdict (`true` or `wrong`), your reason and the day. Schema `drift-feedback-marks`, version 1. Nothing in Drift reads it but `drift feedback export`; a mark changes no verdict. |
+| `key` | 32 random bytes, made with the first mark, used to hash ids in the exported file. It is never written to that file. |
+| `drift-feedback.json` | The exported file, schema `drift-feedback`, version 1, written only by `drift feedback export` (or to the file named by `--out`). |
+
+Commit none of them. What the exported file holds, field by field, is on [Beta Feedback](Beta-Feedback).
 
 ### `.drift/verify-cache.json`
 

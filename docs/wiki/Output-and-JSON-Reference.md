@@ -22,6 +22,7 @@ The JSON that `drift census`, `drift check`, `drift security`, `drift practices`
 | `drift review --json` | `schema` and `schema_version` | `drift-review-questions`, 1 |
 | `drift investigate --json` | `schema` and `version` | `drift-investigate`, 1 |
 | `drift findings --json` | `schema` and `version` | `drift-findings`, 1 (each finding `drift-finding`, each gap report `drift-gap-report`, both 1) |
+| `drift feedback export` (the file) | `schema` and `schema_version` | `drift-feedback`, 1 (the marks file `drift-feedback-marks`, 1); every field is on [Beta Feedback](Beta-Feedback#what-the-exported-file-holds) |
 | `drift check --format json` | none | |
 | `drift security --json` | none | |
 
@@ -73,6 +74,27 @@ The conventions Drift would propose. Writes no files.
 | `wiring` | object (optional) | Present only while the experimental `wiring` feature is on. |
 | `workspace` | object (optional) | Present only in a repository of several packages: `tools` and per-package rows. |
 | `unchecked` | list of paths (optional) | Files not parsed for lack of stack, left out of every count. |
+| `from_map` | list (optional, with `--from-map`) | The proposals from the map and what qualified but is not proposed; below. |
+
+### `drift census --from-map --json`
+
+`from_map` holds one object per practice or layer the map shows that qualified. Nothing here is mined, and nothing is written. A proposal (`proposed: true`):
+
+| Field | Meaning |
+| --- | --- |
+| `proposed` | `true`. |
+| `id`, `summary` | The convention's id and what it says. |
+| `kind` | `practice` or `layering`: which map it came from. |
+| `convention` | The convention `drift init` writes: `status: proposed`, `mode: advise`, with `from_map` set. |
+| `same_rule` | Rules already in the policy or mined that say the same, each `{id, summary, status}` (`accepted` or `proposed`). Empty when there is none. |
+| `candidate` | Of a practice: the candidate, in the shape of `drift practices promote --json`'s `candidate`. |
+| `settles` | Of a practice: the units the practice departures name that it would record as differing today. |
+| `layering` | Of a layer: `layer`, `target`, `importing` (files of the role that import code of the repository and that Drift read to the end), `members`, `importing_target` (always 0), `not_read` (files of the layer Drift cannot vouch for), `target_files`, `reverse_files`, `reverse_declared`, and `through` when the reverse edge goes through a third layer. |
+| `follows`, `differ`, `unknown` | Units that follow it, that differ, and that Drift could not read (never reported). |
+
+One not proposed (`proposed: false`): `id`, `kind`, `summary`, `reason` (`passive`, `preview_concern`, `python_off`, `overlaps`, `same_as_mined`, `not_shown` or `over_cap`) and `why` (the reason in words).
+
+With the hidden study flag `--gate-candidate <NAME>`, a proposal only a candidate gate makes carries `gate_candidate` (the candidate's name) and the `tier_reason` `gate_candidate`. Absent with no such flag.
 
 ### `drift census --why --json`
 
@@ -120,7 +142,7 @@ New violations of accepted conventions, with the conventions as checked.
 | `violations` | list | Every violation, including baselined ones; below. |
 | `fixed` | list of text | `drift.lock` entries whose violation no longer exists (fixed), safe to prune. Entries in unchecked files and their dependents are never listed: their violations are unknown. For a promoted practice: a unit that now follows it or is gone, never one of a stale practice or one the map cannot tell, and none when the check is limited to named files. |
 | `conventions` | list | Each convention as checked; below. |
-| `practices` | `{departures}` (optional) | What the practice map says of the files looked at: facts, never a violation, never part of the exit code. Omitted when nothing departs. |
+| `practices` | `{departures, added}` (optional) | What the practice map says of the files looked at: facts, never a violation, never part of the exit code. `added` (with `--diff-base`) lists the entry points the diff adds whose authentication is none, identified or unknown. Omitted when there is nothing to say. |
 | `diff` | mapping (optional, with `--diff-base`) | `base`, `merge_base`, `files_added`, `files_changed`, `files_renamed`, `files_deleted`, `base_checked` (the merge base was checked too), `policy_changed` (the change edits the policy: every new violation counts as introduced), `new_outside_diff`, and `base_unchecked` (optional). |
 | `unchecked` | list of paths (optional) | Files not checked: no stack large enough to parse them could be reserved, so their violations are unknown, not absent. |
 | `exempt` | list (optional) | Members an accepted convention is not about, with `id`, `path`, `symbol`, `line`, `reason` and `code`. |
@@ -173,7 +195,9 @@ A convention as checked:
 | `agents` | Whether agents are shown it, with a person's `agents: show` and a forced block taken into account. |
 | `verify` | Only with `agents.verify: on`: the experimental verifier's standing. |
 
-A practice departure (under `practices.departures`): `concern`, `unit`, `path`, `package`, `dir`, `variant` and `label` (what `held` of the `others` units around it do), `example`, and `units` (each with `line`, `symbol`, `variant`, `does`).
+A practice departure (under `practices.departures`): `concern`, `unit`, `path`, `package`, `dir`, `variant` and `label` (what `held` of the `others` units around it do), `example`, and `units` (each with `line`, `symbol`, `variant`, `does`); and `promote` (optional): the `drift practices promote <id> --in <place>` command that would make the place's way the rule for new code there, present only when the command would take it as the code stands. It is for people: agents are not given it.
+
+What each rule that reported a new violation rests on (`source`, `evidence`, `changed`, `not checked` and the rest) is in the text and GitHub output only, not in this JSON; `standing` holds the counts.
 
 ## `drift security --json`
 
@@ -194,6 +218,9 @@ The full inventory. `FILES` does not filter it.
 | `scope_gaps` | list of `{resource, key, members, scoped, exceptions[], example}` (optional) | What most entry points that query one thing filter by a value of the caller, and the entry points that query it and filter it by none. |
 | `sinks[].fed`, `entry_points[].reaches[].fed` | boolean (optional) | The operation is given a value read off a parameter of its function, handed on by each call on the way: what the request sent may reach it. Absent when false. |
 | `warnings` | list of text (optional) | What could not be read around the inventory, such as a `.drift/conventions.yaml` that does not parse. |
+| `top` | mapping (optional, with `--top`) | The findings to look at first: `shown` (the first N ranked findings), `more` (how many ranked findings are not shown) and `not_ranked`; below. |
+
+A ranked finding (under `top.shown`): `kind` (the risky operation's kind), `sink` (the operation's function, `path#Symbol`), `sink_line` (optional), `caller` (`anyone`: no guard found in what Drift read; `passes_guard`: a guard Drift read turns some callers away; `service`: the body verifies a webhook's signature), `validation` (`not_found`, `not_read` or `found`) and `places`: every entry point that reaches the same operation the same way, each `{path, line, method, route, symbol, exposure, guard, guard_not_read?, via}`, where `guard` says in words what guards it, `guard_not_read` counts what Drift saw on the way and did not read, and `via` is the call chain to the operation. `not_ranked` counts the findings not ranked, each once, by the first reason that applies: `no_remote_caller`, `no_caller` (a queue or a schedule starts it), `test_or_example`, `settings` (the risk is how the code is set up), `not_fed` (no request value was read reaching the operation) and `guard_unknown` (Drift could not read whether a guard turns callers away: unknown, never a hole). `top` changes no exit code.
 
 An entry point row:
 

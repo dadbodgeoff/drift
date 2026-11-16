@@ -18,6 +18,7 @@
 - [Team Rollout](Team-Rollout)
 - [Security and Privacy](Security-and-Privacy)
 - [Troubleshooting](Troubleshooting)
+- [Beta Feedback](Beta-Feedback)
 
 **Reference**
 - [Command Reference](Command-Reference)
