@@ -134,12 +134,18 @@ fn census_is_the_same_with_and_without_components() {
         &["--no-cache", "census"][..],
         &["--no-cache", "census", "--json", "--all", "--max", "1000"][..],
     ] {
-        // The output names the root it read; nothing else may differ.
+        // The output names the root it read; nothing else may differ. In JSON the root
+        // is a string, so a Windows path has its separators escaped there.
         let run = |r: &Path| {
-            let canonical = r.canonicalize().unwrap();
-            drift(r, args)
-                .replace(&canonical.display().to_string(), "<root>")
-                .replace(&r.display().to_string(), "<root>")
+            let mut out = drift(r, args);
+            for root in [r.canonicalize().unwrap(), r.to_path_buf()] {
+                let plain = root.display().to_string();
+                let quoted = serde_json::to_string(&plain).unwrap();
+                out = out
+                    .replace(quoted.trim_matches('"'), "<root>")
+                    .replace(&plain, "<root>");
+            }
+            out
         };
         assert_eq!(run(with.path()), run(without.path()), "{args:?}");
     }
