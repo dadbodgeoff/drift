@@ -45,7 +45,7 @@ pub(crate) const INPUT_KEYS: &[&str] = &[
 ];
 
 /// Names a destructured parameter gives the request (`({ request, params })`).
-const REQUEST_KEYS: &[&str] = &["req", "request"];
+pub(crate) const REQUEST_KEYS: &[&str] = &["req", "request"];
 
 /// Keys of a destructured parameter that are known to carry no request input. Any
 /// other key may be input (Inngest's `{ event }`, multer's `{ file }`, BullMQ's

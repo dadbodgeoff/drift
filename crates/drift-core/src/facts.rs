@@ -94,6 +94,10 @@ pub struct FileFacts {
     pub discovers: Vec<String>,
     /// Test files only: the requests the tests make. Sorted, at most
     /// [`caps::TEST_REQUESTS`](crate::practice::caps::TEST_REQUESTS); omitted when empty.
+    /// One copy for both readings ([`Listed`] holds none): mining never reads it (the
+    /// testing practice does, `drift_mine::practices::testing`), so a reading added
+    /// since the measured build (TypeScript `assert.equal(res.status, 401)`, Cypress)
+    /// changes it in the measured facts too and leaves what mining proposes as it was.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub test_requests: Vec<TestRequest>,
     /// Canonical modules this file mocks (`vi.mock` / `jest.mock` / `@patch("a.b")` /
@@ -680,10 +684,11 @@ pub struct CatchFact {
     /// What the clause does, sorted: `rethrow`, `throw:<canonical>`, `log`,
     /// `respond:<status>`, `report:<canonical>` (Sentry and the like), `return`,
     /// `swallow` (none of the others). `rethrow` is also a clause that hands what
-    /// it caught to the continuation the framework gave the function, by position
-    /// (`catch (e) { next(e) }`, `return next(e)`): the error goes on to the
-    /// framework's error handling, and no `return` is recorded for it (TypeScript
-    /// lowering 85, the listed reading only).
+    /// it caught to the continuation the framework gave the function, by position,
+    /// as its last statement after nothing that may leave (`catch (e) { next(e) }`,
+    /// `return next(e)`; not `catch (e) { if (gone(e)) return; next(e) }`): the
+    /// error goes on to the framework's error handling, and no `return` is
+    /// recorded for it (TypeScript, the listed reading only).
     pub does: Vec<String>,
 }
 
@@ -1649,7 +1654,7 @@ pub mod controls {
     /// by-name fallback where no definition is read). A throw of one in a branch
     /// that turns the caller away is a [`crate::facts::BodyCheck`] of that status.
     /// A class whose status is set by a base of another module carries none.
-    /// Recorded by TypeScript (lowering 85), on classes, in the listed reading only
+    /// Recorded by TypeScript, on classes, in the listed reading only
     /// ([`crate::facts::Listed`]); mining never reads it.
     pub const REFUSAL_STATUS: &str = "refusal_status:";
     /// What starts the control of a body that returns what a call handed back when
