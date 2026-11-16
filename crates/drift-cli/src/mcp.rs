@@ -20,6 +20,8 @@ use crate::agent::rules_note;
 use crate::project::{NewFileRules, Project, blocks};
 use drift_mine::policy::Convention;
 
+mod surface;
+
 /// The newest protocol version this server speaks.
 const PROTOCOL_VERSION: &str = "2025-11-25";
 
@@ -1627,9 +1629,11 @@ fn mode_text(c: &Convention, stale: Option<&str>) -> String {
     }
 }
 
-/// The protocol versions this server speaks, newest first. It has tools only and
-/// answers in text, which every one of these defines the same way (2025-03-26 also
-/// requires accepting batches, which `reply_to_line` does for every version).
+/// The protocol versions this server speaks, newest first. It answers in text, which
+/// every one of these defines the same way, and has tools, resources and prompts,
+/// which all of them have; what is newer than 2024-11-05 (tool annotations, titles) is
+/// given only to a client that settled on a version with it ([`surface`]). 2025-03-26
+/// also requires accepting batches, which `reply_to_line` does for every version.
 const PROTOCOL_VERSIONS: [&str; 4] = [PROTOCOL_VERSION, "2025-06-18", "2025-03-26", "2024-11-05"];
 
 /// Where tools read the repository from. The conventions and the lock are read again
@@ -1640,6 +1644,9 @@ pub struct Server {
     /// Where the server was started (`--root`, default the agent's working directory).
     pub root: PathBuf,
     pub no_cache: bool,
+    /// The protocol version `initialize` settled on (the newest until then): what
+    /// `tools/list`, `resources/list` and `prompts/list` say depends on it.
+    negotiated: std::cell::Cell<&'static str>,
 }
 
 impl Server {
@@ -1983,19 +1990,36 @@ pub fn handle_message(server: &Server, msg: &Value) -> Option<Value> {
         {
             // The client's version when this server speaks it, else the newest it does:
             // the client then decides whether it can go on.
-            Some(asked) => Ok(json!({
-                "protocolVersion": PROTOCOL_VERSIONS.iter().find(|v| **v == asked).copied().unwrap_or(PROTOCOL_VERSION),
-                "capabilities": { "tools": { "listChanged": false } },
-                "serverInfo": { "name": "drift", "version": env!("CARGO_PKG_VERSION") },
-            })),
+            Some(asked) => {
+                let version = PROTOCOL_VERSIONS
+                    .iter()
+                    .find(|v| **v == asked)
+                    .copied()
+                    .unwrap_or(PROTOCOL_VERSION);
+                server.negotiated.set(version);
+                Ok(json!({
+                    "protocolVersion": version,
+                    "capabilities": surface::capabilities(version),
+                    "serverInfo": { "name": "drift", "version": env!("CARGO_PKG_VERSION") },
+                }))
+            }
             None => Err((
                 -32602,
                 "invalid params: `protocolVersion` must be a string".to_string(),
             )),
         },
         "ping" => Ok(json!({})),
-        "tools/list" => Ok(json!({ "tools": tools(verify_on(&server.project_root())) })),
+        "tools/list" => {
+            let mut t = tools(verify_on(&server.project_root()));
+            surface::annotate(&mut t, server.negotiated.get());
+            Ok(json!({ "tools": t }))
+        }
         "tools/call" => tools_call(server, msg),
+        "resources/list" => Ok(surface::resources_list(server.negotiated.get())),
+        "resources/templates/list" => Ok(surface::resource_templates(server.negotiated.get())),
+        "resources/read" => surface::resources_read(server, msg),
+        "prompts/list" => Ok(surface::prompts_list(server.negotiated.get())),
+        "prompts/get" => surface::prompts_get(server, msg),
         _ => Err((-32601, "method not found".to_string())),
     };
     Some(match result {
@@ -2054,6 +2078,7 @@ pub fn serve(root: &Path, no_cache: bool) -> anyhow::Result<()> {
     let server = Server {
         root: root.to_path_buf(),
         no_cache,
+        negotiated: std::cell::Cell::new(PROTOCOL_VERSION),
     };
     let mut stdin = std::io::stdin().lock();
     let mut stdout = std::io::stdout().lock();

@@ -466,7 +466,7 @@ fn protocol_errors_are_json_rpc_errors() {
     let reply =
         s.request(json!({"jsonrpc":"2.0","id":4,"method":"tools/call","params":["drift_check"]}));
     assert_eq!(code(&reply), -32602, "params not an object: {reply}");
-    let reply = s.request(json!({"jsonrpc":"2.0","id":5,"method":"resources/list"}));
+    let reply = s.request(json!({"jsonrpc":"2.0","id":5,"method":"completion/complete"}));
     assert_eq!(code(&reply), -32601, "{reply}");
     let reply = s.request(json!({"jsonrpc":"2.0","id":6}));
     assert_eq!(code(&reply), -32600, "no method: {reply}");
