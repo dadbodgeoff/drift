@@ -163,6 +163,12 @@ impl Concern for Validation {
             // facts do not hold: nothing found is not none [STRICT].
             unknown(UnknownReason::Unresolved, "")
         } else if common::any_control(&bodies, controls::READS_INPUT) {
+            // The input is handed to a call of a package (or one not resolved)
+            // that is no validation library Drift knows: what it does with the
+            // input is not read, so whether it validates is unknown, never none.
+            if let Some(callee) = handed_unread(&bodies) {
+                return unknown(UnknownReason::Unclassified, &callee);
+            }
             Assignment::None {
                 label: "reads input, nothing validates it".into(),
             }
@@ -177,12 +183,34 @@ impl Concern for Validation {
 /// provably takes no input. [`Validation::assign`] is not to be asked about any other
 /// unit: of one that reads nothing it can only say it does not know whether input is
 /// read.
+///
+/// A body whose parameter names the input only to leave it unread
+/// ([`controls::INPUT_UNREAD`], `async ({ ctx, input }) => handler({ ctx })`)
+/// takes none either: naming a key is not reading it.
 pub fn may_read_input<'a>(cx: &Cx<'a>, unit: &UnitRef<'a>) -> bool {
     unit_symbol(cx, unit).is_none_or(|(_, s)| {
-        !common::bodies(cx, s)
-            .iter()
-            .all(|b| b.controls.iter().any(|c| c == controls::NO_INPUT))
+        !common::bodies(cx, s).iter().all(|b| {
+            b.controls
+                .iter()
+                .any(|c| c == controls::NO_INPUT || c == controls::INPUT_UNREAD)
+        })
     })
+}
+
+/// The first (by name) call of a package, or one that did not resolve, a body
+/// hands the request's input to ([`controls::INPUT_HANDED`]) and that is no
+/// validation library Drift knows ([`validation_library`]). A function of the
+/// repository is not counted: its body is code Drift reads where it is defined.
+fn handed_unread(bodies: &[&drift_core::Symbol]) -> Option<String> {
+    bodies
+        .iter()
+        .flat_map(|b| &b.controls)
+        .filter_map(|c| c.strip_prefix(controls::INPUT_HANDED))
+        .flat_map(|rest| rest.split('\t'))
+        .filter(|callee| callee.starts_with("pkg:") || callee.starts_with("unresolved:"))
+        .filter(|callee| validation_library(callee).is_none())
+        .min()
+        .map(str::to_string)
 }
 
 type Classified = (&'static str, String, VariantSource);
