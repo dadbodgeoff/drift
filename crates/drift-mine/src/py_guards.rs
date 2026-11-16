@@ -81,6 +81,12 @@ pub enum Position {
     /// "no guard". Decided by the entry's adapter, not by a name of what stands
     /// there (review R5, row 9).
     Admin,
+    /// A permission class of a GraphQL field (strawberry's `permission_classes`, an
+    /// extension of the field): strawberry runs its `has_permission(source, info)`
+    /// before the resolver, and what it asks of the caller is read through the
+    /// context the schema's view builds, which is not read. Each is named and
+    /// unknown, never "no guard". Decided by the entry's adapter.
+    FieldPermission,
 }
 
 impl Position {
@@ -99,6 +105,8 @@ impl Position {
             // The admin's one entry point: `AdminSite.admin_view` wraps its views as
             // a decorator does, and what the site lets in is not read.
             WrapKind::Call if adapter == "django_admin" => Some(Position::Admin),
+            // What a GraphQL field runs before its resolver: a permission class.
+            WrapKind::Call if adapter == "strawberry" => Some(Position::FieldPermission),
             // A base, a setting: read where they are.
             _ => None,
         }
@@ -321,7 +329,7 @@ fn read_at(
     holders: &[&Symbol],
     authz: bool,
 ) -> Verdict {
-    if at == Position::Admin {
+    if matches!(at, Position::Admin | Position::FieldPermission) {
         return UNCLASSIFIED;
     }
     let w = crate::mine::norm_ref(wrapper);
@@ -1504,6 +1512,14 @@ const FRAMEWORKS: &[(&str, &[&str])] = &[
         "rest_framework",
         &["permissions", "authentication", "authtoken"],
     ),
+    // The GraphQL libraries: their decorators and classes declare the schema
+    // (`@strawberry.type` on a root type, whose methods are listed as resolvers) and
+    // check no caller. strawberry's permission classes and `PermissionExtension` are
+    // read where a field names them.
+    ("strawberry", &["permission"]),
+    ("graphene", &[]),
+    ("graphene_django", &[]),
+    ("ariadne", &[]),
 ];
 
 /// Exports of a framework's authenticating modules that authenticate no request:

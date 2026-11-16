@@ -43,8 +43,9 @@ pub const SECURITY_LOCK: &str = ".drift/security.lock";
 ///
 /// 1: every kind, detector and reading before the stamp. 2: `unscoped-key`, and the
 /// readings of [`READ_SINCE`]. (No build stamped 2 before those readings: the stamp
-/// and they ship together.)
-pub const INVENTORY_VERSION: u32 = 2;
+/// and they ship together.) 3: the resolvers of a Python GraphQL schema's root
+/// fields listed as entry points ([`READ_SINCE`]).
+pub const INVENTORY_VERSION: u32 = 3;
 
 /// The version of a baseline written before baselines were stamped.
 const UNSTAMPED: u32 = 1;
@@ -89,16 +90,25 @@ const DETECTOR_SINCE: &[(&str, u32)] = &[];
 ///   workflows a job calls, and a second step of a job with the same expression
 ///   keyed apart (` (occurrence N in the job)`).
 ///
+/// 3:
+/// - `no-guard`, `unguarded-reaching`, `guard-gap`, `scope-gap`,
+///   `no-authorization`, `unscoped-key`, `whole-row`: the resolvers of a Python
+///   GraphQL schema's root fields (strawberry, graphene, ariadne) are entry points
+///   (kind `graphql`), so each kind an entry point or its body is found for finds
+///   more. (A risky operation in a resolver was found before, by its function or
+///   its class's method, under the same key.)
+///
 /// `dependency`, `kubernetes` and `leak` read as before. Every later
 /// change to what a reading finds adds its kinds here with the new version.
 const READ_SINCE: &[(&str, u32)] = &[
-    ("guard-gap", 2),
-    ("no-authorization", 2),
-    ("no-guard", 2),
+    ("guard-gap", 3),
+    ("no-authorization", 3),
+    ("no-guard", 3),
     ("risky", 2),
-    ("scope-gap", 2),
-    ("unguarded-reaching", 2),
-    ("whole-row", 2),
+    ("scope-gap", 3),
+    ("unguarded-reaching", 3),
+    ("unscoped-key", 3),
+    ("whole-row", 3),
     ("workflow", 2),
 ];
 

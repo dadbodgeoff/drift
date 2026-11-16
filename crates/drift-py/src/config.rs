@@ -695,6 +695,25 @@ impl Linker<'_> {
         }
     }
 
+    /// Wraps the settings serving URLconf `node` give a view of a package registered
+    /// there with the wrappers `reg_guards` (a GraphQL library's view, which is no
+    /// DRF view): the middleware, and `LoginRequiredMiddleware` unless the
+    /// registration exempts the view. As [`Linker::view_settings_guards`] gives them
+    /// to a view of the repository.
+    pub(super) fn package_view_settings(&self, node: &str, reg_guards: &[String]) -> Vec<Wrap> {
+        let settings = self.settings_guards(node);
+        let wrap = |wrapper: String| Wrap {
+            wrapper,
+            kind: WrapKind::Config,
+        };
+        let mut out: Vec<Wrap> = settings.middleware.iter().cloned().map(wrap).collect();
+        out.extend(settings.scoping.iter().map(|w| wrap(format!("mw:{w}"))));
+        if !reg_guards.iter().any(|g| g == LOGIN_NOT_REQUIRED) {
+            out.extend(settings.login.iter().cloned().map(wrap));
+        }
+        out
+    }
+
     /// Wraps the settings give one view symbol in file `ti` (`Config`,
     /// `ConfigAuthenticates`), and the DRF classes it inherits from an in-repo base
     /// (`Call`, `Authenticates`), which replace the settings' defaults, as in DRF.

@@ -22,6 +22,8 @@ use crate::resolve::Resolver;
 
 #[path = "config.rs"]
 pub(crate) mod config;
+#[path = "graphql_link.rs"]
+mod graphql;
 
 /// Maximum hops followed through re-exports (guards cycles).
 const MAX_HOPS: usize = 32;
@@ -758,6 +760,11 @@ pub struct Linker<'r> {
     /// by file ([`Linker::with_declared`]).
     declared: BTreeMap<String, Vec<EntryPoint>>,
     track: Option<Track>,
+    /// Some file builds a GraphQL schema ([`RawGraphql::schemas`]).
+    graphql_schemas: bool,
+    /// The GraphQL entry points of the listed reading, built on the first link
+    /// that asks ([`Linker::graphql_of`]).
+    graphql: std::sync::OnceLock<graphql::Table>,
 }
 
 /// For linking one file against a subset of the repo ([`Linker::tracking`]): the
@@ -1318,6 +1325,8 @@ impl<'r> Linker<'r> {
             compat: false,
             unmeasured: std::sync::atomic::AtomicBool::new(false),
             declared: BTreeMap::new(),
+            graphql_schemas: files.iter().any(|f| !f.raw.graphql.schemas.is_empty()),
+            graphql: std::sync::OnceLock::new(),
         };
         l.build_adapter_tables();
         l.build_handles();
@@ -4576,6 +4585,9 @@ impl<'r> Linker<'r> {
             .collect();
         entry_points.extend(extra.entries.iter().cloned());
         entry_points.extend(self.consumers(fi));
+        // The resolvers of a GraphQL schema's root fields: the listed reading's.
+        let gql = self.graphql_of(rel);
+        entry_points.extend(gql.iter().flat_map(|g| g.entries.iter().cloned()));
         // A declared entry point the file's own code already shows (a console script
         // naming the `main` an `if __name__` guard runs through argparse) is that entry
         // point, not a second one: the one read from the code is kept.
@@ -4600,12 +4612,23 @@ impl<'r> Linker<'r> {
             }
         }
 
+        let gql_entries: BTreeSet<&str> = gql
+            .iter()
+            .flat_map(|g| g.entries.iter().map(|e| e.symbol.as_str()))
+            .collect();
         let symbols = raw
             .symbols
             .iter()
             // A handler method of a class no view base is read for is a symbol where
             // an entry point names it ([`RawSymbol::late`]).
             .filter(|s| !s.late || entry_points.iter().any(|e| e.symbol == s.name))
+            // And so is a resolver method of a GraphQL type.
+            .chain(
+                raw.graphql
+                    .methods
+                    .iter()
+                    .filter(|s| gql_entries.contains(s.name.as_str())),
+            )
             .map(|s| {
                 let mut wraps: Vec<Wrap> = Vec::new();
                 // A decorator written above the route decorator of a Flask or
@@ -4695,8 +4718,16 @@ impl<'r> Linker<'r> {
                     .as_ref()
                     .and_then(|_| s.name.rsplit_once('.'))
                     .map(|(_, m)| m);
+                // The decorator that binds a GraphQL resolver, and those above it,
+                // wrap what it hands back ([`RawGqlBind::unwraps`]).
+                let unwraps = gql.and_then(|g| g.unwraps.get(&s.name));
                 for (r, k) in s.wraps.iter().skip(skip) {
                     if replaced(r, *k) || class_attr(r, *k) {
+                        continue;
+                    }
+                    if *k == WrapKind::Decorator
+                        && unwraps.is_some_and(|u| u.contains(&self.canon(fi, r)))
+                    {
                         continue;
                     }
                     let only: Vec<&Option<String>> = if only_live && *k == WrapKind::Decorator {
@@ -5395,18 +5426,31 @@ impl<'r> Linker<'r> {
                         .collect(),
                     catches: s.catches.iter().map(|c| self.catch_fact(fi, c)).collect(),
                     headers: s.headers.clone(),
-                    inputs: s
-                        .inputs
-                        .iter()
-                        .filter_map(|i| match i {
-                            RawInput::Validated(r) => Some(self.canon(fi, r)),
-                            RawInput::Param(r) if http_entries.contains(&s.name) => {
-                                let c = self.canon(fi, r);
-                                self.is_repo_class(&c).then_some(c)
-                            }
-                            RawInput::Param(_) => None,
-                        })
-                        .collect(),
+                    inputs: {
+                        // A GraphQL resolver's typed arguments are its inputs, as an
+                        // HTTP handler's are; and so are those declared for it
+                        // elsewhere (graphene's `Arguments`).
+                        let request =
+                            http_entries.contains(&s.name) || gql_entries.contains(s.name.as_str());
+                        let mut inputs: Vec<String> = s
+                            .inputs
+                            .iter()
+                            .filter_map(|i| match i {
+                                RawInput::Validated(r) => Some(self.canon(fi, r)),
+                                RawInput::Param(r) if request => {
+                                    let c = self.canon(fi, r);
+                                    self.is_repo_class(&c).then_some(c)
+                                }
+                                RawInput::Param(_) => None,
+                            })
+                            .collect();
+                        if let Some(more) = gql.and_then(|g| g.inputs.get(&s.name)) {
+                            inputs.extend(more.iter().cloned());
+                            inputs.sort();
+                            inputs.dedup();
+                        }
+                        inputs
+                    },
                     handles_errors: {
                         let mut h: Vec<String> =
                             s.handles.iter().map(|x| self.handled(fi, x)).collect();
@@ -5516,7 +5560,11 @@ impl<'r> Linker<'r> {
                 vec![]
             },
             route_matchers: vec![],
-            mounts: extra.mounts.clone(),
+            mounts: {
+                let mut m = extra.mounts.clone();
+                m.extend(gql.iter().flat_map(|g| g.mounts.iter().cloned()));
+                m
+            },
             apps: self.apps.get(rel).cloned().unwrap_or_default(),
             listed: None,
         };
