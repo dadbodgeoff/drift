@@ -734,7 +734,8 @@ pub struct RawLogCall {
 /// [`drift_core::CatchFact`] before resolution: the classes caught (`Text("*")` for
 /// any), and what the clause does as (kind, reference): `throw` and `report` carry the
 /// reference written after a `:`, the others (`rethrow`, `log`, `respond:<status>`,
-/// `return`, `swallow`) none.
+/// `return`, `swallow`, and `unread` for a clause that hands what it caught on after
+/// a statement not read, [`read_before_forward`]) none.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct RawCatch {
     pub catches: Vec<RawOperand>,
@@ -8944,6 +8945,34 @@ const REPORT_CALLS: &[&str] = &[
     "trackException",
     "recordException",
 ];
+
+/// A statement of a `catch` clause, before the call that hands what it caught to the
+/// framework's continuation, that Drift reads as answering nothing: a log line (a level-named
+/// method, [`drift_core::practice::LOG_LEVELS`], `print` aside), a report to an error
+/// tracker ([`REPORT_CALLS`]), or a declaration none of whose values is a call or a
+/// construction. Any other statement may answer the request itself
+/// (`sendError(res, e)`), which the clause's facts do not say.
+fn read_before_forward(s: &Statement<'_>) -> bool {
+    match s {
+        Statement::ExpressionStatement(x) => match peel(&x.expression) {
+            Expression::CallExpression(c) => {
+                let log = matches!(unwrap_expr(&c.callee), Expression::StaticMemberExpression(m)
+                    if drift_core::practice::normalize_level(m.property.name.as_str())
+                        .is_some_and(|l| l != "print"));
+                log || call_name(&c.callee).is_some_and(|n| REPORT_CALLS.contains(&n))
+            }
+            _ => false,
+        },
+        Statement::VariableDeclaration(d) => d.declarations.iter().all(|v| {
+            !matches!(
+                v.init.as_ref().map(peel),
+                Some(Expression::CallExpression(_) | Expression::NewExpression(_))
+            )
+        }),
+        _ => false,
+    }
+}
+
 /// Header-reading methods on a headers object (`req.headers.get(...)`).
 const HEADER_GETTERS: &[&str] = &["get", "has"];
 /// Members of a headers object that are methods, not header names.
@@ -15666,22 +15695,31 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         // where handing it on is the clause's last statement and nothing before it
         // can leave: `catch (e) { if (e.code === "ENOENT") return; next(e) }` still
         // swallows some errors.
-        let forwards = match it.body.body.as_slice() {
-            [before @ .., last] => {
-                self.forwards_caught(last, param)
-                    && before.iter().all(|s| {
-                        matches!(
-                            s,
-                            Statement::ExpressionStatement(_) | Statement::VariableDeclaration(_)
-                        )
-                    })
+        //
+        // A clause that answered first (`res.status(500).json(...); next(e)`) is the
+        // handler answering, as the measured build read it: what it sent is the
+        // answer, not the framework's handling. One where a statement before the
+        // hand-on is no log line, no report to an error tracker and no plain
+        // declaration ([`read_before_forward`]: `sendError(res, e); next(e)`) may
+        // have answered too: `unread`, neither the framework's nor the handler's.
+        let (forwards, unread_before) = match it.body.body.as_slice() {
+            [before @ .., last] if self.forwards_caught(last, param) => {
+                let plain = before.iter().all(|s| {
+                    matches!(
+                        s,
+                        Statement::ExpressionStatement(_) | Statement::VariableDeclaration(_)
+                    )
+                });
+                (plain, plain && !before.iter().all(read_before_forward))
             }
-            [] => false,
+            _ => (false, false),
         };
         if let Some(mut f) = self.p.frames.pop() {
-            if forwards && !routes::unmeasured_listing() {
+            let answered = f.does.iter().any(|(d, _)| d.starts_with("respond:"));
+            if forwards && !answered && !routes::unmeasured_listing() {
                 f.does.remove(&("return".to_string(), None));
-                f.does.insert(("rethrow".to_string(), None));
+                let what = if unread_before { "unread" } else { "rethrow" };
+                f.does.insert((what.to_string(), None));
             }
             let mut catches: Vec<RawOperand> = f.classes.into_iter().collect();
             if catches.is_empty() {

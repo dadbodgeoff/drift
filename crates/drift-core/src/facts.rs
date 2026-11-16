@@ -688,7 +688,11 @@ pub struct CatchFact {
     /// as its last statement after nothing that may leave (`catch (e) { next(e) }`,
     /// `return next(e)`; not `catch (e) { if (gone(e)) return; next(e) }`): the
     /// error goes on to the framework's error handling, and no `return` is
-    /// recorded for it (TypeScript, the listed reading only).
+    /// recorded for it (TypeScript, the listed reading only), where nothing before
+    /// it answered (a clause that answered keeps its `respond:<status>`) and every
+    /// statement before it is a log line, a report or a plain declaration. Where
+    /// another statement comes first (`sendError(res, e); next(e)`), which may have
+    /// answered, it is `unread` instead: what the clause answers is not read.
     pub does: Vec<String>,
 }
 

@@ -2162,6 +2162,16 @@ impl<'a> Reach<'a> {
                     .enumerate()
                     .find_map(|(i, o)| effect(cx, from, o, 0, &mut seen).map(|call| (i, call)))
             };
+            // The list was cut at its cap ([`drift_core::AFTER_MORE`] at its end, or
+            // `order` in the listed reading's `truncated`): a callee it does not hold
+            // was first called past the cap, after calls the list does not hold,
+            // any of which may change data. Whether it runs before the write is not
+            // read, never "it does".
+            let cut = order.iter().any(|o| o == drift_core::AFTER_MORE)
+                || match from {
+                    Node::Sym(s) => !quiet && s.truncated.iter().any(|t| t == "order"),
+                    Node::Member(_) => false,
+                };
             for c in from.callees() {
                 let c = c.trim_end_matches("(ref)");
                 // A method of the bound class's line called on `self`: the one that
@@ -2212,9 +2222,11 @@ impl<'a> Reach<'a> {
                         .position(|o| o == c)
                         .is_some_and(|i| i > *at)
                 });
+                let past_cut = cut && !order.iter().any(|o| o == c);
                 let edge = from
                     .conditional_to(c, node)
-                    .or(late.then_some(obligation::AFTER_EFFECT));
+                    .or(late.then_some(obligation::AFTER_EFFECT))
+                    .or(past_cut.then_some(obligation::PATH_UNREAD));
                 if let Some(to) = self.nodes.iter().position(|x| x.node.same(node)) {
                     self.edges.push((at, to, edge.is_some()));
                     continue;
