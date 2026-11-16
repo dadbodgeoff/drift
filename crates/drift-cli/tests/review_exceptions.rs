@@ -116,7 +116,7 @@ fn review_cards_list_outliers_capped() {
     );
     assert!(
         card.contains(&format!(
-            "fine because...: `drift review --exempt {id} --member app/api/new/route.ts#GET --reason \"<why>\"`"
+            "fine because...: `drift review --exempt {id} --member 'app/api/new/route.ts#GET' --reason \"<why>\"`"
         )),
         "{card}"
     );

@@ -39,7 +39,13 @@ Environment variables the binary reads include `DRIFT_CACHE_DIR`, `DRIFT_EXPERIM
 | a temporary directory | pull-request mode's merge-base copy, removed afterwards |
 | `DRIFT_CACHE_DIR` | where the cache goes instead, when set |
 
-Drift never writes through a symbolic link that leaves the repository, and an issue draft (`drift findings --issue --write`) is never written through a symbolic link inside the repository, nor into `.drift/` or `drift.lock`; a gap report writes only inside its own fixture: such a link at `.drift/conventions.yaml`, `drift.lock` or an export target is refused with exit 2. The Claude Code hooks deny agent edits to `.drift/` and `drift.lock` (best effort for shell commands). The complete list by command is on [Files Drift Writes](Files-Drift-Writes).
+Drift never writes through a symbolic link that leaves the repository, and an issue draft (`drift findings --issue --write`) is never written through a symbolic link inside the repository, nor into `.drift/` or `drift.lock`; a gap report writes only inside its own fixture: such a link at `.drift/conventions.yaml`, `drift.lock`, `.drift/security.lock` (`drift security --write-baseline` included) or an export target is refused with exit 2, and so is a link there to a file that does not exist (it is left as it is, never replaced by a regular file).
+
+Drift reads its own files by the same rule. A `.drift/security.lock`, `drift.lock`, `.drift/conventions.yaml` or `.drift/config.yaml` that is a symbolic link leading outside the repository, or a link to nothing, is refused: `drift check` and `drift security --ratchet` exit 2 with a message that names the path and says why, instead of comparing against a file the change does not hold and reviewers never see, or reading a dangling baseline as no baseline. A link that stays inside the repository is followed as before. On Windows the same checks run, but only the unix behaviour is tested.
+
+Every command Drift prints for a person or an agent to run (in `drift check`, `drift review`, the hooks, MCP, `drift setup`, `drift practices`) passes each word taken from the repository (a convention id, a path, a member) through one quoting rule: bare when it holds only characters no shell reads specially, else in single quotes. A committed id such as `x; rm -rf ~` is printed as one quoted word and pasting the command runs nothing else.
+
+The Claude Code hooks deny agent edits to `.drift/` and `drift.lock` (best effort for shell commands). The complete list by command is on [Files Drift Writes](Files-Drift-Writes).
 
 ## Network access
 

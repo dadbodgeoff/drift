@@ -602,8 +602,8 @@ fn promote_command(report: &PracticesReport, shown: &str, id: &str) -> Option<St
     let cand = super::promote::candidate_for(report, Some(&place), &req).ok()?;
     Some(format!(
         "drift practices promote {} --in {}",
-        sanitize(id, 40),
-        sanitize(&cand.place.shown(), 160)
+        crate::report::shell_word(&sanitize(id, 40)),
+        crate::report::shell_word(&sanitize(&cand.place.shown(), 160))
     ))
 }
 

@@ -1728,12 +1728,13 @@ fn card_outlier_lines(c: &Convention, r: &CheckReport, cap: OutlierCap) -> Vec<S
             out.push(format!(
                 "    +{} more: `drift review --show {} --all-outliers` lists them all",
                 flagged.len() - shown,
-                c.id
+                drift_mine::report::shell_word(&c.id)
             ));
         }
         out.push(format!(
-            "  fine because...: `drift review --exempt {} --member {}#{} --reason \"<why>\"`",
-            c.id, flagged[0].path, flagged[0].symbol
+            "  fine because...: `drift review --exempt {} --member {} --reason \"<why>\"`",
+            drift_mine::report::shell_word(&c.id),
+            drift_mine::report::shell_word(&format!("{}#{}", flagged[0].path, flagged[0].symbol))
         ));
     }
     if !c.exceptions.is_empty() {
@@ -2464,13 +2465,13 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         fail.insert(k.clone());
                     }
                 }
-                let path = root.join(drift_mine::ratchet::SECURITY_LOCK);
-                if let Some(dir) = path.parent() {
-                    std::fs::create_dir_all(dir)
-                        .with_context(|| format!("creating {}", dir.display()))?;
-                }
-                std::fs::write(&path, drift_mine::ratchet::render_lock_with(&found, &fail))
-                    .with_context(|| format!("writing {}", path.display()))?;
+                // Never through a link that leaves the repository, as every other
+                // writer of Drift's files.
+                drift_mine::policy::write_no_follow(
+                    root,
+                    Path::new(drift_mine::ratchet::SECURITY_LOCK),
+                    drift_mine::ratchet::render_lock_with(&found, &fail).as_bytes(),
+                )?;
                 let mut by_kind: BTreeMap<&str, usize> = BTreeMap::new();
                 for (kind, _) in found.keys() {
                     *by_kind.entry(kind.as_str()).or_default() += 1;
@@ -3922,7 +3923,8 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     });
                 if !flagged {
                     bail!(
-                        "{member} is not an outlier of {id} in the code now (`drift review --show {id}` lists them); nothing was changed"
+                        "{member} is not an outlier of {id} in the code now (`drift review --show {}` lists them); nothing was changed",
+                        drift_mine::report::shell_word(id)
                     );
                 }
                 let before = rlog.before(c);
@@ -3932,7 +3934,9 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 policy.save(root)?;
                 rlog.flush();
                 println!(
-                    "{id}: {member} marked fine ({reason}). `drift check` lists it as exempt, not as a violation; `drift review --unexempt {id} --member {member}` undoes it."
+                    "{id}: {member} marked fine ({reason}). `drift check` lists it as exempt, not as a violation; `drift review --unexempt {} --member {}` undoes it.",
+                    drift_mine::report::shell_word(id),
+                    drift_mine::report::shell_word(&member)
                 );
                 return Ok(ExitCode::SUCCESS);
             }
@@ -4829,11 +4833,8 @@ fn security_baseline_checked(
     scope: Option<&pr::DiffScope>,
 ) -> anyhow::Result<Option<(drift_mine::ratchet::Baseline, Vec<String>)>> {
     use drift_mine::ratchet::{self, SECURITY_LOCK};
-    let text = match std::fs::read_to_string(root.join(SECURITY_LOCK)) {
-        Ok(t) => Some(t),
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
-        Err(e) => return Err(e).with_context(|| format!("reading {SECURITY_LOCK}")),
-    };
+    // Never through a link that leaves the repository: refused, so the check fails.
+    let text = ratchet::read_text(root).with_context(|| format!("reading {SECURITY_LOCK}"))?;
     let mut said: Vec<String> = text
         .as_deref()
         .map(ratchet::header_problems)
@@ -5371,7 +5372,9 @@ fn print_report(r: &CheckReport, hidden: &BTreeSet<&str>, practice: &BTreeMap<&s
         if let Some(stale) = &s.stale {
             println!(
                 "drift: [{}] mined rule is stale: {stale}, so its violations in drift.lock advise until a person looks (a violation not in drift.lock is checked as before): `drift review --advise {}` keeps it as advice, `drift review --reject {}` drops it",
-                s.id, s.id, s.id
+                s.id,
+                drift_mine::report::shell_word(&s.id),
+                drift_mine::report::shell_word(&s.id)
             );
         }
         if let Some(note) = &s.mode_note {
@@ -6152,7 +6155,8 @@ fn review_answer(
             if !agents.shown {
                 println!(
                     "  accepted, {}: `a` (or `drift review --show-to-agents {}`) shows it to agents",
-                    agents.text, c.id
+                    agents.text,
+                    drift_mine::report::shell_word(&c.id)
                 );
             }
         }
@@ -6225,7 +6229,10 @@ fn hidden_card_lines(
         ),
         format!("  example:  {}", c.example),
     ];
-    let more = format!("`drift review --show {} --all-outliers`", c.id);
+    let more = format!(
+        "`drift review --show {} --all-outliers`",
+        drift_mine::report::shell_word(&c.id)
+    );
     for line in card_outlier_lines(c, report, cap) {
         if line.starts_with("  fine because...") {
             continue;
@@ -6233,8 +6240,10 @@ fn hidden_card_lines(
         out.push(line.replace(&more, "`drift review --hidden --all-outliers`"));
     }
     out.push(format!(
-        "  promote:  `drift review --hidden --answer {id}=same` (accept), `{id}=different --set-apart PATHS` (accept, those files set apart) or `{id}=not-a-convention` (reject)",
-        id = c.id
+        "  promote:  `drift review --hidden --answer {}` (accept), `{} --set-apart PATHS` (accept, those files set apart) or `{}` (reject)",
+        drift_mine::report::shell_word(&format!("{}=same", c.id)),
+        drift_mine::report::shell_word(&format!("{}=different", c.id)),
+        drift_mine::report::shell_word(&format!("{}=not-a-convention", c.id))
     ));
     out
 }

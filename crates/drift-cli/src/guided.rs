@@ -187,6 +187,17 @@ impl Asker<'_> {
         }
     }
 
+    /// Whether a script answered `key`, taken as used: for a question that cannot be
+    /// asked, so its answer is said as not recorded instead of as not used.
+    fn named(&mut self, key: &str) -> bool {
+        let named = self.how == How::Scripted
+            && (self.script.yes.contains(key) || self.script.no.contains(key));
+        if named {
+            self.used.insert(key.to_string());
+        }
+        named
+    }
+
     /// Keys the script named that no question asked.
     fn unused(&self) -> Vec<&str> {
         self.script
@@ -1034,6 +1045,11 @@ fn baseline(
                 "  {} cannot be read ({e}): not asked.",
                 ratchet::SECURITY_LOCK
             )?;
+            // A link in its place that leads outside or to nothing, say: a script that
+            // answered it fails, never passes with nothing recorded.
+            if ask.named(BASELINE) {
+                sum.not_recorded.push(BASELINE.to_string());
+            }
             return Ok(());
         }
         Ok(Some(_)) => {

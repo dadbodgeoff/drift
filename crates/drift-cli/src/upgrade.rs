@@ -597,14 +597,8 @@ fn refuse(json: bool, newer: &[String], unreadable: &[String]) -> anyhow::Result
 
 /// The text of `rel` under `root`, `None` when there is none.
 fn read_text(root: &Path, rel: &str) -> anyhow::Result<Option<String>> {
-    match drift_core::fsutil::read_regular_to_string(
-        &root.join(rel),
-        drift_core::fsutil::MAX_CONFIG_BYTES,
-    ) {
-        Ok(t) => Ok(Some(t)),
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
-        Err(e) => Err(anyhow::Error::new(e).context(format!("reading {rel}"))),
-    }
+    drift_mine::owned_file::read(root, Path::new(rel))
+        .map_err(|e| e.context(format!("reading {rel}")))
 }
 
 /// Lines of `drift.lock` that are neither a comment nor a line Drift writes: a

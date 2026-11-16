@@ -226,7 +226,7 @@ pub fn run(
                 drift_mine::report::sanitize(&x.id, 40),
                 drift_mine::practices::plain_concern(&cand.concern),
                 drift_mine::report::sanitize(&cand.place.shown(), 160),
-                drift_mine::report::sanitize(&x.id, 40)
+                shell_word(&drift_mine::report::sanitize(&x.id, 40))
             ),
         );
     }
@@ -342,14 +342,15 @@ pub fn run(
         writeln!(
             stdout,
             "It blocked before; it advises now: {why} (`drift review --block {}` asks again).",
-            conv.id
+            shell_word(&conv.id)
         )?;
     }
     match (&probation, replay) {
         (Some((None, Some(count))), _) => writeln!(
             stdout,
             "Block: {}; so it blocks from now on (`drift review --advise {}` sets it back).",
-            count.message, conv.id
+            count.message,
+            shell_word(&conv.id)
         )?,
         (Some((Some(why), count)), _) => {
             writeln!(
@@ -367,7 +368,7 @@ pub fn run(
             stdout,
             "Block: {}, so it blocks from now on (`drift review --advise {}` sets it back).",
             r.sentence(&cand.unit),
-            conv.id
+            shell_word(&conv.id)
         )?,
         _ => {}
     }
@@ -668,7 +669,7 @@ pub fn refusal_message(report: &PracticesReport, r: &Refusal) -> String {
             };
             format!(
                 "{base}{others} For this one, name its ways (`drift practices --concern {} --all` lists them) or a mechanism (`--mechanism <name>`).",
-                drift_mine::report::sanitize(concern, 40)
+                shell_word(&drift_mine::report::sanitize(concern, 40))
             )
         }
         Refusal::TooUnknown { unknown, total, .. } => format!(
@@ -904,17 +905,10 @@ pub fn command(c: &Candidate) -> String {
     promote::command(c)
 }
 
-/// `w` as one shell word: as it is when it holds only characters no shell reads
-/// specially, else in single quotes.
+/// `w` as one shell word ([`drift_mine::report::shell_word`]: the one rule, so a word
+/// that starts with `-` is quoted here too and is never read as an option).
 pub fn shell_word(w: &str) -> String {
-    let plain = !w.is_empty()
-        && w.chars()
-            .all(|c| c.is_ascii_alphanumeric() || "-_./@+:,=".contains(c));
-    if plain {
-        w.to_string()
-    } else {
-        format!("'{}'", w.replace('\'', "'\\''"))
-    }
+    drift_mine::report::shell_word(w)
 }
 
 /// Takes the offer to promote off every variant of `shown` that `drift practices promote

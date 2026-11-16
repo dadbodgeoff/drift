@@ -27,6 +27,7 @@ pub mod map;
 pub mod mine;
 pub mod neighbour;
 pub mod opt_out;
+pub mod owned_file;
 pub mod parts;
 pub mod policy;
 pub mod practices;
