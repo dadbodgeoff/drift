@@ -468,6 +468,17 @@ pub fn parse_baseline(text: &str) -> Baseline {
     }
 }
 
+/// Whether two copies of a baseline file hold the same lines: a byte-order mark and the
+/// line endings aside. A checkout with `core.autocrlf` (Git for Windows' default) has
+/// CRLF where `git show` gives the committed LF, so a byte comparison took an unchanged
+/// file for a changed one.
+pub fn same_lines(a: &str, b: &str) -> bool {
+    fn body(t: &str) -> &str {
+        t.strip_prefix('\u{feff}').unwrap_or(t)
+    }
+    body(a).lines().eq(body(b).lines())
+}
+
 /// What the header of a baseline file says that a person should know, since it
 /// changes what is checked: a stamp Drift cannot read (read as version 1, so a
 /// finding of a newer reading is held apart only where Drift shows it old), and

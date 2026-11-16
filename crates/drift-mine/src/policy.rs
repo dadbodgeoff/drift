@@ -1087,10 +1087,15 @@ impl Switch {
 /// that cannot be read is an error, never an empty policy: a FIFO or a link to
 /// `/dev/zero` (which a pull request can commit in place of `drift.lock`) is
 /// refused without blocking or exhausting memory
-/// ([`drift_core::fsutil::read_regular`]), as is text that is not UTF-8.
+/// ([`drift_core::fsutil::read_regular`]), as is text that is not UTF-8. A leading
+/// byte-order mark (a Windows editor's) is not text: before, it made the first line of
+/// a `drift.lock` neither a comment nor its entry.
 fn read_policy_file(p: &Path) -> anyhow::Result<Option<String>> {
     match drift_core::fsutil::read_regular_to_string(p, drift_core::fsutil::MAX_CONFIG_BYTES) {
-        Ok(text) => Ok(Some(text)),
+        Ok(text) => Ok(Some(match text.strip_prefix('\u{feff}') {
+            Some(rest) => rest.to_string(),
+            None => text,
+        })),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
         Err(e) => Err(e).with_context(|| format!("reading {}", p.display())),
     }

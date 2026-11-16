@@ -152,7 +152,7 @@ The release workflow builds five targets: `x86_64-unknown-linux-musl`,
 | Linux arm64 | yes (musl) | no |
 | macOS on Apple silicon (arm64) | yes | yes, on `macos-latest`, on pushes to `main`, nightly and on demand; **not** on pull requests |
 | macOS on Intel (x86_64) | yes (cross-compiled on Apple silicon) | no |
-| Windows x86_64 | yes | no |
+| Windows x86_64 | yes | yes, on `windows-latest`, on pull requests that change the Rust build, pushes to `main`, nightly and on demand; it never fails the run and is not yet green |
 
 The project's roadmap records the macOS test job as failing on `main` at the
 time of writing. The plan for the first version supports Windows through WSL

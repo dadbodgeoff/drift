@@ -218,6 +218,17 @@ main branch.
 
 ### Changed: behaviour an existing user will notice
 
+- **Native Windows: the agent hooks read Windows paths.** A shell command that
+  writes to `.drift/` or `drift.lock` is denied however Windows spells the path
+  (`C:\repo\.drift`, `C:/repo`, `\\?\C:\…`, a `\\server\share`, Git Bash's
+  `/c/repo`, a quoted `.drift\x`, `.DRIFT`, `drift.lock.`) and whichever way the
+  program is named (`rm.exe`); before, those were let through. A policy change run
+  as `drift.exe`, through the npm shim `drift.cmd`, or inside `cmd /c` or
+  `powershell -Command` is denied as `drift` is. A `drift.lock` saved with a
+  UTF-8 byte-order mark reads as without it (before, an entry on its first line was
+  lost), and a `.drift/security.lock` checked out with CRLF line endings is no
+  longer taken for a changed file. The Windows CI job runs every test binary
+  (`--no-fail-fast`); it still never fails the run.
 - **Breaking: `drift init` no longer baselines violations of a convention the
   policy already had.** Before, re-running `drift init` baselined the current
   violations of every convention that had no line left in `drift.lock`, so a

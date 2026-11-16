@@ -4931,7 +4931,7 @@ fn security_baseline_checked(
             if let (Some(now), Some(text)) = (&head, &text) {
                 let at_head = pr::file_at(root, "HEAD", SECURITY_LOCK);
                 let was = match at_head {
-                    Some(t) if t != *text => Some(t),
+                    Some(t) if !ratchet::same_lines(&t, text) => Some(t),
                     _ => pr::last_commit_of(root, SECURITY_LOCK)
                         .ok()
                         .and_then(|c| pr::file_at(root, &format!("{c}^"), SECURITY_LOCK)),
