@@ -235,14 +235,21 @@ pub fn rel_in(root: &Path, path: &str) -> Option<String> {
         rest.push(existing.file_name()?.to_os_string());
         existing = existing.parent()?;
     }
-    let mut resolved = existing.canonicalize().ok()?;
+    let mut resolved = drift_core::fsutil::canonical(existing).ok()?;
     for part in rest.iter().rev() {
         if part == ".." {
             return None;
         }
         resolved.push(part);
     }
-    drift_core::ingest::rel_posix(root, &resolved)
+    drift_core::ingest::rel_posix(root, &resolved).or_else(|| {
+        // Windows: a root std spelled `\\?\C:\…`, compared in the spelling of `resolved`.
+        if cfg!(windows) {
+            drift_core::ingest::rel_posix(&drift_core::fsutil::canonical(root).ok()?, &resolved)
+        } else {
+            None
+        }
+    })
 }
 
 /// Where `root` is in its git work tree: `web/` for a `--root web` at the top level,
@@ -305,8 +312,7 @@ impl Project {
         // Hooks and MCP: wiring conventions are inert while the feature is off.
         crate::wiring::gate(root, &mut policy, false)?;
         let lock = Lock::load(root)?;
-        let root = root
-            .canonicalize()
+        let root = drift_core::fsutil::canonical(root)
             .with_context(|| format!("opening {}", root.display()))?;
         Ok(Self {
             root,

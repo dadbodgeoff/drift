@@ -1054,8 +1054,7 @@ fn check_paths(root: &Path, files: &[String]) -> anyhow::Result<Option<BTreeSet<
     if files.is_empty() {
         return Ok(None);
     }
-    let canon = root
-        .canonicalize()
+    let canon = drift_core::fsutil::canonical(root)
         .with_context(|| format!("opening {}", root.display()))?;
     let mut only = BTreeSet::new();
     for f in files {
@@ -1519,7 +1518,7 @@ fn census_json(
         }
         proposals.push(p);
     }
-    let root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
+    let root = drift_core::fsutil::canonical(root).unwrap_or_else(|_| root.to_path_buf());
     let mut out = json!({
         "schema": CENSUS_SCHEMA,
         "engine": engine(),

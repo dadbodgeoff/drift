@@ -2,7 +2,90 @@
 
 use std::fs;
 use std::io::{self, Write};
-use std::path::Path;
+use std::path::{Component, Path, PathBuf, Prefix};
+
+/// [`std::fs::canonicalize`], spelled the way the rest of the system spells a path.
+///
+/// On Windows std returns the verbatim form `\\?\C:\repo`, while the TypeScript
+/// resolver, the working directory, the paths a person or an agent types and the paths
+/// git prints are plain, `C:\repo`. The two never compare equal component by
+/// component (`Prefix::VerbatimDisk` against `Prefix::Disk`), so a verbatim root matched
+/// no resolved import, a POSIX `rel` joined onto it kept its `/` literally, and `git -C`
+/// and every message got a spelling other programs may refuse. A simple verbatim disk
+/// path comes back plain. A verbatim UNC path (`\\?\UNC\server\share\…`), a volume
+/// path, and a path with a name that would mean something else without `\\?\` (a
+/// device name, a trailing dot or space) keep the verbatim form. On every other system
+/// a path has no prefix component, so this is exactly `std::fs::canonicalize`.
+pub fn canonical(path: &Path) -> io::Result<PathBuf> {
+    let real = fs::canonicalize(path)?;
+    Ok(if cfg!(windows) {
+        plain_disk(&real).unwrap_or(real)
+    } else {
+        real
+    })
+}
+
+/// `C:\a\b` for the verbatim disk path `\\?\C:\a\b`, read component by component;
+/// `None` for any other path, and always `None` where paths have no prefix.
+fn plain_disk(path: &Path) -> Option<PathBuf> {
+    let mut parts = path.components();
+    let Some(Component::Prefix(prefix)) = parts.next() else {
+        return None;
+    };
+    let Prefix::VerbatimDisk(drive) = prefix.kind() else {
+        return None;
+    };
+    let mut names = Vec::new();
+    for part in parts {
+        match part {
+            Component::RootDir => {}
+            Component::Normal(name) => names.push(name.to_str()?),
+            _ => return None,
+        }
+    }
+    plain_disk_spelling(drive, &names).map(PathBuf::from)
+}
+
+/// The plain spelling `X:\name\name` of drive `drive` and the names under it, or `None`
+/// when one of the names would read differently without `\\?\` ([`plain_name`]).
+/// Separate from [`plain_disk`] so it is tested on every system.
+fn plain_disk_spelling(drive: u8, names: &[&str]) -> Option<String> {
+    if !drive.is_ascii_alphabetic() {
+        return None;
+    }
+    let mut out = format!("{}:\\", drive as char);
+    for (i, name) in names.iter().enumerate() {
+        if !plain_name(name) {
+            return None;
+        }
+        if i > 0 {
+            out.push('\\');
+        }
+        out.push_str(name);
+    }
+    Some(out)
+}
+
+/// Whether a file name means the same with and without `\\?\`. Without it Windows
+/// drops a trailing dot or space, opens a device for a device name (`CON`, `nul.txt`,
+/// `COM1`: Windows' own reserved names), and reads `/` as a separator and `:` as a
+/// stream.
+fn plain_name(name: &str) -> bool {
+    if name.is_empty() || name == "." || name == ".." || name.ends_with(['.', ' ']) {
+        return false;
+    }
+    let special = |c: char| c < ' ' || matches!(c, '/' | ':' | '<' | '>' | '"' | '|' | '?' | '*');
+    if name.chars().any(special) {
+        return false;
+    }
+    let stem = name.split('.').next().unwrap_or(name).trim_end_matches(' ');
+    let upper = stem.to_ascii_uppercase();
+    let device = ["CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$"].contains(&upper.as_str());
+    let digit = upper.get(3..).filter(|n| n.chars().count() == 1);
+    let numbered = (upper.starts_with("COM") || upper.starts_with("LPT"))
+        && digit.is_some_and(|n| n.chars().all(|c| c.is_ascii_digit() || "¹²³".contains(c)));
+    !device && !numbered
+}
 
 /// Write `bytes` to `path` atomically: into the temp file `tmp_name` next to it,
 /// then renamed into place, so readers never see a torn file.
@@ -137,6 +220,56 @@ mod tests {
         }
         assert!(read_regular(dir.path(), 10).is_err(), "a directory");
         assert!(read_regular(&dir.path().join("missing"), 10).is_err());
+    }
+
+    /// Pins the plain spelling of a verbatim disk path: before `canonical` the
+    /// Windows root was `\\?\C:\…` and matched no import the resolver gave as `C:\…`.
+    #[test]
+    fn plain_spelling_of_a_verbatim_disk_path() {
+        assert_eq!(
+            plain_disk_spelling(b'C', &["Users", "me", "repo"]).as_deref(),
+            Some(r"C:\Users\me\repo")
+        );
+        assert_eq!(plain_disk_spelling(b'D', &[]).as_deref(), Some(r"D:\"));
+        assert_eq!(
+            plain_disk_spelling(b'C', &["a", "com10", "nul-ish", "con.d"]).as_deref(),
+            None,
+            "con.d is the console device"
+        );
+        assert!(plain_disk_spelling(b'C', &["a", "com10", "nul-ish"]).is_some());
+        let odd_names = ["CON", "nul.txt", "Aux", "COM1", "lpt9.log", "COM¹", "x.", "x "];
+        for odd in odd_names.into_iter().chain(["a/b", "a:b"]) {
+            assert_eq!(plain_disk_spelling(b'C', &["r", odd]), None, "{odd}");
+        }
+        assert_eq!(plain_disk_spelling(b'1', &["r"]), None);
+    }
+
+    /// Where paths have no prefix component, `canonical` is `fs::canonicalize`.
+    #[cfg(not(windows))]
+    #[test]
+    fn canonical_is_std_canonicalize_without_prefixes() {
+        let dir = tempfile::tempdir().unwrap();
+        let p = dir.path().join("a");
+        fs::create_dir(&p).unwrap();
+        let dotted = dir.path().join("a/../a/.");
+        assert_eq!(canonical(&dotted).unwrap(), fs::canonicalize(&dotted).unwrap());
+        assert_eq!(plain_disk(&fs::canonicalize(&p).unwrap()), None);
+        assert!(canonical(&dir.path().join("missing")).is_err());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn plain_disk_keeps_unc_and_strips_simple_disk_paths() {
+        assert_eq!(
+            plain_disk(Path::new(r"\\?\C:\Users\me\repo")),
+            Some(PathBuf::from(r"C:\Users\me\repo"))
+        );
+        assert_eq!(plain_disk(Path::new(r"\\?\UNC\server\share\repo")), None);
+        assert_eq!(plain_disk(Path::new(r"C:\Users\me")), None);
+        let dir = tempfile::tempdir().unwrap();
+        let got = canonical(dir.path()).unwrap();
+        assert!(!got.to_string_lossy().starts_with(r"\\?\"), "{}", got.display());
+        assert_eq!(fs::canonicalize(&got).unwrap(), fs::canonicalize(dir.path()).unwrap());
     }
 
     /// A FIFO or a link to a device would block or never end: refused at once.

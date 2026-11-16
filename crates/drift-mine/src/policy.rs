@@ -844,12 +844,19 @@ pub struct DifferentKind {
 /// A path as [`DifferentKind::path`] names it: repo-relative, without `.` or `..`
 /// segments, no control characters. Refused otherwise.
 pub fn different_kind_path(text: &str) -> anyhow::Result<String> {
+    // Windows: `\` is a separator there, never part of a name (on Unix it may be one),
+    // and `:` is never in a relative path (`C:/x`).
+    #[cfg(windows)]
+    let owned = text.replace('\\', "/");
+    #[cfg(windows)]
+    let text = owned.as_str();
     if text.is_empty()
         || text.len() > 1024
         || text.contains('#')
         || text.chars().any(char::is_control)
         || text.starts_with('/')
         || text.contains('\\')
+        || (cfg!(windows) && text.contains(':'))
         || text
             .split('/')
             .any(|p| p == ".." || p == "." || p.is_empty())
@@ -900,6 +907,15 @@ pub fn exception_reason(text: &str) -> anyhow::Result<String> {
 /// A member as an exception names it: `path#symbol` with a repo-relative path, as
 /// `drift check` and `drift.lock` print members. Refused otherwise.
 pub fn exception_member(text: &str) -> anyhow::Result<String> {
+    // Windows: `\` in the path is a separator there, never part of a name (on Unix it
+    // may be one), and `:` is never in a relative path (`C:/x`).
+    #[cfg(windows)]
+    let owned = match text.split_once('#') {
+        Some((path, symbol)) => format!("{}#{symbol}", path.replace('\\', "/")),
+        None => text.to_string(),
+    };
+    #[cfg(windows)]
+    let text = owned.as_str();
     let bad = || {
         anyhow::anyhow!(
             "expected a member as path#symbol (as `drift review --show <id>` and `drift check` print it), got {:?}",
@@ -913,6 +929,7 @@ pub fn exception_member(text: &str) -> anyhow::Result<String> {
         || text.chars().any(char::is_control)
         || path.starts_with('/')
         || path.contains('\\')
+        || (cfg!(windows) && path.contains(':'))
         || path
             .split('/')
             .any(|p| p == ".." || p == "." || p.is_empty())

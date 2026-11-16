@@ -91,6 +91,15 @@ pub fn block(p: &Project) -> String {
 
 /// Replace the generated block in `existing`, or append it.
 pub fn splice(existing: &str, block: &str) -> String {
+    if existing.contains("\r\n") {
+        // A CRLF file (saved on Windows) stays CRLF: no mixed line endings.
+        return splice_lf(&existing.replace("\r\n", "\n"), block).replace('\n', "\r\n");
+    }
+    splice_lf(existing, block)
+}
+
+/// [`splice`] of a file with LF line endings.
+fn splice_lf(existing: &str, block: &str) -> String {
     match (existing.find(START), existing.find(END)) {
         (Some(s), Some(e)) if e > s => {
             format!("{}{}{}", &existing[..s], block, &existing[e + END.len()..])
@@ -141,5 +150,16 @@ mod tests {
         assert_eq!(splice("# Agents\n", &b), format!("# Agents\n\n{b}\n"));
         let old = format!("# Agents\n\n{START}\nold\n{END}\n\nmore\n");
         assert_eq!(splice(&old, &b), format!("# Agents\n\n{b}\n\nmore\n"));
+    }
+
+    /// Pins CRLF: before, an LF block went into a CRLF AGENTS.md (mixed endings).
+    #[test]
+    fn splice_keeps_a_crlf_file_crlf() {
+        let b = format!("{START}\nnew\n{END}");
+        let old = format!("# Agents\r\n\r\n{START}\r\nold\r\n{END}\r\n\r\nmore\r\n");
+        let got = splice(&old, &b);
+        assert_eq!(got, format!("# Agents\n\n{b}\n\nmore\n").replace('\n', "\r\n"));
+        assert!(!got.replace("\r\n", "").contains('\n'), "{got:?}");
+        assert_eq!(splice("# Agents\r\n", &b), format!("# Agents\n\n{b}\n").replace('\n', "\r\n"));
     }
 }

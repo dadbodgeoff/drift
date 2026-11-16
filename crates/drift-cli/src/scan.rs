@@ -12,7 +12,7 @@ pub use drift_ts::{ScanOptions, ScanStats};
 /// side on one pool of workers (the same workers, and the same stacks, each had to
 /// itself in turn before): the scan takes as long as the longer of the two.
 pub fn scan(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, ScanStats)> {
-    let canonical = root.canonicalize()?;
+    let canonical = drift_core::fsutil::canonical(root)?;
     // Before the walk: a file changed this close to it is read again next time.
     let started_ns = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -64,7 +64,7 @@ pub fn scan_file(root: &Path, opts: &ScanOptions, rel: &str) -> anyhow::Result<O
     if drift_py::packages::is_manifest(rel) || opts.cache_dir.is_none() {
         return Ok(None);
     }
-    let root = root.canonicalize()?;
+    let root = drift_core::fsutil::canonical(root)?;
     // A file neither parser reads and no repo-level pass reads (`.md`, `.css`, ...): no
     // facts, as the TypeScript single-file scan would say after the walk.
     if !analysed(rel) && !drift_ts::repo::is_config_path(rel) {
@@ -191,7 +191,7 @@ mod tests {
             threads: 1,
         };
         scan(r, &opts).unwrap();
-        let canon = r.canonicalize().unwrap();
+        let canon = drift_core::fsutil::canonical(r).unwrap();
         for rel in ["README.md", "web/site.css", "notes/new.txt"] {
             // What it was: the walk, then the TypeScript single-file scan.
             let walked =

@@ -430,6 +430,7 @@ pub fn parse_lock(text: &str) -> BTreeSet<(String, String)> {
 
 /// A baseline file, its header read too ([`Baseline`]).
 pub fn parse_baseline(text: &str) -> Baseline {
+    let text = text.strip_prefix('\u{feff}').unwrap_or(text); // a Windows editor's byte-order mark
     let mut version = UNSTAMPED;
     let mut fail = None;
     for l in text.lines().take_while(|l| l.starts_with('#')) {
