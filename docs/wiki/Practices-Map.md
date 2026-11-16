@@ -1,8 +1,8 @@
 # Practices Map
 
-This page explains `drift practices`: the map of what the codebase does for each cross-cutting concern, how to read its states, reasons and obligations, how to declare what Drift cannot classify alone, and what the hints are. It is for engineers and reviewers who want to see how consistently routes authenticate, authorize, validate and handle errors, and for anyone who needs to read an `unknown` or a `none` correctly.
+This page explains `drift practices`: the map of what the codebase does for each cross-cutting concern, how to read its states, reasons and obligations, how to declare what Drift cannot classify alone, what the hints are, and how a person turns one practice into a rule for new code. It is for engineers and reviewers who want to see how consistently routes authenticate, authorize, validate and handle errors, and for anyone who needs to read an `unknown` or a `none` correctly.
 
-The practice map states facts, not rules. It is read-only, exits 0, enforces nothing and never blocks. (There is no `drift practices promote`: a practice cannot yet be turned into a checked convention, and `promotable` in the JSON is always null.)
+The practice map says what the code does. `drift practices` itself is read-only, exits 0 and never blocks, and nothing in the map is checked on its own. A person can make one practice the rule for new code in one place with one command, `drift practices promote`: it writes an accepted convention, and from then on `drift check` holds new code there to it like any other convention. See [Promoting a practice to a convention](#promoting-a-practice-to-a-convention).
 
 ## Concerns and units
 
@@ -182,11 +182,162 @@ The recipe is followed by findings, in rank order:
 4. **`unknown`:** units that cannot be told because of one instrument, with the `practices:` line that would classify it.
 5. **`duplicate_helper`:** the same top-level function in two or more production files whose copies call the same things, with every copy's path and line; at most five, listed last.
 
+## Promoting a practice to a convention
+
+The map can tell you "38 of 40 routes in `app/api` sign the caller in with `withAuth`, 2 do not". Promoting that practice says "yes, that is our rule here: hold new code to it". It is one command:
+
+```bash
+drift practices promote P-0f0acb --in app/api
+```
+
+`P-0f0acb` is the variant's id, as `drift practices --all` or `drift practices --json` (`concerns[].variants[].id`) prints it. `--in` names the place. The command prints a preview, writes one convention to `.drift/conventions.yaml` and one line per existing exception to `drift.lock`, and ends with `Wrote .drift/conventions.yaml and drift.lock.` Add `--dry-run` to see the preview and write nothing. Every flag is on [Command Reference](Command-Reference#drift-practices-promote).
+
+The examples in this section are on the sample repository the [README](https://github.com/dadbodgeoff/drift/blob/main/README.md#a-five-minute-first-run) uses (built by `npm/dry-run.sh`): 40 route files `app/api/r00` to `app/api/r39`, of which 38 are wrapped in `withAuth` and `r38` and `r39` are not. The preview there:
+
+```
+Sign-in in app/api: wrapped in withAuth in 38 of 40 entry points.
+  2 do not, and are recorded as they are (app/api/r38/route.ts:1 GET, app/api/r39/route.ts:1 GET).
+  0 could not be read; those are never reported.
+From now on `drift check` reports a new entry point here that does it another way, or not at all.
+Mode: advise (it never fails a check). `drift practices promote P-0f0acb --in app/api --block` makes it fail one, when the 15 entry points added here most recently follow it.
+Also in .drift/conventions.yaml: D-37416b names the same way for code of this package. Where both are accepted, new code that breaks them is reported under each; `drift review --reject <id>` drops one.
+Dry run: nothing was written.
+```
+
+The `Also in .drift/conventions.yaml` line appears when a mined convention, proposed or accepted, requires the same thing of code in the same package (here `D-37416b`, the proposal `drift init` made for `withAuth`). The two are checked separately, so with both accepted a new route that breaks them is reported twice. Keep the one you prefer: the mined rule matches the wrapper by name on route files, the promoted practice asks the classifier what each entry point does and accepts every way you named. `drift review --reject <id>` drops the other. With `--json` the ids are in `same_way`.
+
+### What it writes
+
+- **One accepted convention**, in advise mode, of the rule type `practice`. It stores the concern (`authn`), the place, and the accepted ways as variant keys (`wrap:lib/auth.ts#withAuth`), never as names. It records which variant it came from (`promoted_from_practice: P-0f0acb`) and is shown to agents (`agents: show`), because a person promoted it. It has an id like any convention (`D-` and six hex digits), taken from the place and the concern, so promoting again in the same place keeps the id.
+- **One `drift.lock` line per unit that differs today**, `<id> <path>#<symbol>` (`<id> app/api/r38/route.ts#GET`). Code that already did it another way is recorded as it is, so `drift check` reports only new code. This is what `drift init` does for every mined convention.
+
+It writes nothing else: no source file, no `.drift/config.yaml`.
+
+### How the rule is checked
+
+The rule is checked by the same classifier that draws the map, not by matching a name. For each unit of the concern in the place:
+
+| The map says the unit | Result |
+| --- | --- |
+| does it one of the accepted ways | follows |
+| does it another known way, is `identified` (reads the caller and turns no one away), or `none` | breaks it: a violation, unless it is in `drift.lock` or has a `drift-ignore` comment |
+| `unknown` | **never reported.** Counted, and `drift check` says how many units it could not check |
+
+So a unit Drift cannot read never becomes a violation, and "nothing found" is told apart from "could not tell". A way is what the map read, stored by its key (the file and symbol that define it), so a second helper that does the same job is a second way: add it with `--with`. A helper you declared in `.drift/config.yaml` under `practices:` is a known way like any other.
+
+A violation of a promoted practice is reported like any other violation, in `drift check` and in CI, and counts toward the exit code by its mode. To make an exception on purpose, put `// drift-ignore <id>: <reason>` (`#` in Python) directly above the declaration; a reason is required.
+
+### What may be promoted
+
+Drift decides from counts in the place, never from names. A practice may be promoted in a place when all three hold:
+
+| Count | Needed | Why |
+| --- | --- | --- |
+| Units of the concern in the place that Drift could read (follows plus differs) | at least **8** | fewer is not a practice, it is a handful of files |
+| Share of those readable units that do it one of the accepted ways | at least **80%** | the same share the map uses for "departs from" |
+| Share of all units in the place that are `unknown` | at most **20%** | Drift cannot hold code to what it cannot read |
+
+On the sample repository: 40 entry points in `app/api`, 0 unknown, 38 of 40 (95%) use `withAuth`. It qualifies.
+
+`drift practices promote --list` lists every practice that qualifies now, one line each with the command to run. Each variant is listed at its broadest place that qualifies: the package, or a directory of it only where the package as a whole does not qualify.
+
+```
+3 practice(s) may be promoted now. Each becomes an accepted convention in advise mode, with the code that differs today recorded in drift.lock; the command prints what it records (--dry-run writes nothing):
+  sign-in in .: wrapped in withAuth in 38 of 40 entry points; 2 differ, 0 could not be read
+    drift practices promote P-0f0acb --in .
+  errors in .: left to the framework in 40 of 40 entry points; 0 differ, 0 could not be read
+    drift practices promote P-6123b9 --in .
+  responses in .: built with Response.json in 40 of 40 entry points; 0 differ, 0 could not be read
+    drift practices promote P-9fdb90 --in .
+```
+
+If you leave out `--in`, Drift promotes the variant in its broadest place that qualifies. If none does, it refuses and says which place came nearest and why that one fails. Every refusal exits 2, says why in one sentence on standard error and writes nothing. The refusals and what to do about each are on [Troubleshooting](Troubleshooting#a-practice-cannot-be-promoted).
+
+### Places
+
+A place is a package, or one directory of a package. A unit is in the place when its file is in that directory or below it. `--in` takes a path from the repository root (`app/api`, `apps/web/app/api`, `.` for the root package); the longest package that holds the path is the package, and the rest is the directory.
+
+### More than one accepted way: `--with`
+
+Some places accept two ways (a policy with alternatives: one guard or another). Add each further variant of the same concern with `--with`:
+
+```bash
+drift practices promote P-0f0acb --in app/api --with <another P-id of the same concern>
+```
+
+The ways' units count together toward the 80%. The preview lists the other known ways units of the place use, so you can see what `--with` could add. A variant of another concern is refused.
+
+**A route that is open on purpose.** Some frameworks mark a route as public by design (`AllowAny`, `@Public()`, a middleware's public list); the map records that as its own way, `opens`. Drift never counts it as following the rule unless you add it yourself with `--with`: the preview lists it among the other ways, and adding it is your decision. Without it, a new route marked open in that place is reported. A single route that is public for its own reason is better settled with a `drift-ignore` comment and a reason.
+
+### Promoting again
+
+Running `drift practices promote` again for the same concern in the same place updates that convention, under the same id. The accepted ways become the set you give now, units that differ under the new set are added to `drift.lock`, and the mode a person chose is kept unless you pass `--block`.
+
+### Stale: the way is gone
+
+If no unit of the place uses any accepted way any more (the guard was renamed or replaced), the convention is **stale**. `drift check` says so, and the convention fires on nothing until a person looks at it. A rename never turns into forty violations. Promote the new way in the same place to replace the old one (same id), or reject the convention with `drift review --reject <id>`. On the sample repository, after renaming `withAuth` to `requireAuth` in `lib/auth.ts` and in every route:
+
+```
+drift: no new violations (0 legacy, baselined)
+drift: [D-d67d54] promoted practice is stale: none of the 40 Drift read in app/api does it an accepted way any more (Sign-in in app/api: wrapped in withAuth), so it reports nothing until a person looks. To accept the way the code does it now: `drift practices promote <P-id> --in app/api` again (`drift practices promote --list` shows what may be promoted); to drop it: `drift review --reject D-d67d54`
+drift: practices (facts, not rules; they never fail the check): 2 file(s) do a concern differently from the entry points around them
+  app/api/r38/route.ts: authn: 38 of the 39 other entry points in app/api use wrap requireAuth [P-75e3fc]; here GET:1 does: none: no guard found in what Drift read (copy app/api/r00/route.ts:3 GET)
+  app/api/r39/route.ts: authn: 38 of the 39 other entry points in app/api use wrap requireAuth [P-75e3fc]; here GET:1 does: none: no guard found in what Drift read (copy app/api/r00/route.ts:3 GET)
+```
+
+A stale convention never fails a check.
+
+### Below the share: `--force`
+
+It is your codebase. `--force` promotes a practice whose ways hold less than 80% of the readable units. It lifts only that one condition: the place still needs 8 readable units and at most 20% unknown. A forced practice advises only and never blocks, now or later; `--block --force` is an error.
+
+### Block mode and the replay
+
+A promoted practice starts in advise mode: it is reported and never fails a check. To make it fail `drift check`, and with it CI and the pre-commit hook, promote it with `--block`:
+
+```bash
+drift practices promote P-0f0acb --in app/api --block
+```
+
+Drift allows block mode only on evidence of recent work: a **replay**. It takes the 15 units most recently added to the place that the map can tell, ordered by the commit that first added each unit's file, and counts how many follow the practice. Block mode needs at least 80% of them (12 of 15). Drift prints the count either way, and writes nothing when block is refused.
+
+```
+Sign-in in app/api: wrapped in withAuth in 38 of 40 entry points.
+  2 do not, and are recorded as they are (app/api/r38/route.ts:1 GET, app/api/r39/route.ts:1 GET).
+  0 could not be read; those are never reported.
+From now on `drift check` reports a new entry point here that does it another way, or not at all.
+Mode: block (a new one fails the check). `drift review --advise D-d67d54` makes it advise.
+Also in .drift/conventions.yaml: D-37416b names the same way for code of this package. Where both are accepted, new code that breaks them is reported under each; `drift review --reject <id>` drops one.
+Block: of the last 15 entry points added here, 15 follow it as they stand, so it blocks from now on (`drift review --advise D-d67d54` sets it back).
+Dry run: nothing was written.
+```
+
+What the replay measures, and what it does not:
+
+- It reads the units **as they stand now**, not as they were when they were committed. A route added unguarded and fixed later counts as following. It asks "does recent work here follow the practice today", not "would the rule have fired on each past commit".
+- "Most recently added" is by the commit that first added the unit's file. A unit added to an old file counts at that old file's date. Ties are broken by path and line.
+- It needs git history. With no git, or a file whose first commit Drift cannot find, those units are not read; with fewer than 15 units read, block is refused with the reason. Run it from a full clone: a shallow clone does not hold the commits that first added most files.
+
+Advise mode needs no history and always works. `drift review --advise <id>` returns a promoted practice to advise mode, as for any convention.
+
+### Python advises only
+
+A place whose units are Python advises only, as every Python convention does (decision D7; see [Conventions and Review](Conventions-and-Review#tiers)). It can be promoted, in advise mode; `--block` does not make it block.
+
+### Other places to do it
+
+- **`drift review`** offers each practice that qualifies, after the mined proposals: `y` promote (advise), `b` promote in block mode, `n` no, `s` skip, `q` quit. See [Conventions and Review](Conventions-and-Review#practices-that-may-be-promoted).
+- **The Studio** has the same step in its Practices view, with the same preview.
+
+### Undoing it
+
+A promoted practice is an ordinary convention once written. `drift review --reject <id>` rejects it; `drift review --advise <id>` returns it to advise mode. As the code is fixed, its lock lines are listed as `fixed` by `drift check --format json`, as for any convention.
+
 ## Where else the map shows up
 
 - **`drift card <file>`** has a "Practices here" section.
-- **Agents** get the recipe once before they write a new entry-point file, and are told after an edit when a file's entry points do a concern another way than at least 80% of those around them. See [Using Drift with Agents](Using-Drift-with-Agents).
-- **`drift check`** prints, under its own heading and after the exit code is decided, the concerns the checked files do differently from their neighbours, for the files it looked at (every file, the files named, or with `--diff-base` the files the diff added or changed). A route that does all its neighbours do and more is not one, a health probe is compared in no concern, and a one-off route is said with what it does itself. These never change the exit code: `practices.departures` in `--format json`, notices and a job-summary section in `--format github`, run notifications (not results) in `--format sarif`.
+- **Agents** get the recipe once before they write a new entry-point file, and are told after an edit when a file's entry points do a concern another way than at least 80% of those around them. See [Using Drift with Agents](Using-Drift-with-Agents). These are facts the agent is told; a practice is held as a rule only once a person promotes it.
+- **`drift check`** prints, under its own heading and after the exit code is decided, the concerns the checked files do differently from their neighbours, for the files it looked at (every file, the files named, or with `--diff-base` the files the diff added or changed). A route that does all its neighbours do and more is not one, a health probe is compared in no concern, and a one-off route is said with what it does itself. These never change the exit code: `practices.departures` in `--format json`, notices and a job-summary section in `--format github`, run notifications (not results) in `--format sarif`. A practice a person promoted is different: it is a convention, and its violations are reported with the others (see [Promoting a practice to a convention](#promoting-a-practice-to-a-convention)).
 - **`drift init`** leads with the map, whether or not any convention is proposed: the three largest kinds of entry point with their counts, and at most five findings under `Worth a look first`.
 
 ## Other readings that decide a state
@@ -300,4 +451,4 @@ A sign-in check in the body of a Python handler is read from what its test is fo
 
 On a 3,200-file monorepo, authorization reads 19 known, 2 none and 116 unknown of 137 units, and 64 of the unknown carry a check that was found; authentication reads 150 known, 20 none and 8 unknown of 178 units. An earlier build read 74 of the authorization units known; that figure included answers that were not proven, and an independent review found about 14 of 31 sampled to be false. The 19 are what is proven, each read against the source: a count of proofs, not of how much of the repository checks authorization. This is why most routes read `unknown` for authorization. The caller's side of a comparison is partly taken from names today (`req.user.orgId`, a parameter called `session`), and a TypeScript query filtered by the session's own value is `unknown`. See [Accuracy and Limits](Accuracy-and-Limits).
 
-See also: [How Drift Works](How-Drift-Works), [Security Inventory](Security-Inventory), [Setup Questions](Setup-Questions), [Using Drift with Agents](Using-Drift-with-Agents), [Output and JSON Reference](Output-and-JSON-Reference), [Glossary](Glossary).
+See also: [How Drift Works](How-Drift-Works), [Conventions and Review](Conventions-and-Review), [Command Reference](Command-Reference#drift-practices-promote), [Security Inventory](Security-Inventory), [Setup Questions](Setup-Questions), [Using Drift with Agents](Using-Drift-with-Agents), [Output and JSON Reference](Output-and-JSON-Reference), [Glossary](Glossary).

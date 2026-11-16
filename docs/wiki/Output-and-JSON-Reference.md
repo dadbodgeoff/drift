@@ -103,13 +103,15 @@ New violations of accepted conventions, with the conventions as checked.
 | Field | Type | Meaning |
 | --- | --- | --- |
 | `violations` | list | Every violation, including baselined ones; below. |
-| `fixed` | list of text | `drift.lock` entries whose violation no longer exists (fixed), safe to prune. Entries in unchecked files and their dependents are never listed: their violations are unknown. |
+| `fixed` | list of text | `drift.lock` entries whose violation no longer exists (fixed), safe to prune. Entries in unchecked files and their dependents are never listed: their violations are unknown. For a promoted practice: a unit that now follows it or is gone, never one of a stale practice or one the map cannot tell, and none when the check is limited to named files. |
 | `conventions` | list | Each convention as checked; below. |
 | `practices` | `{departures}` (optional) | What the practice map says of the files looked at: facts, never a violation, never part of the exit code. Omitted when nothing departs. |
 | `diff` | mapping (optional, with `--diff-base`) | `base`, `merge_base`, `files_added`, `files_changed`, `files_renamed`, `files_deleted`, `base_checked` (the merge base was checked too), `policy_changed` (the change edits the policy: every new violation counts as introduced), `new_outside_diff`, and `base_unchecked` (optional). |
 | `unchecked` | list of paths (optional) | Files not checked: no stack large enough to parse them could be reserved, so their violations are unknown, not absent. |
 | `exempt` | list (optional) | Members an accepted convention is not about, with `id`, `path`, `symbol`, `line`, `reason` and `code`. |
 | `suppressed_neighbour` | list (optional) | Warnings the neighbour gate held back (only with `DRIFT_NEIGHBOUR_GATE=on`). |
+| `stale_practices` | list (optional) | Promoted practices none of whose ways any unit of their place uses any more: `id`, `summary`, `units` (the units of the concern in the place now). They fire on nothing and never fail the check. Omitted when there are none. |
+| `practices_not_checked` | list (optional) | Per promoted practice, the units of its place the practice map cannot tell: `id`, `units`. Never reported, never fail the check. Omitted when there are none. |
 
 A violation:
 
@@ -124,14 +126,14 @@ A violation:
 | `unsure` | boolean (optional) | Its file depends on a file not parsed for lack of stack; never new, never blocks. |
 | `wire`, `import`, `suppressed_neighbour` | optional | Wiring violations (where the fix goes), the import a layering violation is about, and the neighbour gate. |
 
-A new violation is one with `baselined` false and `suppressed` false. It fails the check when `mode` is `block` (or with `--strict`).
+A new violation is one with `baselined` false and `suppressed` false. It fails the check when `mode` is `block` (or with `--strict`). A violation of a promoted practice has the same fields and the same meaning.
 
 A convention as checked:
 
 | Field | Meaning |
 | --- | --- |
 | `id`, `status`, `mode` | As in `.drift/conventions.yaml`. |
-| `effective_mode` | As checked once accepted: a role under 15 members advises even when `mode` is `block`. |
+| `effective_mode` | As checked once accepted: a role under 15 members advises even when `mode` is `block`, and so does a practice promoted below the 80% share (`--force`). |
 | `tier`, `tier_reason`, `language`, `names_package`, `rule_kind`, `members`, `blockable` | As in a census proposal. |
 | `agents` | Whether agents are shown it, with a person's `agents: show` and a forced block taken into account. |
 | `verify` | Only with `agents.verify: on`: the experimental verifier's standing. |
@@ -199,7 +201,7 @@ Only what the change since the merge base introduces. Exits 0 whatever it lists.
 
 ## `drift practices --json`
 
-What the codebase does for each concern. Facts, not rules. `version` is 1 and `facts_schema` is the facts schema (11).
+What the codebase does for each concern: facts about the code, which nothing checks unless a person promotes a practice. `version` is 1 and `facts_schema` is the facts schema (11).
 
 | Field | Type | Meaning |
 | --- | --- | --- |
@@ -214,7 +216,9 @@ What the codebase does for each concern. Facts, not rules. `version` is 1 and `f
 
 A concern: `id`, `title`, `unit`, `population` (`total`, `known`, `declared`, `none`, `unknown`, `coverage`, `left_out` of tests and non-production), `variants`, `unknown`, `by_package`, `divergence`, `groups` (variants grouped by the instrument they share, optional) and, with `--units`, `units` (every unit with its assignment: `known`, `none` or `unknown`, and the reason).
 
-A concern's `population`, and the entries of `recipes[].concerns`, carry an `identified` count when it is not zero. A unit's `assignment` is `known`, `identified`, `none` or `unknown`; a `none` unit has `basis`. A variant: `id` (`P-` and six hex digits), `key`, `label`, `kind` (`known`, `none` or `identified`), `mechanisms`, `instruments`, `source` (`vocab`, `usage` or `declared`), `members`, `share`, `where` (packages, directories, roles, entry kinds, methods), `sets_apart` (at most 3), `examples` (at most 3), `exceptions` (at most 10, the rest in `exceptions_more`), `conventions`, `promotable` (always null: a practice cannot yet be promoted to a convention) and optionally `alternatives`.
+A concern's `population`, and the entries of `recipes[].concerns`, carry an `identified` count when it is not zero. A unit's `assignment` is `known`, `identified`, `none` or `unknown`; a `none` unit has `basis`. A variant: `id` (`P-` and six hex digits), `key`, `label`, `kind` (`known`, `none` or `identified`), `mechanisms`, `instruments`, `source` (`vocab`, `usage` or `declared`), `members`, `share`, `where` (packages, directories, roles, entry kinds, methods), `sets_apart` (at most 3), `examples` (at most 3), `exceptions` (at most 10, the rest in `exceptions_more`), `conventions`, `promotable` (null unless the variant may be promoted now; then `rule` is `"practice"`, `role` is `""` and `place` is the place `drift practices promote` would use, as output names it) and optionally `alternatives`.
+
+`drift practices promote --json` and `drift practices promote --list --json` are documented with the command, on [Command Reference](Command-Reference#drift-practices-promote).
 
 `unknown` is never a variant. It carries `members`, `reasons` (`unparsed`, `opaque_wrapper`, `unresolved`, `no_symbol`, `dynamic`, `body_unreadable`, `not_followed`, `partly_read`, `forwarded`, `signature_not_proven`, `route_not_matched`, `unclassified`, `check_not_proven`), `instruments` (each with the `config_hint` line that would classify it, when one would), `examples`, and optionally `not_proven` and `checks`: a check that was *found and not proven*, with the obligation it fails and one line worded as an unknown. A unit with a found check is never rendered as known.
 

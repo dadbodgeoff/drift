@@ -8,6 +8,16 @@ Agents are shown accepted conventions of the default tier, and a suggestion only
 
 On top of conventions, agents get facts that need no accepted convention: a file's card, the practice recipe for a new entry-point file, and notes after an edit about how that file differs from its neighbours. Facts are labelled "facts, not rules" and never block.
 
+### Promoted practices
+
+The practice recipe and the departure notes tell an agent what most of the code around it does. They are facts: nothing checks them, and an agent that ignores one fails nothing. When a person promotes a practice (`drift practices promote`, the practices step of `drift review`, or the Studio), it becomes an accepted convention for one place. From then on `drift check` and CI hold new code there to it, and the agent is shown it as a rule, like any accepted convention it is shown. Its tier is a suggestion, so it is shown because a person promoted it: promotion writes `agents: show`. Promotion is a person's step: it changes the policy, so the plugin's hook denies an agent running `drift practices promote` (it may run it with `--dry-run` or `--list` to show you what it would do). See [Practices Map](Practices-Map#promoting-a-practice-to-a-convention).
+
+Where the agent sees a promoted practice:
+
+- **`drift card <path>`, `drift_card` and `drift_rules_for`** list it for a file in its place that declares one of the things the practice is about (an entry point, for sign-in, permissions, validation, errors and responses), and for a file not written yet in that place. A helper file in the same directory with no entry point is not held to it. The line reads like any convention's: `[D-d67d54] Sign-in in app/api: wrapped in withAuth (38/40 follow it, advises); copy app/api/r00/route.ts#GET`.
+- **Before it writes a new file** there, the `PreToolUse` hook gives it the rule with the other accepted rules; when the content is not known yet it is marked `for its entry points`.
+- **After an edit, and at the end of the turn**, a new entry point that breaks it is reported like any violation, with what to do: `fix  handle sign-in the way app/api/r00/route.ts#GET does`. In advise mode that is advice; in block mode it stops the turn from ending, as for every blocking convention.
+
 ### Which suggestions are shown
 
 A suggestion is shown to agents only when its rule family is admitted: its suggestion-tier accept rate on the latest labelled development run meets the bar, in the convention's language (85% accepted of at least 10 labelled cards). The table, bar included, is committed data, `crates/drift-mine/data/family-admission.json`, with the run and date it came from. It is regenerated after every relabel with one command, `node eval/study/family-admission.mjs --run eval/study/runs/<run>` (`--min-accept 0.75 --min-cards 10` changes the bar it stores). On the current table (development relabel 4, 2026-11-07) **no suggestion family is admitted** in TypeScript, JavaScript or Python, so agents see the default tier only. A rule kind the table does not know, a family without labelled cards, or a missing table is not shown.
@@ -130,7 +140,7 @@ drift export claude-settings
 drift export claude-settings --write .claude/settings.json
 ```
 
-The first prints the entries; the second merges them into the file, keeping other settings, with keys written sorted. It adds `drift card`, `drift map`, `drift example`, `drift check`, `drift practices` and the read-only MCP tools (the eight lookups, `drift_setup_questions` and `drift_investigate_items`) to `permissions.allow`. The two writing tools, `drift_setup_answer` and `drift_investigate_record`, are not in that list, so a person approves them as they are called.
+The first prints the entries; the second merges them into the file, keeping other settings, with keys written sorted. It adds `drift card`, `drift map`, `drift example`, `drift check`, `drift practices` and the read-only MCP tools (the eight lookups, `drift_setup_questions` and `drift_investigate_items`) to `permissions.allow`. The two writing tools, `drift_setup_answer` and `drift_investigate_record`, are not in that list, so a person approves them as they are called. `drift practices promote` writes a convention, so the export adds `Bash(drift practices promote:*)` to `permissions.deny`, and the plugin's hook denies it too: an agent can run it with `--dry-run` or `--list` to show you what it would do, and a person runs the promotion.
 
 ## The agents block
 

@@ -130,6 +130,17 @@ for i in $(seq -w 0 29); do printf 'export function h%s() {\n  return %s;\n}\n' 
   [ "$status" = 1 ] || { echo "error: check on a new unwrapped route exited $status, not 1"; exit 1; }
   echo "check on a new unwrapped route: exit 1"
   rm -r app/api/new
+  # A practice from the map made the rule for app/api (advise mode): the two routes
+  # that differ are recorded, so the check stays clean.
+  pid=$(drift practices promote --list --json | node -e '
+    const l = JSON.parse(require("fs").readFileSync(0, "utf8"));
+    const c = l.candidates.find((c) => c.candidate.concern === "authn");
+    if (!c) { console.error("no sign-in practice may be promoted"); process.exit(1); }
+    console.log(c.candidate.ways[0].id);
+  ')
+  drift practices promote "$pid" --in app/api
+  drift check
+  echo "check after promoting $pid: exit 0"
 )
 
 # The plugin hooks, exactly as hooks.json writes them, with sample input on stdin.

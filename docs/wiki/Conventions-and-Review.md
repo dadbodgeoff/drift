@@ -1,10 +1,19 @@
 # Conventions and Review
 
-This page explains how Drift mines conventions from your code, what tiers and suggestions are, how you review and decide, what `drift.lock` is, and how outliers and set-apart files work. It is for the people who run `drift init` and `drift review`, and for leads who need to know what a proposal's numbers mean before they let one reach agents or CI.
+This page explains how Drift mines conventions from your code, how a person promotes a practice from the practice map to a convention, what tiers and suggestions are, how you review and decide, what `drift.lock` is, and how outliers and set-apart files work. It is for the people who run `drift init` and `drift review`, and for leads who need to know what a proposal's numbers mean before they let one reach agents or CI.
 
 ## What a convention is
 
-A convention is a pattern that most members of a role follow, with the members that do not follow it listed as *outliers*. "HTTP handlers in `app/**` are wrapped in `withAuth()` (38 of 42)" is a convention. Drift ships none. It proposes only what your repository's code already does, and nothing it proposes is checked, shown to an agent or able to block until a person accepts it.
+A convention is a pattern that most members of a role follow, with the members that do not follow it listed as *outliers*. "HTTP handlers in `app/**` are wrapped in `withAuth()` (38 of 42)" is a convention. Drift ships none. Every convention says what your repository's code already does, and none is checked, shown to an agent or able to block until a person accepts it.
+
+A convention comes from one of two places:
+
+| Origin | How it starts | What decides "follows" |
+| --- | --- | --- |
+| **Mined** | Drift finds it (`drift init`) and proposes it; a person accepts or rejects it in `drift review` | the rule matched against each member of the role (a wrapper, a decorator, a name, an import, ...) |
+| **Promoted from the practice map** | a person reads a practice in `drift practices` and promotes it (`drift practices promote`, the practices step of `drift review`, or the Studio); it is written as accepted at once | the practice map's classifier: the unit does the concern one of the accepted ways. A unit the map cannot tell is never reported |
+
+Both live in one file and have one lifecycle: accepted or rejected, advise or block, `drift review --advise` and `--reject`, `// drift-ignore <id>: <reason>`, and `drift.lock` for the code that was there before. One step differs: a promoted practice is set to block by promoting it again with `--block`, which Drift allows only when a replay of recent work supports it ([Block mode and the replay](Practices-Map#block-mode-and-the-replay)). A promoted practice is marked with `promoted_from_practice: P-…` (the variant it came from) and its rule type is `practice`. How a practice qualifies and what promoting it writes are on [Practices Map](Practices-Map#promoting-a-practice-to-a-convention).
 
 A convention has an id (`D-37416b`), a status (`proposed`, `accepted`, `rejected`), a mode (`advise` or `block`), a role, a rule, its evidence, an example to copy, and any exceptions. They live in `.drift/conventions.yaml`, which you commit.
 
@@ -116,7 +125,7 @@ Only `off` (or `false`) turns them off, and `on` (or `true`) says the default. A
 drift review
 ```
 
-Interactive review shows proposals only: the default tier first, then the 5 best suggestions (`drift review --all` for every one).
+Interactive review shows the mined proposals, the default tier first, then the 5 best suggestions (`drift review --all` for every one), and after them the practices that may be promoted ([below](#practices-that-may-be-promoted)).
 
 | Key | Meaning |
 | --- | --- |
@@ -150,6 +159,20 @@ drift review --show-to-agents D-04385a
 ```
 
 Each card's `agents:` line says whether agents are shown it. Each run ends with the counts, for example `4 accepted (2 block), 10 proposed, 1 rejected`, and how many accepted conventions agents are not shown, when there are any; interactive review ends by saying how many accepted conventions block. `--advise` is the way back from block mode and keeps the convention accepted. `--block` on a suggestion is refused unless you add `--force`. `drift review --list` prints the cards interactive review would ask about, and `drift review --show D-37416b` prints one card of any status, with its outliers (the first 5; `--all-outliers` for all). To change your mind later, use the flags above or edit `status` and `mode` in `.drift/conventions.yaml`. Re-running `drift init` keeps every decision and id and adds new proposals.
+
+### Practices that may be promoted
+
+After the proposals, interactive `drift review` offers the practices from the practice map that may be promoted now (the same list as `drift practices promote --list`), one at a time. Each shows the preview `drift practices promote --dry-run` prints: how many units of the place follow, the ones that differ and would be recorded in `drift.lock`, what could not be read, and the command.
+
+| Key | Meaning |
+| --- | --- |
+| `y` | promote it, in advise mode |
+| `b` | promote it in block mode, which needs the replay to allow it ([Block mode and the replay](Practices-Map#block-mode-and-the-replay)) |
+| `n` | no: this is not our rule. Remembered, so review does not offer it again |
+| `s` | skip it for now; it is offered again next time |
+| `q` | quit |
+
+A practice promoted here is the same as one promoted with `drift practices promote`: an accepted convention, shown to agents, with today's exceptions in `drift.lock`.
 
 ### What to look at on a card
 
@@ -208,7 +231,7 @@ Only a person puts a convention in block mode. In the beta only a default-tier c
 
 ## `drift.lock`
 
-`drift.lock` lists the legacy violations Drift found when you ran `init`: the outliers that already existed, one `<convention id> <path#symbol>` per line, sorted. Legacy code never fails a check; only new violations do. To shrink the lock, fix the code. Drift only ever removes lines; people add them, which is what makes `drift.lock merge=union` in `.gitattributes` safe for parallel branches. The lock covers every proposal, while `drift check` counts the legacy violations of accepted conventions only, so its legacy count is smaller until you accept them all.
+`drift.lock` lists the legacy violations Drift found when you ran `init`, or when a person promoted a practice: the outliers that already existed, one `<convention id> <path#symbol>` per line, sorted. Legacy code never fails a check; only new violations do. To shrink the lock, fix the code. Drift only ever removes lines; people add them, which is what makes `drift.lock merge=union` in `.gitattributes` safe for parallel branches. The lock covers every proposal, while `drift check` counts the legacy violations of accepted conventions only, so its legacy count is smaller until you accept them all.
 
 Moving a file keeps its legacy violations quiet in pull-request mode, while a plain `drift check` reports them because they no longer match their `drift.lock` key. See [Drift in CI](Drift-in-CI).
 
@@ -217,7 +240,8 @@ Moving a file keeps its legacy violations quiet in pull-request mode, while a pl
 | Term | What it is | Where it lives | Effect |
 | --- | --- | --- | --- |
 | Outlier | a member of the role that does not follow the rule | computed each run | reported by `drift check` as a violation (new) or legacy (in `drift.lock`) |
-| Legacy outlier | an outlier already present at `init` | `drift.lock` | never fails |
+| Legacy outlier | an outlier already present at `init`, or when a practice was promoted | `drift.lock` | never fails |
+| Not checked (promoted practice) | a unit of a promoted practice's place the practice map cannot tell | computed each run | counted by `drift check`, never reported, never fails |
 | Marked fine (`exceptions`) | an outlier a reviewer approved with a reason | `.drift/conventions.yaml` | listed as exempt, with the reason |
 | Set apart (`different_kind`) | files whose members are a different kind of thing | `.drift/conventions.yaml` | exempt by path, code `different_kind` |
 | Exempt by mining (`exempt` in `census --json`) | members a rule is not about: the rule's own target, an opt-out through a decorator of the wrapped package, and similar | computed | never reported by `check` or the hooks |
@@ -286,4 +310,4 @@ These cards were recorded at an earlier build and not re-run for this wiki; the 
 
 `drift review --set-log on` (or `review_log: on` in `.drift/conventions.yaml`) records each decision and each card shown in `.drift/review-log/`, local only. The directory holds a `.gitignore` of `*`, so it is never committed, and nothing is sent anywhere. It exists to collect real-maintainer accept rates for Drift's evaluation (decision D10.3 in [PLAN-PAR](https://github.com/dadbodgeoff/drift/blob/main/eval/study/PLAN-PAR.md)). It is off by default. `--log` records one run without the setting. It records each decision (accept, reject, block, forced block and whether the Studio offered it as the record-backed or the neutral Block, advise, show to agents, skip, an exception marked fine or removed, with its reason) and each card shown (with its rank, tier, family, admission decision and verifier status), with the card's evidence and Drift's version; for the one-question flow, how many flags you saw and which you set apart (`question`, `set_apart_members`). Off, no file is written and no output changes. It is never written through a symbolic link, appends take a lock (the command line and the Studio may write at once), and it rotates at 4 MB into one older file. `drift review --export-log FILE` writes a study file for `eval/study/maintainer-log.mjs`, which reports flag precision as maintainers judge it; convention ids, members and examples are hashed (blake3 keyed with a random salt kept in `.drift/review-log/salt`, one per repository) and reasons are replaced by their length, unless you pass `--include-paths`.
 
-See also: [Getting Started](Getting-Started), [Using Drift with Agents](Using-Drift-with-Agents), [Drift in CI](Drift-in-CI), [Team Rollout](Team-Rollout), [Accuracy and Limits](Accuracy-and-Limits), [Configuration Reference](Configuration-Reference).
+See also: [Getting Started](Getting-Started), [Practices Map](Practices-Map#promoting-a-practice-to-a-convention), [Using Drift with Agents](Using-Drift-with-Agents), [Drift in CI](Drift-in-CI), [Team Rollout](Team-Rollout), [Accuracy and Limits](Accuracy-and-Limits), [Configuration Reference](Configuration-Reference).

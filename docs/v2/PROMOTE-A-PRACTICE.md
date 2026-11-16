@@ -1,6 +1,6 @@
 # Design: turn a practice into a convention in one step
 
-Status: **proposal, nothing built**. It needs four decisions (section 7).
+Status: **built on branch `promote-a-practice`.** The four decisions of section 7 were taken as recommended: (1) a classifier-checked `practice` rule kind; (2) every existing exception baselined in `drift.lock` at promotion, so only new units are reported; (3) a way that marks a route open on purpose is listed and added only with `--with`, never silently; (4) advise mode ships without a replay, and block mode for a promoted practice requires one (15 units, 80%). The rest of this page is the record of the design; the user documentation is [Practices Map](../wiki/Practices-Map.md#promoting-a-practice-to-a-convention) and [Command Reference](../wiki/Command-Reference.md#drift-practices-promote).
 
 ## 1. The problem
 
@@ -36,7 +36,7 @@ drift practices promote <P-id> [--in <package or directory>] [--with <P-id>...] 
 It writes one accepted convention of a new rule kind, `practice`, and baselines today's exceptions in `drift.lock`. From then on `drift check` holds new code in that place to it.
 
 ```yaml
-- id: D-4c1e07
+- id: D-d67d54
   status: accepted
   mode: advise
   promoted_from_practice: P-0f0acb
@@ -50,11 +50,12 @@ It writes one accepted convention of a new rule kind, `practice`, and baselines 
 What the command prints before it writes:
 
 ```
-Sign-in in app/api: 38 of 40 entry points use wrap withAuth.
+Sign-in in app/api: wrapped in withAuth in 38 of 40 entry points.
   2 do not, and are recorded as they are (app/api/r38/route.ts:1 GET, app/api/r39/route.ts:1 GET).
   0 could not be read; those are never reported.
-From now on `drift check` reports a new entry point here that signs a caller in another way, or not at all.
-Mode: advise (it never fails a check). `drift review --block D-4c1e07` makes it fail one.
+From now on `drift check` reports a new entry point here that does it another way, or not at all.
+Mode: advise (it never fails a check). `drift practices promote P-0f0acb --in app/api --block` makes it fail one, when the 15 entry points added here most recently follow it.
+Also in .drift/conventions.yaml: D-37416b names the same way for code of this package. Where both are accepted, new code that breaks them is reported under each; `drift review --reject <id>` drops one.
 ```
 
 ## 3. How the rule is checked
@@ -92,7 +93,7 @@ Existing gates are unchanged: Python conventions advise only; block mode needs 1
 
 1. **`drift init`**, in `Worth a look first`: a finding in a place that qualifies ends with the command, e.g. `make it the rule for new code: drift practices promote P-0f0acb`.
 2. **`drift practices`**: each variant that qualifies shows the same command. `--json` fills the existing `promotable` field (the rule type becomes `practice`).
-3. **`drift review`** (interactive): after the proposals, the practices that qualify, one at a time: `y` advise, `b` block, `n` no (remembered, not asked again), `s` skip.
+3. **`drift review`** (interactive): after the proposals, the practices that qualify, one at a time: `y` advise, `b` block, `n` no (remembered, not asked again), `s` skip, `q` quit.
 4. **Studio**, Practices view: a "Make this a convention" action on a variant, with the same preview. One new write operation.
 
 Weak mined cards (kept back by the show policy) already have a promotion path, `drift review --hidden --answer <id>=same`. Step 3 puts both kinds in one flow, so "promote" means one thing to a person.
@@ -101,7 +102,7 @@ Weak mined cards (kept back by the show policy) already have a promotion path, `
 
 | Phase | What | Notes |
 | --- | --- | --- |
-| 1 | `Rule::Practice`, its check, lock baseline, stale detection, `drift practices promote`, `promotable` filled, docs, tests | Advise mode only. `conventions.yaml` gains one rule type, which an older Drift cannot parse: the file's version goes up with the first promoted practice, so an older binary stops with "written by a newer Drift" and not with a parse error. A file with no promoted practice keeps its version. |
+| 1 | `Rule::Practice`, its check, lock baseline, stale detection, `drift practices promote`, `promotable` filled, docs, tests | Advise mode only. `conventions.yaml` gains one rule type, which an older Drift cannot parse: a file that holds a promoted practice stops an older binary with a parse error naming the rule type, and it cannot read the file at all. The file's version does not change. Every machine and CI is upgraded before the first practice is promoted. |
 | 2 | The `drift review` step, the `drift init` and `drift practices` pointers, the Studio action | Contract change: `promotable.rule = "practice"`; one new Studio write op. |
 | 3 | Block mode for promoted practices, behind a history replay | See decision 4. |
 
@@ -112,7 +113,7 @@ Each phase is measured on the seven repositories: how many places qualify, and f
 1. **Rule kind.** A classifier-checked `practice` rule (recommended, section 3), or the name-matching mapping of `PLAN-R13.md` §4.5. The first is more work in `check`; the second is faster to build and wrong for alternatives and renamed helpers.
 2. **Old code.** Baseline every existing exception at promotion, so only new units are reported (recommended; it is what every other convention does), or list them as violations to fix.
 3. **Explicit "open" routes.** Some frameworks have a way to say "this route is public on purpose" (`AllowAny`, a `public` procedure). Recommended: the preview lists it as a way the person can include with `--with`, and never includes it silently.
-4. **Blocking.** `PLAN-R13.md` decision 6 made a history replay a precondition of any promotion. Recommended: advise mode ships without it (it cannot fail a check), and block mode for a promoted practice requires the replay, shown as evidence ("of the last 14 entry points added here, 13 followed it"). The alternative is to hold all of phase 1 until the replay exists.
+4. **Blocking.** `PLAN-R13.md` decision 6 made a history replay a precondition of any promotion. Recommended: advise mode ships without it (it cannot fail a check), and block mode for a promoted practice requires the replay, shown as evidence ("of the last 15 entry points added here, 14 follow it as they stand"). The alternative is to hold all of phase 1 until the replay exists.
 
 ## 8. Risks
 

@@ -74,14 +74,14 @@ Drift read 103 files of TypeScript and JavaScript. Nothing left this machine.
 
 What the code does (read from the code: facts, not rules)
   42 http entry points
-    sign-in:     wrap withAuth in 38; other ways in 1; nothing found in 3 (of 42)
-    permissions: nothing found in 38 (of 38)
+    sign-in:     wrapped in withAuth in 38; other ways in 1; nothing found in 3 (of 42)
+    permissions: nothing found in 38 (of 38 where a caller is or may be signed in)
     errors:      left to the framework in 42 (of 42)
     responses:   built with Response.json in 42 (of 42)
 
 Worth a look first
-  1. sign-in: no guard found in what Drift read, in 3 places (e.g. app/api/r38/route.ts:1 GET)
-  `drift security` lists every entry point with its guard and what it reaches.
+  1. sign-in: no guard found in what Drift read, in 3 places (e.g. app/api/r38/route.ts:1 GET); make the usual way the rule for new code: drift practices promote P-0f0acb --in .
+  `drift security` lists every entry point with its guard and what it reaches. `drift practices promote --list` lists the practices you can make a rule for new code.
 
 Conventions
   1 proposed (1 default tier, 0 suggestions). Nothing is checked and no agent is told of one until you decide (`drift review`); an accepted convention advises unless you set it to block.
@@ -110,7 +110,7 @@ Tip: add `drift.lock merge=union` to .gitattributes so branches never conflict o
 
 Read it top to bottom:
 
-- **`What the code does`** is read from the code and is there whether or not Drift proposes anything: each kind of entry point, how many of them sign a caller in and how, check permissions, handle errors and answer. Each line adds up to its total: `nothing found` is what Drift read to the end and found no guard in, `could not tell` is what it could not read. Facts, not rules: nothing checks them. See [Practices Map](Practices-Map).
+- **`What the code does`** is read from the code and is there whether or not Drift proposes anything: each kind of entry point, how many of them sign a caller in and how, check permissions, handle errors and answer. Each line adds up to its total: `nothing found` is what Drift read to the end and found no guard in, `could not tell` is what it could not read. These are what the code does, and nothing checks them until a person promotes one (step 7 below). See [Practices Map](Practices-Map).
 - **`Worth a look first`** is at most five things from that map, the costliest first: a signed-in caller reaching what is not theirs, entry points with no sign-in, input nothing validates, two ways of doing one thing side by side.
 - **`Conventions`** is what Drift proposes to check from now on. On many repositories this is short or empty, and the two sections above are the first result.
 - **`Next`** lists only the commands that have something to do in this repository.
@@ -266,7 +266,53 @@ It then adds a section of practice departures (facts, not rules, which never fai
 
 To suppress one violation on purpose, put `// drift-ignore D-37416b: <reason>` (`#` in Python) directly above the declaration. A reason is required, and suppressions are counted so reviewers see them.
 
-## 7. Look around
+## 7. Make a practice the rule
+
+`What the code does` at the top of `drift init` is the practice map: facts about the code, which nothing checks. When one of them is the rule you want for new code, promote it. This takes one command and does not depend on what mining proposed.
+
+The example is the sample repository in the [README](https://github.com/dadbodgeoff/drift/blob/main/README.md#a-five-minute-first-run) (built by `npm/dry-run.sh`): 40 route files in `app/api`, 38 wrapped in `withAuth`. List what may be promoted:
+
+```bash
+drift practices promote --list
+```
+
+```
+3 practice(s) may be promoted now. Each becomes an accepted convention in advise mode, with the code that differs today recorded in drift.lock; the command prints what it records (--dry-run writes nothing):
+  sign-in in .: wrapped in withAuth in 38 of 40 entry points; 2 differ, 0 could not be read
+    drift practices promote P-0f0acb --in .
+  errors in .: left to the framework in 40 of 40 entry points; 0 differ, 0 could not be read
+    drift practices promote P-6123b9 --in .
+  responses in .: built with Response.json in 40 of 40 entry points; 0 differ, 0 could not be read
+    drift practices promote P-9fdb90 --in .
+```
+
+See what promoting sign-in in `app/api` would write, without writing it:
+
+```bash
+drift practices promote P-0f0acb --in app/api --dry-run
+```
+
+```
+Sign-in in app/api: wrapped in withAuth in 38 of 40 entry points.
+  2 do not, and are recorded as they are (app/api/r38/route.ts:1 GET, app/api/r39/route.ts:1 GET).
+  0 could not be read; those are never reported.
+From now on `drift check` reports a new entry point here that does it another way, or not at all.
+Mode: advise (it never fails a check). `drift practices promote P-0f0acb --in app/api --block` makes it fail one, when the 15 entry points added here most recently follow it.
+Also in .drift/conventions.yaml: D-37416b names the same way for code of this package. Where both are accepted, new code that breaks them is reported under each; `drift review --reject <id>` drops one.
+Dry run: nothing was written.
+```
+
+Then promote it:
+
+```bash
+drift practices promote P-0f0acb --in app/api
+```
+
+It ends with `Wrote .drift/conventions.yaml and drift.lock.` The convention is accepted, in advise mode, and shown to agents. The 2 routes that do not use `withAuth` today are recorded in `drift.lock`, so `drift check` reports only a new route in `app/api` that signs the caller in another way, or not at all. A route Drift cannot read is never reported. Commit `.drift/conventions.yaml` and `drift.lock`.
+
+On this sample, `drift init` also proposed the mined `D-37416b`, which says much the same by name. They are two conventions: keep one, or both. Block mode, `--with`, `--force` and what qualifies are on [Practices Map](Practices-Map#promoting-a-practice-to-a-convention). Interactive `drift review` offers the same step after the proposals.
+
+## 8. Look around
 
 These read-only commands show what Drift knows beyond conventions:
 

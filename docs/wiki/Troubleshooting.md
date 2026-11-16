@@ -1,6 +1,6 @@
 # Troubleshooting
 
-This page lists common problems with Drift and how to fix them: a slow first run, no conventions proposed, a route that is not listed, `unknown` everywhere, hooks that feel slow, a config line `drift setup` will not edit, and the errors you may see in CI. Every fix here was tried against the current binary. It is for engineers who have Drift installed and something looks wrong.
+This page lists common problems with Drift and how to fix them: a slow first run, no conventions proposed, a route that is not listed, `unknown` everywhere, hooks that feel slow, a practice that cannot be promoted or has gone stale, a config line `drift setup` will not edit, and the errors you may see in CI. Every fix here was tried against the current binary. It is for engineers who have Drift installed and something looks wrong.
 
 ## The first run is slow
 
@@ -108,6 +108,79 @@ Treat both as "nothing found in what Drift read". On code Drift was not tuned on
 
 A default-tier proposal reaches no agent until a person accepts it. Check `drift review --list` or `drift census` for `agents: not shown to agents`, and accept it with `drift review --accept <id>`. Accepting a suggestion is not enough (every Python convention is a suggestion): a suggestion is shown only when its rule family is admitted (none is today) or you chose `drift review --show-to-agents <id>`. A `.drift/conventions.yaml` that does not parse also leaves agents with nothing: the hooks fail open with a note.
 
+## A practice cannot be promoted
+
+`drift practices promote` refuses with one sentence on standard error, exits 2 and writes nothing. `--json` gives the same refusal on standard output, with a `code`. Use `--dry-run` while you work out the place; `drift practices promote --list` shows what qualifies now. The rules are on [Practices Map](Practices-Map#what-may-be-promoted). The refusals you can meet, shown on the README's sample repository (40 routes in `app/api`, 38 wrapped in `withAuth`, variant `P-0f0acb`) where one can be:
+
+**Too few units** (`too_small`). The place has fewer than 8 units of the concern that Drift could read. A practice in three files is not yet a practice.
+
+```
+drift: In app/api/r00, Drift could read how this is done once; a practice is promoted only where it could at least 8 times.
+Nothing was written.
+```
+
+Fix: name a wider place (the parent directory, or the package), or leave out `--in` and let Drift pick the broadest place that qualifies.
+
+**Below the share** (`below_share`). The ways you gave hold less than 80% of the units Drift could read in the place.
+
+```
+drift: In app/api, 30 of the 40 Drift could read do it this way (75%), below the 80% a practice needs. `--force` promotes it all the same, in advise mode only (it never blocks).
+Nothing was written.
+```
+
+Fix, in order: read the units that differ. If several use another way that is also right, add it with `--with <P-id>`. If one directory does it differently on purpose, promote in a narrower place with `--in`. If the practice is still the rule you want, `--force` promotes it all the same: it then advises only and can never block.
+
+**Too much unknown** (`too_unknown`). More than 20% of the units in the place are ones the map cannot tell. Drift cannot hold code to what it cannot read, and `--force` does not lift this. Fix:
+
+1. See why they are unknown: `drift practices --concern <concern> --all`, or `drift card <file>` for one of them. The reason says what Drift could not read.
+2. Run `drift practices --hints`. If a wrapper or check Drift cannot classify alone is yours, and you have read it, merge the line it prints under `practices:` in `.drift/config.yaml`. Its units then count as known.
+3. Answer `drift setup` if it has questions.
+4. Or promote in a narrower place where less is unknown (`--in`).
+
+**No place qualifies** (`no_place`). You left out `--in`, and the variant qualifies nowhere. The sentence names the place that came nearest and why that one fails, which is one of the refusals above; the fix is that one's.
+
+```
+drift: P-0f0acb may be promoted in no place as the code stands. The nearest: In ., 30 of the 40 Drift could read do it this way (75%), below the 80% a practice needs. `--force` promotes it all the same, in advise mode only (it never blocks).
+Nothing was written.
+```
+
+**Not a way to promote** (`not_a_way`). The id names `none` (no guard found), the tail of one-off ways, or a way a person only declared, with no unit proven to use it. There is nothing to hold new code to; promote the variant the units use instead. **Unknown id** (`unknown_variant`): take the id from `drift practices --all` as the code is now. **Another concern** (`other_concern`): every `--with` variant must be of the same concern as the first. **No such place** (`no_such_place`): the path holds no unit of the concern, or is not a directory of a package Drift read.
+
+**Block mode refused: no history.** `--block` needs git history, to find the 15 units most recently added to the place. Without a git repository, in a shallow clone that lacks the commits that first added the files, or with fewer than 15 units whose first commit is known, block is refused with the reason. Promote without `--block` (advise always works), and set block mode later from a full clone.
+
+```
+drift: D-d67d54: not set to block: blocking needs a replay of the last 15 entry points added to its place, by the commit that first added each file, and Drift could not read when they were added: this is not a git repository. Nothing was written. Advise mode needs no history: run it again without --block.
+```
+
+**Block mode refused by the replay.** Of the 15 units most recently added to the place, fewer than 80% (12) follow the practice as they stand: recent work does not follow it, so blocking would stop people doing what they have been doing. Promote in advise mode, look at the recent units that differ, and try `--block` again later.
+
+```
+drift: D-d67d54: not set to block: of the last 15 added to the place, 11 follow it as they stand (73%), and blocking needs 80%. Nothing was written. Advise mode needs no history: run it again without --block.
+Replay: of the last 15 entry points added here, 11 follow it as they stand.
+```
+
+**`--block` with `--force`** is a usage error: a practice forced below the share never blocks.
+
+## A promoted practice is stale
+
+**Symptom.** `drift check` says a promoted practice is stale, and reports nothing for it.
+
+**Cause.** No unit of its place uses any of its accepted ways any more, usually because the guard was renamed, moved to another file, or replaced. The rule stores each way by its key (the file and symbol that define it), so a renamed guard is a new way. Drift does not turn that into a violation for every route; the convention fires on nothing until a person looks.
+
+```
+drift: no new violations (0 legacy, baselined)
+drift: [D-d67d54] promoted practice is stale: none of the 40 Drift read in app/api does it an accepted way any more (Sign-in in app/api: wrapped in withAuth), so it reports nothing until a person looks. To accept the way the code does it now: `drift practices promote <P-id> --in app/api` again (`drift practices promote --list` shows what may be promoted); to drop it: `drift review --reject D-d67d54`
+drift: practices (facts, not rules; they never fail the check): 2 file(s) do a concern differently from the entry points around them
+  app/api/r38/route.ts: authn: 38 of the 39 other entry points in app/api use wrap requireAuth [P-75e3fc]; here GET:1 does: none: no guard found in what Drift read (copy app/api/r00/route.ts:3 GET)
+  app/api/r39/route.ts: authn: 38 of the 39 other entry points in app/api use wrap requireAuth [P-75e3fc]; here GET:1 does: none: no guard found in what Drift read (copy app/api/r00/route.ts:3 GET)
+```
+
+**Fix.** Run `drift practices --concern <concern> --all` to find the new way's `P-` id, then promote it in the same place (`drift practices promote <new P-id> --in <place>`). That updates the same convention, under the same id. If the practice is no longer the rule, `drift review --reject <id>`.
+
+## A promoted practice reports nothing for some routes
+
+`drift check` counts the units of a promoted practice's place that it could not check: the practice map cannot tell what they do, and an unknown unit is never reported. That is by design. To have them checked, settle them as in [`unknown` everywhere](#unknown-everywhere): read the reason, and declare a check you have verified with `drift practices --hints`.
+
 ## `drift setup` refuses to write a config line
 
 **Symptom.**
@@ -127,6 +200,8 @@ drift: .drift/config.yaml cannot be edited safely; add this under `security.not_
 
 **Fix.** Open the file at that line (a merge conflict marker is the usual cause after a merge) and repair it, then run `drift check`. Commands that read the policy stop; the hooks fail open and tell the agent.
 
+If the error names the rule type `practice`, the file holds a practice someone promoted, and this Drift is older than promotion: it cannot read the file at all. The file is fine. Upgrade this machine (or CI) to the version that wrote it; see [Versioning and Upgrades](Versioning-and-Upgrades#promoted-practices-and-older-drift).
+
 ## Errors in CI
 
 | Message | Cause and fix |
@@ -134,6 +209,7 @@ drift: .drift/config.yaml cannot be edited safely; add this under `security.not_
 | `drift: no .drift/conventions.yaml: run drift init first` | the policy is not committed, or the job runs in the wrong directory; commit `.drift/conventions.yaml` and `drift.lock` |
 | `--diff-base: base ref ... not found. Fetch it first` (exit 2) | the base branch is not fetched; use `fetch-depth: 0`, or let the Action deepen the clone |
 | `fetch-depth: 0 needed` | a shallow clone lacks the merge base; use `fetch-depth: 0` |
+| a parse error in `.drift/conventions.yaml` that names the rule type `practice` | CI runs a Drift older than the one that promoted a practice; pin CI to the same version as your machines ([Versioning and Upgrades](Versioning-and-Upgrades#promoted-practices-and-older-drift)) |
 | `drift` not found | the pre-commit hook and the hooks run `drift` from `PATH`; install it globally |
 | the pre-commit hook does not run | it runs only when a commit stages TypeScript, JavaScript or Python files; a policy-only commit is not checked (`pre-commit run drift-check --all-files`) |
 | the check passes locally and fails in CI (or the reverse) | the legacy count differs: your lock or policy is not committed, or the Drift versions differ. Pin both |
