@@ -1,4 +1,7 @@
-//! Claude Code hook handler: `drift hook claude <event>`.
+//! The hook core: `drift hook <agent> <event>`.
+//!
+//! The per-event functions read and answer Claude Code's hook JSON, the core's own form;
+//! [`crate::hook_agents`] maps every other agent onto it ([`handle`]).
 //!
 //! Contract (code.claude.com/docs/en/hooks): the event JSON arrives on stdin;
 //! we always exit 0 and answer with JSON on stdout, so a crash is never read as
@@ -594,8 +597,9 @@ fn prune_sessions(dir: &Path) {
     }
 }
 
-/// Entry point. Returns the JSON to print (or `None` for no output).
-pub fn handle(event: &str) -> Option<Value> {
+/// Entry point for one agent's `event`. Returns the JSON to print (or `None` for no
+/// output), in that agent's form ([`crate::hook_agents::Adapter`]).
+pub fn handle(adapter: &dyn crate::hook_agents::Adapter, event: &str) -> Option<Value> {
     let mut buf = Vec::new();
     if std::io::stdin()
         .take(MAX_INPUT_BYTES)
@@ -604,17 +608,24 @@ pub fn handle(event: &str) -> Option<Value> {
     {
         return None;
     }
-    let input: Value = serde_json::from_slice(&buf).unwrap_or(Value::Null);
+    let payload: Value = serde_json::from_slice(&buf).unwrap_or(Value::Null);
     let started = std::time::Instant::now();
-    let out = match handle_event(event, &input) {
-        Ok(v) => v,
-        // Fail open: tell the person, never block the agent because Drift broke.
-        Err(e) => Some(
-            json!({ "systemMessage": format!("drift: hook error, skipped ({})", sanitize(&format!("{e:#}"), 200)) }),
-        ),
+    let (event, out) = match adapter.core_input(event, payload) {
+        Ok((core_event, input)) => {
+            let out = match handle_event(&core_event, &input) {
+                Ok(v) => v,
+                // Fail open: tell the person, never block the agent because Drift broke.
+                Err(e) => Some(
+                    json!({ "systemMessage": format!("drift: hook error, skipped ({})", sanitize(&format!("{e:#}"), 200)) }),
+                ),
+            };
+            (core_event, out)
+        }
+        // A payload the adapter cannot read fails open too, and says so.
+        Err(note) => (event.to_string(), Some(json!({ "systemMessage": note }))),
     };
-    trace::write(event, started.elapsed(), out.is_some());
-    out
+    trace::write(&event, started.elapsed(), out.is_some());
+    out.and_then(|out| adapter.render(&event, out))
 }
 
 /// The hook path log (PLAN-R14 D1): with `DRIFT_HOOK_TRACE=<file>` set, each hook

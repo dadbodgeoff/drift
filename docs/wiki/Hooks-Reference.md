@@ -89,6 +89,61 @@ The end of the agent's turn, and the only hook that can block.
 
 Matcher `clear`. Writes the handoff the next session picks up (baseline and what the code was at the start), and clears what the conversation has seen so the MCP server, which outlives `/clear`, does not treat rules as already given. Prints nothing.
 
+## Other agents
+
+The hooks have one core and one adapter per agent (`crates/drift-cli/src/hook_agents/`). The core answers eight moments of a session; an adapter maps an agent's hook events and payloads onto them and the core's answer back into the agent's format. Claude Code's adapter is the core's own form, so what it gets is exactly what this page describes. Adding an agent is one adapter file and one value of `drift hook <AGENT>`; one is added only once its hook format has been checked field by field against that agent's own documentation, because a field read wrongly fails open without a word: a file nobody primed, a block nobody saw.
+
+| Moment | What Drift answers | Claude Code (`claude`) | `generic` (experimental) | Cursor, Codex CLI, Gemini CLI, Windsurf, GitHub Copilot, Cline, Kiro and others |
+| --- | --- | --- | --- | --- |
+| Session start | brief, baseline | `SessionStart` | `session-start` | MCP and AGENTS.md only, hook format not verified |
+| Before a file edit | rules of the file; refuses writes to `.drift/` and `drift.lock` | `PreToolUse` (Write, Edit, MultiEdit, NotebookEdit) | `before-edit` | MCP and AGENTS.md only, hook format not verified |
+| After a file edit | what the edit introduced, as advice | `PostToolUse` | `after-edit` | MCP and AGENTS.md only, hook format not verified |
+| Before a shell command | refuses writes to Drift's files and policy changes; approves read-only lookups | `PreToolUse` (Bash) | `before-shell` | MCP and AGENTS.md only, hook format not verified |
+| Before a search | a pointer to `drift card` | `PreToolUse` (Grep, Glob) | `before-search` | MCP and AGENTS.md only, hook format not verified |
+| Before a Drift MCP tool | approves the read-only ones | `PreToolUse` (`mcp__*drift*__drift_*`) | not expressible (tool names are each agent's own) | MCP and AGENTS.md only, hook format not verified |
+| Prompt submitted | advice the last end of turn queued | `UserPromptSubmit` | `prompt-submit` | MCP and AGENTS.md only, hook format not verified |
+| End of turn | blocks on new block-mode violations, with the loop guard | `Stop` | `end-of-turn` | MCP and AGENTS.md only, hook format not verified |
+| Session end | hands the baseline on after a clear | `SessionEnd` (`clear`) | `session-end` | MCP and AGENTS.md only, hook format not verified |
+
+An agent with no end-of-turn hook cannot have its turn blocked: for it, block-mode conventions are enforced by `drift check`, the pre-commit hook and CI only. An agent whose hooks cannot add text to its context gets no rules before an edit and no advice after it from hooks; the MCP server (`drift_rules_for`, `drift_check`) and the AGENTS.md block (`drift export agents-md`) carry them instead.
+
+### The generic protocol (experimental)
+
+`drift hook generic <event>` is Drift's own protocol, for a person who wraps another agent's hooks in a small script: the script turns the agent's payload into one JSON object on Drift's standard input and Drift's answer into the agent's response. It is experimental: its fields may change before 1.0, and no agent speaks it natively. It keeps the same session state as Claude Code's hooks, by `session_id`.
+
+Input, one JSON object (every field a string unless said; an unknown field is ignored):
+
+| Event | Fields |
+| --- | --- |
+| all | `session_id` (one state per id; without it, sessions share one), `cwd` (the agent's directory; default: Drift's) |
+| `session-start` | `source`: `startup`, `resume`, `clear` or `compact` (default `startup`) |
+| `before-edit` | `file_path` (needed; relative to `cwd` or absolute), `content` (the whole new file, when the agent writes one) |
+| `after-edit` | `file_path` (needed) |
+| `before-shell` | `command` (needed) |
+| `before-search` | `kind` (needed): `content` (a search of file contents; `pattern` a regular expression, `glob` the files searched) or `files` (`pattern` a glob of file names); `path`, the directory searched |
+| `prompt-submit` | none |
+| `end-of-turn` | `after_block` (true or false): true when this turn goes on because Drift blocked its end before (the loop guard reads it) |
+| `session-end` | `reason` (`clear` hands the baseline to the next session) |
+
+Output, one JSON object, or nothing when Drift has nothing to say:
+
+| Field | Meaning |
+| --- | --- |
+| `decision` | `deny` (refuse the tool; before an edit or a shell command), `allow` (run it without asking the person; Drift's read-only lookups only), `block` (do not end the turn yet; end of turn only), or absent |
+| `reason` | for the agent, beside `decision` |
+| `context` | text to add to the agent's context (rules, advice, the brief) |
+| `message` | for the person, not the agent |
+
+The rules of every hook hold: it exits 0; a payload it cannot read (not JSON, a field missing or of the wrong type, an unknown event) gets only a `message` saying so and never a decision; and only `end-of-turn` blocks.
+
+```bash
+echo '{"session_id":"try","file_path":"src/new.ts"}' | drift hook generic before-edit
+```
+
+### Before another agent gets an adapter
+
+Each of the agents in the last column has a hook system of its own, but its payload and response fields were not checked against its documentation for this release, so none is built in. A maintainer adding one checks, from that agent's documentation: the event names and which of the moments above each fires on (and for which tools); the field naming the session, the working directory, the file and the new content; how a hook refuses a tool and gives the reason; whether and how it adds text to the agent's context; whether an end-of-turn hook can keep the turn going, and what tells it that it already did (Drift's loop guard needs it); and how the hook is registered. Then the adapter gets a test feeding that agent's real payloads, and an export of its configuration (written like `drift export claude-settings`: printed, never written unasked).
+
 ## How long a hook takes
 
 The plugin's time budgets above are Claude Code's limits. Drift's own cost, measured on its development repositories with a release build on a shared 4-CPU machine (minimum of 5 runs; [performance record](https://github.com/dadbodgeoff/drift/blob/main/eval/perf/2026-11-07/README.md)):
@@ -119,7 +174,7 @@ claude plugin install drift@drift
 
 `claude plugin marketplace add /path/to/a/checkout` installs from a local checkout instead. The plugin adds the hooks above, a skill (`integrations/claude-code/skills/drift/SKILL.md`, which tells Claude to ask `drift card` before reading sibling files) and the MCP server (its `.mcp.json` starts `drift mcp`). To remove the hooks, remove the plugin with Claude Code's own plugin commands (`claude plugin --help`); Drift writes nothing into Claude Code's configuration, so there is nothing of Drift's to clean up. The brief alone can be turned off with `agents: {brief: off}`; the hooks' other behaviour has no setting.
 
-A plugin cannot ship permission rules, so the plugin's PreToolUse hook is what approves the read-only lookups. Without the plugin, write the same entries into `.claude/settings.json` with `drift export claude-settings --write .claude/settings.json` (see [Command Reference](Command-Reference)). The plugin's hook commands are plain `drift hook claude <Event>` lines, so wiring them by hand into another configuration is possible; that route is not documented or tested here.
+A plugin cannot ship permission rules, so the plugin's PreToolUse hook is what approves the read-only lookups. Without the plugin, write the same entries into `.claude/settings.json` with `drift export claude-settings --write .claude/settings.json` (see [Command Reference](Command-Reference)). The plugin's hook commands are plain `drift hook claude <Event>` lines, so wiring them by hand into another configuration is possible; that route is not documented or tested here. For an agent other than Claude Code, see [Other agents](#other-agents).
 
 ## Trying a hook by hand
 

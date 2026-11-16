@@ -1065,7 +1065,7 @@ The first mark creates `.drift/feedback/` with its own `.gitignore` of `*` and a
 
 ## drift hook
 
-The agent hook handler. Claude Code runs it (see [Hooks Reference](Hooks-Reference)); there is nothing to call by hand. It reads the hook event JSON on standard input and answers with JSON on standard output, or nothing.
+The agent hook handler. Claude Code runs it (see [Hooks Reference](Hooks-Reference)); there is nothing to call by hand. `generic` (experimental) is Drift's own protocol, for a wrapper a person writes around another agent's hooks ([Hooks Reference](Hooks-Reference#other-agents)). It reads the hook event JSON on standard input and answers with JSON on standard output, or nothing.
 
 ```text
 drift hook [OPTIONS] <AGENT> <EVENT>
@@ -1073,8 +1073,8 @@ drift hook [OPTIONS] <AGENT> <EVENT>
 
 | Argument | Meaning |
 | --- | --- |
-| `<AGENT>` | [possible values: claude] |
-| `<EVENT>` | Hook event name: SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop or SessionEnd |
+| `<AGENT>` | [possible values: claude, generic] |
+| `<EVENT>` | Hook event name, in the agent's words: for `claude` SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop or SessionEnd; for `generic` session-start, before-edit, after-edit, before-shell, before-search, prompt-submit, end-of-turn or session-end |
 
 | Option | Meaning | Default |
 | --- | --- | --- |
@@ -1085,11 +1085,12 @@ drift hook [OPTIONS] <AGENT> <EVENT>
 
 ```bash
 echo '{"session_id":"try","hook_event_name":"SessionStart","source":"startup"}' | drift hook claude SessionStart
+echo '{"file_path":"src/new.ts"}' | drift hook generic before-edit
 ```
 
 **Output**
 
-JSON on standard output (`hookSpecificOutput`, `systemMessage` or, at the end of a turn, `decision: block`), or nothing. See [Hooks Reference](Hooks-Reference) for what each event says.
+JSON on standard output (`hookSpecificOutput`, `systemMessage` or, at the end of a turn, `decision: block`; for `generic`, `decision`, `reason`, `context` and `message`), or nothing. See [Hooks Reference](Hooks-Reference) for what each event says.
 
 **Exit codes**
 
