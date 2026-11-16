@@ -22,6 +22,8 @@ use crate::resolve::Resolver;
 
 #[path = "config.rs"]
 pub(crate) mod config;
+#[path = "unlisted.rs"]
+pub(crate) mod unlisted;
 
 /// Maximum hops followed through re-exports (guards cycles).
 const MAX_HOPS: usize = 32;
@@ -758,6 +760,9 @@ pub struct Linker<'r> {
     /// by file ([`Linker::with_declared`]).
     declared: BTreeMap<String, Vec<EntryPoint>>,
     track: Option<Track>,
+    /// module -> the route decorators and registrations of the file that listed
+    /// nothing, with why ([`unlisted`]). The listed link's only.
+    unlisted: BTreeMap<String, Vec<drift_core::UnlistedRoute>>,
 }
 
 /// For linking one file against a subset of the repo ([`Linker::tracking`]): the
@@ -1318,6 +1323,7 @@ impl<'r> Linker<'r> {
             compat: false,
             unmeasured: std::sync::atomic::AtomicBool::new(false),
             declared: BTreeMap::new(),
+            unlisted: BTreeMap::new(),
         };
         l.build_adapter_tables();
         l.build_handles();
@@ -3301,6 +3307,9 @@ impl<'r> Linker<'r> {
         self.apps = self.app_facts();
         // Routes and registrations, attached to the file defining the symbol.
         let mut extra: BTreeMap<String, Extra> = BTreeMap::new();
+        // What listed nothing, where it is written ([`unlisted`]).
+        let reports = self.reports_unlisted();
+        let mut unlisted = BTreeMap::new();
         for fi in 0..self.files.len() {
             let rel = self.module_of(fi).to_string();
             let raw = &self.files[fi].raw;
@@ -3308,16 +3317,27 @@ impl<'r> Linker<'r> {
             // schedules find tasks by name across files.
             for rt in &raw.routes {
                 if !self.untracked(&rel) || rt.verb == "task" {
-                    self.route(fi, rt, extra.entry(rel.clone()).or_default());
+                    let e = extra.entry(rel.clone()).or_default();
+                    let before = e.entries.len();
+                    self.route(fi, rt, e);
+                    if reports {
+                        let listed = e.entries.len() > before;
+                        self.note_unlisted_route(fi, rt, listed, &mut unlisted);
+                    }
                 }
             }
             for g in &raw.registrations {
                 if g.unmeasured && !self.since_measured() {
                     continue;
                 }
+                let before = reports.then(|| unlisted::listed_count(&extra));
                 self.registration(fi, g, &mut extra);
+                if before.is_some_and(|n| n == unlisted::listed_count(&extra)) {
+                    self.note_unlisted_registration(fi, g, &mut unlisted);
+                }
             }
         }
+        self.unlisted = unlisted;
         for (fi, parent, prefix) in admin_mounts {
             self.admin_entry(fi, &parent, &prefix, &mut extra);
         }
@@ -5496,6 +5516,7 @@ impl<'r> Linker<'r> {
                 .collect(),
             truncated: vec![],
             unlisted_routes: vec![],
+            unlisted_reasons: self.unlisted_of(fi, test_file),
             discovers: raw.discovers.clone(),
             outgoing: if test_file {
                 vec![]

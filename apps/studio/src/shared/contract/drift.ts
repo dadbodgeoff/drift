@@ -1577,8 +1577,11 @@ export interface Inventory {
   top?: SecurityTop;
   /** Source files that were not read (too large, a line too long, nested too deep, not UTF-8), tests and generated files apart: an entry point or a risky operation in one is not listed (newer drift; absent when empty). */
   skipped?: { path: string; reason: string }[];
-  /** Registrations written as a route is that no listing accounts for, in production code: a route in one may be served and is not in `entry_points` (newer drift; absent when empty). */
-  unlisted?: { path: string; line: number; symbol?: string }[];
+  /**
+   * Registrations written as a route is that no listing accounts for, in production code: a route in one may be served and is not in `entry_points` (newer drift; absent when empty).
+   * `reason` (security.rs `Unlisted.reason`, drift-core `UnlistedReason`) says why: `receiver_not_read`, `handler_not_read`, `not_found`, `package_handler`, `target_not_read`, `path_not_read`, `not_mounted`, `table_not_read`, or `handler_not_reached` (with `symbol`). Absent from an older drift.
+   */
+  unlisted?: { path: string; line: number; symbol?: string; reason?: string }[];
   /** What most entry points that query one thing filter by a value of the caller, and the entry points that query it and filter it by none (newer drift; absent when empty). */
   scope_gaps?: {
     resource: string;

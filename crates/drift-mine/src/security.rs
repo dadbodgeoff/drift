@@ -119,6 +119,11 @@ pub struct Unlisted {
     /// found where it is written. Not serialised when empty.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub symbol: String,
+    /// Why it is not listed ([`drift_core::UnlistedReason`]): what serves the
+    /// registration was not read (TypeScript), its handler, path or mount target is
+    /// one Drift does not follow (Python), or, with a symbol, no listed entry
+    /// point reaches the function.
+    pub reason: drift_core::UnlistedReason,
 }
 
 /// A production file that nothing Drift read reaches ([`Inventory::unreached`],
@@ -540,6 +545,7 @@ fn unreached_handlers(
                     path: f.path.clone(),
                     line: s.line,
                     symbol: s.name.clone(),
+                    reason: drift_core::UnlistedReason::HandlerNotReached,
                 });
             }
         }
@@ -7689,10 +7695,11 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
                     && !unreached.contains(&f.path)
             })
             .flat_map(|f| {
-                f.unlisted_routes.iter().map(|line| Unlisted {
+                f.unlisted().into_iter().map(|u| Unlisted {
                     path: f.path.clone(),
-                    line: *line,
+                    line: u.line,
                     symbol: String::new(),
+                    reason: u.reason,
                 })
             })
             .collect(),
@@ -7738,7 +7745,11 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
                 path: f.path.clone(),
                 parsed: f.parse_ok,
                 sinks,
-                unlisted: f.unlisted_routes.clone(),
+                unlisted: {
+                    let mut lines: Vec<u32> = f.unlisted().iter().map(|u| u.line).collect();
+                    lines.dedup();
+                    lines
+                },
             });
             continue;
         }
@@ -9243,7 +9254,12 @@ pub fn render_at(
             .iter()
             .take(5)
             .map(|u| match u.symbol.is_empty() {
-                true => format!("{}:{}", sanitize(&u.path, 160), u.line),
+                true => format!(
+                    "{}:{} ({})",
+                    sanitize(&u.path, 160),
+                    u.line,
+                    u.reason.label()
+                ),
                 false => format!(
                     "{}:{} {}",
                     sanitize(&u.path, 160),

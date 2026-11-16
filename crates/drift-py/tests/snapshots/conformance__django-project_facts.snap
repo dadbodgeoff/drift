@@ -227,6 +227,12 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             }
           ]
         }
+      ],
+      "unlisted_reasons": [
+        {
+          "line": 7,
+          "reason": "not_mounted"
+        }
       ]
     },
     {
