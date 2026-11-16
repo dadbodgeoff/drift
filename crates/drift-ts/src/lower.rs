@@ -155,6 +155,18 @@ pub struct RawSymbol {
     /// does ([`RawSymbol::builder_checks`]). TypeScript lowering 70.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub refusal_builder: Option<drift_core::CheckOutcome>,
+    /// Classes: the class is an error that answers 401 or 403, read from its own
+    /// definition, not from its name: its constructor passes that status to its
+    /// base (`super(403, message)`, `super(message, 401)`) or sets it on the
+    /// instance (`this.status = 403`, `this.statusCode = 401`), or the class
+    /// declares it as a property (`status = 403`), and nothing in it says another
+    /// ([`Lowerer::class_status`]). A throw of one where a check turns the caller
+    /// away is that check, kept by linking as the checks of a refusal builder are
+    /// ([`RawSymbol::builder_checks`]), and the class carries
+    /// [`drift_core::controls::REFUSAL_STATUS`]; the listed reading only. A class
+    /// whose status is set by a base of another module is not read.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub refusal_status: Option<drift_core::CheckOutcome>,
     /// The calls of a function of another module this function's own body
     /// returns (`return unauthenticated()`, under a check or not): linking reads
     /// the function as one that refuses by the response it hands back, as one
@@ -1206,6 +1218,7 @@ fn lower_semantic(
     l.typescript = source_type.is_typescript();
     l.test_file = is_test_file(rel_path);
     l.out.parse_ok = parse_ok;
+    l.member_writes.visit_program(program);
     l.lower_program(program);
     if rel_path
         .rsplit('/')
@@ -1433,6 +1446,11 @@ struct Lowerer<'s> {
     /// handler = createRequestHandler({ build })`): the callee
     /// ([`RawFile::handed_calls`]).
     module_calls: BTreeMap<String, RawRef>,
+    /// The members the program writes by assignment anywhere, by the name of what
+    /// they are written on ([`MemberWrites`]): a function an object literal holds
+    /// under such a key may not be the one a call of it runs, and is not read as
+    /// its member ([`Lowerer::lower_object_methods`]).
+    member_writes: MemberWrites,
     /// Class properties initialised with `new X()` in the class being lowered
     /// (`private readonly logger = new Logger(Svc.name)`): the receiver of a log call
     /// through `this.logger`. Read for log calls only.
@@ -2321,6 +2339,7 @@ impl<'s> Lowerer<'s> {
             env_bound: BTreeSet::new(),
             module_news: BTreeMap::new(),
             module_calls: BTreeMap::new(),
+            member_writes: MemberWrites::default(),
             this_news: std::cell::RefCell::new(BTreeMap::new()),
             test_file: false,
             sql: signals::SqlLocals::default(),
@@ -3618,6 +3637,18 @@ impl<'s> Lowerer<'s> {
         sym.nest_metadata
             .extend(self.direct_metadata(&class.decorators));
         sym.members = self.class_members(name, class);
+        // What the class answers where it is thrown, read from its definition: the
+        // listed reading only, since the measured build.
+        if let Some(status) = class_status(class)
+            && let Some(outcome) = status_outcome(status)
+            && !routes::unmeasured_listing()
+        {
+            sym.refusal_status = Some(outcome);
+            sym.listed_controls.push(format!(
+                "{}{status}",
+                drift_core::controls::REFUSAL_STATUS
+            ));
+        }
         sym.attr_types = self
             .this_types
             .borrow()
@@ -4087,7 +4118,35 @@ impl<'s> Lowerer<'s> {
     /// (`{ onRequest: guards.authenticate }`), that function is read, not what the
     /// object does as a whole. Listed for the practice map and `drift security` only
     /// ([`RawSymbol::in_place`]), never mined.
+    ///
+    /// Every function of the object is a member of it, addressed `path#<name>.<key>`
+    /// as a class's method is, in the listed reading: a call of one
+    /// (`authenticatedUsers.from(req)`) is followed into that body
+    /// ([`Lowerer::member_function_facts`]: `this.<key>()` of a `function` is a call
+    /// of the sibling). The measured build read only those of an object one of
+    /// whose functions refuses callers (`accessors` false), each as a handler, and
+    /// its reading stays as it was. A key the program writes elsewhere
+    /// (`authenticatedUsers.from = other`, [`MemberWrites`]) is not read: which
+    /// function a call of it runs is not said.
     fn lower_object_methods(&mut self, name: &str, o: &ObjectExpression, accessors: bool) {
+        let owned: Vec<String> = o
+            .properties
+            .iter()
+            .filter_map(|p| match p {
+                ObjectPropertyKind::ObjectProperty(p)
+                    if !p.computed
+                        && matches!(
+                            unwrap_expr(&p.value),
+                            Expression::ArrowFunctionExpression(_)
+                                | Expression::FunctionExpression(_)
+                        ) =>
+                {
+                    key_name(&p.key)
+                }
+                _ => None,
+            })
+            .collect();
+        let keys: BTreeSet<&str> = owned.iter().map(String::as_str).collect();
         for p in &o.properties {
             let ObjectPropertyKind::ObjectProperty(p) = p else {
                 continue;
@@ -4101,9 +4160,9 @@ impl<'s> Lowerer<'s> {
             let Some(key) = key_name(&p.key).filter(|_| !p.computed) else {
                 continue;
             };
-            // Only the functions a call is read as an accessor of by its name
+            // The functions of an object none of whose functions refuses
             // (`accessors`): the listed reading, since the measured build.
-            if accessors && (routes::unmeasured_listing() || !caller::accessor_name(&key)) {
+            if accessors && routes::unmeasured_listing() {
                 continue;
             }
             let member = format!("{name}.{key}");
@@ -4114,8 +4173,100 @@ impl<'s> Lowerer<'s> {
                 RawSymbol::empty(&member, SymbolKind::Function, self.line_of(f.span().start));
             sym.in_place = true;
             sym.is_async = is_async;
-            self.handler_facts(Some(f), &mut sym);
+            if !accessors && routes::unmeasured_listing() {
+                // As the measured build read it.
+                self.handler_facts(Some(f), &mut sym);
+            } else if self.member_writes.written(name, &key) {
+                // Which function a call of it runs is not said: nothing of a body is
+                // recorded, so a reader finds no body to follow.
+                continue;
+            } else {
+                let this_is_value = matches!(f, Expression::FunctionExpression(_));
+                self.member_function_facts(
+                    name,
+                    &keys,
+                    this_is_value,
+                    f,
+                    &HashMap::new(),
+                    &mut sym,
+                );
+            }
             self.push_symbol(sym);
+        }
+    }
+
+    /// The facts of a function a value holds under a key, read as a method of that
+    /// value is ([`Lowerer::class_members`]), with its own parameters, so a check
+    /// on one reads `param:<name>`; where `this` is the
+    /// value (`this_is_value`: a `function` of an object, any function a
+    /// constructor function assigns on `this`), a call `this.<key>()` of a sibling
+    /// in `keys` is a call of `<owner>.<key>`, written as a class's sibling call is
+    /// (`Local(owner)` + `.key`); and the locals of an enclosing function the body
+    /// uses (`closed`: `const users = new UsersDAO(db)` of a constructor function)
+    /// name what they hold, so `users.find(id)` is a call of `UsersDAO.find`. What
+    /// any other name holds is not read, as in any body.
+    fn member_function_facts(
+        &self,
+        owner: &str,
+        keys: &BTreeSet<&str>,
+        this_is_value: bool,
+        f: &Expression,
+        closed: &HashMap<SymbolId, RawRef>,
+        sym: &mut RawSymbol,
+    ) {
+        let status = match f {
+            Expression::ArrowFunctionExpression(a) => input::arrow_input(a, false),
+            Expression::FunctionExpression(x) => input::function_input(x, false),
+            _ => return,
+        };
+        let mut c = Collector::new(self);
+        c.skip_decorators = true;
+        if this_is_value {
+            c.this_methods = Some((
+                owner.to_string(),
+                keys.iter().map(|k| k.to_string()).collect(),
+            ));
+        }
+        for (s, r) in closed {
+            c.aliases.insert(*s, r.clone());
+        }
+        let mut siblings = ThisCalls {
+            names: keys,
+            found: BTreeSet::new(),
+        };
+        match f {
+            // An arrow has no `this` of its own: walked whole, as a handler written
+            // in place is ([`Lowerer::handler_facts`]), so what its expression
+            // hands back is read as one's is.
+            Expression::ArrowFunctionExpression(_) => {
+                c.visit_expression(f);
+                siblings.visit_expression(f);
+            }
+            // A `function` is walked from its body, as a class's method is: there,
+            // `this` is the value it is called on.
+            Expression::FunctionExpression(x) => {
+                let Some(b) = x.body.as_deref() else {
+                    return;
+                };
+                c.fn_depth = 1;
+                c.continuation_names.push(continuation_params(&x.params));
+                c.continuations.push(positional_continuation(&x.params));
+                c.note_params(&x.params);
+                c.visit_function_body(b);
+                siblings.visit_function_body(b);
+            }
+            _ => return,
+        }
+        let saw_input = c.saw_input;
+        c.fill(sym);
+        record_input(sym, saw_input, status);
+        if this_is_value {
+            sym.calls.extend(siblings.found.into_iter().map(|m| RawRef {
+                base: RawBase::Local(owner.to_string()),
+                member: format!(".{m}"),
+            }));
+            sym.calls.sort();
+            sym.calls.dedup();
         }
     }
 
@@ -4157,6 +4308,23 @@ impl<'s> Lowerer<'s> {
         {
             return;
         }
+        // Each is read as a method of the instance ([`Lowerer::member_function_facts`]):
+        // `this` is the instance, so `this.<key>()` of another function assigned
+        // once is a call of `<name>.<key>`; and an instance the constructor builds
+        // in a `const` at the top of its body (`const users = new UsersDAO(db)`)
+        // is what a call through that name is made on, `UsersDAO.<method>`, as
+        // the routes a function lists name a method of an instance it builds.
+        let keys: BTreeSet<&str> = assigned
+            .iter()
+            .filter(|(k, f)| {
+                matches!(
+                    f,
+                    Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_)
+                ) && assigned.iter().filter(|(x, _)| x == k).count() == 1
+            })
+            .map(|(k, _)| *k)
+            .collect();
+        let closed = self.constructed_locals(body);
         for (key, f) in &assigned {
             let is_async = match f {
                 Expression::ArrowFunctionExpression(a) => a.r#async,
@@ -4173,9 +4341,42 @@ impl<'s> Lowerer<'s> {
                 RawSymbol::empty(&member, SymbolKind::Function, self.line_of(f.span().start));
             sym.in_place = true;
             sym.is_async = is_async;
-            self.handler_facts(Some(f), &mut sym);
+            self.member_function_facts(name, &keys, true, f, &closed, &mut sym);
             self.push_symbol(sym);
         }
+    }
+
+    /// The `const`s at the top of a function's body bound to an instance a class or
+    /// a constructor function of the repository or of a package builds (`const
+    /// users = new UsersDAO(db)`), each as what it is built from (`UsersDAO`): a
+    /// function written in that body that calls a method through one calls that
+    /// method of what built it ([`Lowerer::member_function_facts`]). A `let`, and a
+    /// name the body declares more than once, are not read.
+    fn constructed_locals(&self, body: &FunctionBody) -> HashMap<SymbolId, RawRef> {
+        let mut out = HashMap::new();
+        for st in &body.statements {
+            let Statement::VariableDeclaration(v) = st else {
+                continue;
+            };
+            if !v.kind.is_const() {
+                continue;
+            }
+            for d in &v.declarations {
+                let (BindingPattern::BindingIdentifier(id), Some(init)) = (&d.id, &d.init) else {
+                    continue;
+                };
+                let Expression::NewExpression(n) = unwrap_expr(init) else {
+                    continue;
+                };
+                if let (Some(sym), Some(r)) = (id.symbol_id.get(), self.canon(&n.callee))
+                    && matches!(r.base, RawBase::Import { .. } | RawBase::Local(_))
+                    && r.member.is_empty()
+                {
+                    out.insert(sym, r);
+                }
+            }
+        }
+        out
     }
 
     fn decorator_ref(&self, d: &Decorator) -> Option<RawRef> {
@@ -4565,9 +4766,11 @@ impl<'s> Lowerer<'s> {
         if let Expression::ObjectExpression(o) = cur
             && plain
         {
-            // Every function of an object that turns callers away; else those a
-            // call is read as a sign-in accessor by its name (`auth.getUser(req)`):
+            // Every function of the object, each read for itself where a call of
+            // it is followed (`authenticatedUsers.from(req)`, `auth.getUser(req)`):
             // what one gives is what its own body returns, not what it is called.
+            // Of an object none of whose functions turns callers away, in the
+            // listed reading only.
             self.lower_object_methods(name, o, rejects == 0);
         }
     }
@@ -5144,6 +5347,7 @@ impl RawSymbol {
             order: vec![],
             returns_calls: vec![],
             refusal_builder: None,
+            refusal_status: None,
             returns_builder: Vec::new(),
             other_rejection: false,
             builder_checks: vec![],
@@ -5231,6 +5435,63 @@ const INPUT_NAMES: &[&str] = &["input", "parsedInput", "rawInput", "params", "se
 enum MemberBody<'b, 'a> {
     Block(&'b FunctionBody<'a>),
     Arrow(&'b ArrowFunctionBody<'a>),
+}
+
+/// The members a program writes by assignment, anywhere in it, by the name of what
+/// they are written on: `guards.authenticate = other` as (`guards`,
+/// `authenticate`); and the names whose members are written under a key that is
+/// not read (`guards[key] = f`) or handed whole to a built-in of `Object` that
+/// writes them (`Object.assign(guards, extra)`), every member of which may then
+/// hold something else ([`Lowerer::member_writes`]).
+#[derive(Default)]
+struct MemberWrites {
+    named: BTreeSet<(String, String)>,
+    whole: BTreeSet<String>,
+}
+
+impl MemberWrites {
+    /// A member `key` of what `name` holds may be given another value than the
+    /// one written where `name` is bound.
+    fn written(&self, name: &str, key: &str) -> bool {
+        self.whole.contains(name)
+            || self
+                .named
+                .contains(&(name.to_string(), key.to_string()))
+    }
+}
+
+impl<'a> Visit<'a> for MemberWrites {
+    fn visit_assignment_expression(&mut self, it: &AssignmentExpression<'a>) {
+        match &it.left {
+            AssignmentTarget::StaticMemberExpression(m) => {
+                if let Expression::Identifier(id) = unwrap_expr(&m.object) {
+                    self.named
+                        .insert((id.name.to_string(), m.property.name.to_string()));
+                }
+            }
+            AssignmentTarget::ComputedMemberExpression(m) => {
+                if let Expression::Identifier(id) = unwrap_expr(&m.object) {
+                    self.whole.insert(id.name.to_string());
+                }
+            }
+            _ => {}
+        }
+        walk::walk_assignment_expression(self, it);
+    }
+
+    fn visit_call_expression(&mut self, it: &CallExpression<'a>) {
+        if let Expression::StaticMemberExpression(m) = unwrap_expr(&it.callee)
+            && matches!(unwrap_expr(&m.object), Expression::Identifier(o) if o.name == "Object")
+            && let Some(Expression::Identifier(id)) = it
+                .arguments
+                .first()
+                .and_then(|a| a.as_expression())
+                .map(unwrap_expr)
+        {
+            self.whole.insert(id.name.to_string());
+        }
+        walk::walk_call_expression(self, it);
+    }
 }
 
 /// Calls of sibling methods through `this` (`this.upload(...)`) in one method's body.
@@ -5479,6 +5740,13 @@ struct Collector<'l, 's> {
     /// is bound to, from its parameters (`({ next: go })`, `(req, res, next)`,
     /// `(ctx, next)`; [`continuation_params`]).
     continuation_names: Vec<Vec<String>>,
+    /// Per function being walked (innermost last): the parameter it takes last
+    /// where it takes three or four, which is where a framework hands a
+    /// middleware its continuation (`(req, res, next)`, `(err, req, res, next)`),
+    /// read by position and never by name ([`positional_continuation`]). A catch
+    /// clause that gives what it caught to one passes the error on
+    /// ([`Collector::forwards_caught`]).
+    continuations: Vec<Option<SymbolId>>,
     /// The body hands the request on where the facts do not follow
     /// ([`drift_core::SymbolCalls::hands_on`]).
     hands_on: bool,
@@ -5812,6 +6080,7 @@ impl<'l, 's> Collector<'l, 's> {
             result_used: BTreeSet::new(),
             result_returned: BTreeSet::new(),
             continuation_names: Vec::new(),
+            continuations: Vec::new(),
             hands_on: false,
             in_try: 0,
             cred_present: 0,
@@ -7716,6 +7985,20 @@ fn continuation_params(params: &FormalParameters) -> Vec<String> {
     out
 }
 
+/// The parameter a function of three or four parameters takes last, where it is
+/// a plain name: where Express, Connect and the frameworks built like them hand a
+/// middleware its continuation (`(req, res, next)`, `(err, req, res, next)`). By
+/// position only, whatever it is called ([`Collector::continuations`]).
+fn positional_continuation(params: &FormalParameters) -> Option<SymbolId> {
+    if !matches!(params.items.len(), 3 | 4) {
+        return None;
+    }
+    match &params.items.last()?.pattern {
+        BindingPattern::BindingIdentifier(b) => b.symbol_id.get(),
+        _ => None,
+    }
+}
+
 /// `if (<name>) return <name>;`, with the test also written `<name> instanceof
 /// Response`, `<name> != null` or `<name> !== undefined`: the value itself (""). And
 /// `if (<name>.error) return <name>.error;`, the test also written `"error" in
@@ -8574,6 +8857,67 @@ fn status_outcome(s: u16) -> Option<drift_core::CheckOutcome> {
         403 => Some(CheckOutcome::Forbidden),
         404 => Some(CheckOutcome::NotFound),
         429 => Some(CheckOutcome::Throttled),
+        _ => None,
+    }
+}
+
+/// The status an error class answers by its own definition, where it is 401 or
+/// 403 and the only one the class writes ([`RawSymbol::refusal_status`]): what its
+/// constructor passes to its base as a literal (`super(403, message)`, `super(
+/// message, HttpStatus.UNAUTHORIZED)`), sets on the instance at the top level of
+/// its body (`this.status = 403`, `this.statusCode = 401`), or what an instance
+/// property of that name is declared with (`status = 403`). `status` and
+/// `statusCode` are the names HTTP's own response objects give the status. A
+/// status the class writes that is not a literal, or two statuses, say nothing;
+/// nor does a class that writes none: what a base of another module sets is not
+/// read. Never by the class's name.
+fn class_status(class: &Class) -> Option<u16> {
+    let status_key = |k: &str| matches!(k, "status" | "statusCode");
+    let mut found: BTreeSet<u16> = BTreeSet::new();
+    for el in &class.body.body {
+        match el {
+            ClassElement::PropertyDefinition(p) if !p.r#static => {
+                if key_name(&p.key).is_some_and(|k| status_key(k.as_str())) {
+                    found.insert(p.value.as_ref().and_then(literal_status)?);
+                }
+            }
+            ClassElement::MethodDefinition(m) if m.kind.is_constructor() => {
+                let Some(body) = m.value.body.as_deref() else {
+                    continue;
+                };
+                for st in &body.statements {
+                    let Statement::ExpressionStatement(es) = st else {
+                        continue;
+                    };
+                    match unwrap_expr(&es.expression) {
+                        Expression::CallExpression(c)
+                            if matches!(unwrap_expr(&c.callee), Expression::Super(_)) =>
+                        {
+                            found.extend(
+                                c.arguments
+                                    .iter()
+                                    .filter_map(|a| a.as_expression())
+                                    .filter_map(literal_status),
+                            );
+                        }
+                        Expression::AssignmentExpression(a) => {
+                            if let AssignmentTarget::StaticMemberExpression(m) = &a.left
+                                && matches!(unwrap_expr(&m.object), Expression::ThisExpression(_))
+                                && status_key(m.property.name.as_str())
+                            {
+                                found.insert(literal_status(&a.right)?);
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    let mut it = found.into_iter();
+    match (it.next(), it.next()) {
+        (Some(n @ (401 | 403)), None) => Some(n),
         _ => None,
     }
 }
@@ -9490,6 +9834,35 @@ impl Collector<'_, '_> {
     /// ([`drift_core::not_always::SWALLOWED`]: what is thrown may be caught and the
     /// request served all the same), never nothing. A handler that answers no 401
     /// (`catch { request.user = null }`) is no check.
+    /// `s`, a statement at the top level of a catch clause, hands what the clause
+    /// caught (`caught`) on to a continuation the framework gave an enclosing
+    /// function, and only that: `next(err)`, `return next(err)`, where `next` is
+    /// the parameter that function takes last of three or four
+    /// ([`Collector::continuations`]), by position and whatever its name.
+    fn forwards_caught(&self, s: &Statement, caught: Option<SymbolId>) -> bool {
+        let Some(caught) = caught else { return false };
+        let e = match s {
+            Statement::ReturnStatement(r) => r.argument.as_ref(),
+            Statement::ExpressionStatement(x) => Some(&x.expression),
+            _ => None,
+        };
+        let Some(Expression::CallExpression(c)) = e.map(peel) else {
+            return false;
+        };
+        let Expression::Identifier(callee) = unwrap_expr(&c.callee) else {
+            return false;
+        };
+        let given = c.arguments.len() == 1
+            && matches!(
+                c.arguments.first().and_then(|a| a.as_expression()).map(unwrap_expr),
+                Some(Expression::Identifier(id)) if self.symbol_of(id) == Some(caught)
+            );
+        given
+            && self
+                .symbol_of(callee)
+                .is_some_and(|s| self.continuations.contains(&Some(s)))
+    }
+
     fn note_verified_try(&mut self, it: &TryStatement, ends: bool) {
         use drift_core::CheckOutcome::Unauthenticated;
         use drift_core::not_always::SWALLOWED;
@@ -9571,7 +9944,13 @@ impl Collector<'_, '_> {
                 }
                 // The caught error handed on with a status that is not read: the
                 // request is refused, and not known to be for want of a sign-in.
-                if !nested.found && !stmts.iter().any(sends_caught) {
+                // The listed reading records no check of it at all: what the `try`
+                // ran may have failed for any reason (`catch (e) { next(e) }`
+                // after a query), and nothing answers 401 here. The measured build
+                // recorded a swallowed one.
+                if !nested.found
+                    && (!stmts.iter().any(sends_caught) || !routes::unmeasured_listing())
+                {
                     return;
                 }
                 why = SWALLOWED;
@@ -10357,7 +10736,20 @@ impl Collector<'_, '_> {
                                 self.refuses_without.insert(by);
                                 return false;
                             }
-                            None => return false,
+                            // A branch that throws an error of the repository
+                            // whose arguments say nothing (`throw new
+                            // ForbiddenError()`): a check where the class answers
+                            // 401 or 403 by its own definition, kept by linking
+                            // with that status as a builder's is
+                            // ([`RawSymbol::refusal_status`]). The listed reading
+                            // only, since the measured build.
+                            None => match self.thrown_class(&it.consequent) {
+                                Some(class) if !routes::unmeasured_listing() => {
+                                    pending = Some(class);
+                                    (drift_core::CheckOutcome::Unauthenticated, false, false)
+                                }
+                                _ => return false,
+                            },
                         },
                     },
                 },
@@ -10681,6 +11073,32 @@ impl Collector<'_, '_> {
     /// ([`RawSymbol::refusal_builder`]): one of this file, with its status, or
     /// one of another module of the repository, to be told by linking (its
     /// reference; `Unauthenticated` stands until linking says).
+    /// The class of the repository a branch throws an instance of, where the branch
+    /// is that throw (`throw new ForbiddenError()`, `{ throw new NotSignedIn(msg)
+    /// }`): a class of this file or one an import names. What it answers is read
+    /// where it is defined ([`RawSymbol::refusal_status`]); a package's class, a
+    /// global (`Error`) and a member of anything are not read here.
+    fn thrown_class(&self, s: &Statement) -> Option<RawRef> {
+        let t = match s {
+            Statement::ThrowStatement(t) => t,
+            Statement::BlockStatement(b) => match b.body.as_slice() {
+                [Statement::ThrowStatement(t)] => t,
+                _ => return None,
+            },
+            _ => return None,
+        };
+        let Expression::NewExpression(n) = peel(&t.argument) else {
+            return None;
+        };
+        let Expression::Identifier(_) = unwrap_expr(&n.callee) else {
+            return None;
+        };
+        self.l
+            .canon(&n.callee)
+            .filter(|r| r.member.is_empty())
+            .filter(|r| matches!(r.base, RawBase::Local(_) | RawBase::Import { .. }))
+    }
+
     fn builder_returned(
         &self,
         s: &Statement,
@@ -13702,8 +14120,11 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         self.value_methods.push(of_value);
         self.continuation_names
             .push(continuation_params(&it.params));
+        self.continuations
+            .push(positional_continuation(&it.params));
         self.note_params(&it.params);
         walk::walk_function(self, it, flags);
+        self.continuations.pop();
         self.continuation_names.pop();
         self.value_methods.pop();
         self.own_this -= 1;
@@ -13745,6 +14166,8 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         let outer = self.enter_fn(it.span.start, later);
         self.continuation_names
             .push(continuation_params(&it.params));
+        self.continuations
+            .push(positional_continuation(&it.params));
         self.note_params(&it.params);
         if self.fn_depth == 1
             && let Some(body) = it.body.as_expression()
@@ -13757,6 +14180,7 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         self.in_lost += lost;
         walk::walk_arrow_function_expression(self, it);
         self.in_lost -= lost;
+        self.continuations.pop();
         self.continuation_names.pop();
         self.leave_fn(outer);
     }
@@ -14498,7 +14922,21 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         self.in_catch += 1;
         walk::walk_catch_clause(self, it);
         self.in_catch -= 1;
-        if let Some(f) = self.p.frames.pop() {
+        // `catch (e) { next(e) }`: what was caught is handed to the continuation the
+        // framework gave the function, and the framework's error handling answers
+        // it. The error goes on, as a rethrow does; it is not swallowed, and a
+        // `return next(e)` is not a return of the request served. The listed
+        // reading only: the measured build read it as nothing ([`RawCatch`]).
+        let forwards = it
+            .body
+            .body
+            .iter()
+            .any(|s| self.forwards_caught(s, param));
+        if let Some(mut f) = self.p.frames.pop() {
+            if forwards && !routes::unmeasured_listing() {
+                f.does.remove(&("return".to_string(), None));
+                f.does.insert(("rethrow".to_string(), None));
+            }
             let mut catches: Vec<RawOperand> = f.classes.into_iter().collect();
             if catches.is_empty() {
                 catches.push(RawOperand::Text("*".into()));

@@ -502,11 +502,6 @@ fn words(name: &str) -> Vec<String> {
     out
 }
 
-/// `name` is one of the sign-in accessors a call is read as by its name
-/// (source 1, [`CALLER_ACCESSORS`]).
-pub(super) fn accessor_name(name: &str) -> bool {
-    CALLER_ACCESSORS.contains(&name)
-}
 
 /// A name that says the caller by its last word (`user`, `currentUser`,
 /// `authSession`; not `userId`, which names a value anyone may hold).
