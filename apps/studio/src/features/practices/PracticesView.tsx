@@ -305,7 +305,7 @@ function Findings({ report, findings, pkg }: { report: PracticesReport; findings
 }
 
 function Finding({ report, f }: { report: PracticesReport; f: PracticeFinding }) {
-  const t = findingText(report, f);
+  const text = findingText(report, f);
   const k = FINDING_KIND[f.kind];
   return (
     <li className={`pr-finding is-${f.kind}`}>
@@ -321,8 +321,8 @@ function Finding({ report, f }: { report: PracticesReport; f: PracticeFinding })
         {f.concern !== HYGIENE && isPreview(f.concern) && <Tag>preview</Tag>}
         <span className="t-caption t-muted">{f.package === null ? (f.kind === "duplicate_helper" ? "across packages" : "whole repository") : pkgLabel(f.package)}</span>
       </div>
-      <p className="pr-finding__title">{t.title}</p>
-      <p className="t-body-sm t-secondary">{t.detail}</p>
+      <p className="pr-finding__title">{text.title}</p>
+      <p className="t-body-sm t-secondary">{text.detail}</p>
       {f.kind === "unexplained_split" && f.variants.length > 0 && (
         <p className="t-body-sm">
           {f.variants.map((id, i) => (
@@ -335,9 +335,9 @@ function Finding({ report, f }: { report: PracticesReport; f: PracticeFinding })
       )}
       {f.config_hint && <ConfigHint hint={f.config_hint} />}
       {f.kind === "duplicate_helper" ? (
-        (f.copies?.length ?? 0) > 0 && <Examples compact items={f.copies ?? []} context={(e) => ({ title: t.title, detail: `One of ${f.members} copies of ${e.symbol}`, tone: "warning" })} />
+        (f.copies?.length ?? 0) > 0 && <Examples compact items={f.copies ?? []} context={(e) => ({ title: text.title, detail: `One of ${f.members} copies of ${e.symbol}`, tone: "warning" })} />
       ) : (
-        f.examples.length > 0 && <Examples compact items={f.examples} context={(e) => ({ title: t.title, detail: `${concernTitle(report, f.concern)}: ${e.symbol}`, tone: f.kind === "none" || f.kind === "unscoped_key" ? "warning" : "info" })} />
+        f.examples.length > 0 && <Examples compact items={f.examples} context={(e) => ({ title: text.title, detail: `${concernTitle(report, f.concern)}: ${e.symbol}`, tone: f.kind === "none" || f.kind === "unscoped_key" ? "warning" : "info" })} />
       )}
     </li>
   );

@@ -250,10 +250,14 @@ export const PromoteRefusedEnvelope = z.object({ refused: z.object({ code: z.str
 
 export const PromoteEnvelope = z.union([PromoteRefusedEnvelope, PromoteResultEnvelope]);
 
-/** `drift practices promote --list --json` (drift-cli promote.rs `list`, exit 0): each candidate is checked where read (features/practices). */
+/** One entry of `drift practices promote --list --json`. */
+const PromoteListItemEnvelope = z.object({ place: z.string(), command: z.string(), candidate: z.object({ concern: z.string(), ways: z.array(PromoteWayEnvelope) }).passthrough() }).passthrough();
+
+/** `drift practices promote --list --json` (drift-cli promote.rs `list_of`, exit 0): each candidate is checked where read (features/practices). `passive`: newer drift. */
 export const PromoteListEnvelope = z
   .object({
-    candidates: z.array(z.object({ place: z.string(), command: z.string(), candidate: z.object({ concern: z.string(), ways: z.array(PromoteWayEnvelope) }).passthrough() }).passthrough()),
+    candidates: z.array(PromoteListItemEnvelope),
+    passive: z.array(PromoteListItemEnvelope).optional(),
     declined: z.number(),
     promoted: z.array(z.string()),
   })

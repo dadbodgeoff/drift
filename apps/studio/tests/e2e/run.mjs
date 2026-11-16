@@ -1733,18 +1733,20 @@ await test("practices: what may be promoted, worded by kind, passive candidates 
     await page.evaluate((s) => localStorage.setItem("drift-studio:theme", s), scheme);
     await open(page, "practices/candidates");
     await page.waitForSelector(".pr-cand");
-    expect((await page.locator(".pr-cand").count()) === list.candidates.length, "every candidate Drift listed");
+    // A newer Drift lists the passive candidates apart (`passive`); the view shows them after the others.
+    const listed = [...list.candidates, ...(list.passive ?? [])];
+    expect((await page.locator(".pr-cand").count()) === listed.length, "every candidate Drift listed");
     const titles = await page.locator(".pr-cand__title").allTextContents();
     expect(titles[0] === "Authentication in apps/api" && titles[titles.length - 1] === "Error handling in apps/api", `order, passive last: ${titles}`);
     expect((await page.locator("[data-testid='candidates-passive'] .pr-cand").count()) === 1, "the passive one apart");
     expect((await page.textContent("[data-testid='candidates-passive']")).includes("Followed by doing nothing"), "and said why");
     const mech = await page.textContent(".pr-cand[data-kind='mechanism']");
-    expect(mech.includes("Accepts mechanism wrap whole") && mech.includes("whichever instrument it names") && mech.includes("Drift prints no command for this one"), `mechanism: ${mech}`);
+    expect(mech.includes("Accepts mechanism wrap whole") && mech.includes("whichever instrument it names") && mech.includes("drift practices promote --concern authn --in apps/web/lib/actions --mechanism wrap"), `mechanism: ${mech}`);
     const enf = await page.textContent(".pr-cand[data-kind='enforcing']");
     expect(enf.includes("Accepts any way that enforces it") && enf.includes("70 of the 74 entry points in apps/web/app/api/workspaces/[id] follow it"), `any enforcing: ${enf}`);
     const data = await page.textContent(".pr-cand:has-text('Data access in apps/web')");
     expect(data.includes("2 symbols not checked: Drift could not read them, so they are never reported") && data.includes("All 2 not checked share one cause outside them: a call whose body Drift cannot read (pkg:@acme/edge-db#connect)"), `not checked and the cause: ${data}`);
-    expect((await page.textContent(".pr-cand:has-text('Data access in apps/web') [data-testid='cause-hint']")).trim() === list.candidates[6].candidate.unknown_cause.hint, "the config line as Drift wrote it");
+    expect((await page.textContent(".pr-cand:has-text('Data access in apps/web') [data-testid='cause-hint']")).trim() === listed.find((x) => x.candidate.unknown_cause).candidate.unknown_cause.hint, "the config line as Drift wrote it");
     expect((await page.textContent(".pr-cand >> nth=0")).includes("3 background jobs not counted"), "jobs");
     expect((await page.textContent(".pr-cand >> nth=1")).includes("drift practices promote P-1587e5 --in apps/web/app/api/admin"), "the command Drift prints");
     expect((await page.textContent(".pr-candidates__declined")).includes("1 declined earlier in drift review"), "declined");

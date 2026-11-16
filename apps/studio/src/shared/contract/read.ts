@@ -74,7 +74,8 @@ function readWay(v: unknown): PromoteWay | null {
   const id = str(v.id);
   const members = count(v.members);
   if (id === null || members === null) return null;
-  return { id, key: str(v.key) ?? "", label: str(v.label) ?? id, members };
+  const alternatives = strings(v.alternatives);
+  return { id, key: str(v.key) ?? "", label: str(v.label) ?? id, members, ...(alternatives.length ? { alternatives } : {}) };
 }
 
 function readExample(v: unknown): PracticeExample | null {
@@ -105,12 +106,16 @@ export function readCandidate(v: unknown): PromoteCandidate | null {
   const concern = str(v.concern);
   const follows = count(v.follows);
   const unknown = count(v.unknown);
-  if (concern === null || follows === null || unknown === null || !isObj(v.place)) return null;
-  const place: PromotePlace = { package: str(v.place.package) ?? "", dir: str(v.place.dir) ?? "" };
+  const rawPlace = v.place;
+  if (concern === null || follows === null || unknown === null || !isObj(rawPlace)) return null;
+  const file = str(rawPlace.file);
+  const route = str(rawPlace.route);
+  const place: PromotePlace = { package: str(rawPlace.package) ?? "", dir: str(rawPlace.dir) ?? "", ...(file !== null ? { file } : {}), ...(route !== null ? { route } : {}) };
   const exceptions = examples(v.exceptions);
   const mechanisms = strings(v.mechanisms);
   const jobs = count(v.jobs);
   const cause = readUnknownCause(v.unknown_cause);
+  const unreadRoutes = count(v.unread_routes);
   return {
     concern,
     unit: str(v.unit) ?? "unit",
@@ -128,6 +133,7 @@ export function readCandidate(v: unknown): PromoteCandidate | null {
     ...(v.passive === true ? { passive: true } : {}),
     ...(jobs ? { jobs } : {}),
     ...(cause ? { unknown_cause: cause } : {}),
+    ...(unreadRoutes ? { unread_routes: unreadRoutes } : {}),
   };
 }
 
@@ -136,14 +142,22 @@ function readItem(v: unknown): PromoteListItem | null {
   const candidate = readCandidate(v.candidate);
   const place = str(v.place);
   if (!candidate || place === null) return null;
-  return { place, command: str(v.command) ?? "", candidate };
+  const departures = count(v.departures);
+  return { place, command: str(v.command) ?? "", ...(departures !== null ? { departures } : {}), candidate };
 }
 
-/** `drift practices promote --list --json`: the candidates in Drift's order, with how many were declined and which promoted conventions cover others. */
+const items = (v: unknown): PromoteListItem[] => (Array.isArray(v) ? v.map(readItem).filter((x): x is PromoteListItem => x !== null) : []);
+
+/**
+ * `drift practices promote --list --json`: the candidates in Drift's order, with how many were declined and which
+ * promoted conventions cover others. A newer Drift lists the candidates followed by doing nothing apart (`passive`);
+ * they are read into `candidates` after the others, each marked `passive` as Drift marks it, which is how an older
+ * Drift listed them, so the view splits them the one way.
+ */
 export function readPromoteList(raw: unknown): PromoteList {
   const d = isObj(raw) ? raw : {};
   return {
-    candidates: (Array.isArray(d.candidates) ? d.candidates : []).map(readItem).filter((x): x is PromoteListItem => x !== null),
+    candidates: [...items(d.candidates), ...items(d.passive).map((x) => (x.candidate.passive ? x : { ...x, candidate: { ...x.candidate, passive: true } }))],
     declined: count(d.declined) ?? 0,
     promoted: strings(d.promoted),
   };

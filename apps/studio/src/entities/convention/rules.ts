@@ -183,7 +183,11 @@ export function practiceText(rule: Rule): string | null {
   if (n > 0 || (!mechanisms.length && !rule.any_enforcing)) parts.push(n === 1 ? t("conventions.practice.oneWay") : t("conventions.practice.ways", { n }));
   if (mechanisms.length) parts.push(t("conventions.practice.mechanism", { mechanisms: mechanisms.map(mechanismWords).join(t("conventions.practice.mechanismOr")) }));
   if (rule.any_enforcing) parts.push(t("conventions.practice.enforcing"));
-  return t("conventions.practice.done", { concern: rule.concern, parts: parts.join(t("conventions.practice.or")) });
+  const done = t("conventions.practice.done", { concern: rule.concern, parts: parts.join(t("conventions.practice.or")) });
+  // A place narrower than the role's directory (newer drift): one file, or the routes under a literal prefix.
+  if (rule.in_file) return `${done}${t("conventions.practice.inFile", { file: rule.in_file })}`;
+  if (rule.under_route) return `${done}${t("conventions.practice.underRoute", { route: rule.under_route })}`;
+  return done;
 }
 
 /** `import:<area>` signals (not `import:pkg:`) are layering rules. */

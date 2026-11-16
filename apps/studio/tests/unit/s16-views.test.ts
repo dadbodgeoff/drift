@@ -44,7 +44,10 @@ describe("a convention proposed from Drift's map of the code", () => {
 
 describe("the practices that may be promoted", () => {
   it("words each kind of candidate on its own", () => {
-    const [api, admin, ws, , mech] = list().candidates;
+    const xs = list().candidates;
+    const [api, admin] = xs;
+    const mech = xs.find((x) => x.candidate.mechanisms?.length);
+    const ws = xs.find((x) => x.candidate.any_enforcing);
     expect(candidateKind(api!.candidate)).toBe("ways");
     expect(acceptsText(admin!.candidate)).toBe("Accepts wrap withAdmin.");
     expect(candidateKind(mech!.candidate)).toBe("mechanism");
@@ -77,11 +80,14 @@ describe("the practices that may be promoted", () => {
     expect(refusalCause({ code: "no_enforcing", concern: "logging" })).toBeNull();
   });
 
-  it("shows the command only where it promotes something", () => {
+  it("shows the command Drift prints, and none where an older Drift printed one with no id", () => {
     const xs = list().candidates;
     expect(commandShown(xs[1]!)).toBe("drift practices promote P-1587e5 --in apps/web/app/api/admin");
-    expect(commandShown(xs[2]!)).toBeNull();
-    expect(commandShown({ command: "drift practices promote --mechanism wrap --in apps/web" })).toBe("drift practices promote --mechanism wrap --in apps/web");
+    // A candidate of no named way: `--concern` in place of a variant id (drift-cli promote.rs `command`).
+    expect(commandShown(xs.find((x) => x.candidate.any_enforcing)!)).toBe("drift practices promote --concern authn --in 'apps/web/app/api/workspaces/[id]' --any-enforcing");
+    expect(commandShown(xs.find((x) => x.candidate.mechanisms?.length)!)).toBe("drift practices promote --concern authn --in apps/web/lib/actions --mechanism wrap");
+    expect(commandShown({ command: "drift practices promote  --in apps/web" })).toBeNull();
+    expect(commandShown({ command: "" })).toBeNull();
   });
 
   it("lists passive candidates apart and after the others, and says so", () => {
@@ -96,7 +102,8 @@ describe("the practices that may be promoted", () => {
     expect(text).toContain("19 of the 20 entry points in apps/web/app/api/admin follow it.");
     expect(text).toContain("2 symbols not checked");
     expect(text).toContain("3 background jobs not counted");
-    expect(text).toContain("Drift prints no command for this one");
+    expect(text).toContain("drift practices promote --concern authn --in apps/web/lib/actions --mechanism wrap");
+    expect(text).not.toContain("prints no command for this one");
     expect(text).toContain("1 declined earlier in drift review");
     expect(text).toContain("Nothing is written from this list.");
     expect(html.match(/data-kind="mechanism"/g)).toHaveLength(1);
