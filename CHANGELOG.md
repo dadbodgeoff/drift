@@ -33,6 +33,17 @@ main branch.
 
 ### Added
 
+- **Serverless functions and Workers are entry points.** `drift security`, the
+  practice map and cards list the handlers a deployment file names, with the kind
+  and route its trigger gives: Serverless Framework `serverless.yml` functions and
+  their events, AWS SAM `AWS::Serverless::Function` resources, Cloudflare Workers
+  (`wrangler.toml` / `.json` / `.jsonc`: `fetch`, `scheduled`, `queue`, `email`,
+  Durable Objects), Netlify Functions and Vercel `api/` functions outside Next.js.
+  A platform authorizer, API key or IAM authorization is named and leaves the
+  guard unknown; a handler or value the file does not settle is listed under
+  `unlisted` with its file and line. Listed reading only: mining is unchanged. The
+  security baseline's inventory version is 3: against a baseline stamped 2, these
+  new findings in unchanged code are held apart as new in Drift.
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise

@@ -2388,6 +2388,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             inv.workflows = drift_mine::workflows::read(root);
             inv.dependencies = drift_mine::dependencies::read(root);
             inv.cluster = drift_mine::kubernetes::read(root);
+            drift_mine::serverless::add_unlisted(&mut inv, root, &facts);
             // Each shared guard, linked to the convention that says the same (accepted
             // or proposed), when the project has conventions. A policy that cannot be
             // read only loses the links: the inventory is the repository's, not the
@@ -4812,6 +4813,7 @@ fn security_inventory(
     inv.workflows = drift_mine::workflows::read(root);
     inv.dependencies = drift_mine::dependencies::read(root);
     inv.cluster = drift_mine::kubernetes::read(root);
+    drift_mine::serverless::add_unlisted(&mut inv, root, facts);
     inv
 }
 
@@ -5010,6 +5012,7 @@ fn security_compare(
             base_inv.workflows = drift_mine::workflows::read(base_root);
             base_inv.dependencies = drift_mine::dependencies::read(base_root);
             base_inv.cluster = drift_mine::kubernetes::read(base_root);
+            drift_mine::serverless::add_unlisted(&mut base_inv, base_root, base_facts);
             baseline_findings(base_root, base_facts, &base_inv).map(|f| (f, base_inv))
         });
         match read {

@@ -17,8 +17,8 @@ pub fn scan(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, ScanS
     let started_ns = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map_or(0, |d| d.as_nanos() as u64);
-    let mut walked =
-        drift_core::ingest::walk(&canonical, opts.threads, &drift_ts::repo::is_config_path)?;
+    let mut walked = drift_core::ingest::walk(&canonical, opts.threads, &walked_config)?;
+    let deployments = drift_mine::serverless::read_configs(&walked.config);
     let py_walked = std::mem::take(&mut walked.python);
     let py_opts = drift_py::ScanOptions {
         cache_dir: opts.cache_dir.clone(),
@@ -35,6 +35,7 @@ pub fn scan(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, ScanS
     let (py, py_stats) = py?;
     merge(&mut repo, py);
     apply_packages(root, &mut repo);
+    drift_mine::serverless::list(&mut repo, &deployments);
     stats.files += py_stats.files;
     stats.cache_hits += py_stats.cache_hits;
     stats.parse_errors += py_stats.parse_errors;
@@ -79,8 +80,8 @@ pub fn scan_file(root: &Path, opts: &ScanOptions, rel: &str) -> anyhow::Result<O
     // Whether an `integration/` directory is a test suite only decides anything about
     // a file below one: only then are the other language's files there looked up.
     let suite_matters = drift_core::in_integration_dir(rel);
-    let mut walked =
-        drift_core::ingest::walk(&root, opts.threads, &drift_ts::repo::is_config_path)?;
+    let mut walked = drift_core::ingest::walk(&root, opts.threads, &walked_config)?;
+    let deployments = drift_mine::serverless::read_configs(&walked.config);
     let py = std::mem::take(&mut walked.python);
     let python = std::path::Path::new(rel)
         .extension()
@@ -129,7 +130,18 @@ pub fn scan_file(root: &Path, opts: &ScanOptions, rel: &str) -> anyhow::Result<O
     };
     apply_packages(&root, &mut facts);
     facts.normalize();
+    // The entry points a deployment file names, decided as a full scan decides them;
+    // where that needs files this scan did not read, a full scan is needed.
+    if drift_mine::serverless::list(&mut facts, &deployments).needs_repo(&root, rel) {
+        return Ok(None);
+    }
     Ok(Some(listed_where_asked(&root, facts)))
+}
+
+/// The files the walk collects for repo-level passes: those the TypeScript scan
+/// reads, and the deployment files ([`drift_mine::serverless`]).
+fn walked_config(rel: &str) -> bool {
+    drift_ts::repo::is_config_path(rel) || drift_mine::serverless::is_config_path(rel)
 }
 
 /// A file Drift reads at all: a source, a file repo-level passes read (`package.json`,

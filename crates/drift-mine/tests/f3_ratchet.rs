@@ -39,6 +39,7 @@ const OLDER: &str = "# drift security baseline: what `drift security` found when
 
 #[test]
 fn every_kind_a_reading_widened_is_found_since_the_widening() {
+    // Widened again by version 3: the entry points a deployment file names.
     for kind in [
         "guard-gap",
         "no-authorization",
@@ -46,16 +47,17 @@ fn every_kind_a_reading_widened_is_found_since_the_widening() {
         "risky",
         "scope-gap",
         "unguarded-reaching",
+        "unscoped-key",
         "whole-row",
-        "workflow",
     ] {
-        assert_eq!(found_since(kind, "x"), 2, "{kind}");
+        assert_eq!(found_since(kind, "x"), 3, "{kind}");
     }
+    assert_eq!(found_since("workflow", "x"), 2);
     // Read as before.
     for kind in ["dependency", "kubernetes", "leak"] {
         assert_eq!(found_since(kind, "x"), 1, "{kind}");
     }
-    const { assert!(INVENTORY_VERSION >= 2) };
+    const { assert!(INVENTORY_VERSION >= 3) };
 }
 
 #[test]

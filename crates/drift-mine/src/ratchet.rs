@@ -43,8 +43,9 @@ pub const SECURITY_LOCK: &str = ".drift/security.lock";
 ///
 /// 1: every kind, detector and reading before the stamp. 2: `unscoped-key`, and the
 /// readings of [`READ_SINCE`]. (No build stamped 2 before those readings: the stamp
-/// and they ship together.)
-pub const INVENTORY_VERSION: u32 = 2;
+/// and they ship together.) 3: the entry points a deployment file names
+/// ([`crate::serverless`]).
+pub const INVENTORY_VERSION: u32 = 3;
 
 /// The version of a baseline written before baselines were stamped.
 const UNSTAMPED: u32 = 1;
@@ -91,14 +92,19 @@ const DETECTOR_SINCE: &[(&str, u32)] = &[];
 ///
 /// `dependency`, `kubernetes` and `leak` read as before. Every later
 /// change to what a reading finds adds its kinds here with the new version.
+///
+/// 3: the entry points a Serverless Framework, SAM, Wrangler, Netlify or Vercel
+/// deployment names ([`crate::serverless`]): more entry points, so more findings of
+/// every kind read off an entry point.
 const READ_SINCE: &[(&str, u32)] = &[
-    ("guard-gap", 2),
-    ("no-authorization", 2),
-    ("no-guard", 2),
-    ("risky", 2),
-    ("scope-gap", 2),
-    ("unguarded-reaching", 2),
-    ("whole-row", 2),
+    ("guard-gap", 3),
+    ("no-authorization", 3),
+    ("no-guard", 3),
+    ("risky", 3),
+    ("scope-gap", 3),
+    ("unguarded-reaching", 3),
+    ("unscoped-key", 3),
+    ("whole-row", 3),
     ("workflow", 2),
 ];
 

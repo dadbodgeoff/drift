@@ -370,14 +370,14 @@ fn an_old_security_baseline_keeps_working() {
     );
     assert!(r.gone.is_empty());
 
-    // A stamped baseline (inventory 2) holds what that inventory finds: the kind is no
-    // longer new in Drift, and it advises until a person sets it to fail.
+    // A stamped baseline (this inventory's) holds what that inventory finds: the kind
+    // is no longer new in Drift, and it advises until a person sets it to fail.
     let stamped = OLD_BASELINE.replace(
         "do not edit by hand.\n",
-        "do not edit by hand.\n# inventory: 2\n# fail: no-guard,risky\n",
+        "do not edit by hand.\n# inventory: 3\n# fail: no-guard,risky\n",
     );
     let b = parse_baseline(&stamped);
-    assert_eq!(b.version, 2);
+    assert_eq!(b.version, 3);
     let r = compare_with(&now, &b, None);
     assert!(r.new_in_drift.is_empty(), "{r:?}");
     assert!(r.advised.contains_key("unscoped-key"), "{r:?}");
