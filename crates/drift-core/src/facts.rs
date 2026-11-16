@@ -1788,6 +1788,27 @@ pub mod controls {
     /// what the request sent. TypeScript lowering 76 (listed reading).
     pub const SINK_FED_MADE: &str = "sink_fed_made:";
     pub const PASSES_MADE: &str = "passes_made:";
+    /// [`SINK_FED`] by position: `sink_fed_at:<kind>\t<position>`, the position
+    /// among the function's parameters that the operation's operand (the value it
+    /// judges: the first argument that is no number, the key written) is read off:
+    /// `#0` for the first, `*` where which one is not read, `-` where the operand
+    /// is given nothing of a parameter though another argument is. A kind with no
+    /// such control is read as [`SINK_FED`] says. TypeScript lowering (listed
+    /// reading). Mining never proposes it.
+    pub const SINK_FED_AT: &str = "sink_fed_at:";
+    /// [`PASSES_PARAM`] by argument: `passes_at:<callee>\t<argument>\t<position>`,
+    /// canonical: the call hands the callee, at the argument's position (`#1`; `*`
+    /// at or after a spread), a value read off the parameter at the position
+    /// (`#0`, `*`). With [`SINK_FED_AT`] a reader follows what an entry point was
+    /// sent through the parameter that carries it: a parameter the caller does
+    /// not pass (one with a default) carries nothing. A callee with no such
+    /// control is read as [`PASSES_PARAM`] says. TypeScript lowering (listed
+    /// reading). Mining never proposes it.
+    pub const PASSES_AT: &str = "passes_at:";
+    /// [`PASSES_MADE`] by argument: `passes_made_at:<callee>\t<argument>`, the
+    /// positions of the arguments read off a parameter of the function the body
+    /// hands back. TypeScript lowering (listed reading). Mining never proposes it.
+    pub const PASSES_MADE_AT: &str = "passes_made_at:";
     /// What starts the control that says what held where a wrapper hands a request
     /// on: one control for each call, in a function defined in another, of what the
     /// outer function was given (`return view_func(request, *args, **kwargs)` in a

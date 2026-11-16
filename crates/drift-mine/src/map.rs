@@ -268,7 +268,10 @@ pub fn imported_package_name(module: &str) -> Option<String> {
 /// [`package_graph`] and [`file_targets`].
 struct Targets<'a> {
     pkg_of_path: BTreeMap<&'a str, &'a str>,
-    by_name: BTreeMap<&'a str, &'a str>,
+    /// (a Python package, its name) -> its directory: an import by name lands only in
+    /// a package of the importer's own ecosystem (`import emails` in Python is not
+    /// the npm workspace package `emails`).
+    by_name: BTreeMap<(bool, &'a str), &'a str>,
     name_of: BTreeMap<&'a str, &'a str>,
     dev_only: BTreeMap<&'a str, &'a [String]>,
 }
@@ -285,7 +288,10 @@ impl<'a> Targets<'a> {
                 .packages
                 .iter()
                 .filter(|p| !p.name.is_empty())
-                .map(|p| (p.name.as_str(), p.path.as_str()))
+                .map(|p| {
+                    let python = crate::roles::is_python_package(p);
+                    ((python, p.name.as_str()), p.path.as_str())
+                })
                 .collect(),
             name_of: repo
                 .packages
@@ -313,7 +319,7 @@ impl<'a> Targets<'a> {
         let mut targets: BTreeMap<&str, (bool, &str)> = BTreeMap::new();
         for i in &f.imports {
             let target = if let Some(name) = imported_package_name(&i.module) {
-                self.by_name.get(name.as_str()).copied()
+                self.by_name.get(&(f.lang == "py", name.as_str())).copied()
             } else if i.module.starts_with("unresolved:") {
                 None
             } else {
