@@ -121,7 +121,12 @@ fn a_change_that_breaks_enough_members_still_blocks() {
     assert_eq!(s.stale, None, "{s:?}");
     assert_eq!(s.mode, "block");
     assert_eq!(report.blocking().count(), 15);
-    assert!(report.violations.iter().any(|v| v.baselined && v.path == bare(0)));
+    assert!(
+        report
+            .violations
+            .iter()
+            .any(|v| v.baselined && v.path == bare(0))
+    );
 }
 
 /// Item 2: a member in a file the parser reported errors in is counted once, as not

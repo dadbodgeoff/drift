@@ -351,7 +351,11 @@ fn a_public_procedure_built_on_code_drift_read_stays_a_violation() {
             "trpc/server/routers/viewer/public.ts"
         ]
     );
-    assert_eq!(report.standing[0].not_checked, 0, "{:?}", report.standing[0]);
+    assert_eq!(
+        report.standing[0].not_checked, 0,
+        "{:?}",
+        report.standing[0]
+    );
 }
 
 #[test]
@@ -408,7 +412,12 @@ fn a_stale_rule_advises_and_says_why() {
     assert_eq!(fresh.standing[0].stale, None, "{:?}", fresh.standing[0]);
     assert_eq!(fresh.standing[0].mode, "block");
     assert!(!fresh.violations.is_empty());
-    assert!(fresh.violations.iter().all(|v| v.mode == "block" && !v.baselined));
+    assert!(
+        fresh
+            .violations
+            .iter()
+            .all(|v| v.mode == "block" && !v.baselined)
+    );
     assert!(fresh.blocking().count() > 0);
     // Once they are legacy (in the lock: the code the lock knows no longer bears the rule
     // out), it is stale.

@@ -129,7 +129,9 @@ pub fn refuse_policy_path(
         file_name_of(drift_mine::ratchet::SECURITY_LOCK),
     ];
     let refused = |p: &Path| {
-        if p.file_name().is_some_and(|f| names.iter().any(|n| f.eq_ignore_ascii_case(*n))) {
+        if p.file_name()
+            .is_some_and(|f| names.iter().any(|n| f.eq_ignore_ascii_case(*n)))
+        {
             return true;
         }
         // Inside the repository only what is below its root counts (a checkout may

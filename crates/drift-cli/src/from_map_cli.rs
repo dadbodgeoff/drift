@@ -1417,14 +1417,11 @@ pub fn accept_ids(
         .iter()
         .filter(|id| block.contains(id))
         .filter(|id| {
-            policy
-                .conventions
-                .iter()
-                .any(|c| {
-                    &c.id == *id
-                        && c.language() == Lang::Python
-                        && (c.rule.is_practice() || c.from_map.as_deref() == Some(DECLARED))
-                })
+            policy.conventions.iter().any(|c| {
+                &c.id == *id
+                    && c.language() == Lang::Python
+                    && (c.rule.is_practice() || c.from_map.as_deref() == Some(DECLARED))
+            })
         })
         .map(String::as_str)
         .collect();

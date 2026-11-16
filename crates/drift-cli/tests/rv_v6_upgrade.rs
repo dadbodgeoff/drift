@@ -176,7 +176,11 @@ fn the_same_drift_on_both_sides_baselines_nothing() {
     assert!(out.contains("\n  0 appear only because"), "{out}");
     assert!(out.contains("was written by this same Drift"), "{out}");
     assert!(out.contains("app/api/r39/route.ts#GET (line "), "{out}");
-    assert_eq!(read(r, "drift.lock"), lock, "a same-Drift violation was baselined");
+    assert_eq!(
+        read(r, "drift.lock"),
+        lock,
+        "a same-Drift violation was baselined"
+    );
 }
 
 /// Pins (review item 2): a convention that was an undecided proposal at the commit that
@@ -206,8 +210,15 @@ fn a_proposal_accepted_later_is_not_a_reading_change() {
     let (code, out) = drift(r, &["upgrade", "--apply"]);
     assert_eq!(code, 3, "{out}");
     assert!(out.contains("\n  0 appear only because"), "{out}");
-    assert!(out.contains("was an undecided proposal from the map at commit"), "{out}");
-    assert_eq!(read(r, "drift.lock"), lock, "an accepted proposal's break was baselined");
+    assert!(
+        out.contains("was an undecided proposal from the map at commit"),
+        "{out}"
+    );
+    assert_eq!(
+        read(r, "drift.lock"),
+        lock,
+        "an accepted proposal's break was baselined"
+    );
 }
 
 /// Pins (review item 4): `drift export agents-md --write` keeps a CRLF AGENTS.md CRLF,
@@ -223,7 +234,10 @@ fn a_crlf_agents_file_reads_as_current() {
     assert!(read(r, "AGENTS.md").contains("\r\n<!-- drift:end -->"));
     let (_, out) = drift(r, &["upgrade"]);
     assert!(out.contains("AGENTS.md (agents-md): current"), "{out}");
-    assert!(!out.contains("drift export agents-md --write AGENTS.md"), "{out}");
+    assert!(
+        !out.contains("drift export agents-md --write AGENTS.md"),
+        "{out}"
+    );
 }
 
 /// Pins (review item 5): a security baseline saved with a byte-order mark is read as
@@ -265,7 +279,10 @@ fn an_older_stamp_is_left_to_do() {
     );
     let (code, out) = drift(r, &["upgrade"]);
     assert_eq!(code, 3, "{out}");
-    assert!(out.contains(".drift/security.lock is stamped inventory 1"), "{out}");
+    assert!(
+        out.contains(".drift/security.lock is stamped inventory 1"),
+        "{out}"
+    );
     assert!(
         out.contains("(only with --security-baseline): drift upgrade --apply --security-baseline"),
         "{out}"
@@ -273,7 +290,11 @@ fn an_older_stamp_is_left_to_do() {
     let (code, out) = drift(r, &["upgrade", "--apply", "--security-baseline"]);
     assert_eq!(code, 0, "{out}");
     let now = read(r, ".drift/security.lock");
-    assert!(now.lines().any(|l| l == format!("# inventory: {INVENTORY_VERSION}")), "{now}");
+    assert!(
+        now.lines()
+            .any(|l| l == format!("# inventory: {INVENTORY_VERSION}")),
+        "{now}"
+    );
     assert!(now.lines().any(|l| l == "# fail: no-guard"), "{now}");
 }
 
@@ -333,13 +354,26 @@ fn other_written_paths_never_reach_the_policy() {
     let lock = read(r, "drift.lock");
     for args in [
         &["export", "agents-md", "--write", "x/../drift.lock"][..],
-        &["export", "agents-md", "--write", ".drift/feedback/../conventions.yaml"],
-        &["export", "claude-settings", "--write", ".drift/settings.json"],
+        &[
+            "export",
+            "agents-md",
+            "--write",
+            ".drift/feedback/../conventions.yaml",
+        ],
+        &[
+            "export",
+            "claude-settings",
+            "--write",
+            ".drift/settings.json",
+        ],
         &["review", "--export-log", "a/../drift.lock"],
     ] {
         let (code, text) = drift(r, args);
         assert_ne!(code, 0, "{args:?}: {text}");
-        assert!(text.contains("is Drift's policy or state"), "{args:?}: {text}");
+        assert!(
+            text.contains("is Drift's policy or state"),
+            "{args:?}: {text}"
+        );
         assert_eq!(read(r, ".drift/conventions.yaml"), policy, "{args:?}");
         assert_eq!(read(r, "drift.lock"), lock, "{args:?}");
     }

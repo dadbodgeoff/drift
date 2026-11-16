@@ -1840,7 +1840,8 @@ impl Lock {
             if !self.contains(&m.id, &m.from) || self.contains(&m.id, &m.to) {
                 continue;
             }
-            self.entries.retain(|(id, key)| *id != m.id || Self::member_of(key) != m.from);
+            self.entries
+                .retain(|(id, key)| *id != m.id || Self::member_of(key) != m.from);
             self.entries.insert((m.id.clone(), m.to.clone()));
             self.entries
                 .insert((m.id.clone(), Self::fingerprint_key(&m.fingerprint, &m.to)));

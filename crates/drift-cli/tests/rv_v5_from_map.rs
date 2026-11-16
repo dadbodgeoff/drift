@@ -358,7 +358,13 @@ fn confirm_does_not_combine_with_yes_to() {
     let (code, out, err) = run(
         r,
         &[
-            "setup", "--by", "person", "--confirm", "S-x", "--yes-to", "baseline",
+            "setup",
+            "--by",
+            "person",
+            "--confirm",
+            "S-x",
+            "--yes-to",
+            "baseline",
         ],
         true,
         &[],

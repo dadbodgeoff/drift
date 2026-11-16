@@ -696,7 +696,12 @@ fn number_repeats(out: &mut [WorkflowFinding]) {
         std::collections::BTreeMap::new();
     for f in out.iter_mut() {
         let n = seen
-            .entry((f.kind.clone(), f.path.clone(), f.job.clone(), f.detail.clone()))
+            .entry((
+                f.kind.clone(),
+                f.path.clone(),
+                f.job.clone(),
+                f.detail.clone(),
+            ))
             .or_insert(0);
         *n += 1;
         if *n > 1 {

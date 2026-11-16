@@ -130,7 +130,10 @@ fn a_hook_that_only_forbids_is_no_guard_of_the_caller() {
     );
     // The redirects follow it; the hook that answers 401 is still a guard, ranked
     // after every finding with none.
-    assert!(out.contains("  2. A caller Drift found no guard for can"), "{out}");
+    assert!(
+        out.contains("  2. A caller Drift found no guard for can"),
+        "{out}"
+    );
     assert!(!out.contains("POST /exec"), "{out}");
     let (_, all, _) = drift(dir.path(), &["security", "--top", "0"]);
     assert!(

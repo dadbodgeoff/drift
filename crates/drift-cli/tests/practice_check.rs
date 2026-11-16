@@ -293,8 +293,7 @@ fn a_renamed_guard_is_not_a_reason_to_stop_gating() {
     );
     assert!(out.contains("drift: 38 new violation(s)"), "{out}");
     assert!(
-        !out
-            .lines()
+        !out.lines()
             .any(|l| l.contains(&format!("[{id}]")) && l.contains("stale")),
         "{out}"
     );

@@ -506,10 +506,7 @@ fn proposals(
         (Vec::new(), Vec::new())
     } else {
         // Layering (and any other kind from the map), after the practices.
-        (
-            undecided(Some(from_map_cli::PRACTICE)),
-            undecided(None),
-        )
+        (undecided(Some(from_map_cli::PRACTICE)), undecided(None))
     };
     let decided_before = policy
         .conventions
