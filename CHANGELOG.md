@@ -33,6 +33,20 @@ main branch.
 
 ### Added
 
+- **`drift security --diff-base` compares every kind the security baseline
+  holds,** by the key the baseline holds it under (JSON `added`, by kind; text
+  `Other findings this change adds`): scope gaps, entry points that check
+  nothing of a signed-in caller, unscoped keys, rows sent whole, CI workflows,
+  dependencies and Kubernetes manifests, as well as the five it explained
+  before. `--fail-on` takes every kind; a kind that could not be compared is
+  said (`not_compared`) and fails a `--fail-on` that names it.
+- **`drift security --format sarif`:** the inventory, `--diff-base` or
+  `--ratchet` as SARIF 2.1.0, with the rules and locations of
+  `drift check --format sarif`.
+- **Findings a pull request baselines itself are listed.** `drift check
+  --diff-base` lists each finding the change adds to the code and also writes
+  into `.drift/security.lock` (text, `security.baselined_by_change`, a GitHub
+  notice, a SARIF note). It fails nothing.
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise
@@ -218,6 +232,15 @@ main branch.
 
 ### Changed: behaviour an existing user will notice
 
+- **`drift security --diff-base` decides what a change added as `drift check`
+  does against the baseline.** `--fail-on` counts every finding of the kinds
+  named that the merge base did not have, by its baseline key: `--fail-on
+  no-guard` now also fails on a guard taken off a route that was there, and a
+  signed-in route that checks nothing of who calls is listed as
+  `no-authorization`. A row of the explained sections whose finding the merge
+  base already had is no longer listed. The SARIF rules `drift-security/<kind>`
+  now describe the kind (`Security: <what> (<kind>)`) rather than "not in the
+  baseline", since `drift security --format sarif` writes them too.
 - **Breaking: `drift init` no longer baselines violations of a convention the
   policy already had.** Before, re-running `drift init` baselined the current
   violations of every convention that had no line left in `drift.lock`, so a

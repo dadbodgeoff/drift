@@ -265,7 +265,9 @@ fn a_new_route_with_no_sign_in_check_is_a_notice_whatever_its_siblings_do() {
     // Added: a route with no sign-in check, one whose check Drift cannot read, and one
     // that checks the sign-in as its siblings do; and a handler with no check added to
     // a file that has one. A handler edited in place is not added: the sign-in check
-    // taken out of `iam/roles` is not said here.
+    // taken out of `iam/roles` is not said among the new entry points, but as the
+    // `no-guard` finding the security baseline would hold, with the one signed-in
+    // route that checks nothing of who calls (`no-authorization`).
     write(r, "app/api/iam/orgs/count/route.ts", UNGUARDED);
     write(r, "app/api/iam/unknown/route.ts", UNREAD_CHECK);
     write(r, "app/api/iam/signed/route.ts", SIGNED_IN);
@@ -293,6 +295,8 @@ fn a_new_route_with_no_sign_in_check_is_a_notice_whatever_its_siblings_do() {
             "::notice file=app/api/billing/plans/route.ts,line=11,title=drift security::New http entry point POST /api/billing/plans: no guard found in what Drift read; internet-facing (compose service web in compose.yaml publishes ports). Facts for review; this fails nothing.",
             "::notice file=app/api/iam/orgs/count/route.ts,line=1,title=drift security::New http entry point GET /api/iam/orgs/count: no guard found in what Drift read; internet-facing (compose service web in compose.yaml publishes ports). Facts for review; this fails nothing.",
             "::notice file=app/api/iam/unknown/route.ts,line=3,title=drift security::New http entry point GET /api/iam/unknown: guard unknown, Drift cannot tell whether it requires sign-in (it could not read: requireMember); internet-facing (compose service web in compose.yaml publishes ports). Facts for review; this fails nothing.",
+            "::notice file=app/api/iam/roles/route.ts,line=1,title=drift security [no-guard]::app/api/iam/roles/route.ts#GET GET /api/iam/roles: added by this change (entry point(s) where Drift found no guard). Facts for review.",
+            "::notice file=app/api/iam/signed/route.ts,line=3,title=drift security [no-authorization]::app/api/iam/signed/route.ts#GET GET /api/iam/signed: added by this change (entry point(s) that sign the caller in and check nothing of who they are (no role, no tenant, no owner)). Facts for review.",
         ],
         "{out}"
     );
@@ -315,8 +319,13 @@ fn a_new_route_with_no_sign_in_check_is_a_notice_whatever_its_siblings_do() {
         text.contains("\nNew entry points whose guard is unknown (Drift could not read what may be one; not findings)\n  app/api/iam/unknown/route.ts:3 GET /api/iam/unknown [http]: guard unknown, "),
         "{text}"
     );
-    assert!(!text.contains("iam/signed"), "{text}");
-    assert!(!text.contains("iam/roles"), "{text}");
+    let (listed, other) = text.split_once("\nOther findings").unwrap();
+    assert!(!listed.contains("iam/signed"), "{text}");
+    assert!(!listed.contains("iam/roles"), "{text}");
+    assert!(
+        other.contains("app/api/iam/roles/route.ts#GET GET /api/iam/roles"),
+        "{text}"
+    );
 
     let (code, out, err) = drift(
         r,

@@ -156,7 +156,12 @@ pub type Findings = BTreeMap<(String, String), String>;
 
 /// How an entry point is keyed: its handler, its method and its route, never its
 /// line.
-fn entry_key(path: &str, symbol: &str, method: Option<&str>, route: Option<&str>) -> String {
+pub(crate) fn entry_key(
+    path: &str,
+    symbol: &str,
+    method: Option<&str>,
+    route: Option<&str>,
+) -> String {
     let mut key = format!("{path}#{symbol}");
     for part in [method, route].into_iter().flatten() {
         key.push(' ');
@@ -165,7 +170,7 @@ fn entry_key(path: &str, symbol: &str, method: Option<&str>, route: Option<&str>
     key
 }
 
-fn row_key(e: &EntryRow) -> String {
+pub(crate) fn row_key(e: &EntryRow) -> String {
     entry_key(&e.path, &e.symbol, e.method.as_deref(), e.route.as_deref())
 }
 
@@ -651,6 +656,14 @@ pub struct Ratchet {
     /// a finding, and these fail nothing. Omitted when empty (additive).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub guard_unknown: Vec<Unknown>,
+    /// Against a diff: findings the change adds to the code (not at the merge base)
+    /// and also writes into the baseline itself (lines of `.drift/security.lock` the
+    /// merge base's did not have), by kind
+    /// ([`crate::security_diff::baselined_by_change`]). They are in the baseline, so
+    /// they fail nothing; listed so that a reviewer sees them where the check is read,
+    /// not only in the lock's diff. Omitted when empty (additive).
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub baselined_by_change: BTreeMap<String, Vec<Added>>,
 }
 
 fn is_zero(n: &usize) -> bool {
@@ -677,6 +690,7 @@ impl Ratchet {
             &self.advised,
             &self.new_in_drift,
             &self.outside_change,
+            &self.baselined_by_change,
         ]
         .iter()
         .any(|m| m.values().any(|rows| !rows.is_empty()))
@@ -934,6 +948,16 @@ pub fn render(r: &Ratchet, max: usize) -> String {
         };
         out.push_str(&format!(
             "\n{} new {what} [{kind}] (advice: the baseline does not set this kind to fail; `drift security --write-baseline --fail-on {kind}` does)\n",
+            rows.len()
+        ));
+        rows_text(&mut out, rows, max);
+    }
+    for (kind, what) in KINDS {
+        let Some(rows) = r.baselined_by_change.get(*kind) else {
+            continue;
+        };
+        out.push_str(&format!(
+            "\n{} {what} [{kind}] this change adds and also writes into {SECURITY_LOCK} itself: it baselines them, so they fail nothing; a reviewer accepts them by approving the lock's diff\n",
             rows.len()
         ));
         rows_text(&mut out, rows, max);
