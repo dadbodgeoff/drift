@@ -326,13 +326,27 @@ pub fn add_practices<'m>(
 /// rejected, [`drift_mine::check::baseline`]), the units that break a promoted practice
 /// included ([`promote::baseline`]). The map is built only when there is one.
 pub fn baseline_with_practices(root: &Path, facts: &RepoFacts, policy: &ConventionsFile) -> Lock {
+    let map = OnceCell::new();
+    baseline_with_map(facts, policy, || {
+        map.get_or_init(|| report_units_kept(root, facts, None))
+    })
+}
+
+/// [`baseline_with_practices`] for a caller that has the practice map of `facts` (with
+/// units listed): `map` is asked only when the policy has a promoted practice. Accepting
+/// a proposal from the map records its lines through this, so they are the lines `drift
+/// init` writes for any convention new to the policy.
+pub fn baseline_with_map<'m>(
+    facts: &RepoFacts,
+    policy: &ConventionsFile,
+    map: impl FnOnce() -> &'m PracticesReport,
+) -> Lock {
     let mut lock = dcheck::baseline(facts, policy);
     // A proposal from the map is recorded only once a person accepts it.
     let promoted = promoted_only(policy);
     if promote::any(&promoted, dcheck::Scope::All) {
-        let map = report_units_kept(root, facts, None);
         lock.entries
-            .extend(promote::baseline(facts, &map, &promoted));
+            .extend(promote::baseline(facts, map(), &promoted));
     }
     lock
 }

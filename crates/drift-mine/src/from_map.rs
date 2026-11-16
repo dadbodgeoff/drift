@@ -576,6 +576,15 @@ fn scope_of(role: &RoleSelector) -> String {
     }
 }
 
+/// The layer a role lies in, as a proposal from the map is compared with a rule Drift
+/// has ([`Proposal::same_as_mined`], `crate::declared`'s also declared): two
+/// conventions of the same rule whose roles lie in the same layer say the same thing,
+/// whatever their ids (a layering id hashes the role and rule, a declared id the place
+/// and the target).
+pub fn layer_of(role: &RoleSelector) -> String {
+    layer_of_scope(&scope_of(role))
+}
+
 /// The layer of a place: its first two segments.
 fn layer_of_scope(scope: &str) -> String {
     scope

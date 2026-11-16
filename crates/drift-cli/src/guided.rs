@@ -210,6 +210,9 @@ struct Summary {
     kept: Vec<String>,
     /// Files written, by path.
     written: BTreeSet<String>,
+    /// The keys answered whose answer was not recorded (the line that says why is
+    /// printed where it happened).
+    not_recorded: Vec<String>,
 }
 
 fn s(n: usize) -> &'static str {
@@ -222,14 +225,19 @@ fn shown(text: &str) -> String {
 }
 
 /// `drift setup`'s guided flow ([`How`]). Writes to `out` only; reads answers from
-/// `input` ([`How::Ask`]) or `script` ([`How::Scripted`]).
+/// `input` ([`How::Ask`]) or `script` ([`How::Scripted`]). `no_from_map`: proposals
+/// from the map are off, as `drift init --no-from-map` has them (none asked, none
+/// written). Returns the keys a person answered whose answer was not recorded (each said
+/// in the output, with why): a script fails on them, as nothing it named may pass
+/// unrecorded in silence.
 pub(crate) fn run(
     cli: &crate::Cli,
     how: How,
     script: &Script,
+    no_from_map: bool,
     input: &mut dyn BufRead,
     out: &mut dyn Write,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Vec<String>> {
     let root: &Path = &cli.root;
     // On stderr, so nothing read or piped from stdout changes.
     eprintln!("Reading the repository (this can take a minute on a large one)...");
@@ -258,7 +266,7 @@ pub(crate) fn run(
     let fresh = existing.is_none();
     let mut policy = match existing {
         Some(p) => p,
-        None => planned(root, &facts),
+        None => planned(root, &facts, no_from_map),
     };
     // A key no question has is a typo, not a skip: refused before anything is written.
     if how == How::Scripted {
@@ -280,7 +288,16 @@ pub(crate) fn run(
             "  There is no {CONVENTIONS_FILE} yet: these are what `drift init` would propose. A yes or a no to one runs `drift init` first (it writes {CONVENTIONS_FILE} and {LOCK_FILE}, every convention a proposal, none accepted); skipping every one writes nothing."
         )?;
     }
-    proposals(cli, fresh, &mut facts, &mut policy, &mut ask, &mut sum, out)?;
+    proposals(
+        cli,
+        fresh,
+        no_from_map,
+        &mut facts,
+        &mut policy,
+        &mut ask,
+        &mut sum,
+        out,
+    )?;
 
     // From here on the config is read and written through drift setup's own record.
     let mut config = Setup::new(root, &facts)?;
@@ -303,7 +320,8 @@ pub(crate) fn run(
         .iter()
         .filter(|q| !matches!(q.kind, setup::Kind::Deployment))
         .count();
-    done(&sum, how, others, &ask.unused(), out)
+    done(&sum, how, others, &ask.unused(), out)?;
+    Ok(sum.not_recorded)
 }
 
 /// Refuses, with nothing changed, a key of `script` that names no question this flow
@@ -389,8 +407,9 @@ fn read_lines(facts: &RepoFacts, inv: &Inventory) -> Vec<String> {
 /// The conventions file `drift init` would write for the repository as it is, in
 /// memory only: what a run that writes nothing shows as the proposals. Mined as
 /// `drift census` mines (which is `drift init`'s mining where there is no conventions
-/// file), with the proposals from the map `drift init` adds.
-fn planned(root: &Path, facts: &RepoFacts) -> ConventionsFile {
+/// file), with the proposals from the map `drift init` adds (none with `no_from_map`,
+/// as `drift init --no-from-map` adds none).
+fn planned(root: &Path, facts: &RepoFacts, no_from_map: bool) -> ConventionsFile {
     let roles = (
         drift_mine::policy::test_roles(root, false),
         drift_mine::policy::kind_roles(root, false),
@@ -409,21 +428,24 @@ fn planned(root: &Path, facts: &RepoFacts) -> ConventionsFile {
         policy.conventions.retain(|c| !c.rule.is_wiring());
     }
     // What it collected beside the proposals is `drift init`'s report, not asked here.
-    let _ = from_map_cli::for_init(root, facts, &mut policy, python.on(), false);
+    let _ = from_map_cli::for_init(root, facts, &mut policy, python.on(), no_from_map);
     policy
 }
 
 /// `drift init`, run as its own command (its report is not this flow's): the policy
 /// and the lock it writes are what every later question reads.
-fn run_init(cli: &crate::Cli) -> anyhow::Result<()> {
+fn run_init(cli: &crate::Cli, no_from_map: bool) -> anyhow::Result<()> {
     let exe = std::env::current_exe().context("finding the drift binary to run `drift init`")?;
     let mut cmd = std::process::Command::new(exe);
     cmd.arg("--root").arg(&cli.root);
     if cli.no_cache {
         cmd.arg("--no-cache");
     }
+    cmd.arg("init");
+    if no_from_map {
+        cmd.arg("--no-from-map");
+    }
     let done = cmd
-        .arg("init")
         .stdin(std::process::Stdio::null())
         .output()
         .context("running `drift init`")?;
@@ -442,8 +464,9 @@ struct Card {
     /// Where it came from, in the product's words.
     from: String,
     lines: Vec<String>,
-    /// What is a practice from the map (accepted through `from_map_cli::accept_ids`).
-    practice: bool,
+    /// What is a proposal from the map of any kind: accepted through
+    /// `from_map_cli::accept_ids`, which records what breaks it today in the lock.
+    from_map: bool,
     /// The command that promotes it later, for a practice (`drift review --accept`
     /// does not write a declined practice as `drift practices promote` writes it).
     promote: Option<String>,
@@ -452,9 +475,11 @@ struct Card {
 /// Each undecided proposal, one at a time; the decisions are recorded at the end of
 /// the step, as `drift review` records them. `fresh`: there is no conventions file yet,
 /// and `policy` is what `drift init` would write ([`planned`]).
+#[allow(clippy::too_many_arguments)]
 fn proposals(
     cli: &crate::Cli,
     fresh: bool,
+    no_from_map: bool,
     facts: &mut RepoFacts,
     policy: &mut ConventionsFile,
     ask: &mut Asker<'_>,
@@ -476,9 +501,16 @@ fn proposals(
             .map(|c| c.id.clone())
             .collect()
     };
-    let practices = undecided(Some(from_map_cli::PRACTICE));
-    // Layering (and any other kind from the map), after the practices.
-    let layering = undecided(None);
+    // None while proposals from the map are off: `drift init --no-from-map` drops them.
+    let (practices, layering) = if no_from_map {
+        (Vec::new(), Vec::new())
+    } else {
+        // Layering (and any other kind from the map), after the practices.
+        (
+            undecided(Some(from_map_cli::PRACTICE)),
+            undecided(None),
+        )
+    };
     let decided_before = policy
         .conventions
         .iter()
@@ -580,7 +612,7 @@ fn proposals(
     // A person answered: only now is `drift init` run where there was no conventions
     // file, and the answers are recorded in what it wrote.
     if fresh {
-        run_init(cli)?;
+        run_init(cli, no_from_map)?;
         sum.written.insert(CONVENTIONS_FILE.to_string());
         sum.written.insert(LOCK_FILE.to_string());
         writeln!(
@@ -608,21 +640,28 @@ fn proposals(
                 "  Not recorded: `drift init` did not propose {} as shown here. `drift setup` asks about what it proposed.",
                 gone.join(", ")
             )?;
+            sum.not_recorded.extend(
+                accept
+                    .iter()
+                    .chain(&decline)
+                    .filter(|id| !proposed.contains(*id))
+                    .cloned(),
+            );
             accept.retain(|id| proposed.contains(id));
             decline.retain(|id| proposed.contains(id));
         }
     }
-    // A practice from the map is first written as `drift practices promote` writes it
-    // (its lock lines added), by the code `drift review --accept` runs; one that no
-    // longer qualifies stays proposed.
-    let practice_ids: Vec<String> = accept
+    // A proposal from the map is accepted by the code `drift review --accept` runs:
+    // what breaks it today recorded in the lock (a practice first written as `drift
+    // practices promote` writes it); one that no longer qualifies stays proposed.
+    let map_ids: Vec<String> = accept
         .iter()
-        .filter(|id| cards.iter().any(|c| &c.id == *id && c.practice))
+        .filter(|id| cards.iter().any(|c| &c.id == *id && c.from_map))
         .cloned()
         .collect();
-    if !practice_ids.is_empty() {
+    if !map_ids.is_empty() {
         let repo = facts.clone();
-        let lists = [practice_ids.as_slice()];
+        let lists = [map_ids.as_slice()];
         match from_map_cli::accept_ids(root, || Ok(repo), policy, &lists, &[]) {
             Ok(lines) => {
                 for l in lines {
@@ -632,7 +671,8 @@ fn proposals(
             }
             Err(e) => {
                 writeln!(out, "  Not accepted: {e:#}")?;
-                accept.retain(|id| !practice_ids.contains(id));
+                sum.not_recorded.extend(map_ids.iter().cloned());
+                accept.retain(|id| !map_ids.contains(id));
             }
         }
     }
@@ -717,7 +757,12 @@ fn mined_card(
     no_lock: bool,
 ) -> Card {
     let (differ, unread) = checked(c, report);
-    let recorded = lock.entries.iter().filter(|(id, _)| id == &c.id).count();
+    // Member lines only: a fingerprint line is the second key of one of them.
+    let recorded = lock
+        .entries
+        .iter()
+        .filter(|(id, key)| id == &c.id && Lock::split_fingerprint(key).is_none())
+        .count();
     let mut lines = vec![
         format!("Rule: {}", shown(&c.summary)),
         format!(
@@ -747,7 +792,7 @@ fn mined_card(
         id: c.id.clone(),
         from: format!("mined, tier: {}", c.describe_tier()),
         lines,
-        practice: false,
+        from_map: false,
         promote: None,
     }
 }
@@ -786,7 +831,7 @@ fn practice_card(c: &Convention, map: &drift_mine::practices::PracticesReport) -
             "from the map, not mined: a practice; it did not go through the miner's measured gates"
                 .to_string(),
         lines,
-        practice: true,
+        from_map: true,
         promote: Some(crate::promote::command(&cand)),
     })
 }
@@ -814,9 +859,17 @@ fn layering_card(c: &Convention, report: &drift_mine::check::CheckReport) -> Car
             ),
             format!("Follows: {}", shown(&c.example)),
             first_differ(&differ),
-            "If accepted: it advises, as a mined layering convention does.".to_string(),
+            // What `from_map_cli::accept_ids` records on a yes: what breaks it today.
+            match differ.len() {
+                0 => "If accepted: it advises; nothing differs today, so any new code against it is reported.".to_string(),
+                n => format!(
+                    "If accepted: it advises; the {n} that differ{} today {} recorded in drift.lock, so only new code is reported.",
+                    if n == 1 { "s" } else { "" },
+                    if n == 1 { "is" } else { "are" }
+                ),
+            },
         ],
-        practice: false,
+        from_map: true,
         promote: None,
     }
 }
@@ -955,7 +1008,10 @@ fn deployment(
                     q.id
                 ));
             }
-            Err(e) => writeln!(out, "  -> not answered: {e:#}")?,
+            Err(e) => {
+                writeln!(out, "  -> not answered: {e:#}")?;
+                sum.not_recorded.push(q.id.clone());
+            }
         }
     }
     Ok(wrote)
@@ -1040,21 +1096,26 @@ fn baseline(
         out,
     )?;
     match answer {
-        Answer::Yes => {
-            write_baseline(root, &found)?;
-            writeln!(
-                out,
-                "  -> wrote {} ({}).",
-                ratchet::SECURITY_LOCK,
-                crate::count(found.len(), "finding")
-            )?;
-            sum.written.insert(ratchet::SECURITY_LOCK.to_string());
-            sum.decided.push(format!(
-                "Security baseline written ({}). To go without it: delete {}; `drift security --write-baseline` writes it again from what is there then.",
-                crate::count(found.len(), "finding"),
-                ratchet::SECURITY_LOCK
-            ));
-        }
+        Answer::Yes => match write_baseline(root, &found) {
+            Ok(()) => {
+                writeln!(
+                    out,
+                    "  -> wrote {} ({}).",
+                    ratchet::SECURITY_LOCK,
+                    crate::count(found.len(), "finding")
+                )?;
+                sum.written.insert(ratchet::SECURITY_LOCK.to_string());
+                sum.decided.push(format!(
+                    "Security baseline written ({}). To go without it: delete {}; `drift security --write-baseline` writes it again from what is there then.",
+                    crate::count(found.len(), "finding"),
+                    ratchet::SECURITY_LOCK
+                ));
+            }
+            Err(e) => {
+                writeln!(out, "  -> not written: {e:#}")?;
+                sum.not_recorded.push(BASELINE.to_string());
+            }
+        },
         Answer::No => {
             let id = config.record_declined(BASELINE, "whether to write the security baseline")?;
             writeln!(out, "  -> no baseline; recorded as {id} in {CONFIG_FILE}.")?;
@@ -1069,15 +1130,17 @@ fn baseline(
 }
 
 /// What `drift security --write-baseline` writes: every finding, every kind failing
-/// but those that advise first.
+/// but those that advise first. Written as `drift upgrade` writes the same file: never
+/// through a symbolic link that leads outside the repository, and replaced whole (a
+/// temporary file renamed over it), so a committed link cannot have a yes write
+/// elsewhere and an interrupted write leaves the old file.
 fn write_baseline(root: &Path, found: &ratchet::Findings) -> anyhow::Result<()> {
     let fail = ratchet::default_fail();
-    let path = root.join(ratchet::SECURITY_LOCK);
-    if let Some(dir) = path.parent() {
-        std::fs::create_dir_all(dir).with_context(|| format!("creating {}", dir.display()))?;
-    }
-    std::fs::write(&path, ratchet::render_lock_with(found, &fail))
-        .with_context(|| format!("writing {}", path.display()))
+    drift_mine::policy::write_no_follow(
+        root,
+        Path::new(ratchet::SECURITY_LOCK),
+        ratchet::render_lock_with(found, &fail).as_bytes(),
+    )
 }
 
 /// The agent integrations Drift writes: what each tells the agent, and whether to
@@ -1099,9 +1162,15 @@ fn agents(
     let settings_path = root.join(SETTINGS_FILE);
     let settings_text = std::fs::read_to_string(&settings_path).unwrap_or_default();
     let entries = crate::lookup::claude_settings("drift");
+    // Written already only when the file reads as JSON and merging the entries changes
+    // nothing: a file that does not read is not written either (both sides would be
+    // nothing), and asking says why a yes cannot write it.
     let settings_there = !settings_text.trim().is_empty()
-        && serde_json::from_str::<serde_json::Value>(&settings_text).ok()
-            == crate::lookup::merge_settings(&settings_text, &entries);
+        && serde_json::from_str::<serde_json::Value>(&settings_text)
+            .ok()
+            .is_some_and(|v| {
+                crate::lookup::merge_settings(&settings_text, &entries).as_ref() == Some(&v)
+            });
     let integrations: [(&str, bool, String, String); 2] = [
         (
             AGENTS_MD,
@@ -1182,7 +1251,10 @@ fn agents(
                             )
                         });
                     }
-                    Err(e) => writeln!(out, "  -> not written: {e:#}")?,
+                    Err(e) => {
+                        writeln!(out, "  -> not written: {e:#}")?;
+                        sum.not_recorded.push(key.to_string());
+                    }
                 }
             }
             Answer::No => {
@@ -1265,6 +1337,22 @@ fn done(
             out,
             "  Not asked, so not used: {} (decided already, or no such question now).",
             unused.join(", ")
+        )?;
+    }
+    if !sum.not_recorded.is_empty() {
+        let keys: Vec<String> = sum.not_recorded.iter().map(|k| shown(k)).collect();
+        writeln!(
+            out,
+            "  Answered but not recorded: {} (each line above says why). Nothing of these was changed; run `drift setup` again once it can be{}.",
+            keys.join(", "),
+            if how == How::Scripted {
+                format!(
+                    ". This run exits {} so a script does not take it for done",
+                    crate::upgrade::EXIT_PENDING
+                )
+            } else {
+                String::new()
+            }
         )?;
     }
     if sum.written.is_empty() {

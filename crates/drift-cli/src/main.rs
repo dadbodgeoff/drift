@@ -318,6 +318,11 @@ enum Command {
         /// person's run: with --by person and DRIFT_SETUP_PERSON=1).
         #[arg(long)]
         guided: bool,
+        /// The guided flow asks about no proposal from the map, and the `drift init` it
+        /// runs writes none, as `drift init --no-from-map`. Setting the environment
+        /// variable DRIFT_NO_FROM_MAP to anything but empty or 0 does the same.
+        #[arg(long)]
+        no_from_map: bool,
     },
     /// Every route Drift could not settle (authentication or authorization unknown or
     /// none, reach unknown or inside only), grouped by what would settle it, with the
@@ -1799,6 +1804,23 @@ fn review_report(cli: &Cli, policy: &ConventionsFile) -> anyhow::Result<(RepoFac
     Ok((facts, report))
 }
 
+/// Whether `c` is a proposal from the map accepted where no command recorded its lock
+/// lines: by hand in the file. A practice is taken whenever it has no lock line yet (as
+/// before); a declared or layering rule only while it has no `accepted_evidence`, which
+/// `drift review` and `drift setup` keep when they accept one (and record its lines).
+fn hand_accepted_from_map(c: &drift_mine::policy::Convention) -> bool {
+    c.status == Status::Accepted
+        && c.from_map.is_some()
+        && (c.rule.is_practice() || c.accepted_evidence.is_none())
+}
+
+/// Whether proposals from the map are off for this run: `--no-from-map`, or
+/// `DRIFT_NO_FROM_MAP` set to anything but empty or 0 (for scripts that also run a binary
+/// from before the flag). `drift init` and `drift setup` read it the same way.
+pub(crate) fn no_from_map_asked(flag: bool) -> bool {
+    flag || std::env::var("DRIFT_NO_FROM_MAP").is_ok_and(|v| !v.is_empty() && v != "0")
+}
+
 /// [`review_report`] on facts already read.
 fn review_report_on(
     cli: &Cli,
@@ -2903,10 +2925,19 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             }
             let had = existing.is_some();
             // The conventions the policy already had: only a convention new to it has its
-            // current violations baselined below.
+            // current violations baselined below. A proposal from the map nobody decided
+            // is not one of them: it was left out of the lock, so if mining drafts it now
+            // (`ConventionsFile::merge_carrying` makes it mining's), its outliers are
+            // recorded as a new mined convention's are.
             let known_ids: BTreeSet<String> = existing
                 .as_ref()
-                .map(|e| e.conventions.iter().map(|c| c.id.clone()).collect())
+                .map(|e| {
+                    e.conventions
+                        .iter()
+                        .filter(|c| !from_map_cli::undecided(c))
+                        .map(|c| c.id.clone())
+                        .collect()
+                })
                 .unwrap_or_default();
             let (mut policy, carried) = ConventionsFile::merge_carrying(
                 existing,
@@ -2973,21 +3004,30 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                             || Lock::split_fingerprint(key)
                                 .is_some_and(|(_, member)| lock.contains(id, member))
                             // A proposal from the map a person accepted by hand (the
-                            // file says it may be edited so): it was left out of the
-                            // lock while proposed, so its debt of today is recorded
-                            // once, as `drift review` would have. Accepted only, never
-                            // a proposal; once it has a line it is never baselined again.
+                            // file says it may be edited so), of any kind (a practice, a
+                            // declared or a layering rule): it was left out of the lock
+                            // while proposed, so its debt of today is recorded once, as
+                            // `drift review` would have. Accepted only, never a
+                            // proposal; once it has a line it is never baselined again.
+                            // A rule that is no practice is repaired once only: a
+                            // command that accepts it records its lines itself and
+                            // keeps what the person was shown (`accepted_evidence`),
+                            // and so does this repair (below), so a break written
+                            // after a yes that recorded nothing is never taken for
+                            // debt.
                             || (!lock.entries.iter().any(|(i, _)| i == id)
                                 && policy.conventions.iter().any(|c| {
-                                    c.id == *id
-                                        && c.status == Status::Accepted
-                                        && c.from_map.is_some()
-                                        && c.rule.is_practice()
+                                    c.id == *id && hand_accepted_from_map(c)
                                 }))
                     })
                     .cloned()
                     .collect();
                 lock.entries.extend(add);
+                for c in &mut policy.conventions {
+                    if !c.rule.is_practice() && hand_accepted_from_map(c) {
+                        c.freeze_accepted_evidence();
+                    }
+                }
             } else {
                 lock = fresh;
             }
@@ -3009,8 +3049,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             // proposals (advise, shown to no agent, not in the lock until accepted).
             // `DRIFT_NO_FROM_MAP` does what `--no-from-map` does, for scripts that also
             // run a binary from before the flag (which ignores the variable).
-            let no_from_map = *no_from_map
-                || std::env::var("DRIFT_NO_FROM_MAP").is_ok_and(|v| !v.is_empty() && v != "0");
+            let no_from_map = no_from_map_asked(*no_from_map);
             // The practice map with units listed, built once for the proposals and the
             // security summary below: the same facts and options either way (the policy
             // saved between them changes conventions only, not the file kinds the options
@@ -3273,6 +3312,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             yes_to,
             no_to,
             guided: guided_flag,
+            no_from_map,
         } => {
             if *agent_brief {
                 print!("{}", setup::AGENT_BRIEF);
@@ -3366,7 +3406,20 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 let stdin = std::io::stdin();
                 let mut input = stdin.lock();
                 let mut stdout = std::io::stdout().lock();
-                guided::run(cli, how, &script, &mut input, &mut stdout)?;
+                let missed = guided::run(
+                    cli,
+                    how,
+                    &script,
+                    no_from_map_asked(*no_from_map),
+                    &mut input,
+                    &mut stdout,
+                )?;
+                // A script named an answer that was not recorded: not done, and the
+                // exit code says so (the code `drift upgrade` gives what still needs
+                // doing), with which ones said above.
+                if how == guided::How::Scripted && !missed.is_empty() {
+                    return Ok(ExitCode::from(upgrade::EXIT_PENDING));
+                }
                 return Ok(ExitCode::SUCCESS);
             }
             // The questions one at a time, in a terminal or with --interactive.
@@ -3829,6 +3882,17 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             if let Some(a) = answer {
                 let (id, kind) = parse_answer(a)?;
                 known_ids(&policy, std::slice::from_ref(&id))?;
+                // A proposal from the map is accepted only through `--accept` (or the
+                // interactive review), which records what breaks it today in the lock.
+                if policy
+                    .conventions
+                    .iter()
+                    .any(|c| c.id == id && from_map_cli::undecided(c))
+                {
+                    bail!(
+                        "{id} is proposed from the map, not mined: the question is asked of mined proposals only; use --accept or --reject; nothing was changed"
+                    );
+                }
                 if !set_apart.is_empty() && kind != Answer::Different {
                     bail!("--set-apart goes with --answer {id}=different; nothing was changed");
                 }

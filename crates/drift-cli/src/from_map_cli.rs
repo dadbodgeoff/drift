@@ -220,6 +220,24 @@ pub fn known<'a>(
     out
 }
 
+/// Whether a person decided (accepted or rejected) a rule from the map that says what
+/// `p` says under another id: the same rule, of a role in the same layer
+/// ([`from_map::layer_of`]). A declared rule and a layering proposal of one restriction
+/// have different ids, so a decision is found by what the rule says, not only by its id:
+/// one decided is never proposed again as the other.
+fn decided_same(policy: Option<&ConventionsFile>, p: &Convention) -> bool {
+    let layer = from_map::layer_of(&p.role);
+    policy.is_some_and(|f| {
+        f.conventions.iter().any(|c| {
+            c.status != Status::Proposed
+                && c.from_map.is_some()
+                && !c.rule.is_practice()
+                && c.rule == p.rule
+                && from_map::layer_of(&c.role) == layer
+        })
+    })
+}
+
 /// Whether `c` is a proposal from the map a person has not decided yet.
 pub fn undecided(c: &Convention) -> bool {
     c.status == Status::Proposed && c.from_map.is_some()
@@ -472,7 +490,7 @@ fn layering_into(
     };
     let mut kept: Vec<Proposal> = Vec::new();
     for p in from_map::layering(repo, kinds, &rules) {
-        if decided(&p.convention.id) {
+        if decided(&p.convention.id) || decided_same(policy, &p.convention) {
             continue;
         }
         let reason = if let Some(m) = &p.same_as_mined {
@@ -557,7 +575,7 @@ fn declared_into(
     out.notes.extend(drift_mine::declared::notes(&d));
     let mut offered = 0usize;
     for p in d.proposals {
-        if decided(&p.convention.id) {
+        if decided(&p.convention.id) || decided_same(policy, &p.convention) {
             continue;
         }
         let reason = if !python_on && p.convention.language() == Lang::Python {
@@ -616,31 +634,76 @@ fn census_notes(
     c.notes.extend(instructions);
 }
 
-/// Accept the proposed declared rule `id` ([`DECLARED`]): accepted, advising, and the
-/// files that break it today recorded in `lock` as `drift init` records a new
-/// convention's, so only a new import against it is reported. Returns how many lines
-/// were added.
-fn accept_declared(
+/// The lock lines of what breaks the convention `id` of `policy` today, read as
+/// accepted: the lines `drift init` writes for a convention new to the policy
+/// ([`crate::practices::baseline_with_map`], the one baseline of mined conventions and
+/// promoted practices alike). Every way a person accepts a proposal from the map records
+/// these, so what broke the rule before they said yes is debt, not a new violation.
+/// `map`: the practice map of `repo` (with units listed), asked only for a practice.
+pub fn today<'m>(
+    repo: &RepoFacts,
+    policy: &ConventionsFile,
+    id: &str,
+    map: impl FnOnce() -> &'m PracticesReport,
+) -> Lock {
+    let mut only = policy.clone();
+    only.conventions.retain(|x| x.id == id);
+    for c in &mut only.conventions {
+        c.status = Status::Accepted;
+    }
+    crate::practices::baseline_with_map(repo, &only, map)
+}
+
+/// [`today`]'s lines of `id` added to `lock`, less those it has. Returns how many
+/// units they record (member lines; a fingerprint line is the second key of one).
+pub fn record_today<'m>(
+    repo: &RepoFacts,
+    policy: &ConventionsFile,
+    lock: &mut Lock,
+    id: &str,
+    map: impl FnOnce() -> &'m PracticesReport,
+) -> usize {
+    let mut n = 0;
+    for (i, key) in today(repo, policy, id, map).entries {
+        if lock.contains(&i, &key) {
+            continue;
+        }
+        if Lock::split_fingerprint(&key).is_none() {
+            n += 1;
+        }
+        lock.entries.insert((i, key));
+    }
+    n
+}
+
+/// Accept the proposed rule `id` from the map that is no practice (declared by a lint
+/// configuration, or layering): accepted, advising, and what breaks it today recorded in
+/// `lock` ([`record_today`]), so only new code against it is reported. Returns how many
+/// units were recorded.
+fn accept_rule<'m>(
     repo: &RepoFacts,
     policy: &mut ConventionsFile,
     lock: &mut Lock,
     id: &str,
+    map: impl FnOnce() -> &'m PracticesReport,
 ) -> usize {
     let Some(c) = policy.get_mut(id) else {
         return 0;
     };
     c.status = Status::Accepted;
     c.mode = Mode::Advise;
-    let mut only = policy.clone();
-    only.conventions.retain(|x| x.id == id);
-    let new: Vec<(String, String)> = drift_mine::check::baseline(repo, &only)
-        .entries
-        .into_iter()
-        .filter(|(i, key)| !lock.contains(i, key))
-        .collect();
-    let n = new.len();
-    lock.entries.extend(new);
-    n
+    // What the person was shown, kept now: it also tells `drift init` that this
+    // acceptance recorded its lines, so it never baselines a later break as debt.
+    c.freeze_accepted_evidence();
+    record_today(repo, policy, lock, id, map)
+}
+
+/// What a person is told a rule from the map that is no practice is, by its kind.
+fn kind_words(c: &Convention) -> &'static str {
+    match c.from_map.as_deref() {
+        Some(DECLARED) => "declared by the repository",
+        _ => "layering from the map",
+    }
 }
 
 // ---------- drift init ----------
@@ -1019,9 +1082,9 @@ fn insert(policy: &mut ConventionsFile, c: Convention) {
 
 /// Accept the proposed practice `conv`: what `drift practices promote` writes (the
 /// engine's convention, accepted, advising, `from_map: practice` kept to say where it
-/// came from) put in `policy`, and the lock lines of the units that differ today from
-/// the engine's baseline ([`promote::baseline`]), less those already there, added to
-/// `lock`. Returns how many lines were added; `None` when it no longer qualifies
+/// came from) put in `policy`, and the lock lines of the units that differ today
+/// ([`record_today`]), less those already there, added to `lock`. Returns how many
+/// units were recorded; `None` when it no longer qualifies
 /// (nothing changed).
 fn accept_practice(
     repo: &RepoFacts,
@@ -1033,16 +1096,9 @@ fn accept_practice(
     let cand = recompute(report, conv)?;
     let mut c = written(policy, &cand);
     c.from_map = conv.from_map.clone();
-    let mut only = policy.clone();
-    only.conventions = vec![c.clone()];
-    let new: Vec<(String, String)> = promote::baseline(repo, report, &only)
-        .into_iter()
-        .filter(|(id, key)| !lock.contains(id, key))
-        .collect();
-    let n = new.len();
-    lock.entries.extend(new);
+    let id = c.id.clone();
     insert(policy, c);
-    Some(n)
+    Some(record_today(repo, policy, lock, &id, || report))
 }
 
 /// The id of another accepted practice of the same concern whose place overlaps the
@@ -1069,8 +1125,14 @@ pub struct Step {
     pub quit: bool,
 }
 
-/// The card of one proposal in interactive review.
-fn card(report: &PracticesReport, known: &[Known<'_>], c: &Convention) -> Option<Vec<String>> {
+/// The card of one proposal in interactive review. `now`: what breaks a rule that is no
+/// practice as the code stands ([`Now::of`]); a practice is recomputed from `report`.
+fn card(
+    report: &PracticesReport,
+    known: &[Known<'_>],
+    c: &Convention,
+    now: &Now,
+) -> Option<Vec<String>> {
     let mut out = vec![format!(
         "[{}] {} (from the map, not mined: it did not go through the miner's measured gates)",
         sanitize(&c.id, 40),
@@ -1113,26 +1175,105 @@ fn card(report: &PracticesReport, known: &[Known<'_>], c: &Convention) -> Option
             ));
         }
         Some(DECLARED) => {
-            out.extend(drift_mine::declared::card_lines(c));
+            out.extend(drift_mine::declared::card_lines(
+                c,
+                now.breaks.len(),
+                now.unread,
+            ));
+            out.extend(now.named());
         }
         _ => {
             out.push(format!(
-                "  {} of the {} files there that import code of this repository follow it, 0 differ",
-                c.evidence.holders, c.evidence.total
+                "  {} differ today, {} could not be read (never reported); when it was proposed, {} of the {} files there that import code of this repository followed it",
+                now.breaks.len(),
+                now.unread,
+                c.evidence.holders,
+                c.evidence.total
             ));
-            out.push(
-                "  y accepts it, as a mined layering convention is accepted (advise mode)"
-                    .to_string(),
-            );
+            out.extend(now.named());
+            out.push(format!(
+                "  y accepts it (advise mode; {})",
+                now.recorded_words()
+            ));
         }
     }
     Some(out)
 }
 
+/// What `drift check` reports of a rule from the map that is no practice, checked when
+/// its card is shown: what accepting it records ([`today`]) is what breaks it then, so
+/// the card says that, not the counts from when it was proposed.
+struct Now {
+    /// `path#symbol` and line of each unit that breaks it, sorted, each once.
+    breaks: Vec<(String, u32)>,
+    /// Units it could not read to the end: never a break, never recorded as one.
+    unread: usize,
+}
+
+impl Now {
+    fn of(repo: &RepoFacts, policy: &ConventionsFile, id: &str) -> Now {
+        let mut only = policy.clone();
+        only.conventions.retain(|x| x.id == id);
+        for c in &mut only.conventions {
+            c.status = Status::Accepted;
+        }
+        let r = drift_mine::check::check(
+            repo,
+            &only,
+            &Lock::default(),
+            drift_mine::check::Scope::All,
+            None,
+        );
+        let unread: BTreeSet<String> = r
+            .violations
+            .iter()
+            .filter(|v| v.unsure)
+            .map(|v| format!("{}#{}", v.path, v.symbol))
+            .collect();
+        let mut breaks: Vec<(String, u32)> = r
+            .violations
+            .iter()
+            .filter(|v| !v.unsure)
+            .map(|v| (format!("{}#{}", v.path, v.symbol), v.line))
+            .collect();
+        breaks.sort();
+        breaks.dedup_by(|b, a| a.0 == b.0);
+        Now {
+            breaks,
+            unread: unread.len(),
+        }
+    }
+
+    /// At most three of the units that break it, then how many more.
+    fn named(&self) -> Vec<String> {
+        let mut out: Vec<String> = self
+            .breaks
+            .iter()
+            .take(3)
+            .map(|(unit, line)| format!("  differs: {} (line {line})", sanitize(unit, 240)))
+            .collect();
+        if self.breaks.len() > 3 {
+            out.push(format!("  and {} more", self.breaks.len() - 3));
+        }
+        out
+    }
+
+    /// What accepting it records, in words.
+    fn recorded_words(&self) -> String {
+        match self.breaks.len() {
+            0 => "nothing differs today, so any new code against it is reported".to_string(),
+            n => format!(
+                "the {n} that differ today recorded in {LOCK_FILE}, so only new code against it is reported"
+            ),
+        }
+    }
+}
+
 /// The from-the-map step of interactive `drift review`, before the practices that may
 /// be promoted: each proposal from the map nobody decided, one at a time, labelled. `y`
-/// accepts (a practice as `drift practices promote` writes it; layering as a mined
-/// convention is accepted), `n` records it rejected so it is not offered again, `s`
+/// accepts (a practice as `drift practices promote` writes it; a declared or layering
+/// rule with what breaks it now recorded, `accept_rule`), `n` records it rejected so
+/// it is not offered again, `s`
 /// skips, `q` stops the review. The policy is changed in memory (the caller saves it);
 /// the lock is saved here.
 pub fn review_step(
@@ -1163,9 +1304,19 @@ pub fn review_step(
         let Some(conv) = policy.conventions.iter().find(|c| c.id == id).cloned() else {
             continue;
         };
+        // Checked now, not read from the file: what accepting records is what breaks it
+        // at this moment (an import added since `drift init` included).
+        let now = if conv.from_map.as_deref() == Some(PRACTICE) {
+            Now {
+                breaks: Vec::new(),
+                unread: 0,
+            }
+        } else {
+            Now::of(repo, policy, &id)
+        };
         let lines_of = {
             let known = known(Some(&*policy), &[]);
-            card(report, &known, &conv)
+            card(report, &known, &conv, &now)
         };
         let Some(text) = lines_of else {
             println!();
@@ -1203,12 +1354,9 @@ pub fn review_step(
                             continue;
                         }
                     }
-                } else if conv.from_map.as_deref() == Some(DECLARED) {
-                    let n = accept_declared(repo, policy, &mut lock, &id);
+                } else {
+                    let n = accept_rule(repo, policy, &mut lock, &id, || report);
                     println!("  accepted: {id}, advise ({n} recorded in {LOCK_FILE})");
-                } else if let Some(c) = policy.get_mut(&id) {
-                    c.status = Status::Accepted;
-                    println!("  accepted: {id}, advise");
                 }
                 step.changed = true;
             }
@@ -1239,8 +1387,9 @@ pub fn review_step(
 /// the map, before the decisions are applied: it is first written as `drift practices
 /// promote` writes it (and its lock lines added), so the decisions then apply to that.
 /// Refuses, changing nothing, when one no longer qualifies, or when a Python one is
-/// asked to block (a Python practice advises only). Layering proposals need nothing
-/// here: they are accepted as mined conventions are. Returns a line per practice.
+/// asked to block (a Python practice advises only). A declared or layering rule is
+/// accepted with what breaks it today recorded (`accept_rule`), as every way a person
+/// accepts one records it. Returns a line per proposal.
 pub fn accept_ids(
     root: &Path,
     facts: impl FnOnce() -> anyhow::Result<RepoFacts>,
@@ -1252,11 +1401,10 @@ pub fn accept_ids(
         .iter()
         .flat_map(|l| l.iter())
         .filter(|id| {
-            policy.conventions.iter().any(|c| {
-                &c.id == *id
-                    && undecided(c)
-                    && (c.rule.is_practice() || c.from_map.as_deref() == Some(DECLARED))
-            })
+            policy
+                .conventions
+                .iter()
+                .any(|c| &c.id == *id && undecided(c))
         })
         .cloned()
         .collect();
@@ -1272,7 +1420,11 @@ pub fn accept_ids(
             policy
                 .conventions
                 .iter()
-                .any(|c| &c.id == *id && c.language() == Lang::Python)
+                .any(|c| {
+                    &c.id == *id
+                        && c.language() == Lang::Python
+                        && (c.rule.is_practice() || c.from_map.as_deref() == Some(DECLARED))
+                })
         })
         .map(String::as_str)
         .collect();
@@ -1283,7 +1435,9 @@ pub fn accept_ids(
         );
     }
     let repo = facts()?;
-    let report = crate::practices::report_units_kept(root, &repo, None);
+    // The practice map, read only when a practice is among them.
+    let map = std::cell::OnceCell::new();
+    let report = || map.get_or_init(|| crate::practices::report_units_kept(root, &repo, None));
     let mut lock = Lock::load(root)?;
     let mut next = policy.clone();
     let mut out = Vec::new();
@@ -1293,20 +1447,21 @@ pub fn accept_ids(
         let Some(conv) = next.conventions.iter().find(|c| &c.id == id).cloned() else {
             continue;
         };
-        // A declared rule is accepted as the interactive step accepts it, so the files
-        // that break it today are recorded and not reported as new.
-        if conv.from_map.as_deref() == Some(DECLARED) {
-            let n = accept_declared(&repo, &mut next, &mut lock, id);
+        // A declared or layering rule is accepted as the interactive step accepts it,
+        // so what breaks it today is recorded and not reported as new.
+        if !conv.rule.is_practice() {
+            let n = accept_rule(&repo, &mut next, &mut lock, id, report);
             out.push(format!(
-                "{id}: declared by the repository, accepted advising ({n} file(s) that break it today recorded in {LOCK_FILE})"
+                "{id}: {}, accepted advising ({n} unit(s) that break it today recorded in {LOCK_FILE})",
+                kind_words(&conv)
             ));
             continue;
         }
-        if let Some(x) = covered_by(&report, &next, &conv) {
+        if let Some(x) = covered_by(report(), &next, &conv) {
             covered.push(format!("{} (covered by {x})", sanitize(id, 40)));
             continue;
         }
-        match accept_practice(&repo, &report, &mut next, &mut lock, &conv) {
+        match accept_practice(&repo, report(), &mut next, &mut lock, &conv) {
             Some(n) => out.push(format!(
                 "{id}: from the map, written as `drift practices promote` writes it ({n} unit(s) that differ today recorded in {LOCK_FILE})"
             )),
