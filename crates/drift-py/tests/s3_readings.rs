@@ -144,12 +144,13 @@ urlpatterns = [
     assert!(call_wraps(&mined, v, "SignOut.post").iter().any(|w| w == PERM));
 }
 
-/// Fix 3: a `raise` in an `except` handler turns away only the requests whose `try`
-/// failed; every other request goes on, so a check after the `try` is not
-/// `after_conditional_return` (FastAPI template `get_current_user`). A `return` in
-/// the handler still is: those requests are served without the check.
+/// Fix 3, withdrawn (review R5, row 2): reading a `raise` in an `except` handler as
+/// skipping nothing changed the lowering both readings share, and so the
+/// `conditional` of what mining reads. Pins that what mining reads is as the
+/// measured build gave it: the check after the `try` stays
+/// `after_conditional_return`, in both readings, as after a `return` there.
 #[test]
-fn a_raise_in_an_except_handler_skips_nothing_after_it() {
+fn a_raise_in_an_except_handler_leaves_what_mining_reads_as_it_was() {
     let dir = tempfile::tempdir().unwrap();
     let r = dir.path();
     write(r, "pyproject.toml", "[project]\nname = \"fx\"\n");
@@ -187,19 +188,20 @@ def get_optional_user(token: str):
 "#,
     );
     let repo = scanned(r);
-    let checks = |name: &str| -> Vec<(bool, String)> {
-        symbol(&repo, "app/deps.py", name)
+    let listed = repo.listed();
+    let checks = |facts: &RepoFacts, name: &str| -> Vec<(bool, String)> {
+        symbol(facts, "app/deps.py", name)
             .raise_checks
             .iter()
             .filter(|c| c.status == 404)
             .map(|c| (c.conditional, c.condition.clone()))
             .collect()
     };
-    assert_eq!(checks("get_current_user"), [(false, String::new())]);
-    assert_eq!(
-        checks("get_optional_user"),
-        [(true, not_always::AFTER_CONDITIONAL_RETURN.to_string())]
-    );
+    let after = || [(true, not_always::AFTER_CONDITIONAL_RETURN.to_string())];
+    for facts in [&repo, &*listed] {
+        assert_eq!(checks(facts, "get_current_user"), after());
+        assert_eq!(checks(facts, "get_optional_user"), after());
+    }
 }
 
 /// Fix 4: a parameter the framework parses by its declared type before the

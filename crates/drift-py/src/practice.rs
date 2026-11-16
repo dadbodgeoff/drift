@@ -1325,11 +1325,14 @@ impl Lowerer<'_> {
     /// Each of a handler's parameters, in [`Lowerer::input_params`]' order: its name,
     /// and whether its declared type is one a request value is parsed into and can
     /// fail to be ([`RawInputUse::typed`]). Read from what the annotation resolves to,
-    /// not from its name: a class of a package or of the repository (`uuid.UUID`,
-    /// `pydantic.EmailStr`, a model, an enum), a builtin scalar (`int`, `float`,
-    /// `bool`), a `Literal[...]`, and a list of such. Not: no annotation, a type every
-    /// value of a request already is (`str`, `bytes`, `object`, `typing.Any`, a bare
-    /// `dict` or `list`), a name Drift cannot resolve.
+    /// not from its name: a class of the standard library (`uuid.UUID`,
+    /// `datetime.date`), a builtin scalar (`int`, `float`, `bool`), a `Literal[...]`,
+    /// and a list of such. Not: no annotation, a type every value of a request
+    /// already is (`str`, `bytes`, `object`, `typing.Any`, a bare `dict` or `list`),
+    /// a name Drift cannot resolve, and a class of a package or of the repository
+    /// (review R5, row 7): what one parses is in code this lowering does not read
+    /// (`fastapi.UploadFile` takes any file, a repository's class may be an alias of
+    /// `str`), so it is not said to parse.
     pub(crate) fn param_types(&self, params: &ast::Parameters) -> Vec<(String, bool)> {
         params
             .iter_non_variadic_params()
@@ -1404,11 +1407,19 @@ impl Lowerer<'_> {
                     base: RawBase::Star(_),
                     ..
                 }) => false,
-                Some(_) => !matches!(
-                    self.dotted_of(e).as_deref(),
-                    Some("typing.Any" | "typing_extensions.Any")
-                ),
-                None => false,
+                // A class of the standard library, imported: what it parses is
+                // the language's own. `typing`'s bare names (`Any`, `Dict`) parse
+                // nothing.
+                Some(RawRef {
+                    base: RawBase::Import { spec, .. },
+                    ..
+                }) => {
+                    let top = spec.split('.').next().unwrap_or_default();
+                    crate::stdlib::is_stdlib(top)
+                        && !matches!(top, "typing" | "typing_extensions")
+                }
+                // A class of a package or of the repository: not read here.
+                Some(_) | None => false,
             },
             _ => false,
         }

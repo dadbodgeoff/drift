@@ -4226,16 +4226,15 @@ impl<'a> Visitor<'a> for Collector<'_, 'a> {
             Stmt::AugAssign(a) => self.rebind(&[&a.target]),
             Stmt::AnnAssign(a) if a.value.is_some() => self.rebind(&[&a.target]),
             // What follows a `return` or a `raise` every request reaches never runs.
-            // A `raise` in an `except` handler is reached only by the requests whose
-            // `try` failed, and it turns them away: every request that gets past the
-            // `try` goes on to what follows, so nothing after it is skipped. (A
-            // `return` there serves those requests without what follows: still
-            // noted, as before.)
+            // [STRICT] A `raise` in an `except` handler is noted too, though only the
+            // requests whose `try` failed reach it: this lowering is shared by both
+            // readings, and what follows is `conditional` in what mining reads (its
+            // exemption gate reads it). Reading it as unconditional for the listed
+            // reading only needs a mark the linker resolves per reading in every
+            // field `not_always` feeds; until then both readings keep the measured
+            // build's.
             Stmt::Return(_) | Stmt::Raise(_)
-                if self.conds.is_empty()
-                    && !self.frames.is_empty()
-                    && self.skipped.is_none()
-                    && !(self.in_except > 0 && matches!(stmt, Stmt::Raise(_))) =>
+                if self.conds.is_empty() && !self.frames.is_empty() && self.skipped.is_none() =>
             {
                 self.skipped = Some(String::new());
             }

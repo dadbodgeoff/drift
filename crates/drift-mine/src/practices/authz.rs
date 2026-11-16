@@ -6438,13 +6438,18 @@ fn route_param_of<'a>(reach: &Reach<'a>, column: &str, segments: &[&str]) -> Opt
 /// ([`obligation::SIDES_NOT_CALLER_AND_RESOURCE`]) and that a guard around the unit
 /// ties to the caller ([`guard_ties`]) become the unit's: a tenant or owner filter of
 /// the unit's own under a column, by a parameter of the route ([`route_param_of`]),
-/// that a guard ties by the same parameter, or by a value it reads the URL's
-/// parameters off (the view, the keyword arguments: a parameter of the guard that the
-/// route does not name). Units move from a check found and not proven to known,
-/// never the other way. [STRICT]: what a guard ties by what it reads the URL off is
-/// tied by the column, so a route that names two values for one column (two
-/// workspaces) is read as the guard's; the facts do not say which key of the URL the
-/// guard read.
+/// that a guard ties by a parameter of the same name, which the framework gives the
+/// guard from the same segment of the URL. Units move from a check found and not
+/// proven to known, never the other way.
+///
+/// A guard's parameter the route does not name ties nothing (review R5, row 3): of
+/// a FastAPI dependency it is a query or body value (`def allow_member(workspace:
+/// str)`), which the caller sends beside the URL's, so the guard and the handler may
+/// check two objects. Nor does what a guard reads the URL's parameters off (a DRF
+/// `view`, a decorator's `**kwargs`): the facts do not say which key it read.
+/// [STRICT] Neither is a guard's parameter of the route's name that the guard
+/// declares to come from elsewhere (`slug: str = Query()`): the facts do not hold
+/// where a parameter's value comes from.
 fn tie_found<'a>(
     cx: &Cx<'a>,
     route: Option<&str>,
@@ -6486,11 +6491,9 @@ fn tie_found<'a>(
             .and_then(|(mechanism, rest)| {
                 let column = rest.split(" (").next().unwrap_or(rest);
                 let param = route_param_of(reach, column, &segments)?;
-                let (guard, _) = guards.iter().find(|(_, t)| {
-                    t.get(column).is_some_and(|by| {
-                        by == &param || !segments.contains(&by.as_str())
-                    })
-                })?;
+                let (guard, _) = guards
+                    .iter()
+                    .find(|(_, t)| t.get(column).is_some_and(|by| by == &param))?;
                 Some((
                     mechanism.to_string(),
                     format!("{column} ({param}, tied by {guard})"),
@@ -6517,12 +6520,15 @@ const LEARNED_SCOPE_BODIES: usize = 3;
 /// looks the caller's own record up, it scopes nothing else.
 const LEARNED_SCOPE_TARGETS: usize = 3;
 
-/// A query key or a route parameter as the two are compared: the last member,
-/// lower-cased, its letters and digits only (`where.userId`, `user_id`, `{userId}`
-/// all read `userid`).
+/// A query key or a route parameter as the two are compared: the whole filter path
+/// but a leading `where`, lower-cased, its letters and digits only (`where.userId`,
+/// `user_id`, `{userId}` all read `userid`). Not its last member: a filter through
+/// a relation (`where: { author: { id } }`, `author__id`) reads `authorid`, never
+/// `id`, which would make every `{id}` of a route a key the repository scopes rows
+/// by (review R5, row 5).
 fn scope_word(key: &str) -> String {
-    let last = key.rsplit('.').next().unwrap_or(key);
-    last.chars()
+    let key = key.strip_prefix("where.").unwrap_or(key);
+    key.chars()
         .filter(char::is_ascii_alphanumeric)
         .map(|c| c.to_ascii_lowercase())
         .collect()
@@ -6548,7 +6554,8 @@ fn query_target(callee: &str) -> String {
 /// caller's ([`drift_core::controls::FILTER_VALUE`]), and an argument of a query
 /// call that is the caller's or the caller itself ([`drift_core::controls::ARG_VALUE`],
 /// [`side_is_callers`], [`side_is_caller_self`]). No name decides: the repository's
-/// own code says which keys tie its rows to the caller. Found once for the run
+/// own code says which keys tie its rows to the caller. Each package's own, written
+/// `package\tkey` ([`scope_param`] reads them). Found once for the run
 /// ([`Cx::scope_keys`]).
 pub(crate) fn scope_keys<'c>(cx: &'c Cx<'_>) -> &'c std::collections::BTreeSet<String> {
     cx.scope_keys(learn_scope_keys)
@@ -6558,12 +6565,14 @@ fn learn_scope_keys(cx: &Cx<'_>) -> std::collections::BTreeSet<String> {
     use std::collections::{BTreeMap, BTreeSet};
     // Per key: the bodies and the rows filtered by it with a value of the caller.
     let mut by: BTreeMap<String, (BTreeSet<String>, BTreeSet<String>)> = BTreeMap::new();
-    let mut note = |key: &str, callee: &str, body: &str| {
+    // Learned per package (`package\tword`): in a monorepo one package's queries
+    // say nothing of another's keys (review R5, row 6).
+    let mut note = |package: &str, key: &str, callee: &str, body: &str| {
         let word = scope_word(key);
         if word.is_empty() {
             return;
         }
-        let e = by.entry(word).or_default();
+        let e = by.entry(format!("{package}\t{word}")).or_default();
         e.0.insert(body.to_string());
         e.1.insert(query_target(callee));
     };
@@ -6581,7 +6590,12 @@ fn learn_scope_keys(cx: &Cx<'_>) -> std::collections::BTreeSet<String> {
             for (body, facts, queries) in bodies {
                 for q in queries {
                     if q.source == drift_core::ScopeSource::Session {
-                        note(q.key.as_str(), q.callee.as_str(), body.as_str());
+                        note(
+                            f.package.as_str(),
+                            q.key.as_str(),
+                            q.callee.as_str(),
+                            body.as_str(),
+                        );
                     }
                 }
                 for x in facts {
@@ -6590,7 +6604,7 @@ fn learn_scope_keys(cx: &Cx<'_>) -> std::collections::BTreeSet<String> {
                         if let [callee, key, side] = parts.as_slice()
                             && side_is_callers(cx, side)
                         {
-                            note(*key, *callee, body.as_str());
+                            note(f.package.as_str(), *key, *callee, body.as_str());
                         }
                     }
                 }
@@ -6611,7 +6625,7 @@ fn learn_scope_keys(cx: &Cx<'_>) -> std::collections::BTreeSet<String> {
                         };
                         let callers = side_is_caller_self(cx, side) || side_is_callers(cx, side);
                         if callers && filter_key(key) && query_call(cx, callee, key) {
-                            note(key, callee, body.as_str());
+                            note(f.package.as_str(), key, callee, body.as_str());
                         }
                     }
                 }
@@ -6626,20 +6640,24 @@ fn learn_scope_keys(cx: &Cx<'_>) -> std::collections::BTreeSet<String> {
         .collect()
 }
 
-/// The first dynamic segment of `route` that is a key this repository scopes rows
-/// to the caller by: one of the keys it learned ([`scope_keys`]) where its queries
-/// show any; otherwise, and only then, one named for a tenant or an owner
+/// The first dynamic segment of `route` that is a key `package` scopes rows to the
+/// caller by: one of the keys it learned ([`scope_keys`]) where its queries show
+/// any; otherwise, and only then, one named for a tenant or an owner
 /// ([`request_key`]: the name lists of [`super::libraries`], kept as the fallback
-/// for a repository whose own queries say nothing).
-pub fn scope_param(cx: &Cx<'_>, route: &str) -> Option<String> {
-    let learned = scope_keys(cx);
+/// for a package whose own queries say nothing).
+pub fn scope_param(cx: &Cx<'_>, package: &str, route: &str) -> Option<String> {
+    let prefix = format!("{package}\t");
+    let learned: std::collections::BTreeSet<&str> = scope_keys(cx)
+        .iter()
+        .filter_map(|k| k.strip_prefix(prefix.as_str()))
+        .collect();
     if learned.is_empty() {
         return request_key(route);
     }
     route
         .split('/')
         .filter_map(segment_param)
-        .find(|name| learned.contains(&scope_word(name)))
+        .find(|name| learned.contains(scope_word(name).as_str()))
         .map(str::to_string)
 }
 
@@ -6729,10 +6747,23 @@ fn unscoped<'a>(
         .collect();
     let ctx = cx.context();
     let classes = common::owning_classes(sfile, s);
-    let wraps = s.wraps.iter().chain(classes.iter().flat_map(|c| &c.wraps));
+    // What the unit's own mount adds, and the application's middleware, run too
+    // (review R5, row 11): read as `read_unit` reads them, a package's left to the
+    // reading of the unit.
+    let wraps = unit
+        .mount_wraps()
+        .iter()
+        .chain(&s.wraps)
+        .chain(classes.iter().flat_map(|c| &c.wraps));
+    let app = s
+        .app_middleware
+        .iter()
+        .chain(unit.mount_middleware())
+        .map(|m| m.trim_start_matches('?'));
     let around = wraps
         .filter(|w| w.kind != drift_core::WrapKind::Try)
         .map(|w| w.wrapper.as_str())
+        .chain(app)
         .chain(middleware);
     for w in around {
         if w.starts_with("unresolved:") {
@@ -6757,7 +6788,10 @@ fn unscoped<'a>(
         return None;
     }
     if uses.is_empty() {
-        return entry.route.as_deref().and_then(|r| scope_param(cx, r));
+        return entry
+            .route
+            .as_deref()
+            .and_then(|r| scope_param(cx, &sfile.package, r));
     }
     nodes
         .iter()
@@ -6913,10 +6947,12 @@ fn enclosing_function<'a>(cx: &Cx<'a>, inner: &'a Symbol) -> Option<&'a Symbol> 
 /// What a method call on an instance a constructor function of the repository built
 /// runs (`<module>#DAO().find`, of `const dao = new DAO(db)`): the function the
 /// constructor assigns there, where the lowering reads it by its own name
-/// (`DAO.find`), else the constructor's whole body, which holds every function written
-/// in it (more than the call runs, never less). `None` where the module assigns
-/// methods on the constructor's prototype (`DAO.prototype.find = ...`, outside its
-/// body) or where the call is anything else: the caller reads it as before.
+/// (`DAO.find`). `None` where the constructor assigns no function of that name, as
+/// where the method comes from elsewhere (`util.inherits(DAO, Base)`,
+/// `Object.assign(DAO.prototype, mixin)`, a constructor that returns another
+/// object: review R5, row 4), where the module assigns methods on the
+/// constructor's prototype (`DAO.prototype.find = ...`, outside its body), or where
+/// the call is anything else: the caller reads it as before.
 fn constructor_method<'a>(cx: &Cx<'a>, c: &str) -> Option<&'a Symbol> {
     let (module, rest) = c.split_once('#')?;
     let (head, method) = rest.split_once("().")?;
@@ -6925,8 +6961,7 @@ fn constructor_method<'a>(cx: &Cx<'a>, c: &str) -> Option<&'a Symbol> {
         return None;
     }
     let ctx = cx.context();
-    let d = ctx
-        .definition(&format!("{module}#{head}"))
+    ctx.definition(&format!("{module}#{head}"))
         .filter(|d| d.kind == SymbolKind::Function && d.name == head)?;
     let file = cx.facts.files.iter().find(|f| f.path == module)?;
     if file
@@ -6937,12 +6972,9 @@ fn constructor_method<'a>(cx: &Cx<'a>, c: &str) -> Option<&'a Symbol> {
         return None;
     }
     let own = format!("{head}.{method}");
-    Some(
-        file.symbols
-            .iter()
-            .find(|s| s.kind == SymbolKind::Function && s.name == own)
-            .unwrap_or(d),
-    )
+    file.symbols
+        .iter()
+        .find(|s| s.kind == SymbolKind::Function && s.name == own)
 }
 
 /// A binding built from a library the map names for what it is (a schema, a logger, a
@@ -7879,6 +7911,174 @@ mod tests {
             [("org_id".to_string(), 1, "org_settings".to_string())]
         );
         assert_eq!(unit_row(&r, "user_settings").unscoped, None);
+    }
+
+    /// Pins (review R5, row 3): a guard ties the route's value only by a parameter of
+    /// the same name. One that filters by `param workspace`, which the route
+    /// `/workspaces/{slug}` does not name (a FastAPI dependency's query or body
+    /// value), ties nothing: the unit stays a check found and not proven. Before, a
+    /// guard parameter the route does not name was taken as the URL's. A guard with
+    /// a way through where nothing held ties nothing either (sibling case).
+    #[test]
+    fn a_guard_tied_by_a_value_beside_the_url_ties_nothing() {
+        const MEMBERS: &str = "svc/models.py#Member.objects.filter";
+        const ITEMS: &str = "svc/models.py#Item.objects.filter";
+        let guard = |name: &str, param: &str, ways: &[&str]| {
+            let mut g = func(name, 20, &["pkg:fastapi#HTTPException"]);
+            g.controls = vec!["rejects_caller".into(), "throw".into()];
+            g.controls.extend(
+                ways.iter()
+                    .map(|w| format!("{}{w}", drift_core::controls::LEAVES_AFTER)),
+            );
+            g.controls.push(format!(
+                "{}{MEMBERS}\tmember\town caller\tworkspace__slug\tparam {param}",
+                drift_core::controls::ARG_VALUE
+            ));
+            g.body_checks = vec![check(USER, CheckOutcome::Forbidden)];
+            g
+        };
+        let held = format!("{MEMBERS}().exists");
+        let handler = |name: &str| {
+            let mut h = func(name, 10, &[]);
+            h.args = vec![format!("{ITEMS}@0:workspace__slug")];
+            h.controls = vec![format!(
+                "{}{ITEMS}\tworkspace__slug\tparam slug",
+                drift_core::controls::ARG_VALUE
+            )];
+            h
+        };
+        let r = with_units(vec![
+            module(
+                "svc/perm.py",
+                vec![
+                    guard("by_query", "workspace", &[held.as_str()]),
+                    guard("one_way", "slug", &[held.as_str(), ""]),
+                ],
+            ),
+            route(
+                "query",
+                "/workspaces/{slug}/query",
+                &[USER, DB, "svc/perm.py#by_query"],
+                handler("ws_query"),
+            ),
+            route(
+                "branch",
+                "/workspaces/{slug}/branch",
+                &[USER, DB, "svc/perm.py#one_way"],
+                handler("ws_branch"),
+            ),
+        ]);
+        assert_eq!(authz_of(&r, "ws_query"), "unknown");
+        assert_eq!(authz_of(&r, "ws_branch"), "unknown");
+    }
+
+    /// Pins (review R5, row 4): a method the constructor function does not assign
+    /// (it may come from `util.inherits`, a mixin, a returned object) is not read as
+    /// the constructor's whole body: nothing is read to the end. Before, `DAO().find`
+    /// with no `DAO.find` read `DAO`'s body in its place.
+    #[test]
+    fn a_method_no_constructor_assigns_is_not_read_through_it() {
+        let d = empty();
+        let mut facts = nodegoat(&["pkg:mongodb#MongoClient"], false, false);
+        facts.files[0].symbols.retain(|s| s.name != "DAO.find");
+        let cx = Cx::new(&facts, &d);
+        let show = facts.files[1]
+            .symbols
+            .iter()
+            .find(|s| s.name == "Handler.show")
+            .unwrap();
+        assert!(closure(&cx, vec![Node::Sym(show)]).is_none());
+    }
+
+    /// Pins (review R5, row 5): a filter through a relation is learned by its whole
+    /// path, so `where.author.id` is never the key `id`. Before, it read `id`.
+    #[test]
+    fn a_relation_filter_is_learned_by_its_whole_path() {
+        assert_eq!(scope_word("where.author.id"), "authorid");
+        assert_eq!(scope_word("author__id"), "authorid");
+        assert_eq!(scope_word("where.userId"), "userid");
+        assert_eq!(scope_word("user_id"), "userid");
+        assert_eq!(scope_word("authorId"), "authorid");
+    }
+
+    /// Pins (review R5, row 6): keys are learned per package. The `org_id` that
+    /// package `svc` scopes by says nothing of package `web`, whose `user_id` route
+    /// is still read by the name lists. Before, one package's learned keys turned
+    /// the fallback off for every package.
+    #[test]
+    fn scope_keys_are_learned_per_package() {
+        let by_caller = |name: &str, model: &str| {
+            let mut f = func(name, 3, &[]);
+            f.scoped_queries = vec![ScopedQuery {
+                condition: String::new(),
+                callee: format!("svc/models.py#{model}.objects.filter"),
+                key: "org_id".into(),
+                source: ScopeSource::Session,
+            }];
+            f
+        };
+        let repo = module(
+            "svc/repo.py",
+            vec![
+                by_caller("list_notes", "Note"),
+                by_caller("list_tags", "Tag"),
+                by_caller("list_teams", "Team"),
+            ],
+        );
+        let mut web = route(
+            "web_user",
+            "/users/{user_id}/settings",
+            &[USER, DB],
+            func("web_settings", 10, &["svc/crud.py#load_settings"]),
+        );
+        web.package = "web".into();
+        let r = with_units(vec![repo, web]);
+        assert_eq!(
+            unscoped_keys(&r),
+            [("user_id".to_string(), 1, "web_settings".to_string())]
+        );
+    }
+
+    /// Pins (review R5, row 11): what the application runs before the unit is read
+    /// with it. A middleware class of the repository decides in a method the closure
+    /// does not read, so nothing is said of the key. Before, the unit's own wraps
+    /// alone were read.
+    #[test]
+    fn the_applications_middleware_is_read_before_a_key_is_unscoped() {
+        let d = empty();
+        let build = |middleware: &[&str]| {
+            let mut h = func("user_settings", 10, &["svc/crud.py#load_settings"]);
+            h.app_middleware = middleware.iter().map(|m| m.to_string()).collect();
+            let mut mw = func("TenantScope", 2, &[]);
+            mw.kind = SymbolKind::Class;
+            let mut files = vec![
+                route("settings", "/users/{user_id}/settings", &[USER, DB], h),
+                module("svc/mw.py", vec![mw]),
+            ];
+            files.extend(shared());
+            files.sort_by(|a, b| a.path.cmp(&b.path));
+            RepoFacts {
+                schema_version: drift_core::FACTS_SCHEMA_VERSION,
+                files,
+                ..RepoFacts::default()
+            }
+        };
+        let key_of = |facts: &RepoFacts| {
+            let cx = Cx::new(facts, &d);
+            let file = facts
+                .files
+                .iter()
+                .find(|f| f.path == "svc/api/settings.py")
+                .unwrap();
+            let unit = UnitRef::Entry {
+                file,
+                entry: &file.entry_points[0],
+                symbol: file.symbols.first(),
+            };
+            unscoped(&cx, &unit, &[], None)
+        };
+        assert_eq!(key_of(&build(&[])).as_deref(), Some("user_id"));
+        assert_eq!(key_of(&build(&["svc/mw.py#TenantScope"])), None);
     }
 
     // ---------- a service class's method ----------

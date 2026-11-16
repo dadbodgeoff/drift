@@ -157,13 +157,18 @@ impl Concern for Validation {
         // `<uuid:pk>` converter in a Django route), and the body reads no other
         // ([`controls::INPUT_TYPED`]): a value of another shape is answered with an
         // error. Only where nothing else was found, so a unit that also binds a
-        // model keeps its way.
+        // model keeps its way. [STRICT] Shown, as a check found and not proven, and
+        // never a use: the audits measured Drift's reading of typed parameters wrong
+        // (3 of 3), and this reading of them is not yet measured, so it is no way a
+        // candidate rule may rest on (review R5, row 7). A person may declare it.
         if uses.is_empty()
             && sfile.lang == "py"
             && s.controls.iter().any(|c| c == controls::INPUT_TYPED)
         {
-            uses.push(use_of("typed_param", &entry.adapter));
-            sources.push(VariantSource::Vocab);
+            return unknown(
+                UnknownReason::CheckNotProven,
+                &format!("typed_param:{}", entry.adapter),
+            );
         }
         if !uses.is_empty() {
             return common::known(uses, common::source_of(&sources));
