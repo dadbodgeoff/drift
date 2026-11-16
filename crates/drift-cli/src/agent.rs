@@ -2177,9 +2177,20 @@ fn post_tool_use(p: &Project, input: &Value, state_path: &Path) -> anyhow::Resul
         }
     }
     scan();
-    let (facts, _) = std::mem::ManuallyDrop::into_inner(own)
+    let (facts, whole) = std::mem::ManuallyDrop::into_inner(own)
         .into_inner()
         .expect("scanned above")?;
+    // [FIX1-G1] One file's facts settle its check only when it finds nothing the rest
+    // of the repository could change (`drift_check`'s rule, [`crate::mcp::alone_is_enough`]):
+    // a guard rule sets aside the entry points the practice map cannot tell, and a map of
+    // one file's facts cannot follow a guard or dependency defined in another, so a new
+    // unguarded route was set aside and never said (nor did Stop block on it).
+    let facts = if whole || crate::mcp::alone_is_enough(p, &facts, &rel) {
+        facts
+    } else {
+        trace::took("full_scan:not_alone");
+        p.scan(false)?
+    };
     let facts = std::mem::ManuallyDrop::new(facts);
     let only: BTreeSet<String> = [rel.clone()].into();
     let report = p.check_keeping(&facts, Some(&only), &map);

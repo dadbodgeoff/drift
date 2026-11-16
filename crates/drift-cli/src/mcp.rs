@@ -47,7 +47,7 @@ fn base_tools() -> Value {
     json!([
         {
             "name": "drift_rules_for",
-            "description": "Accepted conventions that apply to a file (existing or about to be created), each with its evidence, tier (default, or suggestion: weaker, advice only), mode (`advises`: a new violation is only reported; otherwise one fails `drift check` and, in Claude Code, stops the turn from ending) and an example file to copy. Strongest first: default tier before suggestions, a rule that blocks (as `drift check` applies it now) before one that advises, then by id. An indented line under a rule says when one set to block advises now and why, and where a promoted practice of one file or of a route prefix holds. A rule that advises needs no action where it does not fit the file. Rules already given this session are named, not repeated. Call before creating a file; pass the planned content to get only the rules for what it declares.",
+            "description": "Accepted conventions that apply to a file (existing or about to be created), each with its evidence, tier (default, or suggestion: weaker, advice only), mode (`advises`: a new violation is only reported; otherwise one fails `drift check` and, in Claude Code, stops the turn from ending) and an example file to copy. Strongest first: default tier before suggestions, a rule whose new violation fails `drift check` (as it applies the rule now) before one that advises, then by id. An indented line under a rule says when one the policy sets to fail it advises now and why, and where a promoted practice of one file or of a route prefix holds. A rule that advises needs no action where it does not fit the file. Rules already given this session are named, not repeated. Call before creating a file; pass the planned content to get only the rules for what it declares.",
             "inputSchema": { "type": "object", "properties": {
                 "path": { "type": "string", "description": "Repo-relative path of the file" },
                 "content": { "type": "string", "description": "Planned content of a new file (optional)" },
@@ -65,7 +65,7 @@ fn base_tools() -> Value {
         },
         {
             "name": "drift_explain",
-            "description": "One convention by id: its rule, status, mode as `drift check` applies it now (with the reason when a rule set to block advises), tier, where a promoted practice holds, why (how many members of its role follow it, the lower bound and lift; for a layering rule the files counted, which has no lift), the evidence at acceptance when it differs, what a check of the code finds now when it is something not to read as a pass (members Drift could not read, a rule gone stale), its known exceptions, an example to copy, and what to do where it does not fit. A convention no person accepted (a proposal, or one a person rejected) is said to be no rule, with nothing of it.",
+            "description": "One convention by id: its rule, status, mode as `drift check` applies it now (with the reason when a rule the policy sets to fail the check advises), tier, where a promoted practice holds, why (how many members of its role follow it, the lower bound and lift; for a layering rule the files counted, which has no lift), the evidence at acceptance when it differs, what a check of the code finds now when it is something not to read as a pass (members Drift could not read, a rule gone stale), its known exceptions, an example to copy, and what to do where it does not fit. A convention no person accepted (a proposal, or one a person rejected) is said to be no rule, with nothing of it.",
             "inputSchema": { "type": "object", "properties": { "id": { "type": "string" } }, "required": ["id"] },
         },
         {
@@ -407,7 +407,7 @@ fn facts_for_file(
 ///   helper defined elsewhere), where the whole repository's facts can tell it;
 /// - a wiring rule (registered in, mirrors keys): checked against other files than the
 ///   member's, and the key files it compares are attached by a full scan only.
-fn alone_is_enough(project: &Project, facts: &drift_core::RepoFacts, rel: &str) -> bool {
+pub(crate) fn alone_is_enough(project: &Project, facts: &drift_core::RepoFacts, rel: &str) -> bool {
     if project
         .policy
         .conventions

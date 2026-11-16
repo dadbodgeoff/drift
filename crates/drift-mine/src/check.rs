@@ -836,7 +836,20 @@ fn settle(report: &mut CheckReport, conventions: &[&Convention]) {
         // A rule a person proposed from a map never passed mining's gates: what it
         // needs to stay a rule is not mining's to say.
         s.stale = if s.whole && c.from_map.is_none() {
-            stale_reason(s)
+            // [FIX1-G1] A member broken anew (a violation the lock does not hold) is the
+            // gate's to stop, never a reason to stop gating: counted against the rule's
+            // share, one edit to a shared barrel (or an agent breaking enough members)
+            // made a blocking rule stale and advise, so it no longer blocked. Staleness
+            // is judged on the code the lock knows: those members count as following.
+            let anew = report
+                .violations
+                .iter()
+                .filter(|v| v.id == s.id && !v.baselined && v.wire.is_none())
+                .map(|v| format!("{}#{}", v.path, v.symbol))
+                .filter(|k| s.breaking.contains(k))
+                .collect::<BTreeSet<String>>()
+                .len();
+            stale_reason(s, anew)
         } else {
             None
         };
@@ -855,8 +868,9 @@ fn settle(report: &mut CheckReport, conventions: &[&Convention]) {
 /// mining needs to propose a rule ([`MIN_ROLE_SIZE`]), or fewer of the members Drift can
 /// tell follow it than the share that made it a rule ([`MIN_LOWER_BOUND`]). A stale rule
 /// advises: a check must not fail on a rule the code no longer bears out, and must not
-/// stop reporting it without saying so.
-fn stale_reason(s: &Standing) -> Option<String> {
+/// stop reporting it without saying so. `anew`: members of `s.breaking` that break it
+/// anew (not in the lock), counted as following ([`settle`]).
+fn stale_reason(s: &Standing, anew: usize) -> Option<String> {
     if s.role < MIN_ROLE_SIZE {
         return Some(format!(
             "its role has {} member(s) now, under the {MIN_ROLE_SIZE} a mined rule needs",
@@ -864,9 +878,15 @@ fn stale_reason(s: &Standing) -> Option<String> {
         ));
     }
     let told = s.holders + s.breaking.len();
-    (told > 0 && (s.holders as f64) < MIN_LOWER_BOUND * told as f64).then(|| {
+    let following = s.holders + anew;
+    (told > 0 && (following as f64) < MIN_LOWER_BOUND * told as f64).then(|| {
+        let anew = if anew == 0 {
+            String::new()
+        } else {
+            format!(" and {anew} more break it only anew (counted as following it)")
+        };
         format!(
-            "{} of the {told} members Drift can tell follow it now, under the {:.0}% a mined rule needs",
+            "{} of the {told} members Drift can tell follow it now{anew}, under the {:.0}% a mined rule needs",
             s.holders,
             MIN_LOWER_BOUND * 100.0
         )

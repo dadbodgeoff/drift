@@ -750,8 +750,17 @@ fn mixed_repo() -> tempfile::TempDir {
     let dir = mixed_repo_proposed();
     let r = dir.path();
     let yaml = std::fs::read_to_string(r.join(".drift/conventions.yaml")).unwrap();
-    let ids: Vec<&str> = yaml.split("- id: ").skip(1).map(|b| &b[..8]).collect();
+    // [FIX1-G1] S10: `init` also writes a from-map proposal (`from_map:`, "Responses in
+    // the root package"), left proposed here: the three mined conventions are the ones
+    // these tests are about.
+    let ids: Vec<&str> = yaml
+        .split("- id: ")
+        .skip(1)
+        .filter(|b| !b.contains("\n  from_map: "))
+        .map(|b| &b[..8])
+        .collect();
     assert_eq!(ids.len(), 3, "{yaml}");
+    assert_eq!(yaml.matches("\n  from_map: ").count(), 1, "{yaml}");
     run(r, &["review", "--show-to-agents", &ids.join(",")], None);
     dir
 }
@@ -1220,11 +1229,15 @@ fn tiers_order_census_and_guard_review() {
         !yaml.contains("tier"),
         "tiers are computed, never stored: {yaml}"
     );
+    // [FIX1-G1] S10: `init` also writes one from-map proposal (`from_map:`); it advises
+    // too. `census` (no `--from-map`) lists the three mined ones only.
+    assert_eq!(yaml.matches("\n  from_map: ").count(), 1, "{yaml}");
     assert_eq!(
         yaml.matches("\n  mode: advise\n").count(),
-        3,
+        4,
         "init never blocks: {yaml}"
     );
+    assert!(!yaml.contains("\n  mode: block\n"), "init never blocks: {yaml}");
 
     let props = census_ids(r);
     let kinds: Vec<(&str, &str)> = props
@@ -1342,8 +1355,31 @@ fn tiers_order_census_and_guard_review() {
     assert_eq!(after.matches("\n  mode: block\n").count(), 3, "{after}");
 
     // A later init keeps every decision and every id; tiers change nothing on disk.
+    // [FIX1-G1] S8 (kept by the lead at F10): decided cards are written in id order, so
+    // the first init after a review moves the cards it decided into that order once
+    // (`review` keeps the order it found); each card's text is unchanged, and the next
+    // init writes the same bytes.
     run(r, &["init"], None);
-    assert_eq!(std::fs::read_to_string(&yaml_path).unwrap(), after);
+    let again = std::fs::read_to_string(&yaml_path).unwrap();
+    let cards = |y: &str| {
+        let mut c: Vec<String> = y
+            .split("\n- id: ")
+            .map(|b| b.trim_end().to_string())
+            .collect();
+        c.sort();
+        c
+    };
+    assert_eq!(cards(&again), cards(&after), "{again}");
+    let decided: Vec<&str> = again
+        .split("\n- id: ")
+        .skip(1)
+        .filter(|b| b.contains("\n  status: accepted\n"))
+        .map(|b| &b[..8])
+        .collect();
+    assert_eq!(decided.len(), 3, "{again}");
+    assert!(decided.is_sorted(), "{again}");
+    run(r, &["init"], None);
+    assert_eq!(std::fs::read_to_string(&yaml_path).unwrap(), again);
     assert_eq!(census_ids(r), props);
 }
 
@@ -1494,9 +1530,11 @@ fn suggestions_below_the_admission_bar_reach_people_not_agents() {
         &["review", "--accept", &format!("{wrapper},{calls},{jsx}")],
         None,
     );
+    // [FIX1-G1] S10: init's from-map proposal stays proposed (`census` without
+    // `--from-map` does not list it, so it is not among the three accepted here).
     assert!(
         out.contains(
-            "3 accepted (0 block), 0 proposed, 0 rejected (2 accepted not shown to agents"
+            "3 accepted (0 block), 1 proposed, 0 rejected (2 accepted not shown to agents"
         ),
         "{out}"
     );
@@ -1742,7 +1780,15 @@ fn python_repo() -> (
     ]
     .into_iter()
     .collect();
-    let all: Vec<&str> = yaml.split("- id: ").skip(1).map(|b| &b[..8]).collect();
+    // [FIX1-G1] S10: `init` also writes from-map proposals (`from_map:`); accepting them
+    // too gave one a priming slot these tests count on for the mined rules. They stay
+    // proposed: the mined Python conventions are the ones these tests are about.
+    let all: Vec<&str> = yaml
+        .split("- id: ")
+        .skip(1)
+        .filter(|b| !b.contains("\n  from_map: "))
+        .map(|b| &b[..8])
+        .collect();
     run(r, &["review", "--show-to-agents", &all.join(",")], None);
     (dir, ids)
 }
@@ -3300,7 +3346,15 @@ fn python_dependency_chains_hold_in_census_check_and_hooks() {
         ("MCP", &mcp),
     ] {
         assert!(out.contains("new_3"), "{what}: {out}");
-        assert!(!out.contains("new_1"), "{what}: {out}");
+        // [FIX1-G1] S22: under a blocking rule's violation, `check` names members that
+        // follow it nearby (`holds near it`); `new_1` may be one of them. It is never
+        // reported as a violation.
+        let reported: String = out
+            .lines()
+            .filter(|l| !l.trim_start().starts_with("holds near it"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert!(!reported.contains("new_1"), "{what}: {out}");
     }
     // Single-file facts equal a full scan's.
     let (code, out) = run(r, &["debug", "incremental"], None);
