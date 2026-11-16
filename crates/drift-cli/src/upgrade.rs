@@ -508,11 +508,14 @@ pub(crate) fn run(cli: &crate::Cli, args: &UpgradeArgs) -> anyhow::Result<ExitCo
             for (kind, key, at) in &new_findings {
                 keys.insert((kind.clone(), key.clone()), at.clone());
             }
-            let next = ratchet::render_lock_with(&keys, &b.fail_kinds());
+            let next = ratchet::render_lock_opted(&keys, &b.fail_kinds(), &b.self_baselined);
             // Only ever adds: every finding it held is in `next`, and the kinds that
-            // fail are the ones it said (or, unsaid, the ones it failed).
+            // fail are the ones it said (or, unsaid, the ones it failed), the opt-in
+            // for findings a change baselines itself too.
             let kept = ratchet::parse_baseline(&next);
-            let safe = b.findings.is_subset(&kept.findings) && kept.fail_kinds() == b.fail_kinds();
+            let safe = b.findings.is_subset(&kept.findings)
+                && kept.fail_kinds() == b.fail_kinds()
+                && kept.self_baselined == b.self_baselined;
             if !safe {
                 failed = Some(format!(
                     "{SECURITY_LOCK} was not written: the baseline written again would not hold every finding and fail kind it holds"

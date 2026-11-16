@@ -113,7 +113,11 @@ export function StandingSection({ rows, summaries, onConvention }: { rows: Check
  */
 export function SecurityAdviceSection({ advice, ratchet, onOpen, onSecurity }: { advice: SecurityAdvice[]; ratchet: SecurityRatchet | undefined; onOpen(path: string, line: number | null, a: SecurityAdvice): void; onSecurity(): void }) {
   const groups = adviceGroups(advice);
-  const added = ratchet ? Object.values(ratchet.added).reduce((n, xs) => n + xs.length, 0) : 0;
+  // Where the lock opts in (`# fail self-baselined:`), findings the change baselines itself fail too.
+  const selfRows = ratchet ? [ratchet.self_baselined, ratchet.self_baselined_unknown].flatMap((m) => Object.entries(m ?? {})) : [];
+  const notIn = ratchet ? Object.values(ratchet.added).reduce((n, xs) => n + xs.length, 0) : 0;
+  const selfCount = selfRows.reduce((n, [, xs]) => n + xs.length, 0);
+  const added = notIn + selfCount;
   return (
     <section id="ck-security-advice" className="ck-exempt ck-advice" aria-labelledby="ck-security-advice-title">
       <div className="st-row st-wrap">
@@ -131,7 +135,8 @@ export function SecurityAdviceSection({ advice, ratchet, onOpen, onSecurity }: {
       {ratchet ? (
         <div className="t-body-sm st-stack">
           <p className="t-secondary">
-            Checked against the repository's security baseline: {plural(added, "finding", "findings")} not in it, {plural(ratchet.gone.length, "finding", "findings")} in it no longer found, {num(ratchet.kept)} still found.
+            Checked against the repository's security baseline: {plural(notIn, "finding", "findings")} not in it, {plural(ratchet.gone.length, "finding", "findings")} in it no longer found, {num(ratchet.kept)} still found.
+            {selfCount > 0 && ` ${plural(selfCount, "finding", "findings")} this change adds and writes into .drift/security.lock itself, which the baseline sets to fail.`}
           </p>
           {added > 0 && (
             <ul className="ck-exempt__list" aria-label="Findings not in the security baseline">
@@ -148,6 +153,17 @@ export function SecurityAdviceSection({ advice, ratchet, onOpen, onSecurity }: {
                     </li>
                   )),
                 )}
+              {selfRows.flatMap(([kind, xs]) =>
+                xs.map((x) => (
+                  <li key={`self|${kind}|${x.key}`} className="ck-advice__row">
+                    <Badge tone="danger" variant="outline">
+                      {kind}
+                    </Badge>
+                    <span className="dui-mono t-truncate">{x.key}</span>
+                    <span className="dui-mono t-caption t-muted">{x.at}: this change wrote its line into .drift/security.lock itself</span>
+                  </li>
+                )),
+              )}
             </ul>
           )}
         </div>

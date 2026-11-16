@@ -1716,6 +1716,19 @@ export interface SecurityRatchet {
    * lines that only moved with a renamed file, are not listed. Newer drift; absent when empty.
    */
   baselined_by_change?: Record<string, { key: string; at: string }[]>;
+  /**
+   * `drift check --diff-base` only, where `.drift/security.lock` opts in (`# fail self-baselined:`, written by
+   * `drift security --write-baseline --fail-on self-baselined` or `self-baselined:<kind>`): the findings of
+   * `baselined_by_change` of a kind it covers, moved here. They fail the check: the change cannot accept its own
+   * finding (fix the code, or land the lock line alone on the base branch first). Newer drift; absent when empty.
+   */
+  self_baselined?: Record<string, { key: string; at: string }[]>;
+  /**
+   * As `self_baselined`, where whether the change also adds the finding to the code could not be read (the merge base,
+   * or the finding's file there, unread): not checked, and they fail (a gate asked for does not pass on unknown). Newer
+   * drift; absent when empty.
+   */
+  self_baselined_unknown?: Record<string, { key: string; at: string }[]>;
 }
 
 // ---------- drift card <path> --json (crates/drift-mine/src/card.rs `Card`, schema 1) ----------

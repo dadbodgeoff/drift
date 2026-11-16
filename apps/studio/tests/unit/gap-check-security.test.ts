@@ -162,6 +162,12 @@ describe("check --diff-base: security advice (security_advice[])", () => {
     const added = plain(renderToStaticMarkup(createElement(SecurityAdviceSection, { advice: [], ratchet: { added: { "no-guard": [{ key: "a.ts#f GET /a", at: "a.ts:3" }] }, gone: [], kept: 0 }, onOpen: () => {}, onSecurity: () => {} })));
     expect(added).toContain("1 finding not in it");
     expect(added).toContain("a.ts#f GET /a");
+    // Where the lock opts in, a finding the change baselines itself fails, and is shown so.
+    const own = plain(renderToStaticMarkup(createElement(SecurityAdviceSection, { advice: [], ratchet: { added: {}, gone: [], kept: 2, self_baselined: { risky: [{ key: "eval in a.py#f", at: "a.py:4" }] } }, onOpen: () => {}, onSecurity: () => {} })));
+    expect(own).toContain("0 findings not in it");
+    expect(own).toContain("1 finding this change adds and writes into .drift/security.lock itself, which the baseline sets to fail.");
+    expect(own).toContain("eval in a.py#f");
+    expect(rs("drift-mine/src/ratchet.rs")).toContain("pub self_baselined: BTreeMap<String, Vec<Added>>");
   });
 });
 
