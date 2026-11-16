@@ -8,6 +8,7 @@ import type { AbRow, Census, CensusWhy, CheckReport, Convention, Inventory, MapP
 import type { History, LogEntry, PromoteRequest, RepoRef, SessionSummary, Snapshot } from "@/shared/ipc/contract";
 import { fixtureConvention, fixtureListOpen, fixturePromote, isRefused, promoteCommand } from "@/shared/lib/promote";
 import { answerCommand, exemptCommand, reviewCommand } from "@/shared/lib/review";
+import { baselineCommand } from "@/shared/lib/baseline";
 import { answerPlan } from "@/shared/lib/questions";
 import type { Answer } from "@/shared/ipc/contract";
 import { type Decision, type Loaded, type StudiesData, type StudioApi, retain } from "./types";
@@ -17,8 +18,10 @@ interface Index {
    * `errors`: the repository has errors.json, what drift printed when it refused to run there (make-round11-fixtures.mjs).
    * `practices`: the repository has practices.json (`drift practices --json`); `map`: map.json (`drift map --json`).
    * `funnel`: funnel.json (`drift census --why --json`); `promoteList`: promote-list.json (`drift practices promote --list --json`).
+   * `securityTop`: security-top.json (`drift security --top 0 --json`); `baseline`: security-baseline.json (what
+   * `drift security --write-baseline` printed and wrote on a copy of the repository, make-harbor-fixtures.mjs).
    */
-  repos: { id: string; path: string; name: string; local?: boolean; errors?: boolean; practices?: boolean; map?: boolean; funnel?: boolean; promoteList?: boolean }[];
+  repos: { id: string; path: string; name: string; local?: boolean; errors?: boolean; practices?: boolean; map?: boolean; funnel?: boolean; promoteList?: boolean; securityTop?: boolean; baseline?: boolean }[];
   sessions: { id: string; project: string; title: string; bytes: number; modified: number; hasState: boolean }[];
   studies: { census: string[]; ab: string[]; runs?: string[]; variants?: { path: string; variant: string }[] };
 }
@@ -37,6 +40,8 @@ export class FixtureApi implements StudioApi {
   private setApart = new Map<string, Map<string, Map<string, string[]>>>();
   /** This tab's practices made conventions per repo: convention id -> the convention (`drift practices promote`). */
   private promoted = new Map<string, Map<string, Convention>>();
+  /** This tab's security baseline per repo: the `.drift/security.lock` text `drift security --write-baseline` wrote. */
+  private baselines = new Map<string, string>();
   private idx: Promise<Index> | null = null;
   private logBuf: LogEntry[] = [];
 
@@ -170,6 +175,43 @@ export class FixtureApi implements StudioApi {
     return this.wait(this.loaded(await this.json<SecurityDiff>(`${await this.dir(repo)}/security-diff.json`), false), this.delay * 3);
   }
 
+  /**
+   * `drift security --top N --json` for this fixture: security-top.json holds every ranked finding (`--top 0`); the
+   * first `n` are shown and the rest counted under `more`, as `Summary::top` does. A repository without one fails as a
+   * run would.
+   */
+  async securityTop(repo: RepoRef, n: number): Promise<Loaded<Inventory>> {
+    const r = (await this.index()).repos.find((x) => x.path === repo.path);
+    if (!r?.securityTop) throw new Error(`drift security --top failed: fixture mode has no security-top.json for ${repo.name}`);
+    const inv = await this.json<Inventory>(`${await this.dir(repo)}/security-top.json`);
+    if (inv.top) {
+      const all = [...inv.top.shown];
+      const k = n === 0 ? all.length : Math.min(n, all.length);
+      inv.top = { ...inv.top, shown: all.slice(0, k), more: all.length - k + inv.top.more };
+    }
+    return this.wait(this.loaded(inv, false), this.delay * 3);
+  }
+
+  /** `drift security --write-baseline` in this tab only: what Drift printed for this fixture, and the file it wrote, kept in memory. */
+  async securityBaseline(repo: RepoRef) {
+    const r = (await this.index()).repos.find((x) => x.path === repo.path);
+    if (!r?.baseline) throw new Error(`drift security --write-baseline failed: fixture mode has no security-baseline.json for ${repo.name}`);
+    const recorded = await this.json<{ stdout: string; lock: string }>(`${await this.dir(repo)}/security-baseline.json`);
+    this.baselines.set(repo.path, recorded.lock);
+    const entry = {
+      at: Date.now(),
+      user: "you (fixture)",
+      decision: "security-baseline" as const,
+      ids: [],
+      command: baselineCommand(repo.path),
+      ok: true,
+      output: `${recorded.stdout.trim()}\nfixture mode: recorded in this tab only; no file was written`,
+    };
+    const h = await this.history(repo);
+    this.saveHistory(repo, retain({ ...h, audit: [...h.audit, entry] }));
+    return this.wait(entry);
+  }
+
   /** `drift practices --json` for this fixture (practices.json); a repository without one fails as a run would. */
   async practices(repo: RepoRef): Promise<Loaded<PracticesReport>> {
     const r = (await this.index()).repos.find((x) => x.path === repo.path);
@@ -206,18 +248,20 @@ export class FixtureApi implements StudioApi {
     const d = await this.dir(repo);
     let yaml: string;
     let lock: string | null;
+    // The security baseline: written in this tab, or none (no fixture repository has one committed).
+    const securityLock = this.baselines.get(repo.path) ?? null;
     try {
       yaml = await this.text(`${d}/conventions.yaml`);
       lock = await this.text(`${d}/drift.lock`);
     } catch {
-      return { conventions: null, lock: null };
+      return { conventions: null, lock: null, securityLock };
     }
     const over = this.overrides.get(repo.path);
     const fine = this.exceptions.get(repo.path);
     const logSetting = this.reviewLog.get(repo.path);
     const apart = this.setApart.get(repo.path);
     const promoted = this.promoted.get(repo.path);
-    if (!over?.size && !fine?.size && !apart?.size && !promoted?.size && logSetting === undefined) return { conventions: yaml, lock };
+    if (!over?.size && !fine?.size && !apart?.size && !promoted?.size && logSetting === undefined) return { conventions: yaml, lock, securityLock };
     // Apply this tab's decisions the way `drift review` records them.
     const doc = parseDocument(yaml);
     // `review_log: on`, absent when off (as Drift writes it).
@@ -255,7 +299,7 @@ export class FixtureApi implements StudioApi {
         item.set("mode", Number(ev.get("total")) >= 15 ? "block" : "advise");
       } else if (dec === "advise") item.set("mode", "advise");
     }
-    return { conventions: doc.toString(), lock };
+    return { conventions: doc.toString(), lock, securityLock };
   }
 
   async review(repo: RepoRef, decision: Decision, ids: string[]) {

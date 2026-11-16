@@ -13,6 +13,10 @@ export type DriftOp =
   | { op: "census" }
   | { op: "check"; base?: string | null }
   | { op: "security"; base?: string | null }
+  /** The findings to look at first (`drift security --top N --json`, 0 for all): read-only. */
+  | { op: "securityTop"; n: number }
+  /** The security baseline written (`drift security --write-baseline`, `.drift/security.lock`): a write. */
+  | { op: "securityBaseline" }
   | { op: "review"; decision: ReviewDecision; ids: string[] }
   /** A reviewer's exception: added with a reason, removed with `reason: null`. */
   | { op: "exempt"; id: string; member: string; reason: string | null }
@@ -179,10 +183,17 @@ export function promoteFlags(a: PromoteArgs, dryRun: boolean): string[] {
 
 /**
  * Whether an op writes to the repository. The only writes are `drift review` (decisions, exceptions, answers, the
- * review log setting), `drift init` and `drift practices promote` without `--dry-run`; every other op reads.
+ * review log setting), `drift init`, `drift practices promote` without `--dry-run` and `drift security
+ * --write-baseline`; every other op reads.
  */
 export function writesRepository(op: DriftOp["op"]): boolean {
-  return op === "review" || op === "exempt" || op === "setLog" || op === "answer" || op === "init" || op === "promote";
+  return op === "review" || op === "exempt" || op === "setLog" || op === "answer" || op === "init" || op === "promote" || op === "securityBaseline";
+}
+
+/** `--top N` for `drift security`: a whole number from 0 (every ranked finding) to 1000. */
+export function assertTop(n: unknown): number {
+  if (typeof n !== "number" || !Number.isInteger(n) || n < 0 || n > 1000) throw new InvalidArgument("--top must be a whole number from 0 to 1000");
+  return n;
 }
 
 /** argv for `drift`, never through a shell. `root` is an absolute repo path the person chose. */
@@ -200,6 +211,10 @@ export function driftArgs(root: string, op: DriftOp): string[] {
       return ["--root", root, "check", "--format", "json", ...(op.base ? ["--diff-base", assertGitRef(op.base)] : [])];
     case "security":
       return ["--root", root, "security", "--json", ...(op.base ? ["--diff-base", assertGitRef(op.base)] : [])];
+    case "securityTop":
+      return ["--root", root, "security", "--top", String(assertTop(op.n)), "--json"];
+    case "securityBaseline":
+      return ["--root", root, "security", "--write-baseline"];
     case "init":
       return ["--root", root, "init"];
     case "practices":

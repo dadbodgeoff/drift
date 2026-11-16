@@ -16,6 +16,8 @@ export const keys = {
   check: (r: RepoRef, base?: string | null) => (base === undefined ? (["check", r.path] as const) : (["check", r.path, base] as const)),
   /** Without `base`, a prefix that also matches every diff-scoped security run of the repository. */
   security: (r: RepoRef, base?: string) => (base === undefined ? (["security", r.path] as const) : (["security", r.path, "diff", base] as const)),
+  /** Under `security`'s prefix, so a rescan or a baseline written refetches it with the inventory. */
+  securityTop: (r: RepoRef, n: number) => ["security", r.path, "top", n] as const,
   practices: (r: RepoRef) => ["practices", r.path] as const,
   map: (r: RepoRef) => ["map", r.path] as const,
   funnel: (r: RepoRef) => ["funnel", r.path] as const,
@@ -144,6 +146,26 @@ export function useSecurityDiff(repo: RepoRef | null, base: string | null) {
     retry: false,
     queryFn: ({ signal }) => timed("security --diff-base", api.securityDiff(repo!, { signal, base: base! })),
   });
+}
+
+/** `drift security --top N --json` (0: all): the findings to look at first. Run only when `enabled` (the view's tab is open). */
+export function useSecurityTop(repo: RepoRef | null, n: number, enabled = true) {
+  const api = useApi();
+  return useQuery({
+    queryKey: repo ? keys.securityTop(repo, n) : ["security", "none", "top", n],
+    enabled: !!repo && enabled,
+    staleTime: Infinity,
+    retry: false,
+    queryFn: ({ signal }) => timed("security --top", api.securityTop(repo!, n, { signal })),
+  });
+}
+
+/**
+ * What writing the security baseline makes stale: the policy files (the baseline is one), check (with a baseline it
+ * reports `security` and no `security_advice`), security (every run of it) and the history (the audit entry).
+ */
+export function baselineKeys(r: RepoRef) {
+  return [keys.policy(r), keys.check(r), keys.security(r), keys.history(r)];
 }
 
 /** `drift practices --json`: the practice map (facts, not rules). Run when the Practices view asks for it. */

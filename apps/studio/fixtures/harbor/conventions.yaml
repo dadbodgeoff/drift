@@ -1,0 +1,150 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 2
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - route
+  suffixes: []
+packages:
+- ""
+- packages/app
+- packages/core
+- packages/jobs
+conventions:
+- id: D-6ff644
+  status: accepted
+  mode: advise
+  summary: >-
+    files in packages/jobs/** do not import from packages/app/** (declared
+    dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: packages/jobs
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:packages/app
+  evidence:
+    holders: 120
+    total: 121
+    lower_bound: 0.955
+    lift: 3.0
+  example: packages/jobs/src/job0.ts#(file)
+  selector_version: 3
+  accepted_evidence:
+    role_size: 121
+    holders: 120
+    total: 121
+    lower_bound: 0.955
+- id: D-0f9742
+  status: accepted
+  mode: advise
+  summary: >-
+    files in packages/core/** do not import from packages/app/** (declared
+    dependencies, and lazy loads of peer or optional dependencies, excepted)
+  role:
+    package: packages/core
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:packages/app
+  evidence:
+    holders: 60
+    total: 61
+    lower_bound: 0.913
+    lift: 3.0
+  example: packages/core/src/c0.ts#(file)
+  selector_version: 3
+  accepted_evidence:
+    role_size: 61
+    holders: 60
+    total: 61
+    lower_bound: 0.913
+- id: D-b941d4
+  status: accepted
+  mode: advise
+  summary: HTTP handlers in app/** (route files) are wrapped in withSession()
+  role:
+    package: ""
+    dir: app
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - lib/session.ts#withSession
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 8.333
+  example: app/api/accounts/route.ts#GET
+  selector_version: 3
+  accepted_evidence:
+    role_size: 21
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+- id: D-446122
+  status: proposed
+  mode: advise
+  summary: "Sign-in in the root package: wrapped in withSession"
+  role:
+    package: ""
+    dir: "**"
+    file: (practice)
+    entry: '-'
+    kind: module
+  rule:
+    type: practice
+    concern: authn
+    any_of:
+    - wrap:lib/session.ts#withSession
+  evidence:
+    holders: 20
+    total: 21
+    lower_bound: 0.773
+    lift: 1.0
+    split:
+    - - wrap:lib/session.ts#withSession
+      - 20
+  example: app/api/accounts/route.ts#GET
+  selector_version: 3
+  promoted_from_practice: P-7f5143
+  from_map: practice
+- id: D-03d219
+  status: proposed
+  mode: advise
+  summary: "Responses in the root package: built with Response.json"
+  role:
+    package: ""
+    dir: "**"
+    file: (practice)
+    entry: '-'
+    kind: module
+  rule:
+    type: practice
+    concern: api
+    any_of:
+    - builder:global#Response.json
+  evidence:
+    holders: 21
+    total: 21
+    lower_bound: 0.845
+    lift: 1.0
+    split:
+    - - builder:global#Response.json
+      - 21
+  example: app/api/accounts/route.ts#GET
+  selector_version: 3
+  promoted_from_practice: P-9fdb90
+  from_map: practice

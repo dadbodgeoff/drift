@@ -33,6 +33,16 @@ main branch.
 
 ### Added
 
+- **Studio: what a check rests on, and the security baseline.** The Check view
+  lists, per accepted mined rule, the members that follow it, break it and were
+  not checked (with why), and whether it is stale (`standing[]`); a departure's
+  `drift practices promote` command, copyable; and in PR mode the security
+  advice (`security_advice[]`) or, with a baseline, what is not in it. The
+  Security view adds "Look at these first" (`drift security --top`), "Nothing
+  reaches" (`unreached[]`), the entry points a change adds whose guard is
+  unknown, shown as unknown (`guard_unknown[]`), and a confirmed, audited
+  `drift security --write-baseline`.
+
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise

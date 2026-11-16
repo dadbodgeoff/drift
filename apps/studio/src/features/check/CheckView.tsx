@@ -18,6 +18,7 @@ import { mdCode, mdTable } from "@/shared/lib/markdown";
 import { navigate } from "@/shared/lib/router";
 import { useOpenCode } from "@/shared/ui/code";
 import { Loading } from "@/shared/ui/QueryState";
+import { PromoteHint, SecurityAdviceSection, StandingSection } from "./Basis";
 
 const PAGE = 100;
 const LEDGER: ViolationStatus[] = ["block", "advise", "held", "unsure", "suppressed", "baselined", "fixed"];
@@ -317,6 +318,15 @@ export function CheckView() {
                 );
               })}
             </div>
+          )}
+          {(report.standing || (report.conventions && !report.conventions.some((k) => k.status === "accepted" && k.rule_kind !== "practice"))) && <StandingSection rows={report.standing ?? []} summaries={new Map(report.violations.map((v) => [v.id, v.summary]))} onConvention={(id) => navigate("conventions", id)} />}
+          {(diff || report.security) && (
+            <SecurityAdviceSection
+              advice={report.security_advice ?? []}
+              ratchet={report.security}
+              onOpen={(path, line, a) => openCode({ path, line: line ?? undefined, context: { title: `${a.kind}: ${a.key}`, detail: a.read, tone: a.kind === "unscoped-key" ? "warning" : "danger" } })}
+              onSecurity={() => navigate("security")}
+            />
           )}
           {(report.practices?.departures.length ?? 0) > 0 && <DepartSection departures={report.practices!.departures} />}
           {(report.stale_practices?.length ?? 0) > 0 && <StalePracticesSection stale={report.stale_practices!} />}
@@ -631,6 +641,12 @@ function PracticesNotCheckedSection({ rows }: { rows: PracticeNotChecked[] }) {
 
 function DepartSection({ departures }: { departures: PracticeDeparture[] }) {
   const openCode = useOpenCode();
+  const toast = useToast();
+  const copy = (command: string) =>
+    void navigator.clipboard?.writeText(command).then(
+      () => toast.show({ title: "Command copied", body: command, tone: "success", duration: 2500 }),
+      () => toast.show({ title: "Could not copy", body: command, tone: "neutral", duration: 5000 }),
+    );
   const [limit, setLimit] = useState(PAGE);
   return (
     <section id="ck-practices" className="ck-exempt ck-practices" aria-labelledby="ck-practices-title">
@@ -679,6 +695,7 @@ function DepartSection({ departures }: { departures: PracticeDeparture[] }) {
                     </>
                   )}
                 </span>
+                {d.promote && <PromoteHint command={d.promote} onCopy={copy} />}
               </span>
             </li>
           );

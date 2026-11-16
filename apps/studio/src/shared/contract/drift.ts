@@ -1571,7 +1571,7 @@ export interface Inventory {
    * parser reported errors. Sorted (newer drift; absent when empty).
    */
   unreached?: { path: string; parsed: boolean; sinks?: string[]; unlisted?: number[] }[];
-  /** With `--top N` only (the Studio does not pass it): the findings to look at first, ranked (security_summary.rs `Top`). */
+  /** With `--top N` only (the Security view's "Look at these first" runs it apart): the findings to look at first, ranked (security_summary.rs `Top`). */
   top?: SecurityTop;
   /** Source files that were not read (too large, a line too long, nested too deep, not UTF-8), tests and generated files apart: an entry point or a risky operation in one is not listed (newer drift; absent when empty). */
   skipped?: { path: string; reason: string }[];
@@ -1719,9 +1719,11 @@ export interface SecurityRanked {
   /** The operation's function (`path#Symbol`). */
   sink: string;
   sink_line?: number;
-  caller: "anyone" | "passes_guard" | "service";
+  /** Who can reach the operation (security_summary.rs `Caller`): `hook_not_read` and `unread` rest on what Drift did not read. */
+  caller: "anyone" | "hook_not_read" | "passes_guard" | "service" | "unread";
   validation: "not_found" | "not_read" | "found";
-  places: { path: string; line: number; method: string | null; route: string | null; symbol: string; exposure: Exposure; guard: string; guard_not_read?: number; via: string[] }[];
+  /** `schema_in_body`: the validation found is a schema seen in the body (absent when false). */
+  places: { path: string; line: number; method: string | null; route: string | null; symbol: string; exposure: Exposure; guard: string; guard_not_read?: number; schema_in_body?: boolean; via: string[] }[];
 }
 
 /**

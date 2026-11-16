@@ -26,6 +26,13 @@
    "path": "/work/broken",
    "name": "broken",
    "errors": true
+  },
+  {
+   "id": "harbor",
+   "path": "/work/harbor",
+   "name": "harbor",
+   "securityTop": true,
+   "baseline": true
   }
  ],
  "sessions": [

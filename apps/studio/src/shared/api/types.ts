@@ -61,6 +61,10 @@ export interface StudioApi {
   security(repo: RepoRef, opts?: RunOpts): Promise<Loaded<Inventory>>;
   /** `drift security --json --diff-base <base>`: only what the change since the merge base introduces (exit 0: facts for review). */
   securityDiff(repo: RepoRef, opts: RunOpts & { base: string }): Promise<Loaded<SecurityDiff>>;
+  /** `drift security --top N --json` (0: all): the inventory with `top`, the findings to look at first, ranked by what Drift read. Read-only. */
+  securityTop(repo: RepoRef, n: number, opts?: RunOpts): Promise<Loaded<Inventory>>;
+  /** `drift security --write-baseline`: an explicit write (`.drift/security.lock`); returns the audit entry with Drift's output. */
+  securityBaseline(repo: RepoRef): Promise<AuditEntry>;
   /** `drift practices --json`: for each cross-cutting concern, its variants by share, where each lives and an example (facts, not rules). */
   practices(repo: RepoRef, opts?: RunOpts): Promise<Loaded<PracticesReport>>;
   /** `drift map --json`: packages with production and test dependencies apart (the Map view draws its graph from `drift scan`). */
