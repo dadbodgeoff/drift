@@ -28,7 +28,33 @@ pub fn use_keys(key: &str) -> Vec<&str> {
     if key.is_empty() || key == super::TAIL || key.starts_with("any_of(") {
         return Vec::new();
     }
-    key.split('+').collect()
+    split_uses(key)
+}
+
+/// A variant key cut into its uses' keys, at each `+` that [`super::VariantKey::new`]
+/// put between two uses: one followed by a mechanism (a word of lowercase letters,
+/// digits and `_`) and its `:`. An instrument may hold a `+` itself (a SvelteKit
+/// `src/routes/+page.server.ts`, a route parameter `:path+`), and it is not cut there.
+/// The separator itself stays `+`: changing it would change every stored key and
+/// practice id.
+pub fn split_uses(key: &str) -> Vec<&str> {
+    let mut out = Vec::new();
+    let mut start = 0;
+    for (i, _) in key.match_indices('+') {
+        let rest = &key[i + 1..];
+        let new_use = rest.split_once(':').is_some_and(|(m, _)| {
+            m.bytes().next().is_some_and(|b| b.is_ascii_lowercase())
+                && m
+                    .bytes()
+                    .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_')
+        });
+        if new_use {
+            out.push(&key[start..i]);
+            start = i + 1;
+        }
+    }
+    out.push(&key[start..]);
+    out
 }
 
 /// The use one use's key names (`wrap:lib/auth.ts#withAuth`), as it is written: the key

@@ -180,7 +180,10 @@ pub struct Way {
     /// Its key ([`super::VariantKey::key`]): what the rule stores.
     pub key: String,
     pub label: String,
-    /// The units of the place that do it this way.
+    /// The units of the place that do it this way. Ways may overlap: where the uses of
+    /// a concern add up ([`Concern::additive`]), a unit that does two accepted ways is a
+    /// member of each, so the members of a practice's ways (its `Evidence.split`) may
+    /// sum to more than the units that follow it.
     pub members: usize,
     /// A folded policy's alternatives' keys (`any_of(A|B)` accepts `A` and `B`); empty
     /// for any other way.
@@ -242,7 +245,7 @@ pub struct Candidate {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub any_enforcing: bool,
     /// What it accepts is what code does by doing nothing ([`Concern::passive`]: errors
-    /// left to the framework, logs to the language's own output): new code follows it
+    /// left to the framework): new code follows it
     /// without trying, so as a rule it holds code to little. Still a candidate; a list
     /// shows it apart.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -945,6 +948,20 @@ impl Accepts {
             mechanisms: any_mechanism.iter().cloned().collect(),
             enforcing: any_enforcing,
         }
+    }
+
+    /// A stored rule read against the map's `variants`: a key that is a folded
+    /// policy's own (`any_of(a|b|c)`, as practices promoted before a fold's
+    /// alternatives were stored kept it) accepts its alternatives' keys too, which are
+    /// what the fold's units carry.
+    fn with_folds(mut self, variants: &[Variant]) -> Self {
+        let more: Vec<String> = variants
+            .iter()
+            .filter(|v| !v.alternatives.is_empty() && self.keys.contains(&v.key))
+            .flat_map(|v| v.alternatives.iter().map(|a| a.key.clone()))
+            .collect();
+        self.keys.extend(more);
+        self
     }
 }
 
@@ -2461,7 +2478,8 @@ pub fn check(
             continue;
         };
         let r = Reading::new(cr);
-        let accepted = Accepts::of_rule(any_of, any_mechanism, *any_enforcing);
+        let accepted =
+            Accepts::of_rule(any_of, any_mechanism, *any_enforcing).with_folds(&cr.variants);
         let judged = r.judged(&place, &r.verdicts(&accepted));
         if !judged.iter().any(|j| j.verdict == Verdict::Follows) {
             out.stale.push(Stale {
@@ -2598,7 +2616,8 @@ pub fn replay(
         return Replay::default();
     };
     let r = Reading::new(cr);
-    let accepted = Accepts::of_rule(any_of, any_mechanism, *any_enforcing);
+    let accepted =
+        Accepts::of_rule(any_of, any_mechanism, *any_enforcing).with_folds(&cr.variants);
     let judged = r.judged(&place, &r.verdicts(&accepted));
     let mut dated: Vec<(i64, &Judged<'_>)> = judged
         .iter()
@@ -3533,9 +3552,11 @@ mod tests {
 
     /// Sign-in ways for the mechanism and enforcing tests: two wrappers, a dependency,
     /// a way that opens a route on purpose, one that only identifies the caller, and
-    /// one that does `withAuth` and checks more besides.
+    /// one that does `withAuth` and checks more besides. Without the fold of `variants`:
+    /// its alternatives are `A` and `B`, so it would hold every unit of either wrapper
+    /// and be the one way offered where these tests need no single way to qualify.
     fn signin_variants() -> Vec<Variant> {
-        let mut vs = variants();
+        let mut vs: Vec<Variant> = variants().into_iter().filter(|v| v.id != "P-fold").collect();
         vs.extend([
             variant("P-a", A, "wrap a", VariantKind::Known),
             variant("P-b", B, "wrap b", VariantKind::Known),
@@ -3816,8 +3837,10 @@ mod tests {
         assert_eq!((c.follows, c.jobs), (10, 0));
     }
 
-    /// Pins passive ways: errors left to the framework and logs to the console are what
-    /// code does by doing nothing; a way someone chose is not.
+    /// Pins passive ways: errors left to the framework are what code does by doing
+    /// nothing, as the classifier's `bubble` mechanism says; a way someone chose is not.
+    /// Logging to the console is not passive: no fact of the use says "the language's
+    /// own output", and the instrument's name is not one.
     #[test]
     fn a_way_of_doing_nothing_is_passive() {
         let errors = report_of(
@@ -3857,7 +3880,7 @@ mod tests {
             )],
             routes("lib", 0, 8, "P-console"),
         );
-        assert!(candidate(&logging, "P-console", None, &[], false).unwrap().passive);
+        assert!(!candidate(&logging, "P-console", None, &[], false).unwrap().passive);
     }
 
     /// Pins stale detection for each form of the rule: a practice nothing in its place
@@ -3949,5 +3972,43 @@ mod tests {
         // A key that holds `|` is read from the fold itself, not split.
         let piped = variant("P-one", "a:x|y", "one", VariantKind::Known);
         assert_eq!(way_keys(&piped), ["a:x|y"]);
+    }
+
+    /// Pins that a key is cut only between uses: an instrument that holds a `+` (a
+    /// SvelteKit `+layout.server.ts`, a route parameter `:p+`) is one use, so a unit
+    /// that does it and more follows it. Before, the instrument was cut in two and the
+    /// unit broke the practice.
+    #[test]
+    fn a_plus_in_an_instrument_is_not_a_second_use() {
+        let layout = "wrap:src/routes/+layout.server.ts#handle";
+        let key = format!("{layout}+body_check:event.locals.user");
+        assert_eq!(use_keys(&key), [layout, "body_check:event.locals.user"]);
+        assert_eq!(use_keys("matcher:/a/:p++wrap:x"), ["matcher:/a/:p+", "wrap:x"]);
+        assert_eq!(use_keys(layout), [layout]);
+        let mut uses = use_keys(&key);
+        uses.sort_unstable();
+        assert!(includes(&uses, layout));
+    }
+
+    /// Pins a practice stored with a fold's own key (`any_of(A|B)`), as one promoted
+    /// before a fold's alternatives were stored was: the fold's units follow it by
+    /// their own way. Before, none did: it went stale and reported nothing.
+    #[test]
+    fn a_practice_stored_with_a_folds_own_key_accepts_its_alternatives() {
+        let mut units: Vec<UnitRow> = (0..6)
+            .map(|i| own(&format!("svc/a{i}.py"), "h", "P-fold", "wrap:lib/a.ts#a"))
+            .collect();
+        units
+            .extend((0..4).map(|i| own(&format!("svc/b{i}.py"), "h", "P-fold", "wrap:lib/b.ts#b")));
+        units.extend(routes("svc", 0, 1, "P-none"));
+        let r = report(units);
+        let mut old = convention(&candidate(&r, "P-fold", None, &[], false).unwrap());
+        if let Rule::Practice { any_of, .. } = &mut old.rule {
+            *any_of = vec!["any_of(wrap:lib/a.ts#a|wrap:lib/b.ts#b)".into()];
+        }
+        let now = checked(&r, &old);
+        assert!(now.stale.is_empty(), "{:?}", now.stale);
+        assert_eq!(violating(&now), ["svc/r00/route.ts"]);
+        assert_eq!(replay(&r, &old, &|_| Some(1)).followed, 10);
     }
 }

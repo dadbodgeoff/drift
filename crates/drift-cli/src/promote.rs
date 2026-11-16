@@ -615,13 +615,12 @@ pub fn drop_decided(report: &mut PracticesReport, policy: &ConventionsFile) {
             };
             let id = promote::convention_id(&place, &c.id);
             let done = policy.conventions.iter().any(|x| match &x.rule {
-                Rule::Practice { concern, .. } if *concern == c.id => {
-                    if x.status == Status::Rejected {
-                        x.id == id
-                    } else {
-                        promote::place_of(x).is_some_and(|p| overlaps(&p, &place))
-                    }
-                }
+                Rule::Practice { concern, .. } if *concern == c.id => match x.status {
+                    Status::Rejected => x.id == id,
+                    // Only proposed: nobody decided it.
+                    Status::Proposed => false,
+                    Status::Accepted => promote::place_of(x).is_some_and(|p| overlaps(&p, &place)),
+                },
                 _ => false,
             });
             if done {
@@ -634,11 +633,12 @@ pub fn drop_decided(report: &mut PracticesReport, policy: &ConventionsFile) {
     }
 }
 
-/// The promoted practice of `policy`, not rejected, of the candidate's concern, whose
-/// place overlaps the candidate's.
+/// The promoted practice of `policy`, accepted, of the candidate's concern, whose
+/// place overlaps the candidate's. One only proposed (`drift init`'s, from the map) is
+/// no decision: a person has not promoted it.
 fn covering<'a>(policy: &'a ConventionsFile, c: &Candidate) -> Option<&'a Convention> {
     policy.conventions.iter().find(|x| {
-        x.status != Status::Rejected
+        x.status == Status::Accepted
             && matches!(&x.rule, Rule::Practice { concern, .. } if *concern == c.concern)
             && promote::place_of(x).is_some_and(|p| overlaps(&p, &c.place))
     })
@@ -782,13 +782,12 @@ pub fn drop_decided_departures(
         };
         let id = promote::convention_id(&place, &d.concern);
         let decided = policy.conventions.iter().any(|x| match &x.rule {
-            Rule::Practice { concern, .. } if *concern == d.concern => {
-                if x.status == Status::Rejected {
-                    x.id == id
-                } else {
-                    promote::place_of(x).is_some_and(|p| overlaps(&p, &place))
-                }
-            }
+            Rule::Practice { concern, .. } if *concern == d.concern => match x.status {
+                Status::Rejected => x.id == id,
+                // Only proposed: nobody decided it.
+                Status::Proposed => false,
+                Status::Accepted => promote::place_of(x).is_some_and(|p| overlaps(&p, &place)),
+            },
             _ => false,
         });
         if decided {
@@ -990,7 +989,7 @@ fn list_of(
         if !ranked.passive.is_empty() {
             writeln!(
                 stdout,
-                "{} more that code here follows by doing nothing (errors left to the framework, logs to the language's own output): new code follows them without trying, so as a rule each holds it to little. Listed apart:",
+                "{} more that code here follows by doing nothing (errors left to the framework): new code follows them without trying, so as a rule each holds it to little. Listed apart:",
                 ranked.passive.len()
             )?;
             for r in &ranked.passive {
@@ -1537,5 +1536,62 @@ mod tests {
     fn units_read_as_plurals() {
         assert_eq!(units("entry_point"), "entry points");
         assert_eq!(units("tests"), "tests");
+    }
+
+    /// Pins that a practice only proposed (`drift init`'s, from the map) is no decision:
+    /// it covers no candidate (so `--list` lists it, not "Already promoted"), takes no
+    /// variant's offer and no departure's command. Before, every convention not
+    /// rejected did. Accepted, it does all three.
+    #[test]
+    fn a_practice_only_proposed_is_not_promoted() {
+        use drift_mine::practices::{ConcernReport, Departure, Variant};
+        use drift_mine::practices::Promotable;
+        let c = cand("authn", "app/api", &["P-a"], &[], false);
+        let mut proposed = promote::convention(&c);
+        proposed.status = Status::Proposed;
+        proposed.from_map = Some("practice".into());
+        let file = |conv: Convention| ConventionsFile {
+            version: drift_mine::policy::POLICY_VERSION_SINGLE,
+            engine: String::new(),
+            file_kinds: drift_mine::roles::FileKinds::default(),
+            suggestion_cap: None,
+            agents: Default::default(),
+            review_log: Default::default(),
+            packages: Vec::new(),
+            conventions: vec![conv],
+        };
+        let report = || PracticesReport {
+            concerns: vec![ConcernReport {
+                id: "authn".into(),
+                variants: vec![Variant {
+                    id: "P-a".into(),
+                    promotable: Some(Promotable {
+                        rule: "practice".into(),
+                        role: String::new(),
+                        place: Some("app/api".into()),
+                    }),
+                    ..Variant::default()
+                }],
+                ..ConcernReport::default()
+            }],
+            ..PracticesReport::default()
+        };
+        let departure = || Departure {
+            concern: "authn".into(),
+            path: "app/api/x/route.ts".into(),
+            dir: "app/api".into(),
+            promote: Some("drift practices promote P-a --in app/api".into()),
+            ..Departure::default()
+        };
+        for (conv, decided) in [(proposed.clone(), false), (promote::convention(&c), true)] {
+            let policy = file(conv);
+            assert_eq!(covering(&policy, &c).is_some(), decided);
+            let mut r = report();
+            drop_decided(&mut r, &policy);
+            assert_eq!(r.concerns[0].variants[0].promotable.is_none(), decided);
+            let mut deps = vec![departure()];
+            drop_decided_departures(&report(), &policy, &mut deps);
+            assert_eq!(deps[0].promote.is_none(), decided);
+        }
     }
 }
