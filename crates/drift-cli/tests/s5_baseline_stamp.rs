@@ -124,9 +124,16 @@ fn a_baseline_with_no_stamp_is_the_first_inventory_and_fails_as_it_did() {
     assert_eq!(code, 0, "{out}{err}");
 
     // A finding of a kind whose reading this Drift widened (`no-guard`) is not one
-    // the first inventory would have found as it is found now: against it, it is
-    // listed and fails nothing (F3, review R3: the upgrade must not fail CI).
+    // the first inventory would have found as it is found now: where the commit that
+    // wrote the baseline shows it was there (its code unchanged since), it is listed
+    // and fails nothing (F3, review R3: the upgrade must not fail CI). Uncommitted,
+    // nothing shows it is old code, and it fails (review of PR 148, area 7 item 1).
     write(r, "app/api/u9/route.ts", UNGUARDED);
+    let (code, out, _) = drift(r, &["security", "--ratchet"]);
+    assert_eq!(code, 1, "{out}");
+    git(r, &["init", "-q"]);
+    git(r, &["add", "-A"]);
+    git(r, &["commit", "-qm", "as the older Drift wrote it"]);
     let (code, out, _) = drift(r, &["security", "--ratchet"]);
     assert_eq!(code, 0, "{out}");
     assert!(
@@ -202,7 +209,7 @@ fn a_guard_gap_the_change_did_not_touch_fails_nothing() {
     let (code, text, _) = drift(r, &["check", "--diff-base", "main"]);
     assert_eq!(code, 0, "{text}");
     assert!(
-        text.contains("[guard-gap] in files this change did not touch: other entry points gained the guard, so these are not this change's; they fail nothing\n"),
+        text.contains("[guard-gap] in files this change did not touch, lacking what they lacked before it (other entry points gained the guard, or the gap was there already): not this change's; they fail nothing\n"),
         "{text}"
     );
 

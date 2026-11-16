@@ -2579,16 +2579,17 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 return Ok(ExitCode::SUCCESS);
             }
             if *ratchet {
-                let Some(baseline) = drift_mine::ratchet::load_baseline(root)
-                    .with_context(|| format!("reading {}", drift_mine::ratchet::SECURITY_LOCK))?
-                else {
+                let Some((baseline, header)) = security_baseline_checked(root, None)? else {
                     anyhow::bail!(
                         "no security baseline ({}): write one with `drift security --write-baseline`",
                         drift_mine::ratchet::SECURITY_LOCK
                     );
                 };
                 let found = baseline_findings(root, &facts, &inv)?;
-                let result = drift_mine::ratchet::compare_with(&found, &baseline, None);
+                // What is held apart as new in this Drift is what the commit that
+                // last wrote the baseline shows to be old code ([`security_compare`]).
+                let mut result = security_compare(root, &inv, &found, &baseline, None);
+                result.header = header;
                 if *json {
                     println!("{}", serde_json::to_string_pretty(&result)?);
                 } else {
@@ -4617,6 +4618,12 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                             "message": { "text": line },
                         }));
                     }
+                    for line in security.iter().flat_map(security_said) {
+                        notes.push(serde_json::json!({
+                            "level": "warning",
+                            "message": { "text": line },
+                        }));
+                    }
                     // What the security baseline does not hold fails the check: a
                     // result, so that code scanning shows why, under a rule per kind.
                     for (kind, rows) in security.iter().flat_map(|s| &s.added) {
@@ -4738,6 +4745,11 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     {
                         println!("drift security: {line}");
                     }
+                    // What the baseline's header says, and why findings of newer
+                    // readings fail: said once, in the log.
+                    for line in security.iter().flat_map(security_said) {
+                        println!("drift security: {line}");
+                    }
                     // Advice is said in the log, not as annotations: the practice
                     // notices above already point at new entry points.
                     print!("{}", drift_mine::ratchet::render_advice(&advice));
@@ -4846,19 +4858,195 @@ fn check_security(
     if files_named {
         return Ok(None);
     }
-    let Some(baseline) = drift_mine::ratchet::load_baseline(root)
-        .with_context(|| format!("reading {}", drift_mine::ratchet::SECURITY_LOCK))?
-    else {
+    let Some((baseline, header)) = security_baseline_checked(root, scope)? else {
         return Ok(None);
     };
     let inv = security_inventory(cli, root, facts);
     let found = baseline_findings(root, facts, &inv)?;
+    let mut r = security_compare(root, &inv, &found, &baseline, scope);
+    r.header = header;
+    Ok(Some(r))
+}
+
+/// What a check says of the security baseline outside its findings: its header
+/// ([`drift_mine::ratchet::Ratchet::header`]) and why findings of newer readings
+/// fail ([`drift_mine::ratchet::unshown_line`]).
+fn security_said(r: &drift_mine::ratchet::Ratchet) -> Vec<String> {
+    r.header
+        .iter()
+        .cloned()
+        .chain(drift_mine::ratchet::unshown_line(r))
+        .collect()
+}
+
+/// The security baseline a check enforces, with what is said of its header
+/// ([`drift_mine::ratchet::Ratchet::header`]); `None` where there is none.
+///
+/// Against a diff, the change's own edit of the header does not decide what checks
+/// it: the merge base's baseline is read too, and the stricter header of the two is
+/// enforced ([`drift_mine::ratchet::stricter`]); a change that deletes the baseline
+/// is checked against the merge base's. With no diff there is no older header to
+/// enforce, so an edit git shows that checks less (against `HEAD`, or else in the
+/// commit that last wrote the file) is said. A header that cannot be read in full
+/// is said in both.
+fn security_baseline_checked(
+    root: &Path,
+    scope: Option<&pr::DiffScope>,
+) -> anyhow::Result<Option<(drift_mine::ratchet::Baseline, Vec<String>)>> {
+    use drift_mine::ratchet::{self, SECURITY_LOCK};
+    let text = match std::fs::read_to_string(root.join(SECURITY_LOCK)) {
+        Ok(t) => Some(t),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
+        Err(e) => return Err(e).with_context(|| format!("reading {SECURITY_LOCK}")),
+    };
+    let mut said: Vec<String> = text.as_deref().map(ratchet::header_problems).unwrap_or_default();
+    let head = text.as_deref().map(ratchet::parse_baseline);
+    let baseline = match scope {
+        Some(s) => {
+            let base = pr::file_at(root, &s.merge_base, SECURITY_LOCK)
+                .map(|t| ratchet::parse_baseline(&t));
+            match (head, base) {
+                (Some(head), Some(base)) => {
+                    let (kept, weakened) = ratchet::stricter(&head, &base);
+                    said.extend(weakened);
+                    Some(kept)
+                }
+                (None, Some(base)) => {
+                    said.push(format!(
+                        "this change deletes {SECURITY_LOCK}; this check reads the baseline the change starts from"
+                    ));
+                    Some(base)
+                }
+                (head, None) => head,
+            }
+        }
+        None => {
+            if let (Some(now), Some(text)) = (&head, &text) {
+                let at_head = pr::file_at(root, "HEAD", SECURITY_LOCK);
+                let was = match at_head {
+                    Some(t) if t != *text => Some(t),
+                    _ => pr::last_commit_of(root, SECURITY_LOCK)
+                        .ok()
+                        .and_then(|c| pr::file_at(root, &format!("{c}^"), SECURITY_LOCK)),
+                };
+                if let Some(was) = was {
+                    said.extend(ratchet::header_weakened(&ratchet::parse_baseline(&was), now));
+                }
+            }
+            head
+        }
+    };
+    Ok(baseline.map(|b| (b, said)))
+}
+
+/// `found` compared with the security baseline ([`drift_mine::ratchet::compare_with`]),
+/// with what shows which findings it does not hold are old code read anew
+/// ([`drift_mine::ratchet::Since`]): what this Drift finds at a commit before the
+/// change, and the files changed since. Against a diff (`scope`) that commit is the
+/// merge base; with none, the commit that last wrote the baseline, so a run on a
+/// branch holds apart nothing the branch added. It is read only where something
+/// could be held apart ([`drift_mine::ratchet::needs_since`]). Where it cannot be
+/// read (no git, the baseline in no commit, the commit not scanned) nothing is held
+/// apart, and the run says why ([`drift_mine::ratchet::Ratchet::unshown_why`]).
+///
+/// Against a diff, the entry points the change adds whose guard cannot be read are
+/// listed too ([`drift_mine::ratchet::Ratchet::guard_unknown`]).
+fn security_compare(
+    root: &Path,
+    inv: &drift_mine::security::Inventory,
+    found: &drift_mine::ratchet::Findings,
+    baseline: &drift_mine::ratchet::Baseline,
+    scope: Option<&pr::DiffScope>,
+) -> drift_mine::ratchet::Ratchet {
+    use drift_mine::ratchet::{self, SECURITY_LOCK, Since};
+    let diff = scope.is_some();
     let touched = |p: &str| scope.is_some_and(|s| s.touches(p));
-    Ok(Some(drift_mine::ratchet::compare_with(
-        &found,
-        &baseline,
-        scope.map(|_| &touched as &dyn Fn(&str) -> bool),
-    )))
+    let unknown_added = scope.is_some_and(|s| {
+        inv.entry_points
+            .iter()
+            .any(|e| s.touches(&e.path) && e.guards.is_empty() && !e.opaque.is_empty())
+    });
+    if !unknown_added && !ratchet::needs_since(found, baseline, diff, &touched) {
+        return ratchet::compare_with(found, baseline, None);
+    }
+    // With no diff: the change is everything since the commit that last wrote the
+    // baseline, and the working tree.
+    let since_lock;
+    let (scope, why): (Option<&pr::DiffScope>, Option<String>) = match scope {
+        Some(s) => (Some(s), None),
+        None => match pr::last_commit_of(root, SECURITY_LOCK) {
+            Ok(commit) => match pr::DiffScope::from_git(root, &commit) {
+                Ok(s) => {
+                    since_lock = s;
+                    (Some(&since_lock), None)
+                }
+                Err(_) => (
+                    None,
+                    Some(format!(
+                        "what changed since commit {}, which last wrote {SECURITY_LOCK}, could not be read",
+                        &commit[..commit.len().min(12)]
+                    )),
+                ),
+            },
+            Err(why) => (None, Some(why)),
+        },
+    };
+    let base = scope.map(|s| {
+        let read = s.with_base(root, |base_root, base_facts| {
+            let mut base_inv = drift_mine::security::inventory_with(
+                base_facts,
+                drift_mine::security::Boundaries::load(base_root),
+            );
+            base_inv.workflows = drift_mine::workflows::read(base_root);
+            base_inv.dependencies = drift_mine::dependencies::read(base_root);
+            base_inv.cluster = drift_mine::kubernetes::read(base_root);
+            baseline_findings(base_root, base_facts, &base_inv).map(|f| (f, base_inv))
+        });
+        match read {
+            Ok(Ok(read)) => Ok((s, read)),
+            Ok(Err(_)) | Err(_) => Err(format!(
+                "commit {} could not be read",
+                &s.merge_base[..s.merge_base.len().min(12)]
+            )),
+        }
+    });
+    let (s, (base_found, base_inv)) = match base {
+        Some(Ok(read)) => read,
+        Some(Err(why_not)) => {
+            let mut r = ratchet::compare_with(found, baseline, None);
+            r.unshown_why = Some(why_not);
+            return r;
+        }
+        None => {
+            let mut r = ratchet::compare_with(found, baseline, None);
+            r.unshown_why = why;
+            return r;
+        }
+    };
+    let base_found: BTreeSet<(String, String)> = base_found.into_keys().collect();
+    let since = Since {
+        commit: s.merge_base.clone(),
+        touched: found
+            .values()
+            .map(|at| at.rsplit_once(':').map_or(at.as_str(), |(p, _)| p))
+            .filter(|p| s.touches(p))
+            .map(str::to_string)
+            .collect(),
+        outside: if diff {
+            ratchet::not_the_changes_gaps(&base_inv, inv, &base_found, &|p| s.touches(p))
+        } else {
+            BTreeSet::new()
+        },
+        found: base_found,
+    };
+    let mut r = ratchet::compare_with(found, baseline, Some(&since));
+    if diff {
+        let regs = drift_mine::security::regressions(&base_inv, inv, &|p| s.touches(p), &|p| {
+            s.old_path(p).to_string()
+        });
+        r.guard_unknown = ratchet::guard_unknown(&regs.guard_unknown);
+    }
+    r
 }
 
 /// `drift check --diff-base` where the repository has no security baseline: what

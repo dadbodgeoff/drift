@@ -23,7 +23,7 @@ use drift_mine::policy::{
     POLICY_VERSION, POLICY_VERSION_FORMS, POLICY_VERSION_PACKAGES, POLICY_VERSION_SINGLE,
     written_version,
 };
-use drift_mine::ratchet::{Findings, compare_with, parse_baseline};
+use drift_mine::ratchet::{Findings, Since, compare_with, parse_baseline};
 
 /// The header `ConventionsFile::save` writes above the YAML.
 const HEADER: &str = "# Drift conventions: mined from this codebase, approved by people.\n\
@@ -308,7 +308,7 @@ fn found(rows: &[(&str, &str)]) -> Findings {
 /// then failing; what it holds is kept; a kind added since (`unscoped-key`) is new in
 /// this Drift and fails nothing; so is a finding of an old kind whose reading was
 /// widened since (`no-guard`: F3, review R3, the upgrade must not fail CI); a finding
-/// of an old kind read as before (`workflow`) that a change added still fails.
+/// of an old kind a change added since the commit compared with (`workflow`) still fails.
 #[test]
 fn an_old_security_baseline_keeps_working() {
     let b = parse_baseline(OLD_BASELINE);
@@ -340,7 +340,15 @@ fn an_old_security_baseline_keeps_working() {
             "unpinned_action in .github/workflows/ci.yml job deploy: someone/deploy@v2",
         ),
     ]);
-    let r = compare_with(&now, &b, None);
+    // What the commit that wrote the baseline shows (review of PR 148, area 7 item
+    // 1): every finding but the workflow step a change added since. With nothing to
+    // compare with, nothing would be held apart.
+    let shown = Since {
+        commit: "c0ffee".into(),
+        found: now.keys().filter(|(k, _)| k != "workflow").cloned().collect(),
+        ..Since::default()
+    };
+    let r = compare_with(&now, &b, Some(&shown));
     assert_eq!(r.kept, 2);
     assert!(r.new_in_drift.contains_key("unscoped-key"), "{r:?}");
     assert!(!r.added.contains_key("unscoped-key"), "{r:?}");
@@ -354,7 +362,7 @@ fn an_old_security_baseline_keeps_working() {
     assert_eq!(
         r.added.get("workflow").map(Vec::len),
         Some(1),
-        "a change's finding of a kind read as before still fails: {r:?}"
+        "a change's finding, not at the commit compared with, still fails: {r:?}"
     );
     assert!(r.gone.is_empty());
 

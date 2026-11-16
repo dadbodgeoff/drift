@@ -361,7 +361,10 @@ pub(crate) fn run(cli: &crate::Cli, args: &UpgradeArgs) -> anyhow::Result<ExitCo
         if let Some(b) = &baseline {
             let inv = crate::security_inventory(cli, root, &facts);
             let found = crate::baseline_findings(root, &facts, &inv)?;
-            let r = ratchet::compare_with(&found, b, None);
+            // New in this Drift only where the commit that last wrote the baseline
+            // shows it (a branch's own findings are not), so `--apply` never records
+            // what a change added ([`crate::security_compare`]).
+            let r = crate::security_compare(root, &inv, &found, b, None);
             security.failing_not_in_baseline = r.added.values().map(Vec::len).sum();
             for (kind, rows) in &r.new_in_drift {
                 security.new_in_drift.insert(kind.clone(), rows.len());
