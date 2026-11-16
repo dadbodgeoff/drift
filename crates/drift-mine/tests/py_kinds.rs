@@ -688,6 +688,7 @@ fn accepted_handler_rule(r: &RepoFacts) -> ConventionsFile {
         different_kind: Vec::new(),
         promoted_from_hidden: false,
         promoted_from_practice: None,
+        from_map: None,
     });
     p
 }

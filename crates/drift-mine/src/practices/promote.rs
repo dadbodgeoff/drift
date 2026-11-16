@@ -1019,6 +1019,8 @@ pub fn convention(c: &Candidate) -> Convention {
         rule: Rule::Practice {
             concern: c.concern.clone(),
             any_of,
+            any_mechanism: Vec::new(),
+            any_enforcing: false,
         },
         evidence: Evidence {
             holders,
@@ -1039,6 +1041,7 @@ pub fn convention(c: &Candidate) -> Convention {
         different_kind: Vec::new(),
         promoted_from_hidden: false,
         promoted_from_practice: c.ways.first().map(|w| w.id.clone()),
+        from_map: None,
     }
 }
 
@@ -1292,7 +1295,9 @@ pub fn check(
     let starts = crate::check::declaration_starts(repo);
     let listed = |path: &str| only_paths.is_none_or(|o| o.contains(path));
     for c in conventions {
-        let (Rule::Practice { concern, any_of }, Some(place)) = (&c.rule, place_of(c)) else {
+        let (Rule::Practice {
+            concern, any_of, ..
+        }, Some(place)) = (&c.rule, place_of(c)) else {
             continue;
         };
         let Some(cr) = report.concerns.iter().find(|x| x.id == *concern) else {
@@ -1410,7 +1415,9 @@ pub fn replay(
     c: &Convention,
     added: &dyn Fn(&str) -> Option<i64>,
 ) -> Replay {
-    let (Rule::Practice { concern, any_of }, Some(place)) = (&c.rule, place_of(c)) else {
+    let (Rule::Practice {
+            concern, any_of, ..
+        }, Some(place)) = (&c.rule, place_of(c)) else {
         return Replay::default();
     };
     let Some(cr) = report.concerns.iter().find(|x| x.id == *concern) else {
@@ -1763,6 +1770,8 @@ mod tests {
             Rule::Practice {
                 concern: AUTHN.into(),
                 any_of: vec!["wrap:lib/a.ts#a".into(), "wrap:lib/b.ts#b".into()],
+                any_mechanism: Vec::new(),
+                any_enforcing: false,
             }
         );
         assert_eq!(conv.promoted_from_practice.as_deref(), Some("P-fold"));

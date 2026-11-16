@@ -190,6 +190,22 @@ pub enum Rule {
     Practice {
         concern: String,
         any_of: Vec<String>,
+        /// Mechanisms accepted whole: a unit follows when one of its uses is of one of
+        /// these mechanisms, whichever instrument it names (the mechanism of a use is
+        /// what the classifier names it by, [`crate::practices::mechanism_of`]: `wrap`,
+        /// `permission`, `dependency`, ...). For a place whose rule is "a membership
+        /// check, by any of our permission classes", which no list of ways can keep up
+        /// with. Never a list of names: the vocabulary is the classifier's own. Absent
+        /// when empty, so a practice promoted by its ways is written as before.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        any_mechanism: Vec<String>,
+        /// Any way the classifier says enforces the concern follows (authentication:
+        /// a use that turns a caller away; authorization: a check it proved), named or
+        /// not in `any_of`: "every entry point here signs the caller in, however". A
+        /// unit with nothing found, or one that only identifies the caller, breaks it;
+        /// a unit the classifier cannot tell is never a violation. Absent when false.
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        any_enforcing: bool,
     },
 }
 
@@ -3081,7 +3097,9 @@ impl Rule {
             }
             // The words a person reads are the convention's summary, written from the
             // map's labels when it is promoted; this is the rule as the file holds it.
-            Rule::Practice { concern, any_of } => {
+            Rule::Practice {
+                concern, any_of, ..
+            } => {
                 format!("do {concern} one of these ways: {}", any_of.join(" or "))
             }
         }

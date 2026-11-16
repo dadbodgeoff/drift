@@ -3009,6 +3009,10 @@ fn unit_rows(report: &ConcernReport, placed: &[Placed], of_unit: &[String]) -> V
                     Outcome::None { .. } => p.backing.basis.clone(),
                     _ => None,
                 },
+                kind: None,
+                uses: Vec::new(),
+                enforces: None,
+                unscoped: None,
                 instrument: match &p.outcome {
                     Outcome::Unknown { instrument, .. } => instrument.clone(),
                     _ => String::new(),

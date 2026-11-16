@@ -1081,6 +1081,29 @@ pub struct UnitRow {
     /// what was read and what was seen and not read (additive to v1).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub basis: Option<basis::Basis>,
+    /// The kind of the entry point, as the facts name it (`http`, `server_action`,
+    /// `job`, ...), for a concern whose unit is an entry point: a background job takes
+    /// no request, so it is no unit of sign-in for a promoted practice to count
+    /// (additive to v1).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+    /// The key of each of the unit's known uses, one per use, sorted: what
+    /// [`UnitRow::key`] joins. A unit that does an accepted way and more still follows
+    /// that way, which only its separate uses can show (additive to v1).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub uses: Vec<String>,
+    /// Of a known unit: whether one of its uses enforces the concern, in the
+    /// classifier's own sense (authentication: it turns a caller away;
+    /// authorization: a check it proved). Absent where the concern has no such
+    /// notion or the unit is not known (additive to v1).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enforces: Option<bool>,
+    /// Of an authorization unit: the tenant or owner key the entry point takes from
+    /// the request and neither checks nor scopes, in a body read to the end
+    /// ([`FindingKind::UnscopedKey`], which lists the same units). Absent otherwise
+    /// (additive to v1).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unscoped: Option<String>,
     /// Of an unknown unit: the instrument its reason is about (the call whose body was
     /// not read, the name that does not resolve, the check found). For `drift
     /// investigate`, in process only: never serialised, so no output changes.

@@ -612,6 +612,7 @@ mod tests {
             different_kind: vec![],
             promoted_from_hidden: false,
             promoted_from_practice: None,
+            from_map: None,
         }
     }
 

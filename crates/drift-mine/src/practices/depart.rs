@@ -727,6 +727,10 @@ mod tests {
             does: None,
             key: None,
             route: None,
+            kind: None,
+            uses: Vec::new(),
+            enforces: None,
+            unscoped: None,
             instrument: String::new(),
         }
     }

@@ -773,6 +773,16 @@ pub struct Convention {
     /// convention, so they are written as before. Not part of the id.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub promoted_from_practice: Option<String>,
+    /// Drift proposed this convention from one of its maps, not from mining: which
+    /// fact it rests on (`practice`: a place of the practice map that qualifies for
+    /// promotion, proposed for a person to accept; `layering`: a pair of layers of the
+    /// structure map where one never imports the other; `manifest`: a workspace
+    /// package that imports only what its manifest declares). Such a proposal goes
+    /// through none of mining's gates and changes none of mining's output; like every
+    /// proposal, nothing checks it until a person accepts it. Absent for every mined
+    /// or hand-promoted convention, so they are written as before. Not part of the id.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from_map: Option<String>,
 }
 
 /// A file a person set apart from its convention as a different kind of thing
@@ -1139,6 +1149,7 @@ impl ConventionsFile {
                             different_kind: Vec::new(),
                             promoted_from_hidden: false,
                             promoted_from_practice: None,
+                            from_map: None,
                         },
                     );
                 }
@@ -1239,6 +1250,7 @@ impl Convention {
             different_kind: Vec::new(),
             promoted_from_hidden: false,
             promoted_from_practice: None,
+            from_map: None,
         }
     }
 }
