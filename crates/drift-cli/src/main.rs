@@ -1967,6 +1967,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 scan(root, &opts).with_context(|| format!("scanning {}", root.display()))?;
             let elapsed = started.elapsed();
             if let Some(out) = out {
+                export::refuse_policy_path(root, out, None, "the facts file")?;
                 std::fs::write(out, serde_json::to_vec_pretty(&facts)?)
                     .with_context(|| format!("writing {}", out.display()))?;
             }
@@ -3736,6 +3737,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 return Ok(ExitCode::SUCCESS);
             }
             if let Some(path) = export_log {
+                export::refuse_policy_path(root, path, None, "the study file")?;
                 let study = review_log::export(root, *include_paths)?;
                 let n = study["events"].as_array().map_or(0, Vec::len);
                 let mut text = serde_json::to_string_pretty(&study)?;
@@ -4200,6 +4202,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             let block = export::block(&project);
             match write {
                 Some(path) => {
+                    export::refuse_policy_path(root, path, None, "the agents file")?;
                     let existed = path.exists();
                     let existing = std::fs::read_to_string(path).unwrap_or_default();
                     write_out(root, path, export::splice(&existing, &block).as_bytes())?;
@@ -4216,6 +4219,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             let entries = lookup::claude_settings("drift");
             match write {
                 Some(path) => {
+                    export::refuse_policy_path(root, path, None, "the settings file")?;
                     let existed = path.exists();
                     let existing = std::fs::read_to_string(path).unwrap_or_default();
                     let merged =

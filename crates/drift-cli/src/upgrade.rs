@@ -39,7 +39,11 @@
 //! violation, and no change made it one. Wherever one of these cannot be shown (no git,
 //! a shallow clone, the policy never committed, the convention's rule or role changed
 //! since, a file Drift could not parse at that commit), the violation is listed as one
-//! Drift cannot tell about, for a person, and never baselined.
+//! Drift cannot tell about, for a person, and never baselined. So is one of a convention
+//! that was an undecided proposal at that commit (accepting it later was a person's
+//! decision, and what it breaks comes with that decision), and every one where the
+//! policy at that commit names this same Drift, or no Drift, as its `engine:` (the same
+//! Drift reads the code the same way: nothing it finds is a new reading).
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
@@ -311,7 +315,7 @@ pub(crate) fn run(cli: &crate::Cli, args: &UpgradeArgs) -> anyhow::Result<ExitCo
         inventory: baseline.as_ref().map(|b| b.version),
         stamped: security_text
             .as_deref()
-            .is_some_and(|t| t.lines().any(|l| l.starts_with(VERSION_LINE))),
+            .is_some_and(|t| without_bom(t).lines().any(|l| l.starts_with(VERSION_LINE))),
         this_inventory: INVENTORY_VERSION,
         ..Security::default()
     };
@@ -414,6 +418,22 @@ pub(crate) fn run(cli: &crate::Cli, args: &UpgradeArgs) -> anyhow::Result<ExitCo
             what: format!(
                 "{} security finding(s) are of kinds or detectors newer than {SECURITY_LOCK}; they fail nothing until it records them",
                 security.new_in_drift_total
+            ),
+            command: "drift upgrade --apply --security-baseline".into(),
+            by: "security_baseline",
+        });
+    } else if let Some(v) = security.inventory.filter(|v| *v < INVENTORY_VERSION) {
+        // Nothing newer is found today, but the stamp is older: a finding of a kind or
+        // detector newer than it, added later, would fail nothing. Stamping it again
+        // adds no finding and keeps the kinds that fail.
+        let stamp = if security.stamped {
+            format!("is stamped inventory {v}")
+        } else {
+            format!("has no inventory stamp (read as inventory {v})")
+        };
+        todo.push(Todo {
+            what: format!(
+                "{SECURITY_LOCK} {stamp} (this Drift: {INVENTORY_VERSION}); a finding of a kind or detector newer than it fails nothing until it is stamped again"
             ),
             command: "drift upgrade --apply --security-baseline".into(),
             by: "security_baseline",
@@ -676,10 +696,18 @@ fn lock_with(existing: Option<&str>, lock: &Lock, add: &Lock) -> Option<(String,
 /// The header line that stamps a security baseline ([`ratchet`]'s own).
 const VERSION_LINE: &str = "# inventory: ";
 
+/// `text` without a leading byte-order mark, which a Windows editor may save:
+/// [`ratchet::parse_baseline`] reads past it, so `drift check` reads such a baseline,
+/// and an upgrade must not refuse it as broken.
+fn without_bom(text: &str) -> &str {
+    text.strip_prefix('\u{feff}').unwrap_or(text)
+}
+
 /// A security baseline's stamp of a newer inventory, and lines that are no finding and
 /// no comment ([`ratchet::parse_lock`] skips them; [`ratchet::parse_baseline`] reads a
 /// stamp it cannot parse as the oldest).
 fn security_problems(text: &str) -> (Vec<String>, Vec<String>) {
+    let text = without_bom(text);
     let (mut newer, mut bad) = (Vec::new(), Vec::new());
     for (n, line) in text.lines().enumerate() {
         if let Some(v) = line.strip_prefix(VERSION_LINE) {
@@ -1301,6 +1329,20 @@ fn convention_base(root: &Path, current: &ConventionsFile, id: &str) -> Result<S
             "{CONVENTIONS_FILE} at commit {at} could not be read"
         ));
     };
+    // The same Drift on both sides reads the code the same way, so nothing can be a
+    // reading change; and a file that names no Drift cannot show it was another one.
+    // (`engine:` names the Drift that last ran `drift init`, which wrote the lock.)
+    if then.engine.is_empty() {
+        return Err(format!(
+            "{CONVENTIONS_FILE} at commit {at} records no Drift that wrote it, so Drift cannot tell its reading changed since"
+        ));
+    }
+    if then.engine == crate::engine() {
+        return Err(format!(
+            "{CONVENTIONS_FILE} at commit {at} was written by this same Drift ({}), so no violation can come from a new reading",
+            crate::engine()
+        ));
+    }
     let (Some(was), Some(now)) = (
         then.conventions.iter().find(|c| c.id == id),
         current.conventions.iter().find(|c| c.id == id),
@@ -1310,6 +1352,14 @@ fn convention_base(root: &Path, current: &ConventionsFile, id: &str) -> Result<S
     if was.status == Status::Rejected {
         return Err(format!(
             "{id} was rejected at commit {at}, so nothing was baselined for it then"
+        ));
+    }
+    // Undecided then, accepted since: the acceptance is a person's decision made after
+    // that commit, and what it breaks comes with that decision, not with a change in how
+    // Drift reads the code (a proposal from the map had no lock line written at all).
+    if was.status == Status::Proposed {
+        return Err(format!(
+            "{id} was an undecided proposal at commit {at} and was accepted since, so what it breaks comes with that decision, not with a new reading"
         ));
     }
     if was.role != now.role || was.rule != now.rule || was.selector_version != now.selector_version
@@ -1435,7 +1485,8 @@ fn integrations(
                 .map_err(|e| format!("{e:#}"))
         });
         let (state, note) = match now {
-            Ok(b) if b.as_str() == block => ("current", "the block is what this Drift writes".to_string()),
+            // Newline-blind: a CRLF file's block is written with CRLF ([`crate::export::splice`]).
+            Ok(b) if crate::export::same_block(block, b.as_str()) => ("current", "the block is what this Drift writes".to_string()),
             Ok(_) => (
                 "differs",
                 "the block differs from what this Drift writes; Drift cannot tell an older Drift's block from one a person edited (the older wording is not kept), so it leaves it".to_string(),

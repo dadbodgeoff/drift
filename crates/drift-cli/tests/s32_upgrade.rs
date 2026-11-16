@@ -133,9 +133,27 @@ fn without_accepted_evidence(yaml: &str) -> String {
     out
 }
 
+/// The policy with its `engine:` naming an older Drift, as that Drift's `drift init`
+/// wrote it: the same Drift on both sides reads nothing differently, so `drift upgrade`
+/// baselines nothing for a policy this very Drift wrote.
+fn older_engine(yaml: &str) -> String {
+    let out: String = yaml
+        .lines()
+        .map(|l| {
+            if l.starts_with("engine: ") {
+                "engine: drift 0.0.1\n".to_string()
+            } else {
+                format!("{l}\n")
+            }
+        })
+        .collect();
+    assert_ne!(out, yaml, "no engine line:\n{yaml}");
+    out
+}
+
 /// A Next.js app whose HTTP handlers are wrapped in `withAuth` but two (r38, r39),
 /// after `drift init` and every proposal accepted, rewritten as an older Drift wrote
-/// it; with `older_reading`, the lock lacks r39's lines, as a Drift whose reading did
+/// it (no `accepted_evidence`, an older `engine:`); with `older_reading`, the lock lacks r39's lines, as a Drift whose reading did
 /// not see that violation wrote it. Committed.
 fn repo(older_reading: bool) -> tempfile::TempDir {
     let dir = tempfile::tempdir().unwrap();
@@ -174,7 +192,7 @@ fn repo(older_reading: bool) -> tempfile::TempDir {
     write(
         r,
         ".drift/conventions.yaml",
-        &without_accepted_evidence(&yaml),
+        &older_engine(&without_accepted_evidence(&yaml)),
     );
     let lock = read(r, "drift.lock");
     assert!(lock.contains("app/api/r39/route.ts#GET"), "{lock}");
