@@ -168,8 +168,93 @@ fn an_error_handed_to_the_continuation_is_a_refusal_in_the_listed_reading() {
             .filter(|c| c.starts_with(prefix))
             .collect()
     };
-    assert!(!of("updateProfile").is_empty(), "{:?}", file.symbols);
+    // `users.get(req.cookies.token)` looks the caller up by the credential the
+    // request carries (`credential_identity`, older than this reading): the value
+    // is the caller's own, so the branch is a check of the caller's own body, read
+    // exactly as `throw new Error(...)` in its place is (an `unauthenticated` body
+    // check and `rejects_caller`), not a refusal for what a callee gave.
+    let sym = |name: &str| {
+        file.symbols
+            .iter()
+            .find(|s| s.name == name)
+            .unwrap_or_else(|| panic!("{name}: {:?}", file.symbols))
+    };
+    let update = sym("updateProfile");
+    assert!(
+        update
+            .body_checks
+            .iter()
+            .any(|b| b.outcome == drift_core::CheckOutcome::Unauthenticated
+                && b.source == "src/users.ts#users.get"),
+        "{update:?}"
+    );
+    assert!(
+        update
+            .controls
+            .iter()
+            .any(|c| c == drift_core::controls::REJECTS_CALLER),
+        "{update:?}"
+    );
+    assert!(of("updateProfile").is_empty(), "{:?}", of("updateProfile"));
     // `next("route")` skips to another route: it refuses no one.
+    let skipped = sym("skipped");
+    assert!(of("skipped").is_empty(), "{:?}", of("skipped"));
+    assert!(skipped.body_checks.is_empty(), "{skipped:?}");
+    assert!(
+        !skipped
+            .controls
+            .iter()
+            .any(|c| c == drift_core::controls::REJECTS_CALLER),
+        "{skipped:?}"
+    );
+    // What mining reads has neither: the continuation is read since then.
+    let mined = r.files.iter().find(|f| f.path == path).unwrap();
+    for s in &mined.symbols {
+        assert!(s.body_checks.is_empty(), "{s:?}");
+        assert!(
+            !s.controls
+                .iter()
+                .any(|c| c == drift_core::controls::REJECTS_CALLER),
+            "{s:?}"
+        );
+    }
+}
+
+/// The same continuation where the value is what a callee gave for a value that is
+/// no credential (`users.get(req.params.id)`): whether that is who calls is said
+/// where the callee is read, as [`drift_core::controls::REFUSES_WITHOUT`], in the
+/// listed reading only.
+#[test]
+fn an_error_handed_to_the_continuation_for_a_value_a_callee_gave_refuses_without_it() {
+    let given = REFUSED.replace("req.cookies.token", "req.params.id");
+    let r = repo(&[
+        ("package.json", PACKAGE),
+        ("src/users.ts", USERS),
+        ("src/profile.ts", given.as_str()),
+    ]);
+    let prefix = drift_core::controls::REFUSES_WITHOUT;
+    let path = "src/profile.ts";
+    assert!(controls(&r, path, prefix).is_empty());
+    let listed = r.listed();
+    let file = listed
+        .files
+        .iter()
+        .find(|f| f.path == path)
+        .expect("src/profile.ts scanned");
+    let of = |name: &str| -> Vec<&String> {
+        file.symbols
+            .iter()
+            .filter(|s| s.name == name)
+            .flat_map(|s| s.controls.iter())
+            .filter(|c| c.starts_with(prefix))
+            .collect()
+    };
+    assert_eq!(
+        of("updateProfile"),
+        [&format!("{prefix}src/users.ts#users.get")],
+        "{:?}",
+        file.symbols
+    );
     assert!(of("skipped").is_empty(), "{:?}", of("skipped"));
 }
 

@@ -514,7 +514,7 @@ pub fn read<'a>(cx: &Cx<'a>, unit: &UnitRef<'a>) -> Reading {
             }
             r.position(verdict, own, &w.wrapper);
             if !nothing_here {
-                derived_bases(cx, sfile, s, &w.wrapper, &mut r);
+                derived_bases(cx, sfile, s, &w.wrapper, &guards, &mut r);
             }
             continue;
         }
@@ -946,7 +946,14 @@ const MAX_BASES: usize = 4;
 /// itself derived, to [`MAX_BASES`]. A base that is a package's, or one whose
 /// position is not proven a guard, adds nothing: the wrapper's own reading
 /// stands.
-fn derived_bases(cx: &Cx<'_>, sfile: &FileFacts, route: &Symbol, w: &str, r: &mut Reading) {
+fn derived_bases(
+    cx: &Cx<'_>,
+    sfile: &FileFacts,
+    route: &Symbol,
+    w: &str,
+    guards: &[&str],
+    r: &mut Reading,
+) {
     let mut cur = crate::mine::norm_ref(w).into_owned();
     for _ in 0..MAX_BASES {
         let Some(d) = cx.context().definition(&cur) else {
@@ -962,6 +969,16 @@ fn derived_bases(cx: &Cx<'_>, sfile: &FileFacts, route: &Symbol, w: &str, r: &mu
         if let crate::guard_position::Verdict::Guard(instrument) =
             crate::guard_position::read(cx, sfile, route, &base)
         {
+            // The base read as a route standing on it reads it ([`Reading::position`]):
+            // by its own reading where that signs in (`wrap isAuthed` of
+            // `authedProcedure = t.procedure.use(isAuthed)`), so a route on the
+            // derived builder follows the same practice as one on the base.
+            let mut own = Reading::default();
+            wrap(cx, sfile, &base, WrapKind::Call, guards, None, &mut own);
+            if own.signs_in() || !own.role_only.is_empty() {
+                r.absorb(own);
+                return;
+            }
             let u = use_of("wrap", &instrument);
             if !r.uses.contains(&u) {
                 r.add("wrap", &instrument, source(&instrument));
