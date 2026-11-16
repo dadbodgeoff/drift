@@ -26,6 +26,7 @@
 //!   line) stops the command before anything is read or written: exit 2.
 //! - **Exit codes.** 0: nothing needs doing. [`EXIT_PENDING`] (3): something does (by
 //!   `--apply` or by a person; the report says which, with the command). 2: refused.
+//!   1: a write of `--apply` failed; the report says what was written before it.
 //!
 //! Why a violation counts as "the reading changed": the commit that first wrote its
 //! convention into `.drift/conventions.yaml` also wrote `drift.lock` (every command
@@ -74,7 +75,8 @@ pub const HELP: &str = "Examples:
                                         this Drift (and only those)
 
 A file written by a newer Drift, or one that does not parse, stops the command with exit 2
-and nothing changed.";
+and nothing changed. Exit 1: a write of --apply failed; the report lists what was written
+before it (nothing after it was).";
 
 /// The arguments of `drift upgrade`.
 #[derive(clap::Args, Debug, Clone)]
@@ -230,6 +232,9 @@ struct Report {
     integrations: Vec<Integration>,
     /// What `--apply` did (empty in a dry run).
     done: Vec<String>,
+    /// The write that failed, if one did: nothing after it was written (exit 1).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    failed: Option<String>,
     /// What is left: in a dry run, everything to do.
     left: Vec<Todo>,
     /// Whether anything is left (the exit code is [`EXIT_PENDING`] then).
@@ -249,16 +254,26 @@ pub(crate) fn run(cli: &crate::Cli, args: &UpgradeArgs) -> anyhow::Result<ExitCo
         Err(e) => {
             match e.downcast_ref::<NewerPolicy>() {
                 Some(n) => newer.push(n.to_string()),
-                None => unreadable.push(format!("{e:#}")),
+                // A parse error can quote the file: repository text.
+                None => unreadable.push(sanitize(&format!("{e:#}"), 400)),
             }
             None
         }
     };
-    let lock_text = read_text(root, LOCK_FILE)?;
+    // A file that cannot be read at all (not a regular file, not UTF-8) is a refusal
+    // too, named, not an error after something was read.
+    let mut read_or_note = |rel: &str| match read_text(root, rel) {
+        Ok(t) => t,
+        Err(e) => {
+            unreadable.push(sanitize(&format!("{e:#}"), 400));
+            None
+        }
+    };
+    let lock_text = read_or_note(LOCK_FILE);
+    let security_text = read_or_note(SECURITY_LOCK);
     if let Some(text) = &lock_text {
         unreadable.extend(lock_problems(text));
     }
-    let security_text = read_text(root, SECURITY_LOCK)?;
     if let Some(text) = &security_text {
         let (n, u) = security_problems(text);
         newer.extend(n);
@@ -267,7 +282,7 @@ pub(crate) fn run(cli: &crate::Cli, args: &UpgradeArgs) -> anyhow::Result<ExitCo
     let config = match DriftConfig::load(root) {
         Ok(c) => Some(c),
         Err(e) => {
-            unreadable.push(format!("{e:#}"));
+            unreadable.push(sanitize(&format!("{e:#}"), 400));
             None
         }
     };
@@ -376,17 +391,18 @@ pub(crate) fn run(cli: &crate::Cli, args: &UpgradeArgs) -> anyhow::Result<ExitCo
     }
     for c in &conventions {
         if c.classes.contains(&"stale") || c.classes.contains(&"no_longer_checkable") {
+            // The id is the policy file's text: shown sanitised, quoted as a shell word.
+            let id = sanitize(&c.id, 80);
             todo.push(Todo {
                 what: format!(
-                    "look at {}: {}",
-                    c.id,
+                    "look at {id}: {}",
                     if c.classes.contains(&"stale") {
                         "it is stale now (it advises until a person decides)"
                     } else {
                         "Drift cannot tell any of its members now (nothing of it is checked)"
                     }
                 ),
-                command: format!("drift review --show {}", c.id),
+                command: format!("drift review --show {}", crate::promote::shell_word(&id)),
                 by: "person",
             });
         }
@@ -417,6 +433,9 @@ pub(crate) fn run(cli: &crate::Cli, args: &UpgradeArgs) -> anyhow::Result<ExitCo
     // violations the reading added, the integrations Drift installed itself, and the
     // security baseline only when asked.
     let mut done: Vec<String> = Vec::new();
+    // The first write that failed: nothing after it is written, and the report says
+    // what was (`done`) and what was not.
+    let mut failed: Option<String> = None;
     if args.apply {
         if let (Some(checked), Some(facts)) = (&checked_policy, &facts_held)
             && !reading.is_empty()
@@ -424,29 +443,36 @@ pub(crate) fn run(cli: &crate::Cli, args: &UpgradeArgs) -> anyhow::Result<ExitCo
             let all = drift_mine::roles::all_units(facts, &checked.file_kinds);
             let by_key: BTreeMap<String, &drift_mine::roles::Unit<'_>> =
                 all.iter().map(|u| (u.key(), u)).collect();
+            // The fingerprint `drift init` writes for the same violation
+            // ([`drift_mine::check::baseline`]).
             let add = Lock::baselining(&reading, |v| {
                 let u = by_key.get(&format!("{}#{}", v.path, v.symbol))?;
                 v.wire
                     .is_none()
                     .then(|| u.fingerprint(v.import.as_ref().map(|i| i.module.as_str())))
             });
-            let mut next = lock.clone();
-            next.entries.extend(add.entries);
-            if next != lock {
-                next.save(root)?;
-                done.push(format!(
-                    "baselined {} violation(s) in {LOCK_FILE} that appear only because this Drift reads the code differently (each with its fingerprint line)",
-                    reading.len()
-                ));
+            if let Some((text, n)) = lock_with(lock_text.as_deref(), &lock, &add) {
+                match policy::write_no_follow(root, Path::new(LOCK_FILE), text.as_bytes()) {
+                    Ok(()) => done.push(format!(
+                        "baselined {n} violation(s) in {LOCK_FILE} that appear only because this Drift reads the code differently (each with its fingerprint line, added at the end; no line removed)"
+                    )),
+                    Err(e) => failed = Some(format!("writing {LOCK_FILE}: {e:#}")),
+                }
             }
         }
         for (path, bytes) in &refresh {
-            crate::write_out(root, &root.join(path), bytes)?;
-            done.push(format!(
-                "refreshed {path}: added the entries this Drift writes that the older Drift did not (nothing removed)"
-            ));
+            if failed.is_some() {
+                break;
+            }
+            match crate::write_out(root, &root.join(path), bytes) {
+                Ok(()) => done.push(format!(
+                    "refreshed {path}: added the entries this Drift writes that the older Drift did not (nothing removed)"
+                )),
+                Err(e) => failed = Some(format!("writing {path}: {e:#}")),
+            }
         }
         if args.security_baseline
+            && failed.is_none()
             && let (Some(b), Some(text)) = (&baseline, &security_text)
         {
             let mut keys: ratchet::Findings = b
@@ -458,19 +484,33 @@ pub(crate) fn run(cli: &crate::Cli, args: &UpgradeArgs) -> anyhow::Result<ExitCo
                 keys.insert((kind.clone(), key.clone()), at.clone());
             }
             let next = ratchet::render_lock_with(&keys, &b.fail_kinds());
-            if next != *text {
-                policy::write_no_follow(root, Path::new(SECURITY_LOCK), next.as_bytes())?;
-                done.push(format!(
-                    "added to {SECURITY_LOCK} the {} finding(s) new in this Drift, stamped inventory {INVENTORY_VERSION}; every finding it held is kept, and the kinds that fail are as they were",
-                    new_findings.len()
+            // Only ever adds: every finding it held is in `next`, and the kinds that
+            // fail are the ones it said (or, unsaid, the ones it failed).
+            let kept = ratchet::parse_baseline(&next);
+            let safe = b.findings.is_subset(&kept.findings)
+                && kept.fail_kinds() == b.fail_kinds();
+            if !safe {
+                failed = Some(format!(
+                    "{SECURITY_LOCK} was not written: the baseline written again would not hold every finding and fail kind it holds"
                 ));
+            } else if next != *text {
+                match policy::write_no_follow(root, Path::new(SECURITY_LOCK), next.as_bytes()) {
+                    Ok(()) => done.push(format!(
+                        "added to {SECURITY_LOCK} the {} finding(s) new in this Drift, stamped inventory {INVENTORY_VERSION}; every finding it held is kept, and the kinds that fail are as they were",
+                        new_findings.len()
+                    )),
+                    Err(e) => failed = Some(format!("writing {SECURITY_LOCK}: {e:#}")),
+                }
             }
         }
-        todo.retain(|t| match t.by {
-            "apply" => false,
-            "security_baseline" => !args.security_baseline,
-            _ => true,
-        });
+        // After a failed write, everything stays listed: `done` says what was written.
+        if failed.is_none() {
+            todo.retain(|t| match t.by {
+                "apply" => false,
+                "security_baseline" => !args.security_baseline,
+                _ => true,
+            });
+        }
     }
     let pending = !todo.is_empty();
     let report = Report {
@@ -484,6 +524,7 @@ pub(crate) fn run(cli: &crate::Cli, args: &UpgradeArgs) -> anyhow::Result<ExitCo
         security,
         integrations: found_integrations,
         done,
+        failed,
         left: todo,
         pending,
     };
@@ -492,7 +533,9 @@ pub(crate) fn run(cli: &crate::Cli, args: &UpgradeArgs) -> anyhow::Result<ExitCo
     } else {
         print!("{}", render(&report));
     }
-    Ok(if pending {
+    Ok(if report.failed.is_some() {
+        ExitCode::from(1)
+    } else if pending {
         ExitCode::from(EXIT_PENDING)
     } else {
         ExitCode::SUCCESS
@@ -588,6 +631,42 @@ fn lock_problems(text: &str) -> Vec<String> {
         }
     }
     out
+}
+
+/// `drift.lock` as it is (`existing`, `None` when there is none) with the member lines
+/// of `add` that `lock` does not hold appended at the end, each followed by its
+/// fingerprint lines (`#~ <id> <fingerprint> <path#symbol>`, as [`Lock::save`] writes
+/// them), and how many member lines that is; `None` when there are none. Appended, not
+/// written again through [`Lock::save`]: that would drop a person's comments and any
+/// fingerprint line whose member line is gone, and an upgrade deletes no line. The
+/// order does not matter to [`Lock::load`].
+fn lock_with(existing: Option<&str>, lock: &Lock, add: &Lock) -> Option<(String, usize)> {
+    let mut out = existing.map_or_else(
+        || "# drift.lock: legacy violations that never block. Fix code to remove lines.\n".to_string(),
+        str::to_string,
+    );
+    if !out.is_empty() && !out.ends_with('\n') {
+        out.push('\n');
+    }
+    let mut n = 0;
+    for (id, key) in &add.entries {
+        if Lock::split_fingerprint(key).is_some() || lock.contains(id, key) {
+            continue;
+        }
+        out.push_str(&format!("{id} {key}\n"));
+        n += 1;
+        for (fid, fkey) in &add.entries {
+            if fid != id || lock.contains(fid, fkey) {
+                continue;
+            }
+            if let Some((fp, member)) = Lock::split_fingerprint(fkey)
+                && member == key.as_str()
+            {
+                out.push_str(&format!("#~ {id} {fp} {key}\n"));
+            }
+        }
+    }
+    (n > 0).then_some((out, n))
 }
 
 /// The header line that stamps a security baseline ([`ratchet`]'s own).
@@ -796,7 +875,10 @@ fn config_row(root: &Path, config: Option<&DriftConfig>) -> FileRow {
         written_by: None,
         format: None,
         this_drift: present.then(|| "reads it as written; a key it does not know is a warning, never an error".to_string()),
-        notes: config.map(|c| c.warnings.clone()).unwrap_or_default(),
+        // A warning names the repository's own keys.
+        notes: config
+            .map(|c| c.warnings.iter().map(|w| sanitize(w, 300)).collect())
+            .unwrap_or_default(),
     }
 }
 
@@ -820,7 +902,7 @@ fn review_log_row(root: &Path) -> FileRow {
         written_by: last
             .as_ref()
             .and_then(|v| v["drift"]["version"].as_str())
-            .map(|v| format!("drift {v} (its last event)")),
+            .map(|v| format!("drift {} (its last event)", sanitize(v, 80))),
         format: last
             .as_ref()
             .and_then(|v| v["v"].as_u64())
@@ -864,11 +946,13 @@ fn cache_row(root: &Path, no_cache: bool) -> FileRow {
     let tags = [drift_ts::parser_tag(), drift_py::parser_tag()];
     let dir = crate::project::cache_dir(root, no_cache);
     let mut older: Vec<String> = Vec::new();
-    let mut present = false;
+    // Whether the cache is in use, not whether its directory exists: this very run
+    // (or the first `drift check` after it) creates this Drift's generation, and the
+    // report must read the same before and after.
+    let present = dir.is_some();
     if let Some(dir) = &dir
         && let Ok(rd) = std::fs::read_dir(dir)
     {
-        present = true;
         for e in rd.flatten() {
             let name = e.file_name().to_string_lossy().into_owned();
             if !name.starts_with("facts-v") {
@@ -891,7 +975,7 @@ fn cache_row(root: &Path, no_cache: bool) -> FileRow {
         notes.push(format!(
             "{} older generation(s) this Drift does not read ({}); the cache is local and safe to delete to reclaim the space. Nothing was deleted.",
             older.len(),
-            older.join(", ")
+            sanitize(&older.join(", "), 400)
         ));
     }
     FileRow {
@@ -1026,10 +1110,16 @@ fn classify(root: &Path, policy: &ConventionsFile, lock: &Lock, new: &[Violation
     }
     let mut base_of: BTreeMap<String, Result<String, String>> = BTreeMap::new();
     for v in new {
-        if !base_of.contains_key(&v.id) {
-            base_of.insert(v.id.clone(), convention_base(root, policy, &v.id));
-        }
+        base_of
+            .entry(v.id.clone())
+            .or_insert_with(|| convention_base(root, policy, &v.id));
     }
+    // The lock as committed at HEAD: a line taken out of the working copy since is a
+    // person's doing, not the reading's.
+    let head_lock: BTreeSet<(String, String)> =
+        git_text(root, &["show", &format!("HEAD:./{LOCK_FILE}")])
+            .map(|t| lock_entries(&t))
+            .unwrap_or_default();
     let mut by_base: BTreeMap<String, Vec<&Violation>> = BTreeMap::new();
     for v in new {
         match &base_of[&v.id] {
@@ -1039,10 +1129,16 @@ fn classify(root: &Path, policy: &ConventionsFile, lock: &Lock, new: &[Violation
     }
     for (base, vs) in by_base {
         let at = short(&base).to_string();
-        let old_lock: BTreeSet<(String, String)> =
-            git_text(root, &["show", &format!("{base}:./{LOCK_FILE}")])
-                .map(|t| lock_entries(&t))
-                .unwrap_or_default();
+        // The lock written with the convention ([`convention_base`] checked that the
+        // commit wrote it). Unreadable there: nothing is known of what it held.
+        let Some(old_lock) = git_text(root, &["show", &format!("{base}:./{LOCK_FILE}")])
+            .map(|t| lock_entries(&t))
+        else {
+            let why = format!("{LOCK_FILE} at commit {at} could not be read");
+            out.unknown
+                .extend(vs.into_iter().map(|v| (v.clone(), why.clone())));
+            continue;
+        };
         let scope = crate::pr::DiffScope::from_git(root, &base).and_then(|mut s| {
             s.check_base(root, policy, lock)?;
             Ok(s)
@@ -1068,10 +1164,54 @@ fn classify(root: &Path, policy: &ConventionsFile, lock: &Lock, new: &[Violation
         let mut texts: BTreeMap<String, Option<String>> = BTreeMap::new();
         for v in vs {
             let member = format!("{}#{}", v.path, v.symbol);
-            if old_lock.contains(&(v.id.clone(), member)) {
+            let key = (v.id.clone(), member.clone());
+            if old_lock.contains(&key) {
                 out.unknown.push((
                     v.clone(),
                     format!("{LOCK_FILE} held it at commit {at} and its line was taken out since"),
+                ));
+                continue;
+            }
+            // A line for it written into the lock after that commit and taken out again
+            // (committed, or only in the working copy): a person's doing, perhaps on
+            // purpose. Unknown when git cannot say.
+            let since = git_text(
+                root,
+                &[
+                    "log",
+                    "--format=%H",
+                    &format!("-S{} {member}", v.id),
+                    &format!("{base}..HEAD"),
+                    "--",
+                    LOCK_FILE,
+                ],
+            );
+            match since {
+                Some(t) if t.trim().is_empty() && !head_lock.contains(&key) => {}
+                Some(_) => {
+                    out.unknown.push((
+                        v.clone(),
+                        format!("a line for it was in {LOCK_FILE} after commit {at} and was taken out"),
+                    ));
+                    continue;
+                }
+                None => {
+                    out.unknown.push((
+                        v.clone(),
+                        format!("git could not say whether {LOCK_FILE} held it after commit {at}"),
+                    ));
+                    continue;
+                }
+            }
+            // Its file was renamed since: what was there under the old name is not this
+            // reading's business to decide.
+            if scope.old_path(&v.path) != v.path {
+                out.unknown.push((
+                    v.clone(),
+                    format!(
+                        "its file was renamed since commit {at} (from {}), so Drift cannot tell it is the same code",
+                        scope.old_path(&v.path)
+                    ),
                 ));
                 continue;
             }
@@ -1284,7 +1424,13 @@ fn integrations(
                 "differs",
                 "the block differs from what this Drift writes; Drift cannot tell an older Drift's block from one a person edited (the older wording is not kept), so it leaves it".to_string(),
             ),
-            Err(e) => ("differs", format!("what this Drift would write could not be built: {e}")),
+            Err(e) => (
+                "differs",
+                format!(
+                    "what this Drift would write could not be built: {}",
+                    sanitize(e, 300)
+                ),
+            ),
         };
         if state == "differs" {
             todo.push(Todo {
@@ -1429,8 +1575,10 @@ fn render(r: &Report) -> String {
         }
         let mut line = format!("  {}:", f.path);
         match (&f.written_by, &f.format) {
-            (Some(w), Some(v)) => line.push_str(&format!(" {w}, format {v}")),
-            (Some(w), None) => line.push_str(&format!(" {w}")),
+            (Some(w), Some(v)) => {
+                line.push_str(&format!(" {}, format {v}", sanitize(w, 120)));
+            }
+            (Some(w), None) => line.push_str(&format!(" {}", sanitize(w, 120))),
             (None, Some(v)) => line.push_str(&format!(" records no Drift version; format {v}")),
             (None, None) => line.push_str(" records no Drift version"),
         }
@@ -1450,7 +1598,11 @@ fn render(r: &Report) -> String {
             r.conventions.len()
         ));
         for c in &r.conventions {
-            out.push_str(&format!("  {}  {}\n", c.id, sanitize(&c.summary, 160)));
+            out.push_str(&format!(
+                "  {}  {}\n",
+                sanitize(&c.id, 80),
+                sanitize(&c.summary, 160)
+            ));
             match &c.accepted {
                 Some(a) => out.push_str(&format!(
                     "    when accepted: {} of {} follow it, {} in its role\n",
@@ -1518,7 +1670,7 @@ fn render(r: &Report) -> String {
         for row in &v.reading_only {
             out.push_str(&format!(
                 "    {} {} (line {}; compared with commit {})\n",
-                row.id,
+                sanitize(&row.id, 80),
                 sanitize(&row.member, 200),
                 row.line,
                 row.base.as_deref().unwrap_or("?")
@@ -1536,10 +1688,10 @@ fn render(r: &Report) -> String {
             for row in &v.cannot_tell {
                 out.push_str(&format!(
                     "    {} {} (line {}): {}\n",
-                    row.id,
+                    sanitize(&row.id, 80),
                     sanitize(&row.member, 200),
                     row.line,
-                    row.why.as_deref().unwrap_or("")
+                    sanitize(row.why.as_deref().unwrap_or(""), 400)
                 ));
             }
         }
@@ -1583,6 +1735,12 @@ fn render(r: &Report) -> String {
             out.push_str(&format!("  - {d}\n"));
         }
     }
+    if let Some(f) = &r.failed {
+        out.push_str(&format!(
+            "\nFailed\n  {}\n  Only what is listed under Done was written; nothing after the failure was. Fix the cause and run `drift upgrade --apply` again.\n",
+            sanitize(f, 400)
+        ));
+    }
     out.push_str("\nLeft to do\n");
     if r.left.is_empty() {
         out.push_str("  nothing\n");
@@ -1597,7 +1755,13 @@ fn render(r: &Report) -> String {
     }
     out.push_str(&format!(
         "\nNever done by an upgrade: accepting, rejecting, promoting or demoting a convention, changing a mode, or deleting a line. Exit {}.\n",
-        if r.pending { EXIT_PENDING } else { 0 }
+        if r.failed.is_some() {
+            1
+        } else if r.pending {
+            EXIT_PENDING
+        } else {
+            0
+        }
     ));
     out
 }
@@ -1615,6 +1779,40 @@ mod tests {
         assert_eq!(p.len(), 2, "{p:?}");
         assert!(p[0].starts_with("drift.lock line 4:"), "{p:?}");
         assert!(p[1].starts_with("drift.lock line 5:"), "{p:?}");
+    }
+
+    /// Pins: baselining into the lock only appends: a person's comment, an old-form
+    /// fingerprint line and a fingerprint line whose member line is gone (which
+    /// `Lock::save` would drop) are all kept byte for byte, the new member line comes
+    /// with its fingerprint line, and a member the lock holds already adds nothing.
+    #[test]
+    fn baselining_into_the_lock_deletes_no_line() {
+        let text = "# drift.lock: header\n# a person's note\nD-aaaaaa app/a.ts#GET\nD-aaaaaa ~00ff app/a.ts#GET\n#~ D-aaaaaa 0abc app/gone.ts#GET";
+        let lock = Lock {
+            entries: [
+                ("D-aaaaaa".to_string(), "app/a.ts#GET".to_string()),
+                ("D-aaaaaa".to_string(), "~00ff app/a.ts#GET".to_string()),
+                ("D-aaaaaa".to_string(), "~0abc app/gone.ts#GET".to_string()),
+            ]
+            .into_iter()
+            .collect(),
+        };
+        let add = Lock {
+            entries: [
+                ("D-aaaaaa".to_string(), "app/a.ts#GET".to_string()),
+                ("D-aaaaaa".to_string(), "app/b.ts#GET".to_string()),
+                ("D-aaaaaa".to_string(), "~1234 app/b.ts#GET".to_string()),
+            ]
+            .into_iter()
+            .collect(),
+        };
+        let (out, n) = lock_with(Some(text), &lock, &add).unwrap();
+        assert_eq!(n, 1);
+        assert_eq!(
+            out,
+            format!("{text}\nD-aaaaaa app/b.ts#GET\n#~ D-aaaaaa 1234 app/b.ts#GET\n")
+        );
+        assert!(lock_with(Some(text), &lock, &lock).is_none());
     }
 
     /// Pins: a security baseline stamped by a newer inventory is refused as newer; a

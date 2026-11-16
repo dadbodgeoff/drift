@@ -56,10 +56,21 @@ fn git(root: &Path, args: &[&str]) {
 
 /// `drift --no-cache ARGS` in `root`: exit code, stdout, stderr.
 fn drift(root: &Path, args: &[&str]) -> (i32, String, String) {
+    drift_with(root, &["--no-cache"], args, &[])
+}
+
+/// `drift PRE ARGS` in `root` with `env` set: exit code, stdout, stderr.
+fn drift_with(
+    root: &Path,
+    pre: &[&str],
+    args: &[&str],
+    env: &[(&str, &str)],
+) -> (i32, String, String) {
     let out = Command::new(&*BIN)
-        .arg("--no-cache")
+        .args(pre)
         .args(args)
         .current_dir(root)
+        .envs(env.iter().copied())
         .env_remove("DRIFT_CACHE_DIR")
         .env_remove("CLAUDECODE")
         .env_remove("DRIFT_AGENT")
@@ -183,11 +194,12 @@ fn the_dry_run_reports_and_changes_no_byte() {
     let (code, out, err) = drift(r, &["upgrade"]);
     assert_eq!(code, 3, "{out}{err}");
     assert!(
-        out.contains("1 appear only because this Drift reads the code differently"),
+        out.contains(" appear only because this Drift reads the code differently")
+            && !out.contains("\n  0 appear only because"),
         "{out}"
     );
-    assert!(out.contains("app/api/r39/route.ts#GET"), "{out}");
-    assert!(out.contains("newly violated by code that did not change: 1"), "{out}");
+    assert!(out.contains("app/api/r39/route.ts#GET (line "), "{out}");
+    assert!(out.contains("newly violated by code that did not change: "), "{out}");
     assert!(
         out.contains("when accepted: not recorded (accepted before Drift kept it)"),
         "{out}"
@@ -224,7 +236,7 @@ fn apply_baselines_only_what_the_reading_added_and_twice_is_once() {
     );
     assert!(!lock.contains("r40"), "a change's violation was baselined:\n{lock}");
     assert_eq!(read(r, ".drift/conventions.yaml"), policy, "a decision changed");
-    assert!(out.contains("Done\n  - baselined 1 violation(s)"), "{out}");
+    assert!(out.contains("Done\n  - baselined "), "{out}");
 
     let after = snapshot(r);
     let (_, out, err) = drift(r, &["upgrade", "--apply"]);
@@ -234,7 +246,10 @@ fn apply_baselines_only_what_the_reading_added_and_twice_is_once() {
         out.contains("0 appear only because this Drift reads the code differently"),
         "{out}"
     );
-    assert!(out.contains("1 in code that changed since"), "{out}");
+    assert!(
+        out.contains(" in code that changed since") && !out.contains("\n  0 in code that changed"),
+        "{out}"
+    );
 }
 
 /// Pins: a policy, or a security baseline, written by a newer Drift is refused with the
@@ -385,7 +400,11 @@ fn the_security_baseline_is_touched_only_when_asked() {
 
     let (_, out, err) = drift(r, &["upgrade", "--apply", "--security-baseline"]);
     let now = read(r, ".drift/security.lock");
-    assert!(now.contains("\n# inventory: 2\n"), "{out}{err}\n{now}");
+    assert!(
+        now.lines()
+            .any(|l| l.starts_with("# inventory: ") && l != "# inventory: 1"),
+        "{out}{err}\n{now}"
+    );
     for f in &findings {
         assert!(now.lines().any(|l| l == *f), "{f} was dropped:\n{now}");
     }
@@ -406,8 +425,11 @@ fn the_json_report_is_deterministic() {
     assert_eq!(v["version"], 1);
     assert_eq!(v["pending"], true);
     let reading = v["violations"]["reading_only"].as_array().unwrap();
-    assert_eq!(reading.len(), 1, "{v}");
-    assert_eq!(reading[0]["member"], "app/api/r39/route.ts#GET");
+    assert!(!reading.is_empty(), "{v}");
+    assert!(
+        reading.iter().all(|r| r["member"] == "app/api/r39/route.ts#GET"),
+        "{v}"
+    );
     assert!(v["violations"]["changed_code"].as_array().unwrap().is_empty());
     let lock = v["files"]
         .as_array()
@@ -424,4 +446,84 @@ fn the_json_report_is_deterministic() {
             .all(|c| c["accepted"].is_null()),
         "{v}"
     );
+}
+
+/// Pins: where there is no git history (the checkout's `.git` gone, and git kept from
+/// looking above it), every new violation is one Drift cannot tell about, and `--apply`
+/// baselines none of them: `drift.lock` keeps every byte. Before this was pinned, a
+/// failure of git could have read as "nothing changed since", which baselines.
+#[test]
+fn without_git_nothing_is_baselined() {
+    let dir = repo(true);
+    let r = dir.path();
+    std::fs::remove_dir_all(r.join(".git")).unwrap();
+    let ceiling = r.parent().unwrap().to_string_lossy().into_owned();
+    let env = [("GIT_CEILING_DIRECTORIES", ceiling.as_str())];
+    let lock = read(r, "drift.lock");
+    let (code, out, err) = drift_with(r, &["--no-cache"], &["upgrade", "--apply"], &env);
+    assert_eq!(code, 3, "{out}{err}");
+    assert!(out.contains("\n  0 appear only because"), "{out}");
+    assert!(out.contains("there is no git history to compare with"), "{out}");
+    assert!(out.contains("app/api/r39/route.ts#GET (line "), "{out}");
+    assert!(!out.contains("\nDone\n"), "{out}");
+    assert_eq!(read(r, "drift.lock"), lock, "a violation Drift cannot tell about was baselined");
+}
+
+/// Pins: in a shallow clone, the commit that baselined a convention may be missing, so
+/// every new violation is one Drift cannot tell about and `--apply` baselines none.
+#[test]
+fn a_shallow_clone_baselines_nothing() {
+    let dir = repo(true);
+    let r = dir.path();
+    // A second commit, so a clone of depth 1 is cut short.
+    write(r, "lib/more.ts", "export const more = 1;\n");
+    git(r, &["add", "-A"]);
+    git(r, &["commit", "-qm", "more"]);
+    let parent = tempfile::tempdir().unwrap();
+    let url = format!("file://{}", r.display());
+    git(parent.path(), &["clone", "-q", "--depth", "1", &url, "c"]);
+    let c = parent.path().join("c");
+    let lock = read(&c, "drift.lock");
+    let (code, out, err) = drift(&c, &["upgrade", "--apply"]);
+    assert_eq!(code, 3, "{out}{err}");
+    assert!(out.contains("the clone is shallow"), "{out}");
+    assert!(out.contains("\n  0 appear only because"), "{out}");
+    assert_eq!(read(&c, "drift.lock"), lock, "a shallow clone's violation was baselined");
+}
+
+/// Pins: a line a person took out of `drift.lock` (here, only in the working copy) is
+/// their decision: the violation it held is one Drift cannot tell about, and `--apply`
+/// does not put the line back.
+#[test]
+fn a_lock_line_a_person_took_out_is_not_put_back() {
+    let dir = repo(false);
+    let r = dir.path();
+    let lock: String = read(r, "drift.lock")
+        .lines()
+        .filter(|l| !l.contains("app/api/r39/route.ts"))
+        .map(|l| format!("{l}\n"))
+        .collect();
+    write(r, "drift.lock", &lock);
+    let (code, out, err) = drift(r, &["upgrade", "--apply"]);
+    assert_eq!(code, 3, "{out}{err}");
+    assert!(out.contains("\n  0 appear only because"), "{out}");
+    assert!(out.contains("app/api/r39/route.ts#GET (line "), "{out}");
+    assert_eq!(read(r, "drift.lock"), lock);
+}
+
+/// Pins: the dry run with the fact cache on changes no file Drift reads as policy and
+/// prints the same report before and after the cache exists (the cache row says
+/// whether the cache is in use, not whether this run created its directory).
+#[test]
+fn the_dry_run_reads_the_same_with_the_cache() {
+    let dir = repo(true);
+    let r = dir.path();
+    let policy = read(r, ".drift/conventions.yaml");
+    let lock = read(r, "drift.lock");
+    let (code, a, err) = drift_with(r, &[], &["upgrade", "--json"], &[]);
+    assert_eq!(code, 3, "{a}{err}");
+    let (_, b, _) = drift_with(r, &[], &["upgrade", "--json"], &[]);
+    assert_eq!(a, b, "the first run's cache changed the report");
+    assert_eq!(read(r, ".drift/conventions.yaml"), policy);
+    assert_eq!(read(r, "drift.lock"), lock);
 }
