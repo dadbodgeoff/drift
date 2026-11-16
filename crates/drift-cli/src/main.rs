@@ -597,6 +597,11 @@ enum Command {
         /// `dependency`, `kubernetes`, `leak`), `public` (an entry point made
         /// internet-facing), or `any`; a kind named that could not be compared fails
         /// too. Off unless given: without it the run is facts for review and exits 0.
+        /// With --write-baseline, also `self-baselined` (every kind the baseline sets
+        /// to fail) or `self-baselined:<kind>`: recorded in the baseline's header
+        /// (`# fail self-baselined:`), so that `drift check --diff-base` exits 1 on a
+        /// finding a change adds and writes into the baseline itself (kept when the
+        /// baseline is written again).
         #[arg(long, value_delimiter = ',', value_name = "KINDS")]
         fail_on: Vec<String>,
         /// Write the security baseline (`.drift/security.lock`): every finding of
@@ -2388,8 +2393,26 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             if let Some(unknown) = fail_on.iter().find(|k| {
                 !FAIL_ON.contains(&k.as_str())
                     && !drift_mine::ratchet::KINDS.iter().any(|(x, _)| x == k)
+                    && !drift_mine::ratchet::self_baselined_token(k)
+                        .is_some_and(drift_mine::ratchet::is_self_baselined_token)
             }) {
-                anyhow::bail!("--fail-on: `{unknown}` is none of {}", FAIL_ON.join(", "));
+                anyhow::bail!(
+                    "--fail-on: `{unknown}` is none of {}, {}, {}:<kind>",
+                    FAIL_ON.join(", "),
+                    drift_mine::ratchet::SELF_BASELINED_FLAG,
+                    drift_mine::ratchet::SELF_BASELINED_FLAG
+                );
+            }
+            // The opt-in is recorded in the baseline, where `drift check --diff-base`
+            // reads it ([`sec_diff::split_self_baselined`]).
+            let (opt_in, fail_on) = sec_diff::split_self_baselined(fail_on);
+            let fail_on = &fail_on;
+            if !opt_in.is_empty() && !*write_baseline {
+                anyhow::bail!(
+                    "--fail-on {}: recorded in the security baseline, so it is given with --write-baseline; `drift check --diff-base <ref>` then fails on a finding a change adds and writes into {} itself",
+                    drift_mine::ratchet::SELF_BASELINED_FLAG,
+                    drift_mine::ratchet::SECURITY_LOCK
+                );
             }
             if !fail_on.is_empty() && diff_base.is_none() && !*ratchet && !*write_baseline {
                 anyhow::bail!("--fail-on needs --diff-base, --ratchet or --write-baseline");
@@ -2456,10 +2479,23 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 let found = baseline_findings(root, &facts, &inv)?;
                 // The kinds that fail: what the baseline set before (a person's
                 // choice, kept), or every kind but those that advise first; and the
-                // kinds named now.
-                let mut fail = match drift_mine::ratchet::load_baseline(root)
-                    .with_context(|| format!("reading {}", drift_mine::ratchet::SECURITY_LOCK))?
+                // kinds named now. So is the opt-in for findings a change baselines
+                // itself: kept, and what is named now added.
+                let before = drift_mine::ratchet::read_text(root)
+                    .with_context(|| format!("reading {}", drift_mine::ratchet::SECURITY_LOCK))?;
+                if let Some(e) = before
+                    .as_deref()
+                    .and_then(|t| drift_mine::ratchet::header_errors(t).into_iter().next())
                 {
+                    anyhow::bail!("{e}");
+                }
+                let before = before.as_deref().map(drift_mine::ratchet::parse_baseline);
+                let mut self_baselined = before
+                    .as_ref()
+                    .map(|b| b.self_baselined.clone())
+                    .unwrap_or_default();
+                self_baselined.extend(opt_in.iter().cloned());
+                let mut fail = match before {
                     Some(b) => b.fail_kinds(),
                     None => drift_mine::ratchet::default_fail(),
                 };
@@ -2474,12 +2510,24 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         fail.insert(k.clone());
                     }
                 }
+                // A kind named for the opt-in that only advises would fail where the
+                // change baselines its finding and pass where it does not: refused.
+                if let Some(k) = opt_in.iter().find(|k| {
+                    k.as_str() != drift_mine::ratchet::SELF_BASELINED_FAILING
+                        && !fail.contains(k.as_str())
+                }) {
+                    anyhow::bail!(
+                        "--fail-on {}:{k}: {k} advises in this baseline, so a finding of it the change did not baseline would not fail either; add --fail-on {k}",
+                        drift_mine::ratchet::SELF_BASELINED_FLAG
+                    );
+                }
                 // Never through a link that leaves the repository, as every other
                 // writer of Drift's files.
                 drift_mine::policy::write_no_follow(
                     root,
                     Path::new(drift_mine::ratchet::SECURITY_LOCK),
-                    drift_mine::ratchet::render_lock_with(&found, &fail).as_bytes(),
+                    drift_mine::ratchet::render_lock_opted(&found, &fail, &self_baselined)
+                        .as_bytes(),
                 )?;
                 let mut by_kind: BTreeMap<&str, usize> = BTreeMap::new();
                 for (kind, _) in found.keys() {
@@ -2511,6 +2559,20 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         )
                     }
                 );
+                let opted = drift_mine::ratchet::Baseline {
+                    fail: Some(fail.clone()),
+                    self_baselined: self_baselined.clone(),
+                    ..Default::default()
+                }
+                .self_baselined_kinds();
+                if !opted.is_empty() {
+                    println!(
+                        "`drift check --diff-base <ref>` also exits 1 when a change adds a finding of {} and writes its line into {} itself; such a finding is accepted by a change to {} alone that reaches the base branch first.",
+                        opted.into_iter().collect::<Vec<_>>().join(", "),
+                        drift_mine::ratchet::SECURITY_LOCK,
+                        drift_mine::ratchet::SECURITY_LOCK
+                    );
+                }
                 return Ok(ExitCode::SUCCESS);
             }
             if *ratchet {
@@ -4355,7 +4417,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             let security = check_security(cli, root, &facts, only.is_some(), scope.as_ref())?;
             let insecure = security
                 .as_ref()
-                .is_some_and(|s| s.added.values().any(|rows| !rows.is_empty()));
+                .is_some_and(drift_mine::ratchet::Ratchet::fails);
             // Wiring advice never fails, not even with `--strict`.
             let failing = report.new_violations().filter(|v| v.fails(*strict)).count();
             // Decided on what is reported (after the diff filter) and before any
@@ -4844,6 +4906,14 @@ fn security_baseline_checked(
     use drift_mine::ratchet::{self, SECURITY_LOCK};
     // Never through a link that leaves the repository: refused, so the check fails.
     let text = ratchet::read_text(root).with_context(|| format!("reading {SECURITY_LOCK}"))?;
+    // An opt-in line Drift cannot read is an error, never a pass of the gate it asks
+    // for ([`ratchet::header_errors`]).
+    if let Some(e) = text
+        .as_deref()
+        .and_then(|t| ratchet::header_errors(t).into_iter().next())
+    {
+        anyhow::bail!("{e}");
+    }
     let mut said: Vec<String> = text
         .as_deref()
         .map(ratchet::header_problems)
@@ -4851,8 +4921,24 @@ fn security_baseline_checked(
     let head = text.as_deref().map(ratchet::parse_baseline);
     let baseline = match scope {
         Some(s) => {
-            let base = pr::file_at(root, &s.merge_base, SECURITY_LOCK)
-                .map(|t| ratchet::parse_baseline(&t));
+            let base_text = pr::file_at(root, &s.merge_base, SECURITY_LOCK);
+            let mut base = base_text.as_deref().map(ratchet::parse_baseline);
+            // At the merge base the change cannot fix it, so it is not an error there:
+            // read as the strictest it could mean (every kind that fails), and said.
+            if let (Some(b), Some(e)) = (
+                base.as_mut(),
+                base_text
+                    .as_deref()
+                    .and_then(|t| ratchet::header_errors(t).into_iter().next()),
+            ) {
+                b.self_baselined
+                    .insert(ratchet::SELF_BASELINED_FAILING.to_string());
+                said.push(format!(
+                    "at the merge base, {e}; this check reads it there as `{}{}`",
+                    ratchet::SELF_BASELINED_LINE,
+                    ratchet::SELF_BASELINED_FAILING
+                ));
+            }
             match (head, base) {
                 (Some(head), Some(base)) => {
                     let (kept, weakened) = ratchet::stricter(&head, &base);
@@ -4884,6 +4970,8 @@ fn security_baseline_checked(
                     ));
                 }
             }
+            // The opt-in is read against a change; with none it is not checked.
+            said.extend(head.as_ref().and_then(ratchet::self_baselined_unchecked));
             head
         }
     };
@@ -4977,6 +5065,19 @@ fn security_compare(
             let mut r = ratchet::compare_with(found, baseline, None);
             unread_written(&mut r, &why_not);
             r.unshown_why = Some(why_not);
+            // Where the baseline opts in, what the change writes fails: it could not
+            // be told apart from what the change adds.
+            let mut unknown: BTreeMap<String, Vec<ratchet::Added>> = BTreeMap::new();
+            for (kind, key) in &written {
+                unknown
+                    .entry(kind.clone())
+                    .or_default()
+                    .push(ratchet::Added {
+                        key: key.clone(),
+                        at: found[&(kind.clone(), key.clone())].clone(),
+                    });
+            }
+            r.hold_self_baselined(baseline, unknown);
             return r;
         }
         None => {
@@ -5013,14 +5114,25 @@ fn security_compare(
             // one in a file the merge base could not parse may have been there.
             let now = drift_mine::security_diff::as_now(&base.found, base_inv, inv, s.renamed());
             let mut by = drift_mine::security_diff::baselined_by_change(found, &written, &now);
-            for rows in by.values_mut() {
-                rows.retain(|a| {
-                    let path = a.at.rsplit_once(':').map_or(a.at.as_str(), |(p, _)| p);
-                    !base.unparsed.contains(s.old_path(path))
-                });
+            // Set apart, not dropped: where the baseline opts in they are unknown, and
+            // fail ([`ratchet::Ratchet::self_baselined_unknown`]).
+            let mut unparsed: BTreeMap<String, Vec<ratchet::Added>> = BTreeMap::new();
+            for (kind, rows) in by.iter_mut() {
+                let (keep, unread): (Vec<_>, Vec<_>) =
+                    std::mem::take(rows)
+                        .into_iter()
+                        .partition(|a: &ratchet::Added| {
+                            let path = a.at.rsplit_once(':').map_or(a.at.as_str(), |(p, _)| p);
+                            !base.unparsed.contains(s.old_path(path))
+                        });
+                *rows = keep;
+                if !unread.is_empty() {
+                    unparsed.insert(kind.clone(), unread);
+                }
             }
             by.retain(|_, rows| !rows.is_empty());
             r.baselined_by_change = by;
+            r.hold_self_baselined(baseline, unparsed);
         }
     }
     r

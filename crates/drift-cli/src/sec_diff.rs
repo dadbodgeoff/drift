@@ -518,15 +518,77 @@ pub fn sarif_ratchet(log: &mut Value, notes: &mut Vec<Value>, sec: &Ratchet, pre
             )
         });
     }
+    // Where the baseline opts in, a finding the change baselines itself fails as one
+    // not in the baseline does: a result at `error`.
+    for (kind, rows, what) in self_baselined_rows(sec) {
+        sarif_results(log, kind, rows, "error", prefix, &|a| {
+            format!("Security [{kind}]: {}: {what}", sanitize(&a.key, 300))
+        });
+    }
+}
+
+/// The findings that fail because the change baselines them itself
+/// ([`Ratchet::self_baselined`], [`Ratchet::self_baselined_unknown`]), by kind, with
+/// what is said of each.
+fn self_baselined_rows(sec: &Ratchet) -> Vec<(&str, &[Added], String)> {
+    let opt = ratchet::SELF_BASELINED_LINE.trim_end();
+    let how = ratchet::SELF_BASELINED_HOW;
+    sec.self_baselined
+        .iter()
+        .map(|(k, rows)| {
+            (
+                k.as_str(),
+                rows.as_slice(),
+                format!("this change adds the finding and writes its line into {SECURITY_LOCK} itself, and the baseline sets such findings to fail (`{opt}`): {how}."),
+            )
+        })
+        .chain(sec.self_baselined_unknown.iter().map(|(k, rows)| {
+            (
+                k.as_str(),
+                rows.as_slice(),
+                format!("this change writes the finding's line into {SECURITY_LOCK} itself and whether it also adds it to the code could not be read; the baseline sets findings a change baselines itself to fail (`{opt}`), so it fails: {how}."),
+            )
+        }))
+        .collect()
+}
+
+/// `--fail-on` split in two: the opt-in for findings a change baselines itself,
+/// recorded in the baseline (`self-baselined`, `self-baselined:<kind>`, as
+/// [`ratchet::SELF_BASELINED_LINE`] writes them), and every other value.
+pub fn split_self_baselined(fail_on: &[String]) -> (BTreeSet<String>, Vec<String>) {
+    let mut opt_in = BTreeSet::new();
+    let mut rest = Vec::new();
+    for v in fail_on {
+        match ratchet::self_baselined_token(v) {
+            Some(t) => {
+                opt_in.insert(t.to_string());
+            }
+            None => rest.push(v.clone()),
+        }
+    }
+    (opt_in, rest)
 }
 
 /// What is said of a finding a change adds and baselines itself.
 const BASELINED: &str = "this change adds the finding and baselines it (its line is new in .drift/security.lock), so it fails nothing; a reviewer accepts it by approving the lock's diff.";
 
 /// `drift check --format github`: a notice for each finding the change adds and
-/// baselines itself ([`Ratchet::baselined_by_change`]).
+/// baselines itself ([`Ratchet::baselined_by_change`]), and an error for each that
+/// fails because the baseline opts in ([`Ratchet::self_baselined`]).
 pub fn github_baselined(sec: &Ratchet, prefix: &str) -> String {
     let mut out = String::new();
+    for (kind, rows, what) in self_baselined_rows(sec) {
+        for a in rows {
+            let (path, line) = a.at.rsplit_once(':').unwrap_or((a.at.as_str(), "1"));
+            out.push_str(&format!(
+                "::error file={},line={},title={}::{}\n",
+                github_escape_property(&format!("{prefix}{path}")),
+                github_escape_property(line),
+                github_escape_property(&format!("drift security [{kind}]")),
+                github_escape_data(&format!("{}: {what}", sanitize(&a.key, 300)))
+            ));
+        }
+    }
     for (kind, rows) in &sec.baselined_by_change {
         for a in rows {
             let (path, line) = a.at.rsplit_once(':').unwrap_or((a.at.as_str(), "1"));

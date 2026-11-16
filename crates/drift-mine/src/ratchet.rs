@@ -429,6 +429,37 @@ pub fn add_unscoped(found: &mut Findings, units: &[crate::practices::UnitRow]) {
 const VERSION_LINE: &str = "# inventory: ";
 /// The line of the header that says which kinds fail `drift check`.
 const FAIL_LINE: &str = "# fail: ";
+/// The line of the header that says which kinds of finding a change adds and also
+/// writes into the baseline itself fail `drift check --diff-base`
+/// ([`Baseline::self_baselined`]). Absent, they are a notice, as before the line.
+pub const SELF_BASELINED_LINE: &str = "# fail self-baselined: ";
+/// The value of [`SELF_BASELINED_LINE`] that means every kind the baseline sets to
+/// fail (`--fail-on self-baselined`), so a kind set to fail later is covered too.
+pub const SELF_BASELINED_FAILING: &str = "failing";
+/// What `--fail-on` takes for the opt-in: alone, every failing kind; with
+/// `:<kind>`, that kind.
+pub const SELF_BASELINED_FLAG: &str = "self-baselined";
+/// How a finding [`SELF_BASELINED_LINE`] fails is settled, said wherever it fails: the
+/// baseline is a person's acceptance reviewed on its own, so its line must reach the
+/// base branch before the code that adds the finding does.
+pub const SELF_BASELINED_HOW: &str = "the change itself wrote its line into .drift/security.lock. Fix the code, or accept the finding with a change to .drift/security.lock alone that reaches the base branch first, so that its line is in the base's baseline when this code arrives";
+
+/// What one value of `--fail-on` asks of [`SELF_BASELINED_LINE`]: `Some(token)` for
+/// `self-baselined` ([`SELF_BASELINED_FAILING`]) and `self-baselined:<kind>` (the
+/// kind, as given: the caller checks it is one), `None` for any other value.
+pub fn self_baselined_token(value: &str) -> Option<&str> {
+    if value == SELF_BASELINED_FLAG {
+        return Some(SELF_BASELINED_FAILING);
+    }
+    value
+        .strip_prefix(SELF_BASELINED_FLAG)
+        .and_then(|rest| rest.strip_prefix(':'))
+}
+
+/// Whether `token` is one [`SELF_BASELINED_LINE`] may hold.
+pub fn is_self_baselined_token(token: &str) -> bool {
+    token == SELF_BASELINED_FAILING || KINDS.iter().any(|(k, _)| *k == token)
+}
 
 /// The kinds a new baseline sets to fail: every kind but those that advise first.
 pub fn default_fail() -> BTreeSet<String> {
@@ -451,9 +482,31 @@ pub struct Baseline {
     /// `None` for a baseline written before the header said so: every kind of then
     /// fails, and none of [`ADVISE_FIRST`].
     pub fail: Option<BTreeSet<String>>,
+    /// What [`SELF_BASELINED_LINE`] holds, as written ([`SELF_BASELINED_FAILING`] or
+    /// kinds; a value Drift cannot read is kept so that writing the file again does
+    /// not drop it, and [`header_errors`] refuses it). Empty where the header has no
+    /// such line: a finding a change baselines itself is a notice.
+    pub self_baselined: BTreeSet<String>,
 }
 
 impl Baseline {
+    /// Whether a finding of `kind` that a change adds to the code and also writes into
+    /// the baseline itself fails `drift check --diff-base` ([`SELF_BASELINED_LINE`]).
+    pub fn fails_self_baselined(&self, kind: &str) -> bool {
+        self.self_baselined.contains(kind)
+            || (self.self_baselined.contains(SELF_BASELINED_FAILING) && self.fails(kind))
+    }
+
+    /// The kinds [`Baseline::fails_self_baselined`] covers, as kinds.
+    pub fn self_baselined_kinds(&self) -> BTreeSet<String> {
+        KINDS
+            .iter()
+            .map(|(k, _)| *k)
+            .filter(|k| self.fails_self_baselined(k))
+            .map(str::to_string)
+            .collect()
+    }
+
     /// Whether a finding of `kind` that is not in the baseline fails `drift check`.
     pub fn fails(&self, kind: &str) -> bool {
         match &self.fail {
@@ -485,6 +538,17 @@ pub fn render_lock(found: &Findings) -> String {
 /// tab-separated, sorted. Lines only ever differ by the finding they hold, so two
 /// branches that each add one merge without a conflict (`merge=union`).
 pub fn render_lock_with(found: &Findings, fail: &BTreeSet<String>) -> String {
+    render_lock_opted(found, fail, &BTreeSet::new())
+}
+
+/// [`render_lock_with`], with [`SELF_BASELINED_LINE`] holding `self_baselined` where
+/// it is not empty (no line otherwise, so a baseline that never opted in is written
+/// byte for byte as before).
+pub fn render_lock_opted(
+    found: &Findings,
+    fail: &BTreeSet<String>,
+    self_baselined: &BTreeSet<String>,
+) -> String {
     let mut out = String::from(
         "# drift security baseline: what `drift security` found when this was written.\n\
          # `drift check` and `drift security --ratchet` report what is found now and is not here.\n\
@@ -494,6 +558,11 @@ pub fn render_lock_with(found: &Findings, fail: &BTreeSet<String>) -> String {
     out.push_str(FAIL_LINE);
     out.push_str(&fail.iter().cloned().collect::<Vec<_>>().join(","));
     out.push('\n');
+    if !self_baselined.is_empty() {
+        out.push_str(SELF_BASELINED_LINE);
+        out.push_str(&self_baselined.iter().cloned().collect::<Vec<_>>().join(","));
+        out.push('\n');
+    }
     for (kind, key) in found.keys() {
         out.push_str(kind);
         out.push('\t');
@@ -523,11 +592,21 @@ pub fn parse_baseline(text: &str) -> Baseline {
     let text = text.strip_prefix('\u{feff}').unwrap_or(text); // a Windows editor's byte-order mark
     let mut version: Option<u32> = None;
     let mut fail: Option<BTreeSet<String>> = None;
+    let mut self_baselined = BTreeSet::new();
     for l in text.lines().take_while(|l| l.starts_with('#')) {
         if let Some(v) = l.strip_prefix(VERSION_LINE) {
             if let Ok(v) = v.trim().parse::<u32>() {
                 version = Some(version.map_or(v, |was| was.max(v)));
             }
+        } else if let Some(tokens) = l.strip_prefix(SELF_BASELINED_LINE.trim_end()) {
+            // Several lines (two branches merged) are read together, as `# fail:` is.
+            self_baselined.extend(
+                tokens
+                    .split(',')
+                    .map(str::trim)
+                    .filter(|t| !t.is_empty())
+                    .map(str::to_string),
+            );
         } else if let Some(kinds) = l.strip_prefix(FAIL_LINE.trim_end()) {
             fail.get_or_insert_with(BTreeSet::new).extend(
                 kinds
@@ -542,7 +621,67 @@ pub fn parse_baseline(text: &str) -> Baseline {
         findings: parse_lock(text),
         version: version.unwrap_or(UNSTAMPED),
         fail,
+        self_baselined,
     }
+}
+
+/// The lines of a baseline file's header that name the opt-in
+/// ([`SELF_BASELINED_LINE`]) and that Drift cannot read: a value that is neither
+/// [`SELF_BASELINED_FAILING`] nor a kind, or the line without its colon. A gate a
+/// person asked for must not pass because its line was mistyped, so the check that
+/// reads one is an error naming it. Empty where every such line reads.
+pub fn header_errors(text: &str) -> Vec<String> {
+    let text = text.strip_prefix('\u{feff}').unwrap_or(text);
+    let name = SELF_BASELINED_LINE.trim_end().trim_end_matches(':');
+    let mut out = Vec::new();
+    for l in text.lines().take_while(|l| l.starts_with('#')) {
+        if !l.starts_with(name) {
+            continue;
+        }
+        let bad: Vec<&str> = match l.strip_prefix(SELF_BASELINED_LINE.trim_end()) {
+            Some(tokens) => tokens
+                .split(',')
+                .map(str::trim)
+                .filter(|t| !t.is_empty() && !is_self_baselined_token(t))
+                .collect(),
+            None => vec![""],
+        };
+        if bad.is_empty() {
+            continue;
+        }
+        let what = if bad == [""] {
+            format!("it is not `{}<values>`", SELF_BASELINED_LINE.trim_end())
+        } else {
+            format!(
+                "{} is neither `{SELF_BASELINED_FAILING}` nor a kind of finding ({})",
+                bad.iter()
+                    .map(|b| format!("`{}`", crate::report::sanitize(b, 60)))
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                KINDS.iter().map(|(k, _)| *k).collect::<Vec<_>>().join(", ")
+            )
+        };
+        out.push(format!(
+            "{SECURITY_LOCK}: the line `{}` cannot be read: {what}. Fix the line, or remove it and write the baseline again with `drift security --write-baseline --fail-on {SELF_BASELINED_FLAG}`",
+            crate::report::sanitize(l.trim(), 120)
+        ));
+    }
+    out
+}
+
+/// The one line a check with no change to compare says where the baseline opts in
+/// ([`SELF_BASELINED_LINE`]): whether a change wrote a finding's line itself is read
+/// against the merge base, so without `--diff-base` it is not checked (and fails
+/// nothing). None where the baseline does not opt in.
+pub fn self_baselined_unchecked(b: &Baseline) -> Option<String> {
+    let kinds = b.self_baselined_kinds();
+    (!kinds.is_empty()).then(|| {
+        format!(
+            "{SECURITY_LOCK} sets findings of {} that a change adds and writes into it itself to fail (`{}`); this run compares no change, so they are not checked here: `drift check --diff-base <ref>` checks them",
+            kinds.into_iter().collect::<Vec<_>>().join(", "),
+            SELF_BASELINED_LINE.trim_end()
+        )
+    })
 }
 
 /// Whether two copies of a baseline file hold the same lines: a byte-order mark and the
@@ -564,9 +703,11 @@ pub fn same_lines(a: &str, b: &str) -> bool {
 pub fn header_problems(text: &str) -> Vec<String> {
     let text = text.strip_prefix('\u{feff}').unwrap_or(text);
     let mut out = Vec::new();
-    let (mut stamps, mut fails) = (0, 0);
+    let (mut stamps, mut fails, mut opted) = (0, 0, 0);
     for l in text.lines().take_while(|l| l.starts_with('#')) {
-        if let Some(v) = l.strip_prefix(VERSION_LINE) {
+        if l.starts_with(SELF_BASELINED_LINE.trim_end()) {
+            opted += 1;
+        } else if let Some(v) = l.strip_prefix(VERSION_LINE) {
             stamps += 1;
             if v.trim().parse::<u32>().is_err() {
                 out.push(format!(
@@ -588,6 +729,12 @@ pub fn header_problems(text: &str) -> Vec<String> {
             "{SECURITY_LOCK} has {fails} `# fail:` lines (two branches' headers merged); every kind any of them names fails"
         ));
     }
+    if opted > 1 {
+        out.push(format!(
+            "{SECURITY_LOCK} has {opted} `{}` lines (two branches' headers merged); every kind any of them names fails",
+            SELF_BASELINED_LINE.trim_end()
+        ));
+    }
     out
 }
 
@@ -607,6 +754,22 @@ pub fn stricter(head: &Baseline, base: &Baseline) -> (Baseline, Vec<String>) {
             crate::report::sanitize(&dropped.join(", "), 300)
         ));
         out.fail = Some(now.union(&was).cloned().collect());
+    }
+    // The opt-in ([`SELF_BASELINED_LINE`]), compared by the kinds it covers: a change
+    // that removes the line, or names fewer kinds, is still checked as the base says.
+    let (now, was) = (head.self_baselined_kinds(), base.self_baselined_kinds());
+    let dropped: Vec<&str> = was.difference(&now).map(String::as_str).collect();
+    if !dropped.is_empty() {
+        said.push(format!(
+            "this change takes {} off `{}` in {SECURITY_LOCK}; this check still fails on them, as the baseline the change starts from says",
+            crate::report::sanitize(&dropped.join(", "), 300),
+            SELF_BASELINED_LINE.trim_end()
+        ));
+        out.self_baselined = head
+            .self_baselined
+            .union(&base.self_baselined)
+            .cloned()
+            .collect();
     }
     if head.version < base.version {
         said.push(format!(
@@ -640,6 +803,18 @@ pub fn header_weakened(was: &Baseline, now: &Baseline) -> Vec<String> {
         said.push(format!(
             "{SECURITY_LOCK} was edited to take {} off `# fail:`: findings of those kinds no longer fail",
             crate::report::sanitize(&dropped.join(", "), 300)
+        ));
+    }
+    let dropped: Vec<String> = was
+        .self_baselined_kinds()
+        .difference(&now.self_baselined_kinds())
+        .cloned()
+        .collect();
+    if !dropped.is_empty() {
+        said.push(format!(
+            "{SECURITY_LOCK} was edited to take {} off `{}`: findings of those kinds a change baselines itself no longer fail",
+            crate::report::sanitize(&dropped.join(", "), 300),
+            SELF_BASELINED_LINE.trim_end()
         ));
     }
     if now.version < was.version {
@@ -752,6 +927,18 @@ pub struct Ratchet {
     /// not only in the lock's diff. Omitted when empty (additive).
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub baselined_by_change: BTreeMap<String, Vec<Added>>,
+    /// Against a diff: the findings of [`Ratchet::baselined_by_change`] of a kind the
+    /// baseline opts in for ([`SELF_BASELINED_LINE`]), moved here. A change cannot
+    /// accept its own finding: these fail. Omitted when empty (additive).
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub self_baselined: BTreeMap<String, Vec<Added>>,
+    /// Against a diff: findings of a kind the baseline opts in for whose line the
+    /// change writes into the baseline, where whether the change also adds them to
+    /// the code could not be read (the merge base unread, or the file unparsed there).
+    /// Not checked, and a gate a person asked for does not pass on what it could not
+    /// read: these fail. Omitted when empty (additive).
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub self_baselined_unknown: BTreeMap<String, Vec<Added>>,
 }
 
 fn is_zero(n: &usize) -> bool {
@@ -779,11 +966,55 @@ impl Ratchet {
             &self.new_in_drift,
             &self.outside_change,
             &self.baselined_by_change,
+            &self.self_baselined,
+            &self.self_baselined_unknown,
         ]
         .iter()
         .any(|m| m.values().any(|rows| !rows.is_empty()))
             || !self.header.is_empty()
             || !self.guard_unknown.is_empty()
+    }
+
+    /// Whether the comparison fails `drift check`: a finding not in the baseline of a
+    /// kind it sets to fail, or one the change baselines itself where the baseline
+    /// opts in ([`Ratchet::self_baselined`], [`Ratchet::self_baselined_unknown`]).
+    pub fn fails(&self) -> bool {
+        [
+            &self.added,
+            &self.self_baselined,
+            &self.self_baselined_unknown,
+        ]
+        .iter()
+        .any(|m| m.values().any(|rows| !rows.is_empty()))
+    }
+
+    /// Applies the opt-in of `baseline` ([`SELF_BASELINED_LINE`]): the findings the
+    /// change baselines itself of a kind it covers move from
+    /// [`Ratchet::baselined_by_change`] to [`Ratchet::self_baselined`], and of
+    /// `unknown` (lines the change writes whose finding could not be told to be the
+    /// change's or not) those of a kind it covers go to
+    /// [`Ratchet::self_baselined_unknown`]. Without the line nothing moves.
+    pub fn hold_self_baselined(
+        &mut self,
+        baseline: &Baseline,
+        unknown: BTreeMap<String, Vec<Added>>,
+    ) {
+        let opted: Vec<String> = self
+            .baselined_by_change
+            .keys()
+            .filter(|k| baseline.fails_self_baselined(k))
+            .cloned()
+            .collect();
+        for kind in opted {
+            if let Some(rows) = self.baselined_by_change.remove(&kind) {
+                self.self_baselined.insert(kind, rows);
+            }
+        }
+        for (kind, rows) in unknown {
+            if baseline.fails_self_baselined(&kind) && !rows.is_empty() {
+                self.self_baselined_unknown.insert(kind, rows);
+            }
+        }
     }
 }
 
@@ -933,6 +1164,7 @@ pub fn compare(found: &Findings, baseline: &BTreeSet<(String, String)>) -> Ratch
             findings: baseline.clone(),
             version: INVENTORY_VERSION,
             fail: None,
+            self_baselined: BTreeSet::new(),
         },
         None,
     )
@@ -1047,6 +1279,28 @@ pub fn render(r: &Ratchet, max: usize) -> String {
         out.push_str(&format!(
             "\n{} {what} [{kind}] this change adds and also writes into {SECURITY_LOCK} itself: it baselines them, so they fail nothing; a reviewer accepts them by approving the lock's diff\n",
             rows.len()
+        ));
+        rows_text(&mut out, rows, max);
+    }
+    for (kind, what) in KINDS {
+        let Some(rows) = r.self_baselined.get(*kind) else {
+            continue;
+        };
+        out.push_str(&format!(
+            "\n{} {what} [{kind}] this change adds and also writes into {SECURITY_LOCK} itself; the baseline sets such findings to fail (`{}`), so they fail: {SELF_BASELINED_HOW}\n",
+            rows.len(),
+            SELF_BASELINED_LINE.trim_end()
+        ));
+        rows_text(&mut out, rows, max);
+    }
+    for (kind, what) in KINDS {
+        let Some(rows) = r.self_baselined_unknown.get(*kind) else {
+            continue;
+        };
+        out.push_str(&format!(
+            "\n{} {what} [{kind}] whose line this change writes into {SECURITY_LOCK} itself, where whether it also adds them to the code could not be read: not checked, and the baseline sets findings a change baselines itself to fail (`{}`), so they fail: {SELF_BASELINED_HOW}\n",
+            rows.len(),
+            SELF_BASELINED_LINE.trim_end()
         ));
         rows_text(&mut out, rows, max);
     }
@@ -1602,5 +1856,95 @@ mod tests {
         assert!(said.is_empty());
         assert_eq!(header_weakened(&base, &head).len(), 2);
         assert!(header_weakened(&head, &base).is_empty());
+    }
+
+    /// Pins the opt-in for findings a change baselines itself: no line is written for
+    /// a baseline that does not opt in (its file is as before), the line round-trips,
+    /// `failing` covers every kind that fails and not one that advises, merged lines
+    /// are read together, a line that cannot be read is an error naming it, and a
+    /// change that removes the line or narrows it gets the base's reading.
+    #[test]
+    fn the_self_baselined_line_is_written_read_protected_and_refused_when_unreadable() {
+        let plain = render_lock(&Findings::new());
+        assert!(!plain.contains("self-baselined"), "{plain}");
+        assert!(parse_baseline(&plain).self_baselined.is_empty());
+        assert!(self_baselined_unchecked(&parse_baseline(&plain)).is_none());
+
+        let failing: BTreeSet<String> = [SELF_BASELINED_FAILING.to_string()].into();
+        let text = render_lock_opted(&Findings::new(), &default_fail(), &failing);
+        assert!(
+            text.contains("\n# fail self-baselined: failing\n"),
+            "{text}"
+        );
+        let b = parse_baseline(&text);
+        assert!(b.fails_self_baselined("no-guard") && b.fails_self_baselined("risky"));
+        assert!(!b.fails_self_baselined("unscoped-key"));
+        assert!(header_errors(&text).is_empty());
+        assert!(
+            self_baselined_unchecked(&b)
+                .unwrap()
+                .contains("--diff-base")
+        );
+
+        let merged = parse_baseline(
+            "# x\n# fail: no-guard,risky\n# fail self-baselined: risky\n# fail self-baselined: no-guard\n",
+        );
+        assert_eq!(merged.self_baselined_kinds().len(), 2);
+        assert!(
+            header_problems("# fail self-baselined: risky\n# fail self-baselined: no-guard\n")
+                .iter()
+                .any(|l| l.contains("2 `# fail self-baselined:` lines"))
+        );
+
+        let bad = header_errors("# x\n# fail self-baselined: risky,riskyy\n");
+        assert_eq!(bad.len(), 1, "{bad:?}");
+        assert!(
+            bad[0].contains("`# fail self-baselined: risky,riskyy`"),
+            "{bad:?}"
+        );
+        assert!(bad[0].contains("`riskyy`"), "{bad:?}");
+        assert_eq!(header_errors("# fail self-baselined\n").len(), 1);
+        // A finding line after the header is no header line.
+        assert!(header_errors("# x\nrisky\t# fail self-baselined: nope\n").is_empty());
+
+        // Removed by the change: the base's opt-in is kept, and said.
+        let (kept, said) = stricter(&parse_baseline(&plain), &b);
+        assert!(kept.fails_self_baselined("no-guard"), "{kept:?}");
+        assert_eq!(said.len(), 1, "{said:?}");
+        assert!(said[0].contains("off `# fail self-baselined:`"), "{said:?}");
+        // Narrowed to one kind: still every failing kind.
+        let narrowed = parse_baseline(&render_lock_opted(
+            &Findings::new(),
+            &default_fail(),
+            &["risky".to_string()].into(),
+        ));
+        let (kept, _) = stricter(&narrowed, &b);
+        assert!(kept.fails_self_baselined("no-guard"));
+        // Added by the change: kept, nothing said.
+        let (kept, said) = stricter(&b, &parse_baseline(&plain));
+        assert!(kept.fails_self_baselined("risky") && said.is_empty());
+        assert_eq!(header_weakened(&b, &parse_baseline(&plain)).len(), 1);
+
+        // What moves: only the kinds the line covers.
+        let mut r = Ratchet::default();
+        for kind in ["risky", "unscoped-key"] {
+            r.baselined_by_change.insert(
+                kind.into(),
+                vec![Added {
+                    key: "k".into(),
+                    at: "a.py:1".into(),
+                }],
+            );
+        }
+        let mut plain_r = r.clone();
+        plain_r.hold_self_baselined(&parse_baseline(&plain), BTreeMap::new());
+        assert!(!plain_r.fails() && plain_r.self_baselined.is_empty());
+        r.hold_self_baselined(&b, BTreeMap::new());
+        assert!(r.fails());
+        assert_eq!(r.self_baselined.keys().collect::<Vec<_>>(), ["risky"]);
+        assert_eq!(
+            r.baselined_by_change.keys().collect::<Vec<_>>(),
+            ["unscoped-key"]
+        );
     }
 }

@@ -76,6 +76,14 @@ main branch.
   --diff-base` lists each finding the change adds to the code and also writes
   into `.drift/security.lock` (text, `security.baselined_by_change`, a GitHub
   notice, a SARIF note). It fails nothing.
+- **Opt in to failing on findings a pull request baselines itself.** `drift
+  security --write-baseline --fail-on self-baselined` (or
+  `self-baselined:<kind>`) records `# fail self-baselined:` in
+  `.drift/security.lock`; `drift check --diff-base` then exits 1 on a finding
+  the change adds and writes into the lock itself (`security.self_baselined`,
+  an `::error` annotation, a SARIF error), and says how to accept it instead.
+  A lock without the line behaves as before; a line Drift cannot read is an
+  error naming it.
 - **Studio, promote every form:** the promote dialog offers every form of
   `drift practices promote` (ways, mechanisms, any enforcing way; a directory, a
   file or a route prefix; advise, block, and `--force` after Drift refuses below

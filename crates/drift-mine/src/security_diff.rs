@@ -80,6 +80,7 @@ pub fn added(head: &Findings, base: &Keys, outside: &Keys) -> ChangeFindings {
                 .chain(head.keys().map(|(k, _)| k.clone()))
                 .collect(),
         ),
+        self_baselined: Default::default(),
     };
     let since = Since {
         commit: String::new(),
