@@ -6,7 +6,7 @@ use drift_core::{RepoFacts, SymbolKind};
 use serde::Serialize;
 
 use crate::context::RepoContext;
-use crate::mine::{MIN_BLOCK_ROLE_SIZE, Rule};
+use crate::mine::{MIN_BLOCK_ROLE_SIZE, MIN_LOWER_BOUND, MIN_ROLE_SIZE, Rule, Told};
 use crate::policy::{Convention, ConventionsFile, Lock, Mode, Status};
 use crate::roles::{Legacy, Unit, View, units_before};
 use crate::tier::Tier;
@@ -353,6 +353,77 @@ pub struct CheckReport {
     /// not checked, never reported. Omitted when there are none.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub practices_not_checked: Vec<crate::practices::promote::NotChecked>,
+    /// Per accepted mined rule, what `drift check` read of its members now: how many
+    /// follow it, how many Drift could not tell (never reported), whether it went stale,
+    /// and the mode it is checked with ([`Standing`]). By convention id; omitted when
+    /// there are none (a check of proposals, `init`'s lock).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub standing: Vec<Standing>,
+}
+
+/// What `drift check` read of the members of one accepted mined rule
+/// ([`CheckReport::standing`]). A promoted practice says the same through
+/// [`CheckReport::practices_not_checked`] and [`CheckReport::stale_practices`].
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+pub struct Standing {
+    /// The convention's id (`D-…`).
+    pub id: String,
+    /// Whether the counts are of the whole repository. A scan of one file counts the
+    /// members it holds only, and staleness is then not decided.
+    pub whole: bool,
+    /// Units in its role now, exempt ones included.
+    pub role: usize,
+    /// Members the rule is about: those that follow it, those that break it (a
+    /// reviewer's exceptions aside) and those not checked.
+    pub members: usize,
+    pub holders: usize,
+    /// Members Drift could not tell ([`crate::mine::Told::CannotTell`], or a unit the
+    /// practice map cannot tell, [`CheckReport::set_aside_untold`]): never reported,
+    /// and their lock entries stay.
+    pub not_checked: usize,
+    /// Why, with how many members each. Omitted when none.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub not_checked_why: BTreeMap<String, usize>,
+    /// Why the rule is stale ([`stale_reason`]): it then advises, never blocks, until a
+    /// person looks. Omitted when it is not.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stale: Option<String>,
+    /// The mode it is checked with now (`block` or `advise`, [`mode_now`]).
+    pub mode: String,
+    /// `was block, now advise because …` when that mode is not the one in the file.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode_note: Option<String>,
+    /// The members that break it, as `path#symbol` (whether reported or not).
+    #[serde(skip)]
+    breaking: BTreeSet<String>,
+}
+
+impl Standing {
+    /// Counts one member of the role, as `c` (a part of the convention) judged it.
+    fn count(&mut self, c: &Convention, u: &Unit, verdict: &Verdict, cx: &RepoContext) {
+        self.role += 1;
+        match verdict {
+            Verdict::Holds => {
+                if c.rule.applies_in(Some(&c.role), &u.view, cx) {
+                    self.holders += 1;
+                }
+            }
+            Verdict::Breaks => {
+                let key = u.key();
+                // A reviewer's exception is not about the rule's share.
+                if c.exception(&key).is_none() {
+                    self.breaking.insert(key);
+                }
+            }
+            Verdict::NotChecked(why) => self.untold(why, 1),
+            Verdict::Exempt(_) => {}
+        }
+    }
+
+    fn untold(&mut self, why: &str, n: usize) {
+        self.not_checked += n;
+        *self.not_checked_why.entry(why.to_string()).or_default() += n;
+    }
 }
 
 /// A warning the neighbour gate held back ([`CheckReport::suppressed_neighbour`]).
@@ -508,31 +579,64 @@ pub fn check_gated(
     let starts = declaration_starts(repo);
     // The neighbour gate's holders, per convention id ([`neighbour_gate`]).
     let gate = scope == Scope::Accepted && neighbour;
+    // What `drift check` says of an accepted convention's members is three-valued
+    // ([`crate::mine::Rule::tell_in`]): a member whose deciding fact Drift did not read
+    // is not checked, never a violation. `init`'s lock and the review cards (every
+    // convention not rejected) read members as mining does, so they stay as they were.
+    let tell = scope == Scope::Accepted;
+    // The standing of an accepted rule ([`Standing`]) is of the whole repository: with
+    // the whole repository's facts every unit is counted, whatever files are reported.
+    let whole = !ctx.holds_one_file();
+    let mut tally: BTreeMap<String, Standing> = BTreeMap::new();
+    if tell {
+        for c in conventions.iter().filter(|c| has_standing(c)) {
+            tally.entry(c.id.clone()).or_insert_with(|| Standing {
+                id: c.id.clone(),
+                whole,
+                ..Standing::default()
+            });
+        }
+    }
     let mut holders: BTreeMap<&str, Vec<usize>> = BTreeMap::new();
     // Members of files a person set apart as a different kind: their lock entries stay.
     let mut set_apart: Vec<(String, String)> = Vec::new();
+    // Members not checked: what they do is unknown, not fixed, so their lock entries stay.
+    let mut untold: Vec<(String, String)> = Vec::new();
     for (ui, u) in all.iter().enumerate() {
         let path = u.path();
-        if only_paths.is_some_and(|p| !p.contains(&path)) {
+        let listed = only_paths.is_none_or(|p| p.contains(&path));
+        if !listed && !(whole && !tally.is_empty()) {
             continue;
         }
         let extent = extent(&u.view, &starts);
         for c in &conventions {
-            let why = match classify(c, u, &policy.conventions, &contexts) {
-                None => continue,
-                Some(Verdict::Holds) => {
+            let Some(verdict) = classify(c, u, &policy.conventions, &contexts, tell) else {
+                continue;
+            };
+            if let Some(s) = tally.get_mut(c.id.as_str()) {
+                s.count(c, u, &verdict, contexts.of(c));
+            }
+            if !listed {
+                continue;
+            }
+            let why = match verdict {
+                Verdict::Holds => {
                     if gate && c.rule.applies_in(Some(&c.role), &u.view, contexts.of(c)) {
                         holders.entry(c.id.as_str()).or_default().push(ui);
                     }
                     continue;
                 }
-                Some(Verdict::Exempt(why)) => {
+                Verdict::NotChecked(_) => {
+                    untold.push((c.id.clone(), u.key()));
+                    continue;
+                }
+                Verdict::Exempt(why) => {
                     if why.code == DIFFERENT_KIND {
                         set_apart.push((c.id.clone(), format!("{path}#{}", u.name())));
                     }
                     why
                 }
-                Some(Verdict::Breaks) => {
+                Verdict::Breaks => {
                     let key = u.key();
                     report.violations.push(Violation {
                         id: c.id.clone(),
@@ -607,6 +711,7 @@ pub fn check_gated(
             .map(|v| (v.id.clone(), format!("{}#{}", v.path, v.symbol)))
             .chain(reviewed)
             .chain(set_apart)
+            .chain(untold)
             .collect();
         // A promoted practice's entries are the practice map's to call fixed.
         let in_scope: BTreeSet<&str> = conventions
@@ -624,7 +729,65 @@ pub fn check_gated(
             .map(|(id, key)| format!("{id} {key}"))
             .collect();
     }
+    if tell {
+        report.standing = tally.into_values().collect();
+        settle(&mut report, &conventions);
+    }
     report
+}
+
+/// Whether `drift check` keeps a [`Standing`] for `c`: a rule checked against its role's
+/// members (not a wiring rule, not a promoted practice, which says its own).
+fn has_standing(c: &Convention) -> bool {
+    !c.rule.is_wiring() && !c.rule.is_practice()
+}
+
+/// Fills each standing's members, staleness and mode from its counts, and gives every
+/// violation of it that mode ([`mode_now`]: the one place that decides).
+fn settle(report: &mut CheckReport, conventions: &[&Convention]) {
+    for s in &mut report.standing {
+        let Some(c) = conventions.iter().find(|c| c.id == s.id) else {
+            continue;
+        };
+        s.members = s.holders + s.breaking.len() + s.not_checked;
+        // A rule a person proposed from a map never passed mining's gates: what it
+        // needs to stay a rule is not mining's to say.
+        s.stale = if s.whole && c.from_map.is_none() {
+            stale_reason(s)
+        } else {
+            None
+        };
+        let (mode, note) = mode_now(c, s.stale.as_deref());
+        s.mode = mode.to_string();
+        s.mode_note = note;
+    }
+    for v in &mut report.violations {
+        if let Some(s) = report.standing.iter().find(|s| s.id == v.id) {
+            v.mode = s.mode.clone();
+        }
+    }
+}
+
+/// Why an accepted mined rule is stale, or `None`: its role holds fewer members now than
+/// mining needs to propose a rule ([`MIN_ROLE_SIZE`]), or fewer of the members Drift can
+/// tell follow it than the share that made it a rule ([`MIN_LOWER_BOUND`]). A stale rule
+/// advises: a check must not fail on a rule the code no longer bears out, and must not
+/// stop reporting it without saying so.
+fn stale_reason(s: &Standing) -> Option<String> {
+    if s.role < MIN_ROLE_SIZE {
+        return Some(format!(
+            "its role has {} member(s) now, under the {MIN_ROLE_SIZE} a mined rule needs",
+            s.role
+        ));
+    }
+    let told = s.holders + s.breaking.len();
+    (told > 0 && (s.holders as f64) < MIN_LOWER_BOUND * told as f64).then(|| {
+        format!(
+            "{} of the {told} members Drift can tell follow it now, under the {:.0}% a mined rule needs",
+            s.holders,
+            MIN_LOWER_BOUND * 100.0
+        )
+    })
 }
 
 /// What one convention says of one unit ([`classify`]).
@@ -636,15 +799,20 @@ enum Verdict {
     Holds,
     /// It breaks the rule.
     Breaks,
+    /// It does not hold as the facts read it, but what decides it was not read
+    /// ([`Told::CannotTell`]): counted, never a violation.
+    NotChecked(String),
 }
 
 /// What `c` says of `u`: `None` when `u` is not in its role or it is a wiring rule
-/// (checked apart, [`wiring_violations`]).
+/// (checked apart, [`wiring_violations`]). `tell`: an accepted convention as `drift
+/// check` reads it ([`crate::mine::Rule::tell_in`]); otherwise as mining reads it.
 fn classify(
     c: &Convention,
     u: &Unit,
     every: &[Convention],
     contexts: &Contexts,
+    tell: bool,
 ) -> Option<Verdict> {
     // Wiring rules are checked against other files than the unit's own, apart; a
     // promoted practice against the practice map ([`CheckReport::add_practices`]).
@@ -671,7 +839,14 @@ fn classify(
             reason: why,
         }));
     }
-    if c.rule.holds_in(Some(&c.role), &u.view, cx) {
+    let told = if tell {
+        c.rule.tell_in(Some(&c.role), &u.view, cx)
+    } else if c.rule.holds_in(Some(&c.role), &u.view, cx) {
+        Told::Holds
+    } else {
+        Told::Breaks
+    };
+    if told == Told::Holds {
         return Some(Verdict::Holds);
     }
     // An outlier a sibling rule of the role leaves out for what it is.
@@ -687,7 +862,11 @@ fn classify(
             reason: why,
         }));
     }
-    Some(Verdict::Breaks)
+    // Exemptions first: what a member is says more than what Drift could not read of it.
+    match told {
+        Told::CannotTell(why) => Some(Verdict::NotChecked(why)),
+        _ => Some(Verdict::Breaks),
+    }
 }
 
 /// Whether `drift check` (and so the hooks, MCP and PR mode) runs the neighbour gate
@@ -769,7 +948,7 @@ fn neighbour_gate<'a, 'c>(
                 continue;
             }
             for c in conventions.iter().filter(|c| ids.contains(c.id.as_str())) {
-                match classify(c, u, every, contexts) {
+                match classify(c, u, every, contexts, true) {
                     Some(Verdict::Holds)
                         if c.rule.applies_in(Some(&c.role), &u.view, contexts.of(c)) =>
                     {
@@ -1365,22 +1544,54 @@ pub fn needs_full_scan(repo: &RepoFacts, policy: &ConventionsFile) -> bool {
 /// The mode a convention is checked with. A role under [`MIN_BLOCK_ROLE_SIZE`] members never
 /// blocks, even when a hand-edited policy says `mode: block`: it advises. (A suggestion a person
 /// set to block, with `drift review --force` or before tiers existed, keeps blocking.)
+///
+/// What the policy alone says: a surface that has no check of the code at hand (a
+/// hook deciding whether to scan, `drift review`'s counts) reads this; `drift check`
+/// reads [`mode_now`] with what it found, which can only turn a block into advice.
 pub fn effective_mode(c: &crate::policy::Convention) -> &'static str {
+    mode_now(c, None).0
+}
+
+/// The mode a convention is checked with, and, when that is advise for a convention
+/// the file sets to block, `was block, now advise because …`. `stale`: why the code no
+/// longer bears the rule out ([`Standing::stale`]), when a check found that. The one
+/// place that decides advise or block: every other surface asks it
+/// ([`effective_mode`]).
+pub fn mode_now(
+    c: &crate::policy::Convention,
+    stale: Option<&str>,
+) -> (&'static str, Option<String>) {
+    let advise = |why: String| {
+        let note =
+            (c.mode == Mode::Block).then(|| format!("was block, now advise because {why}"));
+        ("advise", note)
+    };
     // Experimental wiring rules never block (also enforced when the policy loads).
     if c.rule.is_wiring() {
-        return "advise";
+        return advise("experimental wiring rules only advise".to_string());
     }
     // A practice promoted below the share a place needs, on a person's word, advises.
     if c.rule.is_practice()
         && (c.evidence.holders as f64)
             < crate::practices::promote::BLOCK_SHARE * c.evidence.total as f64
     {
-        return "advise";
+        return advise(
+            "it was promoted below the share of its place a practice needs to block".to_string(),
+        );
     }
-    match c.mode {
-        Mode::Block if c.evidence.role_size() >= MIN_BLOCK_ROLE_SIZE => "block",
-        _ => "advise",
+    if c.mode != Mode::Block {
+        return ("advise", None);
     }
+    if c.evidence.role_size() < MIN_BLOCK_ROLE_SIZE {
+        return advise(format!(
+            "its role had {} members when it was mined, under the {MIN_BLOCK_ROLE_SIZE} needed to block",
+            c.evidence.role_size()
+        ));
+    }
+    if let Some(why) = stale {
+        return advise(format!("it is stale: {why}"));
+    }
+    ("block", None)
 }
 
 /// The convention's summary, with what it means for the code as it is now: a
@@ -1396,6 +1607,212 @@ fn summary_now(c: &crate::policy::Convention, ctx: &RepoContext) -> String {
         }
         _ => c.summary.clone(),
     }
+}
+
+/// The concerns of the practice map that say how an entry point is guarded: who may
+/// call it (authentication) and what a caller may reach (authorization). Drift's own
+/// concern ids, never names of code.
+const GUARD_CONCERNS: [&str; 2] = [crate::practices::AUTHN, crate::practices::AUTHZ];
+
+/// How many bindings [`target_concerns`] follows from a rule's target to what it is
+/// built from ([`drift_core::Symbol::derives_from`]).
+const TARGET_DEPTH: usize = 8;
+
+/// A rule about how an entry point is guarded: wrapped by, calls, calls before. Its
+/// verdict on an entry point the practice map cannot tell for the concern its target
+/// does is not one Drift can stand behind ([`CheckReport::set_aside_untold`]).
+fn guards_entry(rule: &Rule) -> bool {
+    matches!(
+        rule,
+        Rule::WrappedBy { .. } | Rule::Calls { .. } | Rule::Before { .. }
+    )
+}
+
+/// Whether [`CheckReport::set_aside_untold`] has anything to read in `report` (a check
+/// of `policy`'s accepted conventions): some accepted rule about how an entry point is
+/// guarded has a member that breaks it. Only then does a caller need the practice map,
+/// which costs seconds on a large repository.
+pub fn reads_practice_map(report: &CheckReport, policy: &ConventionsFile) -> bool {
+    let ids: BTreeSet<&str> = policy
+        .conventions
+        .iter()
+        .filter(|c| c.status == Status::Accepted && has_standing(c) && guards_entry(&c.rule))
+        .map(|c| c.id.as_str())
+        .collect();
+    !ids.is_empty()
+        && (report.violations.iter().any(|v| ids.contains(v.id.as_str()))
+            || report
+                .standing
+                .iter()
+                .any(|s| ids.contains(s.id.as_str()) && !s.breaking.is_empty()))
+}
+
+impl CheckReport {
+    /// Sets aside what an accepted mined rule about how an entry point is guarded
+    /// ([`guards_entry`]) says of an entry point the practice map (`map`, of `repo`, with
+    /// units listed) marks `unknown` for a concern the rule's target does
+    /// ([`target_concerns`]): Drift cannot tell how that entry point is guarded, so the
+    /// rule's verdict on it is not one to report. Such a member leaves the violations
+    /// (its lock entry stays, never called fixed) and is counted as not checked in the
+    /// rule's [`Standing`], whose mode is then settled again. A promoted practice never
+    /// reports a unit it cannot tell; this holds a mined rule to the same. `report` is a
+    /// check of `policy`'s accepted conventions.
+    pub fn set_aside_untold(
+        &mut self,
+        repo: &RepoFacts,
+        policy: &ConventionsFile,
+        map: &crate::practices::PracticesReport,
+    ) {
+        let parts = policy.by_part();
+        let accepted: Vec<&Convention> = parts
+            .conventions
+            .iter()
+            .filter(|c| c.status == Status::Accepted)
+            .collect();
+        // Per convention id: the entry points the map cannot tell, and why in words.
+        let mut untold: BTreeMap<String, (BTreeSet<String>, String)> = BTreeMap::new();
+        for c in accepted
+            .iter()
+            .filter(|c| has_standing(c) && guards_entry(&c.rule))
+        {
+            if untold.contains_key(&c.id) {
+                continue;
+            }
+            let concerns = target_concerns(&c.rule, repo, map);
+            let keys: BTreeSet<String> = map
+                .concerns
+                .iter()
+                .filter(|cr| concerns.contains(cr.id.as_str()))
+                .flat_map(|cr| &cr.units)
+                .filter(|u| u.assignment == "unknown")
+                .map(|u| format!("{}#{}", u.path, u.symbol))
+                .collect();
+            if keys.is_empty() {
+                continue;
+            }
+            let words: Vec<&str> = concerns
+                .iter()
+                .map(|c| crate::practices::plain_concern(c))
+                .collect();
+            let why = format!(
+                "the practice map cannot tell how it handles {}",
+                words.join(" or ")
+            );
+            untold.insert(c.id.clone(), (keys, why));
+        }
+        if untold.is_empty() {
+            return;
+        }
+        self.violations.retain(|v| {
+            v.wire.is_some()
+                || !untold
+                    .get(&v.id)
+                    .is_some_and(|(keys, _)| keys.contains(&format!("{}#{}", v.path, v.symbol)))
+        });
+        for s in &mut self.standing {
+            let Some((keys, why)) = untold.get(&s.id) else {
+                continue;
+            };
+            let moved: Vec<String> = s.breaking.intersection(keys).cloned().collect();
+            for k in &moved {
+                s.breaking.remove(k);
+            }
+            if !moved.is_empty() {
+                s.untold(why, moved.len());
+            }
+        }
+        settle(self, &accepted);
+    }
+}
+
+/// The guard concerns ([`GUARD_CONCERNS`]) of `map` a rule's target does, as the
+/// practice classifier reads it: the concerns one of whose instruments (a variant's, a
+/// group's, a unit's own use) is the target, a binding the target is built from, or
+/// something the definition of either wraps or calls (`authedProcedure =
+/// procedure.use(isAuthed)` does authentication when the map's authentication
+/// instruments hold `isAuthed`). Decided by what the classifier found, never by a name.
+fn target_concerns<'m>(
+    rule: &Rule,
+    repo: &RepoFacts,
+    map: &'m crate::practices::PracticesReport,
+) -> BTreeSet<&'m str> {
+    let targets: Vec<&str> = match rule {
+        Rule::WrappedBy { any_of, .. } => any_of.iter().map(String::as_str).collect(),
+        Rule::Calls { callee } => vec![callee.as_str()],
+        Rule::Before { first, .. } => vec![first.as_str()],
+        _ => return BTreeSet::new(),
+    };
+    let bare =
+        |r: &str| crate::mine::norm_ref(r.strip_suffix("(ref)").unwrap_or(r)).into_owned();
+    let mut refs: BTreeSet<String> = BTreeSet::new();
+    for t in targets {
+        let mut cur = Some(bare(t));
+        for _ in 0..TARGET_DEPTH {
+            let Some(r) = cur.take() else {
+                break;
+            };
+            if !refs.insert(r.clone()) {
+                break;
+            }
+            let Some(def) = definition_in(repo, &r) else {
+                break;
+            };
+            refs.extend(def.wraps.iter().map(|w| bare(w.wrapper.as_str())));
+            refs.extend(def.calls.iter().map(|c| bare(c.as_str())));
+            cur = (!def.derives_from.is_empty()).then(|| bare(def.derives_from.as_str()));
+        }
+    }
+    map.concerns
+        .iter()
+        .filter(|cr| GUARD_CONCERNS.contains(&cr.id.as_str()))
+        .filter(|cr| {
+            let variants = cr
+                .variants
+                .iter()
+                .flat_map(|v| std::iter::once(v).chain(&v.alternatives))
+                .flat_map(|v| v.instruments.iter().map(String::as_str));
+            let groups = cr.groups.iter().map(|g| g.instrument.as_str());
+            // A unit's own uses (`mechanism:instrument`): a one-off way sits in no
+            // variant of its own.
+            let uses = cr
+                .units
+                .iter()
+                .flat_map(|u| {
+                    u.key
+                        .iter()
+                        .flat_map(|k| k.split('+'))
+                        .chain(u.uses.iter().map(String::as_str))
+                })
+                .filter_map(|k| k.split_once(':').map(|(_, i)| i));
+            variants
+                .chain(groups)
+                .chain(uses)
+                .any(|i| !i.is_empty() && refs.contains(&bare(i)))
+        })
+        .map(|cr| cr.id.as_str())
+        .collect()
+}
+
+/// The in-repo symbol that defines the binding a reference starts with, as
+/// [`RepoContext::definition`] reads it, from the facts alone: the longest prefix of
+/// `path#a.b.c` (before any call) a file of `repo` declares or exports.
+fn definition_in<'r>(repo: &'r RepoFacts, r: &str) -> Option<&'r drift_core::Symbol> {
+    let (module, rest) = r.split_once('#')?;
+    let f = repo
+        .files
+        .iter()
+        .chain(&repo.context_files)
+        .find(|f| f.path == module)?;
+    let segs: Vec<&str> = rest.split('.').collect();
+    (1..=segs.len()).rev().find_map(|k| {
+        if segs[..k].iter().any(|s| s.contains('(')) {
+            return None;
+        }
+        let name = segs[..k].join(".");
+        f.symbols
+            .iter()
+            .find(|s| s.name == name || s.exported_as.iter().any(|e| *e == name))
+    })
 }
 
 /// The lock that baselines every current violation of `policy` (all non-rejected conventions).

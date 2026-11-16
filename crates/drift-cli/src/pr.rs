@@ -291,6 +291,7 @@ impl DiffScope {
                 .collect(),
             stale_practices: report.stale_practices.clone(),
             practices_not_checked: report.practices_not_checked.clone(),
+            standing: report.standing.clone(),
         }
     }
 

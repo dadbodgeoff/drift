@@ -920,6 +920,61 @@ fn derivation_open(f: &FileFacts, s: &Symbol, ctx: &RepoContext) -> bool {
             .any(|w| derived_forms(&w.wrapper, ctx).open)
 }
 
+/// What `drift check` can say of one member of an accepted convention's role
+/// ([`Rule::tell_in`]). Mining never asks it: it reads [`Rule::holds_in`], whose
+/// answer is two-valued and unchanged, so what is mined stays as it was measured.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Told {
+    /// It holds, or the rule is not about it.
+    Holds,
+    /// It breaks the rule, and what decides that was read.
+    Breaks,
+    /// It does not hold as the facts read it, but the fact that decides it is one
+    /// Drift did not read: plain words saying which. Never a violation.
+    CannotTell(String),
+}
+
+/// Why a member's wrappers of `kind` cannot tell a wrapper rule ([`Rule::unread_in`]):
+/// a wrapper that does not resolve to code Drift read (of any kind: an unresolved
+/// base or decorator may be the rule's), or, for a call wrapper, one whose chain of
+/// bindings ends in a file the facts lack, or that is (or is built on) a value a
+/// factory call returns ([`drift_core::Symbol::made_by`]): what it does is in the
+/// factory, which a wrapper rule does not follow.
+fn unread_wrapper(s: &Symbol, kind: WrapKind, ctx: &RepoContext) -> Option<String> {
+    for w in s.wraps.iter().filter(|w| w.kind == kind) {
+        if w.wrapper.starts_with("unresolved:") {
+            return Some(format!(
+                "it is wrapped in {}, which does not resolve to code Drift read",
+                short(&w.wrapper)
+            ));
+        }
+        if kind != WrapKind::Call {
+            continue;
+        }
+        let derived = derived_forms(&w.wrapper, ctx);
+        if derived.open {
+            return Some(format!(
+                "it is wrapped in {}, which is built in a file Drift did not read",
+                short(&w.wrapper)
+            ));
+        }
+        let bindings = std::iter::once(norm_ref(&w.wrapper).into_owned())
+            .chain(derived.forms.into_iter().map(|(f, _)| f));
+        for b in bindings {
+            if let Some(def) = ctx.definition(&b)
+                && !def.made_by.is_empty()
+            {
+                return Some(format!(
+                    "it is wrapped in {}, which {}() builds: what it does is in that factory, which Drift does not follow for this rule",
+                    short(&w.wrapper),
+                    short(&def.made_by)
+                ));
+            }
+        }
+    }
+    None
+}
+
 /// The symbol calls `callee`, is wrapped by it (a decorator or wrapper call), or
 /// passes it a key (which only a call does).
 fn calls_callee(s: &Symbol, callee: &str) -> bool {
@@ -2980,6 +3035,81 @@ impl Rule {
                 }
             }
             _ => true,
+        }
+    }
+
+    /// [`Rule::holds_in`] as `drift check` reads an accepted convention: a member that
+    /// does not hold it breaks it only when the fact that decides it was read
+    /// ([`Rule::unread_in`]); otherwise Drift cannot tell, and says so. A unit Drift
+    /// could not read to the end is never a violation. Mining never calls this.
+    pub fn tell_in(&self, role: Option<&RoleSelector>, view: &View, ctx: &RepoContext) -> Told {
+        if self.holds_in(role, view, ctx) {
+            return Told::Holds;
+        }
+        match self.unread_in(view, ctx) {
+            Some(why) => Told::CannotTell(why),
+            None => Told::Breaks,
+        }
+    }
+
+    /// Of a member that does not hold the rule as the facts read it, what the facts did
+    /// not read that decides it, in plain words; `None` when what decides it was read.
+    /// Per rule kind, only where the deciding fact can be opaque:
+    ///
+    /// - a wrapper rule: a wrapper of the rule's kind that does not resolve, or a call
+    ///   wrapper built where the facts do not follow ([`unread_wrapper`]);
+    /// - passing a key: a call of the callee that unpacks a value into its arguments
+    ///   ([`drift_core::SPLAT_KEY`]: it may pass any key);
+    /// - calling a function, or calling one before another: a body that hands a value
+    ///   to a call the facts do not record ([`drift_core::controls::UNREAD_CALL`]): the
+    ///   call the rule asks for may be that one;
+    /// - rendering a component: a rendered component that does not resolve.
+    ///
+    /// Every other kind decides from facts that are read whole (a file's directives,
+    /// imports and test file; a model's fields; a manifest; a name): `None`.
+    fn unread_in(&self, view: &View, ctx: &RepoContext) -> Option<String> {
+        let View::Symbol(file, own) = view else {
+            return None;
+        };
+        // A plain alias of a function does what the function does, as `satisfied` reads it.
+        let (_, symbol) = ctx.alias_target(file, own).unwrap_or((file, own));
+        match self {
+            Rule::WrappedBy { kind, .. } => unread_wrapper(symbol, *kind, ctx),
+            Rule::PassesKey { callee, .. } => symbol
+                .args
+                .iter()
+                .any(|a| {
+                    a.rsplit_once('@').is_some_and(|(c, rest)| {
+                        same_ref(c, callee)
+                            && rest
+                                .split_once(':')
+                                .is_some_and(|(_, k)| k == drift_core::SPLAT_KEY)
+                    })
+                })
+                .then(|| {
+                    format!(
+                        "its call of {}() unpacks a value into its arguments, so it may pass any key",
+                        short(callee)
+                    )
+                }),
+            Rule::Calls { .. } | Rule::Before { .. } => symbol
+                .controls
+                .iter()
+                .any(|c| c == drift_core::controls::UNREAD_CALL)
+                .then(|| {
+                    "it hands a value to a call Drift did not record (a method of a local or of an untyped parameter), which may be the call the rule asks for".to_string()
+                }),
+            Rule::Renders { .. } => symbol
+                .renders
+                .iter()
+                .find(|r| r.starts_with("unresolved:"))
+                .map(|r| {
+                    format!(
+                        "it renders {}, which does not resolve to code Drift read",
+                        short(r)
+                    )
+                }),
+            _ => None,
         }
     }
 

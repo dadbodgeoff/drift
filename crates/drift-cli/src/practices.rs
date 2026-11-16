@@ -263,10 +263,21 @@ pub fn add_practices<'m>(
     only: Option<&BTreeSet<String>>,
     map: impl FnOnce() -> &'m PracticesReport,
 ) {
-    if !promote::any(policy, scope) {
+    let promoted = promote::any(policy, scope);
+    // An accepted mined rule about how an entry point is guarded reports no entry point
+    // the map cannot tell ([`CheckReport::set_aside_untold`]); the map is asked only
+    // when such a rule has a member that breaks it.
+    let mined = scope == dcheck::Scope::Accepted && dcheck::reads_practice_map(report, policy);
+    if !promoted && !mined {
         return;
     }
-    report.add_practices(promote::check(facts, map(), policy, lock, scope, only));
+    let map = map();
+    if promoted {
+        report.add_practices(promote::check(facts, map, policy, lock, scope, only));
+    }
+    if mined {
+        report.set_aside_untold(facts, policy, map);
+    }
 }
 
 /// The lock that baselines every current violation of `policy` (every convention not
