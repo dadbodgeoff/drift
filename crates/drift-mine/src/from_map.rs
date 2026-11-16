@@ -31,6 +31,11 @@ use crate::roles::{FILE_UNIT, FileKinds, PACKAGE_WIDE, RoleSelector, View};
 pub const LAYERING: &str = "layering";
 /// [`Convention::from_map`] of a manifest proposal ([`manifest`]).
 pub const MANIFEST: &str = "manifest";
+/// [`Convention::from_map`] of a rule the repository declares ([`crate::declared`]).
+pub const DECLARED: &str = crate::declared::DECLARED;
+/// The channel of wiring regularities ([`crate::wiring_proposals`]): listed by `drift
+/// census --from-map`, never written, so never a [`Convention::from_map`] value.
+pub const WIRING: &str = crate::wiring_proposals::WIRING;
 
 /// Members of the role that import in-repo code, at least: with every one of them
 /// holding, the 95% Wilson lower bound of "holds" is at least 0.9, the bound mining asks
