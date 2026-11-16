@@ -371,6 +371,19 @@ def mentions_other_runs(path, results_dir, own_id):
     return sorted(found - {own_id})
 
 
+def fresh_attempt_dir(attempt_dir):
+    """Create the attempt directory empty. One left by an interrupted run (Ctrl-C, or an
+    error before result.json) is moved aside to <dir>.stale-N, never reused: its
+    transcript, usage and arm.log are that run's, and reading them would count its cost
+    and its transcript hash as this attempt's."""
+    if os.path.lexists(attempt_dir):
+        n = 1
+        while os.path.lexists("%s.stale-%d" % (attempt_dir, n)):
+            n += 1
+        os.rename(attempt_dir, "%s.stale-%d" % (attempt_dir, n))
+    os.makedirs(attempt_dir)
+
+
 def one_run(cfg, task, arm, r, attempt_dir, keep):
     rid = os.path.basename(os.path.dirname(attempt_dir))
     root = cfg["runs_root"]
@@ -378,7 +391,7 @@ def one_run(cfg, task, arm, r, attempt_dir, keep):
     home = os.path.join(cfg["work_root"] + ".home", rid)
     tmp = os.path.join(home, "tmp")
     bin_dir = os.path.join(cfg["work_root"] + ".bin", rid)
-    os.makedirs(attempt_dir, exist_ok=True)
+    fresh_attempt_dir(attempt_dir)
     res = {"task": task["id"], "arm": arm, "run": r, "run_id": rid, "status": None, "exit_code": None,
            "timed_out": False, "wall_s": None, "error": None}
     mirror = cfg["mirrors"].get(task["repository"])

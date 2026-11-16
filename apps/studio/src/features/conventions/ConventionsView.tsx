@@ -27,7 +27,7 @@ import {
   useToast,
 } from "@drift/ui";
 import { useRepo } from "@/entities/repo";
-import { keys, useCheck, useFacts, useQuestions } from "@/entities/drift";
+import { keys, reviewDecisionKeys, useCheck, useFacts, useQuestions } from "@/entities/drift";
 import { VIOLATION_STATUS, statusOf } from "@/entities/check";
 import { type ConventionRow, type FineOutlier, MIN_BLOCK_ROLE_SIZE, RECORD_MIN_CARDS, blockDecision, capSuggestions, forceBlockIsDanger, memberKey, reviewCounts, reviewOrder, splitOutliers, suggestionRecord, trackRecord, undecided, blocksInNameOnly, describeDecision, exemptionKind, exemptionKinds, importSource, keyTypeText, languageText, layeringTarget, ruleTargets, practiceText, shortRef, tierReasonText, uncheckedFilesText, uncheckedMembersText, useConventions, WIRING_FLAG_HELP, wireAt, agentsHiddenText, verifyText, BLOCK_CANDIDATE_TEXT, isBlockCandidate, type PythonProposalsState, pythonProposalsText, QUESTION, answerPlan, needsTick, ACCURACY, REVIEW_FIRST_TEXT, pctOf, type SourceFilter, hasFromMap, passesSource } from "@/entities/convention";
 import { symbolLine, useFactsIndex } from "@/entities/facts";
@@ -157,7 +157,7 @@ export function ConventionsView({ selectedId }: { selectedId: string | null }) {
     try {
       const entry = await api.review(repo, decision, [id]);
       log(entry.ok ? "info" : "error", `review ${decision} ${id}`, { command: entry.command, output: entry.output });
-      await Promise.all([qc.invalidateQueries({ queryKey: keys.policy(repo) }), qc.invalidateQueries({ queryKey: keys.check(repo) }), qc.invalidateQueries({ queryKey: keys.history(repo) })]);
+      await Promise.all(reviewDecisionKeys(repo).map((queryKey) => qc.invalidateQueries({ queryKey })));
       if (!entry.ok) toast.show({ title: `drift review failed for ${id}`, body: entry.output, tone: "danger", duration: 0 });
       else if (entry.output.trim()) toast.show({ title: `${decisionPast(decision)} ${id}`, body: entry.output.trim().split("\n").at(-1), tone: "success", duration: 3000 });
     } catch (e) {
@@ -178,7 +178,7 @@ export function ConventionsView({ selectedId }: { selectedId: string | null }) {
       return;
     }
     log(entry.ok ? "info" : "error", `review ${entry.decision} ${row.id} ${member}`, { command: entry.command, output: entry.output });
-    await Promise.all([qc.invalidateQueries({ queryKey: keys.policy(repo) }), qc.invalidateQueries({ queryKey: keys.check(repo) }), qc.invalidateQueries({ queryKey: keys.history(repo) })]);
+    await Promise.all(reviewDecisionKeys(repo).map((queryKey) => qc.invalidateQueries({ queryKey })));
     if (!entry.ok) toast.show({ title: `drift review failed for ${row.id}`, body: entry.output, tone: "danger", duration: 0 });
     else toast.show({ title: reason === null ? `Checked again: ${member}` : `Marked fine: ${member}`, body: <code className="dui-mono">{entry.command}</code>, tone: "success", duration: 3500 });
   };
@@ -194,7 +194,7 @@ export function ConventionsView({ selectedId }: { selectedId: string | null }) {
       return;
     }
     log(entry.ok ? "info" : "error", `review answer ${answer} ${row.id}`, { command: entry.command, output: entry.output });
-    await Promise.all([keys.policy(repo), keys.check(repo), keys.history(repo), keys.questions(repo), keys.census(repo), keys.reviewLog(repo)].map((queryKey) => qc.invalidateQueries({ queryKey })));
+    await Promise.all([...reviewDecisionKeys(repo), keys.questions(repo), keys.census(repo), keys.reviewLog(repo)].map((queryKey) => qc.invalidateQueries({ queryKey })));
     if (!entry.ok) toast.show({ title: `drift review failed for ${row.id}`, body: entry.output, tone: "danger", duration: 0 });
     else toast.show({ title: answer === "not-a-convention" ? `Rejected ${row.id}: not a convention` : answer === "different" ? `Accepted ${row.id}, files set apart` : `Accepted ${row.id}`, body: <code className="dui-mono">{entry.command}</code>, tone: "success", duration: 3500 });
   };

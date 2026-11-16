@@ -76,12 +76,12 @@ COMMANDS = [
     ("census_json", ["census", "--json"], "census.json", {"funnel": True}),
     ("census_why", ["census", "--why", "--json"], "census-why.json", {"optional": True}),
     ("census_from_map", ["census", "--from-map", "--json"], "census-from-map.json", {"optional": True}),
-    ("census_no_from_map", ["census", "--no-from-map"], "census-no-from-map.txt", {"optional": True}),
     ("practices_units", ["practices", "--json", "--units"], "practices-units.json", {}),
     ("promote_list", ["practices", "promote", "--list", "--json"], "promote-list.json", {}),
     ("security", ["security", "--json"], "security.json", {}),
     ("map", ["map", "--json"], "map.json", {}),
 ]
+FUNNEL = "funnel.json"
 NOT_IN_BUILD = re.compile(r"unexpected argument|unrecognized (subcommand|argument|option)|Found argument|invalid value")
 
 
@@ -156,6 +156,21 @@ def run_one(argv, out_path, err_path, env, timeout):
     }
 
 
+def clear_outputs(rdir):
+    """Remove every file a collect step writes in <out>/<repo>/ (the funnel and run.json
+    included), so a step that fails or is skipped leaves nothing from an earlier collect
+    for `score` to read as this run's."""
+    names = [f for _, _, f, _ in COMMANDS] + [FUNNEL]
+    for n in names:
+        for stale in (n, n + ".gz", n + ".err"):
+            p = os.path.join(rdir, stale)
+            if os.path.lexists(p):
+                os.remove(p)
+    p = os.path.join(rdir, "run.json")
+    if os.path.lexists(p):
+        os.remove(p)
+
+
 def store(path):
     """Hash the raw output, gzip it when big; return (stored name, sha256, bytes)."""
     digest = sha256_file(path)
@@ -200,10 +215,12 @@ def collect(args):
     }
     for repo in names:
         root = os.path.join(repos_dir, repo)
+        rdir = os.path.join(out, repo)
+        if os.path.isdir(rdir):
+            clear_outputs(rdir)
         if not os.path.isdir(root):
             print(f"{repo}: not found under {repos_dir}, skipped", file=sys.stderr)
             continue
-        rdir = os.path.join(out, repo)
         os.makedirs(rdir, exist_ok=True)
         cache = os.path.join(out, ".cache", repo)
         shutil.rmtree(cache, ignore_errors=True)
@@ -225,13 +242,16 @@ def collect(args):
             if args.cache == "none":
                 argv.insert(1, "--no-cache")
             e = dict(env)
+            stales = [os.path.join(rdir, fname)]
             if opt.get("funnel"):
-                e["DRIFT_FUNNEL"] = os.path.join(rdir, "funnel.json")
+                e["DRIFT_FUNNEL"] = os.path.join(rdir, FUNNEL)
+                stales.append(e["DRIFT_FUNNEL"])
             outp = os.path.join(rdir, fname)
             errp = outp + ".err"
-            for stale in (outp, outp + ".gz", errp):
-                if os.path.exists(stale):
-                    os.remove(stale)
+            for stale in stales:
+                for p in (stale, stale + ".gz", stale + ".err"):
+                    if os.path.lexists(p):
+                        os.remove(p)
             rec = run_one(argv, outp, errp, e, args.timeout)
             rec["argv"] = ["<bin>"] + [("<root>" if a == root else a) for a in argv[1:]]
             err = open(errp, encoding="utf-8", errors="replace").read()
@@ -260,9 +280,13 @@ def collect(args):
                 write_json(os.path.join(rdir, "run.json"), meta["repos"][repo])
                 write_json(os.path.join(out, "collect.json"), meta)
                 sys.exit(f"{repo}: the repository changed during `{name}` ({', '.join(changed[:5])}); stopped. Try --cache none.")
-        if os.path.exists(os.path.join(rdir, "funnel.json")):
-            stored, digest, size = store(os.path.join(rdir, "funnel.json"))
-            runs["census_json"]["funnel_file"] = stored
+        funnel = os.path.join(rdir, FUNNEL)
+        if os.path.exists(funnel):
+            if runs["census_json"].get("available"):
+                stored, digest, size = store(funnel)
+                runs["census_json"]["funnel_file"] = stored
+            else:  # written by a census that failed or timed out: not this run's funnel
+                os.remove(funnel)
         cache_bytes = dir_bytes(cache) if args.cache == "scratch" else 0
         if not args.keep_cache:
             shutil.rmtree(cache, ignore_errors=True)
@@ -420,7 +444,7 @@ def define_metrics():
     metric("cand.python", "Candidates in Python (by the example's extension)", "info", source="audit 6 §2.2: 26")
     metric("cand.preview", "Candidates of a preview concern", "info", source="audit 3 §0: 42 of 77")
     metric("cand.bubble", "Candidates whose way is bubble:framework_default", "down", source="audit 3 G4: 10 of 16 errors")
-    metric("cand.passive", "Candidates marked passive (new build)", "info", source="S1")
+    metric("cand.passive", "Candidates listed apart as passive (counted in cand.count too; new build)", "info", source="S1")
     metric("cand.mechanism", "Candidates accepting a whole mechanism (new build)", "up", source="S1")
     metric("cand.any_enforcing", "Candidates accepting any enforcing way (new build)", "up", source="S1")
     metric("cand.signin_covered", "Units covered by a promotable sign-in or permission rule", "up",
@@ -434,7 +458,6 @@ def define_metrics():
     metric("cand.exceptions_unmatched", "Candidate exceptions with no unit row", "info", source="consistency")
     # census
     metric("census.text_sha256", "Plain `drift census` text, sha256", "same", True, source="sprint 2 step 4: byte-identical")
-    metric("census.no_from_map_sha256", "`drift census --no-from-map` text, sha256 (new build)", "info", source="INTEGRATION-NOTES S10")
     metric("census.conventions", "Conventions proposed by census", "up", source="audit 6 §2.1 / audit 7 §2.1: 13")
     metric("census.default", "... default tier", "info", source="audit 6 §2.1: 7")
     metric("census.suggestion", "... suggestions", "info", source="audit 6 §2.1: 6")
@@ -724,7 +747,13 @@ def score_repo(rdir, repo):
     cand_keys = []
     exc_keys = []
     if plist is not None:
-        C = [x["candidate"] for x in plist.get("candidates", [])]
+        # `promote --list --json` lists the candidates code follows by doing nothing apart,
+        # under `passive`: they are candidates all the same, so every number below counts
+        # them, and `cand.passive` counts them apart. A list with no `passive` key is from
+        # an older build: `cand.passive` is None there, and `diff` calls the candidate
+        # numbers of such a side not comparable with a side that has the key.
+        passive = [x["candidate"] for x in plist.get("passive", []) or []]
+        C = [x["candidate"] for x in plist.get("candidates", [])] + passive
         m["cand.count"] = len(C)
         new_cands = prac is not None and (m.get("units.has_kind", 0) > 0 or m.get("units.has_uses", 0) > 0)
         per = Counter(c["concern"] for c in C)
@@ -739,7 +768,7 @@ def score_repo(rdir, repo):
         m["cand.python"] = sum(1 for c in C if ((c.get("example") or {}).get("path") or "").endswith(".py"))
         m["cand.preview"] = sum(1 for c in C if c["concern"] in PREVIEW)
         m["cand.bubble"] = sum(1 for c in C if any(w.get("key", "").startswith("bubble:") for w in c.get("ways", [])))
-        m["cand.passive"] = sum(1 for c in C if c.get("passive")) if new_cands else None
+        m["cand.passive"] = len(passive) if "passive" in plist else None
         m["cand.mechanism"] = sum(1 for c in C if c.get("mechanisms")) if new_cands else None
         m["cand.any_enforcing"] = sum(1 for c in C if c.get("any_enforcing")) if new_cands else None
         sign = [c for c in C if c["concern"] in ("authn", "authz")]
@@ -796,8 +825,6 @@ def score_repo(rdir, repo):
             notes.append(f"census.txt line 1 not understood: {first[:80]!r}")
         wm = re.search(r"(\d+) mined card\(s\) withheld", census_txt.decode("utf-8", "replace"))
         m["census.withheld"] = int(wm.group(1)) if wm else 0
-    nfm = read_bytes(rdir, "census-no-from-map.txt")
-    m["census.no_from_map_sha256"] = hashlib.sha256(nfm).hexdigest() if nfm is not None else None
     census_ids = []
     if census is not None:
         P = census.get("proposals", [])
@@ -884,6 +911,22 @@ def score_repo(rdir, repo):
     return m, notes, labels
 
 
+def failed_commands(rdir):
+    """Collect steps of this repository that did not exit 0 within the timeout (crashed,
+    timed out, or not run), from run.json; an optional command this build does not have is not a
+    failure. None when there is no run.json (outputs saved by hand, as the baseline's)."""
+    run = read_json(rdir, "run.json")
+    if run is None:
+        return None
+    runs = run.get("runs", {})
+    out = []
+    for name, _, _, _ in COMMANDS:
+        r = runs.get(name)
+        if r is None or (not r.get("available") and not r.get("note")):
+            out.append(name)
+    return out
+
+
 def from_map_entries(v):
     if isinstance(v, list):
         return [e for e in v if isinstance(e, dict)]
@@ -909,7 +952,7 @@ def score(args):
     data = os.path.abspath(args.data)
     truth = os.path.abspath(args.truth) if args.truth else os.path.join(os.path.dirname(os.path.abspath(__file__)), "truth")
     repos = [r for r in REPOS if os.path.isdir(os.path.join(data, r))]
-    out = {"schema": SCHEMA, "data": data, "repos": {}, "notes": {}, "labels": {}}
+    out = {"schema": SCHEMA, "data": data, "repos": {}, "notes": {}, "labels": {}, "failed": {}}
     cmeta = read_json(data, "collect.json")
     if cmeta:
         out["build"] = {k: cmeta.get(k) for k in ("binary", "binary_sha256", "version", "started", "cache")}
@@ -917,6 +960,9 @@ def score(args):
         m, notes, labels = score_repo(os.path.join(data, r), r)
         out["repos"][r] = m
         out["labels"][r] = labels
+        failed = failed_commands(os.path.join(data, r))
+        if failed is not None:
+            out["failed"][r] = failed
         if notes:
             out["notes"][r] = notes
     keys = sorted({k for m in out["repos"].values() for k in m})
@@ -1083,6 +1129,9 @@ def print_score(out):
     for r, n in out.get("notes", {}).items():
         for x in n:
             print(f"note: {r}: {x}")
+    for r, n in out.get("failed", {}).items():
+        if n:
+            print(f"failed: {r}: " + ", ".join(n) + " did not exit 0 within the timeout (see run.json)")
 
 
 # --------------------------------------------------------------------------------------
@@ -1115,6 +1164,52 @@ def load_score(path):
     return load_json_file(path)
 
 
+# The collect steps each guard number is computed from: a guard with no "after" value
+# names them (the ones run.json records as failed, when it is there).
+GUARD_NEEDS = {
+    "census.text_sha256": ["census"],
+    "sec.guard_gap_exceptions_unknown": ["security"],
+    "cand.exceptions_unknown": ["promote_list", "practices_units"],
+    "census.outliers_unknown": ["census_json", "practices_units"],
+}
+NOT_COMPARABLE = "not comparable (older build)"
+
+
+def counts_passive(k):
+    """Numbers that count passive candidates, which an older build's promote list did not
+    list apart (no `passive` key)."""
+    return k.startswith("cand.") or k.endswith(".in_candidate_place")
+
+
+def passive_split_differs(b, a, repos):
+    """Repositories where one side's promote list has a `passive` list and the other's
+    has none: their candidate numbers are not comparable."""
+    out = []
+    for r in repos:
+        x, y = b["repos"][r], a["repos"][r]
+        if x.get("cand.count") is None or y.get("cand.count") is None:
+            continue
+        if (x.get("cand.passive") is None) != (y.get("cand.passive") is None):
+            out.append(r)
+    return out
+
+
+def guard_missing(a, repos, k, av):
+    """One line per repository where guard `k` has no value after: the run cannot say
+    whether the guard held, so it fails."""
+    lines = []
+    for r, y in zip(repos, av):
+        if y is not None:
+            continue
+        need = GUARD_NEEDS.get(k, [])
+        failed = (a.get("failed") or {}).get(r)
+        named = [n for n in need if n in failed] if failed is not None else []
+        cmds = " or ".join("`drift " + " ".join(sub) + "`" for n, sub, _, _ in COMMANDS if n in (named or need))
+        how = "failed or timed out" if named else "failed, timed out or was not collected"
+        lines.append(f"{r}: {k} has no value after: {cmds or 'its command'} {how} (see <data>/{r}/run.json)")
+    return lines
+
+
 def diff(args):
     b, a = load_score(args.before), load_score(args.after)
     if b is None or a is None:
@@ -1123,8 +1218,12 @@ def diff(args):
     meta = dict(b.get("meta", {}))
     meta.update(a.get("meta", {}))
     meta.update({k: v for k, v in META.items()})
-    keys = sorted({k for r in repos for k in list(b["repos"][r]) + list(a["repos"][r])})
+    # every guard is judged, even one neither side computed: a guard with no value after fails
+    keys = sorted({k for r in repos for k in list(b["repos"][r]) + list(a["repos"][r])} | set(GUARD_NEEDS))
     regressions = []
+    missing = []
+    split = passive_split_differs(b, a, repos)
+    not_comparable = []
     rows = []
     for k in keys:
         md = meta.get(k, {"label": k, "direction": "info", "guard": False})
@@ -1143,7 +1242,19 @@ def diff(args):
                 bt, at = (rate(s, [r for r, (x, y) in zip(repos, zip(bv, av))
                                    if isinstance(x, (int, float)) and isinstance(y, (int, float))]) for s in (b, a))
         changed = bv != av
-        verdict = judge(md, bv, av, k)
+        if split and counts_passive(k):
+            keep = [i for i, r in enumerate(repos) if r not in split]
+            verdict = judge(md, [bv[i] for i in keep], [av[i] for i in keep], k)
+            if verdict != "worse":
+                verdict = NOT_COMPARABLE
+            not_comparable.append(k)
+        else:
+            verdict = judge(md, bv, av, k)
+        if md.get("guard"):
+            lost = guard_missing(a, repos, k, av)
+            if lost:
+                verdict = "missing"
+                missing.extend(lost)
         if md.get("guard") and verdict == "worse":
             regressions.append(k)
         rows.append((k, md, bv, av, bt, at, changed, verdict))
@@ -1165,7 +1276,8 @@ def diff(args):
             {"key": k, "label": md.get("label"), "direction": md.get("direction"), "guard": md.get("guard"),
              "before": dict(zip(repos, bv)), "after": dict(zip(repos, av)), "total_before": bt, "total_after": at,
              "verdict": v} for k, md, bv, av, bt, at, ch, v in rows if ch or not args.changed],
-            "guard_regressions": regressions, "unknown_guard": unknown_guard_fail}, indent=1))
+            "guard_regressions": regressions, "guard_missing": missing, "unknown_guard": unknown_guard_fail,
+            "not_comparable": {"repos": split, "keys": not_comparable}}, indent=1))
     else:
         w = 9
         head = f"{'number':52} {'good':4} " + "".join(f"{SHORT.get(r, r)[:w]:>{2 * w + 3}}" for r in repos) + f"{'total':>{2 * w + 6}}"
@@ -1173,9 +1285,10 @@ def diff(args):
         for k, md, bv, av, bt, at, ch, v in rows:
             if args.changed and not ch:
                 continue
-            mark = {"better": "+", "worse": "-", "same": " ", "changed": "~", "n/a": " "}[v]
+            mark = {"better": "+", "worse": "-", "same": " ", "changed": "~", "n/a": " ", NOT_COMPARABLE: "?",
+                    "missing": "?"}[v]
             if md.get("guard"):
-                mark = "GUARD!" if v == "worse" else "guard"
+                mark = {"worse": "GUARD!", "missing": "GUARD MISSING", NOT_COMPARABLE: "guard ?"}.get(v, "guard")
             arrow = {"up": "up", "down": "down", "same": "=", "info": ""}[md.get("direction", "info")]
             label = k if len(k) <= 51 else k[:48] + "..."
             cells = "".join(f"{pair(x, y):>{2 * w + 3}}" for x, y in zip(bv, av))
@@ -1195,12 +1308,18 @@ def diff(args):
                 if b["repos"][r].get(k) != a["repos"][r].get(k)))
         for x in unknown_guard_fail:
             print(f"GUARD REGRESSION: unknown rose without a matching fall: {x}")
+        for x in missing:
+            print(f"GUARD MISSING: {x}")
+        if split:
+            print(f"{NOT_COMPARABLE}: the candidate numbers (cand.*, units.*.in_candidate_place) of "
+                  + ", ".join(split) + ": one side's `practices promote --list --json` has no `passive` list,"
+                  " so it counted passive candidates another way; marked ?, not a rise or a drop")
         if "census.text_sha256" in regressions:
             print("  the plain census text moved: compare <dir>/<repo>/census.txt of the two data directories"
-                  " (diff -u); a build with `census --no-from-map` also records that text's hash")
-        if not regressions and not unknown_guard_fail:
+                  " (diff -u); plain census never lists the map's proposals (only `census --from-map` does)")
+        if not regressions and not unknown_guard_fail and not missing:
             print("guards: none regressed")
-    sys.exit(1 if regressions or unknown_guard_fail else 0)
+    sys.exit(1 if regressions or unknown_guard_fail or missing else 0)
 
 
 def rate(s, repos):
