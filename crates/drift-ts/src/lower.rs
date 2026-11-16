@@ -15,7 +15,7 @@ use oxc_span::{GetSpan, SourceType};
 use serde::{Deserialize, Serialize};
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 86;
+pub const LOWERING_VERSION: u32 = 87;
 
 /// What an options object gives a Fastify route: for each hook it names
 /// (`onRequest`, `preHandler`), what that hook runs.
@@ -850,6 +850,13 @@ pub struct RawFile {
     /// of the routes below it.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub route_middleware: bool,
+    /// The symbols that are inline Next.js server actions
+    /// ([`crate::nextjs::inline_actions`]): a module-level function whose own
+    /// body says `"use server"`, and each one written inside another function,
+    /// lowered as a symbol of its own ([`Lowerer::lower_inline_actions`]).
+    /// Linking lists them as server actions in the listed reading only.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub inline_actions: Vec<String>,
     /// The lines of the registrations written as a route is that the lowering did
     /// not list ([`drift_core::FileFacts::unlisted_routes`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1221,6 +1228,10 @@ fn lower_semantic(
     l.out.parse_ok = parse_ok;
     l.member_writes.visit_program(program);
     l.lower_program(program);
+    // Only a file that says so holds one: the walk is skipped everywhere else.
+    if text.contains("use server") {
+        l.lower_inline_actions(program);
+    }
     if rel_path
         .rsplit('/')
         .next()
@@ -3580,6 +3591,96 @@ impl<'s> Lowerer<'s> {
             ReachesArguments::of(f.body.as_deref())
         });
         self.push_symbol(sym);
+    }
+
+    /// Inline Next.js server actions ([`crate::nextjs::inline_actions`]). One
+    /// written inside another function (a server component's body, an object
+    /// of props, a JSX attribute) is lowered as a symbol of its own,
+    /// `<owner>.<name>` (`Page.save`; `Page.anonymous@12` for one bound to no
+    /// name; `@<line>` added where the name is taken), with its own body read as
+    /// any function's is: the guards it calls, what it reads of its arguments
+    /// (a server action's client input), what it validates. What the enclosing
+    /// function did before handing the action out is not its own: a check that
+    /// ran while the component rendered does not run when the action is called,
+    /// and a value it closes over is what the render computed (Next.js sends it
+    /// back with the call), so a check on it is not read as the action's guard.
+    /// The symbol is listed for the practice map and `drift security` only
+    /// ([`RawSymbol::in_place`]), never mined; the enclosing function's own
+    /// facts stay as they were read.
+    fn lower_inline_actions(&mut self, program: &Program) {
+        let mut found: Vec<RawSymbol> = Vec::new();
+        let mut tops: Vec<String> = Vec::new();
+        crate::nextjs::inline_actions(program, &mut |a| {
+            if a.top {
+                tops.extend(a.owner.map(str::to_string));
+                return;
+            }
+            let (start, body, params) = match &a.func {
+                crate::nextjs::ActionFn::Function(f) => {
+                    (f.span.start, f.body.as_deref(), &*f.params)
+                }
+                crate::nextjs::ActionFn::Arrow(x) => {
+                    (x.span.start, x.get_function_body(), &*x.params)
+                }
+            };
+            let line = self.line_of(start);
+            let own = a
+                .name
+                .map_or_else(|| format!("anonymous@{line}"), str::to_string);
+            let base = match a.owner {
+                Some(o) => format!("{o}.{own}"),
+                None => own,
+            };
+            let taken = |n: &str| {
+                self.out.symbols.iter().any(|s| s.name == n) || found.iter().any(|s| s.name == n)
+            };
+            let name = if taken(&base) {
+                format!("{base}@{line}")
+            } else {
+                base
+            };
+            if taken(&name) {
+                return;
+            }
+            let mut sym = RawSymbol::empty(&name, SymbolKind::Function, line);
+            sym.in_place = true;
+            let mut c = Collector::new(self);
+            let status = match &a.func {
+                crate::nextjs::ActionFn::Function(f) => {
+                    if f.return_type.is_some() {
+                        sym.controls.push("typed_return".into());
+                    }
+                    sym.is_async = f.r#async || returns_promise(f.return_type.as_deref());
+                    c.visit_function(f, oxc_semantic::ScopeFlags::Function);
+                    self.function_input(f)
+                }
+                crate::nextjs::ActionFn::Arrow(x) => {
+                    if x.return_type.is_some() {
+                        sym.controls.push("typed_return".into());
+                    }
+                    sym.is_async = x.r#async || returns_promise(x.return_type.as_deref());
+                    c.visit_arrow_function_expression(x);
+                    self.arrow_input(x)
+                }
+            };
+            let saw_input = c.saw_input;
+            c.fill(&mut sym);
+            if let Some(b) = body {
+                self.add_body_wraps(&mut sym, b);
+            }
+            record_input(&mut sym, saw_input, status);
+            record_input_unread(&mut sym, self.scoping, params, || {
+                ReachesArguments::of(body)
+            });
+            found.push(sym);
+        });
+        for sym in found {
+            self.out.inline_actions.push(sym.name.clone());
+            self.push_symbol(sym);
+        }
+        self.out.inline_actions.extend(tops);
+        self.out.inline_actions.sort();
+        self.out.inline_actions.dedup();
     }
 
     fn lower_class_symbol(&mut self, name: &str, class: &Class) {
