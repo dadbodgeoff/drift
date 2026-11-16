@@ -416,13 +416,14 @@ fn trust_card(new: &[&crate::check::Violation], basis: &crate::report::Basis) ->
             if let Some(cmd) = &t.mark_fine {
                 out.push_str(&format!("    exception: a person runs `{cmd}`\n"));
             }
+            if t.mark_by_hand {
+                out.push_str(&format!("    exception: {}\n", crate::report::MARK_BY_HAND));
+            }
         }
-        let wrong: Vec<String> = t
-            .wrong_rule
-            .iter()
-            .map(|(cmd, what)| format!("`{cmd}` {what}"))
-            .collect();
-        out.push_str(&format!("    wrong rule: a person runs {}\n", wrong.join("; ")));
+        // The card is what agents are told to run (`LOOKUP_RULE`), so it names no
+        // command that demotes or drops a rule: that is a person's decision, and the
+        // reviewer's surfaces (`drift check`, the annotation, the job summary) carry it.
+        out.push_str("    wrong rule: say so to a person, who decides it with `drift review`\n");
     }
     if shown == 0 {
         return String::new();

@@ -139,7 +139,7 @@ fn an_unknown_guard_is_never_ranked() {
     let first = render_first_run(&s);
     assert_eq!(first.lines().count(), 1, "{first}");
     assert!(
-        first.starts_with("From the security inventory: nothing ranks. Drift could not rank 1 risky operation(s)"),
+        first.starts_with("From the security inventory: nothing ranks. Drift could not rank 1 pair(s) of an entry point and a risky operation it reaches"),
         "{first}"
     );
 }
