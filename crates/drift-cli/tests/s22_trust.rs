@@ -203,7 +203,8 @@ fn each_surface_says_what_a_failed_check_rests_on() {
     let here = format!("{}:1 GET: it is not wrapped in withAuth()", b.violator);
     let comment = format!("// drift-ignore {id}: <reason>");
     let exempt = format!(
-        "drift review --exempt {id} --member \"{}#GET\" --reason \"<why>\"",
+        // Quoted as shell words: the member holds `#`, the reason placeholder `<`.
+        "drift review --exempt {id} --member '{}#GET' --reason '<why>'",
         b.violator
     );
     let advise = format!("drift review --advise {id}");
@@ -226,7 +227,7 @@ fn each_surface_says_what_a_failed_check_rests_on() {
         format!("    holds near it  {near}"),
         format!("    exception  add `{comment}` above the declaration\n"),
         format!("    exception  a person runs `{exempt}`\n"),
-        format!("  wrong rule   `{advise}` keeps it as advice"),
+        format!("  wrong rule   a person runs `{advise}` keeps it as advice"),
         format!("`{reject}` drops it\n"),
     ] {
         assert!(basis.contains(&want), "{want:?} in:\n{basis}");
@@ -257,7 +258,7 @@ fn each_surface_says_what_a_failed_check_rests_on() {
         format!("%0AHolds near it: {near}"),
         format!("`{comment}`"),
         format!("%0AException: a person runs `{exempt}`."),
-        format!("%0AWrong rule: `{advise}` keeps it as advice"),
+        format!("%0AWrong rule: a person runs `{advise}` keeps it as advice"),
     ] {
         assert!(line.contains(&want), "{want:?} in:\n{line}");
     }
@@ -309,7 +310,8 @@ fn each_surface_says_what_a_failed_check_rests_on() {
         "    copy: ".to_string(),
         format!("    exception: add `{comment}` above the declaration\n"),
         format!("    exception: a person runs `{exempt}`\n"),
-        format!("    wrong rule: a person runs `{advise}` keeps it as advice"),
+        // The card is what agents run: it names no command that demotes the rule.
+        "    wrong rule: say so to a person, who decides it with `drift review`\n".to_string(),
     ] {
         assert!(section.contains(&want), "{want:?} in:\n{section}");
     }

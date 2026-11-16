@@ -408,7 +408,8 @@ fn a_mark_changes_no_verdict() {
     assert!(again.contains("This changes no verdict"), "{again}");
     assert!(
         again.contains(&format!(
-            "drift review --exempt {} --member app/api/okapinew/route.ts#GET",
+            // The member is one quoted shell word (`#` is never left bare).
+            "drift review --exempt {} --member 'app/api/okapinew/route.ts#GET'",
             repo.auth
         )),
         "{again}"

@@ -135,6 +135,10 @@ pub enum Caller {
     PassesGuard,
     /// The body verifies a webhook's signature: a caller whose signature checks out.
     Service,
+    /// No guard found in what Drift read, but Drift saw wrappers or middleware on the
+    /// way that it did not read ([`EntryRow::basis`]'s `not_read`): a guard may be
+    /// there. Ranked after every guard Drift read, since what it rests on is unread.
+    Unread,
 }
 
 /// What the practice map read of the entry point's input validation. Ordered as
@@ -239,6 +243,10 @@ pub struct Place {
     /// did not read ([`EntryRow::basis`]).
     #[serde(default, skip_serializing_if = "is_zero")]
     pub guard_not_read: usize,
+    /// Its validation is the inventory's schema seen in the body, not the practice
+    /// map's reading ([`Readings::validation_of`]). Omitted when false.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub schema_in_body: bool,
     /// The call chain from the entry point to the operation, inclusive.
     pub via: Vec<String>,
 }
@@ -398,6 +406,14 @@ fn classify(e: &EntryRow, r: &Reach) -> Result<Caller, Reason> {
     if !e.verifies_signature.is_empty() {
         return Ok(Caller::Service);
     }
+    // "No guard found" only where Drift read everything on the way (the same test as
+    // the session's known-bare reading): something it saw and did not read may hold
+    // the guard. An explicit opening to anyone is read, so it stays `Anyone`. A row
+    // with no basis at all is one the inventory computed none for (none is computed
+    // only where nothing may be a guard), and is read as it was.
+    if e.opens.is_empty() && e.basis.as_ref().is_some_and(|b| !b.not_read.is_empty()) {
+        return Ok(Caller::Unread);
+    }
     Ok(Caller::Anyone)
 }
 
@@ -417,6 +433,9 @@ fn place(e: &EntryRow, r: &Reach, caller: Caller) -> Place {
             sanitize(&e.opens.join(", "), 120)
         ),
         Caller::Anyone => "no guard found in what Drift read".to_string(),
+        Caller::Unread => {
+            "no guard found in what Drift read, and some of the way was not read".to_string()
+        }
     };
     Place {
         path: e.path.clone(),
@@ -427,9 +446,10 @@ fn place(e: &EntryRow, r: &Reach, caller: Caller) -> Place {
         exposure: e.exposure,
         guard,
         guard_not_read: match caller {
-            Caller::Anyone => e.basis.as_ref().map_or(0, |b| b.not_read.len()),
+            Caller::Anyone | Caller::Unread => e.basis.as_ref().map_or(0, |b| b.not_read.len()),
             _ => 0,
         },
+        schema_in_body: false,
         via: r.via.clone(),
     }
 }
@@ -475,7 +495,16 @@ pub fn summarize(inv: &Inventory, readings: &Readings) -> Summary {
                     groups
                         .entry((r.kind.clone(), sink, caller, readings.validation_of(e)))
                         .or_default()
-                        .push(place(e, r, caller));
+                        .push({
+                            let mut p = place(e, r, caller);
+                            // Validated only by the inventory's schema in the body: the
+                            // practice map did not read the unit.
+                            p.schema_in_body = e.validates
+                                && !readings
+                                    .validation
+                                    .contains_key(&(e.path.clone(), e.symbol.clone()));
+                            p
+                        });
                 }
             }
         }
@@ -520,7 +549,8 @@ pub type OrderKey = (
 /// severity score: it says which fact to look at first and judges none.
 ///
 /// 1. Who can do it ([`Caller`]): a caller Drift found no guard for, then one who
-///    passes a guard Drift read, then a service whose signature checks out.
+///    passes a guard Drift read, then a service whose signature checks out, then one
+///    whose guard may be in something Drift did not read ([`Caller::Unread`]).
 /// 2. What the operation does with the value ([`consequence`]): code execution, then
 ///    query injection, files, identity, outgoing requests, page content, writes,
 ///    patterns, and redirects last.
@@ -612,6 +642,7 @@ fn caller_words(c: Caller) -> &'static str {
         Caller::Anyone => "A caller Drift found no guard for can",
         Caller::PassesGuard => "A caller who passes its guard can",
         Caller::Service => "A caller whose signature checks out can",
+        Caller::Unread => "A caller, unless something Drift did not read turns them away, can",
     }
 }
 
@@ -652,8 +683,28 @@ pub fn finding_lines(r: &Ranked) -> Vec<String> {
         )
     };
 
-    let mut read: Vec<String> = vec![first.guard.clone()];
-    if first.via.len() > 1 {
+    // A grouped line speaks for every place: where the places read differently, it
+    // says so rather than speak for all of them in the first one's words.
+    let guard = if r.places.iter().all(|p| p.guard == first.guard) {
+        first.guard.clone()
+    } else if r.caller == Caller::PassesGuard {
+        "behind guards that differ by entry point (`drift security` names each)".to_string()
+    } else {
+        "what Drift read of their guards differs by entry point (`drift security` names each)"
+            .to_string()
+    };
+    let mut read: Vec<String> = vec![guard];
+    // Each chain starts at its own entry point: compared from the step after it.
+    let one_chain = r
+        .places
+        .iter()
+        .all(|p| p.via.iter().skip(1).eq(first.via.iter().skip(1)));
+    if first.via.len() > 1 && !one_chain {
+        read.push(
+            "a value the request sent reaches the operation, by a different way from each entry point"
+                .to_string(),
+        );
+    } else if first.via.len() > 1 {
         let steps: Vec<String> = first
             .via
             .iter()
@@ -671,6 +722,14 @@ pub fn finding_lines(r: &Ranked) -> Vec<String> {
     }
     match r.validation {
         Validation::NotFound => read.push("no input validation found".to_string()),
+        // The inventory's own fact is a schema seen somewhere in the body, not that it
+        // is applied on the way: said as what it is.
+        Validation::Found if r.places.iter().all(|p| p.schema_in_body) => {
+            read.push("a schema is read in the body".to_string())
+        }
+        Validation::Found if r.places.iter().any(|p| p.schema_in_body) => read.push(
+            "the input is validated on the way, or a schema is read in the body".to_string(),
+        ),
         Validation::Found => read.push("the input is validated on the way".to_string()),
         Validation::NotRead => {}
     }
@@ -696,10 +755,12 @@ pub fn finding_lines(r: &Ranked) -> Vec<String> {
     if exposure == Exposure::Unknown {
         not_read.push("where the entry point can be reached from".to_string());
     }
-    if first.guard_not_read > 0 {
+    // The most any one place left unread: the first place may have read everything.
+    let guard_not_read = r.places.iter().map(|p| p.guard_not_read).max().unwrap_or(0);
+    if guard_not_read > 0 {
         not_read.push(format!(
             "{} thing(s) on the way a guard may be in (`drift security` names them)",
-            first.guard_not_read
+            guard_not_read
         ));
     }
     vec![
@@ -717,7 +778,7 @@ fn nothing_ranks(s: &Summary, opening: &str) -> Option<String> {
         return None;
     }
     Some(format!(
-        "{opening}: nothing ranks. Drift could not rank {total} risky operation(s) that entry points reach: {}.",
+        "{opening}: nothing ranks. Drift could not rank {total} pair(s) of an entry point and a risky operation it reaches: {}.",
         s.not_ranked.parts().join(", ")
     ))
 }

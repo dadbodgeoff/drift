@@ -477,8 +477,11 @@ fn mark(root: &Path, a: &MarkArgs) -> anyhow::Result<()> {
     );
     if verdict == "wrong" && m.report == "violation" {
         println!(
-            "If the code is fine as it is, record an exception the usual way, with a reason:\n  drift review --exempt {} --member {} --reason \"<why it is fine>\"\nor a `// drift-ignore {}: <reason>` comment (`#` in Python) directly above the declaration.",
-            m.id, m.member, m.id
+            "If the code is fine as it is, record an exception the usual way, with a reason:\n  drift review --exempt {} --member {} --reason '<why it is fine>'\nor a `// drift-ignore {}: <reason>` comment (`#` in Python) directly above the declaration.",
+            // Each value is one shell word: the command is meant to be pasted.
+            drift_mine::report::shell_word(&m.id),
+            drift_mine::report::shell_word(&m.member),
+            m.id
         );
     }
     Ok(())
@@ -967,6 +970,16 @@ fn feedback_dir(root: &Path, create: bool) -> anyhow::Result<PathBuf> {
                 b"# Created by drift: feedback marks and their key stay on this machine.\n*\n",
             );
         }
+        // A `.gitignore` the repository brought (committed, or empty) may not ignore the
+        // key and the marks; then nothing is written, so `git add -A` cannot commit them.
+        let ignore = dir.join(".gitignore");
+        let ignores_all = read_small(&ignore)?.is_some_and(|t| t.lines().any(|l| l.trim() == "*"));
+        if !ignores_all {
+            bail!(
+                "{} does not ignore everything (a line `*`): the feedback key and marks are not written where git could commit them",
+                ignore.display()
+            );
+        }
     }
     Ok(dir)
 }
@@ -1049,9 +1062,13 @@ fn key_in(dir: &Path, create: bool) -> anyhow::Result<Option<[u8; 32]>> {
     }
     let key = random_key()?;
     let hex: String = key.iter().map(|b| format!("{b:02x}")).collect();
-    let mut f = std::fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
+    let mut opts = std::fs::OpenOptions::new();
+    opts.write(true).create_new(true);
+    // Only this user reads the key: it is what keeps the export's hashes from being
+    // reversed by anyone who can guess the names.
+    #[cfg(unix)]
+    std::os::unix::fs::OpenOptionsExt::mode(&mut opts, 0o600);
+    let mut f = opts
         .open(&p)
         .with_context(|| format!("creating {}", p.display()))?;
     f.write_all(format!("{hex}\n").as_bytes())?;
