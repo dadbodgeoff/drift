@@ -368,9 +368,7 @@ pub fn choose(
             .iter()
             .find(|o| o.concern == c.concern && places_overlap(&o.place, &c.place))
         {
-            Some(Reason::Overlaps(promote::convention_id(
-                &o.place, &o.concern,
-            )))
+            Some(Reason::Overlaps(promote::candidate_id(o)))
         } else if chosen.len() >= MAX_PRACTICES {
             Some(Reason::OverCap)
         } else {
@@ -970,8 +968,7 @@ pub fn recompute(report: &PracticesReport, c: &Convention) -> Option<Candidate> 
     };
     let place = promote::place_of(c)?;
     if let Some(found) = promote::candidates(report).into_iter().find(|x| {
-        promote::convention_id(&x.place, &x.concern) == c.id
-            && promote::convention(x).rule == c.rule
+        x.place == place && promote::convention(x).rule == c.rule
     }) {
         return Some(found);
     }
@@ -1032,6 +1029,9 @@ fn accept_practice(
 ) -> Option<usize> {
     let cand = recompute(report, conv)?;
     let mut c = written(policy, &cand);
+    // Accepting a proposal keeps its id: one proposed before a mechanism or any
+    // enforcing way had an id of its own carries its place's, and its lock lines.
+    c.id = conv.id.clone();
     c.from_map = conv.from_map.clone();
     let mut only = policy.clone();
     only.conventions = vec![c.clone()];
@@ -1056,7 +1056,7 @@ fn covered_by(
     conv: &Convention,
 ) -> Option<String> {
     let cand = recompute(report, conv)?;
-    let id = promote::convention_id(&cand.place, &cand.concern);
+    let id = promote::candidate_id(&cand);
     crate::promote::covering(policy, &cand)
         .filter(|x| x.id != id && x.id != conv.id)
         .map(|x| sanitize(&x.id, 40))
