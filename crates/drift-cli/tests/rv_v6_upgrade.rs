@@ -85,6 +85,11 @@ const UNGUARDED: &str =
 /// A Next.js app whose HTTP handlers are wrapped in `withAuth` but two (r38, r39), after
 /// `drift init` (proposals undecided). Not committed.
 fn app() -> tempfile::TempDir {
+    app_with(None)
+}
+
+/// [`app`], with `departure` (if given) written as r37's handler before `drift init`.
+fn app_with(departure: Option<&str>) -> tempfile::TempDir {
     let dir = tempfile::tempdir().unwrap();
     let r = dir.path();
     write(r, "package.json", "{ \"name\": \"t\" }");
@@ -96,6 +101,9 @@ fn app() -> tempfile::TempDir {
     for i in 10..40 {
         let body = if i < 38 { GUARDED } else { UNGUARDED };
         write(r, &format!("app/api/r{i}/route.ts"), body);
+    }
+    if let Some(body) = departure {
+        write(r, "app/api/r37/route.ts", body);
     }
     // So `withAuth` is measured as rarer elsewhere and the convention is mined.
     for i in 0..30 {
@@ -123,6 +131,35 @@ fn proposed(root: &Path) -> String {
         .collect();
     assert!(!ids.is_empty(), "{yaml}");
     ids.join(",")
+}
+
+/// The ids of every proposal in the policy, mined and from the map.
+fn all_proposed(root: &Path) -> String {
+    let yaml = read(root, ".drift/conventions.yaml");
+    let ids: Vec<&str> = yaml
+        .split("- id: ")
+        .skip(1)
+        .filter(|b| b.contains("status: proposed"))
+        .map(|b| &b[..8])
+        .collect();
+    assert!(!ids.is_empty(), "{yaml}");
+    ids.join(",")
+}
+
+/// A guarded handler that builds its response with `new Response`, not `Response.json`:
+/// one departure from the map's practice "built with Response.json".
+const GUARDED_NEW_RESPONSE: &str = "import { withAuth } from \"../../../lib/auth\";\n\nexport const GET = withAuth(async (req: Request) => {\n  return new Response(\"ok\");\n});\n";
+
+/// The lock without `id`'s lines.
+fn drop_lines_of(root: &Path, id: &str) {
+    let lock = read(root, "drift.lock");
+    assert!(lock.contains(&format!("{id} ")), "{lock}");
+    let older: String = lock
+        .lines()
+        .filter(|l| !l.contains(&format!("{id} ")))
+        .map(|l| format!("{l}\n"))
+        .collect();
+    write(root, "drift.lock", &older);
 }
 
 /// The policy's `engine:` set to an older Drift's.
@@ -159,11 +196,16 @@ fn drop_r39(root: &Path) {
 /// this very Drift, so no new violation can be a reading change: r39, missing from the
 /// lock, is one Drift cannot tell about, and `--apply` leaves `drift.lock` byte for
 /// byte. Before, it was baselined as "this Drift reads the code differently".
+///
+/// (Fix wave: r39 breaks the mined withAuth convention, so every proposal is accepted
+/// here, not only those from the map: an unaccepted convention's break is never a new
+/// violation, and the test then saw none at all. Its break is left to a person, so the
+/// run exits 3, `EXIT_PENDING`.)
 #[test]
 fn the_same_drift_on_both_sides_baselines_nothing() {
     let dir = app();
     let r = dir.path();
-    let ids = proposed(r);
+    let ids = all_proposed(r);
     let (code, out) = drift(r, &["review", "--accept", &ids]);
     assert_eq!(code, 0, "{out}");
     drop_r39(r);
@@ -183,35 +225,44 @@ fn the_same_drift_on_both_sides_baselines_nothing() {
     );
 }
 
-/// Pins (review item 2): a convention that was an undecided proposal at the commit that
+/// Pins (review item 2): a proposal from the map that was undecided at the commit that
 /// first wrote it, and was accepted in a later commit, is a person's decision made since:
 /// its breaks are left to a person and never baselined, even with an older Drift named
-/// at that commit. Before, the init commit served as the baseline point and r39 was
-/// appended to `drift.lock` as a reading change.
+/// at that commit. Before, the init commit served as the baseline point and the break
+/// was appended to `drift.lock` as a reading change.
+///
+/// (Fix wave: the fixture's practice had no break, and `drift review --accept` of a
+/// proposal from the map now writes its breaks into `drift.lock` itself. So r37 departs
+/// from the practice, and its lock line is taken out after accepting, as an older
+/// Drift's accept left the lock. Everything else that would make it a reading change
+/// holds: r37 was there unchanged at the init commit and that lock did not hold it.)
 #[test]
 fn a_proposal_accepted_later_is_not_a_reading_change() {
-    let dir = app();
+    let dir = app_with(Some(GUARDED_NEW_RESPONSE));
     let r = dir.path();
     older_engine(r);
-    drop_r39(r);
     git(r, &["init", "-q"]);
     git(r, &["add", "-A"]);
     git(r, &["commit", "-qm", "init, an older Drift"]);
     let ids = proposed(r);
+    assert!(!ids.contains(','), "one proposal from the map: {ids}");
     let (code, out) = drift(r, &["review", "--accept", &ids]);
     assert_eq!(code, 0, "{out}");
     assert!(
-        !read(r, "drift.lock").contains("app/api/r39/route.ts"),
-        "the fixture needs r39 out of the lock"
+        read(r, "drift.lock").contains(&format!("{ids} app/api/r37/route.ts#GET")),
+        "accepting records the break today"
     );
+    drop_lines_of(r, &ids);
     git(r, &["add", "-A"]);
-    git(r, &["commit", "-qm", "accept"]);
+    git(r, &["commit", "-qm", "accept, as an older Drift left the lock"]);
     let lock = read(r, "drift.lock");
     let (code, out) = drift(r, &["upgrade", "--apply"]);
     assert_eq!(code, 3, "{out}");
     assert!(out.contains("\n  0 appear only because"), "{out}");
     assert!(
-        out.contains("was an undecided proposal from the map at commit"),
+        out.contains(&format!(
+            "{ids} app/api/r37/route.ts#GET (line 3): {ids} was an undecided proposal from the map at commit"
+        )),
         "{out}"
     );
     assert_eq!(

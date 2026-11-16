@@ -277,13 +277,40 @@ fn setup_honours_no_from_map() {
     assert!(!off.contains("from the map, not mined"), "{off}");
 }
 
-/// Area 5 items 6 and 7: a committed `.drift/security.lock` that links outside the
+/// Area 5 items 6 and 7: a committed link that leads the security baseline outside the
 /// repository is not written through, and the scripted run that named `baseline` exits
 /// 3 saying it was not recorded. Before, the yes wrote outside the repository, and a
 /// named answer that was not recorded exited 0.
+///
+/// (Fix wave: the test linked `.drift/security.lock` itself to a file outside that did
+/// not exist. Setup then asks, and the write replaces the dangling link with a regular
+/// file in the repository, as `write_no_follow` documents: nothing is written outside,
+/// and nothing fails, so the run exited 0. A link to a file that does exist is never
+/// asked about: the baseline "is there". The refusal is for a link on the way, so here
+/// `.drift` is the link; the dangling final link is pinned as what it does.)
 #[cfg(unix)]
 #[test]
 fn a_baseline_through_an_outside_link_is_not_written_and_the_run_fails() {
+    let outside = tempfile::tempdir().unwrap();
+    let dir = layered(false);
+    let r = dir.path();
+    std::os::unix::fs::symlink(outside.path(), r.join(".drift")).unwrap();
+    let (code, out, err) = run(
+        r,
+        &["setup", "--by", "person", "--yes-to", "baseline"],
+        true,
+        &[],
+    );
+    assert!(
+        std::fs::read_dir(outside.path()).unwrap().next().is_none(),
+        "written through the link:\n{out}"
+    );
+    assert_eq!(code, 3, "{out}\n{err}");
+    assert!(out.contains("-> not written: refusing to write"), "{out}");
+    assert!(out.contains("Answered but not recorded: baseline"), "{out}");
+
+    // A dangling `.drift/security.lock` leading outside: the link itself is replaced
+    // by the baseline, and its target is never created.
     let outside = tempfile::tempdir().unwrap();
     let target = outside.path().join("x");
     let dir = layered(false);
@@ -297,9 +324,14 @@ fn a_baseline_through_an_outside_link_is_not_written_and_the_run_fails() {
         &[],
     );
     assert!(!target.exists(), "written through the link:\n{out}");
-    assert_eq!(code, 3, "{out}\n{err}");
-    assert!(out.contains("-> not written"), "{out}");
-    assert!(out.contains("Answered but not recorded: baseline"), "{out}");
+    assert_eq!(code, 0, "{out}\n{err}");
+    assert!(
+        std::fs::symlink_metadata(r.join(".drift/security.lock"))
+            .unwrap()
+            .file_type()
+            .is_file(),
+        "{out}"
+    );
 }
 
 /// Area 5 item 8: a mined card counts what `drift.lock` records of it by member line
