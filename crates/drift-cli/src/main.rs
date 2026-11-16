@@ -5,6 +5,7 @@ mod card;
 mod derived;
 mod export;
 mod findings;
+mod from_map_cli;
 mod history;
 mod lookup;
 mod mcp;
@@ -135,6 +136,10 @@ enum Command {
         /// known.
         #[arg(long)]
         explain: bool,
+        /// Write no proposals from the map (the practices and layering the map shows,
+        /// which did not go through the miner's measured gates).
+        #[arg(long)]
+        no_from_map: bool,
         #[command(flatten)]
         cap: CapArgs,
     },
@@ -204,6 +209,11 @@ enum Command {
             conflicts_with = "coverage"
         )]
         why: Option<String>,
+        /// Also list the proposals from the map (practices and layering the map shows,
+        /// not mined) and what qualified but is not proposed, with why. With --json, as
+        /// `from_map`. Writes nothing.
+        #[arg(long, conflicts_with_all = ["coverage", "why"])]
+        from_map: bool,
         #[command(flatten)]
         cap: CapArgs,
     },
@@ -2448,6 +2458,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             coverage,
             listed,
             why,
+            from_map,
             cap,
         } => {
             let tests = drift_mine::policy::test_roles(root, *test_roles);
@@ -2534,6 +2545,15 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 }
                 // New field: the cards mining withheld, by language, family and reason.
                 out["withheld"] = withheld_json(&mined.withheld);
+                // Only when asked: the proposals from the map.
+                if *from_map {
+                    out["from_map"] = from_map_cli::census_json(&from_map_cli::for_census(
+                        root,
+                        &facts,
+                        &mined,
+                        python.on(),
+                    ));
+                }
                 let mut stdout = std::io::stdout().lock();
                 serde_json::to_writer_pretty(&mut stdout, &out)?;
                 writeln!(stdout)?;
@@ -2615,11 +2635,24 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             if let Some(n) = withheld_next(&mined.withheld) {
                 println!("{n}");
             }
+            // Only when asked: the proposals from the map, after what census prints.
+            if *from_map {
+                print!(
+                    "{}",
+                    from_map_cli::census_text(&from_map_cli::for_census(
+                        root,
+                        &facts,
+                        &mined,
+                        python.on(),
+                    ))
+                );
+            }
         }
         Command::Init {
             max,
             refresh_kinds,
             explain,
+            no_from_map,
             cap,
         } => {
             let mut facts = load_facts(cli, 0)?;
@@ -2710,7 +2743,12 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             // Baseline only on first init; afterwards the lock only shrinks unless a person edits it.
             let mut lock = Lock::load(root)?;
             // Promoted practices kept from before are baselined as every convention is.
-            let fresh = practices::baseline_with_practices(root, &facts, &policy);
+            // Proposals from the map are recorded only once a person accepts one.
+            let fresh = practices::baseline_with_practices(
+                root,
+                &facts,
+                &from_map_cli::left_out_of_lock(&policy),
+            );
             if had {
                 // New conventions get their current violations baselined; existing entries are kept.
                 let known: BTreeSet<&str> =
@@ -2739,6 +2777,11 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             if !map.text.is_empty() {
                 println!("\n{}", map.text.trim_end());
             }
+            // After the first run read the file: the proposals from the map, written as
+            // proposals (advise, shown to no agent, not in the lock until accepted).
+            let from_map =
+                from_map_cli::for_init(root, &facts, &mut policy, python.on(), *no_from_map);
+            policy.save(root)?;
             println!("\nConventions");
             // The default tier in full, then the best suggestions (`drift_mine::rank`).
             let placed = rank::place(&ordered, cap.resolve(policy.suggestion_cap).0);
@@ -2814,6 +2857,9 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             }
             if withheld > 0 {
                 println!("  {}", python_off_note(withheld));
+            }
+            for line in from_map_cli::init_lines(&from_map) {
+                println!("{line}");
             }
             let kept = if decided > 0 {
                 format!("; {} kept", count(decided, "earlier decision"))
@@ -3415,7 +3461,11 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         println!("{n}");
                     }
                     // Promoted practices are never proposals: listed with where they came from.
-                    for line in promote::listed(&policy) {
+                    for line in promote::listed(&from_map_cli::left_out_of_lock(&policy)) {
+                        println!("{line}");
+                    }
+                    // The proposals from the map, apart: they are not mined.
+                    for line in from_map_cli::listed(&policy) {
                         println!("{line}");
                     }
                     ids
@@ -3550,8 +3600,11 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     println!("{}", nothing_to_ask(&withheld));
                     // The practices that may be promoted are offered all the same.
                     let map = practices::report_units_kept(root, &facts, None);
+                    // The proposals from the map first (they are not in the queue).
+                    let step = from_map_cli::review_step(root, &facts, &map, &mut policy)?;
                     drop(facts);
-                    if promote::review_step(root, &map, &mut policy)? {
+                    let promoted = !step.quit && promote::review_step(root, &map, &mut policy)?;
+                    if step.changed || promoted {
                         policy.save(root)?;
                         println!("{}", review_summary(&policy));
                     }
@@ -3573,8 +3626,12 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 // be promoted, one at a time.
                 if review_interactive(&mut policy, cap, &report, &questions, more, &mut rlog)? {
                     let map = practices::report_units_kept(root, &facts, None);
+                    // The proposals from the map, then the practices that may be promoted.
+                    let step = from_map_cli::review_step(root, &facts, &map, &mut policy)?;
                     drop(facts);
-                    promote::review_step(root, &map, &mut policy)?;
+                    if !step.quit {
+                        promote::review_step(root, &map, &mut policy)?;
+                    }
                 }
             } else {
                 // Refuse before changing anything: an id that is not in the policy,
@@ -3647,6 +3704,22 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     .filter(|_| rlog.on())
                     .map(|c| (c.id.clone(), rlog.before(c)))
                     .collect();
+                // A practice proposed from the map is first written as `drift practices
+                // promote` writes it (and its lock lines added); the decisions apply to that.
+                for line in from_map_cli::accept_ids(
+                    root,
+                    || load_facts(cli, 0),
+                    &mut policy,
+                    &[
+                        accept.as_slice(),
+                        block.as_slice(),
+                        advise.as_slice(),
+                        show_to_agents.as_slice(),
+                    ],
+                    block,
+                )? {
+                    eprintln!("{line}");
+                }
                 let mut logged: Vec<(&str, &String)> = Vec::new();
                 for (ids, status, mode) in [
                     (accept, Status::Accepted, None),
@@ -4501,7 +4574,7 @@ fn review_queue(
     let mut proposed: Vec<&Convention> = policy
         .conventions
         .iter()
-        .filter(|c| c.status == Status::Proposed)
+        .filter(|c| c.status == Status::Proposed && c.from_map.is_none())
         .collect();
     tier::order_by_tier(&mut proposed, |c| c.tier());
     let placed = rank::place(&proposed, cap);
