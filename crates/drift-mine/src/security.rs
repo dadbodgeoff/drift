@@ -7358,6 +7358,24 @@ impl<'a> Index<'a> {
         if s.kind == drift_core::SymbolKind::Class && !s.members.is_empty() {
             return class(f, s);
         }
+        // A function written in a value and listed under the value's name (`Dao.find`
+        // of a constructor function that assigns it on `this`, a function of an
+        // object): the call of it runs that function alone, not the value's other
+        // functions. Where none is listed by that name, the value is read as a whole.
+        if let Some(m) = member
+            && let Some(own) = f.symbols.iter().find(|x| {
+                x.name
+                    .strip_prefix(s.name.as_str())
+                    .and_then(|k| k.strip_prefix('.'))
+                    == Some(m)
+            })
+        {
+            return Some(Node {
+                file: f,
+                symbol: own,
+                member: None,
+            });
+        }
         // A binding to an instance: `export const storage = new StorageClient()`.
         if member.is_some()
             && matches!(
@@ -7377,6 +7395,24 @@ impl<'a> Index<'a> {
             }
         }
         Some(whole)
+    }
+
+    /// What the reach follows from `node`: its calls, and, of a function listed under
+    /// a value's name ([`Index::target`]), its calls through the instances the value
+    /// builds (`dao.find(id)` of `const dao = new Dao(db)`, recorded as
+    /// [`Symbol::receiver_calls`] `Dao.find`): the method called, where building the
+    /// instance runs none of them.
+    fn followed(&self, node: &Node<'a>) -> impl Iterator<Item = &'a String> {
+        let in_value = node.member.is_none()
+            && node.symbol.name.split_once('.').is_some_and(|(owner, _)| {
+                self.by_name.contains_key(&(node.file.path.as_str(), owner))
+            });
+        let receivers: &'a [String] = if in_value {
+            &node.symbol.receiver_calls
+        } else {
+            &[]
+        };
+        node.calls().iter().chain(receivers)
     }
 
     /// Where reading an entry point starts: a handler method of a class view
@@ -7410,7 +7446,7 @@ impl<'a> Index<'a> {
         let mut queue: VecDeque<(Node, usize)> = VecDeque::from([(first, 0)]);
         while let Some((node, hops)) = queue.pop_front() {
             if hops < MAX_HOPS {
-                for c in node.calls() {
+                for c in self.followed(&node) {
                     if let Some(next) = self.target(c)
                         && seen.insert(next.key())
                     {
@@ -7474,7 +7510,7 @@ impl<'a> Index<'a> {
             if hops >= MAX_HOPS {
                 continue;
             }
-            for c in node.calls() {
+            for c in self.followed(&node) {
                 let Some(next) = self.target(c) else {
                     continue;
                 };

@@ -60,6 +60,7 @@ pub mod probation;
 pub mod promote;
 mod py_authz;
 mod render;
+mod signin_test;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::OnceLock;

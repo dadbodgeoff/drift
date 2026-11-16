@@ -1591,6 +1591,27 @@ fn body(
         } else {
             format!("{}{}", c.source, c.reads)
         };
+        // TypeScript: a 401 is no sign-in check by its status. One on what the
+        // request sent (a CAPTCHA answer, a new password) is input validation and
+        // says nothing of who calls, and so is the stored value such input must
+        // match (the CAPTCHA's answer); a header of no credential's name is found,
+        // not proven ([`super::signin_test::tested`]). Each is unknown, never known
+        // and never none. A declared or a library's check, and one whose value the
+        // facts say nothing of, are read as before.
+        if !py
+            && declared(cx, super::AUTHN, &c.source).is_none()
+            && !authn_callee(&c.source)
+        {
+            match super::signin_test::tested(cx, c, &s.body_checks) {
+                super::signin_test::Tested::Caller | super::signin_test::Tested::Unsaid => {}
+                // No sign-in check, and the body refuses some callers by what it
+                // tests: what else it tests is not all read, so never none.
+                super::signin_test::Tested::Input | super::signin_test::Tested::CannotTell => {
+                    r.call_unknown(UnknownReason::CheckNotProven, &what);
+                    continue;
+                }
+            }
+        }
         // [STRICT] TypeScript: a `try` whose handler answers 401 for some of what it
         // catches, or after which the request is handed on all the same: found, and
         // not proven to turn anyone away.
