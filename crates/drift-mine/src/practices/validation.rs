@@ -94,7 +94,7 @@ impl Concern for Validation {
         let mut unproven: Option<String> = None;
         for c in bodies.iter().flat_map(|b| &b.controls) {
             let read = if let Some(rest) = c.strip_prefix(controls::PARSES_INPUT) {
-                parsed_input(cx, rest)
+                parsed_input(cx, rest, &bodies)
             } else if let Some(pipe) = c.strip_prefix(controls::PIPES_INPUT) {
                 piped_input(cx, pipe)
             } else {
@@ -320,15 +320,25 @@ fn input(cx: &Cx<'_>, adapter: &str, i: &str) -> Result<Classified, (UnknownReas
 /// ([`controls::PARSES_INPUT`], `<callee>\t<binding>`): `None` where the binding is
 /// no schema (a client, a setting, a function), so the call says nothing of
 /// validation. Where it is one, the call checks the request against it only where
-/// the callee is a validation library's own (`safeParse(Schema, body)` of
-/// valibot, [`validation_library`]): `schema:<library>`, the library the schema is
-/// built with. Any other callee is found beside a schema and not proven (`Err`
-/// with it): a package that is no validation library (`jwt.sign(body,
-/// env.SECRET)` where `env` was parsed with zod, a model SDK handed a schema for
-/// what it answers, `parseWithZod` of a forms package), as an input handed to one
-/// reads ([`handed_unread`]); a function of the repository, whose body is not
-/// followed here; a callee that was not resolved.
-fn parsed_input(cx: &Cx<'_>, rest: &str) -> Option<Result<Classified, String>> {
+/// the callee is a validation library's own ([`validation_library`]) and the
+/// handler is refused on its failure: a check of one of `bodies` on what the call
+/// handed back answers 400 or 422 (`const r = v.safeParse(Schema, body); if
+/// (!r.success) return 400`). Then `schema:<library>`, the library the schema is
+/// built with. A library's call whose answer nothing refuses on may check nothing
+/// (`yup.reach(Schema, path)`, valibot's `getDefault(Schema, body)`, a check whose
+/// boolean is dropped): which of a library's functions validate is not in the
+/// facts, so it is found and not proven (`Err` with the callee), never a name.
+/// Any other callee is found beside a schema and not proven too: a package that
+/// is no validation library (`jwt.sign(body, env.SECRET)` where `env` was parsed
+/// with zod, a model SDK handed a schema for what it answers, `parseWithZod` of a
+/// forms package), as an input handed to one reads ([`handed_unread`]); a function
+/// of the repository, whose body is not followed here; a callee that was not
+/// resolved.
+fn parsed_input(
+    cx: &Cx<'_>,
+    rest: &str,
+    bodies: &[&drift_core::Symbol],
+) -> Option<Result<Classified, String>> {
     let (callee, given) = rest.split_once('\t')?;
     let (lib, source) = if let Some(label) = declared(cx, super::VALIDATION, given) {
         (label.to_string(), VariantSource::Declared)
@@ -343,10 +353,15 @@ fn parsed_input(cx: &Cx<'_>, rest: &str) -> Option<Result<Classified, String>> {
         }
         (schema_library(cx, d, 0)?, VariantSource::Usage)
     };
-    if validation_library(callee).is_some() {
+    let call = crate::mine::norm_ref(callee);
+    let refused = bodies
+        .iter()
+        .flat_map(|b| &b.body_checks)
+        .any(|c| common::check_invalid(c) && crate::mine::norm_ref(&c.source) == call);
+    if validation_library(callee).is_some() && refused {
         Some(Ok(("schema", lib, source)))
     } else {
-        Some(Err(crate::mine::norm_ref(callee).into_owned()))
+        Some(Err(call.into_owned()))
     }
 }
 
@@ -547,10 +562,30 @@ mod tests {
             of(&assign_all(&Validation, &cx), route, "GET")
         };
         let parses = controls::PARSES_INPUT;
-        let facts = with(&format!(
-            "{parses}pkg:zod#z.object.parse\tlib/schemas.ts#CreateProject"
-        ));
-        assert_eq!(key(&at(&facts)), "schema:zod");
+        // A library's call handed a schema and the request's data, whose failure
+        // the handler refuses with a 400, checks the request against the schema.
+        let call = "pkg:zod#z.object.parse";
+        let mut facts = with(&format!("{parses}{call}\tlib/schemas.ts#CreateProject"));
+        for f in facts.files.iter_mut().filter(|f| f.path == route) {
+            for s in f.symbols.iter_mut().filter(|s| s.name == "GET") {
+                s.body_checks.push(drift_core::BodyCheck {
+                    source: call.into(),
+                    reads: ".success".into(),
+                    outcome: drift_core::CheckOutcome::Invalid,
+                    ..drift_core::BodyCheck::default()
+                });
+            }
+        }
+        assert!(key(&at(&facts)).contains("schema:zod"), "{:?}", at(&facts));
+        // Review area 6, item 3: the same call whose answer nothing refuses on
+        // (`yup.reach(Schema, req.body.path)`, valibot's `getDefault(Schema, body)`)
+        // may check nothing: found, not proven. It was `schema:<library>`.
+        let facts = with(&format!("{parses}{call}\tlib/schemas.ts#CreateProject"));
+        assert!(
+            matches!(at(&facts), Assignment::Unknown { .. }),
+            "{:?}",
+            at(&facts)
+        );
         // A package that is no validation library, handed the request's data and a
         // binding built with zod: found beside a schema, not proven.
         for callee in [
