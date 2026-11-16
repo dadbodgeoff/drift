@@ -536,9 +536,10 @@ fn probes(report: &PracticesReport) -> BTreeSet<UnitAt<'_>> {
         .collect()
 }
 
-/// The uses a variant key names (`dependency:a+dependency:b`).
+/// The uses a variant key names (`dependency:a+dependency:b`), cut only between uses
+/// ([`super::common::split_uses`]: an instrument may hold a `+`).
 fn uses(key: &str) -> BTreeSet<&str> {
-    key.split('+').collect()
+    super::common::split_uses(key).into_iter().collect()
 }
 
 /// The unit does all the dominant way does, and more (`verify_api_key` and

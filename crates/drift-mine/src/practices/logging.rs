@@ -25,10 +25,10 @@ pub struct Logging;
 /// Files that must import an in-repo logger binding for it to be the repo's logger.
 pub const REPO_LOGGER_FILES: usize = 3;
 
-/// The loggers the language gives every file without an import: what [`origin`] names a
-/// `global#console.*` or `global#print` call. Logging through them is what code does when
-/// nobody chose a logger ([`Concern::passive`]).
-const BUILTIN_LOGGERS: &[&str] = &["console", "print"];
+// No way of logging is passive ([`Concern::passive`], the default): logging to the
+// language's own output would be, but the classifier records no fact of the use that
+// says so (its mechanisms are the style and whether the logger is the repo's own), and
+// deciding from the instrument's name would be a list of names.
 
 impl Concern for Logging {
     fn id(&self) -> &'static str {
@@ -37,15 +37,6 @@ impl Concern for Logging {
 
     fn unit(&self) -> &'static str {
         "symbol"
-    }
-
-    /// Every log call goes to the language's own output ([`BUILTIN_LOGGERS`]), in
-    /// whatever style: the default a new symbol falls into by logging at all.
-    fn passive(&self, uses: &[Use]) -> bool {
-        !uses.is_empty()
-            && uses
-                .iter()
-                .all(|u| BUILTIN_LOGGERS.contains(&u.instrument.as_str()))
     }
 
     fn population<'a>(&self, cx: &Cx<'a>) -> Vec<UnitRef<'a>> {
