@@ -523,6 +523,20 @@ main branch.
   again. In `drift security`, a route whose handler is one function a constructor
   function assigns on `this` reaches what that function calls, and a call through
   an instance it builds reaches the method called, not every method of the object.
+- **Promoted practices and the readings under them no longer say "followed" or
+  "guarded" of code they never saw guarded.** A route practice (`--in
+  <package>:/<prefix>`) is no longer shown as a rule for a file whose entry points
+  are all served at no route (a module of Next.js server actions, a middleware):
+  `drift example`, `drift card`, the MCP tools and the hooks stop listing it there.
+  A server action (or any unit of a kind served at no route) under a practice only
+  a route can follow (the middleware) is now not checked, counted, instead of a
+  violation. A FastAPI dependency that looks the caller up in a value the route's
+  path does not declare, or in a value the facts do not name, is now a membership
+  check found and not proven (unknown) instead of `known membership_guard`. A
+  Python 401 on a value of the module (a constant, a name bound to an environment
+  read, a field of a module object) is now unknown instead of sign-in. Each can
+  only turn a "follows" or a "known" into "not checked" or unknown: no new
+  violation, and a `drift.lock` line of a unit now not checked is kept.
 - **Breaking: `drift init` no longer baselines violations of a convention the
   policy already had.** Before, re-running `drift init` baselined the current
   violations of every convention that had no line left in `drift.lock`, so a

@@ -1631,6 +1631,20 @@ fn body(
             r.call_unknown(UnknownReason::Unresolved, &what);
             continue;
         }
+        // Python: a 401 on a value of the module rather than of this request (a flag,
+        // a name bound to an environment read, a field of an object the module made:
+        // `if not LOCKED: raise HTTPException(401)`) tests no caller: every request
+        // gets the same answer, so it signs no one in. Found, not proven: unknown,
+        // never known and never none ([`module_value`]). A declared check or a
+        // library's is read as before.
+        if py
+            && declared(cx, super::AUTHN, &c.source).is_none()
+            && !authn_callee(&c.source)
+            && module_value(cx, c)
+        {
+            r.call_unknown(UnknownReason::CheckNotProven, &what);
+            continue;
+        }
         let src = if declared(cx, super::AUTHN, &c.source).is_some() {
             VariantSource::Declared
         } else if authn_callee(&c.source) {
@@ -2174,6 +2188,28 @@ fn names_service_check(c: &str) -> bool {
 fn names_guard(c: &str) -> bool {
     let last = common::short(c).rsplit('.').next().unwrap_or_default();
     crate::vocab::refuse::names_access_control(&format!("x#{last}"))
+}
+
+/// Whether the value a Python check tests is the module's, the same for every request
+/// ([`body`]): the check reads a module-level name of the repository (or a member of
+/// one) that the module binds once, as a constant (a literal, an environment read,
+/// whatever it computes at import), or as a variable whose value only the
+/// repository's own code makes (`box = Box()`). A variable a package's call makes
+/// (`current_user = LocalProxy(...)`, a `ContextVar`) may hold each request's own
+/// value, and a function's or a class's name is read as before.
+fn module_value(cx: &Cx<'_>, c: &drift_core::BodyCheck) -> bool {
+    let source = c.source.as_str();
+    if source.is_empty() || external(source) || source.contains(':') || !source.contains('#') {
+        return false;
+    }
+    let Some(d) = cx.context().definition(&crate::mine::norm_ref(source)) else {
+        return false;
+    };
+    match d.kind {
+        drift_core::SymbolKind::Const => true,
+        drift_core::SymbolKind::Variable => d.calls.iter().all(|call| !external(call)),
+        _ => false,
+    }
 }
 
 // ---------- the Next.js middleware ----------
