@@ -10,6 +10,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
+use drift_core::pathtext::{AbsPath, Style, same_name};
 use drift_mine::check::Exemption;
 use drift_mine::check::Violation;
 use drift_mine::policy::{Convention, LOCK_FILE};
@@ -1173,11 +1174,11 @@ fn pre_tool_use_existing(input: &Value, root: &Path) -> Option<Option<Value>> {
     let Some(path) = tool_path(input) else {
         return Some(None);
     };
-    let root = root.canonicalize().ok()?;
+    let root = drift_core::fsutil::canonical(root).ok()?;
     let Some(rel) = crate::project::rel_in(&root, &path) else {
         return Some(None);
     };
-    if rel.starts_with(".drift/") || rel == LOCK_FILE {
+    if drift_state_rel(&rel) {
         return Some(Some(deny_drift_file(&rel)));
     }
     root.join(&rel).exists().then_some(None)
@@ -1219,7 +1220,7 @@ fn pre_tool_use(p: &Project, input: &Value, state_path: &Path) -> anyhow::Result
     let Some(rel) = p.rel(&path) else {
         return Ok(None);
     };
-    if rel.starts_with(".drift/") || rel == LOCK_FILE {
+    if drift_state_rel(&rel) {
         return Ok(Some(deny_drift_file(&rel)));
     }
     // Before a new file is written, tell the agent the rules for its role, once per role.
@@ -1549,9 +1550,9 @@ fn existing_file_rel(
     state_path: &Path,
 ) -> Option<(String, SessionState)> {
     let path = tool_path(input)?;
-    let root = root.canonicalize().ok()?;
+    let root = drift_core::fsutil::canonical(root).ok()?;
     let rel = crate::project::rel_in(&root, &path)?;
-    if rel.starts_with(".drift/") || rel == LOCK_FILE {
+    if drift_state_rel(&rel) {
         return None;
     }
     if !root.join(&rel).is_file() || !crate::scan::read_by_drift(&rel) {
@@ -3334,13 +3335,45 @@ fn sets_guarded(w: &str) -> Option<String> {
 /// Whether `w` names Drift's command: `drift`, a path to it, or its package
 /// (`@dadbodgeoff/drift`, either with `@<version>`).
 fn drift_like(w: &str) -> bool {
-    let base = w.rsplit('/').next().unwrap_or(w);
-    base.split('@').next() == Some("drift")
+    program_name(w).split('@').next() == Some("drift")
+}
+
+/// The program a command word runs: its last name (after `/`, or `\`, which Windows
+/// reads as a separator) less an extension Windows runs a program by (`.exe`, and the
+/// `.cmd` shim npm installs): Git Bash runs `rm.exe`, `/usr/bin/rm` and `rm` alike.
+fn program_name(w: &str) -> &str {
+    let base = w.rsplit(['/', '\\']).next().unwrap_or(w);
+    [".exe", ".cmd", ".bat", ".com"]
+        .iter()
+        .find_map(|ext| {
+            let cut = base.len().checked_sub(ext.len()).filter(|&k| k > 0)?;
+            base.get(cut..)
+                .filter(|e| e.eq_ignore_ascii_case(ext))
+                .map(|_| &base[..cut])
+        })
+        .unwrap_or(base)
+}
+
+/// Windows shells and the command line they run: `cmd /c <line>` (Git Bash spells the
+/// switch `//c`) and `powershell -Command <line>` or `pwsh -c <line>` (the switch in any
+/// case, `-c` or a prefix of `-command` as PowerShell reads it). Read as a shell line:
+/// the words that name Drift and its decisions are the same words there.
+fn windows_shell_line(name: &str, args: &[&str]) -> Option<String> {
+    let switch = |a: &&str| {
+        let a = a.to_ascii_lowercase();
+        match name.to_ascii_lowercase().as_str() {
+            "cmd" => matches!(a.as_str(), "/c" | "//c" | "/k" | "//k"),
+            "powershell" | "pwsh" => a == "-c" || (a.len() >= 4 && "-command".starts_with(&a)),
+            _ => false,
+        }
+    };
+    let k = args.iter().position(switch)?;
+    Some(args[k + 1..].join(" "))
 }
 
 /// Whether `w` names a command [`policy_segment`] reads.
 fn names_command(w: &str) -> bool {
-    let name = w.rsplit('/').next().unwrap_or(w);
+    let name = program_name(w);
     drift_like(w)
         || SHELLS.contains(&name)
         || POLICY_WRAPPERS.contains(&name)
@@ -3374,8 +3407,11 @@ fn policy_segment(argv: &[&str], pty: bool) -> Option<String> {
         }
     }
     let first = argv.get(i)?;
-    let name = first.rsplit('/').next().unwrap_or(first);
+    let name = program_name(first);
     let args = &argv[i + 1..];
+    if let Some(line) = windows_shell_line(name, args) {
+        return shell_policy_in(&line, pty);
+    }
     if SHELL_SETTERS.contains(&name) {
         return args.iter().find_map(|a| sets_guarded(a));
     }
@@ -3922,57 +3958,71 @@ fn shell_tokens(cmd: &str) -> Vec<ShellTok> {
 /// A shell word as an absolute path, resolved lexically against `cwd`. `None`
 /// when it cannot be known: `~`, an expansion, or a relative path while the
 /// working directory is unknown.
-fn shell_path(cwd: Option<&Path>, word: &str) -> Option<PathBuf> {
+/// Read as the shell's system reads it ([`ShellPaths::style`]): on Windows `C:\x`,
+/// `C:/x`, Git Bash's `/c/x` and a quoted `.drift\x` all name the same files.
+fn shell_path(cwd: Option<&AbsPath>, word: &str, style: Style) -> Option<AbsPath> {
     if word.is_empty() || word.starts_with('~') || word.contains('$') {
         return None;
     }
-    let p = Path::new(word);
-    let abs = if p.is_absolute() {
-        p.to_path_buf()
-    } else {
-        cwd?.join(p)
-    };
-    let mut out = PathBuf::new();
-    for c in abs.components() {
-        match c {
-            std::path::Component::CurDir => {}
-            std::path::Component::ParentDir => {
-                out.pop();
-            }
-            c => out.push(c),
-        }
+    AbsPath::resolve(cwd, word, style)
+}
+
+/// How [`shell_write_to_drift`] reads paths: the system's style, and whether the file
+/// system is asked (links followed). Tests read another system's paths without it.
+#[derive(Clone, Copy)]
+struct ShellPaths {
+    style: Style,
+    real: bool,
+}
+
+/// Whether the repository names `names` (below the root) are `.drift`, under it, or
+/// `drift.lock`, compared as `style` opens files ([`same_name`]): on Windows `.DRIFT\x`
+/// and `drift.lock.` are those files.
+fn state_names<S: AsRef<str>>(names: &[S], style: Style) -> bool {
+    match names {
+        [first, ..] if same_name(first.as_ref(), ".drift", style) => true,
+        [only] => same_name(only.as_ref(), LOCK_FILE, style),
+        _ => false,
     }
-    Some(out)
+}
+
+/// [`state_names`] of a repository-relative POSIX path, on this system.
+fn drift_state_rel(rel: &str) -> bool {
+    state_names(&rel.split('/').collect::<Vec<_>>(), Style::HOST)
 }
 
 /// Whether `path` (absolute, normalised) is `<root>/.drift`, under it, or
-/// `<root>/drift.lock`. Resolved like [`Project::rel`]: the nearest existing
-/// ancestor is canonicalised, so links into the repository count.
-fn is_drift_state(root: &Path, path: &Path) -> bool {
-    let mut existing = path;
-    let mut rest = Vec::new();
-    while !existing.exists() {
-        let (Some(name), Some(parent)) = (existing.file_name(), existing.parent()) else {
-            break;
-        };
-        rest.push(name);
-        existing = parent;
-    }
-    let mut resolved = existing
-        .canonicalize()
-        .unwrap_or_else(|_| existing.to_path_buf());
-    for part in rest.iter().rev() {
-        resolved.push(part);
-    }
-    let Ok(rel) = resolved.strip_prefix(root) else {
-        return false;
+/// `<root>/drift.lock`. With `how.real`, resolved like [`Project::rel`]: the nearest
+/// existing ancestor is canonicalised in the root's one form
+/// ([`drift_core::fsutil::canonical`]), so links into the repository count.
+fn is_drift_state(root: &AbsPath, path: &AbsPath, how: ShellPaths) -> bool {
+    let resolved = if how.real {
+        real_path(path)
+    } else {
+        path.clone()
     };
-    let mut parts = rel.components();
-    match parts.next() {
-        Some(std::path::Component::Normal(first)) if first == ".drift" => true,
-        Some(std::path::Component::Normal(first)) if first == LOCK_FILE => parts.next().is_none(),
-        _ => false,
+    resolved
+        .under(root)
+        .is_some_and(|rest| state_names(rest, how.style))
+}
+
+/// `path` with its nearest existing ancestor canonicalised, the rest laid on as named.
+fn real_path(path: &AbsPath) -> AbsPath {
+    for n in (0..=path.names().len()).rev() {
+        let native = path.ancestor(n).to_native();
+        if !Path::new(&native).exists() {
+            continue;
+        }
+        let real = drift_core::fsutil::canonical(Path::new(&native)).ok();
+        if let Some(mut real) = real.and_then(|r| AbsPath::parse(r.to_str()?, Style::HOST)) {
+            for name in &path.names()[n..] {
+                real.push(name);
+            }
+            return real;
+        }
+        break;
     }
+    path.clone()
 }
 
 /// Commands that change every file they name.
@@ -4057,11 +4107,27 @@ fn in_place_files<'a>(name: &str, args: &[&'a str]) -> (bool, Vec<&'a str>) {
 /// (`sh -c '...'`), scripts, or programs that write on their own
 /// (`git checkout`, `python`). The real backstop is elsewhere: the Action scans
 /// with a fresh cache, and a git-tracked `.drift/cache` is ignored.
+///
+/// Paths are read as this system reads them ([`drift_core::pathtext`]): on Windows a
+/// drive, `\\?\`, a share, Git Bash's `/c/`, either separator, and names in any case.
 fn shell_write_to_drift(cmd: &str, root: &Path, cwd: &Path) -> Option<String> {
-    let root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
-    let mut cur: Option<PathBuf> = Some(cwd.to_path_buf());
-    let mut dirs: Vec<Option<PathBuf>> = Vec::new();
-    let mut scopes: Vec<(Option<PathBuf>, Vec<Option<PathBuf>>)> = Vec::new();
+    let root = drift_core::fsutil::canonical(root).unwrap_or_else(|_| root.to_path_buf());
+    let style = Style::HOST;
+    let root = AbsPath::parse(root.to_str()?, style)?;
+    let cwd = cwd.to_str().and_then(|c| AbsPath::parse(c, style));
+    shell_writes(cmd, &root, cwd, ShellPaths { style, real: true })
+}
+
+/// [`shell_write_to_drift`] with the root and the directory already read, in `how`.
+fn shell_writes(
+    cmd: &str,
+    root: &AbsPath,
+    cwd: Option<AbsPath>,
+    how: ShellPaths,
+) -> Option<String> {
+    let mut cur: Option<AbsPath> = cwd;
+    let mut dirs: Vec<Option<AbsPath>> = Vec::new();
+    let mut scopes: Vec<(Option<AbsPath>, Vec<Option<AbsPath>>)> = Vec::new();
     let toks = shell_tokens(cmd);
     let mut seg: Vec<&ShellTok> = Vec::new();
     for t in toks.iter().chain(std::iter::once(&ShellTok::Sep)) {
@@ -4069,7 +4135,7 @@ fn shell_write_to_drift(cmd: &str, root: &Path, cwd: &Path) -> Option<String> {
             seg.push(t);
             continue;
         }
-        if let Some(op) = shell_segment(&seg, &root, &mut cur, &mut dirs) {
+        if let Some(op) = shell_segment(&seg, root, how, &mut cur, &mut dirs) {
             return Some(op);
         }
         seg.clear();
@@ -4090,12 +4156,13 @@ fn shell_write_to_drift(cmd: &str, root: &Path, cwd: &Path) -> Option<String> {
 /// One simple command of [`shell_write_to_drift`]; updates the working directory.
 fn shell_segment(
     seg: &[&ShellTok],
-    root: &Path,
-    cur: &mut Option<PathBuf>,
-    dirs: &mut Vec<Option<PathBuf>>,
+    root: &AbsPath,
+    how: ShellPaths,
+    cur: &mut Option<AbsPath>,
+    dirs: &mut Vec<Option<AbsPath>>,
 ) -> Option<String> {
-    let protected = |cur: &Option<PathBuf>, w: &str| {
-        shell_path(cur.as_deref(), w).is_some_and(|p| is_drift_state(root, &p))
+    let protected = |cur: &Option<AbsPath>, w: &str| {
+        shell_path(cur.as_ref(), w, how.style).is_some_and(|p| is_drift_state(root, &p, how))
     };
     let mut argv: Vec<&str> = Vec::new();
     let mut it = seg.iter();
@@ -4133,7 +4200,7 @@ fn shell_segment(
         }
     }
     let first = argv.get(i)?;
-    let name = first.rsplit('/').next().unwrap_or(first);
+    let name = program_name(first);
     let args = &argv[i + 1..];
     let operands: Vec<&str> = {
         let mut out = Vec::new();
@@ -4153,7 +4220,7 @@ fn shell_segment(
                 dirs.push(cur.clone());
             }
             *cur = match operands.as_slice() {
-                [one] if *one != "-" => shell_path(cur.as_deref(), one),
+                [one] if *one != "-" => shell_path(cur.as_ref(), one, how.style),
                 _ => None,
             };
             false
@@ -4191,6 +4258,10 @@ fn shell_segment(
     };
     writes.then(|| name.to_string())
 }
+
+#[cfg(test)]
+#[path = "agent_windows_tests.rs"]
+mod windows_tests;
 
 #[cfg(test)]
 mod tests {
@@ -4301,8 +4372,16 @@ mod tests {
     }
     use super::*;
 
+    /// Read as Linux reads paths on every system, without the file system: on Windows
+    /// `/repo` is no absolute path, so the fixture tested nothing there.
     fn writes(cmd: &str) -> Option<String> {
-        shell_write_to_drift(cmd, Path::new("/repo"), Path::new("/repo"))
+        writes_in(cmd, "/repo", Style::Posix)
+    }
+
+    fn writes_in(cmd: &str, root: &str, style: Style) -> Option<String> {
+        let root = AbsPath::parse(root, style).unwrap();
+        let how = ShellPaths { style, real: false };
+        shell_writes(cmd, &root, Some(root.clone()), how)
     }
 
     #[test]

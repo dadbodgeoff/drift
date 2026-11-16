@@ -4931,7 +4931,7 @@ fn security_baseline_checked(
             if let (Some(now), Some(text)) = (&head, &text) {
                 let at_head = pr::file_at(root, "HEAD", SECURITY_LOCK);
                 let was = match at_head {
-                    Some(t) if t != *text => Some(t),
+                    Some(t) if !ratchet::same_lines(&t, text) => Some(t),
                     _ => pr::last_commit_of(root, SECURITY_LOCK)
                         .ok()
                         .and_then(|c| pr::file_at(root, &format!("{c}^"), SECURITY_LOCK)),
@@ -6492,12 +6492,23 @@ pub(crate) fn has_command(name: &str) -> bool {
         .is_some()
 }
 
+/// Whether a `println!` panic says the reader of stdout went away (`drift census |
+/// head`). The message ends with the operating system's own words for the error.
+/// Windows has two for a closed pipe, and neither says `Broken pipe`: the pipe is
+/// being closed (error 232) and the pipe has been ended (error 109).
+fn stdout_reader_gone(msg: &str) -> bool {
+    msg.starts_with("failed printing to stdout")
+        && (msg.contains("Broken pipe")
+            || (cfg!(windows)
+                && (msg.contains("(os error 232)") || msg.contains("(os error 109)"))))
+}
+
 fn main() -> ExitCode {
     // `println!` panics when stdout is a closed pipe: exit quietly with the pipe code.
     let default_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
         let msg = info.payload_as_str().unwrap_or_default();
-        if msg.starts_with("failed printing to stdout") && msg.contains("Broken pipe") {
+        if stdout_reader_gone(msg) {
             std::process::exit(i32::from(PIPE_EXIT.load(Ordering::Relaxed)));
         }
         // A parse that ran out of its memory budget: the file is skipped as too

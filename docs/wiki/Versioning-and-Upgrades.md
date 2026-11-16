@@ -21,6 +21,17 @@ gh attestation verify drift-vX.Y.Z-<target>.tar.gz --repo dadbodgeoff/drift
 
 Every change a user can see is recorded in `CHANGELOG.md` at the repository root, with each breaking change marked **Breaking:**; what changed in a release is also in its release notes. A project-level compatibility policy beyond what is stated below is not published: this is a pre-release (`0.x`), and anything may change between versions.
 
+## Platforms
+
+Linux and macOS are where Drift is built and tested. Native Windows (`x86_64-pc-windows-msvc`) is built by the release, and the project's CI runs the whole test suite on `windows-latest` on pull requests that change the Rust build, but that job does not fail the run and has not yet been seen green, so native Windows is not yet supported: use WSL, where Drift is the Linux binary. What the code does for native Windows, pinned by tests that run on every system:
+
+- One spelling of the repository root: a `\\?\C:\…` path from the system is read as `C:\…`, and the keys Drift writes to `drift.lock` and `.drift/security.lock` are repository paths with `/` on every system, so a lock written on Windows matches on Linux.
+- Drift's own files read the same with CRLF line endings (Git for Windows checks text out so by default) or a UTF-8 byte-order mark: `drift.lock`, `.drift/security.lock`, `.drift/conventions.yaml` and `.drift/config.yaml`.
+- The agent hooks deny writes to `.drift/` and `drift.lock` in the Windows spellings of the path listed there, from Git Bash commands too ([Hooks Reference](Hooks-Reference)).
+- File permissions (a private `0600` file) are set on Unix only; on Windows the file gets the directory's access rules.
+
+Not expected to work on native Windows yet: anything the Windows CI job still shows failing, and the agent hooks under a shell other than Git Bash (a `PowerShell` tool's commands are not read).
+
 ## The numbers inside Drift
 
 | Number | Where it lives | Value in this build | What it means |
