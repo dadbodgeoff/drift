@@ -1,0 +1,180 @@
+name: Studio package
+
+# Drift Studio as a person downloads it: the desktop app packaged with electron-builder
+# (apps/studio/scripts/package.mjs), with the platform's drift binary inside, and the live
+# end-to-end test (apps/studio/tests/e2e/live.mjs) run against that package and against the
+# app from source. Unsigned unless a caller asks for signing: every artifact name then says
+# `unsigned`. Linux on every pull request that touches the Studio; macOS and Windows nightly,
+# on demand and when release.yml calls this workflow (see apps/studio/README.md, Packaging).
+on:
+  pull_request:
+    paths:
+      - "apps/studio/**"
+      - "packages/ui/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/studio-package.yml"
+  schedule:
+    - cron: "41 6 * * *"
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      sign:
+        description: Sign (and on macOS notarise) with the secrets below; refuses to build unsigned (STUDIO_RELEASE=1).
+        type: boolean
+        default: false
+    secrets:
+      MAC_CSC_LINK:
+        required: false
+      MAC_CSC_KEY_PASSWORD:
+        required: false
+      APPLE_API_KEY_P8:
+        required: false
+      APPLE_API_KEY_ID:
+        required: false
+      APPLE_API_ISSUER:
+        required: false
+      WIN_CSC_LINK:
+        required: false
+      WIN_CSC_KEY_PASSWORD:
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: studio-package-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_TERM_COLOR: always
+  # The packager, pinned; installed beside the workspace so package-lock.json is unchanged.
+  ELECTRON_BUILDER_VERSION: "26.17.0"
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - run: rustup show
+      - uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+      - name: Build drift (the binary the package carries)
+        run: cargo build --release --locked -p drift-cli
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci --ignore-scripts
+      # Electron's own installer: downloads the pinned version and checks it against the
+      # package's checksums.json.
+      - run: node node_modules/electron/install.js
+      - run: npm run build -w drift-studio
+      - run: npm install --prefix "$RUNNER_TEMP/eb" --no-save --no-audit --no-fund --ignore-scripts "electron-builder@$ELECTRON_BUILDER_VERSION"
+      - name: Package (AppImage, deb)
+        env:
+          ELECTRON_BUILDER: ${{ runner.temp }}/eb/node_modules/electron-builder/cli.js
+          STUDIO_RELEASE: ${{ inputs.sign && '1' || '' }}
+        run: node apps/studio/scripts/package.mjs --linux --drift target/release/drift
+      - run: command -v xvfb-run || (sudo apt-get update && sudo apt-get install -y xvfb)
+      - name: Live end-to-end, the package and the drift it carries
+        env:
+          STUDIO_APP: apps/studio/release/out/linux-unpacked/drift-studio
+        run: xvfb-run -a node apps/studio/tests/e2e/live.mjs
+      - name: Live end-to-end, the app from source and the drift just built
+        run: DRIFT_BIN="$PWD/target/release/drift" xvfb-run -a node apps/studio/tests/e2e/live.mjs
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: studio-linux-x64
+          path: |
+            apps/studio/release/out/*.AppImage
+            apps/studio/release/out/*.deb
+            apps/studio/release/out/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: studio-live-linux-screens
+          path: apps/studio/test-results/live-*.png
+          if-no-files-found: ignore
+
+  desktop:
+    # macOS and Windows: nightly, on demand and for a release. Never run on a pull request
+    # (scarce runners), and not yet green anywhere, so an unsigned run never fails the
+    # workflow; a signing run (a release) does.
+    if: github.event_name != 'pull_request'
+    continue-on-error: ${{ !inputs.sign }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-latest, platform: mac, arch: arm64, target: aarch64-apple-darwin, exe: drift, live: "apps/studio/release/out/mac-arm64/Drift Studio.app/Contents/MacOS/Drift Studio" }
+          # Cross-compiled on Apple silicon; its app cannot be launched there, so no live test.
+          - { os: macos-latest, platform: mac, arch: x64, target: x86_64-apple-darwin, exe: drift, live: "" }
+          - { os: windows-latest, platform: win, arch: x64, target: x86_64-pc-windows-msvc, exe: drift.exe, live: apps/studio/release/out/win-unpacked/drift-studio.exe }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - if: matrix.platform == 'win'
+        run: git config --global core.longpaths true
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - run: rustup show && rustup target add ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+        with:
+          key: ${{ matrix.target }}
+      - run: cargo build --release --locked -p drift-cli --target ${{ matrix.target }}
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: node node_modules/electron/install.js
+      - run: npm run build -w drift-studio
+      - run: npm install --prefix "$RUNNER_TEMP/eb" --no-save --no-audit --no-fund --ignore-scripts "electron-builder@$ELECTRON_BUILDER_VERSION"
+      - name: Notarisation key file
+        if: inputs.sign && matrix.platform == 'mac'
+        env:
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+        run: printf '%s' "$APPLE_API_KEY_P8" > "$RUNNER_TEMP/AuthKey.p8"
+      - name: Package
+        env:
+          ELECTRON_BUILDER: ${{ runner.temp }}/eb/node_modules/electron-builder/cli.js
+          STUDIO_RELEASE: ${{ inputs.sign && '1' || '' }}
+          # Secrets only when a caller asks for signing; absent, the build is unsigned.
+          CSC_LINK: ${{ inputs.sign && matrix.platform == 'mac' && secrets.MAC_CSC_LINK || '' }}
+          CSC_KEY_PASSWORD: ${{ inputs.sign && matrix.platform == 'mac' && secrets.MAC_CSC_KEY_PASSWORD || '' }}
+          APPLE_API_KEY: ${{ inputs.sign && matrix.platform == 'mac' && format('{0}/AuthKey.p8', runner.temp) || '' }}
+          APPLE_API_KEY_ID: ${{ inputs.sign && matrix.platform == 'mac' && secrets.APPLE_API_KEY_ID || '' }}
+          APPLE_API_ISSUER: ${{ inputs.sign && matrix.platform == 'mac' && secrets.APPLE_API_ISSUER || '' }}
+          WIN_CSC_LINK: ${{ inputs.sign && matrix.platform == 'win' && secrets.WIN_CSC_LINK || '' }}
+          WIN_CSC_KEY_PASSWORD: ${{ inputs.sign && matrix.platform == 'win' && secrets.WIN_CSC_KEY_PASSWORD || '' }}
+        run: node apps/studio/scripts/package.mjs --${{ matrix.platform }} --${{ matrix.arch }} --drift "target/${{ matrix.target }}/release/${{ matrix.exe }}"
+      - name: Live end-to-end, the package and the drift it carries
+        if: matrix.live != ''
+        env:
+          STUDIO_APP: ${{ matrix.live }}
+        run: node apps/studio/tests/e2e/live.mjs
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: studio-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            apps/studio/release/out/*.dmg
+            apps/studio/release/out/*.zip
+            apps/studio/release/out/*.exe
+            apps/studio/release/out/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: studio-live-${{ matrix.platform }}-${{ matrix.arch }}-screens
+          path: apps/studio/test-results/live-*.png
+          if-no-files-found: ignore

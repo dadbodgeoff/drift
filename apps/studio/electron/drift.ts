@@ -7,7 +7,7 @@ import { type DriftOp, acceptableExit, driftArgs, driftEnv, driftErrorLine } fro
 
 export interface DriftBinary {
   path: string | null;
-  source: "settings" | "path" | "none";
+  source: "settings" | "bundled" | "path" | "none";
 }
 
 /** `.cmd` and `.bat` files cannot run without a shell (CVE-2024-27980), and the Studio never uses one. */
@@ -87,12 +87,26 @@ function runnable(p: string, platform: NodeJS.Platform): string | null {
   return executable(p, platform) ? p : null;
 }
 
-/** The configured binary, or the first `drift` on PATH (plus common install dirs). */
-export function resolveDrift(configured: string | null, env: NodeJS.ProcessEnv = process.env, platform: NodeJS.Platform = process.platform): DriftBinary {
+/**
+ * Where a packaged Studio carries its own drift: `<resources>/bin/drift[.exe]`, put there by
+ * `extraResources` in scripts/package-config.ts. Null when running from source (no resources).
+ */
+export function bundledDrift(resourcesPath: string | null | undefined, platform: NodeJS.Platform = process.platform): string | null {
+  return resourcesPath && isAbsolute(resourcesPath) ? join(resourcesPath, "bin", platform === "win32" ? "drift.exe" : "drift") : null;
+}
+
+/**
+ * The configured binary, else the one this build carries, else the first `drift` on PATH
+ * (plus common install dirs). The bundled binary comes before PATH because it is the Drift
+ * this Studio was built and tested with: an older `drift` on PATH may lack commands or
+ * schemas the views need. A person who wants another one chooses it in Settings.
+ */
+export function resolveDrift(configured: string | null, env: NodeJS.ProcessEnv = process.env, platform: NodeJS.Platform = process.platform, bundled: string | null = null): DriftBinary {
   // Only absolute paths: drift runs with the repository as its working directory, so a
   // relative path would name a different file there than the one checked here.
   const fromSettings = configured && isAbsolute(configured) ? runnable(configured, platform) : null;
   if (fromSettings) return { path: fromSettings, source: "settings" };
+  if (bundled && isAbsolute(bundled) && executable(bundled, platform)) return { path: bundled, source: "bundled" };
   // On Windows `drift.exe` itself, else the `drift.cmd` npm installs, followed to its `drift.exe`.
   const names = platform === "win32" ? ["drift.exe", "drift.cmd"] : ["drift"];
   const home = env.HOME ?? env.USERPROFILE ?? "";

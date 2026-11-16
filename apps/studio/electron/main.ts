@@ -7,6 +7,7 @@ import { extname, join, normalize, relative, resolve } from "node:path";
 import { BrowserWindow, Menu, app, dialog, ipcMain, net, protocol, session, shell } from "electron";
 import { type Channel, channels } from "../src/shared/ipc/contract";
 import { CHANNEL_NAMES, CHANNEL_PREFIX } from "../src/shared/ipc/names";
+import { bundledDrift } from "./drift";
 import { StudioMain } from "./handlers";
 import { InvalidArgument } from "./ops";
 import { Store } from "./store";
@@ -38,6 +39,7 @@ const studio = new StudioMain({
   })(),
   appVersion: app.getVersion(),
   platform: process.platform,
+  bundledDrift: app.isPackaged ? bundledDrift(process.resourcesPath) : null,
   dialogs: {
     async chooseDirectory(title) {
       const r = await dialog.showOpenDialog(win!, { title, properties: ["openDirectory"] });

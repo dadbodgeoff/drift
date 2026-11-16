@@ -36,7 +36,12 @@ export interface MainDeps {
   user: string;
   appVersion: string;
   platform: string;
+  /** The drift a packaged build carries (`bundledDrift`); absent when running from source. */
+  bundledDrift?: string | null;
 }
+
+/** What a person reads when no drift is found: where the Studio looked, and the two ways out. */
+export const NO_DRIFT = "drift was not found: this build carries none, and none is on PATH or in ~/.cargo/bin. Install Drift or choose the binary in Settings";
 
 const MAX_SOURCE = 2 * 1024 * 1024;
 const MAX_TRANSCRIPT = 200 * 1024 * 1024;
@@ -143,14 +148,14 @@ export class StudioMain {
   // ---------- the binary ----------
 
   private bin(): string {
-    const b = resolveDrift(this.d.store.settings().driftPath);
-    if (!b.path) throw new DriftError("drift was not found: install it or choose the binary in Settings");
+    const b = resolveDrift(this.d.store.settings().driftPath, process.env, process.platform, this.d.bundledDrift ?? null);
+    if (!b.path) throw new DriftError(NO_DRIFT);
     return b.path;
   }
 
   async driftInfo() {
-    const b = resolveDrift(this.d.store.settings().driftPath);
-    if (!b.path) return { path: null, version: null, censusJson: false, source: "none" as const, error: "drift is not on PATH; choose the binary in Settings" };
+    const b = resolveDrift(this.d.store.settings().driftPath, process.env, process.platform, this.d.bundledDrift ?? null);
+    if (!b.path) return { path: null, version: null, censusJson: false, source: "none" as const, error: NO_DRIFT };
     if (this.infoCache?.path !== b.path) {
       try {
         const v = await runDrift(b.path, ".", { op: "version" }, { cacheDir: this.d.store.dir, cwd: this.d.store.dir });
