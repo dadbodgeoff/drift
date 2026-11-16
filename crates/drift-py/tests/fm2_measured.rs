@@ -235,7 +235,11 @@ def make_user():
 current = make_user()
 "#,
     );
-    write(r, "models.py", "db = None\n\n\nclass Item:\n    owner = None\n");
+    write(
+        r,
+        "models.py",
+        "db = None\n\n\nclass Item:\n    owner = None\n",
+    );
     write(
         r,
         "helpers.py",
