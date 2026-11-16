@@ -1165,8 +1165,10 @@ pub struct UnitRow {
     pub unscoped: Option<String>,
     /// Of an unknown unit: the instrument its reason is about (the call whose body was
     /// not read, the name that does not resolve, the check found). For `drift
-    /// investigate`, in process only: never serialised, so no output changes.
-    #[serde(skip)]
+    /// investigate`, in process only: left out of every output, so none changes, and
+    /// written only where the report is kept to be read back in place of building it
+    /// ([`crate::in_process`]).
+    #[serde(default, skip_serializing_if = "crate::in_process::left_out")]
     pub instrument: String,
 }
 

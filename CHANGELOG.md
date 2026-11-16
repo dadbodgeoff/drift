@@ -669,3 +669,11 @@ main branch.
   read-only tools the hook approves; and the lowering versions are current. A
   test (`gap_docs_sync`) fails when a command or flag `--help` prints, an exit
   code, a version constant or the read-only tool list is missing from the pages.
+- **The agent hooks no longer build the practice map and the search-hint index
+  again in every process.** The practice map of a repository with a unit Drift
+  could not read was never kept between hook processes (it holds a field no
+  output shows, and was written without it, so it never read back equal), and
+  SessionStart built the whole security inventory a second time for the
+  search-hint index. Both are now kept in `.drift/cache/derived-v1/` and read
+  back while the code is unchanged. No answer of any hook changes; SessionStart,
+  and Stop where a rule blocks, take less time on a large repository.
