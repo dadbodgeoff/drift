@@ -29,7 +29,7 @@ const writer = (root) => (rel, body) => {
 
 export function writeHarbor(root) {
   const w = writer(root);
-  w("package.json", JSON.stringify({ name: "harbor", private: true, dependencies: { next: "15.0.0", pg: "8.0.0" } }, null, 2) + "\n");
+  w("package.json", JSON.stringify({ name: "harbor", private: true, dependencies: { next: "15.5.28", pg: "8.0.0" } }, null, 2) + "\n");
   w("README.md", "# harbor\n\nA synthetic repository for Drift Studio's fixtures.\n");
   w(
     "lib/session.ts",
