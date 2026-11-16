@@ -39,9 +39,7 @@ use std::process::ExitCode;
 use anyhow::{Context, bail};
 use drift_core::RepoFacts;
 use drift_mine::check::CheckReport;
-use drift_mine::policy::{
-    CONVENTIONS_FILE, Convention, ConventionsFile, LOCK_FILE, Lock, Mode, Status,
-};
+use drift_mine::policy::{CONVENTIONS_FILE, Convention, ConventionsFile, Lock, Mode, Status};
 use drift_mine::tier;
 use serde::{Deserialize, Serialize};
 
@@ -554,20 +552,14 @@ fn export(root: &Path, no_cache: bool, a: &ExportArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Refuse an `--out` that is Drift's policy or state (`.drift/` outside [`DIR`], or
-/// `drift.lock`): the export never overwrites what the hooks protect.
+/// Refuse an `--out` that is Drift's policy or state (`.drift/` outside [`DIR`], or a
+/// `drift.lock`, `conventions.yaml` or `security.lock` anywhere): the export never
+/// overwrites what the hooks protect, however the path is spelled (`..`, a link, another
+/// letter case: [`crate::export::refuse_policy_path`]).
 fn refuse_drift_state(root: &Path, out: &Path) -> anyhow::Result<()> {
-    let abs = std::path::absolute(out)?;
-    let root_abs = std::path::absolute(root)?;
-    if let Ok(rel) = abs.strip_prefix(&root_abs)
-        && (rel == Path::new(LOCK_FILE) || (rel.starts_with(".drift") && !rel.starts_with(DIR)))
-    {
-        bail!(
-            "{} is Drift's policy or state; write the feedback file somewhere else (default {DIR}/{DEFAULT_OUT})",
-            out.display()
-        );
-    }
-    Ok(())
+    crate::export::refuse_policy_path(root, out, Some(DIR), "the feedback file").map_err(|e| {
+        anyhow::anyhow!("{e:#}; write it somewhere else (default {DIR}/{DEFAULT_OUT})")
+    })
 }
 
 /// The document for `policy`, the facts and the check report of the repository (either
