@@ -501,6 +501,7 @@ pub fn walk(
     threads: usize,
     is_config: &(dyn Fn(&str) -> bool + Sync),
 ) -> anyhow::Result<Walked> {
+    crate::work::note(crate::work::Work::Walk);
     let root = crate::fsutil::canonical(root)?;
     check_root_ignore_files(&root)?;
     let generated = generated_attributes(&root);
@@ -712,6 +713,7 @@ pub fn read_source(c: &Candidate) -> Option<Read> {
 /// Read a candidate of `lang` and apply that language's content filters, in the
 /// order [`ingest_lang`] applies them. `None` when it cannot be read.
 pub fn read_source_lang(c: &Candidate, lang: Lang) -> Option<Read> {
+    crate::work::note(crate::work::Work::SourceRead);
     let bytes = fs::read(&c.abs_path).ok()?;
     let hash = hash_bytes(&bytes);
     let text = match String::from_utf8(bytes) {

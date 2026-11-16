@@ -129,6 +129,7 @@ pub fn regularities(
             policy: ConventionsFile::merge(base, "drift", mined.kinds.clone(), &candidates),
             lock: Lock::default(),
             unverified: Vec::new(),
+            scanned: std::sync::OnceLock::new(),
         };
         let covering = match view.rules_for_new_file(rel, None, false) {
             NewFileRules::Matched(convs) => convs,

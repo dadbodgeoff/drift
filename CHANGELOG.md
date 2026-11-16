@@ -218,6 +218,15 @@ main branch.
 
 ### Changed: behaviour an existing user will notice
 
+- **Hooks do less work for the same answers.** Each hook reads
+  `.drift/config.yaml` and `.drift/conventions.yaml` once (it read the config up
+  to five times) and scans the repository at most once: a PostToolUse that needs
+  the repository, and SessionStart with `agents.verify: on`, scanned twice.
+  `DRIFT_HOOK_TRACE` lines gain `work`, counts of walks, files read and parsed,
+  scans and config reads. Session state is saved under an operating-system lock
+  on `.<session>.json.flock`, so a hook killed while saving no longer makes the
+  next hooks of the session wait and save unlocked for 10 s, and a lock is never
+  taken over from a hook that still holds it.
 - **Breaking: `drift init` no longer baselines violations of a convention the
   policy already had.** Before, re-running `drift init` baselined the current
   violations of every convention that had no line left in `drift.lock`, so a

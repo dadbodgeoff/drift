@@ -12,6 +12,7 @@ pub use drift_ts::{ScanOptions, ScanStats};
 /// side on one pool of workers (the same workers, and the same stacks, each had to
 /// itself in turn before): the scan takes as long as the longer of the two.
 pub fn scan(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, ScanStats)> {
+    drift_core::work::note(drift_core::work::Work::FullScan);
     let canonical = drift_core::fsutil::canonical(root)?;
     // Before the walk: a file changed this close to it is read again next time.
     let started_ns = std::time::SystemTime::now()
@@ -61,6 +62,7 @@ fn listed_where_asked(root: &Path, facts: RepoFacts) -> RepoFacts {
 /// needed (no index yet, a package manifest or schema file, or a file that cannot
 /// be done exactly).
 pub fn scan_file(root: &Path, opts: &ScanOptions, rel: &str) -> anyhow::Result<Option<RepoFacts>> {
+    drift_core::work::note(drift_core::work::Work::FileScan);
     if drift_py::packages::is_manifest(rel) || opts.cache_dir.is_none() {
         return Ok(None);
     }

@@ -108,6 +108,22 @@ pub struct Project {
     /// suggestions agents are not shown that the host agent may verify (no verdict, or a
     /// stale one). Empty otherwise.
     pub unverified: Vec<String>,
+    /// The repository's facts of the one full scan [`Project::repository_facts`] made,
+    /// once a caller asked for them; with the error, as text, when it failed.
+    pub(crate) scanned: std::sync::OnceLock<Result<RepoFacts, String>>,
+}
+
+/// Whether [`Project::open_for_agents`] keeps the facts of the scan it made to compare
+/// cached verdicts ([`drift_mine::verify::statuses`]) for the callers after it
+/// ([`Project::repository_facts`]). Set by a process that is one agent hook
+/// ([`keep_repository_facts`]); another process (the MCP server, a command) drops them
+/// there, as before, so as not to hold two copies of a large repository's facts.
+static KEEP_FACTS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// From now on, a project opened for agents keeps the facts of a scan it made for its
+/// own use ([`KEEP_FACTS`]): an agent hook, which needs the whole repository at most once.
+pub(crate) fn keep_repository_facts() {
+    KEEP_FACTS.store(true, std::sync::atomic::Ordering::Relaxed);
 }
 
 /// Directory for the fact cache (or `None` when disabled).
@@ -347,6 +363,7 @@ impl Project {
             policy,
             lock,
             unverified: Vec::new(),
+            scanned: std::sync::OnceLock::new(),
         })
     }
 
@@ -385,7 +402,11 @@ impl Project {
         policy: Option<ConventionsFile>,
     ) -> anyhow::Result<Self> {
         let mut p = Self::with_policy(root, policy)?;
-        let statuses = drift_mine::verify::statuses(&p.root, &p.policy, || p.scan(false).ok());
+        let statuses =
+            drift_mine::verify::statuses(&p.root, &p.policy, || p.repository_facts().ok());
+        if !KEEP_FACTS.load(std::sync::atomic::Ordering::Relaxed) {
+            p.scanned = std::sync::OnceLock::new();
+        }
         let shown =
             |c: &Convention| drift_mine::verify::convention_view(c, statuses.as_ref()).shown;
         if let Some(st) = &statuses {
@@ -419,10 +440,23 @@ impl Project {
         Ok(facts)
     }
 
-    /// Facts sufficient to check the file `rel`: computed for that file alone from
-    /// the scan index when possible (same result as a full scan), else a full scan.
-    /// With them, whether they are the whole repository's (the full scan was made).
-    pub fn scan_for_file(&self, rel: &str) -> anyhow::Result<(RepoFacts, bool)> {
+    /// The repository's facts, as [`Project::scan`] gives them (the fact cache on), from
+    /// one full scan made the first time any caller asks and shared by every caller after
+    /// it: a hook that needs the whole repository for several things (the verifier's
+    /// statuses, the practice map, the inventory, the conventions' check) scans it once.
+    /// A scan that failed fails each caller with the same message.
+    pub fn repository_facts(&self) -> anyhow::Result<&RepoFacts> {
+        self.scanned
+            .get_or_init(|| self.scan(false).map_err(|e| format!("{e:#}")))
+            .as_ref()
+            .map_err(|e| anyhow::anyhow!("{e}"))
+    }
+
+    /// Facts for the file `rel` alone, from the scan index, when they are enough to check
+    /// it (the same facts a full scan gives the file): `None` when the repository must
+    /// be scanned instead (no index, a file that cannot be done alone, a practice that
+    /// covers it), which [`Project::scan_for_file`] then does. The trace names which.
+    pub fn scan_one_file(&self, rel: &str) -> Option<RepoFacts> {
         let opts = ScanOptions {
             cache_dir: cache_dir(&self.root, false),
             threads: 0,
@@ -433,20 +467,30 @@ impl Project {
         match scan_file(&self.root, &opts, rel) {
             Ok(Some(facts)) if !drift_mine::check::needs_full_scan(&facts, &self.policy) => {
                 crate::agent::trace::took("single_file");
-                Ok((facts, false))
+                Some(facts)
             }
             Ok(Some(_)) => {
                 crate::agent::trace::took("full_scan:needs_full_scan");
-                Ok((self.scan(false)?, true))
+                None
             }
             Ok(None) => {
                 crate::agent::trace::took("full_scan:no_single_file_scan");
-                Ok((self.scan(false)?, true))
+                None
             }
             Err(_) => {
                 crate::agent::trace::took("full_scan:single_file_error");
-                Ok((self.scan(false)?, true))
+                None
             }
+        }
+    }
+
+    /// Facts sufficient to check the file `rel`: computed for that file alone from
+    /// the scan index when possible (same result as a full scan), else a full scan.
+    /// With them, whether they are the whole repository's (the full scan was made).
+    pub fn scan_for_file(&self, rel: &str) -> anyhow::Result<(RepoFacts, bool)> {
+        match self.scan_one_file(rel) {
+            Some(facts) => Ok((facts, false)),
+            None => Ok((self.scan(false)?, true)),
         }
     }
 

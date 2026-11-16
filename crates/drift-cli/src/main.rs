@@ -1977,6 +1977,11 @@ fn block_guard(c: &Convention) -> BlockGuard {
 
 fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
     let root = &cli.root;
+    // A hook reads each `.drift/config.yaml` and policy once ([`agent::handle`]), this
+    // reading of the config included.
+    if matches!(cli.command, Command::Hook { .. }) {
+        drift_mine::policy::remember_configs();
+    }
     drift_mine::workspace::configure(root);
     match &cli.command {
         Command::Scan { json, out, threads } => {
