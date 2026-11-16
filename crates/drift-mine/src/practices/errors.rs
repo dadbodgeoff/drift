@@ -72,11 +72,12 @@ impl Concern for Errors {
         }
         let mut uses: Vec<Use> = Vec::new();
         // Python: the override of the framework's method on the view's own class or
-        // an in-repo base that answers what that method raised (S15c).
-        match base_handler(cx, sfile, s) {
-            Err(a) => return a,
-            Ok(Some(h)) => uses.push(use_of("base_handler", &h)),
-            Ok(None) => {}
+        // an in-repo base that answers what that method raised (S15c). A base not
+        // read decides only a view nothing else here is read for: a way its own
+        // body or wrappers are read to use stays known, as before S15c.
+        let base = base_handler(cx, sfile, s);
+        if let Ok(Some(h)) = &base {
+            uses.push(use_of("base_handler", h));
         }
         for w in &s.wraps {
             if !matches!(w.kind, WrapKind::Call | WrapKind::Decorator) {
@@ -154,6 +155,13 @@ impl Concern for Errors {
             } else if let Some(base) = ctx.ancestors(t).iter().find(|a| framework_error(a)) {
                 uses.push(use_of("throw", base));
             }
+        }
+        // An in-repo base not read may hold the override: "framework default" (or
+        // an app's catch-all) is not proven ([`base_handler`]).
+        if uses.is_empty()
+            && let Err(a) = base
+        {
+            return a;
         }
         if uses.is_empty() {
             match handlers.iter().find(|(_, h)| h.iter().any(|x| x == "*")) {

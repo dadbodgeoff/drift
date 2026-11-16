@@ -102,9 +102,11 @@ export async function action() {
     assert!(!has(misc, controls::RETURNS_VALUE));
 }
 
-/// Pins: `if (!isAuthorized) return redirect(..)` of a header compared with
-/// `Bearer ${process.env.TOKEN}` is `refuses_secret:authorization` in the listed
-/// reading only; a compare with a literal, and one inside a branch, are not.
+/// Pins: `if (!isAuthorized) return redirect("/")` of a header compared with
+/// `Bearer ${process.env.TOKEN}` is an exit not read
+/// (`exit_unread:header:authorization`) in the listed reading only: a redirect to
+/// `/` is no refusal the lowering reads (F9), so it is not `refuses_secret`. A
+/// compare with a literal, and one inside a branch, are neither.
 #[test]
 fn a_header_compared_with_an_environment_secret_refuses() {
     let r = repo(&[
@@ -153,12 +155,14 @@ export async function action({ request }: { request: Request }) {
 "#,
         ),
     ]);
-    let secret = format!("{}authorization", controls::REFUSES_SECRET);
+    let unread = format!("{}header:authorization", controls::EXIT_UNREAD);
     let measured = symbol(file(&r, "app/routes/admin.cache.ts"), "action");
     assert!(!has_prefix(measured, controls::REFUSES_SECRET));
+    assert!(!has(measured, &unread));
     let listed = r.listed();
     let action = symbol(file(&listed, "app/routes/admin.cache.ts"), "action");
-    assert!(has(action, &secret), "{:?}", action.controls);
+    assert!(!has_prefix(action, controls::REFUSES_SECRET), "{:?}", action.controls);
+    assert!(has(action, &unread), "{:?}", action.controls);
     let literal = symbol(file(&listed, "app/routes/admin.literal.ts"), "action");
     assert!(!has_prefix(literal, controls::REFUSES_SECRET));
     // Only requests that take the outer branch are checked.

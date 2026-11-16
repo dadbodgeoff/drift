@@ -6026,6 +6026,10 @@ struct Practice {
     /// Calls that are not a built-in's handed what the request sent
     /// ([`drift_core::controls::INPUT_HANDED`]).
     handed: BTreeSet<RawRef>,
+    /// A call was handed what the request sent past [`MAX_PARSED`] callees: its
+    /// callee is not kept, so what it does with the input is not read, and the
+    /// body is unknown, never "nothing validates it" ([`HANDED_UNREAD`]).
+    handed_unread: bool,
     handles: BTreeSet<RawOperand>,
     env_calls: BTreeSet<(RawRef, u32, String, bool)>,
     /// Span starts of calls already read as part of a response (`res.status(401)` in
@@ -6779,6 +6783,12 @@ impl<'l, 's> Collector<'l, 's> {
             let entry = (drift_core::controls::INPUT_HANDED.to_string(), vec![callee]);
             if !sym.listed_refs.contains(&entry) {
                 sym.listed_refs.push(entry);
+            }
+        }
+        if p.handed_unread {
+            let c = format!("{}{HANDED_UNREAD}", drift_core::controls::INPUT_HANDED);
+            if !sym.listed_controls.contains(&c) {
+                sym.listed_controls.push(c);
             }
         }
         sym.handles_errors.extend(p.handles);
@@ -8952,6 +8962,11 @@ const HEADER_METHODS: &[&str] = &[
 /// ([`drift_core::controls::PARSES_INPUT`]).
 const MAX_PARSED: usize = 16;
 
+/// The callee written for input handed where the lowering stops reading
+/// (`input_handed:unresolved:handed_unread`, [`Practice::handed_unread`]): a call
+/// that did not resolve, so the reader says unknown.
+const HANDED_UNREAD: &str = "unresolved:handed_unread";
+
 /// Validation methods whose receiver is the schema (`Schema.parse(body)`).
 const SCHEMA_METHODS: &[&str] = &[
     "parse",
@@ -9529,6 +9544,29 @@ impl Collector<'_, '_> {
                 if matches!(unwrap_expr(&c.callee), Expression::Identifier(id)
                     if self.symbol_of(id).is_some_and(|s| self.l.params.contains_key(&s))))
         })
+    }
+
+    /// The branch a secret mismatch takes refuses the caller, as the lowering reads
+    /// a refusal ([`Collector::branch_outcome`], a refusal builder of this file, a
+    /// refusing status written and left on, a `throw`): an answer that serves
+    /// (`return Response.json(data)`) or one not read is no refusal. A `throw` under
+    /// a `try` of this function whose handler runs is caught here, and what the
+    /// handler answers is not read: no refusal. A package's function returned
+    /// ([`Collector::builder_returned`] with a callee) is not proven here either.
+    fn secret_branch_refuses(&self, s: &Statement) -> bool {
+        let caught = self.in_try > 0;
+        let first = match s {
+            Statement::BlockStatement(b) => {
+                b.body.iter().find(|x| self.branch_outcome(x).is_some())
+            }
+            x => Some(x).filter(|x| self.branch_outcome(x).is_some()),
+        };
+        if let Some(first) = first {
+            return !(caught && matches!(first, Statement::ThrowStatement(_)));
+        }
+        (!caught && always_throws(s))
+            || matches!(self.builder_returned(s), Some((_, None)))
+            || status_assigned(s).is_some()
     }
 
     /// `header === secret` (or `!==`, either side): a request header compared
@@ -12136,13 +12174,25 @@ impl Collector<'_, '_> {
             }
         }
         let given: Vec<bool> = parts.iter().map(|x| self.mentions_input(x, 0)).collect();
-        if !given.iter().any(|g| *g) {
+        // Input handed by a spread (`fn(...input)`, `create({ ...input })`) is
+        // handed all the same ([`Practice::handed`]); a spread inside a property's
+        // value (`{ data: { ...input } }`) is read by `mentions_input`.
+        let spread = it.arguments.iter().any(|a| match a {
+            Argument::SpreadElement(s) => self.mentions_input(&s.argument, 0),
+            _ => matches!(a.as_expression().map(peel), Some(Expression::ObjectExpression(o))
+                if o.properties.iter().any(|p| matches!(p,
+                    ObjectPropertyKind::SpreadProperty(s) if self.mentions_input(&s.argument, 0)))),
+        });
+        if !spread && !given.iter().any(|g| *g) {
             return;
         }
         // What the request sent is handed to it, schema or not: what the call does
         // with it is for a reader to say ([`drift_core::controls::INPUT_HANDED`]).
+        // Past the cap the callee is not kept: unknown, not "nothing validates it".
         if self.p.handed.len() < MAX_PARSED {
             self.p.handed.insert(callee.clone());
+        } else if !self.p.handed.contains(&callee) {
+            self.p.handed_unread = true;
         }
         for (x, input) in parts.iter().zip(&given) {
             if *input || self.p.parsed.len() >= MAX_PARSED {
@@ -14918,16 +14968,24 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         // handing the request on (`return next()`, `return handler(req)`) lets it
         // through without the secret, and refuses no one
         // ([`Collector::lets_through`]). The listed reading only.
+        // Only a branch that refuses counts ([`Collector::secret_branch_refuses`]);
+        // one that leaves with an answer the lowering does not read as a refusal
+        // (`return Response.json(published)`, `return redirect("/")`) is an exit
+        // not read ([`drift_core::controls::EXIT_UNREAD`]), never a refusal.
         if self.counting()
             && self.fn_depth <= 1
             && self.branches == 0
             && !self.served
             && leaves(&it.consequent)
-            && !routes::unmeasured_listing()
             && let Some(header) = self.secret_mismatch(&it.test, false, 0)
+            && !routes::unmeasured_listing()
             && !self.lets_through(&it.consequent)
         {
-            self.secret_refusals.insert(header);
+            if self.secret_branch_refuses(&it.consequent) {
+                self.secret_refusals.insert(header);
+            } else {
+                self.note_unread_exit(None, &[RawOperand::Text(format!("header:{header}"))]);
+            }
         }
         // A branch that answers and does not leave, after which the function goes
         // on (`if (!token) { res.status(401).json({}); } next();`): found, not

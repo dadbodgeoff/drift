@@ -3,8 +3,8 @@
 //!
 //! - api: a React Router handler that returns a value is `builder:return_value`
 //!   from its facts; one that returns nothing stays unknown.
-//! - authn: a header compared whole with an environment secret, the body left
-//!   where they differ, is `service_auth`.
+//! - authn: a header compared whole with an environment value, the body left
+//!   where they differ, is unknown, never `service_auth` (F9).
 //! - authn: a procedure made from a guarded procedure counts the base's guard.
 //! - validation: a procedure that names `input` and never reads it leaves the
 //!   population; input handed to a package's call that is no validation library
@@ -132,11 +132,12 @@ fn a_router_handler_answers_by_what_it_returns() {
     assert!(ping.starts_with("unknown"), "{api:?}");
 }
 
-/// Pins: epic `admin/cache/sqlite.server.ts` read none for authn; the secret
-/// compare it leaves by is a sending service's check. A compare with a literal
-/// is no such check and is not read as one.
+/// Pins: epic `admin/cache/sqlite.server.ts` read none for authn; the compare it
+/// leaves by may be a sending service's check and is unknown (F9: not
+/// `service_auth`, which it read after S15a). A compare with a literal is no such
+/// check and is not read as one.
 #[test]
-fn a_shared_secret_refusal_is_service_auth() {
+fn a_shared_secret_refusal_is_not_proven() {
     let dir = write(&[
         ("package.json", ROUTER_PACKAGE),
         (
@@ -169,11 +170,11 @@ export async function action({ request }: { request: Request }) {
         ),
     ]);
     let authn = readings(dir.path(), "authn");
-    assert_eq!(
-        of(&authn, &["app/routes/admin.cache.ts", "action"]).as_deref(),
-        Some("known service_auth:header:authorization"),
-        "{authn:?}"
-    );
+    // F9: the facts do not show the value is a secret, and a redirect to `/` is
+    // no refusal Drift reads: found, not proven. Unknown, never `service_auth`.
+    let cache = of(&authn, &["app/routes/admin.cache.ts", "action"]).unwrap_or_default();
+    assert!(cache.starts_with("unknown"), "{authn:?}");
+    assert!(!cache.contains("service_auth"), "{authn:?}");
     let literal = of(&authn, &["app/routes/admin.literal.ts", "action"]).unwrap_or_default();
     assert!(!literal.contains("service_auth"), "{authn:?}");
 }
