@@ -93,7 +93,10 @@ export function parseLock(text: string): LockEntry[] {
     if (!t || t.startsWith("#")) continue;
     const i = t.indexOf(" ");
     if (i < 0) continue;
-    out.push({ id: t.slice(0, i), key: t.slice(i + 1).trim() });
+    const key = t.slice(i + 1).trim();
+    // `<id> ~<fingerprint> <path#symbol>`: the second key of a member line, not another entry.
+    if (/^~[0-9a-f]+ /.test(key)) continue;
+    out.push({ id: t.slice(0, i), key });
   }
   return out;
 }

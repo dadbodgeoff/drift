@@ -139,13 +139,23 @@ pub fn agent_message(violations: &[&Violation], at: AgentAt) -> String {
         }
         AgentAt::Check => format!("{blocks} marked (blocks) fail `drift check`; {advice} advice"),
     };
+    // The drift-ignore way out is offered only where a comment can cover the violation
+    // ([`suppression_hint`]); otherwise only a person can mark it fine.
+    let ignorable = violations
+        .iter()
+        .any(|v| v.mode == "block" && suppression_hint(v).is_some());
+    let out_of_it = if ignorable {
+        "add the drift-ignore comment shown with a real reason"
+    } else {
+        "say so to a person: only they can mark it fine (`drift review`)"
+    };
     let what = if blocks == 0 {
         ADVICE_FIT.to_string()
     } else if at == AgentAt::EndOfTurn || advice == 0 {
-        "Fix each, or, if one is an intentional exception, add the drift-ignore comment shown with a real reason.".to_string()
+        format!("Fix each, or, if one is an intentional exception, {out_of_it}.")
     } else {
         format!(
-            "Fix those marked (blocks), or, if one is an intentional exception, add the drift-ignore comment shown with a real reason. {ADVICE_FIT}"
+            "Fix those marked (blocks), or, if one is an intentional exception, {out_of_it}. {ADVICE_FIT}"
         )
     };
     let mut out = String::new();
@@ -185,13 +195,17 @@ pub fn why_line(evidence: &str) -> String {
     format!("{evidence} of its role follow it")
 }
 
-/// The listed violations of an agent message, at most [`MAX_AGENT_VIOLATIONS`];
-/// with `mark_blocks`, block-mode ones are marked `(blocks)`; with `offer_ignore`,
-/// block-mode ones (and only those) offer the `drift-ignore` comment for an intentional
-/// exception. Each says why the rule exists (its evidence); its known exceptions are in
-/// its statement (", except ...").
+/// The listed violations of an agent message, at most [`MAX_AGENT_VIOLATIONS`],
+/// block-mode ones first (each group in the order given), so that with many more
+/// conventions than fit, what blocks is never the part cut off; the line that says how
+/// many more there are says how many of them block. With `mark_blocks`, block-mode ones
+/// are marked `(blocks)`; with `offer_ignore`, block-mode ones (and only those) offer
+/// the `drift-ignore` comment for an intentional exception, where one can go
+/// ([`suppression_hint`]). Each says why the rule exists (its evidence); its known
+/// exceptions are in its statement (", except ...").
 fn agent_items(out: &mut String, violations: &[&Violation], mark_blocks: bool, offer_ignore: bool) {
-    let shown = &violations[..violations.len().min(MAX_AGENT_VIOLATIONS)];
+    let ordered = worst_first(violations);
+    let shown = &ordered[..ordered.len().min(MAX_AGENT_VIOLATIONS)];
     if shown.iter().any(|v| is_suggestion(v)) {
         out.push_str(
             "(suggestion) marks a weaker convention: advice only; follow it where it fits.\n",
@@ -213,14 +227,12 @@ fn agent_items(out: &mut String, violations: &[&Violation], mark_blocks: bool, o
             ),
             (None, None) => String::new(),
         };
-        let ignore = if offer_ignore && v.mode == "block" {
-            format!(
-                "  if intentional: add `{} drift-ignore {}: <reason>` above the declaration (shown to reviewers)\n",
-                comment_marker(&v.path),
-                sanitize(&v.id, 16),
-            )
-        } else {
-            String::new()
+        let ignore = match suppression_hint(v) {
+            _ if !offer_ignore || v.mode != "block" => String::new(),
+            Some((comment, place)) => {
+                format!("  if intentional: add `{comment}` {place} (shown to reviewers)\n")
+            }
+            None => "  if intentional: no drift-ignore comment can go in this file; say so to a person, who can mark it fine (`drift review`)\n".to_string(),
         };
         // A layering violation names the import that breaks the rule; "like <holder>"
         // says nothing about what to change for an avoid rule, so it is left out.
@@ -250,10 +262,34 @@ fn agent_items(out: &mut String, violations: &[&Violation], mark_blocks: bool, o
     }
     if violations.len() > MAX_AGENT_VIOLATIONS {
         out.push_str(&format!(
-            "+{} more: run `drift check` to see all\n",
-            violations.len() - MAX_AGENT_VIOLATIONS
+            "+{} more{}: run `drift check` to see all\n",
+            violations.len() - MAX_AGENT_VIOLATIONS,
+            cut_counts(&ordered[MAX_AGENT_VIOLATIONS..])
         ));
     }
+}
+
+/// `violations` with the block-mode ones first, each group in the order given: what a
+/// capped list keeps.
+fn worst_first<'a>(violations: &[&'a Violation]) -> Vec<&'a Violation> {
+    let mut out = violations.to_vec();
+    out.sort_by_key(|v| v.mode != "block");
+    out
+}
+
+/// What a capped list left out, by mode: ` (2 that block, 3 advice)`; a mode none of
+/// them has is not named, so a list of advice never speaks of blocking.
+fn cut_counts(cut: &[&Violation]) -> String {
+    let blocks = cut.iter().filter(|v| v.mode == "block").count();
+    let advice = cut.len() - blocks;
+    let mut parts = Vec::new();
+    if blocks > 0 {
+        parts.push(format!("{blocks} that block"));
+    }
+    if advice > 0 {
+        parts.push(format!("{advice} advice"));
+    }
+    format!(" ({})", parts.join(", "))
 }
 
 /// Exempt members named in one hook line before pointing to `drift check`.
@@ -411,23 +447,43 @@ pub fn github_escape_property(s: &str) -> String {
         .replace(',', "%2C")
 }
 
-/// The comment that suppresses `id` above a declaration in `path`, or `None` where
-/// suppressions do not apply (files, packages, models).
-fn suppression_hint(v: &Violation) -> Option<String> {
-    if !matches!(v.extent, Extent::Symbol { .. }) {
-        return None;
-    }
-    Some(format!(
+/// The comment that suppresses `v`, and where it goes: above the declaration for a
+/// symbol; for a file, a model or a package, at the top of its file
+/// ([`crate::roles::apply_file_ignores`]), or on the line of the import a layering rule
+/// is about, or above the model. `None` where no comment can cover it, so nothing
+/// offers one: a manifest without comments (`package.json`), and wiring advice or a
+/// promoted practice that is not a declaration (their comments are their
+/// declarations').
+fn suppression_hint(v: &Violation) -> Option<(String, &'static str)> {
+    let comment = format!(
         "{} drift-ignore {}: <reason>",
         comment_marker(&v.path),
         sanitize(&v.id, 16)
-    ))
+    );
+    let place = match v.extent {
+        Extent::Symbol { .. } => "above the declaration",
+        _ if v.wire.is_some() || v.practice.is_some() || !takes_comments(&v.path) => {
+            return None;
+        }
+        Extent::Model { .. } => "directly above the model, or at the top of its file",
+        Extent::File if v.import.is_some() => "on the import's line, or at the top of the file",
+        Extent::File => "at the top of the file",
+    };
+    Some((comment, place))
+}
+
+/// Whether a file at `path` can hold a comment: every file Drift reads but a JSON one.
+fn takes_comments(path: &str) -> bool {
+    !path.ends_with(".json")
 }
 
 /// The line-comment marker of the language `path` is written in.
 fn comment_marker(path: &str) -> &'static str {
-    if path.ends_with(".py") || path.ends_with(".pyi") {
+    let hash = [".py", ".pyi", ".toml", ".txt", ".yaml", ".yml", ".cfg"];
+    if hash.iter().any(|e| path.ends_with(e)) {
         "#"
+    } else if path.ends_with(".sql") {
+        "--"
     } else {
         "//"
     }
@@ -450,8 +506,13 @@ pub fn github_annotations(violations: &[&Violation]) -> String {
             }
         };
         let exception = match suppression_hint(v) {
-            Some(c) => format!(
-                "If intentional, add `{c}` directly above the declaration (shown to reviewers)."
+            Some((c, place)) => format!(
+                "If intentional, add `{c}` {} (shown to reviewers).",
+                if place == "above the declaration" {
+                    "directly above the declaration"
+                } else {
+                    place
+                }
             ),
             None => "If the convention does not apply, change it with `drift review`.".into(),
         };
@@ -689,16 +750,18 @@ pub fn github_summary(s: &GithubSummary) -> String {
         }
         if s.new.len() > MAX_SUMMARY_VIOLATIONS {
             out.push_str(&format!(
-                "\n+{} more in the annotations and the log.\n",
-                s.new.len() - MAX_SUMMARY_VIOLATIONS
+                "\n+{} more{} in the annotations and the log.\n",
+                s.new.len() - MAX_SUMMARY_VIOLATIONS,
+                cut_counts(&top[MAX_SUMMARY_VIOLATIONS..])
             ));
         }
         out.push_str(
             "\n**Fix:** make the code follow the convention; each annotation names an \
              example to copy, and `drift example <file>` finds one for any file. \
              **Intentional exception:** add `// drift-ignore <id>: <reason>` \
-             (`# drift-ignore` in Python) directly above the declaration; the reason is \
-             shown to reviewers. **Wrong convention:** change or reject it with `drift review`.\n",
+             (`# drift-ignore` in Python) directly above the declaration, or at the top of \
+             the file for a rule about a whole file (a `package.json` takes none); the \
+             reason is shown to reviewers. **Wrong convention:** change or reject it with `drift review`.\n",
         );
     }
     let mut notes = Vec::new();
@@ -999,7 +1062,9 @@ mod tests {
         let mut s = v("util", "src/lib/u.py");
         s.mode = "advise".into();
         s.tier = Tier::Suggestion;
-        let mut f = v("(file)", "src/x.ts");
+        // A manifest takes no comment: nothing offers one. (A file that can hold one is
+        // offered its header: `a_file_unit_is_offered_its_header`.)
+        let mut f = v("(file)", "package.json");
         f.mode = "advise".into();
         f.extent = Extent::File;
         let out = github_annotations(&[&b, &a, &s, &f]);
@@ -1043,6 +1108,7 @@ mod tests {
             "{}",
             lines[3]
         );
+        assert!(!lines[3].contains("drift-ignore"), "{}", lines[3]);
         assert_eq!(github_escape_data("a%b\r\nc"), "a%25b%0D%0Ac");
         assert_eq!(github_escape_property("a:b,c%"), "a%3Ab%2Cc%25");
     }
@@ -1126,5 +1192,31 @@ mod tests {
             clean,
             "## Drift\n\n**No new convention violations** in the repository.\n\n"
         );
+    }
+
+    /// G3 (audit 6): a file-level violation was offered a comment "above the
+    /// declaration" that nothing read. Now a file unit is offered its header, an import
+    /// rule the import's line too, and a manifest without comments nothing at all.
+    #[test]
+    fn a_file_unit_is_offered_its_header() {
+        let mut f = v("(file)", "src/x.ts");
+        f.extent = Extent::File;
+        let msg = agent_message(&[&f], AgentAt::EndOfTurn);
+        assert!(
+            msg.contains("if intentional: add `// drift-ignore D-abc123: <reason>` at the top of the file"),
+            "{msg}"
+        );
+        f.import = Some(crate::check::ImportHit {
+            module: "models/user.ts".into(),
+            specifier: "../models/user".into(),
+            line: 3,
+        });
+        let msg = agent_message(&[&f], AgentAt::EndOfTurn);
+        assert!(msg.contains("on the import's line, or at the top of the file"), "{msg}");
+        let mut p = v("t", "package.json");
+        p.extent = Extent::File;
+        let msg = agent_message(&[&p], AgentAt::EndOfTurn);
+        assert!(!msg.contains("drift-ignore D-abc123"), "{msg}");
+        assert!(msg.contains("only they can mark it fine"), "{msg}");
     }
 }

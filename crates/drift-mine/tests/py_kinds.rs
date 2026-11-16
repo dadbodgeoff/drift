@@ -689,6 +689,7 @@ fn accepted_handler_rule(r: &RepoFacts) -> ConventionsFile {
         promoted_from_hidden: false,
         promoted_from_practice: None,
         from_map: None,
+        accepted_evidence: None,
     });
     p
 }

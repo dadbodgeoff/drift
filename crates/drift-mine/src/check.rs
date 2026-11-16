@@ -106,6 +106,9 @@ pub fn locate_imports(report: &mut CheckReport, root: &std::path::Path) {
             v.line = line;
         }
     }
+    // With the import's line known: the `drift-ignore` comments of files, models and
+    // packages, which the facts do not carry.
+    crate::roles::apply_file_ignores(report, root);
 }
 
 /// The first line of `text` (a file at `from`) with a quoted import specifier that
@@ -511,6 +514,8 @@ pub fn check_gated(
     let mut holders: BTreeMap<&str, Vec<usize>> = BTreeMap::new();
     // Members of files a person set apart as a different kind: their lock entries stay.
     let mut set_apart: Vec<(String, String)> = Vec::new();
+    // Each violation's unit fingerprint, by (id, path#symbol): the lock's second key.
+    let mut fingerprints: BTreeMap<(String, String), String> = BTreeMap::new();
     for (ui, u) in all.iter().enumerate() {
         let path = u.path();
         if only_paths.is_some_and(|p| !p.contains(&path)) {
@@ -534,6 +539,13 @@ pub fn check_gated(
                 }
                 Some(Verdict::Breaks) => {
                     let key = u.key();
+                    fingerprints.insert(
+                        (c.id.clone(), key.clone()),
+                        u.fingerprint(
+                            crate::mine::offending_import(&c.rule, &u.view, contexts.of(c))
+                                .as_deref(),
+                        ),
+                    );
                     report.violations.push(Violation {
                         id: c.id.clone(),
                         path: path.clone(),
@@ -583,7 +595,28 @@ pub fn check_gated(
         &unchecked,
         &mut report,
     );
-    let reviewed = apply_exceptions(&conventions, &mut report);
+    // Old debt that moved keeps its lock line, and a reviewer's exception follows it
+    // ([`Lock::baseline_moved`], [`crate::policy::carry_moved_exceptions`]).
+    let present: BTreeSet<String> = if lock.has_fingerprints() {
+        all.iter().map(|u| u.key()).collect()
+    } else {
+        BTreeSet::new()
+    };
+    let moved = lock.baseline_moved(&mut report.violations, &fingerprints, &present);
+    let carried = crate::policy::carry_moved_exceptions(
+        &conventions,
+        lock,
+        &report.violations,
+        &fingerprints,
+        &present,
+    );
+    let excepting: Vec<&Convention> = conventions
+        .iter()
+        .copied()
+        .filter(|c| !carried.iter().any(|x| x.id == c.id))
+        .chain(carried.iter())
+        .collect();
+    let reviewed = apply_exceptions(&excepting, &mut report);
     if gate {
         neighbour_gate(
             repo,
@@ -607,6 +640,7 @@ pub fn check_gated(
             .map(|v| (v.id.clone(), format!("{}#{}", v.path, v.symbol)))
             .chain(reviewed)
             .chain(set_apart)
+            .chain(moved)
             .collect();
         // A promoted practice's entries are the practice map's to call fixed.
         let in_scope: BTreeSet<&str> = conventions
@@ -614,14 +648,19 @@ pub fn check_gated(
             .filter(|c| !c.rule.is_practice())
             .map(|c| c.id.as_str())
             .collect();
+        // A fingerprint line is fixed with its member line, and listed once with it.
         report.fixed = lock
             .entries
             .iter()
-            .filter(|e| in_scope.contains(e.0.as_str()) && !current.contains(*e))
-            .filter(|(_, key)| {
-                !unchecked.uncertain(key.split_once('#').map_or(key.as_str(), |(p, _)| p))
+            .map(|(id, key)| (id, Lock::member_of(key)))
+            .filter(|(id, key)| {
+                in_scope.contains(id.as_str())
+                    && !current.contains(&((*id).clone(), (*key).to_string()))
             })
+            .filter(|(_, key)| !unchecked.uncertain(key.split_once('#').map_or(*key, |(p, _)| p)))
             .map(|(id, key)| format!("{id} {key}"))
+            .collect::<BTreeSet<String>>()
+            .into_iter()
             .collect();
     }
     report
@@ -1401,11 +1440,14 @@ fn summary_now(c: &crate::policy::Convention, ctx: &RepoContext) -> String {
 /// The lock that baselines every current violation of `policy` (all non-rejected conventions).
 pub fn baseline(repo: &RepoFacts, policy: &ConventionsFile) -> Lock {
     let r = check(repo, policy, &Lock::default(), Scope::All, None);
-    Lock {
-        entries: r
-            .violations
-            .into_iter()
-            .map(|v| (v.id, format!("{}#{}", v.path, v.symbol)))
-            .collect(),
-    }
+    // Each line with its unit's fingerprint beside it, so the debt follows a move
+    // ([`Lock::baselining`]); the fingerprint is the one `check` computes for it.
+    let all = crate::roles::all_units(repo, &policy.file_kinds);
+    let by_key: BTreeMap<String, &Unit> = all.iter().map(|u| (u.key(), u)).collect();
+    Lock::baselining(&r.violations, |v| {
+        let u = by_key.get(&format!("{}#{}", v.path, v.symbol))?;
+        v.wire
+            .is_none()
+            .then(|| u.fingerprint(v.import.as_ref().map(|i| i.module.as_str())))
+    })
 }
