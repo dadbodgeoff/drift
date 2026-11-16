@@ -1726,9 +1726,14 @@ pub(super) fn run(
         let (mut report, of_unit) = concern_report(id, title, unit, placed, left_out.clone());
         // What may be promoted is read from every unit, whether the report lists them
         // or not (`drift practices` does not by default): one reading, the one
-        // `drift practices promote` makes ([`super::promote::fill_promotable`]).
-        report.units = unit_rows(&report, placed, &of_unit);
-        super::promote::fill_promotable(&mut report);
+        // `drift practices promote` makes ([`super::promote::fill_promotable`]). Only
+        // for a caller that shows it ([`super::Options::promotable`]).
+        if opts.units || opts.promotable {
+            report.units = unit_rows(&report, placed, &of_unit);
+        }
+        if opts.promotable {
+            super::promote::fill_promotable(&mut report);
+        }
         if !opts.units {
             report.units = Vec::new();
         }

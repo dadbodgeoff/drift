@@ -33,6 +33,7 @@ pub fn options(root: &Path, facts: &RepoFacts, scope: Scope) -> Options {
         kinds: Some(crate::map_kinds(root, facts, true)),
         units: false,
         skip_duplicates: true,
+        promotable: false,
     }
 }
 
@@ -72,7 +73,12 @@ pub struct FirstRun {
 /// The practice map as `drift init` opens with it: read from the code, whatever
 /// conventions were mined.
 pub fn first_run(root: &Path, facts: &RepoFacts) -> FirstRun {
-    let mut r = practices::practices(facts, &options(root, facts, Scope::default()));
+    // The first run offers the command that promotes a finding's usual way.
+    let opts = Options {
+        promotable: true,
+        ..options(root, facts, Scope::default())
+    };
+    let mut r = practices::practices(facts, &opts);
     // On a re-run, what a person already promoted or declined is not offered again.
     if let Ok(Some(policy)) = ConventionsFile::load(root) {
         crate::promote::drop_decided(&mut r, &policy);
@@ -208,9 +214,17 @@ pub fn report_units_kept_of(
         kinds,
         units,
         skip_duplicates,
+        promotable,
     } = &opts;
-    let Ok(more) = serde_json::to_vec(&(scope, commit, declared, kinds, units, skip_duplicates))
-    else {
+    let Ok(more) = serde_json::to_vec(&(
+        scope,
+        commit,
+        declared,
+        kinds,
+        units,
+        skip_duplicates,
+        promotable,
+    )) else {
         return practices::practices(listed.get(), &opts);
     };
     crate::derived::get_or(derived, crate::derived::PRACTICES, &more, || {
@@ -268,6 +282,18 @@ pub fn add_practices<'m>(
     map: impl FnOnce() -> &'m PracticesReport,
 ) {
     if !promote::any(policy, scope) {
+        return;
+    }
+    // Paths named (a hook's one file): a practice that covers none of them says nothing
+    // of them, and the map of facts that may be of one file is not built for it.
+    if let Some(only) = only
+        && !policy.conventions.iter().any(|c| {
+            facts
+                .files
+                .iter()
+                .any(|f| only.contains(&f.path) && promote::covers_file(c, f))
+        })
+    {
         return;
     }
     report.add_practices(promote::check(facts, map(), policy, lock, scope, only));
@@ -507,6 +533,8 @@ pub fn report_with(
         units,
         // `drift practices` and MCP `drift_practices`: the findings are read.
         skip_duplicates: false,
+        // And what may be promoted: `drift practices` offers the command.
+        promotable: true,
         ..options(root, facts, scope)
     };
     let mut r = practices::practices(facts, &opts);

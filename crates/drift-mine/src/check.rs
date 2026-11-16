@@ -1224,14 +1224,22 @@ fn extent(view: &View, starts: &BTreeMap<&str, Vec<u32>>) -> Extent {
 ///   symbol that may be a part of the role ([`crate::parts::may_be_part`]), when the
 ///   facts hold no other file of the role: who uses it is known only from the other
 ///   files;
-/// - an accepted promoted practice ([`crate::practices::promote::check`]): its verdicts
-///   are read from the practice map, which is of the whole repository (whether a place
+/// - an accepted promoted practice ([`crate::practices::promote::check`]) that covers a
+///   file of the facts ([`crate::practices::promote::covers_file`]): its verdicts are
+///   read from the practice map, which is of the whole repository (whether a place
 ///   still uses one of its ways, a unit's guard defined in another file, its lock
-///   entries).
+///   entries). A practice of another place says nothing of the file.
 ///
 /// Hooks then scan the repo. Units and context are built once for all.
 pub fn needs_full_scan(repo: &RepoFacts, policy: &ConventionsFile) -> bool {
-    if crate::practices::promote::any(policy, Scope::Accepted) {
+    if policy.conventions.iter().any(|c| {
+        c.status == Status::Accepted
+            && c.rule.is_practice()
+            && repo
+                .files
+                .iter()
+                .any(|f| crate::practices::promote::covers_file(c, f))
+    }) {
         return true;
     }
     let parts = policy.by_part();

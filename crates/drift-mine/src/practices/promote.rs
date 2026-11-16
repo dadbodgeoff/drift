@@ -90,6 +90,21 @@ pub struct Way {
     pub label: String,
     /// The units of the place that do it this way.
     pub members: usize,
+    /// A folded policy's alternatives' keys (`any_of(A|B)` accepts `A` and `B`); empty
+    /// for any other way.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub alternatives: Vec<String>,
+}
+
+impl Way {
+    /// The keys it accepts ([`way_keys`]).
+    fn keys(&self) -> Vec<String> {
+        if self.alternatives.is_empty() {
+            vec![self.key.clone()]
+        } else {
+            self.alternatives.clone()
+        }
+    }
 }
 
 /// What promoting a practice in a place would record ([`candidate`]).
@@ -428,17 +443,14 @@ impl Refusal {
 }
 
 /// The keys a way accepts: a folded policy's (`any_of(A|B)`) are its alternatives'
-/// keys, `A` and `B`; any other way's is its own key.
-fn way_keys(key: &str) -> Vec<String> {
-    if let Some(inner) = key
-        .strip_prefix("any_of(")
-        .and_then(|k| k.strip_suffix(')'))
-        && let Some((a, b)) = inner.split_once('|')
-        && !b.contains('|')
-    {
-        return vec![a.to_string(), b.to_string()];
+/// keys, `A` and `B`, read from the fold itself (a key may hold `|`); any other way's
+/// is its own key.
+fn way_keys(v: &Variant) -> Vec<String> {
+    if v.alternatives.is_empty() {
+        vec![v.key.clone()]
+    } else {
+        v.alternatives.iter().map(|a| a.key.clone()).collect()
     }
-    vec![key.to_string()]
 }
 
 /// Whether `k` is one of `keys`.
@@ -448,7 +460,7 @@ fn in_keys(keys: &[String], k: &str) -> bool {
 
 /// Every key the ways accept.
 fn accepted_keys(ways: &[&Variant]) -> BTreeSet<String> {
-    ways.iter().flat_map(|v| way_keys(&v.key)).collect()
+    ways.iter().flat_map(|v| way_keys(v)).collect()
 }
 
 /// How one unit stands against the accepted ways. Ordered so that the worst of a
@@ -624,7 +636,7 @@ fn is_way(r: &Reading<'_>, v: &Variant) -> Result<(), String> {
     if v.key == TAIL {
         return Err("it stands for the ways one unit each uses, not for one way".to_string());
     }
-    let keys = way_keys(&v.key);
+    let keys = way_keys(v);
     if !(0..r.c.units.len()).any(|i| r.uses(i, &keys)) {
         return Err(
             "no unit Drift read is known to do it this way (a way declared in .drift/config.yaml is one once a unit uses it)"
@@ -641,7 +653,7 @@ fn may_qualify(r: &Reading<'_>, v: &Variant) -> bool {
     if is_way(r, v).is_err() {
         return false;
     }
-    let keys = way_keys(&v.key);
+    let keys = way_keys(v);
     let rows = (0..r.c.units.len()).filter(|&i| r.uses(i, &keys)).count();
     rows as f64 >= PLACE_SHARE * MIN_ROLE_SIZE as f64
 }
@@ -704,7 +716,7 @@ fn build_from(
     );
     let forced = eligible(place, follows, breaks, unknown, force)?;
     let way_of = |v: &Variant| -> Way {
-        let keys = way_keys(&v.key);
+        let keys = way_keys(v);
         Way {
             id: v.id.clone(),
             key: v.key.clone(),
@@ -715,6 +727,7 @@ fn build_from(
                     j.verdict == Verdict::Follows && j.own.is_some_and(|k| in_keys(&keys, k))
                 })
                 .count(),
+            alternatives: v.alternatives.iter().map(|a| a.key.clone()).collect(),
         }
     };
     // The ways the units that break it use, by the variant of their own way.
@@ -734,6 +747,7 @@ fn build_from(
                 key: v.key.clone(),
                 label: v.label.clone(),
                 members: 0,
+                alternatives: v.alternatives.iter().map(|a| a.key.clone()).collect(),
             })
             .members += 1;
     }
@@ -1000,7 +1014,7 @@ fn role_of(place: &Place) -> RoleSelector {
 /// the concern only ([`convention_id`]), so adding a way later keeps the id and its
 /// lock entries.
 pub fn convention(c: &Candidate) -> Convention {
-    let mut any_of: Vec<String> = c.ways.iter().flat_map(|w| way_keys(&w.key)).collect();
+    let mut any_of: Vec<String> = c.ways.iter().flat_map(Way::keys).collect();
     any_of.sort();
     any_of.dedup();
     let holders = c.follows;
@@ -1319,6 +1333,15 @@ pub fn check(
                 units: unknown,
             });
         }
+        // Blocks only while the place still holds it as the gate asked at promotion: the
+        // evidence recorded then is not refreshed, the code is read now.
+        let count = |v: Verdict| judged.iter().filter(|j| j.verdict == v).count();
+        let (follows, breaks) = (count(Verdict::Follows), count(Verdict::Breaks));
+        let mode = if (follows as f64) < BLOCK_SHARE * (follows + breaks) as f64 {
+            "advise"
+        } else {
+            crate::check::effective_mode(c)
+        };
         // The units whose lock entry stays: those that break it (reported, exempt or
         // not) and those the map cannot tell.
         let mut current: BTreeSet<String> = BTreeSet::new();
@@ -1339,7 +1362,7 @@ pub fn check(
                 summary: c.summary.clone(),
                 evidence: format!("{}/{}", c.evidence.holders, c.evidence.total),
                 example: c.example.clone(),
-                mode: crate::check::effective_mode(c).into(),
+                mode: mode.into(),
                 tier: c.tier(),
                 baselined: lock.contains(&c.id, &key),
                 suppressed: suppressed(repo, j, &c.id),

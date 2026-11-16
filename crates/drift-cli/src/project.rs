@@ -380,13 +380,8 @@ impl Project {
             threads: 0,
         };
         // A promoted practice is checked against the practice map, which one file's facts
-        // cannot draw (a place's share is of all its units): the repository is scanned,
-        // whatever `needs_full_scan` says of the rest of the policy, and the one-file scan
-        // that would be thrown away is not made.
-        if self.has_practices() {
-            crate::agent::trace::took("full_scan:needs_full_scan");
-            return Ok((self.scan(false)?, true));
-        }
+        // cannot draw: `needs_full_scan` asks for the repository only when a practice
+        // covers the file, so an edit anywhere else keeps the one-file check.
         match scan_file(&self.root, &opts, rel) {
             Ok(Some(facts)) if !drift_mine::check::needs_full_scan(&facts, &self.policy) => {
                 crate::agent::trace::took("single_file");
@@ -467,12 +462,6 @@ impl Project {
             only,
             map,
         );
-    }
-
-    /// Whether an accepted convention is a promoted practice: its check reads the
-    /// practice map, which is of the whole repository.
-    pub fn has_practices(&self) -> bool {
-        drift_mine::practices::promote::any(&self.policy, Scope::Accepted)
     }
 
     pub fn accepted(&self) -> impl Iterator<Item = &Convention> {
