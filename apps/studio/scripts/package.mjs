@@ -71,7 +71,11 @@ rmSync(join(rel, "out"), { recursive: true, force: true });
 mkdirSync(stageApp, { recursive: true });
 cpSync(join(app, "dist"), join(stageApp, "dist"), { recursive: true });
 cpSync(join(app, "dist-electron"), join(stageApp, "dist-electron"), { recursive: true });
-const manifest = { name: studio.name, productName: "Drift Studio", version: studio.version, description: studio.description, license: studio.license, author: "The Drift authors", main: studio.main };
+// The deb target refuses to build without a project homepage. The workspace's Cargo.toml is
+// the one place the repository URL is written, so it is read from there.
+const homepage = /^repository\s*=\s*"([^"]+)"/m.exec(readFileSync(join(app, "..", "..", "Cargo.toml"), "utf8"))?.[1];
+if (!homepage) fail("no repository URL in the workspace Cargo.toml (the deb package needs a homepage)");
+const manifest = { name: studio.name, productName: "Drift Studio", version: studio.version, description: studio.description, license: studio.license, author: "The Drift authors", homepage, main: studio.main };
 writeFileSync(join(stageApp, "package.json"), `${JSON.stringify(manifest, null, 2)}\n`);
 
 for (const [key, src] of drifts) {
