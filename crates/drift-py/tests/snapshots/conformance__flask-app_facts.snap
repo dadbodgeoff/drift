@@ -303,7 +303,66 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "route": "/admin",
           "adapter": "flask"
         }
-      ]
+      ],
+      "listed": {
+        "entry_points": [
+          {
+            "symbol": "ban",
+            "kind": "http",
+            "method": "POST",
+            "route": "/admin/users/<int:user_id>/ban",
+            "adapter": "flask"
+          },
+          {
+            "symbol": "index",
+            "kind": "http",
+            "method": "GET",
+            "route": "/admin",
+            "adapter": "flask"
+          }
+        ],
+        "symbols": [
+          {
+            "name": "ban",
+            "kind": "function",
+            "exported_as": [
+              "ban"
+            ],
+            "line": 13,
+            "wraps": [
+              {
+                "wrapper": "src/shop/auth.py#load_session",
+                "kind": "app_hook"
+              },
+              {
+                "wrapper": "src/shop/__init__.py#create_app.require_tenant",
+                "kind": "app_hook"
+              },
+              {
+                "wrapper": "src/shop/hooks.py#check_csrf",
+                "kind": "app_hook"
+              },
+              {
+                "wrapper": "src/shop/hooks.py#init_hooks.track",
+                "kind": "app_hook"
+              },
+              {
+                "wrapper": "pkg:flask_login#login_required",
+                "kind": "decorator"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "input_typed",
+              "reads_input",
+              "typed_return"
+            ],
+            "string_literals": 1
+          }
+        ]
+      }
     },
     {
       "path": "src/shop/admin_app.py",
@@ -688,7 +747,109 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             }
           ]
         }
-      ]
+      ],
+      "listed": {
+        "entry_points": [
+          {
+            "symbol": "UserResource.delete",
+            "kind": "http",
+            "method": "DELETE",
+            "route": "/api/v1/people/<int:user_id>",
+            "adapter": "flask_restx"
+          },
+          {
+            "symbol": "UserResource.get",
+            "kind": "http",
+            "method": "GET",
+            "route": "/api/v1/people/<int:user_id>",
+            "adapter": "flask_restx"
+          }
+        ],
+        "symbols": [
+          {
+            "name": "UserResource.delete",
+            "kind": "function",
+            "exported_as": [
+              "UserResource.delete"
+            ],
+            "line": 17,
+            "wraps": [
+              {
+                "wrapper": "src/shop/auth.py#load_session",
+                "kind": "app_hook"
+              },
+              {
+                "wrapper": "src/shop/__init__.py#create_app.require_tenant",
+                "kind": "app_hook"
+              },
+              {
+                "wrapper": "src/shop/hooks.py#check_csrf",
+                "kind": "app_hook"
+              },
+              {
+                "wrapper": "src/shop/hooks.py#init_hooks.track",
+                "kind": "app_hook"
+              },
+              {
+                "wrapper": "pkg:flask_restx#Resource",
+                "kind": "extends"
+              },
+              {
+                "wrapper": "src/shop/auth.py#admins_only",
+                "kind": "decorator"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "input_typed",
+              "reads_input",
+              "typed_return"
+            ],
+            "string_literals": 0
+          },
+          {
+            "name": "UserResource.get",
+            "kind": "function",
+            "exported_as": [
+              "UserResource.get"
+            ],
+            "line": 14,
+            "wraps": [
+              {
+                "wrapper": "src/shop/auth.py#load_session",
+                "kind": "app_hook"
+              },
+              {
+                "wrapper": "src/shop/__init__.py#create_app.require_tenant",
+                "kind": "app_hook"
+              },
+              {
+                "wrapper": "src/shop/hooks.py#check_csrf",
+                "kind": "app_hook"
+              },
+              {
+                "wrapper": "src/shop/hooks.py#init_hooks.track",
+                "kind": "app_hook"
+              },
+              {
+                "wrapper": "pkg:flask_restx#Resource",
+                "kind": "extends"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "input_typed",
+              "reads_input",
+              "typed_return"
+            ],
+            "string_literals": 1
+          }
+        ]
+      }
     },
     {
       "path": "src/shop/auth.py",

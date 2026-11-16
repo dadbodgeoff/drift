@@ -455,7 +455,98 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "route": "/api/links",
           "adapter": "nextjs"
         }
-      ]
+      ],
+      "listed": {
+        "entry_points": [
+          {
+            "symbol": "GET",
+            "kind": "http",
+            "method": "GET",
+            "route": "/api/links",
+            "adapter": "nextjs"
+          },
+          {
+            "symbol": "POST",
+            "kind": "http",
+            "method": "POST",
+            "route": "/api/links",
+            "adapter": "nextjs"
+          }
+        ],
+        "symbols": [
+          {
+            "name": "POST",
+            "kind": "function",
+            "exported_as": [
+              "POST"
+            ],
+            "line": 14,
+            "wraps": [
+              {
+                "wrapper": "try",
+                "kind": "try"
+              }
+            ],
+            "calls": [
+              "global#Response.json",
+              "pkg:zod#object",
+              "pkg:zod#object().parse",
+              "pkg:zod#string"
+            ],
+            "renders": [],
+            "args": [
+              "pkg:zod#object@0:url"
+            ],
+            "controls": [
+              "arg_value:pkg:zod#object\t#0\tunread\t#0.url\tunread",
+              "await",
+              "input_handed:pkg:zod#object().parse",
+              "reads_input",
+              "sends_whole:pkg:zod#object().parse",
+              "throw",
+              "try",
+              "validates"
+            ],
+            "string_literals": 0,
+            "suppressions": [
+              "D-abc123"
+            ],
+            "order": [
+              "pkg:zod#object().parse",
+              "pkg:zod#object",
+              "pkg:zod#string",
+              "global#Response.json"
+            ],
+            "responses": [
+              {
+                "status": 200,
+                "via": "return",
+                "builder": "global#Response.json",
+                "model": "",
+                "keys": [],
+                "in_catch": false
+              }
+            ],
+            "catches": [
+              {
+                "catches": [
+                  "*"
+                ],
+                "does": [
+                  "rethrow"
+                ]
+              }
+            ],
+            "inputs": [
+              "pkg:zod#object()"
+            ],
+            "returns_calls": [
+              "global#Response.json"
+            ],
+            "is_async": true
+          }
+        ]
+      }
     },
     {
       "path": "components/billing.tsx",
@@ -1089,7 +1180,66 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           ]
         }
       ],
-      "entry_points": []
+      "entry_points": [],
+      "listed": {
+        "entry_points": [],
+        "symbols": [
+          {
+            "name": "handlers.GET",
+            "kind": "function",
+            "exported_as": [],
+            "line": 3,
+            "wraps": [],
+            "calls": [
+              "global#Response(new)"
+            ],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input"
+            ],
+            "string_literals": 0,
+            "responses": [
+              {
+                "status": 200,
+                "via": "return",
+                "builder": "global#Response(new)",
+                "model": "",
+                "keys": [],
+                "in_catch": false
+              }
+            ],
+            "is_async": true
+          },
+          {
+            "name": "handlers.POST",
+            "kind": "function",
+            "exported_as": [],
+            "line": 3,
+            "wraps": [],
+            "calls": [
+              "global#Response(new)"
+            ],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "no_input"
+            ],
+            "string_literals": 0,
+            "responses": [
+              {
+                "status": 200,
+                "via": "return",
+                "builder": "global#Response(new)",
+                "model": "",
+                "keys": [],
+                "in_catch": false
+              }
+            ],
+            "is_async": true
+          }
+        ]
+      }
     },
     {
       "path": "lib/schema.ts",
