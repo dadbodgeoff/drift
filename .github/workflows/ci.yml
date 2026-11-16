@@ -5,7 +5,7 @@ on:
     branches: [main]
   pull_request:
   schedule:
-    # Nightly cross-OS check (macOS runners are too scarce to gate pull requests).
+    # Nightly cross-OS check (on pull requests macOS runs only for Rust changes, non-blocking).
     - cron: "17 7 * * *"
   workflow_dispatch:
 
@@ -57,11 +57,37 @@ jobs:
       - uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
       - run: cargo test --release --locked -p drift-ts -p drift-py --test stack_bound
 
+  rust-changed:
+    # Whether a pull request touches the Rust build (crates, manifests, toolchain), so
+    # the scarce macOS runner is asked for only when it can find something.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      rust: ${{ steps.diff.outputs.rust }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - id: diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if git diff --quiet "$BASE" HEAD -- crates Cargo.toml Cargo.lock rust-toolchain.toml .github/workflows/ci.yml; then
+            echo "rust=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "rust=true" >> "$GITHUB_OUTPUT"
+          fi
+
   test-macos:
     # The same snapshot tests on macOS are the cross-OS determinism check. They run on
-    # main, nightly and on demand, not on pull requests: macOS runners are scarce and
-    # queued jobs were cancelled before starting. A failure here is fixed on main.
-    if: github.event_name != 'pull_request'
+    # main, nightly and on demand, and on pull requests that change the Rust build
+    # (rust-changed), so a macOS-only failure shows before the merge. macOS runners are
+    # scarce, so on pull requests the job is non-blocking: its result shows on the pull
+    # request but does not fail the run; on main it blocks as before.
+    needs: rust-changed
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.rust-changed.outputs.rust == 'true') }}
+    continue-on-error: ${{ github.event_name == 'pull_request' }}
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0

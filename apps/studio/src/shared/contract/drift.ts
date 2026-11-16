@@ -2005,6 +2005,8 @@ export interface PromoteWay {
   key: string;
   label: string;
   members: number;
+  /** A folded policy's alternatives' keys (`any_of(A|B)` accepts `A` and `B`). Absent for any other way. */
+  alternatives?: string[];
 }
 
 /** What promoting a practice in a place records (`promote::Candidate`). */

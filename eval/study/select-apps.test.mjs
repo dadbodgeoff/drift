@@ -28,10 +28,19 @@ test("spec: 30 repos split 12/18, permissive licences only, a 256-bit secret com
   for (const l of SPEC.licences) assert.ok(!/GPL|MPL|EPL|EUPL|CECILL|OSL|MS-RL/.test(l), l);
   assert.match(SPEC.secret_sha256, /^[0-9a-f]{64}$/);
   const commit = SPEC.seed_public.split(":").at(-1);
-  assert.equal(spawnSync("git", ["-C", here, "cat-file", "-e", `${commit}^{commit}`]).status, 0, "the public seed names a Drift commit");
+  assert.match(commit, /^[0-9a-f]{40}$/);
   assert.deepEqual([SPEC.loc.min, SPEC.loc.max], [20000, 500000]);
   assert.ok(SPEC.never.includes("polar") && SPEC.never.includes("ctfd"));
   for (const q of SPEC.queries) assert.match(q, /archived:false fork:false is:public/);
+});
+
+// The seed's commit is from the history before the public snapshot (Drift 0.1.0-dev: first public snapshot), which
+// squashed it away, so a clone of the public repository may not have it: checked where it is present, skipped (and
+// shown as skipped) where it is not, as select-holdout.test.mjs does for its recorded refs.
+const seedCommit = SPEC.seed_public.split(":").at(-1);
+const seedPresent = spawnSync("git", ["-C", here, "cat-file", "-e", `${seedCommit}^{commit}`]).status === 0;
+test("spec: the apps11 public seed's Drift commit is in this clone", { skip: !seedPresent && `seed commit ${seedCommit} not in this clone (pre-snapshot history)` }, () => {
+  assert.equal(spawnSync("git", ["-C", here, "cat-file", "-t", seedCommit], { encoding: "utf8" }).stdout.trim(), "commit", "the public seed names a Drift commit");
 });
 
 test("structure (C1): mixed TS + Python, multi-package TS or multi-service Python; docs, examples, tests, hidden and node_modules members never count", () => {
