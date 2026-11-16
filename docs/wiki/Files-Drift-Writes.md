@@ -105,7 +105,7 @@ Do not ignore `.drift/` as a whole: that would drop the policy teammates and CI 
 | Entry | Holds | Rebuilt when |
 | --- | --- | --- |
 | `.gitignore` | `# Created by drift: the fact cache is local.` and `*`. Written once, only if nothing is there, and left alone afterwards. | |
-| `facts-v<N>/<parser>/<xx>/<hash>.json` | Parsed facts per file, keyed by facts schema `N` (11 in this build), parser tag (`ts-l86-0.1.0-dev`: language, lowering version, Drift version) and the file's content hash. Entries are immutable. | A file's content, the facts schema, a lowering version or the Drift version changes: a new key, so old entries are simply not read. |
+| `facts-v<N>/<parser>/<xx>/<hash>.json` | Parsed facts per file, keyed by facts schema `N` (11 in this build), parser tag (`ts-l87-0.1.0-dev`: language, lowering version, Drift version) and the file's content hash. Entries are immutable. | A file's content, the facts schema, a lowering version or the Drift version changes: a new key, so old entries are simply not read. |
 | `index-v<N>-<M>/`, `index-py-v<N>-<M>/` | An index of file stamps (size, times, inode) for TypeScript/JavaScript and Python, so later scans read only the files that changed, and a hook can check one edited file without a full scan. | Its version (`M`) or the facts schema changes. |
 | `derived-v1/` | Results derived from a scan (mined conventions, the practice map), kept between runs and keyed by the facts, the Drift version and build, and the `DRIFT_*` variables set. | The facts, the build or those variables change. |
 | `sessions/<session_id>.json` | A hook session's state: baseline, advice given, rules given, block counter. See [Hooks Reference](Hooks-Reference). | Deleted when untouched for 30 days (at session start). |

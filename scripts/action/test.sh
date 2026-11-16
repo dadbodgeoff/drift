@@ -545,9 +545,12 @@ expect_not "$action" 'default: "main"' "no floating default"
 
 begin "the Action downloads what release.yml publishes, from the repository npm names"
 release_yml="$here/../../.github/workflows/release.yml"
-# The archive and checksum names this script expects, as release.yml writes them.
-expect_has "$release_yml" 'out/drift-${GITHUB_REF_NAME}-${target}.tar.gz' "archive name in release.yml"
-expect_has "$release_yml" 'sha256sum *.tar.gz > SHA256SUMS' "checksums in release.yml"
+# The archive and checksum names this script expects, as release.yml writes them:
+# its package job runs npm/archive.sh with the release tag, and that file names both.
+archive_sh="$here/../../npm/archive.sh"
+expect_has "$release_yml" 'bash npm/archive.sh "$RELEASE_TAG" dist out' "release.yml archives with npm/archive.sh"
+expect_has "$archive_sh" '"$out/drift-${tag}-${target}.tar.gz"' "archive name in npm/archive.sh"
+expect_has "$archive_sh" 'sha256sum -- *.tar.gz > SHA256SUMS' "checksums in npm/archive.sh"
 expect_has "$release_yml" 'tags: ["v*.*.*"]' "release tags"
 for t in x86_64-unknown-linux-musl aarch64-unknown-linux-musl x86_64-apple-darwin aarch64-apple-darwin x86_64-pc-windows-msvc; do
   expect_has "$release_yml" "target: $t," "release.yml builds $t"

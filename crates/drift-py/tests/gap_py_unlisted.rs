@@ -413,19 +413,19 @@ fn a_route_decorator_on_a_receiver_drift_does_not_read_is_reported() {
     write(
         r,
         "pyproject.toml",
-        "[project]\nname = \"sn\"\ndependencies = [\"sanic\"]\n",
+        "[project]\nname = \"sn\"\ndependencies = [\"bottle\"]\n",
     );
     write(r, "app/__init__.py", "");
     let body = concat!(
-        "from sanic import Sanic\n",
+        "from bottle import Bottle\n",
         "\n",
         "from app.cache import cache\n",
         "\n",
-        "srv = Sanic(\"x\")\n",
+        "srv = Bottle()\n",
         "\n",
         "\n",
         "@srv.get(\"/hidden\")\n", // 8
-        "async def hidden(request):\n",
+        "def hidden():\n",
         "    return None\n",
         "\n",
         "\n",
