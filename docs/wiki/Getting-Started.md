@@ -38,6 +38,33 @@ drift --version
 
 **After the first release.** The release channels will be an npm package (`@dadbodgeoff/drift`; a beta under npm's `next` dist-tag, so `@dadbodgeoff/drift@next`) and prebuilt archives on the repository's GitHub Releases, with checksums and build provenance. Neither exists today: `npm install -g @dadbodgeoff/drift` returns 404. When they do, the archive steps are in [RELEASING.md](https://github.com/dadbodgeoff/drift/blob/main/RELEASING.md).
 
+## The first ten minutes: `drift setup`
+
+After installing, one command walks you through the rest of this page:
+
+```bash
+drift setup
+```
+
+In a terminal it reads the repository (on a large one, wait for the first line), then:
+
+1. **What Drift read**: the files by language, the entry points and how many have a guard Drift found, and what it could not read.
+2. **Proposals, one at a time**: the mined conventions first, then the practices and the layering it read from the map, each labelled with where it came from. Each shows the rule, the evidence (how many follow it, differ, or could not be read), one file that follows and one that differs. `y` accepts it, advising (`drift check` reports a new violation of it and fails nothing), `n` declines it (not offered again), Enter skips it (asked again next time), `q` skips the rest. Where there is no `.drift/conventions.yaml` yet, the first answer runs `drift init`.
+3. **Which compose file is deployed**: asked only when two compose files describe the same code with a different reach.
+4. **The security baseline**: what it is, how many findings it would hold today, and whether to record them. Enter means no for now.
+5. **Agents**: the `AGENTS.md` block and the Claude Code permission entries, one question each, what each tells the agent first. Enter means no for now. The Claude Code plugin is installed by Claude Code; the flow prints its two commands.
+6. **Done**: what was decided and written, the command that changes each decision later, the files to commit, and the one command for CI (`drift check --diff-base origin/main`).
+
+Nothing is accepted, baselined, written or shown to an agent unless you answer yes. Run it again at any time: it asks only what is still undecided.
+
+Without a terminal (in a script or CI), `drift setup` asks nothing and writes nothing: it prints each question with the flag that answers it. To answer from a script a person runs:
+
+```bash
+DRIFT_SETUP_PERSON=1 drift setup --by person --yes-to D-1a2b3c,baseline --no-to agents-md
+```
+
+`--yes-to` and `--no-to` take a proposal's id, a compose question's id, `baseline`, `agents-md` or `claude-settings`; what neither names is skipped. The sections below are the same steps one command at a time.
+
 ## 2. Preview what Drift would propose
 
 Run these from the repository root (or pass `--root <dir>` to every command). `drift census` changes nothing:
@@ -216,7 +243,7 @@ Commit `.drift/conventions.yaml` and `drift.lock`. Only promote a card you would
 
 ## 4. Answer the setup questions, if there are any
 
-When the `Next` block `drift init` ends with lists `drift setup` (questions only you can answer), run it. If it has nothing to ask it says so:
+When the `Next` block `drift init` ends with lists `drift setup` (questions only you can answer), run `drift setup --interactive` to answer them one at a time (`drift setup` alone runs the guided flow above, which asks the compose question among its steps). If it has nothing to ask it says so:
 
 ```
 Nothing to ask: Drift has no question only you can answer.

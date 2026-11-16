@@ -15,6 +15,7 @@ mod project;
 mod promote;
 mod review_log;
 mod scan;
+mod guided;
 mod setup;
 mod wiring;
 mod workspace;
@@ -217,10 +218,12 @@ enum Command {
         #[command(flatten)]
         cap: CapArgs,
     },
-    /// Answer the few questions only you can answer (which compose files are test
-    /// stacks, which Terraform target group sends requests to a service, whether a
-    /// helper is your check), one at a time; the answers go to .drift/config.yaml.
-    /// Without a terminal, lists the questions with the command that answers each.
+    /// Set Drift up in one guided flow: what it read, each proposal one at a time,
+    /// which compose file is deployed, the security baseline and the agent
+    /// integrations; nothing is accepted or written without your yes. Without a
+    /// terminal or answers (--yes-to, --no-to), prints what it would ask and changes
+    /// nothing. The questions only you can answer (compose files, Terraform, checks)
+    /// one at a time: --interactive; listed: --list.
     #[command(after_help = SETUP_HELP)]
     Setup {
         /// Print the open questions, each with the command that answers it, and change
@@ -287,6 +290,19 @@ enum Command {
         /// and change nothing.
         #[arg(long)]
         agent_brief: bool,
+        /// The guided flow, from a script: say yes to KEYS (comma-separated or
+        /// repeated): a proposal's id, a compose question's id (yes: only for tests),
+        /// `baseline`, `agents-md` or `claude-settings`. A person's run.
+        #[arg(long, value_delimiter = ',', value_name = "KEYS")]
+        yes_to: Vec<String>,
+        /// The guided flow, from a script: say no to KEYS (recorded, not asked again).
+        /// What neither --yes-to nor --no-to names is skipped.
+        #[arg(long, value_delimiter = ',', value_name = "KEYS")]
+        no_to: Vec<String>,
+        /// The guided flow, asking on standard input even when it is not a terminal (a
+        /// person's run: with --by person and DRIFT_SETUP_PERSON=1).
+        #[arg(long)]
+        guided: bool,
     },
     /// Every route Drift could not settle (authentication or authorization unknown or
     /// none, reach unknown or inside only), grouped by what would settle it, with the
@@ -703,7 +719,12 @@ const CENSUS_HELP: &str = "Examples:
   drift census --json > census.json";
 
 const SETUP_HELP: &str = "Examples:
-  drift setup                          in a terminal: one question at a time; Enter skips
+  drift setup                          in a terminal: the guided flow (what Drift read, each
+                                       proposal, the baseline, agents); Enter skips. Without
+                                       one: what it would ask, nothing changed
+  drift setup --by person --yes-to D-1a2b3c,baseline --no-to agents-md
+                                       the guided flow from a script (DRIFT_SETUP_PERSON=1)
+  drift setup --interactive            the questions only you can answer, one at a time
   drift setup --list                   the open questions, each with the command that answers it
   drift setup --json                   the same as data (schema drift-setup-questions)
   drift setup --answer S-1a2b=tests-only
@@ -3104,6 +3125,9 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             confirm,
             reject,
             agent_brief,
+            yes_to,
+            no_to,
+            guided: guided_flag,
         } => {
             if *agent_brief {
                 print!("{}", setup::AGENT_BRIEF);
@@ -3122,7 +3146,10 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 || *review
                 || !confirm.is_empty()
                 || !reject.is_empty()
-                || *interactive;
+                || *interactive
+                || !yes_to.is_empty()
+                || !no_to.is_empty()
+                || *guided_flag;
             setup::person_is_there(by, writes)?;
             let for_person = |what: &str| -> anyhow::Result<()> {
                 if by == setup::By::Agent {
@@ -3152,6 +3179,41 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 })?;
             }
             let terminal = std::io::stdin().is_terminal() && std::io::stdout().is_terminal();
+            // `drift setup` with none of the flags of one step: the guided flow.
+            let single = *list
+                || *json
+                || !answer.is_empty()
+                || answers.is_some()
+                || !forget.is_empty()
+                || *all
+                || *interactive
+                || *review
+                || reason.is_some()
+                || evidence.is_some();
+            let scripted = !yes_to.is_empty() || !no_to.is_empty();
+            if single && (scripted || *guided_flag) {
+                bail!(
+                    "--yes-to, --no-to and --guided are the guided flow's (`drift setup` alone); they do not combine with the flags of one step. Nothing was changed."
+                );
+            }
+            if !single {
+                let how = if scripted {
+                    guided::How::Scripted
+                } else if (terminal || *guided_flag) && by == setup::By::Person {
+                    guided::How::Ask
+                } else {
+                    guided::How::Dry
+                };
+                if how != guided::How::Dry {
+                    for_person("the guided setup")?;
+                }
+                let script = guided::Script::new(yes_to, no_to)?;
+                let stdin = std::io::stdin();
+                let mut input = stdin.lock();
+                let mut stdout = std::io::stdout().lock();
+                guided::run(cli, how, &script, &mut input, &mut stdout)?;
+                return Ok(ExitCode::SUCCESS);
+            }
             // The questions one at a time, in a terminal or with --interactive.
             let asks = answer.is_empty()
                 && answers.is_none()
