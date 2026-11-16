@@ -647,10 +647,7 @@ fn covering<'a>(policy: &'a ConventionsFile, c: &Candidate) -> Option<&'a Conven
 /// Whether one place holds the other: the same package, one directory at or below the
 /// other.
 fn overlaps(a: &Place, b: &Place) -> bool {
-    fn below(x: &str, y: &str) -> bool {
-        x.is_empty() || x == y || y.starts_with(&format!("{x}/"))
-    }
-    a.package == b.package && (below(&a.dir, &b.dir) || below(&b.dir, &a.dir))
+    a.overlaps(b)
 }
 
 /// The command that promotes `c` as listed: its first way, `--in` its place, `--with`
@@ -1408,6 +1405,7 @@ mod tests {
         let p = |package: &str, dir: &str| Place {
             package: package.into(),
             dir: dir.into(),
+            ..Place::default()
         };
         assert!(overlaps(&p("", ""), &p("", "app/api")));
         assert!(overlaps(&p("", "app/api"), &p("", "app")));
