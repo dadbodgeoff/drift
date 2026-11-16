@@ -1081,6 +1081,7 @@ fn preview_inner(root: &Path, rel: &str, text: &str) -> Preview {
                 behind: RawBehind::default(),
                 shapes: vec![],
                 since_guards: vec![],
+                line: crate::raw::Site::default(),
             });
         }
         match link(&target) {

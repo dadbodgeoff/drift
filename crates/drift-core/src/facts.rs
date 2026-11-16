@@ -148,6 +148,13 @@ pub struct FileFacts {
     /// empty. Not test files.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub unlisted_routes: Vec<u32>,
+    /// The registrations of the file Drift did not list with why
+    /// ([`crate::UnlistedRoute`]): what a reader that can tell why says, where
+    /// [`FileFacts::unlisted_routes`] says only where. Read both with
+    /// [`FileFacts::unlisted`]. Python lowering 75; sorted; omitted when empty.
+    /// Not test files. Reporting only: mining never reads it.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unlisted_reasons: Vec<crate::UnlistedRoute>,
 }
 
 /// What a file's facts are with every listing of entry points Drift makes
@@ -2932,6 +2939,7 @@ impl FileFacts {
     pub fn hold(&mut self, full: FileFacts) {
         // What is not listed is said of every listing made, not of the measured ones.
         self.unlisted_routes.clone_from(&full.unlisted_routes);
+        self.unlisted_reasons.clone_from(&full.unlisted_reasons);
         if self.entry_points == full.entry_points
             && self.mounts == full.mounts
             && self.symbols == full.symbols

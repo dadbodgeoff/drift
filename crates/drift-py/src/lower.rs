@@ -20,7 +20,7 @@ use crate::raw::*;
 use crate::stdlib;
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 74;
+pub const LOWERING_VERSION: u32 = 75;
 
 /// Functions of libraries, by their last name, whose call in a body is a guard or
 /// not by its arguments (`verify_jwt_in_request(optional=True)`): each call of a
@@ -198,6 +198,9 @@ pub(crate) struct Lowerer<'t> {
     /// The module's `urlpatterns`, or a part of it, is not a list Drift reads (a
     /// comprehension, a subscript): which views it routes is not read.
     pub(crate) unread_urlpatterns: bool,
+    /// The line of the registration call being lowered: where a mount or a
+    /// registration made from it is written ([`RawMount::line`]).
+    pub(crate) site: u32,
     /// Registration calls whose view is not written at the call (a loop variable, a
     /// table entry, arguments spread into the call): the router and the adapter of
     /// each ([`Lowerer::lower_adapters_anywhere`]).
@@ -504,6 +507,7 @@ impl<'t> Lowerer<'t> {
             read_targets: BTreeSet::new(),
             table_mounts: HashMap::new(),
             unread_urlpatterns: false,
+            site: 0,
             unplaced: BTreeSet::new(),
             placed_views: BTreeSet::new(),
             branched: BTreeSet::new(),
@@ -637,6 +641,8 @@ impl<'t> Lowerer<'t> {
         self.out.mounts.dedup();
         self.out.registrations.sort();
         self.out.registrations.dedup();
+        self.out.unlisted.sort();
+        self.out.unlisted.dedup();
         self.out.hooks.sort();
         self.out.hooks.dedup();
         self.out.entry_points.sort();

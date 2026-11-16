@@ -33,6 +33,17 @@ main branch.
 
 ### Added
 
+- **Python reports the routes it could not list** in `drift security` (text,
+  `--json` `unlisted`, the MCP `drift_security` tool): a Django `path()` whose
+  view is not found, is a package's or is computed, an `include()` of a module
+  that is not there or made by a call, a URLconf `ROOT_URLCONF` does not reach, a
+  DRF `register` of a viewset not found or at a computed prefix, a Flask
+  `add_url_rule` or FastAPI `add_api_route` whose view is computed or not found,
+  an `include_router` or `app.mount` of something made by a call, a Starlette
+  table or entry not read, and a route decorator on a framework Drift has no
+  adapter for. Each `unlisted` entry now has a `reason` (TypeScript's are
+  `receiver_not_read`). Reporting only; mining is unchanged. Python lowering 75.
+
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise

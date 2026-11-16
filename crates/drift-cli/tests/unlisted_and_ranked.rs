@@ -149,7 +149,7 @@ fn a_registration_no_listing_accounts_for_is_said_to_be_unlisted() {
     assert_eq!(routes, ["/seen"]);
     assert_eq!(
         inv["unlisted"],
-        serde_json::json!([{ "path": "src/routes.ts", "line": 2 }])
+        serde_json::json!([{ "path": "src/routes.ts", "line": 2, "reason": "receiver_not_read" }])
     );
     let (_, text, _) = drift(r, &["security"]);
     assert!(
