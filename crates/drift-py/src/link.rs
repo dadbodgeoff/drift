@@ -3771,6 +3771,10 @@ impl<'r> Linker<'r> {
         let mut out: Vec<Chain> = Vec::new();
         for (parent, mount_prefix, mount_deps, opaque, mount_hooks) in parents {
             let seg = match adapter {
+                // A Sanic blueprint group's prefix is joined to its mount's.
+                "flask" if self.framework_joins_mount(node) => {
+                    format!("{}/{own}", mount_prefix.clone().unwrap_or_default())
+                }
                 // `register_blueprint(bp, url_prefix=)` / `add_namespace(ns, path)` override.
                 "flask" | "flask_restx" => mount_prefix.clone().unwrap_or_else(|| own.to_string()),
                 _ => format!("{}/{own}", mount_prefix.clone().unwrap_or_default()),
@@ -4094,8 +4098,13 @@ impl<'r> Linker<'r> {
             _ => join_path(&[&c.prefix, rt.path.as_deref().unwrap_or("")]),
         });
         let routes = &served.routes;
-        let app_hooks = served.hooks.clone();
+        let mut app_hooks = served.hooks.clone();
         let mut wraps: Vec<Dep> = served.guards.clone();
+        // A Quart websocket runs its websocket hooks, not the request hooks.
+        if let Some(ws) = self.framework_websocket_guards(&node, kind) {
+            app_hooks.retain(|h| middleware_of(h).is_some());
+            wraps = ws;
+        }
         wraps.extend(rt.deps.iter().flat_map(|d| self.dep_canon(fi, d, false)));
         if !rt.splat_deps.is_empty() && self.since_measured() {
             wraps.extend(

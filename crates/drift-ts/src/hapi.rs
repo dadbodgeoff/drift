@@ -11,11 +11,15 @@
 //! or an object in the mode `required` (the mode a strategy is given in unless
 //! told otherwise), refuses a request that does not authenticate (401), whatever
 //! the strategy, as hapi documents; the modes `try` and `optional` refuse no one.
-//! A route that sets none takes the server's default (`server.auth.default(...)`)
-//! where it was set before the route was added: hapi applies the default when the
-//! route is added. Where a plugin registered before the route, or a function the
-//! server was handed, may have set it, or the route is a plugin's (its server is
-//! where the plugin is registered), the default is unread.
+//! A route that sets none takes the server's default (`server.auth.default(...)`),
+//! wherever in the file it is set: hapi looks the default up when it builds a
+//! route's lifecycle, and rebuilds every route already added when the default is
+//! set (`lib/auth.js` `default` and `lookup`, `@hapi/hapi` 21.4.13). Where a plugin
+//! registered on the server, or a function the server was handed, may set it, or
+//! the route is a plugin's (its server is where the plugin is registered), the
+//! default is unread. What a plugin or such a function adds to the server is
+//! unread for every route of it, added before or after: a server extension is
+//! added to every route already added as well (`lib/ext.js`).
 //!
 //! `options.validate` (`payload`, `query`, `params`, `headers`, `state`) validates
 //! the request.
@@ -85,6 +89,9 @@ struct Server {
 struct HapiWalk<'l, 's> {
     l: &'l mut Lowerer<'s>,
     servers: BTreeMap<String, Server>,
+    /// The default authentication and what is unread of each server, gathered
+    /// first: they hold for every route of the server, added before or after.
+    early: BTreeMap<String, (Option<Auth>, Vec<String>)>,
     /// The request extensions of each server, gathered first: they run for every
     /// route of the server, added before them or after.
     ext: BTreeMap<String, Before>,
@@ -101,10 +108,12 @@ impl Lowerer<'_> {
         unlisted: &mut Vec<u32>,
     ) {
         let mut ext = BTreeMap::new();
+        let mut early = BTreeMap::new();
         for collecting_ext in [true, false] {
             let mut w = HapiWalk {
                 l: self,
                 servers: BTreeMap::new(),
+                early,
                 ext,
                 collecting_ext,
                 listed: Vec::new(),
@@ -112,6 +121,14 @@ impl Lowerer<'_> {
             };
             w.visit_program(program);
             ext = w.ext;
+            early = if collecting_ext {
+                w.servers
+                    .into_iter()
+                    .map(|(name, s)| (name, (s.default_auth, s.unread)))
+                    .collect()
+            } else {
+                w.early
+            };
             listed.extend(w.listed);
             unlisted.extend(w.unlisted);
         }
@@ -405,10 +422,12 @@ impl HapiWalk<'_, '_> {
                     }
                     let parent = if s.plugin { "" } else { server };
                     let prefix = prefix.unwrap_or_default();
-                    self.l.server_mount(parent, &prefix, r, &before);
+                    if !self.collecting_ext {
+                        self.l.server_mount(parent, &prefix, r, &before);
+                    }
                     self.unread_after(
                         server,
-                        "what a plugin registered before the route sets on the server (a default authentication, an extension)",
+                        "what a plugin registered on the server sets on it (a default authentication, an extension)",
                     );
                 }
             }
@@ -486,10 +505,17 @@ impl<'a> Visit<'a> for HapiWalk<'_, '_> {
         if let (BindingPattern::BindingIdentifier(id), Some(init)) = (&it.id, &it.init)
             && let Some(spec) = self.l.hapi_server_spec(init)
         {
+            let (default_auth, unread) = self
+                .early
+                .get(id.name.as_str())
+                .cloned()
+                .unwrap_or_default();
             self.servers.insert(
                 id.name.to_string(),
                 Server {
                     spec,
+                    default_auth,
+                    unread,
                     ..Server::default()
                 },
             );
@@ -560,11 +586,10 @@ impl<'a> Visit<'a> for HapiWalk<'_, '_> {
                             self.unlisted.push(line);
                         }
                     },
-                    ("register", false) => self.register(&server, &args),
+                    ("register", _) => self.register(&server, &args),
                     _ => {}
                 }
             } else if method == "default"
-                && !self.collecting_ext
                 && let Expression::StaticMemberExpression(auth) = unwrap_expr(&m.object)
                 && auth.property.name == "auth"
                 && let Some(server) = self.server_of(&auth.object)
@@ -577,7 +602,7 @@ impl<'a> Visit<'a> for HapiWalk<'_, '_> {
             }
         }
         // A server handed to a function: what it sets on it is not read.
-        if !self.collecting_ext {
+        {
             let handed: Vec<String> = args.iter().filter_map(|x| self.server_of(x)).collect();
             for s in handed {
                 self.unread_after(&s, "what a function the server is handed sets on it");

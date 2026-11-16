@@ -141,7 +141,7 @@ pub fn candidate(path: &str, exports: &[&str]) -> bool {
         || ((under("routes/") || stem_of(file) == "root") && (has("loader") || has("action")))
         || ((under("server/api/") || under("server/routes/")) && has("default"))
         || (under("src/pages/")
-            && script(file)
+            && astro_endpoint_file(file)
             && (HTTP_METHODS.iter().any(|m| has(m)) || has("ALL")))
         || astro_middleware(path, exports)
 }
@@ -152,6 +152,51 @@ fn script(file: &str) -> bool {
     [".ts", ".js", ".mts", ".mjs"]
         .iter()
         .any(|ext| file.ends_with(ext))
+}
+
+/// A file Astro routes as an endpoint: `.js` or `.ts` only (`validEndpointExtensions`
+/// of `dist/core/routing/create-manifest.js`, `astro` 7.4.12); a `.mjs` or `.mts`
+/// file under `src/pages` is no route.
+fn astro_endpoint_file(file: &str) -> bool {
+    file.ends_with(".ts") || file.ends_with(".js")
+}
+
+/// The path of an Astro endpoint from the directories under `src/pages` and the
+/// file's name without its extension, as Astro's route manifest builds it: a file or
+/// directory whose name starts with `_` (or with `.`, but `.well-known`) is no route
+/// at all; `index` names its directory; `[x]` is a parameter and `[...x]` the rest,
+/// also within a segment (`[id].json`). Nothing else is special: no route groups,
+/// no pathless segments.
+fn astro_route(parts: &[&str]) -> Option<String> {
+    let mut out: Vec<String> = Vec::new();
+    let last = parts.len().saturating_sub(1);
+    for (i, s) in parts.iter().enumerate() {
+        if s.starts_with('_') || (s.starts_with('.') && *s != ".well-known") {
+            return None;
+        }
+        if i == last && *s == "index" {
+            continue;
+        }
+        let mut seg = String::new();
+        let mut rest = *s;
+        while let Some(open) = rest.find('[') {
+            let Some(close) = rest[open..].find(']') else {
+                break;
+            };
+            seg.push_str(&rest[..open]);
+            let inner = &rest[open + 1..open + close];
+            if inner.starts_with("...") {
+                seg.push('*');
+            } else {
+                seg.push(':');
+                seg.push_str(inner);
+            }
+            rest = &rest[open + close + 1..];
+        }
+        seg.push_str(rest);
+        out.push(seg);
+    }
+    Some(format!("/{}", out.join("/")))
 }
 
 /// An Astro middleware: `onRequest` exported by `src/middleware.ts` or
@@ -301,12 +346,14 @@ pub fn entry_points(facts: &FileFacts, framework: Framework) -> Vec<EntryPoint> 
             let Some(at) = dirs.windows(2).rposition(|w| w == ["src", "pages"]) else {
                 return out;
             };
-            if !script(file) {
+            if !astro_endpoint_file(file) {
                 return out;
             }
             let mut parts: Vec<&str> = dirs[at + 2..].to_vec();
             parts.push(stem_of(file));
-            let route = template(&parts);
+            let Some(route) = astro_route(&parts) else {
+                return out;
+            };
             for m in HTTP_METHODS.iter().chain(&["ALL"]) {
                 if exports_named(facts, m) {
                     entry(m, m, route.clone());
@@ -436,6 +483,26 @@ mod tests {
             ["GET GET /feed.xml"]
         );
         assert!(listed("src/lib/api.ts", &["GET"], A).is_empty());
+        // As Astro's route manifest builds them (`astro` 7.4.12): a name that starts
+        // with `_` is no route, nor is a `.mjs` or `.mts` file; `route`, `(x)`
+        // and a trailing `_` are plain segments, and `[id]` is a parameter within
+        // a segment too.
+        assert!(listed("src/pages/api/_helpers.ts", &["GET"], A).is_empty());
+        assert!(listed("src/pages/_lib/users.ts", &["GET"], A).is_empty());
+        assert!(listed("src/pages/api/x.mjs", &["GET"], A).is_empty());
+        assert!(!candidate("src/pages/api/x.mts", &["GET"]));
+        assert_eq!(
+            listed("src/pages/api/route.ts", &["POST"], A),
+            ["POST POST /api/route"]
+        );
+        assert_eq!(
+            listed("src/pages/(admin)/stats_.ts", &["GET"], A),
+            ["GET GET /(admin)/stats_"]
+        );
+        assert_eq!(
+            listed("src/pages/users/[id].json.ts", &["GET"], A),
+            ["GET GET /users/:id.json"]
+        );
         assert!(candidate("src/pages/api/x.ts", &["POST"]));
         assert!(!candidate("src/pages/about.astro", &["GET"]));
         assert!(astro_middleware("src/middleware.ts", &["onRequest"]));

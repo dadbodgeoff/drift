@@ -496,6 +496,25 @@ main branch.
 
 ### Changed: behaviour an existing user will notice
 
+- **The newer route adapters follow each package's published source.** Checked
+  against quart 0.23.1, django-ninja 1.8.0, litestar 2.25.0, sanic 25.12.1,
+  aiohttp 3.14.5, tornado 6.6.1, falcon 4.4.0, channels 4.3.2, huey 3.5.4,
+  arq 0.28.0, elysia 1.4.32, @hapi/hapi 21.4.13, restify 12.1.0, h3 1.15.11 and
+  astro 7.4.12, `drift security` now reads: django-ninja's `add_router(auth=...)`
+  over the router's own `auth=`; `Litestar([...])` and `Router("/x", ...)` given
+  by position, and a handler's `middleware=` as unknown; Sanic `add_route` as
+  `GET` where no methods are given, and a group mounted with `url_prefix=` under
+  both prefixes; Quart websockets guarded by `before_websocket`, not
+  `before_request`; aiohttp `app.router.add_routes`; Falcon's
+  `process_request_async`; Huey `context_task` and `on_commit_task`; arq
+  `Worker([...])`; Elysia `mapDerive`, `mapResolve`, `.as("scoped")`, a
+  websocket's `upgrade` and a guard's `schema`; hapi's default authentication
+  for routes added before it, and what a plugin of the repository sets on the
+  server as unknown for every route of it (some routes that read "no guard"
+  now read unknown); Restify `server.param` (and no `server.delete`); Astro
+  endpoint files starting with `_`, and Astro's own segment rules. Listed
+  reading only. Lowering versions: TypeScript 88, Python 76.
+
 - **Breaking: the GitHub Action runs the Drift of its own ref, and installs a
   release binary when there is one.** `drift-ref` now defaults to empty, which
   runs the Drift of the ref the Action is used at (`uses: dadbodgeoff/drift@<ref>`)

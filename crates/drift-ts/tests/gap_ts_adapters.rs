@@ -131,11 +131,13 @@ fn elysia_routes_with_guards_groups_and_mounts() {
     );
 }
 
-/// hapi: the server's default authentication guards a route added after it that
-/// sets none (not one added before it), `auth: false` is no guard, a route array
-/// with a method array and a `validate` schema, and a plugin of another file
-/// registered under a prefix, whose routes are served under it with the default
-/// unread.
+/// hapi: the server's default authentication guards every route that sets none,
+/// added before it or after (hapi 21.4.13 `lib/auth.js` `default` rebuilds the
+/// routes already added), `auth: false` is no guard, a route array with a method
+/// array and a `validate` schema, and a plugin of another file registered under a
+/// prefix, whose routes are served under it with the default unread. What that
+/// plugin sets on the server (a default authentication, an extension) is not read,
+/// so every route of the server reads unknown beside what is read.
 #[test]
 fn hapi_routes_with_auth_validation_and_plugins() {
     let r = repo(&[
@@ -150,13 +152,13 @@ fn hapi_routes_with_auth_validation_and_plugins() {
     assert_eq!(
         listed(&r, "hapi"),
         [
-            "GET /before |  | -",
-            "GET /health |  | -",
-            "GET /items/:id | required | -",
-            "GET /users/:id | ? | -",
-            "GET /users/open |  | -",
-            "POST /items | required | validates",
-            "PUT /items | required | validates",
+            "GET /before | ? required | -",
+            "GET /health | ? | -",
+            "GET /items/:id | ? required | -",
+            "GET /users/:id | ? what a plugin registered on the server sets on it (a default authentication, an extension) | -",
+            "GET /users/open | what a plugin registered on the server sets on it (a default authentication, an extension) | -",
+            "POST /items | ? required | validates",
+            "PUT /items | ? required | validates",
         ]
     );
 }
@@ -331,4 +333,121 @@ fn astro_endpoints_with_and_without_middleware() {
         ),
     ]);
     assert_eq!(listed(&bare, "astro"), ["GET /api/health |  | -"]);
+}
+
+/// Elysia, as the published `elysia` 1.4.32 runs it: `.as("scoped")` hands every
+/// hook registered so far to the instance that uses it (`promoteEvent`),
+/// `mapResolve` is a before-handle hook, a websocket route's options are its
+/// handlers (no route option a macro may read), and a guard's `schema` option is
+/// documented. Before these were read, `/me` and `/mapped` read as unguarded and
+/// `/ws` and `/g` as unread.
+#[test]
+fn elysia_as_scoped_map_resolve_ws_and_guard_schema() {
+    let r = repo(&[
+        (
+            "package.json",
+            r#"{ "name": "api", "dependencies": { "elysia": "1.4.32" } }"#,
+        ),
+        (
+            "src/auth.ts",
+            "export const requireUser = ({ headers, status }: any) => {\n  if (!headers.authorization) {\n    return status(401, \"Unauthorized\");\n  }\n};\n",
+        ),
+        (
+            "src/app.ts",
+            "import { Elysia } from \"elysia\";\nimport { requireUser } from \"./auth\";\n\nconst auth = new Elysia({ name: \"auth\" }).onBeforeHandle(requireUser).as(\"scoped\");\n\nconst app = new Elysia()\n  .get(\"/open\", () => \"ok\")\n  .ws(\"/ws\", { idleTimeout: 30, message(ws: any, m: unknown) { ws.send(m); } })\n  .guard({ schema: \"standalone\", beforeHandle: requireUser }, (g) => g.get(\"/g\", () => \"g\"))\n  .use(auth)\n  .get(\"/me\", () => \"me\");\n\nexport const mapped = new Elysia().mapResolve(requireUser).get(\"/mapped\", () => \"m\");\napp.listen(3000);\n",
+        ),
+    ]);
+    unmeasured(&r, "elysia");
+    assert_eq!(
+        listed(&r, "elysia"),
+        [
+            "GET /g | requireUser | -",
+            "GET /mapped | requireUser | -",
+            "GET /me | requireUser | -",
+            "GET /open |  | -",
+            "WS /ws |  | -",
+        ]
+    );
+}
+
+/// hapi applies the server's default authentication to every route that sets
+/// none, added before the default or after it: `server.auth.default()` rebuilds
+/// the routes already added (`lib/auth.js` of `@hapi/hapi` 21.4.13). Before, the
+/// route added first read as unguarded.
+#[test]
+fn hapi_default_authentication_set_after_a_route_guards_it() {
+    let r = repo(&[
+        (
+            "package.json",
+            r#"{ "name": "api", "dependencies": { "@hapi/hapi": "21.4.13", "@hapi/jwt": "3.2.0" } }"#,
+        ),
+        (
+            "src/server.js",
+            r#"const Hapi = require("@hapi/hapi");
+const Jwt = require("@hapi/jwt");
+
+const init = async () => {
+  const server = Hapi.server({ port: 3000 });
+  await server.register(Jwt);
+  server.auth.strategy("token", "jwt", { keys: process.env.JWT_KEY, verify: false, validate: () => ({ isValid: true }) });
+  server.route({ method: "GET", path: "/first", handler: () => "x" });
+  server.route({ method: "GET", path: "/open", options: { auth: false }, handler: () => "o" });
+  server.auth.default("token");
+  server.route({ method: "GET", path: "/later", handler: () => "y" });
+  await server.start();
+};
+init();
+"#,
+        ),
+    ]);
+    assert_eq!(
+        listed(&r, "hapi"),
+        [
+            "GET /first | required | -",
+            "GET /later | required | -",
+            "GET /open |  | -",
+        ]
+    );
+}
+
+/// Restify's `server.param(name, fn)` runs `fn` before every route whose path has
+/// the parameter, wherever it is added (`lib/server.js` of `restify` 12.1.0), and
+/// the `restify.pre` plugins are Restify's own, which turn no one away. Before,
+/// `/items/:id` read as unguarded.
+#[test]
+fn restify_param_handlers_run_before_routes_with_the_parameter() {
+    let r = repo(&[
+        (
+            "package.json",
+            r#"{ "name": "api", "dependencies": { "restify": "12.1.0" } }"#,
+        ),
+        (
+            "src/auth.js",
+            r#"function loadOwned(req, res, next, id) {
+  if (!req.headers.authorization) {
+    res.send(401, { error: "unauthorized" });
+    return next(false);
+  }
+  return next();
+}
+module.exports = { loadOwned };
+"#,
+        ),
+        (
+            "src/server.js",
+            r#"const restify = require("restify");
+const { loadOwned } = require("./auth");
+const server = restify.createServer();
+server.pre(restify.pre.sanitizePath());
+server.get("/items/:id", (req, res, next) => { res.send({ id: req.params.id }); next(); });
+server.get("/raw", (req, res, next) => { res.send({}); next(); });
+server.param("id", loadOwned);
+server.listen(8080);
+"#,
+        ),
+    ]);
+    assert_eq!(
+        listed(&r, "restify"),
+        ["GET /items/:id | loadOwned | -", "GET /raw |  | -"]
+    );
 }

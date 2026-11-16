@@ -139,12 +139,16 @@ init();
 "#,
         ),
     ]);
+    // A plugin of the repository registered on the server may set a default
+    // authentication or an extension on it, which hapi applies to every route of
+    // the server, added before or after (hapi 21.4.13 `lib/auth.js`, `lib/ext.js`):
+    // what it sets is not read, so a route with no guard of its own is unknown.
     expect(
         &routes(dir.path()),
         &[
-            ("GET /health", "none"),
+            ("GET /health", "unknown"),
             ("GET /items/:id", "guarded"),
-            ("GET /maybe", "none"),
+            ("GET /maybe", "unknown"),
             ("GET /users/:id", "unknown"),
             ("GET /users/mine", "guarded"),
         ],
@@ -225,4 +229,55 @@ app.use("/admin", admin.handler);
         ),
     ]);
     expect(&routes(astro.path()), &[("GET /api/users/:id", "guarded")]);
+}
+
+/// A Restify `server.param(name, fn)` handler runs before every route whose path
+/// has `:name` (restify 12.1.0 `Server.prototype.param`), so it guards them; an
+/// Elysia plugin's hook made `.as("scoped")` guards the routes of the instance that
+/// uses it.
+#[test]
+fn restify_param_and_elysia_scoped_hooks_guard_routes() {
+    let restify = write(&[
+        (
+            "package.json",
+            r#"{ "name": "api", "dependencies": { "restify": "12.1.0" } }"#,
+        ),
+        (
+            "src/auth.js",
+            r#"function loadOwned(req, res, next, id) {
+  if (!req.headers.authorization) {
+    return next(new Error("Unauthorized"));
+  }
+  return next();
+}
+module.exports = { loadOwned };
+"#,
+        ),
+        (
+            "src/server.js",
+            r#"const restify = require("restify");
+const { loadOwned } = require("./auth");
+const server = restify.createServer();
+server.param("id", loadOwned);
+server.get("/items/:id", (req, res, next) => { res.send({ id: req.params.id }); next(); });
+server.get("/raw", (req, res, next) => { res.send({}); next(); });
+server.listen(8080);
+"#,
+        ),
+    ]);
+    expect(
+        &routes(restify.path()),
+        &[("GET /items/:id", "guarded"), ("GET /raw", "none")],
+    );
+    let elysia = write(&[
+        (
+            "package.json",
+            r#"{ "name": "api", "dependencies": { "elysia": "1.4.32" } }"#,
+        ),
+        (
+            "src/app.ts",
+            "import { Elysia } from \"elysia\";\n\nconst auth = new Elysia({ name: \"auth\" })\n  .onBeforeHandle(({ headers, status }: any) => {\n    if (!headers.authorization) {\n      return status(401, \"Unauthorized\");\n    }\n  })\n  .as(\"scoped\");\n\nnew Elysia().use(auth).get(\"/me\", () => \"me\").listen(3000);\n",
+        ),
+    ]);
+    expect(&routes(elysia.path()), &[("GET /me", "guarded")]);
 }

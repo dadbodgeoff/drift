@@ -216,3 +216,131 @@ fn sanic_blueprints_groups_and_hooks() {
     );
     assert!(!has(&measured, "http GET /health"), "{measured:#?}");
 }
+
+/// The listed entries of a repository of the files given, beside a `pyproject.toml`.
+fn written(files: &[(&str, &str)]) -> Vec<String> {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(
+        dir.path().join("pyproject.toml"),
+        "[project]\nname = \"fx\"\n",
+    )
+    .unwrap();
+    for (rel, body) in files {
+        let p = dir.path().join(rel);
+        std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+        std::fs::write(p, body).unwrap();
+    }
+    let repo = scan(
+        dir.path(),
+        &ScanOptions {
+            cache_dir: None,
+            threads: 1,
+        },
+    )
+    .unwrap()
+    .0;
+    entries(&repo.listed())
+}
+
+/// Pins: `auth=` given at `add_router` replaces the router's own `auth=`
+/// (django-ninja 1.8.0 `Router.build_routers`: the mount's auth is set on the bound
+/// router over its own), and an operation's `auth=` replaces both.
+#[test]
+fn ninja_mount_auth_replaces_the_routers_own() {
+    let listed = written(&[
+        ("api/__init__.py", ""),
+        (
+            "api/auth.py",
+            "import os\n\nfrom ninja.security import APIKeyHeader\n\n\nclass RouterKey(APIKeyHeader):\n    def authenticate(self, request, key):\n        return key == os.environ.get(\"ROUTER_KEY\")\n\n\nclass MountKey(APIKeyHeader):\n    def authenticate(self, request, key):\n        return key == os.environ.get(\"MOUNT_KEY\")\n",
+        ),
+        (
+            "api/main.py",
+            "from ninja import NinjaAPI, Router\n\nfrom api.auth import MountKey, RouterKey\n\napi = NinjaAPI()\nrouter = Router(auth=RouterKey())\n\n\n@router.get(\"/items\")\ndef items(request):\n    return []\n\n\napi.add_router(\"/v1\", router, auth=MountKey())\n",
+        ),
+        (
+            "manage.py",
+            "import os\n\nos.environ.setdefault(\"DJANGO_SETTINGS_MODULE\", \"proj.settings\")\n",
+        ),
+        ("proj/__init__.py", ""),
+        ("proj/settings.py", "ROOT_URLCONF = \"proj.urls\"\n"),
+        (
+            "proj/urls.py",
+            "from django.urls import path\n\nfrom api.main import api\n\nurlpatterns = [path(\"api/\", api.urls)]\n",
+        ),
+    ]);
+    let items = line(&listed, "http GET /api/v1/items items ninja");
+    assert!(items.contains("api/auth.py#MountKey"), "{items}");
+    assert!(!items.contains("RouterKey"), "{items}");
+}
+
+/// Pins: `Litestar([...])` takes its route handlers first and `Router("/admin",
+/// ...)` its path first (Litestar 2.25.0 `Litestar.__init__`, `Router.__init__`);
+/// a handler's `middleware=` may turn a caller away, so it reads unknown.
+#[test]
+fn litestar_positional_handlers_and_path_and_handler_middleware() {
+    let listed = written(&[
+        ("app/__init__.py", ""),
+        (
+            "app/main.py",
+            "from litestar import Litestar, Router, get\n\n\ndef check(app):\n    return app\n\n\n@get(\"/health\")\nasync def health() -> dict:\n    return {}\n\n\n@get(\"/stats\")\nasync def stats() -> dict:\n    return {}\n\n\n@get(\"/guarded\", middleware=[check])\nasync def guarded() -> dict:\n    return {}\n\n\nadmin = Router(\"/admin\", route_handlers=[stats])\napp = Litestar([health, admin, guarded])\n",
+        ),
+    ]);
+    assert!(
+        !listed.iter().any(|l| l.contains("/?")),
+        "every mount is read: {listed:#?}"
+    );
+    let health = line(&listed, "http GET /health health litestar");
+    assert!(!health.contains("middleware"), "{health}");
+    assert!(
+        has(&listed, "http GET /admin/stats stats litestar"),
+        "{listed:#?}"
+    );
+    let guarded = line(&listed, "http GET /guarded guarded litestar");
+    assert!(guarded.contains("middleware="), "{guarded}");
+}
+
+/// Pins: Sanic's `add_route(handler, uri)` of a function answers GET where no
+/// methods are given (Sanic 25.12.1 `RouteMixin.add_route`: `methods = {"GET"}`),
+/// its methods given second are read, and a group mounted with `url_prefix=` is
+/// under both prefixes (`Sanic.blueprint` joins the mount's, the group's and the
+/// blueprint's).
+#[test]
+fn sanic_add_route_defaults_to_get_and_group_prefixes_join() {
+    let listed = written(&[
+        ("app/__init__.py", ""),
+        (
+            "app/main.py",
+            "from sanic import Blueprint, Sanic\nfrom sanic.response import json\n\napp = Sanic(\"fx\")\nbp = Blueprint(\"items\", url_prefix=\"/items\")\n\n\n@bp.get(\"/\")\nasync def items(request):\n    return json([])\n\n\nasync def ping(request):\n    return json({})\n\n\nasync def save(request):\n    return json({})\n\n\napp.add_route(ping, \"/ping\")\napp.add_route(save, \"/save\", [\"POST\"])\ngroup = Blueprint.group(bp, url_prefix=\"/api\")\napp.blueprint(group, url_prefix=\"/v1\")\n",
+        ),
+    ]);
+    assert!(has(&listed, "http GET /ping ping sanic"), "{listed:#?}");
+    assert!(!has(&listed, "http POST /ping"), "{listed:#?}");
+    assert!(has(&listed, "http POST /save save sanic"), "{listed:#?}");
+    assert!(!has(&listed, "http GET /save"), "{listed:#?}");
+    assert!(has(&listed, "http GET /v1/api/items"), "{listed:#?}");
+}
+
+/// Pins: Quart runs `before_request` hooks before a request only and
+/// `before_websocket` hooks before a websocket (Quart 0.23.1
+/// `Quart.preprocess_request`, `preprocess_websocket`); a blueprint's
+/// `before_app_websocket` runs before every websocket of the application.
+#[test]
+fn quart_websockets_run_their_websocket_hooks() {
+    let listed = written(&[
+        ("app/__init__.py", ""),
+        (
+            "app/main.py",
+            "from quart import Blueprint, Quart, request, websocket\n\napp = Quart(__name__)\nbp = Blueprint(\"live\", __name__)\n\n\n@app.before_request\nasync def note():\n    request.seen = True\n\n\n@app.before_websocket\nasync def ws_guard():\n    websocket.seen = True\n\n\n@bp.before_app_websocket\nasync def everywhere():\n    websocket.seen = True\n\n\n@app.route(\"/page\")\nasync def page():\n    return \"ok\"\n\n\n@app.websocket(\"/ws\")\nasync def ws():\n    return None\n\n\n@bp.websocket(\"/feed\")\nasync def feed():\n    return None\n\n\napp.register_blueprint(bp, url_prefix=\"/live\")\n",
+        ),
+    ]);
+    let page = line(&listed, "http GET /page page flask");
+    assert!(page.contains("app/main.py#note"), "{page}");
+    assert!(!page.contains("ws_guard"), "{page}");
+    let ws = line(&listed, "websocket - /ws ws flask");
+    assert!(!ws.contains("#note"), "{ws}");
+    assert!(ws.contains("app/main.py#ws_guard"), "{ws}");
+    assert!(ws.contains("app/main.py#everywhere"), "{ws}");
+    let feed = line(&listed, "websocket - /live/feed feed flask");
+    assert!(feed.contains("app/main.py#ws_guard"), "{feed}");
+    assert!(feed.contains("app/main.py#everywhere"), "{feed}");
+}

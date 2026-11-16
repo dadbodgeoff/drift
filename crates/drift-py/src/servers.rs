@@ -210,10 +210,15 @@ const DJANGO_PATH: &[&str] = &[
     "django.urls.conf.path",
     "django.urls.conf.re_path",
 ];
-/// Huey's decorators on an instance, and whether each schedules its task.
+/// Huey's decorators on an instance (`Huey.task`, `periodic_task`, `context_task`,
+/// huey 3.5.4 `api.py`) and of Django-Huey (`huey.contrib.djhuey`'s `task`,
+/// `periodic_task`, `db_task`, `db_periodic_task`, `on_commit_task`), and whether
+/// each schedules its task.
 const HUEY_DECORATORS: &[(&str, bool)] = &[
     ("task", false),
     ("db_task", false),
+    ("context_task", false),
+    ("on_commit_task", false),
     ("periodic_task", true),
     ("db_periodic_task", true),
 ];
@@ -544,8 +549,10 @@ impl<'t> Lowerer<'t> {
         }) {
             return Some(def("huey", false, vec![]));
         }
+        // `Worker(functions=(), *, ..., cron_jobs=None)`: the functions may be given
+        // first (arq 0.28.0 `worker.py`).
         if is(&d, ARQ_WORKER) {
-            self.arq_lists(keyword(c, "functions"), keyword(c, "cron_jobs"), out);
+            self.arq_lists(arg(c, 0, "functions"), keyword(c, "cron_jobs"), out);
         }
         None
     }
@@ -663,6 +670,11 @@ impl<'t> Lowerer<'t> {
             let Some(node) = self.server_receiver(&inner.value, scope) else {
                 return;
             };
+            // `app.router.add_routes([...])`: the router's own `add_routes`.
+            if method == "routes" {
+                self.aiohttp_add_routes(node, c, scope, out, line);
+                return;
+            }
             let (methods, path, handler) = match method {
                 "route" => (
                     arg(c, 0, "method").and_then(string_value).map(|m| {
@@ -719,29 +731,7 @@ impl<'t> Lowerer<'t> {
             return;
         };
         match attr {
-            "add_routes" => match c.arguments.args.first() {
-                Some(table @ (Expr::List(_) | Expr::Tuple(_))) => {
-                    self.aiohttp_defs(&node, table, scope, out);
-                }
-                Some(Expr::Name(n))
-                    if matches!(scope.names.get(n.id.as_str()), Some(Bound::List(_))) =>
-                {
-                    if let Some(Bound::List(table)) = scope.names.get(n.id.as_str()) {
-                        let table = *table;
-                        self.aiohttp_defs(&node, table, scope, out);
-                    }
-                }
-                Some(t) => match self.server_receiver(t, scope) {
-                    Some(child) => out.mounts.push(RawNodeMount {
-                        parent: node,
-                        child,
-                        prefix: String::new(),
-                        hooks: vec![],
-                    }),
-                    None => out.unplaced.push(line),
-                },
-                None => {}
-            },
+            "add_routes" => self.aiohttp_add_routes(node, c, scope, out, line),
             "add_subapp" => {
                 let prefix = arg(c, 0, "prefix").and_then(string_value);
                 let child = arg(c, 1, "subapp").and_then(|s| self.server_receiver(s, scope));
@@ -790,6 +780,41 @@ impl<'t> Lowerer<'t> {
                 }
             }
             _ => self.server_pass(c, scope, out),
+        }
+    }
+
+    /// `app.add_routes(...)` / `app.router.add_routes(...)`: route definitions
+    /// written in place or bound to a list, or a table (`RouteTableDef`) mounted.
+    fn aiohttp_add_routes(
+        &mut self,
+        node: RawNode,
+        c: &'t ast::ExprCall,
+        scope: &Scope<'t>,
+        out: &mut RawServers,
+        line: u32,
+    ) {
+        match c.arguments.args.first() {
+            Some(table @ (Expr::List(_) | Expr::Tuple(_))) => {
+                self.aiohttp_defs(&node, table, scope, out);
+            }
+            Some(Expr::Name(n))
+                if matches!(scope.names.get(n.id.as_str()), Some(Bound::List(_))) =>
+            {
+                if let Some(Bound::List(table)) = scope.names.get(n.id.as_str()) {
+                    let table = *table;
+                    self.aiohttp_defs(&node, table, scope, out);
+                }
+            }
+            Some(t) => match self.server_receiver(t, scope) {
+                Some(child) => out.mounts.push(RawNodeMount {
+                    parent: node,
+                    child,
+                    prefix: String::new(),
+                    hooks: vec![],
+                }),
+                None => out.unplaced.push(line),
+            },
+            None => {}
         }
     }
 
@@ -1436,7 +1461,16 @@ impl<'t> Lowerer<'t> {
             }
             let verbs = match responder(m) {
                 Some((verb, _)) => Some(vec![verb]),
-                None if matches!(m, "process_request" | "process_resource") => None,
+                None if matches!(
+                    m,
+                    "process_request"
+                        | "process_resource"
+                        | "process_request_async"
+                        | "process_resource_async"
+                ) =>
+                {
+                    None
+                }
                 None if m == "prepare" && has_base => None,
                 None if m == "handle" && name == "Command" && has_base => None,
                 None => continue,

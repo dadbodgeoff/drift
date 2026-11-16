@@ -29,8 +29,13 @@ const LITESTAR_CONTROLLERS: &[&str] = &["litestar.Controller", "litestar.control
 /// Options of a Litestar layer that run code around a request in a way this
 /// reading does not follow: each may turn a caller away (`before_request=`, a
 /// hook whose answer is the response; `on_app_init=`, which may add guards and
-/// middleware, as the JWT backends do).
-const LITESTAR_UNREAD: &[&str] = &["before_request", "on_app_init"];
+/// middleware, as the JWT backends do; `middleware=`, which every layer and handler
+/// takes, and which runs before the handler: Litestar's authentication middleware
+/// refuses a caller there).
+const LITESTAR_UNREAD: &[&str] = &["before_request", "on_app_init", "middleware"];
+/// Litestar's application class, whose first argument is `route_handlers`
+/// (`Litestar.__init__(self, route_handlers=None, *, ...)`, Litestar 2.25.0).
+const LITESTAR_APPS: &[&str] = &["litestar.Litestar", "litestar.app.Litestar"];
 
 /// The option keywords that make a constructor's options worth keeping.
 const OPTION_KEYWORDS: &[&str] = &["auth", "guards", "route_handlers"];
@@ -207,15 +212,23 @@ impl<'t> Lowerer<'t> {
             _ => "",
         }
         .starts_with(|ch: char| ch.is_ascii_uppercase());
-        let kept = c.arguments.keywords.iter().any(|k| {
-            k.arg
-                .as_ref()
-                .is_some_and(|a| OPTION_KEYWORDS.contains(&a.as_str()))
-        });
+        // `Litestar([index, users])`: the route handlers, given first.
+        let first_handlers = self
+            .canon(&c.func)
+            .and_then(|r| dotted(&r))
+            .filter(|d| LITESTAR_APPS.contains(&d.as_str()))
+            .and_then(|_| c.arguments.args.first())
+            .filter(|_| keyword(c, "route_handlers").is_none());
+        let kept = first_handlers.is_some()
+            || c.arguments.keywords.iter().any(|k| {
+                k.arg
+                    .as_ref()
+                    .is_some_and(|a| OPTION_KEYWORDS.contains(&a.as_str()))
+            });
         if !class_like || !kept {
             return;
         }
-        let handlers = keyword(c, "route_handlers").map(|h| {
+        let handlers = keyword(c, "route_handlers").or(first_handlers).map(|h| {
             elements(h).map(|els| {
                 els.iter()
                     .map(|e| match e {
@@ -275,6 +288,18 @@ impl<'t> Lowerer<'t> {
                 continue;
             };
             let attr = a.attr.as_str();
+            // Quart: `@app.before_websocket`, `@bp.before_app_websocket`.
+            if call.is_none() && matches!(attr, "before_websocket" | "before_app_websocket") {
+                self.out.frameworks.websocket_hooks.push(RawWebsocketHook {
+                    router: receiver.clone(),
+                    hook: RawRef {
+                        base: RawBase::Local(symbol.to_string()),
+                        member: String::new(),
+                    },
+                    app_wide: attr == "before_app_websocket",
+                });
+                continue;
+            }
             // django-ninja: `@api.get("/x", auth=...)`.
             if let Some(c) = call
                 && (HTTP_VERBS.contains(&attr) || attr == "api_operation")
@@ -635,7 +660,7 @@ impl<'t> Lowerer<'t> {
                     router: parent,
                     target,
                     path,
-                    methods: upper_methods(keyword(c, "methods")),
+                    methods: upper_methods(arg(c, 2, "methods")),
                     line,
                 });
             }
