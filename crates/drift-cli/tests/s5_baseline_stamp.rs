@@ -104,7 +104,10 @@ fn a_baseline_with_no_stamp_is_the_first_inventory_and_fails_as_it_did() {
     let lock = std::fs::read_to_string(r.join(".drift/security.lock")).unwrap();
     // The stamp, after the comment lines and before the findings.
     assert!(lock.contains("\n# inventory: 2\n# fail: "), "{lock}");
-    assert!(lock.contains("no-guard\tapp/api/u0/route.ts#GET GET /api/u0\n"), "{lock}");
+    assert!(
+        lock.contains("no-guard\tapp/api/u0/route.ts#GET GET /api/u0\n"),
+        "{lock}"
+    );
 
     // The same findings with the header an older Drift wrote: nothing is new.
     let old: String = lock
@@ -120,7 +123,12 @@ fn a_baseline_with_no_stamp_is_the_first_inventory_and_fails_as_it_did() {
     write(r, "app/api/u9/route.ts", UNGUARDED);
     let (code, out, _) = drift(r, &["security", "--ratchet"]);
     assert_eq!(code, 1, "{out}");
-    assert!(out.contains("[no-guard]\n  app/api/u9/route.ts#GET GET /api/u9  (app/api/u9/route.ts:1)\n"), "{out}");
+    assert!(
+        out.contains(
+            "[no-guard]\n  app/api/u9/route.ts#GET GET /api/u9  (app/api/u9/route.ts:1)\n"
+        ),
+        "{out}"
+    );
     assert!(!out.contains("new in this version of Drift"), "{out}");
 }
 

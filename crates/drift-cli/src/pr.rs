@@ -528,7 +528,9 @@ fn short(sha: &str) -> &str {
 }
 
 /// `--format github`: annotations on stdout, a summary line, and the job summary
-/// appended to `GITHUB_STEP_SUMMARY` when it is set.
+/// appended to `GITHUB_STEP_SUMMARY` when it is set. `drift check` calls
+/// [`github_output_with`]; this is that without the basis.
+#[allow(dead_code)]
 pub fn github_output(
     report: &CheckReport,
     scope: Option<&DiffScope>,

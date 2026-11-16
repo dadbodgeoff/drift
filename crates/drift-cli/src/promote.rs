@@ -702,7 +702,11 @@ fn shell_word(w: &str) -> String {
 pub fn request_of(c: &Candidate) -> Request {
     Request {
         concern: c.concern.clone(),
-        ways: c.ways.first().map(|w| vec![w.id.clone()]).unwrap_or_default(),
+        ways: c
+            .ways
+            .first()
+            .map(|w| vec![w.id.clone()])
+            .unwrap_or_default(),
         with: c.ways.iter().skip(1).map(|w| w.id.clone()).collect(),
         mechanisms: c.mechanisms.clone(),
         any_enforcing: c.any_enforcing,
@@ -713,7 +717,9 @@ pub fn request_of(c: &Candidate) -> Request {
 /// The command that promotes `c` in its place, only when `drift practices promote` would
 /// take it as `report` stands: the engine is asked ([`promote::candidate_for`]) and its
 /// refusal is returned otherwise. A surface that prints a promote command asks this first,
-/// so it never prints one the command then refuses.
+/// so it never prints one the command then refuses. Not wired yet: the surfaces that
+/// print a promote command (`crate::practices`) are where it goes.
+#[allow(dead_code)]
 pub fn checked_command(report: &PracticesReport, c: &Candidate) -> Result<String, Refusal> {
     promote::candidate_for(report, Some(&c.place), &request_of(c)).map(|x| command(&x))
 }
@@ -766,6 +772,7 @@ fn keep_offer(full: &PracticesReport, v: &mut drift_mine::practices::Variant) ->
 /// (not rejected) whose place holds or is held by the departure's, or a rejected one of
 /// that very place. `report` is the map the departures were read from. Not wired yet:
 /// `crate::practices::check_departures` is where it goes, with the policy.
+#[allow(dead_code)]
 pub fn drop_decided_departures(
     report: &PracticesReport,
     policy: &ConventionsFile,
@@ -834,7 +841,9 @@ pub fn ranked(report: &PracticesReport, candidates: Vec<Candidate>) -> Ranked {
         let departures = c
             .exceptions
             .iter()
-            .filter(|e| departing.contains(&(c.concern.as_str(), e.path.as_str(), e.symbol.as_str())))
+            .filter(|e| {
+                departing.contains(&(c.concern.as_str(), e.path.as_str(), e.symbol.as_str()))
+            })
             .count();
         let r = RankedCandidate {
             candidate: c,
@@ -1413,7 +1422,13 @@ mod tests {
     }
 
     /// A candidate of `concern` in `place` with these ways, mechanisms and any enforcing way.
-    fn cand(concern: &str, place: &str, ways: &[&str], mechanisms: &[&str], enforcing: bool) -> Candidate {
+    fn cand(
+        concern: &str,
+        place: &str,
+        ways: &[&str],
+        mechanisms: &[&str],
+        enforcing: bool,
+    ) -> Candidate {
         Candidate {
             concern: concern.into(),
             place: Place::parse(place, &PracticesReport::default()).unwrap(),
@@ -1436,7 +1451,10 @@ mod tests {
     #[test]
     fn the_command_of_every_kind_of_candidate() {
         let cases = [
-            (cand("authn", "app/api", &["P-a"], &[], false), "drift practices promote P-a --in app/api"),
+            (
+                cand("authn", "app/api", &["P-a"], &[], false),
+                "drift practices promote P-a --in app/api",
+            ),
             (
                 cand("authn", "app/api", &["P-a", "P-b", "P-c"], &[], false),
                 "drift practices promote P-a --in app/api --with P-b --with P-c",
@@ -1544,8 +1562,7 @@ mod tests {
     /// rejected did. Accepted, it does all three.
     #[test]
     fn a_practice_only_proposed_is_not_promoted() {
-        use drift_mine::practices::{ConcernReport, Departure, Variant};
-        use drift_mine::practices::Promotable;
+        use drift_mine::practices::{ConcernReport, Departure, Promotable, Variant};
         let c = cand("authn", "app/api", &["P-a"], &[], false);
         let mut proposed = promote::convention(&c);
         proposed.status = Status::Proposed;

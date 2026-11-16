@@ -85,6 +85,10 @@ fn the_export_cut_line_says_how_many_block_and_how_many_advise() {
         "{md}"
     );
     // What blocks comes first: all ten shown rules block, the advising one is cut.
-    assert_eq!(md.matches(" follow it, blocks). Example: `").count(), 10, "{md}");
+    assert_eq!(
+        md.matches(" follow it, blocks). Example: `").count(),
+        10,
+        "{md}"
+    );
     assert!(!md.contains("lib11 for g11"), "{md}");
 }

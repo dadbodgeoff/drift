@@ -8,6 +8,7 @@
 use std::path::Path;
 use std::process::{Command, Stdio};
 
+use drift_mine::mine::Rule;
 use drift_mine::policy::{Convention, ConventionsFile, Mode, Status};
 use drift_mine::practices::promote;
 use serde_json::Value;
@@ -99,7 +100,7 @@ fn from_map(r: &Path) -> Vec<Convention> {
 fn sign_in(r: &Path) -> Convention {
     from_map(r)
         .into_iter()
-        .find(|c| matches!(&c.rule, drift_mine::mine::Rule::Practice { concern, .. } if concern == "authn"))
+        .find(|c| matches!(&c.rule, Rule::Practice { concern, .. } if concern == "authn"))
         .unwrap_or_else(|| panic!("no sign-in proposal in {:?}", from_map(r)))
 }
 
@@ -168,14 +169,20 @@ fn a_plain_census_has_no_section_and_from_map_appends_one() {
     assert!(!plain.contains("From the map"), "{plain}");
     let with = drift(r, &["census", "--from-map"]);
     assert!(with.starts_with(&plain), "{plain}\n---\n{with}");
-    assert!(with[plain.len()..].contains("From the map (not mined"), "{with}");
+    assert!(
+        with[plain.len()..].contains("From the map (not mined"),
+        "{with}"
+    );
     let v = json(r, &["census", "--json"]);
     assert!(v.get("from_map").is_none(), "{v}");
     let v = json(r, &["census", "--json", "--from-map"]);
     let all = v["from_map"].as_array().expect("a from_map array");
     assert!(all.iter().any(|p| p["proposed"] == true), "{v}");
     // Deterministic.
-    assert_eq!(json(r, &["census", "--json", "--from-map"])["from_map"], v["from_map"]);
+    assert_eq!(
+        json(r, &["census", "--json", "--from-map"])["from_map"],
+        v["from_map"]
+    );
 }
 
 #[test]
@@ -198,8 +205,7 @@ fn a_passive_candidate_is_never_proposed() {
         .filter(|p| p["proposed"] == false)
         .collect();
     for item in list["candidates"].as_array().unwrap() {
-        let cand: promote::Candidate =
-            serde_json::from_value(item["candidate"].clone()).unwrap();
+        let cand: promote::Candidate = serde_json::from_value(item["candidate"].clone()).unwrap();
         if !cand.passive {
             continue;
         }

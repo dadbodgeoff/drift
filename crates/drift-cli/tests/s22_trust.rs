@@ -270,7 +270,9 @@ fn each_surface_says_what_a_failed_check_rests_on() {
     );
     let md = std::fs::read_to_string(&summary).unwrap();
     assert!(md.starts_with("## Drift\n"), "{md}");
-    let at = md.find("\n### What each rule rests on\n").unwrap_or_else(|| panic!("{md}"));
+    let at = md
+        .find("\n### What each rule rests on\n")
+        .unwrap_or_else(|| panic!("{md}"));
     let rests = &md[at..];
     for want in [
         format!("**`{id}`** "),
@@ -278,7 +280,10 @@ fn each_surface_says_what_a_failed_check_rests_on() {
         format!("- Evidence: {accepted}; {now}\n"),
         "- Not checked: 1 member\\(s\\) Drift could not read, never reported: ".to_string(),
         "- Copy: `".to_string(),
-        format!("- Here: `{}:1 GET`: it is not wrapped in withAuth\\(\\)", b.violator),
+        format!(
+            "- Here: `{}:1 GET`: it is not wrapped in withAuth\\(\\)",
+            b.violator
+        ),
         format!(". Holds near it: `{near}`"),
         format!(". Exception: add `{comment}` above the declaration, or a person runs `{exempt}`"),
         format!("- Wrong rule: `{advise}` keeps it as advice"),
@@ -309,11 +314,21 @@ fn each_surface_says_what_a_failed_check_rests_on() {
         assert!(section.contains(&want), "{want:?} in:\n{section}");
     }
     // Before what is not known, which stays the card's last line.
-    assert!(card.trim_end().lines().last().unwrap().starts_with("Not known: "), "{card}");
+    assert!(
+        card.trim_end()
+            .lines()
+            .last()
+            .unwrap()
+            .starts_with("Not known: "),
+        "{card}"
+    );
 
     // Nothing here says who accepted the rule or when: the repository records neither.
     for surface in [basis, line, rests, section] {
-        assert!(!surface.contains("accepted on") && !surface.contains("accepted by:"), "{surface}");
+        assert!(
+            !surface.contains("accepted on") && !surface.contains("accepted by:"),
+            "{surface}"
+        );
     }
 }
 
@@ -328,7 +343,10 @@ fn a_rule_accepted_before_its_evidence_was_kept_says_only_what_is_read_now() {
 
     let (code, text, _) = drift(r, &["check"], &[]);
     assert_eq!(code, 1, "{text}");
-    assert!(text.contains(&format!("\n  evidence     {now}\n")), "{text}");
+    assert!(
+        text.contains(&format!("\n  evidence     {now}\n")),
+        "{text}"
+    );
     assert!(!text.contains("accepted at"), "{text}");
 
     let summary_dir = tempfile::tempdir().unwrap();

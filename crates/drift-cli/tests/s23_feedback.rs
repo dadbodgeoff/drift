@@ -69,7 +69,11 @@ fn repo() -> Repo {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path().join(REPO_DIR);
     let r = root.as_path();
-    write(r, "package.json", "{ \"name\": \"marmoset-ledger-product\" }");
+    write(
+        r,
+        "package.json",
+        "{ \"name\": \"marmoset-ledger-product\" }",
+    );
     write(
         r,
         "tsconfig.json",
@@ -248,13 +252,16 @@ fn export_holds_counts_and_kinds_and_names_nothing() {
     let r = repo.root.as_path();
     let outside = tempfile::tempdir().unwrap();
     let out = outside.path().join("feedback.json");
-    let printed = drift(
-        r,
-        &["feedback", "export", "--out", out.to_str().unwrap()],
-    );
+    let printed = drift(r, &["feedback", "export", "--out", out.to_str().unwrap()]);
     // The summary says what it holds and leaves out, and where it goes, before writing.
-    assert!(printed.contains("the file holds this, and nothing else"), "{printed}");
-    assert!(printed.contains("It leaves out: every path, symbol"), "{printed}");
+    assert!(
+        printed.contains("the file holds this, and nothing else"),
+        "{printed}"
+    );
+    assert!(
+        printed.contains("It leaves out: every path, symbol"),
+        "{printed}"
+    );
     assert!(printed.contains(".drift/feedback/key"), "{printed}");
     assert!(printed.contains("nothing is sent"), "{printed}");
     assert!(printed.contains(out.to_str().unwrap()), "{printed}");
@@ -263,8 +270,14 @@ fn export_holds_counts_and_kinds_and_names_nothing() {
     let doc: Value = serde_json::from_str(&text).unwrap();
     assert_eq!(doc["schema"], "drift-feedback", "{doc}");
     assert_eq!(doc["include_reasons"], false);
-    assert!(doc["files_by_language"]["ts"].as_u64().unwrap() >= 40, "{doc}");
-    assert!(doc["files_by_language"]["tsx"].as_u64().unwrap() >= 30, "{doc}");
+    assert!(
+        doc["files_by_language"]["ts"].as_u64().unwrap() >= 40,
+        "{doc}"
+    );
+    assert!(
+        doc["files_by_language"]["tsx"].as_u64().unwrap() >= 30,
+        "{doc}"
+    );
 
     let auth = convention(&doc, "wrapped_by:call");
     assert_eq!(auth["decision"], "accepted", "{auth}");
@@ -296,7 +309,10 @@ fn export_holds_counts_and_kinds_and_names_nothing() {
     assert_eq!(wrong["new_code"], true, "{wrong}");
     assert_eq!(wrong["reason_given"], true, "{wrong}");
     let right = marks.iter().find(|m| m["verdict"] == "true").unwrap();
-    assert_eq!(right["new_code"], false, "the legacy outlier is in drift.lock: {right}");
+    assert_eq!(
+        right["new_code"], false,
+        "the legacy outlier is in drift.lock: {right}"
+    );
     let by_kind = &doc["marks_by_kind"]["wrapped_by:call"];
     assert_eq!(by_kind["true"], 1, "{doc}");
     assert_eq!(by_kind["wrong"], 1, "{doc}");
@@ -315,7 +331,10 @@ fn export_holds_counts_and_kinds_and_names_nothing() {
     assert!(log["total"]["shown"].as_u64().unwrap() >= 1, "{log}");
     assert_eq!(log["by_kind"]["wrapped_by:call"]["accepted"], 1, "{log}");
     assert_eq!(log["by_kind"]["wrapped_by:jsx"]["declined"], 1, "{log}");
-    assert!(log["by_channel"]["mined"]["accepted"].as_u64().unwrap() >= 1, "{log}");
+    assert!(
+        log["by_channel"]["mined"]["accepted"].as_u64().unwrap() >= 1,
+        "{log}"
+    );
 
     // The key stays on this machine, and is not in the document.
     let key = std::fs::read_to_string(r.join(".drift/feedback/key")).unwrap();
@@ -327,7 +346,10 @@ fn reasons_only_when_asked() {
     let repo = repo();
     let r = repo.root.as_path();
     let plain = drift(r, &["feedback", "export", "--dry-run"]);
-    assert!(!dry_run_document(&plain).contains("okapi secret reason"), "{plain}");
+    assert!(
+        !dry_run_document(&plain).contains("okapi secret reason"),
+        "{plain}"
+    );
     let with = drift(r, &["feedback", "export", "--dry-run", "--include-reasons"]);
     let doc = dry_run_document(&with);
     assert!(doc.contains("okapi secret reason, wombat said so"), "{doc}");
@@ -397,7 +419,10 @@ fn a_mark_changes_no_verdict() {
     .unwrap();
     assert_eq!(marks["marks"].as_array().unwrap().len(), 2, "{marks}");
     // Neither --true nor --wrong, or an unknown convention: refused, nothing recorded.
-    let out = run(r, &["feedback", "mark", &repo.auth, "app/api/okapi00/route.ts#GET"]);
+    let out = run(
+        r,
+        &["feedback", "mark", &repo.auth, "app/api/okapi00/route.ts#GET"],
+    );
     assert_eq!(out.status.code(), Some(2), "{out:?}");
     let out = run(r, &["feedback", "mark", "D-000000", "app/a.ts#x", "--true"]);
     assert_eq!(out.status.code(), Some(2), "{out:?}");

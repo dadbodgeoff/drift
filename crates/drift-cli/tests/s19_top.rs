@@ -149,7 +149,10 @@ fn top_ranks_what_the_request_reaches_and_counts_the_rest() {
     assert_eq!(v["top"]["shown"][0]["kind"], "nosql_injection", "{out}");
     assert_eq!(v["top"]["more"], 1, "{out}");
     assert_eq!(v["top"]["not_ranked"]["not_fed"], 1, "{out}");
-    assert!(v["entry_points"].is_array(), "the inventory is still all there");
+    assert!(
+        v["entry_points"].is_array(),
+        "the inventory is still all there"
+    );
 }
 
 #[test]

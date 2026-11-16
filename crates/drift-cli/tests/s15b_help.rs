@@ -10,8 +10,14 @@ static BIN: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
 /// Pins the help text: before S15b it read "The default tier is always listed in full."
 #[test]
 fn suggestions_help_says_only_this_cap_spares_the_default_tier() {
-    let out = Command::new(&*BIN).args(["census", "--help"]).output().unwrap();
+    let out = Command::new(&*BIN)
+        .args(["census", "--help"])
+        .output()
+        .unwrap();
     let help = String::from_utf8_lossy(&out.stdout);
     assert!(!help.contains("always listed in full"), "{help}");
-    assert!(help.contains("This cap never cuts the default tier"), "{help}");
+    assert!(
+        help.contains("This cap never cuts the default tier"),
+        "{help}"
+    );
 }
