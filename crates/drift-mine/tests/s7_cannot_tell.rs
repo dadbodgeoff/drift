@@ -368,7 +368,20 @@ fn a_stale_rule_advises_and_says_why() {
 
     // 20 of the 45 jobs lost the wrapper: 25 of 46 follow it now.
     let decayed = jobs(25, 21, vec![]);
-    let report = check(&decayed, &p, &Lock::default(), Scope::Accepted, None);
+    // [FIX1-G1] Breaks the lock does not hold are new violations: the gate's to stop,
+    // never a reason to stop gating (else one edit that breaks enough members, a shared
+    // barrel's, switches a blocking rule off). Not in the lock, the rule is not stale and
+    // they block.
+    let fresh = check(&decayed, &p, &Lock::default(), Scope::Accepted, None);
+    assert_eq!(fresh.standing[0].stale, None, "{:?}", fresh.standing[0]);
+    assert_eq!(fresh.standing[0].mode, "block");
+    assert!(!fresh.violations.is_empty());
+    assert!(fresh.violations.iter().all(|v| v.mode == "block" && !v.baselined));
+    assert!(fresh.blocking().count() > 0);
+    // Once they are legacy (in the lock: the code the lock knows no longer bears the rule
+    // out), it is stale.
+    let lock = drift_mine::check::baseline(&decayed, &p);
+    let report = check(&decayed, &p, &lock, Scope::Accepted, None);
     let s = &report.standing[0];
     assert_eq!((s.holders, s.members), (25, 46), "{s:?}");
     let why = s.stale.as_deref().expect("stale");

@@ -266,13 +266,43 @@ fn a_hostile_path_is_labelled_for_the_agent_and_quoted_in_every_command() {
     assert!(!said.contains(&format!("drift card {rel}")), "{said}");
 
     // A reviewer's dispute command for a new violation in a hostile directory.
-    let yaml = std::fs::read_to_string(r.join(".drift/conventions.yaml")).unwrap();
-    let wrap = yaml
-        .split("- id: ")
-        .skip(1)
-        .find(|b| b.contains("withAuth"))
-        .map(|b| b[..8].to_string())
-        .expect("withAuth convention learned");
+    // [FIX1-G1] Mining proposes no `withAuth` rule on these routes (nor did it before
+    // this build), and the one card naming `withAuth` is S10's from-map practice, which
+    // `--block` refuses outside git (a replay of history). So the mined-shape rule is
+    // written by hand, proposed, and a person blocks it.
+    let path = r.join(".drift/conventions.yaml");
+    let yaml = std::fs::read_to_string(&path).unwrap();
+    let wrap = "D-0000a0".to_string();
+    let rule = format!(
+        "- id: {wrap}
+  status: proposed
+  mode: advise
+  summary: HTTP handlers in app/** (route files) are wrapped in withAuth()
+  role:
+    package: ''
+    dir: app
+    file: route
+    entry: http
+    kind: function
+  rule:
+    type: wrapped_by
+    kind: call
+    any_of:
+    - lib/auth.ts#withAuth
+  evidence:
+    holders: 39
+    total: 41
+    lower_bound: 0.84
+    lift: 2.0
+  example: app/api/r00/route.ts#GET
+  selector_version: 3
+"
+    );
+    std::fs::write(
+        &path,
+        yaml.replacen("conventions:\n", &format!("conventions:\n{rule}"), 1),
+    )
+    .unwrap();
     drift(r, &["review", "--block", &wrap]);
     let violator = "app/api/$(touch pwned);'q\"x/route.ts";
     write(r, violator, UNGUARDED);
