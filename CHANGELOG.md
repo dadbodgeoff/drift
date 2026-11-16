@@ -227,7 +227,10 @@ main branch.
   `powershell -Command` is denied as `drift` is. A `drift.lock` saved with a
   UTF-8 byte-order mark reads as without it (before, an entry on its first line was
   lost), and a `.drift/security.lock` checked out with CRLF line endings is no
-  longer taken for a changed file. The Windows CI job runs every test binary
+  longer taken for a changed file. The Windows executable asks for the 8 MiB
+  main-thread stack Linux and macOS give: with Windows' default 1 MiB every
+  command that mines (`init`, `census`, `setup`, `practices`, `security`) died
+  of a stack overflow with no output. The Windows CI job runs every test binary
   (`--no-fail-fast`); it still never fails the run.
 - **Breaking: `drift init` no longer baselines violations of a convention the
   policy already had.** Before, re-running `drift init` baselined the current
