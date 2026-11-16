@@ -26,7 +26,7 @@ The plan is conservative on purpose. Drift's mined conventions were about half r
 
 1. **Choose one owner** for the Drift policy (see "Ownership" below) and one repository to start with.
 2. **Agree the rules of use:** advise-first, nothing blocks until a named person sets it to block, and review is never done in bulk.
-3. **Install the same Drift version** for everyone and for CI, and record it. The policy file records the engine version that wrote it (`engine:` at the top of `.drift/conventions.yaml`). Pin the Action's `drift-ref` to a tag or commit. This matters most before the first promoted practice: a Drift from before promotion cannot read the policy file once one is in it. See [Versioning and Upgrades](Versioning-and-Upgrades#promoted-practices-and-older-drift).
+3. **Install the same Drift version** for everyone and for CI, and record it. The policy file records the engine version that wrote it (`engine:` at the top of `.drift/conventions.yaml`). Pin the Action (`uses: dadbodgeoff/drift@<tag or commit>`), which runs the Drift of its own ref. This matters most before the first promoted practice: a Drift from before promotion cannot read the policy file once one is in it. See [Versioning and Upgrades](Versioning-and-Upgrades#promoted-practices-and-older-drift).
 
 ### Week 1: one person runs `drift init`
 

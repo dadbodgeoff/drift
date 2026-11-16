@@ -244,7 +244,7 @@ reports only what the change introduces: entry points lacking a guard most of th
 ```bash
 drift security --diff-base origin/main --fail-on unguarded-reaching,public
 ```
- `--github` prints notice annotations and a job summary. The merge base is scanned in a temporary checkout, so an entry point that lacked the guard before the change, or was renamed, is not reported. The GitHub Action runs this when asked (`security: "true"`, off by default until the shared-guard precision is measured), as notices that never fail the job; with `security-comment: "true"` (needs `pull-requests: write`) it posts the same text as one comment when the pull request introduces anything. See [Drift in CI](Drift-in-CI).
+ `--github` prints notice annotations and a job summary. The merge base is scanned in a temporary checkout, so an entry point that lacked the guard before the change, or was renamed, is not reported. The GitHub Action runs this when asked (`security: "true"`, off by default until the shared-guard precision is measured), as notices that never fail the job; with `comment: "true"` (needs `pull-requests: write`; `security-comment` is its earlier name) the one pull request comment it keeps up to date lists them too. See [Drift in CI](Drift-in-CI).
 
 ### CI workflows
 

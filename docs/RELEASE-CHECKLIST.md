@@ -22,7 +22,7 @@ release-facing file names **dadbodgeoff/drift** and the npm package
 | `npm/config.json` | `name: @dadbodgeoff/drift`, `repository: https://github.com/dadbodgeoff/drift` (platform packages are `@dadbodgeoff/drift-<platform>`) |
 | `Cargo.toml` (`[workspace.package] repository`) | `https://github.com/dadbodgeoff/drift` |
 | `integrations/claude-code/.claude-plugin/plugin.json` | `homepage` and `repository`: `https://github.com/dadbodgeoff/drift` |
-| `action.yml` | builds Drift with `cargo install --git https://github.com/dadbodgeoff/drift` |
+| `scripts/action/install.sh` (the Action) | downloads release archives from, and builds Drift from, `https://github.com/dadbodgeoff/drift` (`scripts/action/test.sh` checks it matches `npm/config.json`) |
 | `README.md` | `npm install -g @dadbodgeoff/drift`, `claude plugin marketplace add dadbodgeoff/drift`, `uses: dadbodgeoff/drift@…`, the pre-commit `repo:` URL |
 | `RELEASING.md` | `gh attestation verify … --repo dadbodgeoff/drift` |
 
@@ -41,7 +41,7 @@ record:
       marketplace command give users today.
 - [ ] **The release runs in dadbodgeoff/drift.** Trusted publishing,
       provenance (`gh attestation verify --repo dadbodgeoff/drift`) and the
-      Action's `cargo install --git` all assume the workflow runs there, not in
+      Action's release download (and its fallback build from source) all assume the workflow runs there, not in
       the development repository.
 - [ ] **The npm scope.** `@dadbodgeoff` must be the owner's npm user or
       organisation. On 2026-11-08 the registry answered "Not found" for

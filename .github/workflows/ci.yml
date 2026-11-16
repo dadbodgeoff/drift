@@ -211,3 +211,110 @@ jobs:
       # The browser for end-to-end tests matches the pinned playwright version.
       - run: npx playwright install --with-deps chromium
       - run: node apps/studio/tests/e2e/run.mjs
+
+  action:
+    # The GitHub Action itself (`uses: ./`) on a fixture repository made here: a base
+    # commit where `drift init` mined the `withAuth()` wrapper of 38 of 40 routes and a
+    # person set it to block, then a change that adds a route without it. The outputs
+    # are asserted; the comment and the status go to a fake `gh` (this job must not
+    # comment on Drift's own pull requests). The first `uses: ./` installs Drift as
+    # every run does (no release for this commit, so a cached build from the Action's
+    # own files); the second finds that binary by its commit. The scripts' logic is
+    # also tested in the `test` job (crates/drift-cli/tests/gap_action_scripts.rs).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - name: Install Drift with the Action
+        id: install
+        uses: ./
+        with:
+          install-only: "true"
+      - name: Fixture repository
+        env:
+          DRIFT_PATH: ${{ steps.install.outputs.drift-path }}
+        run: |
+          set -euo pipefail
+          test "$(command -v drift)" = "$DRIFT_PATH"
+          fx="$RUNNER_TEMP/fixture"
+          mkdir -p "$fx/lib" && cd "$fx"
+          echo '{ "name": "fx" }' > package.json
+          echo '{ "compilerOptions": { "baseUrl": ".", "paths": { "@/*": ["./*"] } } }' > tsconfig.json
+          printf 'export function withAuth<T>(h: T): T {\n  return h;\n}\n' > lib/auth.ts
+          for i in $(seq -w 0 39); do
+            mkdir -p "app/api/r$i"
+            if [ "$i" -lt 38 ]; then
+              printf 'import { withAuth } from "@/lib/auth";\n\nexport const GET = withAuth(async (req: Request) => {\n  return Response.json({ ok: true });\n});\n'
+            else
+              printf 'export async function GET(req: Request) {\n  return Response.json({ ok: true });\n}\n'
+            fi > "app/api/r$i/route.ts"
+          done
+          mkdir -p src/ui src/other
+          for i in $(seq 10 29); do
+            printf 'export function Card%s() {\n  return <div>c</div>;\n}\n' "$i" > "src/ui/c$i.tsx"
+            printf 'export function other%s() {\n  return %s;\n}\n' "$i" "$i" > "src/other/o$i.ts"
+          done
+          echo '.drift/cache/' > .gitignore
+          drift init
+          id=$(drift census --json | jq -r '.proposals[] | select(.rule_kind == "wrapped_by:call") | .id')
+          test -n "$id"
+          drift review --block "$id"
+          g() { git -c user.name=ci -c user.email=ci@example.invalid -c commit.gpgsign=false "$@"; }
+          g init -q -b base && g add -A && g commit -qm base
+          # What a pull request checkout has: its base branch as origin/<base>.
+          g update-ref "refs/remotes/origin/${GITHUB_BASE_REF:-main}" HEAD
+          g checkout -qb change
+          mkdir -p app/api/new
+          printf 'export async function POST(req: Request) {\n  return Response.json({ ok: true });\n}\n' > app/api/new/route.ts
+          g add -A && g commit -qm change
+      - name: Fake gh
+        run: |
+          mkdir -p "$RUNNER_TEMP/fake"
+          cat > "$RUNNER_TEMP/fake/gh" <<'SH'
+          #!/usr/bin/env bash
+          echo "gh $*" >> "$RUNNER_TEMP/gh.log"
+          exit 0
+          SH
+          chmod +x "$RUNNER_TEMP/fake/gh"
+          echo "$RUNNER_TEMP/fake" >> "$GITHUB_PATH"
+      - name: Run the Action on the fixture
+        id: drift
+        uses: ./
+        # A block violation fails the step; the next step asserts that it did.
+        continue-on-error: true
+        with:
+          working-directory: ${{ runner.temp }}/fixture
+          upload-sarif: file
+          comment: "true"
+          status: commit
+      - name: The Action's outputs
+        env:
+          OUTCOME: ${{ steps.drift.outcome }}
+          EXIT_CODE: ${{ steps.drift.outputs.exit-code }}
+          BLOCK: ${{ steps.drift.outputs.block }}
+          ADVISE: ${{ steps.drift.outputs.advise }}
+          SECURITY: ${{ steps.drift.outputs.security-findings }}
+          SECURITY_ADVICE: ${{ steps.drift.outputs.security-advice }}
+          UNCHECKED: ${{ steps.drift.outputs.unchecked }}
+          SARIF: ${{ steps.drift.outputs.sarif }}
+          REPORT: ${{ steps.drift.outputs.report }}
+          HOW: ${{ steps.drift.outputs.installed-from }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euxo pipefail
+          test "$OUTCOME" = failure
+          test "$EXIT_CODE" = 1
+          test "$BLOCK" = 1
+          test "$ADVISE" = 0
+          test "$SECURITY" = 0
+          test "$UNCHECKED" = 0
+          test "$HOW" = cached
+          jq -e '.runs[0].results | length == 1' "$SARIF"
+          jq -e '[.violations[] | select(.baselined | not)] | map(.path) == ["app/api/new/route.ts"]' "$REPORT"
+          grep -q "gh api --method POST repos/$GITHUB_REPOSITORY/statuses/" "$RUNNER_TEMP/gh.log"
+          if [ "$EVENT" = pull_request ]; then
+            jq -e '.diff.base' "$REPORT"
+            test "$SECURITY_ADVICE" = 1
+            grep -q "gh api --method POST repos/$GITHUB_REPOSITORY/issues/.*/comments" "$RUNNER_TEMP/gh.log"
+          fi

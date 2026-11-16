@@ -52,7 +52,7 @@ Three checks, each of which you can repeat:
 What does touch the network is around Drift, not inside it:
 
 - **Installing it:** `npm install`, downloading a release archive, or `cargo install` fetching crates.
-- **The GitHub Action:** it resolves `drift-ref` with `git ls-remote`, builds with `cargo install --git`, fetches the base branch history, and uploads SARIF to GitHub code scanning. That is your CI talking to GitHub, by design.
+- **The GitHub Action:** it resolves the Drift to run with `git ls-remote`, downloads a released binary and its `SHA256SUMS` from the GitHub release (or builds from source with cargo), fetches the base branch history, uploads SARIF to GitHub code scanning, and, when asked, posts a pull request comment and a commit status or check run through the GitHub API. That is your CI talking to GitHub, by design.
 - **Your agent:** hooks and MCP tools hand text to it (below).
 
 `drift --version` and every other command make no update check.
@@ -99,7 +99,7 @@ The Studio is an Electron desktop app over the same CLI. It is not packaged: you
   - bans: wildcard version requirements are denied (wildcard path dependencies allowed), multiple versions of a crate warn;
   - sources: only the crates.io registry; unknown registries and unknown git sources are denied.
 - **Releases** happen only in CI, with no long-lived tokens: the tag, `Cargo.toml` and the plugin version must agree; five targets are built; archives, `SHA256SUMS` and SLSA build provenance are attached to the GitHub Release; npm publishing waits for a person's approval and uses trusted publishing. Verify a download with `sha256sum -c SHA256SUMS --ignore-missing` and `gh attestation verify drift-vX.Y.Z-<target>.tar.gz --repo dadbodgeoff/drift`. The binaries are not code-signed or notarised; the checksums and provenance are what you can verify. Release status: no release has been published yet; see [Getting Started](Getting-Started).
-- **The Action** pins the actions it uses to commit SHAs, and builds Drift from the commit `drift-ref` resolves to.
+- **The Action** pins the actions it uses to commit SHAs, runs the Drift of its own ref (or of the commit `drift-ref` resolves to), checks a downloaded release archive against the release's `SHA256SUMS` and its `drift --version` against the tag, and shows text from the repository in its pull request comment only as escaped code.
 - **Reporting a vulnerability:** privately, through the repository's Security tab (see [SECURITY.md](https://github.com/dadbodgeoff/drift/blob/main/SECURITY.md)); in scope are the CLI and libraries, hook output (including prompt injection through repository content), the Action and release artifacts.
 - **License:** Apache-2.0.
 

@@ -1,0 +1,145 @@
+{
+  "violations": [
+    {
+      "id": "D-37416b",
+      "path": "app/api/x|y/route.ts",
+      "symbol": "GET‮<b>",
+      "line": 1,
+      "summary": "<img src=x onerror=alert(1)> @octocat #1 | `code` [link](javascript:alert(1)) **bold**\nsecond line :smile: www.example.com",
+      "evidence": "38/40",
+      "example": "app/api/r00/route.ts#GET",
+      "mode": "block",
+      "tier": "default",
+      "baselined": false,
+      "suppressed": false
+    },
+    {
+      "id": "D-aaaaaa",
+      "path": "src/a.ts",
+      "symbol": "POST",
+      "line": 7,
+      "summary": "Components in src are wrapped in Shell",
+      "evidence": "38/40",
+      "example": "app/api/r00/route.ts#GET",
+      "mode": "advise",
+      "tier": "default",
+      "baselined": false,
+      "suppressed": false
+    },
+    {
+      "id": "D-37416b",
+      "path": "app/api/r38/route.ts",
+      "symbol": "GET",
+      "line": 1,
+      "summary": "HTTP handlers in app/** (route files) are wrapped in withAuth()",
+      "evidence": "38/40",
+      "example": "app/api/r00/route.ts#GET",
+      "mode": "block",
+      "tier": "default",
+      "baselined": true,
+      "suppressed": false
+    },
+    {
+      "id": "D-37416b",
+      "path": "app/api/r39/route.ts",
+      "symbol": "GET",
+      "line": 1,
+      "summary": "HTTP handlers in app/** (route files) are wrapped in withAuth()",
+      "evidence": "38/40",
+      "example": "app/api/r00/route.ts#GET",
+      "mode": "block",
+      "tier": "default",
+      "baselined": true,
+      "suppressed": false
+    }
+  ],
+  "fixed": [],
+  "standing": [
+    {
+      "id": "D-37416b",
+      "whole": true,
+      "role": 41,
+      "members": 41,
+      "holders": 38,
+      "not_checked": 0,
+      "mode": "block"
+    }
+  ],
+  "diff": {
+    "base": "main",
+    "merge_base": "1eef2867037796b2cdc48cbe6944a247fcc9b85a",
+    "files_added": 1,
+    "files_changed": 0,
+    "files_renamed": 0,
+    "base_checked": false,
+    "policy_changed": false,
+    "files_deleted": 0,
+    "new_outside_diff": 0
+  },
+  "conventions": [
+    {
+      "id": "D-37416b",
+      "status": "accepted",
+      "mode": "block",
+      "effective_mode": "block",
+      "tier": "default",
+      "tier_reason": null,
+      "language": "ts",
+      "names_package": false,
+      "rule_kind": "wrapped_by:call",
+      "members": 40,
+      "blockable": true,
+      "agents": {
+        "shown_to_agents": true,
+        "reason": "default_tier",
+        "source": "default tier, accepted",
+        "text": "shown to agents (default tier)"
+      }
+    },
+    {
+      "id": "D-03d219",
+      "status": "proposed",
+      "mode": "advise",
+      "effective_mode": "advise",
+      "tier": "suggestion",
+      "tier_reason": "rule_kind",
+      "language": "ts",
+      "names_package": false,
+      "rule_kind": "practice",
+      "members": 40,
+      "blockable": true,
+      "agents": {
+        "shown_to_agents": false,
+        "reason": "candidate",
+        "source": "default tier (block candidate)",
+        "text": "not shown to agents (block candidate: reaches agents once you accept it)"
+      }
+    }
+  ],
+  "practices": {
+    "departures": [],
+    "added": [
+      {
+        "path": "app/api/new/route.ts",
+        "line": 1,
+        "symbol": "POST",
+        "kind": "http",
+        "method": "POST",
+        "route": "/api/new",
+        "assignment": "none",
+        "says": "no guard found in what Drift read"
+      }
+    ]
+  },
+  "security_advice": [
+    {
+      "kind": "no-guard",
+      "key": "app/api/x|y/route.ts#GET <script>",
+      "at": "app/api/x|y/route.ts:1",
+      "read": "@admin said ok"
+    }
+  ],
+  "unchecked": [
+    "big/huge.ts"
+  ]
+}

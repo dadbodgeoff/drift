@@ -68,6 +68,9 @@ on:
 permissions:
   contents: read
   security-events: write          # only for the code scanning upload
+  # pull-requests: write          # only with comment: "true"
+  # statuses: write               # only with status: commit
+  # checks: write                 # only with status: check
 jobs:
   drift:
     runs-on: ubuntu-latest
@@ -75,11 +78,13 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0           # optional: saves the Action deepening a shallow clone
-      - uses: dadbodgeoff/drift@main   # pin a tag or commit
+      - uses: dadbodgeoff/drift@v0.1.0   # a release tag or a full commit SHA (until 0.1.0 is released, a SHA): the Drift it runs
+        id: drift
         with:
-          drift-ref: main          # the default; pin a tag or a full commit SHA (and the same ref above)
           # pr-mode: "false"       # check the whole repository on pull requests too
           # upload-sarif: "false"  # private repos without GitHub Advanced Security, or PRs from forks
+          # comment: "true"        # one pull request comment, kept up to date
+          # status: commit         # a commit status named "drift" for branch protection
 ```
 
 Inputs, from `action.yml`:
@@ -87,25 +92,80 @@ Inputs, from `action.yml`:
 | Input | Default | What it does |
 | --- | --- | --- |
 | `args` | empty | extra arguments for `drift check`, for example `--strict` |
-| `upload-sarif` | `"true"` | upload results to GitHub code scanning (needs `security-events: write`) |
-| `drift-ref` | `main` | the Drift tag, branch or full commit SHA to build; pin a tag or commit for reproducible CI |
+| `working-directory` | `.` | the directory to check (for a repository checked out with `path:`) |
+| `upload-sarif` | `"true"` | upload results to GitHub code scanning (needs `security-events: write`); `"file"` writes the SARIF file (the `sarif` output) without uploading it |
+| `drift-ref` | empty | the Drift to run: empty runs the Drift of the Action's own ref; or a release tag, a branch or a full commit SHA |
 | `pr-mode` | `"true"` | on `pull_request` events, report and fail only on what the pull request introduces |
 | `security` | `"false"` | on pull requests in PR mode, also run `drift security --diff-base ... --github` (notices and a job summary; never fails the job) |
-| `security-comment` | `"false"` | with `security`, also post the findings as one pull-request comment (needs `pull-requests: write`) |
+| `comment` | `"false"` | on pull requests, keep one comment up to date with the new violations and security findings (needs `pull-requests: write`) |
+| `security-comment` | `"false"` | the earlier name of `comment`: `"true"` turns `comment` on |
+| `comment-limit` | `"20"` | rows the comment lists per section; the rest are counted |
+| `status` | `"off"` | `commit` posts a commit status (needs `statuses: write`), `check` a check run (needs `checks: write`) |
+| `status-name` | `"drift"` | the name of the commit status or check run |
+| `install-only` | `"false"` | `"true"` installs Drift (on `PATH` for later steps) and checks nothing |
 
 What the Action does:
 
-1. Resolves `drift-ref` to one commit, and builds Drift from source with `cargo` (a prebuilt binary is not used), caching the binary under that commit, so the first run takes several minutes and later runs use the cache.
-2. Uses a fresh fact cache outside the checkout (`DRIFT_CACHE_DIR`), so pull-request code cannot supply cached facts.
-3. When `upload-sarif` is on, runs `drift check --format sarif` over the whole repository and uploads it to code scanning. Code scanning tracks alerts across branches itself and shows a pull request only the alerts it adds. Exit 1 here is expected and tolerated; any other failure stops the job. Forks get no `security-events: write`, so turn the upload off for them.
-4. Runs `drift check --format github`, with `--diff-base origin/<base branch>` on `pull_request` events unless `pr-mode` is `"false"`. Every other event (`push`, and also `pull_request_target` and `merge_group`, whose checkouts are not the pull request's merge commit) falls back to the full check with the same output.
-5. With a shallow checkout (the `actions/checkout` default), fetches the last 100 commits of the base branch and deepens 100 at a time (up to 1,000 commits) until the merge base is there, fetching the full history only as a last resort, and says so in the log. `fetch-depth: 0` makes that unnecessary.
+1. Resolves the Drift to run to one commit: `drift-ref` when set, else the Action's own ref (`uses: dadbodgeoff/drift@<ref>`; a local `uses: ./` is its checkout's commit). There is no floating default.
+2. Installs it. When that commit is a release (a tag `vX.Y.Z`, or a commit SHA such a tag points at) and the runner is one a release ships a binary for (Linux x64 and arm64, macOS x64 and arm64, Windows x64), it downloads `drift-<tag>-<target>.tar.gz` and `SHA256SUMS` from the GitHub release, checks the archive against `SHA256SUMS` and the binary's `drift --version` against the tag, and stops the job if either does not match. Otherwise it builds Drift from source with `cargo build --release --locked` (from the Action's own files when they are that commit, else a shallow fetch of it), caching the cargo registry and the build output by commit, so later runs of the same commit reuse the binary and other commits rebuild only Drift's own crates. A binary is used only for the commit it was installed for.
+3. Uses a fresh fact cache outside the checkout (`DRIFT_CACHE_DIR`), so pull-request code cannot supply cached facts.
+4. When `upload-sarif` is on, runs `drift check --format sarif` over the whole repository and uploads it to code scanning. Code scanning tracks alerts across branches itself and shows a pull request only the alerts it adds. Exit 1 here is expected and tolerated; any other failure stops the job. Forks get no `security-events: write`, so turn the upload off for them.
+5. Runs `drift check --format github`, with `--diff-base origin/<base branch>` on `pull_request` events unless `pr-mode` is `"false"`, then the same check as `--format json`, from which the outputs are counted. Every other event (`push`, and also `pull_request_target` and `merge_group`, whose checkouts are not the pull request's merge commit) falls back to the full check.
+6. With a shallow checkout (the `actions/checkout` default), fetches the last 100 commits of the base branch and deepens 100 at a time (up to 1,000 commits) until the merge base is there, fetching the full history only as a last resort, and says so in the log. `fetch-depth: 0` makes that unnecessary.
+7. Posts the comment and the status when asked, then fails the job with `drift check`'s exit code.
 
-The job fails on new violations of conventions in block mode (`args: --strict` fails on advise mode too).
+The job fails on new violations of conventions in block mode (`args: --strict` fails on advise mode too), on a security finding the committed baseline sets to fail, and on an error.
 
-The Action builds from source and names the repository `dadbodgeoff/drift`.
+The Action's logic is in `scripts/action/` (`install.sh`, `check.sh`, `comment.sh`, `status.sh`), which `action.yml` calls; `bash scripts/action/test.sh` tests it with a fake `gh`, `curl`, `cargo` and `drift`, and the `action` job of Drift's own CI runs `uses: ./` on a fixture repository. The Action names the repository `dadbodgeoff/drift`.
 
-**Pin `drift-ref`.** Its default is `main`, so an Action left on the default builds whatever `main` is on the day of the run: a new Drift version can change what your CI reports without any change to your repository. Set `drift-ref` to a tag or a full 40-character commit SHA you have reviewed, and pin the Action itself (`uses: dadbodgeoff/drift@<ref>`) and the pre-commit `rev:` to the same ref, so that the Action, the hooks and the developers' installs agree. See [Versioning and Upgrades](Versioning-and-Upgrades).
+**Pin the Action.** The Drift it runs is the Action's own ref, so `uses: dadbodgeoff/drift@main` runs whatever `main` is on the day of the run: a new Drift version can change what your CI reports without any change to your repository. Pin a release tag or a full 40-character commit SHA you have reviewed, and the pre-commit `rev:` to the same ref, so that the Action, the hooks and the developers' installs agree. Set `drift-ref` only to run another Drift than the Action's. See [Versioning and Upgrades](Versioning-and-Upgrades).
+
+### Outputs
+
+Read with `steps.<id>.outputs.<name>` (give the step an `id`). The counts come from the `drift check --format json` report of the check that gates the job, so in PR mode they count what the pull request introduces.
+
+| Output | What it is |
+| --- | --- |
+| `exit-code` | `drift check`'s exit code: 0 nothing fails, 1 something fails, 2 an error; empty when the check did not run |
+| `block` | new violations of accepted conventions in block mode |
+| `advise` | new violations of accepted conventions in advise mode |
+| `security-findings` | security findings not in `.drift/security.lock`, of a kind it sets to fail (0 without a baseline) |
+| `security-advice` | security findings that advise: of a kind the baseline does not set to fail, or, with no baseline, what the pull request adds that a baseline would hold |
+| `unchecked` | files Drift could not read, here or at the merge base: their violations are unknown, not absent |
+| `report` | the path of the JSON report |
+| `sarif` | the path of the SARIF file, when `upload-sarif` is not `"false"` |
+| `drift-path`, `drift-commit` | the Drift binary the Action ran, and its commit |
+| `installed-from` | `release`, `build` or `cached` |
+
+A "new" violation is one Drift's own exit code counts: not in `drift.lock`, not suppressed with `drift-ignore`, not unsure because a file it depends on was not parsed, and not held back by the neighbour gate. When the JSON report cannot be read, the counts stay empty (never 0) and `exit-code` is 2, so the job fails.
+
+### The pull request comment
+
+With `comment: "true"`, on `pull_request` events, the Action keeps one comment on the pull request. Its body starts with a hidden marker (`<!-- drift-action:comment -->`), by which the next run finds it: the first run that has something to say creates it, and every later push edits it in place. When there is nothing left to say, the comment is edited to say so and that what it listed is resolved; a pull request that never had anything to report gets no comment. A comment the Action posted before it kept one up to date (marked `<!-- drift-security -->`) is adopted and edited the same way; other copies of it stay as they are.
+
+The comment lists, each with its file and line:
+
+- the new violations of accepted conventions, block mode first, with the rule and its id;
+- the security findings: those not in the committed security baseline (marked "fails" when the baseline sets their kind to fail), the advice `drift check --diff-base` gives with no baseline, and, with `security: "true"`, what `drift security --diff-base` reports (one row per place);
+- the files Drift could not read.
+
+Each section lists at most `comment-limit` rows and counts the rest; the job's log and summary list every one. Everything the comment shows from the repository (paths, symbols, rule text, keys, the base branch name) is shown as code, with every punctuation character written as a character reference, so a file path or rule text cannot add markdown, HTML, a link or an @mention to the comment. Failing to post the comment (a missing permission, a fork's read-only token) is a warning; the check's result does not depend on it.
+
+### The status
+
+With `status: commit` the Action posts a commit status, and with `status: check` a check run, named `drift` (or `status-name`), on the pull request's head commit (on other events, the commit the run is for): success for exit code 0, failure for 1, error for anything else, including a check that never ran to the end. Its description gives the counts (`1 block, 0 advise, 0 security`); a check run's summary is the comment's text. Branch protection can then require `drift` by name, whatever the job is called. Name the job something other than the status, or a rule that requires `drift` may match the job's own check too. A status that cannot be posted is a warning: a rule that requires it keeps waiting, so nothing passes by it.
+
+### Permissions
+
+| Input | Permission the job needs |
+| --- | --- |
+| (always) | `contents: read` |
+| `upload-sarif: "true"` (the default) | `security-events: write` |
+| `comment: "true"` | `pull-requests: write` |
+| `status: commit` | `statuses: write` |
+| `status: check` | `checks: write` |
+
+All of them use `github.token`. A pull request from a fork gets a read-only token: there the upload, the comment and the status fail (as warnings for the comment and the status), so turn them off for forks or run them from a workflow that has the permissions.
 
 ## Output formats
 
@@ -170,7 +230,7 @@ The hook runs `drift check` (or `drift check --strict`) with `language: system`,
 
 ## Caching
 
-- The Action caches the built binary, not facts.
+- The Action caches a binary it built (with the cargo registry and the build output) by Drift commit, never facts; a released binary is downloaded and checked each run.
 - For your own CI, `.drift/cache/` is local and git-ignored by itself. If you restore it between runs, do it from your pipeline's own cache store and not from files the pull request brought: Drift ignores a cache that git tracks and one containing a symbolic link, and a cache file that does not read back as written is replaced, but the Action's design (a fresh cache outside the checkout) is the safe default.
 - `--no-cache` on any command keeps nothing on disk; `DRIFT_CACHE_DIR=<dir>` puts the cache elsewhere.
 - A first run on a large repository is slower than later ones; see [How Drift Works](How-Drift-Works).
@@ -181,7 +241,7 @@ Run `drift init` once at the repository root, commit one `.drift/`, and run `dri
 
 ## Security notices on pull requests
 
-With `security: "true"` the Action runs `drift security --diff-base origin/<base> --github`: notice annotations and a job summary for what the pull request introduces (an entry point lacking a guard most of its siblings have, an unguarded entry point reaching a risky operation, a risky operation or client leak added, an entry point made internet-facing). It never fails the job. It is off by default until the shared-guard precision is measured. With `security-comment: "true"` it also posts one comment. See [Security Inventory](Security-Inventory).
+With `security: "true"` the Action runs `drift security --diff-base origin/<base> --github`: notice annotations and a job summary for what the pull request introduces (an entry point lacking a guard most of its siblings have, an unguarded entry point reaching a risky operation, a risky operation or client leak added, an entry point made internet-facing). It never fails the job. It is off by default until the shared-guard precision is measured. With `comment: "true"` the [pull request comment](#the-pull-request-comment) lists them too. See [Security Inventory](Security-Inventory).
 
 `drift security --diff-base` and `drift check --diff-base` also annotate every http, server action, GraphQL or RPC entry point the change adds where Drift found no guard in what it read, or cannot tell its guard, whatever its siblings do. These are notices; they never fail the check.
 
