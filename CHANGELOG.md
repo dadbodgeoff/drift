@@ -33,6 +33,13 @@ main branch.
 
 ### Added
 
+- **GraphQL operations outside NestJS are entry points.** Each root field
+  (`Query`, `Mutation`, `Subscription`) of a resolver map given to Apollo Server,
+  GraphQL Yoga, `makeExecutableSchema` or an Apollo subgraph, across files and
+  through `mergeResolvers` and spreads, and each root field a Pothos, Nexus or
+  TypeGraphQL schema adds, is a `graphql` entry point in `drift security` and the
+  practice map, with its guards (wrappers, `graphql-shield` rules), its `args` as
+  input and its body's checks. Not mined. TypeScript lowering version 87.
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise
