@@ -64,7 +64,8 @@ impl Linker<'_> {
             return Vec::new();
         };
         match framework {
-            Framework::ReactRouter => Vec::new(),
+            // Astro's middleware is put before its endpoints where they are listed.
+            Framework::ReactRouter | Framework::Astro => Vec::new(),
             Framework::SvelteKit => {
                 let Some(at) = dirs.iter().rposition(|d| *d == "routes") else {
                     return Vec::new();

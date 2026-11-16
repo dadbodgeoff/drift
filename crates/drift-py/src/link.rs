@@ -24,12 +24,12 @@ use crate::resolve::Resolver;
 pub(crate) mod config;
 #[path = "framework_links.rs"]
 mod framework_links;
+#[path = "graphql_link.rs"]
+mod graphql;
 #[path = "servers_link.rs"]
 mod servers;
 #[path = "unlisted.rs"]
 pub(crate) mod unlisted;
-#[path = "graphql_link.rs"]
-mod graphql;
 
 /// Maximum hops followed through re-exports (guards cycles).
 const MAX_HOPS: usize = 32;
