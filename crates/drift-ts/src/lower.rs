@@ -479,6 +479,23 @@ pub struct RawSymbol {
     pub made_fed_sinks: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub made_passes: Vec<RawRef>,
+    /// [`Self::fed_sinks`] by the parameter that feeds each: the kind and the
+    /// position of a parameter its operand is read off (`#4`; `*` where which one
+    /// is not read; `-` where the operand is given nothing of a parameter and
+    /// another argument is) ([`drift_core::controls::SINK_FED_AT`]). The operand is
+    /// the value the detectors judge: the first argument that is no number.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub fed_sinks_at: Vec<(String, String)>,
+    /// [`Self::param_passes`] by argument: the callee, the argument's position
+    /// (`#1`; `*` at or after a spread) and the position of the parameter it is
+    /// read off (`#0`, `*`) ([`drift_core::controls::PASSES_AT`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub param_passes_at: Vec<(RawRef, String, String)>,
+    /// [`Self::made_passes`] by argument: the callee and the position of an
+    /// argument read off a parameter of the function made
+    /// ([`drift_core::controls::PASSES_MADE_AT`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub made_passes_at: Vec<(RawRef, String)>,
     /// Where the body throws for every request for which what a callee gave is
     /// absent, each with the callees that may have given it
     /// ([`drift_core::controls::REFUSES_WITHOUT`]).
@@ -5187,6 +5204,9 @@ impl RawSymbol {
             loose_sides: vec![],
             made_fed_sinks: vec![],
             made_passes: vec![],
+            fed_sinks_at: vec![],
+            param_passes_at: vec![],
+            made_passes_at: vec![],
             param_flows: false,
             tags: vec![],
         }
@@ -5248,6 +5268,22 @@ struct Collector<'l, 's> {
     /// [`RawSymbol::made_fed_sinks`], [`RawSymbol::made_passes`].
     made_fed_sinks: BTreeSet<String>,
     made_passes: BTreeSet<RawRef>,
+    /// [`RawSymbol::fed_sinks_at`], [`RawSymbol::param_passes_at`],
+    /// [`RawSymbol::made_passes_at`].
+    fed_sinks_at: BTreeSet<(String, String)>,
+    param_passes_at: BTreeSet<(RawRef, String, String)>,
+    made_passes_at: BTreeSet<(RawRef, String)>,
+    /// The positions of the parameters of the walk's own function each of
+    /// [`Collector::own_locals`] is read off (`#0`, `*`): which parameter a value
+    /// the body hands on carries.
+    own_local_at: HashMap<SymbolId, BTreeSet<String>>,
+    /// The locals bound to a function written in the body that hands back a
+    /// MongoDB `$where` built from a part that is no constant (`const criteria =
+    /// () => ({ $where: \`this.x > '${threshold}'\` })`), with the positions of the
+    /// parameters of the walk's own function the text is read off
+    /// ([`Collector::where_maker`]): a query given what it hands back is given that
+    /// text.
+    where_makers: HashMap<SymbolId, BTreeSet<String>>,
     /// The parameters of the function the walk's own function hands back (`export
     /// function login() { return (req, res) => { ... } }`: `req`, `res`), and the
     /// locals bound to a value read off one: what the function made is called
@@ -5688,6 +5724,11 @@ impl<'l, 's> Collector<'l, 's> {
             param_passes: BTreeSet::new(),
             made_fed_sinks: BTreeSet::new(),
             made_passes: BTreeSet::new(),
+            fed_sinks_at: BTreeSet::new(),
+            param_passes_at: BTreeSet::new(),
+            made_passes_at: BTreeSet::new(),
+            own_local_at: HashMap::new(),
+            where_makers: HashMap::new(),
             product_params: HashSet::new(),
             own_locals: HashSet::new(),
             cred_seeds: HashSet::new(),
@@ -6462,6 +6503,12 @@ impl<'l, 's> Collector<'l, 's> {
             .extend(std::mem::take(&mut self.made_fed_sinks));
         sym.made_passes
             .extend(std::mem::take(&mut self.made_passes));
+        sym.fed_sinks_at
+            .extend(std::mem::take(&mut self.fed_sinks_at));
+        sym.param_passes_at
+            .extend(std::mem::take(&mut self.param_passes_at));
+        sym.made_passes_at
+            .extend(std::mem::take(&mut self.made_passes_at));
         for r in std::mem::take(&mut self.returns_calls) {
             if !sym.returns_calls.contains(&r) {
                 sym.returns_calls.push(r);
@@ -6706,6 +6753,143 @@ impl Collector<'_, '_> {
         self.names_one(e, &|s| {
             self.flow.own_param(s) || self.own_locals.contains(&s)
         })
+    }
+
+    /// The positions among the parameters of the walk's own function that `e`
+    /// reads a value off ([`Collector::reads_own_param`]): `#0` for the first, `*`
+    /// where which one is not read (a rest parameter, a local whose value was not
+    /// followed to one, a value the flow says is a parameter's by no name in `e`).
+    /// Empty where `e` reads none.
+    fn param_positions(&self, e: &Expression) -> BTreeSet<String> {
+        let mut out = BTreeSet::new();
+        for s in self.names_in(e) {
+            if self.flow.own_param(s) {
+                match self.flow.own_at.get(&s) {
+                    Some((_, token)) => {
+                        let at = token.split('.').next().unwrap_or(token);
+                        out.insert(at.to_string());
+                    }
+                    None => {
+                        out.insert("*".to_string());
+                    }
+                }
+            } else if self.own_locals.contains(&s) {
+                match self.own_local_at.get(&s) {
+                    Some(at) if !at.is_empty() => out.extend(at.iter().cloned()),
+                    _ => {
+                        out.insert("*".to_string());
+                    }
+                }
+            }
+        }
+        if out.is_empty() && self.taint(e).of_a_parameter() {
+            out.insert("*".to_string());
+        }
+        out
+    }
+
+    /// The bindings the names written in `e` refer to, functions written in it
+    /// included, as [`Collector::names_one`] reads them.
+    fn names_in(&self, e: &Expression) -> Vec<SymbolId> {
+        struct Names<'s> {
+            scoping: &'s Scoping,
+            found: Vec<SymbolId>,
+        }
+        impl<'a> Visit<'a> for Names<'_> {
+            fn visit_identifier_reference(&mut self, it: &IdentifierReference<'a>) {
+                if let Some(s) = it
+                    .reference_id
+                    .get()
+                    .and_then(|r| self.scoping.get_reference(r).symbol_id())
+                    && !self.found.contains(&s)
+                {
+                    self.found.push(s);
+                }
+            }
+        }
+        let mut names = Names {
+            scoping: self.l.scoping,
+            found: Vec::new(),
+        };
+        names.visit_expression(e);
+        names.found
+    }
+
+    /// A function written in the body (`() => { ... }`, `function () { ... }`) one
+    /// of whose own `return`s hands back an object written in place with a
+    /// MongoDB `$where` built from a part that is no constant: the positions of the
+    /// parameters of the walk's own function that text is read off
+    /// ([`Collector::param_positions`]), empty where it reads none. None for any
+    /// other value, and for an async function or a generator, whose value is no
+    /// such object.
+    fn where_maker(&self, f: &Expression) -> Option<BTreeSet<String>> {
+        struct Returns<'b, 'a> {
+            out: Vec<&'b Expression<'a>>,
+        }
+        impl<'b, 'a> Returns<'b, 'a> {
+            fn statements(&mut self, body: &'b [Statement<'a>]) {
+                for st in body {
+                    self.statement(st);
+                }
+            }
+            // The `return`s of the function's own body: not those of a function
+            // written in it.
+            fn statement(&mut self, st: &'b Statement<'a>) {
+                match st {
+                    Statement::ReturnStatement(r) => self.out.extend(r.argument.as_ref()),
+                    Statement::BlockStatement(b) => self.statements(&b.body),
+                    Statement::IfStatement(i) => {
+                        self.statement(&i.consequent);
+                        if let Some(a) = &i.alternate {
+                            self.statement(a);
+                        }
+                    }
+                    Statement::TryStatement(t) => {
+                        self.statements(&t.block.body);
+                        if let Some(h) = &t.handler {
+                            self.statements(&h.body.body);
+                        }
+                        if let Some(f) = &t.finalizer {
+                            self.statements(&f.body);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        let mut returns = Returns { out: Vec::new() };
+        match unwrap_expr(f) {
+            Expression::ArrowFunctionExpression(a) if !a.r#async => match &a.body {
+                ArrowFunctionBody::FunctionBody(b) => returns.statements(&b.statements),
+                other => returns.out.extend(other.as_expression()),
+            },
+            Expression::FunctionExpression(g) if !g.r#async && !g.generator => {
+                if let Some(body) = &g.body {
+                    returns.statements(&body.statements);
+                }
+            }
+            _ => return None,
+        }
+        let mut found = false;
+        let mut at = BTreeSet::new();
+        for r in returns.out {
+            let Expression::ObjectExpression(o) = peel(r) else {
+                continue;
+            };
+            for p in &o.properties {
+                let ObjectPropertyKind::ObjectProperty(p) = p else {
+                    continue;
+                };
+                if !p.computed
+                    && p.key.static_name().is_some_and(|k| k.as_str() == Some("$where"))
+                    && self.l.sql.builds_text(self.l.scoping, &p.value)
+                {
+                    found = true;
+                    at.extend(self.param_positions(&p.value));
+                }
+            }
+        }
+        found.then_some(at)
     }
 
     /// Some name written in `e` is a binding `of` holds.
@@ -12613,6 +12797,48 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             if let Some(r) = self.l.canon_callee(&it.callee) {
                 self.param_passes.insert(r);
             }
+            // The same by position: which argument carries which parameter on,
+            // and which parameter the operation's operand is read off. A reader
+            // follows what an entry point was sent through the parameter that
+            // carries it, not through any parameter handed on.
+            let callee = self.l.canon_callee(&it.callee);
+            let mut spread = false;
+            for (j, a) in it.arguments.iter().enumerate() {
+                spread |= matches!(a, Argument::SpreadElement(_));
+                let Some(e) = argument(a) else {
+                    continue;
+                };
+                let at = self.param_positions(e);
+                let pos = if spread {
+                    "*".to_string()
+                } else {
+                    format!("#{j}")
+                };
+                if let Some(r) = &callee {
+                    for p in &at {
+                        self.param_passes_at
+                            .insert((r.clone(), pos.clone(), p.clone()));
+                    }
+                }
+            }
+            if !kinds.is_empty() {
+                let operand = it
+                    .arguments
+                    .iter()
+                    .filter_map(argument)
+                    .find(|e| !matches!(unwrap_expr(e), Expression::NumericLiteral(_)));
+                let mut at = operand
+                    .map(|e| self.param_positions(e))
+                    .unwrap_or_default();
+                if at.is_empty() {
+                    at.insert("-".to_string());
+                }
+                for k in &kinds {
+                    for p in &at {
+                        self.fed_sinks_at.insert((k.to_string(), p.clone()));
+                    }
+                }
+            }
         }
         // What the callee is handed, where it is code a reader can follow.
         if self.fn_depth >= 1
@@ -12625,7 +12851,51 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             self.made_fed_sinks
                 .extend(kinds.iter().map(|k| k.to_string()));
             if let Some(r) = self.l.canon_callee(&it.callee) {
-                self.made_passes.insert(r);
+                self.made_passes.insert(r.clone());
+                // Which arguments carry what the function made was called with.
+                let mut spread = false;
+                for (j, a) in it.arguments.iter().enumerate() {
+                    spread |= matches!(a, Argument::SpreadElement(_));
+                    if argument(a).is_some_and(|e| self.reads_product_param(e)) {
+                        let pos = if spread {
+                            "*".to_string()
+                        } else {
+                            format!("#{j}")
+                        };
+                        self.made_passes_at.insert((r.clone(), pos));
+                    }
+                }
+            }
+        }
+        // A query given what a function of the body builds a `$where` in
+        // ([`Collector::where_makers`]): the text is the query's. Read since the
+        // measured build (the listed reading only).
+        let made_where: Vec<BTreeSet<String>> = it
+            .arguments
+            .iter()
+            .filter_map(|a| a.as_expression())
+            .filter_map(|e| match peel(e) {
+                Expression::CallExpression(c) => match unwrap_expr(&c.callee) {
+                    Expression::Identifier(id) => id
+                        .reference_id
+                        .get()
+                        .and_then(|r| self.l.scoping.get_reference(r).symbol_id())
+                        .and_then(|s| self.where_makers.get(&s))
+                        .cloned(),
+                    _ => None,
+                },
+                _ => None,
+            })
+            .collect();
+        if !made_where.is_empty() && !routes::unmeasured_listing() {
+            let nosql = signals::kind::NOSQL.to_string();
+            self.sinks.insert(nosql.clone());
+            let at: BTreeSet<String> = made_where.into_iter().flatten().collect();
+            if !at.is_empty() {
+                self.fed_sinks.insert(nosql.clone());
+                for p in at {
+                    self.fed_sinks_at.insert((nosql.clone(), p));
+                }
             }
         }
         for s in kinds {
@@ -13614,6 +13884,11 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         {
             self.sinks.insert(signals::kind::KEY_WRITE.into());
             self.fed_sinks.insert(signals::kind::KEY_WRITE.into());
+            // The key is the operand: the parameter it is read off.
+            for p in self.param_positions(&m.expression) {
+                self.fed_sinks_at
+                    .insert((signals::kind::KEY_WRITE.to_string(), p));
+            }
         }
         // `res = unauthorized();`
         if self.counting()
@@ -14042,6 +14317,13 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             }
             if self.reads_own_param(init) {
                 self.own_locals.insert(sym);
+                let at = self.param_positions(init);
+                self.own_local_at.insert(sym, at);
+            }
+            if self.const_decl
+                && let Some(at) = self.where_maker(init)
+            {
+                self.where_makers.insert(sym, at);
             }
             if let Some(of) = self.param_chain(init) {
                 self.param_values.insert(sym, of);

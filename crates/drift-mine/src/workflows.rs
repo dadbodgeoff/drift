@@ -19,7 +19,11 @@
 //!   }}`, or under `permissions: contents: write`). A tag is whatever its owner
 //!   points it at next: the code that runs with the job's secrets is not the code
 //!   that was reviewed. An action named by a full commit, one of the repository
-//!   itself (`./`) and the platform's own (`actions/`, `github/`) are not listed.
+//!   itself (`./`), one of the repository's own owner (`acme/actions/build@v1` in
+//!   a repository whose `origin` is `github.com/acme/app`: whoever moves its tag
+//!   can change the workflow itself) and the platform's own (`actions/`,
+//!   `github/`) are not listed. Where the repository's owner is not known (no
+//!   `origin` remote), every other owner's action is listed, as before.
 //! - **A download handed to an interpreter in a shell step** (`curl ... | sh`,
 //!   `bash <(curl ...)`): what the remote server sends that day is what runs.
 //!
@@ -68,6 +72,7 @@ pub fn read(root: &Path) -> Vec<WorkflowFinding> {
         .filter(|p| matches!(p.extension().and_then(|x| x.to_str()), Some("yml" | "yaml")))
         .collect();
     files.sort();
+    let owner = repository_owner(root);
     let mut out = Vec::new();
     for p in files {
         if std::fs::metadata(&p).map_or(true, |m| m.len() > MAX_BYTES) {
@@ -80,7 +85,7 @@ pub fn read(root: &Path) -> Vec<WorkflowFinding> {
             ".github/workflows/{}",
             p.file_name().and_then(|n| n.to_str()).unwrap_or_default()
         );
-        out.extend(read_text(&rel, &text));
+        out.extend(read_text_of(&rel, &text, owner.as_deref()));
     }
     out.sort();
     out.dedup();
@@ -243,10 +248,62 @@ fn reads_secret(v: &Value) -> bool {
     }
 }
 
+/// The owner of the repository at `root`, as its `origin` remote names it on
+/// GitHub (`https://github.com/acme/app`, `git@github.com:acme/app.git`): what
+/// `github.repository_owner` is when its workflows run. None where the repository
+/// has no such remote, or its git directory is not read.
+pub fn repository_owner(root: &Path) -> Option<String> {
+    let dot = root.join(".git");
+    // A worktree or a submodule: `.git` is a file naming the git directory.
+    let config = if dot.is_file() {
+        let text = std::fs::read_to_string(&dot).ok()?;
+        let dir = text.trim().strip_prefix("gitdir:")?.trim().to_string();
+        let dir = root.join(dir);
+        // A worktree's own directory holds no config: its common directory does.
+        let common = std::fs::read_to_string(dir.join("commondir"))
+            .ok()
+            .map(|c| dir.join(c.trim()));
+        std::fs::read_to_string(common.unwrap_or(dir).join("config")).ok()?
+    } else {
+        std::fs::read_to_string(dot.join("config")).ok()?
+    };
+    origin_owner(&config)
+}
+
+/// The owner a git config's `origin` remote names on GitHub.
+fn origin_owner(config: &str) -> Option<String> {
+    let mut in_origin = false;
+    for line in config.lines() {
+        let t = line.trim();
+        if t.starts_with('[') {
+            in_origin = t == "[remote \"origin\"]";
+            continue;
+        }
+        if !in_origin {
+            continue;
+        }
+        let Some((key, value)) = t.split_once('=') else {
+            continue;
+        };
+        if key.trim() != "url" {
+            continue;
+        }
+        let url = value.trim();
+        let path = url
+            .split_once("github.com/")
+            .or_else(|| url.split_once("github.com:"))
+            .map(|(_, p)| p)?;
+        let owner = path.split('/').next().filter(|o| !o.is_empty())?;
+        return Some(owner.to_string());
+    }
+    None
+}
+
 /// An action as a step names it is another owner's, named by what that owner can
-/// move: not a path of the repository, not the platform's own, not a full commit
-/// and not an image by its digest.
-fn unpinned(uses: &str) -> bool {
+/// move: not a path of the repository, not the platform's own, not one of the
+/// repository's own owner (`owner`, where it is known), not a full commit and not
+/// an image by its digest.
+fn unpinned(uses: &str, owner: Option<&str>) -> bool {
     if uses.is_empty() || uses.starts_with("./") || uses.starts_with("../") {
         return false;
     }
@@ -256,9 +313,10 @@ fn unpinned(uses: &str) -> bool {
     let Some((action, version)) = uses.split_once('@') else {
         return false;
     };
-    let owner = action.split('/').next().unwrap_or_default();
+    let of = action.split('/').next().unwrap_or_default();
     let commit = version.len() == 40 && version.chars().all(|c| c.is_ascii_hexdigit());
-    !commit && !matches!(owner, "actions" | "github")
+    let own = owner.is_some_and(|o| o.eq_ignore_ascii_case(of));
+    !commit && !own && !matches!(of, "actions" | "github")
 }
 
 /// The 1-based line of the first line of `text` that holds `needle`; 1 where none.
@@ -269,8 +327,71 @@ fn line_of(text: &str, needle: &str) -> u32 {
         .map_or(1, |i| i as u32 + 1)
 }
 
-/// The findings of one workflow file.
+/// The 0-based index of the first line of `text`, at `from` or after it, that
+/// holds the first line of `needle`.
+fn line_from(text: &str, from: usize, needle: &str) -> Option<usize> {
+    let needle = needle.lines().next().unwrap_or(needle).trim();
+    if needle.is_empty() {
+        return None;
+    }
+    text.lines()
+        .enumerate()
+        .skip(from)
+        .find(|(_, l)| l.contains(needle))
+        .map(|(i, _)| i)
+}
+
+/// The 0-based index of the line that opens the job `job` under `jobs:`: a key
+/// at the indentation of the first job. The `jobs:` line where it is not found.
+fn job_line(text: &str, job: &str) -> usize {
+    let lines: Vec<&str> = text.lines().collect();
+    let Some(jobs) = lines.iter().position(|l| l.starts_with("jobs:")) else {
+        return 0;
+    };
+    fn indent(l: &str) -> usize {
+        l.len() - l.trim_start().len()
+    }
+    let Some(first) = lines[jobs + 1..]
+        .iter()
+        .find(|l| !l.trim().is_empty() && !l.trim_start().starts_with('#'))
+        .map(|l| indent(l))
+        .filter(|i| *i > 0)
+    else {
+        return jobs;
+    };
+    let heads = [
+        format!("{job}:"),
+        format!("\"{job}\":"),
+        format!("'{job}':"),
+    ];
+    lines[jobs + 1..]
+        .iter()
+        .position(|l| {
+            indent(l) == first && heads.iter().any(|h| l.trim_start().starts_with(h.as_str()))
+        })
+        .map_or(jobs, |i| jobs + 1 + i)
+}
+
+/// What a step is found by in the text: what it uses, else the first line of its
+/// script, else its name.
+fn step_anchor(step: &Value) -> Option<&str> {
+    ["uses", "run", "name"]
+        .iter()
+        .find_map(|k| step.get(*k).and_then(Value::as_str))
+        .filter(|a| !a.trim().is_empty())
+}
+
+/// The findings of one workflow file, of a repository whose owner is not known.
 pub fn read_text(rel: &str, text: &str) -> Vec<WorkflowFinding> {
+    read_text_of(rel, text, None)
+}
+
+/// The findings of one workflow file of a repository of `owner`
+/// ([`repository_owner`]). A finding's line is where its step writes it: what is
+/// found is searched from the step's own line, inside its job, so the same
+/// expression written earlier in the file (a `concurrency` group, another job) is
+/// not where it points.
+pub fn read_text_of(rel: &str, text: &str, owner: Option<&str>) -> Vec<WorkflowFinding> {
     let Ok(doc) = serde_saphyr::from_str::<Value>(text) else {
         return Vec::new();
     };
@@ -292,7 +413,20 @@ pub fn read_text(rel: &str, text: &str) -> Vec<WorkflowFinding> {
         // that may write (its own permissions, else the workflow's).
         let holds = reads_secret(body)
             || grants_write(body.get("permissions").or_else(|| doc.get("permissions")));
+        // Where the steps of the job are read from, one after the other: each
+        // from its own line, the next after it.
+        let mut cursor = job_line(text, job);
         for step in steps {
+            let from = match step_anchor(step).and_then(|a| line_from(text, cursor, a)) {
+                Some(at) => {
+                    cursor = at + 1;
+                    at
+                }
+                None => cursor,
+            };
+            let line_of = |text: &str, needle: &str| -> u32 {
+                line_from(text, from, needle).map_or_else(|| line_of(text, needle), |i| i as u32 + 1)
+            };
             if let Some(run) = step.get("run").and_then(Value::as_str)
                 && let Some(command) = piped_download(run)
             {
@@ -306,7 +440,7 @@ pub fn read_text(rel: &str, text: &str) -> Vec<WorkflowFinding> {
             }
             if holds
                 && let Some(uses) = step.get("uses").and_then(Value::as_str)
-                && unpinned(uses)
+                && unpinned(uses, owner)
             {
                 out.push(WorkflowFinding {
                     kind: "unpinned_action".into(),
@@ -562,6 +696,70 @@ jobs:
                 "curl -fsSL https://get.example.com/install.sh | sudo bash -s -- -y",
                 "bash <(curl -s https://example.com/x.sh)",
             ]
+        );
+    }
+
+    /// Pins audit 5's line attribution: before, both findings pointed at line 3,
+    /// the first place the file writes the expression (a `concurrency` group).
+    #[test]
+    fn a_finding_points_at_the_step_that_writes_it() {
+        let text = "on: pull_request_target
+concurrency:
+  group: ${{ github.head_ref }}
+  cancel-in-progress: true
+jobs:
+  a:
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo ${{ github.head_ref }}
+  b:
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo ${{ github.head_ref }}
+";
+        let lines: Vec<(String, u32)> = read_text(".github/workflows/x.yml", text)
+            .into_iter()
+            .filter(|f| f.kind == "script_injection")
+            .map(|f| (f.job, f.line))
+            .collect();
+        assert_eq!(lines, [("a".to_string(), 9), ("b".to_string(), 13)]);
+    }
+
+    /// Pins audit 5's owner: before, `acme/actions/build@v1` in a repository of
+    /// `acme` was listed as another owner's action.
+    #[test]
+    fn an_action_of_the_repositorys_own_owner_is_not_another_owners() {
+        let text = "on: push
+jobs:
+  deploy:
+    steps:
+      - uses: acme/actions/build@v1
+        with:
+          token: ${{ secrets.TOKEN }}
+      - uses: someone/deploy@v2
+";
+        let details = |owner: Option<&str>| -> Vec<String> {
+            read_text_of(".github/workflows/x.yml", text, owner)
+                .into_iter()
+                .map(|f| f.detail)
+                .collect()
+        };
+        assert_eq!(details(Some("Acme")), ["someone/deploy@v2"]);
+        // Not known: every other owner's, as before.
+        assert_eq!(details(None), ["acme/actions/build@v1", "someone/deploy@v2"]);
+        assert_eq!(
+            origin_owner(
+                "[core]\n\tbare = false\n[remote \"origin\"]\n\turl = git@github.com:acme/app.git\n"
+            ),
+            Some("acme".to_string())
+        );
+        assert_eq!(
+            origin_owner("[remote \"origin\"]\n\turl = https://github.com/makeplane/plane\n"),
+            Some("makeplane".to_string())
+        );
+        assert_eq!(
+            origin_owner("[remote \"upstream\"]\n\turl = https://github.com/x/y\n"),
+            None
         );
     }
 

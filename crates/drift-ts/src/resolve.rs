@@ -4010,6 +4010,30 @@ impl<'r> Linker<'r> {
                                 .filter(|c| !c.starts_with("global#") && !c.starts_with("pkg:"))
                                 .map(|c| format!("{}{c}", drift_core::controls::PASSES_MADE)),
                         )
+                        // The same by position ([`drift_core::controls::SINK_FED_AT`],
+                        // [`drift_core::controls::PASSES_AT`],
+                        // [`drift_core::controls::PASSES_MADE_AT`]).
+                        .chain(s.fed_sinks_at.iter().map(|(k, at)| {
+                            format!("{}{k}\t{at}", drift_core::controls::SINK_FED_AT)
+                        }))
+                        .chain(
+                            s.param_passes_at
+                                .iter()
+                                .map(|(callee, arg, at)| (self.canon(rel, callee), arg, at))
+                                .filter(|(c, _, _)| !c.starts_with("global#") && !c.starts_with("pkg:"))
+                                .map(|(c, arg, at)| {
+                                    format!("{}{c}\t{arg}\t{at}", drift_core::controls::PASSES_AT)
+                                }),
+                        )
+                        .chain(
+                            s.made_passes_at
+                                .iter()
+                                .map(|(callee, arg)| (self.canon(rel, callee), arg))
+                                .filter(|(c, _)| !c.starts_with("global#") && !c.starts_with("pkg:"))
+                                .map(|(c, arg)| {
+                                    format!("{}{c}\t{arg}", drift_core::controls::PASSES_MADE_AT)
+                                }),
+                        )
                         .chain(metadata)
                         .chain(uses)
                         .chain(s.given_result.iter().map(|(by, callee)| {

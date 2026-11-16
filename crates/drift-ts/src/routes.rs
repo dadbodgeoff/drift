@@ -1875,6 +1875,115 @@ impl Lowerer<'_> {
         }
     }
 
+    /// The calls a handler value is handed that build what it wraps: `searchProducts()`
+    /// in `asyncHandler(searchProducts())`, through nested wrappers
+    /// (`a(b(makeHandler()))`), each as the call is named (`routes/search.ts#
+    /// searchProducts()`). A bound method (`ctrl.list.bind(ctrl)`) is a reference
+    /// ([`Lowerer::inner_handler_refs`]), and globals are left out: neither is a
+    /// function the repository makes.
+    fn handler_factories(&self, e: &Expression, out: &mut Vec<RawRef>, depth: usize) {
+        if depth > 3 {
+            return;
+        }
+        let Expression::CallExpression(c) = unwrap_expr(e) else {
+            return;
+        };
+        for a in &c.arguments {
+            let Some(x) = a.as_expression() else {
+                continue;
+            };
+            let Expression::CallExpression(inner) = unwrap_expr(x) else {
+                continue;
+            };
+            let binds = matches!(
+                unwrap_expr(&inner.callee),
+                Expression::StaticMemberExpression(m) if m.property.name == "bind"
+            );
+            if !binds
+                && let Some(r) = self.canon(x)
+                && !matches!(r.base, RawBase::Global(_))
+                && !out.contains(&r)
+            {
+                out.push(r);
+            }
+            self.handler_factories(x, out, depth + 1);
+        }
+    }
+
+    /// A handler a factory builds, given for a path that names a parameter
+    /// (`app.use("/ftp/:file", servePublicFiles())`): the path is one resource, which
+    /// what the call made answers for every method. A router is mounted under a
+    /// prefix; a path with a parameter in it is served. Listed as an `ALL` route for
+    /// the practice map and `drift security` only ([`RawSymbol::in_place`]), with
+    /// what the router runs before it, as a route registered by its verb is. A call
+    /// of a package (a bare specifier) or of a global builds nothing the repository
+    /// can read, and is not listed: whether it serves or mounts is not known.
+    fn factory_mount(
+        &mut self,
+        adapter: &'static str,
+        receiver: &str,
+        prefix: &str,
+        exprs: &[&Expression],
+        line: u32,
+    ) {
+        let [_, before @ .., last] = exprs else {
+            return;
+        };
+        let last: &Expression = last;
+        if !prefix.split('/').any(|seg| seg.starts_with(':')) {
+            return;
+        }
+        let Expression::CallExpression(call) = unwrap_expr(last) else {
+            return;
+        };
+        if !in_place_functions(last).is_empty()
+            || call
+                .arguments
+                .iter()
+                .filter_map(|a| a.as_expression())
+                .any(|a| !in_place_functions(a).is_empty())
+        {
+            return;
+        }
+        let Some(maker) = self.canon(&call.callee) else {
+            return;
+        };
+        match &maker.base {
+            RawBase::Global(_) => return,
+            RawBase::Import { spec, .. } if bare_specifier(spec) => return,
+            _ => {}
+        }
+        let made = self.canon(last);
+        let mut sym = RawSymbol::empty("", SymbolKind::Function, line);
+        for mw in self.express.get(receiver).cloned().unwrap_or_default() {
+            sym.wraps.push((mw, WrapKind::Call));
+        }
+        let mut unread: Vec<String> = Vec::new();
+        for mw in before {
+            self.route_position(mw, &mut sym, &mut unread);
+            if let Some(r) = self.middleware_ref(mw) {
+                sym.wraps.push((r, WrapKind::Call));
+            }
+        }
+        unread.extend(self.scope_unread.get(receiver).into_iter().flatten().cloned());
+        sym.app_unread = unread;
+        sym.app_passed = self.passed.get(receiver).cloned().unwrap_or_default();
+        // What was given for a path that takes this one runs before it; not the
+        // factory itself, which this same registration noted as a hook of its path.
+        self.hooks_covering(receiver, prefix, &mut sym);
+        sym.app_middleware
+            .retain(|h| *h != maker && Some(h) != made.as_ref());
+        for c in self.calls_covering(receiver, prefix) {
+            if c.callee != maker && !sym.guard_calls.contains(&c) {
+                sym.guard_calls.push(c);
+            }
+        }
+        self.handler_facts(Some(last), &mut sym);
+        sym.in_place = true;
+        self.push_route(adapter, "ALL", prefix, line, sym);
+        self.route_on(receiver);
+    }
+
     // ------------------------------------------------------------------ Express / Hono / Fastify (top level)
 
     /// The adapter of the router a registration chain starts from, when the chain
@@ -2144,6 +2253,9 @@ impl Lowerer<'_> {
                         for x in &exprs[1..] {
                             self.note_hook(&receiver, &prefix, "use", x);
                         }
+                        // `app.use("/ftp/:file", servePublicFiles())`: what the call
+                        // made answers there, a route of the readings that list.
+                        self.factory_mount(adapter, &receiver, &prefix, &exprs, line);
                         if let Some(target) = exprs.last().and_then(|t| self.canon(t)) {
                             let mut middleware =
                                 self.express.get(&receiver).cloned().unwrap_or_default();
@@ -2467,6 +2579,18 @@ impl Lowerer<'_> {
                             );
                             let mut named = Vec::new();
                             self.inner_handler_refs(handler, &mut named, 0);
+                            // What a wrapper is handed that a call builds
+                            // (`asyncHandler(searchProducts())`): the function that
+                            // call makes is what answers, a call of the route for the
+                            // readings that list, as `app.get("/p", login())` is.
+                            let mut made = Vec::new();
+                            self.handler_factories(handler, &mut made, 0);
+                            for mut r in made {
+                                r.member.push_str("(ref)");
+                                if !sym.listed_calls.contains(&r) {
+                                    sym.listed_calls.push(r);
+                                }
+                            }
                             if wrapped.is_empty()
                                 && named.is_empty()
                                 && let Some(r) = self.middleware_ref(handler)

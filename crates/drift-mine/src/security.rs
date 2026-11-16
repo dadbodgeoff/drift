@@ -1127,13 +1127,13 @@ impl Boundaries {
                 Some(base) if base == rel => stacks.push((rel.clone(), text, overrides(&dir))),
                 // Another compose file beside the base that names a service of it
                 // (`docker-compose.prod.yml`) is laid over it, as `-f base -f this`
-                // does: a stack of its own, named by this file.
+                // does: a stack of its own, named by this file. Files named with
+                // `-f` are all compose reads: the override files are not merged in.
                 Some(base)
                     if read(base)
                         .is_ok_and(|b| !services_of(&b).is_disjoint(&services_of(&text))) =>
                 {
-                    let mut over = overrides(&dir);
-                    over.push((rel.clone(), text));
+                    let over = vec![(rel.clone(), text)];
                     stacks.push((rel.clone(), read(base).unwrap_or_default(), over));
                 }
                 _ => stacks.push((rel.clone(), text, Vec::new())),
@@ -6895,6 +6895,155 @@ fn internal_target(r: &str) -> Option<(&str, &str)> {
     Some((module, name))
 }
 
+/// Which parameters of a body hold what an entry point was sent, as the reach
+/// follows it ([`Index::reaches`]).
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum Carry {
+    /// None of them: nothing on the way handed it on.
+    None,
+    /// Any of them: the entry point's own handler, or a call whose facts say
+    /// only that some value read off a parameter was handed on.
+    All,
+    /// These positions (`#0`, `#2`), as the calls on the way handed it on.
+    At(BTreeSet<String>),
+}
+
+impl Carry {
+    /// Whether the parameter at `at` (`#1`, or `*` for one whose position is
+    /// not read) holds it.
+    fn holds(&self, at: &str) -> bool {
+        match self {
+            Carry::None => false,
+            Carry::All => true,
+            Carry::At(set) => at == "*" || set.contains(at),
+        }
+    }
+
+    /// Adds what `other` holds; whether that added anything.
+    fn join(&mut self, other: &Carry) -> bool {
+        match other {
+            Carry::None => false,
+            Carry::All => {
+                let changed = *self != Carry::All;
+                *self = Carry::All;
+                changed
+            }
+            Carry::At(b) => match self {
+                Carry::All => false,
+                Carry::None => {
+                    *self = Carry::At(b.clone());
+                    true
+                }
+                Carry::At(a) => {
+                    let before = a.len();
+                    a.extend(b.iter().cloned());
+                    a.len() > before
+                }
+            },
+        }
+    }
+
+    /// Holds the argument at `arg` of a call (`#1`; `*` at or after a spread).
+    fn add_arg(&mut self, arg: &str) {
+        if arg == "*" {
+            *self = Carry::All;
+            return;
+        }
+        match self {
+            Carry::All => {}
+            Carry::None => *self = Carry::At(BTreeSet::from([arg.to_string()])),
+            Carry::At(set) => {
+                set.insert(arg.to_string());
+            }
+        }
+    }
+}
+
+/// Whether the body's operation of kind `kind` is given what `carried` holds: its
+/// operand read off a parameter that holds it
+/// ([`drift_core::controls::SINK_FED_AT`]). Where the facts say no position for
+/// the kind (Python, a body read before positions were), any parameter does
+/// ([`drift_core::controls::SINK_FED`]).
+fn fed_through(facts: &[String], kind: &str, carried: &Carry) -> bool {
+    use drift_core::controls::{SINK_FED, SINK_FED_AT};
+    if *carried == Carry::None {
+        return false;
+    }
+    let at: Vec<&str> = facts
+        .iter()
+        .filter_map(|c| c.strip_prefix(SINK_FED_AT))
+        .filter_map(|c| c.split_once('\t'))
+        .filter(|(k, _)| *k == kind)
+        .map(|(_, at)| at)
+        .collect();
+    if at.is_empty() {
+        return facts
+            .iter()
+            .any(|c| c.strip_prefix(SINK_FED).is_some_and(|k| k == kind));
+    }
+    at.iter().any(|p| *p != "-" && carried.holds(p))
+}
+
+/// Which parameters of what the call `call` runs hold what `carried` holds of the
+/// calling body: the callee's parameter at each argument read off a parameter
+/// that holds it ([`drift_core::controls::PASSES_AT`]), any of them where the facts
+/// say no position ([`drift_core::controls::PASSES_PARAM`]). With `made` (the
+/// body is the entry point's handler or what names it), the arguments read off a
+/// parameter of the function the body hands back too
+/// ([`drift_core::controls::PASSES_MADE_AT`], [`drift_core::controls::PASSES_MADE`]).
+fn carried_into(facts: &[String], call: &str, carried: &Carry, made: bool) -> Carry {
+    use drift_core::controls::{PASSES_AT, PASSES_MADE, PASSES_MADE_AT, PASSES_PARAM};
+    let says = |start: &str| {
+        facts
+            .iter()
+            .any(|c| c.strip_prefix(start).is_some_and(|x| x == call))
+    };
+    let mut out = Carry::None;
+    if *carried != Carry::None {
+        let at: Vec<(&str, &str)> = facts
+            .iter()
+            .filter_map(|c| c.strip_prefix(PASSES_AT))
+            .filter_map(|c| {
+                let mut parts = c.rsplitn(3, '\t');
+                let at = parts.next()?;
+                let arg = parts.next()?;
+                let callee = parts.next()?;
+                (callee == call).then_some((arg, at))
+            })
+            .collect();
+        if at.is_empty() {
+            if says(PASSES_PARAM) {
+                out = Carry::All;
+            }
+        } else {
+            for (arg, from) in at {
+                if carried.holds(from) {
+                    out.add_arg(arg);
+                }
+            }
+        }
+    }
+    if made {
+        let at: Vec<&str> = facts
+            .iter()
+            .filter_map(|c| c.strip_prefix(PASSES_MADE_AT))
+            .filter_map(|c| c.rsplit_once('\t'))
+            .filter(|(callee, _)| *callee == call)
+            .map(|(_, arg)| arg)
+            .collect();
+        if at.is_empty() {
+            if says(PASSES_MADE) {
+                out = Carry::All;
+            }
+        } else {
+            for arg in at {
+                out.add_arg(arg);
+            }
+        }
+    }
+    out
+}
+
 struct Index<'a> {
     /// (module, exported or local name) -> symbol.
     by_name: BTreeMap<(&'a str, &'a str), (&'a FileFacts, &'a Symbol)>,
@@ -7101,15 +7250,18 @@ impl<'a> Index<'a> {
         // Hops are counted between symbols: a call of a sibling method of the same class
         // (`this.fetchFile()` in `download`) is no hop, as it was none while a class was
         // read as a whole.
-        // `carried`: every call on the way handed on a value read off a parameter
-        // ([`drift_core::controls::PASSES_PARAM`]), so what the entry point was sent
-        // may be what the body here is given. A body is read once carried and once
-        // not, the carried reading first where both are met.
-        let mut queue: VecDeque<(Node, Vec<String>, usize, bool)> = VecDeque::new();
-        let mut seen_carried: BTreeSet<String> = BTreeSet::new();
+        // `carried`: which parameters of the body hold what the entry point was
+        // sent ([`Carry`]): every call on the way handed it on, at the argument
+        // the callee's parameter is ([`drift_core::controls::PASSES_AT`]), or,
+        // where the facts say no position, handed on some value read off a
+        // parameter ([`drift_core::controls::PASSES_PARAM`]). A body is read again
+        // when it is met carrying a parameter it was not read carrying, the
+        // carried reading first where both are met.
+        let mut queue: VecDeque<(Node, Vec<String>, usize, Carry)> = VecDeque::new();
+        let mut seen_carried: BTreeMap<String, Carry> = BTreeMap::new();
         seen.insert(first.key());
-        seen_carried.insert(first.key());
-        queue.push_back((first, vec![entry], 0, true));
+        seen_carried.insert(first.key(), Carry::All);
+        queue.push_back((first, vec![entry], 0, Carry::All));
         while let Some((node, chain, hops, carried)) = queue.pop_front() {
             let facts = flow_facts(&node);
             let says = |start: &str, what: &str| {
@@ -7123,8 +7275,8 @@ impl<'a> Index<'a> {
             let made = chain.len() <= 2;
             for k in node.sinks() {
                 if chain.len() == 1 || INPUT_SINKS.contains(&k.as_str()) {
-                    use drift_core::controls::{SINK_FED, SINK_FED_MADE};
-                    let fed = (carried && says(SINK_FED, k)) || (made && says(SINK_FED_MADE, k));
+                    use drift_core::controls::SINK_FED_MADE;
+                    let fed = fed_through(facts, k, &carried) || (made && says(SINK_FED_MADE, k));
                     match found.get(k) {
                         Some((_, was)) if *was || !fed => {}
                         _ => {
@@ -7141,10 +7293,16 @@ impl<'a> Index<'a> {
                     continue;
                 };
                 let key = next.key();
-                let passes = (carried && says(drift_core::controls::PASSES_PARAM, c))
-                    || (made && says(drift_core::controls::PASSES_MADE, c));
+                let passes = carried_into(facts, c, &carried, made);
                 let new = seen.insert(key.clone());
-                let newly_carried = passes && seen_carried.insert(key.clone());
+                let newly_carried = if passes == Carry::None {
+                    false
+                } else if let Some(was) = seen_carried.get_mut(&key) {
+                    was.join(&passes)
+                } else {
+                    seen_carried.insert(key.clone(), passes.clone());
+                    true
+                };
                 if new || newly_carried {
                     let same = std::ptr::eq(next.symbol, node.symbol);
                     let mut chain = chain.clone();
