@@ -491,6 +491,7 @@ mod tests {
             promoted_from_hidden: false,
             promoted_from_practice: None,
             from_map: None,
+            accepted_evidence: None,
         }
     }
 

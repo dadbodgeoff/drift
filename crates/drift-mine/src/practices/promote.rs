@@ -1701,6 +1701,7 @@ pub fn convention(c: &Candidate) -> Convention {
         promoted_from_hidden: false,
         promoted_from_practice: c.ways.first().map(|w| w.id.clone()),
         from_map: None,
+        accepted_evidence: None,
     }
 }
 

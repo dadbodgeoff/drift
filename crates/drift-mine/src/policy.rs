@@ -783,6 +783,39 @@ pub struct Convention {
     /// or hand-promoted convention, so they are written as before. Not part of the id.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub from_map: Option<String>,
+    /// The evidence as it stood when a person accepted the convention: `drift init`
+    /// refreshes [`Convention::evidence`] on every run, so without this nobody can tell
+    /// that the role a block was accepted on has since shrunk or changed. Frozen the
+    /// first time a run meets the convention accepted ([`ConventionsFile::merge`], and
+    /// [`Convention::freeze_accepted_evidence`] for a command that accepts), and carried
+    /// with the decision when its id changes. Absent until then, so every file written
+    /// before is written as before. Not part of the id.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub accepted_evidence: Option<AcceptedEvidence>,
+}
+
+/// What a person saw when they accepted a convention ([`Convention::accepted_evidence`]):
+/// the role's size, how many of the members the rule is about followed it, and the
+/// confidence Drift had.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AcceptedEvidence {
+    /// Members of the role ([`Evidence::role_size`]): the size the block floor reads.
+    pub role_size: usize,
+    /// Members that followed the rule, of `total`.
+    pub holders: usize,
+    pub total: usize,
+    pub lower_bound: f64,
+}
+
+impl AcceptedEvidence {
+    pub fn of(e: &Evidence) -> Self {
+        AcceptedEvidence {
+            role_size: e.role_size(),
+            holders: e.holders,
+            total: e.total,
+            lower_bound: e.lower_bound,
+        }
+    }
 }
 
 /// A file a person set apart from its convention as a different kind of thing
@@ -824,7 +857,8 @@ pub fn different_kind_path(text: &str) -> anyhow::Result<String> {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Exception {
     /// `path#symbol`, as `drift.lock` keys members: it survives the member moving within
-    /// its file, not a rename or a move to another file.
+    /// its file. A move or a rename is followed through the fingerprint the lock keeps
+    /// beside the member's line ([`carry_moved_exceptions`]).
     pub member: String,
     /// Why it is fine, in the reviewer's words: one line, at most
     /// [`MAX_EXCEPTION_REASON`] characters. Echoed to agents only through
@@ -879,6 +913,15 @@ pub fn exception_member(text: &str) -> anyhow::Result<String> {
 }
 
 impl Convention {
+    /// Keep the evidence as it is now as what the person accepted
+    /// ([`Convention::accepted_evidence`]), unless it was kept already: for a command that
+    /// records an acceptance.
+    pub fn freeze_accepted_evidence(&mut self) {
+        if self.accepted_evidence.is_none() {
+            self.accepted_evidence = Some(AcceptedEvidence::of(&self.evidence));
+        }
+    }
+
     /// The exception a reviewer recorded for `member` (`path#symbol`), if any.
     pub fn exception(&self, member: &str) -> Option<&Exception> {
         self.exceptions.iter().find(|e| e.member == member)
@@ -1100,6 +1143,28 @@ impl ConventionsFile {
         kinds: FileKinds,
         candidates: &[Candidate],
     ) -> Self {
+        Self::merge_carrying(existing, engine, kinds, candidates).0
+    }
+
+    /// [`ConventionsFile::merge`], and the decisions it carried from one id to another:
+    /// `(old id, new id)` pairs, sorted. A convention's id hashes its role and rule
+    /// ([`crate::mine::convention_id`]), so a mined rule that gains an alternative (a
+    /// second wrapper beside the first) comes back under a new id. Where a new
+    /// candidate's role is an accepted convention's and its rule is that convention's
+    /// with alternatives added ([`gains_alternatives`]), and mining no longer proposes
+    /// the old one, the new card takes over the person's decision: status, mode, the
+    /// agents choice, the files set apart, the exceptions, how the selector is read and
+    /// the evidence they accepted, and the old card leaves the file. `drift init` moves
+    /// the old id's lock lines to the new one ([`Lock::rename`]). The ids themselves are
+    /// computed as they always were: changing that would orphan every decision made.
+    pub fn merge_carrying(
+        existing: Option<Self>,
+        engine: &str,
+        kinds: FileKinds,
+        candidates: &[Candidate],
+    ) -> (Self, Vec<(String, String)>) {
+        let mut carried: Vec<(String, String)> = Vec::new();
+        let mined: BTreeSet<&str> = candidates.iter().map(|c| c.id.as_str()).collect();
         let mut by_id: BTreeMap<String, Convention> = BTreeMap::new();
         let keep_kinds = existing.as_ref().map(|e| e.file_kinds.clone());
         let suggestion_cap = existing.as_ref().and_then(|e| e.suggestion_cap);
@@ -1123,47 +1188,88 @@ impl ConventionsFile {
                 Some(c) if c.rule.is_practice() => {}
                 Some(c) => {
                     // Refresh evidence; never touch status, mode or how the frozen
-                    // selector is read.
+                    // selector is read. What the person accepted stays beside it: the
+                    // evidence as the file had it, the first time a run meets it
+                    // accepted.
+                    if c.status == Status::Accepted {
+                        c.freeze_accepted_evidence();
+                    }
                     c.summary = summary;
                     c.evidence = cand.evidence.clone();
                     c.example = cand.example.clone();
                 }
                 None => {
                     let exceptions = carried_exceptions(&by_id, cand);
-                    by_id.insert(
-                        cand.id.clone(),
-                        Convention {
-                            id: cand.id.clone(),
-                            status: Status::Proposed,
-                            mode: Mode::Advise,
-                            summary,
-                            role: cand.role.clone(),
-                            rule: cand.rule.clone(),
-                            evidence: cand.evidence.clone(),
-                            example: cand.example.clone(),
-                            selector_version: selector_version_of(&cand.role),
-                            agents: None,
-                            exceptions,
-                            // [STRICT] Not carried to a new card: what a person set
-                            // apart was set apart from the card they saw.
-                            different_kind: Vec::new(),
-                            promoted_from_hidden: false,
-                            promoted_from_practice: None,
-                            from_map: None,
-                        },
-                    );
+                    let from = by_id
+                        .values()
+                        .find(|c| {
+                            c.status == Status::Accepted
+                                && !c.rule.is_practice()
+                                && c.role == cand.role
+                                && !mined.contains(c.id.as_str())
+                                && gains_alternatives(&c.rule, &cand.rule)
+                        })
+                        .map(|c| c.id.clone());
+                    let old = from.and_then(|id| by_id.remove(&id));
+                    let mut new = Convention {
+                        id: cand.id.clone(),
+                        status: Status::Proposed,
+                        mode: Mode::Advise,
+                        summary,
+                        role: cand.role.clone(),
+                        rule: cand.rule.clone(),
+                        evidence: cand.evidence.clone(),
+                        example: cand.example.clone(),
+                        selector_version: selector_version_of(&cand.role),
+                        agents: None,
+                        exceptions,
+                        // [STRICT] Not carried to a new card: what a person set
+                        // apart was set apart from the card they saw.
+                        different_kind: Vec::new(),
+                        promoted_from_hidden: false,
+                        promoted_from_practice: None,
+                        from_map: None,
+                        accepted_evidence: None,
+                    };
+                    if let Some(mut old) = old {
+                        // The same card with more ways to hold it: the person's decision
+                        // moves with it, all of it.
+                        old.freeze_accepted_evidence();
+                        new.status = old.status;
+                        new.mode = old.mode;
+                        new.agents = old.agents;
+                        new.selector_version = old.selector_version;
+                        new.different_kind = old.different_kind;
+                        new.promoted_from_hidden = old.promoted_from_hidden;
+                        new.accepted_evidence = old.accepted_evidence;
+                        new.exceptions.extend(old.exceptions);
+                        new.exceptions.sort_by(|a, b| a.member.cmp(&b.member));
+                        new.exceptions.dedup_by(|b, a| a.member == b.member);
+                        carried.push((old.id, cand.id.clone()));
+                    }
+                    by_id.insert(cand.id.clone(), new);
                 }
             }
         }
-        // Order: accepted first, then proposed by strength, then rejected; ties by id.
+        // Order: accepted first, then proposed, then rejected. A decided convention is
+        // ordered by id alone, so a run that only refreshes evidence moves no line of
+        // what people decided, and a diff or a merge of two branches shows only what
+        // changed. Proposals stay strongest first, the order `drift review` reads
+        // them in: their evidence is rewritten on every run anyway.
         let mut conventions: Vec<Convention> = by_id.into_values().collect();
         conventions.sort_by(|a, b| {
             a.status
                 .cmp(&b.status)
-                .then(b.evidence.lower_bound.total_cmp(&a.evidence.lower_bound))
+                .then_with(|| match (a.status, b.status) {
+                    (Status::Proposed, Status::Proposed) => {
+                        b.evidence.lower_bound.total_cmp(&a.evidence.lower_bound)
+                    }
+                    _ => std::cmp::Ordering::Equal,
+                })
                 .then(a.id.cmp(&b.id))
         });
-        Self {
+        carried.sort();
+        let merged = Self {
             version: POLICY_VERSION_SINGLE,
             engine: engine.to_string(),
             // Keep the frozen vocabulary once it exists, so selectors stay stable.
@@ -1173,7 +1279,8 @@ impl ConventionsFile {
             review_log,
             packages,
             conventions,
-        }
+        };
+        (merged, carried)
     }
 
     /// The `(role, rule)` of every accepted convention: what hysteresis keeps when
@@ -1251,7 +1358,28 @@ impl Convention {
             promoted_from_hidden: false,
             promoted_from_practice: None,
             from_map: None,
+            accepted_evidence: None,
         }
+    }
+}
+
+/// Whether `new` is `old` with alternatives added and nothing else changed: a wrapper
+/// rule of the same kind whose wrappers are a strict superset of `old`'s
+/// ([`ConventionsFile::merge_carrying`]). A rule that drops an alternative, or changes
+/// in any other way, is another rule: a person decides it anew.
+pub fn gains_alternatives(old: &Rule, new: &Rule) -> bool {
+    match (old, new) {
+        (
+            Rule::WrappedBy {
+                kind: k0,
+                any_of: a0,
+            },
+            Rule::WrappedBy {
+                kind: k1,
+                any_of: a1,
+            },
+        ) => k0 == k1 && a1.len() > a0.len() && a0.iter().all(|w| a1.contains(w)),
+        _ => false,
     }
 }
 
@@ -1301,6 +1429,17 @@ fn carried_exceptions(by_id: &BTreeMap<String, Convention>, cand: &Candidate) ->
 ///
 /// Agents only ever remove lines (by fixing code); people add them. That makes
 /// `merge=union` in `.gitattributes` safe for concurrent branches.
+///
+/// Beside each line a baseline writes now, a second line keys the same violation by
+/// what it is rather than where it is: `<convention id> ~<fingerprint> <path#symbol>`
+/// ([`crate::roles::Unit::fingerprint`], [`Lock::fingerprint_key`]). When the member
+/// is no longer at its `path#symbol` (its file moved or was renamed, the symbol was
+/// renamed) and a violation of the same convention has the same fingerprint, that
+/// violation is the old debt, still baselined ([`Lock::baseline_moved`]). Both are
+/// plain lines of one sorted set, so `merge=union` stays safe; a lock written before has
+/// no fingerprint lines and works as it always did, and a Drift that knows no
+/// fingerprint reads its plain lines as before (the second line names no member it can
+/// see).
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Lock {
     pub entries: BTreeSet<(String, String)>,
@@ -1341,6 +1480,188 @@ impl Lock {
     pub fn contains(&self, id: &str, key: &str) -> bool {
         self.entries.contains(&(id.to_string(), key.to_string()))
     }
+
+    /// The key of the fingerprint line of `member` (`path#symbol`):
+    /// `~<fingerprint> <member>`. A member key never starts with `~` followed by a
+    /// fingerprint and a space ([`exception_member`] keeps a path before `#`).
+    pub fn fingerprint_key(fingerprint: &str, member: &str) -> String {
+        format!("~{fingerprint} {member}")
+    }
+
+    /// `(fingerprint, member)` of a fingerprint line's key; `None` for a member line.
+    pub fn split_fingerprint(key: &str) -> Option<(&str, &str)> {
+        let (fp, member) = key.strip_prefix('~')?.split_once(' ')?;
+        (!fp.is_empty() && fp.bytes().all(|b| b.is_ascii_hexdigit()) && !member.is_empty())
+            .then_some((fp, member))
+    }
+
+    /// The member a key names: the key itself, or a fingerprint line's member.
+    pub fn member_of(key: &str) -> &str {
+        Self::split_fingerprint(key).map_or(key, |(_, m)| m)
+    }
+
+    /// Whether any line is a fingerprint line: without one, nothing can have moved.
+    pub fn has_fingerprints(&self) -> bool {
+        self.entries
+            .iter()
+            .any(|(_, k)| Self::split_fingerprint(k).is_some())
+    }
+
+    /// How many violations the lock baselines: its member lines (a fingerprint line
+    /// is the second key of one of them, not another violation).
+    pub fn members(&self) -> usize {
+        self.entries
+            .iter()
+            .filter(|(_, k)| Self::split_fingerprint(k).is_none())
+            .count()
+    }
+
+    /// The lock that baselines `violations`: a member line for each, and its fingerprint
+    /// line where `fingerprint` gives one (the unit's, [`crate::roles::Unit::fingerprint`]).
+    pub fn baselining(
+        violations: &[crate::check::Violation],
+        fingerprint: impl Fn(&crate::check::Violation) -> Option<String>,
+    ) -> Self {
+        let mut entries = BTreeSet::new();
+        for v in violations {
+            let member = format!("{}#{}", v.path, v.symbol);
+            if let Some(fp) = fingerprint(v) {
+                entries.insert((v.id.clone(), Self::fingerprint_key(&fp, &member)));
+            }
+            entries.insert((v.id.clone(), member));
+        }
+        Self { entries }
+    }
+
+    /// Mark baselined each violation that is old debt moved: not baselined by its own
+    /// `path#symbol`, with the fingerprint (`fingerprints`, by `(id, path#symbol)`) of a
+    /// fingerprint line of its convention whose member is gone from the code (not in
+    /// `present`, the `path#symbol` of every unit there is). One line covers one
+    /// violation: a copy of baselined code next to the original is new, and so is a
+    /// second copy where one moved. Lines are taken in order, violations in the order
+    /// given, so the outcome is the same on every run. Returns the `(id, member)` of the
+    /// lines taken, which are not fixed.
+    pub fn baseline_moved(
+        &self,
+        violations: &mut [crate::check::Violation],
+        fingerprints: &BTreeMap<(String, String), String>,
+        present: &BTreeSet<String>,
+    ) -> BTreeSet<(String, String)> {
+        let mut taken = BTreeSet::new();
+        // (id, fingerprint) -> the members gone from the code that had it, in order.
+        let mut gone: BTreeMap<(String, String), Vec<String>> = BTreeMap::new();
+        for (id, key) in &self.entries {
+            let Some((fp, member)) = Self::split_fingerprint(key) else {
+                continue;
+            };
+            // Still there: its own line covers it, or it was fixed.
+            if present.contains(member) {
+                continue;
+            }
+            gone.entry((id.clone(), fp.to_string()))
+                .or_default()
+                .push(member.to_string());
+        }
+        if gone.is_empty() {
+            return taken;
+        }
+        for v in violations.iter_mut() {
+            if v.baselined {
+                continue;
+            }
+            let key = format!("{}#{}", v.path, v.symbol);
+            let Some(fp) = fingerprints.get(&(v.id.clone(), key)) else {
+                continue;
+            };
+            let Some(from) = gone.get_mut(&(v.id.clone(), fp.clone())) else {
+                continue;
+            };
+            if from.is_empty() {
+                continue;
+            }
+            let member = from.remove(0);
+            v.baselined = true;
+            taken.insert((v.id.clone(), member));
+        }
+        taken
+    }
+
+    /// Move every line of convention `from` to `to`: the decision moved
+    /// ([`ConventionsFile::merge_carrying`]), and its legacy violations with it.
+    pub fn rename(&mut self, from: &str, to: &str) {
+        let moved: Vec<(String, String)> = self
+            .entries
+            .iter()
+            .filter(|(id, _)| id == from)
+            .cloned()
+            .collect();
+        for (id, key) in moved {
+            self.entries.remove(&(id, key.clone()));
+            self.entries.insert((to.to_string(), key));
+        }
+    }
+}
+
+/// The exceptions of `conventions` that follow a member that moved: an exception whose
+/// member is gone from the code (not in `present`) and whose lock line has a fingerprint
+/// ([`Lock::fingerprint_key`]) covers the one violation of its convention with that
+/// fingerprint (`fingerprints`, by `(id, path#symbol)`) that has no exception of its own,
+/// as if the reviewer had named its new place. Returns a copy of each convention that
+/// gained one, with the exception added under the violation's `path#symbol` and the
+/// reviewer's reason; nothing is written back, so the policy file keeps the member the
+/// reviewer named. A reviewer's exception for a member the lock has no fingerprint for
+/// (one marked fine after it was baselined, or a lock written before fingerprints)
+/// does not follow it.
+pub fn carry_moved_exceptions(
+    conventions: &[&Convention],
+    lock: &Lock,
+    violations: &[crate::check::Violation],
+    fingerprints: &BTreeMap<(String, String), String>,
+    present: &BTreeSet<String>,
+) -> Vec<Convention> {
+    let mut out: Vec<Convention> = Vec::new();
+    if fingerprints.is_empty() || !lock.has_fingerprints() {
+        return out;
+    }
+    // The fingerprint of each member gone from the code, by (id, member).
+    let mut fp_of: BTreeMap<(&str, &str), &str> = BTreeMap::new();
+    for (id, key) in &lock.entries {
+        if let Some((fp, member)) = Lock::split_fingerprint(key)
+            && !present.contains(member)
+        {
+            fp_of.insert((id.as_str(), member), fp);
+        }
+    }
+    let mut done: BTreeSet<&str> = BTreeSet::new();
+    for c in conventions {
+        if c.exceptions.is_empty() || !done.insert(c.id.as_str()) {
+            continue;
+        }
+        let mut gained = (*c).clone();
+        let mut changed = false;
+        for e in &c.exceptions {
+            let Some(fp) = fp_of.get(&(c.id.as_str(), e.member.as_str())) else {
+                continue;
+            };
+            let found = violations.iter().find(|v| {
+                let key = format!("{}#{}", v.path, v.symbol);
+                v.id == c.id
+                    && gained.exception(&key).is_none()
+                    && fingerprints
+                        .get(&(v.id.clone(), key))
+                        .is_some_and(|f| f.as_str() == *fp)
+            });
+            if let Some(v) = found {
+                let key = format!("{}#{}", v.path, v.symbol);
+                gained.set_exception(&key, &e.reason);
+                changed = true;
+            }
+        }
+        if changed {
+            out.push(gained);
+        }
+    }
+    out
 }
 
 #[cfg(test)]

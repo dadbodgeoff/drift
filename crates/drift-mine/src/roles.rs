@@ -296,7 +296,11 @@ impl Unit<'_> {
         }
     }
 
-    /// `drift-ignore` suppressions that apply (symbols only).
+    /// `drift-ignore` suppressions the facts carry: those of a symbol, read from the
+    /// comment block directly above its declaration. A file, a model or a package has
+    /// none in the facts: its `drift-ignore` comments (the file's header, the line of
+    /// the import a layering rule is about, the block above a model) are read from the
+    /// file itself once a check is done ([`apply_file_ignores`]).
     pub fn suppressions(&self) -> &[String] {
         match self.view {
             View::Symbol(_, s) => &s.suppressions,
@@ -307,6 +311,90 @@ impl Unit<'_> {
     /// Stable key `path#name`.
     pub fn key(&self) -> String {
         format!("{}#{}", self.path(), self.name())
+    }
+
+    /// A key of the unit that does not name where it is: what survives its file moving
+    /// or being renamed, or the symbol being renamed, so a baselined violation that
+    /// moved is still the old one ([`crate::policy::Lock::baseline_moved`]). `about` is
+    /// what the rule is about in the unit, when the rule says (the module a layering
+    /// rule's import names, [`crate::mine::offending_import`]).
+    ///
+    /// A symbol is its body as Drift read it: its kind and the facts of what it does
+    /// (wrappers, calls, rendered components, keys passed, control flow, thrown classes,
+    /// environment reads, risky operations, the order of its calls, decorator
+    /// arguments, how many string literals), with references into its own file written
+    /// without the file's path. The facts hold no text of the body, so this is the
+    /// normalised body Drift has; the name and line are left out. A file is its
+    /// exported names, its directives and `about`; a model its source and fields; a
+    /// package its name and scripts. 16 hex digits of a BLAKE3 hash.
+    ///
+    /// Two units collide only when Drift read the same of both: identical handlers, or
+    /// two files that export the same names and import the same forbidden module.
+    /// Matching takes care of that ([`crate::policy::Lock::baseline_moved`]): a line is
+    /// used only when its own member is gone, and for one violation.
+    pub fn fingerprint(&self, about: Option<&str>) -> String {
+        let mut parts: Vec<String> = Vec::new();
+        match self.view {
+            View::Symbol(f, s) => {
+                let own = format!("{}#", f.path);
+                let local = |x: &str| -> String {
+                    match x.strip_prefix(own.as_str()) {
+                        Some(rest) => format!("#{rest}"),
+                        None => x.to_string(),
+                    }
+                };
+                parts.push(format!("symbol {:?}", s.kind));
+                for w in &s.wraps {
+                    parts.push(format!("wrap {:?} {}", w.kind, local(w.wrapper.as_str())));
+                }
+                let lists: [(&str, &Vec<String>); 9] = [
+                    ("call", &s.calls),
+                    ("render", &s.renders),
+                    ("arg", &s.args),
+                    ("control", &s.controls),
+                    ("throw", &s.throws),
+                    ("read", &s.reads),
+                    ("sink", &s.sinks),
+                    ("order", &s.order),
+                    ("decorator", &s.decorator_args),
+                ];
+                for (label, list) in lists {
+                    for x in list {
+                        parts.push(format!("{label} {}", local(x.as_str())));
+                    }
+                }
+                parts.push(format!("strings {}", s.string_literals));
+            }
+            View::File(f) => {
+                parts.push("file".to_string());
+                let mut names: Vec<&str> = f.exports.iter().map(|e| e.name.as_str()).collect();
+                names.sort_unstable();
+                names.dedup();
+                for n in names {
+                    parts.push(format!("export {n}"));
+                }
+                for d in &f.directives {
+                    parts.push(format!("directive {d}"));
+                }
+            }
+            View::Model(m) => {
+                parts.push(format!("model {}", m.source));
+                for x in &m.fields {
+                    parts.push(format!("field {x}"));
+                }
+            }
+            View::Package(p) => {
+                parts.push(format!("package {}", p.name));
+                for x in &p.scripts {
+                    parts.push(format!("script {x}"));
+                }
+            }
+        }
+        if let Some(a) = about {
+            parts.push(format!("about {a}"));
+        }
+        let h = blake3::hash(parts.join("\n").as_bytes()).to_hex();
+        h[..16].to_string()
     }
 
     /// True when the unit is a member of `role` ([`RoleSelector::includes`]).
@@ -332,6 +420,145 @@ impl Unit<'_> {
                 legacy.applies_to(&self.roles) && role.includes(&legacy.strip(&self.roles), &f.path)
             }
             _ => false,
+        }
+    }
+}
+
+/// The convention id of a `drift-ignore <id>: <reason>` in `line`, when it is in a
+/// comment (after `//`, `#`, `--`, `/*` or a block comment's `*`, or, `in_block`, on a
+/// line inside a block comment) and gives a reason. The same form the parsers read
+/// above a declaration: an id of `D-` and six hex digits, a reason that is not empty.
+fn ignore_in(line: &str, in_block: bool) -> Option<String> {
+    let at = line.find("drift-ignore ")?;
+    let before = line[..at].trim_end();
+    let in_comment = ["//", "#", "--", "/*", "*"]
+        .iter()
+        .any(|m| before.ends_with(m))
+        || (in_block && before.is_empty());
+    if !in_comment {
+        return None;
+    }
+    let rest = &line[at + "drift-ignore ".len()..];
+    let (id, reason) = rest.split_once(':')?;
+    let id = id.trim();
+    let reason = reason.trim().trim_end_matches("*/").trim();
+    let valid = id.len() == 8
+        && id.starts_with("D-")
+        && id[2..].bytes().all(|b| b.is_ascii_hexdigit());
+    (valid && !reason.is_empty()).then(|| id.to_string())
+}
+
+/// A line that only states a directive or a docstring (`"use client";`, `'use strict'`,
+/// `"""Views."""`): part of a file's header, not its code.
+fn directive_line(t: &str) -> bool {
+    let t = t.trim_end_matches(';').trim_end();
+    t.len() >= 2
+        && ((t.starts_with('"') && t.ends_with('"')) || (t.starts_with('\'') && t.ends_with('\'')))
+}
+
+/// The convention ids a file's header suppresses: `drift-ignore <id>: <reason>` in the
+/// comments before its first line of code (blank lines, a `#!` line, directives and a
+/// one-line docstring may come between them). A comment that covers the whole file is
+/// one a reviewer sees at the top of it. Sorted.
+pub fn header_suppressions(text: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut in_block = false;
+    for (n, line) in text.lines().enumerate() {
+        let t = line.trim();
+        if in_block {
+            out.extend(ignore_in(t, true));
+            if t.contains("*/") {
+                in_block = false;
+            }
+            continue;
+        }
+        if t.is_empty() || (n == 0 && t.starts_with("#!")) || directive_line(t) {
+            continue;
+        }
+        if t.starts_with("//") || t.starts_with('#') || t.starts_with("--") {
+            out.extend(ignore_in(t, false));
+            continue;
+        }
+        if t.starts_with("/*") {
+            out.extend(ignore_in(t, false));
+            in_block = !t.contains("*/");
+            continue;
+        }
+        break;
+    }
+    out.sort();
+    out.dedup();
+    out
+}
+
+/// The convention ids suppressed at `line` (1-based) of `text`: a `drift-ignore` comment
+/// at the end of that line, or in the comment lines directly above it (the import a
+/// layering rule is about, a model's declaration). Sorted.
+pub fn suppressions_at(text: &str, line: u32) -> Vec<String> {
+    let lines: Vec<&str> = text.lines().collect();
+    let mut out = Vec::new();
+    let Some(i) = (line as usize)
+        .checked_sub(1)
+        .filter(|i| *i < lines.len())
+    else {
+        return out;
+    };
+    out.extend(ignore_in(lines[i], false));
+    let mut j = i;
+    while j > 0 {
+        j -= 1;
+        let t = lines[j].trim();
+        let comment = t.starts_with("//")
+            || t.starts_with('#')
+            || t.starts_with("--")
+            || t.starts_with("/*")
+            || t.starts_with('*');
+        if !comment {
+            break;
+        }
+        out.extend(ignore_in(t, t.starts_with('*')));
+    }
+    out.sort();
+    out.dedup();
+    out
+}
+
+/// Mark suppressed each violation of a file, a model or a package that a `drift-ignore`
+/// comment in its file covers: one in the file's header ([`header_suppressions`]), or
+/// for a layering violation one on the line of the import it is about, or for a model
+/// one directly above its declaration ([`suppressions_at`]). The facts carry the
+/// comments of declarations only ([`Unit::suppressions`]), so these are read from the
+/// files under `root`, after the check, as the imports' lines are
+/// ([`crate::check::locate_imports`]). A file that cannot be read suppresses nothing; a
+/// manifest without comments (`package.json`) never does. Wiring advice and promoted
+/// practices are left as they are: their comments are their declarations'.
+pub fn apply_file_ignores(report: &mut crate::check::CheckReport, root: &std::path::Path) {
+    let mut texts: BTreeMap<String, Option<String>> = BTreeMap::new();
+    for v in &mut report.violations {
+        if v.suppressed
+            || v.wire.is_some()
+            || v.practice.is_some()
+            || matches!(v.extent, crate::check::Extent::Symbol { .. })
+        {
+            continue;
+        }
+        let text = texts.entry(v.path.clone()).or_insert_with(|| {
+            drift_core::fsutil::read_regular_to_string(
+                &root.join(&v.path),
+                drift_core::fsutil::MAX_CONFIG_BYTES,
+            )
+            .ok()
+        });
+        let Some(text) = text.as_deref() else {
+            continue;
+        };
+        let at = match (&v.import, v.extent) {
+            (Some(hit), _) if hit.line > 0 => suppressions_at(text, hit.line),
+            (_, crate::check::Extent::Model { start, .. }) => suppressions_at(text, start),
+            _ => Vec::new(),
+        };
+        if at.contains(&v.id) || header_suppressions(text).contains(&v.id) {
+            v.suppressed = true;
         }
     }
 }

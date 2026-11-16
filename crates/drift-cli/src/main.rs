@@ -2686,8 +2686,18 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 );
             }
             let had = existing.is_some();
-            let mut policy =
-                ConventionsFile::merge(existing, &engine(), mined.kinds.clone(), &mined.candidates);
+            // The conventions the policy already had: only a convention new to it has its
+            // current violations baselined below.
+            let known_ids: BTreeSet<String> = existing
+                .as_ref()
+                .map(|e| e.conventions.iter().map(|c| c.id.clone()).collect())
+                .unwrap_or_default();
+            let (mut policy, carried) = ConventionsFile::merge_carrying(
+                existing,
+                &engine(),
+                mined.kinds.clone(),
+                &mined.candidates,
+            );
             // Version 2 in a workspace: the packages mined over (the hooks and MCP find a
             // file's package from them); none, and version 1, in a single package.
             policy.packages = packages
@@ -2712,13 +2722,29 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             // Promoted practices kept from before are baselined as every convention is.
             let fresh = practices::baseline_with_practices(root, &facts, &policy);
             if had {
-                // New conventions get their current violations baselined; existing entries are kept.
-                let known: BTreeSet<&str> =
-                    lock.entries.iter().map(|(id, _)| id.as_str()).collect();
+                // A decision that moved to a new id (its rule gained an alternative) takes
+                // its legacy violations with it.
+                for (from, to) in &carried {
+                    lock.rename(from, to);
+                }
+                // Only a convention new to the policy gets its current violations
+                // baselined; existing entries are kept. A convention the policy had is
+                // never baselined again, not even once every line of its old debt is
+                // fixed: a violation written since is new, not legacy. A line it already
+                // has gains its fingerprint, so that debt follows a move from now on.
+                let known: BTreeSet<&str> = known_ids
+                    .iter()
+                    .map(String::as_str)
+                    .chain(carried.iter().map(|(_, to)| to.as_str()))
+                    .collect();
                 let add: Vec<_> = fresh
                     .entries
                     .iter()
-                    .filter(|(id, _)| !known.contains(id.as_str()))
+                    .filter(|(id, key)| {
+                        !known.contains(id.as_str())
+                            || Lock::split_fingerprint(key)
+                                .is_some_and(|(_, member)| lock.contains(id, member))
+                    })
                     .cloned()
                     .collect();
                 lock.entries.extend(add);
@@ -2827,7 +2853,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 } else {
                     ""
                 },
-                match lock.entries.len() {
+                match lock.members() {
                     0 => "no existing violation to record".to_string(),
                     n => format!(
                         "{} recorded, so only new ones are reported",
@@ -5652,6 +5678,7 @@ mod tests {
             promoted_from_hidden: false,
             promoted_from_practice: None,
             from_map: None,
+            accepted_evidence: None,
         }
     }
 
