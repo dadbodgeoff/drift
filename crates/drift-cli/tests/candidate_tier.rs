@@ -249,10 +249,12 @@ fn a_block_candidate_reaches_agents_only_once_accepted() {
         before.rules_for,
         "No accepted conventions cover app/api/other/route.ts."
     );
+    // Since C6 (review of the MCP wiring) `drift_explain` says a proposal is none, in
+    // place of "unknown convention": no statement, no example, nothing to follow.
     assert_eq!(
         before.explain,
         format!(
-            "drift: unknown convention {id}: drift_rules_for and drift_check name the ids of this repository's conventions"
+            "{id} is a proposal no person has accepted: it is not a rule, nothing is checked against it, and there is nothing to follow."
         )
     );
     assert_eq!(
@@ -263,9 +265,11 @@ fn a_block_candidate_reaches_agents_only_once_accepted() {
     assert!(!before.check_text.contains(&id), "{}", before.check_text);
 
     // A person accepts it: every surface has it.
+    // `1 proposed`: since S10 `drift init` also writes the practice map's own proposal
+    // (a `from_map` practice for `Response.json`), which stays proposed.
     let out = ok(r, &["review", "--accept", &id]);
     assert!(
-        out.contains("1 accepted (0 block), 0 proposed, 0 rejected"),
+        out.contains("1 accepted (0 block), 1 proposed, 0 rejected"),
         "{out}"
     );
     let after = agent_view(r, &id);

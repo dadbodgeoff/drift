@@ -6,7 +6,7 @@
 use drift_core::{FileFacts, Import, RepoFacts};
 use drift_mine::check::{CheckReport, Scope, check, locate_imports};
 use drift_mine::mine::{Candidate, MineOptions, Rule, mine_unshown as mine};
-use drift_mine::policy::{ConventionsFile, Lock, Status};
+use drift_mine::policy::{ConventionsFile, Status};
 use drift_mine::roles::{header_suppressions, suppressions_at};
 
 fn file(path: &str, imports: &[&str]) -> FileFacts {
@@ -65,8 +65,12 @@ fn policy() -> ConventionsFile {
 }
 
 /// The report for `kit/k60.ts` written as `text`, its imports located and its comments read.
+/// Checked against the lock `init` wrote before `kit/k60.ts` existed: `kit/k0.ts`, the
+/// rule's outlier when it was mined, is baselined there, so the one new violation is
+/// k60's (with no lock, k0's old break counted as new too).
 fn checked(r: &RepoFacts, p: &ConventionsFile, text: &str) -> CheckReport {
-    let mut report = check(r, p, &Lock::default(), Scope::Accepted, None);
+    let lock = drift_mine::check::baseline(&layered(false), p);
+    let mut report = check(r, p, &lock, Scope::Accepted, None);
     let dir = tempfile::tempdir().unwrap();
     std::fs::create_dir_all(dir.path().join("kit")).unwrap();
     std::fs::write(dir.path().join("kit/k60.ts"), text).unwrap();

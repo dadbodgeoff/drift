@@ -965,9 +965,14 @@ fn call(project: &Project, no_cache: bool, name: &str, args: &Value) -> anyhow::
             // Only an accepted convention is a rule. One no person accepted (a proposal
             // from the map or from mining, or one a person rejected) is said to be none,
             // whether agents are shown its family or not, and nothing of it is given: no
-            // statement, no example, no way to make it one.
+            // statement, no example, no way to make it one. Except a mined proposal a
+            // person set `agents: show` on: that person's decision shows it to agents on
+            // every surface (`admission::decide_convention`), as it did before.
             let not_a_rule = |x: &Convention| {
-                (x.status != drift_mine::policy::Status::Accepted).then(|| {
+                let shown_by_a_person = x.status == drift_mine::policy::Status::Proposed
+                    && x.from_map.is_none()
+                    && x.agents == Some(drift_mine::policy::AgentsChoice::Show);
+                (x.status != drift_mine::policy::Status::Accepted && !shown_by_a_person).then(|| {
                     let what = if x.status == drift_mine::policy::Status::Rejected {
                         "was rejected by a person"
                     } else if x.from_map.is_some() {

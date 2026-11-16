@@ -1494,6 +1494,11 @@ mod first_run_tests {
                 "mapped by wrapper withErrors",
                 "turned into responses by withErrors",
             ),
+            // The row S15c added (Python error handling through a base view's handler).
+            (
+                "base handler BaseView.handle_exception",
+                "turned into responses by the base view's BaseView.handle_exception",
+            ),
             ("in body try return", "caught in the handler, which returns"),
             ("in body try swallow", "caught in the handler and dropped"),
             (

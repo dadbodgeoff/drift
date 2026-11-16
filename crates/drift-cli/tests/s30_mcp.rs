@@ -256,8 +256,25 @@ fn a_proposal_from_the_map_is_no_rule_to_an_agent() {
         assert!(!said.contains(summary.as_str()), "{id}: {said}");
         for (call, reply) in &replies {
             assert!(!reply.contains(id.as_str()), "{call} names {id}:\n{reply}");
+            // The card states what mining found as a fact under its own heading ("facts,
+            // not rules; not accepted conventions, nothing checks them"), as the pre-sprint
+            // card did: that section is no rule. Anywhere else the text is one.
+            let mut as_rules = String::new();
+            let mut facts = false;
+            for l in reply.lines() {
+                if l == drift_mine::card::REGULARITIES_HEAD {
+                    facts = true;
+                    continue;
+                }
+                if facts && l.starts_with("  ") {
+                    continue;
+                }
+                facts = false;
+                as_rules.push_str(l);
+                as_rules.push('\n');
+            }
             assert!(
-                !reply.contains(summary.as_str()),
+                !as_rules.contains(summary.as_str()),
                 "{call} states {id}:\n{reply}"
             );
         }

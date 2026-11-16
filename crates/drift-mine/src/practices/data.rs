@@ -341,13 +341,16 @@ mod tests {
             key(&of(&all, "lib/users.ts", "findUsers")),
             "service:@prisma/client"
         );
+        // The layer is read from the path ([`layer`]): `prisma` is a segment of
+        // `REPOSITORY_PATHS`, so the package's own bindings are its repository layer
+        // (fix wave 1: the test first said `service` here, which `layer` never did).
         assert_eq!(
             key(&of(&all, "packages/prisma/index.ts", "prisma")),
-            "service:@prisma/client"
+            "repository:@prisma/client"
         );
         assert_eq!(
             key(&of(&all, "packages/prisma/index.ts", "baseClient")),
-            "service:@prisma/client"
+            "repository:@prisma/client"
         );
         // Without the generated directory the client is only the driver it is handed.
         let facts = RepoFacts {
@@ -358,7 +361,7 @@ mod tests {
         let all = assign_all(&DataAccess, &cx);
         assert_eq!(
             key(&of(&all, "packages/prisma/index.ts", "baseClient")),
-            "service:pg"
+            "repository:pg"
         );
     }
 

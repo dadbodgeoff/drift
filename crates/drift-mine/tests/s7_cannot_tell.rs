@@ -253,7 +253,11 @@ fn procedures() -> RepoFacts {
         files.push(file(
             &format!("trpc/server/routers/{dir}/r{i}.ts"),
             "trpc",
-            vec![sym(&format!("proc{i}"), SymbolKind::Const, |s| {
+            // Functions, as the TypeScript lowering reads `export const proc =
+            // memberProcedure(() => ...)`: lift is counted per symbol kind over a
+            // background of functions, so a role of `Const` symbols had a lift of 1.06
+            // and nothing was mined.
+            vec![sym(&format!("proc{i}"), SymbolKind::Function, |s| {
                 s.wraps.push(call(MEMBER))
             })],
         ));
@@ -262,7 +266,7 @@ fn procedures() -> RepoFacts {
     files.push(file(
         "trpc/server/routers/viewer/public.ts",
         "trpc",
-        vec![sym("slots", SymbolKind::Const, |s| {
+        vec![sym("slots", SymbolKind::Function, |s| {
             s.wraps.push(call(OPEN))
         })],
     ));
@@ -270,7 +274,7 @@ fn procedures() -> RepoFacts {
     files.push(file(
         "trpc/server/routers/viewer/forgot.ts",
         "trpc",
-        vec![sym("leak", SymbolKind::Const, |_| {})],
+        vec![sym("leak", SymbolKind::Function, |_| {})],
     ));
     files.push(file(
         "core/src/procedures/member.ts",
