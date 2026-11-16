@@ -289,6 +289,34 @@ pub fn at_git_top(report: &CheckReport, prefix: &str) -> CheckReport {
     r
 }
 
+/// [`Project::in_scope`] on `policy`.
+fn in_scope_of(policy: &ConventionsFile, c: &Convention, rel: &str) -> bool {
+    if policy.packages.is_empty() {
+        return true;
+    }
+    let pkg = drift_mine::workspace::package_of(policy.packages.iter().map(String::as_str), rel);
+    c.role.kind == SymbolKind::Package
+        || c.role.kind == SymbolKind::Model
+        || c.role.parts().iter().any(|p| p.package == pkg)
+}
+
+/// [`Project::accepted_in_scope_given`] on `policy` as [`ConventionsFile::load`] read it,
+/// before a project is opened: opening one only takes conventions away (the wiring gate,
+/// what agents are not shown), so where this is true it is true of the project too. What
+/// lets the hook before an edit say nothing without loading the lock or the config.
+pub fn accepted_in_scope_given_in(
+    policy: &ConventionsFile,
+    rel: &str,
+    given: &BTreeSet<String>,
+) -> bool {
+    policy
+        .conventions
+        .iter()
+        .filter(|c| c.status == Status::Accepted)
+        .filter(|c| in_scope_of(policy, c, rel))
+        .all(|c| given.contains(&c.id))
+}
+
 /// Walk up from `start` to the directory holding `.drift/conventions.yaml`.
 pub fn find_root(start: &Path) -> Option<PathBuf> {
     let mut d = Some(start);
@@ -529,13 +557,7 @@ impl Project {
     /// Whether convention `c` is scoped to the package of `rel` (some part of its role
     /// is in that package). Always true in a single-package policy.
     fn in_scope(&self, c: &Convention, rel: &str) -> bool {
-        if self.policy.packages.is_empty() {
-            return true;
-        }
-        let pkg = self.package_of(rel);
-        c.role.kind == SymbolKind::Package
-            || c.role.kind == SymbolKind::Model
-            || c.role.parts().iter().any(|p| p.package == pkg)
+        in_scope_of(&self.policy, c, rel)
     }
 
     /// Whether every accepted convention in scope for the file at `rel` (of its package,
@@ -544,9 +566,7 @@ impl Project {
     /// whatever the file declares, so when this is true none of them is left to say and
     /// the file's facts need not be read to know it.
     pub fn accepted_in_scope_given(&self, rel: &str, given: &BTreeSet<String>) -> bool {
-        self.accepted()
-            .filter(|c| self.in_scope(c, rel))
-            .all(|c| given.contains(&c.id))
+        accepted_in_scope_given_in(&self.policy, rel, given)
     }
 
     /// Repo-relative POSIX path for an absolute or relative path, if inside the root.

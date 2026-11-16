@@ -34,6 +34,13 @@ const MAX_PRIMED_SUGGESTIONS: usize = 2;
 /// on the order the policy file lists rules in (decided ones are listed by id).
 trait PrimeStrength {
     fn strength(&self) -> (bool, f64, &str);
+
+    /// Whether the file breaks the rule already: before an edit, a rule the file follows
+    /// now, which the edit could break, is said before one it breaks
+    /// ([`primed_order`], the order [`worst_first`] gives). A new file breaks nothing.
+    fn broken(&self) -> bool {
+        false
+    }
 }
 
 impl PrimeStrength for (Option<String>, &Convention) {
@@ -46,10 +53,27 @@ impl PrimeStrength for (Option<String>, &Convention) {
     }
 }
 
+/// A rule before an edit of an existing file: whether the file breaks it already, and
+/// the rule.
+impl PrimeStrength for (bool, &Convention) {
+    fn strength(&self) -> (bool, f64, &str) {
+        (
+            blocks(self.1),
+            self.1.evidence.lower_bound,
+            self.1.id.as_str(),
+        )
+    }
+
+    fn broken(&self) -> bool {
+        self.0
+    }
+}
+
 /// The rules to prime with, in tier order (default first, then suggestions, each
-/// strongest first, [`PrimeStrength`]: what blocks, then by its evidence): at most
-/// [`MAX_PRIMED`] in all, of which at most [`MAX_PRIMED_SUGGESTIONS`] suggestions.
-/// Returns the chosen items and how many were left out.
+/// in [`worst_first`]'s order, [`PrimeStrength`]: what blocks, then what the file does
+/// not break yet, then by its evidence): at most [`MAX_PRIMED`] in all, of which at
+/// most [`MAX_PRIMED_SUGGESTIONS`] suggestions. Returns the chosen items and how many
+/// were left out.
 fn pick_primed<T: PrimeStrength>(mut items: Vec<(bool, T)>) -> (Vec<T>, usize) {
     // `false` (not a suggestion) sorts first.
     items.sort_by(|(sa, a), (sb, b)| {
@@ -57,6 +81,7 @@ fn pick_primed<T: PrimeStrength>(mut items: Vec<(bool, T)>) -> (Vec<T>, usize) {
         let (bb, lb, ib) = b.strength();
         sa.cmp(sb)
             .then(bb.cmp(&ba))
+            .then(a.broken().cmp(&b.broken()))
             .then(lb.total_cmp(&la))
             .then(ia.cmp(ib))
     });
@@ -220,6 +245,11 @@ struct SessionState {
     /// scans once to say what still stands, and the Stops after it do not.
     #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
     stop_told: BTreeSet<String>,
+    /// The state as [`load_state`] read it, never written: what [`save_state`] tells this
+    /// hook's changes from what another hook saved meanwhile by. `None` for a state not
+    /// read from the file (every field of it is this hook's).
+    #[serde(skip)]
+    read_as: Option<Value>,
 }
 
 fn yes() -> bool {
@@ -302,9 +332,11 @@ fn session_path(root: &Path, session_id: &str) -> PathBuf {
 
 /// `None` when the state is missing or unreadable: callers fail open.
 fn load_state(path: &Path) -> Option<SessionState> {
-    std::fs::read(path)
+    let mut s: SessionState = std::fs::read(path)
         .ok()
-        .and_then(|b| serde_json::from_slice(&b).ok())
+        .and_then(|b| serde_json::from_slice(&b).ok())?;
+    s.read_as = serde_json::to_value(&s).ok();
+    Some(s)
 }
 
 /// Best effort, atomic (temp file + rename): hooks for parallel tool calls can
@@ -330,8 +362,138 @@ fn write_json<T: Serialize>(path: &Path, value: &T) {
     let _ = drift_core::fsutil::write_atomic(path, &tmp, &b);
 }
 
+/// Saves `s` over the state as it is in the file now, not over the state `s` was read
+/// from: hooks for parallel tool calls, a subagent's and the MCP server's `note_given`
+/// save the same file, and a whole-file write lost what another saved between this
+/// hook's read and its write (an `edited` entry lost so skipped the Stop check of that
+/// file). Under [`StateLock`], the file is read again and what this hook changed since
+/// its read ([`merged`]: entries it added or removed, fields it set) is laid over it;
+/// everything else stays as the other hook saved it. Then written atomically.
 fn save_state(path: &Path, s: &SessionState) {
-    write_json(path, s);
+    if link_under_drift(path).is_some() {
+        return;
+    }
+    let _held = StateLock::take(path);
+    let Ok(mine) = serde_json::to_value(s) else {
+        return;
+    };
+    let out = match load_state(path).and_then(|now| serde_json::to_value(&now).ok()) {
+        Some(now) => {
+            let base = s
+                .read_as
+                .clone()
+                .or_else(|| serde_json::to_value(SessionState::default()).ok());
+            merged(base.as_ref(), Some(&mine), Some(&now))
+                // A merge that does not read back as a state: this hook's, as before.
+                .filter(|v| serde_json::from_value::<SessionState>(v.clone()).is_ok())
+                .unwrap_or(mine)
+        }
+        None => mine,
+    };
+    write_json(path, &out);
+}
+
+/// What a field of the session state is once this hook's change is laid over another's:
+/// `base` as this hook read it, `mine` as it saves it, `now` as the file has it (`None`:
+/// absent). Unchanged by this hook: `now`'s. A set of names (an array of strings, an
+/// absent one empty): `now`'s, less what this hook removed, with what it added. An
+/// object: the same, key by key. Anything else this hook changed: `mine`.
+fn merged(base: Option<&Value>, mine: Option<&Value>, now: Option<&Value>) -> Option<Value> {
+    if mine == base {
+        return now.cloned();
+    }
+    if now == base || now == mine {
+        return mine.cloned();
+    }
+    let names = |v: Option<&Value>| -> Option<BTreeSet<String>> {
+        match v {
+            None => Some(BTreeSet::new()),
+            Some(v) => v
+                .as_array()?
+                .iter()
+                .map(|x| x.as_str().map(String::from))
+                .collect(),
+        }
+    };
+    if let (Some(b), Some(m), Some(n)) = (names(base), names(mine), names(now)) {
+        let out: BTreeSet<String> = n
+            .into_iter()
+            .filter(|x| !b.contains(x) || m.contains(x))
+            .chain(m.difference(&b).cloned())
+            .collect();
+        return Some(Value::from(out.into_iter().collect::<Vec<String>>()));
+    }
+    let fields = |v: Option<&Value>| -> Option<serde_json::Map<String, Value>> {
+        match v {
+            None => Some(serde_json::Map::new()),
+            Some(Value::Object(o)) => Some(o.clone()),
+            Some(_) => None,
+        }
+    };
+    if let (Some(b), Some(m), Some(n)) = (fields(base), fields(mine), fields(now)) {
+        let keys: BTreeSet<&String> = b.keys().chain(m.keys()).chain(n.keys()).collect();
+        let out: serde_json::Map<String, Value> = keys
+            .into_iter()
+            .filter_map(|k| Some((k.clone(), merged(b.get(k), m.get(k), n.get(k))?)))
+            .collect();
+        return Some(Value::Object(out));
+    }
+    mine.cloned()
+}
+
+/// Tries to take a session state's lock before giving up and saving without it: a hook
+/// never waits long on another.
+const LOCK_TRIES: u32 = 50;
+const LOCK_WAIT_MS: u64 = 10;
+/// A lock older than this was left by a hook that died holding it.
+const LOCK_STALE_SECS: u64 = 10;
+
+/// Held while [`save_state`] reads, merges and writes a session's state: one hook at a
+/// time. The lock is a file beside the state (`.<id>.json.lock`) made with `create_new`,
+/// removed when this is dropped; one left by a hook that died is taken over once old.
+struct StateLock(Option<PathBuf>);
+
+impl StateLock {
+    fn take(path: &Path) -> Self {
+        let Some(name) = path.file_name() else {
+            return Self(None);
+        };
+        let lock = path.with_file_name(format!(".{}.lock", name.to_string_lossy()));
+        if let Some(dir) = lock.parent() {
+            let _ = std::fs::create_dir_all(dir);
+        }
+        for _ in 0..LOCK_TRIES {
+            match std::fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&lock)
+            {
+                Ok(_) => return Self(Some(lock)),
+                Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+                    let stale = std::fs::symlink_metadata(&lock)
+                        .and_then(|m| m.modified())
+                        .ok()
+                        .and_then(|t| t.elapsed().ok())
+                        .is_some_and(|age| age.as_secs() >= LOCK_STALE_SECS);
+                    if stale {
+                        let _ = std::fs::remove_file(&lock);
+                    } else {
+                        std::thread::sleep(std::time::Duration::from_millis(LOCK_WAIT_MS));
+                    }
+                }
+                Err(_) => return Self(None),
+            }
+        }
+        Self(None)
+    }
+}
+
+impl Drop for StateLock {
+    fn drop(&mut self) {
+        if let Some(lock) = &self.0 {
+            let _ = std::fs::remove_file(lock);
+        }
+    }
 }
 
 fn now_secs() -> u64 {
@@ -370,10 +532,11 @@ fn prune_sessions(dir: &Path) {
             .map_or(0, |d| d.as_secs());
         let path = e.path();
         let ext = path.extension().and_then(|x| x.to_str()).unwrap_or("");
-        // Old state files, and temp files left by a writer killed before its rename.
+        // Old state files, and temp and lock files left by a writer killed before its
+        // rename.
         let stale = match ext {
             "json" => age > SESSION_MAX_AGE_SECS,
-            "tmp" => age > TMP_MAX_AGE_SECS,
+            "tmp" | "lock" => age > TMP_MAX_AGE_SECS,
             _ => false,
         };
         if stale {
@@ -519,6 +682,12 @@ fn handle_event(event: &str, input: &Value) -> anyhow::Result<Option<Value>> {
         if policy.agents.verify == drift_mine::policy::Switch::On {
             return Ok(None);
         }
+        // Every rule that could be said for the file was given already: known from the
+        // policy and the state alone, before the lock, the config or the file is read.
+        if crate::project::accepted_in_scope_given_in(&policy, &rel, &state.primed) {
+            trace::took("skipped:rules_given");
+            return Ok(None);
+        }
         return Ok(Project::open_for_agents_with(&root, Some(policy))
             .ok()
             .and_then(|p| existing_file_rules(&p, &rel, &state_path, &state)));
@@ -617,7 +786,15 @@ fn session_start(p: &Project, input: &Value, state_path: &Path) -> anyhow::Resul
                 prune_sessions(&dir);
             }
             // A hook that ran before SessionStart may have left advice or priming.
-            let mut state = pending.unwrap_or_default();
+            let mut state = match pending {
+                Some(s) => s,
+                // A state set aside (an anonymous session's at startup) is replaced
+                // whole: read as the file has it, so saving lays every field over it.
+                None => SessionState {
+                    read_as: load_state(state_path).and_then(|s| s.read_as),
+                    ..SessionState::default()
+                },
+            };
             let inherited = if source == "clear" {
                 take_handoff(&dir)
             } else {
@@ -1138,21 +1315,21 @@ fn pre_tool_use(p: &Project, input: &Value, state_path: &Path) -> anyhow::Result
         text.push_str(&format!("- {prefix}{}\n", primed_line(c)));
         shown.push(c.id.clone());
     }
+    // As before an edit of an existing file: a rule folded into one that was cut is left
+    // out with it, counted.
+    let (said, cut, cut_blocking) = folded_outcome(same, &shown);
+    let (left, blocking_left) = (left + cut, blocking_left + cut_blocking);
     if left > 0 {
         text.push_str(&format!(
-            "+{left} more{}: run `drift example {shown_rel}`\n",
-            drift_mine::report::cut_note(blocking_left, left - blocking_left)
+            "+{left} more{}: run `drift example {}`\n",
+            drift_mine::report::cut_note(blocking_left, left - blocking_left),
+            // One shell word: an agent may run it as printed.
+            drift_mine::report::shell_word(&shown_rel)
         ));
     }
     if let Some(line) = practice {
         text.push_str(&format!("{line}\n"));
     }
-    // A rule said by the one shown with it is given with it.
-    let said: Vec<String> = same
-        .into_iter()
-        .filter(|(_, by)| shown.contains(by))
-        .map(|(id, _)| id)
-        .collect();
     state.primed.extend(said);
     state.primed.extend(shown);
     save_state(state_path, &state);
@@ -1171,14 +1348,45 @@ fn primed_order(c: &Convention, broken: bool) -> (bool, bool) {
 /// Rule lines with the convention each is for ([`worst_first`]).
 type Lines<'c, W> = Vec<(W, &'c Convention)>;
 
-/// `lines` in [`primed_order`] (then by evidence, then id), each rule said once: of a
-/// mined rule and a promoted practice that say the same thing ([`says_same`]) and that
-/// the file breaks alike, the first in that order. Returns the lines kept and, for each left out, `(its id, the id of the
-/// rule that says it)`. The caps are [`pick_primed`]'s, after this.
-fn worst_first<'c, W>(
+/// A rule [`worst_first`] left out because the line of another, kept, says enough of it
+/// ([`folds_into`]).
+struct Folded {
+    id: String,
+    /// The id of the rule whose line is said for it.
+    by: String,
+    /// Both accept exactly the same ways: what the kept line says is all this one says,
+    /// so it is given with it. Otherwise the kept line is stricter, and this rule's own
+    /// content was not given.
+    same: bool,
+    blocks: bool,
+}
+
+/// What became of the rules [`worst_first`] folded, once `shown` (the ids said) is
+/// known: the ids given with the line said for them (only where both accept the same
+/// ways), and how many were left out with a rule that was cut, of which how many block.
+fn folded_outcome(folded: Vec<Folded>, shown: &[String]) -> (Vec<String>, usize, usize) {
+    let mut said = Vec::new();
+    let (mut cut, mut cut_blocking) = (0, 0);
+    for f in folded {
+        if !shown.contains(&f.by) {
+            cut += 1;
+            cut_blocking += usize::from(f.blocks);
+        } else if f.same {
+            said.push(f.id);
+        }
+    }
+    (said, cut, cut_blocking)
+}
+
+/// `lines` in [`primed_order`] (then by evidence, then id), each rule said once: a rule
+/// is left out when a rule kept before it, for the same condition and broken by the file
+/// alike, has a line the agent cannot follow and still break it ([`folds_into`]).
+/// Returns the lines kept and those left out ([`Folded`]). The caps are
+/// [`pick_primed`]'s, after this.
+fn worst_first<'c, W: PartialEq>(
     mut lines: Lines<'c, W>,
     broken: &dyn Fn(&Convention) -> bool,
-) -> (Lines<'c, W>, Vec<(String, String)>) {
+) -> (Lines<'c, W>, Vec<Folded>) {
     // Ties by evidence, then id: what the agent hears, and which of two rules that say
     // the same keeps its words, never depends on the order of `conventions.yaml`.
     lines.sort_by(|(_, a), (_, b)| {
@@ -1188,52 +1396,109 @@ fn worst_first<'c, W>(
             .then(a.id.cmp(&b.id))
     });
     let mut kept: Vec<(W, &'c Convention)> = Vec::new();
-    let mut same: Vec<(String, String)> = Vec::new();
+    let mut folded: Vec<Folded> = Vec::new();
     for (w, c) in lines {
         // A rule the file breaks is never folded into one it follows: "this file
-        // already breaks it" would be lost.
+        // already breaks it" would be lost. Nor one said under another condition: the
+        // kept line may not hold for the file where this one does.
         if let Some((_, by)) = kept
             .iter()
-            .find(|(_, k)| (says_same(k, c) || says_same(c, k)) && broken(k) == broken(c))
+            .find(|(kw, k)| *kw == w && broken(k) == broken(c) && folds_into(c, k))
         {
-            same.push((c.id.clone(), by.id.clone()));
+            folded.push(Folded {
+                id: c.id.clone(),
+                by: by.id.clone(),
+                same: accepts_every_way_of(by, c),
+                blocks: blocks(c),
+            });
             continue;
         }
         kept.push((w, c));
     }
-    (kept, same)
+    (kept, folded)
 }
 
-/// Whether the mined rule `mined` and the promoted practice `practice` say the same
-/// thing: every canonical reference the mined rule names as what its members use (the
-/// wrappers of a wrap rule, the callee of a call or key rule, the class of a throw rule)
-/// is an instrument the practice map classified as one of the practice's accepted ways
-/// (a use of its `any_of` keys, `wrap:lib/auth.ts#withAuth`). Decided on the map's own
-/// keys and the rule's references, compared as references ([`drift_mine::mine::norm_ref`]),
-/// never on names or summaries. A practice accepted by mechanism or by "any way that
-/// enforces" names no instrument, and is never the same as a mined rule here.
-fn says_same(mined: &Convention, practice: &Convention) -> bool {
-    use drift_mine::mine::{Rule, norm_ref};
-    let Rule::Practice { any_of, .. } = &practice.rule else {
-        return false;
-    };
-    let targets: Vec<&str> = match &mined.rule {
+/// Whether the line of `kept` may be said for `dropped` too: an agent that follows the
+/// line it is shown cannot break the rule it was not shown. So `dropped` accepts every
+/// way `kept` accepts ([`accepts_every_way_of`]: the two accept the same ways, or the
+/// kept one is the stricter), never the reverse, and `dropped` blocks only if `kept`
+/// does (an agent may set aside a line that only advises).
+fn folds_into(dropped: &Convention, kept: &Convention) -> bool {
+    (!blocks(dropped) || blocks(kept)) && accepts_every_way_of(dropped, kept)
+}
+
+/// The canonical references a mined rule names as what its members use: the wrappers of
+/// a wrap rule (any one of them follows), the callee of a call rule, the class of a
+/// throw rule. `None` for any other rule: a key rule says more than its callee (which
+/// key, where), and the rest name no instrument.
+fn mined_ways(rule: &drift_mine::mine::Rule) -> Option<Vec<&str>> {
+    use drift_mine::mine::Rule;
+    let ways: Vec<&str> = match rule {
         Rule::WrappedBy { any_of, .. } => any_of.iter().map(String::as_str).collect(),
-        // A key rule says more than its callee (which key, where): never the same.
         Rule::Calls { callee } => vec![callee.as_str()],
         Rule::Throws { class } => vec![class.as_str()],
-        _ => Vec::new(),
+        _ => return None,
     };
-    if targets.is_empty() {
-        return false;
+    (!ways.is_empty()).then_some(ways)
+}
+
+/// Whether `looser` accepts every way `stricter` accepts, for a mined rule and a
+/// promoted practice (either one either side), decided on the practice map's own keys
+/// (`wrap:lib/auth.ts#withAuth`, one use each, joined by `+` when a way needs several)
+/// and the mined rule's references ([`mined_ways`]), compared as references
+/// ([`drift_mine::mine::norm_ref`]), never on names or summaries.
+///
+/// - The practice is the looser: every reference of the mined rule is one of the
+///   practice's ways on its own (a key of one use of that instrument).
+/// - The mined rule is the looser: the practice accepts only the ways it names (none by
+///   mechanism or by any way that enforces, which name no instrument), and each of them
+///   uses an instrument the mined rule accepts. A key a folded policy stored whole
+///   (`any_of(A|B)`) is read as no way here.
+///
+/// Two mined rules or two practices: false.
+fn accepts_every_way_of(looser: &Convention, stricter: &Convention) -> bool {
+    use drift_mine::mine::{Rule, norm_ref};
+    fn fold_key(k: &str) -> bool {
+        k.starts_with("any_of(")
     }
-    let instruments: BTreeSet<String> = any_of
-        .iter()
-        .flat_map(|key| key.split('+'))
-        .filter_map(|u| u.split_once(':').map(|(_, instrument)| instrument))
-        .map(|i| norm_ref(i).into_owned())
-        .collect();
-    targets.iter().all(|t| instruments.contains(&*norm_ref(t)))
+    match (&looser.rule, &stricter.rule) {
+        (Rule::Practice { any_of, .. }, mined) => {
+            let Some(ways) = mined_ways(mined) else {
+                return false;
+            };
+            let alone: BTreeSet<String> = any_of
+                .iter()
+                .filter(|k| !k.contains('+') && !fold_key(k.as_str()))
+                .filter_map(|k| k.split_once(':').map(|(_, i)| norm_ref(i).into_owned()))
+                .collect();
+            ways.iter().all(|t| alone.contains(&*norm_ref(t)))
+        }
+        (
+            mined,
+            Rule::Practice {
+                any_of,
+                any_mechanism,
+                any_enforcing,
+                ..
+            },
+        ) => {
+            let Some(ways) = mined_ways(mined) else {
+                return false;
+            };
+            if any_of.is_empty() || !any_mechanism.is_empty() || *any_enforcing {
+                return false;
+            }
+            let ways: BTreeSet<String> = ways.iter().map(|t| norm_ref(t).into_owned()).collect();
+            any_of.iter().all(|k| {
+                !fold_key(k.as_str())
+                    && k.split('+').any(|u| {
+                        u.split_once(':')
+                            .is_some_and(|(_, i)| ways.contains(&*norm_ref(i)))
+                    })
+            })
+        }
+        _ => false,
+    }
 }
 
 /// A rule's line before an edit ([`rule_line`]): for a promoted practice, the accepted
@@ -1328,9 +1593,14 @@ fn existing_file_rules(
     let facts = crate::scan::scan_file(&p.root, &opts, rel).ok().flatten()?;
     trace::took("single_file");
     let file = facts.files.iter().find(|f| f.path == rel)?;
-    let mut state = load_state(state_path)?;
+    // The state [`existing_file_rel`] read, not read again: saving lays only what this
+    // hook changes over what a hook for a parallel edit saved meanwhile ([`save_state`]).
+    let mut state = read.clone();
+    // The models the file declares, from its own facts, as `drift_rules_for` reads them:
+    // a Python ORM's models are told apart by them, not by the file's path.
+    let models = crate::mcp::models_in(&facts, rel);
     let lines: Vec<((), &Convention)> = p
-        .conventions_for_path(rel, Some(file), None, true)
+        .conventions_for_path(rel, Some(file), Some(&models), true)
         .into_iter()
         .filter(|c| !state.primed.contains(&c.id))
         .map(|c| ((), c))
@@ -1342,27 +1612,20 @@ fn existing_file_rules(
     let (lines, same) = worst_first(lines, &broken);
     // As before a new file: the cut line says how many of the rules left out block.
     let blocking_all = lines.iter().filter(|(_, c)| blocks(c)).count();
+    // In the order `worst_first` gave: within a tier, what the file does not break yet
+    // first.
     let (picked, left) = pick_primed(
         lines
             .into_iter()
-            .map(|(_, c)| (is_suggestion(c), (None::<String>, c)))
+            .map(|(_, c)| (is_suggestion(c), (broken(c), c)))
             .collect(),
     );
-    let picked: Vec<(bool, &Convention)> =
-        picked.into_iter().map(|(_, c)| (broken(c), c)).collect();
     let blocking_left = blocking_all - picked.iter().filter(|(_, c)| blocks(c)).count();
-    // A rule merged into one that was cut is left out with it: counted, never lost.
-    let merged_cut: Vec<&str> = same
-        .iter()
-        .filter(|(_, by)| !picked.iter().any(|(_, c)| c.id == *by))
-        .map(|(id, _)| id.as_str())
-        .collect();
-    let merged_blocking = merged_cut
-        .iter()
-        .filter(|id| p.accepted().any(|c| c.id == **id && blocks(c)))
-        .count();
-    let left = left + merged_cut.len();
-    let blocking_left = blocking_left + merged_blocking;
+    // A rule folded into one that was cut is left out with it: counted, never lost.
+    let picked_ids: Vec<String> = picked.iter().map(|(_, c)| c.id.clone()).collect();
+    let (said, cut, cut_blocking) = folded_outcome(same, &picked_ids);
+    let left = left + cut;
+    let blocking_left = blocking_left + cut_blocking;
     let shown_rel = sanitize(rel, 160);
     let shown_at = match p.package_label(rel) {
         Some(pkg) => format!("{shown_rel} in package {}", sanitize(&pkg, 120)),
@@ -1392,11 +1655,6 @@ fn existing_file_rules(
             drift_mine::report::shell_word(&shown_rel)
         ));
     }
-    let said: Vec<String> = same
-        .into_iter()
-        .filter(|(_, by)| shown.contains(by))
-        .map(|(id, _)| id)
-        .collect();
     state.primed.extend(said);
     state.primed.extend(shown);
     save_state(state_path, &state);
@@ -1611,13 +1869,17 @@ fn session_brief(state: &mut SessionState, cwd_rel: &str) -> Option<String> {
         "drift: practices in {} (facts, not rules; each names a file to copy):\n",
         sanitize(if pkg.is_empty() { "." } else { &pkg }, 120)
     );
+    // The recipes name the repository's files and guards: said as data, after the
+    // opening the Studio reads the brief by.
+    out.push_str(FACTS_DATA_LABEL);
     let head = out.len();
     let mut given = Vec::new();
     for r in state.recipes.iter().filter(|r| r.package == pkg) {
-        if out.len() + r.text.len() + 3 > drift_mine::practices::AGENT_CHARS {
+        let text = sanitize(&r.text, drift_mine::practices::AGENT_CHARS);
+        if out.len() + text.len() + 3 > drift_mine::practices::AGENT_CHARS {
             break;
         }
-        out.push_str(&format!("- {}\n", r.text));
+        out.push_str(&format!("- {text}\n"));
         given.push(recipe_key(&r.id));
     }
     if out.len() == head {
@@ -1641,14 +1903,19 @@ fn new_file_recipe(state: &mut SessionState, rel: &str) -> Option<String> {
     if state.primed.contains(&key) {
         return None;
     }
+    // The recipe names the repository's files and guards: said as data, on the lines
+    // after the opening the Studio reads the hint by.
     let mut line = format!(
         "drift: practices for {} (facts, not rules): {}",
         sanitize(rel, 160),
-        r.text
+        format!(
+            "\n{FACTS_DATA_LABEL}{}",
+            sanitize(&r.text, drift_mine::practices::AGENT_CHARS)
+        )
     );
     if !r.preview.is_empty() {
         line.push_str("; ");
-        line.push_str(&r.preview);
+        line.push_str(&sanitize(&r.preview, drift_mine::practices::AGENT_CHARS));
     }
     state.primed.insert(key);
     Some(line)
@@ -2070,9 +2337,31 @@ fn import_seen(rel: &str, module: &str) -> String {
 }
 
 /// Whether the SessionStart index lists `rel` among the files with entry points.
+///
+/// Read once a process: PostToolUse asks twice (which scan to make first, then what to
+/// record), and the index is only written by SessionStart, in a process of its own.
 fn hinted(p: &Project, rel: &str) -> bool {
-    crate::lookup::HintIndex::load(&sessions_dir(&p.root))
-        .is_some_and(|i| i.entries.iter().any(|e| e.path == rel))
+    type Listed = Option<(PathBuf, std::rc::Rc<BTreeSet<String>>)>;
+    thread_local! {
+        static ENTRIES: std::cell::RefCell<Listed> = const { std::cell::RefCell::new(None) };
+    }
+    let entries = ENTRIES.with(|e| {
+        let mut e = e.borrow_mut();
+        let kept = e
+            .as_ref()
+            .filter(|(root, _)| *root == p.root)
+            .map(|(_, files)| files.clone());
+        if let Some(files) = kept {
+            return files;
+        }
+        let files: BTreeSet<String> = crate::lookup::HintIndex::load(&sessions_dir(&p.root))
+            .map(|i| i.entries.into_iter().map(|h| h.path).collect())
+            .unwrap_or_default();
+        let files = std::rc::Rc::new(files);
+        *e = Some((p.root.clone(), files.clone()));
+        files
+    });
+    entries.contains(rel)
 }
 
 /// Whether the PostToolUse of `rel` is sure to read the whole repository if the file
@@ -2201,7 +2490,7 @@ fn post_tool_use(p: &Project, input: &Value, state_path: &Path) -> anyhow::Resul
             "systemMessage": format!("drift: {shown_rel} was not checked: {NO_STACK}. Run `drift check` with more memory to check it."),
             "hookSpecificOutput": {
                 "hookEventName": "PostToolUse",
-                "additionalContext": format!("drift: {shown_rel} was NOT checked against the accepted conventions ({NO_STACK}). Do not assume it follows them; `drift example {shown_rel}` names a file to copy."),
+                "additionalContext": format!("drift: {shown_rel} was NOT checked against the accepted conventions ({NO_STACK}). Do not assume it follows them; `drift example {}` names a file to copy.", drift_mine::report::shell_word(&shown_rel)),
             }
         })));
     }
@@ -3962,7 +4251,7 @@ mod tests {
         };
         // A new file of a recipe's kind: the recipe and its file, once.
         let line = new_file_recipe(&mut state, "apps/web/app/api/x/route.ts").unwrap();
-        assert!(line.starts_with("drift: practices for apps/web/app/api/x/route.ts (facts, not rules): new http entry points in apps/web: authn: "), "{line}");
+        assert!(line.starts_with(&format!("drift: practices for apps/web/app/api/x/route.ts (facts, not rules): \n{FACTS_DATA_LABEL}new http entry points in apps/web: authn: ")), "{line}");
         assert!(line.contains("route.ts:4"), "{line}");
         // Dedupe: the same recipe is not said twice in a session.
         assert_eq!(
@@ -3999,7 +4288,7 @@ mod tests {
             ..SessionState::default()
         };
         let brief = session_brief(&mut state, "apps/web/app").unwrap();
-        assert!(brief.starts_with("drift: practices in apps/web (facts, not rules; each names a file to copy):\n- new http entry points in apps/web"), "{brief}");
+        assert!(brief.starts_with(&format!("drift: practices in apps/web (facts, not rules; each names a file to copy):\n{FACTS_DATA_LABEL}- new http entry points in apps/web")), "{brief}");
         assert!(!brief.contains("handler"), "{brief}");
         assert!(brief.len() <= drift_mine::practices::AGENT_CHARS);
         // Given at session start: the new-file hint does not repeat it.
@@ -4584,5 +4873,221 @@ mod tests {
             ids(pick_primed(items)),
             (vec!["D-ffffff", "D-eeeeee", "D-000004", "D-000003"], 2)
         );
+    }
+
+    // ---------- Review fix v7: the fold, the order, the count, the state ----------
+
+    use drift_mine::mine::{Evidence, Rule};
+    use drift_mine::policy::{Mode, Status};
+
+    fn rv_conv(id: &str, rule: Rule, lower_bound: f64) -> Convention {
+        Convention {
+            id: id.into(),
+            status: Status::Accepted,
+            mode: Mode::Block,
+            summary: format!("rule {id}"),
+            role: drift_mine::roles::RoleSelector {
+                package: String::new(),
+                dir: drift_mine::roles::PACKAGE_WIDE.into(),
+                file: drift_mine::practices::promote::PRACTICE_FILE.into(),
+                entry: "-".into(),
+                kind: drift_core::SymbolKind::Module,
+                variety: None,
+                export_name: None,
+                member_kind: None,
+                shape: None,
+                also: vec![],
+            },
+            rule,
+            evidence: Evidence {
+                holders: 40,
+                total: 42,
+                lower_bound,
+                lift: 3.0,
+                split: vec![],
+                role_members: None,
+                python_members: None,
+            },
+            example: "app/api/a/route.ts#GET".into(),
+            selector_version: drift_mine::policy::SELECTOR_VERSION,
+            agents: None,
+            exceptions: Vec::new(),
+            different_kind: Vec::new(),
+            promoted_from_hidden: false,
+            promoted_from_practice: None,
+            from_map: None,
+            accepted_evidence: None,
+        }
+    }
+
+    fn wrapped(any_of: &[&str]) -> Rule {
+        Rule::WrappedBy {
+            kind: drift_core::WrapKind::Call,
+            any_of: any_of.iter().map(|s| s.to_string()).collect(),
+        }
+    }
+
+    fn practice_of(any_of: &[&str]) -> Rule {
+        Rule::Practice {
+            concern: "authn".into(),
+            any_of: any_of.iter().map(|s| s.to_string()).collect(),
+            any_mechanism: vec![],
+            any_enforcing: false,
+            in_file: None,
+            under_route: None,
+        }
+    }
+
+    fn kept_ids<W>(lines: &Lines<'_, W>) -> Vec<String> {
+        lines.iter().map(|(_, c)| c.id.clone()).collect()
+    }
+
+    /// Pins review item 1 (area 4): a mined `withAuth` wrap rule was folded into a looser
+    /// practice (`withAuth` or `requireSession`) that sorted first, so the agent heard
+    /// "any accepted way", used `requireSession`, and was blocked by a rule it was never
+    /// shown, whose id was recorded as given. Now both are said.
+    #[test]
+    fn a_stricter_rule_is_never_folded_into_a_looser_one() {
+        let mined = rv_conv("D-aaaaaa", wrapped(&["lib/auth.ts#withAuth"]), 0.80);
+        let looser = rv_conv(
+            "P-bbbbbb",
+            practice_of(&["wrap:lib/auth.ts#withAuth", "call:lib/session.ts#requireSession"]),
+            0.90,
+        );
+        let (kept, folded) = worst_first(vec![((), &mined), ((), &looser)], &|_: &Convention| false);
+        assert_eq!(kept_ids(&kept), vec!["P-bbbbbb", "D-aaaaaa"]);
+        assert!(folded.is_empty());
+        // The other way round, the looser one is folded into the stricter line kept, but
+        // its own content was not given: never recorded as given.
+        let mined = rv_conv("D-aaaaaa", wrapped(&["lib/auth.ts#withAuth"]), 0.95);
+        let (kept, folded) = worst_first(vec![((), &mined), ((), &looser)], &|_: &Convention| false);
+        assert_eq!(kept_ids(&kept), vec!["D-aaaaaa"]);
+        assert_eq!((folded[0].id.as_str(), folded[0].same), ("P-bbbbbb", false));
+        let (said, cut, _) = folded_outcome(folded, &["D-aaaaaa".to_string()]);
+        assert_eq!((said, cut), (Vec::<String>::new(), 0));
+        // The same ways: folded, and given with the line said.
+        let same = rv_conv("P-cccccc", practice_of(&["wrap:lib/auth.ts#withAuth"]), 0.90);
+        let (kept, folded) = worst_first(vec![((), &mined), ((), &same)], &|_: &Convention| false);
+        assert_eq!(kept_ids(&kept), vec!["D-aaaaaa"]);
+        let (said, _, _) = folded_outcome(folded, &["D-aaaaaa".to_string()]);
+        assert_eq!(said, vec!["P-cccccc".to_string()]);
+        // A way that needs a second use, a practice by mechanism: never the same.
+        let both = rv_conv(
+            "P-dddddd",
+            practice_of(&["call:lib/audit.ts#audit+wrap:lib/auth.ts#withAuth"]),
+            0.90,
+        );
+        assert!(!accepts_every_way_of(&both, &mined));
+        assert!(accepts_every_way_of(&mined, &both));
+        let mut by_mechanism = rv_conv("P-eeeeee", practice_of(&["wrap:lib/auth.ts#withAuth"]), 0.9);
+        if let Rule::Practice { any_mechanism, .. } = &mut by_mechanism.rule {
+            any_mechanism.push("wrap".into());
+        }
+        assert!(!accepts_every_way_of(&mined, &by_mechanism));
+        // One that blocks is never folded into one that advises.
+        let mut advises = rv_conv("P-ffffff", practice_of(&["wrap:lib/auth.ts#withAuth"]), 0.9);
+        advises.mode = Mode::Advise;
+        assert!(!folds_into(&mined, &advises));
+        assert!(folds_into(&advises, &mined));
+    }
+
+    /// A rule as [`pick_primed`] reads it before an edit: (blocks, lower bound, id,
+    /// broken).
+    struct Before(bool, f64, &'static str, bool);
+
+    impl PrimeStrength for Before {
+        fn strength(&self) -> (bool, f64, &str) {
+            (self.0, self.1, self.2)
+        }
+        fn broken(&self) -> bool {
+            self.3
+        }
+    }
+
+    /// Pins review item 5 (area 4): `pick_primed` sorted by evidence alone, so with six
+    /// blocking rules the four kept could be rules the file already breaks, and those the
+    /// edit could newly break were cut to "+2 more". Now `worst_first`'s order holds.
+    #[test]
+    fn priming_keeps_the_rules_the_edit_could_break_first() {
+        let items: Vec<(bool, Before)> = [
+            ("D-000001", true, 0.95),
+            ("D-000002", true, 0.94),
+            ("D-000003", true, 0.93),
+            ("D-000004", true, 0.92),
+            ("D-000005", false, 0.71),
+            ("D-000006", false, 0.70),
+        ]
+        .into_iter()
+        .map(|(id, broken, lb)| (false, Before(true, lb, id, broken)))
+        .collect();
+        let (picked, left) = pick_primed(items);
+        let ids: Vec<&str> = picked.iter().map(|b| b.2).collect();
+        assert_eq!((ids, left), (vec!["D-000005", "D-000006", "D-000001", "D-000002"], 2));
+    }
+
+    /// Pins review item 6 (area 4): before a new file, a rule folded into one that was cut
+    /// vanished from "+N more"; it is counted with it, and so is its blocking.
+    #[test]
+    fn a_rule_folded_into_a_cut_one_is_counted() {
+        let folded = vec![
+            Folded {
+                id: "P-aaaaaa".into(),
+                by: "D-cut".into(),
+                same: true,
+                blocks: true,
+            },
+            Folded {
+                id: "P-bbbbbb".into(),
+                by: "D-shown".into(),
+                same: true,
+                blocks: true,
+            },
+        ];
+        let (said, cut, blocking) = folded_outcome(folded, &["D-shown".to_string()]);
+        assert_eq!((said, cut, blocking), (vec!["P-bbbbbb".to_string()], 1, 1));
+    }
+
+    /// Pins review item 8 (area 4): session state was read, changed and written whole,
+    /// so two hooks saving at once lost one's entries (a lost `edited` entry skipped the
+    /// Stop check of that file). Each save now lays its own change over the file.
+    #[test]
+    fn parallel_saves_keep_each_others_entries() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("sessions").join("s.json");
+        let start = SessionState {
+            has_baseline: true,
+            advised: ["old".to_string(), "gone".to_string()].into(),
+            ..SessionState::default()
+        };
+        save_state(&path, &start);
+        // Two hooks read the same state.
+        let mut post = load_state(&path).unwrap();
+        let mut mcp = load_state(&path).unwrap();
+        post.edited.insert("app/a.ts".into());
+        post.advised.remove("gone");
+        save_state(&path, &post);
+        mcp.primed.insert("D-aaaaaa".into());
+        mcp.advised.insert("new".into());
+        save_state(&path, &mcp);
+        let now = load_state(&path).unwrap();
+        assert!(now.edited.contains("app/a.ts"), "{now:?}");
+        assert!(now.primed.contains("D-aaaaaa"), "{now:?}");
+        assert_eq!(
+            now.advised,
+            BTreeSet::from(["new".to_string(), "old".to_string()]),
+            "{now:?}"
+        );
+        // A Stop that checked the edited files clears them without dropping one added
+        // since it read the state.
+        let mut stop = load_state(&path).unwrap();
+        let mut post = load_state(&path).unwrap();
+        post.edited.insert("app/b.ts".into());
+        save_state(&path, &post);
+        stop.edited.clear();
+        save_state(&path, &stop);
+        let now = load_state(&path).unwrap();
+        assert_eq!(now.edited, BTreeSet::from(["app/b.ts".to_string()]), "{now:?}");
+        // No lock is left behind.
+        assert!(!dir.path().join("sessions").join(".s.json.lock").exists());
     }
 }
