@@ -33,6 +33,14 @@ main branch.
 
 ### Added
 
+- **More Next.js entry points in `drift security` and the practice map** (the
+  listed reading; mining is unchanged): inline server actions (a function whose
+  own body starts with `"use server"`, such as one written inside a server
+  component), each listed under its own symbol (`Page.save`) with only the
+  guards its own body calls; Next.js 16's `proxy.ts` as the middleware;
+  `getServerSideProps` as `GET` at its page's route; and route files under
+  the extensions a literal `pageExtensions` adds (`route.mts`). TypeScript
+  `LOWERING_VERSION` 87.
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise

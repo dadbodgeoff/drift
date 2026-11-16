@@ -1019,6 +1019,9 @@ pub struct Linker<'r> {
     trpc: TrpcOrigins,
     /// Package directory -> built with Next.js ([`crate::nextjs::package_uses_next`]).
     next_packages: Mutex<BTreeMap<String, bool>>,
+    /// Package directory -> what its files say of the conventions the listed
+    /// reading reads ([`crate::nextjs::next_package`]).
+    next_listing: Mutex<BTreeMap<String, std::sync::Arc<crate::nextjs::NextPackage>>>,
     /// Package directory -> the file-convention router it is built with
     /// ([`crate::filerouters::framework_of`]).
     file_routers: Mutex<BTreeMap<String, Option<crate::filerouters::Framework>>>,
@@ -1386,6 +1389,7 @@ impl<'r> Linker<'r> {
             composed: BTreeMap::new(),
             trpc: TrpcOrigins::default(),
             next_packages: Mutex::new(BTreeMap::new()),
+            next_listing: Mutex::new(BTreeMap::new()),
             file_routers: Mutex::new(BTreeMap::new()),
             route_middleware: files
                 .iter()
@@ -2876,6 +2880,17 @@ impl<'r> Linker<'r> {
             .or_insert_with(|| crate::nextjs::package_uses_next(&self.resolver.root, package))
     }
 
+    /// [`crate::nextjs::next_package`] of the package at `package`, read once per
+    /// package.
+    fn next_listing(&self, package: &str) -> std::sync::Arc<crate::nextjs::NextPackage> {
+        let mut memo = self.next_listing.lock().unwrap_or_else(|e| e.into_inner());
+        memo.entry(package.to_string())
+            .or_insert_with(|| {
+                std::sync::Arc::new(crate::nextjs::next_package(&self.resolver.root, package))
+            })
+            .clone()
+    }
+
     /// The file-convention router the package at `package` is built with, read once
     /// per package.
     fn file_router(&self, package: &str) -> Option<crate::filerouters::Framework> {
@@ -3744,7 +3759,24 @@ impl<'r> Linker<'r> {
                 }
             })
             .collect();
-        facts.entry_points = crate::nextjs::entry_points(&facts, self.uses_next(&facts.package));
+        let next = self.uses_next(&facts.package);
+        facts.entry_points = crate::nextjs::entry_points(&facts, next);
+        // The Next.js entry points the last measured build did not list (an inline
+        // server action, `proxy.ts`, `getServerSideProps`, an extension of
+        // `pageExtensions`): in the listed reading only.
+        let listed_next: Vec<drift_core::EntryPoint> = if next || !f.raw.inline_actions.is_empty() {
+            let pkg = if next {
+                self.next_listing(&facts.package)
+            } else {
+                std::sync::Arc::default()
+            };
+            crate::nextjs::listed_entry_points(&facts, next, &pkg, &f.raw.inline_actions)
+                .into_iter()
+                .filter(|e| !facts.entry_points.contains(e))
+                .collect()
+        } else {
+            Vec::new()
+        };
         // The routes of a file-convention router below: the framework answers a
         // request with what the handler returns, so a handler that hands back a
         // value answers by it ([`drift_core::controls::ANSWERS_BY_RETURN`]).
@@ -3826,6 +3858,7 @@ impl<'r> Linker<'r> {
                 facts.entry_points.push(e);
             }
         }
+        facts.entry_points.extend(listed_next.iter().cloned());
         // Route paths from adapters are file-local: one entry point for each way the
         // route's router is mounted, under that mount's prefix.
         for e in &raw_entry_points {
@@ -4198,6 +4231,7 @@ impl<'r> Linker<'r> {
             })
             .collect();
         if !in_place.is_empty()
+            || !listed_next.is_empty()
             || !attrs.is_empty()
             || !listed_controls.is_empty()
             || !flows.is_empty()
@@ -4328,6 +4362,7 @@ impl<'r> Linker<'r> {
             measured
                 .mounts
                 .retain(|m| !in_place.contains(m.symbol.as_str()));
+            measured.entry_points.retain(|e| !listed_next.contains(e));
             measured.hold(facts);
             measured.hold_guard_calls(guard_calls);
             measured.hold_rewrites(f.raw.rewrites.clone());
