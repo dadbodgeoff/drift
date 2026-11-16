@@ -9,6 +9,10 @@
 //! never imports `apps/web`, in none of its files). This module reads the same facts the
 //! map reads and proposes those pairs.
 //!
+//! The same channel proposes a package's manifest as a rule ([`manifest`]): its files
+//! import only the packages its `package.json` declares ([`Rule::ImportsDeclared`],
+//! decided by [`crate::imports_declared`]), which no mined rule can say.
+//!
 //! It is a second channel: mining, its thresholds, ids and output are untouched, and
 //! nothing here passes through mining's gates. Every proposal is `proposed` and `advise`,
 //! labelled `from_map`, and nothing checks it until a person accepts it. Its rule is the
@@ -468,24 +472,259 @@ pub fn offered(proposals: &[Proposal]) -> (Vec<&Proposal>, usize) {
     (fresh.into_iter().take(MAX_OFFERED).collect(), more)
 }
 
-/// Manifest proposals ("a workspace package imports only what its manifest declares"):
-/// none, on purpose, because no rule kind says it and the checker evaluates none that does.
+/// Members of a manifest proposal's role that Drift read and that import a package
+/// (another workspace package or a third-party one), at least: mining's smallest role
+/// ([`crate::mine::MIN_ROLE_SIZE`]). A package with fewer has too little to hold to a
+/// rule. A starting value, to be measured.
+pub const MIN_MANIFEST_IMPORTING: usize = crate::mine::MIN_ROLE_SIZE;
+
+/// What the summary of a manifest proposal adds to the rule: what counts as declared and
+/// what is not the rule's, so a person and (once accepted) an agent read the same rule
+/// `drift check` evaluates ([`crate::imports_declared`]).
+pub const MANIFEST_CLAUSE: &str =
+    "any of its dependency sections; Node built-ins and its own code excepted; tests not checked";
+
+/// A manifest proposal ([`manifest`]).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct ManifestProposal {
+    /// `status: proposed`, `mode: advise`, `from_map: manifest`, no agents choice.
+    pub convention: Convention,
+    pub manifest: ManifestEvidence,
+}
+
+/// What a manifest proposal rests on, counted from the facts.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ManifestEvidence {
+    /// The manifest (`packages/ui/package.json`).
+    pub manifest: String,
+    /// The package's directory (`""` for the root) and name.
+    pub package: String,
+    pub name: String,
+    /// Production files of the package (the rule's role).
+    pub members: usize,
+    /// Members Drift read that import a package (another workspace package or a
+    /// third-party one): what the rule is about.
+    pub importing: usize,
+    /// Members that follow it today.
+    pub follows: usize,
+    /// Members that break it today, and their imports that do.
+    pub breaking_files: usize,
+    pub breaking_imports: usize,
+    /// Each package imported without being declared, most imports first.
+    pub undeclared: Vec<UndeclaredPackage>,
+    /// Members Drift could not check (an import it could not resolve or judge, a file
+    /// with parse errors or imports cut short, a Python file): neither follow nor break.
+    pub not_read: usize,
+    /// A member that follows it and imports a package, `path#(file)` (a member that
+    /// follows it, else the first member, when none that imports a package does).
+    pub example: String,
+}
+
+/// One package a manifest proposal's files import without declaring it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct UndeclaredPackage {
+    pub package: String,
+    pub imports: usize,
+    pub files: usize,
+    /// The manifests that declare it, `package.json` for the root; empty for a workspace
+    /// package nobody declares.
+    pub declared_in: Vec<String>,
+    /// The workspace package's directory, when it is one.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub workspace: String,
+}
+
+/// Manifest proposals and what was not proposed, from [`manifest`].
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+pub struct Manifests {
+    /// Guards first (packages that break nothing today, so nothing is recorded when a
+    /// person accepts one), then more importing files, then by id. Deterministic.
+    pub proposals: Vec<ManifestProposal>,
+    /// The Python manifests of the repository (`pyproject.toml`, `requirements.txt`):
+    /// never proposed, because a Python import names a module and not the distribution
+    /// that ships it ([`crate::imports_declared::PYTHON_WHY`]). Said, so a person knows
+    /// why a Python project has no such proposal.
+    pub python: Vec<String>,
+}
+
+/// Manifest proposals: "code in this workspace package imports only the packages its
+/// `package.json` declares" ([`Rule::ImportsDeclared`], decided by
+/// [`crate::imports_declared`]), one per `package.json` Drift read whose package has at
+/// least [`MIN_MANIFEST_IMPORTING`] production files that import a package, and no more
+/// than [`MAX_NOT_READ_SHARE`] of whose files Drift could not check. Never mined, never
+/// from a list of names: the facts are the imports as resolved and the manifests as read.
 ///
-/// The fact is in the map: [`crate::map::file_targets`] lists the workspace packages a
-/// file's imports land in, and [`RepoContext::package_depends_on`] says whether its
-/// package declares each (plane: 0 of 1,727 importing files break it; cal.com: 1,192 of
-/// 2,469 do, so it would not be proposed there). But the rule is "no import of an
-/// undeclared workspace package, whichever": `Rule::Avoids` names one signal (one area),
-/// so it cannot say "any package not declared", and its `import:` signals leave out
-/// imports by workspace-package name (`pkg:@x/ui`), which this rule is mostly about.
-/// One `Avoids` per undeclared package would restate today's packages and miss the next
-/// one. A rule kind is needed (say `Rule::ImportsDeclared`, about a file or a package,
-/// held when every import that lands in another workspace package is of one its manifest
-/// declares, test edges and `dev_only` apart), with `check` evaluating it, and the
-/// cross-ecosystem name match fixed first (`map.rs` joins a PyPI import `emails` to an npm
-/// workspace package `emails`). Until then this returns nothing.
-pub fn manifest(_repo: &RepoFacts, _kinds: &FileKinds, _mined: &[MinedRule<'_>]) -> Vec<Proposal> {
-    Vec::new()
+/// A manifest the code follows everywhere is proposed too, as a guard: accepting it
+/// records nothing, and it is the next phantom dependency it catches. One the code
+/// breaks today is proposed with what breaks it counted ("12 imports of 4 packages it
+/// does not declare"), recorded in `drift.lock` when a person accepts it, so only a new
+/// one is reported. `_mined` is unused: mining never makes this rule.
+pub fn manifest(repo: &RepoFacts, kinds: &FileKinds, _mined: &[MinedRule<'_>]) -> Manifests {
+    let units = crate::roles::units(repo, kinds);
+    let ctx = RepoContext::new(repo, &units);
+    let idx = ctx.imports_declared();
+    let mut members: BTreeMap<&str, Vec<&FileFacts>> = BTreeMap::new();
+    for f in file_units(&units) {
+        if f.lang != "py" && idx.read(&f.package) {
+            members.entry(f.package.as_str()).or_default().push(f);
+        }
+    }
+    let mut out: Vec<ManifestProposal> = Vec::new();
+    for (package, files) in members {
+        let role = RoleSelector {
+            package: package.to_string(),
+            dir: PACKAGE_WIDE.into(),
+            file: "*".into(),
+            entry: "-".into(),
+            kind: SymbolKind::Module,
+            variety: None,
+            export_name: None,
+            member_kind: None,
+            shape: None,
+            also: vec![],
+        };
+        let mut ev = ManifestEvidence {
+            manifest: crate::imports_declared::manifest_path(package),
+            package: package.to_string(),
+            name: idx.name(package).unwrap_or_default().to_string(),
+            members: files.len(),
+            importing: 0,
+            follows: 0,
+            breaking_files: 0,
+            breaking_imports: 0,
+            undeclared: Vec::new(),
+            not_read: 0,
+            example: String::new(),
+        };
+        let mut by_package: BTreeMap<String, (UndeclaredPackage, BTreeSet<&str>)> = BTreeMap::new();
+        for f in &files {
+            let v = crate::imports_declared::judge(f, idx);
+            let told = if f.parse_ok {
+                v.told()
+            } else {
+                crate::mine::Told::CannotTell(String::new())
+            };
+            match told {
+                crate::mine::Told::Holds => {
+                    ev.follows += 1;
+                    if v.packages > 0 {
+                        ev.importing += 1;
+                        if ev.example.is_empty() {
+                            ev.example = format!("{}#{FILE_UNIT}", f.path);
+                        }
+                    }
+                }
+                crate::mine::Told::Breaks => {
+                    ev.importing += 1;
+                    ev.breaking_files += 1;
+                    ev.breaking_imports += v.breaks.len();
+                    for (_, u) in v.breaks {
+                        let e = by_package.entry(u.package.clone()).or_insert_with(|| {
+                            (
+                                UndeclaredPackage {
+                                    package: u.package.clone(),
+                                    imports: 0,
+                                    files: 0,
+                                    declared_in: u.declared_in.clone(),
+                                    workspace: u.workspace.clone(),
+                                },
+                                BTreeSet::new(),
+                            )
+                        });
+                        e.0.imports += 1;
+                        e.1.insert(f.path.as_str());
+                    }
+                }
+                crate::mine::Told::CannotTell(_) => ev.not_read += 1,
+            }
+        }
+        if ev.importing < MIN_MANIFEST_IMPORTING
+            || ev.not_read as f64 > MAX_NOT_READ_SHARE * ev.members as f64
+        {
+            continue;
+        }
+        // Every importing member breaks it: the example is a member that holds (it
+        // imports no package), else the first member, so the convention has one.
+        if ev.example.is_empty() {
+            ev.example = format!("{}#{FILE_UNIT}", files[0].path);
+        }
+        let mut undeclared: Vec<UndeclaredPackage> = by_package
+            .into_values()
+            .map(|(mut u, files)| {
+                u.files = files.len();
+                u
+            })
+            .collect();
+        undeclared.sort_by(|a, b| b.imports.cmp(&a.imports).then(a.package.cmp(&b.package)));
+        ev.undeclared = undeclared;
+        let rule = Rule::ImportsDeclared;
+        let told = ev.follows + ev.breaking_files;
+        let convention = Convention {
+            id: convention_id(&role, &rule),
+            status: Status::Proposed,
+            mode: Mode::Advise,
+            summary: manifest_summary(package, &ev.manifest),
+            role: role.clone(),
+            rule,
+            evidence: Evidence {
+                holders: ev.follows,
+                total: told,
+                lower_bound: r3(wilson_lower_bound(ev.follows, told)),
+                // No contrast is measured: the manifest is the evidence.
+                lift: 0.0,
+                split: vec![],
+                role_members: (ev.members != told).then_some(ev.members),
+                python_members: None,
+            },
+            example: ev.example.clone(),
+            selector_version: crate::policy::selector_version_of(&role),
+            agents: None,
+            exceptions: Vec::new(),
+            different_kind: Vec::new(),
+            promoted_from_hidden: false,
+            promoted_from_practice: None,
+            from_map: Some(MANIFEST.to_string()),
+            accepted_evidence: None,
+        };
+        out.push(ManifestProposal {
+            convention,
+            manifest: ev,
+        });
+    }
+    out.sort_by(|a, b| {
+        (a.manifest.breaking_imports > 0)
+            .cmp(&(b.manifest.breaking_imports > 0))
+            .then(b.manifest.importing.cmp(&a.manifest.importing))
+            .then(a.convention.id.cmp(&b.convention.id))
+    });
+    let mut python: Vec<String> = repo
+        .packages
+        .iter()
+        .filter(|p| crate::roles::is_python_package(p))
+        .filter(|p| {
+            repo.files
+                .iter()
+                .any(|f| f.lang == "py" && f.package == p.path)
+        })
+        .map(|p| p.manifest.clone())
+        .collect();
+    python.sort();
+    python.dedup();
+    Manifests {
+        proposals: out,
+        python,
+    }
+}
+
+/// "Code in packages/ui imports only the packages packages/ui/package.json declares
+/// (...)", "Code of the root package ..." for the root.
+fn manifest_summary(package: &str, manifest: &str) -> String {
+    let what = if package.is_empty() {
+        "Code of the root package".to_string()
+    } else {
+        format!("Code in {package}")
+    };
+    format!("{what} imports only the packages {manifest} declares ({MANIFEST_CLAUSE})")
 }
 
 /// "Code in packages/features never imports apps/web (779 files, none do; checked on
@@ -886,6 +1125,136 @@ mod tests {
             format!(
                 "Code in packages/ui never imports apps/web (779 files, none do; 3 files of packages/ui not read; {CHECKED_CLAUSE})"
             )
+        );
+    }
+
+    fn ts(path: &str, package: &str, imports: &[&str]) -> FileFacts {
+        FileFacts {
+            path: path.into(),
+            lang: "ts".into(),
+            package: package.into(),
+            parse_ok: true,
+            imports: imports
+                .iter()
+                .map(|m| drift_core::Import {
+                    module: m.to_string(),
+                    names: vec!["x".into()],
+                    type_only: false,
+                    load: Default::default(),
+                })
+                .collect(),
+            ..Default::default()
+        }
+    }
+
+    fn pkg(path: &str, name: &str, deps: &[&str]) -> drift_core::PackageFacts {
+        drift_core::PackageFacts {
+            path: path.into(),
+            name: name.into(),
+            dependencies: deps.iter().map(|d| d.to_string()).collect(),
+            ..Default::default()
+        }
+    }
+
+    /// `apps/web`: 10 files importing the `next` it declares, `phantoms` of which also
+    /// import `lodash`, which only the root declares; `unresolved` more files with an
+    /// import Drift could not resolve.
+    fn web(phantoms: usize, unresolved: usize) -> RepoFacts {
+        let mut files = Vec::new();
+        for i in 0..10 {
+            let mut imports = vec!["pkg:next/link"];
+            if i < phantoms {
+                imports.push("pkg:lodash");
+                imports.push("pkg:lodash/fp");
+            }
+            files.push(ts(&format!("apps/web/f{i}.ts"), "apps/web", &imports));
+        }
+        for i in 0..unresolved {
+            files.push(ts(
+                &format!("apps/web/u{i}.ts"),
+                "apps/web",
+                &["unresolved:apps/web/~/x"],
+            ));
+        }
+        RepoFacts {
+            files,
+            packages: vec![
+                pkg("", "root", &["lodash@4"]),
+                pkg("apps/web", "web", &["next@14"]),
+            ],
+            ..Default::default()
+        }
+    }
+
+    /// Pins the counts a person sees before accepting: imports, packages and files that
+    /// break it today, each package with where it is declared instead; and a clean
+    /// manifest is proposed as a guard with nothing to record.
+    #[test]
+    fn a_manifest_proposal_counts_what_breaks_it_today() {
+        let r = web(3, 0);
+        let m = manifest(&r, &FileKinds::learn(&r), &[]);
+        assert_eq!(m.proposals.len(), 1, "{m:?}");
+        let p = &m.proposals[0];
+        assert_eq!(p.convention.rule, Rule::ImportsDeclared);
+        assert_eq!(p.convention.from_map.as_deref(), Some(MANIFEST));
+        assert_eq!(p.convention.agents, None);
+        assert_eq!(
+            p.convention.summary,
+            format!(
+                "Code in apps/web imports only the packages apps/web/package.json declares ({MANIFEST_CLAUSE})"
+            )
+        );
+        let e = &p.manifest;
+        assert_eq!(
+            (e.importing, e.breaking_files, e.breaking_imports),
+            (10, 3, 6)
+        );
+        assert_eq!(e.undeclared.len(), 1);
+        assert_eq!(e.undeclared[0].package, "lodash");
+        assert_eq!(e.undeclared[0].declared_in, ["package.json"]);
+        assert_eq!((e.undeclared[0].imports, e.undeclared[0].files), (6, 3));
+        assert_eq!(
+            (p.convention.evidence.holders, p.convention.evidence.total),
+            (7, 10)
+        );
+
+        let r = web(0, 0);
+        let m = manifest(&r, &FileKinds::learn(&r), &[]);
+        assert_eq!(m.proposals[0].manifest.breaking_imports, 0);
+    }
+
+    /// Pins that what Drift could not resolve is not read, never a break or a follow,
+    /// and that a package with too much of it is not proposed (the bound layering uses).
+    #[test]
+    fn a_manifest_mostly_unread_is_not_proposed() {
+        let r = web(0, 2);
+        let m = manifest(&r, &FileKinds::learn(&r), &[]);
+        assert_eq!(m.proposals[0].manifest.not_read, 2);
+        assert_eq!(m.proposals[0].manifest.follows, 10);
+        let r = web(0, 10);
+        assert!(
+            manifest(&r, &FileKinds::learn(&r), &[])
+                .proposals
+                .is_empty()
+        );
+    }
+
+    /// Pins that a Python project gets no proposal, and is named so a person hears why.
+    #[test]
+    fn a_python_project_is_named_not_proposed() {
+        let mut r = web(0, 0);
+        let mut py = ts("api/app.py", "api", &["pkg:requests"]);
+        py.lang = "py".into();
+        r.files.push(py);
+        let mut p = pkg("api", "api", &["requests@2"]);
+        p.manifest = "api/pyproject.toml".into();
+        r.packages.push(p);
+        let m = manifest(&r, &FileKinds::learn(&r), &[]);
+        assert_eq!(m.python, ["api/pyproject.toml"]);
+        assert!(
+            m.proposals
+                .iter()
+                .all(|p| p.convention.role.package != "api")
         );
     }
 }

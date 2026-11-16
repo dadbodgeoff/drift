@@ -268,6 +268,15 @@ pub enum Rule {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         under_route: Option<String>,
     },
+    /// Every import of the file is of a package its own `package.json` declares (any
+    /// section), a Node built-in, or code of its own package: no phantom dependency that
+    /// resolves only because another workspace package or the root installs it. Never
+    /// mined: proposed from the map ([`crate::from_map::manifest`]) for one workspace
+    /// package, its role that package's files. What counts as declared, and what Drift
+    /// cannot check, is [`crate::imports_declared`]'s to say; a policy holding it is
+    /// written as format [`crate::policy::POLICY_VERSION_RULES`], which an older Drift
+    /// refuses instead of failing to parse.
+    ImportsDeclared,
 }
 
 impl Rule {
@@ -632,9 +641,13 @@ fn layer_signals<'a>(
         })
 }
 
-/// The first module a file imports that breaks a layering rule (`avoids:import`), for
-/// the advice that names the import to change; `None` for any other rule or unit.
+/// The first module a file imports that breaks a layering rule (`avoids:import`) or
+/// imports an undeclared package ([`Rule::ImportsDeclared`]), for the advice that names
+/// the import to change; `None` for any other rule or unit.
 pub fn offending_import(rule: &Rule, view: &View, ctx: &RepoContext) -> Option<String> {
+    if *rule == Rule::ImportsDeclared {
+        return crate::imports_declared::first_break(view, ctx.imports_declared()).map(|(m, _)| m);
+    }
     let (Rule::Avoids { signal }, View::File(f)) = (rule, view) else {
         return None;
     };
@@ -2311,6 +2324,7 @@ impl Rule {
             | Rule::RegisteredIn { .. }
             | Rule::MirrorsKeys { .. }
             | Rule::ImportsFrom { .. }
+            | Rule::ImportsDeclared
             | Rule::Practice { .. } => return false,
         };
         let callee = matches!(
@@ -3046,6 +3060,9 @@ impl Rule {
             (Rule::ImportsFrom { instead_of, .. }, View::Symbol(_, symbol)) => {
                 !references(symbol).any(|r| instead_of.iter().any(|a| same_ref(&r, a)))
             }
+            (Rule::ImportsDeclared, View::File(f)) => {
+                crate::imports_declared::holds(f, ctx.imports_declared())
+            }
             (_, View::Symbol(file, own)) => {
                 // A plain alias of a function does what the function does ([`features`]).
                 let (file, symbol) = ctx.alias_target(file, own).unwrap_or((file, own));
@@ -3092,6 +3109,11 @@ impl Rule {
     /// ([`Rule::unread_in`]); otherwise Drift cannot tell, and says so. A unit Drift
     /// could not read to the end is never a violation. Mining never calls this.
     pub fn tell_in(&self, role: Option<&RoleSelector>, view: &View, ctx: &RepoContext) -> Told {
+        // A file's imports are three-valued one by one: a known break is a break, an
+        // import Drift could not judge leaves an otherwise clean file not checked.
+        if *self == Rule::ImportsDeclared && self.applies_in(role, view, ctx) {
+            return crate::imports_declared::tell(view, ctx.imports_declared());
+        }
         if self.holds_in(role, view, ctx) {
             return Told::Holds;
         }
@@ -3293,6 +3315,9 @@ impl Rule {
             } => {
                 format!("do {concern} one of these ways: {}", any_of.join(" or "))
             }
+            Rule::ImportsDeclared => {
+                "import only the packages their package.json declares".to_string()
+            }
         }
     }
 
@@ -3334,6 +3359,7 @@ impl Rule {
             Rule::Named { .. } => 6,
             Rule::RegisteredIn { .. } | Rule::MirrorsKeys { .. } => 2,
             Rule::Practice { .. } => 0,
+            Rule::ImportsDeclared => 2,
         }
     }
 
@@ -3363,7 +3389,10 @@ impl Rule {
             Rule::ImportsFrom { source, .. } => source,
             Rule::HasTest | Rule::ModelHas { .. } | Rule::PackageHas { .. } => return 0.6,
             Rule::Named { .. } => return 0.5,
-            Rule::RegisteredIn { .. } | Rule::MirrorsKeys { .. } | Rule::Practice { .. } => {
+            Rule::RegisteredIn { .. }
+            | Rule::MirrorsKeys { .. }
+            | Rule::Practice { .. }
+            | Rule::ImportsDeclared => {
                 return 1.0;
             }
         };
@@ -5880,6 +5909,7 @@ fn narrowable_targets(rule: &Rule) -> Option<Vec<&str>> {
         | Rule::RegisteredIn { .. }
         | Rule::MirrorsKeys { .. }
         | Rule::ImportsFrom { .. }
+        | Rule::ImportsDeclared
         | Rule::Practice { .. } => return None,
     })
 }

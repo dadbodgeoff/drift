@@ -186,6 +186,7 @@ pub fn rule_kind(rule: &Rule) -> &'static str {
         Rule::MirrorsKeys { .. } => "mirrors_keys",
         Rule::ImportsFrom { .. } => "imports_from",
         Rule::Practice { .. } => "practice",
+        Rule::ImportsDeclared => "imports_declared",
     }
 }
 
@@ -226,6 +227,7 @@ pub fn names_package(rule: &Rule) -> bool {
         | Rule::DependencyVersion { .. }
         | Rule::RegisteredIn { .. }
         | Rule::MirrorsKeys { .. }
+        | Rule::ImportsDeclared
         | Rule::Practice { .. } => false,
     }
 }
@@ -784,6 +786,9 @@ mod tests {
                 // study's tier fixture has no case for it: no sample here. Its kind is
                 // not in the default tier's allowlist, so it is a suggestion.
                 Rule::Practice { .. } => {}
+                // Never mined either (proposed from the map, accepted by a person): the
+                // same as a practice, a suggestion by its kind.
+                Rule::ImportsDeclared => {}
             }
         }
         out

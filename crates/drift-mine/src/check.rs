@@ -71,16 +71,25 @@ pub struct ImportHit {
     /// 1-based line of the import; 0 when not found.
     #[serde(default)]
     pub line: u32,
+    /// A manifest rule's break ([`crate::mine::Rule::ImportsDeclared`]): the package,
+    /// the manifest that should declare it and where it is declared instead, so the
+    /// text that names the import also says the fix. Absent for every other rule.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub undeclared: Option<crate::imports_declared::Undeclared>,
 }
 
 impl ImportHit {
     /// `` imports `@/app/board/board-context` `` (or the module when the specifier was
     /// not found).
     pub fn describe(&self) -> String {
-        if self.specifier.is_empty() {
+        let what = if self.specifier.is_empty() {
             format!("imports {}", self.module)
         } else {
             format!("imports `{}`", self.specifier)
+        };
+        match &self.undeclared {
+            Some(u) => format!("{what}: {}", u.describe()),
+            None => what,
         }
     }
 }
@@ -116,6 +125,8 @@ pub fn locate_imports(report: &mut CheckReport, root: &std::path::Path) {
 /// bare one (`@/x/y`, `~/x/y`, `src/x/y`) whose path is the end of the module's
 /// (extension and `/index` ignored).
 pub fn find_import(text: &str, from: &str, module: &str) -> Option<(u32, String)> {
+    // A package (`pkg:zod/v4`, from a manifest rule): the specifier is written as is.
+    let package = module.strip_prefix("pkg:");
     let strip = |m: &str| -> String {
         let m = m
             .rsplit_once('.')
@@ -126,6 +137,9 @@ pub fn find_import(text: &str, from: &str, module: &str) -> Option<(u32, String)
     let target = strip(module);
     let dir = from.rsplit_once('/').map_or("", |(d, _)| d);
     let names = |spec: &str| -> bool {
+        if let Some(p) = package {
+            return spec == p;
+        }
         if spec.starts_with("./") || spec.starts_with("../") {
             let mut parts: Vec<&str> = dir.split('/').filter(|p| !p.is_empty()).collect();
             for seg in spec.split('/') {
@@ -696,6 +710,15 @@ pub fn check_gated(
                                 module,
                                 specifier: String::new(),
                                 line: 0,
+                                undeclared: (c.rule == Rule::ImportsDeclared)
+                                    .then(|| {
+                                        crate::imports_declared::first_break(
+                                            &u.view,
+                                            contexts.of(c).imports_declared(),
+                                        )
+                                    })
+                                    .flatten()
+                                    .map(|(_, why)| why),
                             }),
                         practice: None,
                     });

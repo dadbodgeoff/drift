@@ -241,14 +241,18 @@ pub fn candidate_shown(c: &Candidate) -> bool {
 
 /// Whether a convention read from `.drift/conventions.yaml` stays in the policy: one a
 /// person decided (accepted, rejected, `agents: show`), a wiring rule or a promoted
-/// practice (a person wrote it; mining never proposes one) always; a proposal when the
-/// policy shows it ([`shown`]).
+/// practice (a person wrote it; mining never proposes one) always; a manifest rule
+/// (`imports_declared`) always too: mining never proposes one either, the show table
+/// has no family for it to measure, and a proposal of it is checked by nothing and
+/// shown to no agent until a person accepts it; a proposal when the policy shows it
+/// ([`shown`]).
 pub fn convention_kept(c: &Convention) -> bool {
     !enforced()
         || c.status != Status::Proposed
         || c.agents.is_some()
         || c.rule.is_wiring()
         || c.rule.is_practice()
+        || c.rule == crate::mine::Rule::ImportsDeclared
         || shown(&c.rule, c.tier(), c.language(), outliers(&c.evidence))
 }
 

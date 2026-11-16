@@ -26,7 +26,7 @@ use std::path::Path;
 use anyhow::bail;
 use drift_core::RepoFacts;
 use drift_core::ingest::Lang;
-use drift_mine::from_map::{self, LayeringEvidence, MinedRule, Proposal};
+use drift_mine::from_map::{self, LayeringEvidence, ManifestEvidence, MinedRule, Proposal};
 use drift_mine::mine::Rule;
 use drift_mine::policy::{
     CONVENTIONS_FILE, Convention, ConventionsFile, LOCK_FILE, Lock, Mode, Status,
@@ -51,6 +51,10 @@ pub const DECLARED: &str = from_map::DECLARED;
 /// The channel of wiring regularities ([`drift_mine::wiring_proposals`]): listed by
 /// `census --from-map` as information, never written.
 pub const WIRING: &str = from_map::WIRING;
+
+/// [`Convention::from_map`] of a package's manifest proposed as a rule
+/// ([`drift_mine::from_map::manifest`]).
+pub const MANIFEST: &str = from_map::MANIFEST;
 
 /// The heading of the section `init` and `census --from-map` print.
 const HEADING: &str = "From the map (not mined: these did not go through the miner's measured gates; each advises only once you accept it)";
@@ -136,6 +140,8 @@ pub enum Basis {
     Declared {
         evidence: drift_mine::declared::DeclaredEvidence,
     },
+    /// A package's manifest: its files import only the packages it declares.
+    Manifest { evidence: ManifestEvidence },
 }
 
 /// One proposal from the map.
@@ -150,7 +156,7 @@ pub struct FromMap {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Held {
     pub id: String,
-    /// [`PRACTICE`] or [`from_map::LAYERING`].
+    /// [`PRACTICE`], [`from_map::LAYERING`], [`DECLARED`] or [`MANIFEST`].
     pub kind: &'static str,
     pub summary: String,
     pub reason: Reason,
@@ -170,7 +176,11 @@ pub struct Collected {
     /// ([`drift_mine::policy::misread_before_forms`]), when they alone raise the file to
     /// [`drift_mine::policy::POLICY_VERSION_FORMS`]; 0 otherwise. Said in one line, so
     /// a person knows why an older Drift now refuses the file though nothing was decided.
+    /// Counts the proposals holding a rule kind of
+    /// [`drift_mine::policy::POLICY_VERSION_RULES`] too ([`Collected::raised_to`]).
     pub raised_by: usize,
+    /// The format those proposals raise the file to (0 when [`Collected::raised_by`] is).
+    pub raised_to: u32,
 }
 
 /// A rule Drift already has: a convention of the policy (neither a practice nor from
@@ -271,6 +281,7 @@ pub fn collect(
     practices_into(report, known, policy, python_on, &mut out);
     layering_into(repo, kinds, known, policy, python_on, &mut out);
     declared_into(repo, kinds, known, policy, python_on, &mut out);
+    manifest_into(repo, kinds, policy, &mut out);
     out.held.sort();
     out
 }
@@ -606,6 +617,137 @@ fn declared_into(
     }
 }
 
+/// A package's manifest as a rule ([`drift_mine::from_map::manifest`]): each proposed
+/// unless a person decided its id (the id holds the package, so a decision is never
+/// found by what the rule says, as [`decided_same`] finds one: every manifest rule says
+/// the same), held when the show policy would drop it or past
+/// [`from_map::MAX_OFFERED`] (guards first). Python projects get a note saying why
+/// none is proposed for them. Not subject to `proposals.python`: none is Python.
+fn manifest_into(
+    repo: &RepoFacts,
+    kinds: &FileKinds,
+    policy: Option<&ConventionsFile>,
+    out: &mut Collected,
+) {
+    let decided = |id: &str| {
+        policy.is_some_and(|p| {
+            p.conventions
+                .iter()
+                .any(|c| c.id == id && c.status != Status::Proposed)
+        })
+    };
+    let m = from_map::manifest(repo, kinds, &[]);
+    let mut offered = 0usize;
+    for p in m.proposals {
+        if decided(&p.convention.id) {
+            continue;
+        }
+        let reason = if !drift_mine::show::convention_kept(&p.convention) {
+            Some(Reason::NotShown)
+        } else if offered >= from_map::MAX_OFFERED {
+            Some(Reason::OverCap)
+        } else {
+            None
+        };
+        match reason {
+            Some(reason) => out.held.push(Held {
+                id: p.convention.id.clone(),
+                kind: MANIFEST,
+                summary: p.convention.summary.clone(),
+                reason,
+            }),
+            None => {
+                offered += 1;
+                out.proposals.push(FromMap {
+                    convention: p.convention,
+                    basis: Basis::Manifest {
+                        evidence: p.manifest,
+                    },
+                    twins: Vec::new(),
+                });
+            }
+        }
+    }
+    if !m.python.is_empty() {
+        let why = drift_mine::imports_declared::PYTHON_WHY;
+        let names: Vec<String> = m.python.iter().map(|x| sanitize(x, 160)).collect();
+        out.notes.push(drift_mine::declared::Note {
+            id: String::new(),
+            kind: MANIFEST,
+            lines: vec![format!(
+                "    {}: no manifest rule is proposed for a Python project: {why}",
+                names.join(", ")
+            )],
+            json: json!({
+                "proposed": false,
+                "note": "python_not_proposed",
+                "kind": MANIFEST,
+                "manifests": m.python,
+                "why": why,
+            }),
+        });
+    }
+}
+
+/// The words of a manifest proposal's evidence: how many follow, what breaks it today
+/// (`12 imports of 4 packages it does not declare, in 9 files: next (5), zod (4), ...`).
+fn manifest_lines(c: &Convention, e: &ManifestEvidence) -> Vec<String> {
+    let mut out = vec![format!(
+        "  [{}] {}: {} of the {} files there that import a package follow it, {} differ; {} could not be checked (never reported)",
+        sanitize(&c.id, 40),
+        sanitize(&c.summary, 240),
+        e.importing - e.breaking_files,
+        e.importing,
+        e.breaking_files,
+        e.not_read
+    )];
+    if e.breaking_imports > 0 {
+        let named: Vec<String> = e
+            .undeclared
+            .iter()
+            .take(5)
+            .map(|u| {
+                let at = if !u.workspace.is_empty() {
+                    format!("the workspace package at {}", sanitize(&u.workspace, 160))
+                } else {
+                    match u.declared_in.first() {
+                        Some(m) if u.declared_in.len() == 1 => {
+                            format!("declared in {}", sanitize(m, 160))
+                        }
+                        Some(m) => format!(
+                            "declared in {} and {} more",
+                            sanitize(m, 160),
+                            u.declared_in.len() - 1
+                        ),
+                        None => String::new(),
+                    }
+                };
+                format!("{} ({}; {at})", sanitize(&u.package, 120), u.imports)
+            })
+            .collect();
+        let more = e.undeclared.len().saturating_sub(5);
+        let more = if more > 0 {
+            format!(", and {more} more")
+        } else {
+            String::new()
+        };
+        out.push(format!(
+            "    today: {} import(s) of {} package(s) {} does not declare, in {} file(s): {}{more}. Accepting records them in {LOCK_FILE}, so only a new one is reported.",
+            e.breaking_imports,
+            e.undeclared.len(),
+            sanitize(&e.manifest, 160),
+            e.breaking_files,
+            named.join(", ")
+        ));
+    } else {
+        out.push(format!(
+            "    today: every import of a package is declared in {}: accepted, it records nothing and reports the first undeclared one.",
+            sanitize(&e.manifest, 160)
+        ));
+    }
+    out
+}
+
 /// What `census --from-map` lists besides the proposals: the wiring regularities the
 /// map computes ([`drift_mine::wiring_proposals`]) and the instruction files of the
 /// repository, with which of these proposals an export would add to them. Information
@@ -700,6 +842,7 @@ fn accept_rule<'m>(
 fn kind_words(c: &Convention) -> &'static str {
     match c.from_map.as_deref() {
         Some(DECLARED) => "declared by the repository",
+        Some(MANIFEST) => "its package's manifest, from the map",
         _ => "layering from the map",
     }
 }
@@ -771,6 +914,7 @@ fn proposal_lines(p: &FromMap) -> Vec<String> {
         Basis::Declared { evidence } => {
             out.extend(drift_mine::declared::proposal_lines(c, evidence));
         }
+        Basis::Manifest { evidence } => out.extend(manifest_lines(c, evidence)),
     }
     for t in &p.twins {
         out.push(format!(
@@ -805,7 +949,7 @@ pub fn init_lines(c: &Collected) -> Vec<String> {
     if c.raised_by > 0 {
         out.push(format!(
             "  {CONVENTIONS_FILE} is now policy format {} because {} proposal(s) from the map use a form older Drift cannot read: a Drift older than this one refuses the file until it is upgraded. `drift init --no-from-map` writes none of them.",
-            drift_mine::policy::POLICY_VERSION_FORMS,
+            c.raised_to,
             c.raised_by
         ));
     }
@@ -842,6 +986,10 @@ pub fn census_text(c: &Collected) -> String {
         (
             WIRING,
             "  Wiring regularities (information: listed, never written, nothing checks them):",
+        ),
+        (
+            MANIFEST,
+            "  Manifests not proposed as rules (information, never written):",
         ),
     ] {
         let of: Vec<&drift_mine::declared::Note> =
@@ -903,6 +1051,12 @@ pub fn census_json(c: &Collected) -> Value {
                 v["declared"] = json!(evidence);
                 v["follows"] = json!(evidence.follows);
                 v["differ"] = json!(evidence.breaks);
+                v["unknown"] = json!(evidence.not_read);
+            }
+            Basis::Manifest { evidence } => {
+                v["manifest"] = json!(evidence);
+                v["follows"] = json!(evidence.importing - evidence.breaking_files);
+                v["differ"] = json!(evidence.breaking_files);
                 v["unknown"] = json!(evidence.not_read);
             }
         }
@@ -990,24 +1144,27 @@ pub fn for_init_with<'m>(
     };
     write(policy, &c);
     c.raised_by = raised_by(policy);
+    if c.raised_by > 0 {
+        c.raised_to = drift_mine::policy::written_version(policy);
+    }
     c
 }
 
-/// How many undecided proposals from the map in `policy` use a form older Drift cannot
-/// read, when without them the file would be written below
-/// [`drift_mine::policy::POLICY_VERSION_FORMS`]; 0 when none does, or when the file is
-/// at that format anyway because of what a person decided.
+/// How many undecided proposals from the map in `policy` use a form or a rule kind older
+/// Drift cannot read ([`drift_mine::policy::raises_version`]), when without them the file
+/// would be written at a lower format; 0 when none does, or when the file is at that
+/// format anyway because of what a person decided.
 fn raised_by(policy: &ConventionsFile) -> usize {
     let n = policy
         .conventions
         .iter()
-        .filter(|x| undecided(x) && drift_mine::policy::misread_before_forms(x))
+        .filter(|x| undecided(x) && drift_mine::policy::raises_version(x))
         .count();
     if n == 0 {
         return 0;
     }
     let without = left_out_of_lock(policy);
-    if drift_mine::policy::written_version(&without) < drift_mine::policy::POLICY_VERSION_FORMS {
+    if drift_mine::policy::written_version(&without) < drift_mine::policy::written_version(policy) {
         n
     } else {
         0
@@ -1182,6 +1339,20 @@ fn card(
                 now.unread,
             ));
             out.extend(now.named());
+        }
+        Some(MANIFEST) => {
+            out.push(format!(
+                "  {} file(s) import a package it does not declare today, {} could not be checked (never reported); when it was proposed, {} of the {} files Drift could check followed it",
+                now.breaks.len(),
+                now.unread,
+                c.evidence.holders,
+                c.evidence.total
+            ));
+            out.extend(now.named());
+            out.push(format!(
+                "  y accepts it (advise mode; {})",
+                now.recorded_words()
+            ));
         }
         _ => {
             out.push(format!(
@@ -1643,6 +1814,7 @@ mod tests {
             held: Vec::new(),
             notes: Vec::new(),
             raised_by: 1,
+            raised_to: drift_mine::policy::POLICY_VERSION_FORMS,
         });
         assert!(
             said.iter().any(|l| l

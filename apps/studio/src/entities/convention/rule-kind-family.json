@@ -27,5 +27,6 @@
  "registered_in": "Wiring",
  "mirrors_keys": "Wiring",
  "imports_from": "Import sources",
- "practice": "Practices"
+ "practice": "Practices",
+ "imports_declared": "Declared dependencies"
 }

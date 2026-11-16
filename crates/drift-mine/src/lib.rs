@@ -21,6 +21,7 @@ pub mod gateway_configs;
 pub mod guard_position;
 pub mod hardening;
 pub mod image;
+pub mod imports_declared;
 pub mod introduced;
 pub mod keytypes;
 pub mod kubernetes;

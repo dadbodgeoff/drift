@@ -860,9 +860,14 @@ fn layering_card(c: &Convention, report: &drift_mine::check::CheckReport) -> Car
         lines: vec![
             format!("Rule: {}", shown(&c.summary)),
             format!(
-                "Evidence: {} of the {} files there that import code of this repository follow it, {} differ, {unread} not read (never reported).",
+                "Evidence: {} of the {} files there that import {} follow it, {} differ, {unread} not read (never reported).",
                 c.evidence.holders,
                 c.evidence.total,
+                if kind == drift_mine::from_map::MANIFEST {
+                    "a package Drift could check"
+                } else {
+                    "code of this repository"
+                },
                 differ.len()
             ),
             format!("Follows: {}", shown(&c.example)),
