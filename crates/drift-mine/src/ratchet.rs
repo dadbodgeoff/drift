@@ -47,6 +47,14 @@ const KIND_SINCE: &[(&str, u32)] = &[("unscoped-key", 2)];
 
 /// Detectors (the kind of a risky operation, as `risky` and `unguarded-reaching`
 /// keys name it) added after version 1, with the version that added them.
+///
+/// Empty, because no sink kind was added: a MongoDB `$where` built in a helper
+/// function is the `nosql_injection` sink read in more places, and routes listed
+/// through a factory mount (`use("/x", factory())`) are more entry points. Both are
+/// more rows of old kinds and old detectors, keyed as a change's would be, so neither
+/// table can tell them apart: naming `nosql_injection` here would let every new
+/// `$where` a change adds through as "new in Drift". Telling them apart needs the
+/// reading that found a row to carry the version that added it.
 const DETECTOR_SINCE: &[(&str, u32)] = &[];
 
 /// Kinds that advise in `drift check` until a person sets them to fail

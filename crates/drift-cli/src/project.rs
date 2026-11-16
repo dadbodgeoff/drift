@@ -331,7 +331,11 @@ impl Project {
     /// quote it either: the error names the file and the command that says why, never the
     /// lines a parser would quote (they hold convention summaries).
     pub fn open_for_agents(root: &Path) -> anyhow::Result<Self> {
-        let policy = ConventionsFile::load(root).map_err(|_| {
+        let policy = ConventionsFile::load(root).map_err(|e| {
+            // A file in a newer format quotes nothing of the file: say what to do.
+            if let Some(newer) = e.downcast_ref::<drift_mine::policy::NewerPolicy>() {
+                return anyhow::anyhow!("{}", newer.for_agents());
+            }
             anyhow::anyhow!(
                 "{CONVENTIONS_FILE} could not be read, so no convention is shown to agents until it is fixed (`drift review --list` says why)"
             )
