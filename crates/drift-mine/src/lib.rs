@@ -32,6 +32,7 @@ pub mod ratchet;
 pub mod report;
 pub mod roles;
 pub mod security;
+pub mod security_summary;
 pub mod shapes;
 pub mod show;
 pub mod start;
