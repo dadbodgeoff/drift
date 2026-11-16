@@ -405,7 +405,7 @@ pub fn write_finding(
         bail!(
             "none of the routes given is one of {}'s (`drift investigate --json --item {}` lists them)",
             item.id,
-            item.id
+            drift_mine::report::shell_word(&item.id)
         );
     }
     let f = Finding {
@@ -533,7 +533,7 @@ pub fn issue(f: &Finding) -> String {
     if !f.patch.is_empty() {
         out.push_str(&format!(
             "\nA patch is attached to the local finding (`drift findings --branch {}` makes a local branch of it).\n",
-            f.id
+            drift_mine::report::shell_word(&f.id)
         ));
     }
     out.push_str(&format!(
@@ -696,7 +696,8 @@ pub fn branch(root: &Path, id: &str) -> anyhow::Result<String> {
     let f = finding(root, id)?;
     if f.patch.trim().is_empty() {
         bail!(
-            "{id} carries no patch: only a fix the agent wrote can become a branch (`drift findings --issue {id}` drafts an issue instead)"
+            "{id} carries no patch: only a fix the agent wrote can become a branch (`drift findings --issue {}` drafts an issue instead)",
+            drift_mine::report::shell_word(id)
         );
     }
     let name = format!("drift/{}", f.id.to_lowercase());

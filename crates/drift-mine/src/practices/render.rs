@@ -274,10 +274,13 @@ fn promote_command(v: &Variant) -> Option<String> {
     Some(match &p.place {
         Some(place) => format!(
             "drift practices promote {} --in {}",
-            sanitize(&v.id, 40),
-            sanitize(place, 160)
+            crate::report::shell_word(&sanitize(&v.id, 40)),
+            crate::report::shell_word(&sanitize(place, 160))
         ),
-        None => format!("drift practices promote {}", sanitize(&v.id, 40)),
+        None => format!(
+            "drift practices promote {}",
+            crate::report::shell_word(&sanitize(&v.id, 40))
+        ),
     })
 }
 

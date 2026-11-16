@@ -166,7 +166,7 @@ impl DriftConfig {
     /// or an `experimental` that is not a list of names, is an error.
     pub fn load(root: &Path) -> anyhow::Result<Self> {
         let p = root.join(CONFIG_FILE);
-        let Some(text) = read_policy_file(&p)? else {
+        let Some(text) = read_policy_file(root, CONFIG_FILE)? else {
             return Ok(Self::default());
         };
         Self::parse(&text, &p.display().to_string())
@@ -657,41 +657,13 @@ fn python_kept(c: &Convention) -> bool {
 /// through a symbolic link that leaves the repository: a repository can commit
 /// `.drift/conventions.yaml -> ~/.bashrc`, and a plain write would overwrite the
 /// target. A link that stays inside (`CLAUDE.md -> AGENTS.md`) is written at its
-/// destination; any other link on the way is refused (an error). The file is
-/// written with `drift_core::fsutil::write_atomic`, which never follows a link.
+/// destination; a link on the way that leads outside, and a final link to a file that
+/// does not exist, are refused (an error naming the link; nothing is written, and the
+/// link is left as it is). The rule is [`crate::owned_file::resolve`], the same one
+/// Drift reads its files by. The file is written with
+/// `drift_core::fsutil::write_atomic`, which never follows a link.
 pub fn write_no_follow(base: &Path, rel: &Path, contents: &[u8]) -> anyhow::Result<()> {
-    let target = base.join(rel);
-    let link = rel
-        .ancestors()
-        .filter(|p| !p.as_os_str().is_empty())
-        .map(|p| base.join(p))
-        .find(|p| std::fs::symlink_metadata(p).is_ok_and(|m| m.file_type().is_symlink()));
-    let target = match link {
-        None => target,
-        Some(link) => {
-            let refuse = || {
-                anyhow::anyhow!(
-                    "refusing to write {}: {} is a symbolic link that leads outside the \
-                     repository. Replace it with a regular file or directory.",
-                    target.display(),
-                    link.display()
-                )
-            };
-            let root = base.canonicalize().map_err(|_| refuse())?;
-            let resolved = match target.canonicalize() {
-                Ok(p) => p,
-                // A dangling final link: resolve its directory; the link is replaced.
-                Err(_) => match (target.parent(), target.file_name()) {
-                    (Some(dir), Some(name)) => dir.canonicalize().map_err(|_| refuse())?.join(name),
-                    _ => return Err(refuse()),
-                },
-            };
-            if !resolved.starts_with(&root) {
-                return Err(refuse());
-            }
-            resolved
-        }
-    };
+    let target = crate::owned_file::resolve(base, rel, "write")?;
     let dir = target.parent().unwrap_or(base);
     std::fs::create_dir_all(dir).with_context(|| format!("creating {}", dir.display()))?;
     let name = target.file_name().unwrap_or_default().to_string_lossy();
@@ -1083,17 +1055,13 @@ impl Switch {
     }
 }
 
-/// The text of the policy file at `p`, `None` when there is none. Anything else
+/// The text of the policy file `root/rel`, `None` when there is none. Anything else
 /// that cannot be read is an error, never an empty policy: a FIFO or a link to
 /// `/dev/zero` (which a pull request can commit in place of `drift.lock`) is
-/// refused without blocking or exhausting memory
-/// ([`drift_core::fsutil::read_regular`]), as is text that is not UTF-8.
-fn read_policy_file(p: &Path) -> anyhow::Result<Option<String>> {
-    match drift_core::fsutil::read_regular_to_string(p, drift_core::fsutil::MAX_CONFIG_BYTES) {
-        Ok(text) => Ok(Some(text)),
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
-        Err(e) => Err(e).with_context(|| format!("reading {}", p.display())),
-    }
+/// refused without blocking or exhausting memory, as is a link that leads outside the
+/// repository or to nothing ([`crate::owned_file::read`]).
+fn read_policy_file(root: &Path, rel: &str) -> anyhow::Result<Option<String>> {
+    crate::owned_file::read(root, Path::new(rel))
 }
 
 /// The one field read before the rest of a policy ([`ConventionsFile::load`]).
@@ -1206,10 +1174,7 @@ fn place_of_a_new_kind(c: &Convention) -> bool {
 impl ConventionsFile {
     pub fn load(root: &Path) -> anyhow::Result<Option<Self>> {
         let p = root.join(CONVENTIONS_FILE);
-        if !p.exists() {
-            return Ok(None);
-        }
-        let Some(text) = read_policy_file(&p)? else {
+        let Some(text) = read_policy_file(root, CONVENTIONS_FILE)? else {
             return Ok(None);
         };
         // The version first, read alone: a newer Drift's file can hold a rule type or a
@@ -1628,8 +1593,7 @@ pub struct Lock {
 
 impl Lock {
     pub fn load(root: &Path) -> anyhow::Result<Self> {
-        let p = root.join(LOCK_FILE);
-        let Some(text) = read_policy_file(&p)? else {
+        let Some(text) = read_policy_file(root, LOCK_FILE)? else {
             return Ok(Self::default());
         };
         let mut entries = BTreeSet::new();

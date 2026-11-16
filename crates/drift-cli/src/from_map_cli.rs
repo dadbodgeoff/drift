@@ -1342,7 +1342,7 @@ pub fn review_step(
                         println!(
                             "  {} is covered by {x}, accepted for the same concern in a place that overlaps it: left as proposed (`drift review --reject {}` declines it)",
                             sanitize(&id, 40),
-                            sanitize(&id, 40)
+                            drift_mine::report::shell_word(&sanitize(&id, 40))
                         );
                         continue;
                     }

@@ -3962,8 +3962,9 @@ impl GapConvention {
                 }
             ),
             _ => format!(
-                "proposed as [{id}]: `drift review --accept {id}` makes it a rule",
-                id = sanitize(&self.id, 16)
+                "proposed as [{}]: `drift review --accept {}` makes it a rule",
+                sanitize(&self.id, 16),
+                crate::report::shell_word(&sanitize(&self.id, 16))
             ),
         }
     }

@@ -2021,7 +2021,8 @@ impl<'a> Setup<'a> {
         .map_err(unsafe_edit)?;
         self.save(text)?;
         Ok(format!(
-            "proposed, waiting for a person: nothing changes until a person confirms it (`drift setup --review`, or `drift setup --confirm {id}`). If confirmed: {}",
+            "proposed, waiting for a person: nothing changes until a person confirms it (`drift setup --review`, or `drift setup --confirm {}`). If confirmed: {}",
+            drift_mine::report::shell_word(id),
             choice.effect
         ))
     }
@@ -2034,12 +2035,17 @@ impl<'a> Setup<'a> {
             bail!("{id} has no answer from an agent waiting in {CONFIG_FILE}");
         };
         let q = self.question(id).with_context(|| {
-            format!("the question is no longer asked; `drift setup --reject {id}` takes the proposal out")
+            format!(
+                "the question is no longer asked; `drift setup --reject {}` takes the proposal out",
+                drift_mine::report::shell_word(id)
+            )
         })?;
         if p.seen != q.evidence {
             bail!(
-                "what {id} rests on changed since the agent proposed `{}`: answer it yourself (`drift setup --answer {id}=<answer>`) or `drift setup --reject {id}`",
-                p.answer
+                "what {id} rests on changed since the agent proposed `{}`: answer it yourself (`drift setup --answer {}=<answer>`) or `drift setup --reject {}`",
+                p.answer,
+                drift_mine::report::shell_word(id),
+                drift_mine::report::shell_word(id)
             );
         }
         let Some(choice) = q.choices.iter().find(|c| c.answer == p.answer) else {
@@ -2151,8 +2157,9 @@ impl<'a> Setup<'a> {
                 .sum();
         if inside > 0 {
             bail!(
-                "taking out {id} would make {inside} route{} reachable only from inside: a person does that (`drift setup --forget {id}` in a terminal)",
-                if inside == 1 { "" } else { "s" }
+                "taking out {id} would make {inside} route{} reachable only from inside: a person does that (`drift setup --forget {}` in a terminal)",
+                if inside == 1 { "" } else { "s" },
+                drift_mine::report::shell_word(id)
             );
         }
         self.save(text)

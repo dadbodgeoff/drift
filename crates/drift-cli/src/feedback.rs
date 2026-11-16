@@ -427,7 +427,8 @@ fn mark(root: &Path, a: &MarkArgs) -> anyhow::Result<()> {
     } else {
         let Some(member) = member else {
             bail!(
-                "name the violation by its convention id and member, as drift check and drift.lock do: `drift feedback mark {id} <path#symbol> --true|--wrong`"
+                "name the violation by its convention id and member, as drift check and drift.lock do: `drift feedback mark {} <path#symbol> --true|--wrong`",
+                drift_mine::report::shell_word(&id)
             );
         };
         let member = drift_mine::policy::exception_member(&member)?;

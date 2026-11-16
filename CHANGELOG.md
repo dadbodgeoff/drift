@@ -218,6 +218,18 @@ main branch.
 
 ### Changed: behaviour an existing user will notice
 
+- **Drift's own files are never read or written through a link that leaves the
+  repository.** `drift security --write-baseline` now refuses such a link at
+  `.drift/security.lock` as every other writer does; a final link to a file that
+  does not exist is refused instead of being replaced by a regular file; and
+  `drift check` and `drift security --ratchet` exit 2, naming the path, when
+  `.drift/security.lock`, `drift.lock`, `.drift/conventions.yaml` or
+  `.drift/config.yaml` is a link that leads outside the repository or to nothing
+  (before, they read the outside file, or took a dangling baseline as none). A
+  link inside the repository still works. Every command Drift prints quotes each
+  id, path and member taken from the repository as one shell word (`drift review
+  --show` cards, `--exempt` hints, stale-rule lines, `drift practices promote`
+  lines, `drift setup` and `drift findings` messages).
 - **Breaking: `drift init` no longer baselines violations of a convention the
   policy already had.** Before, re-running `drift init` baselined the current
   violations of every convention that had no line left in `drift.lock`, so a

@@ -571,11 +571,16 @@ pub fn load(root: &Path) -> std::io::Result<Option<BTreeSet<(String, String)>>> 
 /// The baseline of the repository at `root`, with its header; `None` where there
 /// is none.
 pub fn load_baseline(root: &Path) -> std::io::Result<Option<Baseline>> {
-    match std::fs::read_to_string(root.join(SECURITY_LOCK)) {
-        Ok(text) => Ok(Some(parse_baseline(&text))),
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
-        Err(e) => Err(e),
-    }
+    Ok(read_text(root)?.map(|text| parse_baseline(&text)))
+}
+
+/// The text of the repository's [`SECURITY_LOCK`], `None` where there is none. A
+/// link that leads outside the repository or to nothing, a FIFO or a device is an
+/// error, never "no baseline" ([`crate::owned_file::read`]): the gate that reads it
+/// fails closed instead of comparing against a file the change does not hold.
+pub fn read_text(root: &Path) -> std::io::Result<Option<String>> {
+    crate::owned_file::read(root, Path::new(SECURITY_LOCK))
+        .map_err(|e| std::io::Error::other(format!("{e:#}")))
 }
 
 /// The inventory version from which a finding of `kind` keyed `key` is found as it

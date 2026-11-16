@@ -2709,7 +2709,7 @@ pub fn preview(c: &Candidate, convention: &Convention) -> String {
     } else if crate::check::effective_mode(convention) == "block" {
         format!(
             "Mode: block (a new one fails the check). `drift review --advise {}` makes it advise.\n",
-            sanitize(&convention.id, 40)
+            crate::report::shell_word(&sanitize(&convention.id, 40))
         )
     } else {
         format!("Mode: advise (it never fails a check). {block}.\n")

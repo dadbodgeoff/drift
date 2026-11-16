@@ -283,11 +283,12 @@ fn setup_honours_no_from_map() {
 /// named answer that was not recorded exited 0.
 ///
 /// (Fix wave: the test linked `.drift/security.lock` itself to a file outside that did
-/// not exist. Setup then asks, and the write replaces the dangling link with a regular
-/// file in the repository, as `write_no_follow` documents: nothing is written outside,
-/// and nothing fails, so the run exited 0. A link to a file that does exist is never
-/// asked about: the baseline "is there". The refusal is for a link on the way, so here
-/// `.drift` is the link; the dangling final link is pinned as what it does.)
+/// not exist, and the write replaced the dangling link with a regular file. Since the
+/// lock-hardening gap, a final link to nothing is refused too, read and written alike
+/// (a link is a link): setup cannot read the baseline, says so, and the named answer
+/// is not recorded; the link is left as it is. And a `.drift` that leads outside is
+/// refused already when setup reads `.drift/conventions.yaml` through it: the run fails
+/// (exit 2) before it asks anything, and nothing is written.)
 #[cfg(unix)]
 #[test]
 fn a_baseline_through_an_outside_link_is_not_written_and_the_run_fails() {
@@ -305,12 +306,14 @@ fn a_baseline_through_an_outside_link_is_not_written_and_the_run_fails() {
         std::fs::read_dir(outside.path()).unwrap().next().is_none(),
         "written through the link:\n{out}"
     );
-    assert_eq!(code, 3, "{out}\n{err}");
-    assert!(out.contains("-> not written: refusing to write"), "{out}");
-    assert!(out.contains("Answered but not recorded: baseline"), "{out}");
+    assert_eq!(code, 2, "{out}\n{err}");
+    assert!(
+        err.contains("is a symbolic link that leads outside the repository"),
+        "{err}"
+    );
 
-    // A dangling `.drift/security.lock` leading outside: the link itself is replaced
-    // by the baseline, and its target is never created.
+    // A dangling `.drift/security.lock` leading outside: refused, the link left as it
+    // is, and its target never created.
     let outside = tempfile::tempdir().unwrap();
     let target = outside.path().join("x");
     let dir = layered(false);
@@ -324,12 +327,14 @@ fn a_baseline_through_an_outside_link_is_not_written_and_the_run_fails() {
         &[],
     );
     assert!(!target.exists(), "written through the link:\n{out}");
-    assert_eq!(code, 0, "{out}\n{err}");
+    assert_eq!(code, 3, "{out}\n{err}");
+    assert!(out.contains("does not exist"), "{out}");
+    assert!(out.contains("Answered but not recorded: baseline"), "{out}");
     assert!(
         std::fs::symlink_metadata(r.join(".drift/security.lock"))
             .unwrap()
             .file_type()
-            .is_file(),
+            .is_symlink(),
         "{out}"
     );
 }

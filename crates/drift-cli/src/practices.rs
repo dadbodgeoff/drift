@@ -159,12 +159,16 @@ pub fn without_answered(root: &Path, r: &mut PracticesReport) -> Vec<String> {
             let why = if let Some(id) =
                 crate::setup::investigate::said_not_a(&text, &c.id, &instrument)
             {
-                format!("answered not {what} by {id} (`drift setup --forget {id}` asks again)")
+                format!(
+                    "answered not {what} by {id} (`drift setup --forget {}` asks again)",
+                    crate::promote::shell_word(&id)
+                )
             } else if let Some(id) =
                 crate::setup::investigate::rejected_declaring(&text, &c.id, &instrument)
             {
                 format!(
-                    "rejected by a person in {id}, proposed as {what} (`drift setup --forget {id}` asks again)"
+                    "rejected by a person in {id}, proposed as {what} (`drift setup --forget {}` asks again)",
+                    crate::promote::shell_word(&id)
                 )
             } else {
                 continue;
@@ -459,7 +463,7 @@ pub fn practice_status_lines(report: &CheckReport, policy: &ConventionsFile) -> 
             sanitize(&s.id, 16),
             s.units,
             sanitize(&s.summary, 240),
-            sanitize(&s.id, 16)
+            crate::promote::shell_word(&sanitize(&s.id, 16))
         ));
     }
     for n in not_checked {
