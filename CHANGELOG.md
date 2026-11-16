@@ -156,6 +156,14 @@ main branch.
   exits 1 when a guard regresses (plain `drift census` must stay byte-identical,
   and unknown must not rise without a matching fall). For contributors; it is
   not part of the `drift` binary.
+- **MCP tool annotations, resources and prompts:** `drift mcp` now marks each
+  tool with `title`, `readOnlyHint`, `destructiveHint`, `idempotentHint` and
+  `openWorldHint` (from protocol `2025-03-26` on); `readOnlyHint` is true for
+  exactly the tools the hook approves without a prompt. It offers the resources
+  `drift://rules` (accepted rules shown to agents only, never a proposal),
+  `drift://security` and the template `drift://card/{path}`, and the prompts
+  `drift_before_edit`, `drift_review_change` and `drift_first_setup`. A client
+  that asked for `resources/list` before got `-32601`; it now gets the list.
 
 ### Changed: the files Drift writes
 
