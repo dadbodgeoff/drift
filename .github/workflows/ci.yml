@@ -187,6 +187,67 @@ jobs:
           node-version: 22
       - run: npm install --prefix "$RUNNER_TEMP/yaml" --no-save --no-audit --no-fund --ignore-scripts yaml@2.9.1
       - run: node npm/ci-check.mjs "$RUNNER_TEMP/yaml"
+      - run: node --test npm/set-version.test.mjs
+
+  release-changed:
+    # Whether a pull request touches the release path (the release workflow, the npm
+    # packaging, or a file that states the version), so the Linux rehearsal below
+    # runs only when it can find something.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.diff.outputs.release }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - id: diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if git diff --quiet "$BASE" HEAD -- .github/workflows/release.yml npm Cargo.toml Cargo.lock integrations/claude-code/.claude-plugin .claude-plugin; then
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  release-rehearsal:
+    # The Linux part of release.yml's rehearsal, with a real binary: the
+    # x86_64-unknown-linux-musl release build, archive and SHA256SUMS (a tampered
+    # copy must fail), the npm tarballs packed and installed offline, `drift
+    # --version` through the launcher, then census, init, review, check and every
+    # plugin hook through that install (npm/dry-run.sh, the same script a person runs
+    # locally). One target, not five: the whole matrix is `gh workflow run
+    # release.yml`. Pull requests that touch the release path, nightly, on demand.
+    needs: release-changed
+    if: ${{ !cancelled() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || needs.release-changed.outputs.release == 'true') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - run: rustup show && rustup target add x86_64-unknown-linux-musl
+      - uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+        with:
+          key: release-musl
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+      - run: bash npm/dry-run.sh
+        env:
+          WORK: ${{ runner.temp }}/dry-run
+          DRIFT_BUILD_COMMIT: ${{ github.sha }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: release-rehearsal-linux-x64
+          path: |
+            ${{ runner.temp }}/dry-run/out/
+            ${{ runner.temp }}/dry-run/npm-tarballs/
+          if-no-files-found: ignore
+          retention-days: 7
 
   studio:
     # Drift Studio (apps/studio) and its design system (packages/ui).

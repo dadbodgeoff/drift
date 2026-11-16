@@ -4,54 +4,57 @@
 #   npm/dry-run.sh [version]        (default: the workspace version in Cargo.toml)
 #
 # Follows .github/workflows/release.yml for one target (TARGET, default
-# x86_64-unknown-linux-musl):
-#   1. the versions agree (the tag version, Cargo.toml, plugin.json), as the verify job checks;
-#   2. release build, archive + SHA256SUMS, and `sha256sum -c` (a tampered copy must fail);
-#   3. npm/build.mjs, `npm pack`, then the packed tarballs installed into a scratch
-#      project: `drift --version` through the npm launcher must print this version;
+# x86_64-unknown-linux-musl), running the same scripts its jobs run:
+#   1. the versions agree (npm/set-version.mjs --check <version>), as the verify job checks;
+#   2. release build, then npm/archive.sh (archives + SHA256SUMS) and `sha256sum -c`
+#      (a tampered copy must fail);
+#   3. npm/build.mjs and npm/pack.sh, then npm/install-test.sh: the packed tarballs
+#      installed offline into a scratch project, and `drift --version` through the npm
+#      launcher must print this version;
 #   4. through that install: init, review --block, check, census on a small synthetic
 #      repository, and each Claude Code plugin hook (integrations/claude-code/hooks/hooks.json)
 #      once, with sample hook input on stdin.
 # The other four platform packages get stub binaries so that build.mjs, which needs
 # all five, can run. Needs: the Rust target (`rustup target add $TARGET`; musl-tools
 # on Linux), Node. WORK=<dir> keeps everything in one place (default: a new temp dir).
+# BIN=<path to a drift binary> skips the build and packages that binary instead (it
+# must report the version; any profile or target this machine can run). CI's
+# release-rehearsal job runs this script with no BIN.
 set -euo pipefail
 
 repo=$(cd "$(dirname "$0")/.." && pwd)
 target=${TARGET:-x86_64-unknown-linux-musl}
-cargo_version=$(sed -n '/^\[workspace.package\]/,/^\[/s/^version = "\(.*\)"/\1/p' "$repo/Cargo.toml")
-plugin_version=$(node -p 'require(process.argv[1]).version' "$repo/integrations/claude-code/.claude-plugin/plugin.json")
-version=${1:-$cargo_version}
+version=${1:-$(node "$repo/npm/set-version.mjs" --print)}
 work=${WORK:-$(mktemp -d)}
 echo "dry run: version $version, target $target, in $work"
 
-# 1. The verify job: the tag (here: the version argument), Cargo.toml and plugin.json agree.
-[ "$version" = "$cargo_version" ] || { echo "error: version $version does not match Cargo.toml $cargo_version (node npm/set-version.mjs $version)"; exit 1; }
-[ "$version" = "$plugin_version" ] || { echo "error: version $version does not match plugin.json $plugin_version (node npm/set-version.mjs $version)"; exit 1; }
+# 1. The verify job: the tag (here: the version argument) and every place the
+#    version is written agree.
+node "$repo/npm/set-version.mjs" --check "$version"
 
-cargo build --release --locked -p drift-cli --target "$target" --manifest-path "$repo/Cargo.toml"
-
-# Stage as the build job does; artifacts lose the executable bit, as between jobs.
 exe=drift
 case "$target" in *windows*) exe=drift.exe ;; esac
+if [ -n "${BIN:-}" ]; then
+  echo "BIN=$BIN: not built by the dry run"
+  built=$BIN
+else
+  DRIFT_BUILD_COMMIT=${DRIFT_BUILD_COMMIT:-$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)} \
+    cargo build --release --locked -p drift-cli --target "$target" --manifest-path "$repo/Cargo.toml"
+  built="${CARGO_TARGET_DIR:-$repo/target}/$target/release/$exe"
+fi
+
+# Stage as the build job does; artifacts lose the executable bit, as between jobs.
 mkdir -p "$work/dist/$target"
-cp "${CARGO_TARGET_DIR:-$repo/target}/$target/release/$exe" "$work/dist/$target/"
+cp "$built" "$work/dist/$target/$exe"
 chmod -x "$work/dist/$target/$exe"
 
-# 2. Archive and checksum, as the release job does (keep in sync with release.yml),
-#    then verify as RELEASING.md tells users to.
+# 2. Archive and checksum with the package job's script, then verify as
+#    RELEASING.md tells users to.
 tag="v$version"
+bash "$repo/npm/archive.sh" "$tag" "$work/dist" "$work/out"
 (
   cd "$work"
-  find dist -type f -exec chmod +x {} +
-  mkdir -p out
-  for dir in dist/*/; do
-    t=$(basename "$dir")
-    tar -C "$dir" -czf "out/drift-${tag}-${t}.tar.gz" .
-  done
-  (cd out && sha256sum *.tar.gz > SHA256SUMS)
   cat out/SHA256SUMS
-  (cd out && sha256sum -c SHA256SUMS --ignore-missing)
   # A tampered archive must fail the same check.
   mkdir -p tampered
   cp out/SHA256SUMS tampered/
@@ -62,10 +65,13 @@ tag="v$version"
   fi
   echo "tampered archive rejected by sha256sum -c"
   mkdir -p check && tar -C check -xzf "out/drift-${tag}-${target}.tar.gz"
-  "./check/$exe" --version
+  said=$("./check/$exe" --version)
+  echo "extracted binary: $said"
+  [ "$said" = "drift $version" ] || { echo "error: the archived binary says '$said', not 'drift $version'"; exit 1; }
 )
 
-# Stubs for the targets this machine did not build.
+# Stubs for the targets this machine did not build (after archiving: the stubs are
+# for build.mjs, which needs all five, not for the archives).
 node -e '
   const c = require(process.argv[1]);
   for (const [t, v] of Object.entries(c.targets)) console.log(t, v.exe);
@@ -74,25 +80,12 @@ node -e '
   mkdir -p "$work/dist/$t" && echo "stub: not built by the dry run" > "$work/dist/$t/$e"
 done
 
-# 3. npm packages: build, pack, install offline from the tarballs, run the launcher.
+# 3. npm packages: build and pack as the package job does, install offline from the
+#    tarballs and run the launcher as the install-test job does.
 node "$repo/npm/build.mjs" "$version" "$work/dist" "$work/npm-out"
-mkdir -p "$work/packs"
-for dir in "$work"/npm-out/*/; do (cd "$work/packs" && npm pack --silent "$dir" >/dev/null); done
-for f in "$work"/packs/*.tgz; do echo "$(basename "$f") ($(wc -c < "$f") bytes): $(tar -tzf "$f" | sort | tr '\n' ' ')"; done
-
-suffix=$(node -p 'process.platform + "-" + process.arch')
-name=$(node -p 'require(process.argv[1]).name.replace("@", "").replace("/", "-")' "$repo/npm/config.json")
+bash "$repo/npm/pack.sh" "$work/npm-out" "$work/npm-tarballs"
 project="$work/project"
-mkdir -p "$project"
-(
-  cd "$project"
-  npm init -y >/dev/null
-  npm install --offline --no-audit --no-fund --silent \
-    "$work/packs/$name-$suffix-$version.tgz" "$work/packs/$name-$version.tgz"
-  said=$(npx --no-install drift --version)
-  echo "npx drift --version: $said"
-  [ "$said" = "drift $version" ] || { echo "error: the launcher ran a binary that says '$said', not 'drift $version'"; exit 1; }
-)
+bash "$repo/npm/install-test.sh" "$work/npm-tarballs" "$version" "$project"
 export PATH="$project/node_modules/.bin:$PATH"
 [ "$(command -v drift)" = "$project/node_modules/.bin/drift" ] || { echo "error: drift on PATH is $(command -v drift)"; exit 1; }
 
