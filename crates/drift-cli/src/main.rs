@@ -575,6 +575,18 @@ enum Command {
         /// decorator: always the first 50; exceptions per shared guard: the first 10).
         #[arg(long, default_value_t = 20)]
         max: usize,
+        /// Only the findings to look at first, ranked by what Drift read (default 10;
+        /// 0 for all), repeats through one operation on one line; then how many more,
+        /// and what was not ranked and why (a guard Drift could not read is never
+        /// ranked). With --json, the inventory gains `top`. Changes no exit code.
+        #[arg(
+            long,
+            value_name = "N",
+            num_args = 0..=1,
+            default_missing_value = "10",
+            conflicts_with_all = ["diff_base", "ratchet", "write_baseline"]
+        )]
+        top: Option<usize>,
     },
     /// One file's place in the repository, for an agent about to touch it: package,
     /// entry points with their guards and exposure, risky operations, what its siblings
@@ -2199,6 +2211,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             fail_on,
             write_baseline,
             ratchet,
+            top,
         } => {
             const FAIL_ON: &[&str] = &[
                 "unguarded-reaching",
@@ -2490,6 +2503,22 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         failing.join(", ")
                     );
                     return Ok(ExitCode::from(1));
+                }
+                return Ok(ExitCode::SUCCESS);
+            }
+            // The findings to look at first ([`drift_mine::security_summary`]): ranked
+            // facts for a person; nothing reads them to fail, so the exit code stays 0.
+            if let Some(n) = top {
+                let summary = security_summary(root, &facts, &inv);
+                if *json {
+                    let mut v = serde_json::to_value(&inv)?;
+                    v["top"] = serde_json::to_value(summary.top(*n))?;
+                    println!("{}", serde_json::to_string_pretty(&v)?);
+                } else {
+                    for w in &inv.warnings {
+                        eprintln!("drift security: {w}");
+                    }
+                    print!("{}", drift_mine::security_summary::render(&summary, *n));
                 }
                 return Ok(ExitCode::SUCCESS);
             }
@@ -2870,6 +2899,17 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             let from_map =
                 from_map_cli::for_init(root, &facts, &mut policy, python.on(), *no_from_map);
             policy.save(root)?;
+            // The few security findings to look at first, from the inventory: facts, not
+            // conventions, and nothing checks them ([`drift_mine::security_summary`]).
+            {
+                let inv = security_inventory(cli, root, &facts);
+                let text = drift_mine::security_summary::render_first_run(&security_summary(
+                    root, &facts, &inv,
+                ));
+                if !text.is_empty() {
+                    println!("\n{}", text.trim_end());
+                }
+            }
             println!("\nConventions");
             // The default tier in full, then the best suggestions (`drift_mine::rank`).
             let placed = rank::place(&ordered, cap.resolve(policy.suggestion_cap).0);
@@ -4442,6 +4482,25 @@ fn security_inventory(cli: &Cli, root: &Path, facts: &RepoFacts) -> drift_mine::
     inv.dependencies = drift_mine::dependencies::read(root);
     inv.cluster = drift_mine::kubernetes::read(root);
     inv
+}
+
+/// The inventory's findings ranked for a person ([`drift_mine::security_summary`]),
+/// with the practice map's reading of each entry point's input validation (the map
+/// is built with its units for that).
+fn security_summary(
+    root: &Path,
+    facts: &RepoFacts,
+    inv: &drift_mine::security::Inventory,
+) -> drift_mine::security_summary::Summary {
+    let opts = drift_mine::practices::Options {
+        units: true,
+        ..practices::options(root, facts, drift_mine::practices::Scope::default())
+    };
+    let map = drift_mine::practices::practices(facts, &opts);
+    drift_mine::security_summary::summarize(
+        inv,
+        &drift_mine::security_summary::Readings::from_practices(&map),
+    )
 }
 
 /// `drift check`: what the repository's security baseline does not hold
