@@ -22,10 +22,10 @@ use crate::resolve::Resolver;
 
 #[path = "config.rs"]
 pub(crate) mod config;
-#[path = "unlisted.rs"]
-pub(crate) mod unlisted;
 #[path = "framework_links.rs"]
 mod framework_links;
+#[path = "unlisted.rs"]
+pub(crate) mod unlisted;
 
 /// Maximum hops followed through re-exports (guards cycles).
 const MAX_HOPS: usize = 32;
