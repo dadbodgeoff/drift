@@ -33,6 +33,7 @@ pub fn options(root: &Path, facts: &RepoFacts, scope: Scope) -> Options {
         kinds: Some(crate::map_kinds(root, facts, true)),
         units: false,
         skip_duplicates: true,
+        promotable: false,
     }
 }
 
@@ -64,32 +65,50 @@ pub struct FirstRun {
     /// how many names: what `drift practices --hints` settles. `None` when there are
     /// none.
     pub hints: Option<(usize, usize)>,
+    /// What `drift init --explain` says about the map ([`init_note`]), read from the
+    /// same report so the map is computed once.
+    pub note: Option<String>,
 }
 
 /// The practice map as `drift init` opens with it: read from the code, whatever
 /// conventions were mined.
 pub fn first_run(root: &Path, facts: &RepoFacts) -> FirstRun {
-    let mut r = practices::practices(facts, &options(root, facts, Scope::default()));
+    // The first run offers the command that promotes a finding's usual way.
+    let opts = Options {
+        promotable: true,
+        ..options(root, facts, Scope::default())
+    };
+    let mut r = practices::practices(facts, &opts);
     // On a re-run, what a person already promoted or declined is not offered again.
     if let Ok(Some(policy)) = ConventionsFile::load(root) {
         crate::promote::drop_decided(&mut r, &policy);
     }
     let text = practices::render_first_run(&r);
     let known = !r.recipes.is_empty();
+    let note = init_note(&r);
     without_answered(root, &mut r);
     let (units, names) = practices::config_hint_counts(&r);
+    let hints = (names > 0).then_some((units, names));
     FirstRun {
         text,
         known,
-        hints: (names > 0).then_some((units, names)),
+        hints,
+        note: note.map(|mut note| {
+            // What a person can settle in a minute: Drift never names an instrument itself.
+            if let Some((units, names)) = hints {
+                note.push_str(&format!(
+                    " {units} unit(s) of the map are unknown behind {names} name(s) Drift cannot classify alone: `drift practices --hints` prints the .drift/config.yaml lines that settle them."
+                ));
+            }
+            note
+        }),
     }
 }
 
 /// What `drift init --explain` says about the practice map: it is known whatever is
 /// accepted, and where it reaches people and agents. `None` when no recipe is known (nothing to point
 /// at).
-pub fn init_note(root: &Path, facts: &RepoFacts) -> Option<String> {
-    let r = practices::practices(facts, &options(root, facts, Scope::default()));
+fn init_note(r: &practices::PracticesReport) -> Option<String> {
     let known: Vec<_> = r
         .recipes
         .iter()
@@ -100,20 +119,11 @@ pub fn init_note(root: &Path, facts: &RepoFacts) -> Option<String> {
     }
     let packages: std::collections::BTreeSet<&str> =
         known.iter().map(|rc| rc.package.as_str()).collect();
-    let mut note = format!(
+    let note = format!(
         "Known with nothing accepted (the practice map: facts, not rules): how {} kind(s) of entry point in {} package(s) do authn, authz, validation, errors and the response shape, each with a file to copy. `drift practices` shows it and `drift card <path>` answers for one file. With the hooks installed an agent gets the recipe before it writes a new entry-point file, and is told when a file it wrote does one of these another way than at least 80% of the entry points around it (advice, never a block).",
         known.len(),
         packages.len()
     );
-    // What a person can settle in a minute: Drift never names an instrument itself.
-    let mut r = r;
-    without_answered(root, &mut r);
-    let (units, names) = practices::config_hint_counts(&r);
-    if names > 0 {
-        note.push_str(&format!(
-            " {units} unit(s) of the map are unknown behind {names} name(s) Drift cannot classify alone: `drift practices --hints` prints the .drift/config.yaml lines that settle them."
-        ));
-    }
     Some(note)
 }
 
@@ -204,9 +214,17 @@ pub fn report_units_kept_of(
         kinds,
         units,
         skip_duplicates,
+        promotable,
     } = &opts;
-    let Ok(more) = serde_json::to_vec(&(scope, commit, declared, kinds, units, skip_duplicates))
-    else {
+    let Ok(more) = serde_json::to_vec(&(
+        scope,
+        commit,
+        declared,
+        kinds,
+        units,
+        skip_duplicates,
+        promotable,
+    )) else {
         return practices::practices(listed.get(), &opts);
     };
     crate::derived::get_or(derived, crate::derived::PRACTICES, &more, || {
@@ -268,6 +286,20 @@ pub fn add_practices<'m>(
     // the map cannot tell ([`CheckReport::set_aside_untold`]); the map is asked only
     // when such a rule has a member that breaks it.
     let mined = scope == dcheck::Scope::Accepted && dcheck::reads_practice_map(report, policy);
+    if !promoted && !mined {
+        return;
+    }
+    // Paths named (a hook's one file): a practice that covers none of them says nothing
+    // of them, and the map of facts that may be of one file is not built for it.
+    let promoted = promoted
+        && only.is_none_or(|only| {
+            policy.conventions.iter().any(|c| {
+                facts
+                    .files
+                    .iter()
+                    .any(|f| only.contains(&f.path) && promote::covers_file(c, f))
+            })
+        });
     if !promoted && !mined {
         return;
     }
@@ -514,6 +546,8 @@ pub fn report_with(
         units,
         // `drift practices` and MCP `drift_practices`: the findings are read.
         skip_duplicates: false,
+        // And what may be promoted: `drift practices` offers the command.
+        promotable: true,
         ..options(root, facts, scope)
     };
     let mut r = practices::practices(facts, &opts);

@@ -137,15 +137,43 @@ pub fn run(
         Ok(c) => c,
         Err(r) => return refused(args.json, &r),
     };
+    // Another practice of the concern whose place holds this one, or that this one
+    // holds: both would report the same units, so the second is refused, as the review
+    // leaves it out. The same id is this practice promoted again.
+    let new_id = promote::convention_id(&cand.place, &cand.concern);
+    if let Some(x) = covering(&policy, &cand).filter(|x| x.id != new_id) {
+        return usage(
+            args.json,
+            "covered",
+            &format!(
+                "{} already holds {} to a practice in a place that overlaps {}: `drift review --reject {}` drops it first; nothing was written",
+                x.id,
+                drift_mine::practices::plain_concern(&cand.concern),
+                cand.place.shown(),
+                x.id
+            ),
+        );
+    }
     let mut conv = written(&policy, &cand);
     let mut replay = None;
-    if args.block {
+    // A practice that blocked before is promoted again on new evidence: it keeps
+    // blocking only if the gate still lets it, else it advises (and says so).
+    let kept_block = !args.block && conv.mode == Mode::Block;
+    let mut block_dropped = None;
+    if args.block || kept_block {
         let gate = block_gate(&report, &conv, cand.forced, &first_added(root));
         replay = gate.replay;
-        if let Err(why) = gate.verdict {
-            return block_refused(args.json, &conv, gate.replay, &cand.unit, &why);
+        match gate.verdict {
+            Err(why) if args.block => {
+                return block_refused(args.json, &conv, gate.replay, &cand.unit, &why);
+            }
+            Err(why) => {
+                conv.mode = Mode::Advise;
+                replay = None;
+                block_dropped = Some(why);
+            }
+            Ok(()) => conv.mode = Mode::Block,
         }
-        conv.mode = Mode::Block;
     }
     let new = new_entries(&lock, &conv.id, &cand);
     let preview = promote::preview(&cand, &conv);
@@ -166,6 +194,7 @@ pub fn run(
             "candidate": cand,
             "baselined": new.len(),
             "replay": replay,
+            "block_dropped": block_dropped,
             "same_way": same,
             "preview": preview,
         });
@@ -180,6 +209,13 @@ pub fn run(
             "Also in {CONVENTIONS_FILE}: {} name{} the same way for code of this package. Where both are accepted, new code that breaks them is reported under each; `drift review --reject <id>` drops one.",
             same.join(", "),
             if same.len() == 1 { "s" } else { "" }
+        )?;
+    }
+    if let Some(why) = &block_dropped {
+        writeln!(
+            stdout,
+            "It blocked before; it advises now: {why} (`drift review --block {}` asks again).",
+            conv.id
         )?;
     }
     if let Some(r) = replay {

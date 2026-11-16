@@ -99,6 +99,21 @@ pub struct Way {
     pub label: String,
     /// The units of the place that do it this way.
     pub members: usize,
+    /// A folded policy's alternatives' keys (`any_of(A|B)` accepts `A` and `B`); empty
+    /// for any other way.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub alternatives: Vec<String>,
+}
+
+impl Way {
+    /// The keys it accepts ([`way_keys`]).
+    fn keys(&self) -> Vec<String> {
+        if self.alternatives.is_empty() {
+            vec![self.key.clone()]
+        } else {
+            self.alternatives.clone()
+        }
+    }
 }
 
 /// What promoting a practice in a place would record ([`candidate`]).
@@ -588,22 +603,20 @@ impl Refusal {
     }
 }
 
-/// The keys a way accepts: a folded policy's (`any_of(A|B)`, or of more alternatives)
-/// are its alternatives' keys; any other way's is its own key.
-fn way_keys(key: &str) -> Vec<String> {
-    if let Some(inner) = key
-        .strip_prefix("any_of(")
-        .and_then(|k| k.strip_suffix(')'))
-        && inner.contains('|')
-    {
-        return inner.split('|').map(str::to_string).collect();
+/// The keys a way accepts: a folded policy's (`any_of(A|B)`) are its alternatives'
+/// keys, `A` and `B`, read from the fold itself (a key may hold `|`); any other way's
+/// is its own key.
+fn way_keys(v: &Variant) -> Vec<String> {
+    if v.alternatives.is_empty() {
+        vec![v.key.clone()]
+    } else {
+        v.alternatives.iter().map(|a| a.key.clone()).collect()
     }
-    vec![key.to_string()]
 }
 
 /// Every key the ways accept.
 fn accepted_keys(ways: &[&Variant]) -> BTreeSet<String> {
-    ways.iter().flat_map(|v| way_keys(&v.key)).collect()
+    ways.iter().flat_map(|v| way_keys(v)).collect()
 }
 
 /// Whether the sorted uses `uses` include every use the way `key` names. A key that
@@ -1140,7 +1153,7 @@ fn passive(r: &Reading<'_>, asked: &Asked<'_>) -> bool {
     }
     let mut parts = 0;
     for v in &asked.ways {
-        for k in way_keys(&v.key) {
+        for k in way_keys(v) {
             let uses = use_keys(&k);
             if uses.is_empty() || !r.traits.passive(&uses) {
                 return false;
@@ -1188,6 +1201,7 @@ fn build_from<'a>(
                 .iter()
                 .filter(|j| j.verdict == Verdict::Follows && r.follows(j.row, &acc))
                 .count(),
+            alternatives: v.alternatives.iter().map(|a| a.key.clone()).collect(),
         }
     };
     // The ways the units that break it use, by the variant of their own way.
@@ -1207,6 +1221,7 @@ fn build_from<'a>(
                 key: v.key.clone(),
                 label: v.label.clone(),
                 members: 0,
+                alternatives: v.alternatives.iter().map(|a| a.key.clone()).collect(),
             })
             .members += 1;
     }
@@ -1656,7 +1671,7 @@ fn role_of(place: &Place) -> RoleSelector {
 /// rule's `any_mechanism` and `any_enforcing`; the summary says them in words ("Sign-in
 /// in app/api: any way that turns an unsigned caller away").
 pub fn convention(c: &Candidate) -> Convention {
-    let mut any_of: Vec<String> = c.ways.iter().flat_map(|w| way_keys(&w.key)).collect();
+    let mut any_of: Vec<String> = c.ways.iter().flat_map(Way::keys).collect();
     any_of.sort();
     any_of.dedup();
     let mut any_mechanism = c.mechanisms.clone();
@@ -2044,6 +2059,15 @@ pub fn check(
                 units: unknown,
             });
         }
+        // Blocks only while the place still holds it as the gate asked at promotion: the
+        // evidence recorded then is not refreshed, the code is read now.
+        let count = |v: Verdict| judged.iter().filter(|j| j.verdict == v).count();
+        let (follows, breaks) = (count(Verdict::Follows), count(Verdict::Breaks));
+        let mode = if (follows as f64) < BLOCK_SHARE * (follows + breaks) as f64 {
+            "advise"
+        } else {
+            crate::check::effective_mode(c)
+        };
         // The units whose lock entry stays: those that break it (reported, exempt or
         // not) and those the map cannot tell.
         let mut current: BTreeSet<String> = BTreeSet::new();
@@ -2064,7 +2088,7 @@ pub fn check(
                 summary: c.summary.clone(),
                 evidence: format!("{}/{}", c.evidence.holders, c.evidence.total),
                 example: c.example.clone(),
-                mode: crate::check::effective_mode(c).into(),
+                mode: mode.into(),
                 tier: c.tier(),
                 baselined: lock.contains(&c.id, &key),
                 suppressed: suppressed(repo, j, &c.id),
@@ -3489,8 +3513,14 @@ mod tests {
     /// Pins that a fold of more than two alternatives accepts each of them.
     #[test]
     fn a_fold_of_three_accepts_each() {
-        assert_eq!(way_keys("any_of(a:x|b:y|c:z)"), ["a:x", "b:y", "c:z"]);
-        assert_eq!(way_keys("any_of(a:x|b:y)"), ["a:x", "b:y"]);
-        assert_eq!(way_keys(A), [A]);
+        let alt = |key: &str| variant("P-alt", key, key, VariantKind::Known);
+        let fold = Variant {
+            alternatives: vec![alt("a:x"), alt("b:y"), alt("c:z")],
+            ..variant("P-fold", "any_of(a:x|b:y|c:z)", "any", VariantKind::Known)
+        };
+        assert_eq!(way_keys(&fold), ["a:x", "b:y", "c:z"]);
+        // A key that holds `|` is read from the fold itself, not split.
+        let piped = variant("P-one", "a:x|y", "one", VariantKind::Known);
+        assert_eq!(way_keys(&piped), ["a:x|y"]);
     }
 }

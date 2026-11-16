@@ -3027,7 +3027,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 if let Some((_, rows)) = &packages {
                     println!("{}", workspace::lines(rows).join("\n"));
                 }
-                if let Some(note) = practices::init_note(root, &facts) {
+                if let Some(note) = &map.note {
                     println!("{note}");
                 }
                 if let Some(n) = withheld_next(&mined.withheld) {

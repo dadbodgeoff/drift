@@ -586,7 +586,18 @@ fn a_wrapper_variant_is_promotable_and_its_exceptions_are_listed() {
         ..FileFacts::default()
     });
     let facts = repo(files);
-    let r = run(&facts);
+    // Read only for a report that shows it (`Options::promotable`).
+    assert!(
+        concern(&run(&facts), AUTHN)
+            .variants
+            .iter()
+            .all(|v| v.promotable.is_none())
+    );
+    let opts = Options {
+        promotable: true,
+        ..Options::default()
+    };
+    let r = practices::practices_with(&facts, &opts, &stub());
     let c = concern(&r, AUTHN);
     let top = &c.variants[0];
     assert_eq!(

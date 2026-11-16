@@ -827,13 +827,18 @@ fn of_total(r: &PracticesReport, rc: &Recipe, c: &RecipeConcern) -> String {
 /// settles in `.drift/config.yaml` (an unknown instrument): the first run points at
 /// `drift practices --hints` for those.
 fn first_run_finding(r: &PracticesReport, f: &Finding) -> Option<String> {
-    let label = |vid: &str| {
-        r.concerns
-            .iter()
-            .find(|c| c.id == f.concern)
-            .and_then(|c| c.variants.iter().find(|v| v.id == vid))
-            .map(|v| plain_way(&sanitize(&v.label, 100)))
-            .unwrap_or_default()
+    // The way a finding names, by position; `None` where it names fewer, so a finding
+    // built short is left out rather than panicking the first run.
+    let label = |i: usize| {
+        let vid = f.variants.get(i)?;
+        Some(
+            r.concerns
+                .iter()
+                .find(|c| c.id == f.concern)
+                .and_then(|c| c.variants.iter().find(|v| &v.id == vid))
+                .map(|v| plain_way(&sanitize(&v.label, 100)))
+                .unwrap_or_default(),
+        )
     };
     let pkg = match f.package.as_deref() {
         Some("") | None => String::new(),
@@ -856,15 +861,15 @@ fn first_run_finding(r: &PracticesReport, f: &Finding) -> Option<String> {
         FindingKind::UnexplainedSplit => format!(
             "{}{pkg}: two ways side by side, {} and {} ({} {}), and nothing sets them apart{eg}",
             plain_concern(&f.concern),
-            label(&f.variants[0]),
-            label(&f.variants[1]),
+            label(0)?,
+            label(1)?,
             f.members,
             places(f.members),
         ),
         FindingKind::None => format!(
             "{}{pkg}: {}, in {} {}{eg}",
             plain_concern(&f.concern),
-            label(&f.variants[0]),
+            label(0)?,
             f.members,
             places(f.members),
         ),
@@ -968,21 +973,23 @@ pub fn render_first_run(r: &PracticesReport) -> String {
             );
         }
     }
-    let mut ranked: Vec<&Finding> = r.findings.iter().collect();
-    ranked.sort_by_key(|f| first_run_rank(f));
+    // Only what the first run says counts toward a rank's turn: an unknown instrument
+    // it leaves to `--hints` must not take the place of a copy.
+    let mut ranked: Vec<(u8, String)> = r
+        .findings
+        .iter()
+        .filter_map(|f| Some((first_run_rank(f), first_run_finding(r, f)?)))
+        .collect();
+    ranked.sort_by_key(|(rank, _)| *rank);
     // No more than two of a kind before the others have had their turn: a
     // repository of many packages would list one thing five times.
     let mut seen: std::collections::BTreeMap<u8, usize> = std::collections::BTreeMap::new();
-    let (first, later): (Vec<&Finding>, Vec<&Finding>) = ranked.into_iter().partition(|f| {
-        let n = seen.entry(first_run_rank(f)).or_default();
+    let (first, later): (Vec<_>, Vec<_>) = ranked.into_iter().partition(|(rank, _)| {
+        let n = seen.entry(*rank).or_default();
         *n += 1;
         *n <= 2
     });
-    let findings: Vec<String> = first
-        .into_iter()
-        .chain(later)
-        .filter_map(|f| first_run_finding(r, f))
-        .collect();
+    let findings: Vec<String> = first.into_iter().chain(later).map(|(_, f)| f).collect();
     if !findings.is_empty() {
         if !out.is_empty() {
             out.push('\n');
@@ -1282,6 +1289,33 @@ mod first_run_tests {
         );
         assert!(!out.contains("apps/c"), "{out}");
         assert!(!out.contains("Worth a look first"), "{out}");
+    }
+
+    /// A finding naming fewer ways than its kind needs is left out of the first run,
+    /// not a panic; findings the first run leaves to `--hints` take no copy's turn.
+    #[test]
+    fn short_findings_are_skipped_and_unknowns_take_no_turn() {
+        let dup = |p: &str| {
+            let mut f = finding(FindingKind::DuplicateHelper, DATA_ACCESS, p, &[]);
+            f.key = Some(format!("helper_{p}"));
+            f
+        };
+        let r = PracticesReport {
+            findings: vec![
+                finding(FindingKind::UnexplainedSplit, DATA_ACCESS, "a", &["P-x"]),
+                finding(FindingKind::None, AUTHN, "b", &[]),
+                finding(FindingKind::Unknown, AUTHN, "c", &[]),
+                finding(FindingKind::Unknown, AUTHN, "d", &[]),
+                dup("e"),
+                dup("f"),
+            ],
+            ..Default::default()
+        };
+        let out = render_first_run(&r);
+        assert!(out.contains("`helper_e`"), "{out}");
+        assert!(out.contains("`helper_f`"), "{out}");
+        assert!(!out.contains("two ways side by side"), "{out}");
+        assert_eq!(out.matches(". ").count(), 2, "{out}");
     }
 
     /// What a signed-in caller can reach first, then entry points with no sign-in,

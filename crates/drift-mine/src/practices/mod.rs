@@ -724,6 +724,11 @@ pub struct Options {
     /// every symbol and call of the repository that a caller reading no findings (a
     /// card's lines, a hook's departures, `drift check`) should not pay on each edit.
     pub skip_duplicates: bool,
+    /// Fill each variant's [`Variant::promotable`]: a reading of every unit of every
+    /// place that only a report people read (`drift practices`, MCP
+    /// `drift_practices`, Studio, the first run of `drift init`) shows. A card, a hook
+    /// and `drift check` leave it out; `drift practices promote` reads the units itself.
+    pub promotable: bool,
 }
 
 /// The practice map of a repository with the registered classifiers.
