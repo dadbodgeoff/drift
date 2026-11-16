@@ -965,7 +965,11 @@ fn derived_bases(
     r: &mut Reading,
 ) {
     let mut cur = crate::mine::norm_ref(w).into_owned();
+    // The builders on the way from the wrapper to the base: each runs the base's
+    // steps, so a role guard one of them is already named as is the base's guard.
+    let mut chain: Vec<String> = Vec::new();
     for _ in 0..MAX_BASES {
+        chain.push(cur.clone());
         let Some(d) = cx.context().definition(&cur) else {
             return;
         };
@@ -986,6 +990,13 @@ fn derived_bases(
             let mut own = Reading::default();
             wrap(cx, sfile, &base, WrapKind::Call, guards, None, &mut own);
             if own.signs_in() || !own.role_only.is_empty() {
+                // The same role guard reached through the base and through the
+                // builder standing on it (`auditedAdminProcedure =
+                // adminProcedure.use(isAuthed)`, already read as the role guard it
+                // is) is one guard, named once: by the builder the route stands on.
+                if r.role_guards.iter().any(|g| chain.contains(g)) {
+                    own.role_guards.clear();
+                }
                 r.absorb(own);
                 return;
             }
