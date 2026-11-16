@@ -562,13 +562,17 @@ export type GuardCallArg =
   | { ref: string }
   | { call: GuardCall };
 
-/** Why a file was not analysed. `too_deep`: nesting beyond Drift's limit (it would overflow the parser), so Drift fails closed. `too_costly`: syntax that makes the TypeScript/JavaScript parser re-read large spans (or a parse that ran out of its memory budget) would take far more memory than the file's size, so Drift fails closed. `stack_unavailable`: the scan could not reserve a stack large enough to parse the file safely (an address-space or memory limit on that run), so it fails closed for that run; not cached, a later scan with room parses it. `flow_syntax`: JavaScript with Flow type annotations that cannot be read, or removed with certainty to leave plain JavaScript, so Drift fails closed. */
-export type SkipReason = "too_large" | "generated" | "minified" | "declaration" | "not_utf8" | "too_deep" | "too_costly" | "stack_unavailable" | "flow_syntax";
+/** Why a file was not analysed. `too_deep`: nesting beyond Drift's limit (it would overflow the parser), so Drift fails closed. `too_costly`: syntax that makes the TypeScript/JavaScript parser re-read large spans (or a parse that ran out of its memory budget) would take far more memory than the file's size, so Drift fails closed. `stack_unavailable`: the scan could not reserve a stack large enough to parse the file safely (an address-space or memory limit on that run), so it fails closed for that run; not cached, a later scan with room parses it. `flow_syntax`: JavaScript with Flow type annotations that cannot be read, or removed with certainty to leave plain JavaScript, so Drift fails closed. `component_script`: a Vue, Svelte or Astro component whose script blocks cannot be delimited with certainty; in `listed_skipped` only. */
+export type SkipReason = "too_large" | "generated" | "minified" | "declaration" | "not_utf8" | "too_deep" | "too_costly" | "stack_unavailable" | "flow_syntax" | "component_script";
 
 export interface RepoFacts {
   schema_version: number;
   files: FileFacts[];
   skipped: { path: string; reason: SkipReason }[];
+  /** The scripts of Vue, Svelte and Astro components (TypeScript lowering 87): the listed reading only, which `drift security` and the practice map read and mining does not. Omitted when empty. */
+  listed_files?: FileFacts[];
+  /** Components skipped, and why (`listed_files`). Omitted when empty. */
+  listed_skipped?: { path: string; reason: SkipReason }[];
   models?: { path: string; name: string; source: string; line: number; fields: string[] }[];
   packages?: {
     path: string;

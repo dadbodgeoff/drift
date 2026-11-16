@@ -104,7 +104,7 @@ export function searchFiles(ix: FactsIndex, q: string, limit = 50): string[] {
 
 /** Skip reasons for files Drift could have analysed but did not, to be safe: no facts and no rules checked in them. */
 export function failsClosed(reason: string): boolean {
-  return reason === "too_deep" || reason === "too_costly" || reason === "stack_unavailable" || reason === "flow_syntax";
+  return reason === "too_deep" || reason === "too_costly" || reason === "stack_unavailable" || reason === "flow_syntax" || reason === "component_script";
 }
 
 /** Why Drift skipped a file (`skipped[].reason` in drift scan, crates/drift-core/src/facts.rs `SkipReason`). */
@@ -113,6 +113,7 @@ export const SKIP_REASON: Record<string, { label: string; why: string; weight: n
   too_costly: { label: "too costly to parse", why: "Syntax that makes the parser re-read large spans of the file (such as deeply nested generic calls or comparisons) would take far more memory than the file's size, so Drift skips the file and fails closed: no facts, no rules checked in it.", weight: 3 },
   stack_unavailable: { label: "not parsed for lack of memory", why: "The scan could not reserve a stack large enough to parse this file safely (an address-space or memory limit on that run), so it skipped the file and failed closed: no facts, no rules checked in it. A scan with more memory parses it.", weight: 3 },
   flow_syntax: { label: "Flow type syntax", why: "A JavaScript file with Flow type annotations that Drift cannot read, or cannot remove with certainty to leave plain JavaScript (Flow-only syntax such as exact objects `{| |}`, `opaque type`, `%checks` or `*`), so Drift skips the file and fails closed: no facts, no rules checked in it. Annotations TypeScript shares are removed and the file is analysed.", weight: 3 },
+  component_script: { label: "component scripts unclear", why: "A Vue, Svelte or Astro component whose script blocks Drift cannot delimit with certainty (a block that never ends, two blocks of one kind, blocks in different languages or one Drift does not read, markup closed out of order before a script tag), so Drift skips the file and fails closed: no facts, no rules checked in it.", weight: 3 },
   not_utf8: { label: "not UTF-8", why: "Not valid UTF-8 text, so it cannot be parsed.", weight: 2 },
   too_large: { label: "too large", why: "Larger than Drift's per-file limit.", weight: 1 },
   generated: { label: "generated", why: "Marked or recognised as generated code: conventions are learned from code people write.", weight: 0 },

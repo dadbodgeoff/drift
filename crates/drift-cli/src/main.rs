@@ -2055,6 +2055,15 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 "  imports:         {} ({internal} in-repo, {unresolved} unresolved)",
                 imports.len()
             );
+            // Read since the measured build: `drift security` and the practice map
+            // read them, mining does not.
+            if !facts.listed_files.is_empty() || !facts.listed_skipped.is_empty() {
+                eprintln!(
+                    "  components:      {} read, {} skipped (Vue, Svelte, Astro scripts; read by `drift security` and the practice map, not mined)",
+                    facts.listed_files.len(),
+                    facts.listed_skipped.len()
+                );
+            }
         }
         Command::Debug {
             what: DebugKind::Imports,

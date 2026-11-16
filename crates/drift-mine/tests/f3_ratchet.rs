@@ -46,7 +46,6 @@ fn every_kind_a_reading_widened_is_found_since_the_widening() {
         "guard-gap",
         "no-authorization",
         "no-guard",
-        "risky",
         "scope-gap",
         "unguarded-reaching",
         "unscoped-key",
@@ -56,6 +55,8 @@ fn every_kind_a_reading_widened_is_found_since_the_widening() {
     }
     // Widened by version 3: the pipelines of CI systems other than GitHub Actions.
     assert_eq!(found_since("workflow", "x"), 3);
+    // Widened again by the scripts of single-file components.
+    assert_eq!(found_since("risky", "x"), 3);
     // Read as before.
     for kind in ["dependency", "kubernetes", "leak"] {
         assert_eq!(found_since(kind, "x"), 1, "{kind}");

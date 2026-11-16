@@ -46,7 +46,8 @@ pub const SECURITY_LOCK: &str = ".drift/security.lock";
 /// and they ship together.) 3: tRPC procedures keyed by their dotted path;
 /// `workflow-hardening` and `image-hardening` ([`crate::hardening`]); `workflow`
 /// findings of CI systems other than GitHub Actions ([`crate::ci`]); the entry
-/// points a deployment file names ([`crate::serverless`]).
+/// points a deployment file names ([`crate::serverless`]); the scripts of
+/// single-file components (`.vue`, `.svelte`, `.astro`) read ([`READ_SINCE`]).
 pub const INVENTORY_VERSION: u32 = 3;
 
 /// The version of a baseline written before baselines were stamped.
@@ -117,6 +118,9 @@ const DETECTOR_SINCE: &[(&str, u32)] = &[];
 /// 3: the entry points a Serverless Framework, SAM, Wrangler, Netlify or Vercel
 /// deployment names ([`crate::serverless`]): more entry points, so more findings of
 /// every kind read off an entry point.
+///
+/// 3: `risky`: the risky operations of the scripts of single-file components, and of
+/// the files only a component imports, which were set apart as reached by nothing.
 const READ_SINCE: &[(&str, u32)] = &[
     ("guard-gap", 3),
     ("no-authorization", 3),

@@ -156,14 +156,40 @@ fn lower_cached(
     text: &str,
     cache: Option<&FactCache>,
 ) -> Result<(RawFile, bool), SkipReason> {
-    if let Some(raw) = cache.and_then(|c| c.get::<RawFile>(hash)) {
+    let key = cache_key(rel, hash);
+    if let Some(raw) = cache.and_then(|c| c.get::<RawFile>(&key)) {
         return Ok((raw, true));
     }
-    let raw = lower_on_stack(rel, text).map_err(|_| SkipReason::StackUnavailable)?;
+    let raw = match ingest::is_component_path(rel) {
+        true => crate::sfc::lower_component_on_stack(rel, text),
+        false => lower_on_stack(rel, text),
+    }
+    .map_err(|_| SkipReason::StackUnavailable)?;
     if let Some(c) = cache {
-        c.put(hash, &raw);
+        c.put(&key, &raw);
     }
     Ok((raw, false))
+}
+
+/// The key a file's facts are cached under: the hash of its bytes, or for a
+/// component ([`crate::sfc`]) a hash of that and its kind, since its facts are of
+/// its script, not of the bytes read as a source file.
+fn cache_key(rel: &str, hash: &str) -> String {
+    match ingest::is_component_path(rel) {
+        true => {
+            let ext = rel.rsplit_once('.').map_or("", |(_, e)| e);
+            ingest::hash_bytes(format!("component {ext}\0{hash}").as_bytes())
+        }
+        false => hash.to_string(),
+    }
+}
+
+/// [`ingest::read_source`], or [`ingest::read_component`] for a component.
+fn read(cand: &Candidate) -> Option<Read> {
+    match ingest::is_component_path(&cand.rel_path) {
+        true => ingest::read_component(cand),
+        false => ingest::read_source(cand),
+    }
 }
 
 /// Decide what each candidate holds, reading only files the index cannot vouch for.
@@ -192,7 +218,7 @@ pub(crate) fn classify(
                 });
             }
             let racy = cand.stamp.changed_ns().saturating_add(RACY_NS) >= started_ns;
-            let (hash, lowered) = match ingest::read_source(&cand)? {
+            let (hash, lowered) = match read(&cand)? {
                 Read::Skipped { hash, reason } => (hash, Err(reason)),
                 Read::Source(f) => {
                     let lowered = lower_cached(&f.rel_path, &f.hash, &f.text, cache);
@@ -248,12 +274,12 @@ pub(crate) fn lowered(
     if let Some(raw) = &k.raw {
         return Ok((make(k.hash.clone(), raw.clone()), k.cache_hit));
     }
-    if let Some(raw) = cache.and_then(|c| c.get::<RawFile>(&k.hash)) {
+    if let Some(raw) = cache.and_then(|c| c.get::<RawFile>(&cache_key(&k.cand.rel_path, &k.hash))) {
         return Ok((make(k.hash.clone(), raw), true));
     }
     // Not cached (cache cleared): read it again. The content is what the index says
     // unless the file changed since the walk, in which case the newer content wins.
-    match ingest::read_source(&k.cand).ok_or(None)? {
+    match read(&k.cand).ok_or(None)? {
         Read::Source(f) => {
             let (raw, hit) = lower_cached(&f.rel_path, &f.hash, &f.text, cache).map_err(Some)?;
             if let Some(reason) = raw.skip {
@@ -290,12 +316,28 @@ pub(crate) fn into_lowered(
     }
 }
 
-/// Record what this run knows, if it differs from the loaded index.
-pub(crate) fn update(cache_dir: &Path, root: &Path, old: Option<&Index>, known: &[Known]) {
-    let entries: BTreeMap<String, Entry> = known
+/// Record what this run knows, if it differs from the loaded index. A run that
+/// read no components (`components` false: a single-file scan) keeps what the
+/// index knows of them.
+pub(crate) fn update(
+    cache_dir: &Path,
+    root: &Path,
+    old: Option<&Index>,
+    known: &[Known],
+    components: bool,
+) {
+    let mut entries: BTreeMap<String, Entry> = known
         .iter()
         .filter_map(|k| Some((k.cand.rel_path.clone(), k.entry()?)))
         .collect();
+    if !components && let Some(old) = old {
+        entries.extend(
+            old.entries
+                .iter()
+                .filter(|(p, _)| ingest::is_component_path(p))
+                .map(|(p, e)| (p.clone(), e.clone())),
+        );
+    }
     if old.is_none_or(|i| i.entries != entries) {
         Index::save(cache_dir, root, entries);
     }
@@ -392,7 +434,7 @@ fn scan_file_inner(
         None => ingest::walk(root, opts.threads, &repo::is_config_path)?,
     };
     let known = classify(walked.sources, Some(index), Some(cache), started);
-    update(cache_dir, root, Some(index), &known);
+    update(cache_dir, root, Some(index), &known, false);
     let kept: BTreeMap<&str, &Known> = known
         .iter()
         .filter(|k| k.skip.is_none())

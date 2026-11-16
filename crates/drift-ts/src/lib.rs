@@ -12,6 +12,7 @@ pub mod lower;
 pub mod nextjs;
 pub mod repo;
 pub mod resolve;
+pub mod sfc;
 mod typeres;
 mod types;
 
@@ -128,18 +129,30 @@ fn scan_inner(
         .as_ref()
         .and_then(|d| index::Index::load(d, root));
     // Files whose stamp is unchanged since the last scan are not read again.
-    let known = index::classify(walked.sources, old_index.as_ref(), cache.as_ref(), started);
+    // Components ([`sfc`]) are known beside the sources, and kept apart from them
+    // from here on: they are the listed reading's alone.
+    let mut candidates = walked.sources;
+    candidates.extend(walked.components);
+    let known = index::classify(candidates, old_index.as_ref(), cache.as_ref(), started);
     if let Some(d) = &opts.cache_dir {
-        index::update(d, root, old_index.as_ref(), &known);
+        index::update(d, root, old_index.as_ref(), &known, true);
     }
     let mut skipped = walked.skipped;
-    skipped.extend(known.iter().filter_map(|k| {
-        k.skip.map(|reason| drift_core::Skipped {
-            path: k.cand.rel_path.clone(),
-            reason,
-        })
-    }));
+    let mut listed_skipped = walked.components_skipped;
+    for k in &known {
+        if let Some(reason) = k.skip {
+            let s = drift_core::Skipped {
+                path: k.cand.rel_path.clone(),
+                reason,
+            };
+            match ingest::is_component_path(&s.path) {
+                true => listed_skipped.push(s),
+                false => skipped.push(s),
+            }
+        }
+    }
     let mut lowered: Vec<(LoweredFile, bool)> = Vec::new();
+    let mut components: Vec<LoweredFile> = Vec::new();
     // Files that have no facts now (changed since the walk, or no stack to lower
     // them on) are skipped with their reason, never left out.
     for r in known
@@ -149,7 +162,9 @@ fn scan_inner(
         .collect::<Vec<_>>()
     {
         match r {
+            Ok((f, _)) if ingest::is_component_path(&f.rel_path) => components.push(f),
             Ok(f) => lowered.push(f),
+            Err(Some(s)) if ingest::is_component_path(&s.path) => listed_skipped.push(s),
             Err(Some(s)) => skipped.push(s),
             Err(None) => {}
         }
@@ -161,14 +176,19 @@ fn scan_inner(
         cache_hits: lowered.iter().filter(|(_, h)| *h).count(),
         parse_errors: lowered.iter().filter(|(f, _)| !f.raw.parse_ok).count(),
     };
-    let files: Vec<LoweredFile> = lowered.into_iter().map(|(f, _)| f).collect();
+    // The sources first, then the components: linking the sources reads the first
+    // part alone, so their facts are those of a scan with no components at all.
+    let sources = lowered.len();
+    let mut all: Vec<LoweredFile> = lowered.into_iter().map(|(f, _)| f).collect();
+    all.extend(components);
+    let (files, components) = all.split_at(sources);
 
     let config = repo::read_config(&walked.config);
     let resolver = ModuleResolver::new(root, workspace_from(root, &config.package_jsons));
-    let mut linker = Linker::new(&resolver, &files);
+    let mut linker = Linker::new(&resolver, files);
     // Files that list what the last measured build did not are linked once more as
     // it listed them: what mining reads.
-    let files_measured = measured_files(&files);
+    let files_measured = measured_files(files);
     let linker_measured = files_measured
         .as_ref()
         .map(|files| Linker::new(&resolver, files));
@@ -232,6 +252,8 @@ fn scan_inner(
         key_files: vec![],
         integration_files: vec![],
         generated_clients: repo::generated_clients(&config),
+        listed_files: vec![],
+        listed_skipped: vec![],
     };
     repo::pair_tests(&mut repo);
     repo::mark_cli_entries(&mut repo, root, &config);
@@ -249,6 +271,8 @@ fn scan_inner(
         })
         .collect();
     repo::client_leaks(&mut repo, &reexports);
+    repo.listed_files = sfc::link_components(&resolver, &all, components, root);
+    repo.listed_skipped = listed_skipped;
     repo.normalize();
     // Declaration files the type index lowered left spare arenas on the workers.
     rayon::broadcast(|_| arena::release_spare());

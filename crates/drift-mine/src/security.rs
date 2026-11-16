@@ -161,6 +161,10 @@ pub struct UnreachedFile {
 /// imported, an entry or lists an entry point (a package's initialiser, a barrel), or
 /// sits at any depth below a directory, other than its package's own, that holds a
 /// file with listed entry points (a file router's page that lists none of its own).
+///
+/// A single-file component ([`drift_core::ingest::is_component_path`]) is never
+/// unreached: its markup is not read, and a component is used from markup, by a
+/// file router, or registered by name, none of which the facts show.
 pub fn unreached_files(repo: &RepoFacts, non_production: &NonProduction) -> BTreeSet<String> {
     fn dir(p: &str) -> &str {
         p.rsplit_once('/').map_or("", |(d, _)| d)
@@ -207,6 +211,7 @@ pub fn unreached_files(repo: &RepoFacts, non_production: &NonProduction) -> BTre
         .filter(|f| {
             let d = dir(&f.path);
             !is_test_path(&f.path)
+                && !drift_core::ingest::is_component_path(&f.path)
                 && non_production.dir_of(&f.path, &f.package).is_none()
                 && (!f.parse_ok || f.imports.is_empty())
                 && !serves(f)

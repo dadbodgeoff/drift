@@ -10,10 +10,25 @@ How each statement was checked is marked in the tables: **run** means a small re
 | --- | --- | --- |
 | TypeScript and JavaScript | `.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, `.cjs` | oxc |
 | Python | `.py` | ruff's parser |
+| Vue, Svelte and Astro components | the script blocks of `.vue`, `.svelte` and `.astro` files (listed reading only, below) | oxc |
 
 No other language is read. A Go, Java, Ruby, Rust, C#, PHP or shell source file is not parsed, mined, checked or inventoried; a repository that is mostly another language gets little from Drift.
 
 Left out on purpose, in every language: files over 1 MiB, generated code (a generated-file header, `@generated`, protobuf output, files marked `linguist-generated` in `.gitattributes`), minified code (a line over 5,000 characters), declaration files (`.d.ts`, `.pyi`), files nested or costly enough to endanger the parser, and files that are not UTF-8. Directories never entered: `node_modules`, `.git`, `.next`, `.turbo`, `.vercel`, `.drift`, `dist`, `build`, `out`, `coverage`, `vendor`, `storybook-static`, and for Python also `__pycache__`, virtual environments (`.venv`, `venv`, any directory holding `pyvenv.cfg` or `conda-meta/`), `site-packages`, `.tox`, `.nox`, `.eggs`, `*.egg-info` and tool caches. Python schema migrations (numbered Django migrations, Alembic and Flask-Migrate revisions) are skipped. `.gitignore` and `.ignore` files in each directory are respected; a global git ignore and `.git/info/exclude` are not, so results do not depend on the machine. `drift scan --json` lists skipped files and the reason.
+
+### Single-file components (Vue, Svelte, Astro)
+
+The script blocks of a component are read as one TypeScript or JavaScript module, at the lines and columns of the file (everything else in it is read as blank):
+
+- **Vue** (`.vue`): `<script>` and `<script setup>` at the top level, one of each, in one language (`lang="ts"`, `"tsx"`, `"js"`, `"jsx"`, or none). The two blocks are one module, as the Vue compiler makes them. Compiler macros (`defineProps`, `defineEmits`) are calls of names nothing imports.
+- **Svelte** (`.svelte`): the instance `<script>` and the module script (`context="module"`, or `module` in Svelte 5), `lang="ts"` or none. An `export let` in the instance script is a property of the component, not an export of the module. A `<script>` inside an element of the markup (`<svelte:head>`) is not the component's.
+- **Astro** (`.astro`): the frontmatter between the `---` fences (server code, TypeScript; a `return` at its top level is allowed), and the `<script>` tags the Astro build bundles for the browser (no attribute but `src`). An `is:inline` script is not read. A bundled script that declares a name the frontmatter or an earlier script declares is a module of its own in Astro and is left out rather than read as the same name.
+
+A `.ts` file's import of a component (`import App from './App.vue'`) resolves to it, and a component's imports resolve as any module's. A `src="./x.ts"` attribute points at a file read on its own; that block is empty in the component. A file whose blocks cannot be delimited with certainty (a block that never ends, two blocks of one kind, blocks in two languages or in one Drift does not read, such as `lang="coffee"`, an element closed out of order before a script tag, a frontmatter fence that never closes) is skipped with the reason `component_script`, and is "not checked" in `drift security`.
+
+These files are in the **listed reading only**: `drift scan --json` holds them in `listed_files` and `listed_skipped`, `drift security` and the practice map read them, and convention mining (`drift census`, `drift init`, `drift check` of mined rules, the hooks) does not, so what it proposes for a repository is the same with them or without. The `listed_entry_points` experimental feature makes mining read them too.
+
+Not read: the markup. What a template renders, the components it uses, the handlers it binds and the values it interpolates (`v-html`, `{@html}`) are not facts, so a component used only from a template is not known to be rendered, and Drift never says that nothing reaches a component file. What a client component reaches of server-only code is not read for these files (the client-leak reading knows React's `"use client"` boundary only), nor are the parameter types of their functions. A component is no entry point: an Astro page or endpoint, a SvelteKit `+page.svelte` and a Nuxt page are not listed by their component. `.mdx` files are not read.
 
 Conventions are mined from any parsed code, whatever the framework. What follows concerns the parts of Drift that need to know where a request enters: the security inventory, the practice map, a file's card and the hooks' recipes.
 

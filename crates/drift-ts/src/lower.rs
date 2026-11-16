@@ -1207,7 +1207,21 @@ fn lower_parsed(
     text: &str,
     source_type: SourceType,
 ) -> RawFile {
-    let ret = Parser::new(allocator, text, source_type).parse();
+    lower_parsed_with(allocator, rel_path, text, source_type, Default::default())
+}
+
+/// [`lower_parsed`] with the parser's `options` (a component's script:
+/// [`crate::sfc`]).
+pub(crate) fn lower_parsed_with(
+    allocator: &oxc_allocator::Allocator,
+    rel_path: &str,
+    text: &str,
+    source_type: SourceType,
+    options: oxc_parser::ParseOptions,
+) -> RawFile {
+    let ret = Parser::new(allocator, text, source_type)
+        .with_options(options)
+        .parse();
     if ret.fatal_error {
         return RawFile {
             parse_ok: false,
