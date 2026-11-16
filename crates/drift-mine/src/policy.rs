@@ -1191,14 +1191,12 @@ impl Switch {
 /// (a Windows editor's) is not text: before, it made the first line of a `drift.lock`
 /// neither a comment nor its entry.
 fn read_policy_file(root: &Path, rel: &str) -> anyhow::Result<Option<String>> {
-    Ok(
-        crate::owned_file::read(root, Path::new(rel))?.map(|text| {
-            match text.strip_prefix('\u{feff}') {
-                Some(rest) => rest.to_string(),
-                None => text,
-            }
-        }),
-    )
+    Ok(crate::owned_file::read(root, Path::new(rel))?.map(|text| {
+        match text.strip_prefix('\u{feff}') {
+            Some(rest) => rest.to_string(),
+            None => text,
+        }
+    }))
 }
 
 /// The one field read before the rest of a policy ([`ConventionsFile::load`]).
