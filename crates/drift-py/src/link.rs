@@ -420,11 +420,17 @@ struct Extra {
 }
 
 /// The link of this symbol itself reads what the measured build did not
-/// ([`Linker::links_differently`]): a decorator that is no name.
+/// ([`Linker::links_differently`]): a decorator that is no name. As the build of
+/// `a0779066` asked it: a reading made after that build is no term of it (a sink
+/// marked [`crate::raw::SINCE`], a fact [`marked_by_reading`]), so that the files
+/// it picks are the ones that build picked.
 fn symbol_unmeasured(s: &RawSymbol) -> bool {
+    fn frozen_sinks(sinks: &[String]) -> bool {
+        sinks.iter().any(|k| !k.starts_with(crate::raw::SINCE))
+    }
     !s.since_wraps.is_empty()
-        || !s.since_sinks.is_empty()
-        || s.members.iter().any(|m| !m.since_sinks.is_empty())
+        || frozen_sinks(&s.since_sinks)
+        || s.members.iter().any(|m| frozen_sinks(&m.since_sinks))
         || s.drf_reassigned.is_some()
         || !s.wraps_only.is_empty()
         || !s.since_only.is_empty()
@@ -436,12 +442,6 @@ fn symbol_unmeasured(s: &RawSymbol) -> bool {
         || s.members
             .iter()
             .any(|m| m.unread.iter().any(|c| c == UNREAD_EXIT_MEASURED))
-        || s.controls.iter().any(|c| marked_by_reading(c))
-        || s.fed_sinks.iter().any(|c| marked_by_reading(c))
-        || s.members.iter().any(|m| {
-            m.unread.iter().any(|c| marked_by_reading(c))
-                || m.fed_sinks.iter().any(|c| marked_by_reading(c))
-        })
 }
 
 /// A fact the lowering wrote for one of the two readings only
@@ -748,6 +748,10 @@ pub struct Linker<'r> {
     /// Link as the last build whose mined proposals were measured did: without the
     /// listings made since ([`Linker::measured`]).
     measured: bool,
+    /// Link as the listed linker of the build `a0779066` did ([`Linker::compat`]):
+    /// every reading that build made since the measured build is made, and none
+    /// made after it ([`Linker::since_frozen`]).
+    compat: bool,
     /// A listing made since was met ([`Linker::lists_unmeasured`]).
     unmeasured: std::sync::atomic::AtomicBool,
     /// Entry points declared outside Python code (console scripts, `langgraph.json`),
@@ -1009,6 +1013,29 @@ impl<'r> Linker<'r> {
         )
     }
 
+    /// The same linker, linking as the listed linker of the build `a0779066` did:
+    /// each reading that build made since the measured build is made (it asks
+    /// [`Linker::since_measured`]), and none added after it
+    /// ([`Linker::since_frozen`]). What mining reads of a file
+    /// [`Linker::links_differently`] does not pick, which that build took from its
+    /// listed link. Its tables are built as this linker's were (no reading added
+    /// after that build is asked while they are built), none of them given.
+    pub fn compat(&self) -> Self {
+        let track = self.track.as_ref().map(|t| Track {
+            target: t.target.clone(),
+            misses: Mutex::new(BTreeSet::new()),
+        });
+        let tables = (
+            self.index.clone(),
+            self.specs.clone(),
+            self.bindings.clone(),
+        );
+        let mut l = Self::with_tables(self.res, self.files, track, self.measured, tables, None)
+            .with_declared(self.declared.clone());
+        l.compat = true;
+        l
+    }
+
     /// Whether `measured` ([`Linker::measured`]) may link file `fi` differently from
     /// this linker, so that it has to be linked again. A file's link asks the linker
     /// for three things that depend on which listings are read: what routes and
@@ -1016,10 +1043,12 @@ impl<'r> Linker<'r> {
     /// class built by `__new__` binds, which any file may make (`by_new`: some class
     /// of the repository is one).
     ///
-    /// Not asked by the scan any more: it links every file again (review R5, row 1:
-    /// a reading made since that this test did not know reached what mining reads).
-    /// A test of it is a list of the readings made since, which the next one is
-    /// missing from.
+    /// The test as the build `a0779066` made it, frozen with what mining reads: a
+    /// file it does not pick is linked by [`Linker::compat`], not by `measured`
+    /// (review M2). No reading made after that build is a term of it
+    /// ([`symbol_unmeasured`]), and none feeds one: those are asked with
+    /// [`Linker::since_frozen`], which neither `measured` nor the compat linker
+    /// makes, so a file it does not pick has none of them (review R5, row 1).
     pub fn links_differently(&self, measured: &Self, fi: usize, by_new: bool) -> bool {
         let rel = self.module_of(fi);
         by_new
@@ -1035,13 +1064,26 @@ impl<'r> Linker<'r> {
 
     /// The sinks of a symbol or a method: those the measured build read, and, but
     /// when linking what mining reads, those read since
-    /// ([`RawSymbol::since_sinks`]). Sorted.
+    /// ([`RawSymbol::since_sinks`]). Sorted. One marked [`crate::raw::SINCE`] was
+    /// read after the build `a0779066` (`Collector::note_path_sink`): read where
+    /// [`Linker::since_frozen`] says.
     fn sinks_read(&self, measured: &[String], since: &[String]) -> Vec<String> {
         let mut out = measured.to_vec();
         if !since.is_empty() && self.since_measured() {
-            out.extend(since.iter().cloned());
-            out.sort();
-            out.dedup();
+            let frozen =
+                since.iter().any(|k| k.starts_with(crate::raw::SINCE)) && self.since_frozen();
+            let read: Vec<String> = since
+                .iter()
+                .filter_map(|k| match k.strip_prefix(crate::raw::SINCE) {
+                    Some(k) => frozen.then(|| k.to_string()),
+                    None => Some(k.clone()),
+                })
+                .collect();
+            if !read.is_empty() {
+                out.extend(read);
+                out.sort();
+                out.dedup();
+            }
         }
         out
     }
@@ -1082,7 +1124,8 @@ impl<'r> Linker<'r> {
         if !facts.iter().any(|f| marked_by_reading(f)) {
             return;
         }
-        let since = self.since_measured();
+        // Every mark was written after the build `a0779066`.
+        let since = self.since_frozen();
         let mut out = Vec::with_capacity(facts.len());
         for f in facts.drain(..) {
             if let Some(rest) = f.strip_prefix(crate::raw::SINCE) {
@@ -1111,6 +1154,14 @@ impl<'r> Linker<'r> {
         self.unmeasured
             .store(true, std::sync::atomic::Ordering::Relaxed);
         !self.measured
+    }
+
+    /// [`Linker::since_measured`] for a reading made after the build `a0779066`:
+    /// not made by the measured linker, nor by the compat one ([`Linker::compat`]),
+    /// which links as that build's listed linker did. Asked at exactly the readings
+    /// added after that build; the readings that build made ask `since_measured`.
+    fn since_frozen(&self) -> bool {
+        self.since_measured() && !self.compat
     }
 
     /// A linker over a subset of the repo that only links `target`, and records every
@@ -1264,6 +1315,7 @@ impl<'r> Linker<'r> {
             mounts_unseen,
             handles: BTreeMap::new(),
             measured,
+            compat: false,
             unmeasured: std::sync::atomic::AtomicBool::new(false),
             declared: BTreeMap::new(),
         };
@@ -4605,7 +4657,7 @@ impl<'r> Linker<'r> {
                             .collect();
                         !served.is_empty() && served.iter().all(|e| e.adapter != "drf")
                     })
-                    .filter(|_| self.since_measured())
+                    .filter(|_| self.since_frozen())
                     .map_or(config::DrfAttrs::Read, |h| self.drf_attrs(rel, &h.name));
                 let class_attr = |r: &RawRef, k: WrapKind| {
                     attrs != config::DrfAttrs::Read
@@ -4920,7 +4972,7 @@ impl<'r> Linker<'r> {
                         self.measured_exits(&mut c);
                         // `response_model=None`: read since the measured build.
                         let no_model = drift_core::controls::NO_RESPONSE_MODEL;
-                        if c.iter().any(|x| x == no_model) && !self.since_measured() {
+                        if c.iter().any(|x| x == no_model) && !self.since_frozen() {
                             c.retain(|x| x != no_model);
                         }
                         // A dependency the repository replaces, since the measured
@@ -4950,7 +5002,7 @@ impl<'r> Linker<'r> {
                                     .filter(|e| e.kind == "http" && e.symbol == s.name)
                                     .collect::<Vec<_>>(),
                             )
-                            && self.since_measured()
+                            && self.since_frozen()
                         {
                             c.push(drift_core::controls::INPUT_TYPED.to_string());
                         }

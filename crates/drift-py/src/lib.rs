@@ -304,18 +304,36 @@ fn scan_inner(
     // Mining's input is held at the listings of the last measured build: where the
     // ones made since change a file, the file is what mining reads, and keeps what
     // `drift security` and the practice map read beside it ([`drift_core::Listed`]).
-    // Every file is linked again: what mining reads is the second link's, never the
-    // first link's taken where a test said the two agree. A test of which files
-    // may differ has to know every reading made since, and one it did not know
-    // reached mining (review R5, row 1); the second link knows them all, because
-    // each asks `Linker::since_measured`. Kinds are a matter of the whole
-    // repository, and are classified for each reading.
+    // What mining reads is frozen at what the build `a0779066` gave it, which takes
+    // three readings. That build linked again only the files its test picks
+    // (`Linker::links_differently`, kept as it was) and took every other file from
+    // its listed link, with the listed readings it made since the measured build.
+    // So a file the test picks is the second link's (`measured`); any other is
+    // the compat link's (`Linker::compat`): that build's listed link, which makes
+    // each reading it made and none added after it (`Linker::since_frozen`), so
+    // that a reading added since never reaches mining through a file the test
+    // does not pick (review R5, row 1), and none that build gave mining is lost
+    // (review M2). The full listed link is held beside. Kinds are a matter of the
+    // whole repository, and are classified for each reading.
     let facts = match measured {
         None => classified(linked),
         Some(measured) => {
+            let by_new = p
+                .files
+                .iter()
+                .any(|f| f.raw.symbols.iter().any(|s| s.built_by_new));
+            let picked: Vec<bool> = (0..p.files.len())
+                .into_par_iter()
+                .map(|i| linker.links_differently(&measured, i, by_new))
+                .collect();
+            // Built only where some file is not picked.
+            let compat = picked.iter().any(|picked| !picked).then(|| linker.compat());
             let held: Vec<FileFacts> = (0..p.files.len())
                 .into_par_iter()
-                .map(|i| measured.link(i, packages[i].clone()))
+                .map(|i| match &compat {
+                    Some(compat) if !picked[i] => compat.link(i, packages[i].clone()),
+                    _ => measured.link(i, packages[i].clone()),
+                })
                 .collect();
             // The two readings are classified side by side.
             let (mut held, full) = rayon::join(|| classified(held), || classified(linked));
