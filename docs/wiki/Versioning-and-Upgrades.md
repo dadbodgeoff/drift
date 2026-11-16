@@ -73,7 +73,7 @@ What a Drift says when the file is newer than it reads: on the command line, `<f
 So, before anyone promotes the first practice in a repository:
 
 1. Upgrade Drift on every machine that runs it: each teammate's, and the Claude Code plugin's `drift` on the `PATH`.
-2. Upgrade CI: pin the Action's `drift-ref` (or your pipeline's Drift) to the same version.
+2. Upgrade CI: pin the Action (`uses: dadbodgeoff/drift@<tag>`, which runs the Drift of that ref) or your pipeline's Drift to the same version.
 3. Then promote, and commit `.drift/conventions.yaml` and `drift.lock`.
 
 A machine left on the older Drift fails open in the hooks (the agent is told the policy could not be read) and fails `drift check` with exit 2: never a pass. To go back to an older Drift after a practice was promoted, restore `.drift/conventions.yaml` from before the promotion, or delete the promoted practice's entry from the file by hand. Rejecting it is not enough: a rejected convention stays in the file, with its rule type.

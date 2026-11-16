@@ -1,0 +1,32 @@
+{
+  "guard_gaps": [],
+  "unguarded_reaching": [],
+  "sinks": [],
+  "leaks": [],
+  "now_public": [],
+  "added_without_guard": [
+    {
+      "path": "app/api/new/route.ts",
+      "package": "",
+      "symbol": "POST",
+      "line": 1,
+      "kind": "http",
+      "method": "POST",
+      "route": "/api/new",
+      "guards": [],
+      "validates": false,
+      "reaches": [],
+      "reads": [],
+      "exposure": "unknown",
+      "basis": {
+        "bodies": 1,
+        "not_read": []
+      }
+    }
+  ],
+  "diff": {
+    "base": "main",
+    "merge_base": "1eef2867037796b2cdc48cbe6944a247fcc9b85a",
+    "files": 1
+  }
+}

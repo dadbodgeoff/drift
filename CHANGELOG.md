@@ -201,6 +201,20 @@ main branch.
   scored on one side only, and says when the two sides were scored by different
   harness versions.
 
+- **The GitHub Action has outputs, one comment kept up to date, and an optional
+  status.** Outputs `exit-code`, `block`, `advise`, `security-findings`,
+  `security-advice`, `unchecked`, `report`, `sarif`, `drift-path`,
+  `drift-commit` and `installed-from`, counted from `drift check --format json`.
+  `comment: "true"` keeps one pull request comment (found by a hidden marker,
+  edited on every push, marked resolved when nothing is left) listing new
+  convention violations and security findings with file and line, capped, with
+  repository text escaped. `status: commit | check` posts a commit status or a
+  check run named `drift` (`status-name`) for branch protection; off by default.
+  New inputs `working-directory`, `comment-limit` and `install-only`;
+  `upload-sarif: file` writes the SARIF without uploading it. The logic is in
+  `scripts/action/`, tested by `scripts/action/test.sh`, and CI runs `uses: ./`
+  on a fixture repository. See [Drift in CI](docs/wiki/Drift-in-CI.md#the-github-action).
+
 ### Changed: the files Drift writes
 
 - **Breaking: a promoted practice is a new rule type in
@@ -261,6 +275,23 @@ main branch.
   mined.
 
 ### Changed: behaviour an existing user will notice
+
+- **Breaking: the GitHub Action runs the Drift of its own ref, and installs a
+  release binary when there is one.** `drift-ref` now defaults to empty, which
+  runs the Drift of the ref the Action is used at (`uses: dadbodgeoff/drift@<ref>`)
+  instead of building `main`. A workflow that pinned the Action but relied on
+  the `main` default now runs the pinned version; set `drift-ref: main` to keep
+  the old behaviour. For a release tag (or a commit one points at) the Action
+  downloads the release archive, checks it against `SHA256SUMS` and its
+  `drift --version` against the tag, and fails the job if either does not match;
+  otherwise it builds from source with the cargo registry and build output
+  cached by commit, instead of `cargo install`. A `drift` already on the
+  runner's `PATH` is no longer used in place of the requested one.
+- **The Action's comment covers conventions too, and is edited instead of
+  added.** `security-comment: "true"` is now the earlier name of `comment`:
+  the one comment it keeps lists new convention violations as well as security
+  findings, and no longer adds a copy on every push. A comment the earlier
+  Action posted is adopted and edited.
 
 - **Breaking: `drift init` no longer baselines violations of a convention the
   policy already had.** Before, re-running `drift init` baselined the current
