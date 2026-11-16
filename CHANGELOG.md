@@ -92,6 +92,18 @@ main branch.
   that failed to parse, was skipped, or has an import Drift could not resolve
   counts toward no threshold, and the summary names how many (`N files of X not
   read`). A layer with too large a share of such files is not proposed.
+- **A manifest rule from the map: code imports only declared packages.**
+  `drift init` and `drift census --from-map` propose, for each workspace
+  package whose `package.json` Drift read, `Code in <package> imports only the
+  packages <package>/package.json declares (...)` (`from_map: manifest`, rule
+  `imports_declared`), with today's undeclared imports counted and where each
+  is declared instead; accepting records them in `drift.lock`. `drift check`
+  names the import, the manifest that should declare it, where it is declared
+  and the fix (`add lodash to apps/web/package.json`; JSON: `import.undeclared`).
+  Built-ins, the package's own code, `@types/` for type-only imports and any
+  dependency section count; unresolved imports, packages no manifest declares,
+  unread manifests and test files are not checked. Python is not proposed, and
+  the census says why. It is a suggestion; it blocks only when forced.
 - **Promote by mechanism, by any enforcing way, in a file or under a route.**
   `drift practices promote` gains `--concern <ID>`, `--mechanism <NAME>` (a
   mechanism accepted whole, whichever instrument a unit names) and
@@ -166,6 +178,10 @@ main branch.
   file's `version:` as it was. Upgrade every machine and CI before the first
   promotion; see
   [Versioning and upgrades](docs/wiki/Versioning-and-Upgrades.md#promoted-practices-and-older-drift).
+- **Breaking: `.drift/conventions.yaml` version 4.** A manifest rule
+  (`imports_declared`) makes the file `version: 4`; a Drift that reads up to 3
+  refuses it with the upgrade message. Any other file is written as before.
+  This Drift reads versions 1 to 4.
 - **Breaking: `.drift/conventions.yaml` version 3.** A promoted practice that
   accepts a mechanism whole (`any_mechanism`), any enforcing way
   (`any_enforcing`), or holds in one file (`in_file`) or under a route prefix

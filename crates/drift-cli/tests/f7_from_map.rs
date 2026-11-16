@@ -142,13 +142,22 @@ fn the_mined_part_does_not_depend_on_the_proposals() {
     let plain = read(rb, CONVENTIONS_FILE);
     assert_eq!(version_line(&plain), "version: 1", "{plain}");
     let with = read(ra, CONVENTIONS_FILE);
-    let raised = policy(ra)
-        .conventions
-        .iter()
-        .any(|c| c.from_map.is_some() && drift_mine::policy::misread_before_forms(c));
-    if raised {
-        assert_eq!(version_line(&with), "version: 3", "{with}");
-        assert!(out.contains("is now policy format 3 because"), "{out}");
+    let p = policy(ra);
+    let from_map = || p.conventions.iter().filter(|c| c.from_map.is_some());
+    // A manifest rule raises the file to format 4, a practice of a newer form to 3.
+    let to = if from_map().any(drift_mine::policy::misread_before_rules) {
+        Some(4)
+    } else if from_map().any(drift_mine::policy::misread_before_forms) {
+        Some(3)
+    } else {
+        None
+    };
+    if let Some(v) = to {
+        assert_eq!(version_line(&with), format!("version: {v}"), "{with}");
+        assert!(
+            out.contains(&format!("is now policy format {v} because")),
+            "{out}"
+        );
         assert!(
             out.contains("`drift init --no-from-map` writes none of them"),
             "{out}"

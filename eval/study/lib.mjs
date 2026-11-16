@@ -923,6 +923,9 @@ export const RULE_KINDS = [
   // A practice a person promoted from the practice map (`drift practices promote`): never mined, so no study
   // family and no admission by family; it is shown to agents because the person who promoted it chose so.
   "practice",
+  // A package's files import only what its package.json declares (`from_map: manifest`): never mined, so no study
+  // family either; proposed from the map and checked only once a person accepts it.
+  "imports_declared",
 ];
 
 // The one rule-family mapping (rounds 8 W0 + W4): apps/studio/src/entities/convention/rule-kind-family.json maps each

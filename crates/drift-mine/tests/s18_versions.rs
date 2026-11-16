@@ -20,8 +20,8 @@ use std::path::Path;
 use drift_mine::mine::Rule;
 use drift_mine::policy::{
     AcceptedEvidence, CONVENTIONS_FILE, ConventionsFile, LOCK_FILE, Lock, NewerPolicy,
-    POLICY_VERSION, POLICY_VERSION_FORMS, POLICY_VERSION_PACKAGES, POLICY_VERSION_SINGLE,
-    written_version,
+    POLICY_VERSION, POLICY_VERSION_FORMS, POLICY_VERSION_PACKAGES, POLICY_VERSION_RULES,
+    POLICY_VERSION_SINGLE, written_version,
 };
 use drift_mine::ratchet::{Findings, Since, compare_with, parse_baseline};
 
@@ -211,6 +211,36 @@ fn fields_an_older_drift_may_skip_keep_the_version() {
     let text = saved(r, &f);
     assert!(text.contains("\nversion: 1\n"), "{text}");
     assert!(text.contains("from_map: practice"), "{text}");
+}
+
+/// Pins: a manifest rule (`imports_declared`) makes the file version 4 whatever its
+/// status, above the forms of version 3, since a Drift that reads up to 3 does not know
+/// the rule kind and must refuse the file by its version (the test below) instead of
+/// failing to parse it; this Drift reads what it wrote, and removing the rule writes
+/// the old version again.
+#[test]
+fn a_manifest_rule_raises_the_version_to_4() {
+    let dir = tempfile::tempdir().unwrap();
+    let r = dir.path();
+    write(r, CONVENTIONS_FILE, V1_PRACTICE);
+    let mut f = load(r);
+    let mut m = f.conventions[0].clone();
+    m.id = "D-0000aa".to_string();
+    m.rule = Rule::ImportsDeclared;
+    m.from_map = Some("manifest".to_string());
+    f.conventions.push(m);
+    assert_eq!(written_version(&f), POLICY_VERSION_RULES);
+    const { assert!(POLICY_VERSION_RULES == 4 && POLICY_VERSION_RULES <= POLICY_VERSION) };
+    let text = saved(r, &f);
+    assert!(text.contains("\nversion: 4\n"), "{text}");
+    assert!(text.contains("type: imports_declared"), "{text}");
+    assert_eq!(load(r).conventions, f.conventions);
+    if let Rule::Practice { any_mechanism, .. } = &mut f.conventions[0].rule {
+        any_mechanism.push("permission".to_string());
+    }
+    assert_eq!(written_version(&f), POLICY_VERSION_RULES);
+    f.conventions.pop();
+    assert_eq!(written_version(&f), POLICY_VERSION_FORMS);
 }
 
 /// Pins: a file of a version above this Drift's is refused with what to do (upgrade;

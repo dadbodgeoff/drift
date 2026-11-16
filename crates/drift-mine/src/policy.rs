@@ -22,7 +22,12 @@ use crate::roles::{FileKinds, RoleSelector};
 /// promoted practice that accepts a mechanism whole or any enforcing way). Written only
 /// when one is there ([`written_version`]), so every other file is written as before,
 /// byte for byte; such a Drift refuses a version-3 file instead of checking it wrong.
-pub const POLICY_VERSION: u32 = 3;
+/// 4: a convention holds a rule kind a Drift that reads up to 3 does not know
+/// ([`misread_before_rules`]: [`Rule::ImportsDeclared`], whatever its status). Such a
+/// Drift could not parse the file at all and would show a parse error; at version 4 it
+/// refuses it with "written by a newer Drift: upgrade", as it does format 3. Written only
+/// when one is there, so every other file is written as before, byte for byte.
+pub const POLICY_VERSION: u32 = 4;
 /// The format of a policy without [`ConventionsFile::packages`].
 pub const POLICY_VERSION_SINGLE: u32 = 1;
 /// The format of a policy with [`ConventionsFile::packages`] and no form of
@@ -31,6 +36,9 @@ pub const POLICY_VERSION_PACKAGES: u32 = 2;
 /// The format of a policy holding a form an older Drift would misread
 /// ([`misread_before_forms`]), with or without packages.
 pub const POLICY_VERSION_FORMS: u32 = 3;
+/// The format of a policy holding a rule kind an older Drift does not know
+/// ([`misread_before_rules`]), with or without the forms of [`POLICY_VERSION_FORMS`].
+pub const POLICY_VERSION_RULES: u32 = 4;
 
 /// How a convention's role selector is read ([`Convention::selector_version`]).
 /// 1: as written before reserved exports had roles of their own: a selector without
@@ -1140,7 +1148,8 @@ impl std::error::Error for NewerPolicy {}
 /// with none of a newer format's forms is written as before, byte for byte, and stays
 /// readable by every Drift that read it. Without packages, version 1 (a file a person
 /// hand-wrote as 0 keeps it, as it always did); with packages, 2; with a form of
-/// version 3 ([`misread_before_forms`]), 3 either way. Decided from the content on
+/// version 3 ([`misread_before_forms`]), 3 either way; with a rule kind of version 4
+/// ([`misread_before_rules`]), 4 whatever else. Decided from the content on
 /// every write, as the selector version is per convention
 /// ([`selector_version_of`]): a file whose last such form is removed goes back down.
 pub fn written_version(f: &ConventionsFile) -> u32 {
@@ -1149,11 +1158,26 @@ pub fn written_version(f: &ConventionsFile) -> u32 {
     } else {
         POLICY_VERSION_PACKAGES
     };
-    if f.conventions.iter().any(misread_before_forms) {
+    if f.conventions.iter().any(misread_before_rules) {
+        base.max(POLICY_VERSION_RULES)
+    } else if f.conventions.iter().any(misread_before_forms) {
         base.max(POLICY_VERSION_FORMS)
     } else {
         base
     }
+}
+
+/// Whether a Drift that reads up to [`POLICY_VERSION_FORMS`] does not know the rule kind
+/// of `c` ([`Rule::ImportsDeclared`]): it could not parse the file, and a proposal is
+/// enough for that, so the status does not matter.
+pub fn misread_before_rules(c: &Convention) -> bool {
+    matches!(c.rule, Rule::ImportsDeclared)
+}
+
+/// Whether `c` makes the file be written above [`POLICY_VERSION_PACKAGES`]: a form of
+/// [`POLICY_VERSION_FORMS`] or a rule kind of [`POLICY_VERSION_RULES`].
+pub fn raises_version(c: &Convention) -> bool {
+    misread_before_forms(c) || misread_before_rules(c)
 }
 
 /// Whether a Drift that reads up to [`POLICY_VERSION_PACKAGES`] would read `c` as a

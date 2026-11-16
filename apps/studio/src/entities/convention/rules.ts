@@ -72,6 +72,7 @@ export type RuleFamily =
   | "Wiring"
   | "Import sources"
   | "Practices"
+  | "Declared dependencies"
   | "Other";
 
 const WRAP_FAMILY: Record<string, RuleFamily> = {
@@ -127,6 +128,8 @@ export function ruleFamily(rule: Rule): RuleFamily {
       return "Import sources";
     case "practice":
       return "Practices";
+    case "imports_declared":
+      return "Declared dependencies";
     default:
       // A rule kind newer than this Studio: shown as data (CI fails until it is handled).
       return "Other";
@@ -240,6 +243,8 @@ export function ruleTargets(rule: Rule): string[] {
     }
     case "practice":
       return [practiceText(rule)!];
+    case "imports_declared":
+      return ["imports only what its package.json declares"];
     case "has_test":
       return [];
     default:

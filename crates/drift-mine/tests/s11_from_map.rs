@@ -317,11 +317,24 @@ fn a_repository_is_offered_a_few_and_told_how_many_more() {
     assert_eq!(ids, again);
 }
 
-/// Pins that no manifest rule is proposed until a rule kind says it (see `manifest`).
+/// Pins that a manifest the code follows is proposed as a guard (`Rule::ImportsDeclared`,
+/// proposed, advising, from the map): `packages/core` imports only its own code, so it
+/// has no package to hold to a rule and is not proposed; `apps/web` has 12 files that
+/// import the `@x/core` it declares (the floor is 8). Before the rule kind existed this
+/// returned nothing.
 #[test]
-fn manifest_proposes_nothing_yet() {
+fn a_followed_manifest_is_proposed_as_a_guard() {
     let r = workspace(false);
-    assert!(manifest(&r, &FileKinds::learn(&r), &[]).is_empty());
+    let m = manifest(&r, &FileKinds::learn(&r), &[]);
+    assert_eq!(m.proposals.len(), 1, "{m:?}");
+    let p = &m.proposals[0];
+    assert_eq!(p.convention.rule, Rule::ImportsDeclared);
+    assert_eq!(p.convention.role.package, "apps/web");
+    assert_eq!(p.convention.status, Status::Proposed);
+    assert_eq!(p.convention.mode, Mode::Advise);
+    assert_eq!(p.convention.from_map.as_deref(), Some("manifest"));
+    assert_eq!(p.manifest.importing, 12);
+    assert_eq!(p.manifest.breaking_imports, 0);
 }
 
 /// `core/` read in full (40 importing files) plus `extra` files of `core/` that each

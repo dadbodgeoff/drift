@@ -17,6 +17,7 @@ pub mod gate_candidates;
 pub mod gateway;
 pub mod guard_position;
 pub mod image;
+pub mod imports_declared;
 pub mod introduced;
 pub mod keytypes;
 pub mod kubernetes;

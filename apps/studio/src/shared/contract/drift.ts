@@ -656,7 +656,15 @@ export type Rule =
       in_file?: string;
       /** The literal route prefix it holds under, in its role's package, each parameter as `[*]` (`/api/workspaces/[*]`, `promote::Place::route`). Absent for a directory (newer drift, policy version 3). */
       under_route?: string;
-    };
+    }
+  /**
+   * Code of the convention's package imports only the packages its own `package.json` declares, in any dependency
+   * section (crates/drift-mine/src/imports_declared.rs; proposed from the map as `from_map: manifest`, never mined).
+   * Node built-ins, the package's own code and `@types/` for type-only imports hold; an import Drift cannot tell
+   * (unresolved, a package no manifest declares, an unread manifest) is never a violation. A file holding one is policy
+   * version 4. Always a suggestion (newer drift).
+   */
+  | { type: "imports_declared" };
 
 /**
  * Where a wiring fix goes (crates/drift-mine/src/check.rs `WireHint`): `register` a symbol in a
@@ -876,16 +884,16 @@ export type CensusFromMapEntry =
   | {
       proposed: true;
       id: string;
-      /** `practice` or `layering`. */
+      /** `practice`, `layering` or `manifest`. */
       kind: FromMap;
       summary: string;
       /** The convention as `.drift/conventions.yaml` would hold it (`from_map` set). */
       convention: Convention;
       /** Conventions already in the policy or mined that say the same rule. */
       same_rule: { id: string; summary: string; status: "accepted" | "proposed" }[];
-      /** Units (practice) or files (layering) that follow it. */
+      /** Units (practice) or files (layering; manifest: files that import a package) that follow it. */
       follows: number;
-      /** Units recorded as differing today (0 for layering). */
+      /** Units recorded as differing today (0 for layering; manifest: files that import an undeclared package). */
       differ: number;
       unknown: number;
       /** A practice proposal: what promoting it records, and how many current departures it would settle. */
@@ -893,6 +901,8 @@ export type CensusFromMapEntry =
       settles?: number;
       /** A layering proposal: what the structure map shows (from_map.rs `LayeringEvidence`). */
       layering?: FromMapLayeringEvidence;
+      /** A manifest proposal: what the package's imports show (from_map.rs `ManifestEvidence`; newer drift). */
+      manifest?: FromMapManifestEvidence;
     }
   | {
       proposed: false;
@@ -903,7 +913,44 @@ export type CensusFromMapEntry =
       reason: "passive" | "preview_concern" | "python_off" | "overlaps" | "same_as_mined" | "not_shown" | "over_cap" | (string & {});
       /** The same, in words. */
       why: string;
+    }
+  /** A note with no convention: the Python manifests not proposed, and why (from_map_cli.rs `manifest_into`; newer drift). */
+  | {
+      proposed: false;
+      note: "python_not_proposed" | (string & {});
+      kind: FromMap;
+      manifests: string[];
+      why: string;
     };
+
+/** What a manifest proposal from the map rests on (crates/drift-mine/src/from_map.rs `ManifestEvidence`). */
+export interface FromMapManifestEvidence {
+  /** The manifest (`apps/web/package.json`). */
+  manifest: string;
+  /** The package's directory (`""` for the root) and name. */
+  package: string;
+  name: string;
+  /** Production files of the package (the rule's role). */
+  members: number;
+  /** Members Drift read that import a package. */
+  importing: number;
+  follows: number;
+  breaking_files: number;
+  breaking_imports: number;
+  /** Each package imported without being declared, most imports first. */
+  undeclared: {
+    package: string;
+    imports: number;
+    files: number;
+    /** The manifests that declare it (`package.json` for the root); empty when none does. */
+    declared_in: string[];
+    /** The workspace package's directory, when it is one. */
+    workspace?: string;
+  }[];
+  /** Members Drift could not check: never reported. */
+  not_read: number;
+  example: string;
+}
 
 /** What a layering proposal from the map rests on (crates/drift-mine/src/from_map.rs `LayeringEvidence`). */
 export interface FromMapLayeringEvidence {
@@ -1135,7 +1182,7 @@ export interface Violation {
   import?: ImportHit;
 }
 
-/** The import a layering violation is about (crates/drift-mine/src/check.rs `ImportHit`). */
+/** The import a layering or manifest violation is about (crates/drift-mine/src/check.rs `ImportHit`). */
 export interface ImportHit {
   /** Canonical module id (`app/board/board-context.ts`). */
   module: string;
@@ -1143,6 +1190,17 @@ export interface ImportHit {
   specifier?: string;
   /** 1-based line; 0 when not found. */
   line?: number;
+  /** A manifest violation (`imports_declared`): the package, the manifest that should declare it and where it is declared instead (newer drift). */
+  undeclared?: {
+    package: string;
+    manifest: string;
+    /** Absent when no manifest declares it. */
+    declared_in?: string[];
+    /** The workspace package's directory, when it is one. */
+    workspace?: string;
+    /** The import is type-only: the `@types/` package would do too. */
+    type_only?: boolean;
+  };
 }
 
 /** A warning the neighbour gate held back (`check --format json` `suppressed_neighbour`, crates/drift-mine/src/check.rs `NeighbourHold`). */

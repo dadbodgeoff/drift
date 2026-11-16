@@ -337,7 +337,7 @@ fn agent_items(out: &mut String, violations: &[&Violation], mark_blocks: bool, o
             sanitize_summary(&crate::mine::agent_summary(&v.summary)),
             sanitize(&v.path, MAX_PATH),
             v.line,
-            sanitize(&what, MAX_PATH),
+            sanitize(&what, MAX_PATH + 120),
             why_line(&sanitize(&v.evidence, 16)),
         ));
     }
@@ -1296,7 +1296,7 @@ impl<'a> Basis<'a> {
                 "{}:{} {}",
                 sanitize(&v.path, MAX_PATH),
                 v.line,
-                sanitize(&hit.describe(), MAX_PATH)
+                sanitize(&hit.describe(), MAX_PATH + 120)
             ),
             None => format!(
                 "{}:{} {}",
@@ -1306,7 +1306,7 @@ impl<'a> Basis<'a> {
             ),
         };
         let instead = match (&v.import, &v.wire, &v.practice) {
-            (Some(hit), _, _) => format!("it {}", sanitize(&hit.describe(), MAX_PATH)),
+            (Some(hit), _, _) => format!("it {}", sanitize(&hit.describe(), MAX_PATH + 120)),
             (_, Some(w), _) => format!(
                 "it is missing where its siblings are: {}",
                 sanitize(&w.describe(&v.symbol), MAX_PATH + 80)
@@ -2083,6 +2083,7 @@ mod tests {
             module: "models/user.ts".into(),
             specifier: "../models/user".into(),
             line: 3,
+            undeclared: None,
         });
         let msg = agent_message(&[&f], AgentAt::EndOfTurn);
         assert!(
