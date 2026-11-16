@@ -173,6 +173,9 @@ pub struct Cx<'a> {
     test_files: OnceLock<Vec<&'a FileFacts>>,
     serving: OnceLock<BTreeSet<&'a str>>,
     rivals: OnceLock<Vec<testing::Rival<'a>>>,
+    /// The keys this repository's own queries scope rows to the caller by
+    /// (`authz::scope_keys`), learned once for the run.
+    scope_keys: OnceLock<BTreeSet<String>>,
 }
 
 impl<'a> Cx<'a> {
@@ -185,7 +188,17 @@ impl<'a> Cx<'a> {
             test_files: OnceLock::new(),
             serving: OnceLock::new(),
             rivals: OnceLock::new(),
+            scope_keys: OnceLock::new(),
         }
+    }
+
+    /// The keys this repository scopes rows to the caller by, as `learn` finds them
+    /// in the facts: asked for every authorization unit, answered once for the run.
+    pub(super) fn scope_keys(
+        &self,
+        learn: impl FnOnce(&Self) -> BTreeSet<String>,
+    ) -> &BTreeSet<String> {
+        self.scope_keys.get_or_init(|| learn(self))
     }
 
     /// The facts' test files ([`crate::roles::is_test_path`]), in the facts' order.

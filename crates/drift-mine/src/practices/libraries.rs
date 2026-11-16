@@ -246,6 +246,11 @@ pub const ROLE_KEYS: &[&str] = &[
 
 /// Words of a header, claim, route parameter or query key that name a tenant
 /// (`x-org-id`, `.orgId`, `{workspace_id}`, `where.organizationId`).
+///
+/// FALLBACK, not to be extended: which route parameter is a key the repository scopes
+/// by is learned from its own queries ([`super::authz::scope_param`]); this list
+/// decides it only where those queries say nothing. Its other readers are older and
+/// keep it as they were.
 pub const TENANT_KEYS: &[&str] = &[
     "org",
     "orgs",
@@ -265,6 +270,9 @@ pub const TENANT_KEYS: &[&str] = &[
 /// Query keys and checked values that name the row's owner, as whole identifiers
 /// with `_` removed and lower-cased (`userId`, `owner_id`, `created_by`): object-level
 /// authorization by owner. Never a word of a longer name (`created_at`).
+///
+/// FALLBACK, not to be extended, as [`TENANT_KEYS`] is: a learned scope key
+/// ([`super::authz::scope_param`]) decides first.
 pub const OWNER_KEYS: &[&str] = &[
     "user",
     "userid",

@@ -3012,7 +3012,7 @@ fn unit_rows(report: &ConcernReport, placed: &[Placed], of_unit: &[String]) -> V
                 kind: None,
                 uses: Vec::new(),
                 enforces: None,
-                unscoped: None,
+                unscoped: p.unscoped.clone(),
                 instrument: match &p.outcome {
                     Outcome::Unknown { instrument, .. } => instrument.clone(),
                     _ => String::new(),
