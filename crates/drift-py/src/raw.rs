@@ -536,6 +536,13 @@ pub struct RawInputUse {
     /// `*args` / `**kwargs`: route kwargs may arrive there.
     pub variadic: bool,
     pub params: Vec<RawParamKind>,
+    /// Each of [`RawInputUse::params`], in its order: the parameter's name, and
+    /// whether it is declared with a type its value is parsed into, one a request
+    /// value can fail to be (`uuid.UUID`, `int`, `EmailStr`, a model), rather than
+    /// one every value already is (`str`, `Any`) or none. What the framework does
+    /// with the declaration is the linker's to say, by the entry's adapter.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub typed: Vec<(String, bool)>,
 }
 
 /// A callable a function returns ([`RawSymbol::returns`]).

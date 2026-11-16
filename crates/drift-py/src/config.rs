@@ -83,6 +83,19 @@ const UNREAD_MIDDLEWARE: &str = "unresolved:";
 /// Classes followed up an inheritance chain.
 const MAX_CHAIN: usize = 8;
 
+/// Whether a base of a class reads the DRF class attributes it declares
+/// ([`Linker::drf_attrs`]).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) enum DrfAttrs {
+    /// A DRF view base runs them.
+    Read,
+    /// Every base resolves to a framework view that is no DRF view: they run nowhere.
+    Ignored,
+    /// A base the facts do not read (its canonical id): whether it runs them is not
+    /// known.
+    Unread(String),
+}
+
 /// Guards a settings module applies to every view it serves (canonical class ids).
 #[derive(Debug, Default, Clone)]
 pub(super) struct Guards {
@@ -242,6 +255,41 @@ impl Linker<'_> {
                     last.ends_with("APIView") || last.ends_with("ViewSet")
                 })
             })
+    }
+
+    /// Whether anything runs the DRF class attributes (`permission_classes`,
+    /// `authentication_classes`) that `module#class` declares, from the bases the
+    /// facts resolve. They are a guard only where a base reads them: a DRF view
+    /// base does ([`DrfAttrs::Read`]); a chain that ends only in framework view
+    /// classes that are no DRF view (Django's `View`, Flask's) runs them nowhere
+    /// ([`DrfAttrs::Ignored`]); any other base (a package's class Drift does not
+    /// know, an unresolved import, a chain too deep to follow) might read them, and
+    /// that is not known ([`DrfAttrs::Unread`], with the base in the code's words).
+    pub(super) fn drf_attrs(&self, module: &str, class: &str) -> DrfAttrs {
+        if self.is_drf_view(module, class) {
+            return DrfAttrs::Read;
+        }
+        let chain = self.class_chain(&format!("{module}#{class}"));
+        if chain.len() > MAX_CHAIN {
+            return DrfAttrs::Unread(chain.last().cloned().unwrap_or_default());
+        }
+        for c in &chain {
+            // A class of the repository: its own bases are in the chain.
+            if self.symbol_at(c).is_some() || c == "global#object" {
+                continue;
+            }
+            let framework = c
+                .strip_prefix("pkg:")
+                .and_then(|r| r.split_once('#'))
+                .and_then(|(package, path)| {
+                    crate::lower::adapters::view_adapter(&format!("{package}.{path}"))
+                })
+                .is_some_and(|a| a != "drf");
+            if !framework {
+                return DrfAttrs::Unread(c.clone());
+            }
+        }
+        DrfAttrs::Ignored
     }
 
     /// Canonical id of a dotted path in a setting (`"rest_framework.permissions.IsAuthenticated"`),

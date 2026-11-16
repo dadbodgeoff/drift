@@ -255,7 +255,7 @@ const DJANGO_INCLUDE: &[&str] = &[
 ];
 
 /// Base classes that make a class an HTTP view, by adapter.
-fn view_adapter(base: &str) -> Option<&'static str> {
+pub(crate) fn view_adapter(base: &str) -> Option<&'static str> {
     if base.starts_with("rest_framework.") {
         let last = base.rsplit('.').next().unwrap_or(base);
         return (last.ends_with("APIView") || last.ends_with("ViewSet")).then_some("drf");

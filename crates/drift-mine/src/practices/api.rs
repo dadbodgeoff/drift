@@ -75,7 +75,8 @@ impl Concern for Api {
             },
         };
         let mut uses = vec![use_of("builder", &builder)];
-        if responses.iter().any(|r| !r.model.is_empty()) {
+        if responses.iter().any(|r| !r.model.is_empty()) || annotated_model(cx, &entry.adapter, s)
+        {
             uses.push(use_of("model", "declared"));
         }
         let keys: BTreeSet<&str> = responses
@@ -94,6 +95,51 @@ impl Concern for Api {
         };
         common::known(uses, source)
     }
+}
+
+/// A FastAPI route given no `response_model` (and not `response_model=None`,
+/// [`drift_core::controls::NO_RESPONSE_MODEL`]) whose return annotation names a
+/// model: FastAPI makes the annotation its response model, and validates and filters
+/// what the handler returns by it (`-> Message`). A model: a validation library's
+/// class, or a class of the repository (FastAPI takes any class it is given as a
+/// model, as the validation concern reads a FastAPI input model) that is no response
+/// class: neither it nor a base is named as the lowering names a response class
+/// (`...Response`, which FastAPI sends as it is), and every base is read. Any other
+/// annotation (`-> dict`, a package's class, a base not read) proves nothing: no
+/// model, as before.
+fn annotated_model(cx: &Cx<'_>, adapter: &str, s: &drift_core::Symbol) -> bool {
+    if adapter != "fastapi"
+        || s.returns_type.is_empty()
+        || s.controls
+            .iter()
+            .any(|c| c == drift_core::controls::NO_RESPONSE_MODEL)
+    {
+        return false;
+    }
+    use super::libraries::validation_library;
+    let t = crate::mine::norm_ref(&s.returns_type).into_owned();
+    if validation_library(&t).is_some() {
+        return true;
+    }
+    let ctx = cx.context();
+    if common::external(&t)
+        || ctx
+            .definition(&t)
+            .is_none_or(|d| d.kind != drift_core::SymbolKind::Class)
+    {
+        return false;
+    }
+    let response = |c: &str| {
+        crate::mine::norm_ref(c)
+            .rsplit(['#', '.'])
+            .next()
+            .is_some_and(|n| n.ends_with("Response"))
+    };
+    let ancestors = ctx.ancestors(&t);
+    !response(&t)
+        && !ancestors
+            .iter()
+            .any(|a| response(a) || a.starts_with("unresolved:"))
 }
 
 /// The builder of the returned or set responses: the most used (then by name), or

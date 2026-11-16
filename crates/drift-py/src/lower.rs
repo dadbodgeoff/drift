@@ -2471,6 +2471,8 @@ pub(crate) struct Collector<'l, 't> {
     /// The symbol's own (outermost) function: its parameters as input sources, and the
     /// names its request object goes by ([`Lowerer::input_params`]).
     input_params: Option<(Vec<RawParamKind>, bool)>,
+    /// The same parameters' names and declared types ([`RawInputUse::typed`]).
+    input_typed: Vec<(String, bool)>,
     request_names: BTreeSet<String>,
     input_reads: bool,
     input_escapes: bool,
@@ -2688,6 +2690,7 @@ impl<'l, 't> Collector<'l, 't> {
             frames: Vec::new(),
             frame_params: Vec::new(),
             input_params: None,
+            input_typed: Vec::new(),
             request_names: BTreeSet::new(),
             input_reads: false,
             input_escapes: false,
@@ -2764,6 +2767,7 @@ impl<'l, 't> Collector<'l, 't> {
                 escapes: self.input_escapes,
                 variadic,
                 params,
+                typed: std::mem::take(&mut self.input_typed),
             });
         }
         if self.unauthenticated || (self.forbidden && self.reads_subject) {
@@ -2977,6 +2981,7 @@ impl<'l, 't> Collector<'l, 't> {
             if self.input_params.is_none() {
                 let (kinds, variadic, requests) = self.l.input_params(params);
                 self.input_params = Some((kinds, variadic));
+                self.input_typed = self.l.param_types(params);
                 self.request_names = requests;
             }
         }
@@ -3955,8 +3960,16 @@ impl<'a> Visitor<'a> for Collector<'_, 'a> {
             Stmt::AugAssign(a) => self.rebind(&[&a.target]),
             Stmt::AnnAssign(a) if a.value.is_some() => self.rebind(&[&a.target]),
             // What follows a `return` or a `raise` every request reaches never runs.
+            // A `raise` in an `except` handler is reached only by the requests whose
+            // `try` failed, and it turns them away: every request that gets past the
+            // `try` goes on to what follows, so nothing after it is skipped. (A
+            // `return` there serves those requests without what follows: still
+            // noted, as before.)
             Stmt::Return(_) | Stmt::Raise(_)
-                if self.conds.is_empty() && !self.frames.is_empty() && self.skipped.is_none() =>
+                if self.conds.is_empty()
+                    && !self.frames.is_empty()
+                    && self.skipped.is_none()
+                    && !(self.in_except > 0 && matches!(stmt, Stmt::Raise(_))) =>
             {
                 self.skipped = Some(String::new());
             }

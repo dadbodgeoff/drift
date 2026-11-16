@@ -2458,7 +2458,7 @@ fn decisive_tiers(concern: &str) -> &'static [(&'static str, &'static [&'static 
             ("opens", &["opens"]),
         ],
         VALIDATION => &[
-            ("", &["schema", "typed_model", "declared"]),
+            ("", &["schema", "typed_model", "typed_param", "declared"]),
             ("", &["manual"]),
         ],
         ERRORS => &[(

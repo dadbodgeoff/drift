@@ -70,9 +70,15 @@ fn instrument_at(cx: &Cx<'_>, callee: &str, depth: usize) -> Option<String> {
         SymbolKind::Class | SymbolKind::Model => {
             let (module, _) = callee.split_once('#')?;
             let class = format!("{module}#{}", d.name);
-            ctx.ancestors(&class)
-                .iter()
-                .find_map(|a| data_library(a))
+            let built_on = ctx.ancestors(&class).iter().find_map(|a| data_library(a));
+            // Python: a class that serves routes (`AnalyticsEndpoint.as_view()` in
+            // `urlpatterns`) is a handler, not a client binding. The database calls
+            // of its body are its handlers' own, counted on them; calling the class
+            // or a member it does not define reaches none of them.
+            if built_on.is_none() && serves_routes(cx, module, &d.name) {
+                return None;
+            }
+            built_on
                 // The client it builds, before the driver it hands that client
                 // (`this.prisma = new PrismaClient({ adapter })` beside `new Pool()`).
                 .or_else(|| since.then(|| generated(cx, d)).flatten())
@@ -124,6 +130,23 @@ fn built_from(cx: &Cx<'_>, callee: &str, d: &drift_core::Symbol, depth: usize) -
             })
             .and_then(|_| instrument_at(cx, &at, depth + 1))
     })
+}
+
+/// A Python class of `module` that an entry point of its file is, or is a method of.
+fn serves_routes(cx: &Cx<'_>, module: &str, class: &str) -> bool {
+    let module = crate::mine::norm_ref(module);
+    let Some(file) = cx
+        .facts
+        .files
+        .iter()
+        .find(|f| f.path == module.as_ref() && f.lang == "py")
+    else {
+        return false;
+    };
+    let method = format!("{class}.");
+    file.entry_points
+        .iter()
+        .any(|e| e.symbol == class || e.symbol.starts_with(&method))
 }
 
 fn instruments(cx: &Cx<'_>, s: &Symbol) -> Vec<String> {
@@ -336,6 +359,48 @@ mod tests {
         assert_eq!(
             key(&of(&all, "packages/prisma/index.ts", "baseClient")),
             "service:pg"
+        );
+    }
+
+    /// S3: a URLconf that hands a view class's `as_view()` to `path(...)` makes no
+    /// database call, though the class's body (its handlers) does (plane
+    /// `apps/api/plane/app/urls/analytic.py` `urlpatterns`, read `service:django`).
+    /// The handler's own call is still counted on the handler.
+    #[test]
+    fn a_urlconf_naming_a_view_class_is_no_database_call() {
+        let mut facts = fixtures::py_cases();
+        let views = facts
+            .files
+            .iter_mut()
+            .find(|f| f.path == "svc/web/views.py")
+            .unwrap();
+        let class = views
+            .symbols
+            .iter_mut()
+            .find(|s| s.name == "ItemView")
+            .unwrap();
+        class.calls.push("pkg:django#db.models.Count".into());
+        let mut urls = views.clone();
+        urls.path = "svc/web/urls.py".into();
+        urls.entry_points.clear();
+        urls.symbols.truncate(1);
+        urls.symbols[0].name = "urlpatterns".into();
+        urls.symbols[0].kind = SymbolKind::Variable;
+        urls.symbols[0].calls = vec![
+            "pkg:django#urls.path".into(),
+            "svc/web/views.py#ItemView.as_view".into(),
+        ];
+        facts.files.push(urls);
+        let d = empty();
+        let cx = Cx::new(&facts, &d);
+        let all = assign_all(&DataAccess, &cx);
+        assert!(
+            !all.iter().any(|(p, _, _)| p == "svc/web/urls.py"),
+            "{all:#?}"
+        );
+        assert_eq!(
+            key(&of(&all, "svc/web/views.py", "ItemView.get")),
+            "entry_direct:django"
         );
     }
 }

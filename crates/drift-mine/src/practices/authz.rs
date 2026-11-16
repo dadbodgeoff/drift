@@ -5380,9 +5380,31 @@ fn filters<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
                 by_caller
             }
             true => {
-                cx.context().since_measured()
-                    && !ev.reads_unscoped
-                    && given_callers(cx, n, callee, key)
+                let given = cx.context().since_measured() && given_callers(cx, n, callee, key);
+                // [STRICT]: filtered by the caller (an alias of the request's user
+                // followed: `user = request.user` then `filter(user=user)`), and
+                // another query of the unit reads rows by nothing of the caller
+                // ([`reads_unscoped`]): this query is scoped, what the route reads
+                // is not proven to be. Said as that, not as sides not proven.
+                if given
+                    && ev.reads_unscoped
+                    && ev.cond.is_none()
+                    && (!names_tenant(last) || scoped.is_empty())
+                {
+                    let mechanism = match names_tenant(last) {
+                        true => "tenancy_filter",
+                        false => "owner_filter",
+                    };
+                    ev.find(
+                        mechanism,
+                        &format!("{key} (session)"),
+                        obligation::OTHER_READ_UNSCOPED,
+                        "",
+                        false,
+                    );
+                    continue;
+                }
+                given && !ev.reads_unscoped
             }
         };
         if !names_tenant(last) && !names_owner(last) {

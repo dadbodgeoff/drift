@@ -651,6 +651,7 @@ const PLAIN_USES: &[(&str, &str)] = &[
         "typed with {}, not checked when a request comes in",
     ),
     ("typed model", "parsed into a typed model by {}"),
+    ("typed param", "parameters parsed by their declared types by {}"),
     (
         "schema repo schema",
         "checked against a schema of the repository",

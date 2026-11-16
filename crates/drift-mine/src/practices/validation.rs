@@ -152,6 +152,19 @@ impl Concern for Validation {
             uses.push(use_of("manual", "body_check"));
             sources.push(VariantSource::Usage);
         }
+        // Python: every input the handler takes is a parameter the framework parses
+        // by its declared type before the body runs (`id: uuid.UUID` in FastAPI, a
+        // `<uuid:pk>` converter in a Django route), and the body reads no other
+        // ([`controls::INPUT_TYPED`]): a value of another shape is answered with an
+        // error. Only where nothing else was found, so a unit that also binds a
+        // model keeps its way.
+        if uses.is_empty()
+            && sfile.lang == "py"
+            && s.controls.iter().any(|c| c == controls::INPUT_TYPED)
+        {
+            uses.push(use_of("typed_param", &entry.adapter));
+            sources.push(VariantSource::Vocab);
+        }
         if !uses.is_empty() {
             return common::known(uses, common::source_of(&sources));
         }
